@@ -16,6 +16,15 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Firebase's issuer for our project (ADR-006). Per-environment: the largata-dev project
+          # serves local + dev; prod gets its own project at S0.4 — and preprod must share prod's,
+          # or its prod-mirrored Travelers (keyed by Firebase UID) match no one (spec, decision 1).
+          # Not a secret: the issuer is public, and the JWKS behind it is public by design.
+          issuer-uri: ${FIREBASE_ISSUER_URI:https://securetoken.google.com/largata-dev}
 
 server:
   port: ${PORT:8080}
