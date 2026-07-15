@@ -1,0 +1,54 @@
+# Secrets — structural guarantee (CLAUDE.md: "Never commit secrets", P3).
+# Real secrets live only in these files locally and in the platform's env-var UI in prod.
+# The repo carries .env.example with placeholders only — that one is tracked (negated below).
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+secrets.json
+service-account*.json
+google-services.json
+GoogleService-Info.plist
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Build output
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+
+# Expo / React Native (ADR-010: Android release builds are made locally)
+.expo/
+.expo-shared/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+ios/build/
+ios/Pods/
+*.apk
+*.aab
+*.ipa
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Scratch / temp — NOT specs or tickets: those are tracked under docs/plans/
+.scratch/
+tmp/
+*.log
