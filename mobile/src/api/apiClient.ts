@@ -1,12 +1,18 @@
 import { ApiError } from './ApiError';
+import { currentToken } from '../auth/tokenSource';
 import type { ErrorEnvelope } from '../types/api';
 
 /**
  * The one typed outbound client (06b §6, P6). Components never call `fetch` — everything goes
  * through here, and this is the only module in the app that knows `fetch` exists.
  *
- * Returns typed data or throws exactly one error type ({@link ApiError}). Auth-token attach and
- * refresh land here at S0.2 — once, in this file, never at a call site.
+ * Returns typed data or throws exactly one error type ({@link ApiError}).
+ *
+ * Auth-token attach lives here as promised at S0.1 — once, in this file, never at a call site
+ * (S0.2). Refresh does not: `@react-native-firebase/auth` returns a valid token from its own cache
+ * and refreshes it natively when it is close to expiring, so there is no refresh logic for us to
+ * own. What we must never do is cache the token ourselves — that is how an app ends up sending a
+ * token it refreshed past.
  */
 
 const DEFAULT_BASE_URL = 'http://10.0.2.2:8080';
@@ -26,10 +32,18 @@ function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
 }
 
 async function request<T>(path: string): Promise<T> {
+  const token = await currentToken();
+
   let response: Response;
   try {
     response = await fetch(`${baseUrl()}${path}`, {
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        // Signed out: no header at all, rather than an empty or "Bearer null" one. The backend
+        // treats every flavor of missing/invalid credential identically (UNAUTHENTICATED), but
+        // sending a malformed header would be us manufacturing a rejection we could just not send.
+        ...(token !== null ? { Authorization: `Bearer ${token}` } : {}),
+      },
     });
   } catch {
     // Travelers live in dead zones (ADR-001). An unreachable network is an expected outcome,

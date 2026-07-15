@@ -37,21 +37,40 @@ $staged_env"
 added=$(git diff --cached --diff-filter=ACM -U0 | grep '^+' | grep -v '^+++' || true)
 [ -z "$added" ] && exit 0
 
-# Placeholders are what documentation and .env.example legitimately contain.
-placeholders='<[^>]*>|xxx+|\.\.\.|your[-_]|example|placeholder|changeme|dummy|sample|\$\{|:-|TODO|FIXME'
+# Placeholders are what documentation, .env.example, and test fixtures legitimately contain.
+#
+# `mock`/`fake`/`stub`/`test-` were added at S0.2: the auth tests are necessarily full of
+# credential-shaped lines (`signInWithCredential: mockSignInWithCredential`, `idToken:
+# 'google-id-token'`) and every one of them tripped the assignment rule. A hook that is right about
+# the wrong things trains everyone to reach for --no-verify, which would hollow out the backstop
+# completely — the same reasoning that made this list value-aware rather than keyword-based at S0.1.
+placeholders='<[^>]*>|xxx+|\.\.\.|your[-_]|example|placeholder|changeme|dummy|sample|\$\{|:-|TODO|FIXME|mock|fake|stub|test-|-test'
 
-# 2. Assignment with a real-looking value. The value must be present and non-placeholder —
-#    `API_KEY=` in prose (no value) does not match, `API_KEY=sk_live_abc123...` does.
+# 2. Assignment of a real-looking LITERAL value. Three conditions, each earning its place:
+#    - the name is credential-shaped (api_key, secret, token, ...);
+#    - the value is a *quoted literal* or a bare env-file value — a secret is data, never an
+#      expression. Requiring quotes (or an .env-style `KEY=value` with no quotes) is what stops
+#      `const idToken = response.data.idToken;` from matching: that line assigns a *reference*, and
+#      a reference cannot leak anything. Without this, ordinary auth code trips the hook on every
+#      commit, which is how a backstop becomes noise people learn to bypass. (Widened at S0.2.)
+#    - the value is not a placeholder.
+#    `API_KEY=` in prose (no value) still does not match; `API_KEY=sk_live_abc123...` still does.
 assignments=$(echo "$added" \
-    | grep -inE '(api[-_]?key|secret|password|passwd|token|credential|private[-_]?key)[[:space:]]*[=:][[:space:]]*["'"'"']?[A-Za-z0-9_/+.=-]{8,}' \
+    | grep -inE '(api[-_]?key|secret|password|passwd|token|credential|private[-_]?key)[[:space:]]*[=:][[:space:]]*("[A-Za-z0-9_/+.=-]{8,}"|'"'"'[A-Za-z0-9_/+.=-]{8,}'"'"'|[A-Za-z0-9_/+.=-]{8,}[[:space:]]*$)' \
     | grep -viE "$placeholders" || true)
 [ -n "$assignments" ] && fail "credential-shaped assignment:
 $assignments"
 
 # 3. Private key blocks and known provider key formats — unambiguous, no placeholder exemption
-#    (nobody writes a real-looking PEM header as an example).
+#    (nobody writes a real-looking PEM header as an example). This rule is what catches a secret
+#    whose variable name tells rule 2 nothing (`const x = "sk_live_..."`).
+#
+#    Lengths are ranges, not exact counts (widened at S0.2): the exact-length versions matched only
+#    a canonical specimen, so a real key one character off — and these formats do vary — sailed
+#    through. A prefix match with a generous tail is the honest rule; the prefixes are distinctive
+#    enough that the looseness costs nothing.
 keys=$(echo "$added" \
-    | grep -inE '\-\-\-\-\-BEGIN [A-Z ]*PRIVATE KEY\-\-\-\-\-|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk_live_[A-Za-z0-9]{24}|AIza[0-9A-Za-z_-]{35}' || true)
+    | grep -inE '\-\-\-\-\-BEGIN [A-Z ]*PRIVATE KEY\-\-\-\-\-|AKIA[0-9A-Z]{12,}|gh[pousr]_[A-Za-z0-9]{20,}|sk_(live|test)_[A-Za-z0-9]{16,}|AIza[0-9A-Za-z_-]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.' || true)
 [ -n "$keys" ] && fail "private key or provider credential:
 $keys"
 
