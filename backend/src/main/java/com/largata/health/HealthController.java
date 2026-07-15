@@ -24,7 +24,8 @@ public class HealthController {
 
     @GetMapping
     HealthResponse health() {
-        healthService.verifyDependencies();
-        return new HealthResponse("ok");
+        // The service owns the rule and its result; the controller does no business branching
+        // and does not invent the response (06b §2).
+        return healthService.checkDatastore();
     }
 }

@@ -27,7 +27,8 @@ _Status: **proposed — pending founder ratification.**_
 ## 3. Exception taxonomy — *instantiates P2*
 
 - Root: `DomainException` (unchecked, abstract).
-- Category parents → status: `NotFoundException → 404` · `ValidationException → 400` · `ConflictException → 409` (includes illegal state transitions) · `ForbiddenException → 403`.
+- Category parents → status: `NotFoundException → 404` · `ValidationException → 400` · `ConflictException → 409` (includes illegal state transitions) · `ForbiddenException → 403` · `UnavailableException → 503`.
+  - *`UnavailableException` added at S0.1 (ticket 03).* A required dependency did not answer — neither the caller's fault nor a domain-rule rejection, so none of the other four fits. Without it the only options were an untyped 500 (a Spring error page, violating P2) or misusing a category. Its message never names the failed dependency — that would tell an anonymous caller about our topology; the operator gets the detail from the correlated log line.
 - Naming: `{Entity}{Condition}` — `WorkspaceNotFound`, `SplitsDoNotSum`, `IllegalItineraryTransition`, `NotAMember`.
 - Single handler: one `@RestControllerAdvice` in `common` — logs once, maps to the Artifact 05 envelope. Infrastructure exceptions (DataAccess, IO) are translated to domain errors **in the service layer**; nothing raw ever reaches a controller or the client.
 

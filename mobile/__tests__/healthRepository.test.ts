@@ -1,8 +1,8 @@
 import { healthRepository } from '../src/repositories/healthRepository';
 
 /**
- * The repository layer (ADR-001). The cache is an in-memory pass-through until S0.3 picks the
- * real technology — these tests pin the *contract* so that swap stays a one-file change.
+ * The repository layer (ADR-001). No cache until S0.3 picks the technology — these tests pin the
+ * read-through contract so that swap stays a one-file change.
  */
 
 const mockFetch = jest.fn();
@@ -13,7 +13,6 @@ const okResponse = (body: unknown): Response =>
 
 beforeEach(() => {
   mockFetch.mockReset();
-  healthRepository.reset();
 });
 
 describe('healthRepository', () => {
@@ -21,18 +20,6 @@ describe('healthRepository', () => {
     mockFetch.mockResolvedValue(okResponse({ status: 'ok' }));
 
     await expect(healthRepository.fetchHealth()).resolves.toEqual({ status: 'ok' });
-  });
-
-  it('has nothing cached before the first read', () => {
-    expect(healthRepository.cached()).toBeUndefined();
-  });
-
-  it('caches what it last saw', async () => {
-    mockFetch.mockResolvedValue(okResponse({ status: 'ok' }));
-
-    await healthRepository.fetchHealth();
-
-    expect(healthRepository.cached()).toEqual({ status: 'ok' });
   });
 
   it('propagates ApiError rather than swallowing it', async () => {

@@ -1,6 +1,7 @@
 package com.largata.health;
 
 import com.largata.common.error.DependencyUnavailableException;
+import com.largata.health.api.HealthResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -23,15 +24,17 @@ public class HealthService {
         this.healthRepository = healthRepository;
     }
 
-    public void verifyDependencies() {
+    public HealthResponse checkDatastore() {
         try {
             healthRepository.ping();
         } catch (DataAccessException e) {
-            // Warn (not error): the global handler owns error-severity logging (06b §4).
-            // The cause is logged for the operator; the client sees only the envelope.
-            log.warn("Health check failed: datastore unreachable", e);
-            throw new DependencyUnavailableException("The service is temporarily unavailable.");
+            // Translate, do not log: P2's floor is "never log the same error twice", and the
+            // global handler logs every DomainException. Catch-log-and-rethrow here would emit
+            // two lines for one outage — the exact pattern P2's check greps for. The cause rides
+            // on the exception so the handler can log it once, with the traceId attached.
+            throw new DependencyUnavailableException("The service is temporarily unavailable.", e);
         }
         log.info("Health check passed");
+        return new HealthResponse("ok");
     }
 }

@@ -25,8 +25,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DomainException.class)
     ResponseEntity<ErrorResponse> handleDomain(DomainException e) {
         HttpStatus status = statusOf(e);
-        // One line, every failure. traceId ties it to the client's envelope.
-        log.warn("Domain failure: type={} code={} status={}", e.getClass().getSimpleName(), e.code(), status.value());
+        // One line, every failure — this is the only place a DomainException is logged (P2).
+        // When the exception wraps an infrastructure cause, it is logged here too, so the
+        // operator gets the stack without any lower layer logging it a second time.
+        if (e.getCause() != null) {
+            log.warn(
+                    "Domain failure: type={} code={} status={}",
+                    e.getClass().getSimpleName(),
+                    e.code(),
+                    status.value(),
+                    e.getCause());
+        } else {
+            log.warn(
+                    "Domain failure: type={} code={} status={}",
+                    e.getClass().getSimpleName(),
+                    e.code(),
+                    status.value());
+        }
         return respond(status, e.code(), e.getMessage());
     }
 
@@ -42,11 +57,11 @@ public class GlobalExceptionHandler {
 
     private static HttpStatus statusOf(DomainException e) {
         return switch (e) {
-            case NotFoundException ignored -> HttpStatus.NOT_FOUND;
-            case ValidationException ignored -> HttpStatus.BAD_REQUEST;
-            case ConflictException ignored -> HttpStatus.CONFLICT;
-            case ForbiddenException ignored -> HttpStatus.FORBIDDEN;
-            case UnavailableException ignored -> HttpStatus.SERVICE_UNAVAILABLE;
+            case NotFoundException _ -> HttpStatus.NOT_FOUND;
+            case ValidationException _ -> HttpStatus.BAD_REQUEST;
+            case ConflictException _ -> HttpStatus.CONFLICT;
+            case ForbiddenException _ -> HttpStatus.FORBIDDEN;
+            case UnavailableException _ -> HttpStatus.SERVICE_UNAVAILABLE;
             default -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }

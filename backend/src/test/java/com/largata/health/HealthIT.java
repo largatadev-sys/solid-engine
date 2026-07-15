@@ -2,7 +2,12 @@ package com.largata.health;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.largata.support.PostgresTestBase;
@@ -62,6 +67,27 @@ class HealthIT extends PostgresTestBase {
                 .isEqualTo(1)
                 .jsonPath("$.status")
                 .exists();
+    }
+
+    @Test
+    void successLogsExactlyOneInfoLineFromTheServiceLayer() {
+        // 06b §4: "services log one info line on success (entity id + operation)". Asserted
+        // rather than assumed — the error-side log-once has a test, so the success side should
+        // too, and it is the only thing proving the service layer is on the path at all.
+        ListAppender<ILoggingEvent> capture = new ListAppender<>();
+        capture.start();
+        Logger root = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        root.addAppender(capture);
+        try {
+            rest.get().uri("/v1/health").exchange().expectStatus().isOk();
+
+            assertThat(capture.list)
+                    .filteredOn(e -> e.getLevel() == Level.INFO)
+                    .filteredOn(e -> e.getLoggerName().equals(HealthService.class.getName()))
+                    .hasSize(1);
+        } finally {
+            root.detachAppender(capture);
+        }
     }
 
     @Test

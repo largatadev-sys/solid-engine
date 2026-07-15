@@ -18,6 +18,15 @@ public abstract class DomainException extends RuntimeException {
         this.code = code;
     }
 
+    /**
+     * Carries the underlying infrastructure failure without logging it here — P2 forbids
+     * catch-log-and-rethrow, so the cause rides along and the global handler logs it once.
+     */
+    protected DomainException(String code, String message, Throwable cause) {
+        super(message, cause);
+        this.code = code;
+    }
+
     public String code() {
         return code;
     }
