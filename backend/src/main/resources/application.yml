@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: largata-backend
+  datasource:
+    # Config is env-vars only (Artifact 04). Defaults here are local-dev conveniences, never
+    # secrets — real values come from the environment; prod sets them in the platform's UI.
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/largata}
+    username: ${DATABASE_USERNAME:largata}
+    password: ${DATABASE_PASSWORD:largata}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Flyway owns the schema. Hibernate must never touch DDL — an accidental `update` would
+      # silently diverge environments from the migration history.
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${PORT:8080}
+  error:
+    # Belt and braces for P2: even if something escaped the handler, Spring's default error
+    # page must not render internals to a client.
+    include-stacktrace: never
+    include-message: never
+
+logging:
+  # Structured JSON (06b §4). Boot's built-in ECS/logstash structured format — no extra dependency.
+  structured:
+    format:
+      console: ecs

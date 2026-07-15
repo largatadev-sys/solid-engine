@@ -14,6 +14,12 @@ service-account*.json
 google-services.json
 GoogleService-Info.plist
 
+# Java / Maven
+target/
+*.class
+hs_err_pid*
+replay_pid*
+
 # Node
 node_modules/
 npm-debug.log*
