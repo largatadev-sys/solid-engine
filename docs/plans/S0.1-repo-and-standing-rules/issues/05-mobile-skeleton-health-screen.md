@@ -25,4 +25,19 @@ Versions found at scaffold time: **Expo SDK 57.0.4** (`expo@latest`), React Nati
 - `npx expo export --platform android` bundles successfully (2.6MB Hermes bundle) — the dependency tree resolves for a real build, not just for `tsc`.
 - 15 Jest tests cover the apiClient's success and error translation, the repository's read-through, and a layering test that greps every file under `app/` and `src/` for raw `fetch`.
 
-That is meaningfully weaker than the ACs ask for: bundling proves the app *builds*, not that the screen *renders* or that the emulator can reach `10.0.2.2:8080`. **Carried to ticket 08's gate run** — it is the natural place to launch the emulator once, against the composed stack, and close both ACs. If the gate cannot run an emulator either, this must be raised rather than quietly ticked.
+That is meaningfully weaker than the ACs ask for: bundling proves the app *builds*, not that the screen *renders* or that the emulator can reach `10.0.2.2:8080`.
+
+**2026-07-15 (later) — verified in a browser instead. The ACs still stand unticked.**
+
+**Expo Go cannot run this project.** Both the owner's iPhone and Android phone report *"Project is incompatible with this version of Expo Go"*. Cause: the SDK 57 Expo Go client has not reached the app stores yet (SDK 56 shipped 2026-07-07; 57 is newer), and Expo's own API confirms an SDK 57 client exists (android 57.0.2 / ios 57.0.4) but store rollout lags. **No update fixes this — there is nothing to update to.** Root cause is the scaffold: `create-expo-app@latest` pulled a days-old SDK, and "latest stable" was taken to mean the newest npm tag rather than the newest SDK whose *client* had shipped. Owner decision: **stay on 57**, do not downgrade a foundation to buy one demo — S0.2's dev-build compiles our own SDK into our own container and ends the store-lag problem permanently.
+
+**Verified via React Native Web** (`npx expo start --web`), against the live composed stack:
+- ✅ The screen renders; **"Backend: ok"** displayed, sourced through screen → hook → repository → apiClient → `GET /v1/health` → Spring → Postgres.
+- ✅ With `docker compose stop backend`, **"Backend unreachable" / `NETWORK_UNAVAILABLE`** renders — the typed `ApiError` path, not a crash or white screen. This is the half no unit test can reach (ADR-001's dead-zone posture, proven).
+- ✅ Recovery: restarting the backend and pressing "Check again" returns to ok — the error state is not sticky.
+
+**Why this does not tick the ACs.** They say *"Expo Go on the Android emulator"* and *"the screen shows the typed error state"* on a device. Web proves the layering, the rendering, and the error path; it does **not** prove native rendering, nor the `10.0.2.2` emulator alias / LAN networking assumption — still the one genuinely unproven thing. Redefining the ACs to match what was reachable would be marking my own homework. **They close at S0.2**, which cannot avoid an emulator (Firebase forces a dev-build) and tests the networking assumption as a side effect.
+
+**Two things web cost, both recorded in CLAUDE.md gotchas:**
+1. **`npx expo install react-dom` broke the app** — it installed the SDK's `19.2.3` against our `react@19.2.7`, and the web bundle died at runtime with *"Incompatible React versions"* on a white screen. `react` and `react-dom` must be pinned to the same exact version. Verified the fix from inside the served 4MB bundle: only `19.2.7` appears.
+2. **A dev-only CORS config was needed** (`DevCorsConfig`, `@Profile("dev")`) — browsers enforce CORS, native clients do not. Bound to the dev profile with two tests proving it is enabled in dev and **absent** by default, because a permissive CORS policy on the production API would let any website call it with a traveler's credentials.

@@ -1,19 +1,24 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    // P7's floor is "no `any` at any boundary". `strict` makes the compiler enforce it instead
-    // of leaving it to review; the two extras below close the gaps strict leaves open.
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    // Jest's globals (`jest`, `describe`, `expect`) and Node's (`global`) are ambient in test
-    // files. Without these, `tsc --noEmit` fails on the tests even though Jest itself runs fine —
-    // Jest transpiles without type-checking, so the compiler is the only thing that would notice.
-    "types": ["jest", "node"],
+    "types": [
+      "jest",
+      "node"
+    ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

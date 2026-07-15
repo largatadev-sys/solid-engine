@@ -47,6 +47,10 @@ services:
       DATABASE_USERNAME: ${POSTGRES_USER:-largata}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-largata}
       PORT: 8080
+      # The local stack runs the dev profile, which enables browser CORS (DevCorsConfig) for
+      # React Native Web. Prod sets no profile and therefore has no CORS policy — correct for a
+      # native-only client, and the reason the rule cannot leak out of local development.
+      SPRING_PROFILES_ACTIVE: dev
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:

@@ -83,6 +83,7 @@ The business model: two tiers, **Free / Subscriber**; launch is entirely free. P
 - **Moderation tooling** — replaces founder-handled.
 - **Influencer program** — account-status layer.
 - **Post-validation hardening** — observability, RLS second wall (ADR-003), tested backups, rate limiting (playbook §6 ordering: data-loss/security → downtime → friction).
+- **Visual direction & design tokens** — **needed before S0.3's first real screens.** No design system exists: no colour tokens, no typography scale, no spacing rhythm. S0.1's health screen carries hardcoded throwaway colours borrowed from the existing Largata worklog app, explicitly marked *not* precedent. The open question is whether that portfolio palette suits a **travel** product (trips, diaries, photos, a public browse feed) or reads as an enterprise tool wearing the wrong clothes — a brand-level call, hard to reverse once screens consume the tokens. Outcome: a token layer (`mobile/src/theme/`) plus an ADR recording the choice. Reusing the worklog palette is a fine answer; it just has to be a decision, not a side effect.
 
 ---
 
