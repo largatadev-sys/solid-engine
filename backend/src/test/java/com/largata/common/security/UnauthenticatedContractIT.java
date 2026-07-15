@@ -145,6 +145,26 @@ class UnauthenticatedContractIT extends PostgresTestBase {
     }
 
     @Test
+    void anUnknownRouteIs401ToAnAnonymousCaller_not404() {
+        // Deliberate, and a change from S0.1's behaviour (regression checklist #1, amended at
+        // S0.2): default-deny rejects at the security chain, before routing has looked for a
+        // handler, so an anonymous caller cannot learn whether a path exists. That is the better
+        // answer — a 404-vs-401 difference would map the API's shape for anyone probing it, which
+        // is the same information leak Artifact 03 spends 404s to prevent.
+        //
+        // Authenticated callers still get 404 in the envelope
+        // (ErrorContractIT.unknownRouteIs404InTheEnvelope) — which is what that rule always meant.
+        rest.get()
+                .uri("/v1/definitely-not-a-route")
+                .exchange()
+                .expectStatus()
+                .isUnauthorized()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("UNAUTHENTICATED");
+    }
+
+    @Test
     void healthStaysPublic() {
         // S0.1's contract, unchanged: the stack smoke job and any platform probe reach it without
         // a token. Securing it would break the CI smoke job silently.

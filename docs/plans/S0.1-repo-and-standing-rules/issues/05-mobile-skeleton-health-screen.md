@@ -4,10 +4,10 @@
 
 **Blocked by:** 02 — Backend skeleton *(needs a running `/v1/health`; the composed stack is not required — IDE-run backend suffices)*.
 
-**Status:** done — except two device ACs, **carried to S0.2** (owner decision, 2026-07-15; see "Carried to S0.2" below)
+**Status:** done — both carried ACs closed at S0.2 on the dev-build (2026-07-15; see the final comment)
 
-- [ ] **OPEN → S0.2 — Expo Go on the Android emulator shows the health status against the locally running backend** (no emulator exists on the dev machine yet; verified in a browser instead — see Comments)
-- [ ] **OPEN → S0.2 — Backend stopped → the screen shows the typed error state** (the error path is proven in a browser and in Jest, but not observed on a device)
+- [x] **CLOSED at S0.2 — the Android emulator shows the health status against the locally running backend.** Not via Expo Go, which proved unusable (native SIGSEGV) — via the **dev-build**, exactly as this ticket's fallback anticipated. Screenshot-verified: "Backend: ok" through screen → hook → repository → apiClient → `10.0.2.2:8080` → composed stack.
+- [x] **CLOSED at S0.2 — backend stopped → the screen shows the typed error state.** Screenshot-verified on-device: "Backend unreachable" / `NETWORK_UNAVAILABLE`, no crash, no white screen; restarting the backend and pressing "Check again" recovers.
 - [x] Jest: `apiClient` returns typed data on 200 and throws `ApiError` with correct fields on envelope errors
 - [x] `tsc --noEmit` green under strict mode; no `any` at the apiClient/repository boundaries
 - [x] No `fetch`/network call outside the `apiClient`
@@ -65,3 +65,11 @@ That is meaningfully weaker than the ACs ask for: bundling proves the app *build
 The AVD (Pixel 7, API 36 x86_64) is installed and boots. The recorded store-lag risk did **not** materialize — `npx expo start --android` sideloads a matching Expo Go 57 client straight from Expo's CDN, bypassing the Play Store. The bundle builds and executes (`Android Bundled`, JS "main" runs, 4 attempts). But the experience then dies in **Expo Go's own native code**: `Fatal signal 11 (SIGSEGV) … tid mqt_v_js` — a segfault on the RN JS thread inside the Expo Go client, Android force-finishes the activity back to the Expo Go home screen. No JS error, nothing our code can cause or fix; this is the days-old SDK 57 Android client (57.0.2) on the x86_64 emulator. The ticket's fallback applies: **both ACs close on S0.2's dev-build**, which compiles our own SDK and drops Expo Go entirely.
 
 What *was* proven today, decoupled from Expo Go: **the `10.0.2.2` host-loopback alias works** — Chrome on the emulator fetched `http://10.0.2.2:8080/v1/health` from the composed stack and rendered `{"status":"ok"}` (screenshot-verified). `mobile/.env` now points at `http://10.0.2.2:8080`. The one genuinely untested assumption behind AC 1 is retired; what remains open is only observing *our app's* screens on-device, which the dev-build provides.
+
+**2026-07-15 (S0.2) — both ACs closed on the dev-build. The ticket is done.**
+
+Screenshot-verified on the Pixel 7 AVD, running `com.largata.app` (our own APK, our own compiled SDK — no Expo Go anywhere):
+- ✅ **"Backend: ok"** — through screen → hook → repository → apiClient → `http://10.0.2.2:8080/v1/health` → the composed stack. The full ADR-001 layering, on a device, over the emulator alias.
+- ✅ **"Backend unreachable" / `NETWORK_UNAVAILABLE`** after `docker compose stop backend` — the typed `ApiError` path, no crash, no white screen. Restarting the backend and pressing "Check again" returns to ok, so the error state is not sticky.
+
+**Two months of this ticket's history in one sentence:** the ACs were written for Expo Go, held honestly unticked twice rather than redefined to match what was reachable, and closed by the dev-build — which is what the "Known risk" paragraph above predicted, for a reason nobody predicted (the store-lag theory was wrong; the SDK 57 client segfaults natively even when sideloaded). Refusing to mark my own homework cost a day and produced the right answer anyway.
