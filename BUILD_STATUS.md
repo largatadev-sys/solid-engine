@@ -9,7 +9,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | # | Story | Status | Plan |
 |---|-------|:---:|------|
 | **Epic 0 — Walking Skeleton** | | | | |
-| S0.1 | Repo, environments, and the standing rules | 🔄 | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) — built & verified; **awaiting owner approval to squash-merge into `dev`**; ticket 05's two emulator ACs open |
+| S0.1 | Repo, environments, and the standing rules | ✅ | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) — **on `dev`** (`git log --grep S0.1`). Two device ACs carried to S0.2 (ticket 05); `preprod`/`main` promotion happens at S0.4 with the PaaS |
 | S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | ⬜ | **Starts with: install Android Studio + an AVD, then close S0.1 ticket 05's two open device ACs** (dev-build needs the toolchain anyway) |
 | S0.3 | Create and view an Itinerary (first domain slice, guard included) | ⬜ | — |
 | S0.4 | Both release trains to production (Android: local build → Play internal; iOS deferred — ADR-010) | ⬜ | — |
