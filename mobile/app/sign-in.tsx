@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { AuthCancelled, authRepository } from '../src/repositories/authRepository';
+import { AuthCancelled, AuthError, authRepository } from '../src/repositories/authRepository';
 
 /**
  * Sign in, sign up, and password reset (S0.2, spec decision 5).
@@ -42,7 +42,11 @@ export default function SignInScreen() {
       if (success !== undefined) setMessage(success);
     } catch (error) {
       if (error instanceof AuthCancelled) return; // Backing out is not a failure.
-      setMessage(readableError(error));
+      // The repository's contract is that it throws exactly one type; anything else is a bug in
+      // that layer, and surfacing it raw would hide it. Same shape as useHealth's ApiError guard.
+      setMessage(
+        error instanceof AuthError ? error.message : 'Sign-in failed. Please try again.',
+      );
     } finally {
       setBusy('idle');
     }
@@ -141,33 +145,6 @@ export default function SignInScreen() {
       {message !== null && <Text style={styles.message}>{message}</Text>}
     </View>
   );
-}
-
-/**
- * Firebase's `auth/...` codes, translated at the boundary. Deliberately vague about which half of
- * a credential was wrong: "no account with that email" tells anyone with a list of emails which
- * ones are registered.
- */
-function readableError(error: unknown): string {
-  const code = (error as { code?: string }).code ?? '';
-  switch (code) {
-    case 'auth/invalid-email':
-      return 'That email address is not valid.';
-    case 'auth/invalid-credential':
-    case 'auth/wrong-password':
-    case 'auth/user-not-found':
-      return 'Email or password is incorrect.';
-    case 'auth/email-already-in-use':
-      return 'An account with that email already exists.';
-    case 'auth/weak-password':
-      return 'Password must be at least 6 characters.';
-    case 'auth/network-request-failed':
-      return 'Could not reach the server. Check your connection.';
-    case 'auth/too-many-requests':
-      return 'Too many attempts. Try again shortly.';
-    default:
-      return 'Sign-in failed. Please try again.';
-  }
 }
 
 const styles = StyleSheet.create({

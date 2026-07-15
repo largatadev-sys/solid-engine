@@ -2,6 +2,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { installFirebaseTokenSource } from '../src/auth/firebaseTokenSource';
+import { installGoogleSignIn } from '../src/auth/googleSignInConfig';
 import { AuthProvider, useAuth } from '../src/hooks/useAuth';
 
 /**
@@ -10,8 +11,11 @@ import { AuthProvider, useAuth } from '../src/hooks/useAuth';
  */
 
 // Module scope, not an effect: the API client may be called before any component mounts, and a
-// token source installed "on first render" would be a race the app loses occasionally.
+// token source installed "on first render" would be a race the app loses occasionally. Google
+// sign-in is configured here for the same reason — GoogleSignin.configure() must precede any
+// signIn(), and "configure it when the sign-in screen mounts" is a promise, not a guarantee.
 installFirebaseTokenSource();
+installGoogleSignIn();
 
 export default function RootLayout() {
   return (

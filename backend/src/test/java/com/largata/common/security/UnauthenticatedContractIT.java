@@ -30,7 +30,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
  * code}") has nothing to branch on.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestJwtSupport.Config.class)
+@Import({TestJwtSupport.Config.class, ForbiddenTestController.Config.class})
 class UnauthenticatedContractIT extends PostgresTestBase {
 
     private RestTestClient rest;
@@ -115,6 +115,33 @@ class UnauthenticatedContractIT extends PostgresTestBase {
 
         assertThat(matching).as("log-once (P3): exactly one warn line for this rejection").hasSize(1);
         assertThat(matching.getFirst().getMDCPropertyMap()).doesNotContainKey("userId");
+    }
+
+    @Test
+    void authenticatedButNotPermittedIs403Forbidden_not401() {
+        // The distinction Artifact 05 draws: 401 is "who are you?", 403 is "known, but not
+        // permitted". Telling a traveler UNAUTHENTICATED when they are perfectly authenticated
+        // sends them to sign in again — which fixes nothing and costs them their session.
+        //
+        // This test exists because the bug it catches was invisible: the deny handler was wired to
+        // the 401 entry point, and no route could produce a 403 to reveal it. S0.3's guard — the
+        // first real 403 — would have inherited the wrong status, frozen by ADR-008's
+        // additive-only rule before it was ever reachable. Hence ForbiddenTestController.
+        rest.get()
+                .uri(ForbiddenTestController.PATH)
+                .header(
+                        HttpHeaders.AUTHORIZATION,
+                        "Bearer " + TestJwtSupport.tokenFor("uid-forbidden", "forbidden@example.com"))
+                .exchange()
+                .expectStatus()
+                .isForbidden()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("FORBIDDEN")
+                .jsonPath("$.traceId")
+                .exists()
+                .jsonPath("$.length()")
+                .isEqualTo(4);
     }
 
     @Test

@@ -1,4 +1,4 @@
-import { AuthCancelled, authRepository } from '../src/repositories/authRepository';
+import { AuthCancelled, AuthError, authRepository } from '../src/repositories/authRepository';
 
 /**
  * The auth repository's contract, with the native SDK mocked at the module boundary — the standard
@@ -18,6 +18,7 @@ const mockSendEmailVerification = jest.fn();
 const mockGoogleSignIn = jest.fn();
 const mockGoogleSignOut = jest.fn();
 const mockHasPlayServices = jest.fn();
+const mockGoogleConfigure = jest.fn();
 
 jest.mock('@react-native-firebase/auth', () => {
   const auth = () => ({
@@ -36,7 +37,7 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
     signIn: () => mockGoogleSignIn(),
     signOut: () => mockGoogleSignOut(),
     hasPlayServices: () => mockHasPlayServices(),
-    configure: jest.fn(),
+    configure: (options: unknown) => mockGoogleConfigure(options),
   },
 }));
 
@@ -44,6 +45,35 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockHasPlayServices.mockResolvedValue(true);
   mockCreateUser.mockResolvedValue({ user: { sendEmailVerification: mockSendEmailVerification } });
+});
+
+describe('Google sign-in configuration', () => {
+  // This is the gap a mock cannot see on its own: the SDK must be configured with the *web*
+  // client id before any signIn(), or signIn() resolves with a null idToken and the exchange
+  // fails — with nothing naming the missing configure(). The mock happily returns an idToken
+  // regardless, so without these two tests, "Google sign-in works" was proven only by a fiction.
+  it('configures the SDK with the web client id from environment config', () => {
+    jest.isolateModules(() => {
+      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID = '123-abc.apps.googleusercontent.com';
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('../src/auth/googleSignInConfig').installGoogleSignIn();
+    });
+
+    expect(mockGoogleConfigure).toHaveBeenCalledWith({
+      webClientId: '123-abc.apps.googleusercontent.com',
+    });
+  });
+
+  it('fails loudly at startup when the web client id is missing', () => {
+    // A misconfigured build should die immediately, not look fine until someone taps
+    // "Continue with Google" and gets an unexplained failure at the token exchange.
+    jest.isolateModules(() => {
+      delete process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { installGoogleSignIn } = require('../src/auth/googleSignInConfig');
+      expect(() => installGoogleSignIn()).toThrow(/EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID/);
+    });
+  });
 });
 
 describe('Google sign-in', () => {
@@ -84,6 +114,47 @@ describe('email flows', () => {
     await authRepository.sendPasswordReset('ana@example.com');
 
     expect(mockSendPasswordReset).toHaveBeenCalledWith('ana@example.com');
+  });
+});
+
+describe('error translation at the boundary (ADR-001, 06b §6)', () => {
+  it('turns a Firebase auth/... code into a typed AuthError with a readable message', async () => {
+    mockSignInWithEmail.mockRejectedValue({ code: 'auth/invalid-email' });
+
+    const error = await authRepository.signInWithEmail('nope', 'x').catch((e: unknown) => e);
+
+    // Screens must never see `auth/...` codes: that would be UI code knowing the provider exists,
+    // and every auth screen re-implementing the same cascade.
+    expect(error).toBeInstanceOf(AuthError);
+    expect((error as AuthError).message).toBe('That email address is not valid.');
+  });
+
+  it('does not reveal which half of a credential was wrong', async () => {
+    // Distinguishing "no such account" from "wrong password" hands anyone with a list of emails a
+    // way to learn which are registered.
+    mockSignInWithEmail.mockRejectedValue({ code: 'auth/user-not-found' });
+    const notFound = await authRepository.signInWithEmail('a@b.c', 'x').catch((e: unknown) => e);
+
+    mockSignInWithEmail.mockRejectedValue({ code: 'auth/wrong-password' });
+    const wrongPassword = await authRepository.signInWithEmail('a@b.c', 'x').catch((e: unknown) => e);
+
+    expect((notFound as AuthError).message).toBe((wrongPassword as AuthError).message);
+  });
+
+  it('translates an unrecognised failure rather than leaking it raw', async () => {
+    mockCreateUser.mockRejectedValue(new Error('something nobody anticipated'));
+
+    const error = await authRepository.signUpWithEmail('a@b.c', 'x').catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(AuthError);
+    expect((error as AuthError).message).toBe('Sign-in failed. Please try again.');
+  });
+
+  it('lets AuthCancelled through untranslated', async () => {
+    // Cancellation is not a failure and must not be flattened into one by the catch-all.
+    mockGoogleSignIn.mockResolvedValue({ type: 'cancelled' });
+
+    await expect(authRepository.signInWithGoogle()).rejects.toBeInstanceOf(AuthCancelled);
   });
 });
 

@@ -10,7 +10,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 |---|-------|:---:|------|
 | **Epic 0 — Walking Skeleton** | | | | |
 | S0.1 | Repo, environments, and the standing rules | ✅ | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) — **on `dev`** (`git log --grep S0.1`). Two device ACs carried to S0.2 (ticket 05); `preprod`/`main` promotion happens at S0.4 with the PaaS |
-| S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | 🔄 | [spec](docs/plans/S0.2-auth-end-to-end/spec.md) — intent locked + 6 tickets published 2026-07-15; **awaiting owner review before implementation**. Prereqs done: AVD ✅ · `10.0.2.2` proven ✅ · Expo Go dead (native SIGSEGV; ACs → dev-build, ticket 03) · Firebase `largata-dev` configured ✅ |
+| S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | 🔄 | [spec](docs/plans/S0.2-auth-end-to-end/spec.md) · on `feature/S0.2-auth-end-to-end` (`git log --grep S0.2`). **Backend done** (tickets 01–02: resource server, 401/403 envelopes, Traveler provisioning, `/v1/me` — 43 tests green). **Mobile code done, device ACs open** (03–04): dev-build builds and runs, Expo Go abandoned; sign-in + `/me` screens written, 34 mobile tests green. **Blocked on owner: `mobile/google-services.json`** (Firebase console → register `com.largata.app` with SHA-1 `5E:8F:16:...:F6:25`) — tickets 05–06 cannot start without it |
 | S0.3 | Create and view an Itinerary (first domain slice, guard included) | ⬜ | — |
 | S0.4 | Both release trains to production (Android: local build → Play internal; iOS deferred — ADR-010) | ⬜ | — |
 | **Epic 1 — Collaborative planning** | | | | |

@@ -41,7 +41,10 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(
-            HttpSecurity http, EnvelopeAuthenticationEntryPoint entryPoint) throws Exception {
+            HttpSecurity http,
+            EnvelopeAuthenticationEntryPoint entryPoint,
+            EnvelopeAccessDeniedHandler accessDeniedHandler)
+            throws Exception {
         return http
                 // No browser session, no login form, no CSRF token: the client is a native app
                 // holding a bearer token, and every request stands alone. CSRF protects
@@ -76,16 +79,13 @@ public class SecurityConfig {
                 // token has been verified. Registered as a @Component it would run ahead of the
                 // chain, find an empty security context, and silently log nothing forever.
                 .addFilterAfter(new UserContextFilter(), BearerTokenAuthenticationFilter.class)
-                // Both hooks, deliberately: the entry point answers "no/!bad credentials" (401),
-                // the deny handler answers "valid credentials, insufficient rights" (403). Only the
-                // first can fire today — nothing grants authorities yet — but wiring the second now
-                // means the first 403-producing rule cannot silently emit a non-envelope body.
+                // Two hooks, two distinct answers (Artifact 05): the entry point says "who are
+                // you?" (401 UNAUTHENTICATED), the deny handler says "known, but not permitted"
+                // (403 FORBIDDEN). Only the first can fire today — nothing grants authorities yet —
+                // and the second is wired now so that S0.3's guard inherits the right status
+                // instead of whatever this file happened to leave behind.
                 .exceptionHandling(
-                        e ->
-                                e.authenticationEntryPoint(entryPoint)
-                                        .accessDeniedHandler(
-                                                (request, response, denied) ->
-                                                        entryPoint.commence(request, response, null)))
+                        e -> e.authenticationEntryPoint(entryPoint).accessDeniedHandler(accessDeniedHandler))
                 .build();
     }
 }

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -60,6 +61,25 @@ public class GlobalExceptionHandler {
     ResponseEntity<ErrorResponse> handleNoHandler(Exception e) {
         log.warn("No handler for request: type={}", e.getClass().getSimpleName());
         return respond(HttpStatus.NOT_FOUND, "NOT_FOUND", "Not found.");
+    }
+
+    /**
+     * Authorization denied at the <em>method</em> layer ({@code @PreAuthorize} and friends).
+     *
+     * <p>Spring Security denies access at two layers that surface differently. Filter-layer denials
+     * (the {@code authorizeHttpRequests} rules) never reach a controller and are answered by {@code
+     * EnvelopeAccessDeniedHandler}. Method-layer denials are thrown <em>from</em> the controller, so
+     * they land here — and without this handler they fall to {@link #handleUnexpected} and become a
+     * <strong>500</strong>: logged at ERROR as if the server were broken, and telling the client
+     * "something went wrong" when the truth is "you may not do that". Found by the first test that
+     * could produce a 403 at all (S0.2); Artifact 05 says 403.
+     *
+     * <p>Logged at warn, not error: a refused permission is a correct outcome, not a fault.
+     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    ResponseEntity<ErrorResponse> handleAuthorizationDenied(AuthorizationDeniedException e) {
+        log.warn("Authorization denied: code=FORBIDDEN status={}", HttpStatus.FORBIDDEN.value());
+        return respond(HttpStatus.FORBIDDEN, "FORBIDDEN", "You may not do that.");
     }
 
     /**

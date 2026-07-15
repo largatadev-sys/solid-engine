@@ -69,6 +69,13 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!--
+      Not used yet, and deliberately kept: the spec planned `jwt()` slice tests for endpoints where
+      auth is context rather than subject. S0.2 has one endpoint and auth *is* its subject, so every
+      test here mints a real token through the real chain (TestJwtSupport) — a slice test would
+      prove less. The first S0.3 controller with domain logic behind auth is where this earns its
+      place. Remove it if S0.3 finds it still unused.
+    -->
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-test</artifactId>
