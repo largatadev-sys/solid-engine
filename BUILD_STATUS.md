@@ -9,7 +9,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | # | Story | Status | Plan |
 |---|-------|:---:|------|
 | **Epic 0 — Walking Skeleton** | | | | |
-| S0.1 | Repo, environments, and the standing rules | 🔄 | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) |
+| S0.1 | Repo, environments, and the standing rules | 🔄 | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) — built & verified; **awaiting owner approval to squash-merge into `dev`**; ticket 05's two emulator ACs open |
 | S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | ⬜ | — |
 | S0.3 | Create and view an Itinerary (first domain slice, guard included) | ⬜ | — |
 | S0.4 | Both release trains to production (Android: local build → Play internal; iOS deferred — ADR-010) | ⬜ | — |
