@@ -40,14 +40,25 @@ export const authRepository = {
         throw new AuthCancelled();
       }
 
-      const idToken = response.data.idToken;
-      if (idToken === null) {
+      if (response.data.idToken === null) {
         throw new AuthError('AUTH_NO_ID_TOKEN', 'Sign-in failed. Please try again.');
       }
 
-      // Google's token is exchanged for a Firebase one: the backend only ever trusts Firebase's
+      // Both tokens, not just the idToken `signIn()` hands back — and this is not belt-and-braces.
+      // RNFirebase v25's JS layer accepts `credential(idToken)` alone (it only rejects when *both*
+      // are null), but its **native** layer then throws `accessToken cannot be empty`. The two
+      // layers disagree, so the JS signature lies about what works. `getTokens()` is the library's
+      // own way to get both; passing them satisfies the native side.
+      //
+      // Found only on a device: every unit test passed, the picker worked, the SHA-1 was right.
+      // The bug lived in the one inch between "the mock returns an idToken" and "the native SDK
+      // accepts what we built from it" — which is precisely why this AC was never claimed on the
+      // strength of green tests.
+      const { idToken, accessToken } = await GoogleSignin.getTokens();
+
+      // Google's tokens are exchanged for a Firebase one: the backend only ever trusts Firebase's
       // issuer, so the Google credential is a step on the way, never something we send.
-      await auth().signInWithCredential(auth.GoogleAuthProvider.credential(idToken));
+      await auth().signInWithCredential(auth.GoogleAuthProvider.credential(idToken, accessToken));
     } catch (error) {
       if (error instanceof AuthError) throw error;
       translate(error);

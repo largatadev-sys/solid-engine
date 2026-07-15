@@ -44,7 +44,13 @@ added=$(git diff --cached --diff-filter=ACM -U0 | grep '^+' | grep -v '^+++' || 
 # 'google-id-token'`) and every one of them tripped the assignment rule. A hook that is right about
 # the wrong things trains everyone to reach for --no-verify, which would hollow out the backstop
 # completely — the same reasoning that made this list value-aware rather than keyword-based at S0.1.
-placeholders='<[^>]*>|xxx+|\.\.\.|your[-_]|example|placeholder|changeme|dummy|sample|\$\{|:-|TODO|FIXME|mock|fake|stub|test-|-test'
+#
+# `[-_]token|[-_]secret` followed by the closing quote matches a value *ending* in the literal word
+# ("'google-id-token'", "'my-secret'") — a real credential is an opaque blob and never spells out
+# what it is. The closing quote is what anchors it, not end-of-line: these appear mid-line in
+# object literals (`idToken: 'google-id-token',`). A value like `token_aGVsbG8bG8...` is still
+# caught, because the word must be at the very end.
+placeholders='<[^>]*>|xxx+|\.\.\.|your[-_]|example|placeholder|changeme|dummy|sample|\$\{|:-|TODO|FIXME|mock|fake|stub|test-|-test|[-_](token|secret|password|key)["'"'"']'
 
 # 2. Assignment of a real-looking LITERAL value. Three conditions, each earning its place:
 #    - the name is credential-shaped (api_key, secret, token, ...);

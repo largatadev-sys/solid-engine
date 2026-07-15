@@ -19,6 +19,7 @@ const mockGoogleSignIn = jest.fn();
 const mockGoogleSignOut = jest.fn();
 const mockHasPlayServices = jest.fn();
 const mockGoogleConfigure = jest.fn();
+const mockGetTokens = jest.fn();
 
 jest.mock('@react-native-firebase/auth', () => {
   const auth = () => ({
@@ -28,7 +29,16 @@ jest.mock('@react-native-firebase/auth', () => {
     sendPasswordResetEmail: mockSendPasswordReset,
     signOut: mockFirebaseSignOut,
   });
-  auth.GoogleAuthProvider = { credential: (token: string) => ({ token }) };
+  // Mirrors the native contract, not the JS signature: RNFirebase v25's JS layer accepts an
+  // idToken alone, but its native layer throws `accessToken cannot be empty`. A mock that copied
+  // the permissive JS signature is what let the real bug through to a device — so this one
+  // enforces what the device enforces.
+  auth.GoogleAuthProvider = {
+    credential: (idToken: string, accessToken: string) => {
+      if (!accessToken) throw new Error('Exception in HostFunction: accessToken cannot be empty');
+      return { idToken, accessToken };
+    },
+  };
   return { __esModule: true, default: auth };
 });
 
@@ -38,6 +48,7 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
     signOut: () => mockGoogleSignOut(),
     hasPlayServices: () => mockHasPlayServices(),
     configure: (options: unknown) => mockGoogleConfigure(options),
+    getTokens: () => mockGetTokens(),
   },
 }));
 
@@ -45,6 +56,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockHasPlayServices.mockResolvedValue(true);
   mockCreateUser.mockResolvedValue({ user: { sendEmailVerification: mockSendEmailVerification } });
+  mockGetTokens.mockResolvedValue({ idToken: 'google-id-token', accessToken: 'google-access-token' });
 });
 
 describe('Google sign-in configuration', () => {
@@ -77,13 +89,20 @@ describe('Google sign-in configuration', () => {
 });
 
 describe('Google sign-in', () => {
-  it('exchanges the Google credential for a Firebase session', async () => {
+  it('exchanges the Google credential for a Firebase session, passing BOTH tokens', async () => {
     mockGoogleSignIn.mockResolvedValue({ type: 'success', data: { idToken: 'google-id-token' } });
 
     await authRepository.signInWithGoogle();
 
-    // The backend trusts only Firebase's issuer, so the Google token must be exchanged, never sent.
-    expect(mockSignInWithCredential).toHaveBeenCalledWith({ token: 'google-id-token' });
+    // Both tokens, from getTokens() — not just the idToken signIn() returns. RNFirebase's native
+    // layer rejects an empty accessToken even though its JS signature allows one, and this
+    // assertion is the regression guard for that (the failure was `auth/unknown: accessToken
+    // cannot be empty`, reachable only on a device).
+    expect(mockGetTokens).toHaveBeenCalled();
+    expect(mockSignInWithCredential).toHaveBeenCalledWith({
+      idToken: 'google-id-token',
+      accessToken: 'google-access-token',
+    });
   });
 
   it('treats a cancelled picker as AuthCancelled, not a failure', async () => {

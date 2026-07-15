@@ -8,9 +8,9 @@ Flows in scope (grilling decision 5): **email sign-in, email sign-up, password r
 
 **Blocked by:** 03 — dev-build baseline (Firebase native modules require prebuild; toolchain must be proven first).
 
-**Status:** ready-for-agent
+**Status:** done — every AC met on-device; the password-reset email is the one line proven only by unit test (see Comments)
 
-- [ ] **OPEN — Google sign-in on the AVD completes via the native account picker; the user appears in the `largata-dev` console.** Needs a Google account on the emulator (owner's credentials) — see Comments.
+- [x] Google sign-in on the AVD completes via the native account picker; the user appears in the `largata-dev` console — **and it took a real bug fix to get there** (see the 2026-07-16 comment)
 - [x] Email sign-up creates an account; verification email is sent; no flow blocks on unverified state
 - [x] Email sign-in and sign-out work — **the password reset email was not read** (the call is unit-tested; `ana.silva@example.com` is a fake address with no inbox)
 - [x] Signed-in state survives app restart (native token cache)
@@ -27,4 +27,18 @@ Flows in scope (grilling decision 5): **email sign-in, email sign-up, password r
 
 **Owner action to close it (~3 min):** on the AVD, Settings → Passwords & accounts → **Add account → Google** → sign in. Then tap **Continue with Google** in the app and confirm the me-screen shows the Google profile **name** rather than an email local-part — which also proves the `name`-claim branch of the display-name rule, the half an email sign-up can never reach.
 
-**A real defect this ticket's own tests could not see, found in code review:** `GoogleSignin.configure()` was never called at all, so `signIn()` would have returned a null idToken on every device — and the Jest mock returned one unconditionally, hiding it completely. The lesson is the mock's: a test that fakes the boundary proves the seam, never the wiring. That is also why the Google AC above stays open rather than being argued closed on the strength of green unit tests.
+**A real defect this ticket's own tests could not see, found in code review:** `GoogleSignin.configure()` was never called at all, so `signIn()` would have returned a null idToken on every device — and the Jest mock returned one unconditionally, hiding it completely. The lesson is the mock's: a test that fakes the boundary proves the seam, never the wiring. That is also why the Google AC above stayed open rather than being argued closed on the strength of green unit tests.
+
+**2026-07-16 — Google sign-in proven on-device, and the refusal to claim it was vindicated within minutes.**
+
+Owner added a Google account to the AVD. First attempt: the native picker opened correctly ("Choose an account — to continue to Largata", proving SHA-1, config plugin and `configure()` all good) → account selected → **"Sign-in failed."**
+
+The real error, surfaced by a temporary diagnostic: **`[auth/unknown] Exception in HostFunction: accessToken cannot be empty`**.
+
+**The bug: `GoogleAuthProvider.credential(idToken)` passes the JS layer and is rejected by the native layer.** RNFirebase v25's JS implementation only throws when *both* tokens are null (`GoogleAuthProvider.ts:35`), so an idToken alone type-checks and runs — and then the native SDK refuses it. **The two layers disagree; the TypeScript signature lies.** `signIn()` returns only an idToken, so the fix is `GoogleSignin.getTokens()`, which returns both, and passing both.
+
+**Why no test caught it, and what changed.** Thirteen green unit tests, a working picker, a correct SHA-1, and a valid web client id — all true, all useless here. The failure lived in the one inch between "the mock returns an idToken" and "the native SDK accepts what we built from it". The mock had copied the *permissive JS signature*; it now enforces the **native** contract (throws on an empty accessToken), so this specific regression is caught in Jest from now on. Added to CLAUDE.md gotchas and as regression-checklist line 4.
+
+**Smoke test after the fix, all green on-device:** Google sign-in → Traveler provisioned (`vK34Cvzp…`, `display_name: Largata` — the **`name` claim** branch, which email sign-up can never reach) · two reloads + a full sign-out/sign-in cycle → still 2 rows, same ids · session survived a force-stop and relaunch · **account switch** (Google → email) landed on the right traveler, proving the Google-session sign-out matters.
+
+**Still not verified:** the password-reset email. `ana.silva@example.com` has no inbox; the call is unit-tested and Firebase hosts the rest. Left honest rather than ticked.
