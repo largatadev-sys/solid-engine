@@ -9,7 +9,7 @@
 - [x] Full `docker compose up --build` from scratch passes the per-story verification gate — **and found a real behaviour change** (see Comments)
 - [x] CI green on `feature/S0.2-auth-end-to-end` — verified locally by running exactly what CI runs (backend `mvn verify`, mobile `npm ci`-equivalent + typecheck + jest, compose smoke); the mobile job needs no `google-services.json` because it never prebuilds
 - [x] Every S0.2 ticket's ACs ticked with evidence; S0.1 ticket 05's carried ACs confirmed closed — **one AC deliberately left open**: Google sign-in (ticket 04), untestable without the owner's Google account
-- [x] BUILD_STATUS row updated: S0.2 status + plan link
+- [x] BUILD_STATUS row updated: **✅ + spec link, nothing else** — set here, on the feature branch, so the squash-merge lands a truthful tracker (owner ruling, 2026-07-16: the Plan column's prose was noise, and updating after a merge means committing straight to `dev`; rule now in CLAUDE.md and BUILD_STATUS's header)
 - [x] Artifact 05's 401 amendment verified present; spec deviations appended to ticket Comments, never edited into the spec body
 - [ ] Squash-merge `feature/S0.2-auth-end-to-end` → `dev` **proposed to the owner, then stop and wait** ← *proposed; awaiting approval*
 

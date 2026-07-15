@@ -34,7 +34,7 @@ Single-context, mapped onto the existing `docs/design/` package. See `docs/agent
 
 ## State — always maintain
 
-BUILD_STATUS → `BUILD_STATUS.md`. Every story that lands updates its row (status + plan link); every change that wasn't a planned story gets a line in the off-epic ledger. Keeping BUILD_STATUS current is **non-negotiable** — a stale tracker misleads the next session with authority, which is worse than no tracker. Anything raised along the way (idea, issue, deferred feature) is captured in the epic map's backlog — that is its one home. Regression checklist → `REGRESSION_CHECKLIST.md` (a bug that escapes to a human adds a line; a recurring line graduates into the Maestro smoke suite).
+BUILD_STATUS → `BUILD_STATUS.md`. Every story that lands updates its row — **status + spec link, and nothing else**: no SHAs, no branch names, no summary of what the story proved. The tickets carry the detail and git answers "where does it live"; anything duplicated in the tracker is a fact that rots. **Update the row before the merge, in the last commit on the feature branch** — updating after means committing straight to `dev`, which this workflow doesn't allow. Every change that wasn't a planned story gets a line in the off-epic ledger. Keeping BUILD_STATUS current is **non-negotiable** — a stale tracker misleads the next session with authority, which is worse than no tracker. Anything raised along the way (idea, issue, deferred feature) is captured in the epic map's backlog — that is its one home. Regression checklist → `REGRESSION_CHECKLIST.md` (a bug that escapes to a human adds a line; a recurring line graduates into the Maestro smoke suite).
 
 ## Hard rules (this codebase)
 
