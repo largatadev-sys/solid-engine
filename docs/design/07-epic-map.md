@@ -31,6 +31,7 @@ E0 skeleton → E1 collaborative planning → E2 decisions → E3 the record →
 
 > **S0.2 — Auth end-to-end**
 > **Context anchor.** Epic 0 · identity module · ADR-006, Artifact 03 (context propagation).
+> **Opens with (carried from S0.1, 2026-07-15).** Install Android Studio + an AVD — the dev-build needs the toolchain regardless, so this is a prerequisite, not extra work. First act: close S0.1 ticket 05's two open device ACs (the health screen on a device, and its typed error state). This also tests the `10.0.2.2` host alias, the one assumption S0.1 could not reach. **Note:** Expo Go on the emulator may hit the same SDK 57 store lag that blocked both phones — if so, the dev-build closes those ACs instead, and is the better test anyway.
 > **Vertical slice.** Firebase sign-in on mobile (Google + email; Apple sign-in activates with the iOS phase — ADR-010) → backend validates the JWT as OAuth2 resource server → first authenticated call provisions the domain `Traveler` (keyed by Firebase UID) → `GET /v1/me` returns it.
 > **ACs.** Sign-in on the Android dev-build · request without token → 401 in the standard envelope · first `/me` call creates the Traveler exactly once (idempotent) · `userId` appears in request-scoped logs via the filter, never set by leaf code.
 > **Scope boundary.** No profile editing, no account deletion (its own story later), no workspace anything.
@@ -83,11 +84,12 @@ The business model: two tiers, **Free / Subscriber**; launch is entirely free. P
 - **Moderation tooling** — replaces founder-handled.
 - **Influencer program** — account-status layer.
 - **Post-validation hardening** — observability, RLS second wall (ADR-003), tested backups, rate limiting (playbook §6 ordering: data-loss/security → downtime → friction).
+- **Visual direction & design tokens** — **needed before S0.3's first real screens.** No design system exists: no colour tokens, no typography scale, no spacing rhythm. S0.1's health screen carries hardcoded throwaway colours borrowed from the existing Largata worklog app, explicitly marked *not* precedent. The open question is whether that portfolio palette suits a **travel** product (trips, diaries, photos, a public browse feed) or reads as an enterprise tool wearing the wrong clothes — a brand-level call, hard to reverse once screens consume the tokens. Outcome: a token layer (`mobile/src/theme/`) plus an ADR recording the choice. Reusing the worklog palette is a fine answer; it just has to be a decision, not a side effect.
 
 ---
 
 ## Off-epic standing work
 
-The register #8 unfurler spike — run any time before E6, **after the register #6/#7 UX discussion** (the capture flow and target links shape what the spike should test; founder ruling: Epic 0 ships external links only, untouched by unfurler work) · register #2 analytics events (default set instruments from S0.3 onward, per story ACs) · the regression checklist ratchet (06b §7).
+The register #8 unfurler spike — run any time before E6, **after the register #6/#7 UX discussion** (the capture flow and target links shape what the spike should test; founder ruling: Epic 0 ships external links only, untouched by unfurler work) · register #2 analytics events (default set instruments from S0.3 onward, per story ACs) · the regression checklist ratchet (06b §7) · **domain registration + Android `applicationId` (`com.largata.app`) confirmed — gates S0.4's first Play upload** (the applicationId is permanent once uploaded; decided at S0.1 grilling, 2026-07-15).
 
 **Resolution: ☑ Agreed** *(proposed solo — pending founder ratification)*

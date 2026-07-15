@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# The soft backstop of CLAUDE.md's "never commit secrets" rule.
+#
+# THE REAL DEFENCE IS .gitignore — secret files cannot be staged, so there is nothing to leak.
+# This hook is a second layer for the case the gitignore does not cover: a credential pasted
+# inline into a source file. It is a backstop *because* it depends on being installed
+# (`git config core.hooksPath .githooks`) and can be bypassed with --no-verify. Never let its
+# existence justify relaxing the gitignore.
+#
+# Matching is VALUE-AWARE, not keyword-based. The repo's own docs contain the strings `API_KEY=`,
+# `SECRET`, and `PASSWORD=` while *describing* this list, so a bare-keyword grep would refuse
+# commits to the documentation that explains the rule — training everyone to reach for
+# --no-verify, which would hollow out the backstop entirely. (Verified during S0.1, ticket 01.)
+
+set -e
+
+fail() {
+    echo ""
+    echo "  COMMIT BLOCKED — possible secret in the staged diff:"
+    echo ""
+    echo "$1" | sed 's/^/    /'
+    echo ""
+    echo "  If this is a real credential: remove it, and rotate it — a committed secret is"
+    echo "  compromised even if a later commit deletes it (it stays in history)."
+    echo "  If this is a false positive: widen the placeholder list in .githooks/pre-commit."
+    echo ""
+    exit 1
+}
+
+# 1. Any staged .env file (except the tracked .env.example, which holds placeholders only).
+staged_env=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(^|/)\.env' | grep -v '\.env\.example$' || true)
+[ -n "$staged_env" ] && fail "staged env file(s):
+$staged_env"
+
+# Added lines only: an existing line being moved or deleted is not a new secret.
+added=$(git diff --cached --diff-filter=ACM -U0 | grep '^+' | grep -v '^+++' || true)
+[ -z "$added" ] && exit 0
+
+# Placeholders are what documentation and .env.example legitimately contain.
+placeholders='<[^>]*>|xxx+|\.\.\.|your[-_]|example|placeholder|changeme|dummy|sample|\$\{|:-|TODO|FIXME'
+
+# 2. Assignment with a real-looking value. The value must be present and non-placeholder —
+#    `API_KEY=` in prose (no value) does not match, `API_KEY=sk_live_abc123...` does.
+assignments=$(echo "$added" \
+    | grep -inE '(api[-_]?key|secret|password|passwd|token|credential|private[-_]?key)[[:space:]]*[=:][[:space:]]*["'"'"']?[A-Za-z0-9_/+.=-]{8,}' \
+    | grep -viE "$placeholders" || true)
+[ -n "$assignments" ] && fail "credential-shaped assignment:
+$assignments"
+
+# 3. Private key blocks and known provider key formats — unambiguous, no placeholder exemption
+#    (nobody writes a real-looking PEM header as an example).
+keys=$(echo "$added" \
+    | grep -inE '\-\-\-\-\-BEGIN [A-Z ]*PRIVATE KEY\-\-\-\-\-|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk_live_[A-Za-z0-9]{24}|AIza[0-9A-Za-z_-]{35}' || true)
+[ -n "$keys" ] && fail "private key or provider credential:
+$keys"
+
+exit 0

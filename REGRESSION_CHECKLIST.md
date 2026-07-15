@@ -6,4 +6,4 @@ Automated smoke suite (Maestro, per release candidate — 5–8 flows, pinned): 
 
 | # | Added | Check | Origin (bug/story) | Status |
 |---|-------|-------|--------------------|--------|
-| — | — | — | — | — |
+| 1 | 2026-07-15 | A request to a path that maps to no handler returns **404 + the error envelope**, never 500 / never a Spring error page. | S0.1 — shipped as `500 INTERNAL_ERROR`; 34 tests missed it because every test hits routes that *exist*. Found by curling a nonexistent path at the story gate. | ✅ automated — `ErrorContractIT.unknownRouteIs404InTheEnvelope` |

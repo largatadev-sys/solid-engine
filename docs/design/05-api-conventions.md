@@ -25,6 +25,8 @@ _Status: **proposed — pending founder ratification.** Conventions, not per-end
 
 **Domain-rule rejections:** 400 (validation) · 403 (not permitted / not a member) · 404 (not found or hidden) · 409 (conflict, e.g. illegal state transition). Mapping from the exception taxonomy → 06b §3.
 
+**Dependency outage:** 503 (a required dependency did not answer) — the one non-rejection status in the envelope. The `message` never names the failed dependency (topology is not public); `code` is `DEPENDENCY_UNAVAILABLE`. *(Added S0.1.)*
+
 ## The one error envelope
 
 ```json

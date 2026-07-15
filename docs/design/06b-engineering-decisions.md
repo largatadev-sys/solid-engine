@@ -27,7 +27,8 @@ _Status: **proposed — pending founder ratification.**_
 ## 3. Exception taxonomy — *instantiates P2*
 
 - Root: `DomainException` (unchecked, abstract).
-- Category parents → status: `NotFoundException → 404` · `ValidationException → 400` · `ConflictException → 409` (includes illegal state transitions) · `ForbiddenException → 403`.
+- Category parents → status: `NotFoundException → 404` · `ValidationException → 400` · `ConflictException → 409` (includes illegal state transitions) · `ForbiddenException → 403` · `UnavailableException → 503`.
+  - *`UnavailableException` added at S0.1 (ticket 03).* A required dependency did not answer — neither the caller's fault nor a domain-rule rejection, so none of the other four fits. Without it the only options were an untyped 500 (a Spring error page, violating P2) or misusing a category. Its message never names the failed dependency — that would tell an anonymous caller about our topology; the operator gets the detail from the correlated log line.
 - Naming: `{Entity}{Condition}` — `WorkspaceNotFound`, `SplitsDoNotSum`, `IllegalItineraryTransition`, `NotAMember`.
 - Single handler: one `@RestControllerAdvice` in `common` — logs once, maps to the Artifact 05 envelope. Infrastructure exceptions (DataAccess, IO) are translated to domain errors **in the service layer**; nothing raw ever reaches a controller or the client.
 
@@ -52,7 +53,7 @@ _Status: **proposed — pending founder ratification.**_
 
 | Layer | Tool | Depth (the deliberate choice) |
 |---|---|---|
-| Logic-layer unit | JUnit 5 + Mockito | Every domain rule appearing in an AC. **Exhaustive in the two Full zones:** ledger math (INV-7 sums, INV-8 append-only, expense-vs-transfer) and every state machine's legal **and illegal** transitions. |
+| Logic-layer unit | JUnit (Jupiter API; version per Spring Boot BOM) + Mockito | Every domain rule appearing in an AC. **Exhaustive in the two Full zones:** ledger math (INV-7 sums, INV-8 append-only, expense-vs-transfer) and every state machine's legal **and illegal** transitions. |
 | Integration | Spring Boot Test + **Testcontainers Postgres** | **The isolation-boundary matrix is non-negotiable despite the MVP dial** (it is INV-1): non-member → 403/404 on every workspace-scoped endpoint category · visitor write-rejection · visibility levels (public/unlisted/private) · owner-vs-member rights. Plus contract basics: status codes + error envelope. |
 | Boundary-call unit | Jest (mobile) | The repository/cache layer (ADR-001's abstraction) and the `apiClient`'s shape/error translation. No component-snapshot theater. |
 | E2E — per story | Scripted **API-level happy path** against the running Docker stack | One per story; the story's ACs are the spec. |
