@@ -11,6 +11,19 @@ export type HealthResponse = {
   status: string;
 };
 
+/**
+ * Mirrors `com.largata.identity.api.MeResponse` — the authenticated traveler (S0.2).
+ *
+ * Three fields, matching the backend exactly: no `firebaseUid` (the client already knows its own
+ * from the Firebase SDK), no `createdAt` (nothing reads it). Fields may appear here later; under
+ * ADR-008 none of these can ever change meaning or vanish.
+ */
+export type MeResponse = {
+  id: string;
+  displayName: string;
+  email: string;
+};
+
 /** Mirrors `com.largata.common.error.ErrorResponse` — the one error envelope (Artifact 05). */
 export type ErrorEnvelope = {
   code: string;

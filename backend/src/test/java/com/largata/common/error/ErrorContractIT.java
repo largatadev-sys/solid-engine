@@ -7,6 +7,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.largata.support.PostgresTestBase;
+import com.largata.support.TestJwtSupport;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 /**
@@ -24,10 +26,21 @@ import org.springframework.test.web.servlet.client.RestTestClient;
  * and the traceId in that envelope appears in exactly one log line.
  *
  * <p>Errors are raised by {@link ThrowingTestController}, which exists only in test sources.
+ *
+ * <p><strong>Every request here carries a token from S0.2 on.</strong> Not a workaround: the
+ * security config denies by default, and these routes are not health, so they are authenticated
+ * like every real endpoint — which is exactly the state a production error path is raised in. The
+ * alternative, permitting the test controller's paths in {@code SecurityConfig}, would have put a
+ * test-only hole in production security config to keep a test convenient. (These eight tests
+ * failing the moment {@code anyRequest().authenticated()} landed is default-deny working: a route
+ * written before auth existed was secured without anyone remembering it.)
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(ThrowingTestController.Config.class)
+@Import({ThrowingTestController.Config.class, TestJwtSupport.Config.class})
 class ErrorContractIT extends PostgresTestBase {
+
+    private static final String TOKEN =
+            "Bearer " + TestJwtSupport.tokenFor("uid-error-contract", "errors@example.com");
 
     private RestTestClient rest;
     private ListAppender<ILoggingEvent> logCapture;
@@ -36,7 +49,11 @@ class ErrorContractIT extends PostgresTestBase {
 
     @BeforeEach
     void setUp() {
-        rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+        rest =
+                RestTestClient.bindToServer()
+                        .baseUrl("http://localhost:" + port)
+                        .defaultHeader(HttpHeaders.AUTHORIZATION, TOKEN)
+                        .build();
         logCapture = new ListAppender<>();
         logCapture.start();
         rootLogger().addAppender(logCapture);

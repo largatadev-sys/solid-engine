@@ -1,6 +1,10 @@
 # BUILD_STATUS — Largata
 
-**What this is:** the live map of what's built — the first thing a cold session reads. Source-of-truth index: design artifacts → `docs/design/` · story plans → `docs/plans/` (immutable point-in-time intent; never updated after the fact) · commits — located via the commit convention (`git log --grep <story-id>`), **never stored as SHAs here** (SHAs rot the moment a commit is amended, rebased, or squash-merged — the normal flow). The tracker is the map; the plans and git are the territory. **On session start: read this, then verify against the code — code wins; flag mismatches.**
+**What this is:** the live map of what's built — the first thing a cold session reads. Source-of-truth index: design artifacts → `docs/design/` · story plans → `docs/plans/` (immutable point-in-time intent; never updated after the fact).
+
+**Status and a spec link. Nothing else.** No SHAs, no branch names, no summary of what a story proved — the tickets carry the detail, git answers "where does it live" (`git log --grep <story-id>` · `git branch --contains`), and every fact duplicated here is a fact that rots. The tracker is the map; the plans and git are the territory. **On session start: read this, then verify against the code — code wins; flag mismatches.**
+
+**Update this before the merge, not after.** A story's row reaches its final state in the last commit *on the feature branch*, so the squash-merge lands a truthful tracker and nothing follows it. Updating after the merge means committing straight to `dev`, which the git workflow doesn't allow.
 
 Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 
@@ -9,8 +13,8 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | # | Story | Status | Plan |
 |---|-------|:---:|------|
 | **Epic 0 — Walking Skeleton** | | | | |
-| S0.1 | Repo, environments, and the standing rules | ✅ | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) — **on `dev`** (`git log --grep S0.1`). Two device ACs carried to S0.2 (ticket 05); `preprod`/`main` promotion happens at S0.4 with the PaaS |
-| S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | 🔄 | [spec](docs/plans/S0.2-auth-end-to-end/spec.md) — intent locked + 6 tickets published 2026-07-15; **awaiting owner review before implementation**. Prereqs done: AVD ✅ · `10.0.2.2` proven ✅ · Expo Go dead (native SIGSEGV; ACs → dev-build, ticket 03) · Firebase `largata-dev` configured ✅ |
+| S0.1 | Repo, environments, and the standing rules | ✅ | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) |
+| S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | ✅ | [spec](docs/plans/S0.2-auth-end-to-end/spec.md) |
 | S0.3 | Create and view an Itinerary (first domain slice, guard included) | ⬜ | — |
 | S0.4 | Both release trains to production (Android: local build → Play internal; iOS deferred — ADR-010) | ⬜ | — |
 | **Epic 1 — Collaborative planning** | | | | |
