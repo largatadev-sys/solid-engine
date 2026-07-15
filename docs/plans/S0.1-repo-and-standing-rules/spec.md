@@ -73,3 +73,22 @@ No logic-layer unit tests: S0.1 has zero domain rules, and 06b §7 scopes unit t
 Domain entities · auth (S0.2) · the guard (S0.3 — arrives with the first domain endpoint) · PaaS/deployment (S0.4) · store anything · push notifications · observability beyond the logging filter.
 
 ## Comments
+
+**2026-07-15 — implementation deviations.** Recorded here rather than edited into the body above: the spec is immutable point-in-time intent (issue-tracker rule), so what follows is what actually happened against it.
+
+**Owner-approved during implementation:**
+- **Spring Boot 4.1.0, not 4.0.x.** 4.1.0 shipped 25/06/2026 — three weeks before this story, and after the grilling session that wrote "4.0.x". Both lines' BOMs manage Testcontainers 2.0.5 and JUnit 6.0.3 identically, so the version floor was met either way; 4.1 was chosen on the same reasoning that rejected Boot 3.5 (start on the newest line, put the first forced migration as far away as possible).
+
+**Decided during implementation, documented where they belong:**
+- **A fifth exception category, `UnavailableException` → 503.** None of 06b §3's four fits a dependency outage, and the spec itself required "DB down → 503 through the standard error envelope". Amendment recorded in **06b §3 and 05**, not just in code.
+- **React held at 19.2.7** against Expo SDK 57's `19.2.3` pin — `expo-router` pulls `react-dom@19.2.7`, which peer-requires `react@^19.2.7`. Expo's own constraints contradict each other; 19.2.7 is what resolves without `--legacy-peer-deps`. In CLAUDE.md gotchas.
+- **`.gitignore` Java entries landed in the backend commit** rather than ticket 07's, because the first Maven build staged `target/`.
+
+**Weaker than the spec asked (open, carried to the gate):**
+- **No emulator run.** The spec's mobile slice implies a running app; ticket 05's ACs say so explicitly. Bundling was proven (`expo export`, 2.6MB) and the layers are unit-tested, but nothing was observed on a device. Two of ticket 05's ACs are left **unticked** rather than claimed. See ticket 05's Comments.
+
+**Facts the spec assumed that proved false at scaffold time** (all now in CLAUDE.md gotchas): Testcontainers 2.x renamed its artifacts *and* packages; Boot 4 moved Flyway's autoconfiguration into its own starter (with `flyway-core` alone, Flyway silently never runs); Boot 4 removed `TestRestTemplate` in favour of `RestTestClient`.
+
+**The no-op `V1__init.sql` earned its place immediately.** Flyway was silently not running — every health test still passed, because they only need a DB connection. Only the AC asserting `flyway_schema_history` caught it. The "prove the pipeline before betting a table on it" instinct was correct.
+
+**Code review (two axes) found two hard defects**, both fixed in `5ccc351`: a P2 catch-log-and-rethrow double-logging every outage, and a docstring claiming a standards amendment that had never been made. Both shared a root cause worth carrying forward: *writing the justification into a code comment is not the same as doing the work.*

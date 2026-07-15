@@ -99,6 +99,29 @@ class ErrorContractIT extends PostgresTestBase {
     }
 
     @Test
+    void unknownRouteIs404InTheEnvelope() {
+        // Regression guard. This shipped as a 500 INTERNAL_ERROR and no test noticed — every test
+        // hit routes that exist. Found only by curling a nonexistent path against the composed
+        // stack at the story gate, which is precisely why the gate is mandatory.
+        //
+        // Wrong three ways as a 500: Artifact 05's table says 404; it logs at ERROR for every
+        // scanner and typo; and it leaks — a 500 for "no such route" vs a 404 for "hidden
+        // resource" tells a caller which is which, when Artifact 03 wants 404 to mask that.
+        rest.get()
+                .uri("/v1/definitely-not-a-route")
+                .exchange()
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("NOT_FOUND")
+                .jsonPath("$.traceId")
+                .exists()
+                .jsonPath("$.length()")
+                .isEqualTo(4);
+    }
+
+    @Test
     void unexpectedExceptionsAreOpaqueToTheClient() {
         // The client learns nothing: no exception type, no message, no stack (P2).
         rest.get()

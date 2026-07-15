@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * The single translation boundary (P2, 06b §3): one handler, logs once, maps to the Artifact 05
@@ -43,6 +45,21 @@ public class GlobalExceptionHandler {
                     status.value());
         }
         return respond(status, e.code(), e.getMessage());
+    }
+
+    /**
+     * A request for a path that maps to no handler. Spring raises its own exception type for this,
+     * so without this handler it falls to {@link #handleUnexpected} and becomes a 500 — wrong per
+     * Artifact 05's table, noisy at ERROR for every scanner and typo, and a small information leak:
+     * a 500 for "no such route" versus a 404 for "hidden resource" tells a caller which is which,
+     * when Artifact 03 wants 404 to mask exactly that difference.
+     *
+     * <p>Logged at warn, not error: an unknown path is a client mistake, not a server fault.
+     */
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    ResponseEntity<ErrorResponse> handleNoHandler(Exception e) {
+        log.warn("No handler for request: type={}", e.getClass().getSimpleName());
+        return respond(HttpStatus.NOT_FOUND, "NOT_FOUND", "Not found.");
     }
 
     /**
