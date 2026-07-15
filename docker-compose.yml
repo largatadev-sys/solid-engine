@@ -51,6 +51,13 @@ services:
       # React Native Web. Prod sets no profile and therefore has no CORS policy — correct for a
       # native-only client, and the reason the rule cannot leak out of local development.
       SPRING_PROFILES_ACTIVE: dev
+      # Which Firebase project's tokens this environment trusts (ADR-006). Stated explicitly even
+      # though application.yml defaults to the same value: an environment's identity should be
+      # readable here, not inferred from a default that happens to match. At S0.4 prod points at
+      # its own project — and preprod must point at prod's, or its prod-mirrored Travelers (keyed
+      # by Firebase UID) match nobody (spec, decision 1). Public, not a secret: the issuer and its
+      # JWKS are published by design.
+      FIREBASE_ISSUER_URI: ${FIREBASE_ISSUER_URI:-https://securetoken.google.com/largata-dev}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
