@@ -31,6 +31,7 @@ E0 skeleton → E1 collaborative planning → E2 decisions → E3 the record →
 
 > **S0.2 — Auth end-to-end**
 > **Context anchor.** Epic 0 · identity module · ADR-006, Artifact 03 (context propagation).
+> **Opens with (carried from S0.1, 2026-07-15).** Install Android Studio + an AVD — the dev-build needs the toolchain regardless, so this is a prerequisite, not extra work. First act: close S0.1 ticket 05's two open device ACs (the health screen on a device, and its typed error state). This also tests the `10.0.2.2` host alias, the one assumption S0.1 could not reach. **Note:** Expo Go on the emulator may hit the same SDK 57 store lag that blocked both phones — if so, the dev-build closes those ACs instead, and is the better test anyway.
 > **Vertical slice.** Firebase sign-in on mobile (Google + email; Apple sign-in activates with the iOS phase — ADR-010) → backend validates the JWT as OAuth2 resource server → first authenticated call provisions the domain `Traveler` (keyed by Firebase UID) → `GET /v1/me` returns it.
 > **ACs.** Sign-in on the Android dev-build · request without token → 401 in the standard envelope · first `/me` call creates the Traveler exactly once (idempotent) · `userId` appears in request-scoped logs via the filter, never set by leaf code.
 > **Scope boundary.** No profile editing, no account deletion (its own story later), no workspace anything.

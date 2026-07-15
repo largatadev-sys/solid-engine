@@ -4,14 +4,32 @@
 
 **Blocked by:** 02 — Backend skeleton *(needs a running `/v1/health`; the composed stack is not required — IDE-run backend suffices)*.
 
-**Status:** done
+**Status:** done — except two device ACs, **carried to S0.2** (owner decision, 2026-07-15; see "Carried to S0.2" below)
 
-- [ ] **NOT DONE — Expo Go on the Android emulator shows the health status against the locally running backend** (see Comments: no emulator was launched; bundling was proven instead)
-- [ ] **NOT DONE — Backend stopped → the screen shows the typed error state** (same reason: the error *path* is unit-tested, but not observed on a device)
+- [ ] **OPEN → S0.2 — Expo Go on the Android emulator shows the health status against the locally running backend** (no emulator exists on the dev machine yet; verified in a browser instead — see Comments)
+- [ ] **OPEN → S0.2 — Backend stopped → the screen shows the typed error state** (the error path is proven in a browser and in Jest, but not observed on a device)
 - [x] Jest: `apiClient` returns typed data on 200 and throws `ApiError` with correct fields on envelope errors
 - [x] `tsc --noEmit` green under strict mode; no `any` at the apiClient/repository boundaries
 - [x] No `fetch`/network call outside the `apiClient`
 - [x] Expo SDK version recorded in Comments
+
+## Carried to S0.2 *(owner decision, 2026-07-15)*
+
+The two open ACs above close at the start of S0.2, not here. S0.2 needs the Android toolchain regardless — Firebase forces a dev-build — so this is S0.2's prerequisite, not extra work.
+
+**Owner does (once, ~30–60 min, mostly unattended download):**
+1. Install **Android Studio** (developer.android.com/studio) — defaults are fine; the first-run wizard pulls the SDK + platform-tools (~3 GB).
+2. **Device Manager → Create Virtual Device → Pixel 7 → system image API 35 (x86_64) → Finish.**
+3. Launch the AVD once and confirm it boots to a home screen.
+   *(~8–12 GB total. Hardware checked 2026-07-15: Ryzen 7 7800X3D, 31.5 GB RAM, virtualization on, 161 GB free — comfortable. Docker Desktop's Hyper-V coexists with the modern AEHD emulator; if the AVD refuses to start with a virtualization error, that is a known Windows wrinkle, not a config mistake.)*
+
+**Agent does (then, ~5 min):**
+1. Set `EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:8080` in `mobile/.env` — `10.0.2.2` is the emulator's alias for the host's loopback. **This is the one assumption S0.1 never tested.**
+2. `docker compose up -d` → `npx expo start --android`.
+3. Observe the screen; stop the backend; confirm the typed error state; restart; confirm recovery.
+4. Tick both ACs with the evidence, or report honestly if they fail.
+
+**Known risk:** Expo Go on the emulator installs from the Play Store, so it may hit the same **SDK 57 store lag** that blocked both phones. If it does, these ACs close via S0.2's **dev-build** instead — which compiles our own SDK and is immune to store lag, and is the more meaningful test anyway. Either way they close in S0.2.
 
 ## Comments
 
