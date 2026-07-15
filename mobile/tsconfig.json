@@ -6,6 +6,10 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
+    // Jest's globals (`jest`, `describe`, `expect`) and Node's (`global`) are ambient in test
+    // files. Without these, `tsc --noEmit` fails on the tests even though Jest itself runs fine —
+    // Jest transpiles without type-checking, so the compiler is the only thing that would notice.
+    "types": ["jest", "node"],
     "paths": {
       "@/*": ["./src/*"]
     }
