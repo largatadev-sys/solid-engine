@@ -88,6 +88,6 @@ The business model: two tiers, **Free / Subscriber**; launch is entirely free. P
 
 ## Off-epic standing work
 
-The register #8 unfurler spike — run any time before E6, **after the register #6/#7 UX discussion** (the capture flow and target links shape what the spike should test; founder ruling: Epic 0 ships external links only, untouched by unfurler work) · register #2 analytics events (default set instruments from S0.3 onward, per story ACs) · the regression checklist ratchet (06b §7).
+The register #8 unfurler spike — run any time before E6, **after the register #6/#7 UX discussion** (the capture flow and target links shape what the spike should test; founder ruling: Epic 0 ships external links only, untouched by unfurler work) · register #2 analytics events (default set instruments from S0.3 onward, per story ACs) · the regression checklist ratchet (06b §7) · **domain registration + Android `applicationId` (`com.largata.app`) confirmed — gates S0.4's first Play upload** (the applicationId is permanent once uploaded; decided at S0.1 grilling, 2026-07-15).
 
 **Resolution: ☑ Agreed** *(proposed solo — pending founder ratification)*

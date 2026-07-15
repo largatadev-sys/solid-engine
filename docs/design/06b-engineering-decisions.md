@@ -52,7 +52,7 @@ _Status: **proposed — pending founder ratification.**_
 
 | Layer | Tool | Depth (the deliberate choice) |
 |---|---|---|
-| Logic-layer unit | JUnit 5 + Mockito | Every domain rule appearing in an AC. **Exhaustive in the two Full zones:** ledger math (INV-7 sums, INV-8 append-only, expense-vs-transfer) and every state machine's legal **and illegal** transitions. |
+| Logic-layer unit | JUnit (Jupiter API; version per Spring Boot BOM) + Mockito | Every domain rule appearing in an AC. **Exhaustive in the two Full zones:** ledger math (INV-7 sums, INV-8 append-only, expense-vs-transfer) and every state machine's legal **and illegal** transitions. |
 | Integration | Spring Boot Test + **Testcontainers Postgres** | **The isolation-boundary matrix is non-negotiable despite the MVP dial** (it is INV-1): non-member → 403/404 on every workspace-scoped endpoint category · visitor write-rejection · visibility levels (public/unlisted/private) · owner-vs-member rights. Plus contract basics: status codes + error envelope. |
 | Boundary-call unit | Jest (mobile) | The repository/cache layer (ADR-001's abstraction) and the `apiClient`'s shape/error translation. No component-snapshot theater. |
 | E2E — per story | Scripted **API-level happy path** against the running Docker stack | One per story; the story's ACs are the spec. |

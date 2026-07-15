@@ -9,7 +9,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | # | Story | Status | Plan |
 |---|-------|:---:|------|
 | **Epic 0 — Walking Skeleton** | | | | |
-| S0.1 | Repo, environments, and the standing rules | ⬜ | — |
+| S0.1 | Repo, environments, and the standing rules | 🔄 | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) |
 | S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | ⬜ | — |
 | S0.3 | Create and view an Itinerary (first domain slice, guard included) | ⬜ | — |
 | S0.4 | Both release trains to production (Android: local build → Play internal; iOS deferred — ADR-010) | ⬜ | — |
@@ -64,3 +64,4 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 - Register #1 validation criteria — COO drafts, founders ratify, **signed before alpha**.
 - Register #2 analytics events — COO; default set instruments from S0.3 onward.
 - Register #14 free/paid split + pricing — founders; **before Epic 7 starts**.
+- Domain registration + `applicationId` (`com.largata.app`) confirmation — **gates S0.4's first Play upload** (permanent once uploaded; S0.1 grilling, 2026-07-15).
