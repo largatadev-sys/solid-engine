@@ -1,5 +1,10 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import {
+  browserLocalPersistence,
+  getAuth,
+  initializeAuth,
+  type Auth,
+} from 'firebase/auth';
 
 /**
  * Firebase's JS SDK, initialized for the founders' web preview (S0.4) — web-only, and the only
@@ -25,6 +30,7 @@ import { getAuth, type Auth } from 'firebase/auth';
  */
 
 let app: FirebaseApp | undefined;
+let authInstance: Auth | undefined;
 
 /**
  * The config, read by DIRECT static member access — `process.env.EXPO_PUBLIC_X`, never
@@ -69,6 +75,21 @@ export function webAuth(): Auth {
     }
 
     app = initializeApp(config);
+
+    // initializeAuth, NOT getAuth — and this is the fix for a white-screen crash, not a style
+    // choice (S0.4). getAuth() assumes the auth *component* is already registered on the app, a
+    // registration that happens as a side effect of importing `firebase/auth`. Metro's production
+    // bundler tree-shakes and reorders aggressively enough that getAuth() can run before that side
+    // effect does, throwing "Component auth has not been registered yet" — which surfaces as a blank
+    // page, since it crashes at module load before React renders. initializeAuth() performs the
+    // registration explicitly, so bundler ordering cannot defeat it.
+    //
+    // browserLocalPersistence is the web counterpart of the native SDK's automatic session
+    // persistence: without it, a founder is signed out on every page refresh (in-memory default).
+    authInstance = initializeAuth(app, { persistence: browserLocalPersistence });
   }
-  return getAuth(app);
+
+  // authInstance is set in the same block as app; getAuth(app) is the correct idempotent accessor
+  // once initializeAuth has run, and returns the same instance.
+  return authInstance ?? getAuth(app);
 }
