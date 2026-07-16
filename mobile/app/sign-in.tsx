@@ -9,17 +9,11 @@ import {
   View,
 } from 'react-native';
 import { AuthCancelled, AuthError, authRepository } from '../src/repositories/authRepository';
+import { colors, radii, spacing, typography } from '../src/theme';
 
 /**
- * Sign in, sign up, and password reset (S0.2, spec decision 5).
- *
- * THROWAWAY STYLING — see `index.tsx`. Same scaffold palette, same rule: this is diagnostic
- * chrome, not a design system, and the real visual direction is its own story before S0.3.
+ * Sign in, sign up, and password reset (S0.2, spec decision 5). On tokens since S0.3.
  */
-
-const SCAFFOLD_RED = '#F23643';
-const SCAFFOLD_MUTED = '#8A94A6';
-const SCAFFOLD_INK = '#2B2F38';
 
 type Mode = 'signIn' | 'signUp';
 type Busy = 'idle' | 'google' | 'email' | 'reset';
@@ -70,7 +64,7 @@ export default function SignInScreen() {
         accessibilityRole="button"
       >
         {busy === 'google' ? (
-          <ActivityIndicator color={SCAFFOLD_INK} />
+          <ActivityIndicator color={colors.textPrimary} />
         ) : (
           <Text style={styles.googleButtonText}>Continue with Google</Text>
         )}
@@ -83,7 +77,7 @@ export default function SignInScreen() {
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
-        placeholderTextColor={SCAFFOLD_MUTED}
+        placeholderTextColor={colors.textSecondary}
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
@@ -94,7 +88,7 @@ export default function SignInScreen() {
         value={password}
         onChangeText={setPassword}
         placeholder="Password"
-        placeholderTextColor={SCAFFOLD_MUTED}
+        placeholderTextColor={colors.textSecondary}
         secureTextEntry
         autoCapitalize="none"
         accessibilityLabel="Password"
@@ -107,7 +101,7 @@ export default function SignInScreen() {
         accessibilityRole="button"
       >
         {busy === 'email' ? (
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color={colors.textOnAccent} />
         ) : (
           <Text style={styles.buttonText}>{mode === 'signIn' ? 'Sign in' : 'Create account'}</Text>
         )}
@@ -147,44 +141,47 @@ export default function SignInScreen() {
   );
 }
 
+/** A layout constant, not a token — see `health.tsx`. */
+const FIELD_MAX_WIDTH = 420;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#FFFFFF',
+    padding: spacing.lg,
+    backgroundColor: colors.background,
   },
-  brand: { alignItems: 'center', marginBottom: 28 },
-  wordmark: { fontSize: 34, fontWeight: '700', color: SCAFFOLD_RED, letterSpacing: -0.5 },
-  tagline: { fontSize: 11, fontWeight: '600', color: SCAFFOLD_MUTED, letterSpacing: 2, marginTop: 2 },
+  brand: { alignItems: 'center', marginBottom: spacing.lg },
+  wordmark: { ...typography.wordmark, color: colors.accent },
+  tagline: { ...typography.overline, color: colors.textSecondary, marginTop: spacing.xs },
   input: {
     width: '100%',
-    maxWidth: 420,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 10,
-    borderRadius: 14,
+    maxWidth: FIELD_MAX_WIDTH,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+    borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: '#E6E8EC',
-    fontSize: 15,
-    color: SCAFFOLD_INK,
+    borderColor: colors.border,
+    ...typography.body,
+    color: colors.textPrimary,
   },
   button: {
     width: '100%',
-    maxWidth: 420,
-    marginTop: 6,
-    paddingVertical: 16,
-    borderRadius: 999,
+    maxWidth: FIELD_MAX_WIDTH,
+    marginTop: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radii.pill,
     alignItems: 'center',
-    backgroundColor: SCAFFOLD_RED,
+    backgroundColor: colors.accent,
   },
-  buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  googleButton: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E6E8EC' },
-  googleButtonText: { color: SCAFFOLD_INK, fontWeight: '600', fontSize: 15 },
-  divider: { fontSize: 12, color: SCAFFOLD_MUTED, marginVertical: 16 },
-  links: { alignItems: 'center', gap: 10, marginTop: 18 },
-  link: { fontSize: 13, color: SCAFFOLD_RED, fontWeight: '600' },
-  linkDisabled: { color: SCAFFOLD_MUTED },
-  message: { fontSize: 13, color: SCAFFOLD_INK, textAlign: 'center', marginTop: 18 },
+  buttonText: { ...typography.action, color: colors.textOnAccent },
+  googleButton: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+  googleButtonText: { ...typography.action, color: colors.textPrimary },
+  divider: { ...typography.caption, color: colors.textSecondary, marginVertical: spacing.md },
+  links: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
+  link: { ...typography.caption, color: colors.accent, fontWeight: '600' },
+  linkDisabled: { color: colors.textSecondary },
+  message: { ...typography.caption, color: colors.textPrimary, textAlign: 'center', marginTop: spacing.md },
 });

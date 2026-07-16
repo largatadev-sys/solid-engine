@@ -15,17 +15,18 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | **Epic 0 — Walking Skeleton** | | | | |
 | S0.1 | Repo, environments, and the standing rules | ✅ | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) |
 | S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | ✅ | [spec](docs/plans/S0.2-auth-end-to-end/spec.md) |
-| S0.3 | Create and view an Itinerary (first domain slice, guard included) | ⬜ | — |
+| S0.3 | Create and view an Itinerary (first domain slice, guard included) | ✅ | [spec](docs/plans/S0.3-create-view-itinerary/spec.md) |
 | S0.4 | Both release trains to production (Android: local build → Play internal; iOS deferred — ADR-010) | ⬜ | — |
 | **Epic 1 — Collaborative planning** | | | | |
-| S1.1 | Workspace forms around an itinerary (creator = owner, atomic) | ⬜ | — |
+| S1.1 | Workspace forms around an itinerary (creator = owner, atomic; backfills workspaces for pre-E1 itineraries — ADR-011) | ⬜ | — |
 | S1.2 | Email invite → accept → member *(resolves reg. #12)* | ⬜ | — |
-| S1.3 | Itinerary items CRUD, collaborative *(external links + manual fields)* | ⬜ | — |
+| S1.3 | Itinerary items CRUD + itinerary field edit, collaborative *(external links + manual fields; edit added at S0.3)* | ⬜ | — |
 | S1.4 | Private comments | ⬜ | — |
 | S1.5 | Member removal + leave | ⬜ | — |
 | S1.6 | Ownership transfer + owner-deletion claim (INV-4) | ⬜ | — |
 | S1.7 | Itinerary lifecycle: draft → active → completed *(resolves reg. #10)* | ⬜ | — |
 | S1.8 | Entitlement seam: `can(traveler, capability)` service — full access in v1 (ADR-009) | ⬜ | — |
+| S1.9 | Itinerary delete (owner-only; INV-4 + workspace lifecycle — added at S0.3) | ⬜ | — |
 | **Epic 2 — Decisions** | | | | |
 | S2.1 | Decision + votes (one per member, INV-10) | ⬜ | — |
 | S2.2 | Close decision with outcome | ⬜ | — |
@@ -61,11 +62,12 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | Date | Change | Why it wasn't a story |
 |------|--------|----------------------|
 | 2026-07-15 | Agent-skills config (`docs/agents/{issue-tracker,triage-labels,domain}.md` + `## Agent skills` in CLAUDE.md) and the repo `.gitignore`. Tracker = local markdown under `docs/plans/<story-id>-<slug>/`, tracked in git; domain docs mapped onto the existing `docs/design/` package. | Housekeeping for the build phase — tooling config, no product surface. The `.gitignore` is the structural half of the never-commit-secrets rule and had to exist before the first commit. Overlaps S0.1 (standing rules) but doesn't discharge it. |
+| 2026-07-16 | CLAUDE.md gotcha: a killed `mvn verify` orphans its surefire fork, which holds Testcontainers' Ryuk session and wedges every later run at container discovery — with a diagnosis that looks like a broken Docker daemon. | Found while running S0.3's suite, but it is toolchain knowledge, not story work: it costs the next session an hour whatever story they are on. Rides S0.3's branch because that is where it was learned (owner directive: docs travel with the branch). |
 
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
 - Register #1 validation criteria — COO drafts, founders ratify, **signed before alpha**.
-- Register #2 analytics events — COO; default set instruments from S0.3 onward.
+- Register #2 analytics events — COO; default set instruments from S0.3 onward. Sink = structured log line during the build; **goes durable before alpha** (with reg. #1).
 - Register #14 free/paid split + pricing — founders; **before Epic 7 starts**.
 - Domain registration + `applicationId` (`com.largata.app`) confirmation — **gates S0.4's first Play upload** (permanent once uploaded; S0.1 grilling, 2026-07-15).
