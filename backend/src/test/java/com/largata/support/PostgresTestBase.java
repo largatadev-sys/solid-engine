@@ -5,8 +5,12 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * Real Postgres for integration tests (06b §7). Version pinned to match the local stack — the
- * compatibility floor while the prod major stays undecided (spec Q5; re-pin at S0.4).
+ * Real Postgres for integration tests (06b §7). <strong>The pin is prod's major, and every
+ * environment shares it</strong> — tests, the local stack, and all three Railway environments run
+ * the same Postgres (S0.4: 17 → 18, once Railway made the major ours to choose; ADR-012). The rule
+ * that outlives the number: never test against an older major than production runs, and never let
+ * an environment drift ahead of what the suite proves. Pin an explicit tag, never {@code latest} —
+ * a major upgrade is a decision, not a surprise on some morning's pull.
  *
  * <p><strong>Singleton-container pattern, deliberately not {@code @Testcontainers}/{@code
  * @Container}.</strong> Those annotations manage the container's lifecycle <em>per test class</em>,
@@ -26,7 +30,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  */
 public abstract class PostgresTestBase {
 
-    protected static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
+    protected static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:18-alpine");
 
     static {
         POSTGRES.start();

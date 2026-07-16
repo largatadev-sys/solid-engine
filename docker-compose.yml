@@ -5,7 +5,9 @@
 
 services:
   postgres:
-    image: postgres:17-alpine
+    # The major is prod's, and every environment shares it (S0.4/ADR-012: Railway made the choice
+    # ours, so 17's compatibility-floor era ended). Explicit tag, never `latest`.
+    image: postgres:18-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-largata}
       POSTGRES_USER: ${POSTGRES_USER:-largata}
@@ -48,9 +50,15 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-largata}
       PORT: 8080
       # The local stack runs the dev profile, which enables browser CORS (DevCorsConfig) for
-      # React Native Web. Prod sets no profile and therefore has no CORS policy — correct for a
-      # native-only client, and the reason the rule cannot leak out of local development.
+      # React Native Web. Prod and preprod set no profile and therefore have no CORS policy —
+      # correct for a native-only client, and the reason the rule cannot leak out of the dev
+      # environment. S0.4's founders' preview is a browser client of the *deployed dev* backend, so
+      # it is served by this same profile, with its origin added there via the env-var below.
       SPRING_PROFILES_ACTIVE: dev
+      # Exact origins only, never "*" (DevCorsConfig). Unset locally = the Expo web dev-server
+      # defaults, so `docker compose up` needs no .env; the deployed dev environment sets the
+      # preview's origin in Railway's UI.
+      LARGATA_CORS_ALLOWED_ORIGINS: ${LARGATA_CORS_ALLOWED_ORIGINS:-http://localhost:8081,http://localhost:8082,http://127.0.0.1:8081,http://127.0.0.1:8082}
       # Which Firebase project's tokens this environment trusts (ADR-006). Stated explicitly even
       # though application.yml defaults to the same value: an environment's identity should be
       # readable here, not inferred from a default that happens to match. At S0.4 prod points at

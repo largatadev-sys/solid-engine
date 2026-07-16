@@ -30,7 +30,9 @@
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       "@react-native-google-signin/google-signin",
-      "./plugins/withAndroidJdk"
+      "./plugins/withAndroidJdk",
+      "./plugins/withLongPathNinja",
+      "./plugins/withReleaseSigning"
     ]
   }
 }

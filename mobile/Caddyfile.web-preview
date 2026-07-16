@@ -1,0 +1,36 @@
+# Static file serving for the founders' web preview (S0.4) — see Dockerfile.web-preview.
+#
+# Railway terminates TLS at its edge and hands the container plain HTTP on $PORT, so this listens on
+# HTTP only. `auto_https off` stops Caddy from trying to provision its own certificate for a domain
+# it does not own the DNS for — without it, Caddy would attempt ACME and fail on boot.
+{
+	auto_https off
+	admin off
+}
+
+:{$PORT:8080} {
+	root * /srv
+	encode gzip
+
+	# Expo Router produces a single-page app: the browser asks for /itineraries/<uuid> directly on a
+	# refresh or a shared link, and no such file exists on disk. Without this, that request 404s and
+	# the preview looks broken in exactly the situation a founder is most likely to hit — pasting a
+	# link to something they want to show someone.
+	try_files {path} {path}/ /index.html
+	file_server
+
+	# The bundle's filenames are content-hashed by Metro, so they may be cached hard; index.html must
+	# not be, or a founder keeps loading yesterday's app against today's API and reports ghosts.
+	@html path *.html
+	header @html Cache-Control "no-cache"
+
+	# The preview is a public URL by design (access control is the empty dev sandbox behind it, per
+	# the spec). These headers are not a substitute for that decision — they are the cheap floor:
+	# no framing, no MIME sniffing, no referrer leakage to third parties.
+	header {
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+}

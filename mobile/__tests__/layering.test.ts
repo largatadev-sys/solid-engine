@@ -93,3 +93,65 @@ describe('screens consume design tokens, never raw values (S0.3)', () => {
     expect(readFileSync(join(THEME_DIR, 'tokens.ts'), 'utf8')).toMatch(/#[0-9a-fA-F]{6}\b/);
   });
 });
+
+/**
+ * The auth SDK surface stays inside its seam (S0.4).
+ *
+ * This rule was previously a design property that happened to hold — S0.2 confined Firebase to two
+ * files, and the epic map's RNFirebase-migration note banks on it ("the blast radius is small *now*
+ * and grows with every auth caller"). S0.4 spends that asset: the founders' web preview exists
+ * *because* swapping the SDK meant writing two files, not auditing the app. A rule that valuable
+ * should not survive on good intentions — every new `import auth from '@react-native-firebase/auth'`
+ * in a screen is another file the next migration has to touch, and it would pass review on a busy
+ * day precisely because it looks so ordinary.
+ *
+ * The allowlist is the seam, stated once. Adding a file to it is a real decision — which is the
+ * point: it cannot happen by reflex.
+ */
+describe('the Firebase SDK lives only in the auth seam (S0.2 design, S0.4 dependency)', () => {
+  const SEAM = [
+    join('src', 'repositories', 'authRepository.native.ts'),
+    join('src', 'repositories', 'authRepository.web.ts'),
+    join('src', 'auth', 'firebaseTokenSource.native.ts'),
+    join('src', 'auth', 'firebaseTokenSource.web.ts'),
+    join('src', 'auth', 'firebaseWebApp.ts'),
+    // Google's SDK is not Firebase's, but it is the same kind of doorway plumbing and the same
+    // argument applies to it.
+    join('src', 'auth', 'googleSignInConfig.ts'),
+  ];
+
+  const outsideTheSeam = [
+    ...sourceFiles(join(MOBILE_ROOT, 'app')),
+    ...sourceFiles(join(MOBILE_ROOT, 'src')),
+  ].filter((file) => !SEAM.some((allowed) => file.endsWith(allowed)));
+
+  // Import statements only, not any mention of the package. The first version of this rule grepped
+  // bare package names and failed on `apiClient.ts`, which merely *explains in a comment* why it
+  // does not own token refresh — a file the seam is working perfectly in. A rule that fires on prose
+  // teaches people to delete the prose.
+  const SDK_IMPORT =
+    /(?:from\s*|require\(\s*)['"](?:@react-native-firebase\/|firebase\/|@react-native-google-signin\/)/;
+
+  it.each(outsideTheSeam)('no direct Firebase/Google SDK import in %s', (file) => {
+    expect(readFileSync(file, 'utf8')).not.toMatch(SDK_IMPORT);
+  });
+
+  it('the rule actually fires (guards against a regex that matches nothing)', () => {
+    // Without this, a typo in SDK_IMPORT would make every check above pass vacuously — the failure
+    // mode of every grep-based rule, and invisible precisely because green is what you wanted.
+    expect("import auth from '@react-native-firebase/auth';").toMatch(SDK_IMPORT);
+    expect("const { getAuth } = require('firebase/auth');").toMatch(SDK_IMPORT);
+    expect('// a comment mentioning @react-native-firebase/auth is not an import').not.toMatch(
+      SDK_IMPORT,
+    );
+  });
+
+  it('the seam files exist (guards against the allowlist rotting after a rename)', () => {
+    // Without this, renaming a seam file turns the rule vacuous: the allowlist would match nothing,
+    // the SDK import would move to a file this suite happily ignores, and the check above would
+    // still be green.
+    for (const file of SEAM) {
+      expect(statSync(join(MOBILE_ROOT, file)).isFile()).toBe(true);
+    }
+  });
+});

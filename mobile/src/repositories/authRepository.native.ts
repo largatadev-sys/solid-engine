@@ -1,5 +1,12 @@
-import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import {
+  AuthCancelled,
+  AuthError,
+  translate,
+  type AuthCapabilities,
+  type AuthUser,
+} from './authContract';
 
 /**
  * The repository layer for identity (ADR-001): screens and hooks call these, never Firebase.
@@ -8,6 +15,11 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
  * something extra: the whole Firebase surface is confined to two files (this and
  * `firebaseTokenSource`), which is what ADR-006's "designed exit" (swap the provider, keep the
  * Traveler) means in practice.
+ *
+ * <p><strong>This is the file that ships</strong> (S0.4). Metro resolves `.native.ts` for the APK
+ * and `.web.ts` for the founders' preview; the web twin is interim scaffolding, this one is the
+ * product. Native-layer behaviour therefore gets proven on a device and nowhere else — the S0.2
+ * `getTokens()` bug below is the standing reminder of why a green browser proves nothing here.
  *
  * Note what is *not* here: no `/v1/me` call, no Traveler. Signing in and having a domain identity
  * are different things (`travelerRepository` owns the latter) — the backend provisions the Traveler
@@ -27,6 +39,9 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 export function configureGoogleSignIn(webClientId: string): void {
   GoogleSignin.configure({ webClientId });
 }
+
+/** Android has the native account picker; the web twin declares `google: false` (spec decision). */
+export const authCapabilities: AuthCapabilities = { google: true };
 
 export const authRepository = {
   async signInWithGoogle(): Promise<void> {
@@ -101,66 +116,23 @@ export const authRepository = {
     await auth().signOut();
   },
 
-  /** Fires immediately with the restored session at app start, then on every change. */
-  onAuthStateChanged(listener: (user: FirebaseAuthTypes.User | null) => void): () => void {
-    return auth().onAuthStateChanged(listener);
+  /**
+   * Fires immediately with the restored session at app start, then on every change.
+   *
+   * Narrowed to `AuthUser` (id only) rather than the SDK's user object: the JS SDK's equivalent is a
+   * different type, and anything above this seam that named either would compile on one platform
+   * only. `uid` is all a caller needs — the AuthProvider's question is signed-in-or-not.
+   */
+  onAuthStateChanged(listener: (user: AuthUser | null) => void): () => void {
+    return auth().onAuthStateChanged((user) => listener(user === null ? null : { uid: user.uid }));
   },
 };
 
-/** The user backed out of the native picker. Not an error to show — nothing went wrong. */
-export class AuthCancelled extends Error {
-  constructor() {
-    super('Sign-in was cancelled.');
-    this.name = 'AuthCancelled';
-  }
-}
+/** The type both platform files satisfy — exported here so `.web.ts` is checked against it. */
+export type AuthRepository = typeof authRepository;
 
-/**
- * The one typed error the auth layer throws — the counterpart to `ApiError` for the identity
- * provider (06b §6, P6: one typed gateway per boundary).
- *
- * Screens render `message` and never see a Firebase `auth/…` code. That is the ADR-001 boundary
- * doing its job: an earlier version translated these codes inside the sign-in screen, which meant
- * UI code knew the provider existed — and every future auth screen would have re-implemented the
- * same cascade (and drifted).
- */
-export class AuthError extends Error {
-  readonly code: string;
-
-  constructor(code: string, message: string) {
-    super(message);
-    this.name = 'AuthError';
-    this.code = code;
-  }
-}
-
-/**
- * Firebase's `auth/…` codes, translated once, at the boundary.
- *
- * Deliberately vague about *which half* of a credential was wrong: distinguishing "no such account"
- * from "wrong password" hands anyone with a list of emails a way to learn which are registered.
- */
-function translate(error: unknown): never {
-  if (error instanceof AuthCancelled) throw error;
-
-  const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
-
-  switch (code) {
-    case 'auth/invalid-email':
-      throw new AuthError(code, 'That email address is not valid.');
-    case 'auth/invalid-credential':
-    case 'auth/wrong-password':
-    case 'auth/user-not-found':
-      throw new AuthError(code, 'Email or password is incorrect.');
-    case 'auth/email-already-in-use':
-      throw new AuthError(code, 'An account with that email already exists.');
-    case 'auth/weak-password':
-      throw new AuthError(code, 'Password must be at least 6 characters.');
-    case 'auth/network-request-failed':
-      throw new AuthError(code, 'Could not reach the server. Check your connection.');
-    case 'auth/too-many-requests':
-      throw new AuthError(code, 'Too many attempts. Try again shortly.');
-    default:
-      throw new AuthError(code === '' ? 'AUTH_FAILED' : code, 'Sign-in failed. Please try again.');
-  }
-}
+// The errors and the code translation live in `authContract` (shared): a screen's `error instanceof
+// AuthError` compares class identity, so a per-platform copy would be a *different* class and the
+// check would quietly fail on one of the two builds. Re-exported so callers keep importing from the
+// repository, unaware there is a seam here at all.
+export { AuthCancelled, AuthError };
