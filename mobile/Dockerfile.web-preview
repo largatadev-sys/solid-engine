@@ -1,0 +1,58 @@
+# The founders' web preview (S0.4) — INTERIM, dev environment only.
+#
+# Read the S0.4 spec before extending this. This container exists because the founders carry
+# iPhones and no Apple developer account exists yet (ADR-010), so a browser is the only way they can
+# touch the product. It is not the web surface from the backlog epic, it is not a supported
+# platform, and it is never promoted past the dev environment — deleting this service is the whole
+# decommissioning procedure, which is why the preview is a service of its own rather than bits baked
+# into the backend image.
+#
+# Why a Dockerfile and not Railway's static-site preset: the export needs `EXPO_PUBLIC_*` values
+# baked in at build time (they are compiled into the bundle, not read at runtime), and a Dockerfile
+# makes that explicit and reproducible instead of preset-dependent.
+
+# ---- build stage -------------------------------------------------------------------------
+FROM node:24-alpine AS build
+WORKDIR /build
+
+# Same layering reasoning as backend/Dockerfile: the lockfile changes rarely, sources constantly.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+# These are compile-time constants for the bundle, not runtime config: Expo inlines EXPO_PUBLIC_*
+# at export. Changing one therefore means a rebuild, which is why they are build args rather than
+# container env-vars — a runtime env-var here would be silently ignored, the kind of "config that
+# does nothing" that costs an afternoon to disbelieve.
+#
+# None are secrets: the Firebase web apiKey identifies the project and authorizes nothing (it ships
+# in every web bundle by construction, like the OAuth client id in every APK). The preview signs in
+# via the Identity Toolkit REST API (mobile/src/auth/firebaseWebRest.ts), which uses this key as its
+# `key=` query param; the other FIREBASE_* values are SDK config the REST path does not need, kept
+# here only so one env surface serves both the preview and any future SDK use.
+ARG EXPO_PUBLIC_API_BASE_URL
+ARG EXPO_PUBLIC_FIREBASE_API_KEY
+ARG EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
+ARG EXPO_PUBLIC_FIREBASE_PROJECT_ID
+ARG EXPO_PUBLIC_FIREBASE_APP_ID
+ENV EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL \
+    EXPO_PUBLIC_FIREBASE_API_KEY=$EXPO_PUBLIC_FIREBASE_API_KEY \
+    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=$EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN \
+    EXPO_PUBLIC_FIREBASE_PROJECT_ID=$EXPO_PUBLIC_FIREBASE_PROJECT_ID \
+    EXPO_PUBLIC_FIREBASE_APP_ID=$EXPO_PUBLIC_FIREBASE_APP_ID
+
+# Fail the build if the API base URL is missing rather than shipping a bundle that quietly points at
+# 10.0.2.2 (apiClient's emulator default) — a preview that loads and then cannot reach anything is a
+# far more confusing artifact than a build that refuses to exist.
+RUN test -n "$EXPO_PUBLIC_API_BASE_URL" || (echo "EXPO_PUBLIC_API_BASE_URL is required" && exit 1)
+
+RUN npx expo export --platform web
+
+# ---- runtime stage -----------------------------------------------------------------------
+# Static files and nothing else: no server logic, no secrets, no state. Caddy because it serves SPAs
+# correctly out of the box (see the Caddyfile) and runs unprivileged without ceremony.
+FROM caddy:2-alpine AS runtime
+
+COPY --from=build /build/dist /srv
+COPY Caddyfile.web-preview /etc/caddy/Caddyfile

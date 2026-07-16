@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { installFirebaseTokenSource } from '../src/auth/firebaseTokenSource';
 import { installGoogleSignIn } from '../src/auth/googleSignInConfig';
+import { authCapabilities } from '../src/repositories/authRepository';
 import { AuthProvider, useAuth } from '../src/hooks/useAuth';
 import { createQueryClient } from '../src/query/queryClient';
 import { colors } from '../src/theme';
@@ -18,7 +19,15 @@ import { colors } from '../src/theme';
 // sign-in is configured here for the same reason — GoogleSignin.configure() must precede any
 // signIn(), and "configure it when the sign-in screen mounts" is a promise, not a guarantee.
 installFirebaseTokenSource();
-installGoogleSignIn();
+
+// Gated on the capability, not on `Platform.OS === 'web'`: the question here is "does this build
+// have a Google doorway to configure", and the platform is only today's reason for the answer. The
+// web preview declares `google: false` (S0.4 spec) and must not run this — `installGoogleSignIn`
+// throws when the client id is unset, which on web would be a startup crash for a button that is
+// deliberately not rendered.
+if (authCapabilities.google) {
+  installGoogleSignIn();
+}
 
 export default function RootLayout() {
   // useState, not module scope: one client for the app's lifetime, created inside React so a Fast

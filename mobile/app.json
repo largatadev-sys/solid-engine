@@ -23,14 +23,17 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single"
     },
     "plugins": [
       "expo-router",
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       "@react-native-google-signin/google-signin",
-      "./plugins/withAndroidJdk"
+      "./plugins/withAndroidJdk",
+      "./plugins/withLongPathNinja",
+      "./plugins/withReleaseSigning"
     ]
   }
 }

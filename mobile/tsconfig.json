@@ -4,6 +4,20 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
+    // Metro resolves `./authRepository` to `authRepository.native.ts` in the APK and
+    // `authRepository.web.ts` in the preview export (S0.4's auth fork). tsc knows nothing of that
+    // convention on its own and would report every such import as unresolvable, so it is taught the
+    // same order here.
+    //
+    // The list is global, so one `tsc` run checks one platform: `.native` — the build that ships.
+    // The web twin is therefore not checked *as a resolution target*; it is checked *as a value*,
+    // because it annotates itself `AuthRepository` (the type the native file exports), so any drift
+    // between the two is a compile error in `authRepository.web.ts` on this same run. That is the
+    // whole reason the contract is declared rather than inferred.
+    "moduleSuffixes": [
+      ".native",
+      ""
+    ],
     "types": [
       "jest",
       "node"

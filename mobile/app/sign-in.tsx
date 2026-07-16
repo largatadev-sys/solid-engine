@@ -8,7 +8,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { AuthCancelled, AuthError, authRepository } from '../src/repositories/authRepository';
+import {
+  AuthCancelled,
+  AuthError,
+  authCapabilities,
+  authRepository,
+} from '../src/repositories/authRepository';
 import { colors, radii, spacing, typography } from '../src/theme';
 
 /**
@@ -57,20 +62,32 @@ export default function SignInScreen() {
         <Text style={styles.tagline}>SIGN IN</Text>
       </View>
 
-      <Pressable
-        style={[styles.button, styles.googleButton]}
-        onPress={() => void run('google', () => authRepository.signInWithGoogle())}
-        disabled={busy !== 'idle'}
-        accessibilityRole="button"
-      >
-        {busy === 'google' ? (
-          <ActivityIndicator color={colors.textPrimary} />
-        ) : (
-          <Text style={styles.googleButtonText}>Continue with Google</Text>
-        )}
-      </Pressable>
+      {/*
+        The button and its divider stand or fall together on `authCapabilities.google` — false on
+        the founders' web preview, where the browser's Google doorway is deliberately unbuilt (S0.4
+        spec). Asking the capability rather than `Platform.OS` keeps the screen honest about what it
+        wants to know: whether this build has a Google doorway, not which OS it is running on. The
+        real web surface (backlog) builds that doorway and flips the flag; this screen will not
+        notice.
+      */}
+      {authCapabilities.google && (
+        <>
+          <Pressable
+            style={[styles.button, styles.googleButton]}
+            onPress={() => void run('google', () => authRepository.signInWithGoogle())}
+            disabled={busy !== 'idle'}
+            accessibilityRole="button"
+          >
+            {busy === 'google' ? (
+              <ActivityIndicator color={colors.textPrimary} />
+            ) : (
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            )}
+          </Pressable>
 
-      <Text style={styles.divider}>or</Text>
+          <Text style={styles.divider}>or</Text>
+        </>
+      )}
 
       <TextInput
         style={styles.input}

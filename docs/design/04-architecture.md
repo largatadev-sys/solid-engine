@@ -186,6 +186,14 @@ Caching layer (Redis) · search/discovery index · read replicas · async queues
 - **Assumption that makes this right.** 1:1 Workspace↔Itinerary (Artifact 02) holds, so resolving by itinerary id stays the natural key for itinerary-aggregate access even after real memberships arrive.
 - **What would invalidate it.** Workspace↔Itinerary ceasing to be 1:1, or a second aggregate needing guard semantics the itinerary-keyed signature can't express → widen the guard's interface additively at that story, with this ADR superseded.
 
+### ADR-012 — PaaS: Railway (one project, three environments, Singapore); custom domains as the exit hatch
+- **Status.** Accepted · 2026-07-16 (S0.4 grilling)
+- **Context.** Artifact 04 fixed the shape (PaaS app + managed Postgres, three environments) but not the vendor. Constraints: solo operator, pre-validation cost sensitivity, Docker deploy (Java 25 buildpacks lag), users and founders in Asia, and the playbook ranking data-loss first. The developer already operates a structurally similar app (timelog: native app + web variant + backend, Docker) on Railway.
+- **Decision.** **Railway**: one project, `dev`/`preprod`/`prod` environments in **Southeast Asia (Singapore)**, per-environment backend (Dockerfile) + **own Postgres 18** (explicit image tag — majors change on our schedule), branch-tracked deploys **gated on green CI**. Platform probe = our `GET /v1/health` (no Actuator). **Custom domains from day one** (`api[-env].largata.com`, `preview.largata.com`) so every baked URL — sideloaded APKs, CORS allowlists, bookmarks — is vendor-independent: leaving Railway is a DNS re-point, invisible to clients (the ADR-008 constraint applied to infrastructure).
+- **Alternatives rejected.** Render — the closer call: stronger managed-Postgres story (PITR-class) and free static hosting, but zero operator familiarity; at pre-validation scale, snapshots + a *verified* restore cover the actual risk, and familiarity compounds daily. Fly.io / Cloud Run + Cloud SQL — heavier setup and 3× always-on DB cost for nothing the alpha needs.
+- **Assumption that makes this right.** Snapshot-class backups with a proven restore are sufficient durability until real user data arrives at scale; operator familiarity is worth more than marginal platform features while one person runs everything.
+- **What would invalidate it.** Real production data outgrowing snapshot-grade recovery (beta-scale, or the ledger going live) → revisit at post-validation hardening (tested-backups line) with PITR as the bar; sustained platform reliability pain → migrate along the custom-domain seam.
+
 ---
 
-**Resolution: ☑ Agreed** *(proposed solo — pending founder ratification; ADR log accretes from here — every future significant decision lands as ADR-012+)*
+**Resolution: ☑ Agreed** *(proposed solo — pending founder ratification; ADR log accretes from here — every future significant decision lands as ADR-013+)*
