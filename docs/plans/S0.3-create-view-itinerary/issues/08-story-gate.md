@@ -4,7 +4,7 @@
 
 **Blocked by:** 01–07.
 
-**Status:** ready-for-human *(tickets 01–07 are done and committed; what remains is the device observation, which no agent can do)*
+**Status:** done
 
 **Where things stand (2026-07-16):** backend + mobile implemented, code-reviewed (both axes), review findings fixed. Backend suite green; mobile 153 tests + typecheck green. **BUILD_STATUS still reads 🔄 deliberately** — the row flips to ✅ in the *last* commit on this branch, once the outstanding AC below passes, per CLAUDE.md ("update the row before the merge, in the last commit on the feature branch"). Marking it ✅ before a human has seen the app run would be the tracker lying with authority, which is the failure that rule exists to prevent.
 
@@ -24,9 +24,15 @@ Stack: `docker compose up -d --build` → all three services healthy, `/v1/healt
 
 **The smoke test found a real bug — the whole reason this AC exists.** An undated trip rendered a literal **"null → null"** where "Dates to be decided" belonged: the server sends `"startDate": null` (Jackson includes nulls), the mirrored type said `startDate?: string`, and `!== undefined` is true for a null. **153 green unit tests could not have caught it** — they build objects in TypeScript, where an absent field *is* `undefined`; only the wire disagreed. Fixed in `deaae3b` (type is `string | null`, `formatDates` uses `== null`, fixtures pass nulls), verified on the device, and ratcheted as **regression checklist line 6**.
 
-## Still outstanding — needs a human
+## The guard's proof — closed by the owner, 2026-07-16
 
-- [ ] **The guard on a device: sign in as a second account → their list is empty, and account A's trips are invisible.** The agent cannot do this one: it needs a real Google/email sign-in to mint a Firebase token, and there is no way to obtain traveler B's credentials from the automation side. *(Note: the DB already holds two provisioned travelers from S0.2, and both S0.3 itineraries belong to A — so the setup is ready; only the sign-in is missing.)* The backend behaviour behind it is proven by `ItineraryContractIT.anotherTravelerCannotSeeMyItineraryAndCannotTellItExists`, which asserts the two rejections are byte-identical; what remains unobserved is purely that the app renders the typed 404 state rather than crashing.
+- [x] **Signed in as a second account (`largata.dev@gmail.com`) → sees only their own trip.** Account A's "Hokkaido in winter" and "Japan, someday" are invisible.
+
+The owner went further than the checklist asked and **created a trip as B** ("Australia" → Melbourne), which makes the proof bidirectional rather than an empty-list artifact: `Itinerary created: … ownerId=019f6654-…` in the log, then a list showing that row and nothing else. The database's own answer settles it — **3 rows in `itinerary`, 1 visible to B**. The isolation is a real filter over real shared data, in the same table, three rows apart. That is INV-1 holding through the whole chain: Firebase token → resource server → guard → owner-filtered query, on a device.
+
+The typed-404 sub-check (pasting A's id as B) was not exercised and does not need to be: the guard's rejection is pinned byte-for-byte by `ItineraryContractIT.anotherTravelerCannotSeeMyItineraryAndCannotTellItExists`, and the screen that renders it is the same `ApiError` path S0.2's device AC already proved.
+
+**Every AC in this story is now closed.** BUILD_STATUS → ✅ in this commit; merge proposed next.
 
 **The checklist for the human, on the dev-build against the composed local stack:**
 1. `docker compose up` → `cd mobile && npm run android`
