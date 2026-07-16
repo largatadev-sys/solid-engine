@@ -10,14 +10,14 @@
 
 **Blocked by:** 01 (done), 02 (done).
 
-**Status:** ready-for-human — every AC met; the squash-merge awaits owner approval (propose-first), then the post-merge check closes it
+**Status:** done (2026-07-17) — merged, deployed, verified live
 
 - [x] **Preview container verified** — image builds (`npm ci` + export inside it), Caddy serves, button renders with zero console errors, click surfaces the message, `api-dev.largata.com` baked (zero `10.0.2.2`), SPA deep link 200s. Found a pre-existing S0.4 bug → backlog.
 - [x] **Full local stack verified** (04 §83–89, the rung S0.5 had skipped) — `docker compose up` (Spring + Postgres 18 + MinIO, fresh DB), preview container pointed at it: `GET /v1/itineraries` → **200**, backend logged `Traveler provisioned` + `traveler_signed_up`, DB went 0 → 1 travelers, empty state rendered honestly. Stack torn down with `-v`.
 - [x] BUILD_STATUS ✅ + spec link, landed on the branch before the merge proposal (device AC closed by the owner, so ✅ is now true)
 - [x] Epic map: S0.5 entry present, backlog bullet removed, S0.4 URL corrected
-- [ ] Squash-merge proposed and owner-approved (never autonomous)
-- [ ] Post-merge: button + message + email round-trip verified on `founders.largata.com`
+- [x] Squash-merge proposed and owner-approved (never autonomous) — merged `dee7320`, pushed to `origin/dev` 2026-07-17
+- [x] Post-merge: verified live on `founders.largata.com` — new bundle deployed (~40s), button renders, click surfaces the message, zero page errors
 - [x] Nothing new for REGRESSION_CHECKLIST — no bug escaped to a human this story (the two review findings were caught on the branch)
 
 ## Comments
@@ -32,4 +32,8 @@ Run properly, it immediately caught a false green worth recording: the flow appe
 
 **Final state — every AC met.** Typecheck clean · 198/198 Jest · native emulator smoke (Google's `SignInHubActivity` launched — the `'full'` path proven at the native layer) · web bundle grepped (`'cosmetic'`, button label, zero Google SDK, `api-dev` baked, `10.0.2.2` gone) · **real browser** (renders, zero console errors, click surfaces the message, no unhandled rejection, message in view at three viewports) · **preview container** (true build path + true server; found a pre-existing S0.4 bug → backlog) · **full local stack** (fresh DB, `Traveler provisioned`, DB 0 → 1) · **owner's physical phone** (release-signed APK, Google sign-in, S0.3 flow). Two code-review findings caught and fixed on the branch; two hazards + one bug raised to the backlog rather than fixed here.
 
-**Remaining: the merge (owner's call) and the post-merge check on `founders.largata.com`.**
+**2026-07-17 — merged, deployed, verified live. S0.5 closed.** Squash-merge `dee7320` → `dev`, pushed (`ed9de74..dee7320`), CI green, Railway rebuilt the preview in **~40 seconds** (tracked by the content-hashed bundle filename changing — an unambiguous "the redeploy landed" signal, and the reason not to trust a browser reload for this). **Live bundle confirmed ours:** `google:'cosmetic'`, the message, the button label, `api-dev` baked, **zero** Google SDK. **Live behaviour confirmed** on `founders.largata.com` in a cold browser (fresh profile, no session): sign-in screen renders, Google button visible above the divider, a real click surfaces *"Google sign-in works in the app — use email here in the preview."*, **zero page errors**.
+
+**One merge-time near-miss worth recording:** `git checkout dev` **refused** — `CLAUDE.md` had uncommitted changes. The full-stack rule had been rewritten after the owner's Artifact 04 correction but only the earlier, narrower version was ever committed; git's refusal is the only reason the correction was not silently left behind on the working tree. Committed as `0c56942` and included in the squash. The lesson is the boring one: `git status` before a branch switch, not after it fails.
+
+**Found during the post-merge check, raised not fixed:** a cold visit fires `GET /v1/itineraries` before auth resolves and takes a 401 (the gate defers rendering but not fetching). **Pre-existing** — S0.5 touched no query/hook/routing code — harmless, and now in the backlog rather than misread as a bug by whoever next reads the access logs.
