@@ -15,7 +15,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | **Epic 0 — Walking Skeleton** | | | | |
 | S0.1 | Repo, environments, and the standing rules | ✅ | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) |
 | S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | ✅ | [spec](docs/plans/S0.2-auth-end-to-end/spec.md) |
-| S0.3 | Create and view an Itinerary (first domain slice, guard included) | 🔄 | [spec](docs/plans/S0.3-create-view-itinerary/spec.md) |
+| S0.3 | Create and view an Itinerary (first domain slice, guard included) | ✅ | [spec](docs/plans/S0.3-create-view-itinerary/spec.md) |
 | S0.4 | Both release trains to production (Android: local build → Play internal; iOS deferred — ADR-010) | ⬜ | — |
 | **Epic 1 — Collaborative planning** | | | | |
 | S1.1 | Workspace forms around an itinerary (creator = owner, atomic; backfills workspaces for pre-E1 itineraries — ADR-011) | ⬜ | — |

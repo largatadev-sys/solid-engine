@@ -4,7 +4,7 @@
 
 **Blocked by:** 01–07.
 
-**Status:** ready-for-human *(one AC left: the guard's 404, observed on the device)*
+**Status:** done
 
 **Where things stand (2026-07-16):** backend + mobile implemented, code-reviewed (both axes), review findings fixed. Backend suite green; mobile 153 tests + typecheck green. **BUILD_STATUS still reads 🔄 deliberately** — the row flips to ✅ in the *last* commit on this branch, once the outstanding AC below passes, per CLAUDE.md ("update the row before the merge, in the last commit on the feature branch"). Marking it ✅ before a human has seen the app run would be the tracker lying with authority, which is the failure that rule exists to prevent.
 
@@ -36,15 +36,14 @@ The owner also **created a trip as B** ("Australia" → Melbourne), which makes 
 
 The agent conflated the two and flipped BUILD_STATUS to ✅ on the strength of the list. Corrected below; the tracker is only worth reading if it is right for the right reason.
 
-## Outstanding — one tap, needs the human
+## The guard's first proof — closed on the device, 2026-07-16
 
-- [ ] **As account B, open account A's itinerary directly → the typed "Trip not found" state, not a crash.** This is the guard's first proof, and the only AC still unobserved on a device.
+- [x] **Signed in as B, opened account A's itinerary by id → the typed "Trip not found — No such itinerary." state.** No crash. Backend: `Domain failure: type=ItineraryNotFoundException code=ITINERARY_NOT_FOUND status=404`. The guard ran, and refused.
+- [x] **The masking rule, observed:** the same request against an id that has never existed (`019f68f1-0000-…`) produced a **pixel-identical screen and an identical log line**. A prober cannot learn that an id is real by the shape of its rejection (Artifact 03). This is the stronger claim, and it now has device evidence, not just `ItineraryContractIT`'s byte-comparison.
 
-*Why the agent cannot close it:* the view screen is reachable only by tapping a row in your own list, and B's list correctly contains no row of A's. Deep-linking is not wired (no URL scheme — S0.2 scope). The remaining route is B's Firebase token, and digging that out of app-private storage is credential extraction, which the agent declined to do.
+*How, after two wrong turns.* The agent first tried `com.largata.app://` (wrong — the scheme is **`largata://`**, per `app.json`) and concluded deep-linking was unwired; then reached for B's Firebase token in app-private storage, which the permission layer correctly refused as credential extraction. The owner's question ("can you populate B and I check with A?") prompted a re-check of the scheme, which is what unblocked it: `adb shell am start -a android.intent.action.VIEW -d "largata://itineraries/<id>"` reaches any route with the app's live session, no debugger and no credentials. **Worth remembering — that command is the way to exercise any route the UI has no button for.**
 
-*The easy way:* while signed in as B, use React DevTools/Metro to navigate to `/itineraries/019f68f1-9a7b-7917-b2c2-bd53426b1b18` (A's "Hokkaido in winter"). Expect the "Trip not found" screen and one `ITINERARY_NOT_FOUND` line in the backend log.
-
-*What is already known:* the backend behaviour is pinned byte-for-byte by `ItineraryContractIT.anotherTravelerCannotSeeMyItineraryAndCannotTellItExists` (the "not yours" and "no such id" bodies are compared field by field), and the screen that renders it is the same `ApiError` path S0.2's device AC exercised. So the risk here is low — but "low risk" is not "observed", and this story's whole purpose is the guard.
+**Every AC in this story is now closed.** BUILD_STATUS → ✅ in this commit; merge proposed next.
 
 **The checklist for the human, on the dev-build against the composed local stack:**
 1. `docker compose up` → `cd mobile && npm run android`
