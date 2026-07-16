@@ -48,3 +48,48 @@ describe('the repository layer is the only path to the network (ADR-001)', () =>
     }
   });
 });
+
+/**
+ * The token layer as an executable rule (S0.3, ticket 05).
+ *
+ * Same reasoning as the fetch rule above: a hardcoded colour is invisible in review until the brand
+ * decision lands — due before E4 — and turns a values-only change into a hunt through every screen.
+ * The check greps, because the rule matters more than the elegance of its enforcement.
+ */
+describe('screens consume design tokens, never raw values (S0.3)', () => {
+  const THEME_DIR = join(MOBILE_ROOT, 'src', 'theme');
+  const styled = [...sourceFiles(join(MOBILE_ROOT, 'app')), ...sourceFiles(join(MOBILE_ROOT, 'src'))].filter(
+    (file) => !file.startsWith(THEME_DIR),
+  );
+
+  it.each(styled)('no hex colour literals in %s', (file) => {
+    const source = readFileSync(file, 'utf8');
+
+    // #RGB, #RRGGBB, #RRGGBBAA — the whole family, since one form banned is no form banned.
+    expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(source).not.toMatch(/\brgba?\(/);
+  });
+
+  it.each(styled)('no arithmetic on scale values in %s', (file) => {
+    // `spacing.lg - 2` is not using the scale — it is using 22 while pretending, and it is exactly
+    // how a token layer becomes decorative. If a screen needs a value the scale lacks, the scale is
+    // missing a value; add it there, where every screen can see it.
+    const source = readFileSync(file, 'utf8');
+
+    expect(source).not.toMatch(/\b(spacing|radii)\.\w+\s*[+\-*/]/);
+  });
+
+  it.each(styled)('no bare fontSize in %s — the type scale owns sizes', (file) => {
+    // Colours and font sizes are policed; raw layout numbers (maxWidth, minHeight) are not, because
+    // no rule can tell `maxWidth: 420` — a property of one screen's composition — from a token.
+    const source = readFileSync(file, 'utf8');
+
+    expect(source).not.toMatch(/fontSize:\s*\d/);
+  });
+
+  it('the theme is the only place the palette exists', () => {
+    // A guard against the check above passing because someone moved the values somewhere new: if
+    // tokens.ts stops holding hex, the palette has gone somewhere this test is not looking.
+    expect(readFileSync(join(THEME_DIR, 'tokens.ts'), 'utf8')).toMatch(/#[0-9a-fA-F]{6}\b/);
+  });
+});

@@ -31,19 +31,24 @@ function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   return typeof candidate.code === 'string' && typeof candidate.message === 'string';
 }
 
-async function request<T>(path: string): Promise<T> {
+async function request<T>(path: string, init?: { method: string; body: unknown }): Promise<T> {
   const token = await currentToken();
 
   let response: Response;
   try {
     response = await fetch(`${baseUrl()}${path}`, {
+      method: init?.method ?? 'GET',
       headers: {
         Accept: 'application/json',
+        // Only when there is a body: sending Content-Type on a GET describes a payload that does
+        // not exist, and some proxies take that literally.
+        ...(init !== undefined ? { 'Content-Type': 'application/json' } : {}),
         // Signed out: no header at all, rather than an empty or "Bearer null" one. The backend
         // treats every flavor of missing/invalid credential identically (UNAUTHENTICATED), but
         // sending a malformed header would be us manufacturing a rejection we could just not send.
         ...(token !== null ? { Authorization: `Bearer ${token}` } : {}),
       },
+      ...(init !== undefined ? { body: JSON.stringify(init.body) } : {}),
     });
   } catch {
     // Travelers live in dead zones (ADR-001). An unreachable network is an expected outcome,
@@ -76,4 +81,9 @@ async function request<T>(path: string): Promise<T> {
 
 export const apiClient = {
   get: <T>(path: string): Promise<T> => request<T>(path),
+  /**
+   * Writes go straight to the network — no offline queue (S0.3). ADR-001 promises queued writes
+   * eventually; this is where that lands, behind the same signature, when its story arrives.
+   */
+  post: <T>(path: string, body: unknown): Promise<T> => request<T>(path, { method: 'POST', body }),
 };

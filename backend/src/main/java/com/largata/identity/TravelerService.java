@@ -1,11 +1,11 @@
 package com.largata.identity;
 
-import java.time.Instant;
+import com.largata.common.analytics.Analytics;
+import com.largata.common.analytics.AnalyticsEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The identity module's one entry point (ADR-002: modules are reached by service interface, never
@@ -18,10 +18,12 @@ public class TravelerService {
 
     private final TravelerRepository travelers;
     private final TravelerProvisioner provisioner;
+    private final Analytics analytics;
 
-    TravelerService(TravelerRepository travelers, TravelerProvisioner provisioner) {
+    TravelerService(TravelerRepository travelers, TravelerProvisioner provisioner, Analytics analytics) {
         this.travelers = travelers;
         this.provisioner = provisioner;
+        this.analytics = analytics;
     }
 
     /**
@@ -62,6 +64,14 @@ public class TravelerService {
         try {
             Traveler provisioned = provisioner.insert(claims);
             log.info("Traveler provisioned: id={}", provisioned.id());
+            // The funnel's first stage (register #2's default set, backfilled at S0.3): emitted here
+            // rather than in the resolver because this is the only line that runs when a Traveler is
+            // genuinely new. The race-loser below re-reads an existing row and emits nothing — two
+            // signups for one traveler would be a lie about the one number this event exists to give.
+            // Emitted after the provisioner's own transaction has committed (it is a separate bean
+            // with REQUIRES_NEW — see the note above), so this reports a row that survives.
+            analytics.emit(
+                    AnalyticsEvent.named("traveler_signed_up").with("travelerId", provisioned.id()).build());
             return provisioned;
         } catch (DataIntegrityViolationException lostTheRace) {
             // Someone else inserted this uid between our read and our write. Their row is the row —

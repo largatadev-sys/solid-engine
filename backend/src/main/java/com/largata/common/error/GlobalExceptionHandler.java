@@ -5,11 +5,15 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -80,6 +84,52 @@ public class GlobalExceptionHandler {
     ResponseEntity<ErrorResponse> handleAuthorizationDenied(AuthorizationDeniedException e) {
         log.warn("Authorization denied: code=FORBIDDEN status={}", HttpStatus.FORBIDDEN.value());
         return respond(HttpStatus.FORBIDDEN, "FORBIDDEN", "You may not do that.");
+    }
+
+    /**
+     * A request body that failed Bean Validation ({@code @Valid} on a controller parameter).
+     *
+     * <p>Spring raises its own type for this, so without this handler it falls to {@link
+     * #handleUnexpected} and becomes a <strong>500</strong> for what is plainly a client mistake —
+     * logged at ERROR, and answering "something went wrong" when the truth is "your title is blank".
+     * Artifact 05 says 400.
+     *
+     * <p><strong>The first field's message becomes the envelope's message</strong>, deliberately. The
+     * envelope has one {@code message} field (Artifact 05) and clients branch on {@code code}, never
+     * on prose — so a structured per-field map would be a second error shape invented for one
+     * endpoint. The messages are written to be shown as-is; the mobile form surfaces this one against
+     * the field the client already knows it sent. If per-field mapping is ever genuinely needed, it
+     * arrives as an additive field, decided as a convention rather than improvised here.
+     *
+     * <p>Logged at warn, not error: rejecting a bad request is the system working.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    ResponseEntity<ErrorResponse> handleInvalidBody(MethodArgumentNotValidException e) {
+        // getAllErrors(), not getFieldErrors(): a cross-field rule (@ChronologicalDates) is a
+        // class-level constraint and reports as a *global* error with no field attached. Reading
+        // only field errors would answer "That request is not valid." for the one validation
+        // failure whose message is actually worth showing.
+        String message =
+                e.getBindingResult().getAllErrors().stream()
+                        .findFirst()
+                        .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                        .orElse("That request is not valid.");
+        log.warn("Invalid request body: code=VALIDATION_FAILED status={}", HttpStatus.BAD_REQUEST.value());
+        return respond(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", message);
+    }
+
+    /**
+     * A malformed body Jackson could not read at all, or a path/query parameter of the wrong type
+     * ({@code /v1/itineraries/not-a-uuid}).
+     *
+     * <p>Same reasoning as above: garbage from a client is a 400, and without this it is a 500 that
+     * pages someone. The message stays generic — a parse error's detail names internal types and
+     * would leak them into the envelope (P2).
+     */
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    ResponseEntity<ErrorResponse> handleUnreadableRequest(Exception e) {
+        log.warn("Unreadable request: type={} status={}", e.getClass().getSimpleName(), HttpStatus.BAD_REQUEST.value());
+        return respond(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", "That request could not be read.");
     }
 
     /**

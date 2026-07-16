@@ -1,106 +1,141 @@
-import { Stack } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useHealth } from '../src/hooks/useHealth';
+import { Link, Stack } from 'expo-router';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { formatDates } from '../src/itineraries/formatDates';
+import { useMyItineraries } from '../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../src/theme';
+import type { ItineraryResponse } from '../src/types/api';
 
 /**
- * The walking skeleton's last mile: this screen proves the mobile half of the vertical slice.
+ * My Trips — the signed-in home (S0.3).
  *
- * It reads through hook -> repository -> apiClient (ADR-001). There is no `fetch` here and never
- * will be — the first screen ever written establishes the pattern by example, which is why the
- * skeleton bothers to render anything at all.
- *
- * THROWAWAY STYLING — NOT A DESIGN SYSTEM. The colours below are borrowed from an existing
- * Largata app purely so this diagnostic screen is pleasant to look at; they are hardcoded here,
- * deliberately, rather than promoted into a theme. The real visual direction (tokens, typography,
- * spacing, and whether that portfolio palette even suits a travel product) is a decision deferred
- * to its own story before S0.3's first real screens. Do not copy these values into new screens,
- * and do not treat this file as precedent — this screen is scaffolding and gets deleted or buried
- * once itineraries exist.
+ * Reads through the query cache (ADR-001): a warm cache renders instantly and refreshes behind the
+ * scenes, so this screen has no idea whether the data came from the network or memory. That
+ * ignorance is the point — it is what makes E3's persistence an addition rather than a rewrite.
  */
+export default function MyTripsScreen() {
+  const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useMyItineraries();
 
-const SCAFFOLD_RED = '#F23643';
-const SCAFFOLD_MUTED = '#8A94A6';
-const SCAFFOLD_INK = '#2B2F38';
-
-export default function HealthScreen() {
-  const { state, refresh } = useHealth();
+  const itineraries = data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Largata' }} />
+      <Stack.Screen
+        options={{
+          title: 'My Trips',
+          headerLeft: () => (
+            <Link href="/me" asChild>
+              <Pressable accessibilityRole="button" accessibilityLabel="Your account" hitSlop={spacing.sm}>
+                <Text style={styles.headerActionMuted}>Account</Text>
+              </Pressable>
+            </Link>
+          ),
+          headerRight: () => (
+            <Link href="/itineraries/new" asChild>
+              <Pressable accessibilityRole="button" accessibilityLabel="Plan a trip" hitSlop={spacing.sm}>
+                <Text style={styles.headerAction}>Plan</Text>
+              </Pressable>
+            </Link>
+          ),
+        }}
+      />
 
-      <View style={styles.brand}>
-        <Text style={styles.wordmark}>Largata</Text>
-        <Text style={styles.tagline}>WALKING SKELETON</Text>
-      </View>
+      {isPending && <ActivityIndicator size="large" color={colors.accent} style={styles.centered} />}
 
-      <View style={styles.card}>
-        {state.kind === 'loading' && <ActivityIndicator size="large" color={SCAFFOLD_RED} />}
+      {isError && (
+        <View style={styles.centered}>
+          <Text style={styles.errorTitle}>Could not load your trips</Text>
+          {/* Branching on `code`, never on `message` (Artifact 05). */}
+          <Text style={styles.caption}>{error.message}</Text>
+          <Pressable style={styles.button} onPress={() => void refetch()} accessibilityRole="button">
+            <Text style={styles.buttonText}>Try again</Text>
+          </Pressable>
+        </View>
+      )}
 
-        {state.kind === 'ok' && (
-          <>
-            <Text style={styles.status}>Backend: {state.health.status}</Text>
-            <Text style={styles.caption}>The stack answered through the repository layer.</Text>
-          </>
-        )}
+      {!isPending && !isError && (
+        <FlatList
+          data={itineraries}
+          keyExtractor={(itinerary) => itinerary.id}
+          contentContainerStyle={itineraries.length === 0 ? styles.emptyContainer : styles.listContainer}
+          renderItem={({ item }) => <TripRow itinerary={item} />}
+          onRefresh={() => void refetch()}
+          refreshing={isRefetching}
+          // The cursor never surfaces here: the query layer owns it (Artifact 05 — opaque to
+          // clients). This screen only says "I need more".
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+          }}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={<EmptyState />}
+          ListFooterComponent={
+            isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={styles.footer} /> : null
+          }
+        />
+      )}
+    </View>
+  );
+}
 
-        {state.kind === 'error' && (
-          <>
-            <Text style={styles.errorTitle}>Backend unreachable</Text>
-            {/* Branching on `code`, never on `message` (Artifact 05). */}
-            <Text style={styles.errorCode}>{state.error.code}</Text>
-            <Text style={styles.caption}>{state.error.message}</Text>
-            {state.error.traceId !== undefined && (
-              <Text style={styles.trace}>traceId: {state.error.traceId}</Text>
-            )}
-          </>
-        )}
-      </View>
-
-      <Pressable style={styles.button} onPress={refresh} accessibilityRole="button">
-        <Text style={styles.buttonText}>Check again</Text>
+function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
+  return (
+    <Link href={`/itineraries/${itinerary.id}`} asChild>
+      <Pressable style={styles.row} accessibilityRole="button">
+        <Text style={styles.rowTitle} numberOfLines={1}>
+          {itinerary.title}
+        </Text>
+        <Text style={styles.rowMeta} numberOfLines={1}>
+          {itinerary.destinations.join(' · ')}
+        </Text>
+        <Text style={styles.rowDates}>{formatDates(itinerary)}</Text>
       </Pressable>
+    </Link>
+  );
+}
+
+function EmptyState() {
+  return (
+    <View style={styles.empty}>
+      <Text style={styles.emptyTitle}>No trips yet</Text>
+      <Text style={styles.caption}>Every trip starts as a draft. Plan your first one.</Text>
+      <Link href="/itineraries/new" asChild>
+        <Pressable style={styles.button} accessibilityRole="button">
+          <Text style={styles.buttonText}>Plan a trip</Text>
+        </Pressable>
+      </Link>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#FFFFFF',
-  },
-  brand: { alignItems: 'center', marginBottom: 32 },
-  wordmark: { fontSize: 34, fontWeight: '700', color: SCAFFOLD_RED, letterSpacing: -0.5 },
-  tagline: { fontSize: 11, fontWeight: '600', color: SCAFFOLD_MUTED, letterSpacing: 2, marginTop: 2 },
-  card: {
-    width: '100%',
-    maxWidth: 420,
-    minHeight: 96,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 20,
-    paddingVertical: 22,
-    borderRadius: 24,
+  container: { flex: 1, backgroundColor: colors.background },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
+  headerAction: { ...typography.bodyStrong, color: colors.accent, paddingHorizontal: spacing.sm },
+  headerActionMuted: { ...typography.body, color: colors.textSecondary, paddingHorizontal: spacing.sm },
+  listContainer: { padding: spacing.md, gap: spacing.sm },
+  emptyContainer: { flexGrow: 1 },
+  row: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: '#F3D2D5',
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs,
   },
-  status: { fontSize: 22, fontWeight: '600', color: SCAFFOLD_INK },
-  errorTitle: { fontSize: 20, fontWeight: '600', color: SCAFFOLD_RED },
-  errorCode: { fontSize: 13, fontFamily: 'monospace', color: SCAFFOLD_INK },
-  caption: { fontSize: 13, textAlign: 'center', color: SCAFFOLD_MUTED },
-  trace: { fontSize: 10, color: SCAFFOLD_MUTED, marginTop: 4 },
+  rowTitle: { ...typography.bodyStrong, color: colors.textPrimary },
+  rowMeta: { ...typography.caption, color: colors.textSecondary },
+  rowDates: { ...typography.caption, color: colors.textSecondary },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
+  emptyTitle: { ...typography.heading, color: colors.textPrimary },
+  errorTitle: { ...typography.heading, color: colors.danger },
+  caption: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
+  footer: { paddingVertical: spacing.md },
   button: {
-    width: '100%',
-    maxWidth: 420,
-    marginTop: 20,
-    paddingVertical: 16,
-    borderRadius: 999,
-    alignItems: 'center',
-    backgroundColor: SCAFFOLD_RED,
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
   },
-  buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  buttonText: { ...typography.bodyStrong, color: colors.textOnAccent },
 });

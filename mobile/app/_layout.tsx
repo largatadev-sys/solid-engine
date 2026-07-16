@@ -1,9 +1,12 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { installFirebaseTokenSource } from '../src/auth/firebaseTokenSource';
 import { installGoogleSignIn } from '../src/auth/googleSignInConfig';
 import { AuthProvider, useAuth } from '../src/hooks/useAuth';
+import { createQueryClient } from '../src/query/queryClient';
+import { colors } from '../src/theme';
 
 /**
  * Root layout — Expo Router's file-based routing (spec Q9c). The auth gate landed here at S0.2, as
@@ -18,10 +21,16 @@ installFirebaseTokenSource();
 installGoogleSignIn();
 
 export default function RootLayout() {
+  // useState, not module scope: one client for the app's lifetime, created inside React so a Fast
+  // Refresh does not silently swap it and orphan every cached query mid-session.
+  const [queryClient] = useState(createQueryClient);
+
   return (
-    <AuthProvider>
-      <AuthGate />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -45,14 +54,16 @@ function AuthGate() {
     if (state.kind === 'signedOut' && !onSignIn) {
       router.replace('/sign-in');
     } else if (state.kind === 'signedIn' && onSignIn) {
-      router.replace('/me');
+      // My Trips is the signed-in home from S0.3 — the natural landing for a planning app. The
+      // me-screen stays reachable from it, demoted.
+      router.replace('/');
     }
   }, [state, segments, router]);
 
   if (state.kind === 'restoring') {
     return (
       <View style={styles.splash}>
-        <ActivityIndicator size="large" color="#F23643" />
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
@@ -61,5 +72,10 @@ function AuthGate() {
 }
 
 const styles = StyleSheet.create({
-  splash: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
+  splash: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
 });

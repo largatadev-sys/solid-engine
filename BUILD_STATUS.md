@@ -62,6 +62,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | Date | Change | Why it wasn't a story |
 |------|--------|----------------------|
 | 2026-07-15 | Agent-skills config (`docs/agents/{issue-tracker,triage-labels,domain}.md` + `## Agent skills` in CLAUDE.md) and the repo `.gitignore`. Tracker = local markdown under `docs/plans/<story-id>-<slug>/`, tracked in git; domain docs mapped onto the existing `docs/design/` package. | Housekeeping for the build phase — tooling config, no product surface. The `.gitignore` is the structural half of the never-commit-secrets rule and had to exist before the first commit. Overlaps S0.1 (standing rules) but doesn't discharge it. |
+| 2026-07-16 | CLAUDE.md gotcha: a killed `mvn verify` orphans its surefire fork, which holds Testcontainers' Ryuk session and wedges every later run at container discovery — with a diagnosis that looks like a broken Docker daemon. | Found while running S0.3's suite, but it is toolchain knowledge, not story work: it costs the next session an hour whatever story they are on. Rides S0.3's branch because that is where it was learned (owner directive: docs travel with the branch). |
 
 ## Standing off-epic work
 

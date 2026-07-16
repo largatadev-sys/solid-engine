@@ -1,17 +1,13 @@
-import { Stack } from 'expo-router';
+import { Link, Stack } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useMe } from '../src/hooks/useMe';
 import { authRepository } from '../src/repositories/authRepository';
+import { colors, radii, spacing, typography } from '../src/theme';
 
 /**
- * The story's visible proof: what `GET /v1/me` returned for the signed-in traveler.
- *
- * THROWAWAY STYLING — see `index.tsx`. Diagnostic chrome, not a design system.
+ * The signed-in traveler's account (S0.2), on tokens since S0.3 and demoted from home — My Trips is
+ * where a signed-in traveler lands now. Reached from there; still the place sign-out lives.
  */
-
-const SCAFFOLD_RED = '#F23643';
-const SCAFFOLD_MUTED = '#8A94A6';
-const SCAFFOLD_INK = '#2B2F38';
 
 export default function MeScreen() {
   const { state, refresh } = useMe();
@@ -26,7 +22,7 @@ export default function MeScreen() {
       </View>
 
       <View style={styles.card}>
-        {state.kind === 'loading' && <ActivityIndicator size="large" color={SCAFFOLD_RED} />}
+        {state.kind === 'loading' && <ActivityIndicator size="large" color={colors.accent} />}
 
         {state.kind === 'ok' && (
           <>
@@ -50,8 +46,14 @@ export default function MeScreen() {
         )}
       </View>
 
-      <Pressable style={styles.button} onPress={refresh} accessibilityRole="button">
-        <Text style={styles.buttonText}>Reload</Text>
+      <Link href="/" asChild>
+        <Pressable style={styles.button} accessibilityRole="button">
+          <Text style={styles.buttonText}>My Trips</Text>
+        </Pressable>
+      </Link>
+
+      <Pressable style={[styles.button, styles.secondaryButton]} onPress={refresh} accessibilityRole="button">
+        <Text style={styles.secondaryButtonText}>Reload</Text>
       </Pressable>
 
       <Pressable
@@ -65,46 +67,49 @@ export default function MeScreen() {
   );
 }
 
+/** A layout constant, not a token — see `health.tsx`. */
+const CARD_MAX_WIDTH = 420;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#FFFFFF',
+    padding: spacing.lg,
+    backgroundColor: colors.background,
   },
-  brand: { alignItems: 'center', marginBottom: 32 },
-  wordmark: { fontSize: 34, fontWeight: '700', color: SCAFFOLD_RED, letterSpacing: -0.5 },
-  tagline: { fontSize: 11, fontWeight: '600', color: SCAFFOLD_MUTED, letterSpacing: 2, marginTop: 2 },
+  brand: { alignItems: 'center', marginBottom: spacing.xl },
+  wordmark: { ...typography.wordmark, color: colors.accent },
+  tagline: { ...typography.overline, color: colors.textSecondary, marginTop: spacing.xs },
   card: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: CARD_MAX_WIDTH,
     minHeight: 96,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 20,
-    paddingVertical: 22,
-    borderRadius: 24,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: '#F3D2D5',
+    borderColor: colors.accentMuted,
   },
-  name: { fontSize: 22, fontWeight: '600', color: SCAFFOLD_INK },
-  id: { fontSize: 10, fontFamily: 'monospace', color: SCAFFOLD_MUTED },
-  errorTitle: { fontSize: 20, fontWeight: '600', color: SCAFFOLD_RED },
-  errorCode: { fontSize: 13, fontFamily: 'monospace', color: SCAFFOLD_INK },
-  caption: { fontSize: 13, textAlign: 'center', color: SCAFFOLD_MUTED },
-  trace: { fontSize: 10, color: SCAFFOLD_MUTED, marginTop: 4 },
+  name: { ...typography.heading, color: colors.textPrimary },
+  id: { ...typography.fineMono, color: colors.textSecondary },
+  errorTitle: { ...typography.heading, color: colors.danger },
+  errorCode: { ...typography.mono, color: colors.textPrimary },
+  caption: { ...typography.caption, textAlign: 'center', color: colors.textSecondary },
+  trace: { ...typography.fine, color: colors.textSecondary, marginTop: spacing.xs },
   button: {
     width: '100%',
-    maxWidth: 420,
-    marginTop: 12,
-    paddingVertical: 16,
-    borderRadius: 999,
+    maxWidth: CARD_MAX_WIDTH,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radii.pill,
     alignItems: 'center',
-    backgroundColor: SCAFFOLD_RED,
+    backgroundColor: colors.accent,
   },
-  buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  secondaryButton: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E6E8EC' },
-  secondaryButtonText: { color: SCAFFOLD_INK, fontWeight: '600', fontSize: 15 },
+  buttonText: { ...typography.action, color: colors.textOnAccent },
+  secondaryButton: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+  secondaryButtonText: { ...typography.action, color: colors.textPrimary },
 });
