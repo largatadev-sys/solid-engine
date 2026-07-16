@@ -37,9 +37,18 @@ export type ItineraryResponse = {
   id: string;
   title: string;
   destinations: string[];
-  /** Absent when the traveler gave no start date — undated trips are legitimate (S0.3 spec). */
-  startDate?: string;
-  endDate?: string;
+  /**
+   * `null` when the traveler gave no start date — undated trips are legitimate (S0.3 spec).
+   *
+   * **`null`, not `?`, and the difference is not cosmetic.** The server sends `"startDate": null`
+   * (Jackson includes nulls by default), so an optional field types a shape the API never sends and
+   * makes `x !== undefined` pass for a value that is null — which rendered a literal "null → null"
+   * on the device while every unit test, constructing objects where absent means undefined, stayed
+   * green. Found by the S0.3 device AC; the honest type is the fix that could not have been guessed
+   * from the tests.
+   */
+  startDate: string | null;
+  endDate: string | null;
   state: string;
   visibility: string;
   createdAt: string;

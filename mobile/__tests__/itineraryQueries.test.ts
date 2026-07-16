@@ -6,6 +6,7 @@ import {
   myItinerariesOptions,
   onItineraryCreated,
 } from '../src/query/itineraryQueries';
+import type { ItineraryResponse } from '../src/types/api';
 
 /**
  * The query layer (S0.3, ticket 06) — ADR-001's "reads through a local store the network populates",
@@ -27,10 +28,13 @@ const { itineraryRepository } = jest.requireMock('../src/repositories/itineraryR
   itineraryRepository: { fetchMine: jest.Mock; fetchOne: jest.Mock; create: jest.Mock };
 };
 
-const trip = (id: string, title: string) => ({
+/** The server's shape, nulls and all — see `formatDates.test.ts` for why that matters. */
+const trip = (id: string, title: string): ItineraryResponse => ({
   id,
   title,
   destinations: ['Sapporo'],
+  startDate: null,
+  endDate: null,
   state: 'draft',
   visibility: 'private',
   createdAt: '2026-07-16T00:00:00Z',
