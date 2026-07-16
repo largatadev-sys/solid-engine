@@ -4,7 +4,7 @@
 
 **Blocked by:** 01–07.
 
-**Status:** done
+**Status:** ready-for-human *(one AC left: the guard's 404, observed on the device)*
 
 **Where things stand (2026-07-16):** backend + mobile implemented, code-reviewed (both axes), review findings fixed. Backend suite green; mobile 153 tests + typecheck green. **BUILD_STATUS still reads 🔄 deliberately** — the row flips to ✅ in the *last* commit on this branch, once the outstanding AC below passes, per CLAUDE.md ("update the row before the merge, in the last commit on the feature branch"). Marking it ✅ before a human has seen the app run would be the tracker lying with authority, which is the failure that rule exists to prevent.
 
@@ -24,15 +24,27 @@ Stack: `docker compose up -d --build` → all three services healthy, `/v1/healt
 
 **The smoke test found a real bug — the whole reason this AC exists.** An undated trip rendered a literal **"null → null"** where "Dates to be decided" belonged: the server sends `"startDate": null` (Jackson includes nulls), the mirrored type said `startDate?: string`, and `!== undefined` is true for a null. **153 green unit tests could not have caught it** — they build objects in TypeScript, where an absent field *is* `undefined`; only the wire disagreed. Fixed in `deaae3b` (type is `string | null`, `formatDates` uses `== null`, fixtures pass nulls), verified on the device, and ratcheted as **regression checklist line 6**.
 
-## The guard's proof — closed by the owner, 2026-07-16
+## Second account on the device — 2026-07-16
 
-- [x] **Signed in as a second account (`largata.dev@gmail.com`) → sees only their own trip.** Account A's "Hokkaido in winter" and "Japan, someday" are invisible.
+- [x] **Signed in as a second account (`largata.dev@gmail.com`) → sees only their own trip.** Account A's "Hokkaido in winter" and "Japan, someday" do not appear.
 
-The owner went further than the checklist asked and **created a trip as B** ("Australia" → Melbourne), which makes the proof bidirectional rather than an empty-list artifact: `Itinerary created: … ownerId=019f6654-…` in the log, then a list showing that row and nothing else. The database's own answer settles it — **3 rows in `itinerary`, 1 visible to B**. The isolation is a real filter over real shared data, in the same table, three rows apart. That is INV-1 holding through the whole chain: Firebase token → resource server → guard → owner-filtered query, on a device.
+The owner also **created a trip as B** ("Australia" → Melbourne), which makes this bidirectional rather than an empty-list artifact: `Itinerary created: … ownerId=019f6654-…` in the log, then a list showing that row and nothing else. **3 rows in `itinerary`, 1 visible to B** — a real filter over real shared data, in the same table, three rows apart.
 
-The typed-404 sub-check (pasting A's id as B) was not exercised and does not need to be: the guard's rejection is pinned byte-for-byte by `ItineraryContractIT.anotherTravelerCannotSeeMyItineraryAndCannotTellItExists`, and the screen that renders it is the same `ApiError` path S0.2's device AC already proved.
+**What this does and does not prove — a correction.** It proves the **list's owner filter** (`WHERE owner_id = ?` inside `listMine`), which is real isolation and a real AC. It does **not** prove the guard: `AuthorizationGuard.requireMember` only runs on `GET /v1/itineraries/{id}`, and the running backend has served **zero** `ITINERARY_NOT_FOUND` responses. The list deliberately makes no guard call (the filter *is* its authorization — see `ItineraryService#listMine`), so these are two different code paths and the epic map names the other one:
 
-**Every AC in this story is now closed.** BUILD_STATUS → ✅ in this commit; merge proposed next.
+> **ACs.** … **another authenticated user → 404 on my private itinerary** (the guard's first proof) …
+
+The agent conflated the two and flipped BUILD_STATUS to ✅ on the strength of the list. Corrected below; the tracker is only worth reading if it is right for the right reason.
+
+## Outstanding — one tap, needs the human
+
+- [ ] **As account B, open account A's itinerary directly → the typed "Trip not found" state, not a crash.** This is the guard's first proof, and the only AC still unobserved on a device.
+
+*Why the agent cannot close it:* the view screen is reachable only by tapping a row in your own list, and B's list correctly contains no row of A's. Deep-linking is not wired (no URL scheme — S0.2 scope). The remaining route is B's Firebase token, and digging that out of app-private storage is credential extraction, which the agent declined to do.
+
+*The easy way:* while signed in as B, use React DevTools/Metro to navigate to `/itineraries/019f68f1-9a7b-7917-b2c2-bd53426b1b18` (A's "Hokkaido in winter"). Expect the "Trip not found" screen and one `ITINERARY_NOT_FOUND` line in the backend log.
+
+*What is already known:* the backend behaviour is pinned byte-for-byte by `ItineraryContractIT.anotherTravelerCannotSeeMyItineraryAndCannotTellItExists` (the "not yours" and "no such id" bodies are compared field by field), and the screen that renders it is the same `ApiError` path S0.2's device AC exercised. So the risk here is low — but "low risk" is not "observed", and this story's whole purpose is the guard.
 
 **The checklist for the human, on the dev-build against the composed local stack:**
 1. `docker compose up` → `cd mobile && npm run android`
