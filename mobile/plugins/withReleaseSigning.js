@@ -49,16 +49,13 @@ module.exports = function withReleaseSigning(config) {
   if (storePassword === undefined || storePassword === '') {
     // A path with no password is a half-configuration: it would fail deep inside Gradle with an
     // error about the keystore rather than about the missing variable. Say the true thing here.
+    // (This is a build-time presence check; the value itself is read by the generated Gradle from
+    // the environment, never handled here — see the injection below.)
     throw new Error(
       '[withReleaseSigning] LARGATA_KEYSTORE_PATH is set but LARGATA_KEYSTORE_PASSWORD is not. ' +
         'Both come from the environment (never a tracked file) — see the S0.4 spec.',
     );
   }
-
-  const alias = process.env.LARGATA_KEY_ALIAS ?? 'largata';
-  // keytool uses the store password for the key when you accept its prompt's default, which is the
-  // common case; an explicit variable covers the keystores where they differ.
-  const keyPassword = process.env.LARGATA_KEY_PASSWORD ?? storePassword;
 
   return withAppBuildGradle(config, (modConfig) => {
     const gradle = modConfig.modResults;
@@ -69,19 +66,29 @@ module.exports = function withReleaseSigning(config) {
       );
     }
 
-    // Gradle reads none of this as a properties file, but backslashes inside a Groovy single-quoted
-    // string are still escapes — forward slashes are accepted on every platform and sidestep it.
+    // Forward slashes: backslashes are escapes inside a Groovy string, and `file()` accepts either
+    // on Windows. The path is the ONLY value interpolated into the generated Gradle.
     const escapedPath = keystorePath.replace(/\\/g, '/');
 
+    // The passwords and alias are read by the *generated Gradle* from the environment at eval time —
+    // they are never written into build.gradle. Two reasons, both load-bearing:
+    //   1. P3 (never let a secret enter a durable artifact): baking `storePassword 'literal'` would
+    //      write the password to a file on disk, gitignored or not. Reading getenv() keeps it in the
+    //      environment, where it already lives.
+    //   2. It removes the escaping problem entirely: a password with a backslash, quote, or newline
+    //      would otherwise have to be escaped into Groovy source correctly — and a near-miss there
+    //      fails with a Groovy syntax error that names nothing about the password. No interpolation,
+    //      no escaping bug.
+    // The env-var names must match what this plugin documents and what the build environment sets.
     const releaseConfig = `
         release {
-            // Injected by plugins/withReleaseSigning.js from the environment (S0.4). Values are
-            // never committed: the keystore lives outside the repo, its passwords in a password
-            // manager. Editing this generated file is pointless — prebuild rewrites it.
+            // Injected by plugins/withReleaseSigning.js (S0.4). Only the keystore path is a literal;
+            // the passwords are read from the environment at eval time and never written here.
+            // Editing this generated file is pointless — prebuild rewrites it.
             storeFile file('${escapedPath}')
-            storePassword '${storePassword.replace(/'/g, "\\'")}'
-            keyAlias '${alias.replace(/'/g, "\\'")}'
-            keyPassword '${keyPassword.replace(/'/g, "\\'")}'
+            storePassword System.getenv('LARGATA_KEYSTORE_PASSWORD')
+            keyAlias System.getenv('LARGATA_KEY_ALIAS') ?: 'largata'
+            keyPassword System.getenv('LARGATA_KEY_PASSWORD') ?: System.getenv('LARGATA_KEYSTORE_PASSWORD')
         }`;
 
     // Add the release signingConfig alongside the template's debug one.
