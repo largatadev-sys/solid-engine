@@ -26,29 +26,49 @@ import { getAuth, type Auth } from 'firebase/auth';
 
 let app: FirebaseApp | undefined;
 
-function required(name: string): string {
-  const value = process.env[name];
-  if (value === undefined || value === '') {
-    throw new Error(
-      `${name} is not set. The web preview needs the largata-dev project's Web App config ` +
-        '(Firebase console → Project settings → Your apps → Web app). See mobile/.env.example.',
-    );
-  }
-  return value;
-}
+/**
+ * The config, read by DIRECT static member access — `process.env.EXPO_PUBLIC_X`, never
+ * `process.env[name]`.
+ *
+ * <p><strong>This is load-bearing, and a computed lookup silently breaks it</strong> (found at S0.4
+ * on the first web export). Expo has no runtime environment on web: it inlines `EXPO_PUBLIC_*` at
+ * bundle time by a literal find-and-replace of the exact text `process.env.EXPO_PUBLIC_X`. A
+ * `process.env[name]` with a variable key is invisible to that pass, so it survives into the bundle
+ * and evaluates against an empty `process.env` in the browser — every value `undefined`, sign-in
+ * dead, and no error naming the cause. An earlier version of this file used a `required(name)`
+ * helper doing exactly that; it defeated the one mechanism it depended on. Each field must therefore
+ * be its own literal access, which is why this reads as a flat object rather than a loop.
+ */
+const config = {
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+};
 
 /**
  * The initialized `Auth` instance. Lazy and memoized, deliberately: initializing at module scope
  * would run on import — including inside Jest, where no config exists and nothing wants a live SDK.
+ *
+ * The presence check lives here rather than at module scope for the same reason: a misconfigured
+ * build should fail loudly at first use (which on web is app start), not crash the test runner on
+ * import. It still fails *before* the first sign-in tap, not at the opaque token exchange.
  */
 export function webAuth(): Auth {
   if (app === undefined) {
-    app = initializeApp({
-      apiKey: required('EXPO_PUBLIC_FIREBASE_API_KEY'),
-      authDomain: required('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'),
-      projectId: required('EXPO_PUBLIC_FIREBASE_PROJECT_ID'),
-      appId: required('EXPO_PUBLIC_FIREBASE_APP_ID'),
-    });
+    const missing = Object.entries(config)
+      .filter(([, value]) => value === undefined || value === '')
+      .map(([key]) => key);
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Web preview Firebase config missing: ${missing.join(', ')}. These are inlined from ` +
+          'EXPO_PUBLIC_FIREBASE_* at export time (Firebase console → Project settings → Your apps ' +
+          '→ Web app). See mobile/.env.example.',
+      );
+    }
+
+    app = initializeApp(config);
   }
   return getAuth(app);
 }
