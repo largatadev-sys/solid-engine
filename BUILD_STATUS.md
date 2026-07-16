@@ -16,7 +16,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S0.1 | Repo, environments, and the standing rules | ✅ | [spec](docs/plans/S0.1-repo-and-standing-rules/spec.md) |
 | S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | ✅ | [spec](docs/plans/S0.2-auth-end-to-end/spec.md) |
 | S0.3 | Create and view an Itinerary (first domain slice, guard included) | ✅ | [spec](docs/plans/S0.3-create-view-itinerary/spec.md) |
-| S0.4 | Both release trains to production (Android: local build → Play internal; iOS deferred — ADR-010) | ⬜ | — |
+| S0.4 | Backend train to production + founder preview (re-sliced 2026-07-16; Play track parked → backlog) | 🔄 | [spec](docs/plans/S0.4-backend-prod-founder-preview/spec.md) |
 | **Epic 1 — Collaborative planning** | | | | |
 | S1.1 | Workspace forms around an itinerary (creator = owner, atomic; backfills workspaces for pre-E1 itineraries — ADR-011) | ⬜ | — |
 | S1.2 | Email invite → accept → member *(resolves reg. #12)* | ⬜ | — |
@@ -70,4 +70,5 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 - Register #1 validation criteria — COO drafts, founders ratify, **signed before alpha**.
 - Register #2 analytics events — COO; default set instruments from S0.3 onward. Sink = structured log line during the build; **goes durable before alpha** (with reg. #1).
 - Register #14 free/paid split + pricing — founders; **before Epic 7 starts**.
-- Domain registration + `applicationId` (`com.largata.app`) confirmation — **gates S0.4's first Play upload** (permanent once uploaded; S0.1 grilling, 2026-07-15).
+- Domain registration — **resolved: `largata.com` purchased 2026-07-16**; wiring lands in S0.4. The `applicationId` permanence moment travels with the first Play upload (parked Play-track story, epic-map backlog).
+- Play developer account creation — **trigger: ~E4 start** (verification lead time + personal-vs-organization decision; S0.4 grilling, 2026-07-16). No Apple account until the iOS activation (ADR-010).
