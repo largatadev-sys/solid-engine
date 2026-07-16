@@ -40,8 +40,8 @@ export function configureGoogleSignIn(webClientId: string): void {
   GoogleSignin.configure({ webClientId });
 }
 
-/** Android has the native account picker; the web twin declares `google: false` (spec decision). */
-export const authCapabilities: AuthCapabilities = { google: true };
+/** Android has the native account picker, so the doorway is real; the web twin is `'cosmetic'`. */
+export const authCapabilities: AuthCapabilities = { google: 'full' };
 
 export const authRepository = {
   async signInWithGoogle(): Promise<void> {

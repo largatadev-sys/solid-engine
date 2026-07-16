@@ -8,10 +8,22 @@
 # The keystore itself lives OUTSIDE the repo (default C:\Users\<you>\keys\); override with
 # -KeystorePath. Nothing secret is written by this script — it only reads the password into the
 # process environment for the child Gradle build, which reads it via System.getenv at eval time.
+#
+# -ApiBaseUrl is the backend this APK will talk to, baked into the bundle at build time (S0.5). It
+# defaults to the deployed dev backend because that is what a release APK is for: a real phone
+# cannot reach `10.0.2.2` (the emulator's alias for the host loopback, which mobile/.env carries for
+# local development). A release build that silently inherited that alias is exactly what deferred
+# the S0.4 sideload AC, so the value is echoed in the summary below — every build states what it
+# points at.
+#
+# REVISIT WHEN THE PROD RUNG EXISTS (backlog: preprod + prod environments): a dev default is correct
+# while dev is the only deployed backend, and becomes a landmine the day a release build is meant
+# for real users. At that point this should take the environment, not a URL, or refuse to default.
 
 param(
     [string]$KeystorePath = "$env:USERPROFILE\keys\largata-release.keystore",
-    [string]$Alias = 'largata'
+    [string]$Alias = 'largata',
+    [string]$ApiBaseUrl = 'https://api-dev.largata.com'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -26,6 +38,12 @@ if (-not (Test-Path $KeystorePath)) {
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 $env:LARGATA_KEYSTORE_PATH = $KeystorePath
 $env:LARGATA_KEY_ALIAS = $Alias
+
+# Baked into the JS bundle by Expo's EXPO_PUBLIC_* inlining. Setting it here beats mobile/.env
+# without touching that file: Expo's dotenv load never overrides a variable already present in the
+# process environment. That file stays what it is — local-development config — instead of something
+# to remember to flip before a release and flip back after.
+$env:EXPO_PUBLIC_API_BASE_URL = $ApiBaseUrl
 
 # withLongPathNinja finds ninja on PATH; set LARGATA_NINJA only if a suitable one is not there.
 $ninja = (Get-Command ninja -ErrorAction SilentlyContinue).Source
@@ -69,10 +87,22 @@ try {
 
     Write-Host "`nSIGNED APK: $($apk.FullName)" -ForegroundColor Green
     Write-Host "Size: $([math]::Round($apk.Length/1MB,1)) MB"
+    # Loud, next to the cert, because both are facts you cannot read off the APK later without
+    # tooling — and a release build pointed at the wrong backend looks identical to a right one
+    # until it fails on someone else's phone.
+    Write-Host "API BASE URL (baked in): $ApiBaseUrl" -ForegroundColor Green
     Write-Host "Install on a connected device/emulator with:" -ForegroundColor Yellow
     Write-Host "  adb install -r `"$($apk.FullName)`""
 }
 finally {
     # Scrub the password from the environment as soon as the build is done.
     Remove-Item Env:LARGATA_KEYSTORE_PASSWORD -ErrorAction SilentlyContinue
+
+    # And the API URL, for a different reason: this script is run interactively, so the variable
+    # would otherwise outlive it in that terminal — where the very precedence this script relies on
+    # (a process var beats mobile/.env) turns against you. The next `npm run android` in the same
+    # window would silently bake the deployed backend into a local emulator build, with no error
+    # naming the cause. Leaving it set would recreate the invisible-state trap the param exists to
+    # remove. The keystore path/alias leak too, but are inert; this one changes behaviour.
+    Remove-Item Env:EXPO_PUBLIC_API_BASE_URL -ErrorAction SilentlyContinue
 }

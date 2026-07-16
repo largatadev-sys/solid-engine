@@ -21,11 +21,13 @@ import { colors } from '../src/theme';
 installFirebaseTokenSource();
 
 // Gated on the capability, not on `Platform.OS === 'web'`: the question here is "does this build
-// have a Google doorway to configure", and the platform is only today's reason for the answer. The
-// web preview declares `google: false` (S0.4 spec) and must not run this — `installGoogleSignIn`
-// throws when the client id is unset, which on web would be a startup crash for a button that is
-// deliberately not rendered.
-if (authCapabilities.google) {
+// have a Google doorway to configure", and the platform is only today's reason for the answer.
+//
+// `'full'` exactly — not "anything truthy". The web preview declares `'cosmetic'` (S0.5): it renders
+// the button but has no doorway behind it, and running this there would be a startup crash
+// (`installGoogleSignIn` throws when the client id is unset) — a white screen in exchange for a
+// button that is only meant to be looked at. This is the line the tri-state exists to make sayable.
+if (authCapabilities.google === 'full') {
   installGoogleSignIn();
 }
 

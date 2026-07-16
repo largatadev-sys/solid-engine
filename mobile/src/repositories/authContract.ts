@@ -90,15 +90,33 @@ export interface AuthUser {
 /**
  * The capabilities a platform's auth doorway may or may not have.
  *
- * `google` is false on web by decision, not by accident (S0.4 spec): the browser doorway is a
- * different flow — popup/redirect, authorized domains, its own failure modes — and the founders'
- * preview does not earn that work. The sign-in screen asks this rather than checking `Platform.OS`,
- * because the question it actually has is "should I render this button", not "am I on Android" — and
- * when the real web surface ships and builds the Google doorway properly, this flips to true in one
- * file and no screen changes.
+ * `google` was a boolean until S0.5, when the founders asked for the preview's sign-in screen to
+ * *look like* the app they will ship — Google + email. That request split the flag: rendering the
+ * button and having a working doorway had been the same question only because the answers happened
+ * to coincide (native: yes/yes; web: no/no). They diverge on the preview, and a boolean cannot say
+ * "show it, but there is nothing behind it".
+ *
+ * - `'full'` — a working doorway: render the button, configure the native SDK (the shipping app).
+ * - `'cosmetic'` — render the button, install nothing; a tap surfaces the repository's message. The
+ *   founders' preview, which exists to show what the app looks like (S0.5). Deliberately not a dead
+ *   click: a button that does nothing reads as a broken app, so `authRepository.web` throws an
+ *   `AuthError` whose text says where Google *does* work, and the sign-in screen already renders it.
+ * - `'none'` — no button. Nothing declares this today; it is what makes the type honest rather than
+ *   a two-value enum wearing a third name, and it is what a future surface without Google would say.
+ *
+ * The state that cannot be spelled here is the point: "working but hidden" is unrepresentable.
+ *
+ * Call sites ask this rather than `Platform.OS`, because their real questions are "should I render
+ * this button" and "is there an SDK to configure" — the platform is only today's reason for the
+ * answers. When the real web surface builds the browser doorway (backlog), web moves to `'full'`:
+ * the sign-in screen will not notice, and `_layout.tsx` will need a web install path (its current
+ * one configures the *native* Google SDK, which a browser has no use for) — the gate stays, what it
+ * gates forks. `'full'` means "a doorway exists", never "the native SDK's doorway exists".
  */
+export type AuthDoorway = 'full' | 'cosmetic' | 'none';
+
 export interface AuthCapabilities {
-  readonly google: boolean;
+  readonly google: AuthDoorway;
 }
 
 export type { AuthRepository };

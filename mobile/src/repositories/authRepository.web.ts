@@ -28,20 +28,30 @@ import {
  * device-AC evidence — the shipping artifact is the APK, whose doorway is `.native.ts`. A green
  * sign-in here is evidence about this file, not about the app (spec).
  *
- * <p><strong>No Google button</strong> — `authCapabilities.google` is false. The browser Google flow
- * is a separate mechanism the preview does not earn (spec); email/password is the web path.
+ * <p><strong>A cosmetic Google button</strong> — `authCapabilities.google` is `'cosmetic'` (S0.5).
+ * The button renders so the preview shows founders the doorways the Android launch ships; the
+ * browser Google flow itself is a separate mechanism the preview does not earn (S0.4 spec, upheld).
+ * Email/password is the working web path.
  */
 
-/** Web has no native picker, and the REST preview does not implement the browser Google flow. */
-export const authCapabilities: AuthCapabilities = { google: false };
+/**
+ * Render the button, install nothing (S0.5).
+ *
+ * Not `'none'`: the preview's job is to show founders what the app looks like, and the app has a
+ * Google button. Not `'full'`: there is no browser doorway behind it — `signInWithGoogle` below is
+ * what a tap reaches, and it explains rather than fails.
+ */
+export const authCapabilities: AuthCapabilities = { google: 'cosmetic' };
 
 export const authRepository: AuthRepository = {
   async signInWithGoogle(): Promise<void> {
-    // Unreachable through the UI (the button is hidden), but the shared contract requires the method
-    // to exist. It throws rather than no-op so a caller ignoring the capability flag fails loudly.
+    // Reachable since S0.5: the button renders on web (`'cosmetic'`) and this is what a tap gets.
+    // The message is the feature — sign-in.tsx catches AuthError and renders it — so it points at
+    // where Google *does* work rather than reporting a deficiency. A silent no-op would read as a
+    // broken app; a raw failure would too.
     throw new AuthError(
       'AUTH_GOOGLE_UNAVAILABLE_ON_WEB',
-      'Google sign-in is not available in the browser preview. Use email and password.',
+      'Google sign-in works in the app — use email here in the preview.',
     );
   },
 

@@ -69,6 +69,17 @@ Flow: feature branches (`feature/<story-id>-<slug>`) are tested on the **local e
 
 **Footgun to watch:** cherry-picking after squash-merges can pull a change whose dependency you didn't pick — a subset that built in `dev` may not build in `preprod`. Track inter-change dependencies before promoting. **The mobile train is separate** (Artifact 04, ADR-010 — Android-only until the iOS activation): emulator/dev-build (local, non-EAS) → local backend · Play internal testing → preprod · Play release → prod. Release builds are made locally (Expo prebuild + Gradle) and uploaded manually.
 
+## Verify on the local full stack — it is where feature branches are tested
+
+**This is Artifact 04's environment topology (04 §83–89), restated here because S0.5 lost it:** feature branches are tested on the **full-stack local Docker instance** — `docker compose up` (Spring + Postgres 18 + MinIO), **fresh DB every redeploy** — and *then* squash-merged to `dev`. `dev` is the long-lived shared **preview**, not a test rung; testing a branch against it writes junk into the environment founders look at, and lets pre-existing data flatter a result that a fresh DB would have failed. Ephemerality is a testing tool, so it lives where you test (04 §85). The mobile side points at it the same way: **emulator / dev-build → local Docker backend** (04 §89).
+
+Two rungs above it, each proving something the one below cannot:
+
+- **The web preview is verified by building and running `mobile/Dockerfile.web-preview`**, never `expo export` + a static server *(S0.5, owner call — it found a real bug on its first run)*. Only the container exercises the **true build path** (`npm ci` from the lockfile, export inside the image) and the **true server** (Caddy + `Caddyfile.web-preview` — SPA `try_files`, cache headers, security headers). Anything else proves the bundle and nothing about what Railway serves; that gap hid a `Cache-Control` matcher that never fires for real URLs.
+- **A sideload AC is the exception that proves the rule: it runs against the deployed `dev` backend on purpose** (S0.5) — the whole point is proving the *baked cloud URL*, which a local backend would defeat. Know which question the run is answering before choosing its backend.
+
+The generalisation this repo keeps re-learning: **verify at the layer that ships, not the layer that is convenient.** Device ACs are closed on a device (S0.2's `getTokens()` was invisible to every green test); release-signed behaviour is proven on a release-signed build (S0.5's Google sign-in); server behaviour is proven on the real server.
+
 ## Gotchas (grows during the build)
 
 - **The two release trains need different JDKs on one machine: backend = Java 25, Android = Java 21.** `JAVA_HOME` points at JDK 25 (S0.1's backend requirement), and the Android Gradle Plugin does not support it — the build dies at `configureCMakeDebug` reporting only *"WARNING: A restricted method in java.lang.System has been called"*, a JDK warning masquerading as the whole error, which reads like a broken toolchain rather than a version mismatch. **Already fixed and should stay fixed:** `mobile/plugins/withAndroidJdk.js` pins `org.gradle.java.home` to Android Studio's bundled JBR at every prebuild (override with `LARGATA_ANDROID_JAVA_HOME`). Never "fix" this by editing `android/gradle.properties` — that directory is generated and gitignored, so the edit vanishes at the next prebuild and the inscrutable CMake error returns. Hit at S0.2.

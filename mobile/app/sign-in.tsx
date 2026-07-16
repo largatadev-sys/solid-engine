@@ -63,14 +63,17 @@ export default function SignInScreen() {
       </View>
 
       {/*
-        The button and its divider stand or fall together on `authCapabilities.google` — false on
-        the founders' web preview, where the browser's Google doorway is deliberately unbuilt (S0.4
-        spec). Asking the capability rather than `Platform.OS` keeps the screen honest about what it
-        wants to know: whether this build has a Google doorway, not which OS it is running on. The
-        real web surface (backlog) builds that doorway and flips the flag; this screen will not
-        notice.
+        The button and its divider stand or fall together on the capability — rendered unless it is
+        `'none'`. Note what this screen deliberately does not ask: whether the doorway *works*. On
+        the founders' preview it is `'cosmetic'` (S0.5), and a tap reaches the repository's message
+        through the same error path as any other failure — so nothing here needs a special case, and
+        the button looks exactly like the app's.
+
+        Asking the capability rather than `Platform.OS` keeps the screen honest about what it wants
+        to know: whether to offer this doorway, not which OS it is running on. The real web surface
+        (backlog) builds the browser flow and moves web to `'full'`; this screen will not notice.
       */}
-      {authCapabilities.google && (
+      {authCapabilities.google !== 'none' && (
         <>
           <Pressable
             style={[styles.button, styles.googleButton]}

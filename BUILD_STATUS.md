@@ -17,6 +17,8 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S0.2 | Auth end-to-end (Firebase → resource server → Traveler) | ✅ | [spec](docs/plans/S0.2-auth-end-to-end/spec.md) |
 | S0.3 | Create and view an Itinerary (first domain slice, guard included) | ✅ | [spec](docs/plans/S0.3-create-view-itinerary/spec.md) |
 | S0.4 | Backend to Railway (dev) + founder preview + release train *(re-sliced 2026-07-16; **preprod/prod + promotion deferred**, Play track parked — both backlog)* | ✅ | [spec](docs/plans/S0.4-backend-prod-founder-preview/spec.md) |
+| S0.5 | Founder preview polish + physical-phone sideload *(backlog pull 2026-07-17 — cosmetic Google button on the preview + the deferred S0.4 sideload sub-AC)* | ✅ | [spec](docs/plans/S0.5-founder-preview-polish/spec.md) |
+| S0.6 | Functional Google sign-in on the founder preview *(raised 2026-07-17 — founder reversal of S0.4's deferral: the preview should work, not just look right; S0.5's tri-state lands it)* | ⬜ | — |
 | **Epic 1 — Collaborative planning** | | | | |
 | S1.1 | Workspace forms around an itinerary (creator = owner, atomic; backfills workspaces for pre-E1 itineraries — ADR-011) | ⬜ | — |
 | S1.2 | Email invite → accept → member *(resolves reg. #12)* | ⬜ | — |
