@@ -11,7 +11,17 @@ import { join } from 'path';
  */
 
 const MOBILE_ROOT = join(__dirname, '..');
-const ALLOWED_TO_FETCH = join('src', 'api', 'apiClient.ts');
+
+// The files permitted to touch the network directly. ADR-001's rule is "no raw network in UI /
+// logic code — go through a typed gateway"; these ARE the typed gateways, so the rule is about
+// keeping the list short and deliberate, not empty. `apiClient` is our backend gateway;
+// `firebaseWebRest` is the web preview's auth gateway (the Identity Toolkit REST calls the Firebase
+// JS SDK would otherwise have made — S0.4, dropped because the SDK's auth registration is
+// tree-shaken on web). Adding a file here is a real decision, which is the point.
+const ALLOWED_TO_FETCH = [
+  join('src', 'api', 'apiClient.ts'),
+  join('src', 'auth', 'firebaseWebRest.ts'),
+];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -29,7 +39,7 @@ describe('the repository layer is the only path to the network (ADR-001)', () =>
     expect(files.length).toBeGreaterThan(3);
   });
 
-  it.each(files.filter((f) => !f.endsWith(ALLOWED_TO_FETCH)))(
+  it.each(files.filter((f) => !ALLOWED_TO_FETCH.some((allowed) => f.endsWith(allowed))))(
     'no raw fetch/XHR in %s',
     (file) => {
       const source = readFileSync(file, 'utf8');
@@ -114,7 +124,11 @@ describe('the Firebase SDK lives only in the auth seam (S0.2 design, S0.4 depend
     join('src', 'repositories', 'authRepository.web.ts'),
     join('src', 'auth', 'firebaseTokenSource.native.ts'),
     join('src', 'auth', 'firebaseTokenSource.web.ts'),
-    join('src', 'auth', 'firebaseWebApp.ts'),
+    // The web preview's auth is the Identity Toolkit REST API, not the Firebase JS SDK (S0.4) — so
+    // this file imports no `firebase/*` at all and the SDK-import ban below is vacuous for it. It
+    // stays on the allowlist because it is still the auth seam: the one place the web preview's
+    // credential flow lives.
+    join('src', 'auth', 'firebaseWebRest.ts'),
     // Google's SDK is not Firebase's, but it is the same kind of doorway plumbing and the same
     // argument applies to it.
     join('src', 'auth', 'googleSignInConfig.ts'),

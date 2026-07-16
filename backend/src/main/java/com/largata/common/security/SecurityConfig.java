@@ -46,6 +46,16 @@ public class SecurityConfig {
             EnvelopeAccessDeniedHandler accessDeniedHandler)
             throws Exception {
         return http
+                // CORS wired into the security chain, not the MVC layer (S0.4). This uses the
+                // CorsConfigurationSource bean if one exists — DevCorsConfig provides it on the dev
+                // profile only, so prod/preprod (no profile, no bean) get no CORS filter and no CORS,
+                // the invariant ProdCorsAbsentIT guards. It must live here rather than in a
+                // WebMvcConfigurer because a browser's preflight OPTIONS to a secured endpoint
+                // carries no token: at the MVC layer it is rejected 401 by this very chain before any
+                // CORS header is added, and the browser blocks the real request. Spring Security's
+                // own CORS filter answers the preflight with a 200 *before* authentication. Native
+                // clients never exercise this (no CORS); it surfaced only once the web preview did.
+                .cors(Customizer.withDefaults())
                 // No browser session, no login form, no CSRF token: the client is a native app
                 // holding a bearer token, and every request stands alone. CSRF protects
                 // cookie-authenticated flows; there are none here, and leaving it on would reject

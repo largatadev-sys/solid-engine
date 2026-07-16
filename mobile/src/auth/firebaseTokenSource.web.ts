@@ -1,21 +1,15 @@
 import { setTokenSource } from './tokenSource';
-import { webAuth } from './firebaseWebApp';
+import { getValidIdToken } from './firebaseWebRest';
 
 /**
- * The web twin of `firebaseTokenSource.native.ts` — founders' preview only (S0.4).
+ * The web twin of `firebaseTokenSource.native.ts` — founders' preview only (S0.4), on the REST
+ * session store rather than the Firebase JS SDK.
  *
- * Same contract, same reasoning: `getIdToken()` per request rather than a cached copy, because the
- * SDK holds the token, knows its expiry, and refreshes it transparently. Caching here would send a
- * token the SDK had already replaced — the "works until the tab has been open an hour" bug.
- *
- * The only real difference from native is shape: the JS SDK exposes `currentUser` on the `Auth`
- * instance and `getIdToken()` as a method on the user, where RNFirebase hangs both off `auth()`.
- * Everything above `setTokenSource` is identical and unaware.
+ * Same contract: a valid ID token per request, refreshed on demand and never cached past its life.
+ * `getValidIdToken` owns the refresh (it exchanges the refresh token at the securetoken endpoint
+ * when the current token is near expiry), so this stays a one-liner and everything above
+ * `setTokenSource` is identical to native and unaware of the platform.
  */
 export function installFirebaseTokenSource(): void {
-  setTokenSource(async () => {
-    const user = webAuth().currentUser;
-    if (user === null) return null;
-    return user.getIdToken();
-  });
+  setTokenSource(() => getValidIdToken());
 }

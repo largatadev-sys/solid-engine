@@ -27,8 +27,10 @@ COPY . .
 # does nothing" that costs an afternoon to disbelieve.
 #
 # None are secrets: the Firebase web apiKey identifies the project and authorizes nothing (it ships
-# in every web bundle by construction, like the OAuth client id in every APK). What guards the
-# project is the authorized-domains list, not this value. See mobile/src/auth/firebaseWebApp.ts.
+# in every web bundle by construction, like the OAuth client id in every APK). The preview signs in
+# via the Identity Toolkit REST API (mobile/src/auth/firebaseWebRest.ts), which uses this key as its
+# `key=` query param; the other FIREBASE_* values are SDK config the REST path does not need, kept
+# here only so one env surface serves both the preview and any future SDK use.
 ARG EXPO_PUBLIC_API_BASE_URL
 ARG EXPO_PUBLIC_FIREBASE_API_KEY
 ARG EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
