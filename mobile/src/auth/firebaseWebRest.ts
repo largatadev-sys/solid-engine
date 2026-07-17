@@ -11,14 +11,19 @@
  * register and no bundler behaviour to fight. For a throwaway founder preview (spec: interim, never
  * device-AC evidence) this is more robust than the SDK, not less.
  *
- * <p><strong>What it is not.</strong> This is the preview only. The shipping app is the native
- * build, which uses `@react-native-firebase` (a real native SDK) — untouched by any of this. The
- * tokens minted here are ordinary Firebase ID tokens; the backend validates them exactly as it
- * validates the native app's (ADR-006), so nothing downstream knows or cares that the preview took
- * the REST path.
+ * <p><strong>What it is not.</strong> This is the preview's transport, not the shipping app's: the
+ * APK uses `@react-native-firebase` (a real native SDK), untouched by any of this. The tokens minted
+ * here are ordinary Firebase ID tokens; the backend validates them exactly as it validates the
+ * native app's (ADR-006), so nothing downstream knows or cares that the preview took the REST path.
+ *
+ * <p><strong>Two doorways since S0.6</strong> — {@link signInWithPassword} and
+ * {@link signInWithGoogleIdToken} — and everything after the credential is shared: one session
+ * store, one refresh, one listener set. Adding Google cost an endpoint, not a mechanism, which is
+ * what the S0.4 pivot bought without knowing it would be collected this soon.
  *
  * <p>The only config it needs is the Firebase Web API key (the `key=` query param). authDomain,
- * appId, etc. are SDK concerns and gone.
+ * appId, etc. are SDK concerns and gone. (The Google *client id* belongs to the GIS loader, not
+ * here — this module never talks to Google directly, only to Firebase about Google.)
  */
 
 import type { AuthUser } from '../repositories/authContract';
@@ -99,6 +104,22 @@ function mapRestError(restMessage: string): string {
       return 'auth/invalid-credential';
     case 'TOO_MANY_ATTEMPTS_TRY_LATER':
       return 'auth/too-many-requests';
+    // signInWithIdp's own vocabulary (S0.6). A rejected Google credential is not a wrong password:
+    // it means the token was malformed, expired, or minted for another project — a wiring fault or
+    // a stale popup, never something the founder typed. They all land on the generic message; what
+    // matters is that they arrive as `auth/*` codes rather than leaking REST strings into the UI.
+    case 'INVALID_IDP_RESPONSE':
+    case 'INVALID_CREDENTIAL_OR_PROVIDER_ID':
+      return 'auth/invalid-credential';
+    // The account exists with a different provider and Firebase's account-linking policy refused.
+    // Not reachable under the default one-account-per-email regime (Google simply takes over the
+    // account — the eviction S0.6 accepted), but the code exists and a silent `auth/internal-error`
+    // would be a worse diagnosis than an honest one.
+    case 'FEDERATED_USER_ID_ALREADY_LINKED':
+    case 'EMAIL_EXISTS_DIFFERENT_CREDENTIAL':
+      return 'auth/account-exists-with-different-credential';
+    case 'USER_DISABLED':
+      return 'auth/user-disabled';
     default:
       return 'auth/internal-error';
   }
@@ -159,6 +180,33 @@ export async function signInWithPassword(email: string, password: string): Promi
   const data = await post(`${IDENTITY_BASE}:signInWithPassword`, {
     email,
     password,
+    returnSecureToken: true,
+  });
+  storeFromAuthResponse(data);
+}
+
+/**
+ * Signs in with a Google ID token obtained in the browser — the preview's Google doorway (S0.6).
+ *
+ * <p>The token comes from Google Identity Services (see `googleIdentityServices.ts`); this exchanges
+ * it for a Firebase session at `accounts:signInWithIdp` and stores that session through exactly the
+ * same path as {@link signInWithPassword}. That sharing is the point: persistence, refresh, and the
+ * auth-state listeners were all built at S0.4 and none of them need to know a second doorway exists.
+ *
+ * <p><strong>The `postBody` quirk:</strong> Identity Toolkit takes the IdP credential as a
+ * *form-encoded string inside a JSON field*, and it must name the provider — a bare token cannot
+ * tell Google which IdP minted it. `requestUri` must be an origin authorized on the OAuth client;
+ * Firebase rejects the exchange otherwise, which is why every new origin needs registering.
+ *
+ * <p><strong>What comes back is unremarkable, deliberately:</strong> an ordinary Firebase ID token
+ * for the same UID the native app's Google sign-in would produce (same project, same account). The
+ * backend cannot tell the doorways apart and does not need to — ADR-006's whole point, and the
+ * reason this story changes no backend code.
+ */
+export async function signInWithGoogleIdToken(idToken: string, requestUri: string): Promise<void> {
+  const data = await post(`${IDENTITY_BASE}:signInWithIdp`, {
+    postBody: `id_token=${encodeURIComponent(idToken)}&providerId=google.com`,
+    requestUri,
     returnSecureToken: true,
   });
   storeFromAuthResponse(data);

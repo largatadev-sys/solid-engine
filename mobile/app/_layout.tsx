@@ -23,10 +23,11 @@ installFirebaseTokenSource();
 // Gated on the capability, not on `Platform.OS === 'web'`: the question here is "does this build
 // have a Google doorway to configure", and the platform is only today's reason for the answer.
 //
-// `'full'` exactly — not "anything truthy". The web preview declares `'cosmetic'` (S0.5): it renders
-// the button but has no doorway behind it, and running this there would be a startup crash
-// (`installGoogleSignIn` throws when the client id is unset) — a white screen in exchange for a
-// button that is only meant to be looked at. This is the line the tri-state exists to make sayable.
+// `'full'` exactly — not "anything truthy". Both platforms declare it since S0.6, and what this
+// installs forks beneath the call: the native Google SDK on the app, the GIS script on the web
+// preview. The gate stays, what it gates forks — which is why the flag flipped and this line did
+// not. `'cosmetic'` (S0.5's web preview: a rendered button with nothing behind it) is still
+// meaningful and still correctly skipped here; nothing declares it today.
 if (authCapabilities.google === 'full') {
   installGoogleSignIn();
 }

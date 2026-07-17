@@ -80,6 +80,65 @@ Two rungs above it, each proving something the one below cannot:
 
 The generalisation this repo keeps re-learning: **verify at the layer that ships, not the layer that is convenient.** Device ACs are closed on a device (S0.2's `getTokens()` was invisible to every green test); release-signed behaviour is proven on a release-signed build (S0.5's Google sign-in); server behaviour is proven on the real server.
 
+## Running the local verification rig (the recipe, learned the hard way at S0.6)
+
+**Every story that touches the mobile web surface or the native app runs this. It is written down because S0.6 rediscovered all of it from scratch — an hour of plumbing, none of it the story's actual work.** Ports are not arbitrary: the preview's port is *pinned* by two independent registrations, so change Metro's instead.
+
+**The port map, and why it cannot be rearranged:**
+
+| Port | What | Why it is fixed |
+|---|---|---|
+| 8080 | backend (docker compose) | `mobile/.env` and the container build arg point at it |
+| **8081** | **preview container** | **Pinned twice**: the backend's dev CORS allowlist (`docker-compose.yml` `LARGATA_CORS_ALLOWED_ORIGINS` = 8081/8082 only) *and* the Google OAuth client's authorized JavaScript origins (console-registered — S0.6). Move the preview and Google refuses to render the button *and* the API preflights 403. |
+| 8082 | Metro (`npx expo start --port 8082`) | The one that gives. Metro defaults to 8081 and *will* collide with the preview. |
+
+```bash
+# 1. Full stack (fresh DB every time — that is the point)
+docker compose up -d --build
+curl -s http://localhost:8080/v1/health          # {"status":"ok"}
+
+# 2. Preview container — the TRUE build path (npm ci + export inside the image) and TRUE server
+cd mobile && set -a && . ./.env && set +a
+docker build -f Dockerfile.web-preview \
+  --build-arg EXPO_PUBLIC_API_BASE_URL="http://localhost:8080" \
+  --build-arg EXPO_PUBLIC_FIREBASE_API_KEY="$EXPO_PUBLIC_FIREBASE_API_KEY" \
+  --build-arg EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN="$EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN" \
+  --build-arg EXPO_PUBLIC_FIREBASE_PROJECT_ID="$EXPO_PUBLIC_FIREBASE_PROJECT_ID" \
+  --build-arg EXPO_PUBLIC_FIREBASE_APP_ID="$EXPO_PUBLIC_FIREBASE_APP_ID" \
+  --build-arg EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID="$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID" \
+  -t largata-preview:local .
+docker run -d --name largata-preview -p 8081:8080 -e PORT=8080 largata-preview:local
+
+# 3. Native dev build on the emulator
+export ANDROID_HOME="$LOCALAPPDATA/Android/Sdk"      # REQUIRED — see gotcha below
+export PATH="$ANDROID_HOME/platform-tools:$PATH"     # REQUIRED — else install fails after a green build
+npx expo run:android                                 # or: gradlew app:assembleDebug + adb install
+npx expo start --port 8082                           # NOT 8081 (preview owns it)
+```
+
+**The traps, each of which cost real time at S0.6:**
+
+- **`adb` is not on the Git Bash PATH and `ANDROID_HOME` is unset.** Gradle fails with *"SDK location not found"*, which reads like a broken toolchain but is a missing shell variable. Do **not** "fix" it by writing `android/local.properties` — that tree is generated and gitignored (CNG), so the edit vanishes at the next prebuild. Export `ANDROID_HOME` instead. Separately, `expo run:android` will **compile successfully and then fail at install** if `adb` is not on PATH — the error is a `spawn ENOENT` deep in an ADBServer stack trace, nowhere near the word "adb".
+- **Git Bash rewrites device paths.** `adb push x /data/local/tmp/y` becomes `C:/Program Files/Git/data/local/tmp/y` and fails with `secure_mkdirs() failed`. Prefix with `MSYS_NO_PATHCONV=1`.
+- **`adb reverse` can be listed and inert.** `adb reverse --list` showed the tunnel while it carried zero traffic (the adb daemon had died — `adb kill-server && adb start-server` reveals it with "daemon not running"). Test the far end, never the plumbing: `adb shell "echo -e 'GET /status HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' | nc localhost 8081 | head -2"`. If the tunnel is dead, point the app at Metro directly via `10.0.2.2` (the emulator's host-loopback alias) by pushing RN's dev pref:
+  `<map><string name="debug_http_host">10.0.2.2:8082</string></map>` → `/data/data/com.largata.app/shared_prefs/com.largata.app_preferences.xml` (via `adb push` + `run-as … cp`).
+- **`INSTALL_FAILED_UPDATE_INCOMPATIBLE`** means the emulator holds a build signed with a different key (e.g. a release APK from sideload testing). `adb uninstall com.largata.app` first — emulator state is disposable.
+- **Metro serves `expo-router/entry.bundle`, not `index.bundle`.** Probing `/index.bundle` returns 404 and looks like a broken Metro; it is a wrong probe. Check `/node_modules/expo-router/entry.bundle?platform=android&dev=true` → 200.
+- **`expo start` in non-interactive mode silently skips its dev server on a port clash** ("Port 8082 is being used… Input is required… Skipping dev server"). It exits *zero*, and `/status` still answers from the *older* instance — so the port looks healthy while nothing is bundling.
+- **Evidence, not vibes:** the native Google AC is closed by logcat showing `SignInHubActivity` → GMS `SignInActivity` (the real picker), and a screenshot. The web AC is closed by a *real browser* (headless Chrome over the DevTools protocol; `ws` is already a transitive dep — no new dependency needed) plus `Traveler provisioned` in the backend log and the DB going 0 → 1. **Routing is not a round-trip** (S0.5).
+
+## Google Cloud console: the OAuth client the preview needs (S0.6)
+
+**The web preview's Google button needs an *authorized JavaScript origin* per browser origin, registered on the OAuth client — and this is the first story that reaches past Firebase's abstraction into the Cloud project underneath it.** S0.2–S0.5 never needed the Cloud console because Firebase managed the client invisibly. Landmines, all hit at S0.6:
+
+- **A Firebase project may not appear in the Cloud console's project picker until you enter it once from Firebase** (Firebase console → gear → *view on Google Cloud*). Before that it looks like the project does not exist — and the console will happily offer to *create* one, appending a suffix because your real project already owns the name. **S0.6 configured a consent screen and an OAuth client in a phantom `largata-dev-502703` before noticing.** Nothing would ever have worked, with no error saying why: the origins simply would not apply. **Identify projects by NUMBER, never name — the real one is `309534715609` (`largata-dev`).** Same principle as ADR-006's environment identity: the name is a label, the number is the identity.
+- **The client to edit is `309534715609-7jjk1jq73igts…`** — the `client_type: 3` (web) entry in `mobile/google-services.json`, and the value of `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`. The project contains ~5 auto-created clients (3 web, 2 Android); **edit only that one, delete none of the others.** The Android ones carry the SHA-1s that make native sign-in work; the other web ones are Firebase-managed. Editing a sibling leaves Google returning `400` for *our* client with no error saying "wrong client".
+- **Registered origins (dev):** `https://founders.largata.com`, `http://localhost:8081`, `http://localhost`. Bare host and host:port are **distinct entries**. Redirect URIs stay empty — GIS's button flow delivers the credential to a JS callback and never redirects.
+- **Propagation is 5 minutes to a few hours.** Until it lands, the button silently does not render — clean console, no page errors — which reads exactly like a code bug. **Do not probe this with `curl`:** S0.6 built a curl-based watcher on `/gsi/button` and it reported **400 indefinitely, long after the button was demonstrably working in a browser** — a bare request lacks the context the endpoint expects, so its status says nothing about origin registration. A check that contradicts the running system is worse than no check. **Load the page in a real browser** (headless Chrome over the DevTools protocol; `ws` is already a transitive dep) and look for: a `<iframe>` whose src contains `accounts.google.com`, `/gsi/button` → **200** in the network log, and zero console errors.
+- **Per project, not per app:** consent screen, OAuth clients, and origins are all per Cloud project. `largata-prod` will need its own of each, and a different `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — that work belongs to the parked prod-rung story.
+- **Consent screen in "Testing" publishing status only admits accounts on its test-user list.** Add each founder's Gmail before a demo, or they hit access-denied and it reads as our bug.
+- **`mobile/google-services.json` is a point-in-time snapshot.** It carries only the **debug** SHA-1 (`5e8f1606…`); the release key (`ff05c732…`, registered at S0.5) exists in the console but not in that file. The console is authoritative — do not diagnose from the JSON alone.
+
 ## Gotchas (grows during the build)
 
 - **The two release trains need different JDKs on one machine: backend = Java 25, Android = Java 21.** `JAVA_HOME` points at JDK 25 (S0.1's backend requirement), and the Android Gradle Plugin does not support it — the build dies at `configureCMakeDebug` reporting only *"WARNING: A restricted method in java.lang.System has been called"*, a JDK warning masquerading as the whole error, which reads like a broken toolchain rather than a version mismatch. **Already fixed and should stay fixed:** `mobile/plugins/withAndroidJdk.js` pins `org.gradle.java.home` to Android Studio's bundled JBR at every prebuild (override with `LARGATA_ANDROID_JAVA_HOME`). Never "fix" this by editing `android/gradle.properties` — that directory is generated and gitignored, so the edit vanishes at the next prebuild and the inscrutable CMake error returns. Hit at S0.2.

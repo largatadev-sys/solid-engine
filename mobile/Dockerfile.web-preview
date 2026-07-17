@@ -31,21 +31,36 @@ COPY . .
 # via the Identity Toolkit REST API (mobile/src/auth/firebaseWebRest.ts), which uses this key as its
 # `key=` query param; the other FIREBASE_* values are SDK config the REST path does not need, kept
 # here only so one env surface serves both the preview and any future SDK use.
+#
+# GOOGLE_WEB_CLIENT_ID is the Google doorway (S0.6): the same web OAuth client the native app uses
+# for its token exchange, used here by Google Identity Services to mint the credential in the first
+# place. Also public by construction. What actually guards it is the client's authorized-JavaScript-
+# origins list in the Google Cloud console — so every origin this image is served from must be
+# registered there (founders.largata.com and the local preview origin), or GIS refuses to render.
 ARG EXPO_PUBLIC_API_BASE_URL
 ARG EXPO_PUBLIC_FIREBASE_API_KEY
 ARG EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
 ARG EXPO_PUBLIC_FIREBASE_PROJECT_ID
 ARG EXPO_PUBLIC_FIREBASE_APP_ID
+ARG EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 ENV EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL \
     EXPO_PUBLIC_FIREBASE_API_KEY=$EXPO_PUBLIC_FIREBASE_API_KEY \
     EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=$EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN \
     EXPO_PUBLIC_FIREBASE_PROJECT_ID=$EXPO_PUBLIC_FIREBASE_PROJECT_ID \
-    EXPO_PUBLIC_FIREBASE_APP_ID=$EXPO_PUBLIC_FIREBASE_APP_ID
+    EXPO_PUBLIC_FIREBASE_APP_ID=$EXPO_PUBLIC_FIREBASE_APP_ID \
+    EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 
 # Fail the build if the API base URL is missing rather than shipping a bundle that quietly points at
 # 10.0.2.2 (apiClient's emulator default) — a preview that loads and then cannot reach anything is a
 # far more confusing artifact than a build that refuses to exist.
 RUN test -n "$EXPO_PUBLIC_API_BASE_URL" || (echo "EXPO_PUBLIC_API_BASE_URL is required" && exit 1)
+
+# Same stance for the Google client id (S0.6), for a sharper reason: without it the app *throws at
+# startup* — installGoogleSignIn() fails loudly by design, which on web means a white screen before
+# React renders. This project has paid for enough white screens (S0.4's whole REST pivot) to prefer
+# a build that refuses to exist over one that dies on load.
+RUN test -n "$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID" || \
+    (echo "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is required (S0.6: the web Google doorway)" && exit 1)
 
 RUN npx expo export --platform web
 

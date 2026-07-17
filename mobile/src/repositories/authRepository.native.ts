@@ -40,7 +40,13 @@ export function configureGoogleSignIn(webClientId: string): void {
   GoogleSignin.configure({ webClientId });
 }
 
-/** Android has the native account picker, so the doorway is real; the web twin is `'cosmetic'`. */
+/**
+ * Android has the native account picker, so the doorway is real.
+ *
+ * The web twin also declares `'full'` since S0.6 — a *different* doorway (Google Identity Services
+ * in the browser), which is exactly what this flag does and does not promise: a doorway exists, not
+ * that it is this one's.
+ */
 export const authCapabilities: AuthCapabilities = { google: 'full' };
 
 export const authRepository = {

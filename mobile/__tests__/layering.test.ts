@@ -132,7 +132,17 @@ describe('the Firebase SDK lives only in the auth seam (S0.2 design, S0.4 depend
     // Google's SDK is not Firebase's, but it is the same kind of doorway plumbing and the same
     // argument applies to it.
     join('src', 'auth', 'googleSignInConfig.ts'),
+    // The web preview's Google credential source (S0.6). It imports no SDK — GIS is a runtime CDN
+    // script, never a module — so the ban below is vacuous for it, exactly as it is for
+    // firebaseWebRest. It is on the seam because that is what it is: the one place the browser's
+    // credential flow lives.
+    join('src', 'auth', 'googleIdentityServices.ts'),
   ];
+  // Note: `GoogleSignInButton.native.tsx` was briefly on this list (S0.6, when it rendered the
+  // library's `GoogleSigninButton`) and came back off when that button was replaced by our own pill
+  // — it imports no SDK now, so an entry would be a lie: the allowlist would claim a seam file that
+  // has nothing to seal, and the "seam files exist" guard below would keep passing while the rule
+  // quietly covered one more file than it needed to. The seam is back to auth modules only.
 
   const outsideTheSeam = [
     ...sourceFiles(join(MOBILE_ROOT, 'app')),

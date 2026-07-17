@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { GoogleSignInButton } from '../src/components/GoogleSignInButton';
 import {
   AuthCancelled,
   AuthError,
@@ -64,29 +65,31 @@ export default function SignInScreen() {
 
       {/*
         The button and its divider stand or fall together on the capability — rendered unless it is
-        `'none'`. Note what this screen deliberately does not ask: whether the doorway *works*. On
-        the founders' preview it is `'cosmetic'` (S0.5), and a tap reaches the repository's message
-        through the same error path as any other failure — so nothing here needs a special case, and
-        the button looks exactly like the app's.
+        `'none'`. Note what this screen deliberately does not ask: whether the doorway *works*, or
+        which platform it is on. Both were `'full'` by S0.6, and this condition did not change when
+        web went from `'cosmetic'` to a real doorway — the tri-state's whole purpose.
 
-        Asking the capability rather than `Platform.OS` keeps the screen honest about what it wants
-        to know: whether to offer this doorway, not which OS it is running on. The real web surface
-        (backlog) builds the browser flow and moves web to `'full'`; this screen will not notice.
+        What *is* new at S0.6: the button itself is a platform-forked component, because the two
+        doorways have different shapes. Native pulls (onPress → await → done); web pushes (GIS owns
+        the click and hands a credential to a callback). The screen passes the same props to both and
+        stays ignorant of which it got — the fork lives at the component seam, like the repository's.
+        See `googleSignInButtonContract.ts` for why every prop goes to both sides.
       */}
       {authCapabilities.google !== 'none' && (
         <>
-          <Pressable
-            style={[styles.button, styles.googleButton]}
-            onPress={() => void run('google', () => authRepository.signInWithGoogle())}
-            disabled={busy !== 'idle'}
-            accessibilityRole="button"
-          >
-            {busy === 'google' ? (
-              <ActivityIndicator color={colors.textPrimary} />
-            ) : (
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
-            )}
-          </Pressable>
+          <View style={styles.googleSlot}>
+            <GoogleSignInButton
+              onPress={() => void run('google', () => authRepository.signInWithGoogle())}
+              onStart={() => {
+                setBusy('google');
+                setMessage(null);
+              }}
+              onSettle={() => setBusy('idle')}
+              onError={setMessage}
+              disabled={busy !== 'idle'}
+              busy={busy === 'google'}
+            />
+          </View>
 
           <Text style={styles.divider}>or</Text>
         </>
@@ -197,8 +200,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
   buttonText: { ...typography.action, color: colors.textOnAccent },
-  googleButton: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
-  googleButtonText: { ...typography.action, color: colors.textPrimary },
+  // Google's button sizes itself (both platforms render Google's own component since S0.6), so this
+  // slot only owns the space around it — never its appearance. The old `googleButton`/
+  // `googleButtonText` styles are gone with the hand-styled pill they described.
+  googleSlot: { width: '100%', maxWidth: FIELD_MAX_WIDTH, alignItems: 'center', marginTop: spacing.xs },
   divider: { ...typography.caption, color: colors.textSecondary, marginVertical: spacing.md },
   links: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
   link: { ...typography.caption, color: colors.accent, fontWeight: '600' },

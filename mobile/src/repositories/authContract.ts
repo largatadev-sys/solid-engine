@@ -2,16 +2,17 @@
  * The auth boundary's shared contract — the half that is not platform-specific.
  *
  * <p><strong>Why this file exists (S0.4).</strong> `authRepository` has two implementations:
- * `.native.ts` on the RNFirebase SDK (the app that ships) and `.web.ts` on the Firebase JS SDK (the
- * founders' preview — interim, per the S0.4 spec). Metro picks one per platform, and callers cannot
- * tell which they got. The error *types*, though, must not fork: a screen does `error instanceof
- * AuthError`, and two copies of that class — one per platform file — would be two different classes,
- * so the check would silently fail on whichever build did not define the one being thrown. Types and
- * errors live here, once; only the SDK calls fork.
+ * `.native.ts` on the RNFirebase SDK (the app that ships) and `.web.ts` on Firebase's Identity
+ * Toolkit REST API (the founders' preview — the JS SDK was dropped at S0.4 when its auth
+ * registration proved un-bundleable; see `firebaseWebRest.ts`). Metro picks one per platform, and
+ * callers cannot tell which they got. The error *types*, though, must not fork: a screen does
+ * `error instanceof AuthError`, and two copies of that class — one per platform file — would be two
+ * different classes, so the check would silently fail on whichever build did not define the one
+ * being thrown. Types and errors live here, once; only the provider calls fork.
  *
  * The doorway asymmetry this encodes: Firebase owns identity uniformly (same user pool, same JWT,
  * same backend contract), but *getting* a credential is per-platform — a native account picker on
- * Android, a form on web. Everything above this seam is written once.
+ * Android, Google Identity Services or a form on web. Everything above this seam is written once.
  */
 
 import type { AuthRepository } from './authRepository';
@@ -96,22 +97,29 @@ export interface AuthUser {
  * to coincide (native: yes/yes; web: no/no). They diverge on the preview, and a boolean cannot say
  * "show it, but there is nothing behind it".
  *
- * - `'full'` — a working doorway: render the button, configure the native SDK (the shipping app).
- * - `'cosmetic'` — render the button, install nothing; a tap surfaces the repository's message. The
- *   founders' preview, which exists to show what the app looks like (S0.5). Deliberately not a dead
- *   click: a button that does nothing reads as a broken app, so `authRepository.web` throws an
- *   `AuthError` whose text says where Google *does* work, and the sign-in screen already renders it.
- * - `'none'` — no button. Nothing declares this today; it is what makes the type honest rather than
- *   a two-value enum wearing a third name, and it is what a future surface without Google would say.
+ * - `'full'` — a working doorway: render the button, install whatever that platform's doorway needs.
+ *   Both platforms since S0.6, and what they install differs (below).
+ * - `'cosmetic'` — render the button, install nothing; a tap surfaces the repository's message. This
+ *   was the founders' preview for exactly one story (S0.5), when the preview showed the app's
+ *   doorways without having them. Nothing declares it today — S0.6 gave web a real doorway — and it
+ *   stays because it is a state a surface can genuinely be in, not because it is currently occupied.
+ * - `'none'` — no button. Nothing declares this today either; it is what a future surface without
+ *   Google would say.
  *
  * The state that cannot be spelled here is the point: "working but hidden" is unrepresentable.
  *
  * Call sites ask this rather than `Platform.OS`, because their real questions are "should I render
- * this button" and "is there an SDK to configure" — the platform is only today's reason for the
- * answers. When the real web surface builds the browser doorway (backlog), web moves to `'full'`:
- * the sign-in screen will not notice, and `_layout.tsx` will need a web install path (its current
- * one configures the *native* Google SDK, which a browser has no use for) — the gate stays, what it
- * gates forks. `'full'` means "a doorway exists", never "the native SDK's doorway exists".
+ * this button" and "is there a doorway to install" — the platform is only today's reason for the
+ * answers. **S0.6 collected on that.** The web preview's browser doorway landed by moving web
+ * `'cosmetic'` → `'full'`: the sign-in screen's render condition did not change, and `_layout.tsx`'s
+ * gate did not change — only what sits behind them (the native Google SDK on the app, the GIS script
+ * on web). `'full'` means "a doorway exists", never "the native SDK's doorway exists"; the gate
+ * stays, what it gates forks.
+ *
+ * What S0.6 *did* change is one layer up, and the type could not have prevented it: the two doorways
+ * have different control-flow shapes (native pulls, web pushes — GIS owns its own click), so the
+ * button itself is now a platform-forked component. A capability flag can say whether a doorway
+ * exists; it cannot make two mechanisms the same shape.
  */
 export type AuthDoorway = 'full' | 'cosmetic' | 'none';
 
