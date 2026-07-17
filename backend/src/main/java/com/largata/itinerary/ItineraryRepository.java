@@ -33,10 +33,12 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
     List<Itinerary> findPageAfter(@Param("ownerId") UUID ownerId, @Param("cursor") UUID cursor, Limit limit);
 
     /**
-     * Ownership, answered without loading the aggregate — this is the guard's hot path (ADR-011):
-     * every read of a private itinerary runs it first.
+     * The guard-authorized read (see {@link ItineraryService#view}) — by {@code (id, ownerId)}
+     * rather than id alone, so even a mistakenly-constructed membership cannot widen what comes back.
+     *
+     * <p>Its sibling {@code existsByIdAndOwnerId} lived here until S1.1 and is gone with that story:
+     * it existed for S0.3's owner-based resolver, and the guard's hot path is now {@code
+     * MembershipRepository.findRole} in the workspace module (ADR-011's swap).
      */
-    boolean existsByIdAndOwnerId(UUID id, UUID ownerId);
-
     Optional<Itinerary> findByIdAndOwnerId(UUID id, UUID ownerId);
 }
