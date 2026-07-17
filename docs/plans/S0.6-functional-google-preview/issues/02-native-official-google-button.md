@@ -1,0 +1,33 @@
+# 02 — Native: swap the placeholder pill for Google's official button
+
+**What to build:** `GoogleSignInButton.native.tsx` (extracted verbatim in ticket 01) renders **`GoogleSigninButton`** from `@react-native-google-signin/google-signin` instead of the themed `Pressable` — the owner's parity ruling: *"web and mobile identical as much as possible, except native gestures and native-only functions."*
+
+1. **Swap the visual, keep the flow.** The component renders the library's `GoogleSigninButton` (pick `size`/`color` variants that sit best on the current screen — placeholder-grade judgment, the palette story owns the real call). `onPress` still receives the screen's handler: `run('google', …)` → `authRepository.signInWithGoogle()` → account picker. **No repository, layout, or flow change of any kind** — this ticket touches one component file.
+2. **Busy/disabled:** the library button has a `disabled` prop — wire it to the same `busy !== 'idle'` condition the Pressable used. The busy spinner treatment may need adjusting (the library button renders its own content); acceptable to show the button disabled while busy rather than replacing its content.
+3. **Tests:** typecheck + Jest ripple (any snapshot/render test touching the sign-in screen). No new native module — the library is already a dependency; no prebuild, no config plugin, no SHA-1 implication.
+4. **Emulator smoke (the evidence bar, deliberately not a device):** button renders on the sign-in screen; tap opens Google's account picker (`SignInHubActivity` in logcat, S0.5 precedent). No release-APK re-proof — signing, SHA-1, and the token flow are untouched, so S0.5's physical-phone evidence stands.
+
+**Expectation on the record:** the native `GoogleSigninButton` and the web GIS button are both Google-branded but not pixel-identical — "as much as possible" is the standard (spec).
+
+**Blocked by:** 01 (the component extraction lands there).
+
+**Status:** done (2026-07-17) — emulator smoke green; the library button was replaced after owner review (see comments)
+
+- [x] `GoogleSignInButton.native.tsx` renders the library's `GoogleSigninButton` (`Size.Wide`, `Color.Light`); `onPress` still runs the screen's `run('google', …)` → `authRepository.signInWithGoogle()`
+- [x] `disabled` wired to `busy !== 'idle'`
+- [x] No repository, layout, or flow change — `authRepository.native.ts`'s only edit is a comment the story falsified
+- [x] Typecheck clean · 240/240 Jest · **Android bundle exports** (the import resolves; Metro is happy)
+- [x] **Emulator smoke (done 2026-07-17, agent-run, owner-reviewed):** dev build installed on `emulator-5554` (a real APK — `installerPackageName=null`, not Expo Go, which is present on the device but unused); button renders; tap launches `SignInHubActivity` → GMS `auth.api.signin.ui.SignInActivity` — Google's real picker, showing "Choose an account to continue to **Largata**". Re-proven after the button was redrawn (below).
+- [x] **Owner review of the result → the library button was replaced** (see comments)
+
+## Comments
+
+**2026-07-17 — the busy spinner is gone on native, and that is sanctioned but worth stating.** The old hand-styled `Pressable` swapped in an `ActivityIndicator` while `busy === 'google'`. The library's button renders its own content and offers no slot for one, so it now shows *disabled* while busy — which this ticket's step 2 explicitly permits ("acceptable to show the button disabled while busy rather than replacing its content"). Recorded because the spec line "only the resting button's pixels change" is now slightly inaccurate: the *busy* pixels changed too. The flow itself is genuinely untouched.
+
+**2026-07-17 — evidence bar, deliberately not a device.** Signing, SHA-1, and the token flow are unchanged, so S0.5's physical-phone proof stands and no release-APK re-build is needed. What the Android *bundle export* proves is narrow but real: the import resolves and the component bundles. The picker opening is the emulator's job — the one thing no test here can establish, and the reason this ticket did not close on green.
+
+**2026-07-17 — the owner looked at it, and the library's button was wrong: replaced with our own pill.** This ticket's premise was "render Google's official `GoogleSigninButton`, per the parity ruling." Seen on the emulator, it renders Google's **older** button spec — square corners, heavy drop shadow, "Sign in with Google" — directly above our flat pill Sign in button. Two eras, eight pixels apart. **And it inverted the ruling it was meant to serve:** GIS draws a *flat pill* reading *"Continue with Google"* on web, so shipping the library button made the two surfaces **less** alike, not more. The library exposes only `Size` and `Color` — no radius, no elevation, no wording — so this was not tunable; it was the wrong component.
+
+**Resolution (owner-approved):** `GoogleSignInButton.native.tsx` now draws our own pill carrying **Google's own unmodified mark** (`assets/google-g-logo.png`, downloaded from Google's identity branding assets), matching the web GIS button's shape, wording, and flatness. Google's branding guidelines explicitly permit a custom button on those conditions (unmodified mark, approved wording, adequate size) — this is sanctioned, not a workaround. **The flow is still untouched** (`onPress` → `run('google', …)` → picker), re-proven on the emulator after the change. Two side effects worth recording: the **busy spinner is back** (the library button had no slot for one — this ticket's step 2 had accepted its loss; a new `busy` prop on the contract restores it, distinct from `disabled`), and `GoogleSignInButton.native.tsx` came **off** the `layering.test.ts` SDK allowlist, since it no longer imports the SDK at all — the seam is back to auth modules only, as it was before this ticket.
+
+**A bug avoided on the way, worth recording because it is this repo's recurring shape.** The mark was first embedded as an **SVG data URI** — elegant, no asset file, no dependency. It would have rendered **blank on Android**: RN's `<Image>` uses Fresco, which has no SVG decoder, while web's `<img>` renders SVG fine. Green on the platform that doesn't ship, invisible on the one that does — the S0.2 `getTokens()` shape exactly. Caught before it landed by asking "does `<Image>` actually decode this?" rather than by running it. `react-native-svg` was rejected as the alternative (a native module + prebuild implications for one 18px glyph); a tracked PNG in the existing `assets/` is what the repo already does for `icon.png`.

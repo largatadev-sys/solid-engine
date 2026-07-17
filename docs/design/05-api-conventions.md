@@ -25,6 +25,10 @@ _Status: **proposed — pending founder ratification.** Conventions, not per-end
 
 **Domain-rule rejections:** 400 (validation) · 403 (not permitted / not a member) · 404 (not found or hidden) · 409 (conflict, e.g. illegal state transition). Mapping from the exception taxonomy → 06b §3.
 
+**Not authenticated:** 401 — missing, expired, malformed, or badly signed credentials; `code` is **`UNAUTHENTICATED`**, one code for every flavor (the client's reaction is identical — refresh the token or go to sign-in — and finer distinctions only tell a prober which guess was warmer). Distinct from 403, which means *authenticated but not permitted*. Emitted by the security filter chain, not the exception handler — the request never reaches a controller — so it is the one envelope no `DomainException` can produce. *(Added S0.2.)*
+
+**Dependency outage:** 503 (a required dependency did not answer) — the one non-rejection status in the envelope. The `message` never names the failed dependency (topology is not public); `code` is `DEPENDENCY_UNAVAILABLE`. *(Added S0.1.)*
+
 ## The one error envelope
 
 ```json

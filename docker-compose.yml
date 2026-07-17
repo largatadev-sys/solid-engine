@@ -1,0 +1,83 @@
+# The canonical local stack (Artifact 04). `docker compose up --build` from a clean checkout is
+# the per-story verification gate — it must need nothing but Docker.
+#
+# Root-level because it spans both peers' concerns and the whole local environment.
+
+services:
+  postgres:
+    # The major is prod's, and every environment shares it (S0.4/ADR-012: Railway made the choice
+    # ours, so 17's compatibility-floor era ended). Explicit tag, never `latest`.
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-largata}
+      POSTGRES_USER: ${POSTGRES_USER:-largata}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-largata}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    # No volume, deliberately (spec Q6): data lives in the container's writable layer and dies
+    # with `docker compose down`. "Redeploy = fresh DB" by construction — no flag to remember,
+    # no cleanup step to forget. Ephemerality is a testing tool, so it lives where you test.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-largata} -d ${POSTGRES_DB:-largata}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-largata}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-largata-local-dev}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    # Container-only until S3.3 (spec Q1): no backend wiring, no bucket code, no storage client.
+    # The healthcheck is what stops the config rotting silently while nothing uses it — compose
+    # itself fails loudly if the emulator breaks.
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-largata}
+      DATABASE_USERNAME: ${POSTGRES_USER:-largata}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-largata}
+      PORT: 8080
+      # The local stack runs the dev profile, which enables browser CORS (DevCorsConfig) for
+      # React Native Web. Prod and preprod set no profile and therefore have no CORS policy —
+      # correct for a native-only client, and the reason the rule cannot leak out of the dev
+      # environment. S0.4's founders' preview is a browser client of the *deployed dev* backend, so
+      # it is served by this same profile, with its origin added there via the env-var below.
+      SPRING_PROFILES_ACTIVE: dev
+      # Exact origins only, never "*" (DevCorsConfig). Unset locally = the Expo web dev-server
+      # defaults, so `docker compose up` needs no .env; the deployed dev environment sets the
+      # preview's origin in Railway's UI.
+      LARGATA_CORS_ALLOWED_ORIGINS: ${LARGATA_CORS_ALLOWED_ORIGINS:-http://localhost:8081,http://localhost:8082,http://127.0.0.1:8081,http://127.0.0.1:8082}
+      # Which Firebase project's tokens this environment trusts (ADR-006). Stated explicitly even
+      # though application.yml defaults to the same value: an environment's identity should be
+      # readable here, not inferred from a default that happens to match. At S0.4 prod points at
+      # its own project — and preprod must point at prod's, or its prod-mirrored Travelers (keyed
+      # by Firebase UID) match nobody (spec, decision 1). Public, not a secret: the issuer and its
+      # JWKS are published by design.
+      FIREBASE_ISSUER_URI: ${FIREBASE_ISSUER_URI:-https://securetoken.google.com/largata-dev}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # The backend does not talk to MinIO yet (S3.3), but the stack contract is "the whole local
+      # environment is up" — so a broken emulator fails the stack rather than lurking.
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s

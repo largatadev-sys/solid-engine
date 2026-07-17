@@ -1,0 +1,88 @@
+name: CI
+
+# Every push on every branch, plus PRs. The promotion pipeline re-checks the same commits at each
+# rung (feature -> dev -> preprod -> main), which is the automated half of the cherry-pick footgun
+# CLAUDE.md warns about: a subset that built on dev may not build on preprod.
+on:
+  push:
+  pull_request:
+
+# A new push supersedes an in-flight run on the same ref; the old one has nothing left to tell us.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend — mvn verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: temurin
+          cache: maven
+
+      # Testcontainers uses the runner's Docker daemon; ubuntu-latest ships one preinstalled.
+      - name: Verify (unit + integration on real Postgres)
+        working-directory: backend
+        run: mvn -B verify
+
+  mobile:
+    name: mobile — typecheck + jest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install
+        working-directory: mobile
+        run: npm ci
+
+      # In a strict-TS codebase the compiler is half the test suite (P7), so it is a first-class
+      # red, not a lint-grade warning.
+      - name: Typecheck
+        working-directory: mobile
+        run: npm run typecheck
+
+      - name: Test
+        working-directory: mobile
+        run: npm test
+
+  stack:
+    name: stack — compose up + health smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Proves the composed artifact — Dockerfile, compose wiring, Flyway-on-boot, the MinIO
+      # healthcheck — on every push. Without this job, "compose up works from a clean checkout" is
+      # only ever proven on machines where it already worked.
+      - name: Build and start the stack
+        run: docker compose up --build -d
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 60); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/v1/health)" = "200" ]; then
+              echo "health green after ${i}s"
+              curl -s http://localhost:8080/v1/health
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "health never returned 200"
+          docker compose ps
+          docker compose logs --tail 50
+          exit 1
+
+      - name: Tear down
+        if: always()
+        run: docker compose down --remove-orphans

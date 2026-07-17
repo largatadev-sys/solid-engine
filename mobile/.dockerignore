@@ -1,0 +1,20 @@
+# Keep the web-preview build context (Dockerfile.web-preview) small and free of local state.
+# `npm ci` regenerates node_modules from the lockfile inside the image; a copied host node_modules
+# would be wrong-platform and slow. The generated native dirs and prior exports must never leak in.
+node_modules
+android
+ios
+dist
+.expo
+.expo-shared
+
+# Local env and secrets never enter an image (they are gitignored too — belt and braces).
+.env
+.env.*
+google-services.json
+GoogleService-Info.plist
+
+# Local build/test noise.
+coverage
+*.log
+.DS_Store
