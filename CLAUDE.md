@@ -98,6 +98,9 @@ docker compose up -d --build
 curl -s http://localhost:8080/v1/health          # {"status":"ok"}
 
 # 2. Preview container — the TRUE build path (npm ci + export inside the image) and TRUE server
+# `set -a; . ./.env; set +a` exports mobile/.env into the shell so the --build-arg values below
+# resolve from it. Never paste the literals into the command: they land in shell history, and the
+# transcript of whoever is watching. The file is gitignored; keep the values there.
 cd mobile && set -a && . ./.env && set +a
 docker build -f Dockerfile.web-preview \
   --build-arg EXPO_PUBLIC_API_BASE_URL="http://localhost:8080" \
@@ -109,12 +112,30 @@ docker build -f Dockerfile.web-preview \
   -t largata-preview:local .
 docker run -d --name largata-preview -p 8081:8080 -e PORT=8080 largata-preview:local
 
-# 3. Native dev build on the emulator
+# 3. Native DEV build on the emulator (UI + flows; JS comes from Metro, debug-signed)
 export ANDROID_HOME="$LOCALAPPDATA/Android/Sdk"      # REQUIRED — see gotcha below
 export PATH="$ANDROID_HOME/platform-tools:$PATH"     # REQUIRED — else install fails after a green build
 npx expo run:android                                 # or: gradlew app:assembleDebug + adb install
 npx expo start --port 8082                           # NOT 8081 (preview owns it)
+
+# 4. Native RELEASE build + sideload (the artifact that ships; JS bundled, real keystore)
+#    Only for ACs that a debug build cannot close — see "which build proves what" below.
+powershell -File mobile/scripts/build-release.ps1    # -ApiBaseUrl defaults to https://api-dev.largata.com
+#   ^ prompts for the keystore password; echoes the baked API URL + signing cert in its summary.
+#     Other params: -KeystorePath (default ~/keys/largata-release.keystore), -Alias (default 'largata')
+adb install -r mobile/android/app/build/outputs/apk/release/*.apk
 ```
+
+**Which build proves what — do not spend a release build on a question a dev build answers.**
+
+| | Dev build (`expo run:android`) | Release build (`build-release.ps1`) |
+|---|---|---|
+| Signed with | debug key (SHA-1 `5e8f1606…`) | the real keystore (SHA-1 `ff05c732…`) |
+| JS from | Metro, live | bundled into the APK (Hermes bytecode) |
+| Proves | UI, flows, native module wiring | **release-signed behaviour** — Google sign-in in particular, since it is the one thing that differs by signing key (S0.5) |
+| Cost | ~1 min rebuild | full prebuild + Gradle + a password prompt |
+
+A debug build works forever while the release one is broken — that is the S0.4 ninja trap and the S0.5 SHA-1 trap both. **Any AC about the shipping artifact is closed on a release build, on a device** (S0.5's rule); everything else runs on the dev build.
 
 **The traps, each of which cost real time at S0.6:**
 
@@ -125,7 +146,7 @@ npx expo start --port 8082                           # NOT 8081 (preview owns it
 - **`INSTALL_FAILED_UPDATE_INCOMPATIBLE`** means the emulator holds a build signed with a different key (e.g. a release APK from sideload testing). `adb uninstall com.largata.app` first — emulator state is disposable.
 - **Metro serves `expo-router/entry.bundle`, not `index.bundle`.** Probing `/index.bundle` returns 404 and looks like a broken Metro; it is a wrong probe. Check `/node_modules/expo-router/entry.bundle?platform=android&dev=true` → 200.
 - **`expo start` in non-interactive mode silently skips its dev server on a port clash** ("Port 8082 is being used… Input is required… Skipping dev server"). It exits *zero*, and `/status` still answers from the *older* instance — so the port looks healthy while nothing is bundling.
-- **Evidence, not vibes:** the native Google AC is closed by logcat showing `SignInHubActivity` → GMS `SignInActivity` (the real picker), and a screenshot. The web AC is closed by a *real browser* (headless Chrome over the DevTools protocol; `ws` is already a transitive dep — no new dependency needed) plus `Traveler provisioned` in the backend log and the DB going 0 → 1. **Routing is not a round-trip** (S0.5).
+- **Evidence, not vibes.** Web: **`node mobile/scripts/drive-preview.js [url] [--shot out.png]`** — real headless Chrome, committed at S0.6 *because S0.5 wrote this driver, threw it away, and S0.6 wrote it again*. It reports the page text (empty = the S0.4 white screen), whether Google's iframe rendered, whether a One Tap overlay appeared, and every console/page error. Native: logcat showing `SignInHubActivity` → GMS `SignInActivity` (the real picker) plus a screenshot (`adb shell screencap -p /sdcard/x.png && adb pull …`). **Neither is sufficient alone:** a sign-in that reaches My Trips can still have failed — check `Traveler provisioned` in the backend log and the DB going 0 → 1. **Routing is not a round-trip** (S0.5).
 
 ## Google Cloud console: the OAuth client the preview needs (S0.6)
 
@@ -134,7 +155,7 @@ npx expo start --port 8082                           # NOT 8081 (preview owns it
 - **A Firebase project may not appear in the Cloud console's project picker until you enter it once from Firebase** (Firebase console → gear → *view on Google Cloud*). Before that it looks like the project does not exist — and the console will happily offer to *create* one, appending a suffix because your real project already owns the name. **S0.6 configured a consent screen and an OAuth client in a phantom `largata-dev-502703` before noticing.** Nothing would ever have worked, with no error saying why: the origins simply would not apply. **Identify projects by NUMBER, never name — the real one is `309534715609` (`largata-dev`).** Same principle as ADR-006's environment identity: the name is a label, the number is the identity.
 - **The client to edit is `309534715609-7jjk1jq73igts…`** — the `client_type: 3` (web) entry in `mobile/google-services.json`, and the value of `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`. The project contains ~5 auto-created clients (3 web, 2 Android); **edit only that one, delete none of the others.** The Android ones carry the SHA-1s that make native sign-in work; the other web ones are Firebase-managed. Editing a sibling leaves Google returning `400` for *our* client with no error saying "wrong client".
 - **Registered origins (dev):** `https://founders.largata.com`, `http://localhost:8081`, `http://localhost`. Bare host and host:port are **distinct entries**. Redirect URIs stay empty — GIS's button flow delivers the credential to a JS callback and never redirects.
-- **Propagation is 5 minutes to a few hours.** Until it lands, the button silently does not render — clean console, no page errors — which reads exactly like a code bug. **Do not probe this with `curl`:** S0.6 built a curl-based watcher on `/gsi/button` and it reported **400 indefinitely, long after the button was demonstrably working in a browser** — a bare request lacks the context the endpoint expects, so its status says nothing about origin registration. A check that contradicts the running system is worse than no check. **Load the page in a real browser** (headless Chrome over the DevTools protocol; `ws` is already a transitive dep) and look for: a `<iframe>` whose src contains `accounts.google.com`, `/gsi/button` → **200** in the network log, and zero console errors.
+- **Propagation is 5 minutes to a few hours.** Until it lands, the button silently does not render — clean console, no page errors — which reads exactly like a code bug. **The only trustworthy check is whether Google's iframe is in the DOM:** run `node mobile/scripts/drive-preview.js` (committed at S0.6 — real headless Chrome, no new dependency) and read *"Google-rendered iframes: 1"*. **Ignore `/gsi/button`'s status code entirely** — S0.6 first built a `curl` watcher on it (reported 400 forever while the button worked), then found it returns **400 even from a real browser while rendering fine**. It is not the origin signal it appears to be, in any client. A check that contradicts the running system is worse than no check; twice burned by the same one.
 - **Per project, not per app:** consent screen, OAuth clients, and origins are all per Cloud project. `largata-prod` will need its own of each, and a different `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — that work belongs to the parked prod-rung story.
 - **Consent screen in "Testing" publishing status only admits accounts on its test-user list.** Add each founder's Gmail before a demo, or they hit access-denied and it reads as our bug.
 - **`mobile/google-services.json` is a point-in-time snapshot.** It carries only the **debug** SHA-1 (`5e8f1606…`); the release key (`ff05c732…`, registered at S0.5) exists in the console but not in that file. The console is authoritative — do not diagnose from the JSON alone.
