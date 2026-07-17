@@ -5,6 +5,7 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
 import com.largata.common.authz.Membership;
+import com.largata.workspace.WorkspaceService;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -38,26 +39,40 @@ public class ItineraryService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final ItineraryRepository itineraries;
+    private final WorkspaceService workspaces;
     private final Analytics analytics;
 
-    ItineraryService(ItineraryRepository itineraries, Analytics analytics) {
+    ItineraryService(ItineraryRepository itineraries, WorkspaceService workspaces, Analytics analytics) {
         this.itineraries = itineraries;
+        this.workspaces = workspaces;
         this.analytics = analytics;
     }
 
     /**
-     * Creates a draft itinerary owned by its creator.
+     * Creates a draft itinerary owned by its creator, and opens its Workspace in the same breath.
      *
      * <p>No {@link Membership} parameter, and that is not an oversight: there is nothing yet to be a
      * member of. Creation is the act that <em>establishes</em> ownership — the guard has nothing to
-     * resolve until the row exists. (At S1.1 this same method also opens the Workspace and writes
-     * the owner Membership, atomically — Artifact 03: no ownerless window ever exists.)
+     * resolve until the row exists.
+     *
+     * <p><strong>The workspace forms inside this transaction (S1.1), and that is the invariant, not
+     * a detail.</strong> Artifact 03: no ownerless window ever exists. From S1.1 the guard reads
+     * standing from membership rows, so an itinerary that committed without its workspace would be
+     * invisible to its own creator — permanently, and with no error naming why. Atomicity is what
+     * makes that state unreachable. The rollback direction is the half worth testing, and {@code
+     * ItineraryFormationIT} tests it.
+     *
+     * <p>The call goes itinerary → workspace and never back: the workspace module answers the
+     * guard's question from its own tables, so the two modules do not form the cycle ADR-011 exists
+     * to prevent.
      */
     @Transactional
     public Itinerary create(
             UUID ownerId, String title, List<String> destinations, LocalDate startDate, LocalDate endDate) {
         Itinerary itinerary =
                 itineraries.save(Itinerary.draft(ownerId, title, destinations, startDate, endDate, Instant.now()));
+        // The itinerary's own instant, not now(): the workspace exists from the trip's first moment.
+        workspaces.formAround(itinerary.id(), itinerary.ownerId(), itinerary.createdAt());
         // The operational line (06b §4: one info line on success, entity id + operation). Distinct
         // from the analytics event below and not a substitute for it: this one answers "what did the
         // system do at 14:02" for an operator reading the app's own log; that one feeds a funnel and
