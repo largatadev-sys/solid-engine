@@ -28,6 +28,8 @@ _Derived from Artifact 00 (§3–4) and the working sessions. Status: **proposed
 | **Expense** | A cost incurred on the trip, split across members (INV-7). Contributes to trip total. |
 | **Transfer** | A settlement / waiver / reassignment between members. Changes balances, never the trip total. |
 | **Invitation** | An email invite into a Workspace; the co-traveler onboarding path. |
+| **Discovery** | The surface for browsing/searching **published Itineraries** (E4; UX flow 5). Never means finding places or activities — that is Place Search. *(Added 2026-07-17, UX reconciliation — the two were colliding in conversation.)* |
+| **Place Search** | *Reserved term, future phase (register #9):* searching destinations/POIs **inside the app** to build a plan. Not the unfurler (which enriches a link the traveler already found elsewhere) and not in MVP scope. |
 
 ---
 
@@ -136,11 +138,11 @@ _Derived from Artifact 00 (§3–4) and the working sessions. Status: **proposed
 
 | Register # | Item | Blocks |
 |---|---|---|
-| 3 | Glossary nouns confirmed canonical (UX) | Nothing structural; naming in code |
-| 4 | Review rules: who, how many, editable | The review story |
-| 5 | Public-comment surface details | The public-itinerary story |
-| 10 | draft→active trigger (owner-start vs date) | The itinerary lifecycle story |
-| 11 | Edit-after-publish policy (freeze / unpublish / version) | The publish story |
+| 3 | Glossary nouns confirmed canonical (UX) *(drift observed 2026-07-17: UX artifacts say "User" and "workspace leader" — canon remains **Traveler** and **owner**)* | Nothing structural; naming in code |
+| 4 | Review rules: who, how many, editable *(UX proposal on record, 2026-07-17, flow 11: eligible = confirmed members of a **completed, forked** workspace; the review lands on the **original** published itinerary; dimensions overall/accuracy/pacing/value + optional photos)* | The review story |
+| 5 | Public-comment surface details *(UX inputs 2026-07-17, flow 9: threaded replies, report action, creator badge; public comments are **not copied on fork**)* | The public-itinerary story |
+| 10 | draft→active trigger (owner-start vs date) *(UX input 2026-07-17, flow 11: end-of-itinerary prompts, the owner marks complete explicitly — supports owner-start with the date as a nudge)* | The itinerary lifecycle story |
+| 11 | Edit-after-publish policy (freeze / unpublish / version) *(enriched 2026-07-17: UX flow 12 proposes **snapshot-publish** — a new public itinerary copied from the workspace, private data scrubbed; rationale = protect member data, though INV-2 achieves that by rule rather than by copy. Flow 6 separately shows publish-from-creation. Resolve transition-vs-snapshot-vs-two-modes at the publish story, together with publish metadata (tags/trip type/cover image) and the est-vs-actual cost question — INV-2's aggregate is live-derived, which a frozen snapshot cannot be)* | The publish story |
 | 12 | Workspace `forming` state — keep or collapse | The invite story |
 | 13 | Published-diary surface pre-itinerary-publish | The diary-publish story |
 

@@ -18,6 +18,8 @@
 
 All code conforms to 06a + 06b. **Dial: MVP grade, except the ledger and the authorization guard, which run at Full rigor.** Name and justify any pattern used (P9).
 
+**The design docs are a living baseline, not a frozen assessment** *(founder, 2026-07-17, at the UX-flow reconciliation)*. They record the initial thinking and hold as baseline — but the build will surface divergence, and when it does the docs change rather than rot: anything new (tech, requirement, concept, UX proposal) is **analyzed together first, then written into the docs** — into canon if decided, into a register/backlog entry attached to the story that will decide it if parked. Nothing load-bearing lives only in a conversation. The test for any change: does it improve what we are building.
+
 ## Agent skills
 
 ### Issue tracker
