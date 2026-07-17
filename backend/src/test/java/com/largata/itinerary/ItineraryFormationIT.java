@@ -137,8 +137,4 @@ class ItineraryFormationIT extends PostgresTestBase {
     private Instant instantOf(String sql, Object arg) {
         return jdbc.queryForObject(sql, java.sql.Timestamp.class, arg).toInstant();
     }
-
-    private int itineraryCountFor(UUID ownerId) {
-        return jdbc.queryForObject("SELECT count(*) FROM itinerary WHERE owner_id = ?", Integer.class, ownerId);
-    }
 }

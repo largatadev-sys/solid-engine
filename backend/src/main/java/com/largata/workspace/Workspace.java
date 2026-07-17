@@ -98,9 +98,4 @@ public class Workspace {
     public Instant createdAt() {
         return createdAt;
     }
-
-    /** Defensively copied: the aggregate's own list is not a handle for callers to mutate. */
-    public List<Membership> memberships() {
-        return List.copyOf(memberships);
-    }
 }

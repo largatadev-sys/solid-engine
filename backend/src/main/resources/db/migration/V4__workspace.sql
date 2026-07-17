@@ -69,11 +69,11 @@ CREATE TABLE membership (
 -- transfer being an update, never a delete-then-insert.)
 CREATE UNIQUE INDEX membership_one_owner_idx ON membership (workspace_id) WHERE role = 'OWNER';
 
--- The guard's hot path, and the reason this index exists (S1.1 spec §The resolver swap):
+-- No index on (traveler_id, …), deliberately. The guard's hot path —
 --     SELECT m.role FROM membership m JOIN workspace w ON m.workspace_id = w.id
 --     WHERE w.itinerary_id = ? AND m.traveler_id = ?
--- Every read of a private itinerary runs it first. `workspace.itinerary_id` is served by its UNIQUE
--- constraint's index; this one serves the membership side of the join, seeking straight to the pair.
--- The PK index (workspace_id, traveler_id) already covers that seek — this index is its mirror, for
--- the "which workspaces does this traveler belong to?" direction E1's list needs (S1.2 onward).
-CREATE INDEX membership_traveler_idx ON membership (traveler_id, workspace_id);
+-- — is already served whole: `workspace.itinerary_id` by its UNIQUE constraint's index, and the
+-- membership side by the PRIMARY KEY's (workspace_id, traveler_id). A traveler-leading index would
+-- serve the *other* direction ("which workspaces does this traveler belong to?"), which no query
+-- asks yet; it lands with the story that writes that query (S1.2 onward), where its shape can be
+-- chosen against a real access path rather than a guessed one.

@@ -8,9 +8,12 @@
 
 **Blocked by:** 01 (the tables it populates).
 
-**Status:** ready-for-agent
+**Status:** done (2026-07-17) — stepping IT green, and verified by sabotage
 
-- [ ] Backfill migration — `WHERE NOT EXISTS`, timestamps inherited from the itinerary
-- [ ] Stepping IT: legacy rows seeded at V(n−1), applied at V(n), rows + timestamps asserted
-- [ ] Stepping IT: ticket-01-formed workspaces untouched by the backfill
-- [ ] Fresh-DB no-op confirmed (full suite green on empty schemas)
+- [x] V5 — `WHERE NOT EXISTS` on both inserts, timestamps inherited from the itinerary
+- [x] **Ids are UUIDv7 assembled from the itinerary's instant**, not `gen_random_uuid()` (which mints v4s). Every other id here is v7 and V3 records why that is load-bearing — the list paginates on `ORDER BY id DESC` *because* v7 sorts by creation time. A v4 would work today and leave a silent inconsistency in data, which outlives code.
+- [x] `WorkspaceBackfillIT` (6) — Flyway to V4, legacy rows seeded via raw SQL, V5 applied; rows, owners and inherited timestamps asserted. **Its own container**, not `PostgresTestBase`'s singleton: that one is shared by the whole run and fully migrated before this class loads, and stepping it would corrupt every other test's schema (the recorded S0.1 gotcha).
+- [x] Pre-existing workspaces left alone (the dev-rung case: an itinerary formed between deploys)
+- [x] Re-running the migration's own SQL (read from the classpath, never paraphrased) changes nothing
+- [x] Fresh-DB no-op confirmed (full suite green on empty schemas)
+- [x] **The test earns its keep — proven, not assumed:** V5's timestamps sabotaged to `now()` → `backfilledTimestampsAreInheritedFromTheItineraryNotTheMigration` fails with the right diagnosis (*expected 2026-03-01, but was 2026-07-17*); restored → green. A migration test that passes against a no-op is worse than none.

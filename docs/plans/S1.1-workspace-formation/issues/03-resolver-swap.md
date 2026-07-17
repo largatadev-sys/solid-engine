@@ -9,9 +9,10 @@
 
 **Blocked by:** 01, 02 (rows must exist and be complete before the resolver trusts them exclusively).
 
-**Status:** ready-for-agent
+**Status:** done (2026-07-17) — S0.3's guard tests pass unmodified, which is the whole evidence
 
-- [ ] Row-backed resolver — one query, uniform 404-mask semantics
-- [ ] `OwnerMembershipResolver` and its wiring gone (grep confirms)
-- [ ] Guard signature + `Membership` type untouched; S0.3 tests pass unmodified
-- [ ] Seeded `member` row resolves to `Membership{MEMBER}` through the guard
+- [x] `RowBackedMembershipResolver` — one projection query, uniform 404-mask semantics, no fallback
+- [x] `OwnerMembershipResolver` deleted; grep confirms only prose references remain. Its now-dead sibling `ItineraryRepository.existsByIdAndOwnerId` went with it (found at review — its javadoc still claimed to be "the guard's hot path", which had become false)
+- [x] Guard signature + `Membership` type untouched — **`AuthorizationGuard.java`, `MembershipResolver.java`, `Membership.java`, every controller and every service signature are not in this diff at all**
+- [x] **AC 3: `ItineraryContractIT` (14) and `AuthorizationGuardTest` (5) pass with zero edits**, now resolving through membership rows. ADR-011's seam paying out exactly as designed
+- [x] `RowBackedMembershipResolverIT` (5) — owner resolves from their row · **a seeded `member` row resolves to `Membership{MEMBER}`** (AC 4, the contract S1.2 stands on) · stranger rejected · nonexistent and someone-else's reject *identically* (Artifact 03's masking rule) · an itinerary with no workspace is invisible even to its owner — the no-fallback decision, pinned as behaviour rather than left as prose
