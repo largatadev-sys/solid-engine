@@ -73,7 +73,7 @@ This is engineering principle **P6 (one typed gateway)** applied to authorizatio
 ## Onboarding implications
 
 - **Workspace creation is atomic with ownership:** the creator becomes `owner` in the same transaction — INV-4 holds from the first instant; no ownerless window exists, ever.
-- **Invite acceptance:** invited visitor authenticates → membership row created (`member`) → the walls open for that user in the same moment. The invitation token is single-use and workspace-bound.
+- **Invite acceptance:** the invited visitor authenticates; the invitation is addressed to an **email**, and acceptance requires the authenticated account's **verified** email to match it — no bearer token exists (the email is a notification; the in-app invitation inbox is the accept surface; a magic-link join is an additive post-validation option). Membership row created (`member`) → the walls open for that user in the same moment. *(S1.2 grilling, 2026-07-20 — replaces the original "single-use token" sketch.)*
 - **Owner departure / account deletion:** ownership transfers to a member or a member claims it (INV-4) before the departing membership row is removed; deletion anonymizes the traveler, but their ownership-transfer record and ledger entries survive anonymized (per Artifact 01, Compliance).
 
 ---

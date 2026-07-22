@@ -58,7 +58,7 @@ _Derived from Artifact 00 (§3–4) and the working sessions. Status: **proposed
 | **Fork Relationship** | id, source itinerary id, forked itinerary id, forked-at | Provenance (INV-6). Plan data only crosses. |
 | **Trip Workspace** | id, itinerary id (1:1), state | The collaboration shell and access-control boundary (tenancy §03). |
 | **Membership** | workspace id, traveler id, role (`owner \| member`), joined-at | Exactly one `owner` per workspace at all times (INV-4). |
-| **Invitation** | workspace id, email, token, status | Email-invite onboarding. Accepting = authenticate + join as member. |
+| **Invitation** | workspace id, email, status (`pending → accepted \| declined \| revoked \| expired` — all terminal; re-inviting = a new row; at most one `pending` per workspace+email) | Email-invite onboarding. **Issued by the workspace owner only** *(S1.2 grilling, 2026-07-20 — role authority, not an entitlement; widening to members would be additive)*. Accepting = authenticate + join as member — **requires the accepting account's *verified* email to match the invited address** (case-insensitive; Google sign-ins arrive pre-verified; unverified email/password accounts must verify first — without the verified check, email-match is theater: anyone can *claim* an address at Firebase sign-up). **No bearer token:** the email is a pure notification; the in-app invitation inbox is the accept surface — a magic-link join is an additive post-validation option. *(S1.2 grilling, 2026-07-20.)* |
 | **Decision** | id, workspace id, question, options, status | A poll. |
 | **Vote** | decision id, member id, option | One per member per decision (INV-10). |
 | **Comment** | id, target (workspace content or published itinerary), author id, body | Private collaboration or public surface per target. |
@@ -118,11 +118,10 @@ _Derived from Artifact 00 (§3–4) and the working sessions. Status: **proposed
 **Illegal:** publishing from `draft`/`active` (live sharing is a **Diary** behavior, not an itinerary state) · any backward transition except `OPEN → register #11` (can a published itinerary be edited / unpublished / versioned?).
 
 ### Trip Workspace
-**States:** `forming → active → completed → archived`
+**States:** `active → completed → archived` — active from creation (formation is atomic with the itinerary, S1.1). *(Register #12 resolved 2026-07-20 at S1.2's grilling: `forming` is collapsed — no behavior anywhere branches on it (INV-1 gates on membership, not state), and every backfilled pre-E1 workspace is solo-owner yet actively in use, so it would have been born in a factually wrong state.)*
 
 | From → To | Trigger |
 |---|---|
-| forming → active | First member accepts an invite — `OPEN → register #12 (UX: does forming exist, or active-from-creation?)` |
 | active → completed | Mirrors the itinerary completing |
 | completed → archived | **Owner's explicit act only — never automatic.** |
 
@@ -143,7 +142,7 @@ _Derived from Artifact 00 (§3–4) and the working sessions. Status: **proposed
 | 5 | Public-comment surface details *(UX inputs 2026-07-17, flow 9: threaded replies, report action, creator badge; public comments are **not copied on fork**)* | The public-itinerary story |
 | 10 | draft→active trigger (owner-start vs date) *(UX input 2026-07-17, flow 11: end-of-itinerary prompts, the owner marks complete explicitly — supports owner-start with the date as a nudge)* | The itinerary lifecycle story |
 | 11 | Edit-after-publish policy (freeze / unpublish / version) *(enriched 2026-07-17: UX flow 12 proposes **snapshot-publish** — a new public itinerary copied from the workspace, private data scrubbed; rationale = protect member data, though INV-2 achieves that by rule rather than by copy. Flow 6 separately shows publish-from-creation. Resolve transition-vs-snapshot-vs-two-modes at the publish story, together with publish metadata (tags/trip type/cover image) and the est-vs-actual cost question — INV-2's aggregate is live-derived, which a frozen snapshot cannot be)* | The publish story |
-| 12 | Workspace `forming` state — keep or collapse | The invite story |
+| 12 | ~~Workspace `forming` state — keep or collapse~~ **Resolved 2026-07-20 (S1.2 grilling): collapsed — active-from-creation.** The `state` column itself ships with the first story that *reads* a state value (S1.7, the lifecycle story) — same discipline as S1.1's deferral. | ~~The invite story~~ closed |
 | 13 | Published-diary surface pre-itinerary-publish | The diary-publish story |
 
 _None blocks Artifact 03 or 04. Each blocks exactly one future story, and is marked so the design-scan catches it there._
