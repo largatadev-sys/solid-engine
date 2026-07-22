@@ -1,7 +1,6 @@
 package com.largata.itinerary;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,13 +31,8 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
     @Query("SELECT i FROM Itinerary i WHERE i.ownerId = :ownerId AND i.id < :cursor ORDER BY i.id DESC")
     List<Itinerary> findPageAfter(@Param("ownerId") UUID ownerId, @Param("cursor") UUID cursor, Limit limit);
 
-    /**
-     * The guard-authorized read (see {@link ItineraryService#view}) — by {@code (id, ownerId)}
-     * rather than id alone, so even a mistakenly-constructed membership cannot widen what comes back.
-     *
-     * <p>Its sibling {@code existsByIdAndOwnerId} lived here until S1.1 and is gone with that story:
-     * it existed for S0.3's owner-based resolver, and the guard's hot path is now {@code
-     * MembershipRepository.findRole} in the workspace module (ADR-011's swap).
-     */
-    Optional<Itinerary> findByIdAndOwnerId(UUID id, UUID ownerId);
+    // The guard-authorized read is now {@link JpaRepository#findById}: once S1.2 admits members, the
+    // authority is the guard's Membership, not itinerary ownership, so a by-(id, ownerId) read would
+    // wrongly exclude members (see ItineraryService#view). The owner-scoped finder that used to live
+    // here (findByIdAndOwnerId) went with that change, as existsByIdAndOwnerId went at S1.1.
 }

@@ -2,10 +2,15 @@ package com.largata.identity;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The identity module's one entry point (ADR-002: modules are reached by service interface, never
@@ -81,5 +86,27 @@ public class TravelerService {
             // is real, not theoretical.
             return travelers.findByFirebaseUid(claims.firebaseUid()).orElseThrow(() -> lostTheRace);
         }
+    }
+
+    /**
+     * The ids of travelers whose snapshot email matches (S1.2, the already-a-member check) — case-
+     * insensitive, against the same lowercased form invitations are stored under.
+     *
+     * @param email an already-normalised (lowercased) address
+     */
+    @Transactional(readOnly = true)
+    public List<UUID> travelerIdsWithEmail(String email) {
+        return travelers.findIdsByEmail(email.toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * The display summaries for a set of travelers (S1.2, composing member lists and inviter names).
+     * Order is unspecified — callers key by id.
+     */
+    @Transactional(readOnly = true)
+    public List<TravelerSummary> summariesByIds(Collection<UUID> ids) {
+        return travelers.findAllById(ids).stream()
+                .map(t -> new TravelerSummary(t.id(), t.displayName()))
+                .toList();
     }
 }

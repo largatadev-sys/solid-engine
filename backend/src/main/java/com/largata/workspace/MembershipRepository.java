@@ -1,6 +1,7 @@
 package com.largata.workspace;
 
 import com.largata.common.authz.Role;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,4 +31,14 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
     @Query("SELECT m.role FROM Membership m WHERE m.workspace.itineraryId = :itineraryId "
             + "AND m.travelerId = :travelerId")
     Optional<Role> findRole(@Param("travelerId") UUID travelerId, @Param("itineraryId") UUID itineraryId);
+
+    /**
+     * Every membership of one workspace, addressed by its itinerary (the member list, S1.2). Projected
+     * straight to the public {@link MembershipView} — the entity never leaves the module — and ordered
+     * by {@code joined_at} so the owner (joined at the trip's first instant) leads and members follow
+     * in the order they accepted.
+     */
+    @Query("SELECT new com.largata.workspace.MembershipView(m.travelerId, m.role, m.joinedAt) "
+            + "FROM Membership m WHERE m.workspace.itineraryId = :itineraryId ORDER BY m.joinedAt ASC")
+    List<MembershipView> findMembers(@Param("itineraryId") UUID itineraryId);
 }

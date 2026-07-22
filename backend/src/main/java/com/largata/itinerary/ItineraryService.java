@@ -8,8 +8,11 @@ import com.largata.common.authz.Membership;
 import com.largata.workspace.WorkspaceService;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Limit;
@@ -85,18 +88,22 @@ public class ItineraryService {
     /**
      * The itinerary the guard has already authorized this caller for.
      *
-     * <p>The membership is the authority: this method re-reads by {@code (id, ownerId)} rather than
-     * by id alone, so even a mistakenly-constructed membership cannot widen what is returned. Belt
-     * and braces on the guard's own check — cheap, since the composite index serves both.
+     * <p><strong>By id, because the membership is the authority</strong> (S1.2). Until members
+     * existed (S0.3), this re-read by {@code (id, ownerId)} as belt-and-braces — harmless when every
+     * authorized caller was the owner. S1.2 makes that wrong: an accepted member passes the guard but
+     * is not the owner, so an owner-scoped re-read would 404 the very traveler the guard just admitted
+     * (it surfaced as a 500 on a member viewing a joined trip). The guard's {@link Membership} is the
+     * check; this fetches what it authorized, and the row must exist — a missing one means the guard
+     * resolved standing for an itinerary that does not exist, an invariant breach, not a user error.
      *
      * @param membership proof from the guard; the only way to obtain one is to have been authorized
      */
     @Transactional(readOnly = true)
     public Itinerary view(Membership membership) {
         return itineraries
-                .findByIdAndOwnerId(membership.itineraryId(), membership.travelerId())
+                .findById(membership.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(
-                        "The guard authorized a membership for an itinerary that does not match it"));
+                        "The guard authorized a membership for an itinerary that does not exist"));
     }
 
     /**
@@ -130,6 +137,21 @@ public class ItineraryService {
         }
         List<Itinerary> page = found.subList(0, limit);
         return Page.of(page, Cursor.encode(page.getLast().id()));
+    }
+
+    /**
+     * The titles of a set of itineraries, keyed by id (S1.2, composing invitation-inbox cards).
+     *
+     * <p>Exposed as a service method rather than a table other modules read (ADR-002): the invitation
+     * module holds {@code workspace_id}, resolves it to an itinerary id through the workspace module,
+     * and asks here for the human name of the trip — never touching {@code itinerary} directly. A
+     * title is not workspace-walled the way itinerary <em>contents</em> are; it is the label an
+     * invitee needs to recognise which trip they were asked into, and it is all this hands over.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, String> titlesByIds(Collection<UUID> itineraryIds) {
+        return itineraries.findAllById(itineraryIds).stream()
+                .collect(Collectors.toMap(Itinerary::id, Itinerary::title));
     }
 
     private static int clamp(Integer requestedLimit) {
