@@ -1,5 +1,5 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Link, Stack, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../src/api/ApiError';
 import { formatDates } from '../../src/itineraries/formatDates';
 import { useItinerary } from '../../src/query/itineraryQueries';
@@ -52,6 +52,13 @@ export default function ItineraryScreen() {
         <Badge label={data.visibility} />
       </View>
 
+      {/* The workspace's people (S1.2): the roster for everyone, invite/revoke for the owner. */}
+      <Link href={`/members/${id}`} asChild>
+        <Pressable style={styles.membersLink} accessibilityRole="button">
+          <Text style={styles.membersLinkText}>Members</Text>
+        </Pressable>
+      </Link>
+
       <Section label="Destinations">
         {data.destinations.map((destination) => (
           <Text key={destination} style={styles.value}>
@@ -96,6 +103,16 @@ const styles = StyleSheet.create({
   },
   title: { ...typography.title, color: colors.textPrimary },
   badges: { flexDirection: 'row', gap: spacing.sm },
+  membersLink: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.accentMuted,
+    backgroundColor: colors.surface,
+  },
+  membersLinkText: { ...typography.bodyStrong, color: colors.accent },
   badge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,

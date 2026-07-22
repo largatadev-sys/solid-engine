@@ -114,6 +114,37 @@ export const authRepository = {
     }
   },
 
+  /**
+   * Re-sends the email-verification link to the signed-in account (S1.2, the verify-waiting state).
+   * Needed when a password sign-up tries to accept an invitation before verifying — the backend
+   * answers 403 EMAIL_NOT_VERIFIED and the app offers to resend.
+   */
+  async resendVerification(): Promise<void> {
+    try {
+      await auth().currentUser?.sendEmailVerification();
+    } catch (error) {
+      translate(error);
+    }
+  },
+
+  /**
+   * Re-checks whether the email is now verified, forcing a fresh token so the backend sees the
+   * updated claim (S1.2). `reload()` refreshes the account's `emailVerified`; `getIdToken(true)` mints
+   * a new token carrying `email_verified: true`, so the next API call — the retried accept — passes
+   * the gate. Returns whether it is now verified, so the UI knows whether to retry or keep waiting.
+   */
+  async refreshVerification(): Promise<boolean> {
+    try {
+      const user = auth().currentUser;
+      if (user === null) return false;
+      await user.reload();
+      await user.getIdToken(true);
+      return auth().currentUser?.emailVerified ?? false;
+    } catch (error) {
+      translate(error);
+    }
+  },
+
   async signOut(): Promise<void> {
     // Google's session is separate from Firebase's: skipping this leaves the account picker
     // silently re-selecting the same account on the next sign-in, which reads as "sign-out is

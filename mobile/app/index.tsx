@@ -1,5 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { InvitationInbox } from '../src/components/InvitationInbox';
 import { formatDates } from '../src/itineraries/formatDates';
 import { useMyItineraries } from '../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../src/theme';
@@ -67,6 +68,9 @@ export default function MyTripsScreen() {
             if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
           }}
           onEndReachedThreshold={0.5}
+          // The invitation inbox rides atop the list (S1.2): pinned where it will be seen, and
+          // invisible when empty (the component renders null). It scrolls with the trips beneath it.
+          ListHeaderComponent={<InvitationInbox />}
           ListEmptyComponent={<EmptyState />}
           ListFooterComponent={
             isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={styles.footer} /> : null

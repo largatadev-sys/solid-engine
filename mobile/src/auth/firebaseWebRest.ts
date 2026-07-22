@@ -227,6 +227,50 @@ export async function sendPasswordReset(email: string): Promise<void> {
   await post(`${IDENTITY_BASE}:sendOobCode`, { requestType: 'PASSWORD_RESET', email });
 }
 
+/**
+ * Re-sends the verification link to the signed-in account (S1.2, verify-waiting) — the web twin of
+ * native `resendVerification`. Uses the current idToken; a no-op when signed out.
+ */
+export async function resendVerification(): Promise<void> {
+  const token = await getValidIdToken();
+  if (token === null) return;
+  await post(`${IDENTITY_BASE}:sendOobCode`, { requestType: 'VERIFY_EMAIL', idToken: token });
+}
+
+/**
+ * Forces a token refresh and reports whether the email is now verified (S1.2). A plain
+ * `getValidIdToken` would return the cached token (still `email_verified: false`) until it neared
+ * expiry; the accept gate needs the *current* claim, so this always exchanges the refresh token and
+ * reads `email_verified` from the account via `accounts:lookup`. The forced exchange also updates the
+ * stored session, so the retried accept sends the fresh token.
+ */
+export async function refreshVerification(): Promise<boolean> {
+  if (session === null) return false;
+  if (API_KEY === undefined || API_KEY === '') return false;
+  try {
+    const response = await fetch(`${SECURETOKEN_URL}?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(session.refreshToken)}`,
+    });
+    if (!response.ok) return false;
+    const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const expiresInSec = Number(data.expires_in ?? 3600);
+    const idToken = String(data.id_token);
+    persist({
+      idToken,
+      refreshToken: String(data.refresh_token),
+      uid: String(data.user_id),
+      expiresAt: Date.now() + expiresInSec * 1000,
+    });
+    const lookup = await post(`${IDENTITY_BASE}:lookup`, { idToken });
+    const users = lookup.users as Array<{ emailVerified?: boolean }> | undefined;
+    return users?.[0]?.emailVerified === true;
+  } catch {
+    return false;
+  }
+}
+
 export function signOut(): void {
   persist(null);
 }

@@ -7,6 +7,8 @@ import {
 } from './authContract';
 import {
   getValidIdToken,
+  refreshVerification as refreshVerificationRest,
+  resendVerification as resendVerificationRest,
   sendPasswordReset,
   signInWithGoogleIdToken,
   signInWithPassword,
@@ -119,6 +121,18 @@ export const authRepository: AuthRepository = {
     } catch (error) {
       translate(error);
     }
+  },
+
+  async resendVerification(): Promise<void> {
+    try {
+      await resendVerificationRest();
+    } catch (error) {
+      translate(error);
+    }
+  },
+
+  async refreshVerification(): Promise<boolean> {
+    return refreshVerificationRest();
   },
 
   async signOut(): Promise<void> {
