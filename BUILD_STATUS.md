@@ -21,7 +21,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S0.6 | Functional Google sign-in on the founder preview *(raised 2026-07-17 — founder reversal of S0.4's deferral: the preview should work, not just look right; S0.5's tri-state lands it)* | ✅ | [spec](docs/plans/S0.6-functional-google-preview/spec.md) |
 | **Epic 1 — Collaborative planning** | | | | |
 | S1.1 | Workspace forms around an itinerary (creator = owner, atomic; backfills workspaces for pre-E1 itineraries — ADR-011) | ✅ | [spec](docs/plans/S1.1-workspace-formation/spec.md) |
-| S1.2 | Email invite → accept → member *(resolves reg. #12; 2026-07-17 rulings: email-only, decline supported, invite survives onboarding, display-name guaranteed at join)* | ⬜ | — |
+| S1.2 | Email invite → accept → member *(resolves reg. #12; 2026-07-17 rulings: email-only, decline supported, invite survives onboarding, display-name guaranteed at join)* | ✅ | [spec](docs/plans/S1.2-email-invites/spec.md) |
 | S1.3 | Itinerary items CRUD + itinerary field edit, collaborative *(external links + manual fields; edit added at S0.3; 2026-07-17: last-write-wins — locking + activity history post-gate)* | ⬜ | — |
 | S1.4 | Private comments *(2026-07-17: flat, pull-based — mentions/notifications/replies post-gate)* | ⬜ | — |
 | S1.5 | Member removal + leave | ⬜ | — |

@@ -80,3 +80,51 @@ export type ErrorEnvelope = {
   traceId: string;
   timestamp: string;
 };
+
+/**
+ * Mirrors `com.largata.invitation.web.CreateInvitationRequest` — the address to invite (S1.2).
+ */
+export type CreateInvitationRequest = {
+  email: string;
+};
+
+/**
+ * Mirrors `com.largata.invitation.web.InvitationResponse` — a pending invitation, the owner's view
+ * (S1.2). Both the create response and the pending-list items; pending by construction.
+ */
+export type InvitationResponse = {
+  id: string;
+  email: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
+/**
+ * Mirrors `com.largata.invitation.web.InboxInvitationResponse` — the invitee's inbox card (S1.2):
+ * which trip, who invited them, and the itinerary to open on accept.
+ */
+export type InboxInvitationResponse = {
+  id: string;
+  itineraryId: string;
+  tripTitle: string;
+  inviterName: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
+/**
+ * Mirrors `com.largata.invitation.web.MemberResponse` — a workspace member (S1.2). `role` is a
+ * string, not a `'owner' | 'member'` union: under ADR-008 the server may add values within /v1, and
+ * this installed app must tolerate them (the same reasoning as `ItineraryResponse.state`).
+ */
+export type MemberResponse = {
+  travelerId: string;
+  displayName: string;
+  role: string;
+  joinedAt: string;
+};
+
+/** Mirrors `com.largata.invitation.web.AcceptResponse` — the itinerary just joined (S1.2). */
+export type AcceptResponse = {
+  itineraryId: string;
+};

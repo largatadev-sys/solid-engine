@@ -61,6 +61,25 @@ public final class TestJwtSupport {
         return token(claims(firebaseUid).claim("email", email).claim("name", name));
     }
 
+    /**
+     * A valid token whose email is <strong>verified</strong> (S1.2) — {@code email_verified: true},
+     * the shape a Google sign-in or a verified password account carries. The invitation accept gate
+     * reads this claim, not the Traveler snapshot.
+     */
+    public static String verifiedToken(String firebaseUid, String email) {
+        return token(claims(firebaseUid).claim("email", email).claim("email_verified", true));
+    }
+
+    /** A valid token whose email is <strong>not</strong> verified (S1.2) — the unverified password shape. */
+    public static String unverifiedToken(String firebaseUid, String email) {
+        return token(claims(firebaseUid).claim("email", email).claim("email_verified", false));
+    }
+
+    /** A verified token that also carries a {@code name} claim (S1.2) — the Google sign-in shape. */
+    public static String verifiedTokenWithName(String firebaseUid, String email, String name) {
+        return token(claims(firebaseUid).claim("email", email).claim("email_verified", true).claim("name", name));
+    }
+
     /** Well-formed and correctly signed, but past its expiry. */
     public static String expiredToken(String firebaseUid) {
         Instant expiredAt = Instant.now().minusSeconds(3600);
