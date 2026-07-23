@@ -12,15 +12,15 @@
 
 **Blocked by:** 01, 02, 03, 04, 05.
 
-**Status:** ready-for-agent — **partially pre-closed by the 2026-07-24 three-rung smoke test** (see the Comments below for exactly what is already evidenced and what remains).
+**Status:** done (2026-07-24) — squash-merged to `dev` (`3e1102d`), pushed, deployed, and verified on the deployed rung. One honest limitation on the member-*writes* half of AC 11 on deployed dev, recorded in the closing comment.
 
-- [ ] Local two-account loop complete with attribution visible (spec AC 11 shape, local rehearsal)
-- [ ] Preview-container loop complete, clean console
-- [ ] All suites green; guard ACs unmodified (spec AC 6)
-- [ ] `/code-review` clean or dispositioned in spec Comments
-- [ ] BUILD_STATUS → ✅ in the last branch commit
-- [ ] Squash-merge proposed and owner-approved
-- [ ] Post-merge loop on deployed `dev` — the gate's closing evidence
+- [x] Local two-account loop with attribution — the owner-half fully on the local stack + emulator + web; the member-*writes* half proven locally against a directly-admitted membership (the S1.2 fixture), because a scripted account cannot verify its email to accept an invite (see closing comment)
+- [x] Preview-container parity — built the true way, `drive-preview.js` clean (page text, Google iframe, zero console/page errors); S1.3 screens driven incl. the `.web` date-picker fork and a browser-created trip; the web-only dead-click and delete-confirm bugs found and fixed here
+- [x] All suites green; guard ACs unmodified (spec AC 6) — backend 170, mobile 433; `git diff --diff-filter=M` shows zero modified S0.3/S1.1/S1.2 suites
+- [x] `/code-review` — per-ticket (all five) **and** whole-branch, both axes; the whole-branch pass found 3 blocking cross-ticket bugs, all fixed (`c1f0ebd`)
+- [x] BUILD_STATUS → ✅ in the last branch commit (`7d5567e`)
+- [x] Squash-merge proposed and owner-approved → merged + pushed (`3e1102d`)
+- [x] Post-merge on deployed `dev` — the full S1.3 flow verified live (see closing comment for the discriminating deploy check and the member-writes gap)
 
 ## Comments
 
@@ -44,3 +44,17 @@
 - Full suites, `/code-review` of the whole branch, BUILD_STATUS → ✅, **propose the squash-merge**, and the **post-merge deployed-`dev` check**.
 
 **The rule this produced (now standing):** a smoke test is not done until it has run on **all three rungs** — API, emulator, web preview. Green tests plus an API drive hid three real bugs; "renders on web" is not "works on web".
+
+**2026-07-24 (later) — the gate closed. Merged, deployed, verified live.**
+
+**The whole-branch `/code-review` was worth holding the merge for.** Reviewing the 13 commits as one change (not per-ticket) found **three blocking bugs** per-ticket reviews structurally could not see — two of them *repeats of classes the branch had already fixed elsewhere*: (1) the two destructive delete confirms still used `Alert.alert` (a no-op on web) after `comingSoon` was forked for exactly that reason — so **delete was a silent dead click in the browser**, verified fixed end-to-end in the preview container (the confirm fires, the day deletes); (2) user-reachable plan caps threw `IllegalArgumentException` → 500 while ticket 03 had already established `ValidationException` → 400 for the same situation (new `PlanLimitExceededException`); (3) `days.tsx` swallowed all seven mutation errors while the other three screens surface theirs. All fixed in `c1f0ebd`. The meta-lesson recorded: *a javadoc asserting a rule is not the rule holding* — grep for each stated rule's siblings at the gate.
+
+**The merge:** squash `feature/S1.3-days-and-activities` → `dev`, one commit `3e1102d`, owner-approved and pushed. `dev` compiled + typechecked post-squash (the cherry-pick-dependency footgun checked, not assumed).
+
+**The deployed-dev check, with the discriminating-probe discipline the S1.1 lesson demands.** A healthcheck 200 does not distinguish new build from old — the trap this repo has hit three times. The discriminating probe: **create a trip with `durationDays` and read the response's `days` array** (a field the old build cannot produce). First probe after push returned `days` absent → *old build still serving* (deploy not yet finished); the poll then flipped to `days=3` → **new build live, which also proves V7 applied on the deployed database** (the days could not seed otherwise). Then the full flow on deployed dev: create-with-duration, day rename, activity create, **reorder** (order confirmed reversed), **field edit** with attribution stamped, dates, and **`costAmount` as a wire string** (the money-through-float fix holding on the real rung). A non-member is masked **404** before joining.
+
+**The one honest limitation.** The member-*writes* half of AC 11 (B, a real second member, editing and A seeing it with B's attribution) could **not** be completed on *deployed* dev: accepting an invite requires a **verified** email (the S1.2 rule), and a scripted `signUp` account is unverified — there is no way to click a verification link from a shell. What is proven on deployed dev is the owner-half of the loop plus the guard **masking** a non-member (404). The member-*writes* path is proven on the **local stack** against a directly-inserted `MEMBER` row (`ItineraryFieldEditIT`, `DayContractIT`, `ActivityContractIT` all admit a real member and assert their writes + attribution). So the capability is proven; only its exercise *through the deployed invite flow by a verified second human* is not — that needs a real invited founder, which is the natural next real-use event, not a scriptable gate step.
+
+**Probe artifacts left on deployed dev, knowingly** (the S1.1 precedent): a handful of `s13-*@largata.test` accounts and their trips ("S1.3 deploy probe/poll/gate…"). They cost nothing — dev is the reseed-at-will preview — and vanish at the next reseed. Recorded so the counts are not a mystery later.
+
+**S1.3 is done.**
