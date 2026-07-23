@@ -12,7 +12,15 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { itineraryRepository } from '../repositories/itineraryRepository';
-import type { CreateItineraryRequest, ItineraryResponse, Page } from '../types/api';
+import type {
+  ActivityRequest,
+  ActivityResponse,
+  CreateItineraryRequest,
+  DayResponse,
+  ItineraryResponse,
+  Page,
+  UpdateItineraryRequest,
+} from '../types/api';
 
 /**
  * The itinerary read/write seam for screens (ADR-001): UI -> query cache -> repository -> apiClient.
@@ -96,6 +104,19 @@ export async function onItineraryCreated(client: QueryClient, created: Itinerary
   await client.invalidateQueries({ queryKey: itineraryKeys.list() });
 }
 
+/**
+ * What must happen after any day mutation (add / rename / delete): the single-itinerary cache holds
+ * the embedded plan, so it is now stale and must refetch to show the changed days.
+ *
+ * Not optimistic, for the create's reason and one more: a delete *renumbers* every later day on the
+ * server (ADR-013's contiguity), so the client cannot predict the resulting ordinals without
+ * replaying that logic — and a wrong guess would flash an incorrect plan. A refetch is one round trip
+ * and always right. The list cache is untouched: a day change does not alter the trip card.
+ */
+export async function onPlanChanged(client: QueryClient, itineraryId: string): Promise<void> {
+  await client.invalidateQueries({ queryKey: itineraryKeys.one(itineraryId) });
+}
+
 // ─── The hooks screens use. Thin by design; the decisions are above. ──────────────────────────────
 
 export function useMyItineraries(): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
@@ -113,5 +134,122 @@ export function useCreateItinerary(): UseMutationResult<ItineraryResponse, Error
   return useMutation({
     mutationFn: (request: CreateItineraryRequest) => itineraryRepository.create(request),
     onSuccess: (created) => onItineraryCreated(client, created),
+  });
+}
+
+/**
+ * Edit an itinerary's own fields (S1.3, ticket 04). The response is the updated itinerary — seed the
+ * detail cache from it (no refetch needed), and invalidate the list because the title/dates on the
+ * trip card may have changed.
+ */
+export async function onItineraryUpdated(client: QueryClient, updated: ItineraryResponse): Promise<void> {
+  client.setQueryData(itineraryKeys.one(updated.id), updated);
+  await client.invalidateQueries({ queryKey: itineraryKeys.list() });
+}
+
+export function useUpdateItinerary(
+  id: string,
+): UseMutationResult<ItineraryResponse, Error, UpdateItineraryRequest> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (request: UpdateItineraryRequest) => itineraryRepository.update(id, request),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
+/** Append a day to a plan (S1.3). The itinerary id is fixed at the hook; the title is per-call. */
+export function useAppendDay(itineraryId: string): UseMutationResult<DayResponse, Error, { title?: string }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (request: { title?: string }) => itineraryRepository.appendDay(itineraryId, request),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+/** Rename a day (S1.3). */
+export function useRenameDay(
+  itineraryId: string,
+): UseMutationResult<DayResponse, Error, { dayId: string; title?: string }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, title }: { dayId: string; title?: string }) =>
+      itineraryRepository.renameDay(itineraryId, dayId, { title }),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+/** Delete a day; the server renumbers the survivors (S1.3, ADR-013). */
+export function useDeleteDay(itineraryId: string): UseMutationResult<void, Error, { dayId: string }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId }: { dayId: string }) => itineraryRepository.deleteDay(itineraryId, dayId),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+/**
+ * Create an activity on a day (S1.3, ticket 02). Like the day mutations, it invalidates the single
+ * trip so the embedded plan refetches — the new activity's server-assigned id and sort order make an
+ * optimistic insert a guess, so a refetch is the honest move.
+ */
+export function useCreateActivity(
+  itineraryId: string,
+): UseMutationResult<ActivityResponse, Error, { dayId: string; request: ActivityRequest }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, request }: { dayId: string; request: ActivityRequest }) =>
+      itineraryRepository.createActivity(itineraryId, dayId, request),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+/** Edit an activity — whole-entity, last-write-wins (S1.3). */
+export function useEditActivity(
+  itineraryId: string,
+): UseMutationResult<ActivityResponse, Error, { dayId: string; activityId: string; request: ActivityRequest }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, activityId, request }: { dayId: string; activityId: string; request: ActivityRequest }) =>
+      itineraryRepository.editActivity(itineraryId, dayId, activityId, request),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+/** Delete an activity (S1.3). */
+export function useDeleteActivity(
+  itineraryId: string,
+): UseMutationResult<void, Error, { dayId: string; activityId: string }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, activityId }: { dayId: string; activityId: string }) =>
+      itineraryRepository.deleteActivity(itineraryId, dayId, activityId),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+/**
+ * Reorder a day's activities (S1.3, ticket 03). The caller computes the new order (see
+ * `reorderActivityIds`) and sends the whole list; a refetch then shows the server's confirmed order.
+ */
+export function useReorderActivities(
+  itineraryId: string,
+): UseMutationResult<DayResponse, Error, { dayId: string; activityIds: string[] }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, activityIds }: { dayId: string; activityIds: string[] }) =>
+      itineraryRepository.reorderActivities(itineraryId, dayId, { activityIds }),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+/** Move an activity to another day, landing at its end (S1.3, ticket 03). */
+export function useMoveActivity(
+  itineraryId: string,
+): UseMutationResult<ActivityResponse, Error, { dayId: string; activityId: string; targetDayId: string }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, activityId, targetDayId }: { dayId: string; activityId: string; targetDayId: string }) =>
+      itineraryRepository.moveActivity(itineraryId, dayId, activityId, { targetDayId }),
+    onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }

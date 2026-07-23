@@ -58,6 +58,21 @@ public class Itinerary {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    /** Optional free-text description of the trip (S1.3). Nullable — an itinerary without one is normal. */
+    @Column private String description;
+
+    /**
+     * Who last edited the itinerary's own fields, and when (S1.3, the last-write-wins attribution
+     * half). NULL until the first field edit — a row that predates S1.3, or a freshly-created one that
+     * has not been edited, has no editor to name, and NULL says exactly that rather than inventing one.
+     * Create does not count as an edit here: the creator is the owner, recorded on the workspace.
+     */
+    @Column(name = "last_edited_by")
+    private UUID lastEditedBy;
+
+    @Column(name = "last_edited_at")
+    private Instant lastEditedAt;
+
     /**
      * {@code EnumType.STRING}, never {@code ORDINAL}: the ordinal form stores a position, so
      * inserting a state into the middle of the enum later would silently reinterpret every existing
@@ -83,6 +98,7 @@ public class Itinerary {
             UUID ownerId,
             String title,
             List<String> destinations,
+            String description,
             LocalDate startDate,
             LocalDate endDate,
             Instant createdAt) {
@@ -90,6 +106,7 @@ public class Itinerary {
         this.ownerId = ownerId;
         this.title = title;
         this.destinations = destinations;
+        this.description = description;
         this.startDate = startDate;
         this.endDate = endDate;
         this.state = ItineraryState.DRAFT;
@@ -99,6 +116,27 @@ public class Itinerary {
 
     /** The title's limit, shared with {@code CreateItineraryRequest} so the two cannot drift. */
     public static final int MAX_TITLE_LENGTH = 120;
+
+    /**
+     * The description's limit, shared with the DTOs so the two cannot drift (the {@code MAX_TITLE_LENGTH}
+     * pattern). Generous — a description is prose, not a label — but bounded, because an unbounded text
+     * field is a denial-of-service column waiting to happen.
+     */
+    public static final int MAX_DESCRIPTION_LENGTH = 4000;
+
+    /**
+     * The most days a plan may hold (S1.3, ADR-013) — a year plus a leap day, which is past any real
+     * itinerary and a guard against a runaway {@code durationDays}. On the aggregate root, shared with
+     * the DTO and {@code DayService}, so the cap is stated once.
+     */
+    public static final int MAX_DAYS = 366;
+
+    /**
+     * A day title's limit (S1.3). Lives on the aggregate root, not on {@code Day}, because the DTO in
+     * the {@code .api} package needs it as a compile-time constant and {@code Day} is package-private —
+     * the same reason {@code MAX_TITLE_LENGTH} lives here. {@code Day} references it back.
+     */
+    public static final int MAX_DAY_TITLE_LENGTH = 120;
 
     /**
      * Mints a draft itinerary for its creator. The id is generated here, app-side, so it exists
@@ -120,6 +158,75 @@ public class Itinerary {
             LocalDate startDate,
             LocalDate endDate,
             Instant createdAt) {
+        return draft(ownerId, title, destinations, null, startDate, endDate, createdAt);
+    }
+
+    /**
+     * Mints a draft itinerary, with an optional description (S1.3). The description-free overload above
+     * delegates here — the S0.3 shape is this one with {@code description = null}.
+     *
+     * @param destinations at least one destination, none of them blank; defensively copied
+     * @param description optional free-text; blank collapses to {@code null} (S1.3)
+     */
+    static Itinerary draft(
+            UUID ownerId,
+            String title,
+            List<String> destinations,
+            String description,
+            LocalDate startDate,
+            LocalDate endDate,
+            Instant createdAt) {
+        validateFields(title, destinations, startDate, endDate);
+        return new Itinerary(
+                UuidV7.generate(),
+                ownerId,
+                title.strip(),
+                destinations.stream().map(String::strip).toList(),
+                normalizeDescription(description),
+                startDate,
+                endDate,
+                createdAt);
+    }
+
+    /**
+     * Edits the itinerary's own fields (S1.3, ticket 04) — title, destinations, description, dates —
+     * and stamps who edited it and when (last-write-wins attribution). Every editable field is
+     * replaced at once; there is no per-field patch and no version check, so a later writer silently
+     * wins over an earlier one, exactly as {@code Activity.edit} does.
+     *
+     * <p>The same {@link #validateFields} the factory runs — a create and an edit can never disagree
+     * about what a valid itinerary is (the two-door discipline applied to the mutator). Lifecycle,
+     * ownership, visibility and existence are <em>not</em> touched here: members shape the plan, only
+     * the owner changes those (spec Q8), and each has its own story.
+     *
+     * @param editor the member making the edit (from the guard's {@code Membership})
+     */
+    void editFields(
+            String title,
+            List<String> destinations,
+            String description,
+            LocalDate startDate,
+            LocalDate endDate,
+            UUID editor,
+            Instant at) {
+        validateFields(title, destinations, startDate, endDate);
+        this.title = title.strip();
+        this.destinations = destinations.stream().map(String::strip).toList();
+        this.description = normalizeDescription(description);
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.lastEditedBy = editor;
+        this.lastEditedAt = at;
+    }
+
+    /**
+     * The field rules shared by create and edit — title present and bounded, at least one non-blank
+     * destination, and start ≤ end when both are given (S0.3's date rule, unchanged). Extracted so the
+     * factory and {@link #editFields} enforce one definition of validity rather than two that could
+     * drift. Domain-side guards; the DTOs mirror them for a clean 400 (the two-door pattern).
+     */
+    private static void validateFields(
+            String title, List<String> destinations, LocalDate startDate, LocalDate endDate) {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("An itinerary needs a title");
         }
@@ -129,24 +236,33 @@ public class Itinerary {
         if (destinations == null || destinations.isEmpty()) {
             throw new IllegalArgumentException("An itinerary needs at least one destination");
         }
-        // Rejected, not filtered. Silently dropping a blank entry would make this factory disagree
-        // with the DTO — which answers 400 for the same input — and a caller that sent a blank by
-        // mistake would have it swallowed rather than reported. The API's contract is "min 1
-        // non-blank"; a quiet filter is a different, weaker contract wearing the same words.
+        // Rejected, not filtered. Silently dropping a blank entry would make this disagree with the
+        // DTO — which answers 400 for the same input — and a caller that sent a blank by mistake would
+        // have it swallowed rather than reported. The API's contract is "min 1 non-blank".
         if (destinations.stream().anyMatch(d -> d == null || d.isBlank())) {
             throw new IllegalArgumentException("An itinerary's destinations cannot be blank");
         }
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new IllegalArgumentException("An itinerary cannot end before it starts");
         }
-        return new Itinerary(
-                UuidV7.generate(),
-                ownerId,
-                title.strip(),
-                destinations.stream().map(String::strip).toList(),
-                startDate,
-                endDate,
-                createdAt);
+    }
+
+    /**
+     * Blank-or-absent description collapses to {@code null}, and an over-long one is refused — the
+     * factory's half of the DTO's rule, so a caller that bypasses the DTO (a fork, an import) cannot
+     * plant an empty string that reads as "has a description" or a megabyte of text. The DTO answers
+     * 400 for the length; this refuses to construct, for the same reason the destinations rule does.
+     */
+    private static String normalizeDescription(String description) {
+        if (description == null || description.isBlank()) {
+            return null;
+        }
+        String stripped = description.strip();
+        if (stripped.length() > MAX_DESCRIPTION_LENGTH) {
+            throw new IllegalArgumentException(
+                    "An itinerary's description is at most " + MAX_DESCRIPTION_LENGTH + " characters");
+        }
+        return stripped;
     }
 
     public UUID id() {
@@ -166,12 +282,24 @@ public class Itinerary {
         return List.copyOf(destinations);
     }
 
+    public String description() {
+        return description;
+    }
+
     public LocalDate startDate() {
         return startDate;
     }
 
     public LocalDate endDate() {
         return endDate;
+    }
+
+    public UUID lastEditedBy() {
+        return lastEditedBy;
+    }
+
+    public Instant lastEditedAt() {
+        return lastEditedAt;
     }
 
     public ItineraryState state() {

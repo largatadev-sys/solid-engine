@@ -1,9 +1,9 @@
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ApiError } from '../../src/api/ApiError';
-import { formatDates } from '../../src/itineraries/formatDates';
-import { useItinerary } from '../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../src/theme';
+import { ApiError } from '../../../src/api/ApiError';
+import { formatDates } from '../../../src/itineraries/formatDates';
+import { useItinerary } from '../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../src/theme';
 
 /**
  * One trip (S0.3).
@@ -43,7 +43,15 @@ export default function ItineraryScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Stack.Screen options={{ title: data.title }} />
 
-      <Text style={styles.title}>{data.title}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{data.title}</Text>
+        {/* Any member edits the trip's fields (S1.3, ticket 04). */}
+        <Link href={`/itineraries/${id}/edit`} asChild>
+          <Pressable accessibilityRole="button" hitSlop={8}>
+            <Text style={styles.editLink}>Edit</Text>
+          </Pressable>
+        </Link>
+      </View>
 
       <View style={styles.badges}>
         {/* Rendered from the server's values, not assumed: S0.3 only ever produces draft/private,
@@ -58,6 +66,22 @@ export default function ItineraryScreen() {
           <Text style={styles.membersLinkText}>Members</Text>
         </Pressable>
       </Link>
+
+      {/* The plan (S1.3): the day-by-day schedule. Shows the day count so a traveler knows there is
+          something to open even before tapping. */}
+      <Link href={`/itineraries/${id}/days`} asChild>
+        <Pressable style={styles.membersLink} accessibilityRole="button">
+          <Text style={styles.membersLinkText}>
+            Daily schedule{data.days.length > 0 ? ` · ${data.days.length} ${data.days.length === 1 ? 'day' : 'days'}` : ''}
+          </Text>
+        </Pressable>
+      </Link>
+
+      {data.description !== null && (
+        <Section label="Description">
+          <Text style={styles.value}>{data.description}</Text>
+        </Section>
+      )}
 
       <Section label="Destinations">
         {data.destinations.map((destination) => (
@@ -101,7 +125,9 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: colors.background,
   },
-  title: { ...typography.title, color: colors.textPrimary },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  title: { ...typography.title, color: colors.textPrimary, flex: 1 },
+  editLink: { ...typography.bodyStrong, color: colors.accent },
   badges: { flexDirection: 'row', gap: spacing.sm },
   membersLink: {
     alignSelf: 'flex-start',

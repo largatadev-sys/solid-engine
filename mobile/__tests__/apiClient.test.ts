@@ -67,4 +67,44 @@ describe('apiClient', () => {
 
     expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/v1/health'), expect.anything());
   });
+
+  it('patches with a JSON body and a Content-Type (S1.3)', async () => {
+    mockFetch.mockResolvedValue(jsonResponse(200, { id: 'day-1' }));
+
+    await apiClient.patch('/v1/itineraries/t/days/d', { title: 'x' });
+
+    const init = mockFetch.mock.calls[0]?.[1] as RequestInit & { headers: Record<string, string> };
+    expect(init.method).toBe('PATCH');
+    expect(init.body).toBe(JSON.stringify({ title: 'x' }));
+    expect(init.headers['Content-Type']).toBe('application/json');
+  });
+
+  it('puts with a JSON body — a wholesale replace (S1.3, ticket 03)', async () => {
+    mockFetch.mockResolvedValue({ ok: true, status: 204, json: async () => undefined } as unknown as Response);
+
+    await apiClient.put('/v1/itineraries/t/days/d/activities/order', { activityIds: ['a', 'b'] });
+
+    const init = mockFetch.mock.calls[0]?.[1] as RequestInit & { headers: Record<string, string> };
+    expect(init.method).toBe('PUT');
+    expect(init.body).toBe(JSON.stringify({ activityIds: ['a', 'b'] }));
+  });
+
+  it('deletes with NO body and NO Content-Type — a bodiless request never describes a payload (S1.3)', async () => {
+    // A 204 with an empty body: json() rejects, request tolerates it, and delete resolves to undefined.
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 204,
+      json: async () => {
+        throw new Error('no body');
+      },
+    } as unknown as Response);
+
+    await expect(apiClient.delete('/v1/itineraries/t/days/d')).resolves.toBeUndefined();
+
+    const init = mockFetch.mock.calls[0]?.[1] as RequestInit & { headers: Record<string, string> };
+    expect(init.method).toBe('DELETE');
+    // The bug this guards: sending `body: "undefined"` or a Content-Type for a payload that isn't there.
+    expect(init.body).toBeUndefined();
+    expect(init.headers['Content-Type']).toBeUndefined();
+  });
 });

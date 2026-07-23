@@ -2,7 +2,7 @@
 
 **A flat list of every significant architectural decision and its rationale.** A *generated view*, assembled from Artifact 04 (ADR-001–007) and Artifact 05 (ADR-008) — not a source of truth. Change happens in the artifacts; regenerate this. Audience: technical stakeholders.
 
-_Generated: 12/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`_
+_Generated: 23/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`_
 
 ## Decision index
 
@@ -18,6 +18,9 @@ _Generated: 12/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 | ADR-008 | API versioning: path-versioned /v1, additive-only within a version | Accepted | 12/07/2026 |
 | ADR-009 | Subscriptions: entitlement chokepoint from Epic 1; store billing (RevenueCat-class) at Epic 7 | Accepted | 12/07/2026 |
 | ADR-010 | Platform sequencing & mobile builds: Android-first; local builds now, EAS at a declared trigger | Accepted | 13/07/2026 |
+| ADR-011 | Phased authorization guard: chokepoint in `common/authz`, membership lookup behind a resolver seam | Accepted | 16/07/2026 |
+| ADR-012 | PaaS: Railway (one project, three environments, Singapore); custom domains as the exit hatch | Accepted | 16/07/2026 |
+| ADR-013 | Plans are day-indexed: Day + Activity structure; dates stay itinerary metadata | Accepted | 23/07/2026 |
 
 ## Decisions
 
@@ -101,6 +104,30 @@ _Generated: 12/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 - **Consequences.** The alpha cohort is Android-only (recruiting constraint in iOS-heavy markets, recorded). Sign in with Apple defers to the iOS phase.
 - **Deferred decision at the iOS trigger.** Local iOS builds require macOS + Xcode — activating iOS means acquiring a Mac or reintroducing a cloud build service for iOS only.
 - **Invalidating condition.** Validation showing the Android-only cohort is unrepresentative, or a moment requiring iOS presence → pull the activation forward and resolve the build path then.
+
+### ADR-011 — The phased authorization guard: chokepoint in `common/authz`, membership lookup behind a resolver seam
+- **Status.** Accepted · 16/07/2026 (S0.3 grilling) · extends ADR-003
+- **Context.** ADR-003 fixed the pattern (guard resolves membership; service methods require the resolved `Membership`), but the first domain endpoint (S0.3) arrives before the Workspace exists — and the guard's future data owner (workspace) and first consumer (itinerary) would otherwise form a reference cycle.
+- **Decision.** Guard + `Membership` value type live in `common/authz` with the permanent signature `requireMember(traveler, itineraryId) → Membership`; the lookup hides behind a one-method `MembershipResolver`. S0.3 ships an owner-based resolver; S1.1 replaces it with the workspace module's row-backed resolver and backfills workspaces for pre-E1 itineraries. The seam that must never be retrofitted is the signature and call-site discipline, not the storage. (`Membership` is not unforgeable — the guard defends against *forgetting*, not deliberate fabrication.)
+- **Alternatives rejected.** Seeding the workspace module early — an unspecced module and an immediate cycle. Pulling S1.1's tables into S0.3 — re-litigates ratified scope. Guard calling `ItineraryService` — the swap lands inside the Full-rigor chokepoint, and `common` points at a module.
+- **Consequences.** A forgotten check stays a compile error from the first domain endpoint; the S1.1 swap happened behind the seam without touching call sites.
+- **Invalidating condition.** Workspace↔Itinerary ceasing to be 1:1, or a second aggregate needing guard semantics the itinerary-keyed signature can't express → widen additively, superseding this.
+
+### ADR-012 — PaaS: Railway (one project, three environments, Singapore); custom domains as the exit hatch
+- **Status.** Accepted · 16/07/2026 (S0.4 grilling)
+- **Context.** Artifact 04 fixed the shape (PaaS + managed Postgres, three environments) but not the vendor. Solo operator, pre-validation cost sensitivity, Docker deploy, users/founders in Asia; operator already runs a structurally similar app on Railway.
+- **Decision.** Railway: one project, `dev`/`preprod`/`prod` in Singapore, per-environment backend (Dockerfile) + own Postgres 18 (explicit image tag), branch-tracked deploys gated on green CI, platform probe = `GET /v1/health`. Custom domains from day one (`api[-env].largata.com`) so every baked URL is vendor-independent — leaving Railway is a DNS re-point.
+- **Alternatives rejected.** Render — stronger managed-Postgres story but zero operator familiarity; snapshots + a verified restore cover the actual pre-validation risk. Fly.io / Cloud Run + Cloud SQL — heavier setup, ~3× always-on DB cost for nothing the alpha needs.
+- **Consequences.** Familiar operations compound daily; the custom-domain seam is ADR-008's constraint applied to infrastructure.
+- **Invalidating condition.** Real production data outgrowing snapshot-grade recovery (beta scale, ledger live) → PITR bar at post-validation hardening; sustained reliability pain → migrate along the domain seam.
+
+### ADR-013 — Plans are day-indexed: Day + Activity structure; dates stay itinerary metadata
+- **Status.** Accepted · 23/07/2026 (S1.3 grilling, founder-confirmed)
+- **Context.** The original Itinerary Item carried a calendar date/time, making "Day 3" a projection of dates. The 07/18 mock plans by ordinal days (duration at create, day titles, empty days); itinerary dates are optional since S0.3; forking wants relative days — date-grouping collapses for undated plans and has no home for a day title or an empty day.
+- **Decision.** The Itinerary aggregate gains a **Day** child (contiguous ordinal, optional title); **Activities** belong to a Day with manual sort order as the authoritative ordering (optional time-of-day is display metadata, local, timezone-free). Dates remain optional itinerary metadata; Day N's calendar date is derived, never stored. No span↔day-count invariant in MVP (S1.7 revisits). Entity noun becomes **Activity** (was Itinerary Item); `type`/`source` defer as columns to their first reader (E6/E4).
+- **Alternatives rejected.** Date-anchored items — break for undated itineraries, hold no day titles or empty days, copy meaningless dates on fork. Dropping dates — ADR-008 forbids it and register #10 wants them.
+- **Consequences.** `/v1` speaks `days`/`activities` permanently within v1 — accepted knowingly, even for E6's future unfurled hotels/flights. Ordinal contiguity is the aggregate's consistency job.
+- **Invalidating condition.** Real demand for calendar-anchored planning (cross-timezone flights, calendar sync) → an optional per-activity datetime added additively beside the day structure.
 
 ---
 

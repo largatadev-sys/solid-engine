@@ -4,6 +4,7 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
+import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.web.VerifiedContact;
@@ -27,8 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * The invitation module's one entry point (ADR-002) — email invite → accept → member (S1.2).
@@ -356,22 +355,13 @@ public class InvitationService {
     }
 
     /**
-     * Runs an action once the current transaction has committed — mail dispatch and analytics both
-     * (the {@code ItineraryService.emitAfterCommit} pattern): neither should report or act on an
-     * invitation a later rollback erases, and both stay off the request's critical path. With no
-     * active transaction (a direct service call in a test) the action runs inline.
+     * Runs an action once the current transaction has committed — mail dispatch and analytics both:
+     * neither should report or act on an invitation a later rollback erases, and both stay off the
+     * request's critical path. Delegates to the shared {@link AfterCommit} (extracted at S1.3 review,
+     * where this same block existed verbatim in three services); kept as a private method so the call
+     * sites read {@code afterCommit(...)} unchanged.
      */
     private void afterCommit(Runnable action) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            action.run();
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        action.run();
-                    }
-                });
+        AfterCommit.run(action);
     }
 }

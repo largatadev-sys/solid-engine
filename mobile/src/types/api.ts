@@ -37,6 +37,8 @@ export type ItineraryResponse = {
   id: string;
   title: string;
   destinations: string[];
+  /** `null` when the traveler gave no description — S1.3 addition (ADR-008 additive). */
+  description: string | null;
   /**
    * `null` when the traveler gave no start date — undated trips are legitimate (S0.3 spec).
    *
@@ -51,15 +53,119 @@ export type ItineraryResponse = {
   endDate: string | null;
   state: string;
   visibility: string;
+  /** Who last edited the itinerary's fields, and when — `null` until the first edit (S1.3, ticket 04 writes it). */
+  lastEditedBy: string | null;
+  lastEditedAt: string | null;
+  /**
+   * The plan: days in order, each with its activities (S1.3, ADR-013). Empty for a pre-S1.3
+   * itinerary or one created without a duration — a valid plan, not an error. Present on the single
+   * fetch; the list (`fetchMine`) sends `[]` because cards do not render plans.
+   */
+  days: DayResponse[];
   createdAt: string;
 };
 
-/** Mirrors `com.largata.itinerary.api.CreateItineraryRequest`. */
+/** Mirrors `com.largata.itinerary.api.DayResponse` — one ordinal slot of the plan (S1.3, ADR-013). */
+export type DayResponse = {
+  id: string;
+  ordinal: number;
+  /** `null` for an untitled day ("Day 3" with no name). */
+  title: string | null;
+  /** In manual sort order (ADR-013); empty until ticket 02 gives activities their CRUD. */
+  activities: ActivityResponse[];
+};
+
+/**
+ * Mirrors `com.largata.itinerary.api.ActivityResponse` — one element of a day's plan (S1.3).
+ *
+ * Ticket 01 ships the shape; ticket 02 ships the data. `timeOfDay` is an ISO local time
+ * (`"14:00"`), no date/zone. Cost is amount + currency, both `null` together — `null` amount is
+ * "unstated", `"0"` is "Free" (a real, different fact). `costAmount` is a string, not a number:
+ * Jackson serialises `NUMERIC` as a JSON number but money must not round-trip through a float, so the
+ * wire carries it verbatim and the UI formats the string.
+ */
+export type ActivityResponse = {
+  id: string;
+  sortOrder: number;
+  title: string;
+  timeOfDay: string | null;
+  costAmount: string | null;
+  costCurrency: string | null;
+  place: string | null;
+  description: string | null;
+  notes: string | null;
+  externalUrl: string | null;
+  lastEditedBy: string;
+  lastEditedAt: string;
+};
+
+/**
+ * Mirrors `com.largata.itinerary.api.CreateItineraryRequest`.
+ *
+ * `description` and `durationDays` are S1.3 additions (ADR-008 additive). `durationDays` mints that
+ * many empty days on the server; absent means an undated, zero-day skeleton.
+ */
 export type CreateItineraryRequest = {
   title: string;
   destinations: string[];
+  description?: string;
   startDate?: string;
   endDate?: string;
+  durationDays?: number;
+};
+
+/**
+ * Mirrors `com.largata.itinerary.api.UpdateItineraryRequest` — the edit-itinerary-fields body (S1.3,
+ * ticket 04). Whole-field despite the PATCH verb (last-write-wins): the body is the new whole state,
+ * so an omitted `description` clears it and the client sends the current title/destinations it keeps.
+ */
+export type UpdateItineraryRequest = {
+  title: string;
+  destinations: string[];
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
+/** Mirrors `com.largata.itinerary.api.DayRequest` — the append/rename-a-day body (S1.3). */
+export type DayRequest = {
+  title?: string;
+};
+
+/**
+ * Mirrors `com.largata.itinerary.api.ActivityRequest` — the create/edit-activity body (S1.3, ticket
+ * 02). One shape for both: last-write-wins means an edit sends the whole activity, exactly as create
+ * does. `costAmount` and `timeOfDay` are strings on the wire (`"500.00"`, `"14:00"`) — money must not
+ * round-trip through a float, and time is an ISO local time. Omitted optional fields clear on edit.
+ */
+export type ActivityRequest = {
+  title: string;
+  timeOfDay?: string;
+  costAmount?: string;
+  costCurrency?: string;
+  place?: string;
+  description?: string;
+  notes?: string;
+  externalUrl?: string;
+};
+
+/**
+ * Mirrors `com.largata.itinerary.api.ReorderActivitiesRequest` — the complete ordered list of a day's
+ * activity ids (S1.3, ticket 03). Whole-list, because manual order is authoritative (ADR-013): the
+ * client owns the arrangement and sends it entire. The server rejects a list that is not exactly the
+ * day's activities (a stale one) with a 400.
+ */
+export type ReorderActivitiesRequest = {
+  activityIds: string[];
+};
+
+/**
+ * Mirrors `com.largata.itinerary.api.MoveActivityRequest` — move an activity to another day, landing
+ * at that day's end (S1.3, ticket 03). Kept distinct from an edit because move is position, edit is
+ * content (last-write-wins).
+ */
+export type MoveActivityRequest = {
+  targetDayId: string;
 };
 
 /**

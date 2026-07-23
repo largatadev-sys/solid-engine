@@ -31,8 +31,12 @@ function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   return typeof candidate.code === 'string' && typeof candidate.message === 'string';
 }
 
-async function request<T>(path: string, init?: { method: string; body: unknown }): Promise<T> {
+async function request<T>(path: string, init?: { method: string; body?: unknown }): Promise<T> {
   const token = await currentToken();
+  // A body rides along only when one was actually given: a DELETE carries a method but no payload,
+  // and a GET carries neither. `hasBody` gates both the Content-Type header and the serialized body,
+  // so a bodiless request never describes a payload it does not send.
+  const hasBody = init !== undefined && init.body !== undefined;
 
   let response: Response;
   try {
@@ -40,15 +44,15 @@ async function request<T>(path: string, init?: { method: string; body: unknown }
       method: init?.method ?? 'GET',
       headers: {
         Accept: 'application/json',
-        // Only when there is a body: sending Content-Type on a GET describes a payload that does
-        // not exist, and some proxies take that literally.
-        ...(init !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        // Only when there is a body: sending Content-Type on a GET (or a bodiless DELETE) describes
+        // a payload that does not exist, and some proxies take that literally.
+        ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
         // Signed out: no header at all, rather than an empty or "Bearer null" one. The backend
         // treats every flavor of missing/invalid credential identically (UNAUTHENTICATED), but
         // sending a malformed header would be us manufacturing a rejection we could just not send.
         ...(token !== null ? { Authorization: `Bearer ${token}` } : {}),
       },
-      ...(init !== undefined ? { body: JSON.stringify(init.body) } : {}),
+      ...(hasBody ? { body: JSON.stringify(init.body) } : {}),
     });
   } catch {
     // Travelers live in dead zones (ADR-001). An unreachable network is an expected outcome,
@@ -86,4 +90,13 @@ export const apiClient = {
    * eventually; this is where that lands, behind the same signature, when its story arrives.
    */
   post: <T>(path: string, body: unknown): Promise<T> => request<T>(path, { method: 'POST', body }),
+  /** A partial update (S1.3): the fields present are changed, the rest left alone. */
+  patch: <T>(path: string, body: unknown): Promise<T> => request<T>(path, { method: 'PATCH', body }),
+  /** A wholesale replace (S1.3): the body replaces the resource's state (e.g. a day's whole ordering). */
+  put: <T>(path: string, body: unknown): Promise<T> => request<T>(path, { method: 'PUT', body }),
+  /**
+   * A delete (S1.3). The server answers 204 with no body; `request`'s tolerant `json().catch` yields
+   * `undefined`, which is the right value for a `void` caller — a delete has nothing to return.
+   */
+  delete: (path: string): Promise<void> => request<void>(path, { method: 'DELETE', body: undefined }),
 };

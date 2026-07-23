@@ -8,10 +8,12 @@ import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.ItineraryService;
 import com.largata.itinerary.api.CreateItineraryRequest;
 import com.largata.itinerary.api.ItineraryResponse;
+import com.largata.itinerary.api.UpdateItineraryRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,16 +44,24 @@ class ItineraryController {
         this.guard = guard;
     }
 
+    /**
+     * Creates an itinerary. The response carries the day skeleton {@code durationDays} just seeded —
+     * see {@link ItineraryService#createWithPlan} for why omitting it silently broke the client's
+     * cache seeding.
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     ItineraryResponse create(@CurrentTraveler Traveler traveler, @Valid @RequestBody CreateItineraryRequest request) {
-        return ItineraryResponse.of(
-                itineraries.create(
+        var created =
+                itineraries.createWithPlan(
                         traveler.id(),
                         request.title(),
                         request.destinations(),
+                        request.description(),
                         request.startDate(),
-                        request.endDate()));
+                        request.endDate(),
+                        request.durationDaysOrZero());
+        return ItineraryResponse.of(created.itinerary(), created.days());
     }
 
     /**
@@ -64,7 +74,31 @@ class ItineraryController {
     @GetMapping("/{id}")
     ItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        return ItineraryResponse.of(itineraries.view(membership));
+        var plan = itineraries.viewPlan(membership);
+        return ItineraryResponse.of(plan.itinerary(), plan.days());
+    }
+
+    /**
+     * Edits the itinerary's own fields (S1.3, ticket 04): title, destinations, description, dates.
+     * Any member — the guard resolves a {@link Membership} and the service authorizes on it; no owner
+     * check, because members shape the plan (spec Q8). The response carries the itinerary with its
+     * plan re-embedded, so the client holds the whole updated resource.
+     */
+    @PatchMapping("/{id}")
+    ItineraryResponse update(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateItineraryRequest request) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        itineraries.editFields(
+                membership,
+                request.title(),
+                request.destinations(),
+                request.description(),
+                request.startDate(),
+                request.endDate());
+        var plan = itineraries.viewPlan(membership);
+        return ItineraryResponse.of(plan.itinerary(), plan.days());
     }
 
     /**

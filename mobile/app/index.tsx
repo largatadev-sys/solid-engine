@@ -1,5 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BottomNav } from '../src/components/BottomNav';
 import { InvitationInbox } from '../src/components/InvitationInbox';
 import { formatDates } from '../src/itineraries/formatDates';
 import { useMyItineraries } from '../src/query/itineraryQueries';
@@ -77,6 +78,10 @@ export default function MyTripsScreen() {
           }
         />
       )}
+
+      {/* The four-tab shell (S1.3, ticket 05): Trips is live and current; the other tabs render
+          disabled and answer a tap with a graceful message — the mock's chrome, honestly. */}
+      <BottomNav active="trips" />
     </View>
   );
 }

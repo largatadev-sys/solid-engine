@@ -98,6 +98,61 @@ class ItineraryTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    // --- ticket 04: field edit (S1.3) -------------------------------------------------------------
+
+    @Test
+    void editingFieldsReplacesThemAndStampsTheEditor() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+        UUID editor = UuidV7.generate();
+        Instant editedAt = Instant.now();
+
+        itinerary.editFields(
+                "El Nido 2027",
+                List.of("Palawan", "El Nido"),
+                "Island hopping.",
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                editor,
+                editedAt);
+
+        assertThat(itinerary.title()).isEqualTo("El Nido 2027");
+        assertThat(itinerary.destinations()).containsExactly("Palawan", "El Nido");
+        assertThat(itinerary.description()).isEqualTo("Island hopping.");
+        assertThat(itinerary.startDate()).isEqualTo(LocalDate.of(2027, 1, 10));
+        assertThat(itinerary.lastEditedBy()).isEqualTo(editor);
+        assertThat(itinerary.lastEditedAt()).isEqualTo(editedAt);
+    }
+
+    @Test
+    void editingLeavesOwnershipAndStateUntouched() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+
+        itinerary.editFields("Renamed", List.of("Cebu"), null, null, null, UuidV7.generate(), Instant.now());
+
+        // Field edit is not a lifecycle or ownership act (spec Q8) — those stay put.
+        assertThat(itinerary.ownerId()).isEqualTo(owner);
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.DRAFT);
+        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
+    }
+
+    @Test
+    void editingEnforcesTheSameFieldRulesAsCreation() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+
+        // The same validation the factory runs — a blank title is refused on edit too (the shared
+        // validateFields, so create and edit cannot disagree about validity).
+        assertThatThrownBy(
+                        () ->
+                                itinerary.editFields(
+                                        "   ", List.of("Cebu"), null, null, null, UuidV7.generate(), Instant.now()))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(
+                        () ->
+                                itinerary.editFields(
+                                        "Trip", List.of(), null, null, null, UuidV7.generate(), Instant.now()))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     private Itinerary draft(String title, List<String> destinations) {
         return Itinerary.draft(owner, title, destinations, null, null, Instant.now());
     }

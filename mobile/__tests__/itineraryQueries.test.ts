@@ -5,6 +5,8 @@ import {
   itineraryOptions,
   myItinerariesOptions,
   onItineraryCreated,
+  onItineraryUpdated,
+  onPlanChanged,
 } from '../src/query/itineraryQueries';
 import type { ItineraryResponse } from '../src/types/api';
 
@@ -21,11 +23,27 @@ import type { ItineraryResponse } from '../src/types/api';
  */
 
 jest.mock('../src/repositories/itineraryRepository', () => ({
-  itineraryRepository: { fetchMine: jest.fn(), fetchOne: jest.fn(), create: jest.fn() },
+  itineraryRepository: {
+    fetchMine: jest.fn(),
+    fetchOne: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    appendDay: jest.fn(),
+    renameDay: jest.fn(),
+    deleteDay: jest.fn(),
+  },
 }));
 
 const { itineraryRepository } = jest.requireMock('../src/repositories/itineraryRepository') as {
-  itineraryRepository: { fetchMine: jest.Mock; fetchOne: jest.Mock; create: jest.Mock };
+  itineraryRepository: {
+    fetchMine: jest.Mock;
+    fetchOne: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    appendDay: jest.Mock;
+    renameDay: jest.Mock;
+    deleteDay: jest.Mock;
+  };
 };
 
 /** The server's shape, nulls and all — see `formatDates.test.ts` for why that matters. */
@@ -33,10 +51,14 @@ const trip = (id: string, title: string): ItineraryResponse => ({
   id,
   title,
   destinations: ['Sapporo'],
+  description: null,
   startDate: null,
   endDate: null,
   state: 'draft',
   visibility: 'private',
+  lastEditedBy: null,
+  lastEditedAt: null,
+  days: [],
   createdAt: '2026-07-16T00:00:00Z',
 });
 
@@ -150,5 +172,49 @@ describe('after creating', () => {
       expect.objectContaining({ title: 'Oslo' }),
     );
     expect(itineraryRepository.fetchOne).not.toHaveBeenCalled();
+  });
+});
+
+describe('after a field edit (S1.3, ticket 04)', () => {
+  it('seeds the detail cache from the response and invalidates the list (title may have changed)', async () => {
+    const client = freshClient();
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('trip-1', 'Old name')] });
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+    expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(false);
+
+    await onItineraryUpdated(client, trip('trip-1', 'New name'));
+
+    // The detail cache holds the updated resource without a refetch...
+    expect(client.getQueryData(itineraryKeys.one('trip-1'))).toEqual(
+      expect.objectContaining({ title: 'New name' }),
+    );
+    // ...and the list is stale, because the trip card shows the (possibly changed) title/dates.
+    expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(true);
+  });
+});
+
+describe('after a day changes', () => {
+  it('marks the single trip stale so the embedded plan refetches (S1.3)', async () => {
+    // The plan lives in the one(id) cache; a day add/rename/delete makes it stale so the Daily
+    // Schedules screen refetches to truth. A delete renumbers server-side, so a refetch — not an
+    // optimistic guess — is the only way to show the right ordinals.
+    const client = freshClient();
+    itineraryRepository.fetchOne.mockResolvedValue(trip('trip-1', 'Palawan'));
+    await client.fetchQuery(itineraryOptions('trip-1', client));
+    expect(client.getQueryState(itineraryKeys.one('trip-1'))?.isInvalidated).toBe(false);
+
+    await onPlanChanged(client, 'trip-1');
+
+    expect(client.getQueryState(itineraryKeys.one('trip-1'))?.isInvalidated).toBe(true);
+  });
+
+  it('leaves the list cache untouched — a day change does not alter the trip card', async () => {
+    const client = freshClient();
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('trip-1', 'Palawan')] });
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+
+    await onPlanChanged(client, 'trip-1');
+
+    expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(false);
   });
 });

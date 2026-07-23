@@ -36,10 +36,10 @@ public @interface ChronologicalDates {
 
     Class<? extends Payload>[] payload() default {};
 
-    class Validator implements ConstraintValidator<ChronologicalDates, CreateItineraryRequest> {
+    class Validator implements ConstraintValidator<ChronologicalDates, HasDateRange> {
 
         @Override
-        public boolean isValid(CreateItineraryRequest request, ConstraintValidatorContext context) {
+        public boolean isValid(HasDateRange request, ConstraintValidatorContext context) {
             if (request == null || request.startDate() == null || request.endDate() == null) {
                 return true;
             }

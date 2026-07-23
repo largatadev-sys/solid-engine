@@ -5,6 +5,7 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
 import com.largata.common.authz.Membership;
+import com.largata.common.tx.AfterCommit;
 import com.largata.workspace.WorkspaceService;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,8 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * The itinerary module's one entry point (ADR-002: modules are reached by service interface, never
@@ -43,11 +42,14 @@ public class ItineraryService {
 
     private final ItineraryRepository itineraries;
     private final WorkspaceService workspaces;
+    private final DayService days;
     private final Analytics analytics;
 
-    ItineraryService(ItineraryRepository itineraries, WorkspaceService workspaces, Analytics analytics) {
+    ItineraryService(
+            ItineraryRepository itineraries, WorkspaceService workspaces, DayService days, Analytics analytics) {
         this.itineraries = itineraries;
         this.workspaces = workspaces;
+        this.days = days;
         this.analytics = analytics;
     }
 
@@ -69,13 +71,38 @@ public class ItineraryService {
      * guard's question from its own tables, so the two modules do not form the cycle ADR-011 exists
      * to prevent.
      */
+    /**
+     * The S0.3 create shape — no description, no day skeleton — kept as a delegating overload so the
+     * many callers that predate S1.3 (workspace and invitation tests, which create trips only to have
+     * a workspace to act on) do not churn. Additive by construction: it is the new create with {@code
+     * description = null} and {@code durationDays = 0}, which is exactly what "an S0.3 itinerary" means.
+     */
     @Transactional
     public Itinerary create(
             UUID ownerId, String title, List<String> destinations, LocalDate startDate, LocalDate endDate) {
+        return create(ownerId, title, destinations, null, startDate, endDate, 0);
+    }
+
+    @Transactional
+    public Itinerary create(
+            UUID ownerId,
+            String title,
+            List<String> destinations,
+            String description,
+            LocalDate startDate,
+            LocalDate endDate,
+            int durationDays) {
         Itinerary itinerary =
-                itineraries.save(Itinerary.draft(ownerId, title, destinations, startDate, endDate, Instant.now()));
+                itineraries.save(
+                        Itinerary.draft(ownerId, title, destinations, description, startDate, endDate, Instant.now()));
         // The itinerary's own instant, not now(): the workspace exists from the trip's first moment.
         workspaces.formAround(itinerary.id(), itinerary.ownerId(), itinerary.createdAt());
+        // ...and its day skeleton, in the same transaction: durationDays mints that many contiguous
+        // empty days (0 for an undated plan). Same instant, so the days are as old as the trip.
+        days.seedDays(itinerary.id(), durationDays, itinerary.createdAt());
+        // Note for the caller: the days now exist, and `createWithPlan` is what hands them back. A
+        // caller using this method alone gets the root only — see that method's javadoc for why the
+        // create *response* must carry the plan.
         // The operational line (06b §4: one info line on success, entity id + operation). Distinct
         // from the analytics event below and not a substitute for it: this one answers "what did the
         // system do at 14:02" for an operator reading the app's own log; that one feeds a funnel and
@@ -83,6 +110,37 @@ public class ItineraryService {
         log.info("Itinerary created: id={} ownerId={}", itinerary.id(), itinerary.ownerId());
         emitAfterCommit(itinerary);
         return itinerary;
+    }
+
+    /**
+     * Creates an itinerary and returns it <strong>with the day skeleton it just seeded</strong>
+     * (S1.3, ticket 01 — corrected at the device smoke test).
+     *
+     * <p><strong>Why the create response must carry the plan.</strong> The mobile client seeds its
+     * single-itinerary cache from the create response (the S0.3 `onItineraryCreated` pattern, so
+     * opening the new trip needs no round trip). When this response omitted the days — as it did
+     * originally, on the reasoning that create "returns before any day is meaningfully populated" —
+     * the client cached <em>"this trip has no days"</em> for a trip that had just been given three,
+     * and the Daily Schedules screen showed an empty plan until something forced a refetch.
+     *
+     * <p>Two individually-defensible decisions in different layers, colliding: the omission was
+     * invisible to the backend ITs (which assert {@code GET} embeds days — true) and to the mobile
+     * tests (which assert the seeding happens — also true). Only running the app found it. The fix is
+     * here rather than in the client because the honest answer to "what did you just create" includes
+     * the days it minted.
+     */
+    @Transactional
+    public ItineraryPlan createWithPlan(
+            UUID ownerId,
+            String title,
+            List<String> destinations,
+            String description,
+            LocalDate startDate,
+            LocalDate endDate,
+            int durationDays) {
+        Itinerary itinerary =
+                create(ownerId, title, destinations, description, startDate, endDate, durationDays);
+        return new ItineraryPlan(itinerary, days.plan(itinerary.id()));
     }
 
     /**
@@ -104,6 +162,58 @@ public class ItineraryService {
                 .findById(membership.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(
                         "The guard authorized a membership for an itinerary that does not exist"));
+    }
+
+    /**
+     * The itinerary the guard authorized, with its day/activity plan embedded (S1.3).
+     *
+     * <p>The single-fetch composition: {@link #view} for the root, {@link DayService#plan} for the
+     * days-and-activities tree beneath it. Kept here rather than in the controller because Day is part
+     * of <em>this</em> aggregate (ADR-013) — the itinerary module composes its own aggregate's view,
+     * and the controller stays transport (it never learns there is a {@code DayService}).
+     */
+    @Transactional(readOnly = true)
+    public ItineraryPlan viewPlan(Membership membership) {
+        return new ItineraryPlan(view(membership), days.plan(membership.itineraryId()));
+    }
+
+    /**
+     * Edits the itinerary's own fields — title, destinations, description, dates (S1.3, ticket 04).
+     * Any member (spec Q8: members shape the plan); the {@link Membership} is the authority and the
+     * editor recorded.
+     *
+     * <p>Whole-field, last-write-wins, attribution stamped — the {@code Activity.edit} shape at the
+     * root. Lifecycle, ownership and visibility are untouched: those are owner-only acts with their own
+     * stories, and this method offers no way to reach them.
+     *
+     * @return the edited itinerary (the controller composes the plan back on for the response)
+     */
+    @Transactional
+    public Itinerary editFields(
+            Membership member,
+            String title,
+            List<String> destinations,
+            String description,
+            LocalDate startDate,
+            LocalDate endDate) {
+        Itinerary itinerary =
+                itineraries
+                        .findById(member.itineraryId())
+                        .orElseThrow(() -> new IllegalStateException(
+                                "The guard authorized a membership for an itinerary that does not exist"));
+        itinerary.editFields(title, destinations, description, startDate, endDate, member.travelerId(), Instant.now());
+        itineraries.save(itinerary);
+        log.info("Itinerary edited: id={} editor={}", itinerary.id(), member.travelerId());
+        AfterCommit.run(
+                () ->
+                        analytics.emit(
+                                AnalyticsEvent.named("itinerary_field_edited")
+                                        .with("itineraryId", itinerary.id())
+                                        .with("travelerId", member.travelerId())
+                                        .with("hasDates", itinerary.startDate() != null || itinerary.endDate() != null)
+                                        .with("destinationCount", itinerary.destinations().size())
+                                        .build()));
+        return itinerary;
     }
 
     /**
@@ -182,19 +292,6 @@ public class ItineraryService {
                         .with("hasDates", itinerary.startDate() != null || itinerary.endDate() != null)
                         .with("destinationCount", itinerary.destinations().size())
                         .build();
-
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            // No transaction to wait for (a direct service call in a test, say) — emit now rather
-            // than silently drop the event.
-            analytics.emit(event);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        analytics.emit(event);
-                    }
-                });
+        AfterCommit.run(() -> analytics.emit(event));
     }
 }

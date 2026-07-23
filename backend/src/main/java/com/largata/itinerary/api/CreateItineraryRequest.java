@@ -1,8 +1,10 @@
 package com.largata.itinerary.api;
 
 import com.largata.itinerary.Itinerary;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
@@ -28,10 +30,14 @@ import java.util.List;
  * @param title what the traveler calls this trip
  * @param destinations at least one non-blank free text destination; no geocoding, no place ids —
  *     structure can be added additively if E4's discovery ever needs it
+ * @param description optional free-text (S1.3); blank collapses to null in the domain factory
  * @param startDate optional calendar date — no time, no timezone: a trip starts on a day, wherever
  *     on earth you are
  * @param endDate optional; must not precede {@code startDate} when both are given (checked in the
  *     domain factory, which is the rule's real home)
+ * @param durationDays optional (S1.3): how many empty days to mint (ADR-013). Absent/null means an
+ *     undated skeleton with zero days — a valid plan. Bounded and non-negative here, the DTO's half
+ *     of the domain rule the {@code DayService} enforces.
  */
 @ChronologicalDates
 public record CreateItineraryRequest(
@@ -43,5 +49,17 @@ public record CreateItineraryRequest(
                 String title,
         @NotEmpty(message = "At least one destination is required.")
                 List<@NotBlank(message = "A destination cannot be blank.") String> destinations,
+        @Size(max = Itinerary.MAX_DESCRIPTION_LENGTH, message = "A description may be at most 4000 characters.")
+                String description,
         LocalDate startDate,
-        LocalDate endDate) {}
+        LocalDate endDate,
+        @PositiveOrZero(message = "Duration cannot be negative.")
+                @Max(value = Itinerary.MAX_DAYS, message = "An itinerary has at most 366 days.")
+                Integer durationDays)
+        implements HasDateRange {
+
+    /** How many days to seed — absent means zero (an undated skeleton), never an error. */
+    public int durationDaysOrZero() {
+        return durationDays == null ? 0 : durationDays;
+    }
+}

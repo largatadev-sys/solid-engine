@@ -6,11 +6,11 @@ import { itineraryRepository } from '../src/repositories/itineraryRepository';
  */
 
 jest.mock('../src/api/apiClient', () => ({
-  apiClient: { get: jest.fn(), post: jest.fn() },
+  apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), put: jest.fn(), delete: jest.fn() },
 }));
 
 const { apiClient } = jest.requireMock('../src/api/apiClient') as {
-  apiClient: { get: jest.Mock; post: jest.Mock };
+  apiClient: { get: jest.Mock; post: jest.Mock; patch: jest.Mock; put: jest.Mock; delete: jest.Mock };
 };
 
 beforeEach(() => {
@@ -62,5 +62,90 @@ describe('reading one and creating', () => {
     await itineraryRepository.create(request);
 
     expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries', request);
+  });
+
+  it('edits the fields by PATCHing the itinerary (S1.3, ticket 04)', async () => {
+    apiClient.patch.mockResolvedValue({ id: 'abc' });
+    const request = { title: 'Renamed', destinations: ['Palawan'], startDate: '2027-01-10' };
+
+    await itineraryRepository.update('abc', request);
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/v1/itineraries/abc', request);
+  });
+});
+
+describe('the day operations (S1.3)', () => {
+  it('appends a day under the itinerary, itinerary-addressed (no workspace id on the wire)', async () => {
+    apiClient.post.mockResolvedValue({ id: 'day-1' });
+
+    await itineraryRepository.appendDay('trip-1', { title: 'Arrival' });
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/days', { title: 'Arrival' });
+  });
+
+  it('renames a day by patching it under its itinerary', async () => {
+    apiClient.patch.mockResolvedValue({ id: 'day-1' });
+
+    await itineraryRepository.renameDay('trip-1', 'day-1', { title: 'Arrival Day' });
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1', { title: 'Arrival Day' });
+  });
+
+  it('deletes a day by id under its itinerary', async () => {
+    apiClient.delete.mockResolvedValue(undefined);
+
+    await itineraryRepository.deleteDay('trip-1', 'day-1');
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1');
+  });
+});
+
+describe('the activity operations (S1.3, ticket 02)', () => {
+  const request = { title: 'Airport Transfer' };
+
+  it('creates an activity under its day, itinerary- and day-addressed', async () => {
+    apiClient.post.mockResolvedValue({ id: 'a-1' });
+
+    await itineraryRepository.createActivity('trip-1', 'day-1', request);
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities', request);
+  });
+
+  it('edits an activity by patching it under its day', async () => {
+    apiClient.patch.mockResolvedValue({ id: 'a-1' });
+
+    await itineraryRepository.editActivity('trip-1', 'day-1', 'a-1', request);
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/a-1', request);
+  });
+
+  it('deletes an activity by id under its day', async () => {
+    apiClient.delete.mockResolvedValue(undefined);
+
+    await itineraryRepository.deleteActivity('trip-1', 'day-1', 'a-1');
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/a-1');
+  });
+});
+
+describe('reorder and move (S1.3, ticket 03)', () => {
+  it('reorders a day by PUTting the whole ordered list', async () => {
+    apiClient.put.mockResolvedValue(undefined);
+
+    await itineraryRepository.reorderActivities('trip-1', 'day-1', { activityIds: ['c', 'a', 'b'] });
+
+    expect(apiClient.put).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/order', {
+      activityIds: ['c', 'a', 'b'],
+    });
+  });
+
+  it('moves an activity to another day', async () => {
+    apiClient.post.mockResolvedValue({ id: 'a-1' });
+
+    await itineraryRepository.moveActivity('trip-1', 'day-1', 'a-1', { targetDayId: 'day-2' });
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/a-1/move', {
+      targetDayId: 'day-2',
+    });
   });
 });
