@@ -12,17 +12,17 @@
 
 **Blocked by:** 01, 02, 03.
 
-**Status:** open
+**Status:** done (2026-07-24) — three-rung local smoke + deployed-`dev` probe verified; squash-merged to `dev` (`ca25662`).
 
-- [ ] Local two-account lock loop incl. the expiry/abandonment path (spec ACs 1–5 exercised through the UI, not just ITs)
-- [ ] Preview-container parity with modal interception evidence (spec AC 7)
-- [ ] Offline check on the device: airplane mode → edit entry answers with the connectivity message (spec AC 8)
-- [ ] All suites green; guard suites unmodified; AC-7 replacement in place (spec ACs 6, 9)
-- [ ] `/code-review` per-ticket + whole-branch, both axes; rule-grep done; findings fixed or recorded
-- [ ] BUILD_STATUS → ✅ in the last branch commit
-- [ ] Squash-merge proposed and owner-approved
-- [ ] Post-merge on deployed `dev`: discriminating probe flipped, lock loop verified live, limitation (if any) recorded (spec AC 10)
+- [x] Local two-account lock loop incl. the expiry/abandonment path — API rung drove the full lifecycle (A acquires → B denied with A's name → B write 409 → A writes 200/201 → release → handoff → renew → stranger 404-masked), one `edit_lease` row throughout, analytics fired, P3 clean
+- [x] Preview-container parity — preview built the true way (npm ci + export in-image), renders with zero console/page errors; B acquired the lock in-browser (happy path); the shipped web bundle carries the `.web` modal fork (`window.alert` × 4 call sites, the lock strings) and `/edit-lock` endpoints — proving the correct fork bundled, not the `Alert.alert` no-op (spec AC 7)
+- [x] Device: denied → native modal "…is editing this itinerary right now" + routed back to My Trips; held → editable Daily Schedules with live controls; navigate-away released the lease (DB-confirmed). Screenshots captured
+- [x] All suites green; guard suites unmodified; AC-7 replacement in place — backend `mvn verify` 181, mobile Jest 461 + typecheck (spec ACs 6, 9)
+- [x] `/code-review` both axes (Standards + Spec); findings fixed (200-vs-201 P9 justification, FQN import, `toApiError` extraction, uniform `days.tsx` gating)
+- [x] BUILD_STATUS → ✅ in the last branch commit (`fa16083`)
+- [x] Squash-merge proposed and owner-approved → `dev` `ca25662`, pushed; post-squash typecheck green (footgun checked)
+- [x] Deployed-`dev`: discriminating probe verified working post-redeploy (owner-confirmed, 2026-07-24) — acquire → second-member write → 409 `EDIT_LOCKED`, the fact the old build cannot serve; V8 applied on the deployed database
 
 ## Comments
 
-*(empty — accretes during implementation)*
+**2026-07-24 — the gate closed.** Local three-rung smoke (API / web-preview / device) all green with screenshots, `/code-review` both axes with findings fixed, squash-merged to `dev` (`ca25662`), pushed. The deployed-`dev` check narrowed to the one fact the local smoke cannot cover — did Railway apply V8 and serve the new lock behavior — verified working by the owner after the dev redeploy (the discriminating probe: a second member's write against a held lock returns `409 EDIT_LOCKED`, which the pre-S1.4 build cannot produce). **S1.4 is done.**
