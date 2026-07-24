@@ -149,3 +149,31 @@ describe('reorder and move (S1.3, ticket 03)', () => {
     });
   });
 });
+
+describe('edit lock (S1.4, ADR-014)', () => {
+  it('acquires the lock with a bodiless POST under /edit-lock', async () => {
+    apiClient.post.mockResolvedValue({ itineraryId: 'trip-1', holderId: 'me', expiresAt: '2026-07-24T10:03:00Z' });
+
+    await itineraryRepository.acquireEditLock('trip-1');
+
+    // A bodiless POST — undefined body, so the client sends no payload (matching the backend's
+    // no-body acquire endpoint).
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', undefined);
+  });
+
+  it('renews under /edit-lock/renew', async () => {
+    apiClient.post.mockResolvedValue({ itineraryId: 'trip-1', holderId: 'me', expiresAt: '2026-07-24T10:04:00Z' });
+
+    await itineraryRepository.renewEditLock('trip-1');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock/renew', undefined);
+  });
+
+  it('releases with a DELETE on /edit-lock', async () => {
+    apiClient.delete.mockResolvedValue(undefined);
+
+    await itineraryRepository.releaseEditLock('trip-1');
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock');
+  });
+});

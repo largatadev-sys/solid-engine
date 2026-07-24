@@ -121,4 +121,4 @@ Publish, preview, visibility, or any state transition · Standouts / best-time-o
 
 ## Comments
 
-*(empty — accretes during implementation)*
+- **2026-07-24 (S1.4 grilling, founder-ruled):** two of this spec's premises are superseded after shipping, deliberately. (1) **AC 7's pinned behavior — last-write-wins, no 409/locking surface — is reversed by ADR-014**: S1.4 ships a whole-itinerary single-writer edit lock, and the AC-7 IT that pins the *absence* of a conflict mechanism is removed/replaced there (the new tests pin the lock's presence instead). The `last edited by/at` attribution this spec shipped is retained. (2) **"comments (S1.4)" in Out of scope no longer points anywhere** — private comments were deleted from the domain at the S1.4 re-scope; Comment is public-only (S4.6, register #5). This spec body stays as point-in-time intent; see `docs/plans/S1.4-itinerary-edit-lock/spec.md`.

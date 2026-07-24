@@ -18,12 +18,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 /**
- * Ticket 02's ACs over HTTP: activity CRUD, the two-account last-write-wins + attribution proof, cost
- * as a wire string, and the guard's masking on every activity endpoint (spec AC 4/6/7, §fields).
+ * Ticket 02's ACs over HTTP: activity CRUD, attribution, cost as a wire string, and the guard's
+ * masking on every activity endpoint (spec AC 4/6/7, §fields).
  *
- * <p><strong>The LWW test is the story's point.</strong> Two members edit the same activity in
- * sequence; the second write silently wins and attribution follows it — no 409, no version, no
- * conflict surface anywhere. That absence is the 2026-07-17 ruling, and the test pins it.
+ * <p><strong>The S1.3 last-write-wins test is gone, reversed by S1.4 (ADR-014).</strong> It used to
+ * prove that two members editing the same activity in sequence resolved by silent overwrite — "no 409,
+ * no conflict surface anywhere". S1.4 replaces that whole posture with the single-writer edit lock: a
+ * second member cannot write while the first holds the lease. The reversal is deliberate and visible
+ * in the diff; the enforcement it replaces the LWW proof with lives in {@code EditLockEnforcementIT},
+ * and the writes here now take the lock first (see {@link #lock}).
  *
  * <p>The member fixture matches {@code DayContractIT}: a second traveler is admitted directly as a
  * {@code MEMBER} (the state a real S1.2 accept produces), so these tests exercise the day/activity
@@ -51,6 +54,7 @@ class ActivityContractIT extends PostgresTestBase {
         UUID dayId = firstDayId(tripId);
         String memberToken = admitMemberTo(tripId);
         UUID memberId = travelerIdOf(memberToken);
+        lock(memberToken, tripId); // S1.4: the member holds the edit lock before writing
 
         // Create, as the member — cost carried as a wire string, time as ISO local.
         rest.post()
@@ -106,42 +110,17 @@ class ActivityContractIT extends PostgresTestBase {
                 .isNoContent();
     }
 
-    @Test
-    void twoMembersEditingTheSameActivitySequentiallyLastWriteWins() {
-        String ownerToken = freshTraveler();
-        String tripId = createTripWithADay(ownerToken);
-        UUID dayId = firstDayId(tripId);
-        String memberToken = admitMemberTo(tripId);
-        UUID ownerId = travelerIdOf(ownerToken);
-        UUID memberId = travelerIdOf(memberToken);
-
-        String activityId = createActivity(ownerToken, tripId, dayId, "Original");
-
-        // The owner edits, then the member edits — sequentially, no version sent by either.
-        editTitle(ownerToken, tripId, dayId, activityId, "Owner's version");
-        editTitle(memberToken, tripId, dayId, activityId, "Member's version");
-
-        // The second write silently won, and attribution followed it. No 409 was ever possible —
-        // there is no version/ETag surface to conflict on (the 2026-07-17 ruling).
-        rest.get()
-                .uri("/v1/itineraries/" + tripId)
-                .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
-                .exchange()
-                .expectBody()
-                .jsonPath("$.days[0].activities[0].title")
-                .isEqualTo("Member's version")
-                .jsonPath("$.days[0].activities[0].lastEditedBy")
-                .isEqualTo(memberId.toString());
-        // Sanity: the owner is a real other traveler, so "member won" is a real fact, not an artifact
-        // of one account doing both writes.
-        org.assertj.core.api.Assertions.assertThat(ownerId).isNotEqualTo(memberId);
-    }
+    // The S1.3 two-member last-write-wins test was here. S1.4 (ADR-014) reversed the posture it
+    // pinned — a second member can no longer write while the first holds the edit lock — so it is
+    // deleted rather than adapted, and EditLockEnforcementIT proves the replacement behaviour. The
+    // deletion is intentional and named in the S1.4 PR (spec ticket 02 AC 6).
 
     @Test
     void aNonMemberIsMaskedOnEveryActivityEndpoint() {
         String ownerToken = freshTraveler();
         String tripId = createTripWithADay(ownerToken);
         UUID dayId = firstDayId(tripId);
+        lock(ownerToken, tripId); // S1.4: the owner holds the lock for the setup write below
         String activityId = createActivity(ownerToken, tripId, dayId, "Private");
         String stranger = freshTraveler();
 
@@ -234,6 +213,7 @@ class ActivityContractIT extends PostgresTestBase {
     void anActivityOfAnotherDayIsNotFound() {
         String token = freshTraveler();
         String tripId = createTripWithADay(token);
+        lock(token, tripId); // S1.4: hold the lock for the day/activity writes below
         UUID dayA = firstDayId(tripId);
         // A second day, and an activity on it.
         String dayBId = appendDay(token, tripId);
@@ -263,6 +243,7 @@ class ActivityContractIT extends PostgresTestBase {
         String tripId = createTripWithADay(ownerToken);
         UUID dayId = firstDayId(tripId);
         String memberToken = admitMemberTo(tripId);
+        lock(memberToken, tripId); // S1.4: the member holds the lock for the creates + reorder
         String a = createActivity(memberToken, tripId, dayId, "A");
         String b = createActivity(memberToken, tripId, dayId, "B");
         String c = createActivity(memberToken, tripId, dayId, "C");
@@ -303,6 +284,7 @@ class ActivityContractIT extends PostgresTestBase {
     void aStaleReorderListIsA400() {
         String token = freshTraveler();
         String tripId = createTripWithADay(token);
+        lock(token, tripId); // S1.4: hold the lock for the creates + reorder attempt
         UUID dayId = firstDayId(tripId);
         String a = createActivity(token, tripId, dayId, "A");
         createActivity(token, tripId, dayId, "B");
@@ -323,6 +305,7 @@ class ActivityContractIT extends PostgresTestBase {
     void aMemberMovesAnActivityToAnotherDay() {
         String token = freshTraveler();
         String tripId = createTripWithADay(token);
+        lock(token, tripId); // S1.4: hold the lock for the day/activity writes + move
         UUID dayA = firstDayId(tripId);
         String dayBId = appendDay(token, tripId);
         String moving = createActivity(token, tripId, dayA, "Moving");
@@ -352,6 +335,7 @@ class ActivityContractIT extends PostgresTestBase {
     void aNonMemberCannotReorderOrMove() {
         String ownerToken = freshTraveler();
         String tripId = createTripWithADay(ownerToken);
+        lock(ownerToken, tripId); // S1.4: the owner holds the lock for the setup writes below
         UUID dayId = firstDayId(tripId);
         String activityId = createActivity(ownerToken, tripId, dayId, "Mine");
         String dayBId = appendDay(ownerToken, tripId);
@@ -399,12 +383,17 @@ class ActivityContractIT extends PostgresTestBase {
         return fieldIn(created, "id");
     }
 
-    private void editTitle(String token, String tripId, UUID dayId, String activityId, String title) {
-        rest.patch()
-                .uri(activitiesUri(tripId, dayId) + "/" + activityId)
+    /**
+     * Acquires the edit lock as {@code token} (S1.4, ADR-014): activity writes now require the lease.
+     * Called by every write test as the traveler who will write. Guard-masking tests lock as the owner
+     * for their setup writes; the stranger's attempts 404 before the lock, so their assertions are
+     * unchanged. Enforcement (a write without the lock is refused) is proven in {@code
+     * EditLockEnforcementIT}.
+     */
+    private void lock(String token, String tripId) {
+        rest.post()
+                .uri("/v1/itineraries/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"title\":\"" + title + "\"}")
                 .exchange()
                 .expectStatus()
                 .isOk();

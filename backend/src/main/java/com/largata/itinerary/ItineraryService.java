@@ -43,13 +43,19 @@ public class ItineraryService {
     private final ItineraryRepository itineraries;
     private final WorkspaceService workspaces;
     private final DayService days;
+    private final EditLeaseService editLease;
     private final Analytics analytics;
 
     ItineraryService(
-            ItineraryRepository itineraries, WorkspaceService workspaces, DayService days, Analytics analytics) {
+            ItineraryRepository itineraries,
+            WorkspaceService workspaces,
+            DayService days,
+            EditLeaseService editLease,
+            Analytics analytics) {
         this.itineraries = itineraries;
         this.workspaces = workspaces;
         this.days = days;
+        this.editLease = editLease;
         this.analytics = analytics;
     }
 
@@ -196,6 +202,10 @@ public class ItineraryService {
             String description,
             LocalDate startDate,
             LocalDate endDate) {
+        // The single-writer lock (S1.4, ADR-014): this caller must hold the live edit lease, or the
+        // write is refused with a 409 naming the holder. Runs after the guard (which resolved the
+        // membership at the controller) — so a non-member is already 404-masked and never reaches here.
+        editLease.requireHeldBy(member);
         Itinerary itinerary =
                 itineraries
                         .findById(member.itineraryId())

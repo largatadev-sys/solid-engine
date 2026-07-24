@@ -39,13 +39,19 @@ public class DayService {
 
     private final DayRepository days;
     private final ActivityRepository activities;
+    private final EditLeaseService editLease;
     private final Analytics analytics;
 
     @PersistenceContext private EntityManager entityManager;
 
-    DayService(DayRepository days, ActivityRepository activities, Analytics analytics) {
+    DayService(
+            DayRepository days,
+            ActivityRepository activities,
+            EditLeaseService editLease,
+            Analytics analytics) {
         this.days = days;
         this.activities = activities;
+        this.editLease = editLease;
         this.analytics = analytics;
     }
 
@@ -98,6 +104,7 @@ public class DayService {
      */
     @Transactional
     public DayView appendDay(Membership member, String title) {
+        editLease.requireHeldBy(member); // single-writer lock (S1.4, ADR-014) — after the guard
         UUID itineraryId = member.itineraryId();
         long existing = days.countByItineraryId(itineraryId);
         if (existing >= Itinerary.MAX_DAYS) {
@@ -116,6 +123,7 @@ public class DayService {
     /** Renames a day (S1.3). Any member. 404-masks a day of another plan. */
     @Transactional
     public DayView renameDay(Membership member, UUID dayId, String title) {
+        editLease.requireHeldBy(member); // single-writer lock (S1.4, ADR-014)
         Day day = require(member.itineraryId(), dayId);
         day.rename(title);
         days.save(day);
@@ -134,6 +142,7 @@ public class DayService {
      */
     @Transactional
     public void deleteDay(Membership member, UUID dayId) {
+        editLease.requireHeldBy(member); // single-writer lock (S1.4, ADR-014)
         UUID itineraryId = member.itineraryId();
         Day day = require(itineraryId, dayId);
         int removedOrdinal = day.ordinal();

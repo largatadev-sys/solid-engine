@@ -169,6 +169,18 @@ export type MoveActivityRequest = {
 };
 
 /**
+ * Mirrors `com.largata.itinerary.api.EditLeaseResponse` — a granted edit lock (S1.4, ADR-014): who
+ * holds the single-writer lease on this itinerary's plan, and when it lapses. Returned by acquire and
+ * renew.
+ */
+export type EditLeaseResponse = {
+  itineraryId: string;
+  holderId: string;
+  /** ISO-8601 instant. The client renews before this; it never relies on its own clock to expire. */
+  expiresAt: string;
+};
+
+/**
  * Mirrors `com.largata.common.api.Page<T>` — the one pagination shape (Artifact 05), for every list
  * in the API.
  *

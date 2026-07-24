@@ -21,7 +21,7 @@ The isolation boundary is instead the **Trip Workspace**: *one world, walled roo
 | Sphere | Contents | Read rule |
 |---|---|---|
 | **World-readable** | Published itineraries (per visibility), Highlights (published diaries on published itineraries), reviews, public comments, stars, public profiles, **aggregate trip cost only** | `public`: anyone, including unauthenticated visitors · `unlisted`: anyone holding the link (unguessable ID) · writes always require an account (INV-3) |
-| **Workspace-walled** (INV-1) | Non-published workspace contents: the plan in progress, ledger detail (expenses, splits, transfers), private comments, votes, invitations, **membership itself** | Workspace members only, resolved per request |
+| **Workspace-walled** (INV-1) | Non-published workspace contents: the plan in progress, ledger detail (expenses, splits, transfers), votes, invitations, **membership itself** *(private comments removed from the domain 2026-07-24 — Comment is public-only, S4.6)* | Workspace members only, resolved per request |
 | **Diary-walled** (INV-2a) | Any diary pre-publication; contribution rights always | Author-owner + granted contributors only; publication is the owner's sole act |
 
 **Never crosses the wall, ever:** ledger detail, individual contributions, raw diaries, workspace member list (INV-2).

@@ -28,6 +28,7 @@ class ActivityOrderingIT extends PostgresTestBase {
     @Autowired private ItineraryService itineraries;
     @Autowired private DayService days;
     @Autowired private ActivityService activities;
+    @Autowired private EditLeaseService editLease;
     @Autowired private JdbcTemplate jdbc;
 
     @Test
@@ -135,7 +136,11 @@ class ActivityOrderingIT extends PostgresTestBase {
     private Membership tripWithOneDay() {
         UUID owner = UUID.randomUUID();
         Itinerary trip = itineraries.create(owner, "Palawan", List.of("Palawan"), null, null, null, 1);
-        return new Membership(owner, trip.id(), Role.OWNER);
+        Membership member = new Membership(owner, trip.id(), Role.OWNER);
+        // S1.4: plan writes require the edit lease (ADR-014). This ordering test writes as one member,
+        // so the fixture takes the lock once and every reorder/move holds it.
+        editLease.acquire(member);
+        return member;
     }
 
     private UUID firstDayId(UUID itineraryId) {

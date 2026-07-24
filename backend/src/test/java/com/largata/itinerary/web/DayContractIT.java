@@ -151,6 +151,7 @@ class DayContractIT extends PostgresTestBase {
                 {"title":"Cebu","destinations":["Cebu"]}
                 """);
         String memberToken = admitMemberTo(tripId);
+        lock(memberToken, tripId); // S1.4: the member takes the edit lock before writing the plan
 
         // Append a titled day, as the member — 201, ordinal 1, the title round-trips.
         rest.post()
@@ -206,6 +207,7 @@ class DayContractIT extends PostgresTestBase {
                         {"title":"Palawan","destinations":["Palawan"],"durationDays":5}
                         """);
         UUID thirdDay = dayIdAtOrdinal(tripId, 3);
+        lock(token, tripId); // S1.4: hold the edit lock before deleting a day
 
         rest.method(org.springframework.http.HttpMethod.DELETE)
                 .uri("/v1/itineraries/" + tripId + "/days/" + thirdDay)
@@ -282,6 +284,7 @@ class DayContractIT extends PostgresTestBase {
                 {"title":"B","destinations":["B"],"durationDays":1}
                 """);
         UUID dayOfB = dayIdAtOrdinal(tripB, 1);
+        lock(token, tripA); // S1.4: hold trip A's lock; the 404 is the day-scoping mask, not the lock
 
         // Same owner, but the day belongs to trip B — addressing it under trip A is 404 (DAY_NOT_FOUND).
         rest.patch()
@@ -300,6 +303,22 @@ class DayContractIT extends PostgresTestBase {
     }
 
     // --- fixtures ---------------------------------------------------------------------------------
+
+    /**
+     * Acquires the edit lock as {@code token} (S1.4, ADR-014): plan writes now require the lease, so a
+     * test that writes takes the lock first — as the traveler who will do the writing. The guard-masking
+     * tests deliberately do <em>not</em> call this: a stranger is 404-masked before the lock is ever
+     * consulted, so their 404 is unchanged. (Enforcement — that a write without the lock is refused — is
+     * proven in {@code EditLockEnforcementIT}, not re-asserted here.)
+     */
+    private void lock(String token, String itineraryId) {
+        rest.post()
+                .uri("/v1/itineraries/" + itineraryId + "/edit-lock")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
 
     /**
      * Provisions a second traveler (via an authenticated call), then inserts a MEMBER row into the

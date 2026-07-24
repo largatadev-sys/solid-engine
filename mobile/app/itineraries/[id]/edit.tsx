@@ -1,9 +1,10 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
 import { DatePicker } from '../../../src/components/DatePicker';
 import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
+import { useEditLock } from '../../../src/hooks/useEditLock';
 import {
   addDestination,
   cleanDestinations,
@@ -34,6 +35,18 @@ export default function EditItineraryScreen() {
   const { data } = useItinerary(id);
   const update = useUpdateItinerary(id);
 
+  // The single-writer edit lock (S1.4, ADR-014): take it as the screen opens. If another member holds
+  // it — or we are offline — `useEditLock` shows the modal and we route back to the read-only plan;
+  // the lease renews itself while the screen is open and releases on unmount / save.
+  const editLock = useEditLock(id);
+  useEffect(() => {
+    void editLock.acquire().then((granted) => {
+      if (!granted) router.back();
+    });
+    // Acquire exactly once, on entry — not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [title, setTitle] = useState(data?.title ?? '');
   const [destinations, setDestinations] = useState<string[]>(data?.destinations ?? ['']);
   const [description, setDescription] = useState(data?.description ?? '');
@@ -54,7 +67,12 @@ export default function EditItineraryScreen() {
       ...(startDate !== '' ? { startDate } : {}),
       ...(endDate !== '' ? { endDate } : {}),
     };
-    update.mutate(request, { onSuccess: () => router.back() });
+    update.mutate(request, {
+      onSuccess: () => {
+        editLock.release(); // free the lock immediately on save (expiry would free it anyway)
+        router.back();
+      },
+    });
   }
 
   const serverMessage = update.error instanceof ApiError ? update.error.message : undefined;
@@ -110,9 +128,11 @@ export default function EditItineraryScreen() {
       )}
 
       <Pressable
-        style={[styles.button, update.isPending && styles.buttonBusy]}
+        style={[styles.button, (update.isPending || editLock.state.kind !== 'held') && styles.buttonBusy]}
         onPress={submit}
-        disabled={update.isPending}
+        // Can't save until we hold the edit lock (S1.4): while acquiring, or if denied, the button is
+        // inert — the traveler is on the read-only plan and the modal has already told them why.
+        disabled={update.isPending || editLock.state.kind !== 'held'}
         accessibilityRole="button"
       >
         {update.isPending ? (

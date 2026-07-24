@@ -5,6 +5,7 @@ import type {
   CreateItineraryRequest,
   DayRequest,
   DayResponse,
+  EditLeaseResponse,
   ItineraryResponse,
   MoveActivityRequest,
   Page,
@@ -115,5 +116,28 @@ export const itineraryRepository = {
       `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/move`,
       request,
     );
+  },
+
+  /**
+   * The single-writer edit lock (S1.4, ADR-014). `acquire` claims (or renews) the lease before an
+   * edit surface opens; `renew` is the heartbeat while it stays open; `release` frees it on exit.
+   *
+   * A denied acquire/renew throws an {@link import('../api/ApiError').ApiError} with code
+   * `EDIT_LOCKED` (a 409 whose message names the holder — shown as-is in the lock modal). `release` is
+   * idempotent server-side, so a best-effort release on navigate-away never fails; the caller may
+   * ignore its result. Offline, `acquire` throws `NETWORK_UNAVAILABLE` — editing needs connectivity
+   * (the lease is minutes-scale and cannot survive an offline gap), and the edit surface surfaces that
+   * as a graceful "you're offline" message rather than opening a form no write could reach.
+   */
+  async acquireEditLock(itineraryId: string): Promise<EditLeaseResponse> {
+    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock`, undefined);
+  },
+
+  async renewEditLock(itineraryId: string): Promise<EditLeaseResponse> {
+    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock/renew`, undefined);
+  },
+
+  async releaseEditLock(itineraryId: string): Promise<void> {
+    return apiClient.delete(`/v1/itineraries/${itineraryId}/edit-lock`);
   },
 };

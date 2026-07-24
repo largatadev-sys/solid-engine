@@ -44,11 +44,17 @@ public class ActivityService {
 
     private final DayRepository days;
     private final ActivityRepository activities;
+    private final EditLeaseService editLease;
     private final Analytics analytics;
 
-    ActivityService(DayRepository days, ActivityRepository activities, Analytics analytics) {
+    ActivityService(
+            DayRepository days,
+            ActivityRepository activities,
+            EditLeaseService editLease,
+            Analytics analytics) {
         this.days = days;
         this.activities = activities;
+        this.editLease = editLease;
         this.analytics = analytics;
     }
 
@@ -61,6 +67,7 @@ public class ActivityService {
      */
     @Transactional
     public ActivityView create(Membership member, UUID dayId, ActivityFields fields) {
+        editLease.requireHeldBy(member); // single-writer lock (S1.4, ADR-014) — after the guard
         requireDay(member.itineraryId(), dayId);
         if (activities.countByDayId(dayId) >= MAX_ACTIVITIES_PER_DAY) {
             throw new PlanLimitExceededException("A day holds at most " + MAX_ACTIVITIES_PER_DAY + " activities");
@@ -81,6 +88,7 @@ public class ActivityService {
      */
     @Transactional
     public ActivityView edit(Membership member, UUID dayId, UUID activityId, ActivityFields fields) {
+        editLease.requireHeldBy(member); // single-writer lock (S1.4, ADR-014)
         requireDay(member.itineraryId(), dayId);
         Activity activity = requireActivity(dayId, activityId);
         activity.edit(fields, member.travelerId(), Instant.now());
@@ -93,6 +101,7 @@ public class ActivityService {
     /** Deletes an activity (S1.3). Any member. 404-masks an activity of another plan. */
     @Transactional
     public void delete(Membership member, UUID dayId, UUID activityId) {
+        editLease.requireHeldBy(member); // single-writer lock (S1.4, ADR-014)
         requireDay(member.itineraryId(), dayId);
         Activity activity = requireActivity(dayId, activityId);
         activities.delete(activity);
@@ -117,6 +126,7 @@ public class ActivityService {
      */
     @Transactional
     public DayView reorder(Membership member, UUID dayId, List<UUID> orderedActivityIds) {
+        editLease.requireHeldBy(member); // single-writer lock (S1.4, ADR-014)
         Day day = requireDay(member.itineraryId(), dayId);
         List<Activity> current = activities.findByDayIdOrderBySortOrderAscIdAsc(dayId);
 
@@ -162,6 +172,7 @@ public class ActivityService {
      */
     @Transactional
     public ActivityView move(Membership member, UUID dayId, UUID activityId, UUID targetDayId) {
+        editLease.requireHeldBy(member); // single-writer lock (S1.4, ADR-014)
         requireDay(member.itineraryId(), dayId);
         requireDay(member.itineraryId(), targetDayId);
         Activity activity = requireActivity(dayId, activityId);

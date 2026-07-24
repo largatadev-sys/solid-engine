@@ -29,6 +29,7 @@ class DayStorageIT extends PostgresTestBase {
 
     @Autowired private ItineraryService itineraries;
     @Autowired private DayService days;
+    @Autowired private EditLeaseService editLease;
     @Autowired private JdbcTemplate jdbc;
 
     @Test
@@ -120,8 +121,15 @@ class DayStorageIT extends PostgresTestBase {
                 "SELECT id FROM day WHERE itinerary_id = ? AND ordinal = ?", UUID.class, itineraryId, ordinal);
     }
 
-    /** The owner's membership, as the guard would mint it — every day op takes one (spec Q8: any member). */
+    /**
+     * The owner's membership, as the guard would mint it — every day op takes one (spec Q8: any member).
+     * Takes the edit lease too (S1.4, ADR-014): day writes now require it, and this fixture's tests
+     * write as a single member, so acquiring here means every {@code appendDay}/{@code deleteDay} holds
+     * the lock.
+     */
     private Membership ownerOf(Itinerary itinerary) {
-        return new Membership(itinerary.ownerId(), itinerary.id(), Role.OWNER);
+        Membership member = new Membership(itinerary.ownerId(), itinerary.id(), Role.OWNER);
+        editLease.acquire(member);
+        return member;
     }
 }
