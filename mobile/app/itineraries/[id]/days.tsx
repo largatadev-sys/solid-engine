@@ -1,9 +1,10 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
 import { comingSoon } from '../../../src/components/comingSoon';
 import { confirmDestructive } from '../../../src/components/confirmDestructive';
+import { useEditLock } from '../../../src/hooks/useEditLock';
 import { activityMetaLine } from '../../../src/itineraries/formatActivityCost';
 import { reorderActivityIds } from '../../../src/itineraries/reorderActivityIds';
 import {
@@ -38,6 +39,21 @@ export default function DailySchedulesScreen() {
   const deleteDay = useDeleteDay(id);
   const deleteActivity = useDeleteActivity(id);
   const reorderActivities = useReorderActivities(id);
+
+  // The single-writer edit lock (S1.4, ADR-014): the Daily Schedules screen is the plan-editing hub —
+  // day CRUD, reorder, and the route to add/edit activities all happen while it is mounted — so it
+  // holds the lease for the whole editing session. Denied (another member editing, or offline) → the
+  // modal fires and we return to the read-only plan; the lease renews while open and releases on exit.
+  // A mid-session loss (someone took over after a network drop) surfaces through `mutationMessage`
+  // below, since every write then 409s EDIT_LOCKED.
+  const editLock = useEditLock(id);
+  const locked = editLock.state.kind !== 'held';
+  useEffect(() => {
+    void editLock.acquire().then((granted) => {
+      if (!granted) router.back();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Which day tab is selected. Held as an ordinal, not a day id: after a delete renumbers the days,
   // an id may vanish while "the 2nd day" still makes sense, so the ordinal is the stabler handle.
@@ -106,7 +122,7 @@ export default function DailySchedulesScreen() {
                 onPress={() => setSelectedOrdinal(day.ordinal)}
               />
             ))}
-            <AddDayChip pending={appendDay.isPending} onPress={() => appendDay.mutate({})} />
+            <AddDayChip pending={appendDay.isPending || locked} onPress={() => appendDay.mutate({})} />
           </ScrollView>
 
           {selected !== undefined && (
@@ -143,6 +159,7 @@ export default function DailySchedulesScreen() {
               }}
               renaming={renameDay.isPending}
               deleting={deleteDay.isPending}
+              disabled={locked}
             />
           )}
         </>
@@ -150,9 +167,9 @@ export default function DailySchedulesScreen() {
 
       {days.length === 0 && (
         <Pressable
-          style={[styles.primaryButton, appendDay.isPending && styles.busy]}
+          style={[styles.primaryButton, (appendDay.isPending || locked) && styles.busy]}
           onPress={() => appendDay.mutate({})}
-          disabled={appendDay.isPending}
+          disabled={appendDay.isPending || locked}
           accessibilityRole="button"
         >
           {appendDay.isPending ? (
@@ -228,6 +245,11 @@ function SelectedDay(props: {
   onReorder: (index: number, direction: 'up' | 'down') => void;
   renaming: boolean;
   deleting: boolean;
+  // Every write control on this day is inert while the edit lock isn't held (S1.4, ADR-014). Gated
+  // uniformly rather than per-control: "why is add-day disabled but delete-day live?" is the trap the
+  // code review flagged. A denied acquire already routes the screen away, so this is mostly the brief
+  // `acquiring` window — but making the whole surface honestly inert in that state is the point.
+  disabled: boolean;
 }) {
   // The title field is seeded from the day and committed on blur — a rename per keystroke would be a
   // write storm. `key` on the day id resets the draft when the selected day changes.
@@ -241,6 +263,7 @@ function SelectedDay(props: {
           style={styles.input}
           value={draftTitle}
           onChangeText={setDraftTitle}
+          editable={!props.disabled}
           onBlur={() => {
             const next = draftTitle.trim();
             if (next !== (props.day.title ?? '')) props.onRename(next);
@@ -252,26 +275,35 @@ function SelectedDay(props: {
 
       {/* The activities, in the server's manual order (ADR-013). Empty is fine — the add button below.
           The up/down controls nudge an activity's position; the reducer computes the new whole-list
-          order and the reorder mutation sends it. */}
+          order and the reorder mutation sends it. All inert while the lock isn't held. */}
       {props.day.activities.map((activity, index) => (
         <ActivityCard
           key={activity.id}
           activity={activity}
-          onEdit={() => props.onEditActivity(activity.id)}
-          onDelete={() => props.onDeleteActivity(activity)}
-          onMoveUp={index > 0 ? () => props.onReorder(index, 'up') : undefined}
-          onMoveDown={index < props.day.activities.length - 1 ? () => props.onReorder(index, 'down') : undefined}
+          onEdit={props.disabled ? undefined : () => props.onEditActivity(activity.id)}
+          onDelete={props.disabled ? undefined : () => props.onDeleteActivity(activity)}
+          onMoveUp={!props.disabled && index > 0 ? () => props.onReorder(index, 'up') : undefined}
+          onMoveDown={
+            !props.disabled && index < props.day.activities.length - 1
+              ? () => props.onReorder(index, 'down')
+              : undefined
+          }
         />
       ))}
 
-      <Pressable style={styles.addActivity} onPress={props.onAddActivity} accessibilityRole="button">
+      <Pressable
+        style={[styles.addActivity, props.disabled && styles.busy]}
+        onPress={props.onAddActivity}
+        disabled={props.disabled}
+        accessibilityRole="button"
+      >
         <Text style={styles.addActivityText}>+ Add activity</Text>
       </Pressable>
 
       <Pressable
-        style={[styles.deleteButton, props.deleting && styles.busy]}
+        style={[styles.deleteButton, (props.deleting || props.disabled) && styles.busy]}
         onPress={props.onDelete}
-        disabled={props.deleting}
+        disabled={props.deleting || props.disabled}
         accessibilityRole="button"
       >
         <Text style={styles.deleteButtonText}>{props.deleting ? 'Removing…' : `Delete Day ${props.day.ordinal}`}</Text>
@@ -294,8 +326,10 @@ function ActivityCard({
   onMoveDown,
 }: {
   activity: ActivityResponse;
-  onEdit: () => void;
-  onDelete: () => void;
+  // `undefined` when the edit lock isn't held (S1.4): the card body and trash go inert, like the
+  // move arrows already do at the list ends.
+  onEdit: (() => void) | undefined;
+  onDelete: (() => void) | undefined;
   onMoveUp: (() => void) | undefined;
   onMoveDown: (() => void) | undefined;
 }) {
@@ -322,14 +356,25 @@ function ActivityCard({
           <Text style={[styles.reorderArrow, onMoveDown === undefined && styles.reorderArrowDisabled]}>↓</Text>
         </Pressable>
       </View>
-      <Pressable style={styles.activityBody} onPress={onEdit} accessibilityRole="button">
+      <Pressable
+        style={styles.activityBody}
+        onPress={onEdit}
+        disabled={onEdit === undefined}
+        accessibilityRole="button"
+      >
         {/* The meta line is empty when an activity has neither a time nor a cost — render nothing
             then, rather than an empty Text that would push the title down with dead space. */}
         {meta !== '' && <Text style={styles.activityMeta}>{meta}</Text>}
         <Text style={styles.activityTitle}>{activity.title}</Text>
         {activity.place !== null && <Text style={styles.activityPlace}>{activity.place}</Text>}
       </Pressable>
-      <Pressable onPress={onDelete} accessibilityRole="button" accessibilityLabel="Delete activity" hitSlop={8}>
+      <Pressable
+        onPress={onDelete}
+        disabled={onDelete === undefined}
+        accessibilityRole="button"
+        accessibilityLabel="Delete activity"
+        hitSlop={8}
+      >
         <Text style={styles.activityDelete}>Delete</Text>
       </Pressable>
     </View>

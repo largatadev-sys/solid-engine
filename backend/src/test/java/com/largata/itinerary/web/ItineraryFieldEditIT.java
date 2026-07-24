@@ -52,6 +52,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                         """);
         String memberToken = admitMemberTo(tripId);
         UUID memberId = travelerIdOf(memberToken);
+        lock(memberToken, tripId); // S1.4: the member holds the edit lock before writing
 
         // The member rewrites all four editable fields.
         rest.patch()
@@ -93,6 +94,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                         """
                         {"title":"Trip","destinations":["Cebu"],"description":"Old blurb."}
                         """);
+        lock(token, tripId); // S1.4: hold the edit lock before writing
 
         // A whole-field edit that omits the description clears it — the body is the new whole state.
         rest.patch()
@@ -119,6 +121,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                         """
                         {"title":"Trip","destinations":["Cebu"],"durationDays":3}
                         """);
+        lock(token, tripId); // S1.4: hold the edit lock before writing
 
         // Editing the itinerary's fields must not disturb its days (a different part of the aggregate).
         rest.patch()
@@ -236,6 +239,21 @@ class ItineraryFieldEditIT extends PostgresTestBase {
     }
 
     // --- fixtures ---------------------------------------------------------------------------------
+
+    /**
+     * Acquires the edit lock as {@code token} (S1.4, ADR-014): a successful field edit now requires the
+     * lease. The guard-masking and visitor tests do not call this (masked / rejected before the lock),
+     * and the pure Bean-Validation rejections (blank title, backwards dates) 400 at the controller
+     * before the service, so they need no lock either; only the tests that reach a real write take it.
+     */
+    private void lock(String token, String itineraryId) {
+        rest.post()
+                .uri("/v1/itineraries/" + itineraryId + "/edit-lock")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
 
     private String admitMemberTo(String itineraryId) {
         String memberToken = freshTraveler();
