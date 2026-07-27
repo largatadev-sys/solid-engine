@@ -25,7 +25,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S1.3 | Itinerary days + activities CRUD + itinerary field edit, collaborative *(external links + manual fields; edit added at S0.3; 2026-07-17: last-write-wins — locking + activity history post-gate; grilled 2026-07-23: day-indexed, ADR-013)* | ✅ | [spec](docs/plans/S1.3-days-and-activities/spec.md) |
 | S1.4 | Itinerary edit lock — single-writer MVP *(re-scoped 2026-07-24: private comments deleted, Comment is public-only → S4.6; supersedes S1.3's LWW — ADR-014)* | ✅ | [spec](docs/plans/S1.4-itinerary-edit-lock/spec.md) |
 | S1.5 | Member removal + leave *(grilled 2026-07-27: owner removes / member leaves, one operation; hard delete + register #4 note; lease released transactionally; single additive DELETE)* | ✅ | [spec](docs/plans/S1.5-member-removal-leave/spec.md) |
-| S1.6 | Ownership transfer + owner-deletion claim (INV-4) | ⬜ | — |
+| S1.6 | Ownership transfer via offer/accept (INV-4) + membership-scoped My Trips *(grilled 2026-07-28: claim flow → S5.5 with its deletion trigger; consent over imposition — the reversal is the record)* | ⬜ | [spec](docs/plans/S1.6-ownership-transfer/spec.md) |
 | S1.7 | Itinerary lifecycle: draft → active → completed *(resolves reg. #10)* | ⬜ | — |
 | S1.8 | Entitlement seam: `can(traveler, capability)` service — full access in v1 (ADR-009) | ⬜ | — |
 | S1.9 | Itinerary delete (owner-only; INV-4 + workspace lifecycle — added at S0.3) | ⬜ | — |
@@ -50,7 +50,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S5.2 | Balances view | ⬜ | — |
 | S5.3 | Transfers: settle / waive / reassign (INV-8) | ⬜ | — |
 | S5.4 | Aggregate trip cost → published itinerary (INV-2) | ⬜ | — |
-| S5.5 | Account deletion = anonymization (completes 01 Compliance) | ⬜ | — |
+| S5.5 | Account deletion = anonymization (completes 01 Compliance) + owner-deletion claim flow *(moved from S1.6, 2026-07-28 — the claim needs deletion to exist; adds `kind` to the transfer record)* | ⬜ | — |
 | **Epic 6 — Unfurler** *(spike reg. #8 precedes; UX reg. #7 resolves here)* | | | | |
 | S6.1 | Share-sheet capture + paste fallback (dev-build native extension) | ⬜ | — |
 | S6.2 | Unfurler worker: Tier 1 OG + Tier 2 JSON-LD, cached, degrade to bare link | ⬜ | — |
