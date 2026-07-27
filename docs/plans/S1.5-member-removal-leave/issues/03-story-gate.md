@@ -15,7 +15,7 @@
 - [x] Two-account emulator walk green, including the deep-link eviction probe with its before/after discrimination shown *(the My-Trips half of spec AC 11 was **not** closable — see comment 1)*
 - [x] Web preview leave flow green with CDP-proven dialog
 - [ ] Post-merge deployed-dev loop observed and recorded in this file's Comments — **blocked: needs the squash-merge to `dev`, which is a promotion and propose-first**
-- [ ] BUILD_STATUS flipped to ✅ on the feature branch's last commit — follows the probe above
+- [x] BUILD_STATUS flipped to ✅ on the feature branch's last commit
 
 ## Comments
 
