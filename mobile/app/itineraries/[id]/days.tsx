@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { ApiError } from '../../../src/api/ApiError';
 import { comingSoon } from '../../../src/components/comingSoon';
 import { confirmDestructive } from '../../../src/components/confirmDestructive';
+import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
 import { useEditLock } from '../../../src/hooks/useEditLock';
 import { activityMetaLine } from '../../../src/itineraries/formatActivityCost';
 import { reorderActivityIds } from '../../../src/itineraries/reorderActivityIds';
@@ -82,8 +83,10 @@ export default function DailySchedulesScreen() {
     return (
       <View style={styles.centered}>
         <Stack.Screen options={{ title: 'Daily Schedules' }} />
-        <Text style={styles.errorTitle}>{missing ? 'Trip not found' : 'Could not load this plan'}</Text>
-        <Text style={styles.caption}>{error.message}</Text>
+        <Text style={styles.errorTitle}>
+          {missing ? missingItineraryMessage.title : 'Could not load this plan'}
+        </Text>
+        <Text style={styles.caption}>{missing ? missingItineraryMessage.body : error.message}</Text>
       </View>
     );
   }

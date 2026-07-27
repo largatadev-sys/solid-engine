@@ -37,6 +37,15 @@ class MembershipStorageIT extends PostgresTestBase {
 
     @Autowired private ItineraryService itineraries;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private WorkspaceService workspaces;
+
+    /**
+     * {@code removeMember} is {@code Propagation.MANDATORY} — deliberately uncallable without a
+     * caller's transaction, so departure cannot half-commit (spec §3). The test therefore has to supply
+     * one, rather than annotating the class {@code @Transactional}: that would roll everything back and
+     * hide whether the delete actually reached the database.
+     */
+    @Autowired private org.springframework.transaction.support.TransactionTemplate transactions;
 
     @Test
     void theRoleColumnHoldsTheEnumsName() {
@@ -77,6 +86,63 @@ class MembershipStorageIT extends PostgresTestBase {
                                         java.sql.Timestamp.from(Instant.now())))
                 .as("membership_one_owner_idx refuses the second owner")
                 .isInstanceOf(org.springframework.dao.DuplicateKeyException.class);
+    }
+
+    /**
+     * INV-4's <em>other</em> half — "at least one owner" — which no database constraint defends (S1.5).
+     *
+     * <p>{@code membership_one_owner_idx} enforces <em>at most</em> one owner, so deleting the last one
+     * satisfies every constraint in the schema and leaves the workspace ownerless: INV-4 broken, no
+     * error, ever. {@code MembershipService} refuses the owner's departure two layers up, but that is
+     * authority logic in a different module, and S1.6 is about to add a second caller of this row
+     * write. So the row write refuses too, and it refuses loudly.
+     */
+    @Test
+    void theOwnersMembershipCannotBeDestroyed() {
+        UUID ownerId = UUID.randomUUID();
+        Itinerary itinerary = itineraries.create(ownerId, "Nikko", List.of("Nikko"), null, null);
+
+        assertThatThrownBy(() -> transactions.executeWithoutResult(tx -> workspaces.removeMember(itinerary.id(), ownerId)))
+                .as("the last owner's row is not deletable — ownership transfers, it is never deleted")
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("INV-4");
+
+        Integer owners =
+                jdbc.queryForObject(
+                        "SELECT count(*) FROM membership m JOIN workspace w ON m.workspace_id = w.id "
+                                + "WHERE w.itinerary_id = ? AND m.role = 'OWNER'",
+                        Integer.class,
+                        itinerary.id());
+        assertThat(owners).isEqualTo(1);
+    }
+
+    /**
+     * The refusal above would be worthless if this row write refused everything — that is the shape of
+     * a check whose two outcomes are indistinguishable, which this repo has been burned by three times.
+     * A member's row deletes cleanly through the same call.
+     */
+    @Test
+    void aMembersMembershipIsDestroyedByTheSameCall() {
+        UUID ownerId = UUID.randomUUID();
+        UUID memberId = UUID.randomUUID();
+        Itinerary itinerary = itineraries.create(ownerId, "Kamakura", List.of("Kamakura"), null, null);
+        UUID workspaceId =
+                jdbc.queryForObject("SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());
+        jdbc.update(
+                "INSERT INTO membership (workspace_id, traveler_id, role, joined_at) VALUES (?, ?, 'MEMBER', ?)",
+                workspaceId,
+                memberId,
+                java.sql.Timestamp.from(Instant.now()));
+
+        Boolean removed =
+                transactions.execute(tx -> workspaces.removeMember(itinerary.id(), memberId));
+
+        assertThat(removed).isTrue();
+        assertThat(workspaces.roleOf(itinerary.id(), memberId)).isEmpty();
+        // Idempotent at this layer too: the second call finds nothing to destroy and says so — the
+        // false that stops MembershipService emitting a second event for one departure.
+        Boolean removedAgain = transactions.execute(tx -> workspaces.removeMember(itinerary.id(), memberId));
+        assertThat(removedAgain).isFalse();
     }
 
     /** The same index must not stand in the way of many members — it is partial for this reason. */

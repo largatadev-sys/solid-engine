@@ -114,6 +114,74 @@ public class WorkspaceService {
         return memberships.findRole(travelerId, itineraryId).isPresent();
     }
 
+    /**
+     * A traveler's role in the workspace around an itinerary, or empty if they hold no membership
+     * (S1.5, the departure decision).
+     *
+     * <p>This is {@link #isMember} with the answer it already had: the same single indexed read, not
+     * discarding the role. Departure needs the role because INV-4 makes the owner's row undeletable
+     * (their exit is S1.6's transfer), and it needs "no row" distinguishable from "a row" because a
+     * DELETE of the already-departed is 204, not 404 (Artifact 05).
+     *
+     * <p><strong>Not a substitute for the guard.</strong> It answers about a <em>third party</em> — the
+     * removal target — which is a domain question, not an authorization one. The caller's own standing
+     * still arrives as a {@link com.largata.common.authz.Membership} the guard minted.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Role> roleOf(UUID itineraryId, UUID travelerId) {
+        return memberships.findRole(travelerId, itineraryId);
+    }
+
+    /**
+     * Destroys a traveler's membership row — removal and leave, which are one act here (S1.5).
+     *
+     * <p><strong>{@link Propagation#MANDATORY}, for the reason {@code formAround} and {@code
+     * admitMember} record.</strong> A departure is not just this row: the departing traveler's edit
+     * lease is released in the same transaction (spec §3, so no plan is left locked by a ghost). Either
+     * both land or neither does, and {@code MANDATORY} makes that a property the caller cannot get
+     * wrong — called with no transaction it throws rather than quietly committing half a departure.
+     *
+     * <p><strong>Hard delete, decided at the grilling (2026-07-27) and forced by this table's shape.</strong>
+     * The row's identity is {@code (workspace, traveler)} with no surrogate key, so a soft-delete
+     * tombstone would collide with its own traveler on re-join, and every reader — {@link
+     * MembershipRepository#findRole}, V4's INV-4 partial index, {@link #membersOf} — would need a
+     * not-deleted filter it can never forget: the default-by-omission pattern Artifact 03 rejected.
+     * The cost is accepted knowingly: "was a member" has no durable record afterwards, and register #4
+     * carries that note for the review story that might have wanted it.
+     *
+     * <p>This method does not check <em>authority</em> — who may ask is {@code MembershipService}'s
+     * decision, made on the guard's {@link com.largata.common.authz.Membership} (Artifact 03). It does
+     * enforce one <em>invariant</em>, which is a different thing:
+     *
+     * <p><strong>The owner's row cannot be destroyed here, and the check belongs at this depth.</strong>
+     * INV-4 ("exactly one owner at all times") is one of the two Full-rigor zones in CLAUDE.md, and
+     * V4's partial unique index cannot defend it: that index enforces <em>at most</em> one owner, so
+     * deleting the last one passes every constraint in the database. Leaving the guarantee to the two
+     * {@code if}s in the calling module would mean the invariant holds only while every future caller
+     * remembers — the default-by-omission shape Artifact 03 rejected — and S1.6 is about to add the
+     * second caller. It fails loud rather than returning false, for {@code admitMember}'s reason: a
+     * caller that reaches here with the owner has a bug, and a silent no-op would report success while
+     * INV-4 quietly depended on luck. Ownership leaves a traveler by <em>transfer</em> (S1.6), never by
+     * deletion.
+     *
+     * @return whether a row was actually destroyed — false means it was already gone (an idempotent
+     *     repeat, or a lost race with a concurrent departure)
+     * @throws IllegalStateException if the target holds the {@code OWNER} role — an INV-4 breach
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean removeMember(UUID itineraryId, UUID travelerId) {
+        if (memberships.findRole(travelerId, itineraryId).filter(role -> role == Role.OWNER).isPresent()) {
+            throw new IllegalStateException(
+                    "Refusing to destroy the owner's membership on itinerary "
+                            + itineraryId
+                            + " — INV-4; ownership transfers, it is never deleted");
+        }
+        // No log line here, deliberately: MembershipService logs this same outcome with the initiator
+        // attached, and P3's check is explicit that one business outcome logged in two layers is a
+        // violation. The richer line wins.
+        return memberships.deleteMember(travelerId, itineraryId) > 0;
+    }
+
     /** The workspace id around an itinerary, or empty if none exists (S1.2, for invitation creation). */
     @Transactional(readOnly = true)
     public Optional<UUID> workspaceIdOf(UUID itineraryId) {

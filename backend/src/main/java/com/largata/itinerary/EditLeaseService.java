@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -141,6 +142,56 @@ public class EditLeaseService {
                                     "Edit lock released: itineraryId={} holder={}",
                                     member.itineraryId(),
                                     member.travelerId());
+                        });
+    }
+
+    /**
+     * Releases whatever lease a <em>named traveler</em> holds on an itinerary, on the system's behalf
+     * rather than the holder's — the hook departure calls when that traveler stops being a member
+     * (S1.5, spec §3).
+     *
+     * <p><strong>Why this exists beside {@link #release}, which looks like it would do.</strong> That
+     * one takes the holder's own {@link Membership} — the capability the guard minted for <em>them</em>
+     * — because releasing your own lock is a member acting on their own behalf. An owner removing
+     * someone else never holds the removed traveler's capability and never can: capabilities are not
+     * transferable, which is the property that makes them worth having. So the system-level release
+     * takes ids, and its authority comes from the caller having already established, through the guard,
+     * that it may end this membership.
+     *
+     * <p><strong>Not a force-take, and the distinction is load-bearing.</strong> ADR-014 forbids taking
+     * a live lease from a member — owner included — because that would let one editor's work be
+     * discarded by another mid-edit. This releases the lease of someone who is, as of this same
+     * transaction, <em>no longer a member</em>: there is no member left to force anything from. What it
+     * actually preserves is a latent invariant — <strong>a lease holder is always a member</strong> —
+     * which departure is the first operation in the system able to break. Without it the plan stays
+     * locked for up to a full TTL by a person the roster no longer lists, and the modal names them.
+     *
+     * <p>Deletes a lapsed lease as readily as a live one: an expired row is not a lock (ADR-014), but
+     * leaving an ex-member's row behind serves nothing.
+     *
+     * <p>{@link Propagation#MANDATORY} — this must land in the caller's departure transaction or not at
+     * all. A lease freed while the membership delete rolls back would unlock a plan for a member who is
+     * still a member; the reverse leaves the ghost lock this method exists to prevent. Same structural
+     * argument {@code WorkspaceService.formAround} makes for the same annotation.
+     *
+     * <p><strong>Do not "de-duplicate" this against {@link #release} — the bodies match, the semantics
+     * do not.</strong> That one is {@code @Transactional} (opens its own if none exists), this one is
+     * {@code MANDATORY} (refuses to). Having either delegate to the other would also be a
+     * <em>self-invocation</em>, which bypasses the Spring proxy entirely and silently drops the
+     * propagation setting of the method being called — the S0.2 gotcha. Six lines twice is the cheaper
+     * of the two mistakes available here.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void releaseHeldBy(UUID itineraryId, UUID travelerId) {
+        leases.findByItineraryId(itineraryId)
+                .filter(lease -> lease.isHeldBy(travelerId))
+                .ifPresent(
+                        lease -> {
+                            leases.delete(lease);
+                            log.info(
+                                    "Edit lock released on departure: itineraryId={} formerHolder={}",
+                                    itineraryId,
+                                    travelerId);
                         });
     }
 

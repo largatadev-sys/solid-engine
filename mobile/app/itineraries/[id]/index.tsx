@@ -1,6 +1,7 @@
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
+import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
 import { formatDates } from '../../../src/itineraries/formatDates';
 import { useItinerary } from '../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../src/theme';
@@ -33,8 +34,10 @@ export default function ItineraryScreen() {
     return (
       <View style={styles.centered}>
         <Stack.Screen options={{ title: 'Trip' }} />
-        <Text style={styles.errorTitle}>{missing ? 'Trip not found' : 'Could not load this trip'}</Text>
-        <Text style={styles.caption}>{error.message}</Text>
+        <Text style={styles.errorTitle}>
+          {missing ? missingItineraryMessage.title : 'Could not load this trip'}
+        </Text>
+        <Text style={styles.caption}>{missing ? missingItineraryMessage.body : error.message}</Text>
       </View>
     );
   }
