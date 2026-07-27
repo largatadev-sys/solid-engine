@@ -134,6 +134,24 @@ powershell -File mobile/scripts/build-release.ps1    # -ApiBaseUrl defaults to h
 adb install -r mobile/android/app/build/outputs/apk/release/*.apk
 ```
 
+**Test identities: use the verified pool, and never invent `@largata.test` accounts again (S1.5).**
+
+`@largata.test` is a **reserved TLD (RFC 2606)** — mail to it is undeliverable *by definition*, so accounts there can never be verified. Every story up to S1.5 minted them, and the cost stayed hidden until S1.5's smoke run: **`email_verified` gates S1.2's invite → accept, so that flow had never been exercised on any rung** — only in ITs with synthetic tokens. Not broken; unreachable by any harness.
+
+The fix needs no code, no Gmail setting, and no backend change (all three verified at S1.5): **Gmail routes anything between `+` and `@` to the base mailbox, while Firebase treats each full address as a distinct account with its own UID.** One real inbox, unlimited genuinely-verifiable travelers. Our `@Email` validation accepts them and `normalize()` (strip + lowercase) preserves the `+`.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/test-pool.js list          # the pool + each member's verification state
+node scripts/test-pool.js create        # create any missing + send their verification mail
+node scripts/seed-trip.js --owner t1 --members t2,t3   # a trip seeded via the REAL invite→accept
+```
+
+- **Verification is a one-time human click, by design** — the thing being proven is mailbox control, which no script can fake. It only happens once: Firebase accounts live in `largata-dev`, so they survive every fresh-DB redeploy.
+- `LARGATA_TEST_POOL_EMAIL_BASE` / `LARGATA_TEST_POOL_PASSWORD` live in the **gitignored `mobile/.env`** — a password is a credential and the address is PII, so neither enters a committed file (never-commit-secrets is structural, not a promise).
+- **Stop planting `membership` rows with psql.** Fixtures did that only because unverifiable accounts could not pass the accept gate — which meant every fixture skipped the step that gate exists to protect. `seed-trip.js` drives invite → inbox → accept over HTTP instead.
+- **Google sign-in is a separate axis the pool does not cover:** a Google sign-in always returns the *base* account, never a `+suffix`. Two Google-authenticated travelers need two real Google accounts. The AVD is already a Play image with the founder's dev Google account signed in (`com.android.vending` + `com.google.android.gms` both present — check with `adb shell pm list packages`), so regression-checklist line #4 is runnable on demand rather than needing setup.
+
 **Which build proves what — do not spend a release build on a question a dev build answers.**
 
 | | Dev build (`expo run:android`) | Release build (`build-release.ps1`) |

@@ -39,3 +39,13 @@ Prompted by the owner asking whether one had been done. It had not: the runs abo
 - **Web preview rung — 16/16**, on a container **rebuilt from the committed code**. My Trips, trip detail, and the daily-schedule screen all render; the new missing-state copy is present and *"No such itinerary"* is gone; the owner sees Remove and no Leave, the member sees Leave and no Remove and no invite field; `window.confirm` fires with the right wording and **cancelling is obeyed**; zero uncaught page errors across both walks.
 - **Emulator rung.** Sign in → My Trips → trip detail → daily schedule → **add a day (persisted: DB 1 day)**, proving plan writes still work through S1.4's lock after these edits. **The highest-risk regression of this change was checked directly:** `confirmDestructive` was generalised to delegate through `confirmWith`, and S1.3's call sites depend on it — "Delete Day 1 and everything in it? / This cannot be undone." renders unchanged with CANCEL/DELETE, and **cancelling is a true no-op** (day count still 1). Then the S1.5 remove: roster and DB drop to one membership, and the plan survives intact.
 - **Zero `ERROR` lines in the backend log** across the whole exercise.
+
+**2026-07-27 (later still) — the smoke's own blocker fixed, and spec AC 9 finally proven on a rung.**
+
+The six first-run API "failures" above were a harness limit, and the founder asked whether it could be removed rather than worked around. It could, with no code: `@largata.test` is a **reserved TLD**, so those accounts were never verifiable and the `email_verified` gate was unreachable from any harness — hence the row-planting in every fixture, which quietly skipped the step that gate exists to protect. Replaced by a **plus-addressed pool on a real inbox** (`test-pool.js`), verified once by the founder; recorded as an off-epic ledger line and in CLAUDE.md's rig recipe.
+
+What that immediately bought, beyond tidiness:
+
+- **`smoke-api.js` now runs 36/36**, up from 30, and three of the new assertions were previously impossible: the real invite → inbox → accept (not a planted row); both halves of S1.2's verification gate (against a permanent deliberately-unverified `u1`, so testing the negative case no longer mints accounts); and — the one that matters for this story — **spec AC 9 (remove → re-invite → rejoin) proven end-to-end on a rung with real Firebase identities**, where it had been IT-only.
+- `seed-trip.js` replaces the psql row-planting for every future fixture.
+- All three scripts are committed, per the S0.6 lesson that a harness living only in a transcript gets rebuilt every story.
