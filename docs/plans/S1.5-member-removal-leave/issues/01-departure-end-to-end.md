@@ -11,19 +11,27 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** open
+**Status:** done
 
-- [ ] Owner removes a member → 204, row gone, roster no longer lists them (spec AC 1)
-- [ ] Member leaves → 204, same destruction (spec AC 2)
-- [ ] Non-owner member targeting anyone else → 403, even if the target is already gone (spec AC 3)
-- [ ] Owner self-target → 409 `OWNER_CANNOT_LEAVE`; the owner row survives every test in the suite — INV-4 (spec AC 4)
-- [ ] Repeat DELETE / never-member target → 204, idempotent (spec AC 5)
-- [ ] Non-member caller 404-masked; unauthenticated 401 (spec AC 6)
-- [ ] Eviction probe discriminates: target's GET is 200 before and 404 after, in one test (spec AC 7)
-- [ ] Live lease freed by departure: next member's acquire succeeds immediately, no TTL wait (spec AC 8)
-- [ ] Remove → re-invite (no `ALREADY_A_MEMBER`) → accept → member again with fresh `joined_at` (spec AC 9)
-- [ ] `member_removed` vs `member_left` by initiator, after commit (spec AC 10)
+- [x] Owner removes a member → 204, row gone, roster no longer lists them (spec AC 1)
+- [x] Member leaves → 204, same destruction (spec AC 2)
+- [x] Non-owner member targeting anyone else → 403, even if the target is already gone (spec AC 3)
+- [x] Owner self-target → 409 `OWNER_CANNOT_LEAVE`; the owner row survives every test in the suite — INV-4 (spec AC 4)
+- [x] Repeat DELETE / never-member target → 204, idempotent (spec AC 5)
+- [x] Non-member caller 404-masked; unauthenticated 401 (spec AC 6)
+- [x] Eviction probe discriminates: target's GET is 200 before and 404 after, in one test (spec AC 7)
+- [x] Live lease freed by departure: next member's acquire succeeds immediately, no TTL wait (spec AC 8)
+- [x] Remove → re-invite (no `ALREADY_A_MEMBER`) → accept → member again with fresh `joined_at` (spec AC 9)
+- [x] `member_removed` vs `member_left` by initiator, after commit (spec AC 10)
 
 ## Comments
 
-*(empty — accretes during implementation)*
+**2026-07-27 — implemented.**
+
+1. **Item 2 of this ticket said "the workspace module gains the departure operation". It could not.** `workspace` imports nothing — it is the leaf — and `itinerary → workspace` already exists (`formAround`), so calling `EditLeaseService` from `WorkspaceService` would have closed the package cycle ADR-011's seam exists to prevent. Departure has no honest existing home either: `invitation` orchestrates admission because *its* trigger is an invitation; departure's is neither an invitation nor an itinerary act. **New `com.largata.membership` module** — one service, no tables, reaching both collaborators by service interface (ADR-002), and the home S1.6's ownership transfer will want. `WorkspaceService.removeMember` (the row) and `EditLeaseService.releaseHeldBy` (the lease) are both `Propagation.MANDATORY`, so neither can commit without the other; the orchestrator's `@Transactional` is the one that opens.
+
+2. **`removeMember` returns a row count, and the caller depends on it.** Two concurrent DELETEs of the same member both pass the role check; Postgres serialises the deletes and the loser removes 0 rows. Returning the count is what stops one departure emitting two analytics events.
+
+3. **A test bug worth recording.** The "an evicted member cannot write the plan" IT first asserted 404 and got **400**: Spring runs `@Valid @RequestBody` validation during argument resolution — before the controller body, therefore before `guard.requireMember(...)` — so an incomplete body answers 400 whoever you are. Not a masking leak (the 400 depends only on the caller's own payload, never on server state), but **any guard assertion on a write endpoint must send a body the validator accepts** or it never reaches authorization at all.
+
+4. **Evidence:** 22 new ITs across `MemberDepartureContractIT` (14), `DepartureFreesEditLockIT` (3), `MemberDepartureAnalyticsIT` (5). Full backend suite **203 tests, 0 failures** — existing guard, lease and workspace suites unmodified and green. `DepartureFreesEditLockIT` runs with the clock untouched against the real 3-minute TTL, so a pass can only mean the release happened; it also pins that the release is *targeted* (removing B must not free the lock the owner is holding).

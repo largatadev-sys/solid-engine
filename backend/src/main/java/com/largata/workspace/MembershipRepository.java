@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -41,4 +42,23 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
     @Query("SELECT new com.largata.workspace.MembershipView(m.travelerId, m.role, m.joinedAt) "
             + "FROM Membership m WHERE m.workspace.itineraryId = :itineraryId ORDER BY m.joinedAt ASC")
     List<MembershipView> findMembers(@Param("itineraryId") UUID itineraryId);
+
+    /**
+     * Destroys one membership row — the only delete this table has (S1.5: removal and leave are the
+     * same act at this layer, distinguished only by who asked).
+     *
+     * <p><strong>Returns the row count, and the caller depends on it.</strong> Zero means the row was
+     * already gone — either an idempotent repeat or a lost race with a concurrent departure — which is
+     * how {@code MembershipService} avoids emitting a second analytics event for one departure.
+     *
+     * <p>The workspace is reached by subquery on its {@code itinerary_id} rather than by dereferencing
+     * {@code m.workspace.itineraryId} as the reads above do: a bulk {@code DELETE} cannot carry the
+     * implicit join that dereference compiles to. {@code m.workspace.id} alone would be fine (it is
+     * the FK column on this table), but the itinerary id is what callers hold, so the subquery does
+     * that hop in SQL.
+     */
+    @Modifying
+    @Query("DELETE FROM Membership m WHERE m.travelerId = :travelerId AND m.workspace.id IN "
+            + "(SELECT w.id FROM Workspace w WHERE w.itineraryId = :itineraryId)")
+    int deleteMember(@Param("travelerId") UUID travelerId, @Param("itineraryId") UUID itineraryId);
 }

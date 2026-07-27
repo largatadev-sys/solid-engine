@@ -49,4 +49,16 @@ export const invitationRepository = {
   async invite(itineraryId: string, request: CreateInvitationRequest): Promise<InvitationResponse> {
     return apiClient.post<InvitationResponse>(`/v1/itineraries/${itineraryId}/invitations`, request);
   },
+
+  /**
+   * End a membership (S1.5): the owner removing somebody, or a member leaving.
+   *
+   * One call for both doors — the server reads which it is from whether `travelerId` is the caller's
+   * own, so there is no flag to send and no way for the client to claim an authority it lacks. A real
+   * DELETE, unlike the invitation transitions above: those flip a row that survives terminal, this
+   * destroys one.
+   */
+  async endMembership(itineraryId: string, travelerId: string): Promise<void> {
+    await apiClient.delete(`/v1/itineraries/${itineraryId}/members/${travelerId}`);
+  },
 };

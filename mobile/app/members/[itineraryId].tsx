@@ -1,9 +1,13 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError } from '../../src/api/ApiError';
+import { confirmWith } from '../../src/components/confirmDestructive';
+import { leaveTripWording, removeMemberWording } from '../../src/components/confirmDestructiveMessage';
 import { useMe } from '../../src/hooks/useMe';
+import { memberControls } from '../../src/members/memberControls';
 import {
+  useEndMembership,
   useInvite,
   useMembers,
   usePendingInvitations,
@@ -13,20 +17,54 @@ import { colors, radii, spacing, typography } from '../../src/theme';
 import type { InvitationResponse, MemberResponse } from '../../src/types/api';
 
 /**
- * The Members screen (S1.2, ticket 07) — the first screen where a trip's people are named.
+ * The Members screen (S1.2, ticket 07; departure added S1.5) — the first screen where a trip's people
+ * are named, and now the only one where they stop being named.
  *
- * Every member sees the roster. The owner additionally sees the invite field, the pending
- * invitations, and revoke — gated on the caller's own role, resolved by finding themselves in the
- * member list (the server enforces the same, regardless; the UI just does not advertise dead ends).
+ * Every member sees the roster. The owner additionally sees the invite field, the pending invitations,
+ * revoke, and **Remove** on everyone but themselves. A non-owner member sees **Leave trip** instead.
+ *
+ * <p><strong>The owner has no Leave control at all</strong>, deliberately: INV-4 keeps exactly one owner
+ * at all times, so an owner's exit is only coherent after transferring ownership — which is S1.6. The
+ * server refuses it either way (409 `OWNER_CANNOT_LEAVE`); the screen simply does not advertise a dead
+ * end, the same reason the invite field is owner-only rather than shown-and-rejected.
  */
 export default function MembersScreen() {
   const { itineraryId } = useLocalSearchParams<{ itineraryId: string }>();
   const members = useMembers(itineraryId);
   const { state: meState } = useMe();
+  const endMembership = useEndMembership(itineraryId);
+  const [departureError, setDepartureError] = useState<string | null>(null);
 
   const myId = meState.kind === 'ok' ? meState.me.id : undefined;
   const roster = members.data?.items ?? [];
-  const isOwner = myId !== undefined && roster.some((m) => m.travelerId === myId && m.role === 'owner');
+  // The gating lives in a pure function so it is testable — a screen is not, under jest-expo (S0.3).
+  const { isOwner, canLeave, removableTravelerIds } = memberControls(roster, myId);
+
+  const removeMember = (member: MemberResponse) => {
+    confirmWith(removeMemberWording(member.displayName), () => {
+      setDepartureError(null);
+      endMembership.mutate(
+        { travelerId: member.travelerId, leaving: false },
+        { onError: (error) => setDepartureError(departureErrorMessage(error)) },
+      );
+    });
+  };
+
+  const leaveTrip = () => {
+    if (myId === undefined) return;
+    confirmWith(leaveTripWording(), () => {
+      setDepartureError(null);
+      endMembership.mutate(
+        { travelerId: myId, leaving: true },
+        {
+          // Back to My Trips, replacing rather than pushing: the trip we just left must not be
+          // reachable with the back gesture — every screen under it would 404 on its next fetch.
+          onSuccess: () => router.replace('/'),
+          onError: (error) => setDepartureError(departureErrorMessage(error)),
+        },
+      );
+    });
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -39,26 +77,77 @@ export default function MembersScreen() {
         <>
           <Section label="Members">
             {roster.map((member) => (
-              <MemberRow key={member.travelerId} member={member} isYou={member.travelerId === myId} />
+              <MemberRow
+                key={member.travelerId}
+                member={member}
+                isYou={member.travelerId === myId}
+                onRemove={
+                  removableTravelerIds.includes(member.travelerId) ? () => removeMember(member) : undefined
+                }
+                busy={endMembership.isPending}
+              />
             ))}
           </Section>
 
+          {departureError !== null && <Text style={styles.error}>{departureError}</Text>}
+
           {isOwner && <OwnerControls itineraryId={itineraryId} />}
+
+          {canLeave && (
+            <Section label="Leaving">
+              <Pressable
+                style={[styles.dangerButton, endMembership.isPending && styles.disabled]}
+                onPress={leaveTrip}
+                disabled={endMembership.isPending}
+                accessibilityRole="button"
+              >
+                {endMembership.isPending ? (
+                  <ActivityIndicator color={colors.danger} />
+                ) : (
+                  <Text style={styles.dangerButtonText}>Leave trip</Text>
+                )}
+              </Pressable>
+            </Section>
+          )}
         </>
       )}
     </ScrollView>
   );
 }
 
-function MemberRow({ member, isYou }: { member: MemberResponse; isYou: boolean }) {
+function MemberRow({
+  member,
+  isYou,
+  onRemove,
+  busy,
+}: {
+  member: MemberResponse;
+  isYou: boolean;
+  /** Present only when the viewer may remove this member — the owner, on somebody else's row. */
+  onRemove?: () => void;
+  busy: boolean;
+}) {
   return (
     <View style={styles.row}>
       <Text style={styles.rowName} numberOfLines={1}>
         {member.displayName}
         {isYou ? ' (you)' : ''}
       </Text>
-      <View style={styles.roleBadge}>
-        <Text style={styles.roleText}>{member.role}</Text>
+      <View style={styles.rowActions}>
+        <View style={styles.roleBadge}>
+          <Text style={styles.roleText}>{member.role}</Text>
+        </View>
+        {onRemove !== undefined && (
+          <Pressable
+            onPress={onRemove}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${member.displayName}`}
+            hitSlop={spacing.sm}
+          >
+            <Text style={styles.revoke}>Remove</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -168,6 +257,30 @@ function inviteErrorMessage(error: Error): string {
   return 'Could not send the invitation. Try again.';
 }
 
+/**
+ * Branch on the envelope `code`, never the message (Artifact 05).
+ *
+ * `OWNER_CANNOT_LEAVE` should be unreachable from this screen — the owner is never shown a Leave
+ * control, and Remove never targets their own row — but it is mapped anyway rather than falling to the
+ * generic line. If the gating ever regresses, the traveler gets the sentence that tells them what to do
+ * instead of a shrug, and the wrong copy in a screenshot is how the regression gets reported.
+ */
+function departureErrorMessage(error: Error): string {
+  if (error instanceof ApiError) {
+    switch (error.code) {
+      case 'OWNER_CANNOT_LEAVE':
+        return 'Transfer ownership to another member before leaving this trip.';
+      case 'NOT_PERMITTED':
+        return 'Only the trip owner can remove a member.';
+      case 'ITINERARY_NOT_FOUND':
+        return 'This trip is no longer available to you.';
+      default:
+        return error.message;
+    }
+  }
+  return 'Could not complete that. Try again.';
+}
+
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <View style={styles.section}>
@@ -197,6 +310,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   rowName: { ...typography.body, color: colors.textPrimary, flexShrink: 1 },
+  rowActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   roleBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -223,6 +337,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
   buttonText: { ...typography.bodyStrong, color: colors.textOnAccent },
+  // Outlined rather than filled: leaving is destructive but it is not the screen's primary action, and
+  // a solid danger-coloured slab reads as an instruction. The invite CTA keeps the filled treatment.
+  dangerButton: {
+    maxWidth: FIELD_MAX_WIDTH,
+    paddingVertical: spacing.md,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.danger,
+  },
+  dangerButtonText: { ...typography.bodyStrong, color: colors.danger },
   disabled: { opacity: 0.5 },
   message: { ...typography.caption, color: colors.textPrimary },
   revoke: { ...typography.caption, color: colors.danger, fontWeight: '600' },
