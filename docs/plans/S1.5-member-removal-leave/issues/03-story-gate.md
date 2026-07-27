@@ -10,11 +10,11 @@
 
 **Blocked by:** 01, 02.
 
-**Status:** in-progress — local rungs closed; the deployed-dev gate remains
+**Status:** done
 
 - [x] Two-account emulator walk green, including the deep-link eviction probe with its before/after discrimination shown *(the My-Trips half of spec AC 11 was **not** closable — see comment 1)*
 - [x] Web preview leave flow green with CDP-proven dialog
-- [ ] Post-merge deployed-dev loop observed and recorded in this file's Comments — **blocked: needs the squash-merge to `dev`, which is a promotion and propose-first**
+- [x] Post-merge deployed-dev loop observed and recorded in this file's Comments
 - [x] BUILD_STATUS flipped to ✅ on the feature branch's last commit
 
 ## Comments
@@ -49,3 +49,18 @@ What that immediately bought, beyond tidiness:
 - **`smoke-api.js` now runs 36/36**, up from 30, and three of the new assertions were previously impossible: the real invite → inbox → accept (not a planted row); both halves of S1.2's verification gate (against a permanent deliberately-unverified `u1`, so testing the negative case no longer mints accounts); and — the one that matters for this story — **spec AC 9 (remove → re-invite → rejoin) proven end-to-end on a rung with real Firebase identities**, where it had been IT-only.
 - `seed-trip.js` replaces the psql row-planting for every future fixture.
 - All three scripts are committed, per the S0.6 lesson that a harness living only in a transcript gets rebuilt every story.
+
+**2026-07-27 — deployed-dev gate closed (spec AC 13). S1.5 done.**
+
+Run against **deployed dev — `api-dev.largata.com`, Firebase project `largata-dev`** (named, per the S1.1 lesson that a result from an unnamed environment is not an answer), with pool accounts `t1` (owner) and `t2` (the removed member). **10/10.**
+
+**The deploy was detected by a check that can fail**, which is the part worth recording — "has the new build landed?" is the question this repo has got wrong three times with probes whose two outcomes were indistinguishable. An authenticated `DELETE /v1/itineraries/{id}/members/{id}` against a random id answers:
+
+- **old build** → `404 NOT_FOUND` — no handler is mapped for that route at all (`GlobalExceptionHandler.handleNoHandler`)
+- **new build** → `404 ITINERARY_NOT_FOUND` — the route exists and the guard masks the unknown id
+
+Same status, different envelope code. So the pass means the S1.5 build is serving, and a failure would have said *which* build was.
+
+The loop itself, in order: both travelers provision on the rung · owner creates a trip · invites `t2` · `t2` accepts and joins · **`t2` reads the trip (200) — the positive control, taken before the removal so the 404 afterwards means eviction rather than a broken probe** · the owner's own departure is refused `409 OWNER_CANNOT_LEAVE`, so INV-4 holds on the deployed rung and not just locally · owner removes `t2` (204) · **the same read is now 404** · roster back to the owner alone.
+
+Gate trip left on the rung for inspection: `019fa308-c029-7a65-9ba2-5d5d3346764d`. It is deliberately not cleaned up — itinerary delete is S1.9, and the trip is named "S1.5 gate probe" so it is identifiable rather than mysterious junk in the environment founders look at.
