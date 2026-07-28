@@ -182,6 +182,94 @@ public class WorkspaceService {
         return memberships.deleteMember(travelerId, itineraryId) > 0;
     }
 
+    /**
+     * Every itinerary this traveler is a member of — owned and joined alike (S1.6, ticket 03).
+     *
+     * <p>The seam that keeps My Trips membership-scoped without the itinerary module touching a
+     * membership table (ADR-002): ids cross, nothing else. The itinerary module pages and hydrates.
+     *
+     * <p><strong>The whole set, not a page.</strong> A traveler is on tens of trips, not thousands, so
+     * fetching their ids costs one indexed scan of a handful of rows — and the alternative (paging on
+     * this side) would move the keyset cursor into the workspace module, away from the ordering it
+     * describes. If the shape ever stops holding, the fix is a paged variant here, not a cross-module
+     * join there.
+     */
+    @Transactional(readOnly = true)
+    public List<UUID> itineraryIdsFor(UUID travelerId) {
+        return memberships.findItineraryIdsFor(travelerId);
+    }
+
+    /**
+     * The traveler who owns the workspace around an itinerary (S1.6). Empty only if no workspace exists
+     * — INV-4 guarantees a workspace always has exactly one owner.
+     *
+     * <p>Answers from the membership rows, which are the authority; {@code itinerary.owner_id} is the
+     * mirror they keep in step, never the source a transfer reads.
+     */
+    @Transactional(readOnly = true)
+    public Optional<UUID> ownerOf(UUID itineraryId) {
+        return memberships.findOwnerTravelerId(itineraryId);
+    }
+
+    /**
+     * Swaps ownership between the current owner and a member, atomically (S1.6 §6).
+     *
+     * <p><strong>{@link Propagation#MANDATORY}, for the reason every other writer here records.</strong>
+     * The swap is one third of a transfer — the itinerary's denormalised owner and the durable transfer
+     * record are the others — and a swap that commits alone would leave an itinerary whose {@code
+     * owner_id} names the wrong traveler with no record of why.
+     *
+     * <p><strong>Demote first, then promote, and the order is forced by V4's partial unique index.</strong>
+     * That index allows at most one {@code OWNER} row per workspace, evaluated per statement: promoting
+     * first would momentarily create a second owner and abort. Demote-then-promote passes through a
+     * momentarily <em>ownerless</em> workspace instead, which is invisible outside this transaction and
+     * — unlike two owners — is a state no constraint forbids and no reader can observe.
+     *
+     * <p><strong>Both halves are conditional, and both counts are checked.</strong> This is where INV-4
+     * is actually defended, one layer below whoever calls it (the pattern S1.5's review established for
+     * {@link #removeMember}): the demote only matches a row that is still {@code OWNER}, so a racing
+     * second transfer finds zero rows and fails loudly here rather than producing two owners or none.
+     * The failure is an {@link IllegalStateException} rather than a domain rejection because a caller
+     * that reaches this method with a stale idea of who owns the trip has a bug — the offer ladder above
+     * has already established the facts.
+     *
+     * @throws IllegalStateException if the named traveler is not the current owner, if the target holds
+     *     no membership, or if either write matches no row (a concurrent transfer won)
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void transferOwnership(UUID itineraryId, UUID fromTravelerId, UUID toTravelerId) {
+        if (fromTravelerId.equals(toTravelerId)) {
+            throw new IllegalStateException(
+                    "Ownership cannot transfer to its current holder on itinerary " + itineraryId);
+        }
+        int demoted = memberships.changeRole(fromTravelerId, itineraryId, Role.OWNER, Role.MEMBER);
+        if (demoted != 1) {
+            // Zero means the row is gone or is no longer OWNER — the only way that happens is a
+            // concurrent transfer that got here first. Refusing keeps INV-4 true: one owner, and the
+            // other transaction's.
+            throw new IllegalStateException(
+                    "Refusing to transfer ownership of itinerary "
+                            + itineraryId
+                            + " — traveler "
+                            + fromTravelerId
+                            + " no longer holds it (concurrent transfer?)");
+        }
+        int promoted = memberships.changeRole(toTravelerId, itineraryId, Role.MEMBER, Role.OWNER);
+        if (promoted != 1) {
+            // The target's membership vanished between the offer ladder's check and here (a concurrent
+            // departure). Fail loud: the alternative is a workspace with no owner at all — the one state
+            // INV-4 says can never exist, and the one V4's index cannot catch.
+            throw new IllegalStateException(
+                    "Refusing to leave itinerary "
+                            + itineraryId
+                            + " ownerless — traveler "
+                            + toTravelerId
+                            + " is no longer a member (concurrent departure?)");
+        }
+        log.info(
+                "Ownership transferred: itineraryId={} from={} to={}", itineraryId, fromTravelerId, toTravelerId);
+    }
+
     /** The workspace id around an itinerary, or empty if none exists (S1.2, for invitation creation). */
     @Transactional(readOnly = true)
     public Optional<UUID> workspaceIdOf(UUID itineraryId) {

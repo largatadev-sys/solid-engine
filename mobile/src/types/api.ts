@@ -240,6 +240,20 @@ export type MemberResponse = {
   displayName: string;
   role: string;
   joinedAt: string;
+  /**
+   * Whether this member currently holds a pending ownership offer (S1.6). At most one row of any
+   * roster carries `true` — one crown, one outstretched hand (V9's partial unique index).
+   *
+   * Optional because it is additive within /v1 (ADR-008): a server that predates S1.6 omits it, and
+   * this app must read `undefined` as "no offer" rather than crashing. Every consumer goes through
+   * `memberControls`, which coerces it.
+   */
+  ownershipOffered?: boolean;
+};
+
+/** The body of `POST /v1/itineraries/{id}/ownership-offer` (S1.6): who is offered the crown. */
+export type OwnershipOfferRequest = {
+  travelerId: string;
 };
 
 /** Mirrors `com.largata.invitation.web.AcceptResponse` — the itinerary just joined (S1.2). */

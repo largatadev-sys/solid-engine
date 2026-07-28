@@ -2,6 +2,7 @@ package com.largata.membership;
 
 import com.largata.common.error.ConflictException;
 import com.largata.common.error.ForbiddenException;
+import com.largata.common.error.NotFoundException;
 
 /**
  * The membership module's rejections (S1.5), each a subtype of the taxonomy's category parents (06b
@@ -42,7 +43,79 @@ final class MembershipExceptions {
      */
     static final class OwnerCannotLeaveException extends ConflictException {
         OwnerCannotLeaveException() {
-            super("OWNER_CANNOT_LEAVE", "Transfer ownership to another member before leaving this trip.");
+            super("OWNER_CANNOT_LEAVE", "Offer ownership to another member and have them accept before leaving this trip.");
+        }
+    }
+
+    /**
+     * The owner offered ownership to someone who is not on the trip — 409, naming the remedy (invite
+     * them first).
+     *
+     * <p><strong>Not a 404, and the distinction is Artifact 03's.</strong> A 404 here would be masking,
+     * and there is nothing to mask: the caller is the owner, they can read the roster, and they already
+     * know who is and is not on it. Masking exists to stop a probe learning that an id is real; refusing
+     * a coherent request against a target the caller can already enumerate is a conflict, not a secret.
+     */
+    static final class TargetNotAMemberException extends ConflictException {
+        TargetNotAMemberException() {
+            super("TARGET_NOT_A_MEMBER", "Only a member of this trip can be offered ownership. Invite them first.");
+        }
+    }
+
+    /**
+     * The owner offered ownership to themselves — 409.
+     *
+     * <p>A no-op 204 was considered and rejected: this is a <em>create</em> endpoint, and answering 201
+     * or 204 to "make me owner, I am the owner" would mean the client cannot tell a real offer from a
+     * swallowed mistake. Idempotency belongs on DELETE (Artifact 05), where the asked-for end state is
+     * genuinely already true; here the asked-for thing — a pending offer — would not exist.
+     */
+    static final class CannotOfferToSelfException extends ConflictException {
+        CannotOfferToSelfException() {
+            super("CANNOT_OFFER_TO_SELF", "You already own this trip.");
+        }
+    }
+
+    /**
+     * An offer is already outstanding on this trip — 409, naming the remedy (revoke it first).
+     *
+     * <p>Silently superseding the old offer was rejected at the grilling: one crown, one outstretched
+     * hand, and the owner should <em>know</em> they are retracting from one person before extending to
+     * another. V9's partial unique index enforces the same rule one layer down, so this exception is
+     * the readable answer rather than the only defence — a race that slips past this check dies on the
+     * constraint rather than producing two live offers.
+     */
+    static final class OfferAlreadyPendingException extends ConflictException {
+        OfferAlreadyPendingException() {
+            super("OFFER_ALREADY_PENDING", "An ownership offer is already pending on this trip. Revoke it first.");
+        }
+    }
+
+    /**
+     * Accept or decline addressed to an offer that does not exist — 404.
+     *
+     * <p>The singleton's "not found": the caller is a member (the guard let them through) but this trip
+     * has no live offer at all. Distinct from {@link NotTripOwnerException}'s sibling below — an offer
+     * that exists but belongs to somebody else is a 403, because refusing it must not depend on whether
+     * the caller happens to be its target.
+     */
+    static final class NoPendingOfferException extends NotFoundException {
+        NoPendingOfferException() {
+            super("OFFER_NOT_FOUND", "There is no pending ownership offer on this trip.");
+        }
+    }
+
+    /**
+     * A member tried to accept or decline an offer made to somebody else — 403.
+     *
+     * <p><strong>This is what makes the stale-accept race safe by construction</strong> (S1.6 §7). If B's
+     * offer is revoked and C is then offered the crown, B's late accept — a retry, a stale screen, a
+     * queued request — finds a pending offer that is not theirs and is refused. B can never take C's
+     * crown, and the outcome does not depend on timing or on the client having refreshed.
+     */
+    static final class NotOfferTargetException extends ForbiddenException {
+        NotOfferTargetException() {
+            super("NOT_PERMITTED", "This ownership offer was made to another member.");
         }
     }
 }

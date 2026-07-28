@@ -59,3 +59,53 @@ export function leaveTripWording(): ConfirmWording {
     confirmLabel: 'Leave',
   };
 }
+
+/**
+ * The owner offering ownership to a member (S1.6).
+ *
+ * <p>Names what the owner is *giving up*, not merely what they are doing. The tap itself is safe and
+ * reversible — an offer can be revoked, and the other person must accept — so the dialog's job is not
+ * "are you sure" but "you understand this ends with you not being the owner". It says the offer must be
+ * accepted, because the single most likely misreading is that tapping this hands the trip over there
+ * and then.
+ */
+export function offerOwnershipWording(displayName: string): ConfirmWording {
+  return {
+    title: `Offer ownership to ${displayName}?`,
+    body: 'They choose whether to accept. If they do, they become the owner and you become a member.',
+    confirmLabel: 'Offer',
+  };
+}
+
+/** The owner retracting an offer before it is answered (S1.6). */
+export function revokeOwnershipOfferWording(displayName: string): ConfirmWording {
+  return {
+    title: `Withdraw the offer to ${displayName}?`,
+    body: 'You stay the owner. You can offer ownership again at any time.',
+    confirmLabel: 'Withdraw',
+  };
+}
+
+/**
+ * The offeree accepting the crown (S1.6).
+ *
+ * <p>Names the authority being *taken on*, in the concrete terms of what only an owner can do, because
+ * accepting is the one act in this flow that cannot be undone unilaterally: the new owner can hand it
+ * back only if the other person accepts in turn. That asymmetry is exactly what a confirm exists for.
+ */
+export function acceptOwnershipWording(tripTitle: string): ConfirmWording {
+  return {
+    title: `Become the owner of ${tripTitle}?`,
+    body: 'You take over managing members, ownership and the trip itself. The current owner stays on as a member.',
+    confirmLabel: 'Accept',
+  };
+}
+
+/** The offeree refusing the crown (S1.6) — nothing moves, and it can be offered again. */
+export function declineOwnershipWording(): ConfirmWording {
+  return {
+    title: 'Decline ownership?',
+    body: 'The current owner keeps the trip. They can offer it to you again later.',
+    confirmLabel: 'Decline',
+  };
+}

@@ -68,10 +68,75 @@ class TripMembershipController {
         return Page.exhausted(invitations.pendingInvitations(membership).stream().map(InvitationResponse::of).toList());
     }
 
+    /**
+     * The trip's roster — and, since S1.6, whether anyone is holding an ownership offer.
+     *
+     * <p><strong>The offer flag is composed here rather than inside {@code InvitationService}</strong>,
+     * and the reason is the module graph. {@code MemberSummary} is the invitation module's composition
+     * (workspace row + identity name), but the offer lives in {@code membership}, which sits
+     * <em>above</em> invitation's collaborators and depends on {@code itinerary}. Having invitation read
+     * it would invert that. This class already fronts two modules by design (see the class javadoc); a
+     * third read joined on traveler id is the same transport-layer composition, and it keeps both
+     * modules unaware of each other. One extra query per roster read, on a bounded list.
+     */
     @GetMapping("/members")
     Page<MemberResponse> members(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        return Page.exhausted(invitations.members(membership).stream().map(MemberResponse::of).toList());
+        UUID offeredTo = memberships.pendingOfferTargetIn(itineraryId).orElse(null);
+        return Page.exhausted(
+                invitations.members(membership).stream()
+                        .map(m -> MemberResponse.of(m, m.travelerId().equals(offeredTo)))
+                        .toList());
+    }
+
+    /**
+     * Offers ownership of this trip to a member (S1.6). Owner-only; the member accepts or declines.
+     *
+     * <p>201, because a pending offer is a created thing the client can now see on the roster — not 204:
+     * the act has a result that outlives the request, unlike revoke/accept/decline which resolve one.
+     */
+    @PostMapping("/ownership-offer")
+    @ResponseStatus(HttpStatus.CREATED)
+    void offerOwnership(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID itineraryId,
+            @Valid @RequestBody OwnershipOfferRequest request) {
+        Membership membership = guard.requireMember(traveler.id(), itineraryId);
+        memberships.offerOwnership(membership, request.travelerId());
+    }
+
+    /**
+     * Retracts the trip's pending ownership offer (S1.6). Owner-only, idempotent: no pending offer is
+     * still 204, because the asked-for end state already holds (Artifact 05).
+     */
+    @DeleteMapping("/ownership-offer")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void revokeOwnershipOffer(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
+        Membership membership = guard.requireMember(traveler.id(), itineraryId);
+        memberships.revokeOwnershipOffer(membership);
+    }
+
+    /**
+     * Accepts the ownership offer made to the caller (S1.6) — the transfer executes in one transaction:
+     * roles swap, the itinerary's owner syncs, the durable transfer record is written, the offer closes.
+     *
+     * <p>No request body, deliberately: the path names the trip and the guard names the caller, so
+     * there is nothing left to send — and a body-less POST cannot trip the S1.5 trap where {@code @Valid}
+     * validation answers 400 during argument resolution, before authorization is ever consulted.
+     */
+    @PostMapping("/ownership-offer/accept")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void acceptOwnershipOffer(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
+        Membership membership = guard.requireMember(traveler.id(), itineraryId);
+        memberships.acceptOwnershipOffer(membership);
+    }
+
+    /** Declines the ownership offer made to the caller (S1.6) — the crown stays where it is. */
+    @PostMapping("/ownership-offer/decline")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void declineOwnershipOffer(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
+        Membership membership = guard.requireMember(traveler.id(), itineraryId);
+        memberships.declineOwnershipOffer(membership);
     }
 
     /**

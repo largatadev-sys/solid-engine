@@ -34,6 +34,34 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
     Optional<Role> findRole(@Param("travelerId") UUID travelerId, @Param("itineraryId") UUID itineraryId);
 
     /**
+     * Every itinerary this traveler is a member of — owned and joined alike (S1.6, the membership-scoped
+     * My Trips).
+     *
+     * <p><strong>No role predicate, and that is the fix.</strong> Since S1.1 the creator gets an {@code
+     * OWNER} membership row atomically with the trip, so one membership-scoped query covers both kinds
+     * with no union and no special case: "trips I own" was only ever a subset of "trips I'm on", and
+     * treating it as the whole set is what made joined trips invisible on their members' home screens
+     * (found at S1.5's device walk).
+     *
+     * <p>Returns ids rather than rows: the itinerary module owns the paging and the hydration, and the
+     * ids are the whole of what crosses the module boundary (ADR-002). Served by V11's {@code
+     * membership_traveler_idx}, the index V4 predicted and deferred to whichever story wrote this query.
+     */
+    @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId")
+    List<UUID> findItineraryIdsFor(@Param("travelerId") UUID travelerId);
+
+    /**
+     * The traveler who currently owns the workspace around an itinerary (S1.6, the transfer's from-side).
+     *
+     * <p>Reads the membership rows rather than {@code itinerary.owner_id} deliberately: the row is the
+     * authority (the column is a mirror kept in step by the transfer), and a transfer that trusted the
+     * mirror could swap the wrong pair if the two ever diverged. INV-4 guarantees exactly one match.
+     */
+    @Query("SELECT m.travelerId FROM Membership m WHERE m.workspace.itineraryId = :itineraryId "
+            + "AND m.role = com.largata.common.authz.Role.OWNER")
+    Optional<UUID> findOwnerTravelerId(@Param("itineraryId") UUID itineraryId);
+
+    /**
      * Every membership of one workspace, addressed by its itinerary (the member list, S1.2). Projected
      * straight to the public {@link MembershipView} — the entity never leaves the module — and ordered
      * by {@code joined_at} so the owner (joined at the trip's first instant) leads and members follow
@@ -61,4 +89,30 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
     @Query("DELETE FROM Membership m WHERE m.travelerId = :travelerId AND m.workspace.id IN "
             + "(SELECT w.id FROM Workspace w WHERE w.itineraryId = :itineraryId)")
     int deleteMember(@Param("travelerId") UUID travelerId, @Param("itineraryId") UUID itineraryId);
+
+    /**
+     * Moves one membership between roles — the two halves of an ownership transfer (S1.6).
+     *
+     * <p><strong>The {@code expectedRole} predicate is the concurrency defence, not decoration.</strong>
+     * Two transfers racing on one workspace both read an {@code OWNER} row and both try to demote it;
+     * with an unconditional UPDATE both would "succeed" and the second promote would leave two owners —
+     * a lost update that V4's partial unique index would catch only by aborting a transaction somewhere
+     * unhelpful. With the predicate, the loser's demote matches zero rows and the caller aborts on the
+     * count. The invariant is enforced by the WHERE clause, and the count is how the caller learns.
+     *
+     * <p>{@code expectedRole} is compared against the enum, so this carries the same {@code
+     * @Enumerated(STRING)} contract V4's partial index does — {@code MembershipStorageIT} pins that a
+     * role's stored spelling moving would be caught rather than silently matching nothing.
+     *
+     * @return rows updated: 1 on success, 0 if the row was absent or no longer held {@code expectedRole}
+     */
+    @Modifying
+    @Query("UPDATE Membership m SET m.role = :newRole WHERE m.travelerId = :travelerId "
+            + "AND m.role = :expectedRole AND m.workspace.id IN "
+            + "(SELECT w.id FROM Workspace w WHERE w.itineraryId = :itineraryId)")
+    int changeRole(
+            @Param("travelerId") UUID travelerId,
+            @Param("itineraryId") UUID itineraryId,
+            @Param("expectedRole") Role expectedRole,
+            @Param("newRole") Role newRole);
 }
