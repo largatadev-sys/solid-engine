@@ -15,12 +15,12 @@
 
 **Blocked by:** 03 — the fence · 04 — mobile archived surface.
 
-**Status:** in progress — device and preview closed; deployed-dev probe pending the promotion
+**Status:** done
 
 - [x] Device run per §1, both accounts, tags stated, cancel and confirm both driven (spec AC 13)
 - [x] Preview container run per §2, CDP-intercepted confirms, frozen treatment shown (spec AC 14)
-- [ ] Deployed-dev probe per §3, database named, both states read back (spec AC 15) — **post-merge, needs the `dev` deploy**
-- [ ] BUILD_STATUS row flipped in the last feature-branch commit; spec comments appended
+- [x] Deployed-dev probe per §3 — 10/10 against `api-dev.largata.com`; the migration proven through the write path rather than SQL (see comment, 2026-07-29) (spec AC 15)
+- [x] BUILD_STATUS row flipped in the last feature-branch commit; spec comments appended
 
 ## Comments
 
@@ -36,3 +36,12 @@
 6. **Cancel was proven to genuinely cancel, by the database rather than the render.** After tapping CANCEL the workspace still read `ARCHIVED` and the screenshot was byte-identical (111248 bytes both times); after CONFIRM it read `ACTIVE` — recomputed from the draft itinerary, per decision 8. Two outcomes from one probe.
 7. **Two documented traps hit and avoided.** `pm clear` deletes the whole `shared_prefs` **directory**, so the Metro-host pref must be re-pushed *after* the app has been launched once (S1.7's white-screen trap) — done in that order, verified by listing the directory. And `adb shell input text` mangles the pool password's special characters, which presents as *"Email or password is incorrect"* and reads like a wrong credential rather than a broken input method; escaping the shell-significant characters fixed it.
 8. **AC 15 remains open by design** — the deployed-dev probe runs *after* the promotion to `dev`, which is the owner's call. Everything it needs is written down in §3.
+
+**2026-07-29 — AC 15 closed post-merge: 10/10 against deployed dev.**
+
+1. **The loop, on the rung:** create → real invite/accept as t2 → t1 archives (200, `archived=true`) → t2's plan write refused `409 TRIP_ARCHIVED` → the trip leaves the default list and appears in `?archived=true` → **t2 still leaves (204)** → t1 unarchives (200, `archived=false`). Probe trip `019fa962-0c8a-7661-8ec4-d3b0dd19755c`.
+2. **The 401 probe is useless here, and that trap was walked into before being caught.** An unauthenticated `POST …/archive` answers 401 whether or not the route exists — the security chain rejects before routing, so a live route and a nonexistent one are indistinguishable. S1.7's commit message records the same finding. The discriminating probe is **authenticated, against a real trip**: `404 NOT_FOUND` = no such route (old build), `200`/`409` = the route is there. It read 404 immediately after the push and 200 once the build landed.
+3. **The SQL half of §3 could not be run and was replaced by a stronger signal, not skipped.** There is no Railway CLI on this machine and the deployed database is internal-only (`postgres.railway.internal`), so no psql session was available. What stands in its place is the **write path**, which is more discriminating than a `SELECT` would be: `workspace.state` is `NOT NULL` with no default, so a 200 from `/archive` is an UPDATE that could not succeed against a database missing the column — it would 500 naming it.
+4. **The backfill is proven by the migration having applied at all, which is the part deployed dev uniquely tests.** Unlike S1.7's V12 (`ADD COLUMN` nullable — metadata-only, reads no row), **V13 is data-dependent**: it adds the column, backfills every row from its itinerary, *then* sets `NOT NULL`. Deployed dev holds 7 workspaces that predate it. Had the backfill missed one, the `NOT NULL` would have aborted the migration and the endpoints would not answer at all. All 7 return a boolean `archived`, none wrongly frozen. This is the S1.1 shape — a backfill that runs against zero rows locally and "passes" — exercised against real rows for the second time (the local stack's 12 hours of S1.7 data was the first).
+5. **Stated limit, so the next reader does not overclaim it:** the archive→unarchive round-trip on the pre-existing *completed* trip (`edited after completion` — 200/200, still `completed`) proves the machinery works on rows older than the feature, but it does **not** discriminate V13's `CASE` mapping: unarchive *recomputes* state from the itinerary, so an inverted backfill would still have returned `COMPLETED`. The mapping is pinned by `WorkspaceStateBackfillIT`, sabotage-verified locally; that is where it is defended, not here.
+6. **The rung was left as found.** The deploy watcher's own probe genuinely archived a trip (`edited after completion`) on the run that detected the deploy — restored to unarchived in the same session rather than left as a surprise for whoever opens the founder preview next.
