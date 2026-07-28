@@ -183,7 +183,7 @@ class OwnershipTransferIT extends PostgresTestBase {
                 .isForbidden()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("NOT_PERMITTED");
+                .isEqualTo("NOT_OFFER_TARGET");
 
         // Nothing moved, and C's offer is intact — the refusal cost C nothing.
         assertThat(roleOnRoster(ownerToken, trip, ownerId)).isEqualTo("owner");

@@ -352,11 +352,18 @@ public class MembershipService {
      * governance state of a shared trip, workspace-walled like roles (INV-1) rather than private
      * between two people — and a group that can see the unaccepted crown can nudge, which is itself
      * part of the discovery guarantee the offer/accept design rests on.
+     *
+     * <p><strong>Takes the guard's {@link Membership}, not an itinerary id</strong>, because "any
+     * member" is still a wall: this answers a question about the caller's own workspace, so it is
+     * workspace-scoped and Artifact 03's rule applies — a handler that has not been through the guard
+     * must not be able to call it. (Contrast {@link WorkspaceService#roleOf}, which takes bare ids and
+     * says why in its javadoc: it answers about a <em>third party</em>, which is a domain question
+     * rather than an authorization one.)
      */
     @Transactional(readOnly = true)
-    public Optional<UUID> pendingOfferTargetIn(UUID itineraryId) {
+    public Optional<UUID> pendingOfferTargetIn(Membership caller) {
         return workspaces
-                .workspaceIdOf(itineraryId)
+                .workspaceIdOf(caller.itineraryId())
                 .flatMap(id -> offers.findByWorkspaceIdAndStatus(id, OwnershipOfferStatus.PENDING))
                 .map(OwnershipOffer::targetTravelerId);
     }

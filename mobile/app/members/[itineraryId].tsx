@@ -442,6 +442,11 @@ function ownershipErrorMessage(error: Error): string {
         return 'An ownership offer is already pending. Withdraw it before offering to somebody else.';
       case 'OFFER_NOT_FOUND':
         return 'That ownership offer is no longer available.';
+      case 'NOT_OFFER_TARGET':
+        // Distinct from NOT_PERMITTED on purpose: this caller is not missing a role, they are acting on
+        // an offer that has since been withdrawn and re-made to somebody else. A sentence about owners
+        // would not describe their situation at all.
+        return 'That ownership offer is no longer yours — it was withdrawn or offered to someone else.';
       case 'NOT_PERMITTED':
         return 'Only the trip owner can offer ownership.';
       case 'ITINERARY_NOT_FOUND':

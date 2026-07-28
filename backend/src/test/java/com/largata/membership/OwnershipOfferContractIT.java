@@ -247,7 +247,9 @@ class OwnershipOfferContractIT extends PostgresTestBase {
                 .isForbidden()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("NOT_PERMITTED");
+                // Its own code, not NOT_PERMITTED: this caller lacks no role, they are reaching for
+                // somebody else's offer, and the client's copy for the two cases must differ.
+                .isEqualTo("NOT_OFFER_TARGET");
     }
 
     // --- void on departure (AC 6) -------------------------------------------------------------------
@@ -330,10 +332,13 @@ class OwnershipOfferContractIT extends PostgresTestBase {
         String outsider = verified(uniqueEmail());
         offer(ownerToken, trip, travelerIdOf(memberToken)).expectStatus().isCreated();
 
-        // 404 everywhere — an outsider learns nothing about the trip, let alone its governance.
+        // 404 on all four — an outsider learns nothing about the trip, let alone its governance. Accept
+        // is included deliberately: it is the one route that moves ownership, so "the whole surface"
+        // (spec AC 11) has to mean all four rather than the three that only read or resolve.
         offer(outsider, trip, travelerIdOf(memberToken)).expectStatus().isNotFound();
         revoke(outsider, trip).expectStatus().isNotFound();
         decline(outsider, trip).expectStatus().isNotFound();
+        acceptOwnership(outsider, trip).expectStatus().isNotFound();
     }
 
     @Test
@@ -387,6 +392,22 @@ class OwnershipOfferContractIT extends PostgresTestBase {
     private RestTestClient.ResponseSpec decline(String callerToken, String tripId) {
         return rest.post()
                 .uri("/v1/itineraries/" + tripId + "/ownership-offer/decline")
+                .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
+                .exchange();
+    }
+
+    /**
+     * Accepting the ownership offer — for the masking test only; what accept <em>does</em> is {@code
+     * OwnershipTransferIT}'s subject. Masking has to cover it here because this is the class that owns
+     * "the whole surface" (AC 11).
+     *
+     * <p>Named for the offer, not just {@code accept}, because this class already has an {@code accept}
+     * for invitations. Two different things one can accept on a trip is exactly the ambiguity a test
+     * fixture should not carry.
+     */
+    private RestTestClient.ResponseSpec acceptOwnership(String callerToken, String tripId) {
+        return rest.post()
+                .uri("/v1/itineraries/" + tripId + "/ownership-offer/accept")
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }

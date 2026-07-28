@@ -82,7 +82,7 @@ class TripMembershipController {
     @GetMapping("/members")
     Page<MemberResponse> members(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        UUID offeredTo = memberships.pendingOfferTargetIn(itineraryId).orElse(null);
+        UUID offeredTo = memberships.pendingOfferTargetIn(membership).orElse(null);
         return Page.exhausted(
                 invitations.members(membership).stream()
                         .map(m -> MemberResponse.of(m, m.travelerId().equals(offeredTo)))

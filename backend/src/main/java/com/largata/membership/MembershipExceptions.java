@@ -112,10 +112,19 @@ final class MembershipExceptions {
      * offer is revoked and C is then offered the crown, B's late accept — a retry, a stale screen, a
      * queued request — finds a pending offer that is not theirs and is refused. B can never take C's
      * crown, and the outcome does not depend on timing or on the client having refreshed.
+     *
+     * <p><strong>Its own code, not the shared {@code NOT_PERMITTED}</strong>, and the reason is the copy
+     * on the other end. {@code NOT_PERMITTED} means "you are a member but this is the owner's to do" —
+     * every client string for it says something about owners. This situation is the opposite shape: the
+     * caller is not lacking a <em>role</em>, they are acting on somebody else's offer, and the honest
+     * sentence ("that offer is no longer yours") is one the owner-flavoured code cannot carry. Since the
+     * client branches on the code and never the message (Artifact 05), one code cannot serve two
+     * meanings without one of them reading wrong. Adding a code is additive (ADR-008); old clients fall
+     * through to the message, which is already the right sentence.
      */
     static final class NotOfferTargetException extends ForbiddenException {
         NotOfferTargetException() {
-            super("NOT_PERMITTED", "This ownership offer was made to another member.");
+            super("NOT_OFFER_TARGET", "This ownership offer was made to another member.");
         }
     }
 }
