@@ -29,6 +29,14 @@ import java.util.UUID;
  * itineraries, so it would say "you" in every response — and the moment E1 makes workspaces real,
  * "who owns this" becomes a question about membership, answered by the endpoint that owns that
  * question rather than smuggled onto this one.
+ *
+ * <p><strong>{@code archived} is the S1.9 addition, and it is a boolean beside {@code state} rather
+ * than a value inside it — deliberately.</strong> Archive lives on the <em>workspace</em> machine
+ * (02-domain-model), which is orthogonal to the itinerary's: a trip can be {@code completed} and
+ * archived at once, and an {@code "archived"} value in {@code state} could not say both. Two
+ * orthogonal facts in one enum is a modelling error that ADR-008 would make permanent on the wire.
+ * The projection direction is the grilling's decision 2: the workspace stores it, this read model
+ * exposes it. Purely additive — every pre-S1.9 client ignores the field and keeps working.
  */
 public record ItineraryResponse(
         UUID id,
@@ -39,6 +47,7 @@ public record ItineraryResponse(
         LocalDate endDate,
         String state,
         String visibility,
+        boolean archived,
         UUID lastEditedBy,
         Instant lastEditedAt,
         List<DayResponse> days,
@@ -59,11 +68,28 @@ public record ItineraryResponse(
      * something and returns it must do the same; reaching for this overload there reintroduces the bug.
      */
     public static ItineraryResponse of(Itinerary itinerary) {
-        return of(itinerary, List.of());
+        return of(itinerary, List.of(), false);
     }
 
     /** The single-fetch shape: the itinerary with its day/activity plan embedded (S1.3). */
     public static ItineraryResponse of(Itinerary itinerary, List<DayView> days) {
+        return of(itinerary, days, false);
+    }
+
+    /**
+     * The S1.9 shape: as above, plus whether the trip's workspace is archived.
+     *
+     * <p><strong>{@code archived} arrives as a parameter rather than being read off the itinerary,
+     * because the itinerary does not know</strong> — the fact lives on the workspace (ADR-002: modules
+     * reach each other by service interface, never by another's tables). The caller that has both — a
+     * controller, or the plan composition — supplies it.
+     *
+     * <p>The two overloads above default it to {@code false}, which is correct for every path that
+     * cannot produce an archived trip: {@code create} makes a live one, and the list composes its own
+     * value. A default that silently said "archived" would be the dangerous direction; this one at
+     * worst under-reports on a path that has no archived case to report.
+     */
+    public static ItineraryResponse of(Itinerary itinerary, List<DayView> days, boolean archived) {
         return new ItineraryResponse(
                 itinerary.id(),
                 itinerary.title(),
@@ -73,6 +99,7 @@ public record ItineraryResponse(
                 itinerary.endDate(),
                 itinerary.state().wireName(),
                 itinerary.visibility().wireName(),
+                archived,
                 itinerary.lastEditedBy(),
                 itinerary.lastEditedAt(),
                 days.stream().map(DayResponse::of).toList(),

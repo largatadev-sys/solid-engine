@@ -27,7 +27,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S1.5 | Member removal + leave *(grilled 2026-07-27: owner removes / member leaves, one operation; hard delete + register #4 note; lease released transactionally; single additive DELETE)* | ✅ | [spec](docs/plans/S1.5-member-removal-leave/spec.md) |
 | S1.6 | Ownership transfer via offer/accept (INV-4) + membership-scoped My Trips *(grilled 2026-07-28: claim flow → S5.5 with its deletion trigger; consent over imposition — the reversal is the record)* | ✅ | [spec](docs/plans/S1.6-ownership-transfer/spec.md) |
 | S1.7 | Itinerary lifecycle: draft → active → completed *(grilled 2026-07-28: reg #10 resolved — owner-explicit, dates nudge; `completed` gates nothing; forward-only + write-once stamps; workspace `state` defers to the archive story)* | ✅ | [spec](docs/plans/S1.7-itinerary-lifecycle/spec.md) |
-| S1.9 | Itinerary delete (owner-only; INV-4 + workspace lifecycle — added at S0.3) | ⬜ | — |
+| S1.9 | Itinerary archive *(grilled 2026-07-28, re-titled from "itinerary delete" — founder ruled archive-only, permanent deletion parked with a trigger; register #12 closes: the workspace `state` column ships; unarchive ships; fence = acts on the trip freeze, self-leave survives; evicts nobody)* | ⬜ | [spec](docs/plans/S1.9-itinerary-archive/spec.md) |
 | **Epic 2 — Decisions** | | | | |
 | S2.1 | Decision + votes (one per member, INV-10) | ⬜ | — |
 | S2.2 | Close decision with outcome | ⬜ | — |

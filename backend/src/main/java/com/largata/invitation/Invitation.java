@@ -119,6 +119,19 @@ public class Invitation {
     }
 
     /**
+     * The system dissolves this invitation — the owner did not retract it (S1.9).
+     *
+     * <p>Archiving a trip freezes every act on it, so a pending invitation into it can only ever fail.
+     * {@link InvitationStatus#VOIDED} rather than {@code REVOKED} keeps the record honest about who
+     * acted; the enum's javadoc carries the full reasoning, and {@code OwnershipOffer.voidBySystem} is
+     * the sibling that made the same split first.
+     */
+    void voidBySystem(Instant now) {
+        this.status = InvitationStatus.VOIDED;
+        this.resolvedAt = now;
+    }
+
+    /**
      * Realises lazy expiry (grilling Q4): flips a past-its-window PENDING row to {@code EXPIRED}. Done
      * only where it must be — on re-invite, to free the one-pending slot the unique index guards.
      */

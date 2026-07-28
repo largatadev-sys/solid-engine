@@ -51,6 +51,39 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
     List<UUID> findItineraryIdsFor(@Param("travelerId") UUID travelerId);
 
     /**
+     * The same set, split by whether the trip is archived (S1.9) — the default list wants the live ones,
+     * the archived view wants the rest.
+     *
+     * <p><strong>The filter belongs here, in the membership→ids step, not in the itinerary module's
+     * page query</strong> (spec decision 10). Two reasons, both structural: archive is a
+     * <em>workspace</em> fact, so filtering on it anywhere else would mean the itinerary module reading
+     * another module's column (ADR-002); and narrowing the id set leaves S1.6's keyset seek — {@code id
+     * < cursor}, ordered by id — completely untouched, so paging semantics are identical in both views.
+     * A predicate added to the page query would have had to be carried in the cursor to stay stable.
+     */
+    @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
+            + "AND m.workspace.state = :state")
+    List<UUID> findItineraryIdsIn(@Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
+
+    /**
+     * The traveler's trips whose workspace is <em>not</em> in the given state (S1.9) — the default My
+     * Trips list, which is everything except archived.
+     *
+     * <p>Two queries rather than one with a boolean predicate: HQL has no boolean-expression-as-value
+     * form ({@code (a = b) = :flag} is a parse error, which is how this shape first announced itself),
+     * and {@code <>} against a single state reads more plainly than either alternative.
+     */
+    @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
+            + "AND m.workspace.state <> :state")
+    List<UUID> findItineraryIdsNotIn(@Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
+
+    // No "which of these are archived" bulk query, deliberately (S1.9): the list is filtered to one
+    // side or the other before paging, so every row on a page carries the same archived value as the
+    // request that asked for it. The flag is the request parameter; a per-page lookup would be a query
+    // with no reader — the ship-when-read discipline that kept the state column itself deferred from
+    // S1.1 to S1.9.
+
+    /**
      * The traveler who currently owns the workspace around an itinerary (S1.6, the transfer's from-side).
      *
      * <p>Reads the membership rows rather than {@code itinerary.owner_id} deliberately: the row is the
