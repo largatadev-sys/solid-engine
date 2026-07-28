@@ -93,3 +93,17 @@ Repository/typed-`apiClient` layer: two mutations (ADR-001 — no raw fetch) · 
 ## Out of scope
 
 Publish + visibility (S4.1, register #11) · itinerary delete (S1.9) · workspace lifecycle/archive · the entitlement seam (S1.8) · any change to edit-lease, invitation, or membership semantics.
+
+## Comments
+
+**2026-07-28 — the 403's envelope code is `NOT_PERMITTED`, not `NOT_TRIP_OWNER` (decision 7 / AC 1 correction).**
+
+Decision 7 and AC 1 name the owner-refusal code `NOT_TRIP_OWNER`, and ticket 01 repeats it as "S1.6's envelope reused". **That prose was wrong about what S1.6 ships, and the code review caught the divergence.** `NOT_TRIP_OWNER` exists nowhere in the codebase: S1.6's spec used the same phrase, but its `MembershipExceptions.NotTripOwnerException` carries the code **`NOT_PERMITTED`** — and its javadoc records why, deliberately. The *class* is named for the situation; the *wire code* is Artifact 05's shared vocabulary, and "you are a member but this is the owner's to do" is one situation from the client's side. A second code for it would mean two branches for one meaning. The invitation module's `NotWorkspaceOwnerException` made the same call before that.
+
+S1.7 therefore ships `NOT_PERMITTED` — genuinely reusing S1.6's envelope, which is what the ticket asked for, rather than minting a fourth code for the same client branch. Under ADR-008 this is the permanent contract, so the correction is recorded rather than silently absorbed: **read every `NOT_TRIP_OWNER` in this spec as `NOT_PERMITTED`.** The intent (403, owner-only, distinct from the guard's 404) is unchanged.
+
+**2026-07-28 — three review findings fixed, two argued down.**
+
+Fixed: (1) `transitionsDoNotTouchTheLastEditedPair` had **no failure mode** — it used a never-edited trip, so both fields were null before and after and it would have passed had a transition stamped them. It now has a member edit the trip first and asserts the member's attribution survives both transitions. (2) `TripLifecycleBanner`'s javadoc claimed the banner "appears rather than flickering away" during roster load; the behaviour is the opposite (hidden until the roster lands) and the comment now states that, with the reasoning for why that direction is the right one. (3) The controller javadoc named a test class that does not exist.
+
+Argued down, with reasons on the record: (a) **month-name date formatting in the nudge copy** — the spec's "Jul 20" is illustrative prose in a decision about nudge *behaviour*, and `formatDates` renders raw ISO on every other surface, so this banner would become the only place in the app formatting dates differently. (b) **Returning the transition's own result instead of a second `viewPlan` read** — the re-read is the shape `view` and `update` already ship (a concurrent write between the two is a pre-existing property of every endpoint here, not something S1.7 introduces); changing it is a refactor of shipped endpoints, which belongs to its own story rather than riding this one.

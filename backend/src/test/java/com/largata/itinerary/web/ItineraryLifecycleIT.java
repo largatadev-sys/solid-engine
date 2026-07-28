@@ -217,24 +217,42 @@ class ItineraryLifecycleIT extends PostgresTestBase {
     void transitionsDoNotTouchTheLastEditedPair() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
+        String member = admitMemberTo(tripId);
+        UUID memberId = travelerIdOf(member);
 
-        // The pair attributes *plan* edits (S1.3). Starting a trip edits nothing about the plan, so a
-        // transition must not claim authorship of an edit that never happened.
-        start(owner, tripId)
+        // A REAL edit first, by somebody other than the owner. Without this the test has no failure
+        // mode: on a never-edited trip both fields are null before and after, so it would pass whether
+        // or not a transition stamps them — the "check whose two outcomes are indistinguishable" trap
+        // this repo has been burned by three times. With a member's attribution already in place, a
+        // transition that touched the pair would overwrite it with the OWNER's id, and that is visible.
+        rest.post()
+                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .header(HttpHeaders.AUTHORIZATION, bearer(member))
+                .exchange()
                 .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("$.lastEditedBy")
-                .doesNotExist()
-                .jsonPath("$.lastEditedAt")
-                .doesNotExist();
+                .isOk();
+        rest.patch()
+                .uri("/v1/itineraries/" + tripId)
+                .header(HttpHeaders.AUTHORIZATION, bearer(member))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"title":"Edited by the member","destinations":["Cebu"]}
+                        """)
+                .exchange()
+                .expectStatus()
+                .isOk();
+        Map<String, Object> afterEdit = attributionOf(tripId);
+        assertThat(afterEdit.get("last_edited_by")).isEqualTo(memberId);
 
-        complete(owner, tripId)
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("$.lastEditedBy")
-                .doesNotExist();
+        // The pair attributes *plan* edits (S1.3). A transition edits nothing about the plan, so it
+        // must not claim authorship — the member stays the last editor, at the instant they edited.
+        start(owner, tripId).expectStatus().isOk();
+        assertThat(attributionOf(tripId)).isEqualTo(afterEdit);
+
+        complete(owner, tripId).expectStatus().isOk();
+        assertThat(attributionOf(tripId))
+                .as("neither transition may overwrite the member's attribution with the owner's")
+                .isEqualTo(afterEdit);
     }
 
     @Test
@@ -308,6 +326,12 @@ class ItineraryLifecycleIT extends PostgresTestBase {
     private Map<String, Object> stampsOf(String itineraryId) {
         return jdbc.queryForMap(
                 "SELECT started_at, completed_at FROM itinerary WHERE id = ?", UUID.fromString(itineraryId));
+    }
+
+    /** The S1.3 attribution pair — who last edited the plan's fields, and when. */
+    private Map<String, Object> attributionOf(String itineraryId) {
+        return jdbc.queryForMap(
+                "SELECT last_edited_by, last_edited_at FROM itinerary WHERE id = ?", UUID.fromString(itineraryId));
     }
 
     private String admitMemberTo(String itineraryId) {

@@ -17,6 +17,12 @@ import com.largata.common.error.ForbiddenException;
  * across three modules is the price of each module owning its own rejections rather than reaching into
  * a sibling's package-private class (ADR-002) or growing a shared exception grab-bag — and the codes
  * are Artifact 05's vocabulary, not any one module's property.
+ *
+ * <p><strong>The S1.7 spec calls this code {@code NOT_TRIP_OWNER}; that prose is wrong and the spec's
+ * {@code ## Comments} records the correction.</strong> The phrase describes the *situation* — and names
+ * this class — but no such code has ever been on the wire: S1.6's spec said it too and shipped {@code
+ * NOT_PERMITTED} for the reasoning above. Under ADR-008 the shipped code is permanent, so this is
+ * written down here rather than left for the next reader to rediscover as a contradiction.
  */
 class NotTripOwnerException extends ForbiddenException {
 

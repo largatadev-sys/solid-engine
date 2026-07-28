@@ -23,8 +23,12 @@ import { deviceToday, lifecycleBanner } from './lifecycleBanner';
  * where the Jest table drives it; this component renders the answer and nothing more.
  *
  * <p>Ownership comes from the roster query the Members screen and the offer banner already share —
- * cached and bounded, so this is a cache hit on most visits. While it is still loading nobody is
- * treated as the owner, so the banner appears rather than flickering away.
+ * cached and bounded, so this is a cache hit on most visits. <strong>While it loads, nobody is treated
+ * as the owner and the banner is absent, appearing once the roster lands.</strong> That direction is
+ * deliberate: the alternative — assuming ownership until proven otherwise — would flash a lever at a
+ * member and then snatch it away, and a control that vanishes reads as a bug in a way one that arrives
+ * does not. On a warm cache (the usual case, since the trip screen already fetches this roster for the
+ * ownership-offer banner) there is no gap at all.
  *
  * <p><strong>Named `Trip…` rather than matching its helper</strong>: `LifecycleBanner.tsx` beside
  * `lifecycleBanner.ts` collides on a case-insensitive filesystem (Windows, macOS), and TypeScript
@@ -80,8 +84,13 @@ export function TripLifecycleBanner({ itinerary }: { itinerary: ItineraryRespons
 
 /**
  * The headline. When a date has passed it leads with that date, because the fact is the nudge — an
- * owner who sees "Start date was 10 Jan" knows immediately whether the suggestion is right, in a way
+ * owner who sees the start date they set knows immediately whether the suggestion is right, in a way
  * "Ready to start?" never tells them.
+ *
+ * <p>The date renders as the ISO string the server sent, which is what {@code formatDates} does on
+ * every other surface (the trip screen, My Trips rows). The spec's illustrative "Jul 20" is prose in a
+ * decision about nudge *behaviour*, not a copy spec — introducing month names here alone would make
+ * this the only place in the app that renders a date differently, which is worse than plain.
  */
 function title(act: 'start' | 'complete', overdue: boolean, itinerary: ItineraryResponse): string {
   if (!overdue) {
