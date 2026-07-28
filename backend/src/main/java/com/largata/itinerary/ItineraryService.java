@@ -260,6 +260,100 @@ public class ItineraryService {
     }
 
     /**
+     * The owner starts the trip (S1.7): {@code draft → active}, stamping when they said so.
+     *
+     * <p><strong>Owner-only, and the check is on the capability object</strong> — {@code
+     * membership.isOwner()}, never a re-read of {@code itinerary.ownerId} (which is a mirror, not the
+     * authority — see {@link #reassignOwner}). Authority before state, S1.5's ordering: a member who is
+     * not the owner gets 403 whether or not the transition would have been legal, so the refusal never
+     * leaks the trip's lifecycle state to someone without standing to change it.
+     *
+     * <p><strong>No edit lease</strong> (ADR-014, spec decision 10). The lease is the single-writer lock
+     * on <em>plan content</em>; a lifecycle transition is a governance act, like S1.5's removal and
+     * S1.6's transfer, and neither takes it. Requiring one would mean the owner had to seize the
+     * editing lock from a member mid-edit just to say the trip has begun.
+     *
+     * <p><strong>The last-edited pair is untouched</strong> for the same reason — it attributes plan
+     * edits (S1.3), and starting a trip edits nothing about the plan.
+     *
+     * @param owner proof from the guard; must be the {@code OWNER} membership
+     */
+    @Transactional
+    public Itinerary start(Membership owner) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.start(Instant.now());
+        return record(itinerary, owner, "itinerary_started");
+    }
+
+    /**
+     * The owner marks the trip complete (S1.7): {@code active → completed}.
+     *
+     * <p>Same authority, same lease and attribution reasoning as {@link #start}. The legality half —
+     * only from {@code ACTIVE}, no skip edge from {@code draft} — lives on the aggregate, which is
+     * where the state machine belongs; see {@link Itinerary#complete}.
+     *
+     * <p><strong>Completion gates nothing</strong> (spec decision 2): plan edits, invites, removal and
+     * transfer all keep working afterwards — canon's workspace afterlife is <em>working</em>, not
+     * frozen. This method records a fact; it does not lock a door. The fact's first reader is S4.1's
+     * publish gate.
+     *
+     * @param owner proof from the guard; must be the {@code OWNER} membership
+     */
+    @Transactional
+    public Itinerary complete(Membership owner) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.complete(Instant.now());
+        return record(itinerary, owner, "itinerary_completed");
+    }
+
+    /**
+     * Authority before state (S1.5's ordering), then the row — the half of a transition that must be
+     * identical for every edge, so it is written once.
+     *
+     * <p>The role check comes first deliberately: a member who is not the owner is refused whether or
+     * not the transition would have been legal, so the 403 never depends on — and never leaks — the
+     * trip's current lifecycle state.
+     */
+    private Itinerary authorizeAndLoad(Membership owner) {
+        if (!owner.isOwner()) {
+            throw new NotTripOwnerException();
+        }
+        return itineraries
+                .findById(owner.itineraryId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "The guard authorized a membership for an itinerary that does not exist"));
+    }
+
+    /**
+     * Persists a completed transition and reports it — the other half both edges share.
+     *
+     * <p>Reached only if the aggregate accepted the edge: an illegal transition throws inside {@code
+     * start}/{@code complete} before this is called, so nothing is saved, nothing is logged, and <em>no
+     * event fires for a refused transition</em> (spec AC 6). The emission is after-commit for the reason
+     * {@link #emitAfterCommit} records — a rolled-back transaction must not leave a funnel counting a
+     * trip that never started.
+     *
+     * <p>Attributes are ids only (P3): which trip, which traveler. The event's <em>name</em> already
+     * carries which transition happened, so no state attribute is needed to disambiguate.
+     */
+    private Itinerary record(Itinerary itinerary, Membership owner, String eventName) {
+        itineraries.save(itinerary);
+        log.info(
+                "Itinerary lifecycle: id={} state={} owner={}",
+                itinerary.id(),
+                itinerary.state().wireName(),
+                owner.travelerId());
+        AfterCommit.run(
+                () ->
+                        analytics.emit(
+                                AnalyticsEvent.named(eventName)
+                                        .with("itineraryId", itinerary.id())
+                                        .with("travelerId", owner.travelerId())
+                                        .build()));
+        return itinerary;
+    }
+
+    /**
      * The trips the caller is a member of — owned and joined, one list, newest first.
      *
      * <p><strong>No {@link Membership} here, and it is not a hole.</strong> The guard answers "may

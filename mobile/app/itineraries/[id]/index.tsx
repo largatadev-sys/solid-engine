@@ -3,6 +3,8 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { ApiError } from '../../../src/api/ApiError';
 import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
 import { formatDates } from '../../../src/itineraries/formatDates';
+import { formatItineraryState } from '../../../src/itineraries/formatItineraryState';
+import { TripLifecycleBanner } from '../../../src/itineraries/TripLifecycleBanner';
 import { OwnershipOfferBanner } from '../../../src/members/OwnershipOfferBanner';
 import { useItinerary } from '../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../src/theme';
@@ -58,11 +60,15 @@ export default function ItineraryScreen() {
       </View>
 
       <View style={styles.badges}>
-        {/* Rendered from the server's values, not assumed: S0.3 only ever produces draft/private,
-            but S1.7 and S4.1 make these vary and this screen needs no change to show it. */}
-        <Badge label={data.state} />
+        {/* Rendered from the server's values, not assumed: S0.3 only ever produced draft/private,
+            S1.7 makes state vary, and S4.1 will make visibility vary with no change here. The state
+            label is formatted (unknown values fall through as themselves — ADR-008). */}
+        <Badge label={formatItineraryState(data.state)} />
         <Badge label={data.visibility} />
       </View>
+
+      {/* The owner's lifecycle lever, with the date nudge (S1.7). Members see nothing. */}
+      <TripLifecycleBanner itinerary={data} />
 
       {/* Renders only for the traveler being offered the crown (S1.6) — the discovery guarantee the
           offer/accept design rests on, on the one screen a participant actually opens. */}

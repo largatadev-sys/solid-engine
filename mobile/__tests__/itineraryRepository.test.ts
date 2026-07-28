@@ -74,6 +74,38 @@ describe('reading one and creating', () => {
   });
 });
 
+describe('the lifecycle transitions (S1.7)', () => {
+  it('starts a trip with a bodiless POST to its own start route', async () => {
+    apiClient.post.mockResolvedValue({ id: 'trip-1', state: 'active' });
+
+    await itineraryRepository.startTrip('trip-1');
+
+    // `undefined`, not `{}`: the act carries no data, and an empty object would be a body the server
+    // never asked for. Action endpoints, not a state field on PATCH — the two doors stay separate
+    // (spec decision 7), and under ADR-008 the path shipped here is the one carried forever.
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/start', undefined);
+  });
+
+  it('completes a trip the same way', async () => {
+    apiClient.post.mockResolvedValue({ id: 'trip-1', state: 'completed' });
+
+    await itineraryRepository.completeTrip('trip-1');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/complete', undefined);
+  });
+
+  it('never reaches for PATCH to move state', async () => {
+    // The client half of the pin the backend asserts structurally: if a future edit routed a transition
+    // through the field-edit door, any member could start or complete somebody else's trip.
+    apiClient.post.mockResolvedValue({ id: 'trip-1' });
+
+    await itineraryRepository.startTrip('trip-1');
+    await itineraryRepository.completeTrip('trip-1');
+
+    expect(apiClient.patch).not.toHaveBeenCalled();
+  });
+});
+
 describe('the day operations (S1.3)', () => {
   it('appends a day under the itinerary, itinerary-addressed (no workspace id on the wire)', async () => {
     apiClient.post.mockResolvedValue({ id: 'day-1' });

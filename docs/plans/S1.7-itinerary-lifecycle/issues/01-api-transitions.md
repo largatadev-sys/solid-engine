@@ -11,11 +11,21 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Start: 200, `active`, `started_at` set; 401 · 404 non-member · 403 member (`NOT_TRIP_OWNER`) · 409 from `active` and `completed` (spec AC 1)
-- [ ] Complete: 200, `completed`, `completed_at` set; 409 from `draft` (no skip edge) and from `completed` (spec AC 2)
-- [ ] `PATCH` cannot move `state` — the pin (spec AC 3)
-- [ ] Timestamps write-once; last-edited pair untouched by transitions (spec AC 4)
-- [ ] Storage IT: enum-name spelling `'ACTIVE'`/`'COMPLETED'` + the `state` default gone (spec AC 5)
-- [ ] Events after commit only, one per act, none on a 409 (spec AC 6)
+- [x] Start: 200, `active`, `started_at` set; 401 · 404 non-member · 403 member (**`NOT_PERMITTED`** — see comment 1) · 409 from `active` and `completed` (spec AC 1)
+- [x] Complete: 200, `completed`, `completed_at` set; 409 from `draft` (no skip edge) and from `completed` (spec AC 2)
+- [x] `PATCH` cannot move `state` — the pin, asserted structurally (spec AC 3)
+- [x] Timestamps write-once; last-edited pair untouched by transitions (spec AC 4)
+- [x] Storage IT: enum-name spelling `'ACTIVE'`/`'COMPLETED'` + the `state` default gone (spec AC 5)
+- [x] Events after commit only, one per act, none on a 409 (spec AC 6)
+
+## Comments
+
+**2026-07-28 — done. 18 new ITs + 6 unit tests; full suite 272 ITs + 34 unit, 0 failures.**
+
+1. **The 403's code is `NOT_PERMITTED`, not `NOT_TRIP_OWNER`.** This ticket said "S1.6's envelope reused" and then named a code that has never been on the wire — S1.6's spec said it too and shipped `NOT_PERMITTED`, deliberately (one client branch wants one code; the invitation module made the same call before it). Reusing the envelope is what actually happened; the prose was wrong. Recorded in the spec's `## Comments` and in `NotTripOwnerException`'s javadoc so the contradiction is not rediscovered as a surprise. Under ADR-008 the shipped code is permanent.
+2. **Authority before state has its own test.** `authorityIsCheckedBeforeState` drives a member completing a `draft` — simultaneously unauthorized (403) and an illegal transition (409). It must answer 403: a 409 would tell a member without standing exactly where in its lifecycle the trip sits. The test fails if the checks ever swap order.
+3. **The PATCH pin is structural, and that was the right call.** An HTTP test sending `{"state":"active"}` passes today only because Jackson ignores unknown properties — it would keep passing right up until someone added the field, which is the check-with-no-failure-mode shape this repo has been burned by three times. It asserts `UpdateItineraryRequest`'s record components instead, so adding a lifecycle field there fails immediately.
+4. **A code-review finding fixed here.** `transitionsDoNotTouchTheLastEditedPair` originally used a never-edited trip, so both fields were null before *and* after — it would have passed had a transition stamped them. It now has a member edit the trip first and asserts their attribution survives both transitions. **Verified by sabotage:** stamping `lastEditedAt` inside `start()` failed both the unit test and the IT with the right diagnosis, then reverted.
+5. **V12 also drops V3's `DEFAULT 'draft'`** (founder-confirmed 2026-07-28, after an explicit walkthrough of what the statement does). Catalog-only: no rows read or written, `NOT NULL` retained. The default had never once applied — Hibernate always supplies the value, and the only two raw-SQL inserts in the repo (both tests) supply it too. Its absence is asserted via `information_schema` so a later migration cannot quietly reinstate the lower-case spelling that nearly produced a zero-matching index at S1.1.

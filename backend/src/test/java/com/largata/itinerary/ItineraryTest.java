@@ -34,6 +34,104 @@ class ItineraryTest {
         assertThat(itinerary.ownerId()).isEqualTo(owner);
     }
 
+    // --- the lifecycle machine (S1.7) -------------------------------------------------------------
+
+    @Test
+    void startingADraftMakesItActiveAndStampsTheMoment() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+        Instant at = Instant.parse("2027-01-10T09:00:00Z");
+
+        itinerary.start(at);
+
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.ACTIVE);
+        assertThat(itinerary.startedAt()).isEqualTo(at);
+        assertThat(itinerary.completedAt()).isNull();
+    }
+
+    @Test
+    void completingAnActiveTripStampsTheSecondMomentAndLeavesTheFirst() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+        Instant started = Instant.parse("2027-01-10T09:00:00Z");
+        Instant completed = Instant.parse("2027-01-20T18:00:00Z");
+
+        itinerary.start(started);
+        itinerary.complete(completed);
+
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.COMPLETED);
+        assertThat(itinerary.startedAt()).isEqualTo(started);
+        assertThat(itinerary.completedAt()).isEqualTo(completed);
+    }
+
+    @Test
+    void theStampsRecordTheActNotTheTravelSoTheyMayFallOutsideThePlansDates() {
+        // A forgetful owner marks a trip complete a week after it ended. `completedAt` after `endDate`
+        // is not a bug to be corrected — the two are different facts (when the system was told, versus
+        // when travel happened) and neither is derivable from the other. Nothing here should refuse it.
+        Itinerary itinerary =
+                Itinerary.draft(
+                        owner,
+                        "Hokkaido",
+                        List.of("Sapporo"),
+                        LocalDate.of(2027, 1, 10),
+                        LocalDate.of(2027, 1, 20),
+                        Instant.parse("2026-12-01T00:00:00Z"));
+
+        itinerary.start(Instant.parse("2027-01-12T09:00:00Z")); // two days late
+        itinerary.complete(Instant.parse("2027-01-27T09:00:00Z")); // a week late
+
+        assertThat(itinerary.completedAt()).isAfter(Instant.parse("2027-01-20T23:59:59Z"));
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.COMPLETED);
+    }
+
+    @Test
+    void everyIllegalEdgeIsRefusedAndChangesNothing() {
+        // The machine is forward-only and has no skip edge (02's illegal list; spec decision 3/9).
+        // Each case asserts the *state is unchanged* as well as the throw — a transition that threw
+        // after mutating would leave a row the exception says was never written.
+        Itinerary draftTrip = draft("Hokkaido", List.of("Sapporo"));
+        assertThatThrownBy(() -> draftTrip.complete(Instant.now()))
+                .isInstanceOf(IllegalStateTransitionException.class);
+        assertThat(draftTrip.state()).isEqualTo(ItineraryState.DRAFT);
+        assertThat(draftTrip.completedAt()).isNull();
+
+        Itinerary activeTrip = draft("Hokkaido", List.of("Sapporo"));
+        activeTrip.start(Instant.parse("2027-01-10T09:00:00Z"));
+        assertThatThrownBy(() -> activeTrip.start(Instant.now()))
+                .isInstanceOf(IllegalStateTransitionException.class);
+        assertThat(activeTrip.startedAt()).isEqualTo(Instant.parse("2027-01-10T09:00:00Z"));
+
+        Itinerary completedTrip = draft("Hokkaido", List.of("Sapporo"));
+        completedTrip.start(Instant.parse("2027-01-10T09:00:00Z"));
+        completedTrip.complete(Instant.parse("2027-01-20T18:00:00Z"));
+        assertThatThrownBy(() -> completedTrip.start(Instant.now()))
+                .isInstanceOf(IllegalStateTransitionException.class);
+        assertThatThrownBy(() -> completedTrip.complete(Instant.now()))
+                .isInstanceOf(IllegalStateTransitionException.class);
+        assertThat(completedTrip.completedAt()).isEqualTo(Instant.parse("2027-01-20T18:00:00Z"));
+    }
+
+    @Test
+    void theRefusalNamesBothEndsOfTheEdgeItRefused() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+
+        // The client branches on the code; a human reads the message. It must say which transition was
+        // refused, in the wire vocabulary the rest of the API uses.
+        assertThatThrownBy(() -> itinerary.complete(Instant.now()))
+                .hasMessageContaining("draft")
+                .hasMessageContaining("completed");
+    }
+
+    @Test
+    void aTransitionDoesNotClaimAuthorshipOfAPlanEdit() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+
+        itinerary.start(Instant.now());
+
+        // The last-edited pair attributes plan edits (S1.3). Starting a trip edits no plan content.
+        assertThat(itinerary.lastEditedBy()).isNull();
+        assertThat(itinerary.lastEditedAt()).isNull();
+    }
+
     @Test
     void titleAndDestinationsAreStripped() {
         Itinerary itinerary = draft("  Hokkaido  ", List.of("  Sapporo  ", "Otaru"));

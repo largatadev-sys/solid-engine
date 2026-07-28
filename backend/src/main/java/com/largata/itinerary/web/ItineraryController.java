@@ -102,6 +102,40 @@ class ItineraryController {
     }
 
     /**
+     * Starts the trip (S1.7): {@code draft → active}. Owner-only — the guard resolves a {@link
+     * Membership} and the service authorizes the role on it; no ownership check here, as always.
+     *
+     * <p><strong>An action endpoint, not a state field on {@link #update}</strong> (spec decision 7).
+     * The repo's idiom for an act with no payload ({@code /accept}, {@code /renew}, {@code /move}), and
+     * the separation is load-bearing: {@code PATCH} is the member-writable field door, this is the
+     * owner-only lifecycle door, and {@code ItineraryLifecycleStorageIT} pins that they stay separate
+     * — it asserts {@code UpdateItineraryRequest}'s component list carries no lifecycle field, so the
+     * day someone adds one, that test fails. No request body — the act carries no data.
+     *
+     * <p>Returns 200 with the whole updated resource, plan embedded, so the client re-renders from one
+     * response rather than transitioning and then refetching.
+     */
+    @PostMapping("/{id}/start")
+    ItineraryResponse start(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        itineraries.start(membership);
+        var plan = itineraries.viewPlan(membership);
+        return ItineraryResponse.of(plan.itinerary(), plan.days());
+    }
+
+    /**
+     * Marks the trip complete (S1.7): {@code active → completed}. Owner-only, same shape as {@link
+     * #start}; completing from {@code draft} is a 409, not a shortcut (the machine has no skip edge).
+     */
+    @PostMapping("/{id}/complete")
+    ItineraryResponse complete(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        itineraries.complete(membership);
+        var plan = itineraries.viewPlan(membership);
+        return ItineraryResponse.of(plan.itinerary(), plan.days());
+    }
+
+    /**
      * The caller's own itineraries, newest first — Artifact 05's one pagination shape, and the
      * reference implementation every later list follows.
      *

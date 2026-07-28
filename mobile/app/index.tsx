@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { BottomNav } from '../src/components/BottomNav';
 import { InvitationInbox } from '../src/components/InvitationInbox';
 import { formatDates } from '../src/itineraries/formatDates';
+import { formatItineraryState } from '../src/itineraries/formatItineraryState';
 import { useMyItineraries } from '../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../src/theme';
 import type { ItineraryResponse } from '../src/types/api';
@@ -90,9 +91,16 @@ function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
   return (
     <Link href={`/itineraries/${itinerary.id}`} asChild>
       <Pressable style={styles.row} accessibilityRole="button">
-        <Text style={styles.rowTitle} numberOfLines={1}>
-          {itinerary.title}
-        </Text>
+        <View style={styles.rowHeader}>
+          <Text style={styles.rowTitle} numberOfLines={1}>
+            {itinerary.title}
+          </Text>
+          {/* The lifecycle phase, member-visible (S1.7): a workspace-visible fact, and the answer to
+              "which of these trips have I actually taken?" without opening any of them. */}
+          <View style={styles.stateBadge}>
+            <Text style={styles.stateBadgeText}>{formatItineraryState(itinerary.state)}</Text>
+          </View>
+        </View>
         <Text style={styles.rowMeta} numberOfLines={1}>
           {itinerary.destinations.join(' · ')}
         </Text>
@@ -131,7 +139,17 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs,
   },
-  rowTitle: { ...typography.bodyStrong, color: colors.textPrimary },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  rowTitle: { ...typography.bodyStrong, color: colors.textPrimary, flexShrink: 1 },
+  stateBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.accentMuted,
+    backgroundColor: colors.surface,
+  },
+  stateBadgeText: { ...typography.overline, color: colors.textSecondary },
   rowMeta: { ...typography.caption, color: colors.textSecondary },
   rowDates: { ...typography.caption, color: colors.textSecondary },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
