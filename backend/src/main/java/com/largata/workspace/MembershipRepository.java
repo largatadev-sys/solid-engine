@@ -34,25 +34,22 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
     Optional<Role> findRole(@Param("travelerId") UUID travelerId, @Param("itineraryId") UUID itineraryId);
 
     /**
-     * Every itinerary this traveler is a member of — owned and joined alike (S1.6, the membership-scoped
-     * My Trips).
+     * The itineraries this traveler is a member of whose workspace is in the given state (S1.9) — the
+     * archived view.
      *
-     * <p><strong>No role predicate, and that is the fix.</strong> Since S1.1 the creator gets an {@code
-     * OWNER} membership row atomically with the trip, so one membership-scoped query covers both kinds
-     * with no union and no special case: "trips I own" was only ever a subset of "trips I'm on", and
-     * treating it as the whole set is what made joined trips invisible on their members' home screens
-     * (found at S1.5's device walk).
+     * <p><strong>No role predicate, and that is deliberate</strong> (S1.6, the membership-scoped My
+     * Trips). Since S1.1 the creator gets an {@code OWNER} membership row atomically with the trip, so
+     * one membership-scoped query covers owned and joined alike with no union and no special case:
+     * "trips I own" was only ever a subset of "trips I'm on", and treating it as the whole set is what
+     * made joined trips invisible on their members' home screens (found at S1.5's device walk).
      *
      * <p>Returns ids rather than rows: the itinerary module owns the paging and the hydration, and the
      * ids are the whole of what crosses the module boundary (ADR-002). Served by V11's {@code
      * membership_traveler_idx}, the index V4 predicted and deferred to whichever story wrote this query.
-     */
-    @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId")
-    List<UUID> findItineraryIdsFor(@Param("travelerId") UUID travelerId);
-
-    /**
-     * The same set, split by whether the trip is archived (S1.9) — the default list wants the live ones,
-     * the archived view wants the rest.
+     *
+     * <p><strong>The unfiltered variant was deleted at S1.9</strong>, not left beside these two: it
+     * carried the obvious name and would have returned archived and live trips mixed, so the next
+     * caller to reach for it would have bypassed the archive filter without noticing.
      *
      * <p><strong>The filter belongs here, in the membership→ids step, not in the itinerary module's
      * page query</strong> (spec decision 10). Two reasons, both structural: archive is a

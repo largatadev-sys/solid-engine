@@ -1,4 +1,4 @@
-import { archiveControl, canEditPlan, canLeaveTrip } from '../src/itineraries/archiveControls';
+import { archiveControl, canEditPlan } from '../src/itineraries/archiveControls';
 
 /**
  * The archive surface's decisions (S1.9, ticket 04).
@@ -50,16 +50,7 @@ describe('what an archived trip hides', () => {
   });
 });
 
-describe('what an archived trip must NOT hide', () => {
-  it('leaves Leave available on an archived trip', () => {
-    // The founder's rule: acts on the trip freeze, acts on your own membership do not. Hiding Leave
-    // alongside the plan controls would strand a member on somebody else's decision, with no lever of
-    // their own and no way to unarchive. The server exempts self-removal from the fence for the same
-    // reason, so a hidden control here would contradict a working endpoint.
-    expect(canLeaveTrip(archived)).toBe(true);
-  });
-
-  it('and on a live one, unchanged', () => {
-    expect(canLeaveTrip(live)).toBe(true);
-  });
-});
+// The founder's rule — acts on the trip freeze, acts on your own membership do not — is pinned in
+// `memberControls.test.ts`, not here. A `canLeaveTrip` lived in this file briefly; code review found it
+// imported nowhere, so it defended nothing. Leave is gated by `memberControls`, so the exception now
+// sits beside the rule it is an exception to, where a sweep of that function cannot miss it.

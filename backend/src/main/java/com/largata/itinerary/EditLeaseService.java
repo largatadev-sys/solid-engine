@@ -140,6 +140,15 @@ public class EditLeaseService {
      * the edit surface (expiry is the guarantee, this is the fast free). Idempotent: releasing when
      * you hold nothing (already expired, already taken over) is a no-op, never an error — a client
      * firing a best-effort release on navigate-away must not see a failure.
+     *
+     * <p><strong>Deliberately outside S1.9's archive fence, and this is the one carve-out worth
+     * stating.</strong> {@code acquire} and {@code renew} are fenced — they claim the right to write a
+     * plan, which a frozen trip has none of. Releasing is the opposite act: it gives that right up, and
+     * archive has already deleted every lease anyway ({@code releaseAnyHold}), so the fence would only
+     * ever refuse a client tidying up after itself. That refusal would break this method's stated
+     * contract — a best-effort release on navigate-away must not fail — for no protective value. It
+     * also fits the founder's rule by analogy: releasing your own lock is an act on your own hold, not
+     * on the trip. {@code ArchiveWriteFenceIT} asserts this outcome rather than leaving it implied.
      */
     @Transactional
     public void release(Membership member) {

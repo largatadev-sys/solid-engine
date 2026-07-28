@@ -234,6 +234,17 @@ function getJson(path) {
     fs.writeFileSync(screenshotPath, Buffer.from(shot.data, 'base64'));
   }
 
+  // --- the members screen freezes too (the code-review finding) ----------------------------------
+  // Three of the four frozen governance acts live here, and the first version of this driver never
+  // opened it — which is how an entirely unguarded screen passed a green run. Checked as the OWNER,
+  // because the owner is the only viewer who has these controls to lose.
+  await goto(`/members/${TRIP_ID}`);
+  const membersFrozen = await text();
+  check('the members screen still shows the roster on an archived trip', membersFrozen.includes('MEMBERS'));
+  check('…but the invite field is gone', !membersFrozen.toLowerCase().includes('invite'));
+  check('…and Remove is gone from every row', !membersFrozen.includes('Remove'));
+  check('…and Make owner is gone', !membersFrozen.includes('Make owner'));
+
   // --- the list splits, on the surface a founder looks at ----------------------------------------
   await goto('/');
   const myTrips = await text();

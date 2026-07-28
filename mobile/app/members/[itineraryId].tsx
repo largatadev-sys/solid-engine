@@ -56,15 +56,20 @@ export default function MembersScreen() {
   const myId = meState.kind === 'ok' ? meState.me.id : undefined;
   const roster = members.data?.items ?? [];
   // The gating lives in a pure function so it is testable — a screen is not, under jest-expo (S0.3).
+  //
+  // S1.9: an archived trip freezes every act on its roster — invite, remove, offer, withdraw — so the
+  // flag is folded into the gating rather than checked at each control. Leave is deliberately outside
+  // the freeze; see `memberControls`. `?? false` while the itinerary loads: not-archived is the
+  // optimistic direction, and the server refuses anything the screen gets wrong.
   const {
-    isOwner,
+    canInvite,
     canLeave,
     removableTravelerIds,
     offeredTravelerId,
     offerableTravelerIds,
     canRevokeOffer,
     isOfferedToMe,
-  } = memberControls(roster, myId);
+  } = memberControls(roster, myId, itinerary.data?.archived ?? false);
   const offeredMember = roster.find((member) => member.travelerId === offeredTravelerId);
   const ownershipBusy =
     offerOwnership.isPending ||
@@ -196,7 +201,7 @@ export default function MembersScreen() {
 
           {ownershipError !== null && <Text style={styles.error}>{ownershipError}</Text>}
 
-          {isOwner && <OwnerControls itineraryId={itineraryId} />}
+          {canInvite && <OwnerControls itineraryId={itineraryId} />}
 
           {canLeave && (
             <Section label="Leaving">

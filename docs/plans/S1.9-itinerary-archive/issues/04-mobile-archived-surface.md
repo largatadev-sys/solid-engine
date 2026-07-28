@@ -30,3 +30,13 @@
 5. **`canLeaveTrip` returns a constant `true`, deliberately, and has a test.** The founder's rule (acts on the trip freeze, acts on your own membership do not) is exactly the kind of thing a later "hide controls on archived trips" sweep would quietly break. A named function with a test is the executable version of the note.
 6. **`TripRow` was extracted rather than copied** — two lists rendering "the same" row is how a badge gets added to one and forgotten on the other. The archived badge sits *beside* the lifecycle badge, never inside it: the machines are orthogonal, so a trip can read Completed **and** Archived.
 7. **The archived list is its own route, not a toggle** — the two views have independent cursors (a toggle would reset paging on every flip), and a filter chip pinned to the top of My Trips quietly undoes the shortening that archiving is *for*.
+
+**2026-07-28 — code review: the Members screen was missed entirely, and this is the story's one real defect.**
+
+Both review axes found it independently. `app/members/[itineraryId].tsx` had no reference to `archived`, so on an archived trip it still rendered **the invite field, Remove, Make owner and Withdraw offer** — four controls the server refuses with `TRIP_ARCHIVED`, i.e. four guaranteed failures. That is precisely the dead-end rule this ticket cites to justify hiding Edit and Daily-schedule: applied on the trip screen and not on the neighbouring one, where **three of the four frozen governance acts actually live**.
+
+**Why the device walk did not catch it.** The Members screen *was* opened during the gate — as **t2**, who is a member and correctly sees only Leave. That screenshot proved the founder's rule holds and, in doing so, masked the untested half: nobody opened the screen as **t1** on an archived trip, which is the only viewer with controls to lose.
+
+**The fix puts the rule where it binds.** `memberControls` now takes `archived` and gates `canInvite`, `removableTravelerIds`, `offerableTravelerIds` and `canRevokeOffer` on it — with `canLeave` deliberately outside the gate and the reasoning attached, so a future sweep hiding controls on archived trips cannot include it by accident. Accept/decline need no gate: archive voided the offer, so there is nobody to be `isOfferedToMe`.
+
+**Verified by sabotage, not by assertion alone.** The web driver gained four Members-screen checks; reverting the fix and rebuilding the preview container failed three of them. A check with no demonstrated failure mode would have been worth little here, given the original escaped a fully green run.

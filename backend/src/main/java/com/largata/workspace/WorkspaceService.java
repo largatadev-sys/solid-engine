@@ -300,18 +300,16 @@ public class WorkspaceService {
      * describes. If the shape ever stops holding, the fix is a paged variant here, not a cross-module
      * join there.
      */
-    @Transactional(readOnly = true)
-    public List<UUID> itineraryIdsFor(UUID travelerId) {
-        return memberships.findItineraryIdsFor(travelerId);
-    }
-
     /**
-     * The same set, narrowed to archived or unarchived trips (S1.9) — My Trips defaults to the live
-     * ones, the archived view asks for the rest.
+     * <strong>Archived or live, never both</strong> (S1.9) — My Trips asks for the live ones, the
+     * archived view for the rest. There is deliberately no unfiltered variant: the one that existed
+     * before S1.9 was removed with this change rather than left beside it, because its name is the
+     * obvious one to reach for and it would silently return both halves — the archive filter bypassed
+     * by whoever picked the shorter signature.
      *
-     * <p>The filter lives on this side of the boundary because archive is a workspace fact and because
-     * narrowing the id set leaves the itinerary module's keyset paging untouched; {@code
-     * MembershipRepository#findItineraryIdsFor(UUID, boolean)} carries the full reasoning.
+     * <p>The filter lives on this side of the boundary because archive is a workspace fact (ADR-002)
+     * and because narrowing the id set leaves the itinerary module's keyset paging exactly as S1.6
+     * shipped it; {@link MembershipRepository#findItineraryIdsNotIn} carries the full reasoning.
      */
     @Transactional(readOnly = true)
     public List<UUID> itineraryIdsFor(UUID travelerId, boolean archived) {

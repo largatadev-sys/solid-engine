@@ -174,3 +174,44 @@ describe('after a transfer completes', () => {
     expect(memberControls(AFTER, OWNER).removableTravelerIds).toEqual([]);
   });
 });
+
+describe('an archived trip (S1.9)', () => {
+  // The founder's rule at the grilling: acts on the trip freeze, acts on your own membership do not.
+  // The server fences invite / remove / offer / withdraw with TRIP_ARCHIVED and exempts self-removal,
+  // so the screen must hide exactly those four and keep Leave — otherwise it offers four guaranteed
+  // failures (the dead end this repo declines to advertise) or strands a member with no lever at all.
+  //
+  // Found by code review: the trip screen got its frozen treatment and this screen did not, even though
+  // three of the four frozen acts live here.
+
+  it('takes every roster control away from the owner', () => {
+    expect(memberControls(ROSTER, OWNER, true)).toMatchObject({
+      isOwner: true,
+      canInvite: false,
+      removableTravelerIds: [],
+      offerableTravelerIds: [],
+      canRevokeOffer: false,
+    });
+  });
+
+  it('withdraws a pending offer’s control too — the act is refused while frozen', () => {
+    expect(memberControls(ROSTER_WITH_OFFER, OWNER, true).canRevokeOffer).toBe(false);
+    // …and it is genuinely the archive doing it, not the offer being absent.
+    expect(memberControls(ROSTER_WITH_OFFER, OWNER, false).canRevokeOffer).toBe(true);
+  });
+
+  it('LEAVES Leave alone — the one door archive keeps open', () => {
+    // The assertion this whole block exists for. A sweep that hid controls on archived trips would
+    // naturally include this one, and the server would then allow an act the app refuses to offer.
+    expect(memberControls(ROSTER, MEMBER, true).canLeave).toBe(true);
+    expect(memberControls(ROSTER, MEMBER, false).canLeave).toBe(true);
+  });
+
+  it('still shows the roster and who holds a pending offer — reading is not writing', () => {
+    expect(memberControls(ROSTER_WITH_OFFER, OTHER, true).offeredTravelerId).toBe(MEMBER);
+  });
+
+  it('defaults to a live trip when the flag is omitted, so pre-S1.9 call sites are unchanged', () => {
+    expect(memberControls(ROSTER, OWNER)).toMatchObject(memberControls(ROSTER, OWNER, false));
+  });
+});

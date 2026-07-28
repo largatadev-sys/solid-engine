@@ -50,19 +50,12 @@ export function canEditPlan(itinerary: Pick<ItineraryResponse, 'archived'>): boo
   return !itinerary.archived;
 }
 
-/**
- * Whether a member's Leave control stays available on this trip (S1.9).
- *
- * **Always true — and this constant-looking function is the point.** The founder's rule at the
- * grilling: acts on the trip freeze, acts on your own membership do not. A member can leave an
- * archived trip, so hiding Leave alongside the plan's editing controls would strand them on somebody
- * else's decision with no lever of their own and no way to unarchive.
- *
- * It is a named function rather than an inlined `true` because the *decision* is what needs to be
- * findable: the next person to sweep this screen hiding controls on archived trips will find this and
- * its reason, instead of quietly including Leave in the sweep. Its test is the executable version of
- * the same note.
- */
-export function canLeaveTrip(_itinerary: Pick<ItineraryResponse, 'archived'>): boolean {
-  return true;
-}
+// There is deliberately no `canLeaveTrip` here (S1.9). One was written — a constant `true` whose job
+// was to make the founder's rule findable: acts on the trip freeze, acts on your own membership do
+// not. Code review caught that it was imported nowhere, so it could not protect the control it claimed
+// to: Leave lives on the members screen, gated by `memberControls`, and a function no call site
+// consults defends nothing. The rule now lives where it binds — `memberControls` takes `archived`,
+// gates the four roster acts on it, and leaves `canLeave` outside that gate with the reasoning
+// attached; a test there pins it. Recorded rather than silently deleted, because "name the decision so
+// it is discoverable" was the right instinct applied in the wrong file: an exception has to sit beside
+// the rule it is an exception to.

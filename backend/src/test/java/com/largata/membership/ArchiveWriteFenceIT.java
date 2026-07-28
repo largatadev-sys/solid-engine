@@ -134,6 +134,10 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/invitations", """
                 {"email":"someone@example.com"}
                 """));
+        // Revoking an invitation is invitation-addressed, so it needs a real pending row to aim at —
+        // one created while the trip was still live, above. Without this the endpoint would answer
+        // "no such invitation" and the probe would prove nothing about the fence.
+        refused(post(trip.owner, "/v1/invitations/" + trip.pendingInvitationId + "/revoke", null));
         refused(post(
                 trip.owner,
                 "/v1/itineraries/" + trip.id + "/ownership-offer",
@@ -152,6 +156,25 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
      * member of an archived trip would have no act available at all and no way to unarchive, stuck on
      * somebody else's decision.
      */
+    /**
+     * <strong>The second carve-out, recorded rather than implied:</strong> releasing the edit lock is
+     * <em>not</em> fenced, while acquiring and renewing are.
+     *
+     * <p>Acquire and renew claim the right to write a plan, which a frozen trip has none of. Release
+     * gives that right up — and archive has already deleted every lease, so a fence here would only
+     * refuse a client tidying up after itself, breaking {@code release}'s stated contract (a
+     * best-effort release on navigate-away must not fail) for no protective value. Asserted because a
+     * carve-out nobody tests is indistinguishable from a call site somebody forgot.
+     */
+    @Test
+    void releasingTheEditLockIsNotFencedThoughAcquiringIs() {
+        Trip trip = liveTripWithTwoMembers();
+        archive(trip.owner, trip.id).expectStatus().isOk();
+
+        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/edit-lock", null));
+        delete(trip.owner, "/v1/itineraries/" + trip.id + "/edit-lock").expectStatus().isNoContent();
+    }
+
     @Test
     void aMemberCanStillLeaveAnArchivedTrip() {
         Trip trip = liveTripWithTwoMembers();
@@ -237,13 +260,30 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         response.expectStatus().isEqualTo(409).expectBody().jsonPath("$.code").isEqualTo("TRIP_ARCHIVED");
     }
 
-    private record Trip(String id, String owner, String member, UUID memberId) {}
+    private record Trip(String id, String owner, String member, UUID memberId, String pendingInvitationId) {}
 
+    /**
+     * A live trip with two members <strong>and one pending invitation</strong>.
+     *
+     * <p>The invitation exists so the revoke probe has a real row to aim at. Without it the endpoint
+     * would answer "no such invitation" <em>before</em> the fence is reached — a refusal that looks
+     * like a pass while proving nothing about the thing under test.
+     */
     private Trip liveTripWithTwoMembers() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
-        return new Trip(tripId, owner, member, travelerIdOf(member));
+        byte[] invitation =
+                post(
+                                owner,
+                                "/v1/itineraries/" + tripId + "/invitations",
+                                "{\"email\":\"pending-" + UUID.randomUUID() + "@example.com\"}")
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent();
+        return new Trip(tripId, owner, member, travelerIdOf(member), fieldIn(invitation, "id"));
     }
 
     private RestTestClient.ResponseSpec archive(String token, String itineraryId) {
