@@ -1,5 +1,6 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, type InfiniteData } from '@tanstack/react-query';
 import {
+  archivedItinerariesOptions,
   findInListCache,
   itineraryKeys,
   itineraryOptions,
@@ -8,7 +9,7 @@ import {
   onItineraryUpdated,
   onPlanChanged,
 } from '../src/query/itineraryQueries';
-import type { ItineraryResponse } from '../src/types/api';
+import type { ItineraryResponse, Page } from '../src/types/api';
 
 /**
  * The query layer (S0.3, ticket 06) — ADR-001's "reads through a local store the network populates",
@@ -56,6 +57,7 @@ const trip = (id: string, title: string): ItineraryResponse => ({
   endDate: null,
   state: 'draft',
   visibility: 'private',
+  archived: false,
   lastEditedBy: null,
   lastEditedAt: null,
   days: [],
@@ -105,6 +107,56 @@ describe('the list', () => {
 
     expect(myItinerariesOptions.getNextPageParam(exhausted, [exhausted], undefined, [undefined])).toBeUndefined();
     expect(myItinerariesOptions.getNextPageParam(more, [more], undefined, [undefined])).toBe('more');
+  });
+});
+
+describe('the archived view (S1.9)', () => {
+  it('asks the repository for the archived half', async () => {
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('1', 'Old Lisbon')] });
+
+    await freshClient().fetchInfiniteQuery(archivedItinerariesOptions);
+
+    expect(itineraryRepository.fetchMine).toHaveBeenCalledWith(undefined, true);
+  });
+
+  /**
+   * The load-bearing one: the two views must not share a cache entry.
+   *
+   * Without `archived` in the key, the archived view's pages would overwrite the default list's in the
+   * same slot — trips appearing to vanish and reappear depending on which screen was opened last. It
+   * would look like a server bug, not a cache-key one.
+   */
+  it('keeps the two lists in separate cache entries', async () => {
+    const client = freshClient();
+    itineraryRepository.fetchMine
+      .mockResolvedValueOnce({ items: [trip('live', 'A live trip')] })
+      .mockResolvedValueOnce({ items: [trip('gone', 'An archived trip')] });
+
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+    await client.fetchInfiniteQuery(archivedItinerariesOptions);
+
+    const live = client.getQueryData<InfiniteData<Page<ItineraryResponse>>>(itineraryKeys.list(false));
+    const archived = client.getQueryData<InfiniteData<Page<ItineraryResponse>>>(itineraryKeys.list(true));
+
+    expect(live?.pages[0]?.items[0]?.title).toBe('A live trip');
+    expect(archived?.pages[0]?.items[0]?.title).toBe('An archived trip');
+  });
+
+  /**
+   * And the other half of that: an archive must refresh *both* views, because the trip moves from one
+   * to the other. `lists()` — the prefix — is what makes one invalidation reach both; the per-view key
+   * would leave whichever screen the traveler is not looking at holding a row that has left it.
+   */
+  it('invalidates both views when a trip is archived', async () => {
+    const client = freshClient();
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [] });
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+    await client.fetchInfiniteQuery(archivedItinerariesOptions);
+
+    await onItineraryUpdated(client, { ...trip('gone', 'An archived trip'), archived: true });
+
+    expect(client.getQueryState(itineraryKeys.list(false))?.isInvalidated).toBe(true);
+    expect(client.getQueryState(itineraryKeys.list(true))?.isInvalidated).toBe(true);
   });
 });
 

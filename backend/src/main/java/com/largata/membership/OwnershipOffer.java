@@ -112,7 +112,20 @@ public class OwnershipOffer {
      * why it is not {@link #revoke}. Called inside S1.5's departure transaction, so an offer never
      * outlives the membership it points at.
      */
-    void voidBecauseTargetDeparted(Instant now) {
+    /**
+     * The system dissolves this offer — nobody retracted it, nobody declined it.
+     *
+     * <p>Two callers, two triggers, one meaning: the target departed (S1.5/S1.6 — they can no longer
+     * accept, and the at-most-one-pending rule would let a dead offer block every future one), or the
+     * trip was archived (S1.9 — governance is frozen, and an offer that can only fail is a dead end in
+     * someone's inbox). {@link OwnershipOfferStatus#VOIDED} rather than {@code REVOKED} in both cases,
+     * because attributing the system's act to the owner would make the analytics lie about who acted.
+     *
+     * <p><em>Named for the outcome, not the trigger</em> — it was {@code voidBecauseTargetDeparted}
+     * when departure was its only caller (S1.6); archive is the second, and a method named for one
+     * caller's reason reads as a bug at the other's call site.
+     */
+    void voidBySystem(Instant now) {
         this.status = OwnershipOfferStatus.VOIDED;
         this.resolvedAt = now;
     }

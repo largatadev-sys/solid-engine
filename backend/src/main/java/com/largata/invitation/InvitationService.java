@@ -4,6 +4,7 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -27,6 +28,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -54,6 +56,7 @@ public class InvitationService {
     private final ItineraryService itineraries;
     private final TravelerService travelers;
     private final AuthorizationGuard guard;
+    private final WriteFence fence;
     private final InvitationMailer mailer;
     private final Analytics analytics;
 
@@ -63,8 +66,10 @@ public class InvitationService {
             ItineraryService itineraries,
             TravelerService travelers,
             AuthorizationGuard guard,
+            WriteFence fence,
             InvitationMailer mailer,
             Analytics analytics) {
+        this.fence = fence;
         this.invitations = invitations;
         this.workspaces = workspaces;
         this.itineraries = itineraries;
@@ -92,6 +97,10 @@ public class InvitationService {
         if (!owner.isOwner()) {
             throw new NotWorkspaceOwnerException();
         }
+        // S1.9: no new invitations into a frozen trip — the invitee could never act on one, and archive
+        // has just voided every invitation that was already pending. After the role check, so a member
+        // without standing is refused for that reason rather than learning the trip is archived.
+        fence.requireWritable(owner);
         UUID itineraryId = owner.itineraryId();
         String email = normalize(rawEmail);
         UUID workspaceId =
@@ -143,6 +152,9 @@ public class InvitationService {
         if (!caller.isOwner()) {
             throw new NotWorkspaceOwnerException();
         }
+        // S1.9: revoking is an act on the trip's roster, so it freezes with the rest. Nothing is lost —
+        // archive already voided every pending invitation, which is what revoke would have been for.
+        fence.requireWritable(caller);
         if (invitation.status() != InvitationStatus.PENDING) {
             throw new InvitationNotPendingException();
         }
@@ -277,6 +289,37 @@ public class InvitationService {
                 () ->
                         analytics.emit(
                                 AnalyticsEvent.named("invite_declined").with("invitationId", invitationId).build()));
+    }
+
+    /**
+     * Voids every pending invitation in a workspace — the system's act, not the owner's (S1.9 archive).
+     *
+     * <p><strong>{@link Propagation#MANDATORY}, because this is one third of archiving.</strong> The
+     * workspace's state flip, the edit-lease release and this voiding must commit together: invitations
+     * voided against a workspace that stayed live would strand people the owner did mean to invite, and
+     * the reverse leaves inbox entries whose only possible outcome is a refusal.
+     *
+     * <p><strong>Called from {@code membership}, which is the module that owns cross-module acts</strong>
+     * (S1.5's precedent). This service does not know what archiving is and should not — it knows how to
+     * dissolve its own rows when told.
+     *
+     * <p>No event per invitation, deliberately: {@code itinerary_archived} already records the act, and
+     * a fan-out of one event per voided row would count the same decision several times in the funnel.
+     * The log line carries the count for operations.
+     *
+     * @return how many rows were voided — for the caller's log line, not for control flow
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public int voidPendingInvitations(UUID workspaceId) {
+        List<Invitation> pending = invitations.findByWorkspaceIdAndStatus(workspaceId, InvitationStatus.PENDING);
+        if (pending.isEmpty()) {
+            return 0;
+        }
+        Instant now = Instant.now();
+        pending.forEach(invitation -> invitation.voidBySystem(now));
+        invitations.saveAllAndFlush(pending);
+        log.info("Pending invitations voided: workspaceId={} count={}", workspaceId, pending.size());
+        return pending.size();
     }
 
     // --- internals --------------------------------------------------------------------------------

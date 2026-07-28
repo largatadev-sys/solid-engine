@@ -5,6 +5,7 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.workspace.WorkspaceService;
 import java.time.Instant;
@@ -45,6 +46,7 @@ public class ItineraryService {
     private final WorkspaceService workspaces;
     private final DayService days;
     private final EditLeaseService editLease;
+    private final WriteFence fence;
     private final Analytics analytics;
 
     ItineraryService(
@@ -52,11 +54,13 @@ public class ItineraryService {
             WorkspaceService workspaces,
             DayService days,
             EditLeaseService editLease,
+            WriteFence fence,
             Analytics analytics) {
         this.itineraries = itineraries;
         this.workspaces = workspaces;
         this.days = days;
         this.editLease = editLease;
+        this.fence = fence;
         this.analytics = analytics;
     }
 
@@ -147,7 +151,10 @@ public class ItineraryService {
             int durationDays) {
         Itinerary itinerary =
                 create(ownerId, title, destinations, description, startDate, endDate, durationDays);
-        return new ItineraryPlan(itinerary, days.plan(itinerary.id()));
+        // Never archived: this trip was created moments ago, and archive is an act on an existing one.
+        // Stated as a literal rather than read back, so create pays for no extra query to learn a fact
+        // it already knows.
+        return new ItineraryPlan(itinerary, days.plan(itinerary.id()), false);
     }
 
     /**
@@ -204,6 +211,28 @@ public class ItineraryService {
     }
 
     /**
+     * Whether the trip has been marked complete (S1.9) — the one fact unarchive needs from this module.
+     *
+     * <p>Unarchiving <em>recomputes</em> the workspace's state rather than remembering it (spec decision
+     * 8), and this is the input to that computation: a completed trip's workspace comes back {@code
+     * COMPLETED}, anything else {@code ACTIVE}. Exposed as a boolean rather than the state itself
+     * deliberately — the caller needs one bit, and handing another module the whole lifecycle enum
+     * invites it to start branching on states it has no business knowing about.
+     *
+     * <p>False for an itinerary that does not exist, which cannot happen through the archive path (the
+     * guard authorized it) and would mean {@code ACTIVE} if it somehow did — the safe direction: a trip
+     * wrongly restored as live can be completed again, while one wrongly restored as completed would
+     * need a state the forward-only machine cannot leave.
+     */
+    @Transactional(readOnly = true)
+    public boolean isCompleted(UUID itineraryId) {
+        return itineraries
+                .findById(itineraryId)
+                .map(itinerary -> itinerary.state() == ItineraryState.COMPLETED)
+                .orElse(false);
+    }
+
+    /**
      * The itinerary the guard authorized, with its day/activity plan embedded (S1.3).
      *
      * <p>The single-fetch composition: {@link #view} for the root, {@link DayService#plan} for the
@@ -213,7 +242,12 @@ public class ItineraryService {
      */
     @Transactional(readOnly = true)
     public ItineraryPlan viewPlan(Membership membership) {
-        return new ItineraryPlan(view(membership), days.plan(membership.itineraryId()));
+        return new ItineraryPlan(
+                view(membership),
+                days.plan(membership.itineraryId()),
+                // The workspace's fact, asked for by id (ADR-002) — see ItineraryPlan on why the
+                // composition happens in a read-model rather than on the aggregate.
+                workspaces.isArchived(membership.itineraryId()));
     }
 
     /**
@@ -292,10 +326,18 @@ public class ItineraryService {
      * only from {@code ACTIVE}, no skip edge from {@code draft} — lives on the aggregate, which is
      * where the state machine belongs; see {@link Itinerary#complete}.
      *
-     * <p><strong>Completion gates nothing</strong> (spec decision 2): plan edits, invites, removal and
-     * transfer all keep working afterwards — canon's workspace afterlife is <em>working</em>, not
+     * <p><strong>Completion gates nothing</strong> (S1.7 spec decision 2): plan edits, invites, removal
+     * and transfer all keep working afterwards — canon's workspace afterlife is <em>working</em>, not
      * frozen. This method records a fact; it does not lock a door. The fact's first reader is S4.1's
-     * publish gate.
+     * publish gate. (S1.9's archive is the state that <em>does</em> freeze writes, and it is a separate
+     * act on a separate machine.)
+     *
+     * <p><strong>The workspace mirror, added at S1.9</strong> (canon's {@code active → completed} edge,
+     * whose trigger is literally "mirrors the itinerary completing"). It rides inside this transaction
+     * so the two sides of a 1:1 cannot disagree; see {@link WorkspaceService#markCompleted} for why a
+     * derivable value is nonetheless written down. {@code start} has no mirror because the workspace
+     * machine has no state below {@code ACTIVE} — a draft trip's workspace is already active, which is
+     * register #12's resolution.
      *
      * @param owner proof from the guard; must be the {@code OWNER} membership
      */
@@ -303,6 +345,7 @@ public class ItineraryService {
     public Itinerary complete(Membership owner) {
         Itinerary itinerary = authorizeAndLoad(owner);
         itinerary.complete(Instant.now());
+        workspaces.markCompleted(itinerary.id());
         return record(itinerary, owner, "itinerary_completed");
     }
 
@@ -318,6 +361,9 @@ public class ItineraryService {
         if (!owner.isOwner()) {
             throw new NotTripOwnerException();
         }
+        // S1.9: an archived trip's lifecycle is frozen with everything else on it. After the role
+        // check, so a member without standing still gets 403 rather than learning the trip's state.
+        fence.requireWritable(owner);
         return itineraries
                 .findById(owner.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(
@@ -378,10 +424,18 @@ public class ItineraryService {
      * correct list, and a 400 for {@code limit=500} would be a contract nobody benefits from. Old
      * clients also never break if the cap is raised later.
      *
+     * <p><strong>Archived trips are excluded by default since S1.9</strong> — {@code archived} narrows
+     * the id set the workspace module hands over, before any paging happens. The filter sits there
+     * rather than in the page queries below for a structural reason: adding a predicate to a keyset
+     * query means the predicate has to be stable across pages (or be carried in the cursor), whereas
+     * narrowing the id set leaves {@code id < cursor} exactly as S1.6 shipped it. It also keeps a
+     * workspace fact out of this module's SQL (ADR-002).
+     *
      * @param cursor {@code null} for the first page; otherwise an opaque cursor this API issued
+     * @param archived {@code false} for the default My Trips list, {@code true} for the archived view
      */
     @Transactional(readOnly = true)
-    public Page<Itinerary> listMine(UUID travelerId, String cursor, Integer requestedLimit) {
+    public Page<Itinerary> listMine(UUID travelerId, String cursor, Integer requestedLimit, boolean archived) {
         int limit = clamp(requestedLimit);
         // Decode BEFORE the empty short-circuit below, so a malformed cursor is rejected the same way
         // for everyone. Decoding after would make input validation depend on the caller's data: a
@@ -391,7 +445,7 @@ public class ItineraryService {
         // use a traveler with no trips.)
         UUID decodedCursor = cursor == null ? null : Cursor.decode(cursor);
 
-        List<UUID> itineraryIds = workspaces.itineraryIdsFor(travelerId);
+        List<UUID> itineraryIds = workspaces.itineraryIdsFor(travelerId, archived);
         if (itineraryIds.isEmpty()) {
             // A traveler on no trips is the ordinary first-run state, not an edge case — and `IN ()` is
             // not valid SQL, so this must not reach the query.

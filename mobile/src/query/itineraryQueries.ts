@@ -45,7 +45,19 @@ import type {
  */
 export const itineraryKeys = {
   all: ['itineraries'] as const,
-  list: () => [...itineraryKeys.all, 'list'] as const,
+  /**
+   * The trip list, keyed by which view it is (S1.9).
+   *
+   * **The `archived` flag has to be in the key.** The two views are different server responses, so a
+   * shared key would let the archived view's pages overwrite the default list's in the same cache
+   * entry — the trips would appear to vanish and reappear depending on which screen was opened last.
+   *
+   * `lists()` is the prefix that invalidates *both*, which is what every archive/unarchive must do: a
+   * trip moves from one view to the other, so refreshing only the one you are looking at leaves the
+   * other holding a row that has left it.
+   */
+  lists: () => [...itineraryKeys.all, 'list'] as const,
+  list: (archived = false) => [...itineraryKeys.lists(), { archived }] as const,
   one: (id: string) => [...itineraryKeys.all, 'one', id] as const,
 };
 
@@ -58,8 +70,25 @@ export const itineraryKeys = {
  * try to decode and reject.
  */
 export const myItinerariesOptions = infiniteQueryOptions({
-  queryKey: itineraryKeys.list(),
+  queryKey: itineraryKeys.list(false),
   queryFn: ({ pageParam }: { pageParam: string | undefined }) => itineraryRepository.fetchMine(pageParam),
+  initialPageParam: undefined as string | undefined,
+  getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
+});
+
+/**
+ * The archived trips (S1.9) — the same list, the other side of the filter.
+ *
+ * A function rather than a constant because it mirrors `myItinerariesOptions` at a different key; the
+ * shape is identical, which is the point: the archived view is not a special screen, it is My Trips
+ * asking a different question. **Available to members, not just the owner** — hiding an archived trip
+ * from the people on it would repeat, one level up, the failure S1.5 had to fix in copy (a trip
+ * vanishing with no explanation reads as data loss).
+ */
+export const archivedItinerariesOptions = infiniteQueryOptions({
+  queryKey: itineraryKeys.list(true),
+  queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+    itineraryRepository.fetchMine(pageParam, true),
   initialPageParam: undefined as string | undefined,
   getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
 });
@@ -101,7 +130,7 @@ export async function onItineraryCreated(client: QueryClient, created: Itinerary
   // Seed the detail cache from the response we already hold: opening the new trip immediately after
   // creating it is the likeliest next tap, and it has no reason to hit the network.
   client.setQueryData(itineraryKeys.one(created.id), created);
-  await client.invalidateQueries({ queryKey: itineraryKeys.list() });
+  await client.invalidateQueries({ queryKey: itineraryKeys.lists() });
 }
 
 /**
@@ -144,7 +173,7 @@ export function useCreateItinerary(): UseMutationResult<ItineraryResponse, Error
  */
 export async function onItineraryUpdated(client: QueryClient, updated: ItineraryResponse): Promise<void> {
   client.setQueryData(itineraryKeys.one(updated.id), updated);
-  await client.invalidateQueries({ queryKey: itineraryKeys.list() });
+  await client.invalidateQueries({ queryKey: itineraryKeys.lists() });
 }
 
 export function useUpdateItinerary(
@@ -182,6 +211,38 @@ export function useCompleteTrip(id: string): UseMutationResult<ItineraryResponse
     mutationFn: () => itineraryRepository.completeTrip(id),
     onSuccess: (updated) => onItineraryUpdated(client, updated),
   });
+}
+
+/**
+ * Archive the trip, or bring it back (S1.9).
+ *
+ * Both reuse `onItineraryUpdated`, which invalidates `lists()` — **the prefix covering both views, and
+ * that is the load-bearing part here**. An archive moves the trip from the default list to the archived
+ * one, so invalidating only the view currently on screen leaves the other holding a row that has left
+ * it: the traveler archives a trip, opens the archived view, and does not see it (or unarchives and
+ * still sees it there). The single-view key that shipped before S1.9 would have done exactly that.
+ *
+ * Not optimistic, for the lifecycle transitions' reason: the server decides whether the edge was legal
+ * at all, and a 409 means this screen was stale.
+ */
+export function useArchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.archiveTrip(id),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
+export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.unarchiveTrip(id),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
+export function useArchivedItineraries(): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
+  return useInfiniteQuery(archivedItinerariesOptions);
 }
 
 /** Append a day to a plan (S1.3). The itinerary id is fixed at the hook; the title is per-call. */

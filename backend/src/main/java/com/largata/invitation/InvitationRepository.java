@@ -31,4 +31,15 @@ interface InvitationRepository extends JpaRepository<Invitation, UUID> {
     /** The inbox: pending, unexpired invitations addressed to one email, newest first. */
     List<Invitation> findByEmailAndStatusAndExpiresAtAfterOrderByIdDesc(
             String email, InvitationStatus status, Instant now);
+
+    /**
+     * Every pending invitation in one workspace, <strong>including past-its-window rows</strong> (S1.9's
+     * archive void).
+     *
+     * <p>Deliberately not filtered by {@code expiresAt}, unlike the owner-visible list above: archive is
+     * closing the workspace down, and a row that behaves expired but still reads {@code PENDING} would
+     * be left holding the one-pending-per-address slot the V6 unique index guards. Voiding it costs
+     * nothing and leaves no ambiguous rows behind.
+     */
+    List<Invitation> findByWorkspaceIdAndStatus(UUID workspaceId, InvitationStatus status);
 }

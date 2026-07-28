@@ -141,3 +141,36 @@ export function completeTripWording(): ConfirmWording {
     confirmLabel: 'Complete',
   };
 }
+
+/**
+ * The owner archiving a trip (S1.9).
+ *
+ * <p>Leads with <strong>reversible</strong>, because that is the fact the traveler most needs and the
+ * one the word "archive" does not settle on its own — in this product it is the *only* end-of-life act
+ * (permanent deletion is parked), so nothing here destroys anything. It then names the two real
+ * consequences, both of which land on other people: the trip freezes for everyone, and anything pending
+ * against it — invitations, an ownership offer — is dissolved and will not come back on unarchive. That
+ * last clause is the one an owner would otherwise learn by surprise.
+ */
+export function archiveTripWording(): ConfirmWording {
+  return {
+    title: 'Archive this trip?',
+    body: 'It leaves your trip list and nobody can edit it — for everyone on it, not just you. Pending invites and ownership offers are cancelled. You can unarchive it at any time.',
+    confirmLabel: 'Archive',
+  };
+}
+
+/**
+ * The owner bringing an archived trip back (S1.9).
+ *
+ * <p>Not destructive at all, and the copy says so — it exists for symmetry with archive rather than as
+ * a last chance, so it is short. It names the one thing that does <em>not</em> come back, because the
+ * natural expectation of "unarchive" is that everything returns exactly as it was.
+ */
+export function unarchiveTripWording(): ConfirmWording {
+  return {
+    title: 'Unarchive this trip?',
+    body: 'It returns to your trip list and everyone on it can edit again. Invites and offers cancelled by archiving are not restored.',
+    confirmLabel: 'Unarchive',
+  };
+}

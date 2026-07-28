@@ -127,4 +127,35 @@ final class MembershipExceptions {
             super("NOT_OFFER_TARGET", "This ownership offer was made to another member.");
         }
     }
+
+    /**
+     * Archive or unarchive was asked for from a workspace state that does not permit it (S1.9) —
+     * archiving an archived trip, unarchiving a live one.
+     *
+     * <p><strong>Carries {@code ILLEGAL_STATE_TRANSITION}, the code S1.7 already put on the wire</strong>
+     * for the itinerary's lifecycle refusals — reused rather than re-minted, because the client's answer
+     * is the identical one: refetch and re-render, the screen was stale. A second code for "the same
+     * refusal on the neighbouring machine" would be two branches serving one meaning, which is the
+     * mistake S1.7's own comment records being talked out of (its spec named {@code NOT_TRIP_OWNER}
+     * where the shipped code was {@code NOT_PERMITTED}).
+     *
+     * <p><strong>A separate class from {@code itinerary}'s, and that is not duplication.</strong> That
+     * one is package-private and constructed from {@link com.largata.itinerary.ItineraryState}; this
+     * transition is on the <em>workspace</em> machine, in another module. The class is named for the
+     * situation, the code is Artifact 05's shared vocabulary — the same split {@code
+     * NotTripOwnerException} makes for {@code NOT_PERMITTED}.
+     */
+    static final class IllegalWorkspaceTransitionException extends ConflictException {
+        IllegalWorkspaceTransitionException(String message) {
+            super("ILLEGAL_STATE_TRANSITION", message);
+        }
+
+        static IllegalWorkspaceTransitionException alreadyArchived() {
+            return new IllegalWorkspaceTransitionException("This trip is already archived.");
+        }
+
+        static IllegalWorkspaceTransitionException notArchived() {
+            return new IllegalWorkspaceTransitionException("This trip is not archived.");
+        }
+    }
 }

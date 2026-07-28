@@ -2,11 +2,9 @@ import { Link, Stack } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BottomNav } from '../src/components/BottomNav';
 import { InvitationInbox } from '../src/components/InvitationInbox';
-import { formatDates } from '../src/itineraries/formatDates';
-import { formatItineraryState } from '../src/itineraries/formatItineraryState';
+import { TripRow } from '../src/itineraries/TripRow';
 import { useMyItineraries } from '../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../src/theme';
-import type { ItineraryResponse } from '../src/types/api';
 
 /**
  * My Trips — the signed-in home (S0.3).
@@ -75,7 +73,19 @@ export default function MyTripsScreen() {
           ListHeaderComponent={<InvitationInbox />}
           ListEmptyComponent={<EmptyState />}
           ListFooterComponent={
-            isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={styles.footer} /> : null
+            <>
+              {isFetchingNextPage && <ActivityIndicator color={colors.accent} style={styles.footer} />}
+              {/* The way to the archived trips (S1.9), at the foot of the list rather than in the
+                  header: archived trips are the rare destination, and a header slot would put a
+                  seldom-used door in front of the thing this screen is for. Always present — a
+                  traveler with none should still be able to confirm that, and a link that appears and
+                  disappears based on data reads as a bug. */}
+              <Link href="/itineraries/archived" asChild>
+                <Pressable style={styles.archivedLink} accessibilityRole="button">
+                  <Text style={styles.archivedLinkText}>Archived trips</Text>
+                </Pressable>
+              </Link>
+            </>
           }
         />
       )}
@@ -84,29 +94,6 @@ export default function MyTripsScreen() {
           disabled and answer a tap with a graceful message — the mock's chrome, honestly. */}
       <BottomNav active="trips" />
     </View>
-  );
-}
-
-function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
-  return (
-    <Link href={`/itineraries/${itinerary.id}`} asChild>
-      <Pressable style={styles.row} accessibilityRole="button">
-        <View style={styles.rowHeader}>
-          <Text style={styles.rowTitle} numberOfLines={1}>
-            {itinerary.title}
-          </Text>
-          {/* The lifecycle phase, member-visible (S1.7): a workspace-visible fact, and the answer to
-              "which of these trips have I actually taken?" without opening any of them. */}
-          <View style={styles.stateBadge}>
-            <Text style={styles.stateBadgeText}>{formatItineraryState(itinerary.state)}</Text>
-          </View>
-        </View>
-        <Text style={styles.rowMeta} numberOfLines={1}>
-          {itinerary.destinations.join(' · ')}
-        </Text>
-        <Text style={styles.rowDates}>{formatDates(itinerary)}</Text>
-      </Pressable>
-    </Link>
   );
 }
 
@@ -157,6 +144,8 @@ const styles = StyleSheet.create({
   errorTitle: { ...typography.heading, color: colors.danger },
   caption: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   footer: { paddingVertical: spacing.md },
+  archivedLink: { paddingVertical: spacing.md, alignItems: 'center' },
+  archivedLinkText: { ...typography.body, color: colors.textSecondary },
   button: {
     marginTop: spacing.md,
     paddingVertical: spacing.md,

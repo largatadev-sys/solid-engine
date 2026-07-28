@@ -4,10 +4,13 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
+import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.itinerary.EditLeaseService;
 import com.largata.itinerary.ItineraryService;
+import com.largata.invitation.InvitationService;
 import com.largata.membership.MembershipExceptions.CannotOfferToSelfException;
+import com.largata.membership.MembershipExceptions.IllegalWorkspaceTransitionException;
 import com.largata.membership.MembershipExceptions.NoPendingOfferException;
 import com.largata.membership.MembershipExceptions.NotOfferTargetException;
 import com.largata.membership.MembershipExceptions.NotTripOwnerException;
@@ -15,6 +18,7 @@ import com.largata.membership.MembershipExceptions.OfferAlreadyPendingException;
 import com.largata.membership.MembershipExceptions.OwnerCannotLeaveException;
 import com.largata.membership.MembershipExceptions.TargetNotAMemberException;
 import com.largata.workspace.WorkspaceService;
+import com.largata.workspace.WorkspaceState;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -69,6 +73,8 @@ public class MembershipService {
     private final WorkspaceService workspaces;
     private final ItineraryService itineraries;
     private final EditLeaseService leases;
+    private final InvitationService invitations;
+    private final WriteFence fence;
     private final OwnershipOfferRepository offers;
     private final OwnershipTransferRepository transfers;
     private final Analytics analytics;
@@ -77,12 +83,16 @@ public class MembershipService {
             WorkspaceService workspaces,
             ItineraryService itineraries,
             EditLeaseService leases,
+            InvitationService invitations,
+            WriteFence fence,
             OwnershipOfferRepository offers,
             OwnershipTransferRepository transfers,
             Analytics analytics) {
         this.workspaces = workspaces;
         this.itineraries = itineraries;
         this.leases = leases;
+        this.invitations = invitations;
+        this.fence = fence;
         this.offers = offers;
         this.transfers = transfers;
         this.analytics = analytics;
@@ -129,6 +139,14 @@ public class MembershipService {
         if (leaving && caller.isOwner()) {
             throw new OwnerCannotLeaveException();
         }
+        // S1.9's fence, and its one exemption — the founder's line at the grilling: acts on the trip
+        // freeze, acts on your own membership do not. Removing somebody else is an act on the trip's
+        // roster; leaving is an act on your own relationship to it, and it stays yours even while the
+        // trip is frozen. Without this exemption a non-owner member of an archived trip would have no
+        // act available at all and no way to unarchive — stuck on somebody else's decision.
+        if (!leaving) {
+            fence.requireWritable(caller);
+        }
 
         Optional<Role> targetRole = workspaces.roleOf(itineraryId, targetTravelerId);
         if (targetRole.isEmpty()) {
@@ -170,6 +188,139 @@ public class MembershipService {
                                         .build()));
     }
 
+    /**
+     * The owner takes the trip out of circulation (S1.9): the workspace freezes, and everything pending
+     * against it dissolves.
+     *
+     * <p><strong>Why archive lives in this module and not in {@code workspace} or {@code itinerary}.</strong>
+     * It is the same argument this class's javadoc makes for departure, with one more edge: archiving
+     * needs <em>three</em> modules in one transaction — the workspace's state, the itinerary's edit
+     * lease, and the invitation module's pending rows — and belongs to none of them. {@code workspace}
+     * imports nothing by design (reaching out would close ADR-011's cycle); {@code itinerary} can see the
+     * others but archiving is not the plan's business; {@code invitation}'s trigger is an invitation, and
+     * this trigger is a governance act. The cycle check was run before the code: {@code
+     * invitation}'s <em>service</em> layer imports nothing from here — the one {@code
+     * invitation → membership} edge is {@code TripMembershipController}, a controller composing two
+     * services for URL cohesion (S1.5's deliberate choice), which is not a module-graph edge.
+     *
+     * <p><strong>Legal from any itinerary state</strong> — draft, active or completed (spec decision 8,
+     * which amends canon's original "skipping completed is illegal"): a cancelled draft is archive's
+     * single most likely real use, and a machine that could not express it would send owners to psql.
+     *
+     * <p><strong>What archive deliberately does <em>not</em> do: evict anybody.</strong> Every membership
+     * row survives untouched, so unarchiving restores a working trip rather than an empty one. Pending
+     * <em>invitations</em> die because an unaccepted offer to join a frozen trip can only ever fail; a
+     * membership is not an offer.
+     *
+     * <p>All four writes declare {@code MANDATORY}, so this transaction is the only place they can land,
+     * and none can commit without the others.
+     *
+     * @param owner proof from the guard; must be the {@code OWNER} membership
+     * @throws NotTripOwnerException if a member who is not the owner asks (403)
+     * @throws MembershipExceptions.IllegalWorkspaceTransitionException if already archived (409)
+     */
+    @Transactional
+    public void archive(Membership owner) {
+        UUID itineraryId = requireOwner(owner);
+        if (currentState(itineraryId).isArchived()) {
+            throw IllegalWorkspaceTransitionException.alreadyArchived();
+        }
+
+        workspaces.archive(itineraryId);
+        // The lease first-class: without this the plan stays locked for up to a TTL by someone nobody
+        // can see, and the others read "«X» is editing" on a trip nobody may edit (S1.5's reasoning,
+        // one step further — see EditLeaseService.releaseAnyHold).
+        leases.releaseAnyHold(itineraryId);
+        invitations.voidPendingInvitations(workspaceIdOf(itineraryId));
+        voidAnyPendingOffer(itineraryId, owner.travelerId());
+
+        log.info("Trip archived: itineraryId={} by={}", itineraryId, owner.travelerId());
+        emitArchiveEvent("itinerary_archived", itineraryId, owner.travelerId());
+    }
+
+    /**
+     * The owner brings the trip back (S1.9): {@code archived → active | completed}.
+     *
+     * <p><strong>Nothing that died at archive is resurrected</strong> (spec decisions 12–13) — not the
+     * edit lease (ephemeral by nature), not the voided invitations (a point-in-time act by the owner,
+     * possibly toward someone they have since thought better of; re-inviting is the zero-code path S1.5
+     * established), not the voided ownership offer. Unarchive restores the trip, not the moment.
+     *
+     * <p><strong>The restored state is recomputed from the itinerary</strong>, never remembered — see
+     * {@link com.largata.workspace.Workspace#unarchive}. A trip whose itinerary reads {@code completed}
+     * comes back {@code COMPLETED}; anything else comes back {@code ACTIVE}.
+     *
+     * @param owner proof from the guard; must be the {@code OWNER} membership
+     * @throws NotTripOwnerException if a member who is not the owner asks (403)
+     * @throws MembershipExceptions.IllegalWorkspaceTransitionException if the trip is not archived (409)
+     */
+    @Transactional
+    public void unarchive(Membership owner) {
+        UUID itineraryId = requireOwner(owner);
+        if (!currentState(itineraryId).isArchived()) {
+            throw IllegalWorkspaceTransitionException.notArchived();
+        }
+
+        workspaces.unarchive(itineraryId, itineraries.isCompleted(itineraryId));
+
+        log.info("Trip unarchived: itineraryId={} by={}", itineraryId, owner.travelerId());
+        emitArchiveEvent("itinerary_unarchived", itineraryId, owner.travelerId());
+    }
+
+    /**
+     * Authority before state, S1.5's ordering, applied to both archive edges: a member who is not the
+     * owner is refused whether or not the transition would have been legal — so the 403 never leaks
+     * where the trip sits in its lifecycle to somebody without standing to move it.
+     */
+    private UUID requireOwner(Membership caller) {
+        if (!caller.isOwner()) {
+            throw new NotTripOwnerException();
+        }
+        return caller.itineraryId();
+    }
+
+    private WorkspaceState currentState(UUID itineraryId) {
+        return workspaces
+                .stateOf(itineraryId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "The guard authorized a membership for an itinerary with no workspace — invariant breach"));
+    }
+
+    /**
+     * Voids the workspace's pending ownership offer, whoever it was made to (S1.9).
+     *
+     * <p>Sibling of {@link #voidPendingOfferTo}, which targets one departing traveler; archive has no
+     * target — governance is freezing wholesale, and an offer that can only fail is a dead end in the
+     * target's inbox. Same {@code VOIDED} status for the same reason: the system dissolved it, nobody
+     * retracted it.
+     */
+    private void voidAnyPendingOffer(UUID itineraryId, UUID byTravelerId) {
+        offers
+                .findByWorkspaceIdAndStatus(workspaceIdOf(itineraryId), OwnershipOfferStatus.PENDING)
+                .ifPresent(
+                        offer -> {
+                            offer.voidBySystem(Instant.now());
+                            offers.saveAndFlush(offer);
+                            log.info(
+                                    "Ownership offer voided by archive: itineraryId={} offerId={}",
+                                    itineraryId,
+                                    offer.id());
+                            emitAfterCommit(
+                                    "ownership_offer_voided", itineraryId, offer.targetTravelerId(), byTravelerId);
+                        });
+    }
+
+    /** One event per archive act, after commit — a rolled-back archive never happened (spec decision 15). */
+    private void emitArchiveEvent(String event, UUID itineraryId, UUID byTravelerId) {
+        AfterCommit.run(
+                () ->
+                        analytics.emit(
+                                AnalyticsEvent.named(event)
+                                        .with("itineraryId", itineraryId)
+                                        .with("travelerId", byTravelerId)
+                                        .build()));
+    }
+
     // --- Ownership offers (S1.6) ------------------------------------------------------------------
 
     /**
@@ -205,6 +356,9 @@ public class MembershipService {
         if (!owner.isOwner()) {
             throw new NotTripOwnerException();
         }
+        // S1.9: governance moves on a live trip. Unarchive first — which the owner can always do, so
+        // nothing is stuck; the extra act is the accepted cost of one unambiguous rule (spec decision 4).
+        fence.requireWritable(owner);
         if (owner.travelerId().equals(targetTravelerId)) {
             throw new CannotOfferToSelfException();
         }
@@ -243,6 +397,9 @@ public class MembershipService {
         if (!owner.isOwner()) {
             throw new NotTripOwnerException();
         }
+        // S1.9: frozen with the rest of governance, and nothing is lost — archive already voided any
+        // pending offer, which is exactly what a revoke would have done.
+        fence.requireWritable(owner);
         Optional<OwnershipOffer> pending =
                 offers.findByWorkspaceIdAndStatus(workspaceIdOf(itineraryId), OwnershipOfferStatus.PENDING);
         if (pending.isEmpty()) {
@@ -421,7 +578,7 @@ public class MembershipService {
                         workspaceId.get(), departingTravelerId, OwnershipOfferStatus.PENDING)
                 .ifPresent(
                         offer -> {
-                            offer.voidBecauseTargetDeparted(Instant.now());
+                            offer.voidBySystem(Instant.now());
                             offers.saveAndFlush(offer);
                             log.info(
                                     "Ownership offer voided by departure: itineraryId={} offerId={} target={}",

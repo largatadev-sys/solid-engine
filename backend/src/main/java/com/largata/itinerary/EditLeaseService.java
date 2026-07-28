@@ -3,6 +3,7 @@ package com.largata.itinerary;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -46,6 +47,7 @@ public class EditLeaseService {
     private final EditLeaseRepository leases;
     private final TravelerService travelers;
     private final Analytics analytics;
+    private final WriteFence fence;
     private final Clock clock;
     private final Duration ttl;
 
@@ -53,11 +55,13 @@ public class EditLeaseService {
             EditLeaseRepository leases,
             TravelerService travelers,
             Analytics analytics,
+            WriteFence fence,
             Clock clock,
             @Value("${largata.edit-lock.ttl:PT3M}") Duration ttl) {
         this.leases = leases;
         this.travelers = travelers;
         this.analytics = analytics;
+        this.fence = fence;
         this.clock = clock;
         this.ttl = ttl;
     }
@@ -73,9 +77,11 @@ public class EditLeaseService {
      *
      * @return the granted lease (holder + fresh expiry)
      * @throws EditLockedException if another member holds a live lease
+     * @throws com.largata.common.authz.TripArchivedException if the trip is archived (S1.9)
      */
     @Transactional
     public EditLeaseView acquire(Membership member) {
+        fence.requireWritable(member); // S1.9 — no lock on a frozen plan; there is nothing to edit
         Instant now = clock.instant();
         UUID itineraryId = member.itineraryId();
         UUID travelerId = member.travelerId();
@@ -112,9 +118,13 @@ public class EditLeaseService {
      * lost the network, say) is a lock conflict, named the same way as a denied acquire.
      *
      * @throws EditLockedException if the lease is not (or no longer) held by this caller
+     * @throws com.largata.common.authz.TripArchivedException if the trip is archived (S1.9) — the
+     *     archive already released every lease, so a renew here can only be a client that has not
+     *     noticed yet; telling it the trip is frozen is more useful than telling it the lock is gone
      */
     @Transactional
     public EditLeaseView renew(Membership member) {
+        fence.requireWritable(member); // S1.9
         Instant now = clock.instant();
         EditLease lease =
                 leases.findByItineraryId(member.itineraryId())
@@ -130,6 +140,15 @@ public class EditLeaseService {
      * the edit surface (expiry is the guarantee, this is the fast free). Idempotent: releasing when
      * you hold nothing (already expired, already taken over) is a no-op, never an error — a client
      * firing a best-effort release on navigate-away must not see a failure.
+     *
+     * <p><strong>Deliberately outside S1.9's archive fence, and this is the one carve-out worth
+     * stating.</strong> {@code acquire} and {@code renew} are fenced — they claim the right to write a
+     * plan, which a frozen trip has none of. Releasing is the opposite act: it gives that right up, and
+     * archive has already deleted every lease anyway ({@code releaseAnyHold}), so the fence would only
+     * ever refuse a client tidying up after itself. That refusal would break this method's stated
+     * contract — a best-effort release on navigate-away must not fail — for no protective value. It
+     * also fits the founder's rule by analogy: releasing your own lock is an act on your own hold, not
+     * on the trip. {@code ArchiveWriteFenceIT} asserts this outcome rather than leaving it implied.
      */
     @Transactional
     public void release(Membership member) {
@@ -196,6 +215,41 @@ public class EditLeaseService {
     }
 
     /**
+     * Releases whoever holds the lease, without naming them (S1.9 archive).
+     *
+     * <p><strong>Why {@link #releaseHeldBy} could not be reused.</strong> That one filters by holder,
+     * and the archiving owner does not know who the holder is — the lease is precisely the thing they
+     * cannot see into. Passing "whoever" as a parameter is not expressible; this is the holder-agnostic
+     * sibling.
+     *
+     * <p><strong>Still not a force-take</strong> (ADR-014). That rule governs one member taking the lock
+     * from another mid-edit so they can keep editing. Nothing is being taken <em>to edit</em> here: the
+     * trip is being frozen, and after this transaction nobody may write the plan at all — including the
+     * owner who archived it. What this preserves is the same latent invariant departure protects, one
+     * step further: <strong>a lease exists only on a writable trip</strong>, so no code ever reasons
+     * about a lock on a frozen plan and no member sees "«someone» is editing" on a trip nobody can edit.
+     *
+     * <p><strong>Not restored on unarchive</strong> (spec decision 12): a lease is ephemeral concurrency
+     * control, not domain state. Whoever wants to edit an unarchived trip acquires a fresh one, which is
+     * also the only correct answer after an arbitrary gap — the original holder's edit screen is long
+     * gone.
+     *
+     * <p>{@link Propagation#MANDATORY} and <em>deliberately not delegating</em> to its sibling, for the
+     * reason {@code releaseHeldBy} records at length: a delegation here would be a self-invocation,
+     * which bypasses the Spring proxy and silently drops the propagation of the method being called
+     * (the S0.2 gotcha).
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void releaseAnyHold(UUID itineraryId) {
+        leases.findByItineraryId(itineraryId)
+                .ifPresent(
+                        lease -> {
+                            leases.delete(lease);
+                            log.info("Edit lock released on archive: itineraryId={}", itineraryId);
+                        });
+    }
+
+    /**
      * Enforcement hook (S1.4, ticket 02): the caller must hold the live lease, or the write is
      * refused. Every plan-write service method calls this <em>after</em> the guard has resolved
      * membership — so a non-member is already 404-masked, and this only ever answers the
@@ -206,10 +260,20 @@ public class EditLeaseService {
      * client's contract is acquire-then-write; a write without a live hold is the race where the lease
      * expired mid-edit and someone else took over, which is exactly the modal's situation.
      *
+     * <p><strong>S1.9's archive fence runs here too, and this is the one place it is not written at the
+     * call site.</strong> Every plan-write method's first line is already this call — that is what makes
+     * it the enforcement hook — so checking the fence here covers all nine of them at the seam they are
+     * structurally required to pass, rather than in nine copies that a tenth method could forget. It is
+     * <em>before</em> the lock check deliberately: on an archived trip nobody holds a lease (archive
+     * released it) and nobody may acquire one, so a lock-first order would answer "«nobody» is editing"
+     * to a question whose real answer is "this trip is frozen".
+     *
+     * @throws com.largata.common.authz.TripArchivedException if the trip is archived (S1.9)
      * @throws EditLockedException if this caller does not hold a live lease on the itinerary
      */
     @Transactional
     public void requireHeldBy(Membership member) {
+        fence.requireWritable(member); // S1.9 — the archive fence for every plan write, at their seam
         Instant now = clock.instant();
         boolean held =
                 leases.findByItineraryId(member.itineraryId())

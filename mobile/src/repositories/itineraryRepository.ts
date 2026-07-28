@@ -29,9 +29,21 @@ export const itineraryRepository = {
    * `cursor` is opaque — whatever `nextCursor` the last page returned, passed back verbatim. This
    * layer never constructs, parses, or reasons about one (Artifact 05).
    */
-  async fetchMine(cursor?: string): Promise<Page<ItineraryResponse>> {
-    const query = cursor !== undefined ? `?cursor=${encodeURIComponent(cursor)}` : '';
-    return apiClient.get<Page<ItineraryResponse>>(`/v1/itineraries${query}`);
+  async fetchMine(cursor?: string, archived = false): Promise<Page<ItineraryResponse>> {
+    // Built by hand rather than with URLSearchParams, deliberately: that class encodes to
+    // `application/x-www-form-urlencoded`, which leaves `/` unescaped and turns a space into `+` —
+    // a *different* encoding of the opaque cursor than the one this app has always sent. The cursor's
+    // characters are the server's business (Artifact 05), so the encoding it round-trips through must
+    // not change silently. `encodeURIComponent` is what shipped and what the tests pin.
+    const params = [
+      ...(cursor !== undefined ? [`cursor=${encodeURIComponent(cursor)}`] : []),
+      // Sent only when true, so the default list's URL is byte-identical to the one that shipped
+      // before S1.9 — an unchanged request is the cheapest possible proof of an additive change.
+      ...(archived ? ['archived=true'] : []),
+    ];
+    return apiClient.get<Page<ItineraryResponse>>(
+      `/v1/itineraries${params.length > 0 ? `?${params.join('&')}` : ''}`,
+    );
   },
 
   async fetchOne(id: string): Promise<ItineraryResponse> {
@@ -66,6 +78,22 @@ export const itineraryRepository = {
 
   async completeTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/complete`, undefined);
+  },
+
+  /**
+   * Archive and unarchive (S1.9) — the owner takes a trip out of circulation, or brings it back.
+   *
+   * Same action-endpoint shape as the lifecycle transitions above, and the same refusals: a non-owner
+   * gets `NOT_PERMITTED` (403), an illegal edge `ILLEGAL_STATE_TRANSITION` (409). A write attempted on
+   * an already-archived trip anywhere else in the app answers `TRIP_ARCHIVED` (409) — a different code
+   * because it has a different remedy the client can offer: unarchive.
+   */
+  async archiveTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/archive`, undefined);
+  },
+
+  async unarchiveTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unarchive`, undefined);
   },
 
   /**

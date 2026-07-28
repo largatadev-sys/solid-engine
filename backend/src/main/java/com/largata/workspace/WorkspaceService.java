@@ -108,6 +108,112 @@ public class WorkspaceService {
         log.info("Member admitted: itineraryId={} travelerId={}", itineraryId, travelerId);
     }
 
+    /**
+     * Mirrors the itinerary completing onto its workspace (S1.9 ticket 01): canon's {@code active →
+     * completed} edge, whose trigger Artifact 02 states as "mirrors the itinerary completing".
+     *
+     * <p><strong>{@link Propagation#MANDATORY}, for the reason every writer here records.</strong> The
+     * mirror is half of one act — the itinerary's own transition is the other — and a mirror that
+     * committed alone (or failed alone) would leave the two sides of a 1:1 disagreeing, which is the
+     * exact defect the column was designed to avoid.
+     *
+     * <p><strong>Why the mirror exists at all, since the value is derivable.</strong> Without it,
+     * {@code COMPLETED} would be a value nothing ever writes — documentation, not data — and the first
+     * reader to ask {@code WHERE state = 'COMPLETED'} would get zero rows with no way to tell "no
+     * completed trips" from "this value is never written". That indistinguishable-outcomes shape has
+     * cost this repo three separate investigations (S0.6's /gsi/button watcher, S1.1's deploy probe,
+     * V4's nearly-shipped {@code WHERE role = 'owner'} index). V13 backfills the rows that predate it.
+     *
+     * <p>Silent when no workspace exists rather than throwing, unlike {@link #admitMember}: this is a
+     * mirror riding along on someone else's act, so failing the traveler's completion because a
+     * derived value could not be updated would be the tail wagging the dog. The invariant that every
+     * itinerary has a workspace is defended at formation and by V5's backfill.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void markCompleted(UUID itineraryId) {
+        workspaces.findByItineraryId(itineraryId).ifPresent(Workspace::markCompleted);
+    }
+
+    /**
+     * Takes the workspace out of circulation (S1.9): {@code active | completed → archived}.
+     *
+     * <p><strong>{@link Propagation#MANDATORY}, for the reason every writer here records.</strong>
+     * Archiving is four writes in one act — this state flip, the edit-lease release, the pending
+     * invitations, the pending offer — and a partial archive is the half-state this codebase keeps
+     * paying for: a frozen workspace with live invitations into it, or live invitations into a trip that
+     * never froze.
+     *
+     * <p>Authority is <em>not</em> checked here — who may archive is {@code MembershipService}'s
+     * decision, made on the guard's {@link com.largata.common.authz.Membership}, exactly as {@link
+     * #removeMember} splits authority from the row write. What this method owns is the state machine's
+     * legality, which the aggregate enforces (see {@link Workspace#archive}).
+     *
+     * @throws IllegalStateException if already archived — the caller raises the domain 409 first, so
+     *     reaching here with an archived workspace is a bug
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void archive(UUID itineraryId) {
+        workspaceFor(itineraryId).archive();
+        log.info("Workspace archived: itineraryId={}", itineraryId);
+    }
+
+    /**
+     * Brings the workspace back (S1.9): {@code archived → active | completed}.
+     *
+     * <p><strong>The restored state is recomputed from the itinerary, never remembered</strong> — hence
+     * the parameter, and see {@link Workspace#unarchive} for why storing a "previous state" would be
+     * both the duplicated fact S1.7 rejected and a value that can drift while archived.
+     *
+     * @param itineraryIsCompleted whether the trip's itinerary currently reads {@code completed}
+     * @throws IllegalStateException if not archived — as {@link #archive}, the caller raises the 409
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void unarchive(UUID itineraryId, boolean itineraryIsCompleted) {
+        workspaceFor(itineraryId).unarchive(itineraryIsCompleted);
+        log.info("Workspace unarchived: itineraryId={} completed={}", itineraryId, itineraryIsCompleted);
+    }
+
+    /**
+     * The workspace around an itinerary, or a loud failure. Used by the writers above, which are only
+     * ever reached for a trip the guard already authorized — so a missing workspace is an invariant
+     * breach (INV: no itinerary without a workspace), not a user error. {@link #admitMember} fails the
+     * same way for the same reason.
+     */
+    private Workspace workspaceFor(UUID itineraryId) {
+        return workspaces
+                .findByItineraryId(itineraryId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "No workspace for itinerary " + itineraryId + " — invariant breach"));
+    }
+
+    /**
+     * The state of the workspace around an itinerary, or empty if none exists (S1.9).
+     *
+     * <p>The read behind the write fence and the trip-list filter — the two readers whose absence kept
+     * this column deferred from S1.1 to S1.9. Empty is not "not archived": callers that must decide
+     * whether to freeze treat an absent workspace as an invariant breach, never as permission.
+     */
+    @Transactional(readOnly = true)
+    public Optional<WorkspaceState> stateOf(UUID itineraryId) {
+        return workspaces.findByItineraryId(itineraryId).map(Workspace::state);
+    }
+
+    /**
+     * Whether the trip is frozen (S1.9) — the fence's question and the read model's, in one call.
+     *
+     * <p><strong>A missing workspace answers {@code false}, and the direction is deliberate.</strong>
+     * This is a <em>projection</em> read (does the badge show? is the screen frozen?), reached only for
+     * trips the guard has already authorized, so an absent workspace is an invariant breach that {@link
+     * #stateOf} will surface loudly at any write. Answering "not archived" here degrades a display, while
+     * answering "archived" would freeze a live trip on a data glitch — the safe failure is the one that
+     * does not take a working trip away from its owner. The write fence resolves state through {@link
+     * #stateOf} instead, which distinguishes the two cases.
+     */
+    @Transactional(readOnly = true)
+    public boolean isArchived(UUID itineraryId) {
+        return stateOf(itineraryId).map(WorkspaceState::isArchived).orElse(false);
+    }
+
     /** Whether a traveler already holds any membership in the workspace around an itinerary (S1.2). */
     @Transactional(readOnly = true)
     public boolean isMember(UUID itineraryId, UUID travelerId) {
@@ -194,10 +300,24 @@ public class WorkspaceService {
      * describes. If the shape ever stops holding, the fix is a paged variant here, not a cross-module
      * join there.
      */
+    /**
+     * <strong>Archived or live, never both</strong> (S1.9) — My Trips asks for the live ones, the
+     * archived view for the rest. There is deliberately no unfiltered variant: the one that existed
+     * before S1.9 was removed with this change rather than left beside it, because its name is the
+     * obvious one to reach for and it would silently return both halves — the archive filter bypassed
+     * by whoever picked the shorter signature.
+     *
+     * <p>The filter lives on this side of the boundary because archive is a workspace fact (ADR-002)
+     * and because narrowing the id set leaves the itinerary module's keyset paging exactly as S1.6
+     * shipped it; {@link MembershipRepository#findItineraryIdsNotIn} carries the full reasoning.
+     */
     @Transactional(readOnly = true)
-    public List<UUID> itineraryIdsFor(UUID travelerId) {
-        return memberships.findItineraryIdsFor(travelerId);
+    public List<UUID> itineraryIdsFor(UUID travelerId, boolean archived) {
+        return archived
+                ? memberships.findItineraryIdsIn(travelerId, WorkspaceState.ARCHIVED)
+                : memberships.findItineraryIdsNotIn(travelerId, WorkspaceState.ARCHIVED);
     }
+
 
     /**
      * The traveler who owns the workspace around an itinerary (S1.6). Empty only if no workspace exists
