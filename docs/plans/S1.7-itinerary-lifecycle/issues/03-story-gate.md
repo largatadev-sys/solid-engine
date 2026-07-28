@@ -10,10 +10,22 @@
 
 **Blocked by:** 01, 02 — the whole story.
 
-**Status:** ready-for-agent
+**Status:** in-progress — everything but the post-merge probe
 
-- [ ] Device walk complete as scripted, tags stated, cancel + confirm both driven, member sees no lever, overdue draft offers Start (spec AC 7)
-- [ ] Preview container driven via CDP, cancel + confirm both, badge on My Trips (spec AC 8)
-- [ ] Deployed-dev probe post-merge: write-path reasoning stated, SQL names `railway`, state + both stamps read back (spec AC 9)
-- [ ] BUILD_STATUS ✅ + regression checklist + epic-map sweep in the last feature-branch commit
-- [ ] Full suites green; squash-merge proposed, not executed
+- [x] Device walk complete as scripted, tags stated, cancel + confirm both driven, member sees no lever, overdue draft offers Start (spec AC 7)
+- [x] Preview container driven via CDP, cancel + confirm both, badge on My Trips (spec AC 8)
+- [ ] Deployed-dev probe **post-merge** — demoted to a smoke confirmation, not a gate (see comment 4) (spec AC 9)
+- [x] BUILD_STATUS ✅ + regression checklist + epic-map sweep in the last feature-branch commit
+- [x] Full suites green; squash-merge proposed, not executed
+
+## Comments
+
+**2026-07-28 — three rungs green; the harness is committed, not scratched.**
+
+1. **API rung — `scripts/smoke-lifecycle.js`, committed, 22/22** against the local full stack with real verified pool accounts (t1 = owner, t2 = member). The steps that carry weight rather than merely passing: **authority before state** (a member completing a `draft` answers 403, never 409 — a 409 would leak the trip's lifecycle position to someone without standing); **`completed` gates nothing** (after completion a member still took the edit lock, still edited the plan, and the owner still invited — the spec's loudest claim, and the one a freeze-on-completion implementation would fail); and the **PATCH pin over the wire** (sending `state: draft` in a field edit left it `completed`). Database `largata` confirmed the four facts no endpoint exposes: `COMPLETED` in enum-name spelling, both stamps written and ordered, and `last_edited_by` still naming the member who edited *after* the transitions.
+2. **The migration probe is the write itself.** `started_at` is mapped on the entity, so a 200 from `/start` is an UPDATE that could not have succeeded against a database missing the column — it would be a 500 naming it. Flyway history and an `information_schema` query confirmed V12 independently, but the write is what makes the check discriminating (the S1.6 AC-14 lesson).
+3. **Web rung — `scripts/drive-lifecycle.js`, committed, 20/20**, container rebuilt through the true path (`npm ci` + export inside the image, Caddy serving). Every act driven **twice**: cancel left server state untouched, confirm acted. Both dialogs' text captured, proving the shared wording module reached the browser rather than a platform default. Committed rather than scratched — S0.5 wrote a preview driver and threw it away, S0.6 rewrote it, S1.4 left one untracked.
+4. **Device rung (dev build, Metro-served, t1 = owner, t2 = member).** Badges render on My Trips and the trip screen; the overdue draft nudged *"Start date was 2020-01-01 / Is this trip underway?"* and offered **Start, never Complete** — the strict two-tap path on glass. The native dialog rendered with wording identical to the web's, cancel genuinely cancelled (server still `draft`), and after confirming, the banner switched to nudging from the *end* date. As t2 on the same trip: badge visible, **no banner at all**.
+5. **A rig trap, added to CLAUDE.md:** `adb shell pm clear` deletes the whole `shared_prefs` **directory**, so the documented pref re-push fails with "No such file or directory" and the app then renders **blank** for want of a Metro host. Reads as a broken bundle; is a missing file. The discriminating signal is `run-as … ls shared_prefs/` (empty = never landed), not logcat. Correct order: clear → launch → push → force-stop → launch.
+6. **AC 9 is post-merge by definition and deliberately demoted** *(founder discussion, 2026-07-28)*. What deployed dev uniquely offers is a database **with pre-existing rows** — the S1.1 lesson, where a backfill ran against zero rows locally and "passed" as a no-op. **V12 is not that shape:** `ADD COLUMN` nullable is metadata-only and reads no row; `DROP DEFAULT` is catalog-only. There is no data-dependent behaviour to discover, and deployed dev otherwise runs the same JAR, Flyway and Postgres as the local stack. It stays as a ~90-second confirmation that Railway picked up the build and applied V12 to *that* database — **a deployment check, not a behaviour check**. `LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-lifecycle.js` runs unchanged. Recorded so the next story decides deliberately rather than inheriting the probe as a reflex.
+7. **No regression-checklist line.** Nothing escaped to a human: the review caught the weak attribution test before it shipped, and the `pm clear` trap is toolchain, not product. The ratchet adds a line when a *bug* escapes — recording a non-event would dilute it.
