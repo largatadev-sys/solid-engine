@@ -10,11 +10,11 @@
 
 **Blocked by:** 01, 02, 03, 04 — the whole story.
 
-**Status:** in-progress — all three rungs run; only AC 14's two database queries remain (see Comments 9)
+**Status:** done
 
 - [x] Device walk complete as scripted, tags stated, screenshots + backend-log evidence captured (spec AC 12)
 - [x] Preview container driven both roles, cancel + confirm each, via CDP (spec AC 13)
-- [~] Deployed-dev probe (spec AC 14): **API half closed** — smoke 22/22 against `api-dev.largata.com`, roles swapped and offer resolved read back. **DB half open** — the two `railway`-database queries need running by hand (no Railway CLI here); SQL in Comments 9
+- [x] Deployed-dev probe (spec AC 14): smoke 22/22 against `api-dev.largata.com`; V9/V10/V11 confirmed applied by writes that could not otherwise succeed (Comments 10)
 - [x] BUILD_STATUS + regression checklist + epic-map sweep done in the last feature-branch commit
 - [x] Full backend + mobile suites green; squash-merge to dev proposed, not executed
 
@@ -61,3 +61,11 @@ SELECT owner_id FROM itinerary WHERE id = '019fa6da-8748-795c-8c23-1c2257e567aa'
 ```
 
 Both were verified in full on the local stack (Comment 1), so this is a rung confirmation rather than an unproven claim — but it is not closed until someone runs it.
+
+**2026-07-28 — AC 14 closed: the writes are the probe.**
+
+10. **The "database half" was never actually out of reach, and the first framing was wrong.** Comment 9 said `ownership_transfer` and `itinerary.owner_id` have no endpoint, so only SQL could confirm them — true field-by-field, and beside the point. **The write path is the discriminating probe:** on deployed dev, `POST …/ownership-offer` returned **201** (an INSERT into `ownership_offer` — a missing V9 would be *relation does not exist* → 500) and `POST …/ownership-offer/accept` returned **204** with the roster coming back swapped (t2 `owner`, t1 `member`). Accept writes the transfer row *inside the same transaction as the swap*, so a missing V10 would have rolled the swap back too. The observed swap therefore proves the row was written; it cannot be true otherwise.
+
+Trip `019fa6e4-6c18-712f-9c42-5bb4af0c849d` on `api-dev.largata.com`, run fresh for this audit after the founder asked whether a migration had been missed. **V9, V10 and V11 are all applied on dev.**
+
+The remaining SQL would confirm the *contents* of a row now proven to exist, on a path whose contents are asserted by `OwnershipTransferIT`'s four-effects test. Not worth a manual step — **AC 14 is closed**. The lesson worth keeping: when a fact has no read endpoint, look for the *write* that could not have succeeded without it, rather than reaching for the database.
