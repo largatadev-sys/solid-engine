@@ -12,11 +12,21 @@
 
 **Blocked by:** 01 — Offer lifecycle.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Accept: 204, and all four effects asserted in one transaction-scoped IT — roles swapped, `owner_id` synced, `ownership_transfer` row written, offer `accepted` (spec AC 4)
-- [ ] Stale-accept race: offer B → revoke → offer C → B's accept 403, C's accept 204; INV-4 intact (spec AC 5)
-- [ ] INV-4 under everything: exactly one `OWNER` row after every test; the conditional demote has a test that fails if its `WHERE role` clause is removed (spec AC 7)
-- [ ] `ownership_transferred` at accept, after commit, no `offer_accepted` (spec AC 10, transfer half)
-- [ ] Accept guard-masked for non-members, 401 unauthenticated (spec AC 11, this ticket's surface)
-- [ ] Post-transfer: the ex-owner can leave through S1.5's door; the new owner self-targeting departure gets `OWNER_CANNOT_LEAVE`
+- [x] Accept: 204, and all four effects asserted in one transaction-scoped IT — roles swapped, `owner_id` synced, `ownership_transfer` row written, offer `accepted` (spec AC 4)
+- [x] Stale-accept race: offer B → revoke → offer C → B's accept 403, C's accept 204; INV-4 intact (spec AC 5)
+- [x] INV-4 under everything: exactly one `OWNER` row after every test; the conditional demote has a test that fails if its `WHERE role` clause is removed (spec AC 7)
+- [x] `ownership_transferred` at accept, after commit, no `offer_accepted` (spec AC 10, transfer half)
+- [x] Accept guard-masked for non-members, 401 unauthenticated (spec AC 11, this ticket's surface)
+- [x] Post-transfer: the ex-owner can leave through S1.5's door; the new owner self-targeting departure gets `OWNER_CANNOT_LEAVE`
+
+## Comments
+
+**2026-07-28 — implemented.**
+
+1. **`Itinerary.ownerId` was `@Column(updatable = false)`, and Hibernate silently dropped the sync.** The annotation was correct while ownership was immutable (S0.3) and became a trap the moment transfer existed: Hibernate omits a non-updatable column from every UPDATE, so `reassignOwner` mutated the entity, `saveAndFlush` reported success, and `owner_id` kept the old traveler — no exception, no warning, nothing in the log. **Caught only by AC 4's four-effects assertion**, and it could not have been caught anywhere else: no code on the request path reads that column, so the drift would have shipped and surfaced whenever something first trusted the column's name (the V3 `state DEFAULT 'draft'` shape exactly). Fixed by dropping `updatable = false`, with the history recorded on the field.
+
+2. **The accept path reads the *current* owner rather than trusting `offer.offeredBy()`.** Not in the spec; added because the offer records who made it, and ownership can move between an offer being written and accepted (A offers to B, B declines, C transfers to A, A's old row…). The swap uses `workspaces.ownerOf()` and logs when the two disagree. Strictly safer than the alternative, and the divergence log means a puzzling transfer record explains itself.
+
+3. **Code review found AC 7 half-closed** (`/code-review`, spec axis). The conditional demote existed but no test could fail if `AND m.role = :expectedRole` were deleted — every existing test drives one transfer at a time, and the blanket "exactly one owner" query passes either way. `OwnershipSwapStorageIT` now covers it, **and the sabotage was run**: with the predicate removed, `aSecondTransferFromAStaleOwnerIsRefused` fails with `DataIntegrityViolationException … membership_one_owner_idx` instead of the clean `IllegalStateException` — the guard demonstrably does something. Restored after.

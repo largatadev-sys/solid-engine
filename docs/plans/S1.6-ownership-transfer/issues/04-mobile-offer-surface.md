@@ -11,11 +11,11 @@
 
 **Blocked by:** 01 — Offer lifecycle · 02 — Accept executes the transfer. *(Does not need 03 — the banner and controls ride the roster, not the list.)*
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Owner: Offer ownership on non-self rows; while pending — badge + Revoke on the target's row, Offer nowhere else
-- [ ] Offeree: badge + Accept / Decline on own row; trip screen shows the discovery banner; tapping it lands on Members
-- [ ] All four acts confirm via `confirmWith`, shared wording, cancel leaves state untouched
-- [ ] After accept: controls flip on the next roster read — ex-owner gains Leave, new owner gains Remove/Offer
-- [ ] `memberControls` Jest table green for the full matrix; banner predicate tested; no raw fetch anywhere (ADR-001)
-- [ ] Web preview container: both roles driven with CDP-intercepted confirms, cancel and confirm paths both (feeds spec AC 13)
+- [x] Owner: Offer ownership on non-self rows; while pending — badge + Revoke on the target's row, Offer nowhere else
+- [x] Offeree: badge + Accept / Decline on own row; trip screen shows the discovery banner; tapping it lands on Members
+- [x] All four acts confirm via `confirmWith`, shared wording, cancel leaves state untouched
+- [x] After accept: controls flip on the next roster read — ex-owner gains Leave, new owner gains Remove/Offer
+- [x] `memberControls` Jest table green for the full matrix; banner predicate tested; no raw fetch anywhere (ADR-001)
+- [ ] Web preview container: both roles driven with CDP-intercepted confirms, cancel and confirm paths both (feeds spec AC 13) — **runs at ticket 05**, with the other two rungs
