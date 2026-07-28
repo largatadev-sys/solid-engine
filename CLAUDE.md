@@ -41,7 +41,7 @@ BUILD_STATUS → `BUILD_STATUS.md`. Every story that lands updates its row — *
 ## Hard rules (this codebase)
 
 - **All workspace access goes through the authorization guard; never query workspace tables directly.** Workspace-scoped service methods take the resolved `Membership` as a parameter (Artifact 03). No inline authority checks anywhere.
-- **All capability gating goes through the entitlement service** — `can(traveler, capability)`; never inline tier checks (ADR-009). v1: it returns full access.
+- **All capability gating goes through the entitlement service** — `can(traveler, capability)`; never inline tier checks (ADR-009, **amended 2026-07-28: the seam is parked** — it ships at register #14's split decision, born wired to the first gated capabilities; until then no entitlement code exists). Standing duty meanwhile: **every story spec records a one-line candidate-capability note** — the acts passing the potentially-gated test (a capability, not existing data · footprint-growing · not governance).
 - **The ledger is append-only.** Corrections, waivers, settlements, reassignments are new Transfer entries — never UPDATE or DELETE on ledger rows (INV-8). Splits must sum to the expense total transactionally (INV-7).
 - **API changes are additive only within /v1** — never rename, retype, remove, or change semantics of anything shipped (ADR-008; old app versions live for weeks).
 - **Modules reference each other by ID + service interface only** — never another module's tables or internals (ADR-002).
