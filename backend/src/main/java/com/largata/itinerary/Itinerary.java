@@ -28,8 +28,9 @@ import org.hibernate.type.SqlTypes;
  * reference this aggregate needs.
  *
  * <p><strong>Every itinerary is born {@code DRAFT}/{@code PRIVATE}</strong> and this class offers no
- * way to be born otherwise: publishing and lifecycle transitions are later stories' explicit acts,
- * so they get explicit methods when they arrive, not a constructor parameter now.
+ * way to be born otherwise: lifecycle transitions are explicit acts, so they are explicit methods —
+ * {@link #start} and {@link #complete} (S1.7) — never a constructor parameter. Publishing is the same
+ * shape and arrives at S4.1 the same way.
  */
 @Entity
 @Table(name = "itinerary")
@@ -97,6 +98,28 @@ public class Itinerary {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    /**
+     * When the owner started the trip, and when they marked it complete (S1.7) — NULL until each
+     * transition happens, which is the honest state for every draft.
+     *
+     * <p><strong>These record the owner's <em>act</em>, not travel.</strong> {@link #startDate}/{@link
+     * #endDate} carry the traveled-when claim; these carry when the system was told. An owner who
+     * completes a trip a week late produces a {@code completedAt} after their own {@code endDate}, and
+     * that is correct — two different facts, neither derivable from the other.
+     *
+     * <p><strong>Write-once, structurally.</strong> The state machine is forward-only (02), so {@link
+     * #start} and {@link #complete} are each reachable from exactly one state and each state is left
+     * exactly once. There is no path back that could re-enter a transition, so neither field can receive
+     * a second write — no {@code updatable = false} needed to say so, and the transition guards are what
+     * make it true rather than a column annotation. Deliberately not on the wire: no client reads them
+     * yet, and adding response fields later is additive (ADR-008).
+     */
+    @Column(name = "started_at")
+    private Instant startedAt;
+
+    @Column(name = "completed_at")
+    private Instant completedAt;
 
     protected Itinerary() {
         // JPA.
@@ -295,6 +318,55 @@ public class Itinerary {
         this.ownerId = newOwnerId;
     }
 
+    /**
+     * The trip is underway (S1.7): {@code draft → active}, stamping when the owner said so.
+     *
+     * <p><strong>Legality lives here, in the aggregate, not in the service.</strong> The service
+     * authorizes (owner-only) and the entity decides whether the transition is <em>coherent</em> — the
+     * same split as {@link #draft}'s field rules versus the DTO's: a caller that reaches this object by
+     * any future path (a fork, an import, a later story) cannot walk the machine backwards or sideways,
+     * because the object refuses. The states are the domain's, so the machine belongs to the domain.
+     *
+     * @throws IllegalStateTransitionException if this itinerary is not a draft
+     */
+    void start(Instant at) {
+        requireState(ItineraryState.DRAFT, ItineraryState.ACTIVE);
+        this.state = ItineraryState.ACTIVE;
+        this.startedAt = at;
+    }
+
+    /**
+     * The trip is over (S1.7): {@code active → completed}, stamping when the owner said so.
+     *
+     * <p><strong>Only from {@code ACTIVE} — there is no skip edge</strong> (spec decision 9). A trip
+     * whose travel ended while it was still a draft passes through {@code active} in two deliberate
+     * acts. Allowing {@code draft → completed} would mean inventing a {@code startedAt} the owner never
+     * supplied, or leaving it NULL on a completed trip and making "was this trip ever started?"
+     * unanswerable — the machine would stop meaning "the phases every trip passes through".
+     *
+     * <p><strong>Forward-only: there is no {@code uncomplete}.</strong> Canon's illegal list (02) holds,
+     * and the absence of a method is how this object says so. The mis-tap guard is the client's confirm
+     * dialog, not a reversal here.
+     *
+     * @throws IllegalStateTransitionException if this itinerary is not active
+     */
+    void complete(Instant at) {
+        requireState(ItineraryState.ACTIVE, ItineraryState.COMPLETED);
+        this.state = ItineraryState.COMPLETED;
+        this.completedAt = at;
+    }
+
+    /**
+     * The one legality check both transitions share — refuse unless the itinerary is in the state the
+     * edge leaves from. Extracted so the two transitions cannot drift into two different ideas of what
+     * "illegal" means, and so the refusal always names both ends of the edge it refused.
+     */
+    private void requireState(ItineraryState required, ItineraryState target) {
+        if (this.state != required) {
+            throw new IllegalStateTransitionException(this.state, target);
+        }
+    }
+
     public UUID id() {
         return id;
     }
@@ -342,5 +414,15 @@ public class Itinerary {
 
     public Instant createdAt() {
         return createdAt;
+    }
+
+    /** When the owner started the trip — NULL while it is still a draft (S1.7). */
+    public Instant startedAt() {
+        return startedAt;
+    }
+
+    /** When the owner marked the trip complete — NULL until they do (S1.7). */
+    public Instant completedAt() {
+        return completedAt;
     }
 }

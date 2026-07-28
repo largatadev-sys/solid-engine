@@ -157,6 +157,33 @@ export function useUpdateItinerary(
   });
 }
 
+/**
+ * Start the trip, or mark it complete (S1.7) — `draft → active → completed`.
+ *
+ * Both reuse `onItineraryUpdated`: the response is the whole updated itinerary, so the detail cache is
+ * seeded from it directly and the list is invalidated because **the trip card carries the state
+ * badge** — without that invalidation the owner transitions a trip, returns to My Trips, and sees the
+ * old badge on a row that is no longer accurate. Exactly the shape the create's comment warns about.
+ *
+ * Not optimistic. The server is the authority on whether the transition was legal at all (a 409 means
+ * this screen was stale), and an optimistic badge flip would show a state the server then refused.
+ */
+export function useStartTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.startTrip(id),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
+export function useCompleteTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.completeTrip(id),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
 /** Append a day to a plan (S1.3). The itinerary id is fixed at the hook; the title is per-call. */
 export function useAppendDay(itineraryId: string): UseMutationResult<DayResponse, Error, { title?: string }> {
   const client = useQueryClient();

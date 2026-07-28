@@ -146,6 +146,56 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
     }
 
     @Test
+    void eachLifecycleTransitionEmitsExactlyOneEventNamingTheTripAndTheOwner() {
+        // S1.7, spec AC 6. One event per act — the event's *name* carries which transition happened,
+        // so no state attribute is needed to disambiguate, and attributes stay ids only (P3).
+        String owner = freshTraveler();
+        String tripId = createAndReturnId(owner, """
+                {"title":"Osaka 2027","destinations":["Osaka"]}
+                """);
+
+        transition(owner, tripId, "start");
+
+        assertThat(eventsNamed("itinerary_started"))
+                .singleElement()
+                .satisfies(
+                        line -> {
+                            assertThat(line.getMDCPropertyMap())
+                                    .containsEntry("event.itineraryId", tripId)
+                                    .containsKey("event.travelerId");
+                            assertThat(line.getFormattedMessage()).doesNotContain("Osaka");
+                        });
+        assertThat(eventsNamed("itinerary_completed")).isEmpty();
+
+        transition(owner, tripId, "complete");
+
+        assertThat(eventsNamed("itinerary_completed")).singleElement();
+        assertThat(eventsNamed("itinerary_started")).as("starting did not fire twice").hasSize(1);
+    }
+
+    @Test
+    void aRefusedTransitionEmitsNothing() {
+        // The mirror of `aRejectedCreateEmitsNothing`, and the half AC 6 names explicitly: an illegal
+        // transition throws inside the aggregate before the row is saved, so a funnel counting
+        // "trips started" must not count an attempt that started nothing.
+        String owner = freshTraveler();
+        String tripId = createAndReturnId(owner, """
+                {"title":"Osaka 2027","destinations":["Osaka"]}
+                """);
+
+        // complete on a DRAFT — 409, no skip edge.
+        rest.post()
+                .uri("/v1/itineraries/" + tripId + "/complete")
+                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isEqualTo(409);
+
+        assertThat(eventsNamed("itinerary_completed")).isEmpty();
+        assertThat(eventsNamed("itinerary_started")).isEmpty();
+    }
+
+    @Test
     void aFirstContactEmitsTheSignupEventOnceAndOnlyOnce() {
         // The funnel's first stage, backfilled at S0.3. The second call re-reads an existing
         // Traveler — two signups for one traveler would misreport the number the event exists for.
@@ -175,6 +225,34 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
                 .exchange()
                 .expectStatus()
                 .isCreated();
+    }
+
+    /** Creates a trip and returns its id — the S1.7 tests act on the trip after creating it. */
+    private String createAndReturnId(String token, String body) {
+        byte[] created =
+                rest.post()
+                        .uri("/v1/itineraries")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(body)
+                        .exchange()
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent();
+        String json = new String(created);
+        int start = json.indexOf("\"id\":\"") + 6;
+        return json.substring(start, json.indexOf('"', start));
+    }
+
+    private void transition(String token, String itineraryId, String act) {
+        rest.post()
+                .uri("/v1/itineraries/" + itineraryId + "/" + act)
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 
     private java.util.List<ILoggingEvent> eventsNamed(String name) {

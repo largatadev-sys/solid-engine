@@ -109,3 +109,35 @@ export function declineOwnershipWording(): ConfirmWording {
     confirmLabel: 'Decline',
   };
 }
+
+/**
+ * The owner starting the trip (S1.7) — `draft → active`.
+ *
+ * The gentlest confirm in the set, and it earns its place only because the transition is one-way: the
+ * body says so plainly rather than implying danger the act does not carry. Nothing is lost by starting
+ * a trip — planning continues exactly as before — so the copy answers the only real question, which is
+ * "can I undo this if I tapped it by accident".
+ */
+export function startTripWording(): ConfirmWording {
+  return {
+    title: 'Start this trip?',
+    body: "It moves from draft to active. You can keep editing the plan, but a trip can't go back to draft.",
+    confirmLabel: 'Start',
+  };
+}
+
+/**
+ * The owner marking the trip complete (S1.7) — `active → completed`.
+ *
+ * Names the forward-only rule *and* what completion does not do. Both halves matter: an owner
+ * hesitating here is usually asking "does this lock the trip?" (it does not — plan edits, members and
+ * settling all continue; canon's afterlife is a working one), and the genuinely irreversible part is
+ * the state itself. Saying only "this cannot be undone" would be true and misleading.
+ */
+export function completeTripWording(): ConfirmWording {
+  return {
+    title: 'Mark this trip complete?',
+    body: "The plan and everyone on it stay as they are — but a completed trip can't be reopened.",
+    confirmLabel: 'Complete',
+  };
+}

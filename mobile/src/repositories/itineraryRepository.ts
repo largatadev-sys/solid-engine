@@ -51,6 +51,24 @@ export const itineraryRepository = {
   },
 
   /**
+   * The lifecycle transitions (S1.7): the owner starts the trip, then marks it complete. Each returns
+   * the whole updated itinerary with its plan re-embedded, so the caller re-renders from one response
+   * rather than transitioning and then refetching.
+   *
+   * No body — the act carries no data. A non-owner is refused with `NOT_PERMITTED` (403) and an
+   * illegal transition with `ILLEGAL_STATE_TRANSITION` (409); both surface as an {@link
+   * import('../api/ApiError').ApiError} the caller shows as-is. The 409 in particular means the screen
+   * was stale, so its handler should refetch.
+   */
+  async startTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/start`, undefined);
+  },
+
+  async completeTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/complete`, undefined);
+  },
+
+  /**
    * The day operations (S1.3, ADR-013). Itinerary-addressed — the app never handles a workspace id
    * (the S1.2 convention) — and each returns the affected day, except delete which returns nothing.
    * The ordinal is the server's to assign on append; this layer never sends one.
