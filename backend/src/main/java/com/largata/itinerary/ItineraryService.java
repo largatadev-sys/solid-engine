@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -171,6 +172,38 @@ public class ItineraryService {
     }
 
     /**
+     * Points the itinerary's denormalised {@code ownerId} at the new owner (S1.6) — one third of an
+     * ownership transfer, called by the membership module inside the transfer's transaction.
+     *
+     * <p><strong>{@link Propagation#MANDATORY}</strong>, like every other participant in a multi-module
+     * write here: this must land with the role swap and the transfer record or not at all. A column that
+     * committed alone would name an owner the membership rows disagree with — and since nothing reads
+     * this column on the request path, the disagreement would be invisible until something did.
+     *
+     * <p><strong>Why sync at all, when nothing reads it.</strong> Because the alternative is a column
+     * whose name lies, silently, forever (the V3 {@code state DEFAULT 'draft'} shape). Keeping it true
+     * also leaves E4's "(Creator)" question genuinely open — creator is derivable from the transfer
+     * records, current owner from here — where a frozen column would have pre-decided it by accident.
+     *
+     * <p>No {@link Membership} parameter: this is not an act a traveler performs on an itinerary, it is
+     * a consequence of one performed on a workspace. The authority was established by the offer ladder
+     * before the transaction opened, exactly as {@code formAround} takes no membership because it is the
+     * act that creates one.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void reassignOwner(UUID itineraryId, UUID newOwnerId) {
+        Itinerary itinerary =
+                itineraries
+                        .findById(itineraryId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "No itinerary " + itineraryId + " to reassign — invariant breach"));
+        itinerary.reassignOwner(newOwnerId);
+        itineraries.saveAndFlush(itinerary);
+    }
+
+    /**
      * The itinerary the guard authorized, with its day/activity plan embedded (S1.3).
      *
      * <p>The single-fetch composition: {@link #view} for the root, {@link DayService#plan} for the
@@ -227,13 +260,25 @@ public class ItineraryService {
     }
 
     /**
-     * The caller's own itineraries, newest first.
+     * The trips the caller is a member of — owned and joined, one list, newest first.
      *
      * <p><strong>No {@link Membership} here, and it is not a hole.</strong> The guard answers "may
      * this traveler touch that itinerary?" — a question about one object. A list has no object yet;
-     * the owner filter <em>is</em> the authorization, applied in the query itself, so an itinerary
-     * that is not the caller's cannot enter the result at all. (E1's "workspaces I belong to" list
-     * is the same shape: filtered by membership rows, not guarded per row.)
+     * the membership filter <em>is</em> the authorization, applied in the query itself, so an itinerary
+     * the caller is not on cannot enter the result at all.
+     *
+     * <p><strong>Membership-scoped since S1.6 (ticket 03), and the change is a bug fix.</strong> This
+     * read was owner-scoped from S0.3, when owner and member were the same person. S1.2 made them
+     * different and nobody revisited it, so from that release a traveler who accepted an invitation got
+     * <em>zero rows</em> for a trip they could open, read and edit perfectly — found only at S1.5's
+     * two-device walk, because every guard IT addresses an itinerary by id and every earlier device
+     * walk drove the owner's phone. S1.6 forces the fix: after a transfer the former owner would
+     * otherwise lose a trip they are still on.
+     *
+     * <p>One merged list rather than owned/joined sections (spec decision 2): since S1.1 every owner
+     * holds a membership row, so "trips I own" is a subset of "trips I'm on" and the merge needs no
+     * union and no role column on the wire. The ids come from the workspace module by service
+     * interface — this module never reads a membership table (ADR-002).
      *
      * <p><strong>The limit is clamped, not rejected</strong> (spec): a clamped list is still a
      * correct list, and a 400 for {@code limit=500} would be a contract nobody benefits from. Old
@@ -244,13 +289,27 @@ public class ItineraryService {
     @Transactional(readOnly = true)
     public Page<Itinerary> listMine(UUID travelerId, String cursor, Integer requestedLimit) {
         int limit = clamp(requestedLimit);
+        // Decode BEFORE the empty short-circuit below, so a malformed cursor is rejected the same way
+        // for everyone. Decoding after would make input validation depend on the caller's data: a
+        // traveler with trips would get 400 and a traveler with none would get 200 for the identical
+        // request — one bad input, two answers, which is the check-with-no-failure-mode shape this repo
+        // keeps getting burned by. (Caught by ItineraryListIT's malformed-cursor test, which happens to
+        // use a traveler with no trips.)
+        UUID decodedCursor = cursor == null ? null : Cursor.decode(cursor);
+
+        List<UUID> itineraryIds = workspaces.itineraryIdsFor(travelerId);
+        if (itineraryIds.isEmpty()) {
+            // A traveler on no trips is the ordinary first-run state, not an edge case — and `IN ()` is
+            // not valid SQL, so this must not reach the query.
+            return Page.exhausted(List.of());
+        }
         // One row more than asked for: its presence is what says "there is a next page", and it
         // costs one row rather than a second COUNT query against the same index.
         Limit probe = Limit.of(limit + 1);
         List<Itinerary> found =
-                cursor == null
-                        ? itineraries.findFirstPage(travelerId, probe)
-                        : itineraries.findPageAfter(travelerId, Cursor.decode(cursor), probe);
+                decodedCursor == null
+                        ? itineraries.findFirstPage(itineraryIds, probe)
+                        : itineraries.findPageAfter(itineraryIds, decodedCursor, probe);
 
         if (found.size() <= limit) {
             return Page.exhausted(found);

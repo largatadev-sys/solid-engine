@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { ApiError } from '../../../src/api/ApiError';
 import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
 import { formatDates } from '../../../src/itineraries/formatDates';
+import { OwnershipOfferBanner } from '../../../src/members/OwnershipOfferBanner';
 import { useItinerary } from '../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 
@@ -62,6 +63,11 @@ export default function ItineraryScreen() {
         <Badge label={data.state} />
         <Badge label={data.visibility} />
       </View>
+
+      {/* Renders only for the traveler being offered the crown (S1.6) — the discovery guarantee the
+          offer/accept design rests on, on the one screen a participant actually opens. */}
+      <OwnershipOfferBanner itineraryId={id} />
+
 
       {/* The workspace's people (S1.2): the roster for everyone, invite/revoke for the owner. */}
       <Link href={`/members/${id}`} asChild>

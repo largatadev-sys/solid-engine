@@ -13,12 +13,12 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Offer create: 201, roster shows `ownershipOffered` on the target's row; 403 non-owner; 409 × `TARGET_NOT_A_MEMBER` / `CANNOT_OFFER_TO_SELF` / `OFFER_ALREADY_PENDING` (spec AC 1)
-- [ ] Revoke: 204, offer `revoked`, flag gone; revoking the absent offer is 204 (spec AC 2)
-- [ ] Decline: 204, terminal; a fresh offer to the same or another member succeeds after (spec AC 3)
-- [ ] Voided on departure, both doors; removal not blocked; pending slot freed after each (spec AC 6)
-- [ ] `'PENDING'` spelling in the partial index pinned by a storage IT (spec AC 9)
-- [ ] Offer events one-per-act, true initiator, after commit only (spec AC 10, offer half)
-- [ ] Guard-mask 404 for non-members and 401 unauthenticated on all three endpoints (spec AC 11, this ticket's surface)
+- [x] Offer create: 201, roster shows `ownershipOffered` on the target's row; 403 non-owner; 409 × `TARGET_NOT_A_MEMBER` / `CANNOT_OFFER_TO_SELF` / `OFFER_ALREADY_PENDING` (spec AC 1)
+- [x] Revoke: 204, offer `revoked`, flag gone; revoking the absent offer is 204 (spec AC 2)
+- [x] Decline: 204, terminal; a fresh offer to the same or another member succeeds after (spec AC 3)
+- [x] Voided on departure, both doors; removal not blocked; pending slot freed after each (spec AC 6)
+- [x] `'PENDING'` spelling in the partial index pinned by a storage IT (spec AC 9)
+- [x] Offer events one-per-act, true initiator, after commit only (spec AC 10, offer half)
+- [x] Guard-mask 404 for non-members and 401 unauthenticated on all three endpoints (spec AC 11, this ticket's surface)

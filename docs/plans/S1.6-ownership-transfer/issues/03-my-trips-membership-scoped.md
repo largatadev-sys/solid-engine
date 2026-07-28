@@ -10,9 +10,17 @@
 
 **Blocked by:** 02 — Accept executes the transfer *(only the post-transfer IT needs it; recorded at ticket-cutting as the deliberate price of keeping spec AC 8 whole in one ticket)*.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A member sees a joined trip in My Trips; an ex-member's list drops it (spec AC 8)
-- [ ] Keyset pagination correct across the membership scope — page boundaries, cursor stability, ordering unchanged (spec AC 8)
-- [ ] The ex-owner still sees the trip post-transfer (spec AC 8)
-- [ ] List wire shape unchanged — no new fields, ADR-008 reasoning recorded in the PR
+- [x] A member sees a joined trip in My Trips; an ex-member's list drops it (spec AC 8)
+- [x] Keyset pagination correct across the membership scope — page boundaries, cursor stability, ordering unchanged (spec AC 8)
+- [x] The ex-owner still sees the trip post-transfer (spec AC 8)
+- [x] List wire shape unchanged — no new fields, ADR-008 reasoning recorded in the PR
+
+## Comments
+
+**2026-07-28 — implemented.**
+
+1. **The empty-list short-circuit broke cursor validation, and the full suite caught it.** `listMine` returns early when the caller is on no trips (`IN ()` is not valid SQL) — but the first draft placed that check *before* `Cursor.decode`, so a malformed cursor answered **400 for a traveler with trips and 200 for a traveler without**. One bad input, two answers, decided by the caller's data rather than the input: the "check whose outcomes are indistinguishable for the wrong reason" family CLAUDE.md tracks. Found by `ItineraryListIT.aCursorThisApiDidNotIssueIsABadRequestNotAServerError`, which happens to use a fresh traveler. Decoding now happens first, and `MyTripsMembershipScopeIT` pins both callers against the same bad cursor so the ordering cannot regress silently.
+
+2. **V4 predicted this index and deferred it to whichever story wrote the query** ("a traveler-leading index would serve the *other* direction … it lands with the story that writes that query"). V11 is that index, and the migration says so — the deferral was honoured rather than forgotten, which is the outcome the V4 comment was written to produce.

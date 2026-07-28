@@ -15,6 +15,7 @@ import type {
   InboxInvitationResponse,
   InvitationResponse,
   MemberResponse,
+  OwnershipOfferRequest,
   Page,
 } from '../types/api';
 
@@ -125,13 +126,11 @@ export function useRevokeInvitation(itineraryId: string): UseMutationResult<void
  * Removal makes the absence immediate and local, which is the one part of eviction a client can control
  * (the *other* traveler's copy is pull-based by decision — spec §5).
  *
- * <p><strong>The list invalidation on leave is inert today, and that is a known backend gap, not an
- * oversight here.</strong> `GET /v1/itineraries` is owner-scoped, so a trip a traveler *joined* was
- * never in their My Trips to begin with — and a leaver is always a member (the owner cannot leave), so
- * there is nothing for the refetch to drop. Verified at S1.5's device walk and recorded as its own
- * epic-map backlog line. The call stays because it costs one cache flag, it is already correct for the
- * day that list becomes membership-scoped, and removing it would leave a real bug behind with nothing
- * pointing at it.
+ * <p><strong>The list invalidation on leave does real work as of S1.6.</strong> It was inert when S1.5
+ * wrote it — `GET /v1/itineraries` was owner-scoped, so a joined trip was never in a member's My Trips
+ * to begin with and a leaver had nothing to drop. The comment then said the call was kept "for the day
+ * that list becomes membership-scoped"; that day is S1.6 ticket 03. The leaver's list now genuinely
+ * contains the trip they are leaving, and this is what removes it.
  */
 export async function onMembershipEnded(
   client: QueryClient,
@@ -146,6 +145,68 @@ export async function onMembershipEnded(
   client.removeQueries({ queryKey: invitationKeys.members(itineraryId) });
   client.removeQueries({ queryKey: invitationKeys.pending(itineraryId) });
   await client.invalidateQueries({ queryKey: itineraryKeys.list() });
+}
+
+// ─── Ownership offers (S1.6) ──────────────────────────────────────────────────────────────────────
+
+/**
+ * What must happen after an offer is made, retracted or refused: only the roster changed, because the
+ * `ownershipOffered` flag rides on it. Nothing about the trip's plan or its membership moved, so a
+ * wider invalidation would refetch data that is still true.
+ */
+export async function onOwnershipOfferChanged(client: QueryClient, itineraryId: string): Promise<void> {
+  await client.invalidateQueries({ queryKey: invitationKeys.members(itineraryId) });
+}
+
+/**
+ * What must happen after an offer is *accepted* — which is the transfer, so this is deliberately wider
+ * than {@link onOwnershipOfferChanged}.
+ *
+ * The roster's roles changed for two people at once, and every cached answer that depends on who owns
+ * the trip is now stale: the single-itinerary entry (its `ownerId`, and any owner-gated affordance
+ * rendered from it) and the list (both parties keep the trip, but their standing in it changed). All
+ * three are invalidated rather than removed — unlike leaving, nothing became *unreadable*; it merely
+ * became wrong.
+ */
+export async function onOwnershipTransferred(client: QueryClient, itineraryId: string): Promise<void> {
+  await Promise.all([
+    client.invalidateQueries({ queryKey: invitationKeys.members(itineraryId) }),
+    client.invalidateQueries({ queryKey: itineraryKeys.one(itineraryId) }),
+    client.invalidateQueries({ queryKey: itineraryKeys.list() }),
+  ]);
+}
+
+export function useOfferOwnership(itineraryId: string): UseMutationResult<void, Error, string> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (travelerId: string) =>
+      invitationRepository.offerOwnership(itineraryId, { travelerId } satisfies OwnershipOfferRequest),
+    onSuccess: () => onOwnershipOfferChanged(client, itineraryId),
+  });
+}
+
+export function useRevokeOwnershipOffer(itineraryId: string): UseMutationResult<void, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => invitationRepository.revokeOwnershipOffer(itineraryId),
+    onSuccess: () => onOwnershipOfferChanged(client, itineraryId),
+  });
+}
+
+export function useAcceptOwnershipOffer(itineraryId: string): UseMutationResult<void, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => invitationRepository.acceptOwnershipOffer(itineraryId),
+    onSuccess: () => onOwnershipTransferred(client, itineraryId),
+  });
+}
+
+export function useDeclineOwnershipOffer(itineraryId: string): UseMutationResult<void, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => invitationRepository.declineOwnershipOffer(itineraryId),
+    onSuccess: () => onOwnershipOfferChanged(client, itineraryId),
+  });
 }
 
 /**

@@ -5,6 +5,7 @@ import type {
   InboxInvitationResponse,
   InvitationResponse,
   MemberResponse,
+  OwnershipOfferRequest,
   Page,
 } from '../types/api';
 
@@ -60,5 +61,31 @@ export const invitationRepository = {
    */
   async endMembership(itineraryId: string, travelerId: string): Promise<void> {
     await apiClient.delete(`/v1/itineraries/${itineraryId}/members/${travelerId}`);
+  },
+
+  // ─── Ownership offers (S1.6). A singleton per trip: no offer ids on the wire. ────────────────────
+
+  /** Offer ownership to a member (owner only — the server enforces it). */
+  async offerOwnership(itineraryId: string, request: OwnershipOfferRequest): Promise<void> {
+    await apiClient.post<void>(`/v1/itineraries/${itineraryId}/ownership-offer`, request);
+  },
+
+  /**
+   * Retract the trip's pending offer (owner only). A DELETE, unlike the invitation transitions above,
+   * because the offer is addressed as a singleton resource rather than by id — and it is idempotent:
+   * revoking when nothing is pending is still 204.
+   */
+  async revokeOwnershipOffer(itineraryId: string): Promise<void> {
+    await apiClient.delete(`/v1/itineraries/${itineraryId}/ownership-offer`);
+  },
+
+  /** Accept the offer made to the caller — this is the transfer. */
+  async acceptOwnershipOffer(itineraryId: string): Promise<void> {
+    await apiClient.post<void>(`/v1/itineraries/${itineraryId}/ownership-offer/accept`, undefined);
+  },
+
+  /** Decline the offer made to the caller; ownership stays where it is. */
+  async declineOwnershipOffer(itineraryId: string): Promise<void> {
+    await apiClient.post<void>(`/v1/itineraries/${itineraryId}/ownership-offer/decline`, undefined);
   },
 };

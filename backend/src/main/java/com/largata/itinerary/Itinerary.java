@@ -37,7 +37,16 @@ public class Itinerary {
 
     @Id private UUID id;
 
-    @Column(name = "owner_id", nullable = false, updatable = false)
+    /**
+     * <strong>{@code updatable = true} since S1.6, and the change is load-bearing.</strong> This was
+     * {@code updatable = false} while ownership was immutable (S0.3) — correct then, and a silent trap
+     * the moment transfer existed: Hibernate omits a non-updatable column from every UPDATE, so {@link
+     * #reassignOwner} mutated the entity, {@code saveAndFlush} reported success, and the column kept
+     * the old owner with no error anywhere. Caught by the transfer IT's four-effects assertion; it
+     * would otherwise have shipped as a column quietly disagreeing with the membership rows, which is
+     * the exact "column that lies" the sync exists to prevent.
+     */
+    @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
 
     @Column(nullable = false)
@@ -263,6 +272,27 @@ public class Itinerary {
                     "An itinerary's description is at most " + MAX_DESCRIPTION_LENGTH + " characters");
         }
         return stripped;
+    }
+
+    /**
+     * Renames the owner after an ownership transfer (S1.6) — the denormalised half of the swap.
+     *
+     * <p><strong>This column is a mirror, not the authority.</strong> Authority is the {@code OWNER}
+     * membership row, which is what the guard resolves and what INV-4's partial unique index defends;
+     * nothing in the request path reads {@code ownerId}. It is kept true anyway because the alternative
+     * — freezing it at creation — leaves a column whose name asserts something false, and the next
+     * reader (a query, a migration, an engineer) has no way to know. That is the V3 {@code state
+     * DEFAULT 'draft'} trap: the quietest possible failure, found by whoever trusts the name next.
+     *
+     * <p>Package-private, and there is no public setter: ownership moves through {@code
+     * ItineraryService.reassignOwner}, called only inside the transfer transaction, so this cannot
+     * drift from the membership rows by any other path.
+     */
+    void reassignOwner(UUID newOwnerId) {
+        if (newOwnerId == null) {
+            throw new IllegalArgumentException("An itinerary always has an owner — INV-4");
+        }
+        this.ownerId = newOwnerId;
     }
 
     public UUID id() {
