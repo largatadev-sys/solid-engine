@@ -44,6 +44,53 @@ describe('reading the list', () => {
 
     expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?cursor=a%2Bb%2Fc%3D');
   });
+
+  it('asks for the archived view only when asked to (S1.9)', async () => {
+    apiClient.get.mockResolvedValue({ items: [] });
+
+    await itineraryRepository.fetchMine(undefined, true);
+
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?archived=true');
+  });
+
+  it('leaves the default list’s URL byte-identical to the pre-S1.9 one', async () => {
+    // The proof that `?archived=` is additive (ADR-008): an unchanged request. If this ever grows an
+    // `archived=false`, the change is still *compatible* — but it stops being invisible, and an
+    // invisible change is the strongest form of the guarantee.
+    apiClient.get.mockResolvedValue({ items: [] });
+
+    await itineraryRepository.fetchMine(undefined, false);
+    await itineraryRepository.fetchMine('MDE5-abc', false);
+
+    expect(apiClient.get).toHaveBeenNthCalledWith(1, '/v1/itineraries');
+    expect(apiClient.get).toHaveBeenNthCalledWith(2, '/v1/itineraries?cursor=MDE5-abc');
+  });
+
+  it('threads a cursor through the archived view too', async () => {
+    apiClient.get.mockResolvedValue({ items: [] });
+
+    await itineraryRepository.fetchMine('MDE5-abc', true);
+
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?cursor=MDE5-abc&archived=true');
+  });
+});
+
+describe('archiving (S1.9)', () => {
+  it('archives with no body — the act carries no data', async () => {
+    apiClient.post.mockResolvedValue({ id: 'abc', archived: true });
+
+    await itineraryRepository.archiveTrip('abc');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/archive', undefined);
+  });
+
+  it('unarchives the same way', async () => {
+    apiClient.post.mockResolvedValue({ id: 'abc', archived: false });
+
+    await itineraryRepository.unarchiveTrip('abc');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/unarchive', undefined);
+  });
 });
 
 describe('reading one and creating', () => {

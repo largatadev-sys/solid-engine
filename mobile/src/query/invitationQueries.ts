@@ -63,7 +63,7 @@ export function pendingInvitationsOptions(itineraryId: string) {
 export async function onInvitationAccepted(client: QueryClient): Promise<void> {
   await Promise.all([
     client.invalidateQueries({ queryKey: invitationKeys.inbox() }),
-    client.invalidateQueries({ queryKey: itineraryKeys.list() }),
+    client.invalidateQueries({ queryKey: itineraryKeys.lists() }),
   ]);
 }
 
@@ -144,7 +144,7 @@ export async function onMembershipEnded(
   client.removeQueries({ queryKey: itineraryKeys.one(itineraryId) });
   client.removeQueries({ queryKey: invitationKeys.members(itineraryId) });
   client.removeQueries({ queryKey: invitationKeys.pending(itineraryId) });
-  await client.invalidateQueries({ queryKey: itineraryKeys.list() });
+  await client.invalidateQueries({ queryKey: itineraryKeys.lists() });
 }
 
 // ─── Ownership offers (S1.6) ──────────────────────────────────────────────────────────────────────
@@ -172,7 +172,7 @@ export async function onOwnershipTransferred(client: QueryClient, itineraryId: s
   await Promise.all([
     client.invalidateQueries({ queryKey: invitationKeys.members(itineraryId) }),
     client.invalidateQueries({ queryKey: itineraryKeys.one(itineraryId) }),
-    client.invalidateQueries({ queryKey: itineraryKeys.list() }),
+    client.invalidateQueries({ queryKey: itineraryKeys.lists() }),
   ]);
 }
 

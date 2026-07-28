@@ -53,6 +53,14 @@ export type ItineraryResponse = {
   endDate: string | null;
   state: string;
   visibility: string;
+  /**
+   * Whether the trip is archived — frozen against every act on it, but present and restorable (S1.9).
+   *
+   * **A boolean beside `state`, not a value inside it**, because archive lives on the *workspace*
+   * machine and is orthogonal to the itinerary's: a trip can be `completed` and archived at once, and
+   * one enum could not say both. Under ADR-008 an `"archived"` state value would have been permanent.
+   */
+  archived: boolean;
   /** Who last edited the itinerary's fields, and when — `null` until the first edit (S1.3, ticket 04 writes it). */
   lastEditedBy: string | null;
   lastEditedAt: string | null;
