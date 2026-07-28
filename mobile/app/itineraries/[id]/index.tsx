@@ -73,8 +73,10 @@ export default function ItineraryScreen() {
         <Badge label={formatItineraryState(data.state)} />
         <Badge label={data.visibility} />
         {/* Archived is a *separate* badge, never a state value: the two machines are orthogonal, so a
-            trip can be Completed and Archived at once (S1.9). */}
-        {data.archived && <Badge label="archived" />}
+            trip can be Completed and Archived at once (S1.9). Capitalised to match the lifecycle badge
+            beside it, which goes through `formatItineraryState` — the raw lowercase form read as a
+            third style next to "Draft" (caught in the preview screenshot, not by any assertion). */}
+        {data.archived && <Badge label="Archived" />}
       </View>
 
       {/* The archive notice for everyone on an archived trip, plus the owner's lever (S1.9). Placed

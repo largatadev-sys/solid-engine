@@ -183,6 +183,50 @@ async function poolToken(tag) {
   const release = await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner);
   check('S1.4 release the lock', release.status === 204, 'got ' + release.status);
 
+  // --- S1.9: archive ----------------------------------------------------------------------------
+  // The whole loop: freeze, prove the freeze is real from both sides, prove the one open door, thaw.
+  const memberArchives = await api(`/v1/itineraries/${trip}/archive`, 'POST', member);
+  check('S1.9 a member cannot archive (403 NOT_PERMITTED)',
+    memberArchives.status === 403 && memberArchives.body.code === 'NOT_PERMITTED',
+    'got ' + memberArchives.status);
+
+  const pendingInvite = await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, { email: address('t3') });
+  check('S1.9 a pending invitation exists before the archive', pendingInvite.status === 201);
+
+  const archived = await api(`/v1/itineraries/${trip}/archive`, 'POST', owner);
+  check('S1.9 the owner archives (200, archived=true)',
+    archived.status === 200 && archived.body.archived === true, 'got ' + archived.status);
+
+  // The fence, from both sides of the roster. A member's plan write and the owner's own lifecycle
+  // act must both refuse — archive freezes the trip, not one person's access.
+  const memberWrites = await api(`/v1/itineraries/${trip}/days`, 'POST', member, { title: 'While frozen' });
+  check('S1.9 a member cannot write the plan (409 TRIP_ARCHIVED)',
+    memberWrites.status === 409 && memberWrites.body.code === 'TRIP_ARCHIVED',
+    'got ' + memberWrites.status + ' ' + JSON.stringify(memberWrites.body?.code));
+  const ownerStarts = await api(`/v1/itineraries/${trip}/start`, 'POST', owner);
+  check('S1.9 even the owner cannot move the lifecycle (409 TRIP_ARCHIVED)',
+    ownerStarts.status === 409 && ownerStarts.body.code === 'TRIP_ARCHIVED',
+    'got ' + ownerStarts.status + ' ' + JSON.stringify(ownerStarts.body?.code));
+
+  // The list splits — and this is the assertion with two outcomes, so it can actually fail.
+  const liveList = await api('/v1/itineraries', 'GET', owner);
+  const archivedList = await api('/v1/itineraries?archived=true', 'GET', owner);
+  check('S1.9 the archived trip leaves the default list',
+    liveList.status === 200 && !liveList.body.items.some((i) => i.id === trip));
+  check('S1.9 …and appears in the archived view',
+    archivedList.status === 200 && archivedList.body.items.some((i) => i.id === trip));
+
+  // The one door that stays open — the founder's rule, proven rather than assumed.
+  const leaves = await api(`/v1/itineraries/${trip}/members/${meMember.body.id}`, 'DELETE', member);
+  check('S1.9 a member can still leave an archived trip (204)', leaves.status === 204, 'got ' + leaves.status);
+
+  const unarchived = await api(`/v1/itineraries/${trip}/unarchive`, 'POST', owner);
+  check('S1.9 the owner unarchives (200, archived=false)',
+    unarchived.status === 200 && unarchived.body.archived === false, 'got ' + unarchived.status);
+  const writableAgain = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner);
+  check('S1.9 writes work again after unarchive', writableAgain.status === 200, 'got ' + writableAgain.status);
+  await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner);
+
   console.log(`\n──────── API rung: ${pass} passed, ${fail} failed ────────\n`);
   process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => { console.error('SMOKE CRASHED:', e.message); process.exit(1); });
