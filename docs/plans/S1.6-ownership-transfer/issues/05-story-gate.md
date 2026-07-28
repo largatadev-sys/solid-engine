@@ -10,11 +10,11 @@
 
 **Blocked by:** 01, 02, 03, 04 — the whole story.
 
-**Status:** in-progress — the two local rungs are closed; AC 14 is blocked on the merge (see Comments 5)
+**Status:** in-progress — all three rungs run; only AC 14's two database queries remain (see Comments 9)
 
 - [x] Device walk complete as scripted, tags stated, screenshots + backend-log evidence captured (spec AC 12)
 - [x] Preview container driven both roles, cancel + confirm each, via CDP (spec AC 13)
-- [ ] Deployed-dev probe: offer `accepted` + transfer row + roles swapped, database named in the query (spec AC 14) — **post-merge by definition**; deployed `dev` runs docs-only `e725a49`
+- [~] Deployed-dev probe (spec AC 14): **API half closed** — smoke 22/22 against `api-dev.largata.com`, roles swapped and offer resolved read back. **DB half open** — the two `railway`-database queries need running by hand (no Railway CLI here); SQL in Comments 9
 - [x] BUILD_STATUS + regression checklist + epic-map sweep done in the last feature-branch commit
 - [x] Full backend + mobile suites green; squash-merge to dev proposed, not executed
 
@@ -35,3 +35,29 @@
 5. **AC 14 (deployed-dev probe) is outstanding and correctly so** — deployed `dev` runs `e725a49`, which is docs only. The probe is a post-merge check by definition; the merge is a promotion and needs the owner's approval. `smoke-ownership-transfer.js` runs against it unchanged: `LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-ownership-transfer.js`.
 
 6. **A rig trap worth recording, hit twice this run** (added to CLAUDE.md): `adb reverse` was listed-but-inert *and* `adb kill-server`/`start-server` did not revive it — the documented `10.0.2.2` fallback was the fix for both Metro and the backend. Also: `mobile/.env` already points the app at `10.0.2.2:8080`, so only Metro needed the pref push. And the emulator held a **stale S1.5 session on an `@largata.test` account**, which presented as "Could not load members" — a rendering that reads as breakage but was the guard 404-masking a non-member correctly; the backend log was the discriminating signal, not the screen.
+
+**2026-07-28 — post-merge: the deployed-dev probe (AC 14).**
+
+Squash-merged as `2d1cf49`; Railway deployed it.
+
+7. **Confirming the deploy needed a discriminating check, and the first two candidates were not.** An unauthenticated `POST` to the new offer route answers **401 on both builds** — default-deny rejects before routing (regression-checklist line 1), so it says nothing about whether the route exists. A 404 on a bad trip id is equally useless: the old build 404s for no-such-route, the new one 404s from the guard's mask. The signal that *is* discriminating is the **presence of the `ownershipOffered` field on a roster row** — a field the old build cannot emit and the new build always emits. It read absent first (old build still serving), then present. Stated before trusting it, per the rule this repo has been burned by three times.
+
+8. **`smoke-ownership-transfer.js` ran unchanged against `https://api-dev.largata.com`: 22/22.** The same arc as local, now over the real network with real Firebase tokens: offer → the bystander seeing it → `OFFER_ALREADY_PENDING` → the stale accept refused with `NOT_OFFER_TARGET` while nothing moves → the crown moving → authority moving with it → both parties keeping the trip in My Trips → **t1 leaving**, the S1.5 dead end open on a deployed rung → the departure void. Final roster read back afterwards: one row, `t2 [owner]`, `ownershipOffered: false`.
+
+9. **One half of AC 14 is outstanding and needs the owner's hand: the two database facts.** The spec asks for a query naming the **`railway`** database, and no Railway CLI is available in this environment. The API confirms roles-swapped and offer-resolved; `ownership_transfer` and `itinerary.owner_id` have no endpoint by design (the table's whole point is that it has no reader yet), so they cannot be probed over HTTP. To close it, run against **database `railway`** on the deployed-dev Postgres:
+
+```sql
+-- expect exactly ONE row, t1 -> t2
+SELECT t.from_traveler_id, t.to_traveler_id, t.transferred_at
+  FROM ownership_transfer t JOIN workspace w ON t.workspace_id = w.id
+ WHERE w.itinerary_id = '019fa6da-8748-795c-8c23-1c2257e567aa';
+
+-- expect ACCEPTED (t2), REVOKED x3, VOIDED (t3)
+SELECT o.status, o.target_traveler_id FROM ownership_offer o
+  JOIN workspace w ON o.workspace_id = w.id WHERE w.itinerary_id = '019fa6da-8748-795c-8c23-1c2257e567aa';
+
+-- expect t2 = 019fa308-bed4-7919-9102-7af0838deabe
+SELECT owner_id FROM itinerary WHERE id = '019fa6da-8748-795c-8c23-1c2257e567aa';
+```
+
+Both were verified in full on the local stack (Comment 1), so this is a rung confirmation rather than an unproven claim — but it is not closed until someone runs it.
