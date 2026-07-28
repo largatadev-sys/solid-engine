@@ -10,11 +10,11 @@
 
 **Blocked by:** 01, 02 — the whole story.
 
-**Status:** in-progress — everything but the post-merge probe
+**Status:** done
 
 - [x] Device walk complete as scripted, tags stated, cancel + confirm both driven, member sees no lever, overdue draft offers Start (spec AC 7)
 - [x] Preview container driven via CDP, cancel + confirm both, badge on My Trips (spec AC 8)
-- [ ] Deployed-dev probe **post-merge** — demoted to a smoke confirmation, not a gate (see comment 4) (spec AC 9)
+- [x] Deployed-dev probe post-merge: 22/22 against `api-dev.largata.com`, script unchanged (see comment 8) (spec AC 9)
 - [x] BUILD_STATUS ✅ + regression checklist + epic-map sweep in the last feature-branch commit
 - [x] Full suites green; squash-merge proposed, not executed
 
@@ -29,3 +29,9 @@
 5. **A rig trap, added to CLAUDE.md:** `adb shell pm clear` deletes the whole `shared_prefs` **directory**, so the documented pref re-push fails with "No such file or directory" and the app then renders **blank** for want of a Metro host. Reads as a broken bundle; is a missing file. The discriminating signal is `run-as … ls shared_prefs/` (empty = never landed), not logcat. Correct order: clear → launch → push → force-stop → launch.
 6. **AC 9 is post-merge by definition and deliberately demoted** *(founder discussion, 2026-07-28)*. What deployed dev uniquely offers is a database **with pre-existing rows** — the S1.1 lesson, where a backfill ran against zero rows locally and "passed" as a no-op. **V12 is not that shape:** `ADD COLUMN` nullable is metadata-only and reads no row; `DROP DEFAULT` is catalog-only. There is no data-dependent behaviour to discover, and deployed dev otherwise runs the same JAR, Flyway and Postgres as the local stack. It stays as a ~90-second confirmation that Railway picked up the build and applied V12 to *that* database — **a deployment check, not a behaviour check**. `LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-lifecycle.js` runs unchanged. Recorded so the next story decides deliberately rather than inheriting the probe as a reflex.
 7. **No regression-checklist line.** Nothing escaped to a human: the review caught the weak attribution test before it shipped, and the `pm clear` trap is toolchain, not product. The ratchet adds a line when a *bug* escapes — recording a non-event would dilute it.
+
+**2026-07-28 — post-merge: AC 9 closed on deployed dev.**
+
+8. **Squash-merged as `861bc3b`; Railway deployed it; `smoke-lifecycle.js` ran unchanged against `https://api-dev.largata.com` — 22/22.** The same arc as local, now over the real network with real Firebase tokens against a database holding months of accumulated rows.
+9. **Confirming the deploy needed a discriminating check, and the obvious one was useless.** An unauthenticated `POST` to the new `/start` route answers **401 on both builds** — default-deny rejects before routing, so it says nothing about whether the route exists (regression-checklist line 1, and the trap S1.6 recorded). The signal that *is* discriminating: an **authenticated owner calling `/start` on their own draft** — the old build has no such route and answers `404 NOT_FOUND`, the new build transitions and answers `200 state=active`. Both outcomes differ. It read 404 first (old build still serving), then 200 — the transition observed directly rather than inferred. Stated before trusting it, per the rule this repo has been burned by three times.
+10. **What the probe proved, precisely — and what it did not.** It proved the *deployment*: Railway picked up the build, and V12 applied to a database with **pre-existing rows**, which no local rung can offer (the S1.1 lesson). It did **not** re-prove behaviour — that was already settled on three rungs against the same JAR, Flyway and Postgres. This is why comment 6 demoted it to a smoke confirmation rather than a gate, and that judgement held: the run took ninety seconds and surfaced nothing the local runs had not. The next story should decide on its own migration's shape whether a probe earns its place, rather than inheriting this one as a reflex.
