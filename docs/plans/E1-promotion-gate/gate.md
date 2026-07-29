@@ -216,6 +216,24 @@ was never built, is corrected in the same edit.
 | Checklist #4 | Google sign-in on a device, through the real picker | ✅ GMS `SignInActivity` + `AccountPickerActivity` on screen, account chosen, then the **discriminating** half: `Traveler provisioned: id=019fac3d…` in the backend log and a new `traveler` row for the base Google address |
 | Checklist #5 | The secret hook still blocks planted specimens | ✅ all six formats blocked (`AIza…`, `sk_live_…`, `ghp_…`, `AKIA…`, PEM, JWT); HEAD unchanged, tree clean afterwards |
 
+### Post-merge re-verification on deployed dev
+
+After the squash landed on `dev` (`edd4307`) Railway redeployed, and the whole L5 layer was re-run
+**against the merged code** rather than against the pre-gate build the first L5 pass necessarily used.
+
+- **Deploy currency proven, not assumed.** `mobile/scripts/deploy-currency.js` was written for this and
+  **verified in both directions before being trusted** — CURRENT against the local stack carrying the
+  fix, STALE against deployed dev still carrying the old build — then watched until it flipped. It
+  discriminates on the `TRIP_ARCHIVED` refusal message, a string this gate changed; `/v1/health` is
+  identical on every build ever deployed and can prove nothing. Its own decay is documented in the
+  scripts README: once every rung carries this build the old spelling is gone, so the next release
+  must re-point it and re-prove both directions.
+- **`smoke-api.js` 46/46** against `api-dev.largata.com` on the merged code.
+- **Two review fixes confirmed on the rung itself:** a member attempting to archive now gets *"Only the
+  trip owner can archive or unarchive this trip."* and a member attempting to offer ownership gets
+  *"Only the trip owner can offer ownership of this trip."* — where both previously said *"Only the
+  trip owner can remove a member."* That was the defect, observed fixed where it ships.
+
 **On L5 and deploy currency.** `/v1/health` returning `{"status":"ok"}` proves nothing about *which*
 build is deployed — it is the indistinguishable-probe shape this repo has been burned by three times.
 The discriminating signal is inside the suite: its S1.9 archive checks pass, and
