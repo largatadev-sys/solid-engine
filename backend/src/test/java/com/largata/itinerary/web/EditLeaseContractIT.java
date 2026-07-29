@@ -17,21 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * The edit-lock endpoints over HTTP (S1.4, ticket 01, spec ACs 1–3, 9): acquire, the holder-naming
- * 409 a second member gets, release, the owner locked out equally, and the guard masking a non-member
- * before any lock state is revealed.
- *
- * <p><strong>The holder-naming 409 is the story's point at this seam.</strong> A live lease answers a
- * different member's acquire with {@code 409 EDIT_LOCKED} whose message contains the holder's display
- * name — that is what the client's "{name} is editing this itinerary right now" modal shows. Expiry
- * and renewal are proven at the service seam under a controlled clock ({@code EditLeaseExpiryIT});
- * here the TTL is the real 3 minutes and no test needs to outlast it.
- *
- * <p>The member fixture matches {@code DayContractIT}: a second traveler admitted directly as a
- * {@code MEMBER} (the state a real S1.2 accept produces), with a display name set so the 409 has a
- * name to carry.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class EditLeaseContractIT extends PostgresTestBase {
@@ -53,7 +39,6 @@ class EditLeaseContractIT extends PostgresTestBase {
         String tripId = createTrip(ownerToken);
         String memberToken = admitNamedMemberTo(tripId, "Maria");
 
-        // The member (Maria) acquires the lock — 200, and the response says she holds it.
         UUID memberId = travelerIdOf(memberToken);
         rest.post()
                 .uri(lockUri(tripId))
@@ -65,7 +50,6 @@ class EditLeaseContractIT extends PostgresTestBase {
                 .jsonPath("$.holderId")
                 .isEqualTo(memberId.toString());
 
-        // The owner tries to acquire — 409, and the message names Maria (no force-take, owner included).
         rest.post()
                 .uri(lockUri(tripId))
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
@@ -86,7 +70,6 @@ class EditLeaseContractIT extends PostgresTestBase {
         String tripId = createTrip(token);
 
         acquire(token, tripId);
-        // Re-entering an edit surface you already hold must not fail — it renews.
         rest.post()
                 .uri(lockUri(tripId))
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -102,7 +85,6 @@ class EditLeaseContractIT extends PostgresTestBase {
         String memberToken = admitNamedMemberTo(tripId, "Maria");
 
         acquire(ownerToken, tripId);
-        // While the owner holds it, the member is refused.
         rest.post()
                 .uri(lockUri(tripId))
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
@@ -110,7 +92,6 @@ class EditLeaseContractIT extends PostgresTestBase {
                 .expectStatus()
                 .isEqualTo(409);
 
-        // The owner releases — 204.
         rest.method(HttpMethod.DELETE)
                 .uri(lockUri(tripId))
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
@@ -118,7 +99,6 @@ class EditLeaseContractIT extends PostgresTestBase {
                 .expectStatus()
                 .isNoContent();
 
-        // Now the member acquires with no wait.
         rest.post()
                 .uri(lockUri(tripId))
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
@@ -132,8 +112,6 @@ class EditLeaseContractIT extends PostgresTestBase {
         String token = freshTraveler();
         String tripId = createTrip(token);
 
-        // Releasing with no lease held is a no-op 204, never an error — a best-effort release on
-        // navigate-away must not fail.
         rest.method(HttpMethod.DELETE)
                 .uri(lockUri(tripId))
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -149,7 +127,6 @@ class EditLeaseContractIT extends PostgresTestBase {
         String memberToken = admitNamedMemberTo(tripId, "Maria");
 
         acquire(memberToken, tripId);
-        // The owner never held the lock, so a renew is a 409 (not silently granted).
         rest.post()
                 .uri(lockUri(tripId) + "/renew")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
@@ -167,7 +144,6 @@ class EditLeaseContractIT extends PostgresTestBase {
         String tripId = createTrip(ownerToken);
         String stranger = freshTraveler();
 
-        // A stranger learns nothing about the lock — 404, the guard's mask, on acquire, renew, release.
         rest.post()
                 .uri(lockUri(tripId))
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
@@ -197,7 +173,6 @@ class EditLeaseContractIT extends PostgresTestBase {
                 .isUnauthorized();
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
     private static String lockUri(String tripId) {
         return "/v1/itineraries/" + tripId + "/edit-lock";
@@ -230,11 +205,11 @@ class EditLeaseContractIT extends PostgresTestBase {
         return fieldIn(created, "id");
     }
 
-    /** Admits a second traveler as a MEMBER with a known display name, so the 409 has a name to carry. */
+
     private String admitNamedMemberTo(String itineraryId, String displayName) {
         String uid = "uid-" + UUID.randomUUID();
         String memberToken = TestJwtSupport.tokenWithName(uid, uid + "@example.com", displayName);
-        UUID memberId = travelerIdOf(memberToken); // provisions the traveler (with the name claim)
+        UUID memberId = travelerIdOf(memberToken);
         UUID workspaceId =
                 jdbc.queryForObject(
                         "SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, UUID.fromString(itineraryId));

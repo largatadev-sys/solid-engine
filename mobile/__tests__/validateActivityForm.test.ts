@@ -1,9 +1,6 @@
 import { validateActivityForm } from '../src/itineraries/validateActivityForm';
 
-/**
- * The activity form's client-side rules (S1.3, ticket 02) — mirroring the server's `@Pattern` +
- * `ActivityFields`. The interesting cases are the cross-field cost rule and the time format.
- */
+
 
 const valid = { title: 'Airport Transfer', timeOfDay: '', costAmount: '', costCurrency: '' };
 

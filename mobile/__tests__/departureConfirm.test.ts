@@ -7,17 +7,7 @@ import {
 } from '../src/components/confirmDestructiveMessage';
 import { missingItineraryMessage } from '../src/components/missingItineraryMessage';
 
-/**
- * The departure confirms (S1.5, ticket 02) and the wording both platform forks share.
- *
- * <p><strong>The same discipline as `editLockedAlert.test.ts`, and the same admitted gap.</strong> Jest
- * resolves `confirmDestructive` to the `.native` fork, so the assertions below exercise the `Alert`
- * path only. The `.web` fork exists because `Alert.alert` is a literal no-op on react-native-web — the
- * S1.3 dead-click trap, which shipped a whole screen of silent buttons — and no unit test in this file
- * can catch a regression there. That is why the wording lives in its own module (tested here, used by
- * both) and the web path is closed by driving the preview container with a `window.confirm`
- * interceptor in CDP (ticket 03).
- */
+
 
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
@@ -25,7 +15,7 @@ beforeEach(() => {
   (Alert.alert as jest.Mock).mockClear();
 });
 
-/** Invokes the affirmative button out of the native Alert's button array. */
+
 function tapConfirm(): void {
   const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as {
     text: string;
@@ -45,8 +35,6 @@ describe('the wording both forks share', () => {
   });
 
   it('tells a leaver what they lose and that the way back is the owner', () => {
-    // The asymmetry is the point: there is no self-service return, because invitation is the only
-    // door into a workspace. A traveler deserves to know that before tapping, not after.
     const { title, body, confirmLabel } = leaveTripWording();
 
     expect(title).toBe('Leave this trip?');
@@ -56,14 +44,12 @@ describe('the wording both forks share', () => {
   });
 
   it('never labels a destructive button "OK" — the word names the act', () => {
-    // On a dialog whose whole job is a last chance, a generic affirmative is the reflexive tap.
     for (const wording of [removeMemberWording('Ana'), leaveTripWording(), confirmDestructiveMessage('Day 2')]) {
       expect(wording.confirmLabel).not.toMatch(/^(ok|yes)$/i);
     }
   });
 
   it('keeps the S1.3 delete wording working through the generalised shape', () => {
-    // confirmDestructive's call sites (days, activities) predate S1.5 and must be untouched by it.
     const { title, body, confirmLabel } = confirmDestructiveMessage('Day 2 and everything in it');
 
     expect(title).toBe('Delete Day 2 and everything in it?');
@@ -74,9 +60,6 @@ describe('the wording both forks share', () => {
 
 describe('the missing-trip copy an evicted member lands on', () => {
   it('asserts neither cause — the 404 masks two situations and the words must cover both', () => {
-    // Artifact 03: "no such trip" and "not yours" are one answer by design. The copy may not claim
-    // non-existence (false, and reads as data loss, for someone who was just removed) nor name removal
-    // (that would leak that the id is real to anyone probing).
     const { title, body } = missingItineraryMessage;
 
     expect(body).toMatch(/no longer exists/i);
@@ -92,7 +75,6 @@ describe('confirmWith (native fork)', () => {
 
     confirmWith(removeMemberWording('Beto Cruz'), onConfirm);
 
-    // Nothing has happened yet — the dialog is the whole point.
     expect(onConfirm).not.toHaveBeenCalled();
     const [title, body] = (Alert.alert as jest.Mock).mock.calls[0];
     expect(title).toBe('Remove Beto Cruz?');

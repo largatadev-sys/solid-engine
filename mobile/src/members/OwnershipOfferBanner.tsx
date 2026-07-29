@@ -5,23 +5,7 @@ import { useMembers } from '../query/invitationQueries';
 import { colors, radii, spacing, typography } from '../theme';
 import { memberControls } from './memberControls';
 
-/**
- * The trip screen's ownership-offer banner (S1.6) — how an offeree finds out at all.
- *
- * <p><strong>Why this exists, when the offer is already visible on the Members screen.</strong> The
- * offer/accept design was chosen over a unilateral transfer precisely because acceptance guarantees the
- * new owner *knows* they hold INV-4's load-bearing role. This product has no notifications, so that
- * guarantee is only as good as the surfaces the offer appears on — and an offer buried one screen deep,
- * behind a Members link nobody opens daily, would undercut the argument that won the design. The trip
- * screen is the surface anyone participating actually opens.
- *
- * <p>It rides the roster query the Members screen already uses — bounded (a handful of rows), cached,
- * no new endpoint — so the cost is a cache hit on most visits.
- *
- * <p>Only the offeree sees it. The owner knows (they made the offer, and their Members screen says so)
- * and uninvolved members have nothing to act on, so for them it would be noise on the screen they use
- * to read the plan.
- */
+
 export function OwnershipOfferBanner({ itineraryId }: { itineraryId: string }) {
   const members = useMembers(itineraryId);
   const { state: meState } = useMe();

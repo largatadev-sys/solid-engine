@@ -4,10 +4,7 @@ import { useMe } from '../src/hooks/useMe';
 import { authRepository } from '../src/repositories/authRepository';
 import { colors, radii, spacing, typography } from '../src/theme';
 
-/**
- * The signed-in traveler's account (S0.2), on tokens since S0.3 and demoted from home — My Trips is
- * where a signed-in traveler lands now. Reached from there; still the place sign-out lives.
- */
+
 
 export default function MeScreen() {
   const { state, refresh } = useMe();
@@ -36,7 +33,7 @@ export default function MeScreen() {
         {state.kind === 'error' && (
           <>
             <Text style={styles.errorTitle}>Could not load your profile</Text>
-            {/* Branching on `code`, never on `message` (Artifact 05). */}
+            {}
             <Text style={styles.errorCode}>{state.error.code}</Text>
             <Text style={styles.caption}>{state.error.message}</Text>
             {state.error.traceId !== undefined && (
@@ -67,7 +64,7 @@ export default function MeScreen() {
   );
 }
 
-/** A layout constant, not a token — see `health.tsx`. */
+
 const CARD_MAX_WIDTH = 420;
 
 const styles = StyleSheet.create({

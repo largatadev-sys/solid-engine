@@ -21,16 +21,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * Spec AC 10: the one fact the single code path does not flatten — who ended the membership.
- *
- * <p>Removal and leave are deliberately one operation (spec §1), so the initiator distinction survives
- * only here. If these two events ever collapse into one, the funnel loses the ability to tell "owners
- * are pruning trips" from "co-travelers are walking away", which are opposite product signals.
- *
- * <p>The sink's own behaviour is unit-tested ({@code LoggingAnalyticsTest}); what needs a running app
- * is the call site — the right event name, after the transaction commits, naming people by id only (P3).
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class MemberDepartureAnalyticsIT extends PostgresTestBase {
@@ -95,8 +86,6 @@ class MemberDepartureAnalyticsIT extends PostgresTestBase {
 
     @Test
     void anIdempotentRepeatEmitsNothingTheSecondTime() {
-        // The event reports a destroyed row. The second DELETE destroys nothing, so counting it would
-        // overstate departures — the same reasoning ItineraryAnalyticsIT applies to a rejected create.
         String ownerToken = verified();
         String trip = createTrip(ownerToken);
         UUID memberId = travelerIdOf(joinAsMember(ownerToken, trip));
@@ -109,8 +98,6 @@ class MemberDepartureAnalyticsIT extends PostgresTestBase {
 
     @Test
     void aRefusedDepartureEmitsNothing() {
-        // The owner's blocked exit rolls back; a funnel that counted it would report departures that
-        // never happened.
         String ownerToken = verified();
         String trip = createTrip(ownerToken);
         joinAsMember(ownerToken, trip);
@@ -123,8 +110,6 @@ class MemberDepartureAnalyticsIT extends PostgresTestBase {
 
     @Test
     void theEventNamesPeopleByIdAndCarriesNoEmailOrName() {
-        // P3, extended to analytics: a departure is a socially loaded fact about real people. The funnel
-        // needs "somebody left trip X"; it never needs to know who by name or address.
         String ownerToken = verified();
         String trip = createTrip(ownerToken);
         String memberEmail = "departing-" + UUID.randomUUID() + "@example.com";
@@ -142,7 +127,6 @@ class MemberDepartureAnalyticsIT extends PostgresTestBase {
                         });
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
     private List<ILoggingEvent> eventsNamed(String name) {
         return events.list.stream().filter(line -> line.getFormattedMessage().equals("event=" + name)).toList();

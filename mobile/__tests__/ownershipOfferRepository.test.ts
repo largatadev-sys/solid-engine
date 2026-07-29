@@ -1,14 +1,6 @@
 import { invitationRepository } from '../src/repositories/invitationRepository';
 
-/**
- * The ownership-offer routes (S1.6, ticket 04) — mocked at the apiClient boundary, the
- * `itineraryRepository.test.ts` seam.
- *
- * <p>What these pin is the <strong>singleton addressing</strong>: no offer id ever reaches the wire,
- * because at most one offer may be pending per trip, so the trip's own URL identifies it. A path that
- * drifted to `/ownership-offers/{id}` would be a different API contract, and under ADR-008 the wrong
- * one is carried forever.
- */
+
 
 jest.mock('../src/api/apiClient', () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), put: jest.fn(), delete: jest.fn() },
@@ -46,8 +38,6 @@ describe('resolving an offer', () => {
   });
 
   it('accepts with a bodyless POST — the path names the trip, the token names the caller', async () => {
-    // Bodyless deliberately: Spring runs @Valid body validation during argument resolution, before the
-    // guard, so a body would introduce a 400 path that never consults authorization (the S1.5 lesson).
     apiClient.post.mockResolvedValue(undefined);
 
     await invitationRepository.acceptOwnershipOffer(TRIP);

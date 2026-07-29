@@ -1,10 +1,6 @@
 import { reorderActivityIds } from '../src/itineraries/reorderActivityIds';
 
-/**
- * The reorder reducer (S1.3, ticket 03) — the pure logic behind the up/down controls, tested without
- * a renderer (the `formatActivityCost` pattern). What matters: a nudge swaps exactly two neighbours,
- * the ends are no-ops, and the input is never mutated.
- */
+
 
 describe('reorderActivityIds', () => {
   it('moves an activity up by swapping it with the one above', () => {

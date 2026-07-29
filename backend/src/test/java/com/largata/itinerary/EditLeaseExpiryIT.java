@@ -21,20 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.TestPropertySource;
 
-/**
- * The lease's time-dependent behaviour, proven against a clock the test controls (S1.4, ADR-014 —
- * expiry is the real guarantee). The TTL is pinned to a known 3 minutes via a property; the {@link
- * MutableClock} steps past it deterministically, so "did the lease expire" is a fact, not a race.
- *
- * <p>At the service seam rather than over HTTP: expiry and renewal are the service's logic, and a
- * controlled clock is far cleaner to inject here than through the web layer. The HTTP contract (a
- * held lock refuses a stranger, names the holder, guards non-members) is {@code EditLeaseContractIT}.
- *
- * <p>The membership is constructed directly — these tests exercise the lease service in isolation, so
- * they build the {@link Membership} the guard would have produced rather than routing through it.
- * (The lease service never consults the guard; it trusts the membership it is handed, exactly as
- * every other workspace-scoped service does.)
- */
+
 @SpringBootTest
 @Import(EditLeaseExpiryIT.ClockConfig.class)
 @TestPropertySource(properties = "largata.edit-lock.ttl=PT3M")
@@ -52,13 +39,10 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         Membership bob = otherMemberOf(alice);
 
         leases.acquire(alice);
-        // Bob cannot take a live lease — the whole point of the lock.
         assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.acquire(bob));
 
-        // Alice's client dies: no release is ever sent. Time passes past the TTL.
         clock.advance(TTL.plusSeconds(1));
 
-        // The lease has freed itself — Bob acquires with no intervention, no cleanup job.
         assertThatCode(() -> leases.acquire(bob)).doesNotThrowAnyException();
     }
 
@@ -69,13 +53,11 @@ class EditLeaseExpiryIT extends PostgresTestBase {
 
         leases.acquire(alice);
 
-        // Two TTL windows pass, but Alice renews inside each — her edit screen is still open.
         clock.advance(TTL.minusSeconds(10));
         leases.renew(alice);
         clock.advance(TTL.minusSeconds(10));
         leases.renew(alice);
 
-        // Across all that elapsed time Bob was never let in: renewal held the lock.
         assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.acquire(bob));
     }
 
@@ -84,10 +66,8 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         Membership alice = ownerOfAFreshTrip();
 
         leases.acquire(alice);
-        // A held, live lease lets Alice's write through.
         assertThatCode(() -> leases.requireHeldBy(alice)).doesNotThrowAnyException();
 
-        // The lease lapses (Alice stopped renewing); a later write is refused — writing needs a live hold.
         clock.advance(TTL.plusSeconds(1));
         assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.requireHeldBy(alice));
     }
@@ -98,14 +78,12 @@ class EditLeaseExpiryIT extends PostgresTestBase {
         Membership bob = otherMemberOf(alice);
 
         leases.acquire(alice);
-        clock.advance(TTL.plusSeconds(1)); // Alice's lease lapses...
-        leases.acquire(bob); // ...and Bob takes over.
+        clock.advance(TTL.plusSeconds(1));
+        leases.acquire(bob);
 
-        // Alice's stale renew must fail — she is not the holder any more.
         assertThatExceptionOfType(EditLockedException.class).isThrownBy(() -> leases.renew(alice));
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
     private Membership ownerOfAFreshTrip() {
         UUID ownerId = UUID.randomUUID();
@@ -119,13 +97,7 @@ class EditLeaseExpiryIT extends PostgresTestBase {
 
     @TestConfiguration
     static class ClockConfig {
-        /**
-         * The single {@link Clock} bean this context has — a {@link MutableClock}, exposed as {@code
-         * Clock} so the production {@code @ConditionalOnMissingBean} clock steps aside (the condition
-         * matches on the {@code Clock} type). Named {@code editLockTestClock}, not {@code clock}, to
-         * avoid colliding with the production bean's name (override is disabled by default). Injected
-         * back into the test as a {@link MutableClock} by type.
-         */
+
         @Bean
         @Primary
         MutableClock editLockTestClock() {

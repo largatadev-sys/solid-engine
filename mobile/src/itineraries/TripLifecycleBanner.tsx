@@ -9,32 +9,7 @@ import { colors, radii, spacing, typography } from '../theme';
 import type { ItineraryResponse } from '../types/api';
 import { deviceToday, lifecycleBanner } from './lifecycleBanner';
 
-/**
- * The trip screen's lifecycle banner (S1.7) — the owner's one lever for `draft → active → completed`.
- *
- * <p><strong>Nudge and control in one surface.</strong> Register #10 resolved that dates never drive a
- * transition; they only suggest one. So the banner is always present for the owner and merely changes
- * its copy when the trip's own dates say the transition is overdue — no modal, no dismissal state to
- * store, nothing that nags. A passive banner is the whole reason a dismissal mechanism is unnecessary.
- *
- * <p><strong>Members see nothing here</strong> (the lever is the owner's — S1.3's split: members shape
- * the plan, the owner keeps lifecycle, membership and existence). They still see the state badge above
- * it, which is a workspace-visible fact. The decision itself lives in the pure {@link lifecycleBanner},
- * where the Jest table drives it; this component renders the answer and nothing more.
- *
- * <p>Ownership comes from the roster query the Members screen and the offer banner already share —
- * cached and bounded, so this is a cache hit on most visits. <strong>While it loads, nobody is treated
- * as the owner and the banner is absent, appearing once the roster lands.</strong> That direction is
- * deliberate: the alternative — assuming ownership until proven otherwise — would flash a lever at a
- * member and then snatch it away, and a control that vanishes reads as a bug in a way one that arrives
- * does not. On a warm cache (the usual case, since the trip screen already fetches this roster for the
- * ownership-offer banner) there is no gap at all.
- *
- * <p><strong>Named `Trip…` rather than matching its helper</strong>: `LifecycleBanner.tsx` beside
- * `lifecycleBanner.ts` collides on a case-insensitive filesystem (Windows, macOS), and TypeScript
- * resolves the import to whichever it saw first — so the screen imported the *helper* and failed with
- * "only refers to a type". A distinct name is the fix that cannot regress; matching case is not.
- */
+
 export function TripLifecycleBanner({ itinerary }: { itinerary: ItineraryResponse }) {
   const members = useMembers(itinerary.id);
   const { state: meState } = useMe();
@@ -54,9 +29,6 @@ export function TripLifecycleBanner({ itinerary }: { itinerary: ItineraryRespons
   const wording = starting ? startTripWording() : completeTripWording();
 
   const onPress = () => {
-    // Platform-forked: `Alert.alert` is a no-op on react-native-web, so an unforked confirm would make
-    // this button do nothing at all in the browser (the S1.3 gotcha). The mutation runs only inside
-    // the confirm callback, which is what makes "cancel" genuinely cancel.
     confirmWith(wording, () => mutation.mutate());
   };
 
@@ -82,16 +54,7 @@ export function TripLifecycleBanner({ itinerary }: { itinerary: ItineraryRespons
   );
 }
 
-/**
- * The headline. When a date has passed it leads with that date, because the fact is the nudge — an
- * owner who sees the start date they set knows immediately whether the suggestion is right, in a way
- * "Ready to start?" never tells them.
- *
- * <p>The date renders as the ISO string the server sent, which is what {@code formatDates} does on
- * every other surface (the trip screen, My Trips rows). The spec's illustrative "Jul 20" is prose in a
- * decision about nudge *behaviour*, not a copy spec — introducing month names here alone would make
- * this the only place in the app that renders a date differently, which is worse than plain.
- */
+
 function title(act: 'start' | 'complete', overdue: boolean, itinerary: ItineraryResponse): string {
   if (!overdue) {
     return act === 'start' ? 'Not started yet' : 'Trip in progress';
@@ -119,8 +82,6 @@ const styles = StyleSheet.create({
     borderColor: colors.accentMuted,
     backgroundColor: colors.surface,
   },
-  // The nudge, rendered: a stronger border when the trip's own dates say the transition is due. Colour
-  // alone is not the signal — the copy changes too — so this reads correctly without colour perception.
   overdue: { borderColor: colors.accent },
   text: { flexShrink: 1, gap: spacing.xs },
   title: { ...typography.bodyStrong, color: colors.textPrimary },

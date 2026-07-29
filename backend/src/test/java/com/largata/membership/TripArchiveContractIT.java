@@ -18,15 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * S1.9 ticket 02 over HTTP: archive and unarchive, their ladders, and everything that dissolves with
- * them (spec ACs 1, 2, 3, 6, 7).
- *
- * <p>The ladder is asserted in the order the service applies it — <strong>authority before state</strong>
- * (S1.5's rule, S1.7's precedent): a member who is not the owner is refused whether or not the
- * transition would have been legal, so a 403 never leaks where the trip sits in its lifecycle to
- * somebody without standing to move it.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class TripArchiveContractIT extends PostgresTestBase {
@@ -42,7 +34,6 @@ class TripArchiveContractIT extends PostgresTestBase {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
     }
 
-    // --- the happy path, both edges (spec ACs 1, 3) -----------------------------------------------
 
     @Test
     void theOwnerArchivesAndTheTripComesBackLiveOnUnarchive() {
@@ -58,11 +49,7 @@ class TripArchiveContractIT extends PostgresTestBase {
         assertThat(workspaceStateOf(tripId)).isEqualTo("ACTIVE");
     }
 
-    /**
-     * <strong>Archive is legal from every itinerary state</strong> (spec AC 2, decision 8) — which
-     * amends canon's original "skipping completed is illegal". A cancelled draft is archive's single
-     * most likely real use, and a machine that could not express it would send owners to psql.
-     */
+
     @Test
     void archiveIsLegalFromDraftActiveAndCompletedAlike() {
         String owner = freshTraveler();
@@ -83,11 +70,7 @@ class TripArchiveContractIT extends PostgresTestBase {
         assertThat(workspaceStateOf(completed)).isEqualTo("ARCHIVED");
     }
 
-    /**
-     * <strong>Unarchive recomputes the state rather than remembering it</strong> (spec AC 3, decision 8):
-     * a completed trip comes back {@code COMPLETED}, everything else {@code ACTIVE}. No "previous state"
-     * is stored, so there is nothing to drift while the trip sits archived.
-     */
+
     @Test
     void unarchiveRestoresCompletedForACompletedTripAndActiveForEverythingElse() {
         String owner = freshTraveler();
@@ -105,7 +88,6 @@ class TripArchiveContractIT extends PostgresTestBase {
         assertThat(workspaceStateOf(draft)).isEqualTo("ACTIVE");
     }
 
-    // --- the ladder (spec ACs 1, 3) ---------------------------------------------------------------
 
     @Test
     void archivingAnArchivedTripIsAConflictAndUnarchivingALiveOneIs() {
@@ -150,13 +132,7 @@ class TripArchiveContractIT extends PostgresTestBase {
                 .isEqualTo("NOT_PERMITTED");
     }
 
-    /**
-     * <strong>Authority before state, with a probe that can tell the two apart.</strong> The member here
-     * asks for a transition that is <em>also</em> illegal (unarchiving a live trip), so the two checks
-     * disagree about the answer: 403 means authority ran first, 409 would mean state did — and a 409
-     * would tell a member without standing exactly where the trip sits. S1.7's {@code
-     * authorityIsCheckedBeforeState} is the same test on the neighbouring machine.
-     */
+
     @Test
     void authorityIsCheckedBeforeState() {
         String owner = freshTraveler();
@@ -179,16 +155,8 @@ class TripArchiveContractIT extends PostgresTestBase {
         rest.post().uri("/v1/itineraries/" + tripId + "/unarchive").exchange().expectStatus().isUnauthorized();
     }
 
-    // --- what dissolves with the trip (spec ACs 6, 7) ---------------------------------------------
 
-    /**
-     * The edit lease dies with the archive, and does not come back (spec AC 6, decision 12).
-     *
-     * <p>Without the release the plan stays locked for up to a TTL by somebody nobody can see, and the
-     * others read "«X» is editing" on a trip nobody may edit. Unarchive deliberately does not restore it:
-     * a lease is ephemeral concurrency control, and after an arbitrary gap the original holder's edit
-     * screen is long gone.
-     */
+
     @Test
     void archiveReleasesTheEditLeaseAndUnarchiveDoesNotBringItBack() {
         String owner = freshTraveler();
@@ -205,13 +173,7 @@ class TripArchiveContractIT extends PostgresTestBase {
         assertThat(leaseCountOn(tripId)).as("a lease is not restored — whoever wants it acquires fresh").isZero();
     }
 
-    /**
-     * Pending invitations and a pending ownership offer both void, in the archive transaction, and
-     * neither returns on unarchive (spec AC 7, decision 13).
-     *
-     * <p>{@code VOIDED} rather than {@code REVOKED} for both: the owner did not retract them, the system
-     * dissolved them — and collapsing the two would permanently lose why a pending row ended.
-     */
+
     @Test
     void archiveVoidsPendingInvitationsAndTheOwnershipOfferAndUnarchiveDoesNotRestoreThem() {
         String owner = freshTraveler();
@@ -235,12 +197,7 @@ class TripArchiveContractIT extends PostgresTestBase {
         assertThat(offerStatusesOn(tripId)).containsExactly("VOIDED");
     }
 
-    /**
-     * <strong>Archive evicts nobody</strong> (spec AC 5's row-level half; the endpoint-level half is
-     * ticket 03's enumeration test). Memberships survive untouched, so unarchiving yields a working trip
-     * with the same roster rather than an empty one — which is the whole difference between archiving a
-     * trip and dissolving it.
-     */
+
     @Test
     void archiveLeavesEveryMembershipIntact() {
         String owner = freshTraveler();
@@ -257,7 +214,6 @@ class TripArchiveContractIT extends PostgresTestBase {
         assertThat(membershipCountOn(tripId)).isEqualTo(3);
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
     private RestTestClient.ResponseSpec archive(String token, String itineraryId) {
         return post(token, "/v1/itineraries/" + itineraryId + "/archive");
@@ -301,11 +257,7 @@ class TripArchiveContractIT extends PostgresTestBase {
                 .exchange();
     }
 
-    /**
-     * Reads the stored workspace state directly. Deliberately not through the API: the column's spelling
-     * is a contract with Hibernate that no wire form exposes (the V4 lesson, pinned in
-     * {@code WorkspaceStateStorageIT}).
-     */
+
     private String workspaceStateOf(String itineraryId) {
         return jdbc.queryForObject(
                 "SELECT state FROM workspace WHERE itinerary_id = ?", String.class, UUID.fromString(itineraryId));

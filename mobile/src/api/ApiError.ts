@@ -1,8 +1,4 @@
-/**
- * The one typed error the client layer throws (06b §6).
- *
- * UI branches on `code` — the stable machine string — never on `message` (Artifact 05).
- */
+
 export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
@@ -16,7 +12,7 @@ export class ApiError extends Error {
     this.traceId = args.traceId;
   }
 
-  /** The network never answered: no status, no envelope, no traceId. */
+
   static offline(): ApiError {
     return new ApiError({
       code: 'NETWORK_UNAVAILABLE',

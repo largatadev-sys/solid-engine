@@ -6,16 +6,7 @@ import {
 } from '../src/query/invitationQueries';
 import { itineraryKeys } from '../src/query/itineraryQueries';
 
-/**
- * The ownership-offer cache contract (S1.6, ticket 04) — driven through a real QueryClient, no
- * renderer, the `departureQueries.test.ts` shape.
- *
- * <p>The decision worth pinning is the width difference. Making, withdrawing or refusing an offer
- * changes one thing: the roster's flag. <strong>Accepting changes who owns the trip</strong>, so the
- * cached itinerary (its owner, and anything gated on it) and the list (both parties keep the trip, but
- * their standing changed) are stale too. Invalidate, never remove — unlike leaving, nothing became
- * unreadable; it became wrong.
- */
+
 
 jest.mock('../src/repositories/invitationRepository', () => ({
   invitationRepository: {
@@ -75,9 +66,6 @@ describe('after an offer is accepted', () => {
   });
 
   it('keeps the cached trip readable — a transfer changes who owns it, not whether you may see it', async () => {
-    // Contrast leaving, which *removes* these entries because every refetch would 404. Both parties
-    // remain members through a transfer, so removing would blank a screen that is still entitled to
-    // its data and force a spinner for no reason.
     const client = seededClient();
 
     await onOwnershipTransferred(client, TRIP);

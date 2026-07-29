@@ -8,10 +8,7 @@ export type HealthState =
   | { kind: 'ok'; health: HealthResponse }
   | { kind: 'error'; error: ApiError };
 
-/**
- * Binds the repository to React. The screen renders {@link HealthState} and knows nothing about
- * transport — no fetch, no URLs, no status codes.
- */
+
 export function useHealth(): { state: HealthState; refresh: () => void } {
   const [state, setState] = useState<HealthState>({ kind: 'loading' });
 
@@ -20,8 +17,6 @@ export function useHealth(): { state: HealthState; refresh: () => void } {
     try {
       setState({ kind: 'ok', health: await healthRepository.fetchHealth() });
     } catch (error) {
-      // The client layer's contract is that it throws exactly one type; anything else is a bug
-      // in that layer, and surfacing it as an unknown crash would hide it.
       setState({
         kind: 'error',
         error:

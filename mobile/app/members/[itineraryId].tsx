@@ -28,18 +28,7 @@ import { useItinerary } from '../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../src/theme';
 import type { InvitationResponse, MemberResponse } from '../../src/types/api';
 
-/**
- * The Members screen (S1.2, ticket 07; departure added S1.5) — the first screen where a trip's people
- * are named, and now the only one where they stop being named.
- *
- * Every member sees the roster. The owner additionally sees the invite field, the pending invitations,
- * revoke, and **Remove** on everyone but themselves. A non-owner member sees **Leave trip** instead.
- *
- * <p><strong>The owner has no Leave control at all</strong>, deliberately: INV-4 keeps exactly one owner
- * at all times, so an owner's exit is only coherent after transferring ownership — which is S1.6. The
- * server refuses it either way (409 `OWNER_CANNOT_LEAVE`); the screen simply does not advertise a dead
- * end, the same reason the invite field is owner-only rather than shown-and-rejected.
- */
+
 export default function MembersScreen() {
   const { itineraryId } = useLocalSearchParams<{ itineraryId: string }>();
   const members = useMembers(itineraryId);
@@ -55,12 +44,6 @@ export default function MembersScreen() {
 
   const myId = meState.kind === 'ok' ? meState.me.id : undefined;
   const roster = members.data?.items ?? [];
-  // The gating lives in a pure function so it is testable — a screen is not, under jest-expo (S0.3).
-  //
-  // S1.9: an archived trip freezes every act on its roster — invite, remove, offer, withdraw — so the
-  // flag is folded into the gating rather than checked at each control. Leave is deliberately outside
-  // the freeze; see `memberControls`. `?? false` while the itinerary loads: not-archived is the
-  // optimistic direction, and the server refuses anything the screen gets wrong.
   const {
     canInvite,
     canLeave,
@@ -130,8 +113,6 @@ export default function MembersScreen() {
       endMembership.mutate(
         { travelerId: myId, leaving: true },
         {
-          // Back to My Trips, replacing rather than pushing: the trip we just left must not be
-          // reachable with the back gesture — every screen under it would 404 on its next fetch.
           onSuccess: () => router.replace('/'),
           onError: (error) => setDepartureError(departureErrorMessage(error)),
         },
@@ -235,15 +216,11 @@ function MemberRow({
 }: {
   member: MemberResponse;
   isYou: boolean;
-  /** Present only when the viewer may remove this member — the owner, on somebody else's row. */
+
   onRemove?: () => void;
-  /**
-   * Present only when the viewer may offer this member ownership — the owner, on somebody else's row,
-   * and only while no offer is pending anywhere on the trip. Its absence on every row is how
-   * at-most-one-offer is expressed in the UI.
-   */
+
   onOffer?: () => void;
-  /** Present only on the offered member's row, for the owner: retract before it is answered. */
+
   onWithdrawOffer?: () => void;
   busy: boolean;
 }) {
@@ -386,7 +363,7 @@ function PendingRow({
   );
 }
 
-/** Branch on the envelope `code`, never the message (Artifact 05). */
+
 function inviteErrorMessage(error: Error): string {
   if (error instanceof ApiError) {
     switch (error.code) {
@@ -403,14 +380,7 @@ function inviteErrorMessage(error: Error): string {
   return 'Could not send the invitation. Try again.';
 }
 
-/**
- * Branch on the envelope `code`, never the message (Artifact 05).
- *
- * `OWNER_CANNOT_LEAVE` should be unreachable from this screen — the owner is never shown a Leave
- * control, and Remove never targets their own row — but it is mapped anyway rather than falling to the
- * generic line. If the gating ever regresses, the traveler gets the sentence that tells them what to do
- * instead of a shrug, and the wrong copy in a screenshot is how the regression gets reported.
- */
+
 function departureErrorMessage(error: Error): string {
   if (error instanceof ApiError) {
     switch (error.code) {
@@ -427,15 +397,7 @@ function departureErrorMessage(error: Error): string {
   return 'Could not complete that. Try again.';
 }
 
-/**
- * Branch on the envelope `code`, never the message (Artifact 05) — the ownership-offer surface (S1.6).
- *
- * Most of these should be unreachable from a screen whose controls are gated by `memberControls`, and
- * they are mapped anyway for `departureErrorMessage`'s reason: if the gating regresses, or a second
- * device acted first, the traveler gets a sentence that explains the state rather than a shrug — and
- * the wrong copy in a screenshot is how the regression gets reported. `OFFER_ALREADY_PENDING` and
- * `OFFER_NOT_FOUND` in particular are the two a stale screen produces.
- */
+
 function ownershipErrorMessage(error: Error): string {
   if (error instanceof ApiError) {
     switch (error.code) {
@@ -448,9 +410,6 @@ function ownershipErrorMessage(error: Error): string {
       case 'OFFER_NOT_FOUND':
         return 'That ownership offer is no longer available.';
       case 'NOT_OFFER_TARGET':
-        // Distinct from NOT_PERMITTED on purpose: this caller is not missing a role, they are acting on
-        // an offer that has since been withdrawn and re-made to somebody else. A sentence about owners
-        // would not describe their situation at all.
         return 'That ownership offer is no longer yours — it was withdrawn or offered to someone else.';
       case 'NOT_PERMITTED':
         return 'Only the trip owner can offer ownership.';
@@ -522,8 +481,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
   buttonText: { ...typography.bodyStrong, color: colors.textOnAccent },
-  // Outlined rather than filled: leaving is destructive but it is not the screen's primary action, and
-  // a solid danger-coloured slab reads as an instruction. The invite CTA keeps the filled treatment.
   dangerButton: {
     maxWidth: FIELD_MAX_WIDTH,
     paddingVertical: spacing.md,
@@ -533,8 +490,6 @@ const styles = StyleSheet.create({
     borderColor: colors.danger,
   },
   dangerButtonText: { ...typography.bodyStrong, color: colors.danger },
-  // Declining is not destructive — nothing is lost and it can be offered again — so it gets the quiet
-  // outlined treatment rather than the danger colour Leave uses.
   secondaryButton: {
     maxWidth: FIELD_MAX_WIDTH,
     paddingVertical: spacing.md,

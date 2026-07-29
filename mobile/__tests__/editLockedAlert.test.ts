@@ -3,15 +3,7 @@ import { ApiError } from '../src/api/ApiError';
 import { editLockedAlert } from '../src/components/editLockedAlert';
 import { editLockedMessage } from '../src/components/editLockedMessage';
 
-/**
- * The edit-lock "can't open this" message (S1.4, ADR-014), and its native fork.
- *
- * <p><strong>Same discipline as `comingSoon.test.ts`.</strong> Jest resolves `editLockedAlert` to the
- * `.native` fork, so these tests exercise the `Alert` path only. The `.web` fork exists precisely
- * because `Alert.alert` is a no-op on react-native-web (the S1.3 dead-click trap) — a gap no unit test
- * here can catch, which is why the wording lives in `editLockedMessage` (tested below, used by both)
- * and the web path is proven by driving the preview container with a `window.alert` interceptor.
- */
+
 
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
@@ -24,8 +16,6 @@ const locked = (message: string) =>
 
 describe('editLockedMessage — the wording both forks share', () => {
   it("shows the backend's holder-naming message verbatim when locked by another member", () => {
-    // The backend already composed "Maria is editing this itinerary right now." — more specific than
-    // anything the client could write, so it is shown as-is.
     const { title, body } = editLockedMessage(locked('Maria is editing this itinerary right now.'));
 
     expect(title).toBe('Someone is editing');

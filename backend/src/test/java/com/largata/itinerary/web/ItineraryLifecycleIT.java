@@ -19,14 +19,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * S1.7 ticket 01 over HTTP: the two lifecycle transitions, their full ladders, and the write-once
- * stamps behind them (spec ACs 1, 2, 4).
- *
- * <p>The ladder is asserted in the order the service applies it — <strong>authority before state</strong>
- * (S1.5's rule): a member who is not the owner is refused whether or not the transition would have been
- * legal, so a 403 never depends on, and never leaks, the trip's lifecycle state.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class ItineraryLifecycleIT extends PostgresTestBase {
@@ -42,14 +35,12 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
     }
 
-    // --- the happy path, both edges (spec AC 1, AC 2) ---------------------------------------------
 
     @Test
     void theOwnerStartsThenCompletesTheTripAndEachActStampsItsOwnMoment() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
-        // Born a draft, with neither stamp — the honest state before anything has happened.
         assertThat(stateOf(tripId)).isEqualTo("DRAFT");
         assertThat(stampsOf(tripId)).containsEntry("started_at", null).containsEntry("completed_at", null);
 
@@ -75,8 +66,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String owner = freshTraveler();
         String tripId = createItineraryWithDays(owner, 3);
 
-        // The client re-renders from this one response rather than transitioning and then refetching,
-        // so the plan must ride along exactly as it does on view and edit.
         start(owner, tripId)
                 .expectStatus()
                 .isOk()
@@ -89,7 +78,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .isEqualTo("Draft trip");
     }
 
-    // --- authority (spec AC 1) --------------------------------------------------------------------
 
     @Test
     void aMemberWhoIsNotTheOwnerCannotStartOrCompleteTheTrip() {
@@ -113,7 +101,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .jsonPath("$.code")
                 .isEqualTo("NOT_PERMITTED");
 
-        // The member's refusals changed nothing.
         assertThat(stateOf(tripId)).isEqualTo("ACTIVE");
     }
 
@@ -123,9 +110,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
 
-        // `complete` on a DRAFT is an illegal transition (409) *and* the caller is a non-owner (403).
-        // The 403 must win: were state checked first, the refusal would tell a member without standing
-        // exactly where in its lifecycle the trip sits. This test fails if the two checks swap order.
         complete(member, tripId)
                 .expectStatus()
                 .isForbidden()
@@ -134,7 +118,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .isEqualTo("NOT_PERMITTED");
     }
 
-    // --- legality (spec AC 1, AC 2) ---------------------------------------------------------------
 
     @Test
     void startingAnAlreadyActiveOrCompletedTripIsRefused() {
@@ -164,10 +147,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
-        // Spec decision 9: the forgetful owner whose trip is over but never started reaches `completed`
-        // through `active`, in two deliberate acts. A skip edge here would invent a `started_at` they
-        // never supplied — or leave it NULL on a completed trip, making "was this ever started?"
-        // unanswerable.
         complete(owner, tripId)
                 .expectStatus()
                 .isEqualTo(409)
@@ -194,7 +173,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .isEqualTo("ILLEGAL_STATE_TRANSITION");
     }
 
-    // --- write-once (spec AC 4) -------------------------------------------------------------------
 
     @Test
     void arefusedTransitionLeavesTheStampsAndAttributionUntouched() {
@@ -204,12 +182,9 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         complete(owner, tripId).expectStatus().isOk();
         Map<String, Object> stamped = stampsOf(tripId);
 
-        // Every illegal re-attempt, from every direction.
         start(owner, tripId).expectStatus().isEqualTo(409);
         complete(owner, tripId).expectStatus().isEqualTo(409);
 
-        // Forward-only means each transition is reachable from exactly one state and each state is left
-        // exactly once — so neither stamp can ever receive a second write. This is that claim, tested.
         assertThat(stampsOf(tripId)).isEqualTo(stamped);
     }
 
@@ -220,11 +195,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String member = admitMemberTo(tripId);
         UUID memberId = travelerIdOf(member);
 
-        // A REAL edit first, by somebody other than the owner. Without this the test has no failure
-        // mode: on a never-edited trip both fields are null before and after, so it would pass whether
-        // or not a transition stamps them — the "check whose two outcomes are indistinguishable" trap
-        // this repo has been burned by three times. With a member's attribution already in place, a
-        // transition that touched the pair would overwrite it with the OWNER's id, and that is visible.
         rest.post()
                 .uri("/v1/itineraries/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
@@ -244,8 +214,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         Map<String, Object> afterEdit = attributionOf(tripId);
         assertThat(afterEdit.get("last_edited_by")).isEqualTo(memberId);
 
-        // The pair attributes *plan* edits (S1.3). A transition edits nothing about the plan, so it
-        // must not claim authorship — the member stays the last editor, at the instant they edited.
         start(owner, tripId).expectStatus().isOk();
         assertThat(attributionOf(tripId)).isEqualTo(afterEdit);
 
@@ -261,7 +229,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
 
-        // The member takes the single-writer lock on plan content (S1.4, ADR-014).
         rest.post()
                 .uri("/v1/itineraries/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
@@ -269,14 +236,10 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .expectStatus()
                 .isOk();
 
-        // The owner can still say the trip has begun. A lifecycle transition is a governance act, like
-        // S1.5's removal and S1.6's transfer — requiring the lease would mean seizing the editing lock
-        // from a member mid-edit just to record that the trip started.
         start(owner, tripId).expectStatus().isOk();
         complete(owner, tripId).expectStatus().isOk();
     }
 
-    // --- guard and visitor (spec AC 1) ------------------------------------------------------------
 
     @Test
     void aNonMemberIsMaskedWithA404OnBothEndpoints() {
@@ -297,7 +260,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         rest.post().uri("/v1/itineraries/" + tripId + "/complete").exchange().expectStatus().isUnauthorized();
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
     private RestTestClient.ResponseSpec start(String token, String itineraryId) {
         return rest.post()
@@ -313,22 +275,19 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .exchange();
     }
 
-    /**
-     * Reads the stored state directly. Deliberately not through the API: the column's spelling is a
-     * contract with Hibernate that the wire's lower-case form hides (the V4 lesson).
-     */
+
     private String stateOf(String itineraryId) {
         return jdbc.queryForObject(
                 "SELECT state FROM itinerary WHERE id = ?", String.class, UUID.fromString(itineraryId));
     }
 
-    /** Both lifecycle stamps, straight from the row — they are deliberately not on the wire yet. */
+
     private Map<String, Object> stampsOf(String itineraryId) {
         return jdbc.queryForMap(
                 "SELECT started_at, completed_at FROM itinerary WHERE id = ?", UUID.fromString(itineraryId));
     }
 
-    /** The S1.3 attribution pair — who last edited the plan's fields, and when. */
+
     private Map<String, Object> attributionOf(String itineraryId) {
         return jdbc.queryForMap(
                 "SELECT last_edited_by, last_edited_at FROM itinerary WHERE id = ?", UUID.fromString(itineraryId));

@@ -10,18 +10,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-/**
- * Resolves {@link AuthEmail} to the verified token's email claims (S1.2).
- *
- * <p>Reads {@code email} and {@code email_verified} off the JWT Spring Security has already validated
- * — never off the raw header, which would be trusting whatever the caller typed. The same guarantee
- * as {@link CurrentTravelerArgumentResolver}: this only runs for a handler behind {@code
- * authenticated()}, so an absent token is unreachable and the throw is a loud tripwire rather than a
- * silent null.
- *
- * <p>{@code email_verified} is treated as false unless explicitly {@code true}: a token that omits the
- * claim, or carries it as anything but boolean true, is not a verification we act on.
- */
+
 @Component
 public class AuthEmailArgumentResolver implements HandlerMethodArgumentResolver {
 

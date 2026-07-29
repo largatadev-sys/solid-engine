@@ -12,12 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * S1.2's endpoint contract over HTTP: invite → inbox → accept → member, plus every rejection the
- * mobile client branches on (Artifact 05 codes). The mailer is the logging adapter here (no Resend
- * key), so these prove the port and the state machine; the real inbox is the deployed-rung gate
- * (ticket 10). One class per file (Failsafe matches {@code *IT} on the outer class only — S0.1 gotcha).
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class InvitationContractIT extends PostgresTestBase {
@@ -31,7 +26,6 @@ class InvitationContractIT extends PostgresTestBase {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
     }
 
-    // --- invite (owner side) ----------------------------------------------------------------------
 
     @Test
     void anOwnerCanInviteAnEmailAndGetsThePendingInvitationBack() {
@@ -141,13 +135,11 @@ class InvitationContractIT extends PostgresTestBase {
 
     @Test
     void aMemberWhoIsNotTheOwnerCannotInvite() {
-        // The 403-vs-404 distinction grilling Q2 rests on: a member IS on the itinerary (not masked),
-        // but lacks the owner role. Distinct from the non-member 404 above.
         String owner = verified("owner@example.com");
         String itinerary = createItinerary(owner);
         String memberEmail = uniqueGuest();
         String memberToken = verified(memberEmail);
-        accept(memberToken, invite(owner, itinerary, memberEmail)); // this traveler is now a MEMBER
+        accept(memberToken, invite(owner, itinerary, memberEmail));
 
         rest.post()
                 .uri("/v1/itineraries/" + itinerary + "/invitations")
@@ -170,8 +162,8 @@ class InvitationContractIT extends PostgresTestBase {
         String itinerary = createItinerary(owner);
         String memberEmail = uniqueGuest();
         String memberToken = verified(memberEmail);
-        accept(memberToken, invite(owner, itinerary, memberEmail)); // now a MEMBER
-        String pendingId = invite(owner, itinerary, uniqueGuest()); // the owner's pending invitation
+        accept(memberToken, invite(owner, itinerary, memberEmail));
+        String pendingId = invite(owner, itinerary, uniqueGuest());
 
         rest.post()
                 .uri("/v1/invitations/" + pendingId + "/revoke")
@@ -184,13 +176,9 @@ class InvitationContractIT extends PostgresTestBase {
                 .isEqualTo("NOT_PERMITTED");
     }
 
-    // --- inbox + accept (invitee side) ------------------------------------------------------------
 
     @Test
     void anInviteeSeesTheInvitationInTheirInboxWithTripAndInviter() {
-        // A unique invited address so this inbox holds only THIS test's invitation: the container is
-        // shared across the run (PostgresTestBase), and the inbox filters by email across all
-        // workspaces, so a reused address would let other tests' pending rows appear here.
         String guestEmail = uniqueGuest();
         String owner = verifiedNamed("owner@example.com", "Ana Silva");
         String itinerary = createItinerary(owner, "Portugal 26");
@@ -239,7 +227,6 @@ class InvitationContractIT extends PostgresTestBase {
         String invitationId = invite(owner, itinerary, "guest@example.com");
         String guest = verified("guest@example.com");
 
-        // Before accepting, the guest cannot see the private itinerary (guard 404).
         rest.get()
                 .uri("/v1/itineraries/" + itinerary)
                 .header(HttpHeaders.AUTHORIZATION, bearer(guest))
@@ -257,7 +244,6 @@ class InvitationContractIT extends PostgresTestBase {
                 .jsonPath("$.itineraryId")
                 .isEqualTo(itinerary);
 
-        // The walls have opened: the same guest now reads the itinerary through the guard.
         rest.get()
                 .uri("/v1/itineraries/" + itinerary)
                 .header(HttpHeaders.AUTHORIZATION, bearer(guest))
@@ -343,7 +329,6 @@ class InvitationContractIT extends PostgresTestBase {
                 .isEqualTo("ALREADY_A_MEMBER");
     }
 
-    // --- decline + revoke -------------------------------------------------------------------------
 
     @Test
     void decliningResolvesTheInvitationWithoutJoining() {
@@ -359,7 +344,6 @@ class InvitationContractIT extends PostgresTestBase {
                 .expectStatus()
                 .isNoContent();
 
-        // Declined is terminal: a later accept is a conflict, and the guest is not a member.
         rest.post()
                 .uri("/v1/invitations/" + invitationId + "/accept")
                 .header(HttpHeaders.AUTHORIZATION, bearer(guest))
@@ -376,7 +360,6 @@ class InvitationContractIT extends PostgresTestBase {
 
     @Test
     void anOwnerCanRevokeAPendingInvitationAndItLeavesTheInbox() {
-        // Unique address so the post-revoke inbox check sees only this test's (now revoked) invitation.
         String guestEmail = uniqueGuest();
         String owner = verified("owner@example.com");
         String itinerary = createItinerary(owner);
@@ -414,7 +397,6 @@ class InvitationContractIT extends PostgresTestBase {
                 .isNotFound();
     }
 
-    // --- member list ------------------------------------------------------------------------------
 
     @Test
     void theMemberListNamesTheOwnerAndAcceptedMembersWithRoles() {
@@ -430,7 +412,6 @@ class InvitationContractIT extends PostgresTestBase {
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                // Owner first (joined at the trip's instant), then the accepted member.
                 .jsonPath("$.items[0].role")
                 .isEqualTo("owner")
                 .jsonPath("$.items[0].displayName")
@@ -454,7 +435,6 @@ class InvitationContractIT extends PostgresTestBase {
                 .isNotFound();
     }
 
-    // --- helpers ----------------------------------------------------------------------------------
 
     private String invite(String ownerToken, String itineraryId, String email) {
         byte[] body =
@@ -501,12 +481,12 @@ class InvitationContractIT extends PostgresTestBase {
         return fieldIn(created, "id");
     }
 
-    /** A unique invited address per call — isolates inbox assertions on the shared container. */
+
     private static String uniqueGuest() {
         return "guest-" + UUID.randomUUID() + "@example.com";
     }
 
-    /** A verified token for a fresh traveler with this email (Google / verified-password shape). */
+
     private static String verified(String email) {
         return TestJwtSupport.verifiedToken("uid-" + UUID.randomUUID(), email);
     }

@@ -27,44 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * The membership lifecycle after joining: departure now (S1.5), ownership transfer and the
- * owner-deletion claim next (S1.6).
- *
- * <p><strong>Why this module exists, since three others could plausibly have hosted it (ADR-002, P9).</strong>
- * Departure needs two modules in one transaction — the membership row from {@code workspace}, the edit
- * lease from {@code itinerary} — and it belongs to neither:
- *
- * <ul>
- *   <li>Not {@code workspace}: that module imports nothing at all, and {@code itinerary} already
- *       depends on it (for {@code formAround}). Reaching from there into {@code EditLeaseService} would
- *       close a package cycle — precisely what ADR-011's resolver seam was built to prevent.
- *   <li>Not {@code itinerary}: it can see both, but membership is not the plan's business. It
- *       orchestrates workspace <em>formation</em> only because that is atomic with creating an
- *       itinerary; nothing about removing a person is.
- *   <li>Not {@code invitation}: it also sits above both and owns the mirror act — {@code accept}
- *       orchestrates admission — but its trigger is an invitation. Departure's trigger is neither an
- *       invitation nor an itinerary act; it is a membership act with no other concept in it. A concern
- *       with no honest home is a missing module, and S1.6's transfer will want the same one.
- * </ul>
- *
- * <p><strong>A third thing called "membership", and the disambiguation is worth the paragraph</strong>
- * (the same one {@code workspace.Membership} writes for the same reason). {@link Membership} in {@code
- * common.authz} is a <em>capability</em> the guard mints. {@code workspace.Membership} is the <em>row</em>
- * that capability is read from. This module is the <em>lifecycle</em> — the acts that create and destroy
- * the relationship. One domain concept, three contexts, each name right where it stands.
- *
- * <p><strong>S1.6 gave it its first table</strong> — {@link OwnershipOffer}, the pending proposal that
- * makes ownership move by consent rather than decree. That does not change the module's character: the
- * membership <em>rows</em> still live in {@code workspace} and are still written only through {@link
- * WorkspaceService}, so this is not a second place membership facts live. It owns the offer because the
- * offer is a lifecycle artifact — it exists to schedule a change of role, and it dies when the role
- * relationship it points at ends.
- *
- * <p>Everything else it reaches by service interface (ADR-002), which is what keeps it a coordinator:
- * the membership row from {@code workspace}, the edit lease and the itinerary's denormalised owner from
- * {@code itinerary}.
- */
+
 @Service
 public class MembershipService {
 
@@ -98,36 +61,7 @@ public class MembershipService {
         this.analytics = analytics;
     }
 
-    /**
-     * Ends a membership: the owner removing a member, or a member leaving (S1.5).
-     *
-     * <p><strong>One operation, two doors.</strong> Removal and leave differ only in whether the caller
-     * is the target — so they are one code path, and the distinction survives exactly where it is
-     * genuinely useful: the analytics event. Two service methods would have meant two authority ladders
-     * to keep in agreement forever, for one act.
-     *
-     * <p><strong>The ladder, and its order is a decision, not an accident:</strong>
-     *
-     * <ol>
-     *   <li><em>Authority before state.</em> A member targeting somebody else is 403 whether or not that
-     *       somebody is still on the trip. Were the order reversed, the already-departed target would
-     *       answer 204 to a caller with no right to ask — an authority answer that leaks roster state,
-     *       and a rejection that changes shape as other people come and go.
-     *   <li><em>INV-4 before existence.</em> The owner targeting themselves is a conflict naming the
-     *       missing step (S1.6's transfer), never a deletion.
-     *   <li><em>Then existence.</em> No row means the work is already done: return, and the endpoint
-     *       answers 204 (Artifact 05 — deleting the deleted is still 204). Nothing leaks: the caller
-     *       passed the guard and can read the roster anyway.
-     * </ol>
-     *
-     * <p>The lease release and the row delete share this transaction by construction — both
-     * collaborators declare {@code MANDATORY}, so neither can commit without the other.
-     *
-     * @param caller the guard-minted standing of whoever is asking — the only way in
-     * @param targetTravelerId whose membership is to end; equal to the caller's own id for a leave
-     * @throws NotTripOwnerException if a non-owner targets somebody else (403)
-     * @throws OwnerCannotLeaveException if the target is the owner (409) — INV-4
-     */
+
     @Transactional
     public void depart(Membership caller, UUID targetTravelerId) {
         UUID itineraryId = caller.itineraryId();
@@ -139,30 +73,19 @@ public class MembershipService {
         if (leaving && caller.isOwner()) {
             throw new OwnerCannotLeaveException();
         }
-        // S1.9's fence, and its one exemption — the founder's line at the grilling: acts on the trip
-        // freeze, acts on your own membership do not. Removing somebody else is an act on the trip's
-        // roster; leaving is an act on your own relationship to it, and it stays yours even while the
-        // trip is frozen. Without this exemption a non-owner member of an archived trip would have no
-        // act available at all and no way to unarchive — stuck on somebody else's decision.
         if (!leaving) {
             fence.requireWritable(caller);
         }
 
         Optional<Role> targetRole = workspaces.roleOf(itineraryId, targetTravelerId);
         if (targetRole.isEmpty()) {
-            return; // Already gone — idempotent 204.
+            return;
         }
         if (targetRole.get() == Role.OWNER) {
-            // Unreachable while INV-4 holds (one owner, and the self-target case is caught above), so
-            // this is a guard against the invariant having been broken elsewhere rather than an
-            // expected path. It fails as a conflict rather than deleting the last owner.
             throw new OwnerCannotLeaveException();
         }
 
         if (!workspaces.removeMember(itineraryId, targetTravelerId)) {
-            // Lost a race with a concurrent departure of the same member. The outcome the caller asked
-            // for holds, so this is still a 204 — but the row was destroyed by the other transaction,
-            // which owns the lease release and the event. Emitting here would double-count one departure.
             return;
         }
         leases.releaseHeldBy(itineraryId, targetTravelerId);
@@ -174,9 +97,6 @@ public class MembershipService {
                 targetTravelerId,
                 caller.travelerId(),
                 leaving);
-        // After commit: a departure that rolls back never happened, and the funnel must not count it.
-        // (Contrast S1.4's edit_lock_denied, which fires immediately *because* its transaction rolls
-        // back — a rejection's whole point is that nothing committed.)
         String event = leaving ? "member_left" : "member_removed";
         AfterCommit.run(
                 () ->
@@ -188,37 +108,7 @@ public class MembershipService {
                                         .build()));
     }
 
-    /**
-     * The owner takes the trip out of circulation (S1.9): the workspace freezes, and everything pending
-     * against it dissolves.
-     *
-     * <p><strong>Why archive lives in this module and not in {@code workspace} or {@code itinerary}.</strong>
-     * It is the same argument this class's javadoc makes for departure, with one more edge: archiving
-     * needs <em>three</em> modules in one transaction — the workspace's state, the itinerary's edit
-     * lease, and the invitation module's pending rows — and belongs to none of them. {@code workspace}
-     * imports nothing by design (reaching out would close ADR-011's cycle); {@code itinerary} can see the
-     * others but archiving is not the plan's business; {@code invitation}'s trigger is an invitation, and
-     * this trigger is a governance act. The cycle check was run before the code: {@code
-     * invitation}'s <em>service</em> layer imports nothing from here — the one {@code
-     * invitation → membership} edge is {@code TripMembershipController}, a controller composing two
-     * services for URL cohesion (S1.5's deliberate choice), which is not a module-graph edge.
-     *
-     * <p><strong>Legal from any itinerary state</strong> — draft, active or completed (spec decision 8,
-     * which amends canon's original "skipping completed is illegal"): a cancelled draft is archive's
-     * single most likely real use, and a machine that could not express it would send owners to psql.
-     *
-     * <p><strong>What archive deliberately does <em>not</em> do: evict anybody.</strong> Every membership
-     * row survives untouched, so unarchiving restores a working trip rather than an empty one. Pending
-     * <em>invitations</em> die because an unaccepted offer to join a frozen trip can only ever fail; a
-     * membership is not an offer.
-     *
-     * <p>All four writes declare {@code MANDATORY}, so this transaction is the only place they can land,
-     * and none can commit without the others.
-     *
-     * @param owner proof from the guard; must be the {@code OWNER} membership
-     * @throws NotTripOwnerException if a member who is not the owner asks (403)
-     * @throws MembershipExceptions.IllegalWorkspaceTransitionException if already archived (409)
-     */
+
     @Transactional
     public void archive(Membership owner) {
         UUID itineraryId = requireOwner(owner);
@@ -227,9 +117,6 @@ public class MembershipService {
         }
 
         workspaces.archive(itineraryId);
-        // The lease first-class: without this the plan stays locked for up to a TTL by someone nobody
-        // can see, and the others read "«X» is editing" on a trip nobody may edit (S1.5's reasoning,
-        // one step further — see EditLeaseService.releaseAnyHold).
         leases.releaseAnyHold(itineraryId);
         invitations.voidPendingInvitations(workspaceIdOf(itineraryId));
         voidAnyPendingOffer(itineraryId, owner.travelerId());
@@ -238,22 +125,7 @@ public class MembershipService {
         emitArchiveEvent("itinerary_archived", itineraryId, owner.travelerId());
     }
 
-    /**
-     * The owner brings the trip back (S1.9): {@code archived → active | completed}.
-     *
-     * <p><strong>Nothing that died at archive is resurrected</strong> (spec decisions 12–13) — not the
-     * edit lease (ephemeral by nature), not the voided invitations (a point-in-time act by the owner,
-     * possibly toward someone they have since thought better of; re-inviting is the zero-code path S1.5
-     * established), not the voided ownership offer. Unarchive restores the trip, not the moment.
-     *
-     * <p><strong>The restored state is recomputed from the itinerary</strong>, never remembered — see
-     * {@link com.largata.workspace.Workspace#unarchive}. A trip whose itinerary reads {@code completed}
-     * comes back {@code COMPLETED}; anything else comes back {@code ACTIVE}.
-     *
-     * @param owner proof from the guard; must be the {@code OWNER} membership
-     * @throws NotTripOwnerException if a member who is not the owner asks (403)
-     * @throws MembershipExceptions.IllegalWorkspaceTransitionException if the trip is not archived (409)
-     */
+
     @Transactional
     public void unarchive(Membership owner) {
         UUID itineraryId = requireOwner(owner);
@@ -267,11 +139,7 @@ public class MembershipService {
         emitArchiveEvent("itinerary_unarchived", itineraryId, owner.travelerId());
     }
 
-    /**
-     * Authority before state, S1.5's ordering, applied to both archive edges: a member who is not the
-     * owner is refused whether or not the transition would have been legal — so the 403 never leaks
-     * where the trip sits in its lifecycle to somebody without standing to move it.
-     */
+
     private UUID requireOwner(Membership caller) {
         if (!caller.isOwner()) {
             throw new NotTripOwnerException();
@@ -286,14 +154,7 @@ public class MembershipService {
                         "The guard authorized a membership for an itinerary with no workspace — invariant breach"));
     }
 
-    /**
-     * Voids the workspace's pending ownership offer, whoever it was made to (S1.9).
-     *
-     * <p>Sibling of {@link #voidPendingOfferTo}, which targets one departing traveler; archive has no
-     * target — governance is freezing wholesale, and an offer that can only fail is a dead end in the
-     * target's inbox. Same {@code VOIDED} status for the same reason: the system dissolved it, nobody
-     * retracted it.
-     */
+
     private void voidAnyPendingOffer(UUID itineraryId, UUID byTravelerId) {
         offers
                 .findByWorkspaceIdAndStatus(workspaceIdOf(itineraryId), OwnershipOfferStatus.PENDING)
@@ -310,7 +171,7 @@ public class MembershipService {
                         });
     }
 
-    /** One event per archive act, after commit — a rolled-back archive never happened (spec decision 15). */
+
     private void emitArchiveEvent(String event, UUID itineraryId, UUID byTravelerId) {
         AfterCommit.run(
                 () ->
@@ -321,43 +182,14 @@ public class MembershipService {
                                         .build()));
     }
 
-    // --- Ownership offers (S1.6) ------------------------------------------------------------------
 
-    /**
-     * Offers ownership of the trip to one of its members (S1.6 §4). Owner-only.
-     *
-     * <p><strong>Why an offer and not a transfer.</strong> The grilling locked unilateral transfer and
-     * the founder reversed it; the reasoning is on the record in {@link OwnershipOffer}'s javadoc.
-     * Short version: this product has no notifications, and of the two unnoticed cases, an unnoticed
-     * offer is a delay while an unnoticed imposition is INV-4's load-bearing role held by somebody who
-     * does not know they hold it.
-     *
-     * <p><strong>The ladder, ordered as S1.5's departure ladder is</strong> — authority first, then
-     * conflicts, so a rejection never changes shape as the roster changes around it:
-     *
-     * <ol>
-     *   <li><em>Authority.</em> Not the owner → 403, whatever the target's state.
-     *   <li><em>Self.</em> Offering to yourself is a conflict, not a no-op: this is a create endpoint,
-     *       and a 201 for "you already own it" would leave the client unable to tell a real offer from
-     *       a swallowed mistake.
-     *   <li><em>Target is a member.</em> A non-member target is a conflict naming the remedy (invite
-     *       them), not a 404 — nothing is being masked from an owner who can read their own roster.
-     *   <li><em>One at a time.</em> A pending offer must be revoked explicitly before another is made.
-     *       V9's partial unique index enforces the same rule underneath, so a request that races past
-     *       this check dies on the constraint rather than producing a second live offer.
-     * </ol>
-     *
-     * @param owner the guard-minted standing of whoever is asking
-     * @param targetTravelerId the member being offered the crown
-     */
+
     @Transactional
     public void offerOwnership(Membership owner, UUID targetTravelerId) {
         UUID itineraryId = owner.itineraryId();
         if (!owner.isOwner()) {
             throw new NotTripOwnerException();
         }
-        // S1.9: governance moves on a live trip. Unarchive first — which the owner can always do, so
-        // nothing is stuck; the extra act is the accepted cost of one unambiguous rule (spec decision 4).
         fence.requireWritable(owner);
         if (owner.travelerId().equals(targetTravelerId)) {
             throw new CannotOfferToSelfException();
@@ -382,28 +214,18 @@ public class MembershipService {
         emitAfterCommit("ownership_offer_created", itineraryId, targetTravelerId, owner.travelerId());
     }
 
-    /**
-     * Revokes the trip's pending ownership offer (S1.6 §4). Owner-only, and idempotent.
-     *
-     * <p><strong>No pending offer is a success, not a 404</strong> (Artifact 05: deleting the deleted is
-     * still 204). The asked-for end state — no outstretched hand — already holds, and nothing leaks: the
-     * caller is the owner and can read the roster. Contrast accept/decline, where the absence of an
-     * offer is a genuine 404, because there the caller is asking to <em>act on</em> a thing rather than
-     * to ensure its absence.
-     */
+
     @Transactional
     public void revokeOwnershipOffer(Membership owner) {
         UUID itineraryId = owner.itineraryId();
         if (!owner.isOwner()) {
             throw new NotTripOwnerException();
         }
-        // S1.9: frozen with the rest of governance, and nothing is lost — archive already voided any
-        // pending offer, which is exactly what a revoke would have done.
         fence.requireWritable(owner);
         Optional<OwnershipOffer> pending =
                 offers.findByWorkspaceIdAndStatus(workspaceIdOf(itineraryId), OwnershipOfferStatus.PENDING);
         if (pending.isEmpty()) {
-            return; // Already none — idempotent 204.
+            return;
         }
         OwnershipOffer offer = pending.get();
         offer.revoke(Instant.now());
@@ -412,30 +234,7 @@ public class MembershipService {
         emitAfterCommit("ownership_offer_revoked", itineraryId, offer.targetTravelerId(), owner.travelerId());
     }
 
-    /**
-     * Accepts the ownership offer made to the caller — the transfer itself (S1.6 §6).
-     *
-     * <p><strong>Four effects, one transaction, and the point is that they are inseparable:</strong>
-     *
-     * <ol>
-     *   <li>the membership roles swap (demote-then-promote, conditional and count-checked inside {@link
-     *       WorkspaceService#transferOwnership} — that is where INV-4 is defended under concurrency);
-     *   <li>the itinerary's denormalised {@code ownerId} follows, so no column lies;
-     *   <li>an {@link OwnershipTransfer} row records that this happened, permanently — the one artifact
-     *       here with no reader today and the one that could never be reconstructed later;
-     *   <li>the offer closes as {@code ACCEPTED}.
-     * </ol>
-     *
-     * <p>Any of them committing without the others is a corruption of a different kind — a crown with no
-     * record, a record with no crown, a column naming a stranger — so they share this transaction and
-     * every collaborator declares {@code MANDATORY} to make that structural rather than remembered.
-     *
-     * <p><strong>The ex-owner stays a member.</strong> Transfer is a role swap, not an exit: leaving is
-     * S1.5's separate act, which now works for them because they are no longer the owner. The two
-     * operations compose with no code at the seam, which is why they are two operations.
-     *
-     * @param caller the guard-minted standing of the offeree
-     */
+
     @Transactional
     public void acceptOwnershipOffer(Membership caller) {
         OwnershipOffer offer = requireOfferFor(caller);
@@ -443,9 +242,6 @@ public class MembershipService {
         UUID newOwnerId = caller.travelerId();
         UUID formerOwnerId = offer.offeredBy();
 
-        // The offer names who made it, but ownership may have moved since (the former owner could have
-        // been offered it back and accepted). Read the current holder rather than trusting the offer's
-        // record of who was owner when it was written.
         UUID currentOwnerId = workspaces.ownerOf(itineraryId).orElseThrow(
                 () -> new IllegalStateException("No owner for itinerary " + itineraryId + " — INV-4 breach"));
         Instant now = Instant.now();
@@ -463,17 +259,12 @@ public class MembershipService {
                 currentOwnerId,
                 newOwnerId);
         if (!currentOwnerId.equals(formerOwnerId)) {
-            // Worth a line: the offer outlived the ownership it was made from. Harmless — the swap used
-            // the current holder — but it means someone's screen was stale, and the log should say so
-            // rather than leaving a puzzling transfer record.
             log.info(
                     "Ownership offer outlived its offeror: itineraryId={} offeredBy={} actualFrom={}",
                     itineraryId,
                     formerOwnerId,
                     currentOwnerId);
         }
-        // One event for one act: accept IS the transfer, so there is no separate offer_accepted. Two
-        // events would double-count one movement of the crown in every funnel that reads them.
         AfterCommit.run(
                 () ->
                         analytics.emit(
@@ -484,13 +275,7 @@ public class MembershipService {
                                         .build()));
     }
 
-    /**
-     * Declines the ownership offer made to the caller (S1.6 §4) — the crown stays where it is.
-     *
-     * <p>Uses {@link #requireOfferFor}, so the ladder is the shared one: no live offer → 404; an offer
-     * that belongs to another member → 403, never a 404, because refusing must not depend on who the
-     * offer happens to target.
-     */
+
     @Transactional
     public void declineOwnershipOffer(Membership caller) {
         OwnershipOffer offer = requireOfferFor(caller);
@@ -501,22 +286,7 @@ public class MembershipService {
                 "ownership_offer_declined", caller.itineraryId(), caller.travelerId(), caller.travelerId());
     }
 
-    /**
-     * The traveler a live ownership offer is addressed to on this trip, if there is one (S1.6 §7) — the
-     * roster's {@code ownershipOffered} flag, and the only offer state that reaches the wire.
-     *
-     * <p><strong>Readable by any member, deliberately.</strong> Who has been offered the crown is
-     * governance state of a shared trip, workspace-walled like roles (INV-1) rather than private
-     * between two people — and a group that can see the unaccepted crown can nudge, which is itself
-     * part of the discovery guarantee the offer/accept design rests on.
-     *
-     * <p><strong>Takes the guard's {@link Membership}, not an itinerary id</strong>, because "any
-     * member" is still a wall: this answers a question about the caller's own workspace, so it is
-     * workspace-scoped and Artifact 03's rule applies — a handler that has not been through the guard
-     * must not be able to call it. (Contrast {@link WorkspaceService#roleOf}, which takes bare ids and
-     * says why in its javadoc: it answers about a <em>third party</em>, which is a domain question
-     * rather than an authorization one.)
-     */
+
     @Transactional(readOnly = true)
     public Optional<UUID> pendingOfferTargetIn(Membership caller) {
         return workspaces
@@ -525,21 +295,8 @@ public class MembershipService {
                 .map(OwnershipOffer::targetTravelerId);
     }
 
-    // --- internals --------------------------------------------------------------------------------
 
-    /**
-     * Loads the caller's own live offer or refuses — the shared gate for accept and decline.
-     *
-     * <p><strong>404 before 403, and the order is the decision.</strong> "No offer at all" and "an offer
-     * that is not yours" are different answers because they are different situations: the first is an
-     * absent resource, the second is a real one the caller has no claim on. Answering 403 for both would
-     * tell a member that <em>some</em> offer exists whenever they guess — and answering 404 for both
-     * would hide C's offer from B in a way that makes a stale client look broken rather than late.
-     *
-     * <p>This is also where the stale-accept race dies: B accepting after their offer was revoked and
-     * C's issued finds C's pending row, is not its target, and is refused. No timing, no client refresh,
-     * no lost update — the wrong accept is structurally impossible rather than merely unlikely.
-     */
+
     private OwnershipOffer requireOfferFor(Membership caller) {
         OwnershipOffer offer =
                 offers
@@ -552,22 +309,7 @@ public class MembershipService {
         return offer;
     }
 
-    /**
-     * Dissolves a pending offer to a traveler who is leaving the trip (S1.6 §5), inside the departure's
-     * transaction.
-     *
-     * <p><strong>Why the offer cannot simply be left standing.</strong> Its target could no longer
-     * legally accept (they are not a member), the owner would see a live offer to a ghost, and — because
-     * at most one offer may be pending per workspace — that dead offer would block offering to anybody
-     * else. So it dies with the membership, and this runs in {@code depart}'s transaction: a departure
-     * and its offer-void commit together or not at all.
-     *
-     * <p>{@link OwnershipOfferStatus#VOIDED} rather than {@code REVOKED} because the owner did not
-     * retract it — the system dissolved it. The distinction is what keeps the analytics honest about who
-     * acted, and it is why removal does not need to <em>refuse</em> while an offer stands: removing the
-     * offeree obviously retracts the offer, and a 409 telling the owner to revoke first would be
-     * ceremony with no protective value.
-     */
+
     private void voidPendingOfferTo(UUID itineraryId, UUID departingTravelerId, UUID byTravelerId) {
         Optional<UUID> workspaceId = workspaces.workspaceIdOf(itineraryId);
         if (workspaceId.isEmpty()) {
@@ -599,14 +341,7 @@ public class MembershipService {
                                         "No workspace for itinerary " + itineraryId + " — invariant breach"));
     }
 
-    /**
-     * Emits one offer-lifecycle event after commit — the four share a shape, so they share a method.
-     *
-     * <p>After commit for {@code depart}'s recorded reason: an act that rolls back never happened, and
-     * the funnel must not count it. {@code byTravelerId} names the true initiator, which is the whole
-     * point of {@code VOIDED} being its own status — a departure-driven void is attributed to whoever
-     * drove the departure, never to the owner whose offer it was.
-     */
+
     private void emitAfterCommit(String event, UUID itineraryId, UUID targetTravelerId, UUID byTravelerId) {
         AfterCommit.run(
                 () ->

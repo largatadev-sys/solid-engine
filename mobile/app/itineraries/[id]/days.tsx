@@ -19,17 +19,7 @@ import {
 import type { ActivityResponse, DayResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 
-/**
- * Daily Schedules (S1.3, the 07/18 mock's frames 3 + 5) — the plan's days and their activities.
- *
- * Ticket 01 built the day layer (tab strip, editable day title, add/delete-day); ticket 02 fills the
- * body with activity cards (time • cost meta line, title, place, edit/delete) and an add-activity
- * button — both routing to the Add/Edit Activity screen.
- *
- * The plan is read from the single-itinerary cache (`useItinerary`), which embeds `days` and their
- * `activities` (ADR-013); every mutation invalidates it, so the screen refetches to truth. No
- * optimistic ordinals — a day delete renumbers server-side, and the client does not guess.
- */
+
 export default function DailySchedulesScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,12 +31,6 @@ export default function DailySchedulesScreen() {
   const deleteActivity = useDeleteActivity(id);
   const reorderActivities = useReorderActivities(id);
 
-  // The single-writer edit lock (S1.4, ADR-014): the Daily Schedules screen is the plan-editing hub —
-  // day CRUD, reorder, and the route to add/edit activities all happen while it is mounted — so it
-  // holds the lease for the whole editing session. Denied (another member editing, or offline) → the
-  // modal fires and we return to the read-only plan; the lease renews while open and releases on exit.
-  // A mid-session loss (someone took over after a network drop) surfaces through `mutationMessage`
-  // below, since every write then 409s EDIT_LOCKED.
   const editLock = useEditLock(id);
   const locked = editLock.state.kind !== 'held';
   useEffect(() => {
@@ -56,14 +40,8 @@ export default function DailySchedulesScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Which day tab is selected. Held as an ordinal, not a day id: after a delete renumbers the days,
-  // an id may vanish while "the 2nd day" still makes sense, so the ordinal is the stabler handle.
   const [selectedOrdinal, setSelectedOrdinal] = useState(1);
 
-  // Every mutation on this screen surfaces its failure, the way the other itinerary screens do.
-  // Without this the seven mutations here failed *silently* — a rejected reorder or a delete that
-  // 404'd looked exactly like success (whole-branch review finding; the other three screens each
-  // render their `serverMessage` and this one did not).
   const mutationError = [appendDay, renameDay, deleteDay, deleteActivity, reorderActivities]
     .map((m) => m.error)
     .find((e): e is Error => e !== null && e !== undefined);
@@ -98,7 +76,7 @@ export default function DailySchedulesScreen() {
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title: 'Daily Schedules' }} />
 
-      {/* A failed mutation says so. The envelope's `message` is written to be shown (Artifact 05). */}
+      {}
       {mutationMessage !== undefined && <Text style={styles.mutationError}>{mutationMessage}</Text>}
 
       {days.length === 0 ? (
@@ -107,10 +85,8 @@ export default function DailySchedulesScreen() {
         </Text>
       ) : (
         <>
-          {/* The day-tab strip (mock DayTabs): one chip per day, plus an add-day chip. */}
-          {/* `style={styles.tabStripOuter}` (flexGrow: 0) is load-bearing: a horizontal ScrollView
-              nested in the screen's vertical one has no bounded cross-axis, so without it the strip
-              claims a full screen-height band. Caught on the device — no unit test renders. */}
+          {}
+          {}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -134,8 +110,6 @@ export default function DailySchedulesScreen() {
               onRename={(title) => renameDay.mutate({ dayId: selected.id, title })}
               onDelete={() => confirmDeleteDay(selected, () => {
                 deleteDay.mutate({ dayId: selected.id });
-                // Reset to Day 1: the deleted day's ordinal may now belong to a different day after
-                // the server renumbers, so the stable landing spot is the first tab.
                 setSelectedOrdinal(1);
               })}
               onAddActivity={() =>
@@ -183,8 +157,7 @@ export default function DailySchedulesScreen() {
         </Pressable>
       )}
 
-      {/* Preview Itinerary — the mock's CTA, disabled (ticket 05 grey-out). The publish/preview flow is
-          S4.1's; this promises its position, and a tap says so gracefully rather than dead-clicking. */}
+      {}
       {days.length > 0 && (
         <Pressable
           style={styles.previewDisabled}
@@ -199,13 +172,7 @@ export default function DailySchedulesScreen() {
   );
 }
 
-/**
- * Confirms a day delete before it fires (spec §Editing mechanics: "delete cascades activities after
- * UI confirm"). A delete removes the day and its activities and renumbers the rest — destructive
- * enough to ask first. Goes through the platform-forked `confirmDestructive`, because RN's `Alert` is
- * a no-op on web and this confirm's callback lives *inside* it: unforked, the delete silently never
- * happened in a browser.
- */
+
 function confirmDeleteDay(day: DayResponse, onConfirm: () => void): void {
   const label = day.title !== null ? `"${day.title}"` : `Day ${day.ordinal}`;
   confirmDestructive(`${label} and everything in it`, onConfirm);
@@ -232,12 +199,12 @@ function AddDayChip({ pending, onPress }: { pending: boolean; onPress: () => voi
   );
 }
 
-/** Confirms an activity delete before it fires — the same discipline, and the same web fork. */
+
 function confirmDeleteActivity(activity: ActivityResponse, onConfirm: () => void): void {
   confirmDestructive(`"${activity.title}"`, onConfirm);
 }
 
-/** The selected day: its editable title, its activity cards in order, add-activity, and day-delete. */
+
 function SelectedDay(props: {
   day: DayResponse;
   onRename: (title: string) => void;
@@ -248,14 +215,8 @@ function SelectedDay(props: {
   onReorder: (index: number, direction: 'up' | 'down') => void;
   renaming: boolean;
   deleting: boolean;
-  // Every write control on this day is inert while the edit lock isn't held (S1.4, ADR-014). Gated
-  // uniformly rather than per-control: "why is add-day disabled but delete-day live?" is the trap the
-  // code review flagged. A denied acquire already routes the screen away, so this is mostly the brief
-  // `acquiring` window — but making the whole surface honestly inert in that state is the point.
   disabled: boolean;
 }) {
-  // The title field is seeded from the day and committed on blur — a rename per keystroke would be a
-  // write storm. `key` on the day id resets the draft when the selected day changes.
   const [draftTitle, setDraftTitle] = useState(props.day.title ?? '');
 
   return (
@@ -276,9 +237,7 @@ function SelectedDay(props: {
         />
       </View>
 
-      {/* The activities, in the server's manual order (ADR-013). Empty is fine — the add button below.
-          The up/down controls nudge an activity's position; the reducer computes the new whole-list
-          order and the reorder mutation sends it. All inert while the lock isn't held. */}
+      {}
       {props.day.activities.map((activity, index) => (
         <ActivityCard
           key={activity.id}
@@ -315,12 +274,7 @@ function SelectedDay(props: {
   );
 }
 
-/**
- * One activity card (the 07/18 mock's frame 5): the time • cost meta line, the title, the place, and
- * edit/delete, plus up/down controls to nudge its position (S1.3, ticket 03 — manual order is
- * authoritative). Tapping the card body edits; the trash deletes (after a confirm at the call site).
- * The up/down arrows are `undefined` at the ends, so they render disabled there.
- */
+
 function ActivityCard({
   activity,
   onEdit,
@@ -329,8 +283,6 @@ function ActivityCard({
   onMoveDown,
 }: {
   activity: ActivityResponse;
-  // `undefined` when the edit lock isn't held (S1.4): the card body and trash go inert, like the
-  // move arrows already do at the list ends.
   onEdit: (() => void) | undefined;
   onDelete: (() => void) | undefined;
   onMoveUp: (() => void) | undefined;
@@ -365,8 +317,7 @@ function ActivityCard({
         disabled={onEdit === undefined}
         accessibilityRole="button"
       >
-        {/* The meta line is empty when an activity has neither a time nor a cost — render nothing
-            then, rather than an empty Text that would push the title down with dead space. */}
+        {}
         {meta !== '' && <Text style={styles.activityMeta}>{meta}</Text>}
         <Text style={styles.activityTitle}>{activity.title}</Text>
         {activity.place !== null && <Text style={styles.activityPlace}>{activity.place}</Text>}
@@ -395,11 +346,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   emptyState: { ...typography.body, color: colors.textSecondary },
-  /** Bounds the strip to its content height — see the ScrollView's comment. */
+
   tabStripOuter: { flexGrow: 0 },
-  // `alignItems: 'center'` keeps each chip at its own height rather than stretching to the tallest;
-  // `tabStripOuter` above is what stops the strip itself claiming the screen. Both were needed —
-  // caught on the device, where no unit test could see it.
   tabStrip: { gap: spacing.sm, paddingVertical: spacing.xs, alignItems: 'center' },
   tab: {
     paddingHorizontal: spacing.md,

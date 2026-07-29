@@ -19,17 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * The day endpoints (S1.3) — appending, renaming and deleting the ordinal slots of a plan (ADR-013).
- *
- * <p>Transport only, like {@code ItineraryController}: the guard resolves a {@link Membership} from
- * the itinerary id and the service does the rest. <strong>No owner check</strong> — S1.3's ruling is
- * that any member shapes the plan (spec Q8), so a resolved membership of any role is enough; the
- * guard's 404 masks a non-member exactly as it does for the itinerary read.
- *
- * <p>Itinerary-addressed, workspace id off the wire (the S1.2 convention): the app knows itinerary
- * ids, and the guard resolves standing from one.
- */
+
 @RestController
 @RequestMapping("/v1/itineraries/{itineraryId}/days")
 class DayController {

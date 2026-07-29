@@ -10,16 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/**
- * The aggregate root's own rules (S0.3, ticket 01) — no Spring, no database.
- *
- * <p><strong>Why these duplicate the contract IT's validation cases.</strong> They do not, quite:
- * the IT proves the <em>API</em> answers 400: that is the DTO's Bean Validation doing its job. These
- * prove the <em>type</em> refuses, which is what protects callers that never touch a DTO — S4.7's
- * fork, a future import. Code review found `title ≤ 120` and blank-destination rejection stated in
- * the DTO and quietly missing here, with every IT still green: the API door was guarded and the
- * type was not. That is the gap this class exists to keep closed.
- */
+
 class ItineraryTest {
 
     private final UUID owner = UuidV7.generate();
@@ -34,7 +25,6 @@ class ItineraryTest {
         assertThat(itinerary.ownerId()).isEqualTo(owner);
     }
 
-    // --- the lifecycle machine (S1.7) -------------------------------------------------------------
 
     @Test
     void startingADraftMakesItActiveAndStampsTheMoment() {
@@ -64,9 +54,6 @@ class ItineraryTest {
 
     @Test
     void theStampsRecordTheActNotTheTravelSoTheyMayFallOutsideThePlansDates() {
-        // A forgetful owner marks a trip complete a week after it ended. `completedAt` after `endDate`
-        // is not a bug to be corrected — the two are different facts (when the system was told, versus
-        // when travel happened) and neither is derivable from the other. Nothing here should refuse it.
         Itinerary itinerary =
                 Itinerary.draft(
                         owner,
@@ -76,8 +63,8 @@ class ItineraryTest {
                         LocalDate.of(2027, 1, 20),
                         Instant.parse("2026-12-01T00:00:00Z"));
 
-        itinerary.start(Instant.parse("2027-01-12T09:00:00Z")); // two days late
-        itinerary.complete(Instant.parse("2027-01-27T09:00:00Z")); // a week late
+        itinerary.start(Instant.parse("2027-01-12T09:00:00Z"));
+        itinerary.complete(Instant.parse("2027-01-27T09:00:00Z"));
 
         assertThat(itinerary.completedAt()).isAfter(Instant.parse("2027-01-20T23:59:59Z"));
         assertThat(itinerary.state()).isEqualTo(ItineraryState.COMPLETED);
@@ -85,9 +72,6 @@ class ItineraryTest {
 
     @Test
     void everyIllegalEdgeIsRefusedAndChangesNothing() {
-        // The machine is forward-only and has no skip edge (02's illegal list; spec decision 3/9).
-        // Each case asserts the *state is unchanged* as well as the throw — a transition that threw
-        // after mutating would leave a row the exception says was never written.
         Itinerary draftTrip = draft("Hokkaido", List.of("Sapporo"));
         assertThatThrownBy(() -> draftTrip.complete(Instant.now()))
                 .isInstanceOf(IllegalStateTransitionException.class);
@@ -114,8 +98,6 @@ class ItineraryTest {
     void theRefusalNamesBothEndsOfTheEdgeItRefused() {
         Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
 
-        // The client branches on the code; a human reads the message. It must say which transition was
-        // refused, in the wire vocabulary the rest of the API uses.
         assertThatThrownBy(() -> itinerary.complete(Instant.now()))
                 .hasMessageContaining("draft")
                 .hasMessageContaining("completed");
@@ -127,7 +109,6 @@ class ItineraryTest {
 
         itinerary.start(Instant.now());
 
-        // The last-edited pair attributes plan edits (S1.3). Starting a trip edits no plan content.
         assertThat(itinerary.lastEditedBy()).isNull();
         assertThat(itinerary.lastEditedAt()).isNull();
     }
@@ -156,8 +137,6 @@ class ItineraryTest {
 
     @Test
     void aTitleHasALimitTheTypeEnforcesItself() {
-        // The gap code review found: this rule lived only in the DTO, so any non-HTTP caller could
-        // persist a 10 KB title into a bare TEXT column.
         assertThatThrownBy(() -> draft("x".repeat(Itinerary.MAX_TITLE_LENGTH + 1), List.of("Sapporo")))
                 .isInstanceOf(IllegalArgumentException.class);
 
@@ -173,17 +152,12 @@ class ItineraryTest {
 
     @Test
     void aBlankDestinationIsRejectedRatherThanQuietlyDropped() {
-        // The other gap: the factory used to filter blanks out, so ["Sapporo", ""] was a 400 through
-        // the API and silent data-loss through anything else. Two layers, one rule — or the rule is
-        // whatever the weaker layer says.
         assertThatThrownBy(() -> draft("Somewhere", java.util.Arrays.asList("Sapporo", "  ")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void everyCombinationOfDatesIsAPlan() {
-        // Optional and independent (S0.3 spec): the dreamer's undated draft, "departing June 3,
-        // open-ended", and "back by then" are all legitimate.
         assertThat(draft("Someday", List.of("Japan")).startDate()).isNull();
         assertThat(dated(LocalDate.of(2027, 6, 3), null).startDate()).isEqualTo(LocalDate.of(2027, 6, 3));
         assertThat(dated(null, LocalDate.of(2027, 6, 3)).endDate()).isEqualTo(LocalDate.of(2027, 6, 3));
@@ -196,7 +170,6 @@ class ItineraryTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    // --- ticket 04: field edit (S1.3) -------------------------------------------------------------
 
     @Test
     void editingFieldsReplacesThemAndStampsTheEditor() {
@@ -227,7 +200,6 @@ class ItineraryTest {
 
         itinerary.editFields("Renamed", List.of("Cebu"), null, null, null, UuidV7.generate(), Instant.now());
 
-        // Field edit is not a lifecycle or ownership act (spec Q8) — those stay put.
         assertThat(itinerary.ownerId()).isEqualTo(owner);
         assertThat(itinerary.state()).isEqualTo(ItineraryState.DRAFT);
         assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
@@ -237,8 +209,6 @@ class ItineraryTest {
     void editingEnforcesTheSameFieldRulesAsCreation() {
         Itinerary itinerary = draft("Draft", List.of("Cebu"));
 
-        // The same validation the factory runs — a blank title is refused on edit too (the shared
-        // validateFields, so create and edit cannot disagree about validity).
         assertThatThrownBy(
                         () ->
                                 itinerary.editFields(

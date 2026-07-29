@@ -17,20 +17,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * S1.6 ticket 03 (spec AC 8): {@code GET /v1/itineraries} lists the trips the caller is a <em>member</em>
- * of, not the ones they own.
- *
- * <p><strong>The bug this closes was invisible for three stories.</strong> The list was owner-scoped
- * from S0.3, when owner and member were the same person; S1.2 made them different and nobody revisited
- * it, so an invitee got an empty My Trips for a trip they could open, read and edit perfectly. Every
- * guard IT addresses an itinerary by id — so none of them could see it — and every two-account device
- * walk before S1.5 drove the owner's phone. The first test below is the one that would have caught it.
- *
- * <p>Pagination is re-proved rather than assumed: the predicate changed from a single-column equality
- * to an {@code IN} over a set, and a keyset cursor that silently stopped seeking would show up as
- * duplicated or vanished rows only under a multi-page list.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class MyTripsMembershipScopeIT extends PostgresTestBase {
@@ -46,7 +33,6 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
 
     @Test
     void aJoinedTripAppearsInTheMembersOwnList() {
-        // The S1.5 discovery, as a test. Before this story the member's list was empty here.
         String ownerToken = verified(uniqueEmail());
         String trip = createTrip(ownerToken);
         String memberToken = joinAsMember(ownerToken, trip, uniqueEmail());
@@ -56,8 +42,6 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
 
     @Test
     void ownedAndJoinedTripsShareOneList() {
-        // One merged list (spec decision 2) — an owner's own trip and a trip they were invited into sit
-        // together, newest first, with nothing on the wire distinguishing them.
         String travelerToken = verified(uniqueEmail());
         String theirOwnTrip = createTrip(travelerToken);
         String hostToken = verified(uniqueEmail());
@@ -65,13 +49,11 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
         joinExistingTraveler(hostToken, hostedTrip, travelerToken);
 
         assertThat(myTripIds(travelerToken)).containsExactlyInAnyOrder(theirOwnTrip, hostedTrip);
-        // ...and the host sees only their own — membership scope is still a wall, not an open door.
         assertThat(myTripIds(hostToken)).containsExactly(hostedTrip);
     }
 
     @Test
     void aTravelerWithNoTripsGetsAnEmptyList() {
-        // The ordinary first-run state, and the short-circuit path (an `IN ()` would be a SQL error).
         assertThat(myTripIds(verified(uniqueEmail()))).isEmpty();
     }
 
@@ -80,7 +62,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
         String ownerToken = verified(uniqueEmail());
         String trip = createTrip(ownerToken);
         String memberToken = joinAsMember(ownerToken, trip, uniqueEmail());
-        assertThat(myTripIds(memberToken)).containsExactly(trip); // the control
+        assertThat(myTripIds(memberToken)).containsExactly(trip);
 
         depart(ownerToken, trip, travelerIdOf(memberToken)).expectStatus().isNoContent();
 
@@ -89,8 +71,6 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
 
     @Test
     void theFormerOwnerKeepsTheTripAfterTransferring() {
-        // The acute case S1.6 forces: hand the crown over and the trip must stay on your own home
-        // screen, because you are still on it. Owner-scoped, this list would have dropped it.
         String ownerToken = verified(uniqueEmail());
         String trip = createTrip(ownerToken);
         String memberToken = joinAsMember(ownerToken, trip, uniqueEmail());
@@ -103,9 +83,6 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
 
     @Test
     void keysetPaginationWalksTheWholeMembershipScopedListExactlyOnce() {
-        // Five trips, three of them joined rather than owned, paged two at a time. Every id must appear
-        // exactly once across the pages: a broken cursor shows up as a repeat or an omission, and a
-        // predicate that lost the membership scope shows up as a short list.
         String travelerToken = verified(uniqueEmail());
         List<String> expected = new ArrayList<>();
         expected.add(createTrip(travelerToken));
@@ -143,9 +120,6 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
 
     @Test
     void aMalformedCursorIsRejectedWhetherOrNotTheCallerHasAnyTrips() {
-        // Input validation must not depend on the caller's data. The membership-scoped list added an
-        // empty short-circuit, and decoding after it would have made this request answer 400 for a
-        // traveler with trips and 200 for a traveler without — one bad input, two answers.
         String withTrips = verified(uniqueEmail());
         createTrip(withTrips);
         String withNone = verified(uniqueEmail());
@@ -165,8 +139,6 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
 
     @Test
     void theListIsNewestFirstAcrossOwnedAndJoinedAlike() {
-        // UUIDv7 ids are time-ordered, so id-descending is newest-first — the property the cursor rests
-        // on. Mixing owned and joined trips must not disturb it.
         String travelerToken = verified(uniqueEmail());
         String hostToken = verified(uniqueEmail());
         String first = createTrip(travelerToken);
@@ -177,7 +149,6 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
         assertThat(myTripIds(travelerToken)).containsExactly(third, second, first);
     }
 
-    // --- fixtures -----------------------------------------------------------------------------------
 
     private List<String> myTripIds(String token) {
         byte[] body =
@@ -193,7 +164,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
         return idsIn(body);
     }
 
-    /** Every {@code "id":"…"} inside the items array, in wire order. */
+
     private static List<String> idsIn(byte[] body) {
         String json = new String(body);
         List<String> ids = new ArrayList<>();
@@ -212,7 +183,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
         String needle = "\"nextCursor\":\"";
         int at = json.indexOf(needle);
         if (at < 0) {
-            return null; // null cursor serialises as "nextCursor":null — the exhausted page
+            return null;
         }
         int start = at + needle.length();
         return json.substring(start, json.indexOf('"', start));
@@ -248,7 +219,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
         return memberToken;
     }
 
-    /** Adds an existing traveler to another host's trip — the "joined" half of a mixed list. */
+
     private void joinExistingTraveler(String hostToken, String tripId, String travelerToken) {
         String email = emailOf(travelerToken);
         acceptInvitation(travelerToken, invite(hostToken, tripId, email));

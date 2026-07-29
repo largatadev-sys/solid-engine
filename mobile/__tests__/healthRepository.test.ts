@@ -1,9 +1,6 @@
 import { healthRepository } from '../src/repositories/healthRepository';
 
-/**
- * The repository layer (ADR-001). No cache until S0.3 picks the technology — these tests pin the
- * read-through contract so that swap stays a one-file change.
- */
+
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch as unknown as typeof fetch;

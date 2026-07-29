@@ -5,10 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * Registers the identity module's argument resolvers — without this, {@code @CurrentTraveler} and
- * {@code @AuthEmail} are inert.
- */
+
 @Configuration
 class IdentityWebConfig implements WebMvcConfigurer {
 

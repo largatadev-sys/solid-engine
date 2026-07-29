@@ -19,15 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/**
- * The guard, reading from membership rows (S1.1, AC 3/4).
- *
- * <p>The regression half of AC 3 — creator sees, stranger 404s, no token 401s — is proven by S0.3's
- * own tests passing unmodified ({@code ItineraryContractIT}, {@code AuthorizationGuardTest}), which
- * is stronger evidence than anything this class could add: they were written against the owner
- * resolver and never touched. What this class adds is the part S0.3 could not express — the {@code
- * MEMBER} role, which had no way to exist until now.
- */
+
 @SpringBootTest
 class RowBackedMembershipResolverIT extends PostgresTestBase {
 
@@ -50,11 +42,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
                 .isEqualTo(trip.id());
     }
 
-    /**
-     * AC 4 — <strong>the contract S1.2 stands on</strong>. No service creates a {@code MEMBER} until
-     * invites land, so the row is seeded directly: the point is that the guard already resolves it
-     * correctly, and the invite story inherits a proven path rather than discovering one.
-     */
+
     @Test
     void aSeededMemberRowResolvesToMember() {
         UUID ana = UUID.randomUUID();
@@ -79,11 +67,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
                 .isInstanceOf(ItineraryNotFoundException.class);
     }
 
-    /**
-     * The masking rule (Artifact 03): "no such itinerary" and "not yours" are one answer, so a probe
-     * cannot learn an id is real from the shape of its rejection. The row-backed resolver keeps that
-     * property for the same reason the owner-based one did — it cannot tell the two apart either.
-     */
+
     @Test
     void aNonexistentItineraryRejectsIdenticallyToSomeoneElses() {
         UUID ana = UUID.randomUUID();
@@ -102,12 +86,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
         assertThat(nonexistent.getMessage()).isEqualTo(someoneElses.getMessage());
     }
 
-    /**
-     * An itinerary with no workspace — the state V5's backfill exists to eliminate — resolves to no
-     * standing, for its own owner. Not a nice behaviour, and deliberately not softened: this is the
-     * shape a failed backfill would take, and the story's answer is to prove the backfill on the
-     * deployed rung (AC 6), not to add a fallback that would hide it (spec §The resolver swap).
-     */
+
     @Test
     void anItineraryWithNoWorkspaceIsInvisibleEvenToItsOwner() {
         UUID ana = UUID.randomUUID();

@@ -1,12 +1,7 @@
 import { apiClient } from '../src/api/apiClient';
 import { resetTokenSource, setTokenSource } from '../src/auth/tokenSource';
 
-/**
- * The token rides on every request, attached in exactly one place (P6, ADR-001).
- *
- * These tests are why `tokenSource` exists as an indirection: the client's contract is "attach the
- * current bearer token, if any", which is verifiable without a native Firebase module in sight.
- */
+
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch as unknown as typeof fetch;
@@ -37,14 +32,10 @@ describe('apiClient token attach', () => {
 
     await apiClient.get('/v1/health');
 
-    // Not "Bearer null", not an empty header: a signed-out request is simply unauthenticated.
     expect(headersOfLastCall()).not.toHaveProperty('Authorization');
   });
 
   it('asks the token source on every request, never caching the token itself', async () => {
-    // The native SDK refreshes tokens on its own schedule. If the client cached the first token it
-    // saw, a long-lived session would keep sending one Firebase had already replaced — an app that
-    // works for an hour and then 401s forever.
     const tokens = ['token-1', 'token-2'];
     setTokenSource(async () => tokens.shift() ?? null);
     mockFetch.mockResolvedValue(jsonResponse(200, { status: 'ok' }));
@@ -69,7 +60,6 @@ describe('apiClient token attach', () => {
       }),
     );
 
-    // The UI's sign-in redirect branches on this code, so the translation must preserve it.
     await expect(apiClient.get('/v1/me')).rejects.toMatchObject({
       code: 'UNAUTHENTICATED',
       status: 401,

@@ -15,14 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/**
- * Ticket 01's ACs: creating an itinerary forms its Workspace, atomically (S1.1, AC 1/2/7).
- *
- * <p>The story's invariant is "no itinerary exists without a workspace", and <strong>only the
- * failure case proves it</strong> — a happy path cannot tell one transaction from two that both
- * happened to work. {@link #workspaceFailureRollsBackTheItinerary} is therefore the test that
- * matters most in this class.
- */
+
 @SpringBootTest
 class ItineraryFormationIT extends PostgresTestBase {
 
@@ -30,7 +23,7 @@ class ItineraryFormationIT extends PostgresTestBase {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
 
-    /** The real service — this class proves formation happens, never that it can be made to fail. */
+
     @Autowired private WorkspaceService workspaces;
 
     @Test
@@ -43,12 +36,7 @@ class ItineraryFormationIT extends PostgresTestBase {
         assertThat(roleOf(itinerary.id(), owner)).isEqualTo("OWNER");
     }
 
-    /**
-     * AC 1's timestamp half. The workspace exists from the itinerary's first instant (Artifact 03),
-     * so its stamps are the itinerary's — not {@code now()}. Getting this wrong is invisible in
-     * every functional test and fabricates an "everyone joined on migration day" artifact that only
-     * shows up when someone asks a question of the history years later.
-     */
+
     @Test
     void theWorkspaceAndTheOwnerMembershipInheritTheItinerarysInstant() {
         UUID owner = UUID.randomUUID();
@@ -68,11 +56,7 @@ class ItineraryFormationIT extends PostgresTestBase {
         assertThat(joinedAt).isEqualTo(itineraryCreatedAt);
     }
 
-    /**
-     * AC 7 — the 1:1 is structural (V4's UNIQUE), not disciplinary. ADR-011's assumption that
-     * "resolving by itinerary id stays the natural key" rests on this cardinality, so the schema
-     * enforces it rather than trusting every future caller of {@code formAround}.
-     */
+
     @Test
     void aSecondWorkspaceForTheSameItineraryIsImpossible() {
         UUID owner = UUID.randomUUID();
@@ -88,12 +72,7 @@ class ItineraryFormationIT extends PostgresTestBase {
                 .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
     }
 
-    /**
-     * {@code formAround} is {@link org.springframework.transaction.annotation.Propagation#MANDATORY}:
-     * called without a transaction it refuses, rather than quietly opening its own and committing a
-     * workspace whose itinerary may still roll back. The silent version of this bug is exactly the
-     * shape this codebase keeps paying for.
-     */
+
     @Test
     void formingAWorkspaceOutsideATransactionIsRefused() {
         assertThatThrownBy(() -> workspaces.formAround(UUID.randomUUID(), UUID.randomUUID(), Instant.now()))
@@ -102,8 +81,6 @@ class ItineraryFormationIT extends PostgresTestBase {
 
     @Test
     void flywayRanTheWorkspaceMigration() {
-        // The S0.1 lesson, repeated per migration: every other test here would pass against a
-        // hand-created table. Only the history proves the migration pipeline built the schema.
         Integer applied =
                 jdbc.queryForObject(
                         "SELECT count(*) FROM flyway_schema_history WHERE version = '4' AND success = true",
@@ -112,7 +89,7 @@ class ItineraryFormationIT extends PostgresTestBase {
         assertThat(applied).isEqualTo(1);
     }
 
-    /** {@code formAround} is MANDATORY, so tests that call it directly must supply the transaction. */
+
     private void inTransaction(Runnable work) {
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run());
     }

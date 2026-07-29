@@ -5,18 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 
-/**
- * Sends invitation emails through Resend (S1.2) — the deployed-rung adapter, active only when a
- * Resend API key is configured (see {@link InvitationMailConfig}).
- *
- * <p><strong>Plain HTTP, no SDK.</strong> One {@code POST https://api.resend.com/emails} via Spring's
- * {@link RestClient} — no {@code com.resend} dependency to carry, update, or be surprised by. Resend
- * is a commodity choice, not an ADR (Artifact 04); this adapter is the whole coupling to it, so
- * swapping providers is one class.
- *
- * <p><strong>Logs the invitation id, nothing else</strong> (P3): not the recipient, not the title.
- * The address is in the request body because that is the function; it is never in a log line.
- */
+
 class ResendInvitationMailer implements InvitationMailer {
 
     private static final Logger log = LoggerFactory.getLogger(ResendInvitationMailer.class);
@@ -51,11 +40,11 @@ class ResendInvitationMailer implements InvitationMailer {
         return new ResendEmail(fromAddress, mail.recipientEmail(), subject, html);
     }
 
-    /** Minimal HTML-escaping — the title and name are user-controlled and land in an HTML body. */
+
     private static String escape(String value) {
         return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
-    /** Resend's send payload. {@code to} is a single address; Resend also accepts an array, unneeded here. */
+
     private record ResendEmail(String from, String to, String subject, String html) {}
 }

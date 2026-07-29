@@ -1,9 +1,6 @@
 import { activityMetaLine, formatActivityCost } from '../src/itineraries/formatActivityCost';
 
-/**
- * The activity cost/meta formatting (S1.3, ticket 02). The interesting case is the one the spec calls
- * out: unstated (null) and free (zero) are different facts and must read differently.
- */
+
 
 describe('formatActivityCost — the null/0/price distinction', () => {
   it('shows nothing when the cost is unstated (null)', () => {
@@ -20,7 +17,6 @@ describe('formatActivityCost — the null/0/price distinction', () => {
   });
 
   it('shows just the amount if somehow no currency rode along', () => {
-    // Defensive: the server pairs them, but the formatter should not crash on a lone amount.
     expect(formatActivityCost('500', null)).toBe('500');
   });
 });

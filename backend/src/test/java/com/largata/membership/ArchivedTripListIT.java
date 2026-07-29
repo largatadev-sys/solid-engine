@@ -24,11 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * S1.9 ticket 02's list half and its events (spec ACs 11, 12): archived trips leave the default My
- * Trips list and appear in the archived view, for members as well as the owner — and each act reports
- * itself exactly once, after commit.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class ArchivedTripListIT extends PostgresTestBase {
@@ -53,12 +49,8 @@ class ArchivedTripListIT extends PostgresTestBase {
         analyticsLogger().detachAppender(events);
     }
 
-    // --- the list splits (spec AC 11) -------------------------------------------------------------
 
-    /**
-     * The default list is the live trips; {@code ?archived=true} is the other half. Neither loses a
-     * trip — the point of archiving rather than deleting.
-     */
+
     @Test
     void archivingMovesATripFromTheDefaultListToTheArchivedView() {
         String owner = freshTraveler();
@@ -79,11 +71,7 @@ class ArchivedTripListIT extends PostgresTestBase {
         assertThat(listIds(owner, true)).isEmpty();
     }
 
-    /**
-     * <strong>Members see the archived trip too</strong> (spec decision 10). Hiding it from the people
-     * on it would repeat, one level up, the failure S1.5 had to fix in copy: a trip vanishing with no
-     * explanation reads as data loss rather than a state change.
-     */
+
     @Test
     void aMemberSeesTheArchivedTripInTheirArchivedViewNotJustTheOwner() {
         String owner = freshTraveler();
@@ -98,7 +86,7 @@ class ArchivedTripListIT extends PostgresTestBase {
         assertThat(listIds(member, true)).as("but they can still find it").containsExactly(tripId);
     }
 
-    /** Every row of a page carries the archived flag matching the view it was asked for. */
+
     @Test
     void theArchivedFlagOnTheWireMatchesTheViewRequested() {
         String owner = freshTraveler();
@@ -111,14 +99,7 @@ class ArchivedTripListIT extends PostgresTestBase {
         assertThat(listBody(owner, true)).contains("\"archived\":true");
     }
 
-    /**
-     * Paging is unaffected by the filter (spec AC 11's second half).
-     *
-     * <p>The filter narrows the <em>id set</em> before the keyset query runs, so {@code id < cursor}
-     * behaves exactly as S1.6 shipped it — which is the reason the filter lives on the membership side
-     * rather than as a predicate in the page query, where it would have had to be carried in the cursor
-     * to stay stable across pages.
-     */
+
     @Test
     void keysetPagingWorksInBothViews() {
         String owner = freshTraveler();
@@ -126,7 +107,6 @@ class ArchivedTripListIT extends PostgresTestBase {
         String second = createItinerary(owner);
         String third = createItinerary(owner);
 
-        // Newest first: UUIDv7 ids sort by creation time, so the page order is third, second, first.
         assertThat(listIds(owner, false)).containsExactly(third, second, first);
 
         String firstPageCursor = pageThrough(owner, false, 2);
@@ -140,7 +120,6 @@ class ArchivedTripListIT extends PostgresTestBase {
         assertThat(pageThrough(owner, true, 2)).as("the archived view pages the same way").isNotNull();
     }
 
-    // --- the events (spec AC 12) ------------------------------------------------------------------
 
     @Test
     void eachActEmitsExactlyOneEventNamingTheTripAndTheOwner() {
@@ -163,11 +142,7 @@ class ArchivedTripListIT extends PostgresTestBase {
         assertThat(eventsNamed("itinerary_archived")).as("the first act is not re-counted").hasSize(1);
     }
 
-    /**
-     * A refused act reports nothing. An event that fired on a 409 would count decisions the system
-     * declined to make — the reasoning {@code ItineraryAnalyticsIT} applies to a rejected create and
-     * {@code MemberDepartureAnalyticsIT} to an idempotent repeat.
-     */
+
     @Test
     void aRefusedTransitionEmitsNoEvent() {
         String owner = freshTraveler();
@@ -181,7 +156,6 @@ class ArchivedTripListIT extends PostgresTestBase {
         assertThat(eventsNamed("itinerary_archived")).as("only the act that happened counts").hasSize(1);
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
     private List<ILoggingEvent> eventsNamed(String name) {
         return events.list.stream()
@@ -216,12 +190,12 @@ class ArchivedTripListIT extends PostgresTestBase {
                         .getResponseBodyContent());
     }
 
-    /** The ids in the requested view, in page order. */
+
     private List<String> listIds(String token, boolean archived) {
         return idsIn(listBody(token, archived));
     }
 
-    /** Reads one page of the given size and returns its {@code nextCursor}, or null if exhausted. */
+
     private String pageThrough(String token, boolean archived, int limit) {
         String body =
                 new String(
@@ -239,7 +213,7 @@ class ArchivedTripListIT extends PostgresTestBase {
         return at < 0 ? null : body.substring(at + 14, body.indexOf('"', at + 14));
     }
 
-    /** Every {@code "id":"…"} in a list body, in order — the items' ids, since only items carry one. */
+
     private static List<String> idsIn(String json) {
         return java.util.regex.Pattern.compile("\"id\":\"([^\"]+)\"")
                 .matcher(json)

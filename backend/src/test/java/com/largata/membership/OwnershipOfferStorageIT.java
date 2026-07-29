@@ -19,21 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/**
- * The contract between {@link OwnershipOfferStatus} and the {@code ownership_offer.status} column —
- * pinned for the reason {@code MembershipStorageIT} pins {@code Role}: <strong>V9's one-pending
- * enforcement silently depends on the spelling.</strong>
- *
- * <p>{@code ownership_offer_one_pending_idx} is a partial unique index with the predicate {@code WHERE
- * status = 'PENDING'}. If the stored spelling ever moved — an {@code AttributeConverter}, a tidied-away
- * {@code @Enumerated}, a lower-casing to match some wire form — that predicate would match nothing. The
- * index would still be created, still cost nothing, and enforce <em>nothing</em>: two live offers on
- * one trip, two people able to accept, INV-4 defended only by an application-level {@code if}. No error,
- * and no other test in this suite would notice.
- *
- * <p>This exact near-miss shipped as a bug once already (S1.1's {@code WHERE role = 'owner'}), which is
- * why every partial index in this schema now gets a test whose failure names the cause.
- */
+
 @SpringBootTest
 class OwnershipOfferStorageIT extends PostgresTestBase {
 
@@ -42,11 +28,7 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
     @Autowired private WorkspaceService workspaces;
     @Autowired private JdbcTemplate jdbc;
 
-    /**
-     * {@code admitMember} is {@code Propagation.MANDATORY} — uncallable without a caller's transaction,
-     * by design — so the fixture supplies one rather than the class being {@code @Transactional}, which
-     * would roll everything back and hide whether the writes reached the database at all.
-     */
+
     @Autowired private TransactionTemplate transactions;
 
     @Test
@@ -69,14 +51,7 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
                 .isEqualTo("PENDING");
     }
 
-    /**
-     * The one-pending rule as a database guarantee rather than a service check.
-     *
-     * <p>The service refuses a second offer with {@code OFFER_ALREADY_PENDING}, and that is the
-     * readable answer — but a race that slips between its read and its write must still not produce two
-     * live offers, because two live offers means two people who can each take the crown. This asserts
-     * the constraint underneath, by writing straight past the service.
-     */
+
     @Test
     void aTripCannotHaveTwoPendingOffers() {
         UUID ownerId = UUID.randomUUID();
@@ -91,10 +66,7 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    /**
-     * ...and the partial half of that index: terminal rows must not collide, or a trip could only ever
-     * have one offer in its entire history — declining once would permanently foreclose the feature.
-     */
+
     @Test
     void terminalOffersDoNotCollide() {
         UUID ownerId = UUID.randomUUID();
@@ -116,19 +88,13 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
         assertThat(live).as("four terminal rows plus exactly one live offer").isEqualTo(1);
     }
 
-    // --- fixtures -----------------------------------------------------------------------------------
 
     private UUID newTrip(UUID ownerId) {
         Itinerary itinerary = itineraries.create(ownerId, "Kanazawa", List.of("Kanazawa"), null, null);
         return itinerary.id();
     }
 
-    /**
-     * A member planted directly, not through the invite flow: this class tests storage constraints, and
-     * the HTTP round trip is {@code OwnershipOfferContractIT}'s job. The row still goes in through the
-     * service that owns the table (never raw SQL for membership), so the fixture cannot drift from how
-     * members are really written.
-     */
+
     private UUID admittedMemberOn(UUID itineraryId, UUID ownerId) {
         UUID memberId = UUID.randomUUID();
         transactions.executeWithoutResult(

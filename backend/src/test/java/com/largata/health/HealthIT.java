@@ -16,17 +16,10 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * Ticket 02's ACs, proven against real Postgres (Testcontainers — see {@link PostgresTestBase}).
- *
- * <p>Exercised over real HTTP against the running server, not MockMvc: the point of the walking
- * skeleton is that the whole path works, servlet container included.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class HealthIT extends PostgresTestBase {
 
-    // Boot 4 removed TestRestTemplate; RestTestClient is Framework 7's servlet-side successor and
-    // is not auto-configured as a bean, so it is built here against the random port.
     private RestTestClient rest;
 
     @Autowired private JdbcTemplate jdbcTemplate;
@@ -51,14 +44,11 @@ class HealthIT extends PostgresTestBase {
 
     @Test
     void healthNeedsNoAuthentication() {
-        // A bare request with no Authorization header must succeed: a health check that needs
-        // auth cannot distinguish "auth is broken" from "everything is broken".
         rest.get().uri("/v1/health").exchange().expectStatus().isOk();
     }
 
     @Test
     void healthBodyLeaksNoReconnaissanceDetail() {
-        // Minimal by design (spec Q7b): no version, commit, uptime, or component breakdown.
         rest.get()
                 .uri("/v1/health")
                 .exchange()
@@ -71,9 +61,6 @@ class HealthIT extends PostgresTestBase {
 
     @Test
     void successLogsExactlyOneInfoLineFromTheServiceLayer() {
-        // 06b §4: "services log one info line on success (entity id + operation)". Asserted
-        // rather than assumed — the error-side log-once has a test, so the success side should
-        // too, and it is the only thing proving the service layer is on the path at all.
         ListAppender<ILoggingEvent> capture = new ListAppender<>();
         capture.start();
         Logger root = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
@@ -102,8 +89,6 @@ class HealthIT extends PostgresTestBase {
 
     @Test
     void healthPathReachesTheDatabase() {
-        // Proves the round-trip is real rather than a constant: with the DB answering, health is
-        // OK; HealthUnavailableIT covers the converse.
         assertThat(jdbcTemplate.queryForObject("SELECT 1", Integer.class)).isEqualTo(1);
         rest.get().uri("/v1/health").exchange().expectStatus().isOk();
     }
