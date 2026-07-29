@@ -205,6 +205,30 @@ Env: the three pool vars, **`TRIP_ID` (required)**, and `LARGATA_PREVIEW_URL`
 (default `http://localhost:8081`). Tags: `t1` = the trip owner; the whole drive runs as the owner,
 because the owner is the only viewer with archive controls to lose.
 
+## `deploy-currency.js` — is the rung running the build you think it is?
+
+Answers one question with a **stated failure mode**, which `/v1/health` cannot: it creates a throwaway
+trip, archives it, attempts a write, and reads the `TRIP_ARCHIVED` refusal *message* — a string that
+changed at the E1 gate. Exit **0 = CURRENT**, **1 = STALE**, **2 = UNKNOWN** (never act on a 2).
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/deploy-currency.js                                    # deployed dev by default
+LARGATA_API_BASE_URL=http://localhost:8080 node scripts/deploy-currency.js
+```
+
+Env: the three pool vars, plus `LARGATA_API_BASE_URL` (default `https://api-dev.largata.com`) and
+optional `LARGATA_POOL_TAG` (default `t1`). Leaves one archived probe trip behind per run.
+
+**Why it exists, and what maintaining it means.** `{"status":"ok"}` is identical on every build ever
+deployed, so it cannot distinguish one from another — the indistinguishable-probe shape this repo has
+been burned by three times. This probe was **verified in both directions before being trusted**:
+CURRENT against the local stack carrying the fix, STALE against deployed dev carrying the old build.
+**Its discriminator is a message string, so it decays**: once preprod and prod also carry this build,
+the old spelling is gone everywhere and the probe silently starts answering CURRENT for everyone. When
+the next release needs a currency check, **re-point it at a string that changed in that release** and
+re-prove both directions, exactly as this one was.
+
 ## `drive-edit-lock.js` — S1.4 edit-lock prober
 
 Signs a pool account in via Identity Toolkit, plants the session in `localStorage`, drives headless
