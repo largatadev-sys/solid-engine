@@ -21,7 +21,7 @@ The isolation boundary is instead the **Trip Workspace**: *one world, walled roo
 | Sphere | Contents | Read rule |
 |---|---|---|
 | **World-readable** | Published itineraries (per visibility), Highlights (published diaries on published itineraries), reviews, public comments, stars, public profiles, **aggregate trip cost only** | `public`: anyone, including unauthenticated visitors · `unlisted`: anyone holding the link (unguessable ID) · writes always require an account (INV-3) |
-| **Workspace-walled** (INV-1) | Non-published workspace contents: the plan in progress, ledger detail (expenses, splits, transfers), private comments, votes, invitations, **membership itself** | Workspace members only, resolved per request |
+| **Workspace-walled** (INV-1) | Non-published workspace contents: the plan in progress, ledger detail (expenses, splits, transfers), votes, invitations, **membership itself** *(private comments removed from the domain 2026-07-24 — Comment is public-only, S4.6)* | Workspace members only, resolved per request |
 | **Diary-walled** (INV-2a) | Any diary pre-publication; contribution rights always | Author-owner + granted contributors only; publication is the owner's sole act |
 
 **Never crosses the wall, ever:** ledger detail, individual contributions, raw diaries, workspace member list (INV-2).
@@ -73,7 +73,7 @@ This is engineering principle **P6 (one typed gateway)** applied to authorizatio
 ## Onboarding implications
 
 - **Workspace creation is atomic with ownership:** the creator becomes `owner` in the same transaction — INV-4 holds from the first instant; no ownerless window exists, ever.
-- **Invite acceptance:** invited visitor authenticates → membership row created (`member`) → the walls open for that user in the same moment. The invitation token is single-use and workspace-bound.
+- **Invite acceptance:** the invited visitor authenticates; the invitation is addressed to an **email**, and acceptance requires the authenticated account's **verified** email to match it — no bearer token exists (the email is a notification; the in-app invitation inbox is the accept surface; a magic-link join is an additive post-validation option). Membership row created (`member`) → the walls open for that user in the same moment. *(S1.2 grilling, 2026-07-20 — replaces the original "single-use token" sketch.)*
 - **Owner departure / account deletion:** ownership transfers to a member or a member claims it (INV-4) before the departing membership row is removed; deletion anonymizes the traveler, but their ownership-transfer record and ledger entries survive anonymized (per Artifact 01, Compliance).
 
 ---

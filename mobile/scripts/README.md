@@ -1,0 +1,238 @@
+# `mobile/scripts` — the verification harness
+
+Node scripts that drive the running product: the API rung over HTTP, and the web preview container
+through real headless Chrome over the DevTools protocol. They are not tests — Jest and Failsafe own
+the assertions. These prove behaviour on a rung that a test cannot reach.
+
+## Before anything: source `mobile/.env`
+
+Every script here reads its credentials from the environment. `mobile/.env` is gitignored (it holds
+`LARGATA_TEST_POOL_PASSWORD`, a credential, and `LARGATA_TEST_POOL_EMAIL_BASE`, PII), so it must be
+exported into the shell first:
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+```
+
+Common env vars, supplied by that file unless stated:
+
+| Var | Meaning |
+|---|---|
+| `EXPO_PUBLIC_FIREBASE_API_KEY` | the `largata-dev` web API key; every script signs pool accounts in through Identity Toolkit with it |
+| `LARGATA_TEST_POOL_EMAIL_BASE` | the pool's base Gmail address; tags become `base+t1@…` |
+| `LARGATA_TEST_POOL_PASSWORD` | the shared password for every pool account |
+| `LARGATA_API_BASE_URL` | which rung to talk to. Default `http://localhost:8080`; `https://api-dev.largata.com` for deployed dev |
+| `LARGATA_PREVIEW_URL` | the web preview container. Default `http://localhost:8081` |
+| `LARGATA_CDP_PORT` | override a driver's Chrome DevTools port (each already owns a distinct one) |
+
+Never put a value from `.env` on a command line — it lands in shell history and in the transcript of
+whoever is watching.
+
+Port map (pinned — see CLAUDE.md): **8080** backend · **8081** preview container · **8082** Metro.
+
+## Test identities
+
+Pool tags are roles, not people. `test-pool.js` owns `t1`–`t5` (verified) and `u1` (deliberately
+never verified — the `EMAIL_NOT_VERIFIED` fixture). The accounts carry no display name on purpose, so
+they render as `largata.dev+t1` and identify themselves on sight in a screenshot, a roster row or a
+log line. Each script's tag→role mapping is stated in its section below.
+
+## Which scripts can hit a deployed rung
+
+Every script that talks to the API picks `http` or `https` from `LARGATA_API_BASE_URL`, so all of them
+reach a deployed rung. The `drive-*` scripts additionally need a preview container, which is local.
+
+## Chrome DevTools ports
+
+Each driver owns a distinct port, so two can run at once. Override with `LARGATA_CDP_PORT`.
+
+| Script | Port |
+|---|---|
+| `drive-preview.js` | 9223 |
+| `drive-archive.js` | 9224 |
+| `drive-ownership-transfer.js` | 9225 |
+| `drive-lifecycle.js` | 9226 |
+| `drive-edit-lock.js` | 9227 |
+
+Chrome is located by probing the usual Windows/Linux/macOS install paths. Only `drive-edit-lock.js`
+takes an override (`LARGATA_CHROME`).
+
+---
+
+## `test-pool.js` — manage the verified test-account pool
+
+Creates and reports the pool of genuinely verifiable Firebase accounts (one real Gmail inbox, `+tag`
+sub-addresses). Verification is a one-time human click per account; the accounts live in the
+`largata-dev` Firebase project, so they survive every fresh-DB redeploy.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/test-pool.js list        # every member and its verification state
+node scripts/test-pool.js create      # create any missing member + send its verification mail
+node scripts/test-pool.js token t1    # print a fresh id token for one member (for API probes)
+```
+
+Env: `EXPO_PUBLIC_FIREBASE_API_KEY`, `LARGATA_TEST_POOL_EMAIL_BASE`, `LARGATA_TEST_POOL_PASSWORD`.
+
+Tags: `t1`–`t5` must all end up **VERIFIED** (open the base inbox and click each link after `create`).
+`u1` must stay **unverified** — `create` deliberately sends it no mail. If it is ever verified by
+accident, delete the account in the Firebase console and re-create it.
+
+## `seed-trip.js` — seed a trip through the real invite → inbox → accept flow
+
+Creates an itinerary, invites each member by email, reads the invitation out of their inbox and
+accepts it over HTTP — no planted `membership` rows. Prints the trip id, the roster, the web-preview
+URL and the `largata://` deep link as JSON.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/seed-trip.js                                   # owner t1, one member t2
+node scripts/seed-trip.js --owner t1 --members t2,t3
+node scripts/seed-trip.js --owner t1 --members t2 --title "Archive smoke"
+```
+
+Env: the three pool vars, plus `LARGATA_API_BASE_URL` (**local `http` rung only**).
+Tags: whatever you pass — `--owner` is the trip owner, `--members` join as ordinary members.
+Fails loudly if an account is not verified, naming `test-pool.js create` as the fix.
+
+## `smoke-api.js` — the API rung's smoke suite
+
+Walks everything shipped so far against a running backend: health, the 401/404 envelope, the plan
+(S0.3/S1.3/S1.4), invitations and the `email_verified` gate (S1.2), departure and re-entry (S1.5),
+and the archive loop (S1.9). Exits non-zero on the first failing rung of checks.
+
+```bash
+cd mobile && set -a && . ./.env && set +a && node scripts/smoke-api.js
+```
+
+Env: the three pool vars, plus `LARGATA_API_BASE_URL` (**local `http` rung only**).
+Tags: `t1` = owner · `t2` = member (invited, removed, re-invited) · `t3` = an invited address only ·
+`u1` = the unverified caller both halves of the gate are proven with.
+
+## `smoke-lifecycle.js` — S1.7 draft → active → completed, against a running rung
+
+Drives the whole lifecycle arc with real verified accounts and real tokens. Every step is a
+discriminating check and throws on the first failure.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/smoke-lifecycle.js                                              # local stack
+LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-lifecycle.js
+```
+
+Env: the three pool vars, plus `LARGATA_API_BASE_URL` (http **or** https).
+Tags: `t1` = trip owner · `t2` = an ordinary member who may never touch the lifecycle ·
+`t3` = an invited address only.
+
+## `smoke-ownership-transfer.js` — S1.6 offer → accept → the owner's exit, against a running rung
+
+Drives the ownership-transfer arc end to end. Prints, at the finish, the SQL for the one fact no
+endpoint exposes (the `ownership_transfer` row) for an operator to confirm in the database — name the
+database in that query: deployed dev is `postgres.railway.internal:5432/railway`.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/smoke-ownership-transfer.js                                     # local stack
+LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-ownership-transfer.js
+```
+
+Env: the three pool vars, plus `LARGATA_API_BASE_URL` (http **or** https).
+Tags: `t1` = original owner · `t2` = offeree / new owner · `t3` = a bystander who must see the
+governance state but never be able to act on it.
+
+## `drive-preview.js` — cold-load report on the web preview
+
+Loads the preview in real headless Chrome as a signed-out visitor and reports what it finds: the page
+text (empty means the white screen), whether Google's sign-in iframe rendered, whether a One Tap
+overlay appeared, GIS network responses, and every console and page error. It **reports only** — it
+asserts nothing and always exits 0, so never gate on its exit code.
+
+```bash
+cd mobile
+node scripts/drive-preview.js                        # default http://localhost:8081/
+node scripts/drive-preview.js http://localhost:8081/ --shot out.png
+```
+
+Env: none — it takes the URL as a positional argument and signs in to nothing.
+Reading the output: **`Google-rendered iframes: 1` is the trustworthy signal** that the OAuth origin
+is registered. A `400` on `/gsi/button` in the GIS network section is normal and means nothing.
+
+## `drive-lifecycle.js` — S1.7 lifecycle, driven in the preview container
+
+Seeds two trips of its own over the API (one with future dates, one whose dates are both in the past),
+then drives the lifecycle controls in the browser with `window.confirm` intercepted — cancel and
+confirm both, since `Alert.alert` is a no-op on react-native-web and a dialog that ignores "no" is
+worse than none. Exits non-zero if any check fails.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/drive-lifecycle.js
+```
+
+Env: the three pool vars, `LARGATA_PREVIEW_URL` (default `http://localhost:8081`),
+`LARGATA_API_BASE_URL` (default `http://localhost:8080`). Needs both the preview container and the
+backend up. Tags: `t1` = trip owner · `t2` = ordinary member.
+
+## `drive-ownership-transfer.js` — S1.6 offer/accept, driven in the preview container
+
+Seeds its own trip over the API, then drives the two-account offer → accept flow in the browser with
+`window.confirm` intercepted, cancel and confirm both. Exits non-zero if any check fails; prints the
+trip id it leaves behind.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/drive-ownership-transfer.js
+```
+
+Env: the three pool vars, `LARGATA_PREVIEW_URL` (default `http://localhost:8081`),
+`LARGATA_API_BASE_URL` (default `http://localhost:8080`). Needs both the preview container and the
+backend up. Tags: `t1` = owner who makes the offer · `t2` = the offeree who accepts it.
+
+## `drive-archive.js` — S1.9 archive/unarchive, driven in the preview container
+
+Drives archive and unarchive on an **existing** trip: the confirm dialog (cancel and accept both), the
+frozen trip screen, the frozen members screen, the My Trips / archived-trips split, and the thaw.
+Optionally writes a screenshot. Exits non-zero if any check fails.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/seed-trip.js --owner t1 --members t2     # note the trip id it prints
+TRIP_ID=<id> node scripts/drive-archive.js
+TRIP_ID=<id> node scripts/drive-archive.js --shot out.png
+```
+
+Env: the three pool vars, **`TRIP_ID` (required)**, and `LARGATA_PREVIEW_URL`
+(default `http://localhost:8081`). Tags: `t1` = the trip owner; the whole drive runs as the owner,
+because the owner is the only viewer with archive controls to lose.
+
+## `deploy-currency.js` — is the rung running the build you think it is?
+
+Answers one question with a **stated failure mode**, which `/v1/health` cannot: it creates a throwaway
+trip, archives it, attempts a write, and reads the `TRIP_ARCHIVED` refusal *message* — a string that
+changed at the E1 gate. Exit **0 = CURRENT**, **1 = STALE**, **2 = UNKNOWN** (never act on a 2).
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/deploy-currency.js                                    # deployed dev by default
+LARGATA_API_BASE_URL=http://localhost:8080 node scripts/deploy-currency.js
+```
+
+Env: the three pool vars, plus `LARGATA_API_BASE_URL` (default `https://api-dev.largata.com`) and
+optional `LARGATA_POOL_TAG` (default `t1`). Leaves one archived probe trip behind per run.
+
+**Why it exists, and what maintaining it means.** `{"status":"ok"}` is identical on every build ever
+deployed, so it cannot distinguish one from another — the indistinguishable-probe shape this repo has
+been burned by three times. This probe was **verified in both directions before being trusted**:
+CURRENT against the local stack carrying the fix, STALE against deployed dev carrying the old build.
+**Its discriminator is a message string, so it decays**: once preprod and prod also carry this build,
+the old spelling is gone everywhere and the probe silently starts answering CURRENT for everyone. When
+the next release needs a currency check, **re-point it at a string that changed in that release** and
+re-prove both directions, exactly as this one was.
+
+## `drive-edit-lock.js` — S1.4 edit-lock prober
+
+Signs a pool account in via Identity Toolkit, plants the session in `localStorage`, drives headless
+Chrome to a trip's `/edit` route and intercepts `window.alert` over CDP to prove the lock modal
+actually fires on web. Env: the three pool vars plus **`TRIP_ID` (required)**, optional
+`LARGATA_POOL_TAG` (default `t2`), optional `LARGATA_PREVIEW_URL` (default `http://localhost:8081`),
+optional `LARGATA_CHROME`.

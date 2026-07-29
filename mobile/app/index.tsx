@@ -1,17 +1,12 @@
 import { Link, Stack } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { formatDates } from '../src/itineraries/formatDates';
+import { BottomNav } from '../src/components/BottomNav';
+import { InvitationInbox } from '../src/components/InvitationInbox';
+import { TripRow } from '../src/itineraries/TripRow';
 import { useMyItineraries } from '../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../src/theme';
-import type { ItineraryResponse } from '../src/types/api';
 
-/**
- * My Trips — the signed-in home (S0.3).
- *
- * Reads through the query cache (ADR-001): a warm cache renders instantly and refreshes behind the
- * scenes, so this screen has no idea whether the data came from the network or memory. That
- * ignorance is the point — it is what makes E3's persistence an addition rather than a rewrite.
- */
+
 export default function MyTripsScreen() {
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMyItineraries();
@@ -45,7 +40,7 @@ export default function MyTripsScreen() {
       {isError && (
         <View style={styles.centered}>
           <Text style={styles.errorTitle}>Could not load your trips</Text>
-          {/* Branching on `code`, never on `message` (Artifact 05). */}
+          {}
           <Text style={styles.caption}>{error.message}</Text>
           <Pressable style={styles.button} onPress={() => void refetch()} accessibilityRole="button">
             <Text style={styles.buttonText}>Try again</Text>
@@ -61,35 +56,29 @@ export default function MyTripsScreen() {
           renderItem={({ item }) => <TripRow itinerary={item} />}
           onRefresh={() => void refetch()}
           refreshing={isRefetching}
-          // The cursor never surfaces here: the query layer owns it (Artifact 05 — opaque to
-          // clients). This screen only says "I need more".
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
           }}
           onEndReachedThreshold={0.5}
+          ListHeaderComponent={<InvitationInbox />}
           ListEmptyComponent={<EmptyState />}
           ListFooterComponent={
-            isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={styles.footer} /> : null
+            <>
+              {isFetchingNextPage && <ActivityIndicator color={colors.accent} style={styles.footer} />}
+              {}
+              <Link href="/itineraries/archived" asChild>
+                <Pressable style={styles.archivedLink} accessibilityRole="button">
+                  <Text style={styles.archivedLinkText}>Archived trips</Text>
+                </Pressable>
+              </Link>
+            </>
           }
         />
       )}
-    </View>
-  );
-}
 
-function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
-  return (
-    <Link href={`/itineraries/${itinerary.id}`} asChild>
-      <Pressable style={styles.row} accessibilityRole="button">
-        <Text style={styles.rowTitle} numberOfLines={1}>
-          {itinerary.title}
-        </Text>
-        <Text style={styles.rowMeta} numberOfLines={1}>
-          {itinerary.destinations.join(' · ')}
-        </Text>
-        <Text style={styles.rowDates}>{formatDates(itinerary)}</Text>
-      </Pressable>
-    </Link>
+      {}
+      <BottomNav active="trips" />
+    </View>
   );
 }
 
@@ -122,7 +111,17 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs,
   },
-  rowTitle: { ...typography.bodyStrong, color: colors.textPrimary },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  rowTitle: { ...typography.bodyStrong, color: colors.textPrimary, flexShrink: 1 },
+  stateBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.accentMuted,
+    backgroundColor: colors.surface,
+  },
+  stateBadgeText: { ...typography.overline, color: colors.textSecondary },
   rowMeta: { ...typography.caption, color: colors.textSecondary },
   rowDates: { ...typography.caption, color: colors.textSecondary },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
@@ -130,6 +129,8 @@ const styles = StyleSheet.create({
   errorTitle: { ...typography.heading, color: colors.danger },
   caption: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   footer: { paddingVertical: spacing.md },
+  archivedLink: { paddingVertical: spacing.md, alignItems: 'center' },
+  archivedLinkText: { ...typography.body, color: colors.textSecondary },
   button: {
     marginTop: spacing.md,
     paddingVertical: spacing.md,

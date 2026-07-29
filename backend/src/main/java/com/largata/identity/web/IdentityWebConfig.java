@@ -5,18 +5,21 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** Registers {@link CurrentTravelerArgumentResolver} — without this, {@code @CurrentTraveler} is inert. */
+
 @Configuration
 class IdentityWebConfig implements WebMvcConfigurer {
 
     private final CurrentTravelerArgumentResolver currentTraveler;
+    private final AuthEmailArgumentResolver authEmail;
 
-    IdentityWebConfig(CurrentTravelerArgumentResolver currentTraveler) {
+    IdentityWebConfig(CurrentTravelerArgumentResolver currentTraveler, AuthEmailArgumentResolver authEmail) {
         this.currentTraveler = currentTraveler;
+        this.authEmail = authEmail;
     }
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(currentTraveler);
+        resolvers.add(authEmail);
     }
 }

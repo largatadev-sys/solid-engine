@@ -1,42 +1,56 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, type InfiniteData } from '@tanstack/react-query';
 import {
+  archivedItinerariesOptions,
   findInListCache,
   itineraryKeys,
   itineraryOptions,
   myItinerariesOptions,
   onItineraryCreated,
+  onItineraryUpdated,
+  onPlanChanged,
 } from '../src/query/itineraryQueries';
-import type { ItineraryResponse } from '../src/types/api';
+import type { ItineraryResponse, Page } from '../src/types/api';
 
-/**
- * The query layer (S0.3, ticket 06) — ADR-001's "reads through a local store the network populates",
- * asserted rather than assumed.
- *
- * Driven through a real QueryClient with no renderer: the options objects hold every decision worth
- * testing, so this exercises the cache contract itself. (@testing-library/react-native 14 renders
- * nothing under jest-expo's preset — recorded in the ticket comments. The split it forced turned out
- * to be the better shape anyway.)
- *
- * Mocked at the repository boundary: what is under test is the cache, not the network.
- */
+
 
 jest.mock('../src/repositories/itineraryRepository', () => ({
-  itineraryRepository: { fetchMine: jest.fn(), fetchOne: jest.fn(), create: jest.fn() },
+  itineraryRepository: {
+    fetchMine: jest.fn(),
+    fetchOne: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    appendDay: jest.fn(),
+    renameDay: jest.fn(),
+    deleteDay: jest.fn(),
+  },
 }));
 
 const { itineraryRepository } = jest.requireMock('../src/repositories/itineraryRepository') as {
-  itineraryRepository: { fetchMine: jest.Mock; fetchOne: jest.Mock; create: jest.Mock };
+  itineraryRepository: {
+    fetchMine: jest.Mock;
+    fetchOne: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    appendDay: jest.Mock;
+    renameDay: jest.Mock;
+    deleteDay: jest.Mock;
+  };
 };
 
-/** The server's shape, nulls and all — see `formatDates.test.ts` for why that matters. */
+
 const trip = (id: string, title: string): ItineraryResponse => ({
   id,
   title,
   destinations: ['Sapporo'],
+  description: null,
   startDate: null,
   endDate: null,
   state: 'draft',
   visibility: 'private',
+  archived: false,
+  lastEditedBy: null,
+  lastEditedAt: null,
+  days: [],
   createdAt: '2026-07-16T00:00:00Z',
 });
 
@@ -54,15 +68,11 @@ describe('the list', () => {
 
     const data = await freshClient().fetchInfiniteQuery(myItinerariesOptions);
 
-    // undefined, not the string "undefined" — the server would try to decode that and answer 400.
     expect(itineraryRepository.fetchMine).toHaveBeenCalledWith(undefined);
     expect(data.pages[0]?.items[0]?.title).toBe('Lisbon');
   });
 
   it('threads the server-s cursor into the next page, untouched', async () => {
-    // `pages: 2` is what asks for a second page: fetchInfiniteQuery re-walks the traversal from the
-    // start, taking each page's cursor from the one before — which is exactly the threading under
-    // test. (Calling it twice without `pages` just refetches page one, and asserts nothing.)
     itineraryRepository.fetchMine
       .mockResolvedValueOnce({ items: [trip('2', 'second')], nextCursor: 'opaque-cursor' })
       .mockResolvedValueOnce({ items: [trip('1', 'first')] });
@@ -75,9 +85,6 @@ describe('the list', () => {
   });
 
   it('stops when the server sends no cursor back', () => {
-    // getNextPageParam is what "hasNextPage" is computed from: undefined means exhausted. Its other
-    // three arguments (all pages, all params, the current param) are unused by this implementation —
-    // the cursor comes from the last page and nowhere else — but the signature is the library's.
     const exhausted = { items: [] };
     const more = { items: [], nextCursor: 'more' };
 
@@ -86,13 +93,48 @@ describe('the list', () => {
   });
 });
 
+describe('the archived view (S1.9)', () => {
+  it('asks the repository for the archived half', async () => {
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('1', 'Old Lisbon')] });
+
+    await freshClient().fetchInfiniteQuery(archivedItinerariesOptions);
+
+    expect(itineraryRepository.fetchMine).toHaveBeenCalledWith(undefined, true);
+  });
+
+
+  it('keeps the two lists in separate cache entries', async () => {
+    const client = freshClient();
+    itineraryRepository.fetchMine
+      .mockResolvedValueOnce({ items: [trip('live', 'A live trip')] })
+      .mockResolvedValueOnce({ items: [trip('gone', 'An archived trip')] });
+
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+    await client.fetchInfiniteQuery(archivedItinerariesOptions);
+
+    const live = client.getQueryData<InfiniteData<Page<ItineraryResponse>>>(itineraryKeys.list(false));
+    const archived = client.getQueryData<InfiniteData<Page<ItineraryResponse>>>(itineraryKeys.list(true));
+
+    expect(live?.pages[0]?.items[0]?.title).toBe('A live trip');
+    expect(archived?.pages[0]?.items[0]?.title).toBe('An archived trip');
+  });
+
+
+  it('invalidates both views when a trip is archived', async () => {
+    const client = freshClient();
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [] });
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+    await client.fetchInfiniteQuery(archivedItinerariesOptions);
+
+    await onItineraryUpdated(client, { ...trip('gone', 'An archived trip'), archived: true });
+
+    expect(client.getQueryState(itineraryKeys.list(false))?.isInvalidated).toBe(true);
+    expect(client.getQueryState(itineraryKeys.list(true))?.isInvalidated).toBe(true);
+  });
+});
+
 describe('one itinerary', () => {
   it('is seeded from the list-s cache — the point of the store', async () => {
-    // Opening a trip from the list is the only route into the detail screen, so the row is already
-    // in memory and the screen should not spinner for it. `initialData` is what carries that, and
-    // it is a useQuery-only concept (fetchQuery deliberately bypasses it), so the seeding *source*
-    // is what is asserted here — the one line that wires it into the options is not worth a
-    // renderer. What that line cannot get wrong, it also cannot hide.
     const client = freshClient();
     itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('abc', 'Lisbon')] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
@@ -115,6 +157,20 @@ describe('one itinerary', () => {
     expect(itinerary.title).toBe('Kyoto');
   });
 
+  it('never serves the seeded list row as fresh — a trip archived elsewhere still refetches', async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
+    });
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('abc', 'Osaka')] });
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+    itineraryRepository.fetchOne.mockResolvedValue({ ...trip('abc', 'Osaka'), archived: true });
+
+    const detail = await client.fetchQuery(itineraryOptions('abc', client));
+
+    expect(itineraryRepository.fetchOne).toHaveBeenCalledWith('abc');
+    expect(detail.archived).toBe(true);
+  });
+
   it('finds a trip on any page of the cached list, not just the first', async () => {
     const client = freshClient();
     itineraryRepository.fetchMine
@@ -129,8 +185,6 @@ describe('one itinerary', () => {
 
 describe('after creating', () => {
   it('marks the list stale so a new trip cannot be missing from it', async () => {
-    // The load-bearing behaviour: without the invalidation a traveler creates a trip, lands back on
-    // My Trips, and does not see it — the cache still holds the list from before it existed.
     const client = freshClient();
     itineraryRepository.fetchMine.mockResolvedValue({ items: [] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
@@ -150,5 +204,44 @@ describe('after creating', () => {
       expect.objectContaining({ title: 'Oslo' }),
     );
     expect(itineraryRepository.fetchOne).not.toHaveBeenCalled();
+  });
+});
+
+describe('after a field edit (S1.3, ticket 04)', () => {
+  it('seeds the detail cache from the response and invalidates the list (title may have changed)', async () => {
+    const client = freshClient();
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('trip-1', 'Old name')] });
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+    expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(false);
+
+    await onItineraryUpdated(client, trip('trip-1', 'New name'));
+
+    expect(client.getQueryData(itineraryKeys.one('trip-1'))).toEqual(
+      expect.objectContaining({ title: 'New name' }),
+    );
+    expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(true);
+  });
+});
+
+describe('after a day changes', () => {
+  it('marks the single trip stale so the embedded plan refetches (S1.3)', async () => {
+    const client = freshClient();
+    itineraryRepository.fetchOne.mockResolvedValue(trip('trip-1', 'Palawan'));
+    await client.fetchQuery(itineraryOptions('trip-1', client));
+    expect(client.getQueryState(itineraryKeys.one('trip-1'))?.isInvalidated).toBe(false);
+
+    await onPlanChanged(client, 'trip-1');
+
+    expect(client.getQueryState(itineraryKeys.one('trip-1'))?.isInvalidated).toBe(true);
+  });
+
+  it('leaves the list cache untouched — a day change does not alter the trip card', async () => {
+    const client = freshClient();
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('trip-1', 'Palawan')] });
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+
+    await onPlanChanged(client, 'trip-1');
+
+    expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(false);
   });
 });

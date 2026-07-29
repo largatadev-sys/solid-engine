@@ -1,0 +1,23 @@
+-- V11 — the traveler-leading membership index: "which trips is this traveler on?" (S1.6, ticket 03).
+--
+-- V4 predicted this index and deliberately did not create it: "A traveler-leading index would serve
+-- the *other* direction ("which workspaces does this traveler belong to?"), which no query asks yet;
+-- it lands with the story that writes that query (S1.2 onward), where its shape can be chosen against
+-- a real access path rather than a guessed one." This is that story, and this is that access path.
+--
+-- WHY THE QUERY EXISTS NOW: `GET /v1/itineraries` was owner-scoped since S0.3 — `WHERE i.owner_id = ?`
+-- — so a traveler who accepted an invitation and became a MEMBER saw zero rows for a trip they could
+-- otherwise read perfectly (found at S1.5's device walk; pre-existing since S1.2). S1.6 makes it
+-- acute: after a transfer the FORMER owner would lose the trip from their list entirely while still
+-- being on it. The list becomes membership-scoped here, so the lookup direction inverts.
+--
+-- SHAPE: traveler_id alone. The query asks for every workspace one traveler belongs to, with no
+-- predicate on role (owned and joined trips are one list — S1.6 spec decision 2) and no ordering that
+-- this index could serve (the ordering is by itinerary id, on the other side of the hop). A composite
+-- (traveler_id, workspace_id) would add nothing: workspace_id is already carried as the index's heap
+-- pointer companion in the PK, and Postgres reaches it from the row.
+--
+-- PURELY ADDITIVE: an index, no data change, no backfill. It alters no semantics; the query it serves
+-- is correct without it and merely slow.
+
+CREATE INDEX membership_traveler_idx ON membership (traveler_id);

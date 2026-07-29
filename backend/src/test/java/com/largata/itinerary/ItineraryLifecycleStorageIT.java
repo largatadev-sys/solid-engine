@@ -1,0 +1,103 @@
+package com.largata.itinerary;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import com.largata.common.authz.Membership;
+import com.largata.common.authz.Role;
+import com.largata.support.PostgresTestBase;
+import java.lang.reflect.RecordComponent;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+
+@SpringBootTest
+class ItineraryLifecycleStorageIT extends PostgresTestBase {
+
+    @Autowired private ItineraryService itineraries;
+    @Autowired private JdbcTemplate jdbc;
+
+
+    @Test
+    void theStateColumnHoldsTheEnumNameNotTheWireForm() {
+        Membership owner = tripOwnedByFreshTraveler();
+
+        assertThat(storedState(owner.itineraryId())).isEqualTo("DRAFT");
+
+        itineraries.start(owner);
+        assertThat(storedState(owner.itineraryId())).isEqualTo("ACTIVE");
+        assertThat(ItineraryState.ACTIVE.wireName()).isEqualTo("active");
+
+        itineraries.complete(owner);
+        assertThat(storedState(owner.itineraryId())).isEqualTo("COMPLETED");
+        assertThat(ItineraryState.COMPLETED.wireName()).isEqualTo("completed");
+    }
+
+
+    @Test
+    void theStateColumnHasNoDefault() {
+        String columnDefault =
+                jdbc.queryForObject(
+                        """
+                        SELECT column_default FROM information_schema.columns
+                         WHERE table_name = 'itinerary' AND column_name = 'state'
+                        """,
+                        String.class);
+
+        assertThat(columnDefault).as("V3's lying lower-case default, dropped at V12").isNull();
+
+        assertThat(
+                        jdbc.queryForObject(
+                                """
+                                SELECT is_nullable FROM information_schema.columns
+                                 WHERE table_name = 'itinerary' AND column_name = 'state'
+                                """,
+                                String.class))
+                .isEqualTo("NO");
+    }
+
+
+    @Test
+    void theFieldEditRequestCannotCarryLifecycleState() {
+        List<String> editableFields =
+                Arrays.stream(com.largata.itinerary.api.UpdateItineraryRequest.class.getRecordComponents())
+                        .map(RecordComponent::getName)
+                        .toList();
+
+        assertThat(editableFields)
+                .as("PATCH edits plan fields only — lifecycle has its own owner-only endpoints")
+                .containsExactlyInAnyOrder("title", "destinations", "description", "startDate", "endDate")
+                .doesNotContain("state", "startedAt", "completedAt", "visibility", "ownerId");
+    }
+
+
+    @Test
+    void theAggregateItselfRefusesASkipEdge() {
+        Membership owner = tripOwnedByFreshTraveler();
+
+        assertThatThrownBy(() -> itineraries.complete(owner))
+                .isInstanceOf(IllegalStateTransitionException.class)
+                .hasMessageContaining("draft")
+                .hasMessageContaining("completed");
+
+        assertThat(storedState(owner.itineraryId())).isEqualTo("DRAFT");
+    }
+
+
+    private String storedState(UUID itineraryId) {
+        return jdbc.queryForObject("SELECT state FROM itinerary WHERE id = ?", String.class, itineraryId);
+    }
+
+
+    private Membership tripOwnedByFreshTraveler() {
+        UUID ownerId = UUID.randomUUID();
+        Itinerary itinerary = itineraries.create(ownerId, "Draft trip", List.of("Cebu"), null, null);
+        return new Membership(ownerId, itinerary.id(), Role.OWNER);
+    }
+}

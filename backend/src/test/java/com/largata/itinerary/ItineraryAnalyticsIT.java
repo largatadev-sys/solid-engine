@@ -19,14 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * Ticket 04's ACs through the real chain: the events register #2's default set asks for, emitted
- * from a real request against a real database.
- *
- * <p>The sink's own behaviour is unit-tested ({@code LoggingAnalyticsTest}); what needs a running
- * app is the <em>call sites</em> — that a create emits exactly one event, after its transaction
- * commits, carrying no PII.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class ItineraryAnalyticsIT extends PostgresTestBase {
@@ -82,10 +75,6 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
 
     @Test
     void theEventNamesTheTripByIdAndLeaksNothingTheTravelerWrote() {
-        // P3, extended to analytics: a title and a destination are the traveler's words about their
-        // own life. The funnel needs "was a trip made, with how many destinations" — never "to
-        // where, called what". The sink is a log line today and a durable store before alpha; both
-        // outlive the request by longer than any of this is worth.
         create(
                 freshTraveler(),
                 """
@@ -104,9 +93,6 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
 
     @Test
     void aRejectedCreateEmitsNothing() {
-        // The event reports a committed row. A validation failure never reaches the service, so the
-        // funnel must not count it — an event for a trip that does not exist is a lie about the one
-        // number this event exists to give.
         rest.post()
                 .uri("/v1/itineraries")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
@@ -123,9 +109,6 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
 
     @Test
     void theOperationalLogLineNamesTheTripByIdAndLeaksNothingTheTravelerWrote() {
-        // 06b §4 wants an info line per successful operation; P3 says it names entities by id. This
-        // line is not the analytics event — it rides the app's own logger, for an operator reading
-        // what the system did — and it is held to the same no-PII rule.
         ListAppender<ILoggingEvent> appLog = new ListAppender<>();
         appLog.start();
         ch.qos.logback.classic.Logger serviceLogger =
@@ -146,9 +129,51 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
     }
 
     @Test
+    void eachLifecycleTransitionEmitsExactlyOneEventNamingTheTripAndTheOwner() {
+        String owner = freshTraveler();
+        String tripId = createAndReturnId(owner, """
+                {"title":"Osaka 2027","destinations":["Osaka"]}
+                """);
+
+        transition(owner, tripId, "start");
+
+        assertThat(eventsNamed("itinerary_started"))
+                .singleElement()
+                .satisfies(
+                        line -> {
+                            assertThat(line.getMDCPropertyMap())
+                                    .containsEntry("event.itineraryId", tripId)
+                                    .containsKey("event.travelerId");
+                            assertThat(line.getFormattedMessage()).doesNotContain("Osaka");
+                        });
+        assertThat(eventsNamed("itinerary_completed")).isEmpty();
+
+        transition(owner, tripId, "complete");
+
+        assertThat(eventsNamed("itinerary_completed")).singleElement();
+        assertThat(eventsNamed("itinerary_started")).as("starting did not fire twice").hasSize(1);
+    }
+
+    @Test
+    void aRefusedTransitionEmitsNothing() {
+        String owner = freshTraveler();
+        String tripId = createAndReturnId(owner, """
+                {"title":"Osaka 2027","destinations":["Osaka"]}
+                """);
+
+        rest.post()
+                .uri("/v1/itineraries/" + tripId + "/complete")
+                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isEqualTo(409);
+
+        assertThat(eventsNamed("itinerary_completed")).isEmpty();
+        assertThat(eventsNamed("itinerary_started")).isEmpty();
+    }
+
+    @Test
     void aFirstContactEmitsTheSignupEventOnceAndOnlyOnce() {
-        // The funnel's first stage, backfilled at S0.3. The second call re-reads an existing
-        // Traveler — two signups for one traveler would misreport the number the event exists for.
         String token = freshTraveler();
 
         callMe(token);
@@ -175,6 +200,34 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
                 .exchange()
                 .expectStatus()
                 .isCreated();
+    }
+
+
+    private String createAndReturnId(String token, String body) {
+        byte[] created =
+                rest.post()
+                        .uri("/v1/itineraries")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(body)
+                        .exchange()
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent();
+        String json = new String(created);
+        int start = json.indexOf("\"id\":\"") + 6;
+        return json.substring(start, json.indexOf('"', start));
+    }
+
+    private void transition(String token, String itineraryId, String act) {
+        rest.post()
+                .uri("/v1/itineraries/" + itineraryId + "/" + act)
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 
     private java.util.List<ILoggingEvent> eventsNamed(String name) {

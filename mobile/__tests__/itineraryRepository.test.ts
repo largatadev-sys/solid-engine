@@ -1,16 +1,13 @@
 import { itineraryRepository } from '../src/repositories/itineraryRepository';
 
-/**
- * The itinerary repository (S0.3, ticket 06) — mocked at the apiClient boundary, the same seam
- * `healthRepository.test.ts` mocks (S0.1 convention).
- */
+
 
 jest.mock('../src/api/apiClient', () => ({
-  apiClient: { get: jest.fn(), post: jest.fn() },
+  apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), put: jest.fn(), delete: jest.fn() },
 }));
 
 const { apiClient } = jest.requireMock('../src/api/apiClient') as {
-  apiClient: { get: jest.Mock; post: jest.Mock };
+  apiClient: { get: jest.Mock; post: jest.Mock; patch: jest.Mock; put: jest.Mock; delete: jest.Mock };
 };
 
 beforeEach(() => {
@@ -23,7 +20,6 @@ describe('reading the list', () => {
 
     await itineraryRepository.fetchMine();
 
-    // Not "?cursor=undefined" — the server would try to decode that string and answer 400.
     expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries');
   });
 
@@ -36,13 +32,55 @@ describe('reading the list', () => {
   });
 
   it('escapes a cursor rather than trusting its characters', async () => {
-    // The cursor is opaque (Artifact 05): this layer must not assume base64url stays URL-safe, or
-    // the day the server's cursor changes shape, pages silently start 400ing.
     apiClient.get.mockResolvedValue({ items: [] });
 
     await itineraryRepository.fetchMine('a+b/c=');
 
     expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?cursor=a%2Bb%2Fc%3D');
+  });
+
+  it('asks for the archived view only when asked to (S1.9)', async () => {
+    apiClient.get.mockResolvedValue({ items: [] });
+
+    await itineraryRepository.fetchMine(undefined, true);
+
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?archived=true');
+  });
+
+  it('leaves the default list’s URL byte-identical to the pre-S1.9 one', async () => {
+    apiClient.get.mockResolvedValue({ items: [] });
+
+    await itineraryRepository.fetchMine(undefined, false);
+    await itineraryRepository.fetchMine('MDE5-abc', false);
+
+    expect(apiClient.get).toHaveBeenNthCalledWith(1, '/v1/itineraries');
+    expect(apiClient.get).toHaveBeenNthCalledWith(2, '/v1/itineraries?cursor=MDE5-abc');
+  });
+
+  it('threads a cursor through the archived view too', async () => {
+    apiClient.get.mockResolvedValue({ items: [] });
+
+    await itineraryRepository.fetchMine('MDE5-abc', true);
+
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?cursor=MDE5-abc&archived=true');
+  });
+});
+
+describe('archiving (S1.9)', () => {
+  it('archives with no body — the act carries no data', async () => {
+    apiClient.post.mockResolvedValue({ id: 'abc', archived: true });
+
+    await itineraryRepository.archiveTrip('abc');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/archive', undefined);
+  });
+
+  it('unarchives the same way', async () => {
+    apiClient.post.mockResolvedValue({ id: 'abc', archived: false });
+
+    await itineraryRepository.unarchiveTrip('abc');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/unarchive', undefined);
   });
 });
 
@@ -62,5 +100,117 @@ describe('reading one and creating', () => {
     await itineraryRepository.create(request);
 
     expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries', request);
+  });
+
+  it('edits the fields by PATCHing the itinerary (S1.3, ticket 04)', async () => {
+    apiClient.patch.mockResolvedValue({ id: 'abc' });
+    const request = { title: 'Renamed', destinations: ['Palawan'], startDate: '2027-01-10' };
+
+    await itineraryRepository.update('abc', request);
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/v1/itineraries/abc', request);
+  });
+});
+
+
+describe('the day operations (S1.3)', () => {
+  it('appends a day under the itinerary, itinerary-addressed (no workspace id on the wire)', async () => {
+    apiClient.post.mockResolvedValue({ id: 'day-1' });
+
+    await itineraryRepository.appendDay('trip-1', { title: 'Arrival' });
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/days', { title: 'Arrival' });
+  });
+
+  it('renames a day by patching it under its itinerary', async () => {
+    apiClient.patch.mockResolvedValue({ id: 'day-1' });
+
+    await itineraryRepository.renameDay('trip-1', 'day-1', { title: 'Arrival Day' });
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1', { title: 'Arrival Day' });
+  });
+
+  it('deletes a day by id under its itinerary', async () => {
+    apiClient.delete.mockResolvedValue(undefined);
+
+    await itineraryRepository.deleteDay('trip-1', 'day-1');
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1');
+  });
+});
+
+describe('the activity operations (S1.3, ticket 02)', () => {
+  const request = { title: 'Airport Transfer' };
+
+  it('creates an activity under its day, itinerary- and day-addressed', async () => {
+    apiClient.post.mockResolvedValue({ id: 'a-1' });
+
+    await itineraryRepository.createActivity('trip-1', 'day-1', request);
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities', request);
+  });
+
+  it('edits an activity by patching it under its day', async () => {
+    apiClient.patch.mockResolvedValue({ id: 'a-1' });
+
+    await itineraryRepository.editActivity('trip-1', 'day-1', 'a-1', request);
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/a-1', request);
+  });
+
+  it('deletes an activity by id under its day', async () => {
+    apiClient.delete.mockResolvedValue(undefined);
+
+    await itineraryRepository.deleteActivity('trip-1', 'day-1', 'a-1');
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/a-1');
+  });
+});
+
+describe('reorder and move (S1.3, ticket 03)', () => {
+  it('reorders a day by PUTting the whole ordered list', async () => {
+    apiClient.put.mockResolvedValue(undefined);
+
+    await itineraryRepository.reorderActivities('trip-1', 'day-1', { activityIds: ['c', 'a', 'b'] });
+
+    expect(apiClient.put).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/order', {
+      activityIds: ['c', 'a', 'b'],
+    });
+  });
+
+  it('moves an activity to another day', async () => {
+    apiClient.post.mockResolvedValue({ id: 'a-1' });
+
+    await itineraryRepository.moveActivity('trip-1', 'day-1', 'a-1', { targetDayId: 'day-2' });
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/a-1/move', {
+      targetDayId: 'day-2',
+    });
+  });
+});
+
+describe('edit lock (S1.4, ADR-014)', () => {
+  it('acquires the lock with a bodiless POST under /edit-lock', async () => {
+    apiClient.post.mockResolvedValue({ itineraryId: 'trip-1', holderId: 'me', expiresAt: '2026-07-24T10:03:00Z' });
+
+    await itineraryRepository.acquireEditLock('trip-1');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', undefined);
+  });
+
+  it('renews under /edit-lock/renew', async () => {
+    apiClient.post.mockResolvedValue({ itineraryId: 'trip-1', holderId: 'me', expiresAt: '2026-07-24T10:04:00Z' });
+
+    await itineraryRepository.renewEditLock('trip-1');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock/renew', undefined);
+  });
+
+  it('releases with a DELETE on /edit-lock', async () => {
+    apiClient.delete.mockResolvedValue(undefined);
+
+    await itineraryRepository.releaseEditLock('trip-1');
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock');
   });
 });

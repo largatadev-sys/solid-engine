@@ -33,7 +33,8 @@
       "@react-native-google-signin/google-signin",
       "./plugins/withAndroidJdk",
       "./plugins/withLongPathNinja",
-      "./plugins/withReleaseSigning"
+      "./plugins/withReleaseSigning",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

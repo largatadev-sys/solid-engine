@@ -8,15 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/**
- * Ticket 02's ACs at the unit seam: the guard's behaviour against a stubbed resolver, no database
- * and no Spring.
- *
- * <p>This is the Full-rigor zone (CLAUDE.md), and these tests are why the resolver seam earns its
- * keep beyond the E1 swap: the guard's decision table — resolve, reject, carry the role — is
- * provable in milliseconds against a stub. The integration proof that the whole chain honours it
- * lives in {@code ItineraryContractIT}; both exist, deliberately.
- */
+
 class AuthorizationGuardTest {
 
     private final UUID traveler = UuidV7.generate();
@@ -41,10 +33,6 @@ class AuthorizationGuardTest {
 
     @Test
     void theRejectionIsIdenticalWhateverTheReasonForIt() {
-        // The masking rule (Artifact 03), asserted at the level where it is decided. The resolver
-        // reports "no standing" for both "no such itinerary" and "exists, not yours" — the guard
-        // cannot tell them apart, which is precisely the guarantee: there is no branch here that a
-        // later change could accidentally make informative.
         AuthorizationGuard guard = new AuthorizationGuard((t, i) -> Optional.empty());
 
         ItineraryNotFoundException nonexistent =
@@ -57,10 +45,6 @@ class AuthorizationGuardTest {
 
     @Test
     void theResolversRoleRidesOnTheMembershipTheGuardReturns() {
-        // Role-gated operations check the role on the object the guard produced (Artifact 03) —
-        // so the guard must carry it faithfully rather than assume OWNER, which is all S0.3's
-        // resolver can currently produce. When E1's resolver starts returning MEMBER, this passes
-        // unchanged; that is the seam working.
         AuthorizationGuard guard =
                 new AuthorizationGuard((t, i) -> Optional.of(new Membership(t, i, Role.MEMBER)));
 
@@ -72,9 +56,6 @@ class AuthorizationGuardTest {
 
     @Test
     void theGuardAsksAboutTheTravelerAndItineraryItWasGiven() {
-        // Guards against the silent catastrophe: a resolver call built from the wrong variables
-        // would still return *a* membership, and every test above would pass while the guard
-        // authorized the wrong person.
         UUID[] asked = new UUID[2];
         AuthorizationGuard guard =
                 new AuthorizationGuard(

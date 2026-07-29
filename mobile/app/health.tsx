@@ -3,18 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useHealth } from '../src/hooks/useHealth';
 import { colors, radii, spacing, typography } from '../src/theme';
 
-/**
- * The walking skeleton's diagnostic screen (S0.1), retrofitted onto the token layer at S0.3 and
- * moved off `/` — My Trips is the signed-in home now.
- *
- * It reads through hook -> repository -> apiClient (ADR-001). There is no `fetch` here and never
- * will be — the first screen ever written establishes the pattern by example.
- *
- * The throwaway hardcoded palette that used to live here is gone: the values were lifted into
- * `src/theme/tokens.ts` and this screen now consumes roles like every other. Kept rather than
- * deleted because "can the app reach the backend, and what does it say when it cannot" stays worth
- * one tap when a device build misbehaves.
- */
+
 export default function HealthScreen() {
   const { state, refresh } = useHealth();
 
@@ -40,7 +29,7 @@ export default function HealthScreen() {
         {state.kind === 'error' && (
           <>
             <Text style={styles.errorTitle}>Backend unreachable</Text>
-            {/* Branching on `code`, never on `message` (Artifact 05). */}
+            {}
             <Text style={styles.errorCode}>{state.error.code}</Text>
             <Text style={styles.caption}>{state.error.message}</Text>
             {state.error.traceId !== undefined && (
@@ -57,11 +46,7 @@ export default function HealthScreen() {
   );
 }
 
-/**
- * A layout constant, not a token: it is "how wide before this looks silly on a tablet", which is a
- * property of this screen's composition, not of the design language. Tokens are the vocabulary
- * screens share; this is a sentence one screen says.
- */
+
 const CARD_MAX_WIDTH = 420;
 
 const styles = StyleSheet.create({

@@ -10,16 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/**
- * The aggregate root's own rules (S0.3, ticket 01) — no Spring, no database.
- *
- * <p><strong>Why these duplicate the contract IT's validation cases.</strong> They do not, quite:
- * the IT proves the <em>API</em> answers 400: that is the DTO's Bean Validation doing its job. These
- * prove the <em>type</em> refuses, which is what protects callers that never touch a DTO — S4.7's
- * fork, a future import. Code review found `title ≤ 120` and blank-destination rejection stated in
- * the DTO and quietly missing here, with every IT still green: the API door was guarded and the
- * type was not. That is the gap this class exists to keep closed.
- */
+
 class ItineraryTest {
 
     private final UUID owner = UuidV7.generate();
@@ -32,6 +23,94 @@ class ItineraryTest {
         assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
         assertThat(itinerary.id()).isNotNull();
         assertThat(itinerary.ownerId()).isEqualTo(owner);
+    }
+
+
+    @Test
+    void startingADraftMakesItActiveAndStampsTheMoment() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+        Instant at = Instant.parse("2027-01-10T09:00:00Z");
+
+        itinerary.start(at);
+
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.ACTIVE);
+        assertThat(itinerary.startedAt()).isEqualTo(at);
+        assertThat(itinerary.completedAt()).isNull();
+    }
+
+    @Test
+    void completingAnActiveTripStampsTheSecondMomentAndLeavesTheFirst() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+        Instant started = Instant.parse("2027-01-10T09:00:00Z");
+        Instant completed = Instant.parse("2027-01-20T18:00:00Z");
+
+        itinerary.start(started);
+        itinerary.complete(completed);
+
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.COMPLETED);
+        assertThat(itinerary.startedAt()).isEqualTo(started);
+        assertThat(itinerary.completedAt()).isEqualTo(completed);
+    }
+
+    @Test
+    void theStampsRecordTheActNotTheTravelSoTheyMayFallOutsideThePlansDates() {
+        Itinerary itinerary =
+                Itinerary.draft(
+                        owner,
+                        "Hokkaido",
+                        List.of("Sapporo"),
+                        LocalDate.of(2027, 1, 10),
+                        LocalDate.of(2027, 1, 20),
+                        Instant.parse("2026-12-01T00:00:00Z"));
+
+        itinerary.start(Instant.parse("2027-01-12T09:00:00Z"));
+        itinerary.complete(Instant.parse("2027-01-27T09:00:00Z"));
+
+        assertThat(itinerary.completedAt()).isAfter(Instant.parse("2027-01-20T23:59:59Z"));
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.COMPLETED);
+    }
+
+    @Test
+    void everyIllegalEdgeIsRefusedAndChangesNothing() {
+        Itinerary draftTrip = draft("Hokkaido", List.of("Sapporo"));
+        assertThatThrownBy(() -> draftTrip.complete(Instant.now()))
+                .isInstanceOf(IllegalStateTransitionException.class);
+        assertThat(draftTrip.state()).isEqualTo(ItineraryState.DRAFT);
+        assertThat(draftTrip.completedAt()).isNull();
+
+        Itinerary activeTrip = draft("Hokkaido", List.of("Sapporo"));
+        activeTrip.start(Instant.parse("2027-01-10T09:00:00Z"));
+        assertThatThrownBy(() -> activeTrip.start(Instant.now()))
+                .isInstanceOf(IllegalStateTransitionException.class);
+        assertThat(activeTrip.startedAt()).isEqualTo(Instant.parse("2027-01-10T09:00:00Z"));
+
+        Itinerary completedTrip = draft("Hokkaido", List.of("Sapporo"));
+        completedTrip.start(Instant.parse("2027-01-10T09:00:00Z"));
+        completedTrip.complete(Instant.parse("2027-01-20T18:00:00Z"));
+        assertThatThrownBy(() -> completedTrip.start(Instant.now()))
+                .isInstanceOf(IllegalStateTransitionException.class);
+        assertThatThrownBy(() -> completedTrip.complete(Instant.now()))
+                .isInstanceOf(IllegalStateTransitionException.class);
+        assertThat(completedTrip.completedAt()).isEqualTo(Instant.parse("2027-01-20T18:00:00Z"));
+    }
+
+    @Test
+    void theRefusalNamesBothEndsOfTheEdgeItRefused() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+
+        assertThatThrownBy(() -> itinerary.complete(Instant.now()))
+                .hasMessageContaining("draft")
+                .hasMessageContaining("completed");
+    }
+
+    @Test
+    void aTransitionDoesNotClaimAuthorshipOfAPlanEdit() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+
+        itinerary.start(Instant.now());
+
+        assertThat(itinerary.lastEditedBy()).isNull();
+        assertThat(itinerary.lastEditedAt()).isNull();
     }
 
     @Test
@@ -58,8 +137,6 @@ class ItineraryTest {
 
     @Test
     void aTitleHasALimitTheTypeEnforcesItself() {
-        // The gap code review found: this rule lived only in the DTO, so any non-HTTP caller could
-        // persist a 10 KB title into a bare TEXT column.
         assertThatThrownBy(() -> draft("x".repeat(Itinerary.MAX_TITLE_LENGTH + 1), List.of("Sapporo")))
                 .isInstanceOf(IllegalArgumentException.class);
 
@@ -75,17 +152,12 @@ class ItineraryTest {
 
     @Test
     void aBlankDestinationIsRejectedRatherThanQuietlyDropped() {
-        // The other gap: the factory used to filter blanks out, so ["Sapporo", ""] was a 400 through
-        // the API and silent data-loss through anything else. Two layers, one rule — or the rule is
-        // whatever the weaker layer says.
         assertThatThrownBy(() -> draft("Somewhere", java.util.Arrays.asList("Sapporo", "  ")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void everyCombinationOfDatesIsAPlan() {
-        // Optional and independent (S0.3 spec): the dreamer's undated draft, "departing June 3,
-        // open-ended", and "back by then" are all legitimate.
         assertThat(draft("Someday", List.of("Japan")).startDate()).isNull();
         assertThat(dated(LocalDate.of(2027, 6, 3), null).startDate()).isEqualTo(LocalDate.of(2027, 6, 3));
         assertThat(dated(null, LocalDate.of(2027, 6, 3)).endDate()).isEqualTo(LocalDate.of(2027, 6, 3));
@@ -95,6 +167,57 @@ class ItineraryTest {
     @Test
     void aTripCannotEndBeforeItStarts() {
         assertThatThrownBy(() -> dated(LocalDate.of(2027, 6, 10), LocalDate.of(2027, 6, 3)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+
+    @Test
+    void editingFieldsReplacesThemAndStampsTheEditor() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+        UUID editor = UuidV7.generate();
+        Instant editedAt = Instant.now();
+
+        itinerary.editFields(
+                "El Nido 2027",
+                List.of("Palawan", "El Nido"),
+                "Island hopping.",
+                LocalDate.of(2027, 1, 10),
+                LocalDate.of(2027, 1, 20),
+                editor,
+                editedAt);
+
+        assertThat(itinerary.title()).isEqualTo("El Nido 2027");
+        assertThat(itinerary.destinations()).containsExactly("Palawan", "El Nido");
+        assertThat(itinerary.description()).isEqualTo("Island hopping.");
+        assertThat(itinerary.startDate()).isEqualTo(LocalDate.of(2027, 1, 10));
+        assertThat(itinerary.lastEditedBy()).isEqualTo(editor);
+        assertThat(itinerary.lastEditedAt()).isEqualTo(editedAt);
+    }
+
+    @Test
+    void editingLeavesOwnershipAndStateUntouched() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+
+        itinerary.editFields("Renamed", List.of("Cebu"), null, null, null, UuidV7.generate(), Instant.now());
+
+        assertThat(itinerary.ownerId()).isEqualTo(owner);
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.DRAFT);
+        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
+    }
+
+    @Test
+    void editingEnforcesTheSameFieldRulesAsCreation() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+
+        assertThatThrownBy(
+                        () ->
+                                itinerary.editFields(
+                                        "   ", List.of("Cebu"), null, null, null, UuidV7.generate(), Instant.now()))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(
+                        () ->
+                                itinerary.editFields(
+                                        "Trip", List.of(), null, null, null, UuidV7.generate(), Instant.now()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

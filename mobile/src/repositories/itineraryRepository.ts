@@ -1,25 +1,29 @@
 import { apiClient } from '../api/apiClient';
-import type { CreateItineraryRequest, ItineraryResponse, Page } from '../types/api';
+import type {
+  ActivityRequest,
+  ActivityResponse,
+  CreateItineraryRequest,
+  DayRequest,
+  DayResponse,
+  EditLeaseResponse,
+  ItineraryResponse,
+  MoveActivityRequest,
+  Page,
+  ReorderActivitiesRequest,
+  UpdateItineraryRequest,
+} from '../types/api';
 
-/**
- * The plan (S0.3) — the app's first domain repository (ADR-001 layering).
- *
- * This layer is deliberately dumb: it maps a call to a path and a typed shape, and knows nothing
- * about caching, React, or when to refetch. That is the query layer's job (`src/query/`), and
- * keeping the two apart is what makes the E3 persistence work a change in one place rather than a
- * sweep — a repository that knew about the cache would have to be rewritten to know about a
- * different one.
- */
+
 export const itineraryRepository = {
-  /**
-   * The caller's own itineraries, newest first.
-   *
-   * `cursor` is opaque — whatever `nextCursor` the last page returned, passed back verbatim. This
-   * layer never constructs, parses, or reasons about one (Artifact 05).
-   */
-  async fetchMine(cursor?: string): Promise<Page<ItineraryResponse>> {
-    const query = cursor !== undefined ? `?cursor=${encodeURIComponent(cursor)}` : '';
-    return apiClient.get<Page<ItineraryResponse>>(`/v1/itineraries${query}`);
+
+  async fetchMine(cursor?: string, archived = false): Promise<Page<ItineraryResponse>> {
+    const params = [
+      ...(cursor !== undefined ? [`cursor=${encodeURIComponent(cursor)}`] : []),
+      ...(archived ? ['archived=true'] : []),
+    ];
+    return apiClient.get<Page<ItineraryResponse>>(
+      `/v1/itineraries${params.length > 0 ? `?${params.join('&')}` : ''}`,
+    );
   },
 
   async fetchOne(id: string): Promise<ItineraryResponse> {
@@ -28,5 +32,88 @@ export const itineraryRepository = {
 
   async create(request: CreateItineraryRequest): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>('/v1/itineraries', request);
+  },
+
+
+  async update(id: string, request: UpdateItineraryRequest): Promise<ItineraryResponse> {
+    return apiClient.patch<ItineraryResponse>(`/v1/itineraries/${id}`, request);
+  },
+
+
+  async archiveTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/archive`, undefined);
+  },
+
+  async unarchiveTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unarchive`, undefined);
+  },
+
+
+  async appendDay(itineraryId: string, request: DayRequest): Promise<DayResponse> {
+    return apiClient.post<DayResponse>(`/v1/itineraries/${itineraryId}/days`, request);
+  },
+
+  async renameDay(itineraryId: string, dayId: string, request: DayRequest): Promise<DayResponse> {
+    return apiClient.patch<DayResponse>(`/v1/itineraries/${itineraryId}/days/${dayId}`, request);
+  },
+
+  async deleteDay(itineraryId: string, dayId: string): Promise<void> {
+    return apiClient.delete(`/v1/itineraries/${itineraryId}/days/${dayId}`);
+  },
+
+
+  async createActivity(itineraryId: string, dayId: string, request: ActivityRequest): Promise<ActivityResponse> {
+    return apiClient.post<ActivityResponse>(`/v1/itineraries/${itineraryId}/days/${dayId}/activities`, request);
+  },
+
+  async editActivity(
+    itineraryId: string,
+    dayId: string,
+    activityId: string,
+    request: ActivityRequest,
+  ): Promise<ActivityResponse> {
+    return apiClient.patch<ActivityResponse>(
+      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`,
+      request,
+    );
+  },
+
+  async deleteActivity(itineraryId: string, dayId: string, activityId: string): Promise<void> {
+    return apiClient.delete(`/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`);
+  },
+
+
+  async reorderActivities(
+    itineraryId: string,
+    dayId: string,
+    request: ReorderActivitiesRequest,
+  ): Promise<DayResponse> {
+    return apiClient.put<DayResponse>(`/v1/itineraries/${itineraryId}/days/${dayId}/activities/order`, request);
+  },
+
+
+  async moveActivity(
+    itineraryId: string,
+    dayId: string,
+    activityId: string,
+    request: MoveActivityRequest,
+  ): Promise<ActivityResponse> {
+    return apiClient.post<ActivityResponse>(
+      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/move`,
+      request,
+    );
+  },
+
+
+  async acquireEditLock(itineraryId: string): Promise<EditLeaseResponse> {
+    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock`, undefined);
+  },
+
+  async renewEditLock(itineraryId: string): Promise<EditLeaseResponse> {
+    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock/renew`, undefined);
+  },
+
+  async releaseEditLock(itineraryId: string): Promise<void> {
+    return apiClient.delete(`/v1/itineraries/${itineraryId}/edit-lock`);
   },
 };

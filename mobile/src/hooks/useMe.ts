@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../api/ApiError';
 import { travelerRepository } from '../repositories/travelerRepository';
 import type { MeResponse } from '../types/api';
@@ -8,31 +8,34 @@ export type MeState =
   | { kind: 'ok'; me: MeResponse }
   | { kind: 'error'; error: ApiError };
 
-/**
- * Binds the traveler repository to React, exactly as `useHealth` does for health — the screen
- * renders a state and knows nothing about transport.
- */
+
+export const meKeys = {
+  me: ['me'] as const,
+};
+
+
+function asApiError(error: unknown): ApiError {
+  return error instanceof ApiError
+    ? error
+    : new ApiError({ code: 'UNKNOWN', message: 'Something went wrong.', status: 0 });
+}
+
+
 export function useMe(): { state: MeState; refresh: () => void } {
-  const [state, setState] = useState<MeState>({ kind: 'loading' });
+  const client = useQueryClient();
+  const query = useQuery({
+    queryKey: meKeys.me,
+    queryFn: () => travelerRepository.fetchMe(),
+  });
 
-  const load = useCallback(async () => {
-    setState({ kind: 'loading' });
-    try {
-      setState({ kind: 'ok', me: await travelerRepository.fetchMe() });
-    } catch (error) {
-      setState({
-        kind: 'error',
-        error:
-          error instanceof ApiError
-            ? error
-            : new ApiError({ code: 'UNKNOWN', message: 'Something went wrong.', status: 0 }),
-      });
-    }
-  }, []);
+  const state: MeState = query.isSuccess
+    ? { kind: 'ok', me: query.data }
+    : query.isError
+      ? { kind: 'error', error: asApiError(query.error) }
+      : { kind: 'loading' };
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return { state, refresh: () => void load() };
+  return {
+    state,
+    refresh: () => void client.invalidateQueries({ queryKey: meKeys.me }),
+  };
 }
