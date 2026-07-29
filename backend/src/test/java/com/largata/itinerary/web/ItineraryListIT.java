@@ -16,13 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * Ticket 03's pagination ACs: the reference implementation of Artifact 05's one pagination shape.
- *
- * <p>These tests matter beyond this story — every later list (E4's discovery feed, workspace
- * activity) copies what they pin down, so what passes here becomes the house style whether or not
- * anyone re-reads Artifact 05.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class ItineraryListIT extends PostgresTestBase {
@@ -38,8 +32,6 @@ class ItineraryListIT extends PostgresTestBase {
 
     @Test
     void anEmptyListIsAResultNotAnAbsence() {
-        // Artifact 05: collections never 404. A new traveler's list is a legitimate empty list, and
-        // the mobile empty state depends on this being a 200.
         rest.get()
                 .uri("/v1/itineraries")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
@@ -51,7 +43,6 @@ class ItineraryListIT extends PostgresTestBase {
                 .isArray()
                 .jsonPath("$.items.length()")
                 .isEqualTo(0)
-                // Exhausted: absent, not a sentinel. Absence needs no interpretation.
                 .jsonPath("$.nextCursor")
                 .doesNotExist();
     }
@@ -80,9 +71,6 @@ class ItineraryListIT extends PostgresTestBase {
 
     @Test
     void aCursorWalksTheWholeListWithoutDuplicatesOrSkips() {
-        // The AC that justifies cursors at all. Seven rows at two per page: the traversal must yield
-        // each row exactly once. An off-by-one in the "one row more than asked for" probe shows up
-        // here as a duplicate or a hole, not as a compile error.
         String token = freshTraveler();
         int total = 7;
         for (int i = 0; i < total; i++) {
@@ -113,9 +101,6 @@ class ItineraryListIT extends PostgresTestBase {
 
     @Test
     void aFullPageWithNothingBeyondItStillEndsTheTraversal() {
-        // The boundary the "+1 probe" exists for: exactly `limit` rows remain. Returning a cursor
-        // here would send the client after an empty page — harmless but wrong, and the kind of thing
-        // only a test at the exact boundary catches.
         String token = freshTraveler();
         create(token, "a");
         create(token, "b");
@@ -125,8 +110,6 @@ class ItineraryListIT extends PostgresTestBase {
 
     @Test
     void anOversizedLimitIsClampedRatherThanRejected() {
-        // Spec: a clamped list is still a correct list. 101 rows, limit=500 → 100 returned, and a
-        // cursor, because a 101st row exists.
         String token = freshTraveler();
         for (int i = 0; i < 101; i++) {
             create(token, "bulk-" + i);
@@ -161,8 +144,6 @@ class ItineraryListIT extends PostgresTestBase {
 
     @Test
     void theListShowsOnlyTheCallersOwnItineraries() {
-        // The list's authorization: the owner filter is inside the query, so a stranger's itinerary
-        // cannot enter the result at all. No guard call is involved — and that is the point.
         String mine = freshTraveler();
         String theirs = freshTraveler();
         create(mine, "mine");
@@ -174,9 +155,6 @@ class ItineraryListIT extends PostgresTestBase {
 
     @Test
     void aCursorThisApiDidNotIssueIsABadRequestNotAServerError() {
-        // A cursor arrives from outside, so a mangled one is a client error. Left unmapped it is an
-        // IllegalArgumentException → 500 logged at ERROR: the wrong answer, plus a page for the
-        // operator about someone else's typo.
         rest.get()
                 .uri("/v1/itineraries?cursor=not-a-real-cursor")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
@@ -214,7 +192,7 @@ class ItineraryListIT extends PostgresTestBase {
                 .isCreated();
     }
 
-    /** Titles in page order — enough to prove ordering, membership and page size. */
+
     private static List<String> titlesIn(byte[] body) {
         List<String> titles = new ArrayList<>();
         String json = new String(body);

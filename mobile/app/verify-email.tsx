@@ -4,18 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { AuthError, authRepository } from '../src/repositories/authRepository';
 import { colors, radii, spacing, typography } from '../src/theme';
 
-/**
- * Verify-email waiting state (S1.2, ticket 08).
- *
- * Reached when accepting an invitation returns 403 EMAIL_NOT_VERIFIED — a password sign-up trying to
- * join before verifying. It offers to resend the link and to re-check ("I've verified"), which forces
- * a fresh token carrying the updated claim so the retried accept passes the gate.
- *
- * This is deliberately NOT a 6-digit code screen (the 07/16 Figma mock's shape) — the shipped
- * mechanism is Firebase's verification LINK (`sendEmailVerification` / `sendOobCode VERIFY_EMAIL`),
- * and a code screen would mean hand-building an OTP system Firebase does not provide. The mock's
- * reconciliation is the backlogged story after S1.2.
- */
+
 export default function VerifyEmailScreen() {
   const router = useRouter();
   const [busy, setBusy] = useState<'idle' | 'resend' | 'check'>('idle');
@@ -40,7 +29,6 @@ export default function VerifyEmailScreen() {
     try {
       const verified = await authRepository.refreshVerification();
       if (verified) {
-        // Back to the inbox — the accept can now be retried and will pass the gate.
         router.back();
       } else {
         setMessage("Not verified yet. Tap the link in your email, then try again.");

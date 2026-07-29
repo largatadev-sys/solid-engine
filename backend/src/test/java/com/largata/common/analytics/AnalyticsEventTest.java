@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-/** The event value type (S0.3, ticket 04). */
+
 class AnalyticsEventTest {
 
     @Test
@@ -33,8 +33,6 @@ class AnalyticsEventTest {
 
     @Test
     void aBuilderCannotReachBackIntoAnEventItAlreadyBuilt() {
-        // The builder is reusable by shape; the events it made must not be. Without the defensive
-        // copy in the compact constructor, a later .with() would mutate an event already emitted.
         AnalyticsEvent.Builder builder = AnalyticsEvent.named("itinerary_created").with("a", 1);
         AnalyticsEvent built = builder.build();
 

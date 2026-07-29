@@ -8,17 +8,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * The domain's account (02-domain-model): the sole platform actor in v1, and what every future
- * foreign key points at.
- *
- * <p>Keyed to a Firebase identity by {@code firebaseUid} — the provider owns credentials, we own
- * identity (ADR-006). That indirection is the designed exit if Firebase is ever replaced.
- *
- * <p>{@code email} and {@code displayName} are a <strong>snapshot</strong> of the token's claims at
- * provisioning time, not a synced mirror (spec, decision 6d): a later change in Firebase does not
- * reach this row. Revisited at S1.2, where invites match by email.
- */
+
 @Entity
 @Table(name = "traveler")
 public class Traveler {
@@ -31,12 +21,7 @@ public class Traveler {
     @Column(nullable = false)
     private String email;
 
-    /**
-     * A human label — deliberately non-unique, and never a lookup key (02-domain-model). Two
-     * travelers named "Ana Silva" are two travelers named Ana Silva; disambiguation is the UI's job
-     * where it matters. If addressability is ever needed, that is a new concept (a handle), not a
-     * constraint bolted onto this field.
-     */
+
     @Column(name = "display_name", nullable = false)
     private String displayName;
 
@@ -44,7 +29,6 @@ public class Traveler {
     private Instant createdAt;
 
     protected Traveler() {
-        // JPA.
     }
 
     private Traveler(UUID id, String firebaseUid, String email, String displayName, Instant createdAt) {
@@ -55,10 +39,7 @@ public class Traveler {
         this.createdAt = createdAt;
     }
 
-    /**
-     * Mints a Traveler for a verified Firebase identity. The id is generated here, app-side (S0.1
-     * spec: UUIDv7, never DB-side), so it exists before persistence.
-     */
+
     static Traveler provision(String firebaseUid, String email, String displayName, Instant createdAt) {
         return new Traveler(UuidV7.generate(), firebaseUid, email, displayName, createdAt);
     }

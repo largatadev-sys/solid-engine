@@ -13,21 +13,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * Spec AC 8: a departing member's edit lease dies with their membership, in the same transaction.
- *
- * <p><strong>What would happen without it, and why that is the bug worth a test.</strong> Safety never
- * depended on this — the guard 404-masks an ex-member instantly, so they cannot write whatever the
- * lease says. The victim is everyone else: the lease row stays live for up to a full TTL, so the next
- * member to open the plan is told "«the person you just removed» is editing this itinerary right now".
- * The invariant being kept is <strong>a lease holder is always a member</strong>, and departure is the
- * first operation in the system able to break it.
- *
- * <p><strong>The clock is deliberately untouched.</strong> The real TTL is 3 minutes; every assertion
- * here runs inside seconds. So a passing test can only mean the release happened — expiry cannot have
- * rescued it. That is the discriminating-failure property this repo keeps re-learning to demand: delete
- * the {@code releaseHeldBy} call and this class fails, immediately and for the right reason.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class DepartureFreesEditLockIT extends PostgresTestBase {
@@ -47,13 +33,11 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
         String trip = createTrip(ownerToken);
         String memberToken = joinAsMember(ownerToken, trip);
 
-        // The member takes the lock, and the owner is correctly locked out (ADR-014: no force-take).
         acquire(memberToken, trip).expectStatus().isOk();
         acquire(ownerToken, trip).expectStatus().isEqualTo(409);
 
         remove(ownerToken, trip, travelerIdOf(memberToken)).expectStatus().isNoContent();
 
-        // No waiting: the lock is free the instant the membership ends.
         acquire(ownerToken, trip).expectStatus().isOk();
     }
 
@@ -64,30 +48,25 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
         String memberToken = joinAsMember(ownerToken, trip);
 
         acquire(memberToken, trip).expectStatus().isOk();
-        remove(memberToken, trip, travelerIdOf(memberToken)).expectStatus().isNoContent(); // leaves
+        remove(memberToken, trip, travelerIdOf(memberToken)).expectStatus().isNoContent();
 
         acquire(ownerToken, trip).expectStatus().isOk();
     }
 
     @Test
     void aDepartureLeavesSomebodyElsesLockAlone() {
-        // The release is targeted, not a blanket unlock: removing member B must not free the lock the
-        // owner is actively holding. The mirror of the test above, and the one that fails if the
-        // implementation ever "simplifies" to deleting the itinerary's lease row unconditionally.
         String ownerToken = verified();
         String trip = createTrip(ownerToken);
         String memberToken = joinAsMember(ownerToken, trip);
         String bystanderToken = joinAsMember(ownerToken, trip);
 
-        acquire(ownerToken, trip).expectStatus().isOk(); // the OWNER holds the lock
+        acquire(ownerToken, trip).expectStatus().isOk();
 
         remove(ownerToken, trip, travelerIdOf(memberToken)).expectStatus().isNoContent();
 
-        // Still locked by the owner — the bystander is refused exactly as before the removal.
         acquire(bystanderToken, trip).expectStatus().isEqualTo(409);
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
     private RestTestClient.ResponseSpec acquire(String token, String tripId) {
         return rest.post()

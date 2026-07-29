@@ -16,13 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * The workspace module's one entry point (ADR-002: modules are reached by service interface, never
- * by another module's tables).
- *
- * <p>S1.1 gives it exactly one method. The member-facing surface — invite, accept, remove, leave,
- * transfer ownership — arrives with the stories that own it (S1.2, S1.5, S1.6).
- */
+
 @Service
 public class WorkspaceService {
 
@@ -38,29 +32,10 @@ public class WorkspaceService {
         this.memberships = memberships;
     }
 
-    /**
-     * Opens the workspace around a newly-created itinerary, with its creator as {@code OWNER}.
-     *
-     * <p><strong>{@link Propagation#MANDATORY}, and that is the method's most important line.</strong>
-     * Artifact 03 requires that no ownerless window ever exists — the workspace and its owner
-     * membership must commit with the itinerary or not at all. {@code MANDATORY} makes that a
-     * property the caller <em>cannot get wrong</em>: called outside a transaction it throws rather
-     * than quietly opening its own and committing independently of an itinerary that may still roll
-     * back. {@code REQUIRED} (the default) would have been the silent version of this bug — and
-     * silence is what this codebase keeps paying for (S0.2's {@code getTokens()}, S0.4's inlining).
-     *
-     * <p>No {@code Membership} parameter and no guard call, deliberately: this is the act that
-     * <em>establishes</em> membership. There is nothing to authorize against until it returns —
-     * exactly the reasoning {@code ItineraryService.create} records for the same absence.
-     *
-     * @param formedAt the itinerary's creation instant — see {@link Workspace#formAround}
-     * @throws org.springframework.transaction.IllegalTransactionStateException if called without an
-     *     active transaction
-     */
+
     @Transactional(propagation = Propagation.MANDATORY)
     public void formAround(UUID itineraryId, UUID ownerTravelerId, Instant formedAt) {
         Workspace workspace = workspaces.save(Workspace.formAround(itineraryId, ownerTravelerId, formedAt));
-        // Ids only, never a title (P3). One line, on the operation that opens the walls.
         log.info(
                 "Workspace formed: id={} itineraryId={} ownerId={}",
                 workspace.id(),
@@ -68,24 +43,7 @@ public class WorkspaceService {
                 ownerTravelerId);
     }
 
-    /**
-     * Admits a traveler into a workspace as a {@code MEMBER} (S1.2, invite acceptance).
-     *
-     * <p><strong>{@link Propagation#MANDATORY}, for {@code formAround}'s reason.</strong> Accepting an
-     * invitation must write the membership row and flip the invitation's status in one transaction —
-     * a membership that commits while its invitation rolls back (or the reverse) is the silent
-     * half-state this codebase keeps paying for. {@code MANDATORY} makes it impossible to call this
-     * outside the caller's transaction: {@code InvitationService.accept} opens it, this joins it, and a
-     * stray call with no transaction throws rather than committing a membership on its own.
-     *
-     * <p>A single-row INSERT via {@code EntityManager.persist}, not the aggregate root: admitting one
-     * member to an existing workspace is one row, and persist gives the true-INSERT semantics the
-     * duplicate check and the accept-atomicity guarantee both need (see the body). {@code formAround}
-     * still goes through the root, because it writes a workspace and its owner as one new aggregate.
-     *
-     * @throws IllegalStateException if no workspace exists for the itinerary — an invariant breach
-     *     (INV: no itinerary without a workspace), not a user error, so it fails loud rather than 404s
-     */
+
     @Transactional(propagation = Propagation.MANDATORY)
     public void admitMember(UUID itineraryId, UUID travelerId, Instant joinedAt) {
         Workspace workspace =
@@ -95,90 +53,32 @@ public class WorkspaceService {
                                 () ->
                                         new IllegalStateException(
                                                 "No workspace for itinerary " + itineraryId + " — invariant breach"));
-        // persist + flush, NOT repository.save: an INSERT, unconditionally. Spring Data's save() does
-        // a *merge* for an assigned-id / composite-key entity (its isNew() reads the always-set id as
-        // "existing"), which for a duplicate would silently SELECT-then-UPDATE the existing row rather
-        // than fail — both the wrong semantics (admitting a member must never overwrite one) and the
-        // reason the accept-atomicity test saw no error. persist() schedules a true INSERT, so a
-        // duplicate hits the (workspace_id, traveler_id) primary key here, synchronously, and rolls
-        // the whole accept back. formAround still writes through the root (workspace + owner as one new
-        // aggregate); admitting one member to an existing workspace is a single-row insert.
         entityManager.persist(new Membership(workspace, travelerId, Role.MEMBER, joinedAt));
         entityManager.flush();
         log.info("Member admitted: itineraryId={} travelerId={}", itineraryId, travelerId);
     }
 
-    /**
-     * Mirrors the itinerary completing onto its workspace (S1.9 ticket 01): canon's {@code active →
-     * completed} edge, whose trigger Artifact 02 states as "mirrors the itinerary completing".
-     *
-     * <p><strong>{@link Propagation#MANDATORY}, for the reason every writer here records.</strong> The
-     * mirror is half of one act — the itinerary's own transition is the other — and a mirror that
-     * committed alone (or failed alone) would leave the two sides of a 1:1 disagreeing, which is the
-     * exact defect the column was designed to avoid.
-     *
-     * <p><strong>Why the mirror exists at all, since the value is derivable.</strong> Without it,
-     * {@code COMPLETED} would be a value nothing ever writes — documentation, not data — and the first
-     * reader to ask {@code WHERE state = 'COMPLETED'} would get zero rows with no way to tell "no
-     * completed trips" from "this value is never written". That indistinguishable-outcomes shape has
-     * cost this repo three separate investigations (S0.6's /gsi/button watcher, S1.1's deploy probe,
-     * V4's nearly-shipped {@code WHERE role = 'owner'} index). V13 backfills the rows that predate it.
-     *
-     * <p>Silent when no workspace exists rather than throwing, unlike {@link #admitMember}: this is a
-     * mirror riding along on someone else's act, so failing the traveler's completion because a
-     * derived value could not be updated would be the tail wagging the dog. The invariant that every
-     * itinerary has a workspace is defended at formation and by V5's backfill.
-     */
+
     @Transactional(propagation = Propagation.MANDATORY)
     public void markCompleted(UUID itineraryId) {
         workspaces.findByItineraryId(itineraryId).ifPresent(Workspace::markCompleted);
     }
 
-    /**
-     * Takes the workspace out of circulation (S1.9): {@code active | completed → archived}.
-     *
-     * <p><strong>{@link Propagation#MANDATORY}, for the reason every writer here records.</strong>
-     * Archiving is four writes in one act — this state flip, the edit-lease release, the pending
-     * invitations, the pending offer — and a partial archive is the half-state this codebase keeps
-     * paying for: a frozen workspace with live invitations into it, or live invitations into a trip that
-     * never froze.
-     *
-     * <p>Authority is <em>not</em> checked here — who may archive is {@code MembershipService}'s
-     * decision, made on the guard's {@link com.largata.common.authz.Membership}, exactly as {@link
-     * #removeMember} splits authority from the row write. What this method owns is the state machine's
-     * legality, which the aggregate enforces (see {@link Workspace#archive}).
-     *
-     * @throws IllegalStateException if already archived — the caller raises the domain 409 first, so
-     *     reaching here with an archived workspace is a bug
-     */
+
     @Transactional(propagation = Propagation.MANDATORY)
     public void archive(UUID itineraryId) {
         workspaceFor(itineraryId).archive();
         log.info("Workspace archived: itineraryId={}", itineraryId);
     }
 
-    /**
-     * Brings the workspace back (S1.9): {@code archived → active | completed}.
-     *
-     * <p><strong>The restored state is recomputed from the itinerary, never remembered</strong> — hence
-     * the parameter, and see {@link Workspace#unarchive} for why storing a "previous state" would be
-     * both the duplicated fact S1.7 rejected and a value that can drift while archived.
-     *
-     * @param itineraryIsCompleted whether the trip's itinerary currently reads {@code completed}
-     * @throws IllegalStateException if not archived — as {@link #archive}, the caller raises the 409
-     */
+
     @Transactional(propagation = Propagation.MANDATORY)
     public void unarchive(UUID itineraryId, boolean itineraryIsCompleted) {
         workspaceFor(itineraryId).unarchive(itineraryIsCompleted);
         log.info("Workspace unarchived: itineraryId={} completed={}", itineraryId, itineraryIsCompleted);
     }
 
-    /**
-     * The workspace around an itinerary, or a loud failure. Used by the writers above, which are only
-     * ever reached for a trip the guard already authorized — so a missing workspace is an invariant
-     * breach (INV: no itinerary without a workspace), not a user error. {@link #admitMember} fails the
-     * same way for the same reason.
-     */
+
     private Workspace workspaceFor(UUID itineraryId) {
         return workspaces
                 .findByItineraryId(itineraryId)
@@ -186,94 +86,31 @@ public class WorkspaceService {
                         "No workspace for itinerary " + itineraryId + " — invariant breach"));
     }
 
-    /**
-     * The state of the workspace around an itinerary, or empty if none exists (S1.9).
-     *
-     * <p>The read behind the write fence and the trip-list filter — the two readers whose absence kept
-     * this column deferred from S1.1 to S1.9. Empty is not "not archived": callers that must decide
-     * whether to freeze treat an absent workspace as an invariant breach, never as permission.
-     */
+
     @Transactional(readOnly = true)
     public Optional<WorkspaceState> stateOf(UUID itineraryId) {
         return workspaces.findByItineraryId(itineraryId).map(Workspace::state);
     }
 
-    /**
-     * Whether the trip is frozen (S1.9) — the fence's question and the read model's, in one call.
-     *
-     * <p><strong>A missing workspace answers {@code false}, and the direction is deliberate.</strong>
-     * This is a <em>projection</em> read (does the badge show? is the screen frozen?), reached only for
-     * trips the guard has already authorized, so an absent workspace is an invariant breach that {@link
-     * #stateOf} will surface loudly at any write. Answering "not archived" here degrades a display, while
-     * answering "archived" would freeze a live trip on a data glitch — the safe failure is the one that
-     * does not take a working trip away from its owner. The write fence resolves state through {@link
-     * #stateOf} instead, which distinguishes the two cases.
-     */
+
     @Transactional(readOnly = true)
     public boolean isArchived(UUID itineraryId) {
         return stateOf(itineraryId).map(WorkspaceState::isArchived).orElse(false);
     }
 
-    /** Whether a traveler already holds any membership in the workspace around an itinerary (S1.2). */
+
     @Transactional(readOnly = true)
     public boolean isMember(UUID itineraryId, UUID travelerId) {
         return memberships.findRole(travelerId, itineraryId).isPresent();
     }
 
-    /**
-     * A traveler's role in the workspace around an itinerary, or empty if they hold no membership
-     * (S1.5, the departure decision).
-     *
-     * <p>This is {@link #isMember} with the answer it already had: the same single indexed read, not
-     * discarding the role. Departure needs the role because INV-4 makes the owner's row undeletable
-     * (their exit is S1.6's transfer), and it needs "no row" distinguishable from "a row" because a
-     * DELETE of the already-departed is 204, not 404 (Artifact 05).
-     *
-     * <p><strong>Not a substitute for the guard.</strong> It answers about a <em>third party</em> — the
-     * removal target — which is a domain question, not an authorization one. The caller's own standing
-     * still arrives as a {@link com.largata.common.authz.Membership} the guard minted.
-     */
+
     @Transactional(readOnly = true)
     public Optional<Role> roleOf(UUID itineraryId, UUID travelerId) {
         return memberships.findRole(travelerId, itineraryId);
     }
 
-    /**
-     * Destroys a traveler's membership row — removal and leave, which are one act here (S1.5).
-     *
-     * <p><strong>{@link Propagation#MANDATORY}, for the reason {@code formAround} and {@code
-     * admitMember} record.</strong> A departure is not just this row: the departing traveler's edit
-     * lease is released in the same transaction (spec §3, so no plan is left locked by a ghost). Either
-     * both land or neither does, and {@code MANDATORY} makes that a property the caller cannot get
-     * wrong — called with no transaction it throws rather than quietly committing half a departure.
-     *
-     * <p><strong>Hard delete, decided at the grilling (2026-07-27) and forced by this table's shape.</strong>
-     * The row's identity is {@code (workspace, traveler)} with no surrogate key, so a soft-delete
-     * tombstone would collide with its own traveler on re-join, and every reader — {@link
-     * MembershipRepository#findRole}, V4's INV-4 partial index, {@link #membersOf} — would need a
-     * not-deleted filter it can never forget: the default-by-omission pattern Artifact 03 rejected.
-     * The cost is accepted knowingly: "was a member" has no durable record afterwards, and register #4
-     * carries that note for the review story that might have wanted it.
-     *
-     * <p>This method does not check <em>authority</em> — who may ask is {@code MembershipService}'s
-     * decision, made on the guard's {@link com.largata.common.authz.Membership} (Artifact 03). It does
-     * enforce one <em>invariant</em>, which is a different thing:
-     *
-     * <p><strong>The owner's row cannot be destroyed here, and the check belongs at this depth.</strong>
-     * INV-4 ("exactly one owner at all times") is one of the two Full-rigor zones in CLAUDE.md, and
-     * V4's partial unique index cannot defend it: that index enforces <em>at most</em> one owner, so
-     * deleting the last one passes every constraint in the database. Leaving the guarantee to the two
-     * {@code if}s in the calling module would mean the invariant holds only while every future caller
-     * remembers — the default-by-omission shape Artifact 03 rejected — and S1.6 is about to add the
-     * second caller. It fails loud rather than returning false, for {@code admitMember}'s reason: a
-     * caller that reaches here with the owner has a bug, and a silent no-op would report success while
-     * INV-4 quietly depended on luck. Ownership leaves a traveler by <em>transfer</em> (S1.6), never by
-     * deletion.
-     *
-     * @return whether a row was actually destroyed — false means it was already gone (an idempotent
-     *     repeat, or a lost race with a concurrent departure)
-     * @throws IllegalStateException if the target holds the {@code OWNER} role — an INV-4 breach
-     */
+
     @Transactional(propagation = Propagation.MANDATORY)
     public boolean removeMember(UUID itineraryId, UUID travelerId) {
         if (memberships.findRole(travelerId, itineraryId).filter(role -> role == Role.OWNER).isPresent()) {
@@ -282,35 +119,11 @@ public class WorkspaceService {
                             + itineraryId
                             + " — INV-4; ownership transfers, it is never deleted");
         }
-        // No log line here, deliberately: MembershipService logs this same outcome with the initiator
-        // attached, and P3's check is explicit that one business outcome logged in two layers is a
-        // violation. The richer line wins.
         return memberships.deleteMember(travelerId, itineraryId) > 0;
     }
 
-    /**
-     * Every itinerary this traveler is a member of — owned and joined alike (S1.6, ticket 03).
-     *
-     * <p>The seam that keeps My Trips membership-scoped without the itinerary module touching a
-     * membership table (ADR-002): ids cross, nothing else. The itinerary module pages and hydrates.
-     *
-     * <p><strong>The whole set, not a page.</strong> A traveler is on tens of trips, not thousands, so
-     * fetching their ids costs one indexed scan of a handful of rows — and the alternative (paging on
-     * this side) would move the keyset cursor into the workspace module, away from the ordering it
-     * describes. If the shape ever stops holding, the fix is a paged variant here, not a cross-module
-     * join there.
-     */
-    /**
-     * <strong>Archived or live, never both</strong> (S1.9) — My Trips asks for the live ones, the
-     * archived view for the rest. There is deliberately no unfiltered variant: the one that existed
-     * before S1.9 was removed with this change rather than left beside it, because its name is the
-     * obvious one to reach for and it would silently return both halves — the archive filter bypassed
-     * by whoever picked the shorter signature.
-     *
-     * <p>The filter lives on this side of the boundary because archive is a workspace fact (ADR-002)
-     * and because narrowing the id set leaves the itinerary module's keyset paging exactly as S1.6
-     * shipped it; {@link MembershipRepository#findItineraryIdsNotIn} carries the full reasoning.
-     */
+
+
     @Transactional(readOnly = true)
     public List<UUID> itineraryIdsFor(UUID travelerId, boolean archived) {
         return archived
@@ -319,43 +132,13 @@ public class WorkspaceService {
     }
 
 
-    /**
-     * The traveler who owns the workspace around an itinerary (S1.6). Empty only if no workspace exists
-     * — INV-4 guarantees a workspace always has exactly one owner.
-     *
-     * <p>Answers from the membership rows, which are the authority; {@code itinerary.owner_id} is the
-     * mirror they keep in step, never the source a transfer reads.
-     */
+
     @Transactional(readOnly = true)
     public Optional<UUID> ownerOf(UUID itineraryId) {
         return memberships.findOwnerTravelerId(itineraryId);
     }
 
-    /**
-     * Swaps ownership between the current owner and a member, atomically (S1.6 §6).
-     *
-     * <p><strong>{@link Propagation#MANDATORY}, for the reason every other writer here records.</strong>
-     * The swap is one third of a transfer — the itinerary's denormalised owner and the durable transfer
-     * record are the others — and a swap that commits alone would leave an itinerary whose {@code
-     * owner_id} names the wrong traveler with no record of why.
-     *
-     * <p><strong>Demote first, then promote, and the order is forced by V4's partial unique index.</strong>
-     * That index allows at most one {@code OWNER} row per workspace, evaluated per statement: promoting
-     * first would momentarily create a second owner and abort. Demote-then-promote passes through a
-     * momentarily <em>ownerless</em> workspace instead, which is invisible outside this transaction and
-     * — unlike two owners — is a state no constraint forbids and no reader can observe.
-     *
-     * <p><strong>Both halves are conditional, and both counts are checked.</strong> This is where INV-4
-     * is actually defended, one layer below whoever calls it (the pattern S1.5's review established for
-     * {@link #removeMember}): the demote only matches a row that is still {@code OWNER}, so a racing
-     * second transfer finds zero rows and fails loudly here rather than producing two owners or none.
-     * The failure is an {@link IllegalStateException} rather than a domain rejection because a caller
-     * that reaches this method with a stale idea of who owns the trip has a bug — the offer ladder above
-     * has already established the facts.
-     *
-     * @throws IllegalStateException if the named traveler is not the current owner, if the target holds
-     *     no membership, or if either write matches no row (a concurrent transfer won)
-     */
+
     @Transactional(propagation = Propagation.MANDATORY)
     public void transferOwnership(UUID itineraryId, UUID fromTravelerId, UUID toTravelerId) {
         if (fromTravelerId.equals(toTravelerId)) {
@@ -364,9 +147,6 @@ public class WorkspaceService {
         }
         int demoted = memberships.changeRole(fromTravelerId, itineraryId, Role.OWNER, Role.MEMBER);
         if (demoted != 1) {
-            // Zero means the row is gone or is no longer OWNER — the only way that happens is a
-            // concurrent transfer that got here first. Refusing keeps INV-4 true: one owner, and the
-            // other transaction's.
             throw new IllegalStateException(
                     "Refusing to transfer ownership of itinerary "
                             + itineraryId
@@ -376,9 +156,6 @@ public class WorkspaceService {
         }
         int promoted = memberships.changeRole(toTravelerId, itineraryId, Role.MEMBER, Role.OWNER);
         if (promoted != 1) {
-            // The target's membership vanished between the offer ladder's check and here (a concurrent
-            // departure). Fail loud: the alternative is a workspace with no owner at all — the one state
-            // INV-4 says can never exist, and the one V4's index cannot catch.
             throw new IllegalStateException(
                     "Refusing to leave itinerary "
                             + itineraryId
@@ -390,23 +167,19 @@ public class WorkspaceService {
                 "Ownership transferred: itineraryId={} from={} to={}", itineraryId, fromTravelerId, toTravelerId);
     }
 
-    /** The workspace id around an itinerary, or empty if none exists (S1.2, for invitation creation). */
+
     @Transactional(readOnly = true)
     public Optional<UUID> workspaceIdOf(UUID itineraryId) {
         return workspaces.findByItineraryId(itineraryId).map(Workspace::id);
     }
 
-    /** The members of the workspace around an itinerary, owner first (S1.2, the member list). */
+
     @Transactional(readOnly = true)
     public List<MembershipView> membersOf(UUID itineraryId) {
         return memberships.findMembers(itineraryId);
     }
 
-    /**
-     * Resolves a set of workspace ids to their itinerary ids (S1.2, the inbox composition): the inbox
-     * holds invitations keyed by {@code workspace_id}, and their trip titles live in the itinerary
-     * module keyed by itinerary id, so this is the one hop between them.
-     */
+
     @Transactional(readOnly = true)
     public Map<UUID, UUID> itineraryIdsByWorkspace(Collection<UUID> workspaceIds) {
         return workspaces.findAllById(workspaceIds).stream()

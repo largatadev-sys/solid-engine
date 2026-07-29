@@ -1,10 +1,6 @@
 import { dateToIso, isIsoDate, isoToDate } from '../src/itineraries/isoDate';
 
-/**
- * The ISO calendar-date helpers (S1.3, ticket 04). The point worth pinning: a calendar date is a day,
- * not an instant, so conversion must never shift the day across a timezone boundary — hence the UTC
- * round-trip.
- */
+
 
 describe('isIsoDate', () => {
   it('accepts a well-formed, real date', () => {

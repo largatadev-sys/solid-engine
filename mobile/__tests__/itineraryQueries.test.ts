@@ -11,17 +11,7 @@ import {
 } from '../src/query/itineraryQueries';
 import type { ItineraryResponse, Page } from '../src/types/api';
 
-/**
- * The query layer (S0.3, ticket 06) — ADR-001's "reads through a local store the network populates",
- * asserted rather than assumed.
- *
- * Driven through a real QueryClient with no renderer: the options objects hold every decision worth
- * testing, so this exercises the cache contract itself. (@testing-library/react-native 14 renders
- * nothing under jest-expo's preset — recorded in the ticket comments. The split it forced turned out
- * to be the better shape anyway.)
- *
- * Mocked at the repository boundary: what is under test is the cache, not the network.
- */
+
 
 jest.mock('../src/repositories/itineraryRepository', () => ({
   itineraryRepository: {
@@ -47,7 +37,7 @@ const { itineraryRepository } = jest.requireMock('../src/repositories/itineraryR
   };
 };
 
-/** The server's shape, nulls and all — see `formatDates.test.ts` for why that matters. */
+
 const trip = (id: string, title: string): ItineraryResponse => ({
   id,
   title,
@@ -78,15 +68,11 @@ describe('the list', () => {
 
     const data = await freshClient().fetchInfiniteQuery(myItinerariesOptions);
 
-    // undefined, not the string "undefined" — the server would try to decode that and answer 400.
     expect(itineraryRepository.fetchMine).toHaveBeenCalledWith(undefined);
     expect(data.pages[0]?.items[0]?.title).toBe('Lisbon');
   });
 
   it('threads the server-s cursor into the next page, untouched', async () => {
-    // `pages: 2` is what asks for a second page: fetchInfiniteQuery re-walks the traversal from the
-    // start, taking each page's cursor from the one before — which is exactly the threading under
-    // test. (Calling it twice without `pages` just refetches page one, and asserts nothing.)
     itineraryRepository.fetchMine
       .mockResolvedValueOnce({ items: [trip('2', 'second')], nextCursor: 'opaque-cursor' })
       .mockResolvedValueOnce({ items: [trip('1', 'first')] });
@@ -99,9 +85,6 @@ describe('the list', () => {
   });
 
   it('stops when the server sends no cursor back', () => {
-    // getNextPageParam is what "hasNextPage" is computed from: undefined means exhausted. Its other
-    // three arguments (all pages, all params, the current param) are unused by this implementation —
-    // the cursor comes from the last page and nowhere else — but the signature is the library's.
     const exhausted = { items: [] };
     const more = { items: [], nextCursor: 'more' };
 
@@ -119,13 +102,7 @@ describe('the archived view (S1.9)', () => {
     expect(itineraryRepository.fetchMine).toHaveBeenCalledWith(undefined, true);
   });
 
-  /**
-   * The load-bearing one: the two views must not share a cache entry.
-   *
-   * Without `archived` in the key, the archived view's pages would overwrite the default list's in the
-   * same slot — trips appearing to vanish and reappear depending on which screen was opened last. It
-   * would look like a server bug, not a cache-key one.
-   */
+
   it('keeps the two lists in separate cache entries', async () => {
     const client = freshClient();
     itineraryRepository.fetchMine
@@ -142,11 +119,7 @@ describe('the archived view (S1.9)', () => {
     expect(archived?.pages[0]?.items[0]?.title).toBe('An archived trip');
   });
 
-  /**
-   * And the other half of that: an archive must refresh *both* views, because the trip moves from one
-   * to the other. `lists()` — the prefix — is what makes one invalidation reach both; the per-view key
-   * would leave whichever screen the traveler is not looking at holding a row that has left it.
-   */
+
   it('invalidates both views when a trip is archived', async () => {
     const client = freshClient();
     itineraryRepository.fetchMine.mockResolvedValue({ items: [] });
@@ -162,11 +135,6 @@ describe('the archived view (S1.9)', () => {
 
 describe('one itinerary', () => {
   it('is seeded from the list-s cache — the point of the store', async () => {
-    // Opening a trip from the list is the only route into the detail screen, so the row is already
-    // in memory and the screen should not spinner for it. `initialData` is what carries that, and
-    // it is a useQuery-only concept (fetchQuery deliberately bypasses it), so the seeding *source*
-    // is what is asserted here — the one line that wires it into the options is not worth a
-    // renderer. What that line cannot get wrong, it also cannot hide.
     const client = freshClient();
     itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('abc', 'Lisbon')] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
@@ -203,8 +171,6 @@ describe('one itinerary', () => {
 
 describe('after creating', () => {
   it('marks the list stale so a new trip cannot be missing from it', async () => {
-    // The load-bearing behaviour: without the invalidation a traveler creates a trip, lands back on
-    // My Trips, and does not see it — the cache still holds the list from before it existed.
     const client = freshClient();
     itineraryRepository.fetchMine.mockResolvedValue({ items: [] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
@@ -236,20 +202,15 @@ describe('after a field edit (S1.3, ticket 04)', () => {
 
     await onItineraryUpdated(client, trip('trip-1', 'New name'));
 
-    // The detail cache holds the updated resource without a refetch...
     expect(client.getQueryData(itineraryKeys.one('trip-1'))).toEqual(
       expect.objectContaining({ title: 'New name' }),
     );
-    // ...and the list is stale, because the trip card shows the (possibly changed) title/dates.
     expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(true);
   });
 });
 
 describe('after a day changes', () => {
   it('marks the single trip stale so the embedded plan refetches (S1.3)', async () => {
-    // The plan lives in the one(id) cache; a day add/rename/delete makes it stale so the Daily
-    // Schedules screen refetches to truth. A delete renumbers server-side, so a refetch — not an
-    // optimistic guess — is the only way to show the right ordinals.
     const client = freshClient();
     itineraryRepository.fetchOne.mockResolvedValue(trip('trip-1', 'Palawan'));
     await client.fetchQuery(itineraryOptions('trip-1', client));

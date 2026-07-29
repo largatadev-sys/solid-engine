@@ -20,40 +20,12 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * <strong>The write fence, enumerated</strong> (S1.9 ticket 03, spec ACs 4 and 5) — the test that is
- * the fence's actual guarantee.
- *
- * <p><strong>Why this exists rather than trusting the call sites.</strong> {@code WriteFence} is called
- * explicitly, so no signature forces a future endpoint to consult it — unlike the guard, whose {@link
- * com.largata.common.authz.Membership} parameter makes a forgotten check a compile error. The
- * grilling accepted that residual risk with this test named as the mitigation: it walks <em>every</em>
- * mutating endpoint against an archived trip, so the day somebody adds one without the fence, this
- * fails.
- *
- * <p><strong>It has two outcomes by construction, which is what makes it a check.</strong> Everything
- * refuses <em>except</em> self-removal, which succeeds — the founder's rule at the grilling: acts on the
- * trip freeze, acts on your own membership do not. A fence test where every row returned the same thing
- * could not distinguish "correctly refused" from "endpoint does not exist, so 404" — the
- * indistinguishable-outcomes shape this repo has been burned by three times (S0.6's {@code /gsi/button}
- * watcher, S1.1's deploy probe, V4's nearly-shipped zero-matching index).
- *
- * <p><strong>Every request body here is one the validator accepts</strong>, deliberately — S1.5's
- * comment 5: Spring runs {@code @Valid} during argument resolution, <em>before</em> the controller body,
- * so an incomplete body answers 400 through a path that never consulted the fence at all. A fence test
- * full of 400s would pass while proving nothing.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class ArchiveWriteFenceIT extends PostgresTestBase {
 
-    /**
-     * A body the validator fully accepts — {@code title} and {@code destinations} are both required on
-     * {@code PATCH}. Named as a constant because getting it wrong is the failure mode this class exists
-     * to avoid: a 400 from {@code @Valid} is decided during argument resolution, before the controller
-     * body and therefore before the fence, so an incomplete body would make every probe pass through a
-     * path that never consulted the thing under test (S1.5's comment 5).
-     */
+
     private static final String VALID_ITINERARY_PATCH =
             """
             {"title":"Renamed while frozen","destinations":["Cebu"]}
@@ -70,30 +42,16 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
     }
 
-    /**
-     * Every act on the trip refuses with {@code TRIP_ARCHIVED} — plan content, lifecycle, the edit
-     * lease, invitations, ownership offers, and removing another member.
-     *
-     * <p>The fixture is built <em>live</em> and archived through the real endpoint, never by planting
-     * state: a fence proven against a hand-written {@code ARCHIVED} row would not prove that archiving
-     * actually produces the state the fence reads.
-     */
+
     @Test
     void everyActOnAnArchivedTripIsRefused() {
         Trip trip = liveTripWithTwoMembers();
         UUID dayId = firstDayOf(trip.id);
         UUID activityId = createActivity(trip.owner, trip.id, dayId);
-        // The owner holds the lease while live, so the plan-write attempts below fail on the fence
-        // rather than on the lock — otherwise a TRIP_ARCHIVED assertion could be an EDIT_LOCKED in
-        // disguise and the test would pass for the wrong reason.
         acquireLease(trip.owner, trip.id).expectStatus().isOk();
 
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        // --- plan content ---
-        // The full body, not a partial one: PATCH requires title + destinations, and a short body would
-        // answer 400 from @Valid during argument resolution — before the controller, so before the
-        // fence. That is S1.5's comment 5, and this line is where this test nearly fell into it.
         refused(patch(trip.owner, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH));
         refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/days", """
                 {"title":"A new day"}
@@ -122,21 +80,15 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                 "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId + "/move",
                 "{\"targetDayId\":\"" + dayId + "\"}"));
 
-        // --- lifecycle ---
         refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/start", null));
         refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/complete", null));
 
-        // --- the edit lease ---
         refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/edit-lock", null));
         refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/edit-lock/renew", null));
 
-        // --- invitations and offers (owner-side) ---
         refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/invitations", """
                 {"email":"someone@example.com"}
                 """));
-        // Revoking an invitation is invitation-addressed, so it needs a real pending row to aim at —
-        // one created while the trip was still live, above. Without this the endpoint would answer
-        // "no such invitation" and the probe would prove nothing about the fence.
         refused(post(trip.owner, "/v1/invitations/" + trip.pendingInvitationId + "/revoke", null));
         refused(post(
                 trip.owner,
@@ -144,28 +96,11 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                 "{\"travelerId\":\"" + trip.memberId + "\"}"));
         refused(delete(trip.owner, "/v1/itineraries/" + trip.id + "/ownership-offer"));
 
-        // --- removing somebody else ---
         refused(delete(trip.owner, "/v1/itineraries/" + trip.id + "/members/" + trip.memberId));
     }
 
-    /**
-     * <strong>The positive control: a member can always leave</strong> (spec decision 4).
-     *
-     * <p>This is the assertion that gives the class above a failure mode. It is also the rule itself:
-     * your relationship to a trip stays yours even when the trip is frozen — and without it a non-owner
-     * member of an archived trip would have no act available at all and no way to unarchive, stuck on
-     * somebody else's decision.
-     */
-    /**
-     * <strong>The second carve-out, recorded rather than implied:</strong> releasing the edit lock is
-     * <em>not</em> fenced, while acquiring and renewing are.
-     *
-     * <p>Acquire and renew claim the right to write a plan, which a frozen trip has none of. Release
-     * gives that right up — and archive has already deleted every lease, so a fence here would only
-     * refuse a client tidying up after itself, breaking {@code release}'s stated contract (a
-     * best-effort release on navigate-away must not fail) for no protective value. Asserted because a
-     * carve-out nobody tests is indistinguishable from a call site somebody forgot.
-     */
+
+
     @Test
     void releasingTheEditLockIsNotFencedThoughAcquiringIs() {
         Trip trip = liveTripWithTwoMembers();
@@ -187,12 +122,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         assertThat(membershipCountOn(trip.id)).as("they are genuinely gone, not merely told yes").isEqualTo(1);
     }
 
-    /**
-     * The four accept/decline doors are fenced <strong>structurally</strong>, by archive having voided
-     * every pending row (ticket 02) — no new check lives in their handlers. This asserts the outcome
-     * rather than trusting that reasoning: a pending invitation and a pending offer are created while
-     * the trip is live, the trip is archived, and neither can then be accepted.
-     */
+
     @Test
     void acceptAndDeclineAreClosedByVoidingRatherThanByTheFence() {
         Trip trip = liveTripWithTwoMembers();
@@ -202,10 +132,6 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        // No pending offer survives an archive, so both doors answer "there is nothing here" —
-        // OFFER_NOT_FOUND (404), not TRIP_ARCHIVED, and that is correct: the fence never ran because
-        // there was nothing left to refuse. The outcome is what matters; asserting the code proves it
-        // is this path rather than a coincidental 404 from somewhere else.
         post(trip.member, "/v1/itineraries/" + trip.id + "/ownership-offer/accept", null)
                 .expectStatus()
                 .isNotFound()
@@ -220,11 +146,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                 .isEqualTo("OFFER_NOT_FOUND");
     }
 
-    /**
-     * <strong>Authority still runs before the fence</strong>, so {@code TRIP_ARCHIVED} is only ever told
-     * to somebody entitled to act: a non-member gets the guard's 404 (learning nothing about the trip,
-     * archived or not), and a member attempting an owner-only act gets 403.
-     */
+
     @Test
     void authorityIsAnsweredBeforeTheFence() {
         Trip trip = liveTripWithTwoMembers();
@@ -242,7 +164,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                 .isForbidden();
     }
 
-    /** Unarchiving restores every act — the fence is a state, not a one-way door (spec AC 5). */
+
     @Test
     void unarchivingRestoresWritesForTheWholeRoster() {
         Trip trip = liveTripWithTwoMembers();
@@ -253,22 +175,15 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         patch(trip.member, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH).expectStatus().isOk();
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
-    /** Asserts one refusal — the status and the code, since a 409 alone could be any conflict. */
+
     private void refused(RestTestClient.ResponseSpec response) {
         response.expectStatus().isEqualTo(409).expectBody().jsonPath("$.code").isEqualTo("TRIP_ARCHIVED");
     }
 
     private record Trip(String id, String owner, String member, UUID memberId, String pendingInvitationId) {}
 
-    /**
-     * A live trip with two members <strong>and one pending invitation</strong>.
-     *
-     * <p>The invitation exists so the revoke probe has a real row to aim at. Without it the endpoint
-     * would answer "no such invitation" <em>before</em> the fence is reached — a refusal that looks
-     * like a pass while proving nothing about the thing under test.
-     */
+
     private Trip liveTripWithTwoMembers() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
@@ -392,7 +307,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                         "id"));
     }
 
-    /** A trip with one day already seeded, so the plan-write probes have something real to aim at. */
+
     private String createItinerary(String token) {
         byte[] created =
                 rest.post()

@@ -1,17 +1,6 @@
 import { formatDates } from '../src/itineraries/formatDates';
 
-/**
- * Date rendering (S0.3, ticket 07).
- *
- * **Every case here passes `null`, not `undefined`, and that is the whole point.** The first version
- * of this function checked `!== undefined` and had thirteen green tests written against objects
- * where an absent date meant `undefined`. The server sends `"startDate": null`. The device rendered
- * "null → null" for the dreamer's undated draft — the exact case the function exists for — while the
- * suite stayed green, because the tests and the wire disagreed about what "no date" looks like.
- *
- * The lesson, worth more than the fix: a test that builds its own input can only ever assert what
- * the author already believed. These use the server's shape.
- */
+
 
 describe('what the server actually sends', () => {
   it('renders both dates when the trip has them', () => {
@@ -31,7 +20,6 @@ describe('what the server actually sends', () => {
   });
 
   it('never renders the words null or undefined, whatever it is handed', () => {
-    // The regression itself: this is what shipped to the emulator.
     const everyShape = [
       { startDate: null, endDate: null },
       { startDate: '2027-01-10', endDate: null },

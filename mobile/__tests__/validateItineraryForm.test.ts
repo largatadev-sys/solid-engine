@@ -1,11 +1,6 @@
 import { validateItineraryEdit, validateItineraryForm } from '../src/itineraries/validateItineraryForm';
 
-/**
- * The create form's client-side rules (S0.3, ticket 07).
- *
- * These mirror the server's, and the interesting cases are the ones where "obviously invalid" is
- * wrong: a trip with no dates is a plan, not an incomplete form.
- */
+
 
 const valid = {
   title: 'Hokkaido in winter',
@@ -72,7 +67,6 @@ describe('what a plan is not allowed to be', () => {
   });
 
   it('rejects a date that looks right but does not exist', () => {
-    // The regex says shape; February says otherwise.
     expect(validateItineraryForm({ ...valid, startDate: '2027-02-31' })).toMatch(/2027-01-10/);
   });
 

@@ -16,34 +16,18 @@ import { useItinerary, useUpdateItinerary } from '../../../src/query/itineraryQu
 import type { UpdateItineraryRequest } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 
-/**
- * Edit itinerary fields (S1.3, ticket 04) — title, destinations, description, dates, on the create
- * form's layout (mock parity, spec §2). Any member may edit (the backend authorizes on membership).
- *
- * Two things this screen is the home of:
- * - **The date picker** (the S0.3 hand-typed-date debt, discharged): `DatePicker` is platform-forked —
- *   the native community picker on device, the browser-native `<input type="date">` on web. Dates stay
- *   optional (a someday trip has none), so each can be cleared.
- * - **Destinations as the list they are** (canon): add/remove rows, min one non-blank — the mock's
- *   single "Change…" field was a UX simplification (spec §Q4).
- *
- * Seeded from the plan cache (`useItinerary`), which the traveler already holds from the trip screen.
- */
+
 export default function EditItineraryScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data } = useItinerary(id);
   const update = useUpdateItinerary(id);
 
-  // The single-writer edit lock (S1.4, ADR-014): take it as the screen opens. If another member holds
-  // it — or we are offline — `useEditLock` shows the modal and we route back to the read-only plan;
-  // the lease renews itself while the screen is open and releases on unmount / save.
   const editLock = useEditLock(id);
   useEffect(() => {
     void editLock.acquire().then((granted) => {
       if (!granted) router.back();
     });
-    // Acquire exactly once, on entry — not on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -69,7 +53,7 @@ export default function EditItineraryScreen() {
     };
     update.mutate(request, {
       onSuccess: () => {
-        editLock.release(); // free the lock immediately on save (expiry would free it anyway)
+        editLock.release();
         router.back();
       },
     });
@@ -81,7 +65,7 @@ export default function EditItineraryScreen() {
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title: 'Edit trip' }} />
 
-      {/* Cover photo — S3.3 activates it (ticket 05 grey-out). */}
+      {}
       <GreyedMediaTile label="Cover photo" />
 
       <Field label="Trip title" value={title} onChangeText={setTitle} placeholder="Island Hopping in El Nido" />
@@ -130,8 +114,6 @@ export default function EditItineraryScreen() {
       <Pressable
         style={[styles.button, (update.isPending || editLock.state.kind !== 'held') && styles.buttonBusy]}
         onPress={submit}
-        // Can't save until we hold the edit lock (S1.4): while acquiring, or if denied, the button is
-        // inert — the traveler is on the read-only plan and the modal has already told them why.
         disabled={update.isPending || editLock.state.kind !== 'held'}
         accessibilityRole="button"
       >

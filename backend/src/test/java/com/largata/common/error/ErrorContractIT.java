@@ -21,20 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * Ticket 03's ACs: the taxonomy maps to statuses, every failure renders the Artifact 05 envelope,
- * and the traceId in that envelope appears in exactly one log line.
- *
- * <p>Errors are raised by {@link ThrowingTestController}, which exists only in test sources.
- *
- * <p><strong>Every request here carries a token from S0.2 on.</strong> Not a workaround: the
- * security config denies by default, and these routes are not health, so they are authenticated
- * like every real endpoint — which is exactly the state a production error path is raised in. The
- * alternative, permitting the test controller's paths in {@code SecurityConfig}, would have put a
- * test-only hole in production security config to keep a test convenient. (These eight tests
- * failing the moment {@code anyRequest().authenticated()} landed is default-deny working: a route
- * written before auth existed was secured without anyone remembering it.)
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import({ThrowingTestController.Config.class, TestJwtSupport.Config.class})
 class ErrorContractIT extends PostgresTestBase {
@@ -91,7 +78,6 @@ class ErrorContractIT extends PostgresTestBase {
 
     @Test
     void envelopeCarriesExactlyTheFourContractFields() {
-        // Artifact 05 defines {code, message, traceId, timestamp} — no more (no stack, no path).
         rest.get()
                 .uri(ThrowingTestController.BASE + "/not-found")
                 .exchange()
@@ -117,13 +103,6 @@ class ErrorContractIT extends PostgresTestBase {
 
     @Test
     void unknownRouteIs404InTheEnvelope() {
-        // Regression guard. This shipped as a 500 INTERNAL_ERROR and no test noticed — every test
-        // hit routes that exist. Found only by curling a nonexistent path against the composed
-        // stack at the story gate, which is precisely why the gate is mandatory.
-        //
-        // Wrong three ways as a 500: Artifact 05's table says 404; it logs at ERROR for every
-        // scanner and typo; and it leaks — a 500 for "no such route" vs a 404 for "hidden
-        // resource" tells a caller which is which, when Artifact 03 wants 404 to mask that.
         rest.get()
                 .uri("/v1/definitely-not-a-route")
                 .exchange()
@@ -140,7 +119,6 @@ class ErrorContractIT extends PostgresTestBase {
 
     @Test
     void unexpectedExceptionsAreOpaqueToTheClient() {
-        // The client learns nothing: no exception type, no message, no stack (P2).
         rest.get()
                 .uri(ThrowingTestController.BASE + "/unexpected")
                 .exchange()

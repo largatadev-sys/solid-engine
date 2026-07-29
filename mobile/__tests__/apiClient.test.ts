@@ -1,10 +1,7 @@
 import { ApiError } from '../src/api/ApiError';
 import { apiClient } from '../src/api/apiClient';
 
-/**
- * The apiClient's contract (06b §7 "boundary-call unit"): it returns typed data or throws exactly
- * one error type. Everything above it depends on that being true.
- */
+
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch as unknown as typeof fetch;
@@ -33,8 +30,6 @@ describe('apiClient', () => {
       }),
     );
 
-    // The UI branches on `code`; losing it in translation would force branching on `message`,
-    // which Artifact 05 forbids.
     await expect(apiClient.get('/v1/health')).rejects.toMatchObject({
       code: 'DEPENDENCY_UNAVAILABLE',
       status: 503,
@@ -90,7 +85,6 @@ describe('apiClient', () => {
   });
 
   it('deletes with NO body and NO Content-Type — a bodiless request never describes a payload (S1.3)', async () => {
-    // A 204 with an empty body: json() rejects, request tolerates it, and delete resolves to undefined.
     mockFetch.mockResolvedValue({
       ok: true,
       status: 204,
@@ -103,7 +97,6 @@ describe('apiClient', () => {
 
     const init = mockFetch.mock.calls[0]?.[1] as RequestInit & { headers: Record<string, string> };
     expect(init.method).toBe('DELETE');
-    // The bug this guards: sending `body: "undefined"` or a Content-Type for a payload that isn't there.
     expect(init.body).toBeUndefined();
     expect(init.headers['Content-Type']).toBeUndefined();
   });

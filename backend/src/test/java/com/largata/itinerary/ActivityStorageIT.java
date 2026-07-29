@@ -14,14 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/**
- * Ticket 02's storage-level ACs: an activity's fields round-trip, cost carries the null/0 distinction,
- * create appends at end-of-day, and the day-scoping masks (spec AC 7-adjacent, §fields).
- *
- * <p>Drives {@link ActivityService} and {@link DayService} directly with a synthesized {@link
- * Membership} — the storage-level counterpart to {@link DayStorageIT}. The wire, the guard's masking,
- * and the two-account LWW live in {@code ActivityContractIT}.
- */
+
 @SpringBootTest
 class ActivityStorageIT extends PostgresTestBase {
 
@@ -57,7 +50,6 @@ class ActivityStorageIT extends PostgresTestBase {
         assertThat(created.place()).isEqualTo("Lio Airport");
         assertThat(created.notes()).isEqualTo("Book the 8am slot.");
         assertThat(created.externalUrl()).isEqualTo("https://klook.com/x");
-        // Attribution is stamped on create — an activity is never un-attributed (spec Q7).
         assertThat(created.lastEditedBy()).isEqualTo(member.travelerId());
         assertThat(created.lastEditedAt()).isNotNull();
     }
@@ -67,11 +59,9 @@ class ActivityStorageIT extends PostgresTestBase {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
 
-        // Free: amount zero, currency present — a real, stated fact.
         ActivityView free =
                 activities.create(
                         member, dayId, fields("Sunset walk", BigDecimal.ZERO, "PHP"));
-        // Unstated: both null — the traveler said nothing about cost.
         ActivityView unstated = activities.create(member, dayId, fields("Wander", null, null));
 
         assertThat(free.costAmount()).isEqualByComparingTo("0");
@@ -80,12 +70,7 @@ class ActivityStorageIT extends PostgresTestBase {
         assertThat(unstated.costCurrency()).isNull();
     }
 
-    /**
-     * A cap a real client can hit answers 400, not 500 (whole-branch review). Ticket 03 reasoned this
-     * out for the reorder while tickets 01/02 left their caps throwing a raw {@code
-     * IllegalArgumentException} — which the global handler turns into an ERROR-logged 500, paging an
-     * operator for "that is as many activities as a day can hold".
-     */
+
     @Test
     void exceedingTheActivityCapIsAValidationFailureNotAServerError() {
         Membership member = tripWithOneDay();
@@ -120,8 +105,6 @@ class ActivityStorageIT extends PostgresTestBase {
         ActivityView second = activities.create(member, dayId, fields("Second", null, null));
         ActivityView third = activities.create(member, dayId, fields("Third", null, null));
 
-        // End-of-day sort: each appends after the last, so order is insertion order until ticket 03
-        // reorders. Values start at 0 and climb.
         assertThat(first.sortOrder()).isLessThan(second.sortOrder());
         assertThat(second.sortOrder()).isLessThan(third.sortOrder());
     }
@@ -164,7 +147,6 @@ class ActivityStorageIT extends PostgresTestBase {
         DayView dayB = days.appendDay(member, "Day B");
         ActivityView onB = activities.create(member, dayB.id(), fields("On B", null, null));
 
-        // Addressing B's activity under day A is a masking 404 — same shape as the guard's.
         assertThatThrownBy(() -> activities.edit(member, dayA, onB.id(), fields("x", null, null)))
                 .isInstanceOf(ActivityNotFoundException.class);
     }
@@ -190,10 +172,6 @@ class ActivityStorageIT extends PostgresTestBase {
         UUID owner = UUID.randomUUID();
         Itinerary trip = itineraries.create(owner, "Palawan", java.util.List.of("Palawan"), null, null, null, 1);
         Membership member = new Membership(owner, trip.id(), Role.OWNER);
-        // S1.4: plan writes now require the edit lease (ADR-014). These storage tests write as a single
-        // member, so the fixture takes the lock once and every write in the test holds it — the lock's
-        // enforcement is proven separately (EditLockEnforcementIT / EditLeaseExpiryIT), not re-asserted
-        // in every S1.3 storage test.
         editLease.acquire(member);
         return member;
     }

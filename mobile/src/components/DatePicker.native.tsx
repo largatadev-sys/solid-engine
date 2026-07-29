@@ -5,25 +5,12 @@ import type { DatePickerProps } from './datePickerContract';
 import { dateToIso, isoToDate } from '../itineraries/isoDate';
 import { colors, radii, spacing, typography } from '../theme';
 
-/**
- * DatePicker, native fork (S1.3, ticket 04) — the community `@react-native-community/datetimepicker`,
- * which discharges the S0.3 hand-typed-date debt on the device.
- *
- * Installed via `expo install` so it is autolinked and config-plugin-managed — no hand-edit of the
- * generated `android/` tree (the CNG rule; a manual edit would vanish at the next prebuild). The value
- * crosses the boundary as an ISO date string (the contract), converted to/from a `Date` only at the
- * picker's edge via `isoDate` helpers that keep the day timezone-stable.
- *
- * Tapping the field opens the platform picker; a "Clear" affordance sets the date back to unset (an
- * undated trip is legitimate, S0.3). On Android the picker is a one-shot dialog; on iOS it is inline —
- * `Platform.OS` gates that difference, the one place the fork cares which native OS it is.
- */
+
 export function DatePicker({ label, value, onChange }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const current = isoToDate(value);
 
   function handleChange(event: DateTimePickerEvent, picked?: Date) {
-    // Android fires 'dismissed' when the dialog is cancelled — keep the value, just close.
     if (Platform.OS === 'android') setOpen(false);
     if (event.type === 'set' && picked !== undefined) {
       onChange(dateToIso(picked));

@@ -15,14 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * Ticket 03's ACs over HTTP: the create/view contract, and the guard's first proof through the whole
- * chain.
- *
- * <p>The pagination ACs live in {@link ItineraryListIT} — one test class per file (Failsafe matches
- * {@code *IT} on the outer class only; a nested one is silently skipped, which looks exactly like
- * passing — CLAUDE.md's S0.1 gotcha).
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class ItineraryContractIT extends PostgresTestBase {
@@ -61,8 +54,6 @@ class ItineraryContractIT extends PostgresTestBase {
                 .isEqualTo("2027-01-10")
                 .jsonPath("$.endDate")
                 .isEqualTo("2027-01-20")
-                // The AC, asserted on the wire: born draft and private. Nothing in S0.3 can produce
-                // any other value — publishing is an explicit act at S4.1.
                 .jsonPath("$.state")
                 .isEqualTo("draft")
                 .jsonPath("$.visibility")
@@ -91,16 +82,7 @@ class ItineraryContractIT extends PostgresTestBase {
                 .isEqualTo("Lisbon");
     }
 
-    /**
-     * <strong>The story's headline AC</strong> (epic map: "another authenticated user → 404 on my
-     * private itinerary") and the guard's first proof — asserted as an <em>indistinguishability</em>
-     * rather than merely a status code.
-     *
-     * <p>A 404 alone would pass with an implementation that leaked: if the "not yours" answer
-     * differed from the "no such id" answer in code, message, or body length, a prober could learn
-     * which ids are real by the shape of the rejection. Artifact 03 requires the two to be one
-     * answer, so the test compares them byte for byte.
-     */
+
     @Test
     void anotherTravelerCannotSeeMyItineraryAndCannotTellItExists() {
         String mine = createItinerary(freshTraveler(), """
@@ -111,8 +93,6 @@ class ItineraryContractIT extends PostgresTestBase {
         byte[] notYours = fetchRejection(stranger, mine);
         byte[] noSuchThing = fetchRejection(stranger, UUID.randomUUID().toString());
 
-        // Only traceId and timestamp legitimately differ between two requests; everything the
-        // client can branch on must match.
         assertThat(codeIn(notYours)).isEqualTo("ITINERARY_NOT_FOUND").isEqualTo(codeIn(noSuchThing));
         assertThat(messageIn(notYours)).isEqualTo(messageIn(noSuchThing));
     }
@@ -134,8 +114,6 @@ class ItineraryContractIT extends PostgresTestBase {
 
     @Test
     void anItineraryWithNoDatesIsALegitimatePlan() {
-        // The dreamer's draft ("Japan, someday") and E4's fork both produce these — the reason dates
-        // are optional at all (spec, Q4).
         rest.post()
                 .uri("/v1/itineraries")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
@@ -155,7 +133,6 @@ class ItineraryContractIT extends PostgresTestBase {
 
     @Test
     void aStartDateWithoutAnEndDateIsALegitimatePlan() {
-        // "Departing June 3, open-ended" — the dates are independently settable, not a pair.
         rest.post()
                 .uri("/v1/itineraries")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
@@ -255,7 +232,6 @@ class ItineraryContractIT extends PostgresTestBase {
                 .expectStatus()
                 .isBadRequest()
                 .expectBody()
-                // The envelope, not a Spring default body: the client branches on code (Artifact 05).
                 .jsonPath("$.code")
                 .exists()
                 .jsonPath("$.message")
@@ -307,7 +283,7 @@ class ItineraryContractIT extends PostgresTestBase {
         return json.substring(start, json.indexOf('"', start));
     }
 
-    /** A token for a traveler nobody else in this run shares — provisioned on first contact. */
+
     private static String freshTraveler() {
         return TestJwtSupport.tokenFor("uid-" + UUID.randomUUID(), "traveler@example.com");
     }

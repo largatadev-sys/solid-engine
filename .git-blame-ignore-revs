@@ -1,0 +1,6 @@
+# Revisions that touched every line without changing any behaviour.
+# Use with:  git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub applies this automatically.
+
+# refactor(all): the sweep — 8,272 comment lines removed across 285 files (06b §10)
+77cc2073c6e699beca1fd6d7c964b69c061252f0

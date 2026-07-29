@@ -19,15 +19,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-/**
- * The DB-down half of the health contract (ticket 03): an unreachable datastore must surface as
- * 503 in the Artifact 05 envelope — never a stack trace, a Spring error page, or a raw JDBC
- * message.
- *
- * <p>Uses its own container rather than {@link com.largata.support.PostgresTestBase}'s shared one,
- * because the test deliberately kills it — a stopped container would break every other class
- * sharing it.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -71,9 +63,6 @@ class HealthUnavailableIT {
     @Test
     @Order(3)
     void theOutageIsLoggedExactlyOnce() {
-        // P2's floor, which holds at every dial: "never log the same error twice". The service
-        // translates and the handler logs; a catch-log-and-rethrow in between would double it.
-        // Regression guard — this was a real defect, found in review rather than by a test.
         ListAppender<ILoggingEvent> capture = new ListAppender<>();
         capture.start();
         Logger root = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
@@ -99,8 +88,6 @@ class HealthUnavailableIT {
     @Test
     @Order(4)
     void outageResponseNamesNoInternalDetail() {
-        // Already stopped by the previous test. The client must learn nothing about our topology:
-        // no driver name, no host, no SQLState, no exception class.
         String body =
                 new String(
                         rest().get()

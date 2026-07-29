@@ -5,20 +5,11 @@ import { useAcceptInvitation, useDeclineInvitation, useInbox } from '../query/in
 import { colors, radii, spacing, typography } from '../theme';
 import type { InboxInvitationResponse } from '../types/api';
 
-/**
- * The invitation inbox (S1.2, ticket 06) — pinned atop My Trips, the screen every traveler lands on.
- *
- * Pull-based, like everything in alpha (no notifications, founder ruling), so it has to live where it
- * will be seen. An empty inbox renders nothing — no header, no empty-state — so it is invisible until
- * there is something to act on. Accept navigates into the joined trip (the walls-open moment); a
- * 403 EMAIL_NOT_VERIFIED routes to the verify-waiting screen (ticket 08).
- */
+
 export function InvitationInbox() {
   const { data, isPending, isError } = useInbox();
   const invitations = data?.items ?? [];
 
-  // Quietly absent until there is something to show — the inbox never announces its own emptiness,
-  // and a transient load/error on a secondary surface must not disrupt My Trips.
   if (isPending || isError || invitations.length === 0) return null;
 
   return (
@@ -41,7 +32,6 @@ function InvitationCard({ invitation }: { invitation: InboxInvitationResponse })
     accept.mutate(invitation.id, {
       onSuccess: (result) => router.push(`/itineraries/${result.itineraryId}`),
       onError: (error) => {
-        // The one error worth a screen: verify your email, then retry. Everything else stays inline.
         if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {
           router.push('/verify-email');
         }

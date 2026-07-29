@@ -6,13 +6,7 @@ import { TripRow } from '../src/itineraries/TripRow';
 import { useMyItineraries } from '../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../src/theme';
 
-/**
- * My Trips — the signed-in home (S0.3).
- *
- * Reads through the query cache (ADR-001): a warm cache renders instantly and refreshes behind the
- * scenes, so this screen has no idea whether the data came from the network or memory. That
- * ignorance is the point — it is what makes E3's persistence an addition rather than a rewrite.
- */
+
 export default function MyTripsScreen() {
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMyItineraries();
@@ -46,7 +40,7 @@ export default function MyTripsScreen() {
       {isError && (
         <View style={styles.centered}>
           <Text style={styles.errorTitle}>Could not load your trips</Text>
-          {/* Branching on `code`, never on `message` (Artifact 05). */}
+          {}
           <Text style={styles.caption}>{error.message}</Text>
           <Pressable style={styles.button} onPress={() => void refetch()} accessibilityRole="button">
             <Text style={styles.buttonText}>Try again</Text>
@@ -62,24 +56,16 @@ export default function MyTripsScreen() {
           renderItem={({ item }) => <TripRow itinerary={item} />}
           onRefresh={() => void refetch()}
           refreshing={isRefetching}
-          // The cursor never surfaces here: the query layer owns it (Artifact 05 — opaque to
-          // clients). This screen only says "I need more".
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
           }}
           onEndReachedThreshold={0.5}
-          // The invitation inbox rides atop the list (S1.2): pinned where it will be seen, and
-          // invisible when empty (the component renders null). It scrolls with the trips beneath it.
           ListHeaderComponent={<InvitationInbox />}
           ListEmptyComponent={<EmptyState />}
           ListFooterComponent={
             <>
               {isFetchingNextPage && <ActivityIndicator color={colors.accent} style={styles.footer} />}
-              {/* The way to the archived trips (S1.9), at the foot of the list rather than in the
-                  header: archived trips are the rare destination, and a header slot would put a
-                  seldom-used door in front of the thing this screen is for. Always present — a
-                  traveler with none should still be able to confirm that, and a link that appears and
-                  disappears based on data reads as a bug. */}
+              {}
               <Link href="/itineraries/archived" asChild>
                 <Pressable style={styles.archivedLink} accessibilityRole="button">
                   <Text style={styles.archivedLinkText}>Archived trips</Text>
@@ -90,8 +76,7 @@ export default function MyTripsScreen() {
         />
       )}
 
-      {/* The four-tab shell (S1.3, ticket 05): Trips is live and current; the other tabs render
-          disabled and answer a tap with a graceful message — the mock's chrome, honestly. */}
+      {}
       <BottomNav active="trips" />
     </View>
   );

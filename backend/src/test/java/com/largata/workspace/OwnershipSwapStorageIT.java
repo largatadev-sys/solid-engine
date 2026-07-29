@@ -16,19 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/**
- * The INV-4 defence inside {@link WorkspaceService#transferOwnership} — spec AC 7 (S1.6).
- *
- * <p><strong>Why this exists as its own class, below the HTTP contract tests.</strong> The swap's
- * conditional demote ({@code WHERE role = 'OWNER'}, count checked) is what resolves two racing
- * transfers to exactly one owner. Every test above this layer drives one transfer at a time and would
- * stay green if that predicate were deleted — so the guard would be code nobody's tests defend, which
- * is the exact shape of the S1.1 partial-index near-miss the storage ITs exist to prevent.
- *
- * <p><strong>Verified to fail:</strong> removing {@code AND m.role = :expectedRole} from {@code
- * MembershipRepository.changeRole} makes {@link #aSecondTransferFromAStaleOwnerIsRefused} fail with two
- * owners on one workspace. A guard test that cannot fail is not a guard test.
- */
+
 @SpringBootTest
 class OwnershipSwapStorageIT extends PostgresTestBase {
 
@@ -36,7 +24,7 @@ class OwnershipSwapStorageIT extends PostgresTestBase {
     @Autowired private WorkspaceService workspaces;
     @Autowired private JdbcTemplate jdbc;
 
-    /** {@code transferOwnership} is {@code MANDATORY} — uncallable without a caller's transaction. */
+
     @Autowired private TransactionTemplate transactions;
 
     @Test
@@ -52,15 +40,7 @@ class OwnershipSwapStorageIT extends PostgresTestBase {
         assertThat(ownerCount(trip)).isEqualTo(1);
     }
 
-    /**
-     * The race, played out deterministically: two transfers both believing Alice is the owner. The
-     * second one's demote matches zero rows — Alice is a member by then — so it refuses instead of
-     * promoting a second owner or leaving the workspace with none.
-     *
-     * <p>Sequential rather than threaded on purpose: the interesting state is "the caller's idea of who
-     * owns this is stale", which two sequential calls reproduce exactly and reliably. Two threads would
-     * test the same predicate through a flaky harness.
-     */
+
     @Test
     void aSecondTransferFromAStaleOwnerIsRefused() {
         UUID alice = UUID.randomUUID();
@@ -77,17 +57,12 @@ class OwnershipSwapStorageIT extends PostgresTestBase {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("no longer holds it");
 
-        // The invariant survived the refusal: Bob owns it, alone, and Carol was not promoted.
         assertThat(ownerCount(trip)).isEqualTo(1);
         assertThat(roleOf(trip, bob)).isEqualTo("OWNER");
         assertThat(roleOf(trip, carol)).isEqualTo("MEMBER");
     }
 
-    /**
-     * The other half of the count check: the target vanished (a concurrent departure) between the
-     * offer ladder's check and the swap. Failing loud is the only correct answer — the alternative is a
-     * workspace with no owner at all, the one state V4's partial index cannot catch.
-     */
+
     @Test
     void aTransferToSomebodyWhoLeftLeavesTheOwnerInPlace() {
         UUID alice = UUID.randomUUID();
@@ -102,7 +77,6 @@ class OwnershipSwapStorageIT extends PostgresTestBase {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("ownerless");
 
-        // The transaction rolled back, so Alice's demote went with it — INV-4 intact.
         assertThat(ownerCount(trip)).isEqualTo(1);
         assertThat(roleOf(trip, alice)).isEqualTo("OWNER");
     }
@@ -121,9 +95,8 @@ class OwnershipSwapStorageIT extends PostgresTestBase {
         assertThat(ownerCount(trip)).isEqualTo(1);
     }
 
-    // --- fixtures -----------------------------------------------------------------------------------
 
-    /** A trip owned by the first traveler, with the rest admitted as members. */
+
     private UUID tripOwnedBy(UUID ownerId, UUID... memberIds) {
         Itinerary itinerary = itineraries.create(ownerId, "Nagano", List.of("Nagano"), null, null);
         for (UUID memberId : memberIds) {

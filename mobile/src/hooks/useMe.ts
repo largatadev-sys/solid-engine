@@ -8,10 +8,7 @@ export type MeState =
   | { kind: 'ok'; me: MeResponse }
   | { kind: 'error'; error: ApiError };
 
-/**
- * Binds the traveler repository to React, exactly as `useHealth` does for health — the screen
- * renders a state and knows nothing about transport.
- */
+
 export function useMe(): { state: MeState; refresh: () => void } {
   const [state, setState] = useState<MeState>({ kind: 'loading' });
 

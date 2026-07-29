@@ -31,21 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * The invitation module's one entry point (ADR-002) — email invite → accept → member (S1.2).
- *
- * <p><strong>This module sits above workspace, itinerary and identity and depends on all three</strong>
- * (see {@link Invitation}'s note on why it is not inside {@code workspace}): it composes the inbox and
- * member views from their service interfaces by id, never their tables, and it admits members through
- * {@link WorkspaceService} so membership rows are still written the one way they are ever written.
- *
- * <p><strong>Authority is split by addressing, matching the API.</strong> Owner-side acts (invite,
- * revoke, the pending list, the member list) are itinerary-addressed, so the controller resolves a
- * {@link Membership} through the guard and hands it here — role checks read {@code membership.isOwner()}
- * (this is role authority, not the entitlement seam). Invitee-side acts (accept, decline, inbox) are
- * invitation-addressed and the guard has no itinerary to resolve; their authority is the verified-email
- * match against the invitation row (grilling Q5–Q6), carried as a {@link VerifiedContact}.
- */
+
 @Service
 public class InvitationService {
 
@@ -79,27 +65,13 @@ public class InvitationService {
         this.analytics = analytics;
     }
 
-    // --- Owner side (itinerary-addressed; authority = the guard's Membership + owner role) ---------
 
-    /**
-     * Opens an invitation to an email and sends the notification (S1.2). Owner-only.
-     *
-     * <p>The rejection ladder, in order: not the owner → 403; the address is already a member → 409;
-     * a live invitation to it already exists → 409. An existing but <em>expired</em> pending row is
-     * flipped to {@code EXPIRED} first (lazy expiry realised on the one path where it matters — the
-     * re-invite), so the one-pending index never blocks a legitimate reissue.
-     *
-     * <p>The mail is dispatched after commit and its failure is isolated (see {@link #afterCommit}):
-     * a Resend outage degrades to "created, email failed, revoke + re-invite", never a 500.
-     */
+
     @Transactional
     public PendingInvitation invite(Membership owner, String rawEmail) {
         if (!owner.isOwner()) {
             throw new NotWorkspaceOwnerException();
         }
-        // S1.9: no new invitations into a frozen trip — the invitee could never act on one, and archive
-        // has just voided every invitation that was already pending. After the role check, so a member
-        // without standing is refused for that reason rather than learning the trip is archived.
         fence.requireWritable(owner);
         UUID itineraryId = owner.itineraryId();
         String email = normalize(rawEmail);
@@ -132,28 +104,17 @@ public class InvitationService {
         return new PendingInvitation(invitation.id(), email, invitation.createdAt(), invitation.expiresAt());
     }
 
-    /**
-     * Revokes a pending invitation (S1.2). Owner-only; the row survives as {@code REVOKED}.
-     *
-     * <p><strong>Invitation-addressed, so authority is resolved here, not in the controller.</strong>
-     * The other owner-side acts are itinerary-addressed and the controller guards them; revoke is
-     * addressed by invitation id, so this loads the invitation, finds its itinerary, and runs the
-     * caller through the guard — a non-member gets the guard's 404 (masking the invitation's
-     * existence), a member-not-owner gets 403. Same authority, resolved one layer deeper because the
-     * path shape gives the controller no itinerary to guard on.
-     */
+
     @Transactional
     public void revoke(UUID invitationId, UUID travelerId) {
         Invitation invitation =
                 invitations.findById(invitationId).orElseThrow(InvitationNotFoundException::new);
         UUID itineraryId =
                 workspaces.itineraryIdsByWorkspace(List.of(invitation.workspaceId())).get(invitation.workspaceId());
-        Membership caller = guard.requireMember(travelerId, itineraryId); // 404-masks a non-member
+        Membership caller = guard.requireMember(travelerId, itineraryId);
         if (!caller.isOwner()) {
             throw new NotWorkspaceOwnerException();
         }
-        // S1.9: revoking is an act on the trip's roster, so it freezes with the rest. Nothing is lost —
-        // archive already voided every pending invitation, which is what revoke would have been for.
         fence.requireWritable(caller);
         if (invitation.status() != InvitationStatus.PENDING) {
             throw new InvitationNotPendingException();
@@ -170,7 +131,7 @@ public class InvitationService {
                                         .build()));
     }
 
-    /** The workspace's pending invitations, newest first — any member may read (INV-1). */
+
     @Transactional(readOnly = true)
     public List<PendingInvitation> pendingInvitations(Membership member) {
         UUID workspaceId = workspaces.workspaceIdOf(member.itineraryId()).orElseThrow();
@@ -182,7 +143,7 @@ public class InvitationService {
                 .toList();
     }
 
-    /** The workspace's members, owner first, names composed from identity — any member may read (INV-1). */
+
     @Transactional(readOnly = true)
     public List<MemberSummary> members(Membership member) {
         List<MembershipView> rows = workspaces.membersOf(member.itineraryId());
@@ -198,14 +159,8 @@ public class InvitationService {
                 .toList();
     }
 
-    // --- Invitee side (invitation-addressed; authority = the verified-email match) ----------------
 
-    /**
-     * The caller's inbox: pending, unexpired invitations addressed to their <em>verified</em> email,
-     * newest first (S1.2). An unverified caller gets an empty inbox — an unverified claim identifies
-     * nobody (grilling Q5b), and returning matches would leak that an address was invited to someone
-     * who has not proven they own it.
-     */
+
     @Transactional(readOnly = true)
     public List<InboxInvitation> inbox(VerifiedContact contact) {
         if (!contact.verified() || contact.email() == null) {
@@ -237,19 +192,7 @@ public class InvitationService {
                 .toList();
     }
 
-    /**
-     * Accepts an invitation: the invitee joins as a {@code MEMBER} (S1.2, the joining transaction).
-     *
-     * <p>The gate, in order (grilling Q5b, Q6): the invitation must exist and be addressed to the
-     * caller's email — else 404, masking existence from anyone it is not for; the caller's email must
-     * be verified — else 403 {@code EMAIL_NOT_VERIFIED}; the invitation must be pending — else 409;
-     * and unexpired — else 409. Only then, in this one transaction, is the membership written and the
-     * status flipped, so a membership never commits while its invitation rolls back or the reverse.
-     *
-     * @param travelerId the accepting traveler (from {@code @CurrentTraveler}) — recorded as {@code
-     *     accepted_by} and made a member
-     * @return the itinerary id of the trip just joined, so the client can open it
-     */
+
     @Transactional
     public UUID accept(UUID invitationId, VerifiedContact contact, UUID travelerId) {
         Invitation invitation = liveInvitationFor(invitationId, contact);
@@ -258,11 +201,6 @@ public class InvitationService {
                 workspaces.itineraryIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
 
         Instant now = Instant.now();
-        // Flip and flush the invitation FIRST, then admit the member — one transaction, and this order
-        // is what makes the atomicity test meaningful: the status is already written when admitMember
-        // runs, so if the membership insert fails it is the *shared transaction's* rollback that undoes
-        // the flip. saveAndFlush, not a bare mutation: nested read-only calls above can leave the
-        // session in a flush mode a commit-time flush would skip (revoke was silently lost to this).
         invitation.accept(travelerId, now);
         invitations.saveAndFlush(invitation);
         workspaces.admitMember(itineraryId, travelerId, now);
@@ -278,7 +216,7 @@ public class InvitationService {
         return itineraryId;
     }
 
-    /** Declines an invitation (S1.2): same verified-email gate as accept, no membership created. */
+
     @Transactional
     public void decline(UUID invitationId, VerifiedContact contact) {
         Invitation invitation = liveInvitationFor(invitationId, contact);
@@ -291,24 +229,7 @@ public class InvitationService {
                                 AnalyticsEvent.named("invite_declined").with("invitationId", invitationId).build()));
     }
 
-    /**
-     * Voids every pending invitation in a workspace — the system's act, not the owner's (S1.9 archive).
-     *
-     * <p><strong>{@link Propagation#MANDATORY}, because this is one third of archiving.</strong> The
-     * workspace's state flip, the edit-lease release and this voiding must commit together: invitations
-     * voided against a workspace that stayed live would strand people the owner did mean to invite, and
-     * the reverse leaves inbox entries whose only possible outcome is a refusal.
-     *
-     * <p><strong>Called from {@code membership}, which is the module that owns cross-module acts</strong>
-     * (S1.5's precedent). This service does not know what archiving is and should not — it knows how to
-     * dissolve its own rows when told.
-     *
-     * <p>No event per invitation, deliberately: {@code itinerary_archived} already records the act, and
-     * a fan-out of one event per voided row would count the same decision several times in the funnel.
-     * The log line carries the count for operations.
-     *
-     * @return how many rows were voided — for the caller's log line, not for control flow
-     */
+
     @Transactional(propagation = Propagation.MANDATORY)
     public int voidPendingInvitations(UUID workspaceId) {
         List<Invitation> pending = invitations.findByWorkspaceIdAndStatus(workspaceId, InvitationStatus.PENDING);
@@ -322,17 +243,14 @@ public class InvitationService {
         return pending.size();
     }
 
-    // --- internals --------------------------------------------------------------------------------
 
-    /** Loads an invitation and runs the full verified-email + live-status gate shared by accept/decline. */
+
     private Invitation liveInvitationFor(UUID invitationId, VerifiedContact contact) {
         Invitation invitation =
                 invitations.findById(invitationId).orElseThrow(InvitationNotFoundException::new);
-        // Email match FIRST: a caller this invitation is not addressed to gets 404, learning nothing.
         if (contact.email() == null || !invitation.email().equals(normalize(contact.email()))) {
             throw new InvitationNotFoundException();
         }
-        // Then verification: the rightful-but-unverified recipient is told to verify (403, its own code).
         if (!contact.verified()) {
             throw new EmailNotVerifiedException();
         }
@@ -351,11 +269,7 @@ public class InvitationService {
                 .anyMatch(travelerId -> workspaces.isMember(itineraryId, travelerId));
     }
 
-    /**
-     * If a pending invitation to this address exists, either reject (still live) or expire it (past
-     * its window) so the reissue can proceed. The expiry flip is the lazy transition realised on the
-     * one path that needs it — nothing else would ever free the one-pending slot.
-     */
+
     private void reconcileExistingPending(UUID workspaceId, String email) {
         Optional<Invitation> existing =
                 invitations.findByWorkspaceIdAndEmailAndStatus(workspaceId, email, InvitationStatus.PENDING);
@@ -367,7 +281,7 @@ public class InvitationService {
             throw new InvitationAlreadyPendingException();
         }
         pending.expire(Instant.now());
-        invitations.saveAndFlush(pending); // flush now, so the new PENDING row does not collide with it
+        invitations.saveAndFlush(pending);
     }
 
     private String tripTitle(UUID itineraryId) {
@@ -387,8 +301,6 @@ public class InvitationService {
         try {
             mailer.send(mail);
         } catch (RuntimeException sendFailedButTheInviteIsRecoverable) {
-            // Send-after-commit, log-don't-retry (spec §Email): the invitation exists; a failed send
-            // is recoverable by revoke + re-invite. Never a 500, never a retry queue.
             log.warn("Invitation email failed to send: invitationId={}", mail.invitationId(), sendFailedButTheInviteIsRecoverable);
         }
     }
@@ -397,13 +309,7 @@ public class InvitationService {
         return rawEmail.strip().toLowerCase(Locale.ROOT);
     }
 
-    /**
-     * Runs an action once the current transaction has committed — mail dispatch and analytics both:
-     * neither should report or act on an invitation a later rollback erases, and both stay off the
-     * request's critical path. Delegates to the shared {@link AfterCommit} (extracted at S1.3 review,
-     * where this same block existed verbatim in three services); kept as a private method so the call
-     * sites read {@code afterCommit(...)} unchanged.
-     */
+
     private void afterCommit(Runnable action) {
         AfterCommit.run(action);
     }

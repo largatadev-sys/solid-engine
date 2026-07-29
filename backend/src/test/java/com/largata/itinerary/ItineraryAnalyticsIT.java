@@ -19,14 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * Ticket 04's ACs through the real chain: the events register #2's default set asks for, emitted
- * from a real request against a real database.
- *
- * <p>The sink's own behaviour is unit-tested ({@code LoggingAnalyticsTest}); what needs a running
- * app is the <em>call sites</em> — that a create emits exactly one event, after its transaction
- * commits, carrying no PII.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class ItineraryAnalyticsIT extends PostgresTestBase {
@@ -82,10 +75,6 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
 
     @Test
     void theEventNamesTheTripByIdAndLeaksNothingTheTravelerWrote() {
-        // P3, extended to analytics: a title and a destination are the traveler's words about their
-        // own life. The funnel needs "was a trip made, with how many destinations" — never "to
-        // where, called what". The sink is a log line today and a durable store before alpha; both
-        // outlive the request by longer than any of this is worth.
         create(
                 freshTraveler(),
                 """
@@ -104,9 +93,6 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
 
     @Test
     void aRejectedCreateEmitsNothing() {
-        // The event reports a committed row. A validation failure never reaches the service, so the
-        // funnel must not count it — an event for a trip that does not exist is a lie about the one
-        // number this event exists to give.
         rest.post()
                 .uri("/v1/itineraries")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
@@ -123,9 +109,6 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
 
     @Test
     void theOperationalLogLineNamesTheTripByIdAndLeaksNothingTheTravelerWrote() {
-        // 06b §4 wants an info line per successful operation; P3 says it names entities by id. This
-        // line is not the analytics event — it rides the app's own logger, for an operator reading
-        // what the system did — and it is held to the same no-PII rule.
         ListAppender<ILoggingEvent> appLog = new ListAppender<>();
         appLog.start();
         ch.qos.logback.classic.Logger serviceLogger =
@@ -147,8 +130,6 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
 
     @Test
     void eachLifecycleTransitionEmitsExactlyOneEventNamingTheTripAndTheOwner() {
-        // S1.7, spec AC 6. One event per act — the event's *name* carries which transition happened,
-        // so no state attribute is needed to disambiguate, and attributes stay ids only (P3).
         String owner = freshTraveler();
         String tripId = createAndReturnId(owner, """
                 {"title":"Osaka 2027","destinations":["Osaka"]}
@@ -175,15 +156,11 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
 
     @Test
     void aRefusedTransitionEmitsNothing() {
-        // The mirror of `aRejectedCreateEmitsNothing`, and the half AC 6 names explicitly: an illegal
-        // transition throws inside the aggregate before the row is saved, so a funnel counting
-        // "trips started" must not count an attempt that started nothing.
         String owner = freshTraveler();
         String tripId = createAndReturnId(owner, """
                 {"title":"Osaka 2027","destinations":["Osaka"]}
                 """);
 
-        // complete on a DRAFT — 409, no skip edge.
         rest.post()
                 .uri("/v1/itineraries/" + tripId + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
@@ -197,8 +174,6 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
 
     @Test
     void aFirstContactEmitsTheSignupEventOnceAndOnlyOnce() {
-        // The funnel's first stage, backfilled at S0.3. The second call re-reads an existing
-        // Traveler — two signups for one traveler would misreport the number the event exists for.
         String token = freshTraveler();
 
         callMe(token);
@@ -227,7 +202,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
                 .isCreated();
     }
 
-    /** Creates a trip and returns its id — the S1.7 tests act on the trip after creating it. */
+
     private String createAndReturnId(String token, String body) {
         byte[] created =
                 rest.post()

@@ -1,9 +1,6 @@
 import { itineraryRepository } from '../src/repositories/itineraryRepository';
 
-/**
- * The itinerary repository (S0.3, ticket 06) — mocked at the apiClient boundary, the same seam
- * `healthRepository.test.ts` mocks (S0.1 convention).
- */
+
 
 jest.mock('../src/api/apiClient', () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), put: jest.fn(), delete: jest.fn() },
@@ -23,7 +20,6 @@ describe('reading the list', () => {
 
     await itineraryRepository.fetchMine();
 
-    // Not "?cursor=undefined" — the server would try to decode that string and answer 400.
     expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries');
   });
 
@@ -36,8 +32,6 @@ describe('reading the list', () => {
   });
 
   it('escapes a cursor rather than trusting its characters', async () => {
-    // The cursor is opaque (Artifact 05): this layer must not assume base64url stays URL-safe, or
-    // the day the server's cursor changes shape, pages silently start 400ing.
     apiClient.get.mockResolvedValue({ items: [] });
 
     await itineraryRepository.fetchMine('a+b/c=');
@@ -54,9 +48,6 @@ describe('reading the list', () => {
   });
 
   it('leaves the default list’s URL byte-identical to the pre-S1.9 one', async () => {
-    // The proof that `?archived=` is additive (ADR-008): an unchanged request. If this ever grows an
-    // `archived=false`, the change is still *compatible* — but it stops being invisible, and an
-    // invisible change is the strongest form of the guarantee.
     apiClient.get.mockResolvedValue({ items: [] });
 
     await itineraryRepository.fetchMine(undefined, false);
@@ -127,9 +118,6 @@ describe('the lifecycle transitions (S1.7)', () => {
 
     await itineraryRepository.startTrip('trip-1');
 
-    // `undefined`, not `{}`: the act carries no data, and an empty object would be a body the server
-    // never asked for. Action endpoints, not a state field on PATCH — the two doors stay separate
-    // (spec decision 7), and under ADR-008 the path shipped here is the one carried forever.
     expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/start', undefined);
   });
 
@@ -142,8 +130,6 @@ describe('the lifecycle transitions (S1.7)', () => {
   });
 
   it('never reaches for PATCH to move state', async () => {
-    // The client half of the pin the backend asserts structurally: if a future edit routed a transition
-    // through the field-edit door, any member could start or complete somebody else's trip.
     apiClient.post.mockResolvedValue({ id: 'trip-1' });
 
     await itineraryRepository.startTrip('trip-1');
@@ -235,8 +221,6 @@ describe('edit lock (S1.4, ADR-014)', () => {
 
     await itineraryRepository.acquireEditLock('trip-1');
 
-    // A bodiless POST — undefined body, so the client sends no payload (matching the backend's
-    // no-body acquire endpoint).
     expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', undefined);
   });
 

@@ -7,11 +7,7 @@ import {
 } from '../src/query/invitationQueries';
 import type { InboxInvitationResponse } from '../src/types/api';
 
-/**
- * The invitation query layer (S1.2, ticket 06) — the cache contract asserted, not assumed. Same shape
- * as `itineraryQueries.test.ts`: driven through a real QueryClient, mocked at the repository boundary,
- * no renderer. The decision worth pinning is what accept invalidates — the inbox AND the trip list.
- */
+
 
 jest.mock('../src/repositories/invitationRepository', () => ({
   invitationRepository: {
@@ -59,13 +55,9 @@ describe('the inbox', () => {
 
 describe('after accepting', () => {
   it('invalidates BOTH the inbox and the trip list', async () => {
-    // The load-bearing behaviour: the accepted card must leave the inbox, and the joined trip must
-    // appear in My Trips. Missing the second leaves a traveler on a list that predates their
-    // membership — the walls opened, but the screen does not show it.
     const client = freshClient();
     invitationRepository.fetchInbox.mockResolvedValue({ items: [invite('1', 'Portugal 26')] });
     await client.fetchQuery(inboxOptions);
-    // Seed a (non-invalidated) list entry so we can observe it flip.
     client.setQueryData(itineraryKeys.list(), { pages: [], pageParams: [] });
     expect(client.getQueryState(invitationKeys.inbox())?.isInvalidated).toBe(false);
     expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(false);
@@ -79,8 +71,6 @@ describe('after accepting', () => {
 
 describe('the keys', () => {
   it('scope members and pending lists by itinerary', () => {
-    // Distinct itineraries must not share a cache entry, or one trip's members would show under
-    // another after a switch.
     expect(invitationKeys.members('a')).not.toEqual(invitationKeys.members('b'));
     expect(invitationKeys.pending('a')).not.toEqual(invitationKeys.pending('b'));
   });

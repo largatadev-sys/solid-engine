@@ -21,18 +21,7 @@ import {
 import type { ActivityRequest, ActivityResponse, DayResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 
-/**
- * Add / Edit Activity (S1.3, ticket 02, the 07/18 mock's frame 4).
- *
- * One screen for both: create when there is no `activityId`, edit when there is — because
- * last-write-wins means an edit sends the whole activity, exactly as create does (the same reason the
- * backend has one DTO). The mock's "Booking Integration" row is a single URL field here; the
- * multi-provider panel is parked to E6 (spec §links). Photos are ticket-05 greyed territory and not
- * on this screen yet.
- *
- * On edit, the form seeds from the activity already in the plan cache (`useItinerary`) — the traveler
- * arrived here from the Daily Schedules screen, which holds it, so there is no separate fetch.
- */
+
 export default function ActivityFormScreen() {
   const router = useRouter();
   const { id, dayId, activityId } = useLocalSearchParams<{ id: string; dayId: string; activityId?: string }>();
@@ -46,7 +35,6 @@ export default function ActivityFormScreen() {
   const move = useMoveActivity(id);
   const mutation = isEdit ? edit : create;
 
-  // The other days this activity could move to (edit only) — every day of the plan except its own.
   const otherDays = (data?.days ?? []).filter((d) => d.id !== dayId);
 
   const [title, setTitle] = useState(existing?.title ?? '');
@@ -64,7 +52,6 @@ export default function ActivityFormScreen() {
     setValidationError(problem);
     if (problem !== undefined) return;
 
-    // Only non-empty fields ride along; an empty one is omitted, which the server reads as "cleared".
     const request: ActivityRequest = {
       title: title.trim(),
       ...opt('timeOfDay', timeOfDay),
@@ -114,7 +101,7 @@ export default function ActivityFormScreen() {
       <Field label="Description" value={description} onChangeText={setDescription} placeholder="What happens here?" multiline />
       <Field label="Notes & tips (private)" value={notes} onChangeText={setNotes} placeholder="Anything for your group" multiline />
 
-      {/* Activity photos — the mock's photo grid; S3.3 activates it (ticket 05 grey-out). */}
+      {}
       <GreyedMediaTile label="Add photo" />
 
       <Field label="Booking link" value={externalUrl} onChangeText={setExternalUrl} placeholder="https://…" keyboardType="url" />
@@ -136,8 +123,7 @@ export default function ActivityFormScreen() {
         )}
       </Pressable>
 
-      {/* Move to another day (edit only) — the mock enters cross-day move from here, not a drag across
-          tabs (spec §mechanics). Tapping a day moves the activity to its end and returns. */}
+      {}
       {isEdit && otherDays.length > 0 && (
         <View style={styles.moveSection}>
           <Text style={styles.label}>Move to another day</Text>
@@ -162,12 +148,12 @@ export default function ActivityFormScreen() {
   );
 }
 
-/** A day's chip label: its title if it has one, else "Day N". */
+
 function dayLabel(day: DayResponse): string {
   return day.title !== null && day.title !== '' ? day.title : `Day ${day.ordinal}`;
 }
 
-/** Finds the activity being edited in the cached plan, or undefined when creating. */
+
 function findActivity(
   days: ItineraryDays | undefined,
   dayId: string,
@@ -179,7 +165,7 @@ function findActivity(
 
 type ItineraryDays = NonNullable<ReturnType<typeof useItinerary>['data']>['days'];
 
-/** A form field maps to a request key only when non-empty; empty means "omit" (clears on edit). */
+
 function opt(key: keyof ActivityRequest, value: string): Partial<ActivityRequest> {
   return value.trim() !== '' ? { [key]: value.trim() } : {};
 }

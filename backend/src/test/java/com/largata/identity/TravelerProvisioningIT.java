@@ -16,13 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/**
- * Ticket 02's ACs at the service seam: provisioning happens once and only once, whatever the
- * concurrency, because the database says so.
- *
- * <p>The HTTP-level ACs (envelope shape, the /me contract) live in {@link
- * com.largata.identity.web.MeContractIT}; this class is about the invariant underneath them.
- */
+
 @SpringBootTest
 @Import(TestJwtSupport.Config.class)
 class TravelerProvisioningIT extends PostgresTestBase {
@@ -55,14 +49,7 @@ class TravelerProvisioningIT extends PostgresTestBase {
         assertThat(rowCountFor(uid)).isEqualTo(1);
     }
 
-    /**
-     * The race the UNIQUE constraint exists for (spec, decision 6b). Both threads read "missing"
-     * and both try to insert; exactly one row must exist and both callers must get it.
-     *
-     * <p>Sixteen concurrent callers, not two: the interleaving that breaks a check-then-insert is
-     * narrow, and two threads can miss it often enough to pass a broken implementation. This does
-     * not prove the absence of a race — no test can — but it fails loudly against the naive version.
-     */
+
     @Test
     void concurrentFirstContactsYieldExactlyOneTraveler() throws Exception {
         String uid = freshUid();
@@ -98,7 +85,6 @@ class TravelerProvisioningIT extends PostgresTestBase {
 
     @Test
     void emailSignUpFallsBackToTheEmailLocalPart() {
-        // No name claim: the email sign-up shape (spec, decision 6c).
         String uid = freshUid();
 
         Traveler traveler = travelers.getOrProvision(TravelerClaims.of(uid, "ana.silva@example.com", null));
@@ -108,9 +94,6 @@ class TravelerProvisioningIT extends PostgresTestBase {
 
     @Test
     void displayNamesCollideAndThatIsAllowed() {
-        // The fallback guarantees collisions — ana@gmail and ana@yahoo both yield "ana". If display
-        // name were unique (the instinct this test exists to refute), the second traveler's very
-        // first authenticated request would fail on a cosmetic field.
         Traveler first = travelers.getOrProvision(TravelerClaims.of(freshUid(), "ana@gmail.example", null));
         Traveler second = travelers.getOrProvision(TravelerClaims.of(freshUid(), "ana@yahoo.example", null));
 
@@ -121,8 +104,6 @@ class TravelerProvisioningIT extends PostgresTestBase {
 
     @Test
     void flywayRanTheTravelerMigration() {
-        // The S0.1 lesson: every other test here would pass on a hand-created table. Only asserting
-        // the history proves the migration pipeline is what built the schema.
         Integer applied =
                 jdbc.queryForObject(
                         "SELECT count(*) FROM flyway_schema_history WHERE version = '2' AND success = true",
@@ -132,8 +113,6 @@ class TravelerProvisioningIT extends PostgresTestBase {
     }
 
     private String freshUid() {
-        // Each test gets its own uid: the container is shared across the whole run (singleton
-        // pattern), so tests that reused a uid would pass or fail depending on their order.
         return "uid-" + UUID.randomUUID();
     }
 

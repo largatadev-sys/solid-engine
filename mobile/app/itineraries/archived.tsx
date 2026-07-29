@@ -4,22 +4,7 @@ import { TripRow } from '../../src/itineraries/TripRow';
 import { useArchivedItineraries } from '../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../src/theme';
 
-/**
- * Archived trips (S1.9) — My Trips asking the other half of the question.
- *
- * <p><strong>Its own route rather than a toggle on My Trips</strong>, for two reasons. The two views
- * are separate cache entries with independent cursors, so a toggle would have to reset paging state on
- * every flip; and archiving is meant to make the main list shorter, which a filter chip sitting
- * permanently at its top quietly undoes.
- *
- * <p><strong>Members reach it too, not just owners.</strong> An archived trip stays visible to everyone
- * on it — hiding it from members would repeat, one level up, the failure S1.5 had to fix in copy: a
- * trip vanishing with no explanation reads as data loss rather than a state change. They see it, and
- * the trip screen tells them why it is frozen.
- *
- * <p>Rows are the shared {@link TripRow}, so an archived trip's card is identical to a live one's
- * except for the badge that distinguishes them — the point of extracting it.
- */
+
 export default function ArchivedTripsScreen() {
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useArchivedItineraries();
@@ -35,7 +20,7 @@ export default function ArchivedTripsScreen() {
       {isError && (
         <View style={styles.centered}>
           <Text style={styles.errorTitle}>Could not load your archived trips</Text>
-          {/* Branching on `code`, never on `message` (Artifact 05). */}
+          {}
           <Text style={styles.caption}>{error.message}</Text>
           <Pressable style={styles.button} onPress={() => void refetch()} accessibilityRole="button">
             <Text style={styles.buttonText}>Try again</Text>
@@ -51,7 +36,6 @@ export default function ArchivedTripsScreen() {
           renderItem={({ item }) => <TripRow itinerary={item} />}
           onRefresh={() => void refetch()}
           refreshing={isRefetching}
-          // The cursor stays in the query layer here as everywhere (Artifact 05 — opaque to clients).
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
           }}
@@ -66,10 +50,7 @@ export default function ArchivedTripsScreen() {
   );
 }
 
-/**
- * The empty state explains what archiving is *for*, because the likeliest visitor here is someone who
- * followed the link to find out — not someone looking for a trip they know is here.
- */
+
 function EmptyState() {
   return (
     <View style={styles.empty}>

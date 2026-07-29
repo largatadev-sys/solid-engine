@@ -24,22 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * The itinerary endpoints — the first domain surface in the product, and the first behind the
- * authorization guard (Artifact 03).
- *
- * <p><strong>What this class does not contain</strong> is the point of the story: no ownership
- * check, no {@code if (!itinerary.ownerId().equals(traveler.id()))}, no status decision, no error
- * response. Authority is resolved by the guard and carried as a {@link Membership}; failures become
- * envelopes at the one translation boundary. A controller is transport — it maps HTTP to a service
- * call and back (P6).
- *
- * <p><strong>It fronts two modules from S1.9</strong>, the way {@code TripMembershipController} has
- * fronted two since S1.5 and for the same reason: archive is itinerary-addressed like everything else
- * here, but the act spans workspace state, the edit lease and pending invitations, so its service
- * lives in the coordinator module. A controller composing services is transport doing its job — the
- * module boundary that matters is below it.
- */
+
 @RestController
 @RequestMapping("/v1/itineraries")
 class ItineraryController {
@@ -55,11 +40,7 @@ class ItineraryController {
         this.guard = guard;
     }
 
-    /**
-     * Creates an itinerary. The response carries the day skeleton {@code durationDays} just seeded —
-     * see {@link ItineraryService#createWithPlan} for why omitting it silently broke the client's
-     * cache seeding.
-     */
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     ItineraryResponse create(@CurrentTraveler Traveler traveler, @Valid @RequestBody CreateItineraryRequest request) {
@@ -75,13 +56,7 @@ class ItineraryController {
         return ItineraryResponse.of(created.itinerary(), created.days());
     }
 
-    /**
-     * One itinerary — 404 for both "no such itinerary" and "not yours", indistinguishably (the
-     * guard's rejection; Artifact 03's masking rule).
-     *
-     * <p>The two lines below are the shape every workspace-scoped read copies: guard first, then a
-     * service call that cannot happen without what the guard returned.
-     */
+
     @GetMapping("/{id}")
     ItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
@@ -89,12 +64,7 @@ class ItineraryController {
         return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
     }
 
-    /**
-     * Edits the itinerary's own fields (S1.3, ticket 04): title, destinations, description, dates.
-     * Any member — the guard resolves a {@link Membership} and the service authorizes on it; no owner
-     * check, because members shape the plan (spec Q8). The response carries the itinerary with its
-     * plan re-embedded, so the client holds the whole updated resource.
-     */
+
     @PatchMapping("/{id}")
     ItineraryResponse update(
             @CurrentTraveler Traveler traveler,
@@ -112,20 +82,7 @@ class ItineraryController {
         return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
     }
 
-    /**
-     * Starts the trip (S1.7): {@code draft → active}. Owner-only — the guard resolves a {@link
-     * Membership} and the service authorizes the role on it; no ownership check here, as always.
-     *
-     * <p><strong>An action endpoint, not a state field on {@link #update}</strong> (spec decision 7).
-     * The repo's idiom for an act with no payload ({@code /accept}, {@code /renew}, {@code /move}), and
-     * the separation is load-bearing: {@code PATCH} is the member-writable field door, this is the
-     * owner-only lifecycle door, and {@code ItineraryLifecycleStorageIT} pins that they stay separate
-     * — it asserts {@code UpdateItineraryRequest}'s component list carries no lifecycle field, so the
-     * day someone adds one, that test fails. No request body — the act carries no data.
-     *
-     * <p>Returns 200 with the whole updated resource, plan embedded, so the client re-renders from one
-     * response rather than transitioning and then refetching.
-     */
+
     @PostMapping("/{id}/start")
     ItineraryResponse start(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
@@ -134,10 +91,7 @@ class ItineraryController {
         return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
     }
 
-    /**
-     * Marks the trip complete (S1.7): {@code active → completed}. Owner-only, same shape as {@link
-     * #start}; completing from {@code draft} is a 409, not a shortcut (the machine has no skip edge).
-     */
+
     @PostMapping("/{id}/complete")
     ItineraryResponse complete(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
@@ -146,23 +100,7 @@ class ItineraryController {
         return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
     }
 
-    /**
-     * The caller's own itineraries, newest first — Artifact 05's one pagination shape, and the
-     * reference implementation every later list follows.
-     *
-     * <p>No guard call: a list has no single object to authorize, and the owner filter inside the
-     * query is the authorization (see {@link ItineraryService#listMine}). Never 404s — an empty list
-     * is a result, not an absence.
-     *
-     * <p><strong>{@code archived} defaults to false</strong> (S1.9), which is what makes the parameter
-     * additive under ADR-008: every pre-S1.9 client sends nothing and keeps getting exactly the list it
-     * got before. {@code ?archived=true} is the archived view — for members as well as the owner, since
-     * hiding an archived trip from the people on it would repeat, one level up, the "reads as data loss"
-     * failure S1.5 had to fix in copy.
-     *
-     * <p>Every row in a page carries the same {@code archived} value as the request that asked for it —
-     * the filter guarantees it, so the flag is the parameter rather than a per-row lookup.
-     */
+
     @GetMapping
     Page<ItineraryResponse> listMine(
             @CurrentTraveler Traveler traveler,
@@ -174,22 +112,7 @@ class ItineraryController {
                 .map(itinerary -> ItineraryResponse.of(itinerary, List.of(), archived));
     }
 
-    /**
-     * Takes the trip out of circulation (S1.9): the workspace freezes and everything pending against it
-     * dissolves. Owner-only — the guard resolves a {@link Membership}, {@code MembershipService}
-     * authorizes the role on it, as with every governance act.
-     *
-     * <p><strong>An action endpoint, not {@code DELETE}</strong> (spec decision 7). A {@code DELETE} that
-     * archives would lie in the contract, fight Artifact 05's "DELETE → 204, always, idempotent" (which
-     * cannot carry the 409 an illegal transition needs), and — under ADR-008 — permanently spend the verb
-     * that permanent deletion is the natural owner of, should it ever leave the backlog.
-     *
-     * <p><strong>Served from this controller though the service lives in {@code membership}.</strong>
-     * The act is itinerary-addressed like the rest of the trip surface, and {@code TripMembershipController}
-     * set the precedent that a controller composing two modules' services is transport doing its job —
-     * the boundary that matters is below it. Archive genuinely spans three modules (workspace state, the
-     * edit lease, pending invitations), which is why the service sits in the coordinator module.
-     */
+
     @PostMapping("/{id}/archive")
     ItineraryResponse archive(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
@@ -198,14 +121,7 @@ class ItineraryController {
         return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
     }
 
-    /**
-     * Brings an archived trip back (S1.9): {@code archived → active | completed}, the restored state
-     * recomputed from the itinerary. Owner-only, same shape as {@link #archive}; unarchiving a live trip
-     * is a 409.
-     *
-     * <p>Nothing that died at archive returns — not the edit lease, not the voided invitations or offer.
-     * Unarchive restores the trip, not the moment (spec decisions 12–13).
-     */
+
     @PostMapping("/{id}/unarchive")
     ItineraryResponse unarchive(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);

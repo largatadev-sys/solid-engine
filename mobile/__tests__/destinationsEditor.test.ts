@@ -5,10 +5,7 @@ import {
   setDestination,
 } from '../src/itineraries/destinationsEditor';
 
-/**
- * The destinations-list edit operations (S1.3, ticket 04) — the row add/remove/edit round-trip AC 3
- * names, tested without a renderer (the `reorderActivityIds` pattern). None of these mutate the input.
- */
+
 
 describe('destinationsEditor', () => {
   it('adds an empty row to the end', () => {
@@ -33,8 +30,8 @@ describe('destinationsEditor', () => {
 
   it('round-trips add → edit → clean the way the screen uses them', () => {
     let rows = ['Palawan'];
-    rows = addDestination(rows); // ['Palawan', '']
-    rows = setDestination(rows, 1, 'El Nido'); // ['Palawan', 'El Nido']
+    rows = addDestination(rows);
+    rows = setDestination(rows, 1, 'El Nido');
     expect(cleanDestinations(rows)).toEqual(['Palawan', 'El Nido']);
   });
 

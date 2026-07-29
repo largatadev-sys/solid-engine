@@ -17,24 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * The S1.4 enforcement AC over HTTP (ticket 02, spec ACs 1, 6): a plan write without the edit lock is
- * refused with {@code 409 EDIT_LOCKED}, and the same write with the lock held succeeds — proven on a
- * representative write of <strong>every</strong> plan-write family, because the lock is only real if
- * no family was missed.
- *
- * <p><strong>This is the test the reversed S1.3 last-write-wins test became.</strong> Where the old
- * ActivityContractIT test pinned the <em>absence</em> of any conflict surface, this pins its presence:
- * server-side, on the itinerary field edit, day append/rename/delete, and activity
- * create/edit/delete/reorder/move. A second member holding the lock is what makes each "without the
- * lock" case real (rather than "no lock exists"): member B holds it, so owner A — who is not the
- * holder — is refused; then A takes the lock (B's is expired-or-released is not needed, A simply can't
- * take a live one, so B releases) and succeeds.
- *
- * <p>The guard runs before the lock (ADR-011): a non-member is 404-masked and never sees a lock
- * answer — that ordering is asserted in {@code EditLeaseContractIT} and the per-family contract ITs;
- * here every actor is a real member, so the only question is who holds the lease.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class EditLockEnforcementIT extends PostgresTestBase {
@@ -57,23 +40,15 @@ class EditLockEnforcementIT extends PostgresTestBase {
         UUID dayId = firstDayId(tripId);
         String blockerToken = admitMemberTo(tripId);
 
-        // A second member takes the lock. Now the owner holds no lease — every write must be refused.
         lock(blockerToken, tripId);
 
-        // 1. Itinerary field edit.
         assertLockedWrite(HttpMethod.PATCH, "/v1/itineraries/" + tripId, ownerToken,
                 "{\"title\":\"x\",\"destinations\":[\"y\"]}");
-        // 2. Day append.
         assertLockedWrite(HttpMethod.POST, "/v1/itineraries/" + tripId + "/days", ownerToken, "{}");
-        // 3. Day rename.
         assertLockedWrite(HttpMethod.PATCH, "/v1/itineraries/" + tripId + "/days/" + dayId, ownerToken,
                 "{\"title\":\"x\"}");
-        // 4. Day delete.
         assertLockedWrite(HttpMethod.DELETE, "/v1/itineraries/" + tripId + "/days/" + dayId, ownerToken, null);
-        // 5. Activity create.
         assertLockedWrite(HttpMethod.POST, activitiesUri(tripId, dayId), ownerToken, "{\"title\":\"x\"}");
-        // 6-8. Activity edit / delete / reorder / move need an activity to address; a made-up id still
-        //      trips the lock, because requireHeldBy runs before the activity is even looked up.
         UUID someActivity = UUID.randomUUID();
         assertLockedWrite(HttpMethod.PATCH, activitiesUri(tripId, dayId) + "/" + someActivity, ownerToken,
                 "{\"title\":\"x\"}");
@@ -83,7 +58,6 @@ class EditLockEnforcementIT extends PostgresTestBase {
         assertLockedWrite(HttpMethod.POST, activitiesUri(tripId, dayId) + "/" + someActivity + "/move", ownerToken,
                 "{\"targetDayId\":\"" + UUID.randomUUID() + "\"}");
 
-        // Now the blocker releases and the owner takes the lock — the same family of write now succeeds.
         release(blockerToken, tripId);
         lock(ownerToken, tripId);
         rest.post()
@@ -96,11 +70,9 @@ class EditLockEnforcementIT extends PostgresTestBase {
                 .isCreated();
     }
 
-    /** Every listed method+uri, sent without holding the lock, is a 409 EDIT_LOCKED. */
+
     private void assertLockedWrite(HttpMethod method, String uri, String token, String body) {
         var headers = rest.method(method).uri(uri).header(HttpHeaders.AUTHORIZATION, bearer(token));
-        // A body-bearing request and a bodiless one (DELETE) take different builder branches — the
-        // fluent spec's body method lives on a different type, so the two cannot share one variable.
         var response =
                 body != null
                         ? headers.contentType(MediaType.APPLICATION_JSON).body(body).exchange()
@@ -108,7 +80,6 @@ class EditLockEnforcementIT extends PostgresTestBase {
         response.expectStatus().isEqualTo(409).expectBody().jsonPath("$.code").isEqualTo("EDIT_LOCKED");
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
     private static String activitiesUri(String tripId, UUID dayId) {
         return "/v1/itineraries/" + tripId + "/days/" + dayId + "/activities";

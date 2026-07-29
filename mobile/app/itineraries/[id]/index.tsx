@@ -11,16 +11,7 @@ import { OwnershipOfferBanner } from '../../../src/members/OwnershipOfferBanner'
 import { useItinerary } from '../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 
-/**
- * One trip (S0.3).
- *
- * Opened from My Trips, so the list's cache usually already holds this row and it renders with no
- * spinner (see `useItinerary`'s initialData) while refreshing behind the scenes.
- *
- * The 404 case is worth reading: the guard answers identically for "no such itinerary" and "not
- * yours" (Artifact 03's masking rule), so this screen cannot tell them apart either — and says the
- * one true thing it knows.
- */
+
 export default function ItineraryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, isPending, isError, error } = useItinerary(id);
@@ -53,10 +44,7 @@ export default function ItineraryScreen() {
 
       <View style={styles.titleRow}>
         <Text style={styles.title}>{data.title}</Text>
-        {/* Any member edits the trip's fields (S1.3, ticket 04) — but not on an archived trip, where
-            the server refuses every write with TRIP_ARCHIVED. Hidden rather than disabled-and-failing:
-            a control that is guaranteed to error is the dead end this repo declines to advertise, and
-            the archive banner above explains its absence (S1.9). */}
+        {}
         {canEditPlan(data) && (
           <Link href={`/itineraries/${id}/edit`} asChild>
             <Pressable accessibilityRole="button" hitSlop={8}>
@@ -67,47 +55,31 @@ export default function ItineraryScreen() {
       </View>
 
       <View style={styles.badges}>
-        {/* Rendered from the server's values, not assumed: S0.3 only ever produced draft/private,
-            S1.7 makes state vary, and S4.1 will make visibility vary with no change here. The state
-            label is formatted (unknown values fall through as themselves — ADR-008). */}
+        {}
         <Badge label={formatItineraryState(data.state)} />
         <Badge label={data.visibility} />
-        {/* Archived is a *separate* badge, never a state value: the two machines are orthogonal, so a
-            trip can be Completed and Archived at once (S1.9). Capitalised to match the lifecycle badge
-            beside it, which goes through `formatItineraryState` — the raw lowercase form read as a
-            third style next to "Draft" (caught in the preview screenshot, not by any assertion). */}
+        {}
         {data.archived && <Badge label="Archived" />}
       </View>
 
-      {/* The archive notice for everyone on an archived trip, plus the owner's lever (S1.9). Placed
-          above the lifecycle banner because it explains the whole screen's state, including why that
-          banner is absent. */}
+      {}
       <TripArchiveBanner itinerary={data} />
 
-      {/* The owner's lifecycle lever, with the date nudge (S1.7). Members see nothing — and nobody sees
-          it on an archived trip, whose transitions the server refuses. */}
+      {}
       {canEditPlan(data) && <TripLifecycleBanner itinerary={data} />}
 
-      {/* Renders only for the traveler being offered the crown (S1.6) — the discovery guarantee the
-          offer/accept design rests on, on the one screen a participant actually opens. */}
+      {}
       <OwnershipOfferBanner itineraryId={id} />
 
 
-      {/* The workspace's people (S1.2): the roster for everyone, invite/revoke for the owner. */}
+      {}
       <Link href={`/members/${id}`} asChild>
         <Pressable style={styles.membersLink} accessibilityRole="button">
           <Text style={styles.membersLinkText}>Members</Text>
         </Pressable>
       </Link>
 
-      {/* The plan (S1.3): the day-by-day schedule. Shows the day count so a traveler knows there is
-          something to open even before tapping.
-
-          Hidden on an archived trip (S1.9), because that screen is the plan-*editing* hub: it acquires
-          the edit lease on mount, which the fence now refuses, so it would bounce straight back with a
-          lock message rather than an archive one. Hiding the door is the honest version of a route
-          that cannot work — and the day count moves to the section below so an archived plan is still
-          readable. */}
+      {}
       {canEditPlan(data) ? (
         <Link href={`/itineraries/${id}/days`} asChild>
           <Pressable style={styles.membersLink} accessibilityRole="button">

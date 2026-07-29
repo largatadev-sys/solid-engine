@@ -13,32 +13,12 @@ import type {
   UpdateItineraryRequest,
 } from '../types/api';
 
-/**
- * The plan (S0.3) — the app's first domain repository (ADR-001 layering).
- *
- * This layer is deliberately dumb: it maps a call to a path and a typed shape, and knows nothing
- * about caching, React, or when to refetch. That is the query layer's job (`src/query/`), and
- * keeping the two apart is what makes the E3 persistence work a change in one place rather than a
- * sweep — a repository that knew about the cache would have to be rewritten to know about a
- * different one.
- */
+
 export const itineraryRepository = {
-  /**
-   * The caller's own itineraries, newest first.
-   *
-   * `cursor` is opaque — whatever `nextCursor` the last page returned, passed back verbatim. This
-   * layer never constructs, parses, or reasons about one (Artifact 05).
-   */
+
   async fetchMine(cursor?: string, archived = false): Promise<Page<ItineraryResponse>> {
-    // Built by hand rather than with URLSearchParams, deliberately: that class encodes to
-    // `application/x-www-form-urlencoded`, which leaves `/` unescaped and turns a space into `+` —
-    // a *different* encoding of the opaque cursor than the one this app has always sent. The cursor's
-    // characters are the server's business (Artifact 05), so the encoding it round-trips through must
-    // not change silently. `encodeURIComponent` is what shipped and what the tests pin.
     const params = [
       ...(cursor !== undefined ? [`cursor=${encodeURIComponent(cursor)}`] : []),
-      // Sent only when true, so the default list's URL is byte-identical to the one that shipped
-      // before S1.9 — an unchanged request is the cheapest possible proof of an additive change.
       ...(archived ? ['archived=true'] : []),
     ];
     return apiClient.get<Page<ItineraryResponse>>(
@@ -54,24 +34,12 @@ export const itineraryRepository = {
     return apiClient.post<ItineraryResponse>('/v1/itineraries', request);
   },
 
-  /**
-   * Edits the itinerary's own fields (S1.3, ticket 04). Whole-field PATCH; returns the updated
-   * itinerary with its plan re-embedded, so the caller has the fresh resource.
-   */
+
   async update(id: string, request: UpdateItineraryRequest): Promise<ItineraryResponse> {
     return apiClient.patch<ItineraryResponse>(`/v1/itineraries/${id}`, request);
   },
 
-  /**
-   * The lifecycle transitions (S1.7): the owner starts the trip, then marks it complete. Each returns
-   * the whole updated itinerary with its plan re-embedded, so the caller re-renders from one response
-   * rather than transitioning and then refetching.
-   *
-   * No body — the act carries no data. A non-owner is refused with `NOT_PERMITTED` (403) and an
-   * illegal transition with `ILLEGAL_STATE_TRANSITION` (409); both surface as an {@link
-   * import('../api/ApiError').ApiError} the caller shows as-is. The 409 in particular means the screen
-   * was stale, so its handler should refetch.
-   */
+
   async startTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/start`, undefined);
   },
@@ -80,14 +48,7 @@ export const itineraryRepository = {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/complete`, undefined);
   },
 
-  /**
-   * Archive and unarchive (S1.9) — the owner takes a trip out of circulation, or brings it back.
-   *
-   * Same action-endpoint shape as the lifecycle transitions above, and the same refusals: a non-owner
-   * gets `NOT_PERMITTED` (403), an illegal edge `ILLEGAL_STATE_TRANSITION` (409). A write attempted on
-   * an already-archived trip anywhere else in the app answers `TRIP_ARCHIVED` (409) — a different code
-   * because it has a different remedy the client can offer: unarchive.
-   */
+
   async archiveTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/archive`, undefined);
   },
@@ -96,11 +57,7 @@ export const itineraryRepository = {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unarchive`, undefined);
   },
 
-  /**
-   * The day operations (S1.3, ADR-013). Itinerary-addressed — the app never handles a workspace id
-   * (the S1.2 convention) — and each returns the affected day, except delete which returns nothing.
-   * The ordinal is the server's to assign on append; this layer never sends one.
-   */
+
   async appendDay(itineraryId: string, request: DayRequest): Promise<DayResponse> {
     return apiClient.post<DayResponse>(`/v1/itineraries/${itineraryId}/days`, request);
   },
@@ -113,11 +70,7 @@ export const itineraryRepository = {
     return apiClient.delete(`/v1/itineraries/${itineraryId}/days/${dayId}`);
   },
 
-  /**
-   * The activity operations (S1.3, ticket 02). Addressed by itinerary + day (the S1.3 convention);
-   * create/edit return the affected activity, delete returns nothing. Edit is a whole-entity replace
-   * (last-write-wins), so it sends the same body shape as create.
-   */
+
   async createActivity(itineraryId: string, dayId: string, request: ActivityRequest): Promise<ActivityResponse> {
     return apiClient.post<ActivityResponse>(`/v1/itineraries/${itineraryId}/days/${dayId}/activities`, request);
   },
@@ -138,11 +91,7 @@ export const itineraryRepository = {
     return apiClient.delete(`/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`);
   },
 
-  /**
-   * Reorders a day's activities to the given order (S1.3, ticket 03). A whole-list PUT — the server
-   * rewrites sort order to match and returns the reordered day (the caller refetches the plan anyway,
-   * so the returned day is a convenience, not load-bearing).
-   */
+
   async reorderActivities(
     itineraryId: string,
     dayId: string,
@@ -151,7 +100,7 @@ export const itineraryRepository = {
     return apiClient.put<DayResponse>(`/v1/itineraries/${itineraryId}/days/${dayId}/activities/order`, request);
   },
 
-  /** Moves an activity to another day, landing at that day's end (S1.3, ticket 03). */
+
   async moveActivity(
     itineraryId: string,
     dayId: string,
@@ -164,17 +113,7 @@ export const itineraryRepository = {
     );
   },
 
-  /**
-   * The single-writer edit lock (S1.4, ADR-014). `acquire` claims (or renews) the lease before an
-   * edit surface opens; `renew` is the heartbeat while it stays open; `release` frees it on exit.
-   *
-   * A denied acquire/renew throws an {@link import('../api/ApiError').ApiError} with code
-   * `EDIT_LOCKED` (a 409 whose message names the holder — shown as-is in the lock modal). `release` is
-   * idempotent server-side, so a best-effort release on navigate-away never fails; the caller may
-   * ignore its result. Offline, `acquire` throws `NETWORK_UNAVAILABLE` — editing needs connectivity
-   * (the lease is minutes-scale and cannot survive an offline gap), and the edit surface surfaces that
-   * as a graceful "you're offline" message rather than opening a form no write could reach.
-   */
+
   async acquireEditLock(itineraryId: string): Promise<EditLeaseResponse> {
     return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock`, undefined);
   },

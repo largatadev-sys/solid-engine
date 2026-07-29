@@ -19,20 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * S1.6 ticket 02: accepting an offer <em>is</em> the transfer, and this proves the four effects land
- * together (spec ACs 4, 5, 7, and the transfer half of 10/11).
- *
- * <p><strong>The four-effects test is deliberately one test, not four.</strong> They share a
- * transaction, so their real property is inseparability — split across four tests, each could pass
- * while the set was incoherent (a crown with no record, a record with no crown, a column naming a
- * stranger). Asserting them together is what makes a partial commit a failure rather than three passes
- * and one puzzle.
- *
- * <p>Ownership state is read through the API where the API exposes it (the roster's {@code role}) and
- * through SQL where it does not (the {@code ownership_transfer} row, {@code itinerary.owner_id}) —
- * those two have no reader in the product by design, so the database is the only honest witness.
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class OwnershipTransferIT extends PostgresTestBase {
@@ -48,7 +35,6 @@ class OwnershipTransferIT extends PostgresTestBase {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
     }
 
-    // --- the transfer itself (AC 4) -----------------------------------------------------------------
 
     @Test
     void acceptingAnOfferSwapsRolesSyncsTheItineraryAndRecordsTheTransfer() {
@@ -61,38 +47,28 @@ class OwnershipTransferIT extends PostgresTestBase {
 
         accept(memberToken, trip).expectStatus().isNoContent();
 
-        // 1 + 2. The roles swapped — both directions, because a promote without a demote is two owners
-        // and a demote without a promote is none.
         assertThat(roleOnRoster(ownerToken, trip, newOwnerId)).isEqualTo("owner");
         assertThat(roleOnRoster(ownerToken, trip, formerOwnerId)).isEqualTo("member");
 
-        // 3. The denormalised column followed. Nothing in the request path reads it, which is exactly
-        // why it needs a test: a drift here would be invisible until something trusted the name.
         assertThat(ownerIdColumnOf(trip)).isEqualTo(newOwnerId);
 
-        // 4. The durable record exists and says the right thing — the one artifact that could never be
-        // reconstructed after the fact.
         List<Map<String, Object>> transfers = transfersFor(trip);
         assertThat(transfers).hasSize(1);
         assertThat(transfers.getFirst().get("from_traveler_id")).isEqualTo(formerOwnerId);
         assertThat(transfers.getFirst().get("to_traveler_id")).isEqualTo(newOwnerId);
 
-        // 5. ...and the offer closed, so the slot is free and nobody can accept it twice.
         assertThat(offerStatusesFor(trip)).containsExactly("ACCEPTED");
         accept(memberToken, trip).expectStatus().isNotFound();
     }
 
     @Test
     void theFormerOwnerKeepsTheirMembershipAndCanNowLeave() {
-        // The story's whole reason to exist: S1.5's OWNER_CANNOT_LEAVE dead end opens. Transfer is a
-        // role swap, not an exit — leaving stays a separate act, and the two compose with no new code.
         String ownerToken = verified(uniqueEmail());
         String trip = createTrip(ownerToken);
         String memberToken = joinAsMember(ownerToken, trip, uniqueEmail());
         UUID formerOwnerId = travelerIdOf(ownerToken);
         offer(ownerToken, trip, travelerIdOf(memberToken)).expectStatus().isCreated();
 
-        // Before: the owner cannot leave. This is the control that makes the "after" meaningful.
         depart(ownerToken, trip, formerOwnerId)
                 .expectStatus()
                 .isEqualTo(409)
@@ -102,7 +78,6 @@ class OwnershipTransferIT extends PostgresTestBase {
 
         accept(memberToken, trip).expectStatus().isNoContent();
 
-        // After: the same call, the same person, now permitted — because they are a member.
         depart(ownerToken, trip, formerOwnerId).expectStatus().isNoContent();
         rest.get()
                 .uri("/v1/itineraries/" + trip)
@@ -114,8 +89,6 @@ class OwnershipTransferIT extends PostgresTestBase {
 
     @Test
     void theNewOwnerInheritsOwnerAuthorityAndTheFormerOwnerLosesIt() {
-        // Roles are not decoration: the swap must move what the roles *do*. Offering ownership is an
-        // owner-only act, so it is the cheapest true probe of authority having moved.
         String ownerToken = verified(uniqueEmail());
         String trip = createTrip(ownerToken);
         String memberToken = joinAsMember(ownerToken, trip, uniqueEmail());
@@ -123,22 +96,17 @@ class OwnershipTransferIT extends PostgresTestBase {
         offer(ownerToken, trip, travelerIdOf(memberToken)).expectStatus().isCreated();
         accept(memberToken, trip).expectStatus().isNoContent();
 
-        // The former owner can no longer offer...
         offer(ownerToken, trip, travelerIdOf(thirdToken))
                 .expectStatus()
                 .isForbidden()
                 .expectBody()
                 .jsonPath("$.code")
                 .isEqualTo("NOT_PERMITTED");
-        // ...and the new owner can.
         offer(memberToken, trip, travelerIdOf(thirdToken)).expectStatus().isCreated();
     }
 
     @Test
     void ownershipCanTravelBackAndTheChainRecordsBothHops() {
-        // Two transfers, so the record is a chain rather than a single row — and the creator stays
-        // derivable as the earliest row's `from`, which is the property the influencer program and the
-        // E4 creator badge will want.
         String aliceToken = verified(uniqueEmail());
         String trip = createTrip(aliceToken);
         String bobToken = joinAsMember(aliceToken, trip, uniqueEmail());
@@ -159,13 +127,9 @@ class OwnershipTransferIT extends PostgresTestBase {
         assertThat(ownerIdColumnOf(trip)).isEqualTo(alice);
     }
 
-    // --- the stale-accept race (AC 5) ---------------------------------------------------------------
 
     @Test
     void aStaleAcceptCannotSeizeSomebodyElsesCrown() {
-        // B is offered, the offer is revoked, C is offered. B's late accept — a retry, a stale screen,
-        // a queued request — must not take the crown meant for C. It is refused by construction: the
-        // pending offer exists but is not B's, so the ladder answers 403 without consulting timing.
         String ownerToken = verified(uniqueEmail());
         String trip = createTrip(ownerToken);
         String bToken = joinAsMember(ownerToken, trip, uniqueEmail());
@@ -185,7 +149,6 @@ class OwnershipTransferIT extends PostgresTestBase {
                 .jsonPath("$.code")
                 .isEqualTo("NOT_OFFER_TARGET");
 
-        // Nothing moved, and C's offer is intact — the refusal cost C nothing.
         assertThat(roleOnRoster(ownerToken, trip, ownerId)).isEqualTo("owner");
         assertThat(transfersFor(trip)).isEmpty();
 
@@ -196,9 +159,6 @@ class OwnershipTransferIT extends PostgresTestBase {
 
     @Test
     void aVoidedOfferCannotBeAcceptedEvenAfterRejoining() {
-        // The offeree left while holding an offer, then was re-invited. Their old offer died with their
-        // membership, so there is no crown lying around for the returning traveler to pick up — a
-        // pending row that survived a departure would be exactly that.
         String ownerToken = verified(uniqueEmail());
         String trip = createTrip(ownerToken);
         String email = uniqueEmail();
@@ -207,10 +167,8 @@ class OwnershipTransferIT extends PostgresTestBase {
         offer(ownerToken, trip, memberId).expectStatus().isCreated();
         depart(memberToken, trip, memberId).expectStatus().isNoContent();
 
-        // While outside the walls, they are masked rather than told about offers.
         accept(memberToken, trip).expectStatus().isNotFound();
 
-        // Back inside, the answer is the honest one: there is no offer here.
         acceptInvitation(memberToken, invite(ownerToken, trip, email));
         accept(memberToken, trip)
                 .expectStatus()
@@ -221,13 +179,9 @@ class OwnershipTransferIT extends PostgresTestBase {
         assertThat(transfersFor(trip)).isEmpty();
     }
 
-    // --- INV-4 under everything (AC 7) --------------------------------------------------------------
 
     @Test
     void everyTripInThisSuiteHasExactlyOneOwnerAtAllTimes() {
-        // The blanket invariant: whatever paths ran above, no workspace in the database may hold zero
-        // or two owners. A single query over the whole schema catches a break that a per-test assertion
-        // aimed at one trip would miss.
         String ownerToken = verified(uniqueEmail());
         String trip = createTrip(ownerToken);
         String memberToken = joinAsMember(ownerToken, trip, uniqueEmail());
@@ -241,10 +195,7 @@ class OwnershipTransferIT extends PostgresTestBase {
         assertThat(misowned).as("INV-4: exactly one owner per workspace, always").isEmpty();
     }
 
-    // (Analytics for the whole S1.6 surface — the four offer events plus ownership_transferred — live
-    // in OwnershipOfferAnalyticsIT, which owns the log-appender fixture the other analytics ITs use.)
 
-    // --- fixtures -----------------------------------------------------------------------------------
 
     private RestTestClient.ResponseSpec offer(String callerToken, String tripId, UUID targetTravelerId) {
         return rest.post()

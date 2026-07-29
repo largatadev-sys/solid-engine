@@ -16,20 +16,7 @@ import { validateItineraryForm } from '../../src/itineraries/validateItineraryFo
 import { useCreateItinerary } from '../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../src/theme';
 
-/**
- * Plan a trip — the create screen (S0.3).
- *
- * The form is one destination field submitting a one-element array: the API takes a list (Artifact
- * 02 says "destination(s)", and a singular field could never become plural under ADR-008), while the
- * UI stays honest about what S0.3 asks for. Multi-destination later is a change to this file only.
- *
- * Dates use the real `DatePicker` (S1.3 ticket 04 — the S0.3 hand-typed-date debt, discharged here
- * and on the edit screen): platform-forked, the native community picker on device and the
- * browser-native input on web. The field stays optional (a someday trip has none), so each can clear.
- *
- * S1.3 adds a description and a duration: duration mints that many empty days on the server (ADR-013),
- * and lands the traveler on the Daily Schedules screen to fill them.
- */
+
 export default function NewItineraryScreen() {
   const router = useRouter();
   const create = useCreateItinerary();
@@ -57,9 +44,6 @@ export default function NewItineraryScreen() {
         ...(duration.trim() !== '' ? { durationDays: Number(duration.trim()) } : {}),
       },
       {
-        // Replace this screen with the new trip's detail, so the back button returns to My Trips (the
-        // list has already been invalidated and refetches). Landing on the plan is the point of adding
-        // a duration — the empty days are there to fill.
         onSuccess: (created) => router.replace(`/itineraries/${created.id}`),
       },
     );
@@ -71,7 +55,7 @@ export default function NewItineraryScreen() {
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title: 'Plan a trip' }} />
 
-      {/* Cover photo — the mock's drop zone; S3.3 (media pipeline) activates it (ticket 05 grey-out). */}
+      {}
       <GreyedMediaTile label="Cover photo" />
 
       <Field label="What is this trip?" value={title} onChangeText={setTitle} placeholder="Hokkaido in winter" />
@@ -97,8 +81,7 @@ export default function NewItineraryScreen() {
       <DatePicker label="Start date" value={startDate} onChange={setStartDate} />
       <DatePicker label="End date" value={endDate} onChange={setEndDate} />
 
-      {/* One message at a time: the client's own rules first, then whatever the server said. The
-          envelope's `message` is written to be shown (Artifact 05), so it is shown as-is. */}
+      {}
       {(validationError ?? serverMessage) !== undefined && (
         <Text style={styles.error}>{validationError ?? serverMessage}</Text>
       )}

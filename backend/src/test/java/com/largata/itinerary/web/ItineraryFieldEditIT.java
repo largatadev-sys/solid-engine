@@ -17,16 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-/**
- * Ticket 04's ACs over HTTP: any member edits the itinerary's own fields (title, destinations,
- * description, dates), attribution follows, the date rules hold, and the guard masks a non-member
- * (spec AC 4/5/6/9).
- *
- * <p>Its own class, not folded into {@code ItineraryContractIT}, because the member-authority AC needs
- * a second real member — the JDBC admit-a-member fixture the day/activity contract ITs use — and that
- * class is deliberately pure-HTTP with no datasource. One class per concern (the Failsafe {@code *IT}
- * discipline).
- */
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class ItineraryFieldEditIT extends PostgresTestBase {
@@ -52,9 +43,8 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                         """);
         String memberToken = admitMemberTo(tripId);
         UUID memberId = travelerIdOf(memberToken);
-        lock(memberToken, tripId); // S1.4: the member holds the edit lock before writing
+        lock(memberToken, tripId);
 
-        // The member rewrites all four editable fields.
         rest.patch()
                 .uri("/v1/itineraries/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
@@ -78,7 +68,6 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .isEqualTo("2027-01-10")
                 .jsonPath("$.endDate")
                 .isEqualTo("2027-01-20")
-                // Attribution: the member who edited, not the owner who created.
                 .jsonPath("$.lastEditedBy")
                 .isEqualTo(memberId.toString())
                 .jsonPath("$.lastEditedAt")
@@ -94,9 +83,8 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                         """
                         {"title":"Trip","destinations":["Cebu"],"description":"Old blurb."}
                         """);
-        lock(token, tripId); // S1.4: hold the edit lock before writing
+        lock(token, tripId);
 
-        // A whole-field edit that omits the description clears it — the body is the new whole state.
         rest.patch()
                 .uri("/v1/itineraries/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -121,9 +109,8 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                         """
                         {"title":"Trip","destinations":["Cebu"],"durationDays":3}
                         """);
-        lock(token, tripId); // S1.4: hold the edit lock before writing
+        lock(token, tripId);
 
-        // Editing the itinerary's fields must not disturb its days (a different part of the aggregate).
         rest.patch()
                 .uri("/v1/itineraries/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -146,8 +133,6 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 {"title":"Trip","destinations":["Cebu"]}
                 """);
 
-        // The S0.3 date rule, unchanged and enforced on the edit path too (the @ChronologicalDates
-        // constraint now covers UpdateItineraryRequest via HasDateRange) — a 400, not a 500.
         rest.patch()
                 .uri("/v1/itineraries/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -238,14 +223,8 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .isUnauthorized();
     }
 
-    // --- fixtures ---------------------------------------------------------------------------------
 
-    /**
-     * Acquires the edit lock as {@code token} (S1.4, ADR-014): a successful field edit now requires the
-     * lease. The guard-masking and visitor tests do not call this (masked / rejected before the lock),
-     * and the pure Bean-Validation rejections (blank title, backwards dates) 400 at the controller
-     * before the service, so they need no lock either; only the tests that reach a real write take it.
-     */
+
     private void lock(String token, String itineraryId) {
         rest.post()
                 .uri("/v1/itineraries/" + itineraryId + "/edit-lock")
