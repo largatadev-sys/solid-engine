@@ -275,11 +275,35 @@ genuinely rejected write, unarchive (S1.9).
 
 ---
 
-## Promotion record
+## Promotion record — executed 2026-07-29
 
-*(Filled in at the promotion; the closing SHA line rides a `docs/` branch after, since it cannot exist
-before the merge it describes.)*
+- **`fix/E1-gate → dev`** squash: **`edd4307`**, plus `582bb73` (the deploy-currency probe) and
+  `a385e78` (the post-merge record).
+- **`dev → preprod`** squash: **`2fdd884`** — `feat(collab): Epic 1 — collaborative planning,
+  dev-verified`. 374 files, 29,295 insertions.
+- **`preprod → main`** fast-forward: **`2fdd884`**, the same commit object.
+- **Equality proof:** `git rev-parse main preprod` prints
+  `2fdd884522e03cd61ead50d603c28895770aa6a1` twice. `git diff main dev` is empty — **prod carries
+  exactly what dev verified**, which is the single property this pipeline exists to guarantee.
 
-- `dev → preprod` squash SHA: —
-- `preprod → main` fast-forward: —
-- `git rev-parse main preprod` equality proof: —
+### The footgun arrived, exactly where CLAUDE.md said it would
+
+`git merge --squash dev` on `preprod` raised **127 add/add conflicts** — every file present on both
+branches. Not a mistake and not a real conflict: after Epic 0's squash the two branches share **no
+commits**, so their merge-base is `initial commit` and git sees each file as independently created on
+both sides. This is the documented consequence of the squash-promotion mechanic meeting its second
+epic, and it will recur on **every** future promotion.
+
+**It was resolved by making `preprod`'s tree exactly `dev`'s** (`git read-tree --reset -u dev`, then
+commit with `preprod` as parent) — which is precisely what "promote the epic" means, and is verifiable
+after the fact in a way a 127-file hand-merge would not be: `git diff preprod dev` is empty.
+
+**The check that mattered was done before resolving, not after.** A bulk resolution can silently drop
+files, so the two files the promotion *removes* were traced to the stories that replaced them:
+`OwnerMembershipResolver` → `RowBackedMembershipResolver` at **S1.1**, when the guard became
+row-backed (ADR-011); and `mobile/app/itineraries/[id].tsx` → the `[id]/` route directory at **S1.3**,
+when the plan grew days, activities and edit routes. Nothing was lost.
+
+**For the next promotion:** expect the same conflict count or larger, and reach for the tree-level
+resolution rather than resolving files by hand. The hazard CLAUDE.md warns about — *a cherry-picked
+subset that leaves a dependency behind* — is avoided by promoting the whole epic, which this did.
