@@ -73,4 +73,20 @@ Deferred to post-validation: full mobile-UI E2E coverage, load tests, chaos anyt
 - **Architecture topology & module rules:** → `04-architecture.md`
 - **Domain model & invariants:** → `02-domain-model.md`
 
+## 10. Code commentary — *instantiates P9/P10*
+
+**Invariant.** Source files carry no prose. Meaning in code is carried by names, types and tests; the *why* — which story shipped it, which alternative lost, which decision governs it — lives in the spec, the ADR log and the commit message. P9 already says this (*"recording why in the commit message, not a code comment"*); this section makes it the whole rule rather than an aside about factories.
+
+**Check.** Grep the diff for `//`, `/*`, `/**`. Any hit that is not a tool directive is a violation. Binary, and it runs at the review gate with everything else.
+
+**Carve-out — exhaustive, and not a judgement call.** `// eslint-disable*`, `// @ts-expect-error`, `// @ts-ignore`, `// prettier-ignore`, `/* istanbul ignore */`. These are consumed by a tool, not a human: they are code that happens to use comment syntax, and deleting one changes what the build does (`@ts-expect-error` fails outright when there is no error to suppress). **A directive with an explanation attached keeps the directive and loses the explanation.** Nothing else qualifies; if a reader is the consumer, it is prose.
+
+**Where the knowledge goes instead.** A trap a future change could silently trip becomes a **named test that fails when the trap is re-tripped**. If no test can catch it — a filesystem or toolchain property, not a program property — it becomes a line in CLAUDE.md's Gotchas. A comment is not one of the options: it is the form this section exists to remove.
+
+**Why, in one line.** A comment has no failure mode. Change the code it describes and it stays green while it starts lying — which is the *"check whose two outcomes are indistinguishable"* shape this repo has been burned by repeatedly, and the reason BUILD_STATUS is forbidden from duplicating facts git already owns. A test that goes red is the same knowledge with a failure mode attached, and is therefore strictly better than the comment it replaces.
+
+**Dial. Floor.** Volume is not a rigor setting. The two Full-rigor subsystems (the ledger, the authorization guard) earn their rigor through *more tests*, never more prose.
+
+*Adopted 2026-07-29 (off-epic). At adoption the tree carried 8,272 comment lines across 285 of 286 source and test files — 43% of backend production source, 29% of mobile — accreted with no rule ever requiring them. Flyway migrations are out of scope permanently: their content is checksummed, so editing an applied migration fails validation on every environment that has run it.*
+
 **Resolution: ☑ Agreed** *(proposed solo — pending founder ratification; 06a ratified unamended)*

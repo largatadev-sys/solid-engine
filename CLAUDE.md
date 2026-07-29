@@ -47,6 +47,7 @@ BUILD_STATUS → `BUILD_STATUS.md`. Every story that lands updates its row — *
 - **Modules reference each other by ID + service interface only** — never another module's tables or internals (ADR-002).
 - **Mobile: no raw fetch/API calls in UI code** — everything through the repository/local-cache layer's typed apiClient (ADR-001, P6).
 - **Never log secrets, tokens, passwords, raw payloads, or PII.** Reference entities by ID (P3).
+- **No code comments — none.** No javadoc, no docstrings, no inline commentary, in source or in tests. Names and tests carry the meaning in code; the *why* lives in the spec, the ADR log, and the commit message (06b §10, P9 — *"recording why in the commit message, not a code comment"*). **A trap worth keeping becomes a test that fails when it is re-tripped**, or a Gotchas line here when no test can catch it (a filesystem or toolchain property) — never a comment, because a comment has no failure mode: change the code and it stays green while it starts lying. Tool directives (`eslint-disable*`, `@ts-expect-error`, `prettier-ignore`) are code that happens to use comment syntax, not commentary — keep the directive, drop any prose attached to it.
 
 ## Stop rules — ask the owner before doing
 
