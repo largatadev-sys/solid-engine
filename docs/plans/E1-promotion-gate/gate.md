@@ -85,6 +85,37 @@ Three findings, each recorded with its evidence under *"E1 promotion gate 2026-0
 unbounded access path and now-dead keyset index · the copy-pasted platform-dialog forks · the twin
 `NotTripOwnerException` class names.
 
+### Found by running the rig, not by reading it
+
+Three defects surfaced only because a layer was actually executed, and all three share the shape this
+repo keeps re-learning: **green at the layer that is convenient, dead at the layer that ships.**
+
+- **A UTF-8 BOM in `InvitationService.java` passed `mvn verify` on the host and killed the container
+  build.** A PowerShell `Set-Content -Encoding utf8` planted it. All **309 ITs passed**; `docker
+  compose build` died at `illegal character: '﻿'`. Since the Docker build is what Railway runs,
+  this would have cleared every gate we had and broken the deploy. A second BOM in
+  `itineraryQueries.ts` passed `tsc` **and** 592 Jest tests, because TypeScript tolerates one
+  silently. Now guarded on both sides by tests **proven to fail** against a planted BOM
+  (checklist #10).
+- **`smoke-api.js` and `seed-trip.js` hardcoded Node's `http`.** The epic's broadest smoke suite could
+  never reach an `https` rung despite reading `LARGATA_API_BASE_URL` — so it had **never once run
+  against deployed dev**, and this gate's own L5 plan was invalid before it started. Fixed in two
+  passes: the first missed the malformed-token probe, and the run then failed *four checks in, after
+  reporting four passes* — the worst shape a probe can fail in. Only running it found either.
+- **Two real Chrome DevTools port collisions the deleted comments actively denied.** `drive-preview`
+  and `drive-ownership-transfer` both took 9223; `drive-archive` and `drive-lifecycle` both took 9224
+  — while the comments said *"not 9223 — drive-preview owns that."* A live demonstration of §10's
+  rationale: a comment has no failure mode, so it drifted while staying green. Each driver now owns a
+  distinct port, overridable with `LARGATA_CDP_PORT`.
+
+### Harness note for the next session
+
+**`adb shell input text` re-parses the string in the device's shell.** The pool password contains `!`,
+and an unquoted send produced **16 characters for a 15-character password** — the sign-in failed with
+*"Email or password is incorrect."*, which reads as a wrong credential rather than a mangled one.
+Single-quote it for the device shell: `adb shell "input text '$PASSWORD'"`. Same family as the Git
+Bash path-rewriting trap already in CLAUDE.md, and it cost the same kind of detour here.
+
 ### Minor, recorded not fixed
 
 **Deep-linking straight to `/itineraries/{id}/edit` on a locked trip leaves the form on screen.** The
@@ -121,19 +152,47 @@ was never built, is corrected in the same edit.
 
 ---
 
-## Regression run
-
-*(Filled in as each layer completes.)*
+## Regression run — all layers green
 
 | Layer | What it proves | Result |
 |---|---|---|
-| L1 — automated suites | `mvn verify`, `tsc`, Jest | pending |
-| L2 — local full stack, fresh DB | `docker compose up` + `smoke-api.js` + `seed-trip.js` over the real invite→accept | pending |
-| L3 — web preview container | The true build path and true server, driven by the committed drivers | pending |
-| L4 — two-account narrative walk | The seams between stories, which no per-story test starts from | pending |
-| L5 — deployed dev | `smoke-api.js` against `api-dev.largata.com`, after confirming deploy currency | pending |
-| Checklist #4 | Google sign-in on a device, through the real picker | pending |
-| Checklist #5 | The secret hook still blocks planted specimens | pending |
+| L1 — automated suites | `mvn verify`, `tsc`, Jest | ✅ backend **309 ITs, 0 failures**, BUILD SUCCESS · mobile `tsc` clean, **592 tests / 28 suites** |
+| L2 — local full stack, fresh DB | `docker compose up` + `smoke-api.js` + `seed-trip.js` over the real invite→accept | ✅ **46/46**; trip `019fac0d…4d70` seeded through the genuine invite → inbox → accept, no planted rows |
+| L3 — web preview container | The true build path (`npm ci` + export in-image) and true server (Caddy) | ✅ `drive-preview` clean (page text present, **Google iframes: 1**, no console/page errors) · `drive-archive` **22/22** · the edit-lock modal captured verbatim |
+| L4 — two-account narrative walk | The seams between stories, which no per-story test starts from | ✅ see below |
+| L5 — deployed dev | `smoke-api.js` against `api-dev.largata.com` | ✅ **46/46** — the first time this suite has ever reached a deployed rung |
+| Checklist #4 | Google sign-in on a device, through the real picker | ✅ GMS `SignInActivity` + `AccountPickerActivity` on screen, account chosen, then the **discriminating** half: `Traveler provisioned: id=019fac3d…` in the backend log and a new `traveler` row for the base Google address |
+| Checklist #5 | The secret hook still blocks planted specimens | ✅ all six formats blocked (`AIza…`, `sk_live_…`, `ghp_…`, `AKIA…`, PEM, JWT); HEAD unchanged, tree clean afterwards |
+
+**On L5 and deploy currency.** `/v1/health` returning `{"status":"ok"}` proves nothing about *which*
+build is deployed — it is the indistinguishable-probe shape this repo has been burned by three times.
+The discriminating signal is inside the suite: its S1.9 archive checks pass, and
+`/archive`, `/unarchive` and the `archived` list dimension **do not exist in any pre-S1.9 build**. So
+deployed dev is confirmed current with `dev` by a probe whose failure mode is stated.
+
+### The L4 walk — `t1` = trip owner, `t2` = invited member
+
+One continuous narrative on the emulator (dev build, JS from Metro on 8082, backend at `10.0.2.2:8080`),
+driven through the UI rather than the API wherever the point was what a traveller sees.
+
+1. **t2 signs in and My Trips lists "E1 gate walk"** — a trip t2 *joined*, never owned. S1.6's
+   membership-scoped list, proven on a device rather than in an IT.
+2. **t1 archives the trip while t2's list is cached; t2 taps in.** The screen shows the **Archived**
+   badge, the banner *"This trip is read-only. Only the trip owner can unarchive it."*, **no Unarchive
+   button** (correctly withheld from a member), and no edit affordances. This is the exact
+   reproduction of the headline defect: under `initialData` this screen rendered as a live, editable
+   trip for thirty seconds and then failed with *"Someone is editing."* Screenshot captured.
+3. **Deep-link into the archived trip's plan** (`largata://itineraries/{id}/days`) — renders
+   *"This trip is archived / Archived trips are read-only."* where it previously claimed a phantom
+   editor. The second known live defect, closed on the surface it lived on.
+4. **t1 unarchives; the trip thaws for t2**, and **t2 — a member, not the owner — creates Day 1**,
+   confirmed in SQL. S1.3 collaborative editing over S1.2 membership.
+
+**One observation, not a defect.** Mid-transition the app briefly showed a stale *"Someone is
+editing"* alert. Investigated rather than assumed: the `edit_lease` row named **t2 itself** as holder,
+and the server returns **200** when the holder re-acquires (idempotent renewal), so the lock is
+behaving correctly. On a clean app start the same route renders the editable plan. The alert was a
+leftover dialog from the archived→unarchived transition, not a reproducible state.
 
 ### The L4 walk — roles, stated up front
 
