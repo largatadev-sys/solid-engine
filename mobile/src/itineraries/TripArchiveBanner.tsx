@@ -33,16 +33,30 @@ export function TripArchiveBanner({ itinerary }: { itinerary: ItineraryResponse 
     confirmWith(wording, () => mutation.mutate());
   };
 
-  const body = !itinerary.archived
-    ? 'Archive it to clear it from your trip list. Nothing is deleted.'
-    : control !== null
+  if (!itinerary.archived) {
+    return (
+      <View style={styles.quiet}>
+        {mutation.isPending ? (
+          <ActivityIndicator color={colors.textSecondary} />
+        ) : (
+          <Pressable accessibilityRole="button" disabled={mutation.isPending} onPress={onPress}>
+            <Text style={styles.quietText}>Archive trip</Text>
+          </Pressable>
+        )}
+        {mutation.isError && <Text style={styles.error}>{mutation.error.message}</Text>}
+      </View>
+    );
+  }
+
+  const body =
+    control !== null
       ? 'This trip is read-only. Unarchive it to make changes.'
       : 'This trip is read-only. Only the trip owner can unarchive it.';
 
   return (
-    <View style={[styles.banner, itinerary.archived && styles.archived]}>
+    <View style={[styles.banner, styles.archived]}>
       <View style={styles.text}>
-        <Text style={styles.title}>{itinerary.archived ? 'Archived' : 'Done with this trip?'}</Text>
+        <Text style={styles.title}>Archived</Text>
         <Text style={styles.body}>{body}</Text>
         {mutation.isError && <Text style={styles.error}>{mutation.error.message}</Text>}
       </View>
@@ -55,7 +69,7 @@ export function TripArchiveBanner({ itinerary }: { itinerary: ItineraryResponse 
             accessibilityRole="button"
             disabled={mutation.isPending}
             onPress={onPress}>
-            <Text style={styles.actionText}>{archiving ? 'Archive' : 'Unarchive'}</Text>
+            <Text style={styles.actionText}>Unarchive</Text>
           </Pressable>
         ))}
     </View>
@@ -75,6 +89,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   archived: { borderColor: colors.accent },
+  quiet: { alignItems: 'flex-start', gap: spacing.xs },
+  quietText: { ...typography.caption, color: colors.textSecondary, textDecorationLine: 'underline' },
   text: { flexShrink: 1, gap: spacing.xs },
   title: { ...typography.bodyStrong, color: colors.textPrimary },
   body: { ...typography.caption, color: colors.textSecondary },

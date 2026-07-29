@@ -40,15 +40,6 @@ export const itineraryRepository = {
   },
 
 
-  async startTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/start`, undefined);
-  },
-
-  async completeTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/complete`, undefined);
-  },
-
-
   async archiveTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/archive`, undefined);
   },

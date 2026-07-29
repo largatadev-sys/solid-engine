@@ -70,6 +70,42 @@ being accepted — several agent claims were corrected in the process.
   already did.
 - **`drive-archive.js` read `PREVIEW_URL`** while its siblings read `LARGATA_PREVIEW_URL`. Unified.
 
+### Pulled into the batch by owner decision — the lifecycle UI removal
+
+**This is the one item in the gate that is not a defect fix, and it entered on an explicit owner
+override of the scope line.** Recorded plainly because the line it crosses was drawn deliberately at
+the grilling (*"defects in E1's deliverable get fixed, everything else gets a backlog line"*).
+
+The trigger was legitimate and pre-registered. The backlog entry parked on 2026-07-29 said *"pull
+earlier only if the three-banner trip screen becomes a demo problem"* — and the founder hit precisely
+that, looking at the running build during this gate and asking why the banners were still there. My
+recommendation was to promote first and pull it separately; the founder chose to include it. The
+override is theirs to make, and the pre-registered condition means this is the park working, not
+being ignored.
+
+**Executed exactly to the parked scope, no more:**
+
+- **Out:** the lifecycle banner and its date nudge, the Start/Complete flows, and the permanent state
+  badge — on **both** the trip screen and the My Trips row, since a permanent "Draft" chip is noise in
+  either place.
+- **Demoted:** archive, from a prompting *"Done with this trip?"* card to a quiet **"Archive trip"**
+  link. Nothing is lost with the card's body copy — the confirm dialog already says *"You can
+  unarchive it at any time."*
+- **Kept:** the archived notice and its Unarchive action, because that banner is what explains a
+  frozen screen rather than prompting for bookkeeping.
+- **Untouched:** the API (`/start`, `/complete`, the wire values — ADR-008) and all data
+  (`started_at`, `completed_at`, V12, V13, the workspace mirror). `git status` confirms **zero backend
+  files changed**.
+- **Also removed, as dead code:** the two mutation hooks, the two repository methods, the two confirm
+  wordings and `formatItineraryState`, each of which had exactly one caller — the deleted UI. Client
+  code carries no additivity obligation, and leaving them would be the speculative generality P9
+  rejects. All recoverable from git; the *endpoints* are what ADR-008 protects, and they survive.
+
+**Verified for both roles on the device, not just in tests:** the owner sees the quiet link and no
+banners; a member sees neither; an archived trip still shows the badge, the notice, and Unarchive for
+the owner alone. Mobile suite **560/560** (down from 594 — the removed lifecycle tests went with the
+feature they tested), `tsc` clean.
+
 ### Rejected on the record
 
 - **`V13__workspace_state.sql`'s comment names `WorkspaceStorageIT`; the class is
