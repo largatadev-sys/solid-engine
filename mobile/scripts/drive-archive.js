@@ -174,24 +174,29 @@ function getJson(path) {
   await goto(`/itineraries/${TRIP_ID}`);
   const liveText = await text();
   check('the trip screen renders (not the S0.4 white screen)', (liveText || '').length > 0);
-  check('a live trip offers the owner Archive', liveText.includes('Archive'));
+  check('a live trip offers the owner a quiet Archive control', liveText.includes('Archive trip'));
   check('…and shows the plan’s editing affordances', liveText.includes('Edit'));
 
-  const cancelled = await tapWithConfirm('Archive', false);
+  const cancelled = await tapWithConfirm('Archive trip', false);
   check('the Archive button exists and was tapped', cancelled.tapped);
   check('it asked before acting (window.confirm fired)', cancelled.asked !== false);
   const afterCancel = await text();
-  check('CANCEL leaves the trip live — still offering Archive', afterCancel.includes('Archive'));
+  check('CANCEL leaves the trip live - still offering Archive', afterCancel.includes('Archive trip'));
   check('…and the plan is still editable', afterCancel.includes('Edit'));
 
-  const accepted = await tapWithConfirm('Archive', true);
+  const accepted = await tapWithConfirm('Archive trip', true);
   check('the second tap asked too', accepted.asked !== false);
   const afterArchive = await text();
   check('CONFIRM archives — the notice names the state', afterArchive.includes('Archived'));
   check('…the frozen surface explains itself', afterArchive.includes('read-only'));
   check('…the owner is offered Unarchive', afterArchive.includes('Unarchive'));
+  const liveControls = await evaluate(`
+    JSON.stringify(Array.from(document.querySelectorAll('div[role="button"],button,a'))
+      .map((n) => (n.innerText || '').trim()).filter(Boolean))
+  `);
   check('…and the editing affordances are gone (hidden, not a dead control)',
-    !afterArchive.includes('Daily schedule'));
+    !liveControls.includes('Edit') && !liveControls.includes('Daily schedule'),
+    'clickable: ' + liveControls);
 
   if (screenshotPath !== null) {
     const shot = await send('Page.captureScreenshot', {});
@@ -218,7 +223,7 @@ function getJson(path) {
   const unarchived = await tapWithConfirm('Unarchive', true);
   check('Unarchive asked before acting', unarchived.asked !== false);
   const afterUnarchive = await text();
-  check('UNARCHIVE restores the trip — Archive is offered again', afterUnarchive.includes('Archive'));
+  check('UNARCHIVE restores the trip - the quiet Archive control returns', afterUnarchive.includes('Archive trip'));
   check('…and the plan is editable again', afterUnarchive.includes('Daily schedule'));
 
   console.log('\nPAGE ERRORS:');
