@@ -55,7 +55,7 @@ export function itineraryOptions(id: string, client: QueryClient) {
   return queryOptions({
     queryKey: itineraryKeys.one(id),
     queryFn: () => itineraryRepository.fetchOne(id),
-    initialData: () => findInListCache(client, id),
+    placeholderData: () => findInListCache(client, id),
   });
 }
 
@@ -109,23 +109,6 @@ export function useUpdateItinerary(
   const client = useQueryClient();
   return useMutation({
     mutationFn: (request: UpdateItineraryRequest) => itineraryRepository.update(id, request),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
-  });
-}
-
-
-export function useStartTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: () => itineraryRepository.startTrip(id),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
-  });
-}
-
-export function useCompleteTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: () => itineraryRepository.completeTrip(id),
     onSuccess: (updated) => onItineraryUpdated(client, updated),
   });
 }

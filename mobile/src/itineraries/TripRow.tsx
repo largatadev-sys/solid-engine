@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing, typography } from '../theme';
 import type { ItineraryResponse } from '../types/api';
 import { formatDates } from './formatDates';
-import { formatItineraryState } from './formatItineraryState';
 
 
 export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
@@ -14,18 +13,13 @@ export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
           <Text style={styles.rowTitle} numberOfLines={1}>
             {itinerary.title}
           </Text>
-          <View style={styles.badges}>
-            {}
-            {itinerary.archived && (
+          {itinerary.archived && (
+            <View style={styles.badges}>
               <View style={[styles.stateBadge, styles.archivedBadge]}>
                 <Text style={[styles.stateBadgeText, styles.archivedBadgeText]}>Archived</Text>
               </View>
-            )}
-            {}
-            <View style={styles.stateBadge}>
-              <Text style={styles.stateBadgeText}>{formatItineraryState(itinerary.state)}</Text>
             </View>
-          </View>
+          )}
         </View>
         <Text style={styles.rowMeta} numberOfLines={1}>
           {itinerary.destinations.join(' · ')}

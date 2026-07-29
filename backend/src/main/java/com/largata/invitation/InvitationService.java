@@ -19,6 +19,7 @@ import com.largata.invitation.InvitationExceptions.NotWorkspaceOwnerException;
 import com.largata.itinerary.ItineraryService;
 import com.largata.workspace.MembershipView;
 import com.largata.workspace.WorkspaceService;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
@@ -45,6 +46,7 @@ public class InvitationService {
     private final WriteFence fence;
     private final InvitationMailer mailer;
     private final Analytics analytics;
+    private final Clock clock;
 
     InvitationService(
             InvitationRepository invitations,
@@ -54,7 +56,8 @@ public class InvitationService {
             AuthorizationGuard guard,
             WriteFence fence,
             InvitationMailer mailer,
-            Analytics analytics) {
+            Analytics analytics,
+            Clock clock) {
         this.fence = fence;
         this.invitations = invitations;
         this.workspaces = workspaces;
@@ -63,6 +66,7 @@ public class InvitationService {
         this.guard = guard;
         this.mailer = mailer;
         this.analytics = analytics;
+        this.clock = clock;
     }
 
 
@@ -78,14 +82,14 @@ public class InvitationService {
         UUID workspaceId =
                 workspaces
                         .workspaceIdOf(itineraryId)
-                        .orElseThrow(() -> new IllegalStateException("Owner has no workspace — invariant breach"));
+                        .orElseThrow(() -> new IllegalStateException("Owner has no workspace â€” invariant breach"));
 
         if (isAlreadyMember(itineraryId, email)) {
             throw new AlreadyMemberException();
         }
         reconcileExistingPending(workspaceId, email);
 
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         Invitation invitation = invitations.save(Invitation.open(workspaceId, email, owner.travelerId(), now));
         log.info("Invitation opened: id={} workspaceId={} invitedBy={}", invitation.id(), workspaceId, owner.travelerId());
 
@@ -119,7 +123,7 @@ public class InvitationService {
         if (invitation.status() != InvitationStatus.PENDING) {
             throw new InvitationNotPendingException();
         }
-        invitation.revoke(Instant.now());
+        invitation.revoke(Instant.now(clock));
         invitations.saveAndFlush(invitation);
         log.info("Invitation revoked: id={} itineraryId={}", invitation.id(), itineraryId);
         afterCommit(
@@ -137,7 +141,7 @@ public class InvitationService {
         UUID workspaceId = workspaces.workspaceIdOf(member.itineraryId()).orElseThrow();
         return invitations
                 .findByWorkspaceIdAndStatusAndExpiresAtAfterOrderByIdDesc(
-                        workspaceId, InvitationStatus.PENDING, Instant.now())
+                        workspaceId, InvitationStatus.PENDING, Instant.now(clock))
                 .stream()
                 .map(i -> new PendingInvitation(i.id(), i.email(), i.createdAt(), i.expiresAt()))
                 .toList();
@@ -169,7 +173,7 @@ public class InvitationService {
         String email = normalize(contact.email());
         List<Invitation> rows =
                 invitations.findByEmailAndStatusAndExpiresAtAfterOrderByIdDesc(
-                        email, InvitationStatus.PENDING, Instant.now());
+                        email, InvitationStatus.PENDING, Instant.now(clock));
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -200,7 +204,7 @@ public class InvitationService {
         UUID itineraryId =
                 workspaces.itineraryIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
 
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         invitation.accept(travelerId, now);
         invitations.saveAndFlush(invitation);
         workspaces.admitMember(itineraryId, travelerId, now);
@@ -220,7 +224,7 @@ public class InvitationService {
     @Transactional
     public void decline(UUID invitationId, VerifiedContact contact) {
         Invitation invitation = liveInvitationFor(invitationId, contact);
-        invitation.decline(Instant.now());
+        invitation.decline(Instant.now(clock));
         invitations.saveAndFlush(invitation);
         log.info("Invitation declined: id={}", invitationId);
         afterCommit(
@@ -236,7 +240,7 @@ public class InvitationService {
         if (pending.isEmpty()) {
             return 0;
         }
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         pending.forEach(invitation -> invitation.voidBySystem(now));
         invitations.saveAllAndFlush(pending);
         log.info("Pending invitations voided: workspaceId={} count={}", workspaceId, pending.size());
@@ -254,7 +258,7 @@ public class InvitationService {
         if (!contact.verified()) {
             throw new EmailNotVerifiedException();
         }
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         if (invitation.status() != InvitationStatus.PENDING) {
             throw new InvitationNotPendingException();
         }
@@ -277,10 +281,10 @@ public class InvitationService {
             return;
         }
         Invitation pending = existing.get();
-        if (!pending.isExpired(Instant.now())) {
+        if (!pending.isExpired(Instant.now(clock))) {
             throw new InvitationAlreadyPendingException();
         }
-        pending.expire(Instant.now());
+        pending.expire(Instant.now(clock));
         invitations.saveAndFlush(pending);
     }
 

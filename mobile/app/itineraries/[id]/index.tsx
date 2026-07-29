@@ -3,10 +3,8 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { ApiError } from '../../../src/api/ApiError';
 import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
 import { formatDates } from '../../../src/itineraries/formatDates';
-import { formatItineraryState } from '../../../src/itineraries/formatItineraryState';
 import { canEditPlan } from '../../../src/itineraries/archiveControls';
 import { TripArchiveBanner } from '../../../src/itineraries/TripArchiveBanner';
-import { TripLifecycleBanner } from '../../../src/itineraries/TripLifecycleBanner';
 import { OwnershipOfferBanner } from '../../../src/members/OwnershipOfferBanner';
 import { useItinerary } from '../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../src/theme';
@@ -55,18 +53,11 @@ export default function ItineraryScreen() {
       </View>
 
       <View style={styles.badges}>
-        {}
-        <Badge label={formatItineraryState(data.state)} />
         <Badge label={data.visibility} />
-        {}
         {data.archived && <Badge label="Archived" />}
       </View>
 
-      {}
       <TripArchiveBanner itinerary={data} />
-
-      {}
-      {canEditPlan(data) && <TripLifecycleBanner itinerary={data} />}
 
       {}
       <OwnershipOfferBanner itineraryId={id} />

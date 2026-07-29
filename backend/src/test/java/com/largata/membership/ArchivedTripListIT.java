@@ -101,6 +101,25 @@ class ArchivedTripListIT extends PostgresTestBase {
 
 
     @Test
+    void theArchivedFlagAgreesWithTheStoredState_notMerelyWithTheQueryString() {
+        String owner = freshTraveler();
+        String kept = createItinerary(owner);
+        String archived = createItinerary(owner);
+        archive(owner, archived).expectStatus().isOk();
+
+        assertThat(listIds(owner, true)).allSatisfy(id -> assertThat(storedStateOf(id)).isEqualTo("ARCHIVED"));
+        assertThat(listIds(owner, false)).allSatisfy(id -> assertThat(storedStateOf(id)).isEqualTo("ACTIVE"));
+
+        assertThat(listIds(owner, false)).as("the live view still holds the untouched trip").contains(kept);
+    }
+
+    private String storedStateOf(String itineraryId) {
+        return jdbc.queryForObject(
+                "SELECT state FROM workspace WHERE itinerary_id = ?", String.class, UUID.fromString(itineraryId));
+    }
+
+
+    @Test
     void keysetPagingWorksInBothViews() {
         String owner = freshTraveler();
         String first = createItinerary(owner);

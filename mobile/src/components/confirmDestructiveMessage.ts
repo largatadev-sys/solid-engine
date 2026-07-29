@@ -74,24 +74,6 @@ export function declineOwnershipWording(): ConfirmWording {
 }
 
 
-export function startTripWording(): ConfirmWording {
-  return {
-    title: 'Start this trip?',
-    body: "It moves from draft to active. You can keep editing the plan, but a trip can't go back to draft.",
-    confirmLabel: 'Start',
-  };
-}
-
-
-export function completeTripWording(): ConfirmWording {
-  return {
-    title: 'Mark this trip complete?',
-    body: "The plan and everyone on it stay as they are — but a completed trip can't be reopened.",
-    confirmLabel: 'Complete',
-  };
-}
-
-
 export function archiveTripWording(): ConfirmWording {
   return {
     title: 'Archive this trip?',

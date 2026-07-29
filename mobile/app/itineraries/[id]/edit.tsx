@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
 import { DatePicker } from '../../../src/components/DatePicker';
+import { archivedPlanNotice } from '../../../src/components/editLockedMessage';
 import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
 import { useEditLock } from '../../../src/hooks/useEditLock';
 import {
@@ -20,16 +21,17 @@ import { colors, radii, spacing, typography } from '../../../src/theme';
 export default function EditItineraryScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data } = useItinerary(id);
+  const { data, isPlaceholderData } = useItinerary(id);
   const update = useUpdateItinerary(id);
 
   const editLock = useEditLock(id);
+  const settledArchived = !isPlaceholderData && data !== undefined ? data.archived : undefined;
   useEffect(() => {
+    if (settledArchived !== false) return;
     void editLock.acquire().then((granted) => {
       if (!granted) router.back();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [settledArchived]);
 
   const [title, setTitle] = useState(data?.title ?? '');
   const [destinations, setDestinations] = useState<string[]>(data?.destinations ?? ['']);
@@ -60,6 +62,16 @@ export default function EditItineraryScreen() {
   }
 
   const serverMessage = update.error instanceof ApiError ? update.error.message : undefined;
+
+  if (data?.archived === true) {
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <Stack.Screen options={{ title: 'Edit trip' }} />
+        <Text style={styles.archivedTitle}>{archivedPlanNotice.title}</Text>
+        <Text style={styles.archivedBody}>{archivedPlanNotice.body}</Text>
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -180,6 +192,8 @@ const styles = StyleSheet.create({
   addDestination: { paddingVertical: spacing.xs },
   addDestinationText: { ...typography.caption, color: colors.accent },
   error: { ...typography.caption, color: colors.danger },
+  archivedTitle: { ...typography.bodyStrong, color: colors.textPrimary },
+  archivedBody: { ...typography.caption, color: colors.textSecondary },
   button: {
     marginTop: spacing.sm,
     paddingVertical: spacing.md,

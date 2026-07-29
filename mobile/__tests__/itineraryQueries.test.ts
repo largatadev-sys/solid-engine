@@ -157,6 +157,20 @@ describe('one itinerary', () => {
     expect(itinerary.title).toBe('Kyoto');
   });
 
+  it('never serves the seeded list row as fresh — a trip archived elsewhere still refetches', async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
+    });
+    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('abc', 'Osaka')] });
+    await client.fetchInfiniteQuery(myItinerariesOptions);
+    itineraryRepository.fetchOne.mockResolvedValue({ ...trip('abc', 'Osaka'), archived: true });
+
+    const detail = await client.fetchQuery(itineraryOptions('abc', client));
+
+    expect(itineraryRepository.fetchOne).toHaveBeenCalledWith('abc');
+    expect(detail.archived).toBe(true);
+  });
+
   it('finds a trip on any page of the cached list, not just the first', async () => {
     const client = freshClient();
     itineraryRepository.fetchMine

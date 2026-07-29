@@ -9,8 +9,16 @@ const OFFLINE_BODY =
   'You need a connection to edit the plan. You can still view it, and edit once you’re back online.';
 const FALLBACK_BODY = 'Another member is editing this itinerary right now. Try again in a moment.';
 
+export const archivedPlanNotice: EditLockedMessage = {
+  title: 'This trip is archived',
+  body: 'Archived trips are read-only. Unarchive it from the trip screen to make changes.',
+};
+
 
 export function editLockedMessage(error: unknown): EditLockedMessage {
+  if (error instanceof ApiError && error.code === 'TRIP_ARCHIVED') {
+    return archivedPlanNotice;
+  }
   if (error instanceof ApiError && error.code === 'EDIT_LOCKED') {
     return { title: LOCKED_TITLE, body: error.message };
   }

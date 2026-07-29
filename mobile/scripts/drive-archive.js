@@ -1,27 +1,3 @@
-/**
- * The web rung for S1.9's archive flow — real headless Chrome against the preview **container**,
- * never `expo export` + a static server (CLAUDE.md: only the container exercises the true build path
- * and the true server).
- *
- * ## What it proves that a unit test cannot
- *
- * 1. **The confirm dialog actually gates the act.** `Alert.alert` is a no-op on react-native-web
- *    (the S1.3 gotcha that shipped an entire dead grey-out shell), so the web fork uses
- *    `window.confirm` — which headless Chrome swallows. This intercepts it, and drives **cancel and
- *    accept both**: a confirm that ignores "no" is worse than none (S1.5's rule).
- * 2. **The frozen surface renders as frozen**, not as a broken screen — the archived notice appears
- *    and the editing affordances are gone.
- * 3. **The list splits**, on the surface a founder actually looks at.
- *
- * ## Usage
- *
- *   cd mobile && set -a && . ./.env && set +a
- *   node scripts/seed-trip.js --owner t1 --members t2     # note the trip id
- *   TRIP_ID=<id> node scripts/drive-archive.js [--shot out.png]
- *
- * Committed rather than left in a transcript, for the reason S0.6 recorded after the preview driver
- * was written and thrown away twice: a harness nobody can find gets rebuilt every story.
- */
 const WebSocket = require('ws');
 const { spawn } = require('child_process');
 const http = require('http');
@@ -29,7 +5,7 @@ const https = require('https');
 const fs = require('fs');
 const os = require('os');
 
-const PREVIEW = process.env.PREVIEW_URL || 'http://localhost:8081';
+const PREVIEW = process.env.LARGATA_PREVIEW_URL || 'http://localhost:8081';
 const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
 const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
@@ -42,7 +18,7 @@ const CHROME_CANDIDATES = [
   '/usr/bin/google-chrome',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ];
-const PORT = 9224; // Not 9223 — drive-preview.js owns that, and both may run in one session.
+const PORT = Number(process.env.LARGATA_CDP_PORT || 9224);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const address = (tag) => BASE.replace('@', `+${tag}@`);
@@ -72,7 +48,6 @@ function postJson(url, body) {
   });
 }
 
-/** A real Firebase sign-in for a pool account — the same tokens the app would hold. */
 async function signIn(tag) {
   const res = await postJson(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${KEY}`,
@@ -156,11 +131,8 @@ function getJson(path) {
     return r?.result?.value;
   };
 
-  // Seed the session the way the app does, so the driver lands signed in rather than at sign-in.
   await send('Page.navigate', { url: PREVIEW });
   await sleep(3000);
-  // The key and shape `firebaseWebRest` persists — read from that module, never guessed: a wrong
-  // key lands the driver on the sign-in screen, which reads as "archive is broken".
   await evaluate(`
     localStorage.setItem('largata.web.session', JSON.stringify({
       idToken: ${JSON.stringify(owner.idToken)},
@@ -177,11 +149,6 @@ function getJson(path) {
   };
   const text = () => evaluate('document.body.innerText');
 
-  /**
-   * Taps the first control whose label matches, having replaced `window.confirm` with a stub that
-   * answers `accept` and records that it was asked. Returns whether the dialog actually appeared —
-   * which is the whole point: a button that acts *without* asking must fail this.
-   */
   const tapWithConfirm = async (label, accept) => {
     await evaluate(`
       window.__confirmAsked = false;
@@ -204,40 +171,38 @@ function getJson(path) {
 
   console.log(`\n=== S1.9 archive, web preview (${PREVIEW}) — trip ${TRIP_ID} ===\n`);
 
-  // --- the trip screen, live ---------------------------------------------------------------------
   await goto(`/itineraries/${TRIP_ID}`);
   const liveText = await text();
   check('the trip screen renders (not the S0.4 white screen)', (liveText || '').length > 0);
-  check('a live trip offers the owner Archive', liveText.includes('Archive'));
+  check('a live trip offers the owner a quiet Archive control', liveText.includes('Archive trip'));
   check('…and shows the plan’s editing affordances', liveText.includes('Edit'));
 
-  // --- cancel must genuinely cancel --------------------------------------------------------------
-  const cancelled = await tapWithConfirm('Archive', false);
+  const cancelled = await tapWithConfirm('Archive trip', false);
   check('the Archive button exists and was tapped', cancelled.tapped);
   check('it asked before acting (window.confirm fired)', cancelled.asked !== false);
   const afterCancel = await text();
-  check('CANCEL leaves the trip live — still offering Archive', afterCancel.includes('Archive'));
+  check('CANCEL leaves the trip live - still offering Archive', afterCancel.includes('Archive trip'));
   check('…and the plan is still editable', afterCancel.includes('Edit'));
 
-  // --- accept must actually archive --------------------------------------------------------------
-  const accepted = await tapWithConfirm('Archive', true);
+  const accepted = await tapWithConfirm('Archive trip', true);
   check('the second tap asked too', accepted.asked !== false);
   const afterArchive = await text();
   check('CONFIRM archives — the notice names the state', afterArchive.includes('Archived'));
   check('…the frozen surface explains itself', afterArchive.includes('read-only'));
   check('…the owner is offered Unarchive', afterArchive.includes('Unarchive'));
+  const liveControls = await evaluate(`
+    JSON.stringify(Array.from(document.querySelectorAll('div[role="button"],button,a'))
+      .map((n) => (n.innerText || '').trim()).filter(Boolean))
+  `);
   check('…and the editing affordances are gone (hidden, not a dead control)',
-    !afterArchive.includes('Daily schedule'));
+    !liveControls.includes('Edit') && !liveControls.includes('Daily schedule'),
+    'clickable: ' + liveControls);
 
   if (screenshotPath !== null) {
     const shot = await send('Page.captureScreenshot', {});
     fs.writeFileSync(screenshotPath, Buffer.from(shot.data, 'base64'));
   }
 
-  // --- the members screen freezes too (the code-review finding) ----------------------------------
-  // Three of the four frozen governance acts live here, and the first version of this driver never
-  // opened it — which is how an entirely unguarded screen passed a green run. Checked as the OWNER,
-  // because the owner is the only viewer who has these controls to lose.
   await goto(`/members/${TRIP_ID}`);
   const membersFrozen = await text();
   check('the members screen still shows the roster on an archived trip', membersFrozen.includes('MEMBERS'));
@@ -245,7 +210,6 @@ function getJson(path) {
   check('…and Remove is gone from every row', !membersFrozen.includes('Remove'));
   check('…and Make owner is gone', !membersFrozen.includes('Make owner'));
 
-  // --- the list splits, on the surface a founder looks at ----------------------------------------
   await goto('/');
   const myTrips = await text();
   check('My Trips no longer lists the archived trip', !myTrips.includes('Archived trip smoke'));
@@ -255,12 +219,11 @@ function getJson(path) {
   const archivedView = await text();
   check('the archived view lists it', archivedView.includes('Archived'));
 
-  // --- unarchive, back to a working trip ---------------------------------------------------------
   await goto(`/itineraries/${TRIP_ID}`);
   const unarchived = await tapWithConfirm('Unarchive', true);
   check('Unarchive asked before acting', unarchived.asked !== false);
   const afterUnarchive = await text();
-  check('UNARCHIVE restores the trip — Archive is offered again', afterUnarchive.includes('Archive'));
+  check('UNARCHIVE restores the trip - the quiet Archive control returns', afterUnarchive.includes('Archive trip'));
   check('…and the plan is editable again', afterUnarchive.includes('Daily schedule'));
 
   console.log('\nPAGE ERRORS:');

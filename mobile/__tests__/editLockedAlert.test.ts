@@ -22,6 +22,16 @@ describe('editLockedMessage — the wording both forks share', () => {
     expect(body).toBe('Maria is editing this itinerary right now.');
   });
 
+  it('names the archive, never a phantom editor, when the trip is frozen', () => {
+    const { title, body } = editLockedMessage(
+      new ApiError({ code: 'TRIP_ARCHIVED', message: 'This trip is archived and is read-only.', status: 409 }),
+    );
+
+    expect(title).toBe('This trip is archived');
+    expect(title).not.toMatch(/someone is editing/i);
+    expect(body).not.toMatch(/another member/i);
+  });
+
   it('shows an offline message when the acquire failed at the network, not the lock', () => {
     const { title, body } = editLockedMessage(ApiError.offline());
 
