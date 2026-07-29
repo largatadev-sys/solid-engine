@@ -85,6 +85,17 @@ Three findings, each recorded with its evidence under *"E1 promotion gate 2026-0
 unbounded access path and now-dead keyset index · the copy-pasted platform-dialog forks · the twin
 `NotTripOwnerException` class names.
 
+### Minor, recorded not fixed
+
+**Deep-linking straight to `/itineraries/{id}/edit` on a locked trip leaves the form on screen.** The
+lock alert fires correctly (*"largata.dev+t1 is editing this itinerary right now."*) but the
+`router.back()` that follows has no history to pop when the route was entered directly, so the edit
+form stays rendered. **Safe** — every write still fails the server's `requireHeldBy` check, so this is
+cosmetic, and it is **pre-existing S1.4 behaviour, not introduced here.** It is also not a path a
+traveller reaches normally: `/edit` is entered from the trip screen, where back works. Fixing it would
+mean gating the route on lock state the way this gate now gates it on `archived` — reasonable, but
+scope creep at a promotion gate. **Trigger: the next story that touches the edit route.**
+
 ### Parked: S1.2 AC 10/11 — the transactional invitation email
 
 **Owner decision, 2026-07-29, and the reasoning is worth keeping because my first recommendation was
