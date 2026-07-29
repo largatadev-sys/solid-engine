@@ -106,6 +106,22 @@ banners; a member sees neither; an archived trip still shows the badge, the noti
 the owner alone. Mobile suite **560/560** (down from 594 — the removed lifecycle tests went with the
 feature they tested), `tsc` clean.
 
+**Re-verified on every layer the change touches**, since a UI removal is only proven where it renders:
+the preview container was **rebuilt through the true build path** and `drive-archive` re-run
+**22/22**, `smoke-api` re-run **46/46** on the local stack.
+
+**And the re-run earned its keep — it exposed two weaknesses in the driver itself.** It matched the
+archive control by *exact* inner text `'Archive'`, so the new `'Archive trip'` label meant the tap
+silently missed and **eleven downstream checks cascaded**, reporting a broken product when the product
+was correct. Worse, its frozen-surface check asserted the *words* `'Daily schedule'` were absent —
+conflating *"the link is gone"* with *"the words are gone."* An archived trip is **supposed** to keep
+showing its plan read-only, so that check only ever passed because the fixture had no days; the moment
+one existed it failed on correct behaviour. It now enumerates the genuinely clickable elements and
+asserts `Edit` and `Daily schedule` are not among them, printing the survivors
+(`["Unarchive","Members"]`) in its output — so a pass now means the affordances are gone, not merely
+that a string is missing. Same family as this repo's recurring lesson: **a check whose two outcomes
+are indistinguishable proves nothing**, and this one had drifted into exactly that.
+
 ### Rejected on the record
 
 - **`V13__workspace_state.sql`'s comment names `WorkspaceStorageIT`; the class is
