@@ -70,7 +70,7 @@ async function poolToken(tag) {
   const anon = await api('/v1/itineraries');
   check('checklist #1: an anonymous request is 401, not 404', anon.status === 401, 'got ' + anon.status);
   check('checklist #2: the 401 carries a non-null traceId', Boolean(anon.body?.traceId));
-  const bad = await request(http, API + '/v1/me', 'GET', undefined, { Authorization: 'Bearer not-a-jwt' });
+  const bad = await request(apiLib, API + '/v1/me', 'GET', undefined, { Authorization: 'Bearer not-a-jwt' });
   check('checklist #3: a malformed token gets the same envelope',
     bad.status === 401 && Boolean(bad.body?.code) && Boolean(bad.body?.traceId));
   const unknown = await api('/v1/no-such-route', 'GET', owner);
