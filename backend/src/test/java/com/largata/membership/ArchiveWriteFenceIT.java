@@ -148,6 +148,33 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
 
     @Test
+    void archivingShutsAStrangersPendingInvitationTooNotJustTheOwnershipOffer() {
+        Trip trip = liveTripWithTwoMembers();
+        String invitee =
+                TestJwtSupport.verifiedToken("uid-" + UUID.randomUUID(), trip.pendingInvitationEmail);
+
+        archive(trip.owner, trip.id).expectStatus().isOk();
+
+        post(invitee, "/v1/invitations/" + trip.pendingInvitationId + "/accept", null)
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ILLEGAL_TRANSITION");
+        post(invitee, "/v1/invitations/" + trip.pendingInvitationId + "/decline", null)
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ILLEGAL_TRANSITION");
+
+        assertThat(membershipCountOn(trip.id))
+                .as("a frozen trip admits nobody, whichever door they arrive at")
+                .isEqualTo(2);
+    }
+
+
+    @Test
     void authorityIsAnsweredBeforeTheFence() {
         Trip trip = liveTripWithTwoMembers();
         String stranger = freshTraveler();
@@ -181,24 +208,29 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         response.expectStatus().isEqualTo(409).expectBody().jsonPath("$.code").isEqualTo("TRIP_ARCHIVED");
     }
 
-    private record Trip(String id, String owner, String member, UUID memberId, String pendingInvitationId) {}
+    private record Trip(
+            String id,
+            String owner,
+            String member,
+            UUID memberId,
+            String pendingInvitationId,
+            String pendingInvitationEmail) {}
 
 
     private Trip liveTripWithTwoMembers() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
+        String invitedEmail = "pending-" + UUID.randomUUID() + "@example.com";
         byte[] invitation =
-                post(
-                                owner,
-                                "/v1/itineraries/" + tripId + "/invitations",
-                                "{\"email\":\"pending-" + UUID.randomUUID() + "@example.com\"}")
+                post(owner, "/v1/itineraries/" + tripId + "/invitations", "{\"email\":\"" + invitedEmail + "\"}")
                         .expectStatus()
                         .isCreated()
                         .expectBody()
                         .returnResult()
                         .getResponseBodyContent();
-        return new Trip(tripId, owner, member, travelerIdOf(member), fieldIn(invitation, "id"));
+        return new Trip(
+                tripId, owner, member, travelerIdOf(member), fieldIn(invitation, "id"), invitedEmail);
     }
 
     private RestTestClient.ResponseSpec archive(String token, String itineraryId) {

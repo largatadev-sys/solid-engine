@@ -55,7 +55,7 @@ export function itineraryOptions(id: string, client: QueryClient) {
   return queryOptions({
     queryKey: itineraryKeys.one(id),
     queryFn: () => itineraryRepository.fetchOne(id),
-    initialData: () => findInListCache(client, id),
+    placeholderData: () => findInListCache(client, id),
   });
 }
 

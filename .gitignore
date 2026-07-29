@@ -58,3 +58,6 @@ Thumbs.db
 .scratch/
 tmp/
 *.log
+
+# Editor config (personal, not project rules - those live in CLAUDE.md)
+.vscode/

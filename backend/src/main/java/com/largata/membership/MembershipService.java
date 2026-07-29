@@ -68,7 +68,7 @@ public class MembershipService {
         boolean leaving = caller.travelerId().equals(targetTravelerId);
 
         if (!leaving && !caller.isOwner()) {
-            throw new NotTripOwnerException();
+            throw NotTripOwnerException.toRemoveAMember();
         }
         if (leaving && caller.isOwner()) {
             throw new OwnerCannotLeaveException();
@@ -111,7 +111,7 @@ public class MembershipService {
 
     @Transactional
     public void archive(Membership owner) {
-        UUID itineraryId = requireOwner(owner);
+        UUID itineraryId = requireOwnerToChangeArchiveState(owner);
         if (currentState(itineraryId).isArchived()) {
             throw IllegalWorkspaceTransitionException.alreadyArchived();
         }
@@ -128,7 +128,7 @@ public class MembershipService {
 
     @Transactional
     public void unarchive(Membership owner) {
-        UUID itineraryId = requireOwner(owner);
+        UUID itineraryId = requireOwnerToChangeArchiveState(owner);
         if (!currentState(itineraryId).isArchived()) {
             throw IllegalWorkspaceTransitionException.notArchived();
         }
@@ -140,9 +140,9 @@ public class MembershipService {
     }
 
 
-    private UUID requireOwner(Membership caller) {
+    private UUID requireOwnerToChangeArchiveState(Membership caller) {
         if (!caller.isOwner()) {
-            throw new NotTripOwnerException();
+            throw NotTripOwnerException.toChangeArchiveState();
         }
         return caller.itineraryId();
     }
@@ -188,7 +188,7 @@ public class MembershipService {
     public void offerOwnership(Membership owner, UUID targetTravelerId) {
         UUID itineraryId = owner.itineraryId();
         if (!owner.isOwner()) {
-            throw new NotTripOwnerException();
+            throw NotTripOwnerException.toOfferOwnership();
         }
         fence.requireWritable(owner);
         if (owner.travelerId().equals(targetTravelerId)) {
@@ -219,7 +219,7 @@ public class MembershipService {
     public void revokeOwnershipOffer(Membership owner) {
         UUID itineraryId = owner.itineraryId();
         if (!owner.isOwner()) {
-            throw new NotTripOwnerException();
+            throw NotTripOwnerException.toRevokeAnOffer();
         }
         fence.requireWritable(owner);
         Optional<OwnershipOffer> pending =

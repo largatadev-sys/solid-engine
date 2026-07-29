@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { ApiError } from '../../../src/api/ApiError';
 import { comingSoon } from '../../../src/components/comingSoon';
 import { confirmDestructive } from '../../../src/components/confirmDestructive';
+import { archivedPlanNotice } from '../../../src/components/editLockedMessage';
 import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
 import { useEditLock } from '../../../src/hooks/useEditLock';
 import { activityMetaLine } from '../../../src/itineraries/formatActivityCost';
@@ -23,7 +24,7 @@ import { colors, radii, spacing, typography } from '../../../src/theme';
 export default function DailySchedulesScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, isPending, isError, error } = useItinerary(id);
+  const { data, isPending, isError, error, isPlaceholderData } = useItinerary(id);
 
   const appendDay = useAppendDay(id);
   const renameDay = useRenameDay(id);
@@ -33,12 +34,13 @@ export default function DailySchedulesScreen() {
 
   const editLock = useEditLock(id);
   const locked = editLock.state.kind !== 'held';
+  const settledArchived = !isPlaceholderData && data !== undefined ? data.archived : undefined;
   useEffect(() => {
+    if (settledArchived !== false) return;
     void editLock.acquire().then((granted) => {
       if (!granted) router.back();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [settledArchived]);
 
   const [selectedOrdinal, setSelectedOrdinal] = useState(1);
 
@@ -65,6 +67,16 @@ export default function DailySchedulesScreen() {
           {missing ? missingItineraryMessage.title : 'Could not load this plan'}
         </Text>
         <Text style={styles.caption}>{missing ? missingItineraryMessage.body : error.message}</Text>
+      </View>
+    );
+  }
+
+  if (data.archived) {
+    return (
+      <View style={styles.centered}>
+        <Stack.Screen options={{ title: 'Daily Schedules' }} />
+        <Text style={styles.errorTitle}>{archivedPlanNotice.title}</Text>
+        <Text style={styles.caption}>{archivedPlanNotice.body}</Text>
       </View>
     );
   }

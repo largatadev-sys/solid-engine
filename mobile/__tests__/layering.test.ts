@@ -78,6 +78,58 @@ describe('screens consume design tokens, never raw values (S0.3)', () => {
 });
 
 
+describe('no source file carries a byte-order mark (E1 gate)', () => {
+  const scanned = [
+    ...sourceFiles(join(MOBILE_ROOT, 'app')),
+    ...sourceFiles(join(MOBILE_ROOT, 'src')),
+    ...readdirSync(join(MOBILE_ROOT, 'scripts'))
+      .filter((f) => f.endsWith('.js'))
+      .map((f) => join(MOBILE_ROOT, 'scripts', f)),
+  ];
+
+  it('finds files to check (guards against a vacuously passing test)', () => {
+    expect(scanned.length).toBeGreaterThan(20);
+  });
+
+  it('no file starts with EF BB BF', () => {
+    const offenders = scanned.filter((file) => {
+      const head = readFileSync(file).subarray(0, 3);
+      return head[0] === 0xef && head[1] === 0xbb && head[2] === 0xbf;
+    });
+
+    expect(offenders).toEqual([]);
+  });
+});
+
+
+describe('a hook that reads a shared server resource caches it (E1 gate)', () => {
+  const HOOKS = join(MOBILE_ROOT, 'src', 'hooks');
+
+  const SINGLE_CONSUMER_OR_SESSION_SCOPED = ['useAuth.tsx', 'useEditLock.ts', 'useHealth.ts'];
+
+  const sharedResourceHooks = readdirSync(HOOKS).filter(
+    (file) => !SINGLE_CONSUMER_OR_SESSION_SCOPED.includes(file),
+  );
+
+  it('finds hooks to check (guards against a vacuously passing test)', () => {
+    expect(sharedResourceHooks.length).toBeGreaterThan(0);
+  });
+
+  it.each(sharedResourceHooks)('%s reads through the query cache, not component state', (file) => {
+    const source = readFileSync(join(HOOKS, file), 'utf8');
+
+    expect(source).toMatch(/\buseQuery\b|\buseMutation\b/);
+    expect(source).not.toMatch(/\buseState\b/);
+  });
+
+  it('the exclusions still name real files (guards against the list rotting after a rename)', () => {
+    for (const file of SINGLE_CONSUMER_OR_SESSION_SCOPED) {
+      expect(statSync(join(HOOKS, file)).isFile()).toBe(true);
+    }
+  });
+});
+
+
 describe('the Firebase SDK lives only in the auth seam (S0.2 design, S0.4 dependency)', () => {
   const SEAM = [
     join('src', 'repositories', 'authRepository.native.ts'),

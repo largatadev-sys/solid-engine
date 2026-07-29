@@ -33,15 +33,17 @@ export function TripArchiveBanner({ itinerary }: { itinerary: ItineraryResponse 
     confirmWith(wording, () => mutation.mutate());
   };
 
+  const body = !itinerary.archived
+    ? 'Archive it to clear it from your trip list. Nothing is deleted.'
+    : control !== null
+      ? 'This trip is read-only. Unarchive it to make changes.'
+      : 'This trip is read-only. Only the trip owner can unarchive it.';
+
   return (
     <View style={[styles.banner, itinerary.archived && styles.archived]}>
       <View style={styles.text}>
         <Text style={styles.title}>{itinerary.archived ? 'Archived' : 'Done with this trip?'}</Text>
-        <Text style={styles.body}>
-          {itinerary.archived
-            ? 'This trip is read-only. Unarchive it to make changes.'
-            : 'Archive it to clear it from your trip list. Nothing is deleted.'}
-        </Text>
+        <Text style={styles.body}>{body}</Text>
         {mutation.isError && <Text style={styles.error}>{mutation.error.message}</Text>}
       </View>
       {control !== null &&

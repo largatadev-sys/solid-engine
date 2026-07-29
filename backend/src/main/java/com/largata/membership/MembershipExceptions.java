@@ -11,8 +11,24 @@ final class MembershipExceptions {
 
 
     static final class NotTripOwnerException extends ForbiddenException {
-        NotTripOwnerException() {
-            super("NOT_PERMITTED", "Only the trip owner can remove a member.");
+        private NotTripOwnerException(String message) {
+            super("NOT_PERMITTED", message);
+        }
+
+        static NotTripOwnerException toRemoveAMember() {
+            return new NotTripOwnerException("Only the trip owner can remove a member.");
+        }
+
+        static NotTripOwnerException toChangeArchiveState() {
+            return new NotTripOwnerException("Only the trip owner can archive or unarchive this trip.");
+        }
+
+        static NotTripOwnerException toOfferOwnership() {
+            return new NotTripOwnerException("Only the trip owner can offer ownership of this trip.");
+        }
+
+        static NotTripOwnerException toRevokeAnOffer() {
+            return new NotTripOwnerException("Only the trip owner can revoke an ownership offer.");
         }
     }
 

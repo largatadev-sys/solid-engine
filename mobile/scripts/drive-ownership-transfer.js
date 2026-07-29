@@ -1,28 +1,3 @@
-/**
- * Drives the S1.6 ownership offer/accept flow in the **web preview container**, with the confirm
- * dialog intercepted (S1.6, ticket 05 / spec AC 13).
- *
- * ## Why this is a committed script and not a scratch file
- *
- * S0.5 wrote a preview driver and threw it away; S0.6 wrote it again; S1.4 left one untracked in the
- * working tree. Each story then paid the same hour. `drive-preview.js` is the committed cold-load
- * driver — this is its sibling for **signed-in, two-account flows**, which that one cannot do.
- *
- * ## What it proves that "it renders" does not
- *
- * `Alert.alert` is a no-op on react-native-web, and S1.3 shipped a whole screen of dead clicks that
- * every unit test and every render check passed (found by a human tapping). So the only honest web
- * proof is *driving* the control with `window.confirm` intercepted — and driving it **twice**: cancel
- * must leave the state untouched, because a confirm that ignores "no" is worse than none.
- *
- * ## Usage
- *
- *   cd mobile && set -a && . ./.env && set +a
- *   node scripts/smoke-ownership-transfer.js          # (optional) leaves a trip behind
- *   node scripts/drive-ownership-transfer.js          # seeds its own trip via the API, then drives
- *
- * Assumes the preview container on :8081 and the backend on :8080 (the pinned port map in CLAUDE.md).
- */
 const http = require('http');
 const https = require('https');
 const { spawn } = require('child_process');
@@ -33,7 +8,7 @@ const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
 const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
 const PASSWORD = process.env.LARGATA_TEST_POOL_PASSWORD;
-const PORT = 9223; // not drive-preview.js's 9222, so both can run at once
+const PORT = Number(process.env.LARGATA_CDP_PORT || 9225);
 
 const CHROME_CANDIDATES = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -100,7 +75,6 @@ function check(description, ok, detail) {
     if (!v) { console.error(`${n} is not set — run with: set -a && . ./.env && set +a`); process.exit(1); }
   }
 
-  // --- seed a trip over the API: t1 owns it, t2 is a member --------------------------------------
   console.log(`Seeding a trip via ${API} …`);
   const t1 = await signIn('t1');
   const t2 = await signIn('t2');
@@ -140,20 +114,9 @@ function check(description, ok, detail) {
   await send('Page.enable');
   const evaluate = async (expression) => (await send('Runtime.evaluate', { expression, returnByValue: true }))?.result?.value;
 
-  /**
-   * Plants the session the way the app's own web auth does, then intercepts window.confirm.
-   *
-   * The interception is the point: headless Chrome swallows native dialogs, so an un-intercepted
-   * confirm silently resolves to false and every destructive control looks broken. Recording the
-   * message *text* also proves the shared wording module reached the browser rather than some
-   * platform default.
-   */
   const enterAs = async (traveler, answer) => {
     await send('Page.navigate', { url: PREVIEW });
     await sleep(2500);
-    // The key and shape are firebaseWebRest.ts's own (`largata.web.session`, and exactly these four
-    // fields) — read from the source, not guessed: a wrong key restores nothing and the driver would
-    // then test a signed-out page while reporting whatever that renders.
     await evaluate(`(() => {
       localStorage.setItem('largata.web.session', JSON.stringify({
         idToken: ${JSON.stringify(traveler.tokens.idToken)},
@@ -186,7 +149,6 @@ function check(description, ok, detail) {
     (await api(`/v1/itineraries/${trip}/members`, 'GET', t2.tokens.idToken))
       .body.items.find((m) => m.role === 'owner')?.travelerId;
 
-  // --- 1. the owner's screen renders the control (not a dead click) ------------------------------
   console.log('As t1 (owner), on /members:');
   await enterAs(t1, 'false');
   const ownerScreen = await evaluate('document.body.innerText');
@@ -194,7 +156,6 @@ function check(description, ok, detail) {
     `${(ownerScreen || '').length} chars`);
   check('the owner sees a "Make owner" control', /make owner/i.test(ownerScreen || ''));
 
-  // --- 2. CANCEL leaves the state untouched ------------------------------------------------------
   const clickedCancel = await clickText('Make owner');
   await sleep(1500);
   const cancelMessages = await evaluate('JSON.stringify(window.__confirms || [])');
@@ -204,14 +165,12 @@ function check(description, ok, detail) {
     /become the owner|become a member/i.test(cancelMessages || ''));
   check('CANCEL made no offer — the server state is untouched', (await rosterFlag()) === undefined);
 
-  // --- 3. CONFIRM makes the offer ----------------------------------------------------------------
   await evaluate(`window.confirm = (m) => { window.__confirms.push(String(m)); return true; };`);
   await clickText('Make owner');
   await sleep(2500);
   check('CONFIRM made the offer — the roster flag is on t2', (await rosterFlag()) === id2,
     `flag=${await rosterFlag()}`);
 
-  // --- 4. the offeree's side: banner, then accept ------------------------------------------------
   console.log('\nAs t2 (offeree):');
   await enterAs(t2, 'false');
   const offereeMembers = await evaluate('document.body.innerText');

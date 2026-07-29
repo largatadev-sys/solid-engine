@@ -10,7 +10,7 @@
 
 **Blocked by:** 01, 02, 03.
 
-**Status:** in progress — pre-merge evidence complete; awaiting the owner's merge approval, then the post-merge dev check
+**Status:** closed — every box below is ticked, AC 6 included *(the "in progress" reading was stale bookkeeping, corrected at the E1 promotion gate, 2026-07-29; the gate closure itself landed on `docs/S1.1-gate-closure` at the time)*
 
 - [x] **Local full-stack run** (`docker compose up`, fresh DB), driven with **real `largata-dev` Firebase tokens** for two throwaway travelers — not test-minted JWTs, so the whole auth chain ran as it ships. `POST /v1/itineraries` → **201** · owner `GET` → **200** · stranger `GET` → **404** · anonymous `GET` → **401** · owner list → **200**, one item. All five migrations applied clean and in order on the fresh DB (V5 a clean no-op against zero rows, as designed).
 - [x] **Routing is not a round-trip (the standing rule), so the claim was checked at the database:** the workspace row exists, the owner membership is `OWNER`, and **both timestamps equal the itinerary's `created_at`** — the assertion no HTTP response could show. Counts: itineraries=1, workspaces=1, owner_memberships=1, **orphans=0**.

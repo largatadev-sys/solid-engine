@@ -1,20 +1,3 @@
-/**
- * The API rung's smoke suite — the walking path through everything shipped so far, run against the
- * local full stack before a story is called done.
- *
- * <p>Written at S1.5 because the story's verification runs had proved S1.5's *own* behaviour on three
- * rungs without ever re-running the flows it might have broken — feature verification wearing a smoke
- * test's clothes. It is committed rather than left in a transcript for the reason S0.6 recorded after
- * the preview driver was written and thrown away twice: a harness nobody can find gets rebuilt every
- * story.
- *
- * <p><strong>It uses the verified test pool</strong> (`test-pool.js`), which is what lets it assert
- * the real invite → inbox → accept instead of planting a membership row — and, with the deliberately
- * unverified `u1`, both halves of S1.2's `email_verified` gate. Before the pool existed neither was
- * reachable from any harness.
- *
- * Usage:  cd mobile && set -a && . ./.env && set +a && node scripts/smoke-api.js
- */
 const https = require('https');
 const http = require('http');
 
@@ -53,8 +36,9 @@ function request(lib, url, method, body, headers = {}) {
   });
 }
 
+const apiLib = API.startsWith('https') ? https : http;
 const api = (path, method = 'GET', token, body) =>
-  request(http, API + path, method, body, token ? { Authorization: 'Bearer ' + token } : {});
+  request(apiLib, API + path, method, body, token ? { Authorization: 'Bearer ' + token } : {});
 const address = (tag) => { const [l, d] = BASE.split('@'); return `${l}+${tag}@${d}`; };
 
 async function poolToken(tag) {
@@ -80,10 +64,9 @@ async function poolToken(tag) {
   const unverified = await poolToken('u1');
   const meOwner = await api('/v1/me', 'GET', owner);
   const meMember = await api('/v1/me', 'GET', member);
-  await api('/v1/me', 'GET', unverified); // provision it too, so the gate is about verification only
+  await api('/v1/me', 'GET', unverified);
   check('S0.2 traveler provisioned on first contact', meOwner.status === 200 && Boolean(meOwner.body.id));
 
-  // --- REGRESSION_CHECKLIST lines reachable over HTTP -------------------------------------------
   const anon = await api('/v1/itineraries');
   check('checklist #1: an anonymous request is 401, not 404', anon.status === 401, 'got ' + anon.status);
   check('checklist #2: the 401 carries a non-null traceId', Boolean(anon.body?.traceId));
@@ -94,7 +77,6 @@ async function poolToken(tag) {
   check('checklist #1: an authenticated unknown route is 404 + envelope',
     unknown.status === 404 && Boolean(unknown.body?.code), 'got ' + unknown.status);
 
-  // --- S0.3 / S1.3 / S1.4: the plan ------------------------------------------------------------
   const created = await api('/v1/itineraries', 'POST', owner,
     { title: 'Smoke trip', destinations: ['Palawan'], startDate: '2027-03-01', endDate: '2027-03-04' });
   check('S0.3 create an itinerary', created.status === 201, 'got ' + created.status);
@@ -125,7 +107,6 @@ async function poolToken(tag) {
     { title: 'hijack', destinations: ['X'] });
   check('S0.3 guard: a non-member write is 404-masked', strangerWrite.status === 404, 'got ' + strangerWrite.status);
 
-  // --- S1.2: the gate, then the real join -------------------------------------------------------
   const inviteUnverified = await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner,
     { email: address('u1') });
   check('S1.2 invite an unverified address (allowed — the gate is at accept)', inviteUnverified.status === 201);
@@ -156,7 +137,6 @@ async function poolToken(tag) {
   check('S1.4 the member is refused the lock the owner holds',
     memberLocked.status === 409 && memberLocked.body.code === 'EDIT_LOCKED', 'got ' + memberLocked.status);
 
-  // --- S1.5: departure --------------------------------------------------------------------------
   const memberRemovesOwner = await api(`/v1/itineraries/${trip}/members/${meOwner.body.id}`, 'DELETE', member);
   check('S1.5 a member cannot remove the owner (403)',
     memberRemovesOwner.status === 403 && memberRemovesOwner.body.code === 'NOT_PERMITTED');
@@ -170,7 +150,6 @@ async function poolToken(tag) {
   const again = await api(`/v1/itineraries/${trip}/members/${meMember.body.id}`, 'DELETE', owner);
   check('S1.5 removing the already-removed is idempotent (204)', again.status === 204, 'got ' + again.status);
 
-  // Re-entry: the hard delete must leave no trace that blocks a fresh invite (spec §6).
   const reinvite = await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, { email: address('t2') });
   check('S1.5 a removed member can be re-invited (no ALREADY_A_MEMBER)', reinvite.status === 201,
     'got ' + reinvite.status + ' ' + JSON.stringify(reinvite.body?.code));
@@ -183,8 +162,6 @@ async function poolToken(tag) {
   const release = await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner);
   check('S1.4 release the lock', release.status === 204, 'got ' + release.status);
 
-  // --- S1.9: archive ----------------------------------------------------------------------------
-  // The whole loop: freeze, prove the freeze is real from both sides, prove the one open door, thaw.
   const memberArchives = await api(`/v1/itineraries/${trip}/archive`, 'POST', member);
   check('S1.9 a member cannot archive (403 NOT_PERMITTED)',
     memberArchives.status === 403 && memberArchives.body.code === 'NOT_PERMITTED',
@@ -197,8 +174,6 @@ async function poolToken(tag) {
   check('S1.9 the owner archives (200, archived=true)',
     archived.status === 200 && archived.body.archived === true, 'got ' + archived.status);
 
-  // The fence, from both sides of the roster. A member's plan write and the owner's own lifecycle
-  // act must both refuse — archive freezes the trip, not one person's access.
   const memberWrites = await api(`/v1/itineraries/${trip}/days`, 'POST', member, { title: 'While frozen' });
   check('S1.9 a member cannot write the plan (409 TRIP_ARCHIVED)',
     memberWrites.status === 409 && memberWrites.body.code === 'TRIP_ARCHIVED',
@@ -208,7 +183,6 @@ async function poolToken(tag) {
     ownerStarts.status === 409 && ownerStarts.body.code === 'TRIP_ARCHIVED',
     'got ' + ownerStarts.status + ' ' + JSON.stringify(ownerStarts.body?.code));
 
-  // The list splits — and this is the assertion with two outcomes, so it can actually fail.
   const liveList = await api('/v1/itineraries', 'GET', owner);
   const archivedList = await api('/v1/itineraries?archived=true', 'GET', owner);
   check('S1.9 the archived trip leaves the default list',
@@ -216,7 +190,6 @@ async function poolToken(tag) {
   check('S1.9 …and appears in the archived view',
     archivedList.status === 200 && archivedList.body.items.some((i) => i.id === trip));
 
-  // The one door that stays open — the founder's rule, proven rather than assumed.
   const leaves = await api(`/v1/itineraries/${trip}/members/${meMember.body.id}`, 'DELETE', member);
   check('S1.9 a member can still leave an archived trip (204)', leaves.status === 204, 'got ' + leaves.status);
 

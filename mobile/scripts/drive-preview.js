@@ -1,27 +1,3 @@
-/**
- * Drives the web preview in a REAL browser and reports what it finds (S0.6).
- *
- * WHY THIS EXISTS. The web preview's ACs cannot be closed by tests or greps. A bundle grep proves a
- * string shipped, never that React mounted it; a unit test proves a module's logic, never that a
- * browser agrees. S0.4's white screen was invisible to everything except loading the page, and S0.6
- * added a second class of failure only a browser can see: Google's button silently not rendering
- * because an OAuth origin is not registered — clean console, no page errors, nothing in the bundle
- * to grep for. This is the "verify at the layer that ships" rule (CLAUDE.md) made runnable.
- *
- * WHY IT IS COMMITTED. S0.5 wrote this, threw it away, and S0.6 wrote it again from scratch. That is
- * the discovery cost this file exists to stop paying.
- *
- * IT IS NOT A TEST. It reports; it asserts nothing and gates nothing. Jest owns the assertions. Run
- * it when you need to know what a browser actually does with the container.
- *
- * USAGE (from mobile/, with the preview container running — see CLAUDE.md's rig recipe):
- *   node scripts/drive-preview.js [url]            # default http://localhost:8081/
- *   node scripts/drive-preview.js --shot out.png   # also write a screenshot
- *
- * NO NEW DEPENDENCY: `ws` is already present transitively, and Chrome is driven over the DevTools
- * protocol rather than through Puppeteer.
- */
-
 const WebSocket = require('ws');
 const { spawn } = require('child_process');
 const http = require('http');
@@ -38,7 +14,7 @@ const args = process.argv.slice(2);
 const shotIndex = args.indexOf('--shot');
 const screenshotPath = shotIndex === -1 ? null : args[shotIndex + 1];
 const url = args.find((a) => a.startsWith('http')) ?? 'http://localhost:8081/';
-const PORT = 9223;
+const PORT = Number(process.env.LARGATA_CDP_PORT || 9223);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -74,8 +50,6 @@ function getJson(path) {
       '--headless=new',
       '--disable-gpu',
       '--no-first-run',
-      // A throwaway profile: a signed-in Google session would change what the page does, and this
-      // should report the state a founder arriving cold would see.
       `--user-data-dir=${require('os').tmpdir()}/largata-preview-driver`,
       '--window-size=1280,900',
       'about:blank',
@@ -118,9 +92,6 @@ function getJson(path) {
       pageErrors.push(msg.params.exceptionDetails.text);
     }
     if (msg.method === 'Network.responseReceived' && msg.params.response.url.includes('gsi/')) {
-      // Reported for context, NOT as a verdict. Observed at S0.6: `/gsi/button` returns 400 while
-      // the button renders perfectly (GIS retries/falls back internally), so this status is not the
-      // origin-registration signal it looks like. The trustworthy signal is the iframe count below.
       const { status, url: u } = msg.params.response;
       gisNetwork.push(`  ${status} ${u.split('?')[0]}`);
     }
@@ -130,7 +101,7 @@ function getJson(path) {
   await send('Network.enable');
   await send('Page.enable');
   await send('Page.navigate', { url });
-  await sleep(6000); // GIS loads from a CDN and renders async; a shorter wait reports false negatives.
+  await sleep(6000);
 
   const evaluate = async (expression) => {
     const r = await send('Runtime.evaluate', { expression, returnByValue: true });

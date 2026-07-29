@@ -1,28 +1,3 @@
-/**
- * Drives S1.6's whole arc against a running backend, with real verified accounts (S1.6, ticket 05).
- *
- * ## What it proves, and why it is a script rather than another IT
- *
- * The ITs prove the contract against Testcontainers. This proves the same arc against a **deployed
- * rung** — a real Firebase token from a real verified account, a real network, the migrations as they
- * actually applied. That is the only thing an IT structurally cannot do, and it is what spec AC 14
- * asks for.
- *
- * Every step is a discriminating check: each one states what it expects and fails loudly otherwise, so
- * a green run cannot mean "the probe never worked" (the repo's three-times-burned lesson). The final
- * SQL-shaped assertions are done through the API where the API exposes the fact, and reported for the
- * operator to confirm in the database where it does not.
- *
- * ## Usage
- *
- *   cd mobile && set -a && . ./.env && set +a
- *   node scripts/smoke-ownership-transfer.js                        # local stack
- *   LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-ownership-transfer.js
- *
- * Tags are stated in the output on purpose (S1.5's rule: a test identity must identify itself) —
- * t1 = original owner, t2 = the traveler offered the crown, t3 = a bystander who must see the
- * governance state but never be able to act on it.
- */
 const https = require('https');
 const http = require('http');
 
@@ -97,7 +72,6 @@ const offeredOn = (roster) => roster.find((m) => m.ownershipOffered === true)?.t
   const id = async (t) => (await api('/v1/me', 'GET', t.token)).body.id;
   const [id1, id2, id3] = [await id(t1), await id(t2), await id(t3)];
 
-  // --- a trip with three travelers, joined for real (invite → inbox → accept) --------------------
   const trip = (await api('/v1/itineraries', 'POST', t1.token,
     { title: 'S1.6 transfer smoke', destinations: ['Palawan'] })).body.id;
   for (const [tag, who] of [['t2', t2], ['t3', t3]]) {
@@ -108,33 +82,27 @@ const offeredOn = (roster) => roster.find((m) => m.ownershipOffered === true)?.t
   }
   check('trip created and t2 + t3 joined through the real invite flow', true, `trip ${trip}`);
 
-  // --- My Trips is membership-scoped (AC 8) -----------------------------------------------------
   const listOf = async (t) => (await api('/v1/itineraries', 'GET', t.token)).body.items.map((i) => i.id);
   check('t2 (a joined member) sees the trip in My Trips — the S1.5 bug, fixed',
     (await listOf(t2)).includes(trip));
 
-  // --- the owner's exit is still shut before the transfer (the control) -------------------------
   const blocked = await api(`/v1/itineraries/${trip}/members/${id1}`, 'DELETE', t1.token);
   check('t1 cannot leave while owner: 409 OWNER_CANNOT_LEAVE', blocked.status === 409 && blocked.body?.code === 'OWNER_CANNOT_LEAVE',
     `${blocked.status} ${blocked.body?.code}`);
 
-  // --- authority on the offer route -------------------------------------------------------------
   const byMember = await api(`/v1/itineraries/${trip}/ownership-offer`, 'POST', t3.token, { travelerId: id2 });
   check('a member cannot offer ownership: 403', byMember.status === 403, String(byMember.status));
 
-  // --- offer, and everyone can see it (AC 1) ----------------------------------------------------
   const offered = await api(`/v1/itineraries/${trip}/ownership-offer`, 'POST', t1.token, { travelerId: id2 });
   check('t1 offers ownership to t2: 201', offered.status === 201, String(offered.status));
   const rosterAfterOffer = (await api(`/v1/itineraries/${trip}/members`, 'GET', t3.token)).body.items;
   check('the bystander t3 sees the offer on t2\'s row — governance state is workspace-walled, not private',
     offeredOn(rosterAfterOffer) === id2);
 
-  // --- one crown, one hand (AC 1) ---------------------------------------------------------------
   const second = await api(`/v1/itineraries/${trip}/ownership-offer`, 'POST', t1.token, { travelerId: id3 });
   check('a second offer is refused: 409 OFFER_ALREADY_PENDING',
     second.status === 409 && second.body?.code === 'OFFER_ALREADY_PENDING', `${second.status} ${second.body?.code}`);
 
-  // --- the stale-accept race, safe by construction (AC 5) ---------------------------------------
   await api(`/v1/itineraries/${trip}/ownership-offer`, 'DELETE', t1.token);
   await api(`/v1/itineraries/${trip}/ownership-offer`, 'POST', t1.token, { travelerId: id3 });
   const staleAccept = await api(`/v1/itineraries/${trip}/ownership-offer/accept`, 'POST', t2.token);
@@ -144,7 +112,6 @@ const offeredOn = (roster) => roster.find((m) => m.ownershipOffered === true)?.t
   const stillOwner = (await api(`/v1/itineraries/${trip}/members`, 'GET', t1.token)).body.items;
   check('...and nothing moved: t1 is still the owner', roleOf(stillOwner, id1) === 'owner');
 
-  // --- back to t2, and accept: the transfer (AC 4) ----------------------------------------------
   await api(`/v1/itineraries/${trip}/ownership-offer`, 'DELETE', t1.token);
   await api(`/v1/itineraries/${trip}/ownership-offer`, 'POST', t1.token, { travelerId: id2 });
   const accepted = await api(`/v1/itineraries/${trip}/ownership-offer/accept`, 'POST', t2.token);
@@ -156,28 +123,24 @@ const offeredOn = (roster) => roster.find((m) => m.ownershipOffered === true)?.t
   check('exactly one owner on the roster — INV-4', after.filter((m) => m.role === 'owner').length === 1);
   check('the offer is resolved: no pending flag left on the roster', offeredOn(after) === undefined);
 
-  // --- authority actually moved with the role ---------------------------------------------------
   const exOwnerOffers = await api(`/v1/itineraries/${trip}/ownership-offer`, 'POST', t1.token, { travelerId: id3 });
   check('the former owner can no longer offer ownership: 403', exOwnerOffers.status === 403, String(exOwnerOffers.status));
   const newOwnerOffers = await api(`/v1/itineraries/${trip}/ownership-offer`, 'POST', t2.token, { travelerId: id3 });
   check('the new owner can: 201', newOwnerOffers.status === 201, String(newOwnerOffers.status));
   await api(`/v1/itineraries/${trip}/ownership-offer`, 'DELETE', t2.token);
 
-  // --- both parties keep the trip in My Trips (AC 8, the acute case) ----------------------------
   check('the former owner t1 still has the trip in My Trips — they are still on it',
     (await listOf(t1)).includes(trip));
   check('the new owner t2 has it too', (await listOf(t2)).includes(trip));
 
-  // --- the point of the whole story: the dead end opens (AC 12's API half) ----------------------
   const left = await api(`/v1/itineraries/${trip}/members/${id1}`, 'DELETE', t1.token);
   check('t1 can now leave — the S1.5 dead end is open', left.status === 204, String(left.status));
   check('...and the trip drops off their My Trips', !(await listOf(t1)).includes(trip));
   const evicted = await api(`/v1/itineraries/${trip}`, 'GET', t1.token);
   check('...and the walls close behind them: 404', evicted.status === 404, String(evicted.status));
 
-  // --- departure voids a pending offer (AC 6) ---------------------------------------------------
   await api(`/v1/itineraries/${trip}/ownership-offer`, 'POST', t2.token, { travelerId: id3 });
-  await api(`/v1/itineraries/${trip}/members/${id3}`, 'DELETE', t3.token); // t3 leaves holding the offer
+  await api(`/v1/itineraries/${trip}/members/${id3}`, 'DELETE', t3.token);
   const rosterAfterVoid = (await api(`/v1/itineraries/${trip}/members`, 'GET', t2.token)).body.items;
   check('t3 leaving voided their pending offer — no ghost flag on the roster', offeredOn(rosterAfterVoid) === undefined);
   check('...and the trip is down to its one owner', rosterAfterVoid.length === 1 && roleOf(rosterAfterVoid, id2) === 'owner');
