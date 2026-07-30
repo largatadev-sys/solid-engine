@@ -24,6 +24,7 @@
 
   <properties>
     <java.version>25</java.version>
+    <firebase-admin.version>9.4.3</firebase-admin.version>
   </properties>
 
   <dependencies>
@@ -67,12 +68,48 @@
     <!--
       Resource server, not the full auth-server story: Firebase owns credentials and signs the
       tokens (ADR-006); this app only validates them, offline, against Google's published JWKS.
-      No Firebase Admin SDK anywhere — a resource server never calls the issuer at request time.
+      Request-path validation still never calls the issuer — the Admin SDK below is used on ONE
+      code path only (S4.0's verification confirm), never per request.
     -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
     </dependency>
+
+    <!--
+      Firebase Admin SDK (S4.0 ticket 02, spec decision 2). The ONE thing it does here is flip
+      `email_verified` on a Firebase user after the traveler proves inbox control with a 6-digit
+      code — a write to the identity provider, which a resource server cannot do with a JWKS.
+      ADR-006's posture is unchanged and deliberately guarded: the whole dependency lives behind
+      `EmailVerificationFlag`, one interface with one method, so "swap the identity provider" stays
+      a bounded edit rather than a hunt. Version is pinned explicitly — Boot's BOM does not manage
+      it, so there is no version to inherit.
+    -->
+    <dependency>
+      <groupId>com.google.firebase</groupId>
+      <artifactId>firebase-admin</artifactId>
+      <version>${firebase-admin.version}</version>
+    </dependency>
+    <!--
+      A TRAP THIS STORY WALKED INTO, RECORDED SO NOBODY REPEATS IT.
+
+      firebase-admin drags Apache HttpClient 5 in transitively, and Spring picks its
+      ClientHttpRequestFactory by CLASSPATH DETECTION rather than configuration. So merely adding
+      the Admin SDK swapped the transport under every RestClient and RestTestClient in the
+      application - and HttpClient 5's default retry strategy RETRIES 503. The first symptom was an
+      unrelated test (HealthUnavailableIT) reporting the same outage logged twice and taking 3x as
+      long; nothing pointed at a dependency.
+
+      The obvious fix - excluding httpclient5 - is WRONG and looks right: the exclusion builds, the
+      unit tests pass, and the application then dies at startup with
+      `NoClassDefFoundError: org/apache/hc/client5/http/nio/AsyncClientConnectionManager` from
+      FirebaseOptions' constructor, because ApiClientUtils.getDefaultTransport() probes for the
+      HTTP/2 transport unguarded. Only `docker compose up` surfaces that (S0.2's getTokens() shape:
+      green everywhere except the environment that ships). FirebaseAdminSdkBootTest now covers it.
+
+      So the dependency STAYS and the side effect is neutralised where we own the client instead:
+      ResendMailTransport and the ITs that care both name their request factory explicitly.
+    -->
 
     <dependency>
       <groupId>org.springframework.boot</groupId>

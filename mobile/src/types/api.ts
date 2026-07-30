@@ -10,6 +10,52 @@ export type MeResponse = {
   id: string;
   displayName: string;
   email: string;
+
+  handle: string | null;
+
+  suggestedHandle: string;
+
+  avatarUrl: string | null;
+  bio: string | null;
+  goals: string[];
+  interests: string[];
+  country: string | null;
+  preferredCurrency: string | null;
+  homeCity: string | null;
+  onboardingCompleted: boolean;
+};
+
+
+export type UpdateProfileRequest = {
+  handle?: string;
+  displayName?: string;
+  bio?: string;
+  avatarUrl?: string;
+  goals?: string[];
+  interests?: string[];
+  country?: string;
+  preferredCurrency?: string;
+  homeCity?: string;
+};
+
+
+export type HandleAvailabilityResponse = {
+  handle: string;
+  available: boolean;
+
+  status: 'FREE' | 'MALFORMED' | 'RESERVED' | 'TAKEN';
+};
+
+
+export type VerificationCodeResponse = {
+  expiresAt: string;
+
+  resendAvailableAt: string;
+};
+
+
+export type VerificationResultResponse = {
+  verified: boolean;
 };
 
 

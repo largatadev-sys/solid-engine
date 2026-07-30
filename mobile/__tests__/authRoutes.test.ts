@@ -10,7 +10,7 @@ describe('which routes a signed-out traveler may see', () => {
     expect(isPublicRoute(segment)).toBe(true);
   });
 
-  it.each(['itineraries', 'me', 'members', 'health', 'verify-email'])('%s is not public', (segment) => {
+  it.each(['itineraries', 'me', 'members', 'health', 'verify-code', 'onboarding'])('%s is not public', (segment) => {
     expect(isPublicRoute(segment)).toBe(false);
   });
 

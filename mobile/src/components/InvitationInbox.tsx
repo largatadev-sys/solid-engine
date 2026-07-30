@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../api/ApiError';
+import { VERIFY_CODE_ROUTE } from '../onboarding/onboardingGate';
 import { useAcceptInvitation, useDeclineInvitation, useInbox } from '../query/invitationQueries';
 import { colors, radii, spacing, typography } from '../theme';
 import type { InboxInvitationResponse } from '../types/api';
@@ -33,7 +34,7 @@ function InvitationCard({ invitation }: { invitation: InboxInvitationResponse })
       onSuccess: (result) => router.push(`/itineraries/${result.itineraryId}`),
       onError: (error) => {
         if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {
-          router.push('/verify-email');
+          router.push(VERIFY_CODE_ROUTE);
         }
       },
     });

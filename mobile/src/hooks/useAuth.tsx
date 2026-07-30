@@ -7,7 +7,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return authRepository.onAuthStateChanged((user) => {
-      setState(user === null ? { kind: 'signedOut' } : { kind: 'signedIn', firebaseUid: user.uid });
+      setState(
+        user === null
+          ? { kind: 'signedOut' }
+          : { kind: 'signedIn', firebaseUid: user.uid, emailVerified: user.emailVerified },
+      );
     });
   }, []);
 

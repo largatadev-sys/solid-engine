@@ -1,50 +1,36 @@
 package com.largata.invitation;
 
+import com.largata.common.mail.OutboundEmail;
+import com.largata.common.mail.ResendMailTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 
 
 class ResendInvitationMailer implements InvitationMailer {
 
     private static final Logger log = LoggerFactory.getLogger(ResendInvitationMailer.class);
-    private static final String SEND_URL = "https://api.resend.com/emails";
 
-    private final RestClient http;
-    private final String fromAddress;
+    private final ResendMailTransport transport;
 
     ResendInvitationMailer(RestClient.Builder builder, String apiKey, String fromAddress) {
-        this.http = builder.baseUrl(SEND_URL).defaultHeader("Authorization", "Bearer " + apiKey).build();
-        this.fromAddress = fromAddress;
+        this.transport = new ResendMailTransport(builder, apiKey, fromAddress);
     }
 
     @Override
     public void send(InvitationMail mail) {
-        http.post()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(payload(mail))
-                .retrieve()
-                .toBodilessEntity();
+        transport.send(compose(mail));
         log.info("Invitation email dispatched via Resend: invitationId={}", mail.invitationId());
     }
 
-    private ResendEmail payload(InvitationMail mail) {
+    private OutboundEmail compose(InvitationMail mail) {
         String subject = mail.inviterName() + " invited you to " + mail.tripTitle() + " on Largata";
         String html =
                 "<p>"
-                        + escape(mail.inviterName())
+                        + ResendMailTransport.escape(mail.inviterName())
                         + " invited you to <strong>"
-                        + escape(mail.tripTitle())
+                        + ResendMailTransport.escape(mail.tripTitle())
                         + "</strong> on Largata.</p><p>Open the Largata app to accept.</p>";
-        return new ResendEmail(fromAddress, mail.recipientEmail(), subject, html);
+        return new OutboundEmail(mail.recipientEmail(), subject, html);
     }
-
-
-    private static String escape(String value) {
-        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-    }
-
-
-    private record ResendEmail(String from, String to, String subject, String html) {}
 }

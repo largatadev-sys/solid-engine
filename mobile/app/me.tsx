@@ -1,6 +1,8 @@
 import { Link, Stack } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Avatar } from '../src/components/Avatar';
 import { useMe } from '../src/hooks/useMe';
+import { ONBOARDING_ROUTES } from '../src/onboarding/onboardingGate';
 import { authRepository } from '../src/repositories/authRepository';
 import { colors, radii, spacing, typography } from '../src/theme';
 
@@ -23,10 +25,16 @@ export default function MeScreen() {
 
         {state.kind === 'ok' && (
           <>
+            <Avatar
+              photoUrl={state.me.avatarUrl}
+              displayName={state.me.displayName}
+              email={state.me.email}
+            />
             <Text style={styles.name}>{state.me.displayName}</Text>
+            {state.me.handle !== null && <Text style={styles.handle}>@{state.me.handle}</Text>}
             <Text style={styles.caption}>{state.me.email}</Text>
+            {state.me.bio !== null && <Text style={styles.caption}>{state.me.bio}</Text>}
             <Text style={styles.id}>{state.me.id}</Text>
-            <Text style={styles.caption}>Traveler provisioned by the backend on first contact.</Text>
           </>
         )}
 
@@ -43,9 +51,15 @@ export default function MeScreen() {
         )}
       </View>
 
-      <Link href="/" asChild>
+      <Link href={`${ONBOARDING_ROUTES.profile}?mode=edit`} asChild>
         <Pressable style={styles.button} accessibilityRole="button">
-          <Text style={styles.buttonText}>My Trips</Text>
+          <Text style={styles.buttonText}>Edit profile</Text>
+        </Pressable>
+      </Link>
+
+      <Link href="/" asChild>
+        <Pressable style={styles.secondaryLinkButton} accessibilityRole="button">
+          <Text style={styles.secondaryButtonText}>My Trips</Text>
         </Pressable>
       </Link>
 
@@ -92,6 +106,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accentMuted,
   },
   name: { ...typography.heading, color: colors.textPrimary },
+  handle: { ...typography.bodyStrong, color: colors.accent },
   id: { ...typography.fineMono, color: colors.textSecondary },
   errorTitle: { ...typography.heading, color: colors.danger },
   errorCode: { ...typography.mono, color: colors.textPrimary },
@@ -109,4 +124,15 @@ const styles = StyleSheet.create({
   buttonText: { ...typography.action, color: colors.textOnAccent },
   secondaryButton: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
   secondaryButtonText: { ...typography.action, color: colors.textPrimary },
+  secondaryLinkButton: {
+    width: '100%',
+    maxWidth: CARD_MAX_WIDTH,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
 });

@@ -1,0 +1,88 @@
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@tanstack/react-query';
+import { useAuth } from '../hooks/authContext';
+import { travelerRepository } from '../repositories/travelerRepository';
+import { verificationRepository } from '../repositories/verificationRepository';
+import type {
+  HandleAvailabilityResponse,
+  MeResponse,
+  UpdateProfileRequest,
+  VerificationCodeResponse,
+} from '../types/api';
+
+
+export const HANDLE_MIN_LENGTH = 3;
+
+const HANDLE_FRESHNESS_MS = 30_000;
+
+
+export const meKeys = {
+  me: ['me'] as const,
+
+  handles: ['handle'] as const,
+  handle: (handle: string) => ['handle', handle] as const,
+};
+
+
+export const meOptions = queryOptions({
+  queryKey: meKeys.me,
+  queryFn: () => travelerRepository.fetchMe(),
+});
+
+
+export function useHandleAvailability(handle: string): UseQueryResult<HandleAvailabilityResponse> {
+  const { kind } = useAuth();
+  return useQuery({
+    queryKey: meKeys.handle(handle),
+    queryFn: () => travelerRepository.checkHandle(handle),
+    enabled: kind === 'signedIn' && handle.length >= HANDLE_MIN_LENGTH,
+    staleTime: HANDLE_FRESHNESS_MS,
+  });
+}
+
+
+export function useUpdateProfile(): UseMutationResult<MeResponse, Error, UpdateProfileRequest> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (request: UpdateProfileRequest) => travelerRepository.updateProfile(request),
+    onSuccess: (updated) => onProfileChanged(client, updated),
+  });
+}
+
+
+export function useCompleteOnboarding(): UseMutationResult<MeResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => travelerRepository.completeOnboarding(),
+    onSuccess: (updated) => onProfileChanged(client, updated),
+  });
+}
+
+
+export function useSendVerificationCode(): UseMutationResult<VerificationCodeResponse, Error, void> {
+  return useMutation({ mutationFn: () => verificationRepository.sendCode() });
+}
+
+
+export function useConfirmVerificationCode(): UseMutationResult<void, Error, string> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (code: string) => {
+      await verificationRepository.confirmCode(code);
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: meKeys.me }),
+  });
+}
+
+
+export async function onProfileChanged(client: QueryClient, updated: MeResponse): Promise<void> {
+  client.setQueryData(meKeys.me, updated);
+  await client.invalidateQueries({ queryKey: meKeys.handles });
+}

@@ -8,9 +8,10 @@ import { installFirebaseTokenSource } from '../src/auth/firebaseTokenSource';
 import { installGoogleSignIn } from '../src/auth/googleSignInConfig';
 import { authCapabilities } from '../src/repositories/authRepository';
 import { useAuth } from '../src/hooks/authContext';
+import { useMe } from '../src/hooks/useMe';
 import { AuthProvider } from '../src/hooks/useAuth';
 import { createQueryClient } from '../src/query/queryClient';
-import { isPublicRoute, landingRouteFor } from '../src/navigation/authRoutes';
+import { destinationFor, isSettling, type GateInput } from '../src/onboarding/onboardingGate';
 import { colors, typography } from '../src/theme';
 import { interFontMap } from '../src/theme/interFonts';
 
@@ -40,20 +41,26 @@ export default function RootLayout() {
 
 
 function AuthGate() {
-  const state = useAuth();
+  const auth = useAuth();
+  const { state } = useMe();
   const segments = useSegments();
   const router = useRouter();
 
+  const gate: GateInput = {
+    auth: auth.kind,
+    emailVerified: auth.kind === 'signedIn' && auth.emailVerified,
+    profile: state.kind === 'ok' ? state.me : null,
+    profileUnreadable: state.kind === 'error',
+    segment: segments[0],
+  };
+
+  const destination = destinationFor(gate);
+
   useEffect(() => {
-    if (state.kind === 'restoring') return;
-
-    const destination = landingRouteFor(state.kind, segments[0]);
     if (destination !== null) router.replace(destination);
-  }, [state, segments, router]);
+  }, [destination, router]);
 
-  if (state.kind === 'restoring') return <Splash />;
-
-  if (state.kind === 'signedOut' && !isPublicRoute(segments[0])) return <Splash />;
+  if (destination !== null || isSettling(gate)) return <Splash />;
 
   return (
     <Stack
@@ -61,7 +68,9 @@ function AuthGate() {
         headerTitleStyle: typography.bodyStrong,
         contentStyle: { backgroundColor: colors.background },
       }}
-    />
+    >
+      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+    </Stack>
   );
 }
 

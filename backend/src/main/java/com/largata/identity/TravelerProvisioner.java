@@ -19,6 +19,11 @@ class TravelerProvisioner {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     Traveler insert(TravelerClaims claims) {
         return travelers.saveAndFlush(
-                Traveler.provision(claims.firebaseUid(), claims.email(), claims.displayName(), Instant.now()));
+                Traveler.provision(
+                        claims.firebaseUid(),
+                        claims.email(),
+                        claims.displayName(),
+                        claims.photoUrl(),
+                        Instant.now()));
     }
 }

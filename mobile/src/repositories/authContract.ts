@@ -50,6 +50,8 @@ export function translate(error: unknown): never {
 
 export interface AuthUser {
   readonly uid: string;
+
+  readonly emailVerified: boolean;
 }
 
 

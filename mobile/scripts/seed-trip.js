@@ -1,5 +1,6 @@
 const https = require('https');
 const http = require('http');
+const { precompleteProfile } = require('./precomplete-profile');
 
 const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
 const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
@@ -65,6 +66,7 @@ function arg(name, fallback) {
   const owner = await signIn(ownerTag);
   const ownerMe = await api('/v1/me', 'GET', owner.token);
   if (ownerMe.status !== 200) throw new Error(`backend unreachable or rejecting: /v1/me → ${ownerMe.status}`);
+  const ownerProfile = await precompleteProfile(api, owner.token, ownerTag);
 
   const trip = await api('/v1/itineraries', 'POST', owner.token,
     { title: arg('title', 'Seeded trip'), destinations: ['Palawan'] });
@@ -74,6 +76,7 @@ function arg(name, fallback) {
   for (const tag of memberTags) {
     const member = await signIn(tag);
     await api('/v1/me', 'GET', member.token);
+    const memberProfile = await precompleteProfile(api, member.token, tag);
 
     const invite = await api(`/v1/itineraries/${trip.body.id}/invitations`, 'POST', owner.token,
       { email: member.email });
@@ -85,15 +88,16 @@ function arg(name, fallback) {
 
     const accept = await api(`/v1/invitations/${invite.body.id}/accept`, 'POST', member.token, {});
     if (accept.status !== 200) throw new Error(`accept failed for ${tag}: ${accept.status} ${JSON.stringify(accept.body)}`);
-    joined.push({ tag, email: member.email });
+    joined.push({ tag, email: member.email, handle: memberProfile.handle });
   }
 
   const roster = await api(`/v1/itineraries/${trip.body.id}/members`, 'GET', owner.token);
   console.log(JSON.stringify({
     tripId: trip.body.id,
     api: API,
-    owner: { tag: ownerTag, email: owner.email },
+    owner: { tag: ownerTag, email: owner.email, handle: ownerProfile.handle },
     members: joined,
+    onboarding: 'pre-completed over the API, so a device walk lands on My Trips (S4.0)',
     password: '(LARGATA_TEST_POOL_PASSWORD in mobile/.env)',
     roster: roster.body?.items?.map((m) => `${m.displayName} [${m.role}]`),
     webPreview: `http://localhost:8081/members/${trip.body.id}`,

@@ -78,6 +78,30 @@ describe('screens consume design tokens, never raw values (S0.3)', () => {
 });
 
 
+describe('a Link asChild child never carries an ARRAY style (S4.0)', () => {
+  const screens = [...sourceFiles(join(MOBILE_ROOT, 'app')), ...sourceFiles(join(MOBILE_ROOT, 'src'))];
+
+  const LINK_ASCHILD_WITH_ARRAY_STYLE = /<Link[^>]*asChild[^>]*>\s*<\w+[^>]*style=\{\[/;
+
+  it('finds files to check (guards against a vacuously passing test)', () => {
+    expect(screens.length).toBeGreaterThan(10);
+  });
+
+  it.each(screens)('%s does not hand an array style to a Link child', (file) => {
+    expect(readFileSync(file, 'utf8')).not.toMatch(LINK_ASCHILD_WITH_ARRAY_STYLE);
+  });
+
+  it('the rule actually fires (guards against a regex that matches nothing)', () => {
+    expect('<Link href="/" asChild>\n  <Pressable style={[styles.a, styles.b]}>').toMatch(
+      LINK_ASCHILD_WITH_ARRAY_STYLE,
+    );
+    expect('<Link href="/" asChild>\n  <Pressable style={styles.a}>').not.toMatch(
+      LINK_ASCHILD_WITH_ARRAY_STYLE,
+    );
+  });
+});
+
+
 describe('no source file carries a byte-order mark (E1 gate)', () => {
   const scanned = [
     ...sourceFiles(join(MOBILE_ROOT, 'app')),

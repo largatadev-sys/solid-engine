@@ -45,7 +45,7 @@ class MeContractIT extends PostgresTestBase {
     }
 
     @Test
-    void firstCallProvisionsAndReturnsExactlyTheThreeContractFields() {
+    void firstCallProvisionsAndReturnsTheContractFields() {
         String uid = freshUid();
 
         rest.get()
@@ -62,9 +62,24 @@ class MeContractIT extends PostgresTestBase {
                 .jsonPath("$.email")
                 .isEqualTo("ana@example.com")
                 .jsonPath("$.length()")
-                .isEqualTo(3);
+                .isEqualTo(13);
 
         assertThat(rowCountFor(uid)).isEqualTo(1);
+    }
+
+    @Test
+    void theShippedThreeFieldsSurviveTheProfileFieldsThatJoinedThemAtS4() {
+        rest.get()
+                .uri("/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, bearer(TestJwtSupport.tokenFor(freshUid(), "additive@example.com")))
+                .exchange()
+                .expectBody()
+                .jsonPath("$.id")
+                .exists()
+                .jsonPath("$.displayName")
+                .exists()
+                .jsonPath("$.email")
+                .exists();
     }
 
     @Test

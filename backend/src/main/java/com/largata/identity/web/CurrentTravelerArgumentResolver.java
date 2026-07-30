@@ -37,7 +37,11 @@ public class CurrentTravelerArgumentResolver implements HandlerMethodArgumentRes
             WebDataBinderFactory binderFactory) {
         Jwt jwt = verifiedToken();
         return travelers.getOrProvision(
-                TravelerClaims.of(jwt.getSubject(), jwt.getClaimAsString("email"), jwt.getClaimAsString("name")));
+                TravelerClaims.of(
+                        jwt.getSubject(),
+                        jwt.getClaimAsString("email"),
+                        jwt.getClaimAsString("name"),
+                        jwt.getClaimAsString("picture")));
     }
 
 
