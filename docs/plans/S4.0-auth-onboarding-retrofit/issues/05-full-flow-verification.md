@@ -52,3 +52,24 @@ POST onboarding-completion : 200 onboardingCompleted=true
 Also established without needing the code: a wrong code answered `400 VERIFICATION_CODE_INCORRECT` rather than `503`, which separates "the code path is live" from "the Admin SDK credential is broken" **before** spending a real code on the question.
 
 **Still owed, and it is not mine to run:** the SQL check naming the `railway` database (spec AC 14's second clause). It needs Railway DB access the agent does not have. Everything above is API-observable; the row-level check is the founder's to run in Railway's console.
+
+**2026-07-30 — AC 14's SQL clause closed, and the clause earned its wording twice in one sitting.**
+
+Run in Railway's console against the deployed rung. `db` came back **`railway`** — the name nothing in this repo would let you guess, since it is Railway's default and not ours — with `flyway_schema_history` holding **both V14 and V15**, the probe traveler present, handles claimed, and **`codes_outstanding = 0`**.
+
+That last zero is the correct answer, not a gap: a successful confirm **deletes** the code row, and the probe's was consumed. Which is the point — **the first attempt at this check returned "no rows" and meant nothing.** The four statements handed over ended with the `verification_code` query, most consoles surface only the final result set, and an empty table there is simultaneously "the code was consumed" (right) and "you are on the wrong database" (wrong). An ambiguous empty result, produced by the very check written to guard against ambiguous empty results.
+
+The replacement is the shape to copy: **a single `SELECT` of scalar sub-counts, which cannot return no rows.**
+
+```sql
+SELECT current_database()                                                       AS db,
+       (SELECT count(*) FROM flyway_schema_history WHERE version IN ('14','15')) AS migrations_14_15,
+       (SELECT count(*) FROM traveler)                                           AS travelers,
+       (SELECT count(*) FROM traveler WHERE handle = 'dev_dev317184')            AS probe_traveler,
+       (SELECT count(*) FROM traveler WHERE handle IS NOT NULL)                  AS handles_claimed,
+       (SELECT count(*) FROM verification_code)                                  AS codes_outstanding;
+```
+
+Every question answers in one row, each answer is a number rather than a presence, and the database names itself in the first column. "No rows" stops being a possible output, so it stops being a possible misreading.
+
+**One thing deliberately not observed on this rung:** codes hashed at rest. The table is empty because the flow works, and manufacturing a live row to inspect would mean leaving an unconsumed credential in the deployed database to look at. Covered by `VerificationCodeIT` (hash asserted against the real column), `LoggingVerificationMailerTest` and `ResendVerificationMailerTest` — and the code path is identical per rung, since the binding differs only in the mailer, never in the hashing.
