@@ -3,10 +3,8 @@ export const SIGNED_IN_HOME = '/';
 
 const PUBLIC_SEGMENTS = ['welcome', 'sign-up', 'sign-in'] as const;
 
-export type PublicSegment = (typeof PUBLIC_SEGMENTS)[number];
-
 export function isPublicRoute(segment: string | undefined): boolean {
-  return PUBLIC_SEGMENTS.includes(segment as PublicSegment);
+  return PUBLIC_SEGMENTS.some((route) => route === segment);
 }
 
 export function landingRouteFor(

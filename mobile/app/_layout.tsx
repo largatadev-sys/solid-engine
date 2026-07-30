@@ -7,10 +7,11 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { installFirebaseTokenSource } from '../src/auth/firebaseTokenSource';
 import { installGoogleSignIn } from '../src/auth/googleSignInConfig';
 import { authCapabilities } from '../src/repositories/authRepository';
-import { AuthProvider, useAuth } from '../src/hooks/useAuth';
+import { useAuth } from '../src/hooks/authContext';
+import { AuthProvider } from '../src/hooks/useAuth';
 import { createQueryClient } from '../src/query/queryClient';
 import { isPublicRoute, landingRouteFor } from '../src/navigation/authRoutes';
-import { colors } from '../src/theme';
+import { colors, typography } from '../src/theme';
 import { interFontMap } from '../src/theme/interFonts';
 
 
@@ -23,9 +24,9 @@ if (authCapabilities.google === 'full') {
 
 export default function RootLayout() {
   const [queryClient] = useState(createQueryClient);
-  const [fontsLoaded] = useFonts(interFontMap);
+  const [fontsLoaded, fontError] = useFonts(interFontMap);
 
-  if (!fontsLoaded) return <Splash />;
+  if (!fontsLoaded && fontError === null) return <Splash />;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -57,7 +58,7 @@ function AuthGate() {
   return (
     <Stack
       screenOptions={{
-        headerTitleStyle: { fontWeight: '600' },
+        headerTitleStyle: typography.bodyStrong,
         contentStyle: { backgroundColor: colors.background },
       }}
     />

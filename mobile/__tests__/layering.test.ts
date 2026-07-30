@@ -140,17 +140,19 @@ describe('reading auth state never drags the Firebase SDK in (S4.0)', () => {
     ...sourceFiles(join(MOBILE_ROOT, 'app')),
     ...sourceFiles(join(MOBILE_ROOT, 'src', 'query')),
     ...sourceFiles(join(MOBILE_ROOT, 'src', 'components')),
-  ].filter((file) => !file.endsWith(join('app', '_layout.tsx')));
+  ];
 
-  const PROVIDER_MODULE = /from\s*['"][^'"]*hooks\/useAuth['"]/;
+  const READS_STATE_FROM_PROVIDER = /useAuth[^'"\n]*}\s*from\s*['"][^'"]*hooks\/useAuth['"]/;
 
   it.each(consumers)('%s reads auth state from the context, not the provider module', (file) => {
-    expect(readFileSync(file, 'utf8')).not.toMatch(PROVIDER_MODULE);
+    expect(readFileSync(file, 'utf8')).not.toMatch(READS_STATE_FROM_PROVIDER);
   });
 
   it('the rule actually fires (guards against a regex that matches nothing)', () => {
-    expect("import { useAuth } from '../hooks/useAuth';").toMatch(PROVIDER_MODULE);
-    expect("import { useAuth } from '../hooks/authContext';").not.toMatch(PROVIDER_MODULE);
+    expect("import { useAuth } from '../hooks/useAuth';").toMatch(READS_STATE_FROM_PROVIDER);
+    expect("import { AuthProvider, useAuth } from '../hooks/useAuth';").toMatch(READS_STATE_FROM_PROVIDER);
+    expect("import { useAuth } from '../hooks/authContext';").not.toMatch(READS_STATE_FROM_PROVIDER);
+    expect("import { AuthProvider } from '../hooks/useAuth';").not.toMatch(READS_STATE_FROM_PROVIDER);
   });
 
   it('the layout is the one place allowed to mount the provider', () => {

@@ -65,6 +65,10 @@ function getJson(path) {
 }
 
 (async () => {
+  const profileDir = `${require('os').tmpdir()}/largata-preview-driver`;
+
+  if (args.includes('--fresh')) fs.rmSync(profileDir, { recursive: true, force: true });
+
   const chrome = spawn(
     chromePath(),
     [
@@ -72,7 +76,7 @@ function getJson(path) {
       '--headless=new',
       '--disable-gpu',
       '--no-first-run',
-      `--user-data-dir=${require('os').tmpdir()}/largata-preview-driver`,
+      `--user-data-dir=${profileDir}`,
       '--window-size=1280,900',
       'about:blank',
     ],

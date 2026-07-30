@@ -130,4 +130,13 @@ Publish + visibility (S4.1) · media pipeline (S3.3) · discovery feed and its p
 
 ## Comments
 
-*(none yet)*
+**2026-07-30 — ticket 01 landed** (palette + front door). Per-ticket detail lives in `issues/01-palette-and-front-door.md`; two things belong at story level:
+
+1. **The hero photo is an owner dependency, not a build step.** A Figma CSS export carries no image, so the welcome screen ships without it. Every later screen in this flow is type-and-token only, so this is the story's single asset gap.
+2. **Decision 10's "values-only swap" proved narrower than the design needed.** Adopting the wireframes meant moving the type scale and corner radii as well as colour and family — all token values, but they re-proportion every previously shipped screen. Called out here rather than absorbed silently, because "zero structural change" was the clause it brushes against.
+
+**Blocked, and it is owner console work — ticket 02 cannot start without it** *(raised 2026-07-30)*. Decision 2 accepted the OTP mechanism knowing the cost was infrastructure; that cost is now the critical path:
+- **Resend**: account, sending-domain DNS on `largata.com` (SPF/DKIM — start first, propagation is not instant), and an API key per rung in the platform env-var UI.
+- **Firebase Admin SDK**: a service-account credential for `largata-dev` (project **309534715609** — identify by number, per the S0.6 phantom-project trap), env-var only.
+
+Without the service account the confirm step cannot set `email_verified` even locally, so the ticket's core mechanism is unreachable — not merely unverifiable. **Ticket 03 (profile + handles) is unaffected and runs in parallel by design**, so the pull order absorbs the wait.

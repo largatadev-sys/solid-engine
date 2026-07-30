@@ -33,8 +33,6 @@ export const colors = {
 
   accentMuted: palette.terracotta200,
 
-  accentSoft: palette.terracotta050,
-
   danger: palette.crimson700,
 
   success: palette.forest600,
@@ -43,7 +41,6 @@ export const colors = {
 
 const fonts = {
   regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
   semiBold: 'Inter_600SemiBold',
   bold: 'Inter_700Bold',
   extraBold: 'Inter_800ExtraBold',
@@ -62,11 +59,9 @@ export const typography = {
 
   action: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 19, fontWeight: '600' },
   label: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 17, fontWeight: '600' },
-  option: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 19, fontWeight: '500' },
   link: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 18, fontWeight: '400' },
   caption: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 20, fontWeight: '400' },
   overline: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 1.5 },
-  code: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 24, fontWeight: '700' },
   mono: { fontSize: 13, fontFamily: 'monospace' },
 
   fine: { fontFamily: fonts.regular, fontSize: 10, lineHeight: 14, fontWeight: '400' },
@@ -88,6 +83,5 @@ export const radii = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 20,
   pill: 100,
 } as const;
