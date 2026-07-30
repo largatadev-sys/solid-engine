@@ -2,7 +2,7 @@
 
 **A flat list of every significant architectural decision and its rationale.** A *generated view*, assembled from Artifact 04 (ADR-001–007) and Artifact 05 (ADR-008) — not a source of truth. Change happens in the artifacts; regenerate this. Audience: technical stakeholders.
 
-_Generated: 24/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`_
+_Generated: 30/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`_
 
 ## Decision index
 
@@ -22,6 +22,8 @@ _Generated: 24/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 | ADR-012 | PaaS: Railway (one project, three environments, Singapore); custom domains as the exit hatch | Accepted | 16/07/2026 |
 | ADR-013 | Plans are day-indexed: Day + Activity structure; dates stay itinerary metadata | Accepted | 23/07/2026 |
 | ADR-014 | MVP concurrency: single-writer itinerary edit lock; supersedes S1.3's last-write-wins | Accepted | 24/07/2026 |
+| ADR-015 | Traveler handle (@username): unique, changeable label; the id stays the identifier | Accepted | 30/07/2026 |
+| ADR-016 | Brand palette & type: terracotta/navy/cream + Inter, adopted globally as token values | Accepted | 30/07/2026 |
 
 ## Decisions
 
@@ -138,6 +140,22 @@ _Generated: 24/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 - **Alternatives rejected.** Keeping LWW — rejected by founder ruling on the merits. Per-item locks — more bookkeeping, partial protection. Live editing now — presence/sync infrastructure the alpha doesn't test.
 - **Consequences.** Offline plan-editing disabled (read-only offline); shipped /v1 write endpoints gain a rejection case (additivity waived while clients are founders-only); S1.3's AC-7 IT deliberately replaced; editing serializes per itinerary.
 - **Invalidating condition.** Validation-gate evidence that serialization hurts collaboration, or live editing arriving → the live-editing backlog line supersedes this wholesale.
+
+### ADR-015 — Traveler handle (@username): a unique, changeable label; the id stays the identifier
+- **Status.** Accepted · 30/07/2026 (S4.0 grilling, founder-ruled) · supersedes the 2026-07-17 "no handles in the MVP" ruling; closes the epic-map handle decision ahead of its pre-S4.3 pin
+- **Context.** S0.2 ruled the display name non-unique and never an identifier; the 07-17 UX reconciliation kept handles out of the MVP, registered for pre-S4.3 (discovery cards are the first surface rendering one). The S4.0 wireframes reintroduced the field and the founder pulled the decision forward with the full onboarding flow.
+- **Decision.** Traveler gains a handle: 3–20 chars `a–z 0–9 _`, stored lowercase, globally unique case-insensitively, required at onboarding (collision-free prefilled suggestion), freely changeable, released immediately, reserved-word blocklist. **The handle is a unique label, never a key** — routes, FKs, and future profile URLs stay id-keyed, which is what makes free change safe. Availability check is an additive endpoint. Existing accounts carry NULL until they complete the profile step — client-routed, never backend-enforced.
+- **Alternatives rejected.** No handles until S4.3 — superseded by the full-onboarding pull. Immutable/tombstoned handles — protects against a takeover vector the id-keyed rule already eliminates.
+- **Consequences.** Display name stays the non-unique human label; uniqueness semantics get a pinning test.
+- **Invalidating condition.** Impersonation/abuse via handle churn → cooldown/tombstone added additively. Vanity URLs → redirect-on-change semantics at that story; the id-keyed rule stands.
+
+### ADR-016 — Brand palette & type: terracotta / navy / cream + Inter, adopted globally as token values
+- **Status.** Accepted · 30/07/2026 (S4.0 grilling, founder-ruled) · discharges the "visual direction & design tokens" decision ahead of its pre-S4.3 pin
+- **Context.** S0.3 built the token layer with explicitly-interim values and the rule "a decision, not a side effect." Two mocks disagreed (07/18 orange `#FF751F` vs the 07/30 auth/onboarding wireframes); building the onboarding screens forced the choice.
+- **Decision.** Accent terracotta `#D96C4A` · ink navy `#1B263B` · background cream `#FAF9F6` · secondary `#5C6470` · border `#E2E4E8` · white surfaces · Inter as the type family. A values-only token swap; screens keep consuming tokens only. Supersedes the 07/18 mock's orange as brand evidence.
+- **Alternatives rejected.** Interim tokens until S4.3 — decides twice, ships onboarding unlike its design. Onboarding-only palette — a two-toned product.
+- **Consequences.** Every screen re-skins in one commit with zero structural change; web/mobile parity holds; Inter loads as an app font on both surfaces.
+- **Invalidating condition.** A professional brand pass before public launch → same mechanism, new values.
 
 ---
 

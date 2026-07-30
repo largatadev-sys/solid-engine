@@ -35,7 +35,8 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S3.1 | Diary create + contributor grants (INV-2a) | ⬜ | — |
 | S3.2 | Diary entries: text + geotag | ⬜ | — |
 | S3.3 | Photo/media pipeline (object storage) *(resliced into the E4 pull, 2026-07-29 — builds after S4.1, before S4.3)* | ⬜ | — |
-| **Epic 4 — Social surface** *(pulled next, 2026-07-29 — order: S4.1 → S3.3 → S4.3 → S4.4–S4.8)* | | | | |
+| **Epic 4 — Social surface** *(pulled next, 2026-07-29 — order amended 2026-07-30: S4.0 → S4.1 → S3.3 → S4.3 → S4.4–S4.8)* | | | | |
+| S4.0 | Auth & onboarding retrofit *(grilled 2026-07-30 — full flow pulled forward from pre-alpha; 6-digit OTP + Resend + Admin SDK; handles ADR-015 + palette ADR-016 decided ahead of their pins; merges two backlog lines)* | ⬜ | [spec](docs/plans/S4.0-auth-onboarding-retrofit/spec.md) |
 | S4.1 | Publish itinerary + visibility *(resolves reg. #11)* | ⬜ | — |
 | S4.2 | Published diaries → Highlights *(resolves reg. #13; detached from the E4 pull 2026-07-29 — hard-depends on diaries, sequenced behind E3)* | ⬜ | — |
 | S4.3 | Discovery / browse feed (cursor) | ⬜ | — |
