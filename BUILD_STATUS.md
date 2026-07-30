@@ -35,7 +35,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S3.1 | Diary create + contributor grants (INV-2a) | ⬜ | — |
 | S3.2 | Diary entries: text + geotag | ⬜ | — |
 | S3.3 | Photo/media pipeline (object storage) *(resliced into the E4 pull, 2026-07-29 — builds after S4.1, before S4.3)* | ⬜ | — |
-| **Epic 4 — Social surface** *(pulled next, 2026-07-29 — order amended 2026-07-30: S4.0 → S4.1 → S3.3 → S4.3 → S4.4–S4.8)* | | | | |
+| **Epic 4 — Social surface** *(pulled next, 2026-07-29 — order amended 2026-07-31: S4.9 → S4.1 → S3.3 → S4.3 → S4.10 → S4.4–S4.8)* | | | | |
 | S4.0 | Auth & onboarding retrofit *(grilled 2026-07-30 — full flow pulled forward from pre-alpha; 6-digit OTP + Resend + Admin SDK; handles ADR-015 + palette ADR-016 decided ahead of their pins; merges two backlog lines)* | ✅ | [spec](docs/plans/S4.0-auth-onboarding-retrofit/spec.md) |
 | S4.1 | Publish itinerary + visibility *(resolves reg. #11)* | ⬜ | — |
 | S4.2 | Published diaries → Highlights *(resolves reg. #13; detached from the E4 pull 2026-07-29 — hard-depends on diaries, sequenced behind E3)* | ⬜ | — |
@@ -45,6 +45,8 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S4.6 | Public comments *(resolves reg. #5)* | ⬜ | — |
 | S4.7 | Fork (plan-only copy + Fork Relationship, INV-6) | ⬜ | — |
 | S4.8 | Visitor read-only surface (INV-3) | ⬜ | — |
+| S4.9 | Trip surfaces retrofit *(grilled 2026-07-31 against the 07/31 trip-creation/workspace mock set — ADR-014 amended to subject-typed leases, built here; activity-history capture; workspace/day/invite/create restructure; invite-by-handle exact-match; tab bar with Home/Search greyed; pulled next, before S4.1)* | ⬜ | [spec](docs/plans/S4.9-trip-surfaces-retrofit/spec.md) |
+| S4.10 | In-trip chat + activity-history surface *(entered launch scope 2026-07-31 — chat reverses the 2026-07-24 no-planning-conversation ruling on the record; pulled after S4.3; UX flow + grilling due before elaboration, may split there)* | ⬜ | — |
 | **Epic 5 — Ledger** *(Full-rigor zone)* | | | | |
 | S5.1 | Expense + splits (INV-7, transactional) | ⬜ | — |
 | S5.2 | Balances view | ⬜ | — |
@@ -165,6 +167,14 @@ Test-harness capture (post-S0.6, owner directive): `mobile/scripts/drive-preview
 **Launch resequenced: E4 pulled ahead of E2/E3 — grilled on the record, the day Epic 1 promoted.** Reorder, not a cut: both epics stay launch scope; the validation gate still waits for Epics 0–6. E2 parked by choice, not blocked (canon's free-standing Decision is shippable; the attachment ruling lands at the founders' E2 UX-flow discussion — now E2's trigger). E3 deferred (diaries land better into a live social surface) and resliced: **S3.3 moves into the E4 pull** as shared infrastructure; **S4.2 detaches**, riding behind E3. Pull order: S4.1 → S3.3 → S4.3 → S4.4–S4.8; cover image designed into S4.1, activating at S3.3 (additive, ADR-008). *(The grilling's step one — a fix batch for the architecture review's two live defects — dissolved on same-day verification: the E1 gate had already fixed both, `gate.md` findings 2/3; the review section's "pullable" line predated the gate absorbing them.)* Palette + @handle decisions pinned before S4.3; Play-account trigger re-pinned to "E2+E3+E4 shipped". Record: the launch-sequence note in `07-epic-map.md`.
 
 *Why it wasn't a story —* Not a story: no code, no product surface — a sequencing decision analyzed together and written into the docs per the working agreement; same shape as the 2026-07-24 EDA parking line.
+
+**2026-07-31**
+
+**Trip-surfaces reconciliation — the 07/31 trip-creation/workspace mock set walked against canon and the implementation; adopted as design baseline, every conflict founder-ruled.** Same discipline as the 2026-07-17 UX-flow reconciliation and S4.0's wireframe walk. Outcomes: **ADR-014 amended** (subject-typed leases — activity/day/header; version-checked reorder; pull-based advisory lock indicator; supersedes its own per-item rejection by answering "partial protection" structurally) · **in-trip chat enters launch scope as S4.10**, partially reversing the 2026-07-24 no-planning-conversation ruling (a new workspace surface; the deleted private Comment stays deleted) · **activity-history re-sliced**: capture at S4.9 (non-backfillable), surface at S4.10 · **owner-only day add/delete, interim** (revisit: validation gate — new backlog line) · glossary gains **Active (workspace)** and **In-trip Chat**, and the **Activity History Entry** entity · pull order now **S4.9 → S4.1 → S3.3 → S4.3 → S4.10 → S4.4–S4.8** · S4.9 specced (`docs/plans/S4.9-trip-surfaces-retrofit/spec.md`, render archived beside it). Confirmed already-true, no change: duration→seeded days (S1.3), per-activity cost columns, attribution pairs, `WorkspaceState`.
+
+*Why it wasn't a story —* Not a story: no code, no product surface — the living backlog absorbing a design artifact before its stories are elaborated, per the working agreement; the build lands as S4.9/S4.10.
+
+---
 
 ## Standing off-epic work
 

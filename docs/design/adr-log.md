@@ -2,7 +2,7 @@
 
 **A flat list of every significant architectural decision and its rationale.** A *generated view*, assembled from Artifact 04 (ADR-001–007) and Artifact 05 (ADR-008) — not a source of truth. Change happens in the artifacts; regenerate this. Audience: technical stakeholders.
 
-_Generated: 30/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`_
+_Generated: 31/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`_
 
 ## Decision index
 
@@ -21,7 +21,7 @@ _Generated: 30/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 | ADR-011 | Phased authorization guard: chokepoint in `common/authz`, membership lookup behind a resolver seam | Accepted | 16/07/2026 |
 | ADR-012 | PaaS: Railway (one project, three environments, Singapore); custom domains as the exit hatch | Accepted | 16/07/2026 |
 | ADR-013 | Plans are day-indexed: Day + Activity structure; dates stay itinerary metadata | Accepted | 23/07/2026 |
-| ADR-014 | MVP concurrency: single-writer itinerary edit lock; supersedes S1.3's last-write-wins | Accepted | 24/07/2026 |
+| ADR-014 | MVP concurrency: single-writer itinerary edit lock; supersedes S1.3's last-write-wins *(amended to subject-typed leases, 31/07/2026)* | Accepted · amended | 24/07/2026 · 31/07/2026 |
 | ADR-015 | Traveler handle (@username): unique, changeable label; the id stays the identifier | Accepted | 30/07/2026 |
 | ADR-016 | Brand palette & type: terracotta/navy/cream + Inter, adopted globally as token values | Accepted | 30/07/2026 |
 
@@ -134,9 +134,10 @@ _Generated: 30/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 - **Invalidating condition.** Real demand for calendar-anchored planning (cross-timezone flights, calendar sync) → an optional per-activity datetime added additively beside the day structure.
 
 ### ADR-014 — MVP concurrency: single-writer itinerary edit lock (supersedes S1.3's last-write-wins)
-- **Status.** Accepted · 24/07/2026 (S1.4 grilling, founder-ruled) · partially supersedes ADR-001 (plan writes leave the offline queue); ADR-008 waived for the S1.3 write endpoints, knowingly
+- **Status.** Accepted · 24/07/2026 (S1.4 grilling, founder-ruled) · **amended 31/07/2026** (trip-surfaces reconciliation — subject-typed leases; ships at S4.9) · partially supersedes ADR-001 (plan writes leave the offline queue); ADR-008 waived for the S1.3 write endpoints, knowingly
 - **Context.** S1.3 shipped last-write-wins with attribution; AC 7 pinned the absence of any conflict surface. Founder ruling 2026-07-24 after challenge: silent overwrites are unacceptable for MVP; live editing is the declared future, this lock its stopgap.
 - **Decision.** Whole-itinerary lease lock: one row (holder + expires_at), acquired on entering any plan-edit surface, TTL ~3 min auto-renewed while editing, released on save/cancel, expiry self-heals abandonment. No force-take (owner included). Server-enforced on every plan write (membership guard first, then lease); the client modal is a response to a failed acquire, never a broadcast (pull-based clients).
+- **Amendment (31/07/2026 — trip-surfaces reconciliation, founder-ruled; ships at S4.9).** The lease becomes **subject-typed** — `header | day | activity` — same per-row semantics: the activity lease guards an activity's edits and deletion; the day lease guards the day's title and deletion (never its activities); the header lease guards the itinerary fields. Adds are unguarded (they commute); add/delete **day** is owner-only *interim* (revisit: validation gate; ADR-008 waiver renewed); delete-day 409s while a contained activity is leased by another member; **reorder is version-checked** (stale → 409, never silently overwritten); the lease gains an additive, pull-based read surface for the advisory "being edited by" indicator — never presence, and the modal stays the enforcement. Supersedes both the whole-itinerary scope and this ADR's per-item-locks rejection, answering the recorded "partial protection" objection structurally. Full text in `04-architecture.md`.
 - **Alternatives rejected.** Keeping LWW — rejected by founder ruling on the merits. Per-item locks — more bookkeeping, partial protection. Live editing now — presence/sync infrastructure the alpha doesn't test.
 - **Consequences.** Offline plan-editing disabled (read-only offline); shipped /v1 write endpoints gain a rejection case (additivity waived while clients are founders-only); S1.3's AC-7 IT deliberately replaced; editing serializes per itinerary.
 - **Invalidating condition.** Validation-gate evidence that serialization hurts collaboration, or live editing arriving → the live-editing backlog line supersedes this wholesale.
