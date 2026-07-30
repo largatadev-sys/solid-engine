@@ -8,24 +8,21 @@ import { messageForAuthFailure } from '../src/auth/authFailureMessage';
 import { authCapabilities, authRepository } from '../src/repositories/authRepository';
 import { colors, spacing, typography } from '../src/theme';
 
-type Busy = 'idle' | 'google' | 'email' | 'reset';
+type Busy = 'idle' | 'google' | 'email';
 
-export default function SignInScreen() {
+export default function SignUpScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState<Busy>('idle');
   const [message, setMessage] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
-  const run = async (kind: Busy, action: () => Promise<void>, success?: string) => {
-    setBusy(kind);
+  const createAccount = async () => {
+    setBusy('email');
     setMessage(null);
-    setNotice(null);
     try {
-      await action();
-      if (success !== undefined) setNotice(success);
+      await authRepository.signUpWithEmail(email.trim(), password);
     } catch (error) {
       setMessage(messageForAuthFailure(error));
     } finally {
@@ -47,7 +44,7 @@ export default function SignInScreen() {
           <Text style={styles.backGlyph}>‹</Text>
         </Pressable>
 
-        <Text style={styles.title}>Welcome back</Text>
+        <Text style={styles.title}>Join the journey</Text>
 
         {authCapabilities.google !== 'none' && (
           <>
@@ -80,10 +77,10 @@ export default function SignInScreen() {
           label="Password"
           value={password}
           onChangeText={setPassword}
-          placeholder="Your password"
+          placeholder="Min. 8 characters"
           secureTextEntry={!reveal}
           autoCapitalize="none"
-          autoComplete="current-password"
+          autoComplete="new-password"
           trailing={{
             text: reveal ? 'Hide' : 'Show',
             onPress: () => setReveal(!reveal),
@@ -92,36 +89,21 @@ export default function SignInScreen() {
         />
 
         <Button
-          label="Sign In"
-          onPress={() => void run('email', () => authRepository.signInWithEmail(email.trim(), password))}
+          label="Create Account"
+          onPress={() => void createAccount()}
           busy={busy === 'email'}
           disabled={busy !== 'idle'}
           style={styles.submit}
         />
 
-        <Pressable
-          onPress={() =>
-            void run(
-              'reset',
-              () => authRepository.sendPasswordReset(email.trim()),
-              'Password reset email sent.',
-            )
-          }
-          disabled={busy !== 'idle' || email.trim() === ''}
-          accessibilityRole="button"
-        >
-          <Text style={[styles.forgot, email.trim() === '' && styles.forgotDisabled]}>Forgot password?</Text>
-        </Pressable>
-
-        {notice !== null && <Text style={styles.notice}>{notice}</Text>}
         {message !== null && <Text style={styles.message}>{message}</Text>}
       </ScrollView>
 
       <View style={styles.footer}>
-        <Link href="/sign-up" replace asChild>
+        <Link href="/sign-in" replace asChild>
           <Pressable accessibilityRole="button">
             <Text style={styles.footerText}>
-              New to Largata? <Text style={styles.footerAction}>Create an account</Text>
+              Already have an account? <Text style={styles.footerAction}>Sign In</Text>
             </Text>
           </Pressable>
         </Link>
@@ -138,9 +120,6 @@ const styles = StyleSheet.create({
   title: { ...typography.title, color: colors.textPrimary, marginBottom: spacing.xs },
   divider: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   submit: { marginTop: spacing.sm },
-  forgot: { ...typography.label, color: colors.accent, textAlign: 'center' },
-  forgotDisabled: { color: colors.textSecondary },
-  notice: { ...typography.caption, color: colors.success, textAlign: 'center' },
   message: { ...typography.caption, color: colors.danger, textAlign: 'center' },
   footer: { padding: spacing.lg, alignItems: 'center' },
   footerText: { ...typography.link, color: colors.textSecondary },

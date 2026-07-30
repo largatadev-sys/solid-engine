@@ -1,13 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { authRepository } from '../repositories/authRepository';
+import { AuthContext, type AuthState } from './authContext';
 
-
-export type AuthState =
-  | { kind: 'restoring' }
-  | { kind: 'signedOut' }
-  | { kind: 'signedIn'; firebaseUid: string };
-
-const AuthContext = createContext<AuthState>({ kind: 'restoring' });
+export { useAuth } from './authContext';
+export type { AuthState } from './authContext';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ kind: 'restoring' });
@@ -19,8 +15,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthState {
-  return useContext(AuthContext);
 }

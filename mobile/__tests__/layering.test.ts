@@ -105,7 +105,12 @@ describe('no source file carries a byte-order mark (E1 gate)', () => {
 describe('a hook that reads a shared server resource caches it (E1 gate)', () => {
   const HOOKS = join(MOBILE_ROOT, 'src', 'hooks');
 
-  const SINGLE_CONSUMER_OR_SESSION_SCOPED = ['useAuth.tsx', 'useEditLock.ts', 'useHealth.ts'];
+  const SINGLE_CONSUMER_OR_SESSION_SCOPED = [
+    'authContext.ts',
+    'useAuth.tsx',
+    'useEditLock.ts',
+    'useHealth.ts',
+  ];
 
   const sharedResourceHooks = readdirSync(HOOKS).filter(
     (file) => !SINGLE_CONSUMER_OR_SESSION_SCOPED.includes(file),
@@ -126,6 +131,30 @@ describe('a hook that reads a shared server resource caches it (E1 gate)', () =>
     for (const file of SINGLE_CONSUMER_OR_SESSION_SCOPED) {
       expect(statSync(join(HOOKS, file)).isFile()).toBe(true);
     }
+  });
+});
+
+
+describe('reading auth state never drags the Firebase SDK in (S4.0)', () => {
+  const consumers = [
+    ...sourceFiles(join(MOBILE_ROOT, 'app')),
+    ...sourceFiles(join(MOBILE_ROOT, 'src', 'query')),
+    ...sourceFiles(join(MOBILE_ROOT, 'src', 'components')),
+  ].filter((file) => !file.endsWith(join('app', '_layout.tsx')));
+
+  const PROVIDER_MODULE = /from\s*['"][^'"]*hooks\/useAuth['"]/;
+
+  it.each(consumers)('%s reads auth state from the context, not the provider module', (file) => {
+    expect(readFileSync(file, 'utf8')).not.toMatch(PROVIDER_MODULE);
+  });
+
+  it('the rule actually fires (guards against a regex that matches nothing)', () => {
+    expect("import { useAuth } from '../hooks/useAuth';").toMatch(PROVIDER_MODULE);
+    expect("import { useAuth } from '../hooks/authContext';").not.toMatch(PROVIDER_MODULE);
+  });
+
+  it('the layout is the one place allowed to mount the provider', () => {
+    expect(readFileSync(join(MOBILE_ROOT, 'app', '_layout.tsx'), 'utf8')).toMatch(/AuthProvider/);
   });
 });
 
