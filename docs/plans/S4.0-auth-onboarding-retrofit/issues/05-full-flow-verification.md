@@ -1,6 +1,6 @@
 # 05 — Full-flow verification pass
 
-**Status:** ready-for-agent
+**Status:** done on every rung that exists before the merge — one item stays open by definition: the deployed-`dev` probe (spec AC 14) cannot run until this code is on that rung. Run it immediately after the squash lands.
 
 **What to build:** the story's gate — every AC closed on every rung that ships. Both sign-up paths walked on the device, the invitee walk run two-account with tags stated, the whole flow driven headless in the preview container, and the deployed-dev probe run post-merge with a real Resend mail. Verify at the layer that ships: device ACs on the device, server behavior on the real server, and every SQL check naming the `railway` database.
 
