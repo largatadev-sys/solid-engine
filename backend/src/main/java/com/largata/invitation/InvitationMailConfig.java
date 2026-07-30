@@ -15,11 +15,10 @@ class InvitationMailConfig {
     @Bean
     @ConditionalOnExpression(API_KEY_PRESENT)
     InvitationMailer resendInvitationMailer(
-            RestClient.Builder builder,
             @org.springframework.beans.factory.annotation.Value("${largata.resend.api-key}") String apiKey,
             @org.springframework.beans.factory.annotation.Value("${largata.resend.from:invites@largata.com}")
                     String fromAddress) {
-        return new ResendInvitationMailer(builder, apiKey, fromAddress);
+        return new ResendInvitationMailer(RestClient.builder(), apiKey, fromAddress);
     }
 
     @Bean

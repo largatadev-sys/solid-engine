@@ -4,13 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.web.client.RestClient;
 
 class InvitationMailerBindingTest {
 
-    private final ApplicationContextRunner contexts = new ApplicationContextRunner()
-            .withBean(RestClient.Builder.class, RestClient::builder)
-            .withUserConfiguration(InvitationMailConfig.class);
+    private final ApplicationContextRunner contexts =
+            new ApplicationContextRunner().withUserConfiguration(InvitationMailConfig.class);
 
     @Test
     void aConfiguredApiKeyBindsTheResendMailer() {
