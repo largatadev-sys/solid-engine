@@ -1,7 +1,10 @@
+import type { IconName } from '../components/Icon';
+
+
 export interface Option {
   readonly value: string;
   readonly label: string;
-  readonly blurb?: string;
+  readonly icon?: IconName;
 }
 
 
@@ -9,31 +12,25 @@ export const EARN_GOAL = 'earn';
 
 
 export const GOALS: readonly Option[] = [
-  { value: 'discover', label: 'Discover trips', blurb: 'Browse itineraries other travelers have shared' },
-  { value: 'plan', label: 'Plan a trip', blurb: 'Build a day-by-day plan of your own' },
-  { value: 'plan_with_friends', label: 'Plan with friends', blurb: 'Invite people and plan together' },
-  { value: 'share', label: 'Share an itinerary', blurb: 'Publish a trip for others to follow' },
-  { value: EARN_GOAL, label: 'Earn from my itineraries', blurb: 'Tell us you are interested' },
+  { value: 'discover', label: 'Discover trips', icon: 'compass' },
+  { value: 'plan', label: 'Plan a trip', icon: 'map' },
+  { value: 'plan_with_friends', label: 'Plan with friends', icon: 'users' },
+  { value: 'share', label: 'Share an itinerary', icon: 'share' },
+  { value: EARN_GOAL, label: 'Earn from my itineraries', icon: 'dollar' },
 ];
 
 
 export const INTERESTS: readonly Option[] = [
-  { value: 'food', label: 'Food' },
-  { value: 'beaches', label: 'Beaches' },
-  { value: 'hiking', label: 'Hiking' },
-  { value: 'diving', label: 'Diving' },
-  { value: 'history', label: 'History' },
-  { value: 'art', label: 'Art' },
-  { value: 'nightlife', label: 'Nightlife' },
-  { value: 'nature', label: 'Nature' },
-  { value: 'road_trips', label: 'Road trips' },
-  { value: 'photography', label: 'Photography' },
-  { value: 'festivals', label: 'Festivals' },
-  { value: 'budget', label: 'Budget travel' },
+  { value: 'budget', label: 'Budget' },
   { value: 'luxury', label: 'Luxury' },
-  { value: 'family', label: 'Family travel' },
-  { value: 'solo', label: 'Solo travel' },
-  { value: 'wellness', label: 'Wellness' },
+  { value: 'adventure', label: 'Adventure' },
+  { value: 'food_culture', label: 'Food & Culture' },
+  { value: 'relaxation', label: 'Relaxation' },
+  { value: 'nightlife', label: 'Nightlife' },
+  { value: 'family_travel', label: 'Family Travel' },
+  { value: 'solo_travel', label: 'Solo Travel' },
+  { value: 'group_travel', label: 'Group Travel' },
+  { value: 'accessible_travel', label: 'Accessible Travel' },
 ];
 
 

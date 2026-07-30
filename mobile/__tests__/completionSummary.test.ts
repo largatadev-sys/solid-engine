@@ -2,6 +2,7 @@ import {
   COMPLETION_BLURB,
   COMPLETION_CTA,
   COMPLETION_HEADLINE,
+  SUMMARY_TITLE,
   completionSummary,
 } from '../src/onboarding/completionSummary';
 import { initialsFor } from '../src/onboarding/initials';
@@ -16,24 +17,34 @@ const ME: MeResponse = {
   avatarUrl: null,
   bio: null,
   goals: ['discover', 'earn'],
-  interests: ['food', 'hiking', 'art'],
+  interests: ['adventure', 'food_culture', 'solo_travel'],
   country: 'PH',
   preferredCurrency: 'PHP',
   homeCity: 'Puerto Princesa',
   onboardingCompleted: false,
 };
 
-describe('the completion summary is a receipt, not a promise', () => {
-  it('restates only what the traveler entered', () => {
-    const lines = completionSummary(ME);
+describe('the completion screen matches the design copy', () => {
+  it('uses the export wording verbatim', () => {
+    expect(COMPLETION_HEADLINE).toBe("You're all set!");
+    expect(COMPLETION_BLURB).toBe('Your Largata account is ready.');
+    expect(COMPLETION_CTA).toBe('Explore Largata');
+    expect(SUMMARY_TITLE).toBe('Summary');
+  });
+});
 
-    expect(lines).toEqual([
-      { label: 'Handle', value: '@anasilva' },
-      { label: 'Here to', value: 'Discover trips, Earn from my itineraries' },
-      { label: 'Interested in', value: 'Food, Hiking, Art' },
-      { label: 'Based in', value: 'Puerto Princesa, Philippines' },
-      { label: 'Preferred currency', value: 'PHP' },
+describe('the summary is a receipt, not a promise', () => {
+  it('restates only what the traveler entered', () => {
+    expect(completionSummary(ME)).toEqual([
+      'Signed in as @anasilva',
+      '3 Interests selected',
+      'Based in Puerto Princesa, Philippines',
+      'PHP is your preferred currency',
     ]);
+  });
+
+  it('keeps the design row it can keep, verbatim in shape', () => {
+    expect(completionSummary(ME)).toContain('3 Interests selected');
   });
 
   it('claims no behaviour that does not exist (spec decision 6, AC 10)', () => {
@@ -46,7 +57,8 @@ describe('the completion summary is a receipt, not a promise', () => {
       /\byour feed\b/i,
       /\bmatched?\b/i,
       /\bcurated\b/i,
-
+      /\benabled\b/i,
+      /\bactive\b/i,
       /\bchange any of it\b/i,
       /\bchange this later\b/i,
     ];
@@ -55,7 +67,8 @@ describe('the completion summary is a receipt, not a promise', () => {
       COMPLETION_HEADLINE,
       COMPLETION_BLURB,
       COMPLETION_CTA,
-      ...completionSummary(ME).flatMap((line) => [line.label, line.value]),
+      SUMMARY_TITLE,
+      ...completionSummary(ME),
     ].join(' ');
 
     for (const claim of CLAIMS_NOTHING_HAS_BUILT) {
@@ -63,52 +76,39 @@ describe('the completion summary is a receipt, not a promise', () => {
     }
   });
 
-  it('the ban list would actually fire on the wording that was cut', () => {
+  it('the ban list would fire on the two design rows that had to be reworded', () => {
     expect('Discovery mode active').toMatch(/discovery mode/i);
-    expect('You can change any of it from your profile.').toMatch(/\bchange any of it\b/i);
+    expect('PHP currency enabled').toMatch(/\benabled\b/i);
   });
 
-  it('promises no edit surface that does not exist: only handle, name and bio are editable', () => {
-    const EDITABLE_ON_THE_ME_SCREEN = ['Handle'];
-    const summarised = completionSummary(ME).map((line) => line.label);
-
-    expect(summarised).not.toEqual(EDITABLE_ON_THE_ME_SCREEN);
-    expect(COMPLETION_BLURB).not.toMatch(/\byour profile\b/i);
+  it('singularises one interest rather than printing "1 Interests"', () => {
+    expect(completionSummary({ ...ME, interests: ['adventure'] })).toContain('1 Interest selected');
   });
 
-  it('omits a line rather than printing an empty one', () => {
-    const bare = completionSummary({
-      ...ME,
-      handle: null,
-      goals: [],
-      interests: [],
-      country: null,
-      preferredCurrency: null,
-      homeCity: null,
-    });
-
-    expect(bare).toEqual([]);
+  it('omits a row rather than printing an empty one', () => {
+    expect(
+      completionSummary({
+        ...ME,
+        handle: null,
+        goals: [],
+        interests: [],
+        country: null,
+        preferredCurrency: null,
+        homeCity: null,
+      }),
+    ).toEqual([]);
   });
 
   it('a city with no country, or a country with no city, still reads properly', () => {
-    expect(completionSummary({ ...ME, country: null })).toContainEqual({
-      label: 'Based in',
-      value: 'Puerto Princesa',
-    });
-    expect(completionSummary({ ...ME, homeCity: null })).toContainEqual({
-      label: 'Based in',
-      value: 'Philippines',
-    });
-    expect(completionSummary({ ...ME, homeCity: '   ' })).toContainEqual({
-      label: 'Based in',
-      value: 'Philippines',
-    });
+    expect(completionSummary({ ...ME, country: null })).toContain('Based in Puerto Princesa');
+    expect(completionSummary({ ...ME, homeCity: null })).toContain('Based in Philippines');
+    expect(completionSummary({ ...ME, homeCity: '   ' })).toContain('Based in Philippines');
   });
 
-  it('an option the client does not know about is dropped rather than shown raw', () => {
-    const lines = completionSummary({ ...ME, interests: ['food', 'something_from_the_future'] });
-
-    expect(lines).toContainEqual({ label: 'Interested in', value: 'Food' });
+  it('an option the client does not know about is not counted', () => {
+    expect(completionSummary({ ...ME, interests: ['adventure', 'from_the_future'] })).toContain(
+      '1 Interest selected',
+    );
   });
 });
 

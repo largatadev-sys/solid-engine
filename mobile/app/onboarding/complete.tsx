@@ -2,19 +2,23 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
+import { Icon } from '../../src/components/Icon';
 import { OnboardingScreen } from '../../src/components/OnboardingScreen';
 import { useMe } from '../../src/hooks/useMe';
 import {
   COMPLETION_BLURB,
   COMPLETION_CTA,
   COMPLETION_HEADLINE,
+  SUMMARY_TITLE,
   completionSummary,
 } from '../../src/onboarding/completionSummary';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { SIGNED_IN_HOME } from '../../src/navigation/authRoutes';
 import { useCompleteOnboarding } from '../../src/query/travelerQueries';
-import { colors, radii, spacing, typography } from '../../src/theme';
+import { colors, controls, radii, spacing, typography } from '../../src/theme';
 
+const SPARKLE_GLYPH = 64;
+const CHECK_GLYPH = 20;
 
 export default function CompleteStepScreen() {
   const router = useRouter();
@@ -22,7 +26,7 @@ export default function CompleteStepScreen() {
   const finish = useCompleteOnboarding();
   const [message, setMessage] = useState<string | null>(null);
 
-  const lines = state.kind === 'ok' ? completionSummary(state.me) : [];
+  const rows = state.kind === 'ok' ? completionSummary(state.me) : [];
 
   const done = async () => {
     setMessage(null);
@@ -36,8 +40,7 @@ export default function CompleteStepScreen() {
 
   return (
     <OnboardingScreen
-      title={COMPLETION_HEADLINE}
-      subtitle={COMPLETION_BLURB}
+      canGoBack={false}
       message={message}
       footer={
         <Button
@@ -48,28 +51,57 @@ export default function CompleteStepScreen() {
         />
       }
     >
-      <View style={styles.card}>
-        {lines.map((line) => (
-          <View key={line.label} style={styles.line}>
-            <Text style={styles.label}>{line.label}</Text>
-            <Text style={styles.value}>{line.value}</Text>
-          </View>
-        ))}
+      <View style={styles.hero}>
+        <View style={styles.iconCircle}>
+          <Icon name="sparkle" size={SPARKLE_GLYPH} color={colors.accent} />
+        </View>
+
+        <View style={styles.headings}>
+          <Text style={styles.headline}>{COMPLETION_HEADLINE}</Text>
+          <Text style={styles.blurb}>{COMPLETION_BLURB}</Text>
+        </View>
+      </View>
+
+      <View style={styles.summary}>
+        <Text style={styles.summaryTitle}>{SUMMARY_TITLE}</Text>
+
+        <View style={styles.rows}>
+          {rows.map((row) => (
+            <View key={row} style={styles.row}>
+              <Icon name="check" size={CHECK_GLYPH} color={colors.accent} />
+              <Text style={styles.rowText}>{row}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     </OnboardingScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  hero: { alignItems: 'center', gap: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.lg },
+  iconCircle: {
+    width: controls.avatarSize,
+    height: controls.avatarSize,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accentTint,
+  },
+  headings: { alignItems: 'center', gap: spacing.sm },
+  headline: { ...typography.display, color: colors.textPrimary, textAlign: 'center' },
+  blurb: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
+  summary: {
+    alignSelf: 'stretch',
     gap: spacing.md,
     padding: spacing.lg,
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  line: { gap: spacing.xs },
-  label: { ...typography.overline, color: colors.textSecondary },
-  value: { ...typography.body, color: colors.textPrimary },
+  summaryTitle: { ...typography.overline, color: colors.textSecondary },
+  rows: { gap: spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  rowText: { ...typography.body, color: colors.textPrimary },
 });

@@ -1,19 +1,23 @@
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, controls, radii, spacing, typography } from '../theme';
 
 interface FormFieldProps extends TextInputProps {
   readonly label: string;
+  readonly prefix?: string;
+  readonly area?: boolean;
   readonly trailing?: { readonly text: string; readonly onPress: () => void; readonly accessibilityLabel: string };
 }
 
-export function FormField({ label, trailing, style, ...inputProps }: FormFieldProps) {
+export function FormField({ label, prefix, area = false, trailing, style, ...inputProps }: FormFieldProps) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
 
-      <View style={styles.shell}>
+      <View style={[styles.shell, area && styles.areaShell]}>
+        {prefix !== undefined && <Text style={styles.prefix}>{prefix}</Text>}
+
         <TextInput
-          style={[styles.input, style]}
+          style={[styles.input, area && styles.areaInput, style]}
           placeholderTextColor={colors.textSecondary}
           accessibilityLabel={label}
           {...inputProps}
@@ -41,12 +45,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    height: controls.inputHeight,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radii.md,
   },
-  input: { flex: 1, paddingVertical: spacing.md, ...typography.body, color: colors.textPrimary },
+  areaShell: { height: controls.bioHeight, alignItems: 'flex-start', paddingVertical: spacing.md },
+  prefix: { ...typography.body, color: colors.textSecondary },
+  input: { flex: 1, ...typography.body, color: colors.textPrimary },
+  areaInput: { height: '100%', textAlignVertical: 'top' },
   trailing: { ...typography.label, color: colors.accent },
 });

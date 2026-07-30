@@ -1,40 +1,35 @@
 import { countryByCode } from './countries';
-import { GOALS, INTERESTS, labelsFor } from './preferenceOptions';
+import { INTERESTS, labelsFor } from './preferenceOptions';
 import type { MeResponse } from '../types/api';
 
 
-export interface SummaryLine {
-  readonly label: string;
-  readonly value: string;
-}
+export const COMPLETION_HEADLINE = "You're all set!";
+
+export const COMPLETION_BLURB = 'Your Largata account is ready.';
+
+export const COMPLETION_CTA = 'Explore Largata';
+
+export const SUMMARY_TITLE = 'Summary';
 
 
-export const COMPLETION_HEADLINE = 'You are all set';
+export function completionSummary(me: MeResponse): string[] {
+  const rows: string[] = [];
 
-export const COMPLETION_BLURB = 'Here is what we saved.';
-
-export const COMPLETION_CTA = 'Go to My Trips';
-
-
-export function completionSummary(me: MeResponse): SummaryLine[] {
-  const lines: SummaryLine[] = [];
-
-  if (me.handle !== null) lines.push({ label: 'Handle', value: `@${me.handle}` });
-
-  const goals = labelsFor(GOALS, me.goals);
-  if (goals.length > 0) lines.push({ label: 'Here to', value: goals.join(', ') });
+  if (me.handle !== null) rows.push(`Signed in as @${me.handle}`);
 
   const interests = labelsFor(INTERESTS, me.interests);
-  if (interests.length > 0) lines.push({ label: 'Interested in', value: interests.join(', ') });
-
-  const based = basedIn(me);
-  if (based !== null) lines.push({ label: 'Based in', value: based });
-
-  if (me.preferredCurrency !== null) {
-    lines.push({ label: 'Preferred currency', value: me.preferredCurrency });
+  if (interests.length > 0) {
+    rows.push(`${interests.length} ${interests.length === 1 ? 'Interest' : 'Interests'} selected`);
   }
 
-  return lines;
+  const based = basedIn(me);
+  if (based !== null) rows.push(`Based in ${based}`);
+
+  if (me.preferredCurrency !== null) {
+    rows.push(`${me.preferredCurrency} is your preferred currency`);
+  }
+
+  return rows;
 }
 
 

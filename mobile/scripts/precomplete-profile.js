@@ -8,9 +8,11 @@
 
 const POOL_HANDLE_PREFIX = 'pool_';
 
+// Values, not labels — these must stay in step with src/onboarding/preferenceOptions.ts, whose
+// vocabulary follows the Figma export (Budget / Luxury / Adventure / Food & Culture / ...).
 const FIXTURE_ANSWERS = {
   goals: ['discover', 'plan_with_friends'],
-  interests: ['food', 'hiking', 'history'],
+  interests: ['adventure', 'food_culture', 'solo_travel'],
   country: 'PH',
   preferredCurrency: 'PHP',
   homeCity: 'Puerto Princesa',

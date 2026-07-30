@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '../../src/components/Avatar';
 import { Button } from '../../src/components/Button';
 import { FormField } from '../../src/components/FormField';
@@ -14,7 +14,7 @@ import {
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { useHandleAvailability, useUpdateProfile } from '../../src/query/travelerQueries';
-import { colors, typography } from '../../src/theme';
+import { colors, spacing, typography } from '../../src/theme';
 
 const BIO_MAX_LENGTH = 500;
 
@@ -58,8 +58,6 @@ export default function ProfileStepScreen() {
   return (
     <OnboardingScreen
       step={editing ? undefined : STEP_NUMBERS.profile}
-      title={editing ? 'Edit your profile' : 'Create your profile'}
-      subtitle="This is how other travelers will see you."
       message={message}
       footer={
         <Button
@@ -70,50 +68,56 @@ export default function ProfileStepScreen() {
         />
       }
     >
-      <Avatar
-        photoUrl={me?.avatarUrl ?? null}
-        displayName={displayName}
-        email={me?.email ?? null}
-      />
+      <View style={styles.avatarBlock}>
+        <Avatar
+          photoUrl={me?.avatarUrl ?? null}
+          displayName={displayName}
+          email={me?.email ?? null}
+        />
+      </View>
 
-      <FormField
-        label="Display name"
-        value={displayName}
-        onChangeText={setDisplayName}
-        placeholder="Your name"
-        autoComplete="name"
-      />
+      <View style={styles.fields}>
+        <FormField
+          label="Display Name"
+          value={displayName}
+          onChangeText={setDisplayName}
+          placeholder="e.g. Jane Doe"
+          autoComplete="name"
+        />
 
-      <FormField
-        label="Handle"
-        value={handle}
-        onChangeText={(raw) => setHandle(normalizeHandleInput(raw))}
-        placeholder="yourhandle"
-        autoCapitalize="none"
-        autoCorrect={false}
-        maxLength={HANDLE_MAX_LENGTH}
-      />
-      <Text style={[styles.feedback, styles[feedback.tone]]}>{feedback.text}</Text>
+        <View>
+          <FormField
+            label="Username"
+            prefix="@"
+            value={handle}
+            onChangeText={(raw) => setHandle(normalizeHandleInput(raw))}
+            placeholder="janedoe"
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={HANDLE_MAX_LENGTH}
+          />
+          <Text style={[styles.feedback, styles[feedback.tone]]}>{feedback.text}</Text>
+        </View>
 
-      <FormField
-        label="Bio"
-        value={bio}
-        onChangeText={setBio}
-        placeholder="A line about how you travel (optional)"
-        multiline
-        maxLength={BIO_MAX_LENGTH}
-        style={styles.bio}
-      />
+        <FormField
+          label="Bio (Optional)"
+          area
+          value={bio}
+          onChangeText={setBio}
+          placeholder="Tell us about your travel style..."
+          multiline
+          maxLength={BIO_MAX_LENGTH}
+        />
+      </View>
     </OnboardingScreen>
   );
 }
 
-const BIO_HEIGHT = 96;
-
 const styles = StyleSheet.create({
-  feedback: { ...typography.caption },
+  avatarBlock: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.md },
+  fields: { gap: spacing.md },
+  feedback: { ...typography.caption, paddingTop: spacing.xs },
   neutral: { color: colors.textSecondary },
   good: { color: colors.success },
   bad: { color: colors.danger },
-  bio: { height: BIO_HEIGHT, textAlignVertical: 'top' },
 });

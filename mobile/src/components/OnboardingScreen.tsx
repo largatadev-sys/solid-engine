@@ -6,7 +6,8 @@ import { colors, spacing, typography } from '../theme';
 
 interface OnboardingScreenProps {
   readonly step?: number;
-  readonly title: string;
+  readonly canGoBack?: boolean;
+  readonly title?: string;
   readonly subtitle?: string;
   readonly children: ReactNode;
   readonly footer: ReactNode;
@@ -15,6 +16,7 @@ interface OnboardingScreenProps {
 
 export function OnboardingScreen({
   step,
+  canGoBack,
   title,
   subtitle,
   children,
@@ -27,12 +29,14 @@ export function OnboardingScreen({
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.inner}>
-          {step !== undefined && <StepIndicator step={step} />}
+          <StepIndicator step={step} canGoBack={canGoBack} />
 
-          <Text style={styles.title}>{title}</Text>
-          {subtitle !== undefined && <Text style={styles.subtitle}>{subtitle}</Text>}
+          <View style={styles.body}>
+            {title !== undefined && <Text style={styles.title}>{title}</Text>}
+            {subtitle !== undefined && <Text style={styles.subtitle}>{subtitle}</Text>}
 
-          {children}
+            {children}
+          </View>
         </View>
       </ScrollView>
 
@@ -50,10 +54,11 @@ const CONTENT_MAX_WIDTH = 480;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, alignItems: 'center' },
-  inner: { width: '100%', maxWidth: CONTENT_MAX_WIDTH, gap: spacing.md },
+  content: { paddingHorizontal: spacing.lg, alignItems: 'center' },
+  inner: { width: '100%', maxWidth: CONTENT_MAX_WIDTH },
+  body: { paddingTop: spacing.lg, gap: spacing.md },
   title: { ...typography.title, color: colors.textPrimary },
   subtitle: { ...typography.body, color: colors.textSecondary },
-  footer: { padding: spacing.lg, alignItems: 'center' },
+  footer: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, alignItems: 'center' },
   message: { ...typography.caption, color: colors.danger, textAlign: 'center' },
 });

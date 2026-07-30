@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRef } from 'react';
 import { CODE_LENGTH, digitsOnly } from '../onboarding/verificationMessages';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, controls, radii, spacing, typography } from '../theme';
 
 interface CodeInputProps {
   readonly value: string;
@@ -46,14 +46,12 @@ export function CodeInput({ value, onChange, editable, invalid }: CodeInputProps
   );
 }
 
-const BOX_SIZE = 52;
-
 const styles = StyleSheet.create({
-  wrap: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'center' },
-  hidden: { position: 'absolute', opacity: 0, height: BOX_SIZE, width: '100%' },
+  wrap: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' },
+  hidden: { position: 'absolute', opacity: 0, height: controls.codeBoxHeight, width: '100%' },
   box: {
-    width: BOX_SIZE,
-    height: BOX_SIZE,
+    flex: 1,
+    height: controls.codeBoxHeight,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.md,
@@ -63,5 +61,5 @@ const styles = StyleSheet.create({
   },
   active: { borderColor: colors.accent },
   invalid: { borderColor: colors.danger },
-  digit: { ...typography.heading, color: colors.textPrimary },
+  digit: { ...typography.codeDigit, color: colors.textPrimary },
 });

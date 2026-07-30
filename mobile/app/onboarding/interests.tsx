@@ -1,20 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { OnboardingScreen } from '../../src/components/OnboardingScreen';
 import { SelectableChip } from '../../src/components/SelectableChip';
 import { useMe } from '../../src/hooks/useMe';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
-import {
-  INTERESTS,
-  hasEnoughInterests,
-  interestsRemaining,
-  toggle,
-} from '../../src/onboarding/preferenceOptions';
+import { INTERESTS, hasEnoughInterests, toggle } from '../../src/onboarding/preferenceOptions';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { useUpdateProfile } from '../../src/query/travelerQueries';
-import { colors, spacing, typography } from '../../src/theme';
+import { spacing } from '../../src/theme';
 
 
 export default function InterestsStepScreen() {
@@ -34,8 +29,6 @@ export default function InterestsStepScreen() {
     setPrefilled(true);
   }, [me, prefilled]);
 
-  const remaining = interestsRemaining(selected);
-
   const submit = async () => {
     setMessage(null);
     try {
@@ -49,8 +42,8 @@ export default function InterestsStepScreen() {
   return (
     <OnboardingScreen
       step={STEP_NUMBERS.interests}
-      title="What do you travel for?"
-      subtitle="Pick at least three."
+      title="What kind of trips interest you?"
+      subtitle="Pick at least 3"
       message={message}
       footer={
         <Button
@@ -61,11 +54,7 @@ export default function InterestsStepScreen() {
         />
       }
     >
-      <Text style={styles.counter}>
-        {remaining > 0 ? `${remaining} more to go` : `${selected.length} selected`}
-      </Text>
-
-      <View style={styles.grid}>
+      <View style={styles.chips}>
         {INTERESTS.map((interest) => (
           <SelectableChip
             key={interest.value}
@@ -80,6 +69,5 @@ export default function InterestsStepScreen() {
 }
 
 const styles = StyleSheet.create({
-  counter: { ...typography.label, color: colors.textSecondary },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignContent: 'flex-start' },
 });

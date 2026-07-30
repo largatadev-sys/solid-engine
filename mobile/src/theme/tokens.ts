@@ -10,6 +10,7 @@ const palette = {
   white: '#FFFFFF',
   crimson700: '#B3261E',
   forest600: '#2F6B47',
+  terracotta016: 'rgba(217, 108, 74, 0.0627451)',
 } as const;
 
 
@@ -32,6 +33,8 @@ export const colors = {
   accent: palette.terracotta600,
 
   accentMuted: palette.terracotta200,
+
+  accentTint: palette.terracotta016,
 
   danger: palette.crimson700,
 
@@ -62,6 +65,7 @@ export const typography = {
   link: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 18, fontWeight: '400' },
   caption: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 20, fontWeight: '400' },
   overline: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 1.5 },
+  codeDigit: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 24, fontWeight: '700' },
   mono: { fontSize: 13, fontFamily: 'monospace' },
 
   fine: { fontFamily: fonts.regular, fontSize: 10, lineHeight: 14, fontWeight: '400' },
@@ -80,8 +84,23 @@ export const spacing = {
 
 
 export const radii = {
+  xs: 2,
   sm: 8,
   md: 12,
   lg: 16,
+  xl: 20,
   pill: 100,
+} as const;
+
+
+export const controls = {
+  inputHeight: 51,
+  buttonHeight: 51,
+  optionHeight: 72,
+  codeBoxHeight: 56,
+  bioHeight: 120,
+  progressHeight: 4,
+  avatarSize: 120,
+  verifyIconSize: 128,
+  navControl: 40,
 } as const;

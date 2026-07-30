@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { OnboardingScreen } from '../../src/components/OnboardingScreen';
-import { SelectableChip } from '../../src/components/SelectableChip';
+import { SelectableOption } from '../../src/components/SelectableOption';
 import { useMe } from '../../src/hooks/useMe';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
 import { GOALS, hasEnoughGoals, toggle } from '../../src/onboarding/preferenceOptions';
@@ -42,8 +42,8 @@ export default function GoalsStepScreen() {
   return (
     <OnboardingScreen
       step={STEP_NUMBERS.goals}
-      title="What brings you here?"
-      subtitle="Pick everything that applies."
+      title="What are you hoping to do?"
+      subtitle="Select all that apply"
       message={message}
       footer={
         <Button
@@ -56,13 +56,12 @@ export default function GoalsStepScreen() {
     >
       <View style={styles.list}>
         {GOALS.map((goal) => (
-          <SelectableChip
+          <SelectableOption
             key={goal.value}
             label={goal.label}
-            blurb={goal.blurb}
+            icon={goal.icon ?? 'compass'}
             selected={selected.includes(goal.value)}
             onPress={() => setSelected(toggle(selected, goal.value))}
-            block
           />
         ))}
       </View>

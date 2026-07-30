@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, controls, radii, spacing, typography } from '../theme';
 
 export type ButtonVariant = 'primary' | 'secondary';
 
@@ -44,7 +44,7 @@ export function Button({
 const styles = StyleSheet.create({
   base: {
     alignSelf: 'stretch',
-    paddingVertical: spacing.md,
+    height: controls.buttonHeight,
     paddingHorizontal: spacing.lg,
     borderRadius: radii.md,
     alignItems: 'center',
