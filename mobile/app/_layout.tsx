@@ -1,13 +1,19 @@
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { installFirebaseTokenSource } from '../src/auth/firebaseTokenSource';
 import { installGoogleSignIn } from '../src/auth/googleSignInConfig';
 import { authCapabilities } from '../src/repositories/authRepository';
-import { AuthProvider, useAuth } from '../src/hooks/useAuth';
+import { useAuth } from '../src/hooks/authContext';
+import { useMe } from '../src/hooks/useMe';
+import { AuthProvider } from '../src/hooks/useAuth';
 import { createQueryClient } from '../src/query/queryClient';
-import { colors } from '../src/theme';
+import { destinationFor, isSettling, type GateInput } from '../src/onboarding/onboardingGate';
+import { colors, typography } from '../src/theme';
+import { interFontMap } from '../src/theme/interFonts';
 
 
 
@@ -19,9 +25,13 @@ if (authCapabilities.google === 'full') {
 
 export default function RootLayout() {
   const [queryClient] = useState(createQueryClient);
+  const [fontsLoaded, fontError] = useFonts(interFontMap);
+
+  if (!fontsLoaded && fontError === null) return <Splash />;
 
   return (
     <QueryClientProvider client={queryClient}>
+      <StatusBar style="dark" />
       <AuthProvider>
         <AuthGate />
       </AuthProvider>
@@ -31,31 +41,46 @@ export default function RootLayout() {
 
 
 function AuthGate() {
-  const state = useAuth();
+  const auth = useAuth();
+  const { state } = useMe();
   const segments = useSegments();
   const router = useRouter();
 
+  const gate: GateInput = {
+    auth: auth.kind,
+    emailVerified: auth.kind === 'signedIn' && auth.emailVerified,
+    profile: state.kind === 'ok' ? state.me : null,
+    profileUnreadable: state.kind === 'error',
+    segment: segments[0],
+  };
+
+  const destination = destinationFor(gate);
+
   useEffect(() => {
-    if (state.kind === 'restoring') return;
+    if (destination !== null) router.replace(destination);
+  }, [destination, router]);
 
-    const onSignIn = segments[0] === 'sign-in';
+  if (destination !== null || isSettling(gate)) return <Splash />;
 
-    if (state.kind === 'signedOut' && !onSignIn) {
-      router.replace('/sign-in');
-    } else if (state.kind === 'signedIn' && onSignIn) {
-      router.replace('/');
-    }
-  }, [state, segments, router]);
+  return (
+    <Stack
+      screenOptions={{
+        headerTitleStyle: typography.bodyStrong,
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
+      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+    </Stack>
+  );
+}
 
-  if (state.kind === 'restoring') {
-    return (
-      <View style={styles.splash}>
-        <ActivityIndicator size="large" color={colors.accent} />
-      </View>
-    );
-  }
 
-  return <Stack screenOptions={{ headerTitleStyle: { fontWeight: '600' } }} />;
+function Splash() {
+  return (
+    <View style={styles.splash}>
+      <ActivityIndicator size="large" color={colors.accent} />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

@@ -11,7 +11,14 @@ import type { GoogleSignInButtonProps } from './googleSignInButtonContract';
 
 
 
-const GIS_BUTTON_WIDTH = 400;
+const GIS_MIN_WIDTH = 200;
+const GIS_MAX_WIDTH = 400;
+
+export function gisButtonWidth(containerWidth: number): number {
+  if (!Number.isFinite(containerWidth) || containerWidth <= 0) return GIS_MAX_WIDTH;
+
+  return Math.max(GIS_MIN_WIDTH, Math.min(GIS_MAX_WIDTH, Math.floor(containerWidth)));
+}
 
 export function GoogleSignInButton({
   onStart,
@@ -30,6 +37,8 @@ export function GoogleSignInButton({
 
     let unmounted = false;
 
+    const width = gisButtonWidth(element.offsetWidth);
+
     void renderButton(element, (idToken: string) => {
       if (unmounted) return;
       void handleGoogleCredential(idToken, {
@@ -38,7 +47,7 @@ export function GoogleSignInButton({
         onError: (message) => latest.current.onError(message),
         isDisabled: () => unmounted || latest.current.disabled,
       });
-    }, GIS_BUTTON_WIDTH).catch(() => {
+    }, width).catch(() => {
       if (!unmounted) latest.current.onError(GIS_UNAVAILABLE_MESSAGE);
     });
 
@@ -47,5 +56,5 @@ export function GoogleSignInButton({
     };
   }, []);
 
-  return <View ref={host} />;
+  return <View ref={host} style={{ alignSelf: 'stretch' }} />;
 }

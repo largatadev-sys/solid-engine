@@ -78,6 +78,30 @@ describe('screens consume design tokens, never raw values (S0.3)', () => {
 });
 
 
+describe('a Link asChild child never carries an ARRAY style (S4.0)', () => {
+  const screens = [...sourceFiles(join(MOBILE_ROOT, 'app')), ...sourceFiles(join(MOBILE_ROOT, 'src'))];
+
+  const LINK_ASCHILD_WITH_ARRAY_STYLE = /<Link[^>]*asChild[^>]*>\s*<\w+[^>]*style=\{\[/;
+
+  it('finds files to check (guards against a vacuously passing test)', () => {
+    expect(screens.length).toBeGreaterThan(10);
+  });
+
+  it.each(screens)('%s does not hand an array style to a Link child', (file) => {
+    expect(readFileSync(file, 'utf8')).not.toMatch(LINK_ASCHILD_WITH_ARRAY_STYLE);
+  });
+
+  it('the rule actually fires (guards against a regex that matches nothing)', () => {
+    expect('<Link href="/" asChild>\n  <Pressable style={[styles.a, styles.b]}>').toMatch(
+      LINK_ASCHILD_WITH_ARRAY_STYLE,
+    );
+    expect('<Link href="/" asChild>\n  <Pressable style={styles.a}>').not.toMatch(
+      LINK_ASCHILD_WITH_ARRAY_STYLE,
+    );
+  });
+});
+
+
 describe('no source file carries a byte-order mark (E1 gate)', () => {
   const scanned = [
     ...sourceFiles(join(MOBILE_ROOT, 'app')),
@@ -105,7 +129,12 @@ describe('no source file carries a byte-order mark (E1 gate)', () => {
 describe('a hook that reads a shared server resource caches it (E1 gate)', () => {
   const HOOKS = join(MOBILE_ROOT, 'src', 'hooks');
 
-  const SINGLE_CONSUMER_OR_SESSION_SCOPED = ['useAuth.tsx', 'useEditLock.ts', 'useHealth.ts'];
+  const SINGLE_CONSUMER_OR_SESSION_SCOPED = [
+    'authContext.ts',
+    'useAuth.tsx',
+    'useEditLock.ts',
+    'useHealth.ts',
+  ];
 
   const sharedResourceHooks = readdirSync(HOOKS).filter(
     (file) => !SINGLE_CONSUMER_OR_SESSION_SCOPED.includes(file),
@@ -126,6 +155,32 @@ describe('a hook that reads a shared server resource caches it (E1 gate)', () =>
     for (const file of SINGLE_CONSUMER_OR_SESSION_SCOPED) {
       expect(statSync(join(HOOKS, file)).isFile()).toBe(true);
     }
+  });
+});
+
+
+describe('reading auth state never drags the Firebase SDK in (S4.0)', () => {
+  const consumers = [
+    ...sourceFiles(join(MOBILE_ROOT, 'app')),
+    ...sourceFiles(join(MOBILE_ROOT, 'src', 'query')),
+    ...sourceFiles(join(MOBILE_ROOT, 'src', 'components')),
+  ];
+
+  const READS_STATE_FROM_PROVIDER = /useAuth[^'"\n]*}\s*from\s*['"][^'"]*hooks\/useAuth['"]/;
+
+  it.each(consumers)('%s reads auth state from the context, not the provider module', (file) => {
+    expect(readFileSync(file, 'utf8')).not.toMatch(READS_STATE_FROM_PROVIDER);
+  });
+
+  it('the rule actually fires (guards against a regex that matches nothing)', () => {
+    expect("import { useAuth } from '../hooks/useAuth';").toMatch(READS_STATE_FROM_PROVIDER);
+    expect("import { AuthProvider, useAuth } from '../hooks/useAuth';").toMatch(READS_STATE_FROM_PROVIDER);
+    expect("import { useAuth } from '../hooks/authContext';").not.toMatch(READS_STATE_FROM_PROVIDER);
+    expect("import { AuthProvider } from '../hooks/useAuth';").not.toMatch(READS_STATE_FROM_PROVIDER);
+  });
+
+  it('the layout is the one place allowed to mount the provider', () => {
+    expect(readFileSync(join(MOBILE_ROOT, 'app', '_layout.tsx'), 'utf8')).toMatch(/AuthProvider/);
   });
 });
 

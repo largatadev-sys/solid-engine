@@ -11,6 +11,7 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
+import { useAuth } from '../hooks/authContext';
 import { itineraryRepository } from '../repositories/itineraryRepository';
 import type {
   ActivityRequest,
@@ -80,7 +81,8 @@ export async function onPlanChanged(client: QueryClient, itineraryId: string): P
 
 
 export function useMyItineraries(): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
-  return useInfiniteQuery(myItinerariesOptions);
+  const { kind } = useAuth();
+  return useInfiniteQuery({ ...myItinerariesOptions, enabled: kind === 'signedIn' });
 }
 
 export function useItinerary(id: string): UseQueryResult<ItineraryResponse> {
@@ -131,7 +133,8 @@ export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryRespons
 }
 
 export function useArchivedItineraries(): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
-  return useInfiniteQuery(archivedItinerariesOptions);
+  const { kind } = useAuth();
+  return useInfiniteQuery({ ...archivedItinerariesOptions, enabled: kind === 'signedIn' });
 }
 
 

@@ -1,0 +1,15 @@
+# The build context is sent to the Docker daemon in full, so a credential sitting beside the pom
+# leaves the machine even though no COPY names it. The Dockerfile only needs pom.xml and src/;
+# everything else is excluded, and the secret spellings are repeated here rather than trusted to
+# .gitignore, which Docker does not read (S4.0).
+target/
+*firebase-adminsdk*.json
+*adminsdk*.json
+service-account*.json
+secrets.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12

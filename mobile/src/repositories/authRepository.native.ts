@@ -42,8 +42,7 @@ export const authRepository = {
 
   async signUpWithEmail(email: string, password: string): Promise<void> {
     try {
-      const credential = await auth().createUserWithEmailAndPassword(email, password);
-      await credential.user.sendEmailVerification();
+      await auth().createUserWithEmailAndPassword(email, password);
     } catch (error) {
       translate(error);
     }
@@ -60,15 +59,6 @@ export const authRepository = {
   async sendPasswordReset(email: string): Promise<void> {
     try {
       await auth().sendPasswordResetEmail(email);
-    } catch (error) {
-      translate(error);
-    }
-  },
-
-
-  async resendVerification(): Promise<void> {
-    try {
-      await auth().currentUser?.sendEmailVerification();
     } catch (error) {
       translate(error);
     }
@@ -94,7 +84,9 @@ export const authRepository = {
 
 
   onAuthStateChanged(listener: (user: AuthUser | null) => void): () => void {
-    return auth().onAuthStateChanged((user) => listener(user === null ? null : { uid: user.uid }));
+    return auth().onIdTokenChanged((user) =>
+      listener(user === null ? null : { uid: user.uid, emailVerified: user.emailVerified }),
+    );
   },
 };
 

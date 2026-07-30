@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -32,7 +33,9 @@ class HealthUnavailableIT {
     @LocalServerPort private int port;
 
     private RestTestClient rest() {
-        return RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+        return RestTestClient.bindToServer(new JdkClientHttpRequestFactory())
+                .baseUrl("http://localhost:" + port)
+                .build();
     }
 
     @Test

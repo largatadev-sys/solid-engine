@@ -11,6 +11,11 @@
 *.jks
 secrets.json
 service-account*.json
+# Firebase Admin SDK private keys download as <project>-firebase-adminsdk-<id>-<id>.json,
+# which service-account*.json does not match. Both spellings, so the file is unstageable
+# wherever it lands rather than wherever someone remembered to rename it.
+*firebase-adminsdk*.json
+*adminsdk*.json
 google-services.json
 GoogleService-Info.plist
 

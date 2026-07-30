@@ -1,17 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../api/ApiError';
-import { travelerRepository } from '../repositories/travelerRepository';
+import { meKeys, meOptions } from '../query/travelerQueries';
+import { useAuth } from './authContext';
 import type { MeResponse } from '../types/api';
 
 export type MeState =
   | { kind: 'loading' }
   | { kind: 'ok'; me: MeResponse }
   | { kind: 'error'; error: ApiError };
-
-
-export const meKeys = {
-  me: ['me'] as const,
-};
 
 
 function asApiError(error: unknown): ApiError {
@@ -23,10 +19,8 @@ function asApiError(error: unknown): ApiError {
 
 export function useMe(): { state: MeState; refresh: () => void } {
   const client = useQueryClient();
-  const query = useQuery({
-    queryKey: meKeys.me,
-    queryFn: () => travelerRepository.fetchMe(),
-  });
+  const { kind } = useAuth();
+  const query = useQuery({ ...meOptions, enabled: kind === 'signedIn' });
 
   const state: MeState = query.isSuccess
     ? { kind: 'ok', me: query.data }

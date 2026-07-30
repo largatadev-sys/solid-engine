@@ -53,6 +53,16 @@ public final class TestJwtSupport {
     }
 
 
+    public static String googleToken(String firebaseUid, String email, String name, String picture) {
+        return token(
+                claims(firebaseUid)
+                        .claim("email", email)
+                        .claim("email_verified", true)
+                        .claim("name", name)
+                        .claim("picture", picture));
+    }
+
+
     public static String expiredToken(String firebaseUid) {
         Instant expiredAt = Instant.now().minusSeconds(3600);
         return token(

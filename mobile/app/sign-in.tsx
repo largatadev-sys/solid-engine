@@ -1,191 +1,107 @@
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { GoogleSignInButton } from '../src/components/GoogleSignInButton';
-import {
-  AuthCancelled,
-  AuthError,
-  authCapabilities,
-  authRepository,
-} from '../src/repositories/authRepository';
-import { colors, radii, spacing, typography } from '../src/theme';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import { AuthScreenLayout } from '../src/components/AuthScreenLayout';
+import { Button } from '../src/components/Button';
+import { FormField } from '../src/components/FormField';
+import { GoogleDoorway } from '../src/components/GoogleDoorway';
+import { messageForAuthFailure } from '../src/auth/authFailureMessage';
+import { authRepository } from '../src/repositories/authRepository';
+import { colors, spacing, typography } from '../src/theme';
 
-
-
-type Mode = 'signIn' | 'signUp';
 type Busy = 'idle' | 'google' | 'email' | 'reset';
 
 export default function SignInScreen() {
-  const [mode, setMode] = useState<Mode>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState<Busy>('idle');
   const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const run = async (kind: Busy, action: () => Promise<void>, success?: string) => {
     setBusy(kind);
     setMessage(null);
+    setNotice(null);
     try {
       await action();
-      if (success !== undefined) setMessage(success);
+      if (success !== undefined) setNotice(success);
     } catch (error) {
-      if (error instanceof AuthCancelled) return;
-      setMessage(
-        error instanceof AuthError ? error.message : 'Sign-in failed. Please try again.',
-      );
+      setMessage(messageForAuthFailure(error));
     } finally {
       setBusy('idle');
     }
   };
 
-  const emailAction = mode === 'signIn' ? authRepository.signInWithEmail : authRepository.signUpWithEmail;
-
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Sign in' }} />
+    <AuthScreenLayout
+      title="Welcome back"
+      footerPrompt="New to Largata?"
+      footerAction="Create an account"
+      footerHref="/sign-up"
+    >
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.brand}>
-        <Text style={styles.wordmark}>Largata</Text>
-        <Text style={styles.tagline}>SIGN IN</Text>
-      </View>
-
-      {}
-      {authCapabilities.google !== 'none' && (
-        <>
-          <View style={styles.googleSlot}>
-            <GoogleSignInButton
-              onPress={() => void run('google', () => authRepository.signInWithGoogle())}
-              onStart={() => {
-                setBusy('google');
-                setMessage(null);
-              }}
-              onSettle={() => setBusy('idle')}
-              onError={setMessage}
-              disabled={busy !== 'idle'}
-              busy={busy === 'google'}
-            />
-          </View>
-
-          <Text style={styles.divider}>or</Text>
-        </>
-      )}
-
-      <TextInput
-        style={styles.input}
+      <FormField
+        label="Email Address"
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
-        placeholderTextColor={colors.textSecondary}
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
-        accessibilityLabel="Email"
       />
-      <TextInput
-        style={styles.input}
+
+      <FormField
+        label="Password"
         value={password}
         onChangeText={setPassword}
-        placeholder="Password"
-        placeholderTextColor={colors.textSecondary}
-        secureTextEntry
+        placeholder="Your password"
+        secureTextEntry={!reveal}
         autoCapitalize="none"
-        accessibilityLabel="Password"
+        autoComplete="current-password"
+        trailing={{
+          text: reveal ? 'Hide' : 'Show',
+          onPress: () => setReveal(!reveal),
+          accessibilityLabel: reveal ? 'Hide password' : 'Show password',
+        }}
+      />
+
+      <Button
+        label="Sign In"
+        onPress={() => void run('email', () => authRepository.signInWithEmail(email.trim(), password))}
+        busy={busy === 'email'}
+        disabled={busy !== 'idle'}
+        style={styles.submit}
       />
 
       <Pressable
-        style={styles.button}
-        onPress={() => void run('email', () => emailAction(email.trim(), password))}
-        disabled={busy !== 'idle'}
+        onPress={() =>
+          void run('reset', () => authRepository.sendPasswordReset(email.trim()), 'Password reset email sent.')
+        }
+        disabled={busy !== 'idle' || email.trim() === ''}
         accessibilityRole="button"
       >
-        {busy === 'email' ? (
-          <ActivityIndicator color={colors.textOnAccent} />
-        ) : (
-          <Text style={styles.buttonText}>{mode === 'signIn' ? 'Sign in' : 'Create account'}</Text>
-        )}
+        <Text style={[styles.forgot, email.trim() === '' && styles.forgotDisabled]}>Forgot password?</Text>
       </Pressable>
 
-      <View style={styles.links}>
-        <Pressable
-          onPress={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')}
-          accessibilityRole="button"
-        >
-          <Text style={styles.link}>
-            {mode === 'signIn' ? 'Create an account' : 'I already have an account'}
-          </Text>
-        </Pressable>
+      <GoogleDoorway
+        busy={busy === 'google'}
+        disabled={busy !== 'idle'}
+        onBusyChange={(running) => setBusy(running ? 'google' : 'idle')}
+        onMessage={setMessage}
+      />
 
-        {mode === 'signIn' && (
-          <Pressable
-            onPress={() =>
-              void run(
-                'reset',
-                () => authRepository.sendPasswordReset(email.trim()),
-                'Password reset email sent.',
-              )
-            }
-            disabled={busy !== 'idle' || email.trim() === ''}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.link, email.trim() === '' && styles.linkDisabled]}>
-              Forgot password?
-            </Text>
-          </Pressable>
-        )}
-      </View>
-
+      {notice !== null && <Text style={styles.notice}>{notice}</Text>}
       {message !== null && <Text style={styles.message}>{message}</Text>}
-    </View>
+    </AuthScreenLayout>
   );
 }
 
-
-const FIELD_MAX_WIDTH = 420;
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-    backgroundColor: colors.background,
-  },
-  brand: { alignItems: 'center', marginBottom: spacing.lg },
-  wordmark: { ...typography.wordmark, color: colors.accent },
-  tagline: { ...typography.overline, color: colors.textSecondary, marginTop: spacing.xs },
-  input: {
-    width: '100%',
-    maxWidth: FIELD_MAX_WIDTH,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.sm,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  button: {
-    width: '100%',
-    maxWidth: FIELD_MAX_WIDTH,
-    marginTop: spacing.xs,
-    paddingVertical: spacing.md,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    backgroundColor: colors.accent,
-  },
-  buttonText: { ...typography.action, color: colors.textOnAccent },
-  googleSlot: { width: '100%', maxWidth: FIELD_MAX_WIDTH, alignItems: 'center', marginTop: spacing.xs },
-  divider: { ...typography.caption, color: colors.textSecondary, marginVertical: spacing.md },
-  links: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
-  link: { ...typography.caption, color: colors.accent, fontWeight: '600' },
-  linkDisabled: { color: colors.textSecondary },
-  message: { ...typography.caption, color: colors.textPrimary, textAlign: 'center', marginTop: spacing.md },
+  submit: { marginTop: spacing.sm },
+  forgot: { ...typography.label, color: colors.accent, textAlign: 'center' },
+  forgotDisabled: { color: colors.textSecondary },
+  notice: { ...typography.caption, color: colors.success, textAlign: 'center' },
+  message: { ...typography.caption, color: colors.danger, textAlign: 'center' },
 });

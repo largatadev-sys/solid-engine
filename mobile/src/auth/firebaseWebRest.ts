@@ -15,6 +15,7 @@ interface Session {
   refreshToken: string;
   uid: string;
   expiresAt: number;
+  emailVerified: boolean;
 }
 
 type Listener = (user: AuthUser | null) => void;
@@ -29,10 +30,25 @@ function restore(): Session | null {
   if (raw === null) return null;
   try {
     const parsed = JSON.parse(raw) as Session;
-    if (typeof parsed.refreshToken === 'string' && typeof parsed.uid === 'string') return parsed;
+    if (typeof parsed.refreshToken === 'string' && typeof parsed.uid === 'string') {
+      return { ...parsed, emailVerified: emailVerifiedIn(parsed.idToken) };
+    }
     return null;
   } catch {
     return null;
+  }
+}
+
+
+export function emailVerifiedIn(idToken: string): boolean {
+  const payload = idToken?.split('.')[1];
+  if (payload === undefined) return false;
+  try {
+    const padded = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const claims = JSON.parse(globalThis.atob(padded)) as { email_verified?: boolean };
+    return claims.email_verified === true;
+  } catch {
+    return false;
   }
 }
 
@@ -42,7 +58,8 @@ function persist(next: Session | null): void {
     if (next === null) window.localStorage.removeItem(STORAGE_KEY);
     else window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }
-  const user: AuthUser | null = next === null ? null : { uid: next.uid };
+  const user: AuthUser | null =
+    next === null ? null : { uid: next.uid, emailVerified: next.emailVerified };
   for (const listener of listeners) listener(user);
 }
 
@@ -116,11 +133,13 @@ async function post(url: string, body: unknown): Promise<Record<string, unknown>
 
 function storeFromAuthResponse(data: Record<string, unknown>): void {
   const expiresInSec = Number(data.expiresIn ?? 3600);
+  const idToken = String(data.idToken);
   persist({
-    idToken: String(data.idToken),
+    idToken,
     refreshToken: String(data.refreshToken),
     uid: String(data.localId),
     expiresAt: Date.now() + expiresInSec * 1000,
+    emailVerified: emailVerifiedIn(idToken),
   });
 }
 
@@ -146,21 +165,10 @@ export async function signInWithGoogleIdToken(idToken: string, requestUri: strin
 export async function signUpWithPassword(email: string, password: string): Promise<void> {
   const data = await post(`${IDENTITY_BASE}:signUp`, { email, password, returnSecureToken: true });
   storeFromAuthResponse(data);
-  void post(`${IDENTITY_BASE}:sendOobCode`, {
-    requestType: 'VERIFY_EMAIL',
-    idToken: String(data.idToken),
-  }).catch(() => undefined);
 }
 
 export async function sendPasswordReset(email: string): Promise<void> {
   await post(`${IDENTITY_BASE}:sendOobCode`, { requestType: 'PASSWORD_RESET', email });
-}
-
-
-export async function resendVerification(): Promise<void> {
-  const token = await getValidIdToken();
-  if (token === null) return;
-  await post(`${IDENTITY_BASE}:sendOobCode`, { requestType: 'VERIFY_EMAIL', idToken: token });
 }
 
 
@@ -177,15 +185,15 @@ export async function refreshVerification(): Promise<boolean> {
     const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
     const expiresInSec = Number(data.expires_in ?? 3600);
     const idToken = String(data.id_token);
+    const verified = emailVerifiedIn(idToken);
     persist({
       idToken,
       refreshToken: String(data.refresh_token),
       uid: String(data.user_id),
       expiresAt: Date.now() + expiresInSec * 1000,
+      emailVerified: verified,
     });
-    const lookup = await post(`${IDENTITY_BASE}:lookup`, { idToken });
-    const users = lookup.users as Array<{ emailVerified?: boolean }> | undefined;
-    return users?.[0]?.emailVerified === true;
+    return verified;
   } catch {
     return false;
   }
@@ -220,18 +228,20 @@ export async function getValidIdToken(): Promise<string | null> {
 
   const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
   const expiresInSec = Number(data.expires_in ?? 3600);
+  const idToken = String(data.id_token);
   persist({
-    idToken: String(data.id_token),
+    idToken,
     refreshToken: String(data.refresh_token),
     uid: String(data.user_id),
     expiresAt: Date.now() + expiresInSec * 1000,
+    emailVerified: emailVerifiedIn(idToken),
   });
-  return String(data.id_token);
+  return idToken;
 }
 
 
 export function subscribe(listener: Listener): () => void {
   listeners.add(listener);
-  listener(session === null ? null : { uid: session.uid });
+  listener(session === null ? null : { uid: session.uid, emailVerified: session.emailVerified });
   return () => listeners.delete(listener);
 }

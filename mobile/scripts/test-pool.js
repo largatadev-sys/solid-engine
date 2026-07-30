@@ -1,5 +1,8 @@
 const https = require('https');
+const http = require('http');
+const { precompleteProfile } = require('./precomplete-profile');
 
+const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
 const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
 const PASSWORD = process.env.LARGATA_TEST_POOL_PASSWORD;
@@ -117,6 +120,54 @@ async function create() {
   console.log(`\nNow open ${BASE} and click each link, then: node scripts/test-pool.js list\n`);
 }
 
+function apiRequest(path, method, bearer, body) {
+  return new Promise((resolve, reject) => {
+    const data = body === undefined ? undefined : JSON.stringify(body);
+    const headers = bearer ? { Authorization: 'Bearer ' + bearer } : {};
+    if (data !== undefined) {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = Buffer.byteLength(data);
+    }
+    const lib = API.startsWith('https') ? https : http;
+    const req = lib.request(new URL(API + path), { method, headers }, (res) => {
+      let b = '';
+      res.on('data', (c) => (b += c));
+      res.on('end', () => {
+        let parsed;
+        try { parsed = b ? JSON.parse(b) : undefined; } catch { parsed = b; }
+        resolve({ status: res.statusCode, body: parsed });
+      });
+    });
+    req.on('error', reject);
+    if (data !== undefined) req.write(data);
+    req.end();
+  });
+}
+
+async function precomplete() {
+  console.log(`\nAPI: ${API}\n`);
+  for (const tag of MEMBERS) {
+    const email = address(tag);
+    const session = await signIn(email);
+    if (session.status !== 200) {
+      console.log(`  ${tag}  SKIPPED  ${email}  (no such account — run: create)`);
+      continue;
+    }
+    if (!isVerified(session.body.idToken)) {
+      console.log(`  ${tag}  SKIPPED  ${email}  (unverified — click its link first)`);
+      continue;
+    }
+    const me = await apiRequest('/v1/me', 'GET', session.body.idToken);
+    if (me.status !== 200) {
+      console.log(`  ${tag}  FAILED   /v1/me -> ${me.status}  (is the backend up at ${API}?)`);
+      continue;
+    }
+    const profile = await precompleteProfile(apiRequest, session.body.idToken, tag);
+    console.log(`  ${tag}  ready    @${profile.handle}  onboarding complete`);
+  }
+  console.log('\nA device walk with these accounts now lands on My Trips, not on step 1.\n');
+}
+
 async function token(tag) {
   const result = await signIn(address(tag));
   if (result.status !== 200) {
@@ -133,9 +184,10 @@ async function token(tag) {
 
   const [command, argument] = process.argv.slice(2);
   if (command === 'create') return create();
+  if (command === 'precomplete') return precomplete();
   if (command === 'token') return token(argument || 't1');
   if (command === 'list' || command === undefined) return list();
-  console.error(`Unknown command "${command}". Use: list | create | token <tag>`);
+  console.error(`Unknown command "${command}". Use: list | create | precomplete | token <tag>`);
   process.exit(1);
 })().catch((e) => {
   console.error('POOL FAILED:', e.message);

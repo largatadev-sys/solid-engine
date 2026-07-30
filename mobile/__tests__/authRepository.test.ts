@@ -8,6 +8,8 @@ const mockSignInWithEmail = jest.fn();
 const mockSendPasswordReset = jest.fn();
 const mockFirebaseSignOut = jest.fn();
 const mockSendEmailVerification = jest.fn();
+const mockOnAuthStateChanged = jest.fn();
+const mockOnIdTokenChanged = jest.fn();
 
 const mockGoogleSignIn = jest.fn();
 const mockGoogleSignOut = jest.fn();
@@ -22,6 +24,8 @@ jest.mock('@react-native-firebase/auth', () => {
     signInWithEmailAndPassword: mockSignInWithEmail,
     sendPasswordResetEmail: mockSendPasswordReset,
     signOut: mockFirebaseSignOut,
+    onAuthStateChanged: mockOnAuthStateChanged,
+    onIdTokenChanged: mockOnIdTokenChanged,
   });
   auth.GoogleAuthProvider = {
     credential: (idToken: string, accessToken: string) => {
@@ -94,11 +98,44 @@ describe('Google sign-in', () => {
 });
 
 describe('email flows', () => {
-  it('sends a verification email on sign-up but does not block on it', async () => {
+  it('creates the account without mailing a verification LINK (S4.0: the code replaced it)', async () => {
     await authRepository.signUpWithEmail('ana@example.com', 'hunter2!');
 
     expect(mockCreateUser).toHaveBeenCalledWith('ana@example.com', 'hunter2!');
-    expect(mockSendEmailVerification).toHaveBeenCalled();
+    expect(mockSendEmailVerification).not.toHaveBeenCalled();
+  });
+
+  it('offers no way to send a link at all, so no inbox-reachable path can come back', () => {
+    expect(authRepository).not.toHaveProperty('resendVerification');
+  });
+});
+
+describe('the auth listener must see a TOKEN REFRESH, not only a sign-in (S4.0)', () => {
+  it('subscribes through onIdTokenChanged', () => {
+    authRepository.onAuthStateChanged(() => undefined);
+
+    expect(mockOnIdTokenChanged).toHaveBeenCalled();
+  });
+
+  it('and not through onAuthStateChanged, which never fires when a claim flips', () => {
+    authRepository.onAuthStateChanged(() => undefined);
+
+    expect(mockOnAuthStateChanged)
+      .not.toHaveBeenCalled();
+  });
+
+  it('reports emailVerified from the refreshed user, which is what the gate reads', () => {
+    const seen: Array<boolean | null> = [];
+    mockOnIdTokenChanged.mockImplementation((listener: (u: unknown) => void) => {
+      listener({ uid: 'uid-1', emailVerified: false });
+      listener({ uid: 'uid-1', emailVerified: true });
+      listener(null);
+      return () => undefined;
+    });
+
+    authRepository.onAuthStateChanged((user) => seen.push(user === null ? null : user.emailVerified));
+
+    expect(seen).toEqual([false, true, null]);
   });
 
   it('signs in with email and password', async () => {

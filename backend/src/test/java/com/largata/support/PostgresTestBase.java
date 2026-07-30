@@ -19,5 +19,9 @@ public abstract class PostgresTestBase {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("spring.datasource.hikari.maximum-pool-size", () -> POOL_SIZE_PER_CONTEXT);
     }
+
+
+    private static final int POOL_SIZE_PER_CONTEXT = 4;
 }

@@ -66,6 +66,27 @@ services:
       # by Firebase UID) match nobody (spec, decision 1). Public, not a secret: the issuer and its
       # JWKS are published by design.
       FIREBASE_ISSUER_URI: ${FIREBASE_ISSUER_URI:-https://securetoken.google.com/largata-dev}
+      # Transactional mail. Unset locally is the normal case and selects the logging sink, which
+      # prints the mail to the backend log — how a local run reads an OTP without an inbox. An
+      # empty value selects the sink too (InvitationMailerBindingTest pins that): a blank key
+      # binding the real mailer would 401 every send while the config looked correct.
+      LARGATA_RESEND_API_KEY: ${LARGATA_RESEND_API_KEY:-}
+      # Any address at the Resend-verified domain. The apex largata.com is verified, so the
+      # backend default (invites@largata.com) needs no override here.
+      LARGATA_RESEND_FROM: ${LARGATA_RESEND_FROM:-invites@largata.com}
+      # Firebase Admin SDK service-account credential (S4.0). The ONE thing it authorises is
+      # flipping `email_verified` after a traveler types the right 6-digit code — ADR-006's
+      # posture otherwise unchanged. A REAL SECRET: it lives in the gitignored root .env locally
+      # and in the platform's env-var UI on deployed rungs, never in a committed file.
+      #
+      # Accepts inline service-account JSON (minified to one line) OR a filesystem path to it;
+      # the backend tells them apart by the leading '{'. Inline is the documented default because
+      # it is the same mechanism on both rungs — Railway's UI holds a value, not a file.
+      #
+      # Unset is a supported posture and is what a fresh clone gets: no credential binds the
+      # UnconfiguredEmailVerificationFlag, which REFUSES with 503 rather than reporting a success
+      # it cannot deliver. Everything except email verification still works.
+      LARGATA_FIREBASE_CREDENTIALS: ${LARGATA_FIREBASE_CREDENTIALS:-}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
