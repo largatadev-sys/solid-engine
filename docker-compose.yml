@@ -66,6 +66,14 @@ services:
       # by Firebase UID) match nobody (spec, decision 1). Public, not a secret: the issuer and its
       # JWKS are published by design.
       FIREBASE_ISSUER_URI: ${FIREBASE_ISSUER_URI:-https://securetoken.google.com/largata-dev}
+      # Transactional mail. Unset locally is the normal case and selects the logging sink, which
+      # prints the mail to the backend log — how a local run reads an OTP without an inbox. An
+      # empty value selects the sink too (InvitationMailerBindingTest pins that): a blank key
+      # binding the real mailer would 401 every send while the config looked correct.
+      LARGATA_RESEND_API_KEY: ${LARGATA_RESEND_API_KEY:-}
+      # Any address at the Resend-verified domain. The apex largata.com is verified, so the
+      # backend default (invites@largata.com) needs no override here.
+      LARGATA_RESEND_FROM: ${LARGATA_RESEND_FROM:-invites@largata.com}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:

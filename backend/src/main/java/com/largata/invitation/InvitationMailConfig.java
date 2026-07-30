@@ -1,7 +1,7 @@
 package com.largata.invitation;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
@@ -10,8 +10,10 @@ import org.springframework.web.client.RestClient;
 @Configuration
 class InvitationMailConfig {
 
+    static final String API_KEY_PRESENT = "!'${largata.resend.api-key:}'.isBlank()";
+
     @Bean
-    @ConditionalOnProperty(prefix = "largata.resend", name = "api-key")
+    @ConditionalOnExpression(API_KEY_PRESENT)
     InvitationMailer resendInvitationMailer(
             RestClient.Builder builder,
             @org.springframework.beans.factory.annotation.Value("${largata.resend.api-key}") String apiKey,
