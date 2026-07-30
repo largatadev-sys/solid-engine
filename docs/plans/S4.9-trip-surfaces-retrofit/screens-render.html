@@ -1,0 +1,514 @@
+<title>Trip creation &amp; workspace — screen renders</title>
+<style>
+  :root{
+    --pg-bg:#FBFAF8; --pg-ink:#22262B; --pg-mut:#6B7280; --pg-line:#E5E3DE; --pg-card:#FFFFFF;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --pg-bg:#191B1E; --pg-ink:#ECEDEE; --pg-mut:#9AA1A9; --pg-line:#33373C; --pg-card:#212428; }
+  }
+  :root[data-theme="dark"]{ --pg-bg:#191B1E; --pg-ink:#ECEDEE; --pg-mut:#9AA1A9; --pg-line:#33373C; --pg-card:#212428; }
+  :root[data-theme="light"]{ --pg-bg:#FBFAF8; --pg-ink:#22262B; --pg-mut:#6B7280; --pg-line:#E5E3DE; --pg-card:#FFFFFF; }
+
+  body{ background:var(--pg-bg); color:var(--pg-ink);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    margin:0; padding:32px 28px 48px; }
+  header.page{ max-width:70ch; margin-bottom:8px; }
+  header.page h1{ font-size:22px; font-weight:800; margin:0 0 6px; letter-spacing:-0.01em; }
+  header.page p{ margin:0; color:var(--pg-mut); font-size:14px; line-height:1.55; }
+  h2.strip-title{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--pg-mut); margin:34px 0 14px; }
+  .strip{ display:flex; gap:28px; overflow-x:auto; padding:4px 4px 18px; align-items:flex-start; }
+  .shot{ flex:none; }
+  .shot .cap{ font-size:12.5px; color:var(--pg-mut); margin:10px 2px 0; }
+  .shot .cap b{ color:var(--pg-ink); font-weight:700; }
+
+  /* ——— phone + shared screen components ——— */
+  .phone{ width:393px; height:852px; border-radius:26px; overflow:hidden;
+    outline:1px solid var(--pg-line); box-shadow:0 10px 30px rgba(0,0,0,.10);
+    background:var(--s-bg); color:var(--s-ink);
+    display:flex; flex-direction:column; justify-content:space-between; }
+
+  .hifi{ --s-accent:#D96C4A; --s-ink:#1B263B; --s-mut:#5C6470; --s-border:#E2E4E8; --s-bg:#FAF9F6;
+    --s-surface:#FFFFFF; --s-tint:rgba(217,108,74,0.063); --s-star:#FFC107; --s-ok:#28C840;
+    --s-status:#26292E; --s-fab:#1B263B;
+    --s-av1:#C98A6B; --s-av2:#7BA7A0; --s-av3:#8B95B5; --s-av4:#B58BA5;
+    --s-cover:linear-gradient(165deg,#8ED8E8 0%,#3FA7CC 48%,#1E6FA5 100%); }
+  .wire{ --s-accent:#B3B3B3; --s-ink:#000000; --s-mut:#666666; --s-border:#F7F7F7; --s-bg:#FFFFFF;
+    --s-surface:#FFFFFF; --s-tint:rgba(179,179,179,0.063); --s-star:#E8E8E8; --s-ok:#B3B3B3;
+    --s-status:#212121; --s-fab:#000000;
+    --s-av1:#CFCFCF; --s-av2:#BDBDBD; --s-av3:#ABABAB; --s-av4:#C6C6C6;
+    --s-cover:linear-gradient(165deg,#E9E9E9 0%,#CFCFCF 48%,#B3B3B3 100%); }
+
+  .phone *{ box-sizing:border-box; }
+  .ic{ width:24px; height:24px; stroke:currentColor; stroke-width:2; fill:none;
+    stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  .ic.f{ fill:currentColor; stroke:none; }
+
+  .statusbar{ display:flex; justify-content:space-between; align-items:center;
+    padding:0 24px; height:54px; color:var(--s-status); }
+  .statusbar .clock{ font-size:16px; font-weight:600; }
+  .statusbar .tray{ display:flex; align-items:center; gap:8px; }
+  .statusbar .tray svg{ width:20px; height:20px; }
+  .statusbar .tray svg.batt{ width:28px; }
+
+  .body-pad{ padding:24px; display:flex; flex-direction:column; }
+
+  .h-32{ font-size:32px; font-weight:800; line-height:39px; color:var(--s-ink); }
+  .h-28{ font-size:28px; font-weight:800; line-height:34px; color:var(--s-ink); }
+  .h-24{ font-size:24px; font-weight:800; line-height:29px; color:var(--s-ink); }
+  .h-20{ font-size:20px; font-weight:800; line-height:24px; color:var(--s-ink); }
+
+  .backbtn{ width:36px; height:36px; border-radius:100px; background:var(--s-surface);
+    border:1px solid var(--s-border); display:flex; align-items:center; justify-content:center;
+    color:var(--s-ink); flex:none; }
+  .backbtn .ic{ width:20px; height:20px; }
+  .headrow{ display:flex; align-items:center; gap:16px; }
+
+  .field{ display:flex; flex-direction:column; gap:8px; }
+  .field .lab{ font-size:14px; font-weight:700; color:var(--s-ink); }
+  .input{ display:flex; align-items:center; gap:12px; padding:14px; height:52px;
+    background:var(--s-surface); border:1px solid var(--s-border); border-radius:12px; }
+  .input .ph{ font-size:15px; color:var(--s-mut); }
+  .input .ic{ width:18px; height:18px; color:var(--s-mut); }
+  .input.area{ height:100px; align-items:flex-start; }
+  .drop{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:32px;
+    height:113px; background:var(--s-surface); border:1px dashed var(--s-border); border-radius:12px;
+    color:var(--s-mut); font-size:14px; }
+
+  .btn{ display:flex; justify-content:center; align-items:center; padding:16px 24px; height:51px;
+    border-radius:12px; font-size:16px; font-weight:600; }
+  .btn.primary{ background:var(--s-accent); color:#FFFFFF; }
+  .btn.outline{ border:1px solid var(--s-border); color:var(--s-ink); }
+
+  .card{ background:var(--s-surface); border:1px solid var(--s-border); border-radius:16px; }
+
+  .choice{ display:flex; align-items:center; gap:16px; padding:20px; }
+  .choice .tile{ width:48px; height:48px; border-radius:12px; background:var(--s-tint);
+    display:flex; align-items:center; justify-content:center; color:var(--s-accent); flex:none; }
+  .choice .t{ font-size:18px; font-weight:700; color:var(--s-ink); line-height:22px; }
+  .choice .d{ font-size:14px; color:var(--s-mut); line-height:17px; margin-top:4px; }
+
+  .chips{ display:flex; gap:12px; }
+  .chip{ padding:10px 16px; border-radius:100px; font-size:14px; font-weight:700;
+    background:var(--s-surface); border:1px solid var(--s-border); color:var(--s-ink); }
+  .chip.on{ background:var(--s-accent); border-color:var(--s-accent); color:#FFFFFF; }
+
+  .act{ display:flex; align-items:flex-start; gap:12px; padding:16px; }
+  .act .grip{ color:var(--s-mut); } .act .grip .ic{ width:20px; height:20px; }
+  .act .mid{ flex:1; display:flex; flex-direction:column; gap:8px; }
+  .act .toprow{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .act .time{ font-size:13px; font-weight:700; color:var(--s-accent); }
+  .act .name{ font-size:16px; font-weight:700; color:var(--s-ink); line-height:19px; margin-top:2px; }
+  .act .kebab{ color:var(--s-mut); } .act .kebab .ic{ width:20px; height:20px; }
+  .act .meta{ display:flex; align-items:center; gap:4px; color:var(--s-mut); font-size:13px; }
+  .act .meta .ic{ width:14px; height:14px; }
+  .act.locked{ border:2px solid var(--s-accent); border-radius:16px; }
+  .editedby{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700;
+    color:var(--s-accent); }
+  .updated{ align-self:flex-start; padding:4px 10px; border-radius:4px; background:var(--s-tint);
+    font-size:11px; font-weight:700; color:var(--s-accent); }
+
+  .fabrow{ display:flex; justify-content:flex-end; padding:24px; }
+  .fab{ width:56px; height:56px; border-radius:100px; background:var(--s-fab); color:#FFFFFF;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.13); }
+
+  .eyebrow{ display:flex; align-items:center; gap:8px; color:var(--s-accent);
+    font-size:14px; font-weight:700; text-transform:uppercase; }
+  .eyebrow .ic{ width:20px; height:20px; }
+  .avrow{ display:flex; justify-content:space-between; align-items:center; }
+  .stack{ display:flex; padding-left:8px; }
+  .av{ width:32px; height:32px; border-radius:100px; margin-left:-8px; border:2px solid var(--s-surface);
+    display:flex; align-items:center; justify-content:center; color:#FFF; font-size:11px; font-weight:700; }
+  .av.more{ background:var(--s-border); color:var(--s-ink); font-size:12px; }
+  .presence{ display:flex; align-items:center; gap:4px; color:var(--s-mut); font-size:14px; font-weight:600; }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--s-ok); }
+
+  .tabs{ display:flex; gap:32px; border-bottom:1px solid var(--s-border); }
+  .tabs .tab{ padding-bottom:12px; font-size:15px; font-weight:500; color:var(--s-mut); }
+  .tabs .tab.on{ font-weight:700; color:var(--s-accent); border-bottom:2px solid var(--s-accent);
+    margin-bottom:-1px; }
+
+  .dayrow{ display:flex; align-items:center; gap:12px; padding:20px; }
+  .dayrow .mid{ flex:1; }
+  .dayrow .t{ font-size:16px; font-weight:700; color:var(--s-ink); }
+  .dayrow .d{ font-size:13px; color:var(--s-mut); margin-top:4px; }
+  .dayrow .ic{ width:20px; height:20px; color:var(--s-mut); }
+
+  .person{ display:flex; justify-content:space-between; align-items:center; }
+  .person .who{ display:flex; align-items:center; gap:12px; }
+  .person .pav{ width:40px; height:40px; border-radius:100px; display:flex; align-items:center;
+    justify-content:center; color:#FFF; font-size:13px; font-weight:700; }
+  .person .n{ font-size:15px; font-weight:700; color:var(--s-ink); }
+  .person .h{ font-size:13px; color:var(--s-mut); }
+  .pill{ padding:8px 16px; border-radius:100px; font-size:12px; font-weight:700; }
+  .pill.invite{ background:var(--s-accent); color:#FFF; }
+  .pill.pending{ background:var(--s-border); color:var(--s-mut); padding:6px 12px; }
+  .seclab{ font-size:14px; font-weight:700; text-transform:uppercase; color:var(--s-mut); }
+
+  .navbar{ border-top:1px solid var(--s-border); background:var(--s-surface);
+    display:flex; justify-content:space-between; align-items:flex-start; padding:12px 16px 0; height:53px; }
+  .navbar .slot{ width:64px; display:flex; flex-direction:column; align-items:center; gap:4px;
+    color:var(--s-mut); font-size:11px; font-weight:500; }
+  .navbar .slot .ic{ width:24px; height:24px; }
+  .navbar .cfab{ width:40px; height:40px; border-radius:100px; background:var(--s-accent); color:#FFF;
+    display:flex; align-items:center; justify-content:center; }
+  .homebar{ display:flex; justify-content:center; padding:21px 0 8px; }
+  .homebar i{ width:139px; height:5px; border-radius:100px; background:var(--s-ink); display:block; }
+
+  .cover{ height:140px; background:var(--s-cover); border-radius:19px 19px 0 0; }
+  .starrow{ display:flex; align-items:center; gap:4px; }
+  .starrow .ic{ width:14px; height:14px; color:var(--s-star); }
+  .infobox{ background:var(--s-tint); border-radius:12px; padding:16px; display:flex;
+    flex-direction:column; gap:12px; }
+  .infobox .head{ display:flex; align-items:center; gap:8px; color:var(--s-accent);
+    font-size:15px; font-weight:700; }
+  .infobox .head .ic{ width:18px; height:18px; }
+  .infobox .bd{ font-size:14px; line-height:150%; color:var(--s-ink); }
+
+  .linkline{ text-align:center; font-size:14px; font-weight:700; color:var(--s-accent);
+    text-decoration:underline; }
+</style>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-file-plus" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></symbol>
+  <symbol id="i-git-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+  <symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+  <symbol id="i-image-plus" viewBox="0 0 24 24"><path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-kebab" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M14.1 5.6a2 2 0 0 0 1.8 0l3.7-1.9A1 1 0 0 1 21 4.6v12.8a1 1 0 0 1-.6.9l-4.5 2.3a2 2 0 0 1-1.8 0l-4.2-2.1a2 2 0 0 0-1.8 0l-3.7 1.9A1 1 0 0 1 3 19.4V6.6a1 1 0 0 1 .6-.9l4.5-2.3a2 2 0 0 1 1.8 0z"/><path d="M15 5.8v15"/><path d="M9 3.2v15"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24"><path d="M4 18v-3"/><path d="M9 18v-6"/><path d="M14 18V9"/><path d="M19 18V5"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-batt" viewBox="0 0 28 24"><rect x="2" y="7" width="20" height="10" rx="3"/><rect x="4.5" y="9.5" width="13" height="5" rx="1.5" fill="currentColor" stroke="none"/><path d="M25 10.5v3"/></symbol>
+</svg>
+
+<header class="page">
+  <h1>Trip creation &amp; workspace — screen renders</h1>
+  <p>Rendered from the 07/31 Figma CSS export: seven screens, high-fidelity (ADR-016 palette) and wireframe.
+     Avatars and the cover photo are placeholders — the export references generated images.
+     Scroll each row horizontally.</p>
+</header>
+
+<template id="screens">
+
+  <!-- 1 · create-trip-entry -->
+  <div class="shot" data-name="create-trip-entry" data-cap="Create a Trip — method chooser">
+  <div class="phone">
+    <div>
+      <div class="statusbar"><span class="clock">9:41</span>
+        <span class="tray"><svg class="ic"><use href="#i-signal"/></svg><svg class="ic"><use href="#i-wifi"/></svg><svg class="ic batt"><use href="#i-batt"/></svg></span></div>
+      <div class="body-pad" style="gap:24px">
+        <div class="h-32">Create a Trip</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card choice">
+            <div class="tile"><svg class="ic"><use href="#i-file-plus"/></svg></div>
+            <div><div class="t">Start from Scratch</div><div class="d">Build your itinerary step by step</div></div>
+          </div>
+          <div class="card choice">
+            <div class="tile"><svg class="ic"><use href="#i-git-branch"/></svg></div>
+            <div><div class="t">Fork an Existing Itinerary</div><div class="d">Start from a published trip and make it yours</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="navbar">
+        <div class="slot"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+        <div class="slot"><svg class="ic"><use href="#i-search"/></svg>Search</div>
+        <div class="slot"><div class="cfab"><svg class="ic"><use href="#i-plus"/></svg></div></div>
+        <div class="slot"><svg class="ic"><use href="#i-map"/></svg>Trips</div>
+        <div class="slot"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+      </div>
+      <div class="homebar"><i></i></div>
+    </div>
+  </div></div>
+
+  <!-- 2 · trip-info-form -->
+  <div class="shot" data-name="trip-info-form" data-cap="Trip Details — scratch flow">
+  <div class="phone">
+    <div>
+      <div class="statusbar"><span class="clock">9:41</span>
+        <span class="tray"><svg class="ic"><use href="#i-signal"/></svg><svg class="ic"><use href="#i-wifi"/></svg><svg class="ic batt"><use href="#i-batt"/></svg></span></div>
+      <div class="body-pad" style="gap:24px">
+        <div class="headrow">
+          <div class="backbtn"><svg class="ic"><use href="#i-arrow-left"/></svg></div>
+          <div class="h-24">Trip Details</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="field"><div class="lab">Trip Title</div>
+            <div class="input"><span class="ph">e.g. Bali Summer 2026</span></div></div>
+          <div class="field"><div class="lab">Destination</div>
+            <div class="input"><svg class="ic"><use href="#i-map-pin"/></svg><span class="ph">Search city or country</span></div></div>
+          <div class="field"><div class="lab">Duration</div>
+            <div class="input"><svg class="ic"><use href="#i-calendar"/></svg><span class="ph">Select number of days</span></div></div>
+          <div class="field"><div class="lab">Description</div>
+            <div class="input area"><span class="ph">What's the vibe of this trip?</span></div></div>
+          <div class="field"><div class="lab">Cover Photo (Optional)</div>
+            <div class="drop"><svg class="ic"><use href="#i-image-plus"/></svg>Tap to upload cover</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="body-pad">
+      <div class="btn primary">Continue</div>
+      <div class="homebar"><i></i></div>
+    </div>
+  </div></div>
+
+  <!-- 3 · trip-editor-days -->
+  <div class="shot" data-name="trip-editor-days" data-cap="Day editor — chips, activity cards, FAB">
+  <div class="phone">
+    <div>
+      <div class="statusbar"><span class="clock">9:41</span>
+        <span class="tray"><svg class="ic"><use href="#i-signal"/></svg><svg class="ic"><use href="#i-wifi"/></svg><svg class="ic batt"><use href="#i-batt"/></svg></span></div>
+      <div class="body-pad" style="gap:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="h-28">Bali Adventure</div>
+          <svg class="ic" style="color:var(--s-ink)"><use href="#i-settings"/></svg>
+        </div>
+        <div class="chips">
+          <span class="chip on">Day 1</span><span class="chip">Day 2</span>
+          <span class="chip">Day 3</span><span class="chip">+</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="card act">
+            <span class="grip"><svg class="ic"><use href="#i-grip"/></svg></span>
+            <div class="mid">
+              <div class="toprow">
+                <div><div class="time">09:00 AM</div><div class="name">Breakfast at Sisterfields</div></div>
+                <span class="kebab"><svg class="ic"><use href="#i-kebab"/></svg></span>
+              </div>
+              <div class="meta"><svg class="ic"><use href="#i-map-pin"/></svg>Seminyak • ₱800</div>
+            </div>
+          </div>
+          <div class="card act">
+            <span class="grip"><svg class="ic"><use href="#i-grip"/></svg></span>
+            <div class="mid">
+              <div class="toprow">
+                <div><div class="time">11:30 AM</div><div class="name">Uluwatu Temple Visit</div></div>
+                <span class="kebab"><svg class="ic"><use href="#i-kebab"/></svg></span>
+              </div>
+              <div class="meta"><svg class="ic"><use href="#i-map-pin"/></svg>Uluwatu • ₱1,200</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fabrow"><div class="fab"><svg class="ic" style="stroke-width:3"><use href="#i-plus"/></svg></div></div>
+    </div>
+    <div>
+      <div class="navbar">
+        <div class="slot"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+        <div class="slot"><svg class="ic"><use href="#i-search"/></svg>Search</div>
+        <div class="slot"><div class="cfab"><svg class="ic"><use href="#i-plus"/></svg></div></div>
+        <div class="slot"><svg class="ic"><use href="#i-map"/></svg>Trips</div>
+        <div class="slot"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+      </div>
+      <div class="homebar"><i></i></div>
+    </div>
+  </div></div>
+
+  <!-- 4 · trip-workspace -->
+  <div class="shot" data-name="trip-workspace" data-cap="Workspace — tabs, members, day list">
+  <div class="phone">
+    <div>
+      <div class="statusbar"><span class="clock">9:41</span>
+        <span class="tray"><svg class="ic"><use href="#i-signal"/></svg><svg class="ic"><use href="#i-wifi"/></svg><svg class="ic batt"><use href="#i-batt"/></svg></span></div>
+      <div class="body-pad" style="gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="eyebrow"><svg class="ic"><use href="#i-users"/></svg>Private Workspace</div>
+          <div class="h-32">Bali Adventure</div>
+          <div class="avrow">
+            <div class="stack">
+              <div class="av" style="background:var(--s-av1)">AR</div>
+              <div class="av" style="background:var(--s-av2)">JM</div>
+              <div class="av" style="background:var(--s-av3)">KT</div>
+              <div class="av more">+2</div>
+            </div>
+            <div class="presence"><span class="dot"></span>Active • 5 members</div>
+          </div>
+        </div>
+        <div class="tabs"><span class="tab on">Itinerary</span><span class="tab">Chat</span><span class="tab">Details</span></div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card dayrow"><div class="mid"><div class="t">Day 1: Arrival</div><div class="d">2 activities</div></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+          <div class="card dayrow"><div class="mid"><div class="t">Day 2: Uluwatu</div><div class="d">4 activities</div></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+          <div class="card dayrow"><div class="mid"><div class="t">Day 3: Ubud</div><div class="d">4 activities</div></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="body-pad">
+      <div class="btn outline">Invite Travelers</div>
+      <div class="homebar"><i></i></div>
+    </div>
+  </div></div>
+
+  <!-- 5 · invite-travelers -->
+  <div class="shot" data-name="invite-travelers" data-cap="Invite — handle search, network, email">
+  <div class="phone">
+    <div>
+      <div class="statusbar"><span class="clock">9:41</span>
+        <span class="tray"><svg class="ic"><use href="#i-signal"/></svg><svg class="ic"><use href="#i-wifi"/></svg><svg class="ic batt"><use href="#i-batt"/></svg></span></div>
+      <div class="body-pad" style="gap:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="h-24">Invite Travelers</div>
+          <svg class="ic" style="color:var(--s-ink)"><use href="#i-x"/></svg>
+        </div>
+        <div class="input"><svg class="ic"><use href="#i-search"/></svg><span class="ph">Search by username or email</span></div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="seclab">From Your Network</div>
+          <div class="person">
+            <div class="who"><div class="pav" style="background:var(--s-av1)">CC</div>
+              <div><div class="n">Carlos Chen</div><div class="h">@carlitos</div></div></div>
+            <span class="pill pending">Pending</span>
+          </div>
+          <div class="person">
+            <div class="who"><div class="pav" style="background:var(--s-av2)">JD</div>
+              <div><div class="n">John Doe</div><div class="h">@johnd</div></div></div>
+            <span class="pill invite">Invite</span>
+          </div>
+          <div class="person">
+            <div class="who"><div class="pav" style="background:var(--s-av4)">MS</div>
+              <div><div class="n">Maria Santos</div><div class="h">@mariatravels</div></div></div>
+            <span class="pill invite">Invite</span>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--s-border)"></div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="seclab">Or invite by email</div>
+          <div style="display:flex;gap:8px">
+            <div class="input" style="flex:1"><span class="ph">traveler@example.com</span></div>
+            <div style="display:flex;align-items:center;padding:0 20px;background:var(--s-fab);border-radius:12px;color:#FFF;font-size:15px;font-weight:700">Send</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div></div>
+
+  <!-- 6 · collaborative-edit -->
+  <div class="shot" data-name="collaborative-edit" data-cap="Day detail — lock indicator, attribution">
+  <div class="phone">
+    <div>
+      <div class="statusbar"><span class="clock">9:41</span>
+        <span class="tray"><svg class="ic"><use href="#i-signal"/></svg><svg class="ic"><use href="#i-wifi"/></svg><svg class="ic batt"><use href="#i-batt"/></svg></span></div>
+      <div class="body-pad" style="gap:24px">
+        <div class="headrow">
+          <div class="backbtn"><svg class="ic"><use href="#i-arrow-left"/></svg></div>
+          <div class="h-20">Day 2: Ubud Market</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="card act locked">
+              <div class="mid">
+                <div class="toprow">
+                  <div><div class="time">10:00 AM</div><div class="name">Ubud Traditional Market</div></div>
+                </div>
+                <div class="meta"><svg class="ic"><use href="#i-map-pin"/></svg>Ubud Center</div>
+                <div class="editedby">
+                  <div class="pav" style="width:18px;height:18px;border-radius:100px;background:var(--s-av1)"></div>
+                  Being edited by @carlos
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="card act">
+              <div class="mid">
+                <div class="toprow">
+                  <div><div class="time">01:00 PM</div><div class="name">Lunch at Clear Cafe</div></div>
+                </div>
+                <div class="meta"><svg class="ic"><use href="#i-map-pin"/></svg>Jalan Hanoman</div>
+              </div>
+            </div>
+            <div class="updated">Updated 2 min ago by @jane</div>
+          </div>
+          <div class="linkline">View Activity History</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="navbar">
+        <div class="slot"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+        <div class="slot"><svg class="ic"><use href="#i-search"/></svg>Search</div>
+        <div class="slot"><div class="cfab"><svg class="ic"><use href="#i-plus"/></svg></div></div>
+        <div class="slot"><svg class="ic"><use href="#i-map"/></svg>Trips</div>
+        <div class="slot"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+      </div>
+      <div class="homebar"><i></i></div>
+    </div>
+  </div></div>
+
+  <!-- 7 · fork-itinerary -->
+  <div class="shot" data-name="fork-itinerary" data-cap="Fork — source card, attribution notice">
+  <div class="phone">
+    <div>
+      <div class="statusbar"><span class="clock">9:41</span>
+        <span class="tray"><svg class="ic"><use href="#i-signal"/></svg><svg class="ic"><use href="#i-wifi"/></svg><svg class="ic batt"><use href="#i-batt"/></svg></span></div>
+      <div class="body-pad" style="gap:24px">
+        <div class="headrow">
+          <div class="backbtn"><svg class="ic"><use href="#i-x"/></svg></div>
+          <div class="h-24">Fork This Trip</div>
+        </div>
+        <div class="card" style="border-radius:20px">
+          <div class="cover"></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:18px;font-weight:700;color:var(--s-ink)">Island Hopping in El Nido</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="pav" style="width:24px;height:24px;border-radius:100px;background:var(--s-av4)"></div>
+                <span style="font-size:13px;color:var(--s-ink)">by @mariatravels</span>
+              </div>
+              <div class="starrow"><svg class="ic"><use href="#i-star"/></svg><span style="font-size:13px;font-weight:700;color:var(--s-ink)">4.8</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="infobox">
+          <div class="head"><svg class="ic"><use href="#i-info"/></svg>Important</div>
+          <div class="bd">Forking creates a private copy you can customize with your group. The original creator gets attribution.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="field"><div class="lab">Your Trip Name</div>
+            <div class="input"><span class="ph">e.g. Our El Nido Adventure</span></div></div>
+          <div class="field"><div class="lab">Tentative Dates</div>
+            <div class="input"><svg class="ic"><use href="#i-calendar"/></svg><span class="ph">Pick dates</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="body-pad">
+      <div class="btn primary">Create My Trip</div>
+      <div class="homebar"><i></i></div>
+    </div>
+  </div></div>
+
+</template>
+
+<h2 class="strip-title">High-fidelity · terracotta / navy / cream (ADR-016)</h2>
+<div class="strip hifi" id="row-hifi"></div>
+
+<h2 class="strip-title">Wireframe · grayscale</h2>
+<div class="strip wire" id="row-wire"></div>
+
+<script>
+  const tpl = document.getElementById('screens');
+  for (const rowId of ['row-hifi', 'row-wire']) {
+    const row = document.getElementById(rowId);
+    const clone = tpl.content.cloneNode(true);
+    clone.querySelectorAll('.shot').forEach(shot => {
+      const cap = document.createElement('div');
+      cap.className = 'cap';
+      cap.innerHTML = '<b>' + shot.dataset.name + '</b> — ' + shot.dataset.cap;
+      shot.appendChild(cap);
+    });
+    row.appendChild(clone);
+  }
+</script>
