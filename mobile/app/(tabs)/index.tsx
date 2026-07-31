@@ -1,19 +1,48 @@
 import { Link } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { InvitationInbox } from '../../src/components/InvitationInbox';
 import { TripRow } from '../../src/itineraries/TripRow';
+import {
+  emptyCategoryMessage,
+  TRIP_CATEGORIES,
+  tripCategoryLabel,
+} from '../../src/itineraries/tripCategories';
 import { useMyItineraries } from '../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../src/theme';
+import type { TripCategory } from '../../src/types/api';
 
 
 export default function MyTripsScreen() {
+  const [category, setCategory] = useState<TripCategory | undefined>(undefined);
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMyItineraries();
+    useMyItineraries(category);
 
   const itineraries = data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
     <View style={styles.container}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.chipBar}
+        contentContainerStyle={styles.chipRow}
+      >
+        <CategoryChip
+          label="All"
+          selected={category === undefined}
+          onPress={() => setCategory(undefined)}
+        />
+        {TRIP_CATEGORIES.map((option) => (
+          <CategoryChip
+            key={option}
+            label={tripCategoryLabel(option)}
+            selected={category === option}
+            onPress={() => setCategory(option)}
+          />
+        ))}
+      </ScrollView>
+
       {isPending && <ActivityIndicator size="large" color={colors.accent} style={styles.centered} />}
 
       {isError && (
@@ -39,7 +68,7 @@ export default function MyTripsScreen() {
           }}
           onEndReachedThreshold={0.5}
           ListHeaderComponent={<InvitationInbox />}
-          ListEmptyComponent={<EmptyState />}
+          ListEmptyComponent={<EmptyState category={category} />}
           ListFooterComponent={
             <>
               {isFetchingNextPage && <ActivityIndicator color={colors.accent} style={styles.footer} />}
@@ -56,11 +85,36 @@ export default function MyTripsScreen() {
   );
 }
 
-function EmptyState() {
+function CategoryChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={[styles.chip, selected && styles.chipSelected]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={label}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+
+function EmptyState({ category }: { category: TripCategory | undefined }) {
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyTitle}>No trips yet</Text>
-      <Text style={styles.caption}>Every trip starts as a draft. Plan your first one.</Text>
+      <Text style={styles.emptyTitle}>
+        {category === undefined ? 'No trips yet' : `No ${tripCategoryLabel(category).toLowerCase()} trips`}
+      </Text>
+      <Text style={styles.caption}>{emptyCategoryMessage(category)}</Text>
       <Link href="/itineraries/new" asChild>
         <Pressable style={styles.button} accessibilityRole="button">
           <Text style={styles.buttonText}>Plan a trip</Text>
@@ -72,6 +126,19 @@ function EmptyState() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  chipBar: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.border },
+  chipRow: { flexDirection: 'row', gap: spacing.sm, padding: spacing.md },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  chipSelected: { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary },
+  chipText: { ...typography.caption, color: colors.textSecondary },
+  chipTextSelected: { color: colors.textOnAccent, fontWeight: '700' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
   listContainer: { padding: spacing.md, gap: spacing.sm },
   emptyContainer: { flexGrow: 1 },

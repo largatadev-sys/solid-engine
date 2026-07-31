@@ -1,8 +1,8 @@
-import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
+import { useSafeBack, type BackTarget } from '../navigation/safeBack';
 import { colors, radii, spacing, typography } from '../theme';
 
 
@@ -13,16 +13,19 @@ export function ScreenHeader({
   title,
   size = 'title',
   back = false,
+  backTo,
   eyebrow,
   action,
 }: {
   title: string;
   size?: HeaderSize;
   back?: boolean;
+
+  backTo?: BackTarget;
   eyebrow?: ReactNode;
   action?: ReactNode;
 }) {
-  const router = useRouter();
+  const goBack = useSafeBack(backTo);
   const insets = useSafeAreaInsets();
 
   return (
@@ -32,7 +35,7 @@ export function ScreenHeader({
         {back && (
           <Pressable
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={goBack}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >

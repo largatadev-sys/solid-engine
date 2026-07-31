@@ -34,6 +34,7 @@ describe('comingSoonMessage — the wording both forks share', () => {
       [
         'activityHistory',
         'activityPhoto',
+        'booking',
         'chat',
         'comments',
         'coverPhoto',

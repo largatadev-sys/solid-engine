@@ -231,8 +231,13 @@ const GREYED = [
   const previewPlan = await text();
   check('…Creator Tips are visible on the preview\'s day cards',
     previewDays.clicked && previewPlan.includes('Book the earliest slot'), previewPlan.slice(0, 160));
-  check('…and per-activity costs still render beside them',
-    previewPlan.includes('₱500') && previewPlan.includes('$40'), previewPlan.slice(0, 200));
+  check('…the card carries the location',
+    previewPlan.includes('Lio Airport'), previewPlan.slice(0, 200));
+  check('…and NOTHING else: no time rail, no per-activity price, no description (founder, 08/01)',
+    !previewPlan.includes('02:00 PM')
+      && !previewPlan.includes('₱500')
+      && !previewPlan.includes('A van transfer'),
+    previewPlan.replace(/\n/g, ' | ').slice(0, 260));
   await tap('Overview');
   check('THE ABSENCE RULE — no calendar date anywhere on the preview',
     !preview.includes('2027-03-04') && !preview.includes('2027-03-08') && !/Mar 4/.test(preview),
@@ -270,8 +275,13 @@ const GREYED = [
   const dayTab = await tap('Day-by-Day');
   const dayByDay = await text();
   check('Day-by-Day is a real tab', dayTab.clicked && dayByDay.includes('Day 1'));
-  check('…activity cards carry the tips and the bare booking link',
+  check('…activity cards carry the tips and the booking link',
     dayByDay.includes('Book the earliest slot') && dayByDay.includes('View Booking Options'));
+
+  const booking = await tapExpectingAlert('View Booking Options');
+  check('View Booking Options greys rather than opening a URL (founder, 08/01)',
+    booking.clicked && typeof booking.said === 'string' && booking.said.includes('Booking options'),
+    `clicked=${booking.clicked} said=${JSON.stringify(booking.said)}`);
 
   for (const [label, surface] of GREYED) {
     const greyed = await tapExpectingAlert(label);

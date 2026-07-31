@@ -29,7 +29,11 @@ export default function ItineraryPreviewScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <ScreenHeader title="Preview" back />
+        <ScreenHeader
+          title="Preview"
+          back
+          backTo={{ pathname: '/itineraries/[id]', params: { id } }}
+        />
 
         <View style={styles.banner}>
           <Icon name="eye" size={BANNER_ICON_SIZE} color={colors.accent} />

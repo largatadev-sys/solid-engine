@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
 import { colors, radii, spacing, typography } from '../theme';
 import type { PublishedActivityResponse, PublishedItineraryResponse } from '../types/api';
-import { activityMetaLine } from './formatActivityCost';
 import { dayHeading } from './dayHeading';
 import { initialsFor } from '../onboarding/initials';
 import {
@@ -41,7 +40,6 @@ export function PublishedItineraryView({
 
   return (
     <View style={styles.page}>
-      <CoverSlot />
       <PublishedHeader projection={projection} audience={audience} />
 
       <ScrollView
@@ -81,22 +79,6 @@ export function PublishedItineraryView({
 
       {tab === 'Overview' ? <Overview projection={projection} /> : <DayByDay projection={projection} />}
     </View>
-  );
-}
-
-
-function CoverSlot() {
-  return (
-    <Pressable
-      style={styles.cover}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: true }}
-      accessibilityLabel="Cover photo, coming soon"
-      onPress={() => comingSoon('coverPhoto')}
-    >
-      <Icon name="map" size={COVER_ICON_SIZE} color={colors.textSecondary} />
-      <Text style={styles.coverHint}>Cover photo coming soon</Text>
-    </Pressable>
   );
 }
 
@@ -242,39 +224,29 @@ function DayByDay({ projection }: { projection: PublishedItineraryResponse }) {
 
 
 function ActivityCard({ activity }: { activity: PublishedActivityResponse }) {
-  const meta = activityMetaLine(activity.timeOfDay, activity.costAmount, activity.costCurrency);
-  const booking = activity.externalUrl;
-
   return (
     <View style={styles.activityCard}>
-      {meta !== '' && <Text style={styles.activityMeta}>{meta}</Text>}
       <Text style={styles.activityTitle}>{activity.title}</Text>
       {activity.place !== null && <Text style={styles.activityPlace}>{activity.place}</Text>}
-      {activity.description !== null && (
-        <Text style={styles.activityBody}>{activity.description}</Text>
-      )}
       {activity.notes !== null && (
         <View style={styles.tips}>
           <Text style={styles.tipsLabel}>Creator tip</Text>
           <Text style={styles.tipsBody}>{activity.notes}</Text>
         </View>
       )}
-      {booking !== null && (
+      {activity.externalUrl !== null && (
         <Pressable
-          accessibilityRole="link"
-          accessibilityLabel="View booking options"
-          onPress={() => {
-            void Linking.openURL(booking);
-          }}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: true }}
+          accessibilityLabel="View booking options, coming soon"
+          onPress={() => comingSoon('booking')}
         >
-          <Text style={styles.bookingLink}>View Booking Options</Text>
+          <Text style={styles.bookingLinkGreyed}>View Booking Options</Text>
         </Pressable>
       )}
     </View>
   );
 }
-
-const COVER_ICON_SIZE = 24;
 
 const FOLLOW_ICON_SIZE = 14;
 
@@ -284,18 +256,6 @@ const STANDOUT_ICON_SIZE = 18;
 
 const styles = StyleSheet.create({
   page: { gap: spacing.md },
-  cover: {
-    height: 150,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  coverHint: { ...typography.caption, color: colors.textSecondary },
   header: { gap: spacing.sm },
   pillRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm },
   pill: {
@@ -381,10 +341,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  activityMeta: { ...typography.caption, color: colors.textSecondary },
   activityTitle: { ...typography.bodyStrong, color: colors.textPrimary },
   activityPlace: { ...typography.caption, color: colors.textSecondary },
-  activityBody: { ...typography.caption, color: colors.textPrimary, lineHeight: 20 },
   tips: {
     gap: spacing.xs,
     padding: spacing.sm,
@@ -393,5 +351,5 @@ const styles = StyleSheet.create({
   },
   tipsLabel: { ...typography.overline, color: colors.accent },
   tipsBody: { ...typography.caption, color: colors.textPrimary },
-  bookingLink: { ...typography.label, color: colors.accent },
+  bookingLinkGreyed: { ...typography.label, color: colors.textSecondary, opacity: 0.6 },
 });

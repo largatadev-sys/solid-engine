@@ -71,7 +71,7 @@ describe('the list', () => {
 
     const data = await freshClient().fetchInfiniteQuery(myItinerariesOptions);
 
-    expect(itineraryRepository.fetchMine).toHaveBeenCalledWith(undefined);
+    expect(itineraryRepository.fetchMine).toHaveBeenCalledWith(undefined, false, undefined);
     expect(data.pages[0]?.items[0]?.title).toBe('Lisbon');
   });
 
@@ -82,8 +82,8 @@ describe('the list', () => {
 
     const data = await freshClient().fetchInfiniteQuery({ ...myItinerariesOptions, pages: 2 });
 
-    expect(itineraryRepository.fetchMine).toHaveBeenNthCalledWith(1, undefined);
-    expect(itineraryRepository.fetchMine).toHaveBeenNthCalledWith(2, 'opaque-cursor');
+    expect(itineraryRepository.fetchMine).toHaveBeenNthCalledWith(1, undefined, false, undefined);
+    expect(itineraryRepository.fetchMine).toHaveBeenNthCalledWith(2, 'opaque-cursor', false, undefined);
     expect(data.pages).toHaveLength(2);
   });
 

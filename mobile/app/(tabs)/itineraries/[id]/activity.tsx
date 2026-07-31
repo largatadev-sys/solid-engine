@@ -91,7 +91,11 @@ export default function ActivityFormScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <ScreenHeader title={isEdit ? 'Edit Activity' : 'Add Activity'} back />
+      <ScreenHeader
+        title={isEdit ? 'Edit Activity' : 'Add Activity'}
+        back
+        backTo={{ pathname: '/itineraries/[id]/days/[dayId]', params: { id, dayId } }}
+      />
 
       <Field label="Activity name" value={title} onChangeText={setTitle} placeholder="Airport Transfer" />
 

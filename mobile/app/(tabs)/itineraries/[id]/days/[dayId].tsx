@@ -66,7 +66,12 @@ export default function DayDetailScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <ScreenHeader title={dayHeading(day)} size="heading" back />
+      <ScreenHeader
+        title={dayHeading(day)}
+        size="heading"
+        back
+        backTo={{ pathname: '/itineraries/[id]', params: { id } }}
+      />
 
       {day.activities.length === 0 ? (
         <Text style={styles.emptyState}>Nothing planned for this day yet.</Text>

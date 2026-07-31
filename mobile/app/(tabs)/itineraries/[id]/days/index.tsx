@@ -126,6 +126,7 @@ export default function DaySurfaceScreen() {
         <ScreenHeader
           title={data.title}
           back
+          backTo={{ pathname: '/itineraries/[id]', params: { id } }}
           action={
             <Pressable
               onPress={() => router.push({ pathname: '/itineraries/[id]', params: { id, tab: 'details' } })}

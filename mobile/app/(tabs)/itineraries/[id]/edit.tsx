@@ -74,7 +74,7 @@ export default function EditItineraryScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <ScreenHeader title="Edit Trip" back />
+      <ScreenHeader title="Edit Trip" back backTo={{ pathname: '/itineraries/[id]', params: { id } }} />
 
       <GreyedMediaTile surface="coverPhoto" />
 

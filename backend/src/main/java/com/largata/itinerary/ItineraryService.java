@@ -283,7 +283,8 @@ public class ItineraryService {
 
 
     @Transactional(readOnly = true)
-    public Page<Itinerary> listMine(UUID travelerId, String cursor, Integer requestedLimit, boolean archived) {
+    public Page<Itinerary> listMine(
+            UUID travelerId, String cursor, Integer requestedLimit, boolean archived, TripCategory category) {
         int limit = clamp(requestedLimit);
         UUID decodedCursor = cursor == null ? null : Cursor.decode(cursor);
 
@@ -291,11 +292,13 @@ public class ItineraryService {
         if (itineraryIds.isEmpty()) {
             return Page.exhausted(List.of());
         }
+        ItineraryState state = category == null ? null : category.state();
+        Visibility visibility = category == null ? null : category.visibility();
         Limit probe = Limit.of(limit + 1);
         List<Itinerary> found =
                 decodedCursor == null
-                        ? itineraries.findFirstPage(itineraryIds, probe)
-                        : itineraries.findPageAfter(itineraryIds, decodedCursor, probe);
+                        ? itineraries.findFirstPage(itineraryIds, state, visibility, probe)
+                        : itineraries.findPageAfter(itineraryIds, decodedCursor, state, visibility, probe);
 
         if (found.size() <= limit) {
             return Page.exhausted(found);

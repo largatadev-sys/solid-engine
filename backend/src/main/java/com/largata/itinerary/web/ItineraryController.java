@@ -8,6 +8,7 @@ import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.ItineraryService;
 import com.largata.itinerary.PublishedItineraryService;
+import com.largata.itinerary.TripCategory;
 import com.largata.itinerary.api.CreateItineraryRequest;
 import com.largata.itinerary.api.ItineraryResponse;
 import com.largata.itinerary.api.PublishedItineraryResponse;
@@ -134,9 +135,10 @@ class ItineraryController {
             @CurrentTraveler Traveler traveler,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit,
-            @RequestParam(defaultValue = "false") boolean archived) {
+            @RequestParam(defaultValue = "false") boolean archived,
+            @RequestParam(required = false) String category) {
         return itineraries
-                .listMine(traveler.id(), cursor, limit, archived)
+                .listMine(traveler.id(), cursor, limit, archived, TripCategory.parse(category).orElse(null))
                 .map(itinerary -> ItineraryResponse.summaryOf(itinerary, itineraries.stateOf(itinerary.id())));
     }
 

@@ -62,6 +62,9 @@ export type VerificationResultResponse = {
 export type Visibility = 'private' | 'published';
 
 
+export type TripCategory = 'draft' | 'private' | 'published';
+
+
 export type ItineraryResponse = {
   id: string;
   title: string;

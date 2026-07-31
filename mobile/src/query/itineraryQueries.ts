@@ -21,6 +21,7 @@ import type {
   ItineraryResponse,
   Page,
   PublishedItineraryResponse,
+  TripCategory,
   UpdateItineraryRequest,
 } from '../types/api';
 
@@ -31,7 +32,8 @@ export const itineraryKeys = {
   all: ['itineraries'] as const,
 
   lists: () => [...itineraryKeys.all, 'list'] as const,
-  list: (archived = false) => [...itineraryKeys.lists(), { archived }] as const,
+  list: (archived = false, category?: TripCategory) =>
+    [...itineraryKeys.lists(), { archived, category: category ?? null }] as const,
   one: (id: string) => [...itineraryKeys.all, 'one', id] as const,
 
   published: (id: string) => [...itineraryKeys.all, 'published', id] as const,
@@ -40,12 +42,18 @@ export const itineraryKeys = {
 };
 
 
-export const myItinerariesOptions = infiniteQueryOptions({
-  queryKey: itineraryKeys.list(false),
-  queryFn: ({ pageParam }: { pageParam: string | undefined }) => itineraryRepository.fetchMine(pageParam),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
-});
+export function myItinerariesOptionsFor(category?: TripCategory) {
+  return infiniteQueryOptions({
+    queryKey: itineraryKeys.list(false, category),
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+      itineraryRepository.fetchMine(pageParam, false, category),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
+  });
+}
+
+
+export const myItinerariesOptions = myItinerariesOptionsFor(undefined);
 
 
 export const archivedItinerariesOptions = infiniteQueryOptions({
@@ -85,9 +93,11 @@ export async function onPlanChanged(client: QueryClient, itineraryId: string): P
 }
 
 
-export function useMyItineraries(): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
+export function useMyItineraries(
+  category?: TripCategory,
+): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
   const { kind } = useAuth();
-  return useInfiniteQuery({ ...myItinerariesOptions, enabled: kind === 'signedIn' });
+  return useInfiniteQuery({ ...myItinerariesOptionsFor(category), enabled: kind === 'signedIn' });
 }
 
 export function useItinerary(id: string): UseQueryResult<ItineraryResponse> {
