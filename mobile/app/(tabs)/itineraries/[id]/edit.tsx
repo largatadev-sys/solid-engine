@@ -13,6 +13,8 @@ import {
   removeDestination,
   setDestination,
 } from '../../../../src/itineraries/destinationsEditor';
+import { addRow, cleanRows, moveRow, removeRow, setRow } from '../../../../src/itineraries/rowEditor';
+import { Icon } from '../../../../src/components/Icon';
 import { validateItineraryEdit } from '../../../../src/itineraries/validateItineraryForm';
 import { useItinerary, useUpdateItinerary } from '../../../../src/query/itineraryQueries';
 import type { UpdateItineraryRequest } from '../../../../src/types/api';
@@ -37,6 +39,8 @@ export default function EditItineraryScreen() {
   const [title, setTitle] = useState(data?.title ?? '');
   const [destinations, setDestinations] = useState<string[]>(data?.destinations ?? ['']);
   const [description, setDescription] = useState(data?.description ?? '');
+  const [standouts, setStandouts] = useState<string[]>(data?.standouts ?? []);
+  const [bestTimeOfYear, setBestTimeOfYear] = useState(data?.bestTimeOfYear ?? '');
   const [startDate, setStartDate] = useState(data?.startDate ?? '');
   const [endDate, setEndDate] = useState(data?.endDate ?? '');
   const [validationError, setValidationError] = useState<string | undefined>();
@@ -51,6 +55,8 @@ export default function EditItineraryScreen() {
       title: title.trim(),
       destinations: cleaned,
       ...(description.trim() !== '' ? { description: description.trim() } : {}),
+      standouts: cleanRows(standouts),
+      ...(bestTimeOfYear.trim() !== '' ? { bestTimeOfYear: bestTimeOfYear.trim() } : {}),
       ...(startDate !== '' ? { startDate } : {}),
       ...(endDate !== '' ? { endDate } : {}),
     };
@@ -115,6 +121,61 @@ export default function EditItineraryScreen() {
       </View>
 
       <Field label="Description" value={description} onChangeText={setDescription} placeholder="What's this trip about?" multiline />
+
+      <View style={styles.field}>
+        <Text style={styles.label}>Trip Highlights (Standouts)</Text>
+        <Text style={styles.hint}>Shown on your published page.</Text>
+        {standouts.map((standout, index) => (
+          <View key={index} style={styles.destinationRow}>
+            <TextInput
+              style={styles.destinationInput}
+              value={standout}
+              onChangeText={(text) => setStandouts((prev) => setRow(prev, index, text))}
+              accessibilityLabel={`Standout ${index + 1}`}
+              placeholder="Big Lagoon Kayaking"
+              placeholderTextColor={colors.textSecondary}
+            />
+            <Pressable
+              onPress={() => setStandouts((prev) => moveRow(prev, index, -1))}
+              accessibilityRole="button"
+              accessibilityLabel={`Move standout ${index + 1} up`}
+              hitSlop={8}
+            >
+              <Text style={styles.reorder}>↑</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setStandouts((prev) => moveRow(prev, index, 1))}
+              accessibilityRole="button"
+              accessibilityLabel={`Move standout ${index + 1} down`}
+              hitSlop={8}
+            >
+              <Text style={styles.reorder}>↓</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setStandouts((prev) => removeRow(prev, index))}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove standout ${index + 1}`}
+              hitSlop={8}
+            >
+              <Text style={styles.remove}>Remove</Text>
+            </Pressable>
+          </View>
+        ))}
+        <Pressable
+          onPress={() => setStandouts((prev) => addRow(prev))}
+          accessibilityRole="button"
+          style={styles.addDestination}
+        >
+          <Text style={styles.addDestinationText}>+ Add Highlight</Text>
+        </Pressable>
+      </View>
+
+      <Field
+        label="Best Time of year"
+        value={bestTimeOfYear}
+        onChangeText={setBestTimeOfYear}
+        placeholder="Dec – Apr"
+      />
 
       <DatePicker label="Start date" value={startDate} onChange={setStartDate} />
       <DatePicker label="End date" value={endDate} onChange={setEndDate} />
@@ -190,6 +251,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   remove: { ...typography.caption, color: colors.danger },
+  reorder: { ...typography.bodyStrong, color: colors.accent },
+  hint: { ...typography.caption, color: colors.textSecondary },
   addDestination: { paddingVertical: spacing.xs },
   addDestinationText: { ...typography.caption, color: colors.accent },
   error: { ...typography.caption, color: colors.danger },

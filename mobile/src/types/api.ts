@@ -69,6 +69,12 @@ export type ItineraryResponse = {
 
   description: string | null;
 
+  standouts: string[];
+
+  bestTimeOfYear: string | null;
+
+  coverImageUrl: string | null;
+
   startDate: string | null;
   endDate: string | null;
   state: string;
@@ -170,6 +176,10 @@ export type PublishedItineraryResponse = {
   destinations: string[];
   description: string | null;
 
+  standouts: string[];
+  bestTimeOfYear: string | null;
+  coverImageUrl: string | null;
+
   durationDays: number;
 
   creator: TravelerCardResponse;
@@ -193,6 +203,10 @@ export type UpdateItineraryRequest = {
   title: string;
   destinations: string[];
   description?: string;
+
+  standouts?: string[];
+
+  bestTimeOfYear?: string;
   startDate?: string;
   endDate?: string;
 };

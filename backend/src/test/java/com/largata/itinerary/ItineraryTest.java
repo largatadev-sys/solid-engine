@@ -178,27 +178,41 @@ class ItineraryTest {
         Instant editedAt = Instant.now();
 
         itinerary.editFields(
-                "El Nido 2027",
-                List.of("Palawan", "El Nido"),
-                "Island hopping.",
-                LocalDate.of(2027, 1, 10),
-                LocalDate.of(2027, 1, 20),
+                new ItineraryFields(
+                        "El Nido 2027",
+                        List.of("Palawan", "El Nido"),
+                        "Island hopping.",
+                        List.of("Big Lagoon Kayaking"),
+                        "Dec – Apr",
+                        LocalDate.of(2027, 1, 10),
+                        LocalDate.of(2027, 1, 20)),
                 editor,
                 editedAt);
 
         assertThat(itinerary.title()).isEqualTo("El Nido 2027");
         assertThat(itinerary.destinations()).containsExactly("Palawan", "El Nido");
         assertThat(itinerary.description()).isEqualTo("Island hopping.");
+        assertThat(itinerary.standouts()).containsExactly("Big Lagoon Kayaking");
+        assertThat(itinerary.bestTimeOfYear()).isEqualTo("Dec – Apr");
         assertThat(itinerary.startDate()).isEqualTo(LocalDate.of(2027, 1, 10));
         assertThat(itinerary.lastEditedBy()).isEqualTo(editor);
         assertThat(itinerary.lastEditedAt()).isEqualTo(editedAt);
     }
 
     @Test
+    void aDraftIsBornWithNoPublishMetadataAtAll() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+
+        assertThat(itinerary.standouts()).isEmpty();
+        assertThat(itinerary.bestTimeOfYear()).isNull();
+        assertThat(itinerary.coverImageUrl()).as("no writer exists until S3.3 activates upload").isNull();
+    }
+
+    @Test
     void editingLeavesOwnershipAndStateUntouched() {
         Itinerary itinerary = draft("Draft", List.of("Cebu"));
 
-        itinerary.editFields("Renamed", List.of("Cebu"), null, null, null, UuidV7.generate(), Instant.now());
+        itinerary.editFields(renamedTo("Renamed"), UuidV7.generate(), Instant.now());
 
         assertThat(itinerary.ownerId()).isEqualTo(owner);
         assertThat(itinerary.state()).isEqualTo(ItineraryState.DRAFT);
@@ -207,18 +221,39 @@ class ItineraryTest {
 
     @Test
     void editingEnforcesTheSameFieldRulesAsCreation() {
-        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+        assertThatThrownBy(() -> renamedTo("   ")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(
+                        () ->
+                                new ItineraryFields(
+                                        "Trip", List.of(), null, List.of(), null, null, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 
-        assertThatThrownBy(
-                        () ->
-                                itinerary.editFields(
-                                        "   ", List.of("Cebu"), null, null, null, UuidV7.generate(), Instant.now()))
+    @Test
+    void aStandoutListIsBoundedInBothLengthAndCount() {
+        assertThatThrownBy(() -> withStandouts(List.of("x".repeat(Itinerary.MAX_STANDOUT_LENGTH + 1))))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(
                         () ->
-                                itinerary.editFields(
-                                        "Trip", List.of(), null, null, null, UuidV7.generate(), Instant.now()))
+                                withStandouts(
+                                        java.util.stream.IntStream.rangeClosed(0, Itinerary.MAX_STANDOUTS)
+                                                .mapToObj(String::valueOf)
+                                                .toList()))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aBlankStandoutRowIsDroppedRatherThanStoredAsAnEmptySellingPoint() {
+        assertThat(withStandouts(java.util.Arrays.asList("  Kayaking  ", "", "   ", null)).standouts())
+                .containsExactly("Kayaking");
+    }
+
+    private static ItineraryFields renamedTo(String title) {
+        return new ItineraryFields(title, List.of("Cebu"), null, List.of(), null, null, null);
+    }
+
+    private static ItineraryFields withStandouts(List<String> standouts) {
+        return new ItineraryFields("Trip", List.of("Cebu"), null, standouts, null, null, null);
     }
 
     @Test

@@ -77,13 +77,7 @@ class ItineraryController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateItineraryRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        itineraries.editFields(
-                membership,
-                request.title(),
-                request.destinations(),
-                request.description(),
-                request.startDate(),
-                request.endDate());
+        itineraries.editFields(membership, request.toFields());
         var plan = itineraries.viewPlan(membership);
         return ItineraryResponse.of(plan);
     }

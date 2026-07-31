@@ -1,21 +1,21 @@
-
+import { addRow, cleanRows, removeRow, setRow } from './rowEditor';
 
 
 export function addDestination(destinations: string[]): string[] {
-  return [...destinations, ''];
+  return addRow(destinations);
 }
 
 
 export function removeDestination(destinations: string[], index: number): string[] {
-  return destinations.filter((_, i) => i !== index);
+  return removeRow(destinations, index);
 }
 
 
 export function setDestination(destinations: string[], index: number, value: string): string[] {
-  return destinations.map((d, i) => (i === index ? value : d));
+  return setRow(destinations, index, value);
 }
 
 
 export function cleanDestinations(destinations: string[]): string[] {
-  return destinations.map((d) => d.trim()).filter((d) => d !== '');
+  return cleanRows(destinations);
 }

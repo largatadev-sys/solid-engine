@@ -177,20 +177,14 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary editFields(
-            Membership member,
-            String title,
-            List<String> destinations,
-            String description,
-            LocalDate startDate,
-            LocalDate endDate) {
+    public Itinerary editFields(Membership member, ItineraryFields fields) {
         editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
         Itinerary itinerary =
                 itineraries
                         .findById(member.itineraryId())
                         .orElseThrow(() -> new IllegalStateException(
                                 "The guard authorized a membership for an itinerary that does not exist"));
-        itinerary.editFields(title, destinations, description, startDate, endDate, member.travelerId(), Instant.now());
+        itinerary.editFields(fields, member.travelerId(), Instant.now());
         itineraries.save(itinerary);
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(itinerary.id()));
         log.info("Itinerary edited: id={} editor={}", itinerary.id(), member.travelerId());

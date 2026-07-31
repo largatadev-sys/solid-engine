@@ -189,6 +189,25 @@ function Overview({ projection }: { projection: PublishedItineraryResponse }) {
       </Pressable>
 
       {projection.description !== null && <Text style={styles.description}>{projection.description}</Text>}
+
+      {projection.bestTimeOfYear !== null && (
+        <View style={styles.bestTime}>
+          <Text style={styles.bestTimeLabel}>Best time of year</Text>
+          <Text style={styles.bestTimeValue}>{projection.bestTimeOfYear}</Text>
+        </View>
+      )}
+
+      {projection.standouts.length > 0 && (
+        <View style={styles.standouts}>
+          <Text style={styles.standoutsHeading}>Standouts</Text>
+          {projection.standouts.map((standout) => (
+            <View key={standout} style={styles.standoutRow}>
+              <Icon name="checkCircle" size={STANDOUT_ICON_SIZE} color={colors.accent} />
+              <Text style={styles.standoutText}>{standout}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -257,6 +276,8 @@ const COVER_ICON_SIZE = 24;
 const FOLLOW_ICON_SIZE = 14;
 
 const CREATOR_AVATAR_SIZE = 36;
+
+const STANDOUT_ICON_SIZE = 18;
 
 const styles = StyleSheet.create({
   page: { gap: spacing.md },
@@ -340,6 +361,13 @@ const styles = StyleSheet.create({
   },
   galleryHint: { ...typography.caption, color: colors.textSecondary },
   description: { ...typography.body, color: colors.textPrimary, lineHeight: 26 },
+  bestTime: { gap: spacing.xs },
+  bestTimeLabel: { ...typography.caption, color: colors.textSecondary },
+  bestTimeValue: { ...typography.bodyStrong, color: colors.textPrimary },
+  standouts: { gap: spacing.sm },
+  standoutsHeading: { ...typography.bodyStrong, color: colors.textPrimary },
+  standoutRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  standoutText: { ...typography.body, color: colors.textPrimary, flexShrink: 1 },
   caption: { ...typography.caption, color: colors.textSecondary },
   dayBlock: { gap: spacing.sm },
   dayTitle: { ...typography.bodyStrong, color: colors.textPrimary },
