@@ -275,6 +275,15 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(workspace).not.toMatch(/visibility\.toUpperCase/);
   });
 
+  it('puts an Edit itinerary cogwheel on the workspace, pointing at the day editor (founder, 08/01)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+    const headerEnds = workspace.indexOf('<View style={styles.identityRow}>');
+
+    expect(workspace.slice(0, headerEnds)).toContain('accessibilityLabel="Edit itinerary"');
+    expect(workspace.slice(0, headerEnds)).toContain("pathname: '/itineraries/[id]/days'");
+    expect(workspace).toContain('canEditPlan(data) ? (');
+  });
+
   it('puts publish on the workspace screen and unpublish quietly in the Details tab (S4.1 decision 11)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
     const detailsTabAt = workspace.indexOf('function DetailsTab');

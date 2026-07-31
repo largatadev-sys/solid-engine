@@ -28,6 +28,8 @@ import type { DayResponse, ItineraryResponse } from '../../../../src/types/api';
 
 const EYEBROW_ICON_SIZE = 20;
 
+const EDIT_ICON_SIZE = 22;
+
 
 type WorkspaceTab = 'itinerary' | 'details';
 
@@ -82,6 +84,22 @@ export default function TripWorkspaceScreen() {
               <Icon name={eyebrow.icon} size={EYEBROW_ICON_SIZE} color={colors.accent} />
               <Text style={styles.eyebrow}>{eyebrow.label}</Text>
             </View>
+          }
+          action={
+            canEditPlan(data) ? (
+              <Link
+                href={{ pathname: '/itineraries/[id]/days', params: { id, day: '1' } }}
+                asChild
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit itinerary"
+                  hitSlop={spacing.sm}
+                >
+                  <Icon name="settings" size={EDIT_ICON_SIZE} color={colors.textPrimary} />
+                </Pressable>
+              </Link>
+            ) : undefined
           }
         />
 
