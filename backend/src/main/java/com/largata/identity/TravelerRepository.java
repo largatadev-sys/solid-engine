@@ -17,6 +17,10 @@ interface TravelerRepository extends JpaRepository<Traveler, UUID> {
     List<UUID> findIdsByEmail(@Param("email") String email);
 
 
+    @Query("SELECT t FROM Traveler t WHERE lower(t.handle) = :handle")
+    Optional<Traveler> findByHandle(@Param("handle") String handle);
+
+
     @Query("SELECT count(t) FROM Traveler t WHERE lower(t.handle) = :handle")
     long countByHandle(@Param("handle") String handle);
 

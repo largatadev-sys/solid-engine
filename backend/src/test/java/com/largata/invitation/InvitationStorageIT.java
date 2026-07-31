@@ -53,6 +53,42 @@ class InvitationStorageIT extends PostgresTestBase {
     }
 
     @Test
+    void aSecondPendingInvitationForTheSameTravelerIsRefused() {
+        UUID workspaceId = aWorkspace();
+        UUID invitee = UUID.randomUUID();
+        invitations.saveAndFlush(Invitation.openFor(workspaceId, invitee, UUID.randomUUID(), Instant.now()));
+
+        assertThatThrownBy(
+                        () ->
+                                invitations.saveAndFlush(
+                                        Invitation.openFor(
+                                                workspaceId, invitee, UUID.randomUUID(), Instant.now())))
+                .as("V6's email index cannot cover this: NULLs never collide, so V17 adds its own")
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void anInvitationIsAddressedOneWayOrTheOtherButNeverBoth() {
+        UUID workspaceId = aWorkspace();
+
+        assertThatThrownBy(
+                        () ->
+                                jdbc.update(
+                                        "INSERT INTO invitation"
+                                            + " (id, workspace_id, email, invitee_traveler_id, status, invited_by,"
+                                            + " created_at, expires_at)"
+                                            + " VALUES (?, ?, 'both@example.com', ?, 'PENDING', ?, ?, ?)",
+                                        UUID.randomUUID(),
+                                        workspaceId,
+                                        UUID.randomUUID(),
+                                        UUID.randomUUID(),
+                                        java.sql.Timestamp.from(Instant.now()),
+                                        java.sql.Timestamp.from(Instant.now().plusSeconds(60))))
+                .as("invitation_one_addressing_mode: matchable two ways would be revocable once")
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
     void twoDifferentAddressesCanBothBePendingInOneWorkspace() {
         UUID workspaceId = aWorkspace();
         invitations.saveAndFlush(Invitation.open(workspaceId, "a@example.com", UUID.randomUUID(), Instant.now()));

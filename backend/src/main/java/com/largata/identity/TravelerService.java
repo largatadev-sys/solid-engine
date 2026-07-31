@@ -5,6 +5,7 @@ import com.largata.common.analytics.AnalyticsEvent;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,24 @@ public class TravelerService {
     @Transactional(readOnly = true)
     public List<UUID> travelerIdsWithEmail(String email) {
         return travelers.findIdsByEmail(email.toLowerCase(Locale.ROOT));
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<TravelerSummary> byExactHandle(String rawHandle) {
+        String normalized = Handle.normalize(rawHandle);
+        if (normalized.isEmpty()) {
+            return Optional.empty();
+        }
+        return travelers
+                .findByHandle(normalized)
+                .map(t -> new TravelerSummary(t.id(), t.displayName(), t.handle(), t.avatarUrl()));
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<String> emailOf(UUID travelerId) {
+        return travelers.findById(travelerId).map(Traveler::email);
     }
 
 

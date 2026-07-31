@@ -5,9 +5,21 @@ import java.time.Instant;
 import java.util.UUID;
 
 
-public record InvitationResponse(UUID id, String email, Instant createdAt, Instant expiresAt) {
+public record InvitationResponse(
+        UUID id,
+        String email,
+        UUID inviteeTravelerId,
+        String inviteeHandle,
+        Instant createdAt,
+        Instant expiresAt) {
 
     public static InvitationResponse of(PendingInvitation pending) {
-        return new InvitationResponse(pending.id(), pending.email(), pending.createdAt(), pending.expiresAt());
+        return new InvitationResponse(
+                pending.id(),
+                pending.email(),
+                pending.inviteeTravelerId(),
+                pending.inviteeHandle(),
+                pending.createdAt(),
+                pending.expiresAt());
     }
 }

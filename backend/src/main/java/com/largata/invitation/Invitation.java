@@ -24,8 +24,11 @@ public class Invitation {
     @Column(name = "workspace_id", nullable = false, updatable = false)
     private UUID workspaceId;
 
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private String email;
+
+    @Column(name = "invitee_traveler_id", updatable = false)
+    private UUID inviteeTravelerId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -49,10 +52,17 @@ public class Invitation {
     protected Invitation() {
     }
 
-    private Invitation(UUID id, UUID workspaceId, String email, UUID invitedBy, Instant createdAt) {
+    private Invitation(
+            UUID id,
+            UUID workspaceId,
+            String email,
+            UUID inviteeTravelerId,
+            UUID invitedBy,
+            Instant createdAt) {
         this.id = id;
         this.workspaceId = workspaceId;
         this.email = email;
+        this.inviteeTravelerId = inviteeTravelerId;
         this.status = InvitationStatus.PENDING;
         this.invitedBy = invitedBy;
         this.createdAt = createdAt;
@@ -67,7 +77,26 @@ public class Invitation {
         if (!email.equals(email.strip().toLowerCase())) {
             throw new IllegalArgumentException("An invitation's email must be normalised (trimmed, lowercased)");
         }
-        return new Invitation(UuidV7.generate(), workspaceId, email, invitedBy, now);
+        return new Invitation(UuidV7.generate(), workspaceId, email, null, invitedBy, now);
+    }
+
+
+    static Invitation openFor(UUID workspaceId, UUID inviteeTravelerId, UUID invitedBy, Instant now) {
+        if (workspaceId == null || inviteeTravelerId == null || invitedBy == null || now == null) {
+            throw new IllegalArgumentException(
+                    "An invitation names a workspace, an invitee, an inviter and an instant");
+        }
+        return new Invitation(UuidV7.generate(), workspaceId, null, inviteeTravelerId, invitedBy, now);
+    }
+
+
+    boolean isAddressedTo(UUID travelerId) {
+        return inviteeTravelerId != null && inviteeTravelerId.equals(travelerId);
+    }
+
+
+    boolean isAddressedByEmail() {
+        return email != null;
     }
 
 
@@ -113,6 +142,10 @@ public class Invitation {
 
     String email() {
         return email;
+    }
+
+    UUID inviteeTravelerId() {
+        return inviteeTravelerId;
     }
 
     InvitationStatus status() {
