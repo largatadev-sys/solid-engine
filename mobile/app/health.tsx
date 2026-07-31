@@ -29,7 +29,6 @@ export default function HealthScreen() {
         {state.kind === 'error' && (
           <>
             <Text style={styles.errorTitle}>Backend unreachable</Text>
-            {}
             <Text style={styles.errorCode}>{state.error.code}</Text>
             <Text style={styles.caption}>{state.error.message}</Text>
             {state.error.traceId !== undefined && (

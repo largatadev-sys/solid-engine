@@ -10,6 +10,7 @@ import { authCapabilities } from '../src/repositories/authRepository';
 import { useAuth } from '../src/hooks/authContext';
 import { useMe } from '../src/hooks/useMe';
 import { AuthProvider } from '../src/hooks/useAuth';
+import { MobileFrame } from '../src/components/MobileFrame';
 import { createQueryClient } from '../src/query/queryClient';
 import { destinationFor, isSettling, type GateInput } from '../src/onboarding/onboardingGate';
 import { colors, typography } from '../src/theme';
@@ -33,7 +34,9 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <StatusBar style="dark" />
       <AuthProvider>
-        <AuthGate />
+        <MobileFrame>
+          <AuthGate />
+        </MobileFrame>
       </AuthProvider>
     </QueryClientProvider>
   );
@@ -70,6 +73,7 @@ function AuthGate() {
       }}
     >
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
     </Stack>
   );
 }

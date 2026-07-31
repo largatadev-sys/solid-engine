@@ -1,4 +1,27 @@
-import { reorderActivityIds } from '../src/itineraries/reorderActivityIds';
+import { applyMove, reorderActivityIds } from '../src/itineraries/reorderActivityIds';
+
+
+describe('applyMove — the id-keyed intent a 409 can be re-applied from (spec AC 7)', () => {
+  it('moves the named activity, wherever it currently sits', () => {
+    expect(applyMove(['a', 'b', 'c'], { activityId: 'c', direction: 'up' })).toEqual(['a', 'c', 'b']);
+  });
+
+  it('re-applies against a list that changed underneath it, which is the whole point', () => {
+    const move = { activityId: 'c', direction: 'up' } as const;
+
+    expect(applyMove(['a', 'b', 'c'], move)).toEqual(['a', 'c', 'b']);
+    expect(applyMove(['x', 'a', 'b', 'c'], move)).toEqual(['x', 'a', 'c', 'b']);
+  });
+
+  it('declines rather than no-ops when the move is off the end, so no pointless PUT is sent', () => {
+    expect(applyMove(['a', 'b'], { activityId: 'a', direction: 'up' })).toBeNull();
+    expect(applyMove(['a', 'b'], { activityId: 'b', direction: 'down' })).toBeNull();
+  });
+
+  it('declines when the activity is gone from the refetched list', () => {
+    expect(applyMove(['a', 'b'], { activityId: 'deleted-meanwhile', direction: 'up' })).toBeNull();
+  });
+});
 
 
 

@@ -6,28 +6,12 @@ const valid = {
   title: 'Hokkaido in winter',
   destination: 'Sapporo',
   description: '',
-  startDate: '',
-  endDate: '',
   duration: '',
 };
 
-describe('what a plan is allowed to be', () => {
-  it('accepts a trip with no dates at all — the dreamer draft', () => {
+describe('what a plan is allowed to be at create (S4.9: duration only, dates live on the Details tab)', () => {
+  it('accepts a trip with no duration at all — the dreamer draft', () => {
     expect(validateItineraryForm(valid)).toBeUndefined();
-  });
-
-  it('accepts a start with no end — "departing June 3, open-ended"', () => {
-    expect(validateItineraryForm({ ...valid, startDate: '2027-06-03' })).toBeUndefined();
-  });
-
-  it('accepts an end with no start', () => {
-    expect(validateItineraryForm({ ...valid, endDate: '2027-06-03' })).toBeUndefined();
-  });
-
-  it('accepts a trip that starts and ends on the same day', () => {
-    expect(
-      validateItineraryForm({ ...valid, startDate: '2027-06-03', endDate: '2027-06-03' }),
-    ).toBeUndefined();
   });
 
   it('accepts a whole-number duration (S1.3)', () => {
@@ -56,20 +40,6 @@ describe('what a plan is not allowed to be', () => {
     expect(validateItineraryForm({ ...valid, destination: '  ' })).toMatch(/destination/);
   });
 
-  it('rejects an end before the start', () => {
-    expect(validateItineraryForm({ ...valid, startDate: '2027-06-10', endDate: '2027-06-03' })).toBe(
-      'A trip cannot end before it starts.',
-    );
-  });
-
-  it('rejects prose where a date belongs', () => {
-    expect(validateItineraryForm({ ...valid, startDate: 'next June' })).toMatch(/2027-01-10/);
-  });
-
-  it('rejects a date that looks right but does not exist', () => {
-    expect(validateItineraryForm({ ...valid, startDate: '2027-02-31' })).toMatch(/2027-01-10/);
-  });
-
   it('rejects a non-numeric duration (S1.3)', () => {
     expect(validateItineraryForm({ ...valid, duration: 'five' })).toMatch(/whole number/);
   });
@@ -83,7 +53,7 @@ describe('what a plan is not allowed to be', () => {
   });
 });
 
-describe('the edit form (S1.3, ticket 04)', () => {
+describe('the edit form — where dates still live (S1.3 ticket 04, kept by S4.9 decision 13)', () => {
   const editable = {
     title: 'El Nido 2027',
     destinations: ['Palawan'],
@@ -97,6 +67,20 @@ describe('the edit form (S1.3, ticket 04)', () => {
     expect(validateItineraryEdit({ ...editable, startDate: '2027-01-10', endDate: '2027-01-20' })).toBeUndefined();
   });
 
+  it('accepts a start with no end — "departing June 3, open-ended"', () => {
+    expect(validateItineraryEdit({ ...editable, startDate: '2027-06-03' })).toBeUndefined();
+  });
+
+  it('accepts an end with no start', () => {
+    expect(validateItineraryEdit({ ...editable, endDate: '2027-06-03' })).toBeUndefined();
+  });
+
+  it('accepts a trip that starts and ends on the same day', () => {
+    expect(
+      validateItineraryEdit({ ...editable, startDate: '2027-06-03', endDate: '2027-06-03' }),
+    ).toBeUndefined();
+  });
+
   it('rejects a blank title', () => {
     expect(validateItineraryEdit({ ...editable, title: '  ' })).toMatch(/title/);
   });
@@ -105,10 +89,18 @@ describe('the edit form (S1.3, ticket 04)', () => {
     expect(validateItineraryEdit({ ...editable, destinations: [] })).toMatch(/destination/);
   });
 
-  it('rejects an end before the start (the only date rule left — the picker guarantees ISO)', () => {
+  it('rejects an end before the start', () => {
     expect(validateItineraryEdit({ ...editable, startDate: '2027-06-10', endDate: '2027-06-03' })).toBe(
       'A trip cannot end before it starts.',
     );
+  });
+
+  it('rejects prose where a date belongs', () => {
+    expect(validateItineraryEdit({ ...editable, startDate: 'next June' })).toMatch(/2027-01-10/);
+  });
+
+  it('rejects a date that looks right but does not exist', () => {
+    expect(validateItineraryEdit({ ...editable, startDate: '2027-02-31' })).toMatch(/2027-01-10/);
   });
 
   it('rejects a description past the limit', () => {

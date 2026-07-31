@@ -10,43 +10,20 @@ import type { ItineraryResponse } from '../types/api';
 import { archiveControl } from './archiveControls';
 
 
-export function TripArchiveBanner({ itinerary }: { itinerary: ItineraryResponse }) {
-  const members = useMembers(itinerary.id);
+function useIsOwner(itineraryId: string): boolean {
+  const members = useMembers(itineraryId);
   const { state: meState } = useMe();
   const myId = meState.kind === 'ok' ? meState.me.id : undefined;
-  const { isOwner } = memberControls(members.data?.items ?? [], myId);
+  return memberControls(members.data?.items ?? [], myId).isOwner;
+}
 
-  const archive = useArchiveTrip(itinerary.id);
+
+export function TripArchiveBanner({ itinerary }: { itinerary: ItineraryResponse }) {
+  const isOwner = useIsOwner(itinerary.id);
   const unarchive = useUnarchiveTrip(itinerary.id);
-
   const control = archiveControl(itinerary, isOwner);
 
-  if (!itinerary.archived && control === null) {
-    return null;
-  }
-
-  const archiving = control?.act === 'archive';
-  const mutation = archiving ? archive : unarchive;
-  const wording = archiving ? archiveTripWording() : unarchiveTripWording();
-
-  const onPress = () => {
-    confirmWith(wording, () => mutation.mutate());
-  };
-
-  if (!itinerary.archived) {
-    return (
-      <View style={styles.quiet}>
-        {mutation.isPending ? (
-          <ActivityIndicator color={colors.textSecondary} />
-        ) : (
-          <Pressable accessibilityRole="button" disabled={mutation.isPending} onPress={onPress}>
-            <Text style={styles.quietText}>Archive trip</Text>
-          </Pressable>
-        )}
-        {mutation.isError && <Text style={styles.error}>{mutation.error.message}</Text>}
-      </View>
-    );
-  }
+  if (!itinerary.archived) return null;
 
   const body =
     control !== null
@@ -58,20 +35,45 @@ export function TripArchiveBanner({ itinerary }: { itinerary: ItineraryResponse 
       <View style={styles.text}>
         <Text style={styles.title}>Archived</Text>
         <Text style={styles.body}>{body}</Text>
-        {mutation.isError && <Text style={styles.error}>{mutation.error.message}</Text>}
+        {unarchive.isError && <Text style={styles.error}>{unarchive.error.message}</Text>}
       </View>
       {control !== null &&
-        (mutation.isPending ? (
+        (unarchive.isPending ? (
           <ActivityIndicator color={colors.accent} />
         ) : (
           <Pressable
             style={styles.action}
             accessibilityRole="button"
-            disabled={mutation.isPending}
-            onPress={onPress}>
+            disabled={unarchive.isPending}
+            onPress={() => confirmWith(unarchiveTripWording(), () => unarchive.mutate())}>
             <Text style={styles.actionText}>Unarchive</Text>
           </Pressable>
         ))}
+    </View>
+  );
+}
+
+
+export function ArchiveTripLink({ itinerary }: { itinerary: ItineraryResponse }) {
+  const isOwner = useIsOwner(itinerary.id);
+  const archive = useArchiveTrip(itinerary.id);
+  const control = archiveControl(itinerary, isOwner);
+
+  if (itinerary.archived || control === null) return null;
+
+  return (
+    <View style={styles.quiet}>
+      {archive.isPending ? (
+        <ActivityIndicator color={colors.textSecondary} />
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          disabled={archive.isPending}
+          onPress={() => confirmWith(archiveTripWording(), () => archive.mutate())}>
+          <Text style={styles.quietText}>Archive trip</Text>
+        </Pressable>
+      )}
+      {archive.isError && <Text style={styles.error}>{archive.error.message}</Text>}
     </View>
   );
 }

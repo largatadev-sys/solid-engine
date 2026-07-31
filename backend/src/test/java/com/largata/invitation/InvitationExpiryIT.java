@@ -67,11 +67,11 @@ class InvitationExpiryIT extends PostgresTestBase {
         invitations.invite(owner, email);
         VerifiedContact invitee = new VerifiedContact(email, true);
 
-        assertThat(invitations.inbox(invitee)).hasSize(1);
+        assertThat(invitations.inbox(invitee, UUID.randomUUID())).hasSize(1);
 
         clock.advance(VALIDITY.plusSeconds(1));
 
-        assertThat(invitations.inbox(invitee)).isEmpty();
+        assertThat(invitations.inbox(invitee, UUID.randomUUID())).isEmpty();
     }
 
     @Test

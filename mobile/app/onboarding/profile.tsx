@@ -11,6 +11,7 @@ import {
   handleFeedbackFor,
   normalizeHandleInput,
 } from '../../src/onboarding/handleFeedback';
+import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { useHandleAvailability, useUpdateProfile } from '../../src/query/travelerQueries';
@@ -49,7 +50,7 @@ export default function ProfileStepScreen() {
     setMessage(null);
     try {
       await save.mutateAsync({ handle, displayName: displayName.trim(), bio: bio.trim() });
-      router.replace(editing ? '/me' : ONBOARDING_ROUTES.goals);
+      router.replace(editing ? PROFILE_TAB_ROUTE : ONBOARDING_ROUTES.goals);
     } catch (error) {
       setMessage(messageForVerificationFailure(error));
     }

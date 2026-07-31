@@ -1,20 +1,18 @@
-import { Link, Stack } from 'expo-router';
+import { Link } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Avatar } from '../src/components/Avatar';
-import { useMe } from '../src/hooks/useMe';
-import { ONBOARDING_ROUTES } from '../src/onboarding/onboardingGate';
-import { authRepository } from '../src/repositories/authRepository';
-import { colors, radii, spacing, typography } from '../src/theme';
+import { Avatar } from '../../src/components/Avatar';
+import { useMe } from '../../src/hooks/useMe';
+import { ONBOARDING_ROUTES } from '../../src/onboarding/onboardingGate';
+import { authRepository } from '../../src/repositories/authRepository';
+import { colors, radii, spacing, typography } from '../../src/theme';
 
 
 
-export default function MeScreen() {
+export default function ProfileScreen() {
   const { state, refresh } = useMe();
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Largata' }} />
-
       <View style={styles.brand}>
         <Text style={styles.wordmark}>Largata</Text>
         <Text style={styles.tagline}>SIGNED IN</Text>
@@ -41,7 +39,6 @@ export default function MeScreen() {
         {state.kind === 'error' && (
           <>
             <Text style={styles.errorTitle}>Could not load your profile</Text>
-            {}
             <Text style={styles.errorCode}>{state.error.code}</Text>
             <Text style={styles.caption}>{state.error.message}</Text>
             {state.error.traceId !== undefined && (

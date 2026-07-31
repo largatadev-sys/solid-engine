@@ -1,10 +1,9 @@
-import { Link, Stack } from 'expo-router';
+import { Link } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { BottomNav } from '../src/components/BottomNav';
-import { InvitationInbox } from '../src/components/InvitationInbox';
-import { TripRow } from '../src/itineraries/TripRow';
-import { useMyItineraries } from '../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../src/theme';
+import { InvitationInbox } from '../../src/components/InvitationInbox';
+import { TripRow } from '../../src/itineraries/TripRow';
+import { useMyItineraries } from '../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../src/theme';
 
 
 export default function MyTripsScreen() {
@@ -15,32 +14,11 @@ export default function MyTripsScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: 'My Trips',
-          headerLeft: () => (
-            <Link href="/me" asChild>
-              <Pressable accessibilityRole="button" accessibilityLabel="Your account" hitSlop={spacing.sm}>
-                <Text style={styles.headerActionMuted}>Account</Text>
-              </Pressable>
-            </Link>
-          ),
-          headerRight: () => (
-            <Link href="/itineraries/new" asChild>
-              <Pressable accessibilityRole="button" accessibilityLabel="Plan a trip" hitSlop={spacing.sm}>
-                <Text style={styles.headerAction}>Plan</Text>
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-
       {isPending && <ActivityIndicator size="large" color={colors.accent} style={styles.centered} />}
 
       {isError && (
         <View style={styles.centered}>
           <Text style={styles.errorTitle}>Could not load your trips</Text>
-          {}
           <Text style={styles.caption}>{error.message}</Text>
           <Pressable style={styles.button} onPress={() => void refetch()} accessibilityRole="button">
             <Text style={styles.buttonText}>Try again</Text>
@@ -65,7 +43,6 @@ export default function MyTripsScreen() {
           ListFooterComponent={
             <>
               {isFetchingNextPage && <ActivityIndicator color={colors.accent} style={styles.footer} />}
-              {}
               <Link href="/itineraries/archived" asChild>
                 <Pressable style={styles.archivedLink} accessibilityRole="button">
                   <Text style={styles.archivedLinkText}>Archived trips</Text>
@@ -75,9 +52,6 @@ export default function MyTripsScreen() {
           }
         />
       )}
-
-      {}
-      <BottomNav active="trips" />
     </View>
   );
 }
@@ -99,8 +73,6 @@ function EmptyState() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
-  headerAction: { ...typography.bodyStrong, color: colors.accent, paddingHorizontal: spacing.sm },
-  headerActionMuted: { ...typography.body, color: colors.textSecondary, paddingHorizontal: spacing.sm },
   listContainer: { padding: spacing.md, gap: spacing.sm },
   emptyContainer: { flexGrow: 1 },
   row: {

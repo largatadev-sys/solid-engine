@@ -114,6 +114,7 @@ class ActivityStorageIT extends PostgresTestBase {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
         ActivityView created = activities.create(member, dayId, fields("Draft", null, null));
+        editLease.acquire(member, LeaseSubject.activity(created.id()));
 
         ActivityView edited =
                 activities.edit(
@@ -133,6 +134,7 @@ class ActivityStorageIT extends PostgresTestBase {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
         ActivityView created = activities.create(member, dayId, fields("Doomed", null, null));
+        editLease.acquire(member, LeaseSubject.activity(created.id()));
 
         activities.delete(member, dayId, created.id());
 
@@ -156,6 +158,7 @@ class ActivityStorageIT extends PostgresTestBase {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
         activities.create(member, dayId, fields("Gone with the day", null, null));
+        editLease.acquire(member, LeaseSubject.day(dayId));
 
         days.deleteDay(member, dayId);
 
@@ -171,9 +174,7 @@ class ActivityStorageIT extends PostgresTestBase {
     private Membership tripWithOneDay() {
         UUID owner = UUID.randomUUID();
         Itinerary trip = itineraries.create(owner, "Palawan", java.util.List.of("Palawan"), null, null, null, 1);
-        Membership member = new Membership(owner, trip.id(), Role.OWNER);
-        editLease.acquire(member);
-        return member;
+        return new Membership(owner, trip.id(), Role.OWNER);
     }
 
     private UUID firstDayId(UUID itineraryId) {

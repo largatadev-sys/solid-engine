@@ -1,12 +1,20 @@
 package com.largata.identity;
 
 import com.largata.common.error.ConflictException;
+import com.largata.common.error.NotFoundException;
 import com.largata.common.error.ValidationException;
 
 
 public final class IdentityExceptions {
 
     private IdentityExceptions() {}
+
+
+    public static final class NoSuchHandleException extends NotFoundException {
+        public NoSuchHandleException() {
+            super("TRAVELER_NOT_FOUND", "No traveler goes by that handle.");
+        }
+    }
 
 
     public static final class MalformedHandleException extends ValidationException {

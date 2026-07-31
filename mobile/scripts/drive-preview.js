@@ -21,9 +21,14 @@ const viewportWidth = widthIndex === -1 ? null : Number(args[widthIndex + 1]);
 
 const steps = [];
 const expectations = [];
+const alertExpectations = [];
 for (let i = 0; i < args.length; i += 1) {
   if (args[i] === '--expect') {
     expectations.push(args[i + 1] ?? '');
+    continue;
+  }
+  if (args[i] === '--expect-alert') {
+    alertExpectations.push(args[i + 1] ?? '');
     continue;
   }
   if (args[i] === '--fill-otp') {
@@ -170,6 +175,19 @@ function getJson(path) {
     });
   }
 
+  // react-native-web's Alert is a NO-OP, so a control whose whole job is to say something can
+  // render, click, and do nothing at all — S1.3 shipped a screenful of dead greys that way, and
+  // every test was green because "renders on web" is not "works on web". Headless Chrome swallows
+  // native dialogs, so the only way to see one is to replace window.alert before the app loads and
+  // record what it was asked to say. Recorded, not suppressed: --expect-alert then gives the check
+  // a failure mode, which a click that merely "succeeded" does not have.
+  await send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `
+      window.__largataAlerts = [];
+      window.alert = (message) => { window.__largataAlerts.push(String(message)); };
+    `,
+  });
+
   await send('Page.navigate', { url });
   await sleep(6000);
 
@@ -311,6 +329,21 @@ function getJson(path) {
   console.log(pageErrors.length ? pageErrors.map((e) => `  ${e}`).join('\n') : '  (none)');
   if (screenshotPath !== null) console.log(`\nSCREENSHOT: ${screenshotPath}`);
 
+  const alerts = (await evaluate('JSON.stringify(window.__largataAlerts || [])')) ?? '[]';
+  const spoken = JSON.parse(alerts);
+  console.log('\nALERTS THE PAGE RAISED (a greyed control that raises none is a DEAD CLICK — S1.3):');
+  console.log(spoken.length ? spoken.map((a) => `  ${a.replace(/\n+/g, ' | ')}`).join('\n') : '  (none)');
+
+  const missingAlerts = alertExpectations.filter(
+    (wanted) => !spoken.some((a) => a.includes(wanted)),
+  );
+  if (alertExpectations.length > 0) {
+    console.log('\nALERT EXPECTATIONS (each greyed affordance must actually SAY something):');
+    for (const wanted of alertExpectations) {
+      console.log(`  ${missingAlerts.includes(wanted) ? 'MISSING' : 'present'}  ${wanted}`);
+    }
+  }
+
   const missing = expectations.filter((wanted) => !(bodyText || '').includes(wanted));
   if (expectations.length > 0) {
     console.log('\nEXPECTATIONS (the walk only passes if the final page says these):');
@@ -321,7 +354,7 @@ function getJson(path) {
 
   ws.close();
   chrome.kill();
-  process.exit(missing.length === 0 ? 0 : 1);
+  process.exit(missing.length === 0 && missingAlerts.length === 0 ? 0 : 1);
 })().catch((e) => {
   console.error('DRIVER FAILED:', e.message);
   process.exit(1);

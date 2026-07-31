@@ -11,7 +11,6 @@ import com.largata.itinerary.api.ItineraryResponse;
 import com.largata.itinerary.api.UpdateItineraryRequest;
 import com.largata.membership.MembershipService;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,7 +52,7 @@ class ItineraryController {
                         request.startDate(),
                         request.endDate(),
                         request.durationDaysOrZero());
-        return ItineraryResponse.of(created.itinerary(), created.days());
+        return ItineraryResponse.of(created);
     }
 
 
@@ -61,7 +60,7 @@ class ItineraryController {
     ItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -79,7 +78,7 @@ class ItineraryController {
                 request.startDate(),
                 request.endDate());
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -88,7 +87,7 @@ class ItineraryController {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.start(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -97,7 +96,7 @@ class ItineraryController {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.complete(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -109,7 +108,7 @@ class ItineraryController {
             @RequestParam(defaultValue = "false") boolean archived) {
         return itineraries
                 .listMine(traveler.id(), cursor, limit, archived)
-                .map(itinerary -> ItineraryResponse.of(itinerary, List.of(), archived));
+                .map(itinerary -> ItineraryResponse.summaryOf(itinerary, itineraries.stateOf(itinerary.id())));
     }
 
 
@@ -118,7 +117,7 @@ class ItineraryController {
         Membership membership = guard.requireMember(traveler.id(), id);
         memberships.archive(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -127,6 +126,6 @@ class ItineraryController {
         Membership membership = guard.requireMember(traveler.id(), id);
         memberships.unarchive(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 }

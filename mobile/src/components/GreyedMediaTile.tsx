@@ -1,13 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from './comingSoon';
+import { COMING_SOON_SURFACES, type ComingSoonSurface } from './comingSoonMessage';
 import { colors, radii, spacing, typography } from '../theme';
 
 
-export function GreyedMediaTile({ label }: { label: string }) {
+export function GreyedMediaTile({ surface }: { surface: ComingSoonSurface }) {
+  const label = COMING_SOON_SURFACES[surface];
   return (
     <Pressable
       style={styles.tile}
-      onPress={() => comingSoon(label)}
+      onPress={() => comingSoon(surface)}
       accessibilityRole="button"
       accessibilityState={{ disabled: true }}
       accessibilityLabel={`${label}, coming soon`}

@@ -1,7 +1,10 @@
 package com.largata.itinerary.api;
 
-import com.largata.itinerary.DayView;
+import com.largata.identity.TravelerSummary;
 import com.largata.itinerary.Itinerary;
+import com.largata.itinerary.ItineraryPlan;
+import com.largata.itinerary.LeaseSubject;
+import com.largata.workspace.WorkspaceState;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,20 +24,14 @@ public record ItineraryResponse(
         UUID lastEditedBy,
         Instant lastEditedAt,
         List<DayResponse> days,
-        Instant createdAt) {
+        Instant createdAt,
+        String workspaceState,
+        String lastEditedByHandle,
+        String lastEditedByName,
+        LeaseHolderResponse lease) {
 
 
-    public static ItineraryResponse of(Itinerary itinerary) {
-        return of(itinerary, List.of(), false);
-    }
-
-
-    public static ItineraryResponse of(Itinerary itinerary, List<DayView> days) {
-        return of(itinerary, days, false);
-    }
-
-
-    public static ItineraryResponse of(Itinerary itinerary, List<DayView> days, boolean archived) {
+    public static ItineraryResponse summaryOf(Itinerary itinerary, WorkspaceState workspaceState) {
         return new ItineraryResponse(
                 itinerary.id(),
                 itinerary.title(),
@@ -44,10 +41,38 @@ public record ItineraryResponse(
                 itinerary.endDate(),
                 itinerary.state().wireName(),
                 itinerary.visibility().wireName(),
-                archived,
+                workspaceState.isArchived(),
                 itinerary.lastEditedBy(),
                 itinerary.lastEditedAt(),
-                days.stream().map(DayResponse::of).toList(),
-                itinerary.createdAt());
+                List.of(),
+                itinerary.createdAt(),
+                workspaceState.wireName(),
+                null,
+                null,
+                null);
+    }
+
+
+    public static ItineraryResponse of(ItineraryPlan plan) {
+        Itinerary itinerary = plan.itinerary();
+        TravelerSummary editor = plan.editor(itinerary.lastEditedBy());
+        return new ItineraryResponse(
+                itinerary.id(),
+                itinerary.title(),
+                itinerary.destinations(),
+                itinerary.description(),
+                itinerary.startDate(),
+                itinerary.endDate(),
+                itinerary.state().wireName(),
+                itinerary.visibility().wireName(),
+                plan.archived(),
+                itinerary.lastEditedBy(),
+                itinerary.lastEditedAt(),
+                plan.days().stream().map(day -> DayResponse.annotated(day, plan)).toList(),
+                itinerary.createdAt(),
+                plan.workspaceState().wireName(),
+                editor == null ? null : editor.handle(),
+                editor == null ? null : editor.displayName(),
+                LeaseHolderResponse.of(plan.holderOf(LeaseSubject.header(itinerary.id()))));
     }
 }

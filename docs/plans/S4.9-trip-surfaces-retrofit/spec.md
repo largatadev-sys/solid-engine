@@ -131,3 +131,81 @@ Publish (S4.1) · chat build + history surface (S4.10) · fork + chooser activat
 ## Comments
 
 *(append-only; intent above is immutable)*
+
+### 2026-07-31 — decision 13's "no chooser until S4.7" is reversed: the chooser ships now, fork greyed (founder-ruled, at the device walk)
+
+Decision 13 ruled *"**No chooser until S4.7** (re-confirms the S1.3 ruling): **+** routes straight to Trip Details; S4.7 supplies the second card and activates the chooser."* Founder ruling at the walk: **+ opens `create-trip-entry`, with both cards drawn and Fork greyed** (`comingSoon('fork')` + register-#2 analytics) until S4.7 implements it.
+
+Why the reversal is cheap where the original ruling was cautious: the objection to a chooser was a one-option chooser — a screen that asks a question with a single answer. Greying the second card answers that: the traveler sees that forking exists and is coming, which is the same argument that put the cover drop-zone, the Chat tab and the network section on screen greyed rather than absent. S4.7 activates the card instead of building the screen.
+
+Route: `+` → `/itineraries/create` → *Start from Scratch* → `/itineraries/new` (Trip Details, unchanged) → Continue → the day editor at Day 1.
+
+### 2026-07-31 — the screen chrome is the page, not a nav bar (founder-ruled, at the device walk)
+
+Every frame in the mock set puts its heading **inside `.body-pad`** — there is no header bar anywhere in the set. The build had been using the navigator's header, which produced a bordered bar above the content on every trip screen. All the trip-flow screens now set `headerShown: false` and render `ScreenHeader` as the first thing in the page.
+
+**`ScreenHeader` owns the safe-area inset**, and that is load-bearing rather than incidental: dropping the navigator header also drops the inset it was providing, so a screen that renders anything before the header collides with the camera cutout. It happened immediately — the workspace's eyebrow sat above the header and landed under the status bar. The fix is the mock's own grouping: eyebrow and title are **one block** (`ScreenHeader`'s `eyebrow` prop), so nothing can render above the inset by accident.
+
+Also corrected against the frames at the same pass: the settings **gear** replaces the "Details" text on the editor · the workspace eyebrow is `users` icon + "Private Workspace" in accent, not an all-caps overline · avatars **overlap** (`margin-left: -8`, 2px surface ring) instead of sitting in a gapped row · activity cost renders as a **sign** (`₱800`, grouped) rather than a code, and rejoins the editor card's meta line as `location • cost` — the gap the previous entry flagged · the time field is a **spinner picker**, 12-hour.
+
+### 2026-07-31 — decision 9 is partially reversed: the day surfaces split back into two (founder-ruled, at the device walk)
+
+Decision 9 ruled *"One day surface, two doors — the chips editor **is** the day screen … the `collaborative-edit` mock is this same screen's decorated state."* Built that way and walked on the device, the founder's read was that the consolidation is **where the confusion lives**: `trip-editor-days`, `collaborative-edit` and the workspace all appeared to do the same job. Ruling: **a workspace day card opens `collaborative-edit`, and `collaborative-edit` stays the screen the mock draws.** `trip-editor-days` is explicitly parked — *"I'll circle back to trip editor days once I get more clarity."*
+
+Reading the two frames side by side supports the split; they are not one screen decorated two ways, they are two jobs:
+
+| | `trip-editor-days` | `collaborative-edit` |
+|---|---|---|
+| header | trip title + settings gear | ← **Day 2: Ubud Market** |
+| day chips | Day 1 / 2 / 3 / **+** | none |
+| card | **grip** · time · name · **kebab** · `📍 Seminyak • ₱800` | time · name · `📍 Ubud Center` |
+| status | none | `Being edited by @…` + the `Updated …` pill |
+| action | **FAB** | View Activity History |
+
+So: **the editor builds the plan** (add/remove days, add activities, reorder, delete) and **the detail reads one day** (who is editing what, tap a card to edit it). Routes are `/itineraries/{id}/days` and `/itineraries/{id}/days/{dayId}`.
+
+**Consequences, stated rather than discovered later:**
+- **Ticket 05 AC 8 is inverted.** It asked that *"One day surface remains in the tree … no orphaned screen survives."* There are now two, deliberately; `tabRouting.test.ts` asserts the split and each screen's job instead of the merge.
+- **The detail screen has no add, no reorder, no day-title edit, no delete** — the mock draws none of them. Everything that builds the plan is reachable only from the editor, which today is reached only by the create flow's Continue (decision 13, unchanged). **That is the gap the parked `trip-editor-days` decision has to close**: as it stands, a returning traveler entering from the workspace can edit existing activities but cannot add one.
+- **Cost comes back into scope at that decision too.** The editor's card meta is `📍 Seminyak • ₱800` — location *and* cost; the detail's is location only. The interim day surface had dropped cost entirely; it now belongs on the editor card, where the mock puts it.
+
+### 2026-07-31 — the cross-mode duplicate check is one-directional by design (founder-ruled, during implementation)
+
+Ticket 02 asked for *"One pending invitation per workspace+target … across both addressing modes"*, and the first implementation held it both ways. The founder challenged the handle→email half on the merits and it does not survive:
+
+- **It made the handle path care about emails.** `inviteByHandle` resolved the invitee's account address (a `TravelerService.emailOf` added for that one line) purely to look for a pending email-invite. Identity handing an address to a module with no other reason to know it — the wrong coupling, and the wrong direction of dependency for two features whose whole distinction is that one addresses a **mailbox** and the other addresses a **traveler**.
+- **It was approximate anyway.** A traveler has one account email; the owner may have invited a different address they also control. So the check caught the common case and silently missed others — a check whose failure mode isn't clean, which this repo has been burned by three times.
+
+**Kept:** the email→id direction. `invite(email)` already calls `travelerIdsWithEmail` for the already-member check, so asking "does that traveler hold a pending id-invite" is free and **exact** — it asks who owns this precise address, not what address this person has.
+
+**Moved, not dropped:** the guarantee the removed half was standing in for now lives where it belongs. `accept` refuses when the caller is already a member (`ALREADY_A_MEMBER`, 409). That is strictly stronger than an issuance-time cross-check because it holds however the duplicate arose — cross-mode, a race between concurrent invites, or an address that changed after the invite went out.
+
+**The hole was real and this story opened it.** Before S4.9 a traveler had exactly one email, so two email-addressed invitations could never resolve to the same person, and `accept` could safely trust issuance. Adding a second addressing mode broke that assumption: `admitMember` persists straight into `membership`'s `PRIMARY KEY (workspace_id, traveler_id)`, so the second accept was a **500**, not a conflict. Verified by sabotage — `thatSameTravelerCanOnlyEverJoinOnce` fails with `expected:<409> but was:<500>` when the guard is removed.
+
+Net effect on the ticket AC: two pending invitations to one traveler are now *possible* (one per door) and *harmless* — the inbox shows both, either one joins them, the other is refused cleanly and the owner can revoke it.
+
+### 2026-07-31 — the trip flow moves inside the tab group so the nav bar persists (founder-ruled, at the fidelity pass)
+
+Every mock frame — `create-trip-entry`, `trip-editor-days`, `collaborative-edit`, `trip-workspace` — draws the bottom navbar, but the build pushed those screens onto the **root** Stack, which renders *over* the tab navigator. Founder ruling: **persist the nav bar on those screens.**
+
+`app/itineraries/**` and `app/members/**` moved to `app/(tabs)/itineraries/**` and `app/(tabs)/members/**`, each with a nested Stack layout, and both declared `href: null` in the tabs layout — the expo-router idiom for a route that lives *in* the tab navigator without being a tab. **No URL changed**: a route group contributes no path segment, so every `router.push`, `Link href`, `largata://` deep link and the onboarding gate's `useSegments()[0]` (already `(tabs)` for the Trips tab) behave exactly as before.
+
+The safe-area inset moved with it. The navigator had been insetting *every* scene, which would now double up against `ScreenHeader`'s own inset on the trip screens. The rule is now one line — **whoever draws the top of the screen owns the inset**: `ScreenHeader` for the trip flow, `bareScene(insets.top)` on the two tab screens that have no header of their own.
+
+Still open, unchanged by this: `trip-editor-days` remains parked at the founder's request, and with it (a) the route from the workspace back to the editor once a plan exists, and (b) the drag-handle deferral.
+
+### 2026-07-31 — mock fidelity is a standing rule, not an S4.9 note (founder-ruled)
+
+*"if mocks are available, it should try to copy exact screen or icon."* Recorded in `CLAUDE.md` under Hard rules rather than here, because it binds every story that ships against a mock set, not just this one. The S4.9 corrections that prompted it — "Details" text where the frame draws a cog, a header bar where the frame blends the heading into the page, non-overlapping avatars, a currency code where the frame shows a sign — were all answerable from the mock's own markup before the screen was written.
+
+### 2026-07-31 — the web preview renders in a phone-width frame (founder-ruled)
+
+*"the web preview should adjust based on the browser size but still true as mobile view. the nav bar at the bottom seems to overshoot with the screen."* The export filled the browser, so cards stretched to 1200px+ and the tab bar spanned the whole window — legible, but nothing like the artifact founders are being asked to judge.
+
+`MobileFrame` (a `.native`/`.web` fork on the established contract shape) caps the app at **393px — the mock's own `.phone` width** — centred, with the surrounding page in `surfaceMuted`. It is a **cap, not a fixed width**: below 393 the frame fills, so a phone browser sees no letterboxing. It wraps *outside* the navigator deliberately — react-navigation renders the tab bar as the last flex child of the navigator container, so constraining the container is what stops the bar overshooting; styling `tabBarStyle` alone would have left the scenes full-bleed. Native gets a passthrough fragment and no extra view in the tree.
+
+### 2026-07-31 — the create button is deliberately LARGER than the mock (founder-ruled)
+
+The mock's `.cfab` is **40×40**, which is what the build shipped — so this is not a fidelity gap being closed but a **deliberate override of the baseline**, recorded because the standing rule (`CLAUDE.md`, Hard rules) says deviations get stated rather than left to look like drift.
+
+*"let's enlarge the + icon on both web and mobile so the ux signal should be tap this to create trip, like that button will be the showcase."* Now 60×60 with a 30px glyph, lifted 18px above the bar with a background-coloured ring and a shadow, and the bar grown to 64 + inset so nothing clips. The test asserts it is **greater than the mock's 40**, naming `MOCK_CFAB_SIZE` — so the next person to read it sees the override is intentional rather than "wrong, per the frames".

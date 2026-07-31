@@ -74,7 +74,11 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         refused(put(
                 trip.owner,
                 "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/order",
-                "{\"activityIds\":[\"" + activityId + "\"]}"));
+                "{\"expectedActivityIds\":[\""
+                        + activityId
+                        + "\"],\"activityIds\":[\""
+                        + activityId
+                        + "\"]}"));
         refused(post(
                 trip.owner,
                 "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId + "/move",
@@ -100,6 +104,18 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
     }
 
 
+
+    @Test
+    void anArchivedTripTellsAMemberItIsFrozen_notThatTheyLackThePermission() {
+        Trip trip = liveTripWithTwoMembers();
+        UUID dayId = firstDayOf(trip.id);
+        archive(trip.owner, trip.id).expectStatus().isOk();
+
+        refused(post(trip.member, "/v1/itineraries/" + trip.id + "/days", """
+                {"title":"While frozen"}
+                """));
+        refused(delete(trip.member, "/v1/itineraries/" + trip.id + "/days/" + dayId));
+    }
 
     @Test
     void releasingTheEditLockIsNotFencedThoughAcquiringIs() {

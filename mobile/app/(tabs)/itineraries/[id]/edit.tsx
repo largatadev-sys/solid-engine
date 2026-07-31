@@ -1,21 +1,22 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ApiError } from '../../../src/api/ApiError';
-import { DatePicker } from '../../../src/components/DatePicker';
-import { archivedPlanNotice } from '../../../src/components/editLockedMessage';
-import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
-import { useEditLock } from '../../../src/hooks/useEditLock';
+import { ApiError } from '../../../../src/api/ApiError';
+import { DatePicker } from '../../../../src/components/DatePicker';
+import { archivedPlanNotice } from '../../../../src/components/editLockedMessage';
+import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
+import { useEditLock } from '../../../../src/hooks/useEditLock';
 import {
   addDestination,
   cleanDestinations,
   removeDestination,
   setDestination,
-} from '../../../src/itineraries/destinationsEditor';
-import { validateItineraryEdit } from '../../../src/itineraries/validateItineraryForm';
-import { useItinerary, useUpdateItinerary } from '../../../src/query/itineraryQueries';
-import type { UpdateItineraryRequest } from '../../../src/types/api';
-import { colors, radii, spacing, typography } from '../../../src/theme';
+} from '../../../../src/itineraries/destinationsEditor';
+import { validateItineraryEdit } from '../../../../src/itineraries/validateItineraryForm';
+import { useItinerary, useUpdateItinerary } from '../../../../src/query/itineraryQueries';
+import type { UpdateItineraryRequest } from '../../../../src/types/api';
+import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
 export default function EditItineraryScreen() {
@@ -28,7 +29,7 @@ export default function EditItineraryScreen() {
   const settledArchived = !isPlaceholderData && data !== undefined ? data.archived : undefined;
   useEffect(() => {
     if (settledArchived !== false) return;
-    void editLock.acquire().then((granted) => {
+    void editLock.acquire({ subjectType: 'header' }).then((granted) => {
       if (!granted) router.back();
     });
   }, [settledArchived]);
@@ -66,7 +67,6 @@ export default function EditItineraryScreen() {
   if (data?.archived === true) {
     return (
       <ScrollView contentContainerStyle={styles.container}>
-        <Stack.Screen options={{ title: 'Edit trip' }} />
         <Text style={styles.archivedTitle}>{archivedPlanNotice.title}</Text>
         <Text style={styles.archivedBody}>{archivedPlanNotice.body}</Text>
       </ScrollView>
@@ -75,10 +75,9 @@ export default function EditItineraryScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: 'Edit trip' }} />
+      <ScreenHeader title="Edit Trip" back />
 
-      {}
-      <GreyedMediaTile label="Cover photo" />
+      <GreyedMediaTile surface="coverPhoto" />
 
       <Field label="Trip title" value={title} onChangeText={setTitle} placeholder="Island Hopping in El Nido" />
 
@@ -90,6 +89,7 @@ export default function EditItineraryScreen() {
               style={styles.destinationInput}
               value={destination}
               onChangeText={(text) => setDestinations((prev) => setDestination(prev, index, text))}
+              accessibilityLabel={`Destination ${index + 1}`}
               placeholder="Palawan"
               placeholderTextColor={colors.textSecondary}
             />
@@ -153,6 +153,7 @@ function Field(props: {
         style={[styles.input, props.multiline === true && styles.inputMultiline]}
         value={props.value}
         onChangeText={props.onChangeText}
+        accessibilityLabel={props.label}
         placeholder={props.placeholder}
         placeholderTextColor={colors.textSecondary}
         multiline={props.multiline ?? false}

@@ -5,10 +5,17 @@ import type { ItineraryResponse } from '../types/api';
 import { formatDates } from './formatDates';
 
 
+export function tripRowDestination(itinerary: Pick<ItineraryResponse, 'id' | 'archived'>) {
+  return itinerary.archived
+    ? { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } }
+    : { pathname: '/itineraries/[id]/days' as const, params: { id: itinerary.id, day: '1' } };
+}
+
+
 export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
   return (
-    <Link href={`/itineraries/${itinerary.id}`} asChild>
-      <Pressable style={styles.row} accessibilityRole="button">
+    <Link href={tripRowDestination(itinerary)} asChild>
+      <Pressable style={styles.row} accessibilityRole="button" accessibilityLabel={itinerary.title}>
         <View style={styles.rowHeader}>
           <Text style={styles.rowTitle} numberOfLines={1}>
             {itinerary.title}

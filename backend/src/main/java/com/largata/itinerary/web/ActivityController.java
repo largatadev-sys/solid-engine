@@ -77,7 +77,8 @@ class ActivityController {
             @PathVariable UUID dayId,
             @Valid @RequestBody ReorderActivitiesRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return DayResponse.of(activities.reorder(member, dayId, request.activityIds()));
+        return DayResponse.of(
+                activities.reorder(member, dayId, request.expectedActivityIds(), request.activityIds()));
     }
 
 

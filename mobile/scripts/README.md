@@ -229,10 +229,13 @@ the old spelling is gone everywhere and the probe silently starts answering CURR
 the next release needs a currency check, **re-point it at a string that changed in that release** and
 re-prove both directions, exactly as this one was.
 
-## `drive-edit-lock.js` — S1.4 edit-lock prober
+## `drive-edit-lock.js` — header-lease prober *(S1.4; rewritten at S4.9 for subject-typed leases)*
 
 Signs a pool account in via Identity Toolkit, plants the session in `localStorage`, drives headless
-Chrome to a trip's `/edit` route and intercepts `window.alert` over CDP to prove the lock modal
-actually fires on web. Env: the three pool vars plus **`TRIP_ID` (required)**, optional
+Chrome to a trip's `/edit` route, types a title change, clicks Save, and intercepts `window.alert`
+over CDP to prove the lock modal actually fires on web. **Saving is what acquires the header lease** —
+S4.9's subject-typed leases removed acquire-on-entry, so a driver that only navigates proves nothing.
+
+Env: the three pool vars plus **`TRIP_ID` (required)**, optional
 `LARGATA_POOL_TAG` (default `t2`), optional `LARGATA_PREVIEW_URL` (default `http://localhost:8081`),
 optional `LARGATA_CHROME`.

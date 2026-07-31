@@ -28,8 +28,9 @@ class InvitationController {
 
 
     @GetMapping
-    Page<InboxInvitationResponse> inbox(@AuthEmail VerifiedContact contact) {
-        return Page.exhausted(invitations.inbox(contact).stream().map(InboxInvitationResponse::of).toList());
+    Page<InboxInvitationResponse> inbox(@CurrentTraveler Traveler traveler, @AuthEmail VerifiedContact contact) {
+        return Page.exhausted(
+                invitations.inbox(contact, traveler.id()).stream().map(InboxInvitationResponse::of).toList());
     }
 
     @PostMapping("/{invitationId}/accept")
@@ -40,8 +41,11 @@ class InvitationController {
 
     @PostMapping("/{invitationId}/decline")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void decline(@AuthEmail VerifiedContact contact, @PathVariable UUID invitationId) {
-        invitations.decline(invitationId, contact);
+    void decline(
+            @CurrentTraveler Traveler traveler,
+            @AuthEmail VerifiedContact contact,
+            @PathVariable UUID invitationId) {
+        invitations.decline(invitationId, contact, traveler.id());
     }
 
     @PostMapping("/{invitationId}/revoke")

@@ -55,6 +55,7 @@ class DayStorageIT extends PostgresTestBase {
         Itinerary trip = itineraries.create(UUID.randomUUID(), "Palawan", List.of("Palawan"), null, null, null, 5);
         Membership member = ownerOf(trip);
         UUID thirdDay = dayIdAtOrdinal(trip.id(), 3);
+        editLease.acquire(member, LeaseSubject.day(thirdDay));
 
         days.deleteDay(member, thirdDay);
 
@@ -103,8 +104,6 @@ class DayStorageIT extends PostgresTestBase {
 
 
     private Membership ownerOf(Itinerary itinerary) {
-        Membership member = new Membership(itinerary.ownerId(), itinerary.id(), Role.OWNER);
-        editLease.acquire(member);
-        return member;
+        return new Membership(itinerary.ownerId(), itinerary.id(), Role.OWNER);
     }
 }

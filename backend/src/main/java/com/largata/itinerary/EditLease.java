@@ -1,7 +1,10 @@
 package com.largata.itinerary;
 
+import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -12,9 +15,17 @@ import java.util.UUID;
 @Table(name = "edit_lease")
 class EditLease {
 
-    @Id
-    @Column(name = "itinerary_id", updatable = false)
+    @Id private UUID id;
+
+    @Column(name = "itinerary_id", nullable = false, updatable = false)
     private UUID itineraryId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "subject_type", nullable = false, updatable = false)
+    private LeaseSubjectType subjectType;
+
+    @Column(name = "subject_id", nullable = false, updatable = false)
+    private UUID subjectId;
 
     @Column(name = "holder_id", nullable = false)
     private UUID holderId;
@@ -28,19 +39,29 @@ class EditLease {
     protected EditLease() {
     }
 
-    private EditLease(UUID itineraryId, UUID holderId, Instant acquiredAt, Instant expiresAt) {
+    private EditLease(
+            UUID id,
+            UUID itineraryId,
+            LeaseSubject subject,
+            UUID holderId,
+            Instant acquiredAt,
+            Instant expiresAt) {
+        this.id = id;
         this.itineraryId = itineraryId;
+        this.subjectType = subject.type();
+        this.subjectId = subject.id();
         this.holderId = holderId;
         this.acquiredAt = acquiredAt;
         this.expiresAt = expiresAt;
     }
 
 
-    static EditLease heldBy(UUID itineraryId, UUID holderId, Instant acquiredAt, Instant expiresAt) {
-        if (itineraryId == null || holderId == null || acquiredAt == null || expiresAt == null) {
-            throw new IllegalArgumentException("A lease names an itinerary, a holder, and its window");
+    static EditLease heldBy(
+            UUID itineraryId, LeaseSubject subject, UUID holderId, Instant acquiredAt, Instant expiresAt) {
+        if (itineraryId == null || subject == null || holderId == null || acquiredAt == null || expiresAt == null) {
+            throw new IllegalArgumentException("A lease names an itinerary, a subject, a holder, and its window");
         }
-        return new EditLease(itineraryId, holderId, acquiredAt, expiresAt);
+        return new EditLease(UuidV7.generate(), itineraryId, subject, holderId, acquiredAt, expiresAt);
     }
 
 
@@ -66,6 +87,10 @@ class EditLease {
 
     UUID itineraryId() {
         return itineraryId;
+    }
+
+    LeaseSubject subject() {
+        return new LeaseSubject(subjectType, subjectId);
     }
 
     UUID holderId() {

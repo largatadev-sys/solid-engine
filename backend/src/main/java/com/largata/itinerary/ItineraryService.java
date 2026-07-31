@@ -7,13 +7,20 @@ import com.largata.common.api.Page;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
+import com.largata.identity.TravelerService;
+import com.largata.identity.TravelerSummary;
 import com.largata.workspace.WorkspaceService;
+import com.largata.workspace.WorkspaceState;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +44,8 @@ public class ItineraryService {
     private final WorkspaceService workspaces;
     private final DayService days;
     private final EditLeaseService editLease;
+    private final ActivityHistoryService history;
+    private final TravelerService travelers;
     private final WriteFence fence;
     private final Analytics analytics;
 
@@ -45,12 +54,16 @@ public class ItineraryService {
             WorkspaceService workspaces,
             DayService days,
             EditLeaseService editLease,
+            ActivityHistoryService history,
+            TravelerService travelers,
             WriteFence fence,
             Analytics analytics) {
         this.itineraries = itineraries;
         this.workspaces = workspaces;
         this.days = days;
         this.editLease = editLease;
+        this.history = history;
+        this.travelers = travelers;
         this.fence = fence;
         this.analytics = analytics;
     }
@@ -94,7 +107,7 @@ public class ItineraryService {
             int durationDays) {
         Itinerary itinerary =
                 create(ownerId, title, destinations, description, startDate, endDate, durationDays);
-        return new ItineraryPlan(itinerary, days.plan(itinerary.id()), false);
+        return assemble(itinerary, days.plan(itinerary.id()));
     }
 
 
@@ -132,10 +145,34 @@ public class ItineraryService {
 
     @Transactional(readOnly = true)
     public ItineraryPlan viewPlan(Membership membership) {
+        return assemble(view(membership), days.plan(membership.itineraryId()));
+    }
+
+
+    @Transactional(readOnly = true)
+    public WorkspaceState stateOf(UUID itineraryId) {
+        return workspaces.stateOf(itineraryId).orElse(WorkspaceState.ACTIVE);
+    }
+
+
+    private ItineraryPlan assemble(Itinerary itinerary, List<DayView> plan) {
+        Set<UUID> editorIds = new LinkedHashSet<>();
+        if (itinerary.lastEditedBy() != null) {
+            editorIds.add(itinerary.lastEditedBy());
+        }
+        plan.forEach(
+                day ->
+                        day.activities().stream()
+                                .map(ActivityView::lastEditedBy)
+                                .filter(Objects::nonNull)
+                                .forEach(editorIds::add));
+        Map<UUID, TravelerSummary> editors =
+                editorIds.isEmpty()
+                        ? Map.of()
+                        : travelers.summariesByIds(editorIds).stream()
+                                .collect(Collectors.toMap(TravelerSummary::id, Function.identity()));
         return new ItineraryPlan(
-                view(membership),
-                days.plan(membership.itineraryId()),
-                workspaces.isArchived(membership.itineraryId()));
+                itinerary, plan, stateOf(itinerary.id()), editLease.liveHoldersFor(itinerary.id()), editors);
     }
 
 
@@ -147,7 +184,7 @@ public class ItineraryService {
             String description,
             LocalDate startDate,
             LocalDate endDate) {
-        editLease.requireHeldBy(member);
+        editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
         Itinerary itinerary =
                 itineraries
                         .findById(member.itineraryId())
@@ -155,6 +192,7 @@ public class ItineraryService {
                                 "The guard authorized a membership for an itinerary that does not exist"));
         itinerary.editFields(title, destinations, description, startDate, endDate, member.travelerId(), Instant.now());
         itineraries.save(itinerary);
+        history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(itinerary.id()));
         log.info("Itinerary edited: id={} editor={}", itinerary.id(), member.travelerId());
         AfterCommit.run(
                 () ->

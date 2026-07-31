@@ -45,6 +45,16 @@ class TripMembershipController {
         return InvitationResponse.of(invitations.invite(membership, request.email()));
     }
 
+    @PostMapping("/invitations/by-handle")
+    @ResponseStatus(HttpStatus.CREATED)
+    InvitationResponse inviteByHandle(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID itineraryId,
+            @Valid @RequestBody InviteByHandleRequest request) {
+        Membership membership = guard.requireMember(traveler.id(), itineraryId);
+        return InvitationResponse.of(invitations.inviteByHandle(membership, request.handle()));
+    }
+
     @GetMapping("/invitations")
     Page<InvitationResponse> pendingInvitations(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);

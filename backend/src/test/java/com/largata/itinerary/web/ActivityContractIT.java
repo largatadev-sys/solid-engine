@@ -40,7 +40,6 @@ class ActivityContractIT extends PostgresTestBase {
         UUID dayId = firstDayId(tripId);
         String memberToken = admitMemberTo(tripId);
         UUID memberId = travelerIdOf(memberToken);
-        lock(memberToken, tripId);
 
         rest.post()
                 .uri(activitiesUri(tripId, dayId))
@@ -67,6 +66,7 @@ class ActivityContractIT extends PostgresTestBase {
                 .jsonPath("$.lastEditedBy")
                 .isEqualTo(memberId.toString());
         UUID activityId = activityIdOn(dayId);
+        holdActivity(memberToken, tripId, activityId.toString());
 
         rest.patch()
                 .uri(activitiesUri(tripId, dayId) + "/" + activityId)
@@ -98,7 +98,6 @@ class ActivityContractIT extends PostgresTestBase {
         String ownerToken = freshTraveler();
         String tripId = createTripWithADay(ownerToken);
         UUID dayId = firstDayId(tripId);
-        lock(ownerToken, tripId);
         String activityId = createActivity(ownerToken, tripId, dayId, "Private");
         String stranger = freshTraveler();
 
@@ -189,7 +188,6 @@ class ActivityContractIT extends PostgresTestBase {
     void anActivityOfAnotherDayIsNotFound() {
         String token = freshTraveler();
         String tripId = createTripWithADay(token);
-        lock(token, tripId);
         UUID dayA = firstDayId(tripId);
         String dayBId = appendDay(token, tripId);
         String onB = createActivity(token, tripId, UUID.fromString(dayBId), "On B");
@@ -216,7 +214,6 @@ class ActivityContractIT extends PostgresTestBase {
         String tripId = createTripWithADay(ownerToken);
         UUID dayId = firstDayId(tripId);
         String memberToken = admitMemberTo(tripId);
-        lock(memberToken, tripId);
         String a = createActivity(memberToken, tripId, dayId, "A");
         String b = createActivity(memberToken, tripId, dayId, "B");
         String c = createActivity(memberToken, tripId, dayId, "C");
@@ -225,7 +222,20 @@ class ActivityContractIT extends PostgresTestBase {
                 .uri(activitiesUri(tripId, dayId) + "/order")
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"activityIds\":[\"" + c + "\",\"" + a + "\",\"" + b + "\"]}")
+                .body(
+                        "{\"expectedActivityIds\":[\""
+                                + a
+                                + "\",\""
+                                + b
+                                + "\",\""
+                                + c
+                                + "\"],\"activityIds\":[\""
+                                + c
+                                + "\",\""
+                                + a
+                                + "\",\""
+                                + b
+                                + "\"]}")
                 .exchange()
                 .expectStatus()
                 .isOk()
@@ -251,32 +261,41 @@ class ActivityContractIT extends PostgresTestBase {
     }
 
     @Test
-    void aStaleReorderListIsA400() {
+    void aReorderListingTheWrongSetIsA400NotAConflict() {
         String token = freshTraveler();
         String tripId = createTripWithADay(token);
-        lock(token, tripId);
         UUID dayId = firstDayId(tripId);
         String a = createActivity(token, tripId, dayId, "A");
-        createActivity(token, tripId, dayId, "B");
+        String b = createActivity(token, tripId, dayId, "B");
 
         rest.put()
                 .uri(activitiesUri(tripId, dayId) + "/order")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"activityIds\":[\"" + a + "\"]}")
+                .body(
+                        "{\"expectedActivityIds\":[\""
+                                + a
+                                + "\",\""
+                                + b
+                                + "\"],\"activityIds\":[\""
+                                + a
+                                + "\"]}")
                 .exchange()
                 .expectStatus()
-                .isBadRequest();
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("INVALID_REORDER");
     }
 
     @Test
     void aMemberMovesAnActivityToAnotherDay() {
         String token = freshTraveler();
         String tripId = createTripWithADay(token);
-        lock(token, tripId);
         UUID dayA = firstDayId(tripId);
         String dayBId = appendDay(token, tripId);
         String moving = createActivity(token, tripId, dayA, "Moving");
+        holdActivity(token, tripId, moving);
 
         rest.post()
                 .uri(activitiesUri(tripId, dayA) + "/" + moving + "/move")
@@ -302,7 +321,6 @@ class ActivityContractIT extends PostgresTestBase {
     void aNonMemberCannotReorderOrMove() {
         String ownerToken = freshTraveler();
         String tripId = createTripWithADay(ownerToken);
-        lock(ownerToken, tripId);
         UUID dayId = firstDayId(tripId);
         String activityId = createActivity(ownerToken, tripId, dayId, "Mine");
         String dayBId = appendDay(ownerToken, tripId);
@@ -312,7 +330,12 @@ class ActivityContractIT extends PostgresTestBase {
                 .uri(activitiesUri(tripId, dayId) + "/order")
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"activityIds\":[\"" + activityId + "\"]}")
+                .body(
+                        "{\"expectedActivityIds\":[\""
+                                + activityId
+                                + "\"],\"activityIds\":[\""
+                                + activityId
+                                + "\"]}")
                 .exchange()
                 .expectStatus()
                 .isNotFound();
@@ -348,10 +371,12 @@ class ActivityContractIT extends PostgresTestBase {
     }
 
 
-    private void lock(String token, String tripId) {
+    private void holdActivity(String token, String tripId, String activityId) {
         rest.post()
                 .uri("/v1/itineraries/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"subjectType\":\"activity\",\"subjectId\":\"" + activityId + "\"}")
                 .exchange()
                 .expectStatus()
                 .isOk();

@@ -7,6 +7,7 @@ import type {
   DayResponse,
   EditLeaseResponse,
   ItineraryResponse,
+  LeaseSubject,
   MoveActivityRequest,
   Page,
   ReorderActivitiesRequest,
@@ -105,15 +106,15 @@ export const itineraryRepository = {
   },
 
 
-  async acquireEditLock(itineraryId: string): Promise<EditLeaseResponse> {
-    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock`, undefined);
+  async acquireEditLock(itineraryId: string, subject: LeaseSubject): Promise<EditLeaseResponse> {
+    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock`, subject);
   },
 
-  async renewEditLock(itineraryId: string): Promise<EditLeaseResponse> {
-    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock/renew`, undefined);
+  async renewEditLock(itineraryId: string, subject: LeaseSubject): Promise<EditLeaseResponse> {
+    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock/renew`, subject);
   },
 
-  async releaseEditLock(itineraryId: string): Promise<void> {
-    return apiClient.delete(`/v1/itineraries/${itineraryId}/edit-lock`);
+  async releaseEditLock(itineraryId: string, subject: LeaseSubject): Promise<void> {
+    return apiClient.delete(`/v1/itineraries/${itineraryId}/edit-lock`, subject);
   },
 };

@@ -1,5 +1,5 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,17 +9,20 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ApiError } from '../../../src/api/ApiError';
-import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
-import { validateActivityForm } from '../../../src/itineraries/validateActivityForm';
+import { ApiError } from '../../../../src/api/ApiError';
+import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
+import { TimePicker } from '../../../../src/components/TimePicker';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
+import { useEditLock } from '../../../../src/hooks/useEditLock';
+import { validateActivityForm } from '../../../../src/itineraries/validateActivityForm';
 import {
   useCreateActivity,
   useEditActivity,
   useItinerary,
   useMoveActivity,
-} from '../../../src/query/itineraryQueries';
-import type { ActivityRequest, ActivityResponse, DayResponse } from '../../../src/types/api';
-import { colors, radii, spacing, typography } from '../../../src/theme';
+} from '../../../../src/query/itineraryQueries';
+import type { ActivityRequest, ActivityResponse, DayResponse } from '../../../../src/types/api';
+import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
 export default function ActivityFormScreen() {
@@ -34,6 +37,14 @@ export default function ActivityFormScreen() {
   const edit = useEditActivity(id);
   const move = useMoveActivity(id);
   const mutation = isEdit ? edit : create;
+
+  const editLock = useEditLock(id);
+  useEffect(() => {
+    if (activityId === undefined) return;
+    void editLock.acquire({ subjectType: 'activity', subjectId: activityId }).then((granted) => {
+      if (!granted) router.back();
+    });
+  }, [activityId]);
 
   const otherDays = (data?.days ?? []).filter((d) => d.id !== dayId);
 
@@ -63,7 +74,12 @@ export default function ActivityFormScreen() {
       ...opt('externalUrl', externalUrl),
     };
 
-    const onDone = { onSuccess: () => router.back() };
+    const onDone = {
+      onSuccess: () => {
+        editLock.release();
+        router.back();
+      },
+    };
     if (isEdit) {
       edit.mutate({ dayId, activityId, request }, onDone);
     } else {
@@ -75,14 +91,13 @@ export default function ActivityFormScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: isEdit ? 'Edit activity' : 'Add activity' }} />
+      <ScreenHeader title={isEdit ? 'Edit Activity' : 'Add Activity'} back />
 
       <Field label="Activity name" value={title} onChangeText={setTitle} placeholder="Airport Transfer" />
 
+      <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
+
       <View style={styles.row}>
-        <View style={styles.rowItem}>
-          <Field label="Time (24h)" value={timeOfDay} onChangeText={setTimeOfDay} placeholder="14:00" />
-        </View>
         <View style={styles.rowItem}>
           <Field
             label="Est. cost"
@@ -101,8 +116,7 @@ export default function ActivityFormScreen() {
       <Field label="Description" value={description} onChangeText={setDescription} placeholder="What happens here?" multiline />
       <Field label="Notes & tips (private)" value={notes} onChangeText={setNotes} placeholder="Anything for your group" multiline />
 
-      {}
-      <GreyedMediaTile label="Add photo" />
+      <GreyedMediaTile surface="activityPhoto" />
 
       <Field label="Booking link" value={externalUrl} onChangeText={setExternalUrl} placeholder="https://…" keyboardType="url" />
 
@@ -123,7 +137,6 @@ export default function ActivityFormScreen() {
         )}
       </Pressable>
 
-      {}
       {isEdit && otherDays.length > 0 && (
         <View style={styles.moveSection}>
           <Text style={styles.label}>Move to another day</Text>
@@ -185,6 +198,7 @@ function Field(props: {
         style={[styles.input, props.multiline === true && styles.inputMultiline]}
         value={props.value}
         onChangeText={props.onChangeText}
+        accessibilityLabel={props.label}
         placeholder={props.placeholder}
         placeholderTextColor={colors.textSecondary}
         autoCapitalize={props.keyboardType === 'url' ? 'none' : 'sentences'}
