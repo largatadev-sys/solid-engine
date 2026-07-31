@@ -125,17 +125,16 @@ class DayContractIT extends PostgresTestBase {
     }
 
     @Test
-    void aMemberWhoIsNotTheOwnerCanBuildTheDaySkeleton() {
+    void theOwnerBuildsTheDaySkeletonAndAMemberOnlyTitlesIt() {
         String ownerToken = freshTraveler();
         String tripId = createItinerary(ownerToken, """
                 {"title":"Cebu","destinations":["Cebu"]}
                 """);
         String memberToken = admitMemberTo(tripId);
-        lock(memberToken, tripId);
 
         rest.post()
                 .uri("/v1/itineraries/" + tripId + "/days")
-                .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
+                .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
                         {"title":"Arrival & Sunsets"}
@@ -150,6 +149,7 @@ class DayContractIT extends PostgresTestBase {
                 .isEqualTo("Arrival & Sunsets");
 
         UUID firstDayId = dayIdAtOrdinal(tripId, 1);
+        lock(memberToken, tripId, firstDayId);
         rest.patch()
                 .uri("/v1/itineraries/" + tripId + "/days/" + firstDayId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
@@ -169,9 +169,11 @@ class DayContractIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .exchange()
                 .expectStatus()
-                .isNoContent();
+                .isForbidden();
 
-        assertThat(dayCount(tripId)).as("the member's delete removed the day").isEqualTo(0);
+        assertThat(dayCount(tripId))
+                .as("day add/delete is owner-only for now — S4.9 decision 3, revisited at the validation gate")
+                .isEqualTo(1);
     }
 
     @Test
@@ -184,7 +186,7 @@ class DayContractIT extends PostgresTestBase {
                         {"title":"Palawan","destinations":["Palawan"],"durationDays":5}
                         """);
         UUID thirdDay = dayIdAtOrdinal(tripId, 3);
-        lock(token, tripId);
+        lock(token, tripId, thirdDay);
 
         rest.method(org.springframework.http.HttpMethod.DELETE)
                 .uri("/v1/itineraries/" + tripId + "/days/" + thirdDay)
@@ -258,7 +260,7 @@ class DayContractIT extends PostgresTestBase {
                 {"title":"B","destinations":["B"],"durationDays":1}
                 """);
         UUID dayOfB = dayIdAtOrdinal(tripB, 1);
-        lock(token, tripA);
+        lock(token, tripA, dayIdAtOrdinal(tripA, 1));
 
         rest.patch()
                 .uri("/v1/itineraries/" + tripA + "/days/" + dayOfB)
@@ -277,10 +279,12 @@ class DayContractIT extends PostgresTestBase {
 
 
 
-    private void lock(String token, String itineraryId) {
+    private void lock(String token, String itineraryId, UUID dayId) {
         rest.post()
                 .uri("/v1/itineraries/" + itineraryId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"subjectType\":\"day\",\"subjectId\":\"" + dayId + "\"}")
                 .exchange()
                 .expectStatus()
                 .isOk();

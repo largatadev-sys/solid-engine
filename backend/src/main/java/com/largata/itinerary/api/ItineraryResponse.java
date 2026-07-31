@@ -1,7 +1,10 @@
 package com.largata.itinerary.api;
 
+import com.largata.identity.TravelerSummary;
 import com.largata.itinerary.DayView;
 import com.largata.itinerary.Itinerary;
+import com.largata.itinerary.ItineraryPlan;
+import com.largata.itinerary.LeaseSubject;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,7 +24,10 @@ public record ItineraryResponse(
         UUID lastEditedBy,
         Instant lastEditedAt,
         List<DayResponse> days,
-        Instant createdAt) {
+        Instant createdAt,
+        String lastEditedByHandle,
+        String lastEditedByName,
+        LeaseHolderResponse lease) {
 
 
     public static ItineraryResponse of(Itinerary itinerary) {
@@ -35,6 +41,18 @@ public record ItineraryResponse(
 
 
     public static ItineraryResponse of(Itinerary itinerary, List<DayView> days, boolean archived) {
+        return build(itinerary, days, archived, null);
+    }
+
+
+    public static ItineraryResponse of(ItineraryPlan plan) {
+        return build(plan.itinerary(), plan.days(), plan.archived(), plan);
+    }
+
+
+    private static ItineraryResponse build(
+            Itinerary itinerary, List<DayView> days, boolean archived, ItineraryPlan plan) {
+        TravelerSummary editor = plan == null ? null : plan.editor(itinerary.lastEditedBy());
         return new ItineraryResponse(
                 itinerary.id(),
                 itinerary.title(),
@@ -47,7 +65,10 @@ public record ItineraryResponse(
                 archived,
                 itinerary.lastEditedBy(),
                 itinerary.lastEditedAt(),
-                days.stream().map(DayResponse::of).toList(),
-                itinerary.createdAt());
+                days.stream().map(day -> DayResponse.of(day, plan)).toList(),
+                itinerary.createdAt(),
+                editor == null ? null : editor.handle(),
+                editor == null ? null : editor.displayName(),
+                plan == null ? null : LeaseHolderResponse.of(plan.holderOf(LeaseSubject.header(itinerary.id()))));
     }
 }

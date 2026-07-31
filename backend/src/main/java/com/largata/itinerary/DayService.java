@@ -3,6 +3,7 @@ package com.largata.itinerary;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -24,6 +25,8 @@ public class DayService {
     private final DayRepository days;
     private final ActivityRepository activities;
     private final EditLeaseService editLease;
+    private final ActivityHistoryService history;
+    private final WriteFence fence;
     private final Analytics analytics;
 
     @PersistenceContext private EntityManager entityManager;
@@ -32,10 +35,14 @@ public class DayService {
             DayRepository days,
             ActivityRepository activities,
             EditLeaseService editLease,
+            ActivityHistoryService history,
+            WriteFence fence,
             Analytics analytics) {
         this.days = days;
         this.activities = activities;
         this.editLease = editLease;
+        this.history = history;
+        this.fence = fence;
         this.analytics = analytics;
     }
 
@@ -67,7 +74,7 @@ public class DayService {
 
     @Transactional
     public DayView appendDay(Membership member, String title) {
-        editLease.requireHeldBy(member);
+        requireOwner(member);
         UUID itineraryId = member.itineraryId();
         long existing = days.countByItineraryId(itineraryId);
         if (existing >= Itinerary.MAX_DAYS) {
@@ -75,6 +82,7 @@ public class DayService {
         }
         int ordinal = (int) existing + 1;
         Day day = days.save(Day.at(itineraryId, ordinal, title, Instant.now()));
+        history.record(member, HistoryAct.DAY_ADDED, LeaseSubject.day(day.id()));
         log.info("Day appended: itineraryId={} dayId={} ordinal={}", itineraryId, day.id(), ordinal);
         emit(member, "day_added", itineraryId);
         return DayView.of(day, List.of());
@@ -83,10 +91,11 @@ public class DayService {
 
     @Transactional
     public DayView renameDay(Membership member, UUID dayId, String title) {
-        editLease.requireHeldBy(member);
         Day day = require(member.itineraryId(), dayId);
+        editLease.requireHeldBy(member, LeaseSubject.day(dayId));
         day.rename(title);
         days.save(day);
+        history.record(member, HistoryAct.DAY_RENAMED, LeaseSubject.day(dayId));
         log.info("Day renamed: itineraryId={} dayId={}", member.itineraryId(), dayId);
         return DayView.of(day, activities.findByDayIdOrderBySortOrderAscIdAsc(day.id()));
     }
@@ -94,13 +103,24 @@ public class DayService {
 
     @Transactional
     public void deleteDay(Membership member, UUID dayId) {
-        editLease.requireHeldBy(member);
+        requireOwner(member);
         UUID itineraryId = member.itineraryId();
         Day day = require(itineraryId, dayId);
-        int removedOrdinal = day.ordinal();
+        editLease.requireHeldBy(member, LeaseSubject.day(dayId));
 
+        List<UUID> containedIds =
+                activities.findByDayIdOrderBySortOrderAscIdAsc(dayId).stream().map(Activity::id).toList();
+        editLease
+                .activityLeaseHeldByAnother(containedIds, member.travelerId())
+                .ifPresent(holder -> {
+                    throw new DayHasLeasedActivityException(holder);
+                });
+
+        int removedOrdinal = day.ordinal();
         days.delete(day);
         entityManager.flush();
+        editLease.releaseSubjects(LeaseSubjectType.ACTIVITY, containedIds);
+        editLease.releaseSubjects(LeaseSubjectType.DAY, List.of(dayId));
 
         List<Day> toRenumber =
                 days.findByItineraryIdOrderByOrdinalAsc(itineraryId).stream()
@@ -110,12 +130,21 @@ public class DayService {
             above.renumberTo(above.ordinal() - 1);
             days.save(above);
         }
+        history.record(member, HistoryAct.DAY_DELETED, LeaseSubject.day(dayId));
         log.info("Day deleted: itineraryId={} dayId={} renumbered={}", itineraryId, dayId, toRenumber.size());
         emit(member, "day_removed", itineraryId);
     }
 
     private Day require(UUID itineraryId, UUID dayId) {
         return days.findByIdAndItineraryId(dayId, itineraryId).orElseThrow(DayNotFoundException::new);
+    }
+
+
+    private void requireOwner(Membership member) {
+        if (!member.isOwner()) {
+            throw new NotTripOwnerException("Only the trip owner can add or remove days.");
+        }
+        fence.requireWritable(member);
     }
 
 

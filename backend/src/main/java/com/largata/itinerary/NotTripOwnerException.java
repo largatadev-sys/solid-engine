@@ -6,6 +6,11 @@ import com.largata.common.error.ForbiddenException;
 class NotTripOwnerException extends ForbiddenException {
 
     NotTripOwnerException() {
-        super("NOT_PERMITTED", "Only the trip owner can start or complete this trip.");
+        this("Only the trip owner can start or complete this trip.");
+    }
+
+
+    NotTripOwnerException(String message) {
+        super("NOT_PERMITTED", message);
     }
 }

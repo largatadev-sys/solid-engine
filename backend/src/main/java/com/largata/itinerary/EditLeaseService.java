@@ -10,11 +10,18 @@ import com.largata.identity.TravelerSummary;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +32,12 @@ public class EditLeaseService {
 
     private static final Logger log = LoggerFactory.getLogger(EditLeaseService.class);
 
+    private static final String ANONYMOUS_HOLDER = "Another member";
+
     private final EditLeaseRepository leases;
+    private final EditLeaseInserter inserter;
+    private final DayRepository days;
+    private final ActivityRepository activities;
     private final TravelerService travelers;
     private final Analytics analytics;
     private final WriteFence fence;
@@ -34,12 +46,18 @@ public class EditLeaseService {
 
     EditLeaseService(
             EditLeaseRepository leases,
+            EditLeaseInserter inserter,
+            DayRepository days,
+            ActivityRepository activities,
             TravelerService travelers,
             Analytics analytics,
             WriteFence fence,
             Clock clock,
             @Value("${largata.edit-lock.ttl:PT3M}") Duration ttl) {
         this.leases = leases;
+        this.inserter = inserter;
+        this.days = days;
+        this.activities = activities;
         this.travelers = travelers;
         this.analytics = analytics;
         this.fence = fence;
@@ -49,41 +67,47 @@ public class EditLeaseService {
 
 
     @Transactional
-    public EditLeaseView acquire(Membership member) {
+    public EditLeaseView acquire(Membership member, LeaseSubject subject) {
         fence.requireWritable(member);
+        requireSubjectBelongsTo(member.itineraryId(), subject);
         Instant now = clock.instant();
-        UUID itineraryId = member.itineraryId();
-        UUID travelerId = member.travelerId();
         Instant expiresAt = now.plus(ttl);
+        UUID travelerId = member.travelerId();
 
-        EditLease lease = leases.findByItineraryId(itineraryId).orElse(null);
-        boolean tookOverExpired = false;
+        EditLease lease = liveOrStale(subject).orElse(null);
         if (lease == null) {
-            lease = EditLease.heldBy(itineraryId, travelerId, now, expiresAt);
-        } else if (!lease.isLiveAt(now)) {
+            EditLeaseView won = insertOrLoseTheRace(member, subject, now, expiresAt);
+            if (won != null) {
+                return won;
+            }
+            lease = liveOrStale(subject).orElseThrow(() -> new EditLockedException(ANONYMOUS_HOLDER));
+        }
+
+        boolean tookOverExpired = false;
+        if (!lease.isLiveAt(now)) {
             tookOverExpired = !lease.isHeldBy(travelerId);
             lease.takeOver(travelerId, now, expiresAt);
         } else if (lease.isHeldBy(travelerId)) {
             lease.takeOver(travelerId, now, expiresAt);
         } else {
-            emitNow(member, "edit_lock_denied");
-            throw new EditLockedException(holderName(lease.holderId()));
+            emitNow(member, "edit_lock_denied", subject);
+            throw new EditLockedException(labelOf(lease.holderId()));
         }
         leases.save(lease);
-        log.info("Edit lock acquired: itineraryId={} holder={}", itineraryId, travelerId);
-        emit(member, tookOverExpired ? "edit_lock_expired_takeover" : "edit_lock_acquired");
+        logAcquisition(subject, travelerId);
+        emit(member, tookOverExpired ? "edit_lock_expired_takeover" : "edit_lock_acquired", subject);
         return EditLeaseView.of(lease);
     }
 
 
     @Transactional
-    public EditLeaseView renew(Membership member) {
+    public EditLeaseView renew(Membership member, LeaseSubject subject) {
         fence.requireWritable(member);
         Instant now = clock.instant();
         EditLease lease =
-                leases.findByItineraryId(member.itineraryId())
+                liveOrStale(subject)
                         .filter(l -> l.isLiveAt(now) && l.isHeldBy(member.travelerId()))
-                        .orElseThrow(() -> new EditLockedException(currentHolderName(member.itineraryId(), now)));
+                        .orElseThrow(() -> new EditLockedException(currentHolderLabel(subject, now)));
         lease.renewUntil(now.plus(ttl));
         leases.save(lease);
         return EditLeaseView.of(lease);
@@ -91,15 +115,16 @@ public class EditLeaseService {
 
 
     @Transactional
-    public void release(Membership member) {
-        leases.findByItineraryId(member.itineraryId())
-                .filter(l -> l.isHeldBy(member.travelerId()))
+    public void release(Membership member, LeaseSubject subject) {
+        liveOrStale(subject)
+                .filter(lease -> lease.isHeldBy(member.travelerId()))
                 .ifPresent(
                         lease -> {
                             leases.delete(lease);
                             log.info(
-                                    "Edit lock released: itineraryId={} holder={}",
-                                    member.itineraryId(),
+                                    "Edit lease released: subjectType={} subjectId={} holder={}",
+                                    subject.type(),
+                                    subject.id(),
                                     member.travelerId());
                         });
     }
@@ -107,76 +132,194 @@ public class EditLeaseService {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void releaseHeldBy(UUID itineraryId, UUID travelerId) {
-        leases.findByItineraryId(itineraryId)
-                .filter(lease -> lease.isHeldBy(travelerId))
-                .ifPresent(
-                        lease -> {
-                            leases.delete(lease);
-                            log.info(
-                                    "Edit lock released on departure: itineraryId={} formerHolder={}",
-                                    itineraryId,
-                                    travelerId);
-                        });
+        List<EditLease> held = leases.findByItineraryIdAndHolderId(itineraryId, travelerId);
+        if (held.isEmpty()) {
+            return;
+        }
+        leases.deleteAll(held);
+        log.info(
+                "Edit leases released on departure: itineraryId={} formerHolder={} count={}",
+                itineraryId,
+                travelerId,
+                held.size());
     }
 
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void releaseAnyHold(UUID itineraryId) {
-        leases.findByItineraryId(itineraryId)
-                .ifPresent(
-                        lease -> {
-                            leases.delete(lease);
-                            log.info("Edit lock released on archive: itineraryId={}", itineraryId);
-                        });
+        List<EditLease> all = leases.findByItineraryId(itineraryId);
+        if (all.isEmpty()) {
+            return;
+        }
+        leases.deleteAll(all);
+        log.info("Edit leases released on archive: itineraryId={} count={}", itineraryId, all.size());
+    }
+
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void releaseSubjects(LeaseSubjectType type, Collection<UUID> subjectIds) {
+        if (subjectIds.isEmpty()) {
+            return;
+        }
+        leases.deleteBySubjectTypeAndSubjectIdIn(type, subjectIds);
     }
 
 
     @Transactional
-    public void requireHeldBy(Membership member) {
+    public void requireHeldBy(Membership member, LeaseSubject subject) {
         fence.requireWritable(member);
         Instant now = clock.instant();
         boolean held =
-                leases.findByItineraryId(member.itineraryId())
+                liveOrStale(subject)
                         .filter(l -> l.isLiveAt(now))
                         .map(l -> l.isHeldBy(member.travelerId()))
                         .orElse(false);
         if (!held) {
-            emitNow(member, "edit_lock_denied");
-            throw new EditLockedException(currentHolderName(member.itineraryId(), now));
+            emitNow(member, "edit_lock_denied", subject);
+            throw new EditLockedException(currentHolderLabel(subject, now));
         }
     }
 
 
-    private String currentHolderName(UUID itineraryId, Instant now) {
-        return leases.findByItineraryId(itineraryId)
-                .filter(l -> l.isLiveAt(now))
-                .map(l -> holderName(l.holderId()))
-                .orElse("Another member");
+    @Transactional(readOnly = true)
+    public Map<LeaseSubject, LeaseHolder> liveHoldersFor(UUID itineraryId) {
+        Instant now = clock.instant();
+        List<EditLease> live = leases.findByItineraryId(itineraryId).stream().filter(l -> l.isLiveAt(now)).toList();
+        if (live.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, TravelerSummary> holders = summariesOf(live.stream().map(EditLease::holderId).toList());
+        Map<LeaseSubject, LeaseHolder> bySubject = new LinkedHashMap<>();
+        for (EditLease lease : live) {
+            bySubject.put(lease.subject(), holderOf(lease, holders.get(lease.holderId())));
+        }
+        return bySubject;
     }
 
 
-    private String holderName(UUID holderId) {
-        return travelers.summariesByIds(List.of(holderId)).stream()
+    @Transactional(readOnly = true)
+    public Optional<LeaseHolder> activityLeaseHeldByAnother(Collection<UUID> activityIds, UUID travelerId) {
+        if (activityIds.isEmpty()) {
+            return Optional.empty();
+        }
+        Instant now = clock.instant();
+        return leases
+                .findBySubjectTypeAndSubjectIdIn(LeaseSubjectType.ACTIVITY, activityIds)
+                .stream()
+                .filter(lease -> lease.isLiveAt(now) && !lease.isHeldBy(travelerId))
                 .findFirst()
-                .map(TravelerSummary::displayName)
-                .filter(name -> name != null && !name.isBlank())
-                .orElse("Another member");
+                .map(lease -> holderOf(lease, summariesOf(List.of(lease.holderId())).get(lease.holderId())));
     }
 
 
-    private void emit(Membership member, String event) {
-        AfterCommit.run(() -> analytics.emit(build(member, event)));
+    private EditLeaseView insertOrLoseTheRace(
+            Membership member, LeaseSubject subject, Instant now, Instant expiresAt) {
+        try {
+            EditLease fresh =
+                    inserter.insert(member.itineraryId(), subject, member.travelerId(), now, expiresAt);
+            logAcquisition(subject, member.travelerId());
+            emit(member, "edit_lock_acquired", subject);
+            return EditLeaseView.of(fresh);
+        } catch (DataIntegrityViolationException somebodyElseGotThereFirst) {
+            return null;
+        }
     }
 
 
-    private void emitNow(Membership member, String event) {
-        analytics.emit(build(member, event));
+    private Optional<EditLease> liveOrStale(LeaseSubject subject) {
+        return leases.findBySubjectTypeAndSubjectId(subject.type(), subject.id());
     }
 
-    private static AnalyticsEvent build(Membership member, String event) {
+
+    private void requireSubjectBelongsTo(UUID itineraryId, LeaseSubject subject) {
+        switch (subject.type()) {
+            case HEADER -> {
+                if (!subject.id().equals(itineraryId)) {
+                    throw new UnknownLeaseSubjectException(subject.id().toString());
+                }
+            }
+            case DAY -> requireDayOf(itineraryId, subject.id());
+            case ACTIVITY -> {
+                Activity activity =
+                        activities.findById(subject.id()).orElseThrow(ActivityNotFoundException::new);
+                requireDayOf(itineraryId, activity.dayId());
+            }
+        }
+    }
+
+
+    private void requireDayOf(UUID itineraryId, UUID dayId) {
+        days.findByIdAndItineraryId(dayId, itineraryId).orElseThrow(DayNotFoundException::new);
+    }
+
+
+    private String currentHolderLabel(LeaseSubject subject, Instant now) {
+        return liveOrStale(subject)
+                .filter(l -> l.isLiveAt(now))
+                .map(l -> labelOf(l.holderId()))
+                .orElse(ANONYMOUS_HOLDER);
+    }
+
+
+    private String labelOf(UUID holderId) {
+        return summariesOf(List.of(holderId)).values().stream()
+                .findFirst()
+                .map(EditLeaseService::label)
+                .orElse(ANONYMOUS_HOLDER);
+    }
+
+
+    private static String label(TravelerSummary summary) {
+        if (summary.handle() != null && !summary.handle().isBlank()) {
+            return "@" + summary.handle();
+        }
+        if (summary.displayName() != null && !summary.displayName().isBlank()) {
+            return summary.displayName();
+        }
+        return ANONYMOUS_HOLDER;
+    }
+
+
+    private Map<UUID, TravelerSummary> summariesOf(Collection<UUID> travelerIds) {
+        return travelers.summariesByIds(travelerIds).stream()
+                .collect(Collectors.toMap(TravelerSummary::id, Function.identity()));
+    }
+
+
+    private static LeaseHolder holderOf(EditLease lease, TravelerSummary summary) {
+        return new LeaseHolder(
+                lease.holderId(),
+                summary == null ? null : summary.handle(),
+                summary == null ? null : summary.displayName(),
+                summary == null ? null : summary.avatarUrl(),
+                lease.expiresAt());
+    }
+
+
+    private static void logAcquisition(LeaseSubject subject, UUID holderId) {
+        log.info(
+                "Edit lease acquired: subjectType={} subjectId={} holder={}",
+                subject.type(),
+                subject.id(),
+                holderId);
+    }
+
+
+    private void emit(Membership member, String event, LeaseSubject subject) {
+        AfterCommit.run(() -> analytics.emit(build(member, event, subject)));
+    }
+
+
+    private void emitNow(Membership member, String event, LeaseSubject subject) {
+        analytics.emit(build(member, event, subject));
+    }
+
+    private static AnalyticsEvent build(Membership member, String event, LeaseSubject subject) {
         return AnalyticsEvent.named(event)
                 .with("itineraryId", member.itineraryId())
                 .with("travelerId", member.travelerId())
+                .with("subjectType", subject.type().wireName())
+                .with("subjectId", subject.id())
                 .build();
     }
 }

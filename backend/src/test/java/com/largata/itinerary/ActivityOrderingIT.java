@@ -46,7 +46,7 @@ class ActivityOrderingIT extends PostgresTestBase {
         ActivityView b = activities.create(member, dayId, named("B"));
         ActivityView c = activities.create(member, dayId, named("C"));
 
-        activities.reorder(member, dayId, List.of(c.id(), a.id(), b.id()));
+        activities.reorder(member, dayId, List.of(a.id(), b.id(), c.id()), List.of(c.id(), a.id(), b.id()));
 
         assertThat(orderedIds(dayId)).containsExactly(c.id(), a.id(), b.id());
     }
@@ -56,9 +56,10 @@ class ActivityOrderingIT extends PostgresTestBase {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
         ActivityView a = activities.create(member, dayId, named("A"));
-        activities.create(member, dayId, named("B"));
+        ActivityView b = activities.create(member, dayId, named("B"));
 
-        assertThatThrownBy(() -> activities.reorder(member, dayId, List.of(a.id())))
+        assertThatThrownBy(
+                        () -> activities.reorder(member, dayId, List.of(a.id(), b.id()), List.of(a.id())))
                 .isInstanceOf(com.largata.common.error.ValidationException.class);
     }
 
@@ -68,8 +69,49 @@ class ActivityOrderingIT extends PostgresTestBase {
         UUID dayId = firstDayId(member.itineraryId());
         ActivityView a = activities.create(member, dayId, named("A"));
 
-        assertThatThrownBy(() -> activities.reorder(member, dayId, List.of(a.id(), UUID.randomUUID())))
+        assertThatThrownBy(
+                        () ->
+                                activities.reorder(
+                                        member, dayId, List.of(a.id()), List.of(a.id(), UUID.randomUUID())))
                 .isInstanceOf(com.largata.common.error.ValidationException.class);
+    }
+
+    @Test
+    void aReorderBuiltOnAStaleOrderingIsRefusedRatherThanSilentlyWinning() {
+        Membership member = tripWithOneDay();
+        UUID dayId = firstDayId(member.itineraryId());
+        ActivityView a = activities.create(member, dayId, named("A"));
+        ActivityView b = activities.create(member, dayId, named("B"));
+        List<UUID> whatTheSlowClientBelieves = List.of(a.id(), b.id());
+
+        activities.reorder(member, dayId, whatTheSlowClientBelieves, List.of(b.id(), a.id()));
+
+        assertThatThrownBy(
+                        () ->
+                                activities.reorder(
+                                        member, dayId, whatTheSlowClientBelieves, List.of(a.id(), b.id())))
+                .isInstanceOf(StaleReorderException.class);
+        assertThat(orderedIds(dayId))
+                .as("the first reorder is not overwritten by the stale one")
+                .containsExactly(b.id(), a.id());
+    }
+
+    @Test
+    void aReorderBuiltOnAStaleSetIsRefused() {
+        Membership member = tripWithOneDay();
+        UUID dayId = firstDayId(member.itineraryId());
+        ActivityView a = activities.create(member, dayId, named("A"));
+        List<UUID> whatTheSlowClientBelieves = List.of(a.id());
+        ActivityView addedMeanwhile = activities.create(member, dayId, named("B"));
+
+        assertThatThrownBy(
+                        () ->
+                                activities.reorder(
+                                        member,
+                                        dayId,
+                                        whatTheSlowClientBelieves,
+                                        List.of(addedMeanwhile.id(), a.id())))
+                .isInstanceOf(StaleReorderException.class);
     }
 
     @Test
@@ -79,6 +121,7 @@ class ActivityOrderingIT extends PostgresTestBase {
         DayView dayB = days.appendDay(member, "Day B");
         activities.create(member, dayB.id(), named("Already on B"));
         ActivityView moving = activities.create(member, dayA, named("Moving from A"));
+        editLease.acquire(member, LeaseSubject.activity(moving.id()));
 
         ActivityView moved = activities.move(member, dayA, moving.id(), dayB.id());
 
@@ -95,6 +138,7 @@ class ActivityOrderingIT extends PostgresTestBase {
         DayView day2 = days.appendDay(member, "Day 2");
         ActivityView x = activities.create(member, day2.id(), named("X"));
         ActivityView y = activities.create(member, day2.id(), named("Y"));
+        editLease.acquire(member, LeaseSubject.day(day1));
 
         days.deleteDay(member, day1);
 
@@ -121,9 +165,7 @@ class ActivityOrderingIT extends PostgresTestBase {
     private Membership tripWithOneDay() {
         UUID owner = UUID.randomUUID();
         Itinerary trip = itineraries.create(owner, "Palawan", List.of("Palawan"), null, null, null, 1);
-        Membership member = new Membership(owner, trip.id(), Role.OWNER);
-        editLease.acquire(member);
-        return member;
+        return new Membership(owner, trip.id(), Role.OWNER);
     }
 
     private UUID firstDayId(UUID itineraryId) {

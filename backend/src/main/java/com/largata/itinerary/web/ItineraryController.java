@@ -53,7 +53,7 @@ class ItineraryController {
                         request.startDate(),
                         request.endDate(),
                         request.durationDaysOrZero());
-        return ItineraryResponse.of(created.itinerary(), created.days());
+        return ItineraryResponse.of(created);
     }
 
 
@@ -61,7 +61,7 @@ class ItineraryController {
     ItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -79,7 +79,7 @@ class ItineraryController {
                 request.startDate(),
                 request.endDate());
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -88,7 +88,7 @@ class ItineraryController {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.start(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -97,7 +97,7 @@ class ItineraryController {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.complete(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -118,7 +118,7 @@ class ItineraryController {
         Membership membership = guard.requireMember(traveler.id(), id);
         memberships.archive(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 
 
@@ -127,6 +127,6 @@ class ItineraryController {
         Membership membership = guard.requireMember(traveler.id(), id);
         memberships.unarchive(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan.itinerary(), plan.days(), plan.archived());
+        return ItineraryResponse.of(plan);
     }
 }

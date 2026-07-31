@@ -57,7 +57,7 @@ public class TravelerService {
     @Transactional(readOnly = true)
     public List<TravelerSummary> summariesByIds(Collection<UUID> ids) {
         return travelers.findAllById(ids).stream()
-                .map(t -> new TravelerSummary(t.id(), t.displayName()))
+                .map(t -> new TravelerSummary(t.id(), t.displayName(), t.handle(), t.avatarUrl()))
                 .toList();
     }
 }
