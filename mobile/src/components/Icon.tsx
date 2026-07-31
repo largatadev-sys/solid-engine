@@ -14,7 +14,8 @@ export type IconName =
   | 'sparkle'
   | 'search'
   | 'plus'
-  | 'home';
+  | 'home'
+  | 'mapPin';
 
 interface IconProps {
   readonly name: IconName;
@@ -56,6 +57,13 @@ export function Icon({ name, size, color }: IconProps) {
         <>
           <Circle cx="12" cy="12" r="10" {...shared} />
           <Polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88" {...shared} />
+        </>
+      )}
+
+      {name === 'mapPin' && (
+        <>
+          <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" {...shared} />
+          <Circle cx="12" cy="10" r="3" {...shared} />
         </>
       )}
 

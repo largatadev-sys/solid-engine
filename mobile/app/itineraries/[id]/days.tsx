@@ -8,7 +8,9 @@ import { archivedPlanNotice } from '../../../src/components/editLockedMessage';
 import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
 import { useEditLock } from '../../../src/hooks/useEditLock';
 import { useMe } from '../../../src/hooks/useMe';
-import { activityMetaLine } from '../../../src/itineraries/formatActivityCost';
+import { Icon } from '../../../src/components/Icon';
+import { formatTimeOfDay } from '../../../src/itineraries/formatActivityCost';
+import { initialsFor } from '../../../src/onboarding/initials';
 import { ActivityKebab } from '../../../src/itineraries/ActivityKebab';
 import { attributionLine, leaseNotice } from '../../../src/itineraries/leaseIndicator';
 import { applyMove, type ReorderMove } from '../../../src/itineraries/reorderActivityIds';
@@ -381,62 +383,80 @@ function ActivityCard({
   onMoveUp: (() => void) | undefined;
   onMoveDown: (() => void) | undefined;
 }) {
-  const meta = activityMetaLine(activity.timeOfDay, activity.costAmount, activity.costCurrency);
+  const clock = formatTimeOfDay(activity.timeOfDay);
   const notice = leaseNotice(activity.lease, myTravelerId);
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <View
-      style={[
-        styles.activityCard,
-        notice !== null && styles.activityCardLeased,
-        menuOpen && styles.activityCardRaised,
-      ]}
-    >
-      <View style={styles.reorderColumn}>
-        <Pressable
-          onPress={onMoveUp}
-          disabled={onMoveUp === undefined}
-          accessibilityRole="button"
-          accessibilityLabel="Move activity up"
-          hitSlop={6}
-        >
-          <Text style={[styles.reorderArrow, onMoveUp === undefined && styles.reorderArrowDisabled]}>↑</Text>
+    <View style={styles.activityBlock}>
+      <View
+        style={[
+          styles.activityCard,
+          notice !== null && styles.activityCardLeased,
+          menuOpen && styles.activityCardRaised,
+        ]}
+      >
+        {}
+        <View style={styles.reorderColumn}>
+          <Pressable
+            onPress={onMoveUp}
+            disabled={onMoveUp === undefined}
+            accessibilityRole="button"
+            accessibilityLabel="Move activity up"
+            hitSlop={6}
+          >
+            <Text style={[styles.reorderArrow, onMoveUp === undefined && styles.reorderArrowDisabled]}>↑</Text>
+          </Pressable>
+          <Pressable
+            onPress={onMoveDown}
+            disabled={onMoveDown === undefined}
+            accessibilityRole="button"
+            accessibilityLabel="Move activity down"
+            hitSlop={6}
+          >
+            <Text style={[styles.reorderArrow, onMoveDown === undefined && styles.reorderArrowDisabled]}>↓</Text>
+          </Pressable>
+        </View>
+
+        {}
+        <Pressable style={styles.activityBody} onPress={onEdit} accessibilityRole="button">
+          {clock !== undefined && <Text style={styles.activityTime}>{clock}</Text>}
+          <Text style={styles.activityTitle}>{activity.title}</Text>
+          {activity.place !== null && (
+            <View style={styles.activityPlaceRow}>
+              <Icon name="mapPin" size={PLACE_ICON_SIZE} color={colors.textSecondary} />
+              <Text style={styles.activityPlace}>{activity.place}</Text>
+            </View>
+          )}
         </Pressable>
-        <Pressable
-          onPress={onMoveDown}
-          disabled={onMoveDown === undefined}
-          accessibilityRole="button"
-          accessibilityLabel="Move activity down"
-          hitSlop={6}
-        >
-          <Text style={[styles.reorderArrow, onMoveDown === undefined && styles.reorderArrowDisabled]}>↓</Text>
-        </Pressable>
+
+        <ActivityKebab
+          activityTitle={activity.title}
+          open={menuOpen}
+          onToggle={() => setMenuOpen((wasOpen) => !wasOpen)}
+          onEdit={() => {
+            setMenuOpen(false);
+            onEdit();
+          }}
+          onDelete={() => {
+            setMenuOpen(false);
+            onDelete();
+          }}
+        />
       </View>
+
       {}
-      <Pressable style={styles.activityBody} onPress={onEdit} accessibilityRole="button">
-        {}
-        {meta !== '' && <Text style={styles.activityMeta}>{meta}</Text>}
-        <Text style={styles.activityTitle}>{activity.title}</Text>
-        {activity.place !== null && <Text style={styles.activityPlace}>{activity.place}</Text>}
-        {}
-        {notice !== null && <Text style={styles.leaseNotice}>{notice}</Text>}
-        <Text style={styles.attribution}>{attributionLine(activity, Date.now())}</Text>
-      </Pressable>
-      {}
-      <ActivityKebab
-        activityTitle={activity.title}
-        open={menuOpen}
-        onToggle={() => setMenuOpen((wasOpen) => !wasOpen)}
-        onEdit={() => {
-          setMenuOpen(false);
-          onEdit();
-        }}
-        onDelete={() => {
-          setMenuOpen(false);
-          onDelete();
-        }}
-      />
+      {notice !== null && (
+        <View style={styles.leaseRow}>
+          <View style={styles.leaseAvatar}>
+            <Text style={styles.leaseAvatarText}>
+              {initialsFor(activity.lease?.displayName ?? null, null)}
+            </Text>
+          </View>
+          <Text style={styles.leaseNotice}>{notice}</Text>
+        </View>
+      )}
+      <Text style={styles.attribution}>{attributionLine(activity, Date.now())}</Text>
     </View>
   );
 }
@@ -444,6 +464,10 @@ function ActivityCard({
 const FAB_SIZE = 56;
 
 const RAISED_CARD = 20;
+
+const LEASE_AVATAR_SIZE = 18;
+
+const PLACE_ICON_SIZE = 14;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
@@ -497,8 +521,28 @@ const styles = StyleSheet.create({
   dayBody: { gap: spacing.md },
   field: { gap: spacing.xs },
   label: { ...typography.caption, color: colors.textSecondary },
-  leaseNotice: { ...typography.caption, color: colors.accent, fontStyle: 'italic' },
-  attribution: { ...typography.caption, color: colors.textSecondary },
+  activityBlock: { gap: spacing.xs },
+  leaseRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  leaseAvatar: {
+    width: LEASE_AVATAR_SIZE,
+    height: LEASE_AVATAR_SIZE,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leaseAvatarText: { ...typography.fine, color: colors.textPrimary },
+  leaseNotice: { ...typography.caption, color: colors.accent, fontWeight: '700' },
+  attribution: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: colors.accentMuted,
+    ...typography.fine,
+    color: colors.accent,
+    fontWeight: '700',
+  },
   input: {
     ...typography.body,
     color: colors.textPrimary,
@@ -526,10 +570,10 @@ const styles = StyleSheet.create({
   reorderArrow: { ...typography.bodyStrong, color: colors.accent },
   reorderArrowDisabled: { color: colors.border },
   activityBody: { flex: 1, gap: spacing.xs },
-  activityMeta: { ...typography.caption, color: colors.textSecondary },
+  activityTime: { ...typography.caption, color: colors.accent, fontWeight: '700' },
   activityTitle: { ...typography.bodyStrong, color: colors.textPrimary },
+  activityPlaceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   activityPlace: { ...typography.caption, color: colors.textSecondary },
-  activityDelete: { ...typography.caption, color: colors.danger },
   primaryButton: {
     marginTop: spacing.sm,
     paddingVertical: spacing.md,
