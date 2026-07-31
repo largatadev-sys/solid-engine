@@ -127,7 +127,7 @@ public class WorkspaceService {
     @Transactional(readOnly = true)
     public List<UUID> itineraryIdsFor(UUID travelerId, boolean archived) {
         return archived
-                ? memberships.findItineraryIdsIn(travelerId, WorkspaceState.ARCHIVED)
+                ? memberships.findOwnedItineraryIdsIn(travelerId, WorkspaceState.ARCHIVED)
                 : memberships.findItineraryIdsNotIn(travelerId, WorkspaceState.ARCHIVED);
     }
 

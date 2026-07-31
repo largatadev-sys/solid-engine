@@ -3,6 +3,7 @@ package com.largata.invitation.web;
 import com.largata.common.api.Page;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.SightFence;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.invitation.InvitationService;
@@ -27,12 +28,17 @@ class TripMembershipController {
     private final InvitationService invitations;
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
+    private final SightFence sight;
 
     TripMembershipController(
-            InvitationService invitations, MembershipService memberships, AuthorizationGuard guard) {
+            InvitationService invitations,
+            MembershipService memberships,
+            AuthorizationGuard guard,
+            SightFence sight) {
         this.invitations = invitations;
         this.memberships = memberships;
         this.guard = guard;
+        this.sight = sight;
     }
 
     @PostMapping("/invitations")
@@ -65,6 +71,7 @@ class TripMembershipController {
     @GetMapping("/members")
     Page<MemberResponse> members(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
+        sight.requireInSight(membership);
         UUID offeredTo = memberships.pendingOfferTargetIn(membership).orElse(null);
         return Page.exhausted(
                 invitations.members(membership).stream()

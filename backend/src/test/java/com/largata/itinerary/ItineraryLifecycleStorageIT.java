@@ -72,7 +72,16 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
 
         assertThat(editableFields)
                 .as("PATCH edits plan fields only — lifecycle has its own owner-only endpoints")
-                .containsExactlyInAnyOrder("title", "destinations", "description", "startDate", "endDate")
+                .containsExactlyInAnyOrder(
+                        "title",
+                        "destinations",
+                        "description",
+                        "standouts",
+                        "bestTimeOfYear",
+                        "startDate",
+                        "endDate")
+                .as("the cover ships read-only until S3.3 activates upload — no writer anywhere")
+                .doesNotContain("coverImageUrl")
                 .doesNotContain("state", "startedAt", "completedAt", "visibility", "ownerId");
     }
 

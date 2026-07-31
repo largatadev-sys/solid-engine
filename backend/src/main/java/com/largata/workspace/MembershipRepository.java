@@ -19,8 +19,8 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
 
 
     @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
-            + "AND m.workspace.state = :state")
-    List<UUID> findItineraryIdsIn(@Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
+            + "AND m.workspace.state = :state AND m.role = com.largata.common.authz.Role.OWNER")
+    List<UUID> findOwnedItineraryIdsIn(@Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
 
 
     @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "

@@ -8,6 +8,7 @@ import { useArchiveTrip, useUnarchiveTrip } from '../query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../theme';
 import type { ItineraryResponse } from '../types/api';
 import { archiveControl } from './archiveControls';
+import { isPublished } from './publishControls';
 
 
 function useIsOwner(itineraryId: string): boolean {
@@ -45,7 +46,9 @@ export function TripArchiveBanner({ itinerary }: { itinerary: ItineraryResponse 
             style={styles.action}
             accessibilityRole="button"
             disabled={unarchive.isPending}
-            onPress={() => confirmWith(unarchiveTripWording(), () => unarchive.mutate())}>
+            onPress={() =>
+              confirmWith(unarchiveTripWording(isPublished(itinerary)), () => unarchive.mutate())
+            }>
             <Text style={styles.actionText}>Unarchive</Text>
           </Pressable>
         ))}
@@ -69,7 +72,9 @@ export function ArchiveTripLink({ itinerary }: { itinerary: ItineraryResponse })
         <Pressable
           accessibilityRole="button"
           disabled={archive.isPending}
-          onPress={() => confirmWith(archiveTripWording(), () => archive.mutate())}>
+          onPress={() =>
+            confirmWith(archiveTripWording(isPublished(itinerary)), () => archive.mutate())
+          }>
           <Text style={styles.quietText}>Archive trip</Text>
         </Pressable>
       )}
