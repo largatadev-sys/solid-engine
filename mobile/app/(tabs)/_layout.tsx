@@ -1,17 +1,30 @@
 import { Tabs, useRouter } from 'expo-router';
-import { type ColorValue } from 'react-native';
+import { StyleSheet, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { comingSoon } from '../../src/components/comingSoon';
 import { Icon, type IconName } from '../../src/components/Icon';
-import { colors, typography } from '../../src/theme';
+import { colors, radii, typography } from '../../src/theme';
 
 
-const TAB_ICON_SIZE = 22;
+const TAB_ICON_SIZE = 24;
+
+const CREATE_BUTTON_SIZE = 40;
+
+const CREATE_ICON_SIZE = 22;
 
 
 function tabIcon(name: IconName) {
   return ({ color }: { color: ColorValue }) => (
     <Icon name={name} size={TAB_ICON_SIZE} color={String(color)} />
+  );
+}
+
+
+function createButton() {
+  return (
+    <View style={styles.createButton}>
+      <Icon name="plus" size={CREATE_ICON_SIZE} color={colors.textOnAccent} />
+    </View>
   );
 }
 
@@ -63,8 +76,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="create"
         options={{
-          title: 'Plan',
-          tabBarIcon: tabIcon('plus'),
+          tabBarIcon: createButton,
+          tabBarLabel: () => null,
           tabBarAccessibilityLabel: 'Plan a trip',
         }}
         listeners={{
@@ -79,3 +92,14 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  createButton: {
+    width: CREATE_BUTTON_SIZE,
+    height: CREATE_BUTTON_SIZE,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
