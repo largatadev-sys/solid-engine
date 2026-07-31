@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
+import { tripRowDestination } from '../src/itineraries/TripRow';
 
 
 const MOBILE_ROOT = join(__dirname, '..');
@@ -108,6 +109,21 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
   it('sends the create flow to the EDITOR, at Day 1 (decision 13)', () => {
     expect(read(APP, 'itineraries', 'new.tsx')).toContain("pathname: '/itineraries/[id]/days'");
     expect(read(APP, 'itineraries', 'new.tsx')).toContain("day: '1'");
+  });
+
+  it('sends a LIVE trip row to the editor too, and an ARCHIVED one to the workspace', () => {
+    const live = tripRowDestination({ id: 'trip-1', archived: false });
+    const archived = tripRowDestination({ id: 'trip-1', archived: true });
+
+    expect(live.pathname).toBe('/itineraries/[id]/days');
+    expect(archived.pathname).toBe('/itineraries/[id]');
+  });
+
+  it('the activity form picks a time rather than asking anyone to type one', () => {
+    const form = read(APP, 'itineraries', '[id]', 'activity.tsx');
+
+    expect(form).toContain('<TimePicker');
+    expect(form).not.toMatch(/Time \(24h\)/);
   });
 
   it('greys the history link on both, until S4.10', () => {

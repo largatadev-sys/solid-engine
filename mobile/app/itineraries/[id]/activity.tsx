@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
 import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
+import { TimePicker } from '../../../src/components/TimePicker';
 import { useEditLock } from '../../../src/hooks/useEditLock';
 import { validateActivityForm } from '../../../src/itineraries/validateActivityForm';
 import {
@@ -93,10 +94,10 @@ export default function ActivityFormScreen() {
 
       <Field label="Activity name" value={title} onChangeText={setTitle} placeholder="Airport Transfer" />
 
+      {}
+      <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
+
       <View style={styles.row}>
-        <View style={styles.rowItem}>
-          <Field label="Time (24h)" value={timeOfDay} onChangeText={setTimeOfDay} placeholder="14:00" />
-        </View>
         <View style={styles.rowItem}>
           <Field
             label="Est. cost"
