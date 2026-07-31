@@ -31,6 +31,12 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     }
   });
 
+  it('lets the layout own the tab labels — a screen-level title silently overrides them', () => {
+    for (const screen of ['index.tsx', 'profile.tsx', 'home.tsx', 'search.tsx', 'create.tsx']) {
+      expect(read(TABS, screen)).not.toMatch(/<Stack\.Screen/);
+    }
+  });
+
   it('greys Home and Search rather than navigating to an empty screen', () => {
     const layout = read(TABS, '_layout.tsx');
 

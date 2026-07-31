@@ -320,6 +320,7 @@ function SelectedDay(props: {
           style={[styles.input, dayLease !== null && styles.inputLeased]}
           value={draftTitle}
           onChangeText={setDraftTitle}
+          accessibilityLabel={`Day ${props.day.ordinal} title`}
           onFocus={props.onTitleFocus}
           onBlur={() => {
             const next = draftTitle.trim();

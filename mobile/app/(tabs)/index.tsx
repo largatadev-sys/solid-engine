@@ -1,4 +1,4 @@
-import { Link, Stack } from 'expo-router';
+import { Link } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { InvitationInbox } from '../../src/components/InvitationInbox';
 import { TripRow } from '../../src/itineraries/TripRow';
@@ -14,19 +14,6 @@ export default function MyTripsScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: 'My Trips',
-          headerRight: () => (
-            <Link href="/itineraries/new" asChild>
-              <Pressable accessibilityRole="button" accessibilityLabel="Plan a trip" hitSlop={spacing.sm}>
-                <Text style={styles.headerAction}>Plan</Text>
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-
       {isPending && <ActivityIndicator size="large" color={colors.accent} style={styles.centered} />}
 
       {isError && (
@@ -88,7 +75,6 @@ function EmptyState() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
-  headerAction: { ...typography.bodyStrong, color: colors.accent, paddingHorizontal: spacing.sm },
   listContainer: { padding: spacing.md, gap: spacing.sm },
   emptyContainer: { flexGrow: 1 },
   row: {

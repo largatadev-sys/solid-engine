@@ -199,6 +199,7 @@ function Field(props: {
         style={[styles.input, props.multiline === true && styles.inputMultiline]}
         value={props.value}
         onChangeText={props.onChangeText}
+        accessibilityLabel={props.label}
         placeholder={props.placeholder}
         placeholderTextColor={colors.textSecondary}
         autoCapitalize={props.keyboardType === 'url' ? 'none' : 'sentences'}

@@ -1,4 +1,4 @@
-import { Link, Stack } from 'expo-router';
+import { Link } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '../../src/components/Avatar';
 import { useMe } from '../../src/hooks/useMe';
@@ -13,8 +13,6 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Largata' }} />
-
       <View style={styles.brand}>
         <Text style={styles.wordmark}>Largata</Text>
         <Text style={styles.tagline}>SIGNED IN</Text>
