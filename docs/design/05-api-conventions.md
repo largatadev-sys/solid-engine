@@ -10,7 +10,7 @@ _Status: **proposed — pending founder ratification.** Conventions, not per-end
 
 - **REST over HTTPS, JSON.** Plural-noun resources, kebab-case paths: `/trip-workspaces/{id}/expenses`, `/itineraries/{id}/items`.
 - **Field naming: camelCase** (JSON convention; matches the TypeScript client).
-- IDs are opaque and **unguessable** (UUIDv7-class) — a functional requirement, not a style choice: unlisted visibility relies on it (Artifact 03).
+- IDs are opaque and **unguessable** (UUIDv7-class) — a functional requirement, not a style choice: non-enumerability of private and archived content relies on it (Artifact 03) *(originally motivated by unlisted visibility — deleted at S4.1/ADR-017; the property stays load-bearing)*.
 
 ## Method → status table
 
