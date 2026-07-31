@@ -53,6 +53,7 @@ Each driver owns a distinct port, so two can run at once. Override with `LARGATA
 | `drive-ownership-transfer.js` | 9225 |
 | `drive-lifecycle.js` | 9226 |
 | `drive-edit-lock.js` | 9227 |
+| `drive-publish.js` | 9228 |
 
 Chrome is located by probing the usual Windows/Linux/macOS install paths. Only `drive-edit-lock.js`
 takes an override (`LARGATA_CHROME`).
@@ -204,6 +205,44 @@ TRIP_ID=<id> node scripts/drive-archive.js --shot out.png
 Env: the three pool vars, **`TRIP_ID` (required)**, and `LARGATA_PREVIEW_URL`
 (default `http://localhost:8081`). Tags: `t1` = the trip owner; the whole drive runs as the owner,
 because the owner is the only viewer with archive controls to lose.
+
+## `smoke-publish.js` — S4.1 publish, the whole ladder against a running rung
+
+Builds its own fixture (a dated, two-day, priced trip with tips and standouts) and walks the story
+end to end on the API: preview → publish → the consumer read → unpublish → republish → archive →
+unarchive. It **pins the projection's field set exactly** and greps the serialized payload for every
+field the absence rule forbids, so a leak fails here as well as in the ITs — the wire is the thing
+travelers see, and it is worth asserting twice. Also checks the derived total's single-currency rule
+in both directions and the ADR-008 additivity of the two new header fields. Exits non-zero on any
+failure, and prints the trip id for the drivers below.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/smoke-publish.js
+LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-publish.js
+```
+
+Env: the three pool vars + `LARGATA_API_BASE_URL`. Tags: **`t1` = owner (publishes), `t2` = member,
+`t3` = non-member consumer** — the three-way split the story needs, since private/member/public are
+three different audiences and two accounts cannot tell them apart.
+
+## `drive-publish.js` — S4.1 publish, driven in the preview container
+
+Walks the owner from the workspace through the preview to the success screen, then **re-seats the
+browser as `t3`** and reads the published page as a stranger would. Asserts the absence rule on the
+rendered page (not just the payload), the five-tab shell, the greyed sweep (Diary Entry / Comments /
+Reviews / Follow — each must produce a message, never a dead click), and zero console/page errors.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/smoke-publish.js                    # note the trip id it prints
+TRIP_ID=<id> node scripts/drive-publish.js
+TRIP_ID=<id> node scripts/drive-publish.js --shot out.png
+```
+
+Env: the three pool vars, **`TRIP_ID` (required)**, `LARGATA_PREVIEW_URL`, `LARGATA_CDP_PORT`
+(default 9228). Tags: `t1` = owner, `t3` = consumer. **Take the screenshot** — the S4.1 gate found
+a truncated tab label that every text assertion passed straight over.
 
 ## `deploy-currency.js` — is the rung running the build you think it is?
 

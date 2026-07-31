@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
@@ -44,7 +44,12 @@ export function PublishedItineraryView({
       <CoverSlot />
       <PublishedHeader projection={projection} audience={audience} />
 
-      <View style={styles.tabBar}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabBar}
+        contentContainerStyle={styles.tabBarRow}
+      >
         {tabs.map((label) => (
           <Pressable
             key={label}
@@ -72,7 +77,7 @@ export function PublishedItineraryView({
             </Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
 
       {tab === 'Overview' ? <Overview projection={projection} /> : <DayByDay projection={projection} />}
     </View>
@@ -339,7 +344,8 @@ const styles = StyleSheet.create({
   statValue: { ...typography.bodyStrong, color: colors.textPrimary },
   statValueGreyed: { ...typography.bodyStrong, color: colors.textSecondary, opacity: 0.6 },
   statLabel: { ...typography.caption, color: colors.textSecondary },
-  tabBar: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border },
+  tabBar: { borderBottomWidth: 1, borderBottomColor: colors.border, flexGrow: 0 },
+  tabBarRow: { flexDirection: 'row' },
   tab: { paddingHorizontal: spacing.sm, paddingVertical: spacing.sm },
   tabSelected: { borderBottomWidth: 2, borderBottomColor: colors.accent },
   tabText: { ...typography.caption, color: colors.textSecondary },
