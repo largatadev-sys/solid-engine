@@ -73,6 +73,8 @@ export type ItineraryResponse = {
 
   archived: boolean;
 
+  workspaceState?: 'active' | 'completed' | 'archived';
+
   lastEditedBy: string | null;
   lastEditedAt: string | null;
 

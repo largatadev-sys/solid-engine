@@ -1,12 +1,29 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing, typography } from '../theme';
+import type { ItineraryResponse } from '../types/api';
 
 
-export function WorkspaceChip({ archived }: { archived: boolean }) {
+export function workspaceChipLabel(
+  itinerary: Pick<ItineraryResponse, 'archived' | 'workspaceState'>,
+): 'Active' | 'Archived' | null {
+  if (itinerary.archived) return 'Archived';
+  if (itinerary.workspaceState === 'completed') return null;
+  return 'Active';
+}
+
+
+export function WorkspaceChip({
+  itinerary,
+}: {
+  itinerary: Pick<ItineraryResponse, 'archived' | 'workspaceState'>;
+}) {
+  const label = workspaceChipLabel(itinerary);
+  if (label === null) return null;
+
   return (
     <View style={styles.chip}>
-      <View style={[styles.dot, archived ? styles.dotArchived : styles.dotActive]} />
-      <Text style={styles.text}>{archived ? 'Archived' : 'Active'}</Text>
+      <View style={[styles.dot, label === 'Active' ? styles.dotActive : styles.dotArchived]} />
+      <Text style={styles.text}>{label}</Text>
     </View>
   );
 }

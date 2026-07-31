@@ -5,7 +5,6 @@ import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.EditLeaseService;
-import com.largata.itinerary.LeaseSubject;
 import com.largata.itinerary.api.EditLeaseResponse;
 import com.largata.itinerary.api.LeaseSubjectRequest;
 import java.util.UUID;
@@ -38,7 +37,7 @@ class EditLeaseController {
             @PathVariable UUID itineraryId,
             @RequestBody(required = false) LeaseSubjectRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return EditLeaseResponse.of(leases.acquire(member, subjectOf(request, itineraryId)));
+        return EditLeaseResponse.of(leases.acquire(member, LeaseSubjectRequest.resolve(request, itineraryId)));
     }
 
 
@@ -48,7 +47,7 @@ class EditLeaseController {
             @PathVariable UUID itineraryId,
             @RequestBody(required = false) LeaseSubjectRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return EditLeaseResponse.of(leases.renew(member, subjectOf(request, itineraryId)));
+        return EditLeaseResponse.of(leases.renew(member, LeaseSubjectRequest.resolve(request, itineraryId)));
     }
 
 
@@ -59,11 +58,6 @@ class EditLeaseController {
             @PathVariable UUID itineraryId,
             @RequestBody(required = false) LeaseSubjectRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        leases.release(member, subjectOf(request, itineraryId));
-    }
-
-
-    private static LeaseSubject subjectOf(LeaseSubjectRequest request, UUID itineraryId) {
-        return LeaseSubjectRequest.resolve(request, itineraryId);
+        leases.release(member, LeaseSubjectRequest.resolve(request, itineraryId));
     }
 }

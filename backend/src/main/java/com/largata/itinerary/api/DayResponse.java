@@ -11,16 +11,21 @@ public record DayResponse(
         UUID id, int ordinal, String title, List<ActivityResponse> activities, LeaseHolderResponse lease) {
 
     public static DayResponse of(DayView day) {
-        return of(day, null);
-    }
-
-
-    static DayResponse of(DayView day, ItineraryPlan plan) {
         return new DayResponse(
                 day.id(),
                 day.ordinal(),
                 day.title(),
-                day.activities().stream().map(activity -> ActivityResponse.of(activity, plan)).toList(),
-                plan == null ? null : LeaseHolderResponse.of(plan.holderOf(LeaseSubject.day(day.id()))));
+                day.activities().stream().map(ActivityResponse::of).toList(),
+                null);
+    }
+
+
+    static DayResponse annotated(DayView day, ItineraryPlan plan) {
+        return new DayResponse(
+                day.id(),
+                day.ordinal(),
+                day.title(),
+                day.activities().stream().map(activity -> ActivityResponse.annotated(activity, plan)).toList(),
+                LeaseHolderResponse.of(plan.holderOf(LeaseSubject.day(day.id()))));
     }
 }

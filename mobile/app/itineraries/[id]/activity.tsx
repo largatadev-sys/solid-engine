@@ -116,7 +116,7 @@ export default function ActivityFormScreen() {
       <Field label="Notes & tips (private)" value={notes} onChangeText={setNotes} placeholder="Anything for your group" multiline />
 
       {}
-      <GreyedMediaTile surface="coverPhoto" />
+      <GreyedMediaTile surface="activityPhoto" />
 
       <Field label="Booking link" value={externalUrl} onChangeText={setExternalUrl} placeholder="https://…" keyboardType="url" />
 

@@ -144,7 +144,9 @@ class PlanCollaborationIT extends PostgresTestBase {
                 .jsonPath("$.days[0].activities[0].lastEditedByHandle")
                 .isEqualTo(ownerHandle)
                 .jsonPath("$.lease")
-                .doesNotExist();
+                .doesNotExist()
+                .jsonPath("$.workspaceState")
+                .isEqualTo("active");
     }
 
     @Test

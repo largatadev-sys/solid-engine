@@ -31,7 +31,7 @@ describe('comingSoonMessage — the wording both forks share', () => {
 
   it('covers every greyed affordance S4.9 ships', () => {
     expect(Object.keys(COMING_SOON_SURFACES).sort()).toEqual(
-      ['activityHistory', 'chat', 'coverPhoto', 'home', 'network', 'search'].sort(),
+      ['activityHistory', 'activityPhoto', 'chat', 'coverPhoto', 'home', 'network', 'search'].sort(),
     );
   });
 });

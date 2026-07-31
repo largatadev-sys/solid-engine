@@ -3,6 +3,7 @@ export const COMING_SOON_SURFACES = {
   search: 'Search',
   chat: 'Trip chat',
   coverPhoto: 'Cover photo',
+  activityPhoto: 'Activity photo',
   network: 'From your network',
   activityHistory: 'Activity history',
 } as const;

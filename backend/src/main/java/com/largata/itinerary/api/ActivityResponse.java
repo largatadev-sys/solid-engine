@@ -30,18 +30,16 @@ public record ActivityResponse(
 
 
     public static ActivityResponse of(ActivityView a) {
-        return of(a, null, null);
+        return build(a, null, null);
     }
 
 
-    static ActivityResponse of(ActivityView a, ItineraryPlan plan) {
-        return plan == null
-                ? of(a)
-                : of(a, plan.editor(a.lastEditedBy()), plan.holderOf(LeaseSubject.activity(a.id())));
+    static ActivityResponse annotated(ActivityView a, ItineraryPlan plan) {
+        return build(a, plan.editor(a.lastEditedBy()), plan.holderOf(LeaseSubject.activity(a.id())));
     }
 
 
-    private static ActivityResponse of(ActivityView a, TravelerSummary editor, LeaseHolder holder) {
+    private static ActivityResponse build(ActivityView a, TravelerSummary editor, LeaseHolder holder) {
         return new ActivityResponse(
                 a.id(),
                 a.sortOrder(),

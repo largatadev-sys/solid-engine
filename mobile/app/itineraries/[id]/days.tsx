@@ -9,6 +9,7 @@ import { missingItineraryMessage } from '../../../src/components/missingItinerar
 import { useEditLock } from '../../../src/hooks/useEditLock';
 import { useMe } from '../../../src/hooks/useMe';
 import { activityMetaLine } from '../../../src/itineraries/formatActivityCost';
+import { ActivityKebab } from '../../../src/itineraries/ActivityKebab';
 import { attributionLine, leaseNotice } from '../../../src/itineraries/leaseIndicator';
 import { applyMove, type ReorderMove } from '../../../src/itineraries/reorderActivityIds';
 import { memberControls } from '../../../src/members/memberControls';
@@ -119,126 +120,138 @@ export default function DaySurfaceScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen
-        options={{
-          title: data.title,
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push({ pathname: '/itineraries/[id]', params: { id, tab: 'details' } })}
-              accessibilityRole="button"
-              accessibilityLabel="Trip settings"
-              hitSlop={spacing.sm}
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <Stack.Screen
+          options={{
+            title: data.title,
+            headerRight: () => (
+              <Pressable
+                onPress={() => router.push({ pathname: '/itineraries/[id]', params: { id, tab: 'details' } })}
+                accessibilityRole="button"
+                accessibilityLabel="Trip settings"
+                hitSlop={spacing.sm}
+              >
+                <Text style={styles.headerAction}>Details</Text>
+              </Pressable>
+            ),
+          }}
+        />
+
+        {}
+        {mutationMessage !== undefined && <Text style={styles.mutationError}>{mutationMessage}</Text>}
+
+        {days.length === 0 ? (
+          <Text style={styles.emptyState}>
+            {isOwner
+              ? 'No days yet. Add the first day to start building the plan.'
+              : 'No days yet. The trip owner adds days to this plan.'}
+          </Text>
+        ) : (
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.tabStripOuter}
+              contentContainerStyle={styles.tabStrip}
             >
-              <Text style={styles.headerAction}>Details</Text>
-            </Pressable>
-          ),
-        }}
-      />
+              {days.map((day) => (
+                <DayChip
+                  key={day.id}
+                  day={day}
+                  selected={day.ordinal === (selected?.ordinal ?? 1)}
+                  onPress={() => setSelectedOrdinal(day.ordinal)}
+                />
+              ))}
+              {}
+              {isOwner && <AddDayChip pending={appendDay.isPending} onPress={() => appendDay.mutate({})} />}
+            </ScrollView>
+
+            {selected !== undefined && (
+              <SelectedDay
+                key={selected.id}
+                day={selected}
+                myTravelerId={myId}
+                isOwner={isOwner}
+                onTitleFocus={() => void withDayLease(selected.id, () => {})}
+                onRename={(title) =>
+                  renameDay.mutate({ dayId: selected.id, title }, { onSettled: () => lease.release() })
+                }
+                onDelete={() =>
+                  confirmDeleteDay(selected, () => {
+                    void withDayLease(selected.id, () => {
+                      deleteDay.mutate({ dayId: selected.id });
+                      setSelectedOrdinal(1);
+                    });
+                  })
+                }
+                onEditActivity={(activityId) =>
+                  router.push({
+                    pathname: '/itineraries/[id]/activity',
+                    params: { id, dayId: selected.id, activityId },
+                  })
+                }
+                onDeleteActivity={(activity) =>
+                  confirmDeleteActivity(activity, () => {
+                    void withActivityLease(activity.id, () =>
+                      deleteActivity.mutate({ dayId: selected.id, activityId: activity.id }),
+                    );
+                  })
+                }
+                onReorder={(move) =>
+                  reorder(
+                    selected.id,
+                    selected.activities.map((a) => a.id),
+                    move,
+                  )
+                }
+                deleting={deleteDay.isPending}
+              />
+            )}
+          </>
+        )}
+
+        {days.length === 0 && isOwner && (
+          <Pressable
+            style={[styles.primaryButton, appendDay.isPending && styles.busy]}
+            onPress={() => appendDay.mutate({})}
+            disabled={appendDay.isPending}
+            accessibilityRole="button"
+          >
+            {appendDay.isPending ? (
+              <ActivityIndicator color={colors.textOnAccent} />
+            ) : (
+              <Text style={styles.primaryButtonText}>Add the first day</Text>
+            )}
+          </Pressable>
+        )}
+
+        {}
+        <Pressable
+          style={styles.historyLink}
+          onPress={() => comingSoon('activityHistory')}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: true }}
+          accessibilityLabel="View activity history, coming soon"
+        >
+          <Text style={styles.historyLinkText}>View Activity History</Text>
+        </Pressable>
+      </ScrollView>
 
       {}
-      {mutationMessage !== undefined && <Text style={styles.mutationError}>{mutationMessage}</Text>}
-
-      {days.length === 0 ? (
-        <Text style={styles.emptyState}>
-          {isOwner
-            ? 'No days yet. Add the first day to start building the plan.'
-            : 'No days yet. The trip owner adds days to this plan.'}
-        </Text>
-      ) : (
-        <>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.tabStripOuter}
-            contentContainerStyle={styles.tabStrip}
-          >
-            {days.map((day) => (
-              <DayChip
-                key={day.id}
-                day={day}
-                selected={day.ordinal === (selected?.ordinal ?? 1)}
-                onPress={() => setSelectedOrdinal(day.ordinal)}
-              />
-            ))}
-            {}
-            {isOwner && <AddDayChip pending={appendDay.isPending} onPress={() => appendDay.mutate({})} />}
-          </ScrollView>
-
-          {selected !== undefined && (
-            <SelectedDay
-              key={selected.id}
-              day={selected}
-              myTravelerId={myId}
-              isOwner={isOwner}
-              onTitleFocus={() => void withDayLease(selected.id, () => {})}
-              onRename={(title) => {
-                renameDay.mutate({ dayId: selected.id, title });
-                lease.release();
-              }}
-              onDelete={() =>
-                confirmDeleteDay(selected, () => {
-                  void withDayLease(selected.id, () => {
-                    deleteDay.mutate({ dayId: selected.id });
-                    setSelectedOrdinal(1);
-                  });
-                })
-              }
-              onAddActivity={() =>
-                router.push({ pathname: '/itineraries/[id]/activity', params: { id, dayId: selected.id } })
-              }
-              onEditActivity={(activityId) =>
-                router.push({
-                  pathname: '/itineraries/[id]/activity',
-                  params: { id, dayId: selected.id, activityId },
-                })
-              }
-              onDeleteActivity={(activity) =>
-                confirmDeleteActivity(activity, () => {
-                  void withActivityLease(activity.id, () =>
-                    deleteActivity.mutate({ dayId: selected.id, activityId: activity.id }),
-                  );
-                })
-              }
-              onReorder={(move) =>
-                reorder(
-                  selected.id,
-                  selected.activities.map((a) => a.id),
-                  move,
-                )
-              }
-              deleting={deleteDay.isPending}
-            />
-          )}
-        </>
-      )}
-
-      {days.length === 0 && isOwner && (
+      {selected !== undefined && (
         <Pressable
-          style={[styles.primaryButton, appendDay.isPending && styles.busy]}
-          onPress={() => appendDay.mutate({})}
-          disabled={appendDay.isPending}
+          style={styles.fab}
+          onPress={() =>
+            router.push({ pathname: '/itineraries/[id]/activity', params: { id, dayId: selected.id } })
+          }
           accessibilityRole="button"
+          accessibilityLabel="Add activity"
         >
-          {appendDay.isPending ? (
-            <ActivityIndicator color={colors.textOnAccent} />
-          ) : (
-            <Text style={styles.primaryButtonText}>Add the first day</Text>
-          )}
+          <Text style={styles.fabText}>+</Text>
         </Pressable>
       )}
-
-      {}
-      <Pressable
-        style={styles.historyLink}
-        onPress={() => comingSoon('activityHistory')}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: true }}
-        accessibilityLabel="View activity history, coming soon"
-      >
-        <Text style={styles.historyLinkText}>View Activity History</Text>
-      </Pressable>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -289,7 +302,6 @@ function SelectedDay(props: {
   onTitleFocus: () => void;
   onRename: (title: string) => void;
   onDelete: () => void;
-  onAddActivity: () => void;
   onEditActivity: (activityId: string) => void;
   onDeleteActivity: (activity: ActivityResponse) => void;
   onReorder: (move: ReorderMove) => void;
@@ -334,15 +346,6 @@ function SelectedDay(props: {
           }
         />
       ))}
-
-      <Pressable
-        style={styles.addActivity}
-        onPress={props.onAddActivity}
-        accessibilityRole="button"
-        accessibilityLabel="Add activity"
-      >
-        <Text style={styles.addActivityText}>+ Add activity</Text>
-      </Pressable>
 
       {}
       {props.isOwner && (
@@ -412,14 +415,28 @@ function ActivityCard({
         {notice !== null && <Text style={styles.leaseNotice}>{notice}</Text>}
         <Text style={styles.attribution}>{attributionLine(activity, Date.now())}</Text>
       </Pressable>
-      <Pressable onPress={onDelete} accessibilityRole="button" accessibilityLabel="Delete activity" hitSlop={8}>
-        <Text style={styles.activityDelete}>Delete</Text>
-      </Pressable>
+      {}
+      <ActivityKebab activityTitle={activity.title} onEdit={onEdit} onDelete={onDelete} />
     </View>
   );
 }
 
+const FAB_SIZE = 56;
+
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
+  fab: {
+    position: 'absolute',
+    right: spacing.lg,
+    bottom: spacing.lg,
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accent,
+  },
+  fabText: { ...typography.title, color: colors.textOnAccent },
   container: { padding: spacing.md, gap: spacing.lg, backgroundColor: colors.background, flexGrow: 1 },
   centered: {
     flex: 1,
@@ -471,15 +488,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   inputLeased: { borderColor: colors.accent },
-  addActivity: {
-    padding: spacing.md,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.border,
-    alignItems: 'center',
-  },
-  addActivityText: { ...typography.bodyStrong, color: colors.textPrimary },
   activityCard: {
     flexDirection: 'row',
     alignItems: 'center',

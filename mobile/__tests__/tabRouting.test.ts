@@ -93,6 +93,30 @@ describe('one day surface remains in the tree, entered by both doors (S4.9 decis
   it('renders the "+" day chip for the owner only (decision 3, interim)', () => {
     expect(read(APP, 'itineraries', '[id]', 'days.tsx')).toContain('{isOwner && <AddDayChip');
   });
+
+  it('adds activities from a FAB every member sees, and edits/deletes from a kebab', () => {
+    const surface = read(APP, 'itineraries', '[id]', 'days.tsx');
+
+    expect(surface).toContain('style={styles.fab}');
+    expect(surface).toContain('<ActivityKebab');
+    expect(surface).not.toMatch(/\{isOwner && [^}]*fab/);
+  });
+
+  it('carries the archive link on the Details tab, with the archived banner above the tabs', () => {
+    const workspace = read(APP, 'itineraries', '[id]', 'index.tsx');
+    const detailsTabAt = workspace.indexOf('function DetailsTab');
+    const tabBarAt = workspace.indexOf('<View style={styles.tabBar}>');
+
+    expect(workspace.indexOf('<TripArchiveBanner')).toBeLessThan(tabBarAt);
+    expect(workspace.indexOf('<ArchiveTripLink')).toBeGreaterThan(detailsTabAt);
+  });
+
+  it('leaves the published eyebrow variant to S4.1 (decision 8)', () => {
+    const workspace = read(APP, 'itineraries', '[id]', 'index.tsx');
+
+    expect(workspace).toContain("data.visibility === 'private'");
+    expect(workspace).not.toMatch(/visibility\.toUpperCase/);
+  });
 });
 
 
@@ -102,6 +126,7 @@ describe('every greyed affordance S4.9 ships is wired to the shared helper (regi
     read(APP, 'itineraries', 'new.tsx'),
     read(APP, 'itineraries', '[id]', 'index.tsx'),
     read(APP, 'itineraries', '[id]', 'days.tsx'),
+    read(APP, 'itineraries', '[id]', 'activity.tsx'),
     read(APP, 'itineraries', '[id]', 'invite.tsx'),
     read(MOBILE_ROOT, 'src', 'components', 'ComingSoonScreen.tsx'),
   ].join('\n');

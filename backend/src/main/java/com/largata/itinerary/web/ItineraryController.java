@@ -11,7 +11,6 @@ import com.largata.itinerary.api.ItineraryResponse;
 import com.largata.itinerary.api.UpdateItineraryRequest;
 import com.largata.membership.MembershipService;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -109,7 +108,7 @@ class ItineraryController {
             @RequestParam(defaultValue = "false") boolean archived) {
         return itineraries
                 .listMine(traveler.id(), cursor, limit, archived)
-                .map(itinerary -> ItineraryResponse.of(itinerary, List.of(), archived));
+                .map(itinerary -> ItineraryResponse.summaryOf(itinerary, itineraries.stateOf(itinerary.id())));
     }
 
 

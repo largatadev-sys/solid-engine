@@ -10,7 +10,7 @@ import { useMe } from '../../../src/hooks/useMe';
 import { AvatarStack } from '../../../src/itineraries/AvatarStack';
 import { canEditPlan } from '../../../src/itineraries/archiveControls';
 import { formatDates } from '../../../src/itineraries/formatDates';
-import { TripArchiveBanner } from '../../../src/itineraries/TripArchiveBanner';
+import { ArchiveTripLink, TripArchiveBanner } from '../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceChip } from '../../../src/itineraries/WorkspaceChip';
 import { memberControls } from '../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../src/members/OwnershipOfferBanner';
@@ -72,7 +72,7 @@ export default function TripWorkspaceScreen() {
         <Stack.Screen options={{ title: data.title }} />
 
         {}
-        <Text style={styles.eyebrow}>{eyebrowFor(data)}</Text>
+        {data.visibility === 'private' && <Text style={styles.eyebrow}>PRIVATE WORKSPACE</Text>}
         <Text style={styles.title}>{data.title}</Text>
 
         <View style={styles.identityRow}>
@@ -88,7 +88,7 @@ export default function TripWorkspaceScreen() {
               </Text>
             </Pressable>
           </Link>
-          <WorkspaceChip archived={data.archived} />
+          <WorkspaceChip itinerary={data} />
         </View>
 
         {}
@@ -133,11 +133,6 @@ export default function TripWorkspaceScreen() {
       )}
     </View>
   );
-}
-
-
-function eyebrowFor(itinerary: ItineraryResponse): string {
-  return itinerary.visibility === 'private' ? 'PRIVATE WORKSPACE' : `${itinerary.visibility.toUpperCase()} TRIP`;
 }
 
 
@@ -230,6 +225,9 @@ function DetailsTab(props: {
           </Text>
         </Pressable>
       </Link>
+
+      {}
+      <ArchiveTripLink itinerary={itinerary} />
 
       {props.canLeave && (
         <Pressable

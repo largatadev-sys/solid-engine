@@ -10,6 +10,7 @@ import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.workspace.WorkspaceService;
+import com.largata.workspace.WorkspaceState;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -106,7 +107,7 @@ public class ItineraryService {
             int durationDays) {
         Itinerary itinerary =
                 create(ownerId, title, destinations, description, startDate, endDate, durationDays);
-        return assemble(itinerary, days.plan(itinerary.id()), false);
+        return assemble(itinerary, days.plan(itinerary.id()));
     }
 
 
@@ -144,14 +145,17 @@ public class ItineraryService {
 
     @Transactional(readOnly = true)
     public ItineraryPlan viewPlan(Membership membership) {
-        return assemble(
-                view(membership),
-                days.plan(membership.itineraryId()),
-                workspaces.isArchived(membership.itineraryId()));
+        return assemble(view(membership), days.plan(membership.itineraryId()));
     }
 
 
-    private ItineraryPlan assemble(Itinerary itinerary, List<DayView> plan, boolean archived) {
+    @Transactional(readOnly = true)
+    public WorkspaceState stateOf(UUID itineraryId) {
+        return workspaces.stateOf(itineraryId).orElse(WorkspaceState.ACTIVE);
+    }
+
+
+    private ItineraryPlan assemble(Itinerary itinerary, List<DayView> plan) {
         Set<UUID> editorIds = new LinkedHashSet<>();
         if (itinerary.lastEditedBy() != null) {
             editorIds.add(itinerary.lastEditedBy());
@@ -167,7 +171,8 @@ public class ItineraryService {
                         ? Map.of()
                         : travelers.summariesByIds(editorIds).stream()
                                 .collect(Collectors.toMap(TravelerSummary::id, Function.identity()));
-        return new ItineraryPlan(itinerary, plan, archived, editLease.liveHoldersFor(itinerary.id()), editors);
+        return new ItineraryPlan(
+                itinerary, plan, stateOf(itinerary.id()), editLease.liveHoldersFor(itinerary.id()), editors);
     }
 
 
