@@ -90,6 +90,7 @@ export default function EditItineraryScreen() {
               style={styles.destinationInput}
               value={destination}
               onChangeText={(text) => setDestinations((prev) => setDestination(prev, index, text))}
+              accessibilityLabel={`Destination ${index + 1}`}
               placeholder="Palawan"
               placeholderTextColor={colors.textSecondary}
             />
@@ -153,6 +154,7 @@ function Field(props: {
         style={[styles.input, props.multiline === true && styles.inputMultiline]}
         value={props.value}
         onChangeText={props.onChangeText}
+        accessibilityLabel={props.label}
         placeholder={props.placeholder}
         placeholderTextColor={colors.textSecondary}
         multiline={props.multiline ?? false}

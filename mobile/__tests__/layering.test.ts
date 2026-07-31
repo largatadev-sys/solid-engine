@@ -78,6 +78,35 @@ describe('screens consume design tokens, never raw values (S0.3)', () => {
 });
 
 
+describe('every text input announces itself (S4.9)', () => {
+  const sources = [...sourceFiles(join(MOBILE_ROOT, 'app')), ...sourceFiles(join(MOBILE_ROOT, 'src'))];
+
+  const TEXT_INPUTS = /<TextInput[\s\S]*?\/>/g;
+
+  it('finds inputs to check (guards against a vacuously passing test)', () => {
+    const total = sources.reduce(
+      (count, file) => count + (readFileSync(file, 'utf8').match(TEXT_INPUTS) ?? []).length,
+      0,
+    );
+    expect(total).toBeGreaterThan(5);
+  });
+
+  it.each(sources)('%s gives every TextInput an accessibilityLabel', (file) => {
+    const unlabelled = (readFileSync(file, 'utf8').match(TEXT_INPUTS) ?? []).filter(
+      (input) => !input.includes('accessibilityLabel'),
+    );
+
+    expect(unlabelled).toEqual([]);
+  });
+
+  it('the rule actually fires (guards against a regex that matches nothing)', () => {
+    const unlabelled = '<TextInput\n  value={x}\n  placeholder="y"\n/>'.match(TEXT_INPUTS) ?? [];
+    expect(unlabelled).toHaveLength(1);
+    expect(unlabelled[0]).not.toContain('accessibilityLabel');
+  });
+});
+
+
 describe('a Link asChild child never carries an ARRAY style (S4.0)', () => {
   const screens = [...sourceFiles(join(MOBILE_ROOT, 'app')), ...sourceFiles(join(MOBILE_ROOT, 'src'))];
 

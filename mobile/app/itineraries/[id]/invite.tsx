@@ -49,6 +49,7 @@ export default function InviteTravelersScreen() {
             value={handleDraft}
             onChangeText={setHandleDraft}
             onSubmitEditing={() => setSearched(handleDraft.trim().toLowerCase())}
+            accessibilityLabel="Find by username"
             placeholder="janedoe"
             placeholderTextColor={colors.textSecondary}
             autoCapitalize="none"
@@ -113,6 +114,7 @@ export default function InviteTravelersScreen() {
             style={styles.input}
             value={email}
             onChangeText={setEmail}
+            accessibilityLabel="Or invite by email"
             placeholder="friend@example.com"
             placeholderTextColor={colors.textSecondary}
             autoCapitalize="none"

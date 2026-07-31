@@ -80,7 +80,7 @@ public class EditLeaseService {
             if (won != null) {
                 return won;
             }
-            lease = liveOrStale(subject).orElseThrow(() -> new EditLockedException(ANONYMOUS_HOLDER));
+            lease = liveOrStale(subject).orElseThrow(() -> new EditLockedException(ANONYMOUS_HOLDER, subject.type()));
         }
 
         boolean tookOverExpired = false;
@@ -91,7 +91,7 @@ public class EditLeaseService {
             lease.takeOver(travelerId, now, expiresAt);
         } else {
             emitNow(member, "edit_lock_denied", subject);
-            throw new EditLockedException(labelOf(lease.holderId()));
+            throw new EditLockedException(labelOf(lease.holderId()), subject.type());
         }
         leases.save(lease);
         logAcquisition(subject, travelerId);
@@ -107,7 +107,7 @@ public class EditLeaseService {
         EditLease lease =
                 liveOrStale(subject)
                         .filter(l -> l.isLiveAt(now) && l.isHeldBy(member.travelerId()))
-                        .orElseThrow(() -> new EditLockedException(currentHolderLabel(subject, now)));
+                        .orElseThrow(() -> new EditLockedException(currentHolderLabel(subject, now), subject.type()));
         lease.renewUntil(now.plus(ttl));
         leases.save(lease);
         return EditLeaseView.of(lease);
@@ -176,7 +176,7 @@ public class EditLeaseService {
                         .orElse(false);
         if (!held) {
             emitNow(member, "edit_lock_denied", subject);
-            throw new EditLockedException(currentHolderLabel(subject, now));
+            throw new EditLockedException(currentHolderLabel(subject, now), subject.type());
         }
     }
 

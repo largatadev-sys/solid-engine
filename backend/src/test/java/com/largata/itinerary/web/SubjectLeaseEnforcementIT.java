@@ -174,6 +174,38 @@ class SubjectLeaseEnforcementIT extends PostgresTestBase {
     }
 
     @Test
+    void theRefusalNamesWHICHSubjectIsBusy_notAlwaysTheWholeTrip() {
+        String owner = rig.travelerWithHandle("owner" + suffix());
+        String tripId = rig.createTrip(owner, 1);
+        String member = rig.joinAsMember(owner, tripId, "member" + suffix());
+        UUID dayOne = rig.dayAt(tripId, 1);
+        UUID activityId = rig.addActivity(owner, tripId, dayOne, "Contested");
+
+        rig.hold(member, tripId, "header", null);
+        rig.hold(member, tripId, "day", dayOne);
+        rig.hold(member, tripId, "activity", activityId);
+
+        rig.acquire(owner, tripId, "header", null)
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.message")
+                .value(message -> assertThat((String) message).contains("this trip's details"));
+        rig.acquire(owner, tripId, "day", dayOne)
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.message")
+                .value(message -> assertThat((String) message).contains("this day"));
+        rig.acquire(owner, tripId, "activity", activityId)
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.message")
+                .value(message -> assertThat((String) message).contains("this activity"));
+    }
+
+    @Test
     void aLeaseCannotBeTakenOnASubjectOfSomebodyElsesTrip() {
         String owner = rig.travelerWithHandle("owner" + suffix());
         String tripId = rig.createTrip(owner, 1);
