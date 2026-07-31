@@ -4,6 +4,9 @@ import type { ItineraryResponse, TripCategory } from '../types/api';
 export const TRIP_CATEGORIES: readonly TripCategory[] = ['draft', 'private', 'published'] as const;
 
 
+export const DEFAULT_TRIP_CATEGORY: TripCategory = 'published';
+
+
 const LABELS: Record<TripCategory, string> = {
   draft: 'Draft',
   private: 'Private',
@@ -26,8 +29,7 @@ export function categoriesOf(
 }
 
 
-export function emptyCategoryMessage(category: TripCategory | undefined): string {
-  if (category === undefined) return 'Every trip starts as a draft. Plan your first one.';
+export function emptyCategoryMessage(category: TripCategory): string {
   return {
     draft: 'No drafts. A trip stays a draft until you start it.',
     private: 'No private trips. Everything you have is published.',

@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, V
 import { InvitationInbox } from '../../src/components/InvitationInbox';
 import { TripRow } from '../../src/itineraries/TripRow';
 import {
+  DEFAULT_TRIP_CATEGORY,
   emptyCategoryMessage,
   TRIP_CATEGORIES,
   tripCategoryLabel,
@@ -14,7 +15,7 @@ import type { TripCategory } from '../../src/types/api';
 
 
 export default function MyTripsScreen() {
-  const [category, setCategory] = useState<TripCategory | undefined>(undefined);
+  const [category, setCategory] = useState<TripCategory>(DEFAULT_TRIP_CATEGORY);
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMyItineraries(category);
 
@@ -28,11 +29,6 @@ export default function MyTripsScreen() {
         style={styles.chipBar}
         contentContainerStyle={styles.chipRow}
       >
-        <CategoryChip
-          label="All"
-          selected={category === undefined}
-          onPress={() => setCategory(undefined)}
-        />
         {TRIP_CATEGORIES.map((option) => (
           <CategoryChip
             key={option}
@@ -108,11 +104,11 @@ function CategoryChip({
 }
 
 
-function EmptyState({ category }: { category: TripCategory | undefined }) {
+function EmptyState({ category }: { category: TripCategory }) {
   return (
     <View style={styles.empty}>
       <Text style={styles.emptyTitle}>
-        {category === undefined ? 'No trips yet' : `No ${tripCategoryLabel(category).toLowerCase()} trips`}
+        {`No ${tripCategoryLabel(category).toLowerCase()} trips`}
       </Text>
       <Text style={styles.caption}>{emptyCategoryMessage(category)}</Text>
       <Link href="/itineraries/new" asChild>

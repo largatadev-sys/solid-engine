@@ -1,4 +1,5 @@
 import {
+  DEFAULT_TRIP_CATEGORY,
   categoriesOf,
   emptyCategoryMessage,
   TRIP_CATEGORIES,
@@ -28,6 +29,10 @@ describe('the Trips categories (founder ruling, 2026-08-01)', () => {
     const messages = TRIP_CATEGORIES.map(emptyCategoryMessage);
 
     expect(new Set(messages).size).toBe(TRIP_CATEGORIES.length);
-    expect(emptyCategoryMessage(undefined)).toMatch(/Plan your first one/);
+  });
+
+  it('opens on Published — there is no All any more (founder, 08/01)', () => {
+    expect(DEFAULT_TRIP_CATEGORY).toBe('published');
+    expect(TRIP_CATEGORIES).toContain(DEFAULT_TRIP_CATEGORY);
   });
 });

@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '../../../src/components/ScreenHeader';
 import { itineraryLoadMessage, ScreenMessage } from '../../../src/components/ScreenMessage';
 import { PublishedItineraryView } from '../../../src/itineraries/PublishedItineraryView';
 import { usePublishedItinerary } from '../../../src/query/itineraryQueries';
@@ -10,7 +10,6 @@ import { colors, spacing, typography } from '../../../src/theme';
 export default function PublishedItineraryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, isPending, isError, error } = usePublishedItinerary(id);
-  const insets = useSafeAreaInsets();
 
   if (isPending) {
     return (
@@ -25,7 +24,8 @@ export default function PublishedItineraryScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
+    <ScrollView contentContainerStyle={styles.container}>
+      <ScreenHeader title="" back backTo="/" />
       <PublishedItineraryView projection={data} audience="consumer" />
     </ScrollView>
   );

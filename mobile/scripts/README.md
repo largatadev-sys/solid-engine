@@ -96,6 +96,24 @@ Env: the three pool vars, plus `LARGATA_API_BASE_URL` (**local `http` rung only*
 Tags: whatever you pass — `--owner` is the trip owner, `--members` join as ordinary members.
 Fails loudly if an account is not verified, naming `test-pool.js create` as the fix.
 
+## `seed-demo.js` — a coherent set of trips to look at
+
+Seeds four trips with real content — two published (one with a collaborator), one private with a
+collaborator, one empty "someday" draft — so the Trips categories, the projection, Standouts, the
+derived total and the roster all have something honest to render. Use it after wiping the local
+stack; the DB has **no volume by design**, so `docker compose down && docker compose up -d` is the
+wipe.
+
+```bash
+docker compose down && docker compose up -d          # from the repo root — fresh DB
+cd mobile && set -a && . ./.env && set +a
+node scripts/seed-demo.js
+```
+
+Env: the three pool vars. Tags: `t1` = owner of everything, `t2` = the collaborator on two of them,
+`t3` = a stranger who joins nothing (so the masking cases stay testable). **Refuses to run against
+anything but `localhost`** — it is fixture data, and there is no undo on a deployed rung.
+
 ## `smoke-api.js` — the API rung's smoke suite
 
 Walks everything shipped so far against a running backend: health, the 401/404 envelope, the plan
