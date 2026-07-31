@@ -13,6 +13,6 @@
 - [x] A stale reorder 409 refetches and re-applies without losing the traveler's intent; fresh reorder persists across refresh (spec AC 7 — client half)
 - [x] Attribution chips render "@handle · relative time" from the additive payload fields (spec AC 14)
 - [x] The history link greys with `comingSoon` + analytics (spec AC 11)
-- [x] One day surface remains in the tree: both doors land on it and no orphaned screen survives (spec decision 9)
+- [ ] ~~One day surface remains in the tree: both doors land on it and no orphaned screen survives (spec decision 9)~~ — **inverted by founder ruling at the device walk.** The consolidation was judged to be *where the confusion lives*; the surfaces split back into `/days` (the editor: chips, FAB, kebab, day CRUD) and `/days/{dayId}` (the detail the `collaborative-edit` mock draws), and a workspace day card opens the detail. `trip-editor-days` is parked for a later decision — **which still owes the add/reorder path for a traveler arriving from the workspace, and cost on the editor card.** See the spec's Comments.
 
 ## Comments

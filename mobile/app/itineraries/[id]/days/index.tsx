@@ -1,21 +1,21 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ApiError } from '../../../src/api/ApiError';
-import { comingSoon } from '../../../src/components/comingSoon';
-import { confirmDestructive } from '../../../src/components/confirmDestructive';
-import { archivedPlanNotice } from '../../../src/components/editLockedMessage';
-import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
-import { useEditLock } from '../../../src/hooks/useEditLock';
-import { useMe } from '../../../src/hooks/useMe';
-import { Icon } from '../../../src/components/Icon';
-import { formatTimeOfDay } from '../../../src/itineraries/formatActivityCost';
-import { initialsFor } from '../../../src/onboarding/initials';
-import { ActivityKebab } from '../../../src/itineraries/ActivityKebab';
-import { attributionLine, leaseNotice } from '../../../src/itineraries/leaseIndicator';
-import { applyMove, type ReorderMove } from '../../../src/itineraries/reorderActivityIds';
-import { memberControls } from '../../../src/members/memberControls';
-import { useMembers } from '../../../src/query/invitationQueries';
+import { ApiError } from '../../../../src/api/ApiError';
+import { comingSoon } from '../../../../src/components/comingSoon';
+import { confirmDestructive } from '../../../../src/components/confirmDestructive';
+import { archivedPlanNotice } from '../../../../src/components/editLockedMessage';
+import { missingItineraryMessage } from '../../../../src/components/missingItineraryMessage';
+import { useEditLock } from '../../../../src/hooks/useEditLock';
+import { useMe } from '../../../../src/hooks/useMe';
+import { Icon } from '../../../../src/components/Icon';
+import { formatTimeOfDay } from '../../../../src/itineraries/formatActivityCost';
+import { initialsFor } from '../../../../src/onboarding/initials';
+import { ActivityKebab } from '../../../../src/itineraries/ActivityKebab';
+import { attributionLine, leaseNotice } from '../../../../src/itineraries/leaseIndicator';
+import { applyMove, type ReorderMove } from '../../../../src/itineraries/reorderActivityIds';
+import { memberControls } from '../../../../src/members/memberControls';
+import { useMembers } from '../../../../src/query/invitationQueries';
 import {
   useAppendDay,
   useDeleteActivity,
@@ -23,9 +23,9 @@ import {
   useItinerary,
   useRenameDay,
   useReorderActivities,
-} from '../../../src/query/itineraryQueries';
-import type { ActivityResponse, DayResponse } from '../../../src/types/api';
-import { colors, radii, spacing, typography } from '../../../src/theme';
+} from '../../../../src/query/itineraryQueries';
+import type { ActivityResponse, DayResponse } from '../../../../src/types/api';
+import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
 export default function DaySurfaceScreen() {

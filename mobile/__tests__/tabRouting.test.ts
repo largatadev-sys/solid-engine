@@ -91,34 +91,45 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13)', 
 });
 
 
-describe('one day surface remains in the tree, entered by both doors (S4.9 decision 9)', () => {
-  it('the chips editor is the only day screen', () => {
-    const dayScreens = readdirSync(join(APP, 'itineraries', '[id]')).filter((file) =>
-      /^(day|days|schedule)/i.test(file),
-    );
+describe('the two day surfaces, each with its own job (founder ruling 2026-07-31)', () => {
+  const DAYS = join(APP, 'itineraries', '[id]', 'days');
 
-    expect(dayScreens).toEqual(['days.tsx']);
+  it('has exactly two: the chips editor and the day detail', () => {
+    expect(readdirSync(DAYS).sort()).toEqual(['[dayId].tsx', 'index.tsx']);
   });
 
-  it('the workspace day cards and the create flow both land on it', () => {
-    expect(read(APP, 'itineraries', '[id]', 'index.tsx')).toContain("pathname: '/itineraries/[id]/days'");
+  it('sends a workspace day card to the DETAIL screen, not the editor', () => {
+    const workspace = read(APP, 'itineraries', '[id]', 'index.tsx');
+
+    expect(workspace).toContain("pathname: '/itineraries/[id]/days/[dayId]'");
+    expect(workspace).toContain('dayId: day.id');
+  });
+
+  it('sends the create flow to the EDITOR, at Day 1 (decision 13)', () => {
     expect(read(APP, 'itineraries', 'new.tsx')).toContain("pathname: '/itineraries/[id]/days'");
+    expect(read(APP, 'itineraries', 'new.tsx')).toContain("day: '1'");
   });
 
-  it('greys the history link until S4.10', () => {
-    expect(read(APP, 'itineraries', '[id]', 'days.tsx')).toContain("comingSoon('activityHistory')");
+  it('greys the history link on both, until S4.10', () => {
+    expect(read(DAYS, 'index.tsx')).toContain("comingSoon('activityHistory')");
+    expect(read(DAYS, '[dayId].tsx')).toContain("comingSoon('activityHistory')");
   });
 
-  it('renders the "+" day chip for the owner only (decision 3, interim)', () => {
-    expect(read(APP, 'itineraries', '[id]', 'days.tsx')).toContain('{isOwner && <AddDayChip');
+  it('keeps building the plan on the editor: owner-only + chip, FAB, kebab', () => {
+    const editor = read(DAYS, 'index.tsx');
+
+    expect(editor).toContain('{isOwner && <AddDayChip');
+    expect(editor).toContain('style={styles.fab}');
+    expect(editor).toContain('<ActivityKebab');
+    expect(editor).not.toMatch(/\{isOwner && [^}]*fab/);
   });
 
-  it('adds activities from a FAB every member sees, and edits/deletes from a kebab', () => {
-    const surface = read(APP, 'itineraries', '[id]', 'days.tsx');
+  it('keeps the detail screen to reading the day — no chips, no FAB, no day CRUD', () => {
+    const detail = read(DAYS, '[dayId].tsx');
 
-    expect(surface).toContain('style={styles.fab}');
-    expect(surface).toContain('<ActivityKebab');
-    expect(surface).not.toMatch(/\{isOwner && [^}]*fab/);
+    expect(detail).not.toMatch(/AddDayChip|styles\.fab|Delete Day/);
+    expect(detail).toContain('leaseNotice');
+    expect(detail).toContain('attributionLine');
   });
 
   it('carries the archive link on the Details tab, with the archived banner above the tabs', () => {
@@ -144,7 +155,8 @@ describe('every greyed affordance S4.9 ships is wired to the shared helper (regi
     read(TABS, '_layout.tsx'),
     read(APP, 'itineraries', 'new.tsx'),
     read(APP, 'itineraries', '[id]', 'index.tsx'),
-    read(APP, 'itineraries', '[id]', 'days.tsx'),
+    read(APP, 'itineraries', '[id]', 'days', 'index.tsx'),
+    read(APP, 'itineraries', '[id]', 'days', '[dayId].tsx'),
     read(APP, 'itineraries', '[id]', 'activity.tsx'),
     read(APP, 'itineraries', '[id]', 'invite.tsx'),
     read(MOBILE_ROOT, 'src', 'components', 'ComingSoonScreen.tsx'),

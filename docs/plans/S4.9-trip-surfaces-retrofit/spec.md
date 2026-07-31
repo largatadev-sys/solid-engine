@@ -132,6 +132,27 @@ Publish (S4.1) · chat build + history surface (S4.10) · fork + chooser activat
 
 *(append-only; intent above is immutable)*
 
+### 2026-07-31 — decision 9 is partially reversed: the day surfaces split back into two (founder-ruled, at the device walk)
+
+Decision 9 ruled *"One day surface, two doors — the chips editor **is** the day screen … the `collaborative-edit` mock is this same screen's decorated state."* Built that way and walked on the device, the founder's read was that the consolidation is **where the confusion lives**: `trip-editor-days`, `collaborative-edit` and the workspace all appeared to do the same job. Ruling: **a workspace day card opens `collaborative-edit`, and `collaborative-edit` stays the screen the mock draws.** `trip-editor-days` is explicitly parked — *"I'll circle back to trip editor days once I get more clarity."*
+
+Reading the two frames side by side supports the split; they are not one screen decorated two ways, they are two jobs:
+
+| | `trip-editor-days` | `collaborative-edit` |
+|---|---|---|
+| header | trip title + settings gear | ← **Day 2: Ubud Market** |
+| day chips | Day 1 / 2 / 3 / **+** | none |
+| card | **grip** · time · name · **kebab** · `📍 Seminyak • ₱800` | time · name · `📍 Ubud Center` |
+| status | none | `Being edited by @…` + the `Updated …` pill |
+| action | **FAB** | View Activity History |
+
+So: **the editor builds the plan** (add/remove days, add activities, reorder, delete) and **the detail reads one day** (who is editing what, tap a card to edit it). Routes are `/itineraries/{id}/days` and `/itineraries/{id}/days/{dayId}`.
+
+**Consequences, stated rather than discovered later:**
+- **Ticket 05 AC 8 is inverted.** It asked that *"One day surface remains in the tree … no orphaned screen survives."* There are now two, deliberately; `tabRouting.test.ts` asserts the split and each screen's job instead of the merge.
+- **The detail screen has no add, no reorder, no day-title edit, no delete** — the mock draws none of them. Everything that builds the plan is reachable only from the editor, which today is reached only by the create flow's Continue (decision 13, unchanged). **That is the gap the parked `trip-editor-days` decision has to close**: as it stands, a returning traveler entering from the workspace can edit existing activities but cannot add one.
+- **Cost comes back into scope at that decision too.** The editor's card meta is `📍 Seminyak • ₱800` — location *and* cost; the detail's is location only. The interim day surface had dropped cost entirely; it now belongs on the editor card, where the mock puts it.
+
 ### 2026-07-31 — the cross-mode duplicate check is one-directional by design (founder-ruled, during implementation)
 
 Ticket 02 asked for *"One pending invitation per workspace+target … across both addressing modes"*, and the first implementation held it both ways. The founder challenged the handle→email half on the merits and it does not survive:

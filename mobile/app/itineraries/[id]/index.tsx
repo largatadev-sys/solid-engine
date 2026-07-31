@@ -7,6 +7,7 @@ import { confirmWith } from '../../../src/components/confirmDestructive';
 import { leaveTripWording } from '../../../src/components/confirmDestructiveMessage';
 import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
 import { useMe } from '../../../src/hooks/useMe';
+import { dayHeading } from '../../../src/itineraries/dayHeading';
 import { AvatarStack } from '../../../src/itineraries/AvatarStack';
 import { canEditPlan } from '../../../src/itineraries/archiveControls';
 import { formatDates } from '../../../src/itineraries/formatDates';
@@ -152,20 +153,18 @@ function ItineraryTab({ itineraryId, days }: { itineraryId: string; days: DayRes
 
   return (
     <View style={styles.tabBody}>
+      {}
       {days.map((day) => (
         <Link
           key={day.id}
           href={{
-            pathname: '/itineraries/[id]/days',
-            params: { id: itineraryId, day: String(day.ordinal) },
+            pathname: '/itineraries/[id]/days/[dayId]',
+            params: { id: itineraryId, dayId: day.id },
           }}
           asChild
         >
           <Pressable style={styles.dayCard} accessibilityRole="button">
-            <Text style={styles.dayCardTitle}>
-              Day {day.ordinal}
-              {day.title !== null && day.title !== '' ? `: ${day.title}` : ''}
-            </Text>
+            <Text style={styles.dayCardTitle}>{dayHeading(day)}</Text>
             <Text style={styles.dayCardMeta}>
               {day.activities.length} {day.activities.length === 1 ? 'activity' : 'activities'}
             </Text>
