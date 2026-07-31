@@ -383,9 +383,16 @@ function ActivityCard({
 }) {
   const meta = activityMetaLine(activity.timeOfDay, activity.costAmount, activity.costCurrency);
   const notice = leaseNotice(activity.lease, myTravelerId);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <View style={[styles.activityCard, notice !== null && styles.activityCardLeased]}>
+    <View
+      style={[
+        styles.activityCard,
+        notice !== null && styles.activityCardLeased,
+        menuOpen && styles.activityCardRaised,
+      ]}
+    >
       <View style={styles.reorderColumn}>
         <Pressable
           onPress={onMoveUp}
@@ -417,12 +424,26 @@ function ActivityCard({
         <Text style={styles.attribution}>{attributionLine(activity, Date.now())}</Text>
       </Pressable>
       {}
-      <ActivityKebab activityTitle={activity.title} onEdit={onEdit} onDelete={onDelete} />
+      <ActivityKebab
+        activityTitle={activity.title}
+        open={menuOpen}
+        onToggle={() => setMenuOpen((wasOpen) => !wasOpen)}
+        onEdit={() => {
+          setMenuOpen(false);
+          onEdit();
+        }}
+        onDelete={() => {
+          setMenuOpen(false);
+          onDelete();
+        }}
+      />
     </View>
   );
 }
 
 const FAB_SIZE = 56;
+
+const RAISED_CARD = 20;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
@@ -491,7 +512,7 @@ const styles = StyleSheet.create({
   inputLeased: { borderColor: colors.accent },
   activityCard: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.sm,
     padding: spacing.md,
     borderRadius: radii.md,
@@ -500,6 +521,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   activityCardLeased: { borderColor: colors.accent, borderWidth: 2 },
+  activityCardRaised: { position: 'relative', zIndex: RAISED_CARD },
   reorderColumn: { gap: spacing.xs, alignItems: 'center' },
   reorderArrow: { ...typography.bodyStrong, color: colors.accent },
   reorderArrowDisabled: { color: colors.border },

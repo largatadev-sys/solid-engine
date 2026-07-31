@@ -1,18 +1,31 @@
 import { Tabs, useRouter } from 'expo-router';
+import { type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { comingSoon } from '../../src/components/comingSoon';
+import { Icon, type IconName } from '../../src/components/Icon';
 import { colors, typography } from '../../src/theme';
+
+
+const TAB_ICON_SIZE = 22;
+
+
+function tabIcon(name: IconName) {
+  return ({ color }: { color: ColorValue }) => (
+    <Icon name={name} size={TAB_ICON_SIZE} color={String(color)} />
+  );
+}
 
 
 export default function TabsLayout() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       backBehavior="history"
       screenOptions={{
-        headerTitleStyle: typography.bodyStrong,
-        headerStyle: { backgroundColor: colors.background },
-        sceneStyle: { backgroundColor: colors.background },
+        headerShown: false,
+        sceneStyle: { backgroundColor: colors.background, paddingTop: insets.top },
         tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
@@ -21,7 +34,11 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="home"
-        options={{ title: 'Home', tabBarAccessibilityLabel: 'Home, coming soon' }}
+        options={{
+          title: 'Home',
+          tabBarIcon: tabIcon('home'),
+          tabBarAccessibilityLabel: 'Home, coming soon',
+        }}
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
@@ -31,7 +48,11 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="search"
-        options={{ title: 'Search', tabBarAccessibilityLabel: 'Search, coming soon' }}
+        options={{
+          title: 'Search',
+          tabBarIcon: tabIcon('search'),
+          tabBarAccessibilityLabel: 'Search, coming soon',
+        }}
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
@@ -41,7 +62,11 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="create"
-        options={{ title: '+', tabBarAccessibilityLabel: 'Plan a trip' }}
+        options={{
+          title: 'Plan',
+          tabBarIcon: tabIcon('plus'),
+          tabBarAccessibilityLabel: 'Plan a trip',
+        }}
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
@@ -49,8 +74,8 @@ export default function TabsLayout() {
           },
         }}
       />
-      <Tabs.Screen name="index" options={{ title: 'Trips', headerShown: false }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile', headerShown: false }} />
+      <Tabs.Screen name="index" options={{ title: 'Trips', tabBarIcon: tabIcon('map') }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: tabIcon('person') }} />
     </Tabs>
   );
 }

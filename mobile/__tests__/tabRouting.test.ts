@@ -45,6 +45,19 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(layout.match(/event\.preventDefault\(\)/g) ?? []).toHaveLength(3);
   });
 
+  it('gives every tab a real icon — an unset one renders as a tofu box on Android', () => {
+    const layout = read(TABS, '_layout.tsx');
+
+    expect(layout.match(/tabBarIcon:/g) ?? []).toHaveLength(5);
+  });
+
+  it('insets the tab scenes, because no tab screen has a header to do it for them', () => {
+    const layout = read(TABS, '_layout.tsx');
+
+    expect(layout).toContain('headerShown: false');
+    expect(layout).toContain('paddingTop: insets.top');
+  });
+
   it('routes + straight to Trip Details — no chooser until S4.7 (decision 13)', () => {
     expect(read(TABS, '_layout.tsx')).toContain("router.push('/itineraries/new')");
     expect(read(TABS, 'create.tsx')).toContain('href="/itineraries/new"');

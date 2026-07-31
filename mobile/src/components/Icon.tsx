@@ -11,7 +11,10 @@ export type IconName =
   | 'dollar'
   | 'chevronDown'
   | 'check'
-  | 'sparkle';
+  | 'sparkle'
+  | 'search'
+  | 'plus'
+  | 'home';
 
 interface IconProps {
   readonly name: IconName;
@@ -53,6 +56,27 @@ export function Icon({ name, size, color }: IconProps) {
         <>
           <Circle cx="12" cy="12" r="10" {...shared} />
           <Polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88" {...shared} />
+        </>
+      )}
+
+      {name === 'search' && (
+        <>
+          <Circle cx="11" cy="11" r="8" {...shared} />
+          <Line x1="21" y1="21" x2="16.65" y2="16.65" {...shared} />
+        </>
+      )}
+
+      {name === 'plus' && (
+        <>
+          <Line x1="12" y1="5" x2="12" y2="19" {...shared} />
+          <Line x1="5" y1="12" x2="19" y2="12" {...shared} />
+        </>
+      )}
+
+      {name === 'home' && (
+        <>
+          <Path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" {...shared} />
+          <Polyline points="9 21 9 13 15 13 15 21" {...shared} />
         </>
       )}
 
