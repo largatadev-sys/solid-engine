@@ -132,6 +132,22 @@ Publish (S4.1) · chat build + history surface (S4.10) · fork + chooser activat
 
 *(append-only; intent above is immutable)*
 
+### 2026-07-31 — decision 13's "no chooser until S4.7" is reversed: the chooser ships now, fork greyed (founder-ruled, at the device walk)
+
+Decision 13 ruled *"**No chooser until S4.7** (re-confirms the S1.3 ruling): **+** routes straight to Trip Details; S4.7 supplies the second card and activates the chooser."* Founder ruling at the walk: **+ opens `create-trip-entry`, with both cards drawn and Fork greyed** (`comingSoon('fork')` + register-#2 analytics) until S4.7 implements it.
+
+Why the reversal is cheap where the original ruling was cautious: the objection to a chooser was a one-option chooser — a screen that asks a question with a single answer. Greying the second card answers that: the traveler sees that forking exists and is coming, which is the same argument that put the cover drop-zone, the Chat tab and the network section on screen greyed rather than absent. S4.7 activates the card instead of building the screen.
+
+Route: `+` → `/itineraries/create` → *Start from Scratch* → `/itineraries/new` (Trip Details, unchanged) → Continue → the day editor at Day 1.
+
+### 2026-07-31 — the screen chrome is the page, not a nav bar (founder-ruled, at the device walk)
+
+Every frame in the mock set puts its heading **inside `.body-pad`** — there is no header bar anywhere in the set. The build had been using the navigator's header, which produced a bordered bar above the content on every trip screen. All the trip-flow screens now set `headerShown: false` and render `ScreenHeader` as the first thing in the page.
+
+**`ScreenHeader` owns the safe-area inset**, and that is load-bearing rather than incidental: dropping the navigator header also drops the inset it was providing, so a screen that renders anything before the header collides with the camera cutout. It happened immediately — the workspace's eyebrow sat above the header and landed under the status bar. The fix is the mock's own grouping: eyebrow and title are **one block** (`ScreenHeader`'s `eyebrow` prop), so nothing can render above the inset by accident.
+
+Also corrected against the frames at the same pass: the settings **gear** replaces the "Details" text on the editor · the workspace eyebrow is `users` icon + "Private Workspace" in accent, not an all-caps overline · avatars **overlap** (`margin-left: -8`, 2px surface ring) instead of sitting in a gapped row · activity cost renders as a **sign** (`₱800`, grouped) rather than a code, and rejoins the editor card's meta line as `location • cost` — the gap the previous entry flagged · the time field is a **spinner picker**, 12-hour.
+
 ### 2026-07-31 — decision 9 is partially reversed: the day surfaces split back into two (founder-ruled, at the device walk)
 
 Decision 9 ruled *"One day surface, two doors — the chips editor **is** the day screen … the `collaborative-edit` mock is this same screen's decorated state."* Built that way and walked on the device, the founder's read was that the consolidation is **where the confusion lives**: `trip-editor-days`, `collaborative-edit` and the workspace all appeared to do the same job. Ruling: **a workspace day card opens `collaborative-edit`, and `collaborative-edit` stays the screen the mock draws.** `trip-editor-days` is explicitly parked — *"I'll circle back to trip editor days once I get more clarity."*

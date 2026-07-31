@@ -9,8 +9,10 @@ import { missingItineraryMessage } from '../../../../src/components/missingItine
 import { useEditLock } from '../../../../src/hooks/useEditLock';
 import { useMe } from '../../../../src/hooks/useMe';
 import { Icon } from '../../../../src/components/Icon';
+import { placeAndCost } from '../../../../src/itineraries/activityMeta';
 import { formatTimeOfDay } from '../../../../src/itineraries/formatActivityCost';
 import { initialsFor } from '../../../../src/onboarding/initials';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { ActivityKebab } from '../../../../src/itineraries/ActivityKebab';
 import { attributionLine, leaseNotice } from '../../../../src/itineraries/leaseIndicator';
 import { applyMove, type ReorderMove } from '../../../../src/itineraries/reorderActivityIds';
@@ -124,23 +126,22 @@ export default function DaySurfaceScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Stack.Screen
-          options={{
-            title: data.title,
-            headerRight: () => (
-              <Pressable
-                onPress={() => router.push({ pathname: '/itineraries/[id]', params: { id, tab: 'details' } })}
-                accessibilityRole="button"
-                accessibilityLabel="Trip settings"
-                hitSlop={spacing.sm}
-              >
-                <Text style={styles.headerAction}>Details</Text>
-              </Pressable>
-            ),
-          }}
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScreenHeader
+          title={data.title}
+          back
+          action={
+            <Pressable
+              onPress={() => router.push({ pathname: '/itineraries/[id]', params: { id, tab: 'details' } })}
+              accessibilityRole="button"
+              accessibilityLabel="Trip settings"
+              hitSlop={spacing.sm}
+            >
+              <Icon name="settings" size={SETTINGS_ICON_SIZE} color={colors.textPrimary} />
+            </Pressable>
+          }
         />
 
-        {}
         {mutationMessage !== undefined && <Text style={styles.mutationError}>{mutationMessage}</Text>}
 
         {days.length === 0 ? (
@@ -228,7 +229,6 @@ export default function DaySurfaceScreen() {
           </Pressable>
         )}
 
-        {}
         <Pressable
           style={styles.historyLink}
           onPress={() => comingSoon('activityHistory')}
@@ -316,7 +316,6 @@ function SelectedDay(props: {
     <View style={styles.dayBody}>
       <View style={styles.field}>
         <Text style={styles.label}>Day {props.day.ordinal} title</Text>
-        {}
         {dayLease !== null && <Text style={styles.leaseNotice}>{dayLease}</Text>}
         <TextInput
           style={[styles.input, dayLease !== null && styles.inputLeased]}
@@ -384,6 +383,7 @@ function ActivityCard({
   onMoveDown: (() => void) | undefined;
 }) {
   const clock = formatTimeOfDay(activity.timeOfDay);
+  const meta = placeAndCost(activity.place, activity.costAmount, activity.costCurrency);
   const notice = leaseNotice(activity.lease, myTravelerId);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -396,7 +396,6 @@ function ActivityCard({
           menuOpen && styles.activityCardRaised,
         ]}
       >
-        {}
         <View style={styles.reorderColumn}>
           <Pressable
             onPress={onMoveUp}
@@ -418,14 +417,16 @@ function ActivityCard({
           </Pressable>
         </View>
 
-        {}
         <Pressable style={styles.activityBody} onPress={onEdit} accessibilityRole="button">
           {clock !== undefined && <Text style={styles.activityTime}>{clock}</Text>}
           <Text style={styles.activityTitle}>{activity.title}</Text>
-          {activity.place !== null && (
+          {}
+          {meta !== undefined && (
             <View style={styles.activityPlaceRow}>
-              <Icon name="mapPin" size={PLACE_ICON_SIZE} color={colors.textSecondary} />
-              <Text style={styles.activityPlace}>{activity.place}</Text>
+              {activity.place !== null && (
+                <Icon name="mapPin" size={PLACE_ICON_SIZE} color={colors.textSecondary} />
+              )}
+              <Text style={styles.activityPlace}>{meta}</Text>
             </View>
           )}
         </Pressable>
@@ -465,6 +466,8 @@ const FAB_SIZE = 56;
 
 const RAISED_CARD = 20;
 
+const SETTINGS_ICON_SIZE = 24;
+
 const LEASE_AVATAR_SIZE = 18;
 
 const PLACE_ICON_SIZE = 14;
@@ -492,7 +495,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: colors.background,
   },
-  headerAction: { ...typography.body, color: colors.accent, paddingHorizontal: spacing.sm },
   emptyState: { ...typography.body, color: colors.textSecondary },
 
   tabStripOuter: { flexGrow: 0 },

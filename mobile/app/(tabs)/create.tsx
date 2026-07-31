@@ -2,5 +2,5 @@ import { Redirect } from 'expo-router';
 
 
 export default function CreateTabScreen() {
-  return <Redirect href="/itineraries/new" />;
+  return <Redirect href="/itineraries/create" />;
 }

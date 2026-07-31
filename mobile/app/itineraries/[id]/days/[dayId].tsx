@@ -5,6 +5,7 @@ import { comingSoon } from '../../../../src/components/comingSoon';
 import { archivedPlanNotice } from '../../../../src/components/editLockedMessage';
 import { Icon } from '../../../../src/components/Icon';
 import { missingItineraryMessage } from '../../../../src/components/missingItineraryMessage';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { useMe } from '../../../../src/hooks/useMe';
 import { formatTimeOfDay } from '../../../../src/itineraries/formatActivityCost';
 import { dayHeading } from '../../../../src/itineraries/dayHeading';
@@ -69,7 +70,9 @@ export default function DayDetailScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ title: dayHeading(day) }} />
+      {}
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title={dayHeading(day)} size="heading" back />
 
       {day.activities.length === 0 ? (
         <Text style={styles.emptyState}>Nothing planned for this day yet.</Text>

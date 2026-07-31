@@ -59,9 +59,18 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(layout).toContain('paddingTop: insets.top');
   });
 
-  it('routes + straight to Trip Details — no chooser until S4.7 (decision 13)', () => {
-    expect(read(TABS, '_layout.tsx')).toContain("router.push('/itineraries/new')");
-    expect(read(TABS, 'create.tsx')).toContain('href="/itineraries/new"');
+  it('routes + to the chooser — decision 13 reversed, fork greyed until S4.7', () => {
+    expect(read(TABS, '_layout.tsx')).toContain("router.push('/itineraries/create')");
+    expect(read(TABS, 'create.tsx')).toContain('href="/itineraries/create"');
+  });
+
+  it('the chooser offers scratch live and fork greyed', () => {
+    const chooser = read(APP, 'itineraries', 'create.tsx');
+
+    expect(chooser).toContain("router.replace('/itineraries/new')");
+    expect(chooser).toContain("comingSoon('fork')");
+    expect(chooser).toContain('Start from Scratch');
+    expect(chooser).toContain('Fork an Existing Itinerary');
   });
 });
 
@@ -170,6 +179,7 @@ describe('every greyed affordance S4.9 ships is wired to the shared helper (regi
   const screens = [
     read(TABS, '_layout.tsx'),
     read(APP, 'itineraries', 'new.tsx'),
+    read(APP, 'itineraries', 'create.tsx'),
     read(APP, 'itineraries', '[id]', 'index.tsx'),
     read(APP, 'itineraries', '[id]', 'days', 'index.tsx'),
     read(APP, 'itineraries', '[id]', 'days', '[dayId].tsx'),

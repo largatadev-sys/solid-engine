@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
 import { comingSoon } from '../../../src/components/comingSoon';
+import { Icon } from '../../../src/components/Icon';
+import { ScreenHeader } from '../../../src/components/ScreenHeader';
 import { confirmWith } from '../../../src/components/confirmDestructive';
 import { leaveTripWording } from '../../../src/components/confirmDestructiveMessage';
 import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
@@ -19,6 +21,9 @@ import { useEndMembership, useMembers } from '../../../src/query/invitationQueri
 import { useItinerary } from '../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 import type { DayResponse, ItineraryResponse } from '../../../src/types/api';
+
+
+const EYEBROW_ICON_SIZE = 20;
 
 
 type WorkspaceTab = 'itinerary' | 'details';
@@ -70,11 +75,23 @@ export default function TripWorkspaceScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Stack.Screen options={{ title: data.title }} />
+        {}
+        <Stack.Screen options={{ headerShown: false }} />
 
         {}
-        {data.visibility === 'private' && <Text style={styles.eyebrow}>PRIVATE WORKSPACE</Text>}
-        <Text style={styles.title}>{data.title}</Text>
+        <ScreenHeader
+          title={data.title}
+          size="display"
+          back
+          eyebrow={
+            data.visibility === 'private' ? (
+              <View style={styles.eyebrowRow}>
+                <Icon name="users" size={EYEBROW_ICON_SIZE} color={colors.accent} />
+                <Text style={styles.eyebrow}>Private Workspace</Text>
+              </View>
+            ) : undefined
+          }
+        />
 
         <View style={styles.identityRow}>
           <Link href={{ pathname: '/members/[itineraryId]', params: { itineraryId: id } }} asChild>
@@ -291,7 +308,8 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: colors.background,
   },
-  eyebrow: { ...typography.overline, color: colors.textSecondary },
+  eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  eyebrow: { ...typography.label, color: colors.accent },
   title: { ...typography.title, color: colors.textPrimary },
   identityRow: {
     flexDirection: 'row',

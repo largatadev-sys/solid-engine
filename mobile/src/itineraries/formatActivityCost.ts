@@ -1,8 +1,27 @@
+import { currencySign, isKnownCurrency } from './currencySign';
+
 
 export function formatActivityCost(amount: string | null, currency: string | null): string | undefined {
   if (amount === null) return undefined;
-  if (Number(amount) === 0) return 'Free';
-  return currency !== null ? `${currency} ${amount}` : amount;
+
+  const value = Number(amount);
+  if (Number.isNaN(value)) return amount;
+  if (value === 0) return 'Free';
+
+  const shown = grouped(value);
+  if (currency === null || currency.trim() === '') return shown;
+
+  const sign = currencySign(currency);
+  return isKnownCurrency(currency) ? `${sign}${shown}` : `${sign} ${shown}`;
+}
+
+
+function grouped(value: number): string {
+  const digits = Number.isInteger(value) ? 0 : 2;
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
 }
 
 

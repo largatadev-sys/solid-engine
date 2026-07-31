@@ -6,6 +6,7 @@ export const COMING_SOON_SURFACES = {
   activityPhoto: 'Activity photo',
   network: 'From your network',
   activityHistory: 'Activity history',
+  fork: 'Forking an itinerary',
 } as const;
 
 export type ComingSoonSurface = keyof typeof COMING_SOON_SURFACES;

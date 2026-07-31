@@ -16,8 +16,24 @@ describe('formatActivityCost — the null/0/price distinction', () => {
     expect(formatActivityCost('0.00', 'PHP')).toBe('Free');
   });
 
-  it('shows the currency and amount when a price is set', () => {
-    expect(formatActivityCost('500.00', 'PHP')).toBe('PHP 500.00');
+  it('shows the currency SIGN, not the code — the mock reads ₱800', () => {
+    expect(formatActivityCost('800', 'PHP')).toBe('₱800');
+    expect(formatActivityCost('500.00', 'PHP')).toBe('₱500');
+    expect(formatActivityCost('20', 'USD')).toBe('$20');
+  });
+
+  it('groups thousands, because ₱1200 is harder to read than ₱1,200', () => {
+    expect(formatActivityCost('1200.00', 'PHP')).toBe('₱1,200');
+    expect(formatActivityCost('1234567', 'PHP')).toBe('₱1,234,567');
+  });
+
+  it('keeps cents when there are cents, and drops them when there are none', () => {
+    expect(formatActivityCost('1200.50', 'PHP')).toBe('₱1,200.50');
+    expect(formatActivityCost('1200.00', 'PHP')).toBe('₱1,200');
+  });
+
+  it('falls back to the code, spaced, for a currency it has no sign for', () => {
+    expect(formatActivityCost('500', 'XYZ')).toBe('XYZ 500');
   });
 
   it('shows just the amount if somehow no currency rode along', () => {
@@ -59,7 +75,7 @@ describe('formatTimeOfDay — the mock reads 12-hour with AM/PM, the server stor
 
 describe('activityMetaLine — joining time and cost', () => {
   it('joins a 12-hour time and a cost with a dot', () => {
-    expect(activityMetaLine('14:00', '500', 'PHP')).toBe('02:00 PM · PHP 500');
+    expect(activityMetaLine('14:00', '500', 'PHP')).toBe('02:00 PM · ₱500');
   });
 
   it('shows only the time when the cost is unstated', () => {

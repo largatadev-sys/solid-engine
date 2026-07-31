@@ -29,18 +29,23 @@ export function AvatarStack({ roster }: { roster: MemberResponse[] }) {
 
 const BUBBLE = 32;
 
+const OVERLAP = -8;
+
+const RING = 2;
+
 const styles = StyleSheet.create({
-  stack: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center' },
+  stack: { flexDirection: 'row', alignItems: 'center', paddingLeft: -OVERLAP },
   bubble: {
     width: BUBBLE,
     height: BUBBLE,
     borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
+    marginLeft: OVERLAP,
+    borderWidth: RING,
+    borderColor: colors.surface,
     backgroundColor: colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  overflow: { backgroundColor: colors.surface },
-  initials: { ...typography.caption, color: colors.textPrimary },
+  overflow: { backgroundColor: colors.border },
+  initials: { ...typography.fine, color: colors.textPrimary },
 });
