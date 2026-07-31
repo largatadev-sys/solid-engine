@@ -36,7 +36,6 @@ export function PublishedItineraryView({
   audience: 'preview' | 'consumer';
 }) {
   const [tab, setTab] = useState<PublishedTab>('Overview');
-  const tabs = audience === 'consumer' ? PUBLISHED_TABS : (['Overview', 'Day-by-Day'] as const);
 
   return (
     <View style={styles.page}>
@@ -48,7 +47,7 @@ export function PublishedItineraryView({
         style={styles.tabBar}
         contentContainerStyle={styles.tabBarRow}
       >
-        {tabs.map((label) => (
+        {PUBLISHED_TABS.map((label) => (
           <Pressable
             key={label}
             style={[styles.tab, tab === label && styles.tabSelected]}

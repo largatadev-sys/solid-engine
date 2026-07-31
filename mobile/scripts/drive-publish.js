@@ -245,6 +245,9 @@ const GREYED = [
   check('…and no roster', !preview.includes('members'));
   check('the preview offers Publish and Continue Editing',
     preview.includes('Publish Itinerary') && preview.includes('Continue Editing'));
+  check('the preview carries the SAME five-tab shell the public page does (founder, 08/01)',
+    ['Overview', 'Day-by-Day', 'Diary Entry', 'Comments', 'Reviews'].every((t) => preview.includes(t)),
+    preview.replace(/\n/g, ' | ').slice(0, 220));
 
   const publishTap = await tap('Publish Itinerary');
   check('Publish is clicked on the preview', publishTap.clicked,

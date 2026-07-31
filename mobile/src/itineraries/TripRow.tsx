@@ -5,10 +5,19 @@ import type { ItineraryResponse } from '../types/api';
 import { formatDates } from './formatDates';
 
 
-export function tripRowDestination(itinerary: Pick<ItineraryResponse, 'id' | 'archived'>) {
-  return itinerary.archived
-    ? { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } }
-    : { pathname: '/itineraries/[id]/days' as const, params: { id: itinerary.id, day: '1' } };
+export function tripRowDestination(
+  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'state' | 'visibility'>,
+) {
+  if (itinerary.archived) {
+    return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
+  }
+  if (itinerary.visibility === 'published') {
+    return { pathname: '/published/[id]' as const, params: { id: itinerary.id } };
+  }
+  if (itinerary.state === 'draft') {
+    return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
+  }
+  return { pathname: '/itineraries/[id]/days' as const, params: { id: itinerary.id, day: '1' } };
 }
 
 

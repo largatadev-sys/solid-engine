@@ -198,12 +198,35 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(read(TRIPS, 'new.tsx')).toContain("day: '1'");
   });
 
-  it('sends a LIVE trip row to the editor too, and an ARCHIVED one to the workspace', () => {
-    const live = tripRowDestination({ id: 'trip-1', archived: false });
-    const archived = tripRowDestination({ id: 'trip-1', archived: true });
+  it('sends a DRAFT row to the workspace and a PUBLISHED row to the overview (founder, 08/01)', () => {
+    const draft = tripRowDestination({
+      id: 'trip-1', archived: false, state: 'draft', visibility: 'private',
+    });
+    const published = tripRowDestination({
+      id: 'trip-1', archived: false, state: 'draft', visibility: 'published',
+    });
+
+    expect(draft.pathname).toBe('/itineraries/[id]');
+    expect(published.pathname).toBe('/published/[id]');
+  });
+
+  it('sends a trip that is under way to the editor, and an ARCHIVED one to the workspace', () => {
+    const live = tripRowDestination({
+      id: 'trip-1', archived: false, state: 'active', visibility: 'private',
+    });
+    const archived = tripRowDestination({
+      id: 'trip-1', archived: true, state: 'active', visibility: 'private',
+    });
 
     expect(live.pathname).toBe('/itineraries/[id]/days');
     expect(archived.pathname).toBe('/itineraries/[id]');
+  });
+
+  it('lets ARCHIVED win over published — an archived trip has no public page to open', () => {
+    expect(
+      tripRowDestination({ id: 'trip-1', archived: true, state: 'draft', visibility: 'published' })
+        .pathname,
+    ).toBe('/itineraries/[id]');
   });
 
   it('the activity form picks a time rather than asking anyone to type one', () => {
