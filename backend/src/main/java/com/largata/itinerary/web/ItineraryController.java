@@ -6,8 +6,10 @@ import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.ItineraryService;
+import com.largata.itinerary.PublishedItineraryService;
 import com.largata.itinerary.api.CreateItineraryRequest;
 import com.largata.itinerary.api.ItineraryResponse;
+import com.largata.itinerary.api.PublishedItineraryResponse;
 import com.largata.itinerary.api.UpdateItineraryRequest;
 import com.largata.membership.MembershipService;
 import jakarta.validation.Valid;
@@ -29,12 +31,17 @@ import org.springframework.web.bind.annotation.RestController;
 class ItineraryController {
 
     private final ItineraryService itineraries;
+    private final PublishedItineraryService published;
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
 
     ItineraryController(
-            ItineraryService itineraries, MembershipService memberships, AuthorizationGuard guard) {
+            ItineraryService itineraries,
+            PublishedItineraryService published,
+            MembershipService memberships,
+            AuthorizationGuard guard) {
         this.itineraries = itineraries;
+        this.published = published;
         this.memberships = memberships;
         this.guard = guard;
     }
@@ -97,6 +104,13 @@ class ItineraryController {
         itineraries.complete(membership);
         var plan = itineraries.viewPlan(membership);
         return ItineraryResponse.of(plan);
+    }
+
+
+    @GetMapping("/{id}/preview")
+    PublishedItineraryResponse preview(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        return PublishedItineraryResponse.of(published.preview(membership));
     }
 
 

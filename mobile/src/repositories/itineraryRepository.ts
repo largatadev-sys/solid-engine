@@ -10,6 +10,7 @@ import type {
   LeaseSubject,
   MoveActivityRequest,
   Page,
+  PublishedItineraryResponse,
   ReorderActivitiesRequest,
   UpdateItineraryRequest,
 } from '../types/api';
@@ -47,6 +48,16 @@ export const itineraryRepository = {
 
   async unarchiveTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unarchive`, undefined);
+  },
+
+
+  async fetchPublished(id: string): Promise<PublishedItineraryResponse> {
+    return apiClient.get<PublishedItineraryResponse>(`/v1/published-itineraries/${id}`);
+  },
+
+
+  async fetchPreview(id: string): Promise<PublishedItineraryResponse> {
+    return apiClient.get<PublishedItineraryResponse>(`/v1/itineraries/${id}/preview`);
   },
 
 

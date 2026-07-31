@@ -1,0 +1,35 @@
+package com.largata.itinerary.api;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.largata.itinerary.ActivityView;
+import java.math.BigDecimal;
+import java.util.UUID;
+
+
+public record PublishedActivityResponse(
+        UUID id,
+        int sortOrder,
+        String title,
+        String timeOfDay,
+        @JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal costAmount,
+        String costCurrency,
+        String place,
+        String description,
+        String notes,
+        String externalUrl) {
+
+
+    static PublishedActivityResponse of(ActivityView activity) {
+        return new PublishedActivityResponse(
+                activity.id(),
+                activity.sortOrder(),
+                activity.title(),
+                activity.timeOfDay() == null ? null : activity.timeOfDay().toString(),
+                activity.costAmount(),
+                activity.costCurrency(),
+                activity.place(),
+                activity.description(),
+                activity.notes(),
+                activity.externalUrl());
+    }
+}

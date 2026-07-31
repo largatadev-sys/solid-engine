@@ -248,7 +248,7 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
 });
 
 
-describe('every greyed affordance S4.9 ships is wired to the shared helper (register #2)', () => {
+describe('every greyed affordance is wired to the shared helper (register #2)', () => {
   const screens = [
     read(TABS, '_layout.tsx'),
     read(TRIPS, 'new.tsx'),
@@ -259,6 +259,7 @@ describe('every greyed affordance S4.9 ships is wired to the shared helper (regi
     read(TRIPS, '[id]', 'activity.tsx'),
     read(TRIPS, '[id]', 'invite.tsx'),
     read(MOBILE_ROOT, 'src', 'components', 'ComingSoonScreen.tsx'),
+    read(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
   ].join('\n');
 
   it.each(Object.keys(COMING_SOON_SURFACES))('%s has a call site', (surface) => {

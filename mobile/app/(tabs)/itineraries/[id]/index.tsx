@@ -8,7 +8,6 @@ import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { confirmWith } from '../../../../src/components/confirmDestructive';
 import {
   leaveTripWording,
-  publishTripWording,
   unpublishTripWording,
 } from '../../../../src/components/confirmDestructiveMessage';
 import { missingItineraryMessage } from '../../../../src/components/missingItineraryMessage';
@@ -23,11 +22,7 @@ import { WorkspaceChip } from '../../../../src/itineraries/WorkspaceChip';
 import { memberControls } from '../../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../../src/members/OwnershipOfferBanner';
 import { useEndMembership, useMembers } from '../../../../src/query/invitationQueries';
-import {
-  useItinerary,
-  usePublishTrip,
-  useUnpublishTrip,
-} from '../../../../src/query/itineraryQueries';
+import { useItinerary, useUnpublishTrip } from '../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../src/theme';
 import type { DayResponse, ItineraryResponse } from '../../../../src/types/api';
 
@@ -50,7 +45,6 @@ export default function TripWorkspaceScreen() {
   const { isOwner, canInvite, canLeave } = memberControls(roster, myId, data?.archived ?? false);
 
   const endMembership = useEndMembership(id);
-  const publish = usePublishTrip(id);
   const unpublish = useUnpublishTrip(id);
   const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'itinerary');
 
@@ -153,18 +147,11 @@ export default function TripWorkspaceScreen() {
       {(canInvite || control?.act === 'publish') && (
         <View style={styles.actionBar}>
           {control?.act === 'publish' && (
-            <Pressable
-              style={[styles.cta, publish.isPending && styles.busy]}
-              disabled={publish.isPending}
-              accessibilityRole="button"
-              onPress={() => confirmWith(publishTripWording(), () => publish.mutate())}
-            >
-              {publish.isPending ? (
-                <ActivityIndicator color={colors.textOnAccent} />
-              ) : (
+            <Link href={{ pathname: '/itineraries/[id]/preview', params: { id } }} asChild>
+              <Pressable style={styles.cta} accessibilityRole="button">
                 <Text style={styles.ctaText}>Publish Itinerary</Text>
-              )}
-            </Pressable>
+              </Pressable>
+            </Link>
           )}
           {canInvite && (
             <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>

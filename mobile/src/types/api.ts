@@ -134,6 +134,51 @@ export type ActivityResponse = {
 };
 
 
+export type EstimatedCostResponse = {
+  amount: string;
+
+  currency: string | null;
+};
+
+
+export type PublishedActivityResponse = {
+  id: string;
+  sortOrder: number;
+  title: string;
+  timeOfDay: string | null;
+  costAmount: string | null;
+  costCurrency: string | null;
+  place: string | null;
+  description: string | null;
+
+  notes: string | null;
+  externalUrl: string | null;
+};
+
+
+export type PublishedDayResponse = {
+  id: string;
+  ordinal: number;
+  title: string | null;
+  activities: PublishedActivityResponse[];
+};
+
+
+export type PublishedItineraryResponse = {
+  id: string;
+  title: string;
+  destinations: string[];
+  description: string | null;
+
+  durationDays: number;
+
+  creator: TravelerCardResponse;
+
+  estimatedCost: EstimatedCostResponse | null;
+  days: PublishedDayResponse[];
+};
+
+
 export type CreateItineraryRequest = {
   title: string;
   destinations: string[];

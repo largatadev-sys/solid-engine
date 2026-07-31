@@ -76,16 +76,6 @@ export function declineOwnershipWording(): ConfirmWording {
 }
 
 
-export function publishTripWording(): ConfirmWording {
-  return {
-    title: 'Publish this trip?',
-    body: 'Every signed-in traveler with the link can read the plan. Your dates never appear on it. You can unpublish at any time.',
-    confirmLabel: 'Publish',
-    tone: 'default',
-  };
-}
-
-
 export function unpublishTripWording(): ConfirmWording {
   return {
     title: 'Unpublish this trip?',

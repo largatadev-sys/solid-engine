@@ -20,6 +20,7 @@ import type {
   DayResponse,
   ItineraryResponse,
   Page,
+  PublishedItineraryResponse,
   UpdateItineraryRequest,
 } from '../types/api';
 
@@ -32,6 +33,10 @@ export const itineraryKeys = {
   lists: () => [...itineraryKeys.all, 'list'] as const,
   list: (archived = false) => [...itineraryKeys.lists(), { archived }] as const,
   one: (id: string) => [...itineraryKeys.all, 'one', id] as const,
+
+  published: (id: string) => [...itineraryKeys.all, 'published', id] as const,
+
+  preview: (id: string) => [...itineraryKeys.all, 'preview', id] as const,
 };
 
 
@@ -132,11 +137,36 @@ export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryRespons
   });
 }
 
+export function usePublishedItinerary(id: string): UseQueryResult<PublishedItineraryResponse> {
+  const { kind } = useAuth();
+  return useQuery({
+    queryKey: itineraryKeys.published(id),
+    queryFn: () => itineraryRepository.fetchPublished(id),
+    enabled: kind === 'signedIn',
+    retry: false,
+  });
+}
+
+
+export function useItineraryPreview(id: string): UseQueryResult<PublishedItineraryResponse> {
+  const { kind } = useAuth();
+  return useQuery({
+    queryKey: itineraryKeys.preview(id),
+    queryFn: () => itineraryRepository.fetchPreview(id),
+    enabled: kind === 'signedIn',
+    retry: false,
+  });
+}
+
+
 export function usePublishTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => itineraryRepository.publishTrip(id),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
+    onSuccess: async (updated) => {
+      await onItineraryUpdated(client, updated);
+      await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
+    },
   });
 }
 
@@ -144,7 +174,10 @@ export function useUnpublishTrip(id: string): UseMutationResult<ItineraryRespons
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => itineraryRepository.unpublishTrip(id),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
+    onSuccess: async (updated) => {
+      await onItineraryUpdated(client, updated);
+      await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
+    },
   });
 }
 
