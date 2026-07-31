@@ -171,10 +171,14 @@ describe('reorder and move (S1.3, ticket 03)', () => {
   it('reorders a day by PUTting the whole ordered list', async () => {
     apiClient.put.mockResolvedValue(undefined);
 
-    await itineraryRepository.reorderActivities('trip-1', 'day-1', { activityIds: ['c', 'a', 'b'] });
+    await itineraryRepository.reorderActivities('trip-1', 'day-1', {
+      activityIds: ['c', 'a', 'b'],
+      expectedActivityIds: ['a', 'b', 'c'],
+    });
 
     expect(apiClient.put).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/order', {
       activityIds: ['c', 'a', 'b'],
+      expectedActivityIds: ['a', 'b', 'c'],
     });
   });
 
@@ -189,28 +193,65 @@ describe('reorder and move (S1.3, ticket 03)', () => {
   });
 });
 
-describe('edit lock (S1.4, ADR-014)', () => {
-  it('acquires the lock with a bodiless POST under /edit-lock', async () => {
-    apiClient.post.mockResolvedValue({ itineraryId: 'trip-1', holderId: 'me', expiresAt: '2026-07-24T10:03:00Z' });
+describe('edit lease (S1.4 / ADR-014 as amended at S4.9 — every call names its subject)', () => {
+  it('acquires a header lease, the shape the trip-fields editor uses', async () => {
+    apiClient.post.mockResolvedValue({
+      itineraryId: 'trip-1',
+      subjectType: 'header',
+      subjectId: 'trip-1',
+      holderId: 'me',
+      expiresAt: '2026-07-24T10:03:00Z',
+    });
 
-    await itineraryRepository.acquireEditLock('trip-1');
+    await itineraryRepository.acquireEditLock('trip-1', { subjectType: 'header' });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', undefined);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', {
+      subjectType: 'header',
+    });
   });
 
-  it('renews under /edit-lock/renew', async () => {
-    apiClient.post.mockResolvedValue({ itineraryId: 'trip-1', holderId: 'me', expiresAt: '2026-07-24T10:04:00Z' });
+  it('acquires an activity lease naming which activity', async () => {
+    apiClient.post.mockResolvedValue({
+      itineraryId: 'trip-1',
+      subjectType: 'activity',
+      subjectId: 'a-1',
+      holderId: 'me',
+      expiresAt: '2026-07-24T10:03:00Z',
+    });
 
-    await itineraryRepository.renewEditLock('trip-1');
+    await itineraryRepository.acquireEditLock('trip-1', { subjectType: 'activity', subjectId: 'a-1' });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock/renew', undefined);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', {
+      subjectType: 'activity',
+      subjectId: 'a-1',
+    });
   });
 
-  it('releases with a DELETE on /edit-lock', async () => {
+  it('renews under /edit-lock/renew, for the subject it holds', async () => {
+    apiClient.post.mockResolvedValue({
+      itineraryId: 'trip-1',
+      subjectType: 'day',
+      subjectId: 'day-1',
+      holderId: 'me',
+      expiresAt: '2026-07-24T10:04:00Z',
+    });
+
+    await itineraryRepository.renewEditLock('trip-1', { subjectType: 'day', subjectId: 'day-1' });
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock/renew', {
+      subjectType: 'day',
+      subjectId: 'day-1',
+    });
+  });
+
+  it('releases with a DELETE carrying the subject — a release must not free somebody else', async () => {
     apiClient.delete.mockResolvedValue(undefined);
 
-    await itineraryRepository.releaseEditLock('trip-1');
+    await itineraryRepository.releaseEditLock('trip-1', { subjectType: 'activity', subjectId: 'a-1' });
 
-    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock');
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', {
+      subjectType: 'activity',
+      subjectId: 'a-1',
+    });
   });
 });

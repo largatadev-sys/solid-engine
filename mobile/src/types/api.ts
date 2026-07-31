@@ -76,8 +76,23 @@ export type ItineraryResponse = {
   lastEditedBy: string | null;
   lastEditedAt: string | null;
 
+  lastEditedByHandle?: string | null;
+  lastEditedByName?: string | null;
+
+  lease?: LeaseHolderResponse | null;
+
   days: DayResponse[];
   createdAt: string;
+};
+
+
+export type LeaseHolderResponse = {
+  travelerId: string;
+  handle: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+
+  expiresAt: string;
 };
 
 
@@ -88,6 +103,8 @@ export type DayResponse = {
   title: string | null;
 
   activities: ActivityResponse[];
+
+  lease?: LeaseHolderResponse | null;
 };
 
 
@@ -104,6 +121,11 @@ export type ActivityResponse = {
   externalUrl: string | null;
   lastEditedBy: string;
   lastEditedAt: string;
+
+  lastEditedByHandle?: string | null;
+  lastEditedByName?: string | null;
+
+  lease?: LeaseHolderResponse | null;
 };
 
 
@@ -145,6 +167,8 @@ export type ActivityRequest = {
 
 export type ReorderActivitiesRequest = {
   activityIds: string[];
+
+  expectedActivityIds: string[];
 };
 
 
@@ -153,8 +177,20 @@ export type MoveActivityRequest = {
 };
 
 
+export type LeaseSubjectType = 'header' | 'day' | 'activity';
+
+
+export type LeaseSubject = {
+  subjectType: LeaseSubjectType;
+
+  subjectId?: string;
+};
+
+
 export type EditLeaseResponse = {
   itineraryId: string;
+  subjectType: LeaseSubjectType;
+  subjectId: string;
   holderId: string;
 
   expiresAt: string;
@@ -180,9 +216,26 @@ export type CreateInvitationRequest = {
 };
 
 
+export type InviteByHandleRequest = {
+  handle: string;
+};
+
+
+export type TravelerCardResponse = {
+  id: string;
+  handle: string | null;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
+
 export type InvitationResponse = {
   id: string;
-  email: string;
+  email: string | null;
+
+  inviteeTravelerId: string | null;
+  inviteeHandle: string | null;
+
   createdAt: string;
   expiresAt: string;
 };

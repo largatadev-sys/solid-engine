@@ -1,10 +1,9 @@
 import { Link, Stack } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { BottomNav } from '../src/components/BottomNav';
-import { InvitationInbox } from '../src/components/InvitationInbox';
-import { TripRow } from '../src/itineraries/TripRow';
-import { useMyItineraries } from '../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../src/theme';
+import { InvitationInbox } from '../../src/components/InvitationInbox';
+import { TripRow } from '../../src/itineraries/TripRow';
+import { useMyItineraries } from '../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../src/theme';
 
 
 export default function MyTripsScreen() {
@@ -18,13 +17,6 @@ export default function MyTripsScreen() {
       <Stack.Screen
         options={{
           title: 'My Trips',
-          headerLeft: () => (
-            <Link href="/me" asChild>
-              <Pressable accessibilityRole="button" accessibilityLabel="Your account" hitSlop={spacing.sm}>
-                <Text style={styles.headerActionMuted}>Account</Text>
-              </Pressable>
-            </Link>
-          ),
           headerRight: () => (
             <Link href="/itineraries/new" asChild>
               <Pressable accessibilityRole="button" accessibilityLabel="Plan a trip" hitSlop={spacing.sm}>
@@ -75,9 +67,6 @@ export default function MyTripsScreen() {
           }
         />
       )}
-
-      {}
-      <BottomNav active="trips" />
     </View>
   );
 }
@@ -100,7 +89,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
   headerAction: { ...typography.bodyStrong, color: colors.accent, paddingHorizontal: spacing.sm },
-  headerActionMuted: { ...typography.body, color: colors.textSecondary, paddingHorizontal: spacing.sm },
   listContainer: { padding: spacing.md, gap: spacing.sm },
   emptyContainer: { flexGrow: 1 },
   row: {

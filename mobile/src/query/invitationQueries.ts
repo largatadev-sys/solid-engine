@@ -14,6 +14,7 @@ import type {
   CreateInvitationRequest,
   InboxInvitationResponse,
   InvitationResponse,
+  InviteByHandleRequest,
   MemberResponse,
   OwnershipOfferRequest,
   Page,
@@ -88,6 +89,17 @@ export function useInvite(itineraryId: string): UseMutationResult<InvitationResp
   const client = useQueryClient();
   return useMutation({
     mutationFn: (email: string) => invitationRepository.invite(itineraryId, { email } satisfies CreateInvitationRequest),
+    onSuccess: () => client.invalidateQueries({ queryKey: invitationKeys.pending(itineraryId) }),
+  });
+}
+
+export function useInviteByHandle(
+  itineraryId: string,
+): UseMutationResult<InvitationResponse, Error, string> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (handle: string) =>
+      invitationRepository.inviteByHandle(itineraryId, { handle } satisfies InviteByHandleRequest),
     onSuccess: () => client.invalidateQueries({ queryKey: invitationKeys.pending(itineraryId) }),
   });
 }

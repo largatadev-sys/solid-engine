@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
 import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
+import { useEditLock } from '../../../src/hooks/useEditLock';
 import { validateActivityForm } from '../../../src/itineraries/validateActivityForm';
 import {
   useCreateActivity,
@@ -34,6 +35,14 @@ export default function ActivityFormScreen() {
   const edit = useEditActivity(id);
   const move = useMoveActivity(id);
   const mutation = isEdit ? edit : create;
+
+  const editLock = useEditLock(id);
+  useEffect(() => {
+    if (activityId === undefined) return;
+    void editLock.acquire({ subjectType: 'activity', subjectId: activityId }).then((granted) => {
+      if (!granted) router.back();
+    });
+  }, [activityId]);
 
   const otherDays = (data?.days ?? []).filter((d) => d.id !== dayId);
 
@@ -63,7 +72,12 @@ export default function ActivityFormScreen() {
       ...opt('externalUrl', externalUrl),
     };
 
-    const onDone = { onSuccess: () => router.back() };
+    const onDone = {
+      onSuccess: () => {
+        editLock.release();
+        router.back();
+      },
+    };
     if (isEdit) {
       edit.mutate({ dayId, activityId, request }, onDone);
     } else {
@@ -102,7 +116,7 @@ export default function ActivityFormScreen() {
       <Field label="Notes & tips (private)" value={notes} onChangeText={setNotes} placeholder="Anything for your group" multiline />
 
       {}
-      <GreyedMediaTile label="Add photo" />
+      <GreyedMediaTile surface="coverPhoto" />
 
       <Field label="Booking link" value={externalUrl} onChangeText={setExternalUrl} placeholder="https://…" keyboardType="url" />
 

@@ -1,14 +1,14 @@
 import { Link, Stack } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Avatar } from '../src/components/Avatar';
-import { useMe } from '../src/hooks/useMe';
-import { ONBOARDING_ROUTES } from '../src/onboarding/onboardingGate';
-import { authRepository } from '../src/repositories/authRepository';
-import { colors, radii, spacing, typography } from '../src/theme';
+import { Avatar } from '../../src/components/Avatar';
+import { useMe } from '../../src/hooks/useMe';
+import { ONBOARDING_ROUTES } from '../../src/onboarding/onboardingGate';
+import { authRepository } from '../../src/repositories/authRepository';
+import { colors, radii, spacing, typography } from '../../src/theme';
 
 
 
-export default function MeScreen() {
+export default function ProfileScreen() {
   const { state, refresh } = useMe();
 
   return (

@@ -13,6 +13,7 @@ import { verificationRepository } from '../repositories/verificationRepository';
 import type {
   HandleAvailabilityResponse,
   MeResponse,
+  TravelerCardResponse,
   UpdateProfileRequest,
   VerificationCodeResponse,
 } from '../types/api';
@@ -28,6 +29,8 @@ export const meKeys = {
 
   handles: ['handle'] as const,
   handle: (handle: string) => ['handle', handle] as const,
+
+  handleLookup: (handle: string) => ['handle', 'lookup', handle] as const,
 };
 
 
@@ -44,6 +47,18 @@ export function useHandleAvailability(handle: string): UseQueryResult<HandleAvai
     queryFn: () => travelerRepository.checkHandle(handle),
     enabled: kind === 'signedIn' && handle.length >= HANDLE_MIN_LENGTH,
     staleTime: HANDLE_FRESHNESS_MS,
+  });
+}
+
+
+export function useTravelerByHandle(handle: string): UseQueryResult<TravelerCardResponse> {
+  const { kind } = useAuth();
+  return useQuery({
+    queryKey: meKeys.handleLookup(handle),
+    queryFn: () => travelerRepository.findByHandle(handle),
+    enabled: kind === 'signedIn' && handle.length >= HANDLE_MIN_LENGTH,
+    staleTime: HANDLE_FRESHNESS_MS,
+    retry: false,
   });
 }
 

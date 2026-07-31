@@ -28,7 +28,7 @@ export default function EditItineraryScreen() {
   const settledArchived = !isPlaceholderData && data !== undefined ? data.archived : undefined;
   useEffect(() => {
     if (settledArchived !== false) return;
-    void editLock.acquire().then((granted) => {
+    void editLock.acquire({ subjectType: 'header' }).then((granted) => {
       if (!granted) router.back();
     });
   }, [settledArchived]);
@@ -78,7 +78,7 @@ export default function EditItineraryScreen() {
       <Stack.Screen options={{ title: 'Edit trip' }} />
 
       {}
-      <GreyedMediaTile label="Cover photo" />
+      <GreyedMediaTile surface="coverPhoto" />
 
       <Field label="Trip title" value={title} onChangeText={setTitle} placeholder="Island Hopping in El Nido" />
 

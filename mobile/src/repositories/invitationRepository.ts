@@ -4,6 +4,7 @@ import type {
   CreateInvitationRequest,
   InboxInvitationResponse,
   InvitationResponse,
+  InviteByHandleRequest,
   MemberResponse,
   OwnershipOfferRequest,
   Page,
@@ -42,6 +43,14 @@ export const invitationRepository = {
 
   async invite(itineraryId: string, request: CreateInvitationRequest): Promise<InvitationResponse> {
     return apiClient.post<InvitationResponse>(`/v1/itineraries/${itineraryId}/invitations`, request);
+  },
+
+
+  async inviteByHandle(itineraryId: string, request: InviteByHandleRequest): Promise<InvitationResponse> {
+    return apiClient.post<InvitationResponse>(
+      `/v1/itineraries/${itineraryId}/invitations/by-handle`,
+      request,
+    );
   },
 
 

@@ -204,13 +204,16 @@ export function useDeleteActivity(
 }
 
 
+export type ReorderIntent = { dayId: string; activityIds: string[]; expectedActivityIds: string[] };
+
+
 export function useReorderActivities(
   itineraryId: string,
-): UseMutationResult<DayResponse, Error, { dayId: string; activityIds: string[] }> {
+): UseMutationResult<DayResponse, Error, ReorderIntent> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ dayId, activityIds }: { dayId: string; activityIds: string[] }) =>
-      itineraryRepository.reorderActivities(itineraryId, dayId, { activityIds }),
+    mutationFn: ({ dayId, activityIds, expectedActivityIds }: ReorderIntent) =>
+      itineraryRepository.reorderActivities(itineraryId, dayId, { activityIds, expectedActivityIds }),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }

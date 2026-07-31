@@ -182,8 +182,6 @@ export default function MembersScreen() {
 
           {ownershipError !== null && <Text style={styles.error}>{ownershipError}</Text>}
 
-          {canInvite && <OwnerControls itineraryId={itineraryId} />}
-
           {canLeave && (
             <Section label="Leaving">
               <Pressable
@@ -275,111 +273,6 @@ function MemberRow({
     </View>
   );
 }
-
-function OwnerControls({ itineraryId }: { itineraryId: string }) {
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-  const invite = useInvite(itineraryId);
-  const pending = usePendingInvitations(itineraryId);
-  const revoke = useRevokeInvitation(itineraryId);
-  const pendingList = pending.data?.items ?? [];
-
-  const onInvite = () => {
-    const trimmed = email.trim().toLowerCase();
-    if (trimmed === '') return;
-    setMessage(null);
-    invite.mutate(trimmed, {
-      onSuccess: () => {
-        setEmail('');
-        setMessage('Invitation sent.');
-      },
-      onError: (error) => setMessage(inviteErrorMessage(error)),
-    });
-  };
-
-  return (
-    <>
-      <Section label="Invite by email">
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="friend@example.com"
-          placeholderTextColor={colors.textSecondary}
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          accessibilityLabel="Email to invite"
-        />
-        <Pressable
-          style={[styles.button, invite.isPending && styles.disabled]}
-          onPress={onInvite}
-          disabled={invite.isPending}
-          accessibilityRole="button"
-        >
-          {invite.isPending ? (
-            <ActivityIndicator color={colors.textOnAccent} />
-          ) : (
-            <Text style={styles.buttonText}>Send invitation</Text>
-          )}
-        </Pressable>
-        {message !== null && <Text style={styles.message}>{message}</Text>}
-      </Section>
-
-      {pendingList.length > 0 && (
-        <Section label="Pending invitations">
-          {pendingList.map((invitation) => (
-            <PendingRow
-              key={invitation.id}
-              invitation={invitation}
-              onRevoke={() => revoke.mutate(invitation.id)}
-              revoking={revoke.isPending}
-            />
-          ))}
-        </Section>
-      )}
-    </>
-  );
-}
-
-function PendingRow({
-  invitation,
-  onRevoke,
-  revoking,
-}: {
-  invitation: InvitationResponse;
-  onRevoke: () => void;
-  revoking: boolean;
-}) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowName} numberOfLines={1}>
-        {invitation.email}
-      </Text>
-      <Pressable onPress={onRevoke} disabled={revoking} accessibilityRole="button" hitSlop={spacing.sm}>
-        <Text style={styles.revoke}>Revoke</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-
-function inviteErrorMessage(error: Error): string {
-  if (error instanceof ApiError) {
-    switch (error.code) {
-      case 'ALREADY_A_MEMBER':
-        return 'That person is already a member.';
-      case 'INVITATION_ALREADY_PENDING':
-        return 'That address already has a pending invitation.';
-      case 'VALIDATION_FAILED':
-        return 'Enter a valid email address.';
-      default:
-        return error.message;
-    }
-  }
-  return 'Could not send the invitation. Try again.';
-}
-
 
 function departureErrorMessage(error: Error): string {
   if (error instanceof ApiError) {

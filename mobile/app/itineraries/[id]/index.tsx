@@ -1,18 +1,41 @@
-import { Link, Stack, useLocalSearchParams } from 'expo-router';
+import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
+import { comingSoon } from '../../../src/components/comingSoon';
+import { confirmWith } from '../../../src/components/confirmDestructive';
+import { leaveTripWording } from '../../../src/components/confirmDestructiveMessage';
 import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
-import { formatDates } from '../../../src/itineraries/formatDates';
+import { useMe } from '../../../src/hooks/useMe';
+import { AvatarStack } from '../../../src/itineraries/AvatarStack';
 import { canEditPlan } from '../../../src/itineraries/archiveControls';
+import { formatDates } from '../../../src/itineraries/formatDates';
 import { TripArchiveBanner } from '../../../src/itineraries/TripArchiveBanner';
+import { WorkspaceChip } from '../../../src/itineraries/WorkspaceChip';
+import { memberControls } from '../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../src/members/OwnershipOfferBanner';
+import { useEndMembership, useMembers } from '../../../src/query/invitationQueries';
 import { useItinerary } from '../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../src/theme';
+import type { DayResponse, ItineraryResponse } from '../../../src/types/api';
 
 
-export default function ItineraryScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+type WorkspaceTab = 'itinerary' | 'details';
+
+
+export default function TripWorkspaceScreen() {
+  const router = useRouter();
+  const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
   const { data, isPending, isError, error } = useItinerary(id);
+
+  const members = useMembers(id);
+  const { state: meState } = useMe();
+  const myId = meState.kind === 'ok' ? meState.me.id : undefined;
+  const roster = members.data?.items ?? [];
+  const { isOwner, canInvite, canLeave } = memberControls(roster, myId, data?.archived ?? false);
+
+  const endMembership = useEndMembership(id);
+  const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'itinerary');
 
   if (isPending) {
     return (
@@ -36,99 +59,233 @@ export default function ItineraryScreen() {
     );
   }
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ title: data.title }} />
+  const leaveTrip = () => {
+    if (myId === undefined) return;
+    confirmWith(leaveTripWording(), () => {
+      endMembership.mutate({ travelerId: myId, leaving: true }, { onSuccess: () => router.replace('/') });
+    });
+  };
 
-      <View style={styles.titleRow}>
-        <Text style={styles.title}>{data.title}</Text>
+  return (
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Stack.Screen options={{ title: data.title }} />
+
         {}
-        {canEditPlan(data) && (
-          <Link href={`/itineraries/${id}/edit`} asChild>
-            <Pressable accessibilityRole="button" hitSlop={8}>
+        <Text style={styles.eyebrow}>{eyebrowFor(data)}</Text>
+        <Text style={styles.title}>{data.title}</Text>
+
+        <View style={styles.identityRow}>
+          <Link href={{ pathname: '/members/[itineraryId]', params: { itineraryId: id } }} asChild>
+            <Pressable
+              style={styles.rosterLink}
+              accessibilityRole="button"
+              accessibilityLabel={`${roster.length} members`}
+            >
+              <AvatarStack roster={roster} />
+              <Text style={styles.rosterCount}>
+                {roster.length} {roster.length === 1 ? 'member' : 'members'}
+              </Text>
+            </Pressable>
+          </Link>
+          <WorkspaceChip archived={data.archived} />
+        </View>
+
+        {}
+        <TripArchiveBanner itinerary={data} />
+        <OwnershipOfferBanner itineraryId={id} />
+
+        <View style={styles.tabBar}>
+          <WorkspaceTabButton
+            label="Itinerary"
+            selected={active === 'itinerary'}
+            onPress={() => setActive('itinerary')}
+          />
+          {}
+          <WorkspaceTabButton label="Chat" selected={false} greyed onPress={() => comingSoon('chat')} />
+          <WorkspaceTabButton
+            label="Details"
+            selected={active === 'details'}
+            onPress={() => setActive('details')}
+          />
+        </View>
+
+        {active === 'itinerary' ? (
+          <ItineraryTab itineraryId={id} days={data.days} />
+        ) : (
+          <DetailsTab
+            itinerary={data}
+            isOwner={isOwner}
+            canLeave={canLeave}
+            leaving={endMembership.isPending}
+            onLeave={leaveTrip}
+          />
+        )}
+      </ScrollView>
+
+      {}
+      {canInvite && (
+        <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
+          <Pressable style={styles.cta} accessibilityRole="button">
+            <Text style={styles.ctaText}>Invite Travelers</Text>
+          </Pressable>
+        </Link>
+      )}
+    </View>
+  );
+}
+
+
+function eyebrowFor(itinerary: ItineraryResponse): string {
+  return itinerary.visibility === 'private' ? 'PRIVATE WORKSPACE' : `${itinerary.visibility.toUpperCase()} TRIP`;
+}
+
+
+function ItineraryTab({ itineraryId, days }: { itineraryId: string; days: DayResponse[] }) {
+  if (days.length === 0) {
+    return (
+      <View style={styles.tabBody}>
+        <Text style={styles.caption}>No days yet. Open the planner to build this trip out.</Text>
+        <Link href={{ pathname: '/itineraries/[id]/days', params: { id: itineraryId, day: '1' } }} asChild>
+          <Pressable style={styles.secondaryAction} accessibilityRole="button">
+            <Text style={styles.secondaryActionText}>Open the planner</Text>
+          </Pressable>
+        </Link>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.tabBody}>
+      {days.map((day) => (
+        <Link
+          key={day.id}
+          href={{
+            pathname: '/itineraries/[id]/days',
+            params: { id: itineraryId, day: String(day.ordinal) },
+          }}
+          asChild
+        >
+          <Pressable style={styles.dayCard} accessibilityRole="button">
+            <Text style={styles.dayCardTitle}>
+              Day {day.ordinal}
+              {day.title !== null && day.title !== '' ? `: ${day.title}` : ''}
+            </Text>
+            <Text style={styles.dayCardMeta}>
+              {day.activities.length} {day.activities.length === 1 ? 'activity' : 'activities'}
+            </Text>
+          </Pressable>
+        </Link>
+      ))}
+    </View>
+  );
+}
+
+
+function DetailsTab(props: {
+  itinerary: ItineraryResponse;
+  isOwner: boolean;
+  canLeave: boolean;
+  leaving: boolean;
+  onLeave: () => void;
+}) {
+  const { itinerary } = props;
+
+  return (
+    <View style={styles.tabBody}>
+      <View style={styles.detailsHeader}>
+        <Text style={styles.sectionLabel}>Trip details</Text>
+        {}
+        {canEditPlan(itinerary) && (
+          <Link href={{ pathname: '/itineraries/[id]/edit', params: { id: itinerary.id } }} asChild>
+            <Pressable accessibilityRole="button" hitSlop={spacing.sm}>
               <Text style={styles.editLink}>Edit</Text>
             </Pressable>
           </Link>
         )}
       </View>
 
-      <View style={styles.badges}>
-        <Badge label={data.visibility} />
-        {data.archived && <Badge label="Archived" />}
-      </View>
-
-      <TripArchiveBanner itinerary={data} />
-
-      {}
-      <OwnershipOfferBanner itineraryId={id} />
-
-
-      {}
-      <Link href={`/members/${id}`} asChild>
-        <Pressable style={styles.membersLink} accessibilityRole="button">
-          <Text style={styles.membersLinkText}>Members</Text>
-        </Pressable>
-      </Link>
-
-      {}
-      {canEditPlan(data) ? (
-        <Link href={`/itineraries/${id}/days`} asChild>
-          <Pressable style={styles.membersLink} accessibilityRole="button">
-            <Text style={styles.membersLinkText}>
-              Daily schedule{data.days.length > 0 ? ` · ${data.days.length} ${data.days.length === 1 ? 'day' : 'days'}` : ''}
-            </Text>
-          </Pressable>
-        </Link>
-      ) : (
-        data.days.length > 0 && (
-          <Section label="Daily schedule">
-            <Text style={styles.value}>
-              {data.days.length} {data.days.length === 1 ? 'day' : 'days'} planned
-            </Text>
-          </Section>
-        )
+      {itinerary.description !== null && (
+        <Field label="Description">
+          <Text style={styles.value}>{itinerary.description}</Text>
+        </Field>
       )}
 
-      {data.description !== null && (
-        <Section label="Description">
-          <Text style={styles.value}>{data.description}</Text>
-        </Section>
-      )}
-
-      <Section label="Destinations">
-        {data.destinations.map((destination) => (
+      <Field label="Destinations">
+        {itinerary.destinations.map((destination) => (
           <Text key={destination} style={styles.value}>
             {destination}
           </Text>
         ))}
-      </Section>
+      </Field>
 
-      <Section label="Dates">
-        <Text style={styles.value}>{formatDates(data)}</Text>
-      </Section>
-    </ScrollView>
+      <Field label="Dates">
+        <Text style={styles.value}>{formatDates(itinerary)}</Text>
+      </Field>
+
+      <Link href={{ pathname: '/members/[itineraryId]', params: { itineraryId: itinerary.id } }} asChild>
+        <Pressable style={styles.secondaryAction} accessibilityRole="button">
+          <Text style={styles.secondaryActionText}>
+            {props.isOwner ? 'Members & ownership transfer' : 'Members'}
+          </Text>
+        </Pressable>
+      </Link>
+
+      {props.canLeave && (
+        <Pressable
+          style={[styles.leaveButton, props.leaving && styles.busy]}
+          onPress={props.onLeave}
+          disabled={props.leaving}
+          accessibilityRole="button"
+        >
+          <Text style={styles.leaveButtonText}>{props.leaving ? 'Leaving…' : 'Leave trip'}</Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+
+function WorkspaceTabButton(props: {
+  label: string;
+  selected: boolean;
+  greyed?: boolean;
+  onPress: () => void;
+}) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.label}>{label}</Text>
+    <Pressable
+      style={[styles.tabButton, props.selected && styles.tabButtonSelected]}
+      onPress={props.onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: props.selected, disabled: props.greyed === true }}
+      accessibilityLabel={props.greyed === true ? `${props.label}, coming soon` : props.label}
+    >
+      <Text
+        style={[
+          styles.tabButtonText,
+          props.selected && styles.tabButtonTextSelected,
+          props.greyed === true && styles.tabButtonTextGreyed,
+        ]}
+      >
+        {props.label}
+      </Text>
+    </Pressable>
+  );
+}
+
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.sectionLabel}>{label}</Text>
       {children}
     </View>
   );
 }
 
-function Badge({ label }: { label: string }) {
-  return (
-    <View style={styles.badge}>
-      <Text style={styles.badgeText}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { padding: spacing.md, gap: spacing.lg, backgroundColor: colors.background, flexGrow: 1 },
+  screen: { flex: 1, backgroundColor: colors.background },
+  container: { padding: spacing.md, gap: spacing.md, backgroundColor: colors.background, flexGrow: 1 },
   centered: {
     flex: 1,
     alignItems: 'center',
@@ -137,11 +294,44 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: colors.background,
   },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  title: { ...typography.title, color: colors.textPrimary, flex: 1 },
+  eyebrow: { ...typography.overline, color: colors.textSecondary },
+  title: { ...typography.title, color: colors.textPrimary },
+  identityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  rosterLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
+  rosterCount: { ...typography.caption, color: colors.textSecondary },
+  tabBar: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tabButton: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  tabButtonSelected: { borderBottomWidth: 2, borderBottomColor: colors.accent },
+  tabButtonText: { ...typography.body, color: colors.textSecondary },
+  tabButtonTextSelected: { color: colors.accent, fontWeight: '700' },
+  tabButtonTextGreyed: { opacity: 0.6 },
+  tabBody: { gap: spacing.md, paddingTop: spacing.sm },
+  dayCard: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  dayCardTitle: { ...typography.bodyStrong, color: colors.textPrimary },
+  dayCardMeta: { ...typography.caption, color: colors.textSecondary },
+  detailsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   editLink: { ...typography.bodyStrong, color: colors.accent },
-  badges: { flexDirection: 'row', gap: spacing.sm },
-  membersLink: {
+  field: { gap: spacing.xs },
+  sectionLabel: { ...typography.caption, color: colors.textSecondary },
+  value: { ...typography.body, color: colors.textPrimary },
+  secondaryAction: {
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -150,19 +340,18 @@ const styles = StyleSheet.create({
     borderColor: colors.accentMuted,
     backgroundColor: colors.surface,
   },
-  membersLinkText: { ...typography.bodyStrong, color: colors.accent },
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+  secondaryActionText: { ...typography.bodyStrong, color: colors.accent },
+  leaveButton: { paddingVertical: spacing.sm, alignItems: 'flex-start' },
+  leaveButtonText: { ...typography.caption, color: colors.danger },
+  cta: {
+    margin: spacing.md,
+    paddingVertical: spacing.md,
     borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.accentMuted,
-    backgroundColor: colors.surface,
+    alignItems: 'center',
+    backgroundColor: colors.accent,
   },
-  badgeText: { ...typography.overline, color: colors.textSecondary },
-  section: { gap: spacing.xs },
-  label: { ...typography.caption, color: colors.textSecondary },
-  value: { ...typography.body, color: colors.textPrimary },
+  ctaText: { ...typography.bodyStrong, color: colors.textOnAccent },
+  busy: { opacity: 0.7 },
   errorTitle: { ...typography.heading, color: colors.danger },
-  caption: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
+  caption: { ...typography.caption, color: colors.textSecondary },
 });

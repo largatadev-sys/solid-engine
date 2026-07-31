@@ -1,8 +1,18 @@
 import { apiClient } from '../api/apiClient';
-import type { HandleAvailabilityResponse, MeResponse, UpdateProfileRequest } from '../types/api';
+import type {
+  HandleAvailabilityResponse,
+  MeResponse,
+  TravelerCardResponse,
+  UpdateProfileRequest,
+} from '../types/api';
 
 
 export const travelerRepository = {
+
+  async findByHandle(handle: string): Promise<TravelerCardResponse> {
+    return apiClient.get<TravelerCardResponse>(`/v1/handles/${encodeURIComponent(handle)}`);
+  },
+
   async fetchMe(): Promise<MeResponse> {
     return apiClient.get<MeResponse>('/v1/me');
   },

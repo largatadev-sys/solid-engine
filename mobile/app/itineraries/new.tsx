@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { ApiError } from '../../src/api/ApiError';
-import { DatePicker } from '../../src/components/DatePicker';
 import { GreyedMediaTile } from '../../src/components/GreyedMediaTile';
 import { validateItineraryForm } from '../../src/itineraries/validateItineraryForm';
 import { useCreateItinerary } from '../../src/query/itineraryQueries';
@@ -25,12 +24,10 @@ export default function NewItineraryScreen() {
   const [destination, setDestination] = useState('');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [validationError, setValidationError] = useState<string | undefined>();
 
   function submit() {
-    const problem = validateItineraryForm({ title, destination, description, startDate, endDate, duration });
+    const problem = validateItineraryForm({ title, destination, description, duration });
     setValidationError(problem);
     if (problem !== undefined) return;
 
@@ -39,12 +36,11 @@ export default function NewItineraryScreen() {
         title: title.trim(),
         destinations: [destination.trim()],
         ...(description.trim() !== '' ? { description: description.trim() } : {}),
-        ...(startDate.trim() !== '' ? { startDate: startDate.trim() } : {}),
-        ...(endDate.trim() !== '' ? { endDate: endDate.trim() } : {}),
         ...(duration.trim() !== '' ? { durationDays: Number(duration.trim()) } : {}),
       },
       {
-        onSuccess: (created) => router.replace(`/itineraries/${created.id}`),
+        onSuccess: (created) =>
+          router.replace({ pathname: '/itineraries/[id]/days', params: { id: created.id, day: '1' } }),
       },
     );
   }
@@ -53,33 +49,30 @@ export default function NewItineraryScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: 'Plan a trip' }} />
+      <Stack.Screen options={{ title: 'Trip Details' }} />
 
-      {}
-      <GreyedMediaTile label="Cover photo" />
+      <GreyedMediaTile surface="coverPhoto" />
 
-      <Field label="What is this trip?" value={title} onChangeText={setTitle} placeholder="Hokkaido in winter" />
-      <Field label="Where to?" value={destination} onChangeText={setDestination} placeholder="Sapporo" />
+      <Field label="Trip Name" value={title} onChangeText={setTitle} placeholder="Hokkaido in winter" />
+      <Field label="Destination" value={destination} onChangeText={setDestination} placeholder="Sapporo, Japan" />
       <Field
-        label="Description (optional)"
-        value={description}
-        onChangeText={setDescription}
-        placeholder="Island hopping, lagoons, and hidden beaches."
-        multiline
-      />
-      <Field
-        label="How many days? (optional)"
+        label="Duration (days)"
         value={duration}
         onChangeText={setDuration}
         placeholder="5"
         keyboardType="number-pad"
       />
+      <Field
+        label="Description (Optional)"
+        value={description}
+        onChangeText={setDescription}
+        placeholder="Island hopping, lagoons, and hidden beaches."
+        multiline
+      />
 
       <Text style={styles.sectionNote}>
-        Dates are optional — a trip can be a someday plan.
+        Dates are optional and live in the trip&apos;s Details tab — a trip can be a someday plan.
       </Text>
-      <DatePicker label="Start date" value={startDate} onChange={setStartDate} />
-      <DatePicker label="End date" value={endDate} onChange={setEndDate} />
 
       {}
       {(validationError ?? serverMessage) !== undefined && (
@@ -95,7 +88,7 @@ export default function NewItineraryScreen() {
         {create.isPending ? (
           <ActivityIndicator color={colors.textOnAccent} />
         ) : (
-          <Text style={styles.buttonText}>Create draft</Text>
+          <Text style={styles.buttonText}>Continue</Text>
         )}
       </Pressable>
     </ScrollView>
