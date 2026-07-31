@@ -74,7 +74,7 @@ public class DayService {
 
     @Transactional
     public DayView appendDay(Membership member, String title) {
-        requireOwner(member);
+        requireOwnerOfWritableTrip(member);
         UUID itineraryId = member.itineraryId();
         long existing = days.countByItineraryId(itineraryId);
         if (existing >= Itinerary.MAX_DAYS) {
@@ -103,7 +103,7 @@ public class DayService {
 
     @Transactional
     public void deleteDay(Membership member, UUID dayId) {
-        requireOwner(member);
+        requireOwnerOfWritableTrip(member);
         UUID itineraryId = member.itineraryId();
         Day day = require(itineraryId, dayId);
         editLease.requireHeldBy(member, LeaseSubject.day(dayId));
@@ -140,11 +140,11 @@ public class DayService {
     }
 
 
-    private void requireOwner(Membership member) {
+    private void requireOwnerOfWritableTrip(Membership member) {
+        fence.requireWritable(member);
         if (!member.isOwner()) {
             throw new NotTripOwnerException("Only the trip owner can add or remove days.");
         }
-        fence.requireWritable(member);
     }
 
 

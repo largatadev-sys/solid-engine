@@ -40,6 +40,9 @@ const apiLib = API.startsWith('https') ? https : http;
 const api = (path, method = 'GET', token, body) =>
   request(apiLib, API + path, method, body, token ? { Authorization: 'Bearer ' + token } : {});
 const address = (tag) => { const [l, d] = BASE.split('@'); return `${l}+${tag}@${d}`; };
+const header = () => ({ subjectType: 'header' });
+const onDay = (dayId) => ({ subjectType: 'day', subjectId: dayId });
+const onActivity = (activityId) => ({ subjectType: 'activity', subjectId: activityId });
 
 async function poolToken(tag) {
   const res = await request(https,
@@ -47,6 +50,115 @@ async function poolToken(tag) {
     'POST', { email: address(tag), password: PASSWORD, returnSecureToken: true });
   if (res.status !== 200) throw new Error(`pool member ${tag} unavailable — run scripts/test-pool.js create`);
   return res.body.idToken;
+}
+
+async function smokeS49({ trip, owner, member, ownerId, dayId }) {
+  const activities = `/v1/itineraries/${trip}/days/${dayId}/activities`;
+  const lease = `/v1/itineraries/${trip}/edit-lock`;
+
+  const mine = await api(activities, 'POST', owner, { title: 'Sunset cruise' });
+  const theirs = await api(activities, 'POST', member, { title: 'Dive shop' });
+  check('S4.9 adds are unguarded — a member adds while the owner holds the header lease',
+    mine.status === 201 && theirs.status === 201, `${mine.status}/${theirs.status}`);
+
+  const unleased = await api(`${activities}/${mine.body.id}`, 'PATCH', owner, { title: 'no lease' });
+  check('S4.9 an activity edit without that activity\'s lease is refused',
+    unleased.status === 409 && unleased.body.code === 'EDIT_LOCKED',
+    'got ' + unleased.status + ' ' + JSON.stringify(unleased.body?.code));
+
+  const ownerHolds = await api(lease, 'POST', owner, onActivity(mine.body.id));
+  const memberHolds = await api(lease, 'POST', member, onActivity(theirs.body.id));
+  check('S4.9 two members hold leases on two activities of ONE day at the same time',
+    ownerHolds.status === 200 && memberHolds.status === 200, `${ownerHolds.status}/${memberHolds.status}`);
+
+  const bothSave = await Promise.all([
+    api(`${activities}/${mine.body.id}`, 'PATCH', owner, { title: 'Sunset cruise, 6pm' }),
+    api(`${activities}/${theirs.body.id}`, 'PATCH', member, { title: 'Dive shop, booked' }),
+  ]);
+  check('S4.9 AC1 both concurrent saves land',
+    bothSave.every((r) => r.status === 200), bothSave.map((r) => r.status).join('/'));
+
+  const poach = await api(`${activities}/${theirs.body.id}`, 'PATCH', owner, { title: 'poached' });
+  check('S4.9 holding one activity authorizes nothing about the one beside it',
+    poach.status === 409 && poach.body.code === 'EDIT_LOCKED', 'got ' + poach.status);
+  check('S4.9 …and the 409 names the holder by @handle',
+    typeof poach.body?.message === 'string' && poach.body.message.includes('@'), poach.body?.message);
+
+  const read = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+  const readDay = read.body.days.find((d) => d.id === dayId);
+  const heldCard = readDay?.activities.find((a) => a.id === theirs.body.id);
+  check('S4.9 AC8 the plan read carries the holder per subject, with their handle',
+    Boolean(heldCard?.lease?.handle), 'lease=' + JSON.stringify(heldCard?.lease));
+  check('S4.9 AC14 …and the last editor\'s handle for the attribution chip',
+    Boolean(heldCard?.lastEditedByHandle), 'handle=' + heldCard?.lastEditedByHandle);
+  check('S4.9 the workspace state is on the payload (the chip reads it, not archived)',
+    read.body.workspaceState === 'active', 'got ' + read.body.workspaceState);
+
+  const asFetched = readDay.activities.map((a) => a.id);
+  const swapped = [...asFetched].reverse();
+  const fresh = await api(`${activities}/order`, 'PUT', owner,
+    { expectedActivityIds: asFetched, activityIds: swapped });
+  check('S4.9 AC7 a reorder carrying the order it believes current is applied', fresh.status === 200,
+    'got ' + fresh.status);
+  const stale = await api(`${activities}/order`, 'PUT', owner,
+    { expectedActivityIds: asFetched, activityIds: asFetched });
+  check('S4.9 AC7 …and the same request replayed on a stale ordering is refused',
+    stale.status === 409 && stale.body.code === 'STALE_REORDER',
+    'got ' + stale.status + ' ' + JSON.stringify(stale.body?.code));
+
+  const memberAddsDay = await api(`/v1/itineraries/${trip}/days`, 'POST', member, { title: 'Nope' });
+  check('S4.9 AC5 a member cannot add a day (403, interim ruling)',
+    memberAddsDay.status === 403 && memberAddsDay.body.code === 'NOT_PERMITTED', 'got ' + memberAddsDay.status);
+
+  await api(lease, 'POST', owner, onDay(dayId));
+  const yanked = await api(`/v1/itineraries/${trip}/days/${dayId}`, 'DELETE', owner);
+  check('S4.9 AC4 a day cannot be deleted while a member edits an activity inside it',
+    yanked.status === 409 && yanked.body.code === 'DAY_HAS_LEASED_ACTIVITY',
+    'got ' + yanked.status + ' ' + JSON.stringify(yanked.body?.code));
+
+  const unleasedDelete = await api(`${activities}/${theirs.body.id}`, 'DELETE', owner);
+  check('S4.9 AC3 deleting an activity needs that activity\'s lease',
+    unleasedDelete.status === 409 && unleasedDelete.body.code === 'EDIT_LOCKED', 'got ' + unleasedDelete.status);
+
+  await api(lease, 'DELETE', member, onActivity(theirs.body.id));
+  await api(lease, 'POST', owner, onActivity(theirs.body.id));
+  const gone = await api(`${activities}/${theirs.body.id}`, 'DELETE', owner);
+  check('S4.9 …and succeeds once held', gone.status === 204, 'got ' + gone.status);
+
+  const stranger = await poolToken('t3');
+  const strangerLease = await api(lease, 'POST', stranger, onActivity(mine.body.id));
+  check('S4.9 the guard still masks a non-member on the lease endpoint (404)',
+    strangerLease.status === 404, 'got ' + strangerLease.status);
+
+  const noHandle = await api('/v1/handles/nobody-goes-by-this', 'GET', owner);
+  check('S4.9 AC13 an unknown handle finds nothing', noHandle.status === 404, 'got ' + noHandle.status);
+  const me = await api('/v1/me', 'GET', owner);
+  const found = await api(`/v1/handles/${me.body.handle}`, 'GET', member);
+  check('S4.9 AC13 an exact handle returns the display card',
+    found.status === 200 && found.body.id === ownerId, 'got ' + found.status);
+  check('S4.9 the display card carries no email (P3)', found.body?.email === undefined);
+  const partial = await api(`/v1/handles/${me.body.handle.slice(0, -1)}`, 'GET', member);
+  check('S4.9 AC13 a PARTIAL handle finds nothing — no fuzzy search, no enumeration',
+    partial.status === 404, 'got ' + partial.status);
+
+  const t3Me = await api('/v1/me', 'GET', stranger);
+  const byHandle = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner,
+    { handle: t3Me.body.handle });
+  check('S4.9 AC13 the owner invites by handle', byHandle.status === 201, 'got ' + byHandle.status);
+  check('S4.9 an id-addressed invitation carries no email', byHandle.body?.email === null,
+    'email=' + JSON.stringify(byHandle.body?.email));
+  const t3Inbox = await api('/v1/invitations', 'GET', stranger);
+  check('S4.9 AC13 it reaches the invitee\'s inbox with no email match at all',
+    t3Inbox.body.items.some((i) => i.id === byHandle.body.id));
+  const joined = await api(`/v1/invitations/${byHandle.body.id}/accept`, 'POST', stranger, {});
+  check('S4.9 AC13 …and accepting joins the trip', joined.status === 200, 'got ' + joined.status);
+  const rejoin = await api(`/v1/invitations/${byHandle.body.id}/accept`, 'POST', stranger, {});
+  check('S4.9 a second accept is a clean conflict, never a 500',
+    rejoin.status === 409, 'got ' + rejoin.status);
+
+  await api(`/v1/itineraries/${trip}/members/${t3Me.body.id}`, 'DELETE', owner);
+  await api(lease, 'DELETE', owner, onDay(dayId));
+  await api(lease, 'DELETE', owner, onActivity(mine.body.id));
 }
 
 (async () => {
@@ -88,8 +200,10 @@ async function poolToken(tag) {
   check('S0.3 read one itinerary', one.status === 200 && one.body.title === 'Smoke trip');
   check('checklist #6: an unset optional field is null, not absent', one.body.description === null);
 
-  const lock = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner);
-  check('S1.4 acquire the edit lock', lock.status === 200, 'got ' + lock.status);
+  const lock = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner, header());
+  check('S4.9 acquire the HEADER lease', lock.status === 200, 'got ' + lock.status);
+  check('S4.9 the lease names its subject back', lock.body?.subjectType === 'header',
+    'subjectType=' + lock.body?.subjectType);
   const edited = await api(`/v1/itineraries/${trip}`, 'PATCH', owner,
     { title: 'Smoke trip (edited)', destinations: ['Palawan', 'Coron'] });
   check('S1.3 edit itinerary fields', edited.status === 200 && edited.body.title === 'Smoke trip (edited)');
@@ -133,9 +247,11 @@ async function poolToken(tag) {
   const twice = await api(`/v1/invitations/${invite.body.id}/accept`, 'POST', member, {});
   check('S1.2 accepting twice is a conflict (terminal statuses)', twice.status === 409, 'got ' + twice.status);
 
-  const memberLocked = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', member);
-  check('S1.4 the member is refused the lock the owner holds',
+  const memberLocked = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', member, header());
+  check('S4.9 the member is refused the HEADER lease the owner holds',
     memberLocked.status === 409 && memberLocked.body.code === 'EDIT_LOCKED', 'got ' + memberLocked.status);
+
+  await smokeS49({ trip, owner, member, ownerId: meOwner.body.id, dayId: day.body.id });
 
   const memberRemovesOwner = await api(`/v1/itineraries/${trip}/members/${meOwner.body.id}`, 'DELETE', member);
   check('S1.5 a member cannot remove the owner (403)',
@@ -158,7 +274,8 @@ async function poolToken(tag) {
 
   const intact = await api(`/v1/itineraries/${trip}`, 'GET', owner);
   check('the plan survived every membership change',
-    intact.status === 200 && intact.body.days[0].activities[0].title === 'Airport transfer');
+    intact.status === 200 && intact.body.days[0].activities.some((a) => a.title === 'Airport transfer'),
+    'titles=' + JSON.stringify(intact.body?.days?.[0]?.activities?.map((a) => a.title)));
   const release = await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner);
   check('S1.4 release the lock', release.status === 204, 'got ' + release.status);
 
