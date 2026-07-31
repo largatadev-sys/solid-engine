@@ -42,6 +42,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
         'itineraries',
         'members',
         'profile.tsx',
+        'published',
         'search.tsx',
       ].sort(),
     );
@@ -115,9 +116,22 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(read(TRIPS, '_layout.tsx')).toContain('headerShown: false');
   });
 
-  it.each(tripScreens())('%s draws its own heading — with no header bar, a navigator title renders nowhere', (_name, source) => {
-    expect(source).toMatch(/<ScreenHeader/);
-  });
+  const FULL_BLEED = ['itineraries/[id]/published.tsx'];
+
+  it.each(tripScreens().filter(([name]) => !FULL_BLEED.includes(name)))(
+    '%s draws its own heading — with no header bar, a navigator title renders nowhere',
+    (_name, source) => {
+      expect(source).toMatch(/<ScreenHeader/);
+    },
+  );
+
+  it.each(tripScreens().filter(([name]) => FULL_BLEED.includes(name)))(
+    '%s is exempt because the mock draws no header bar — so it must take the inset itself',
+    (_name, source) => {
+      expect(source).toMatch(/useSafeAreaInsets/);
+      expect(source).toMatch(/paddingTop: insets\.top/);
+    },
+  );
 
   it.each(tripScreens())('%s sets no navigator title — a dead option that reads as a heading', (_name, source) => {
     expect(source).not.toMatch(/options=\{\{[^}]*title:/);

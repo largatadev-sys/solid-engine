@@ -144,7 +144,7 @@ export default function TripWorkspaceScreen() {
         )}
       </ScrollView>
 
-      {(canInvite || control?.act === 'publish') && (
+      {(canInvite || control !== null) && (
         <View style={styles.actionBar}>
           {control?.act === 'publish' && (
             <Link href={{ pathname: '/itineraries/[id]/preview', params: { id } }} asChild>
@@ -153,13 +153,20 @@ export default function TripWorkspaceScreen() {
               </Pressable>
             </Link>
           )}
+          {control?.act === 'unpublish' && (
+            <Link href={{ pathname: '/published/[id]', params: { id } }} asChild>
+              <Pressable style={styles.cta} accessibilityRole="button">
+                <Text style={styles.ctaText}>View Published Page</Text>
+              </Pressable>
+            </Link>
+          )}
           {canInvite && (
             <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
               <Pressable
-                style={control?.act === 'publish' ? styles.secondaryCta : styles.cta}
+                style={control !== null ? styles.secondaryCta : styles.cta}
                 accessibilityRole="button"
               >
-                <Text style={control?.act === 'publish' ? styles.secondaryCtaText : styles.ctaText}>
+                <Text style={control !== null ? styles.secondaryCtaText : styles.ctaText}>
                   Invite Travelers
                 </Text>
               </Pressable>
