@@ -1,21 +1,21 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ApiError } from '../../../src/api/ApiError';
-import { DatePicker } from '../../../src/components/DatePicker';
-import { archivedPlanNotice } from '../../../src/components/editLockedMessage';
-import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
-import { useEditLock } from '../../../src/hooks/useEditLock';
+import { ApiError } from '../../../../src/api/ApiError';
+import { DatePicker } from '../../../../src/components/DatePicker';
+import { archivedPlanNotice } from '../../../../src/components/editLockedMessage';
+import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
+import { useEditLock } from '../../../../src/hooks/useEditLock';
 import {
   addDestination,
   cleanDestinations,
   removeDestination,
   setDestination,
-} from '../../../src/itineraries/destinationsEditor';
-import { validateItineraryEdit } from '../../../src/itineraries/validateItineraryForm';
-import { useItinerary, useUpdateItinerary } from '../../../src/query/itineraryQueries';
-import type { UpdateItineraryRequest } from '../../../src/types/api';
-import { colors, radii, spacing, typography } from '../../../src/theme';
+} from '../../../../src/itineraries/destinationsEditor';
+import { validateItineraryEdit } from '../../../../src/itineraries/validateItineraryForm';
+import { useItinerary, useUpdateItinerary } from '../../../../src/query/itineraryQueries';
+import type { UpdateItineraryRequest } from '../../../../src/types/api';
+import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
 export default function EditItineraryScreen() {

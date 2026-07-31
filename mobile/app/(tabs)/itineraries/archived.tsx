@@ -1,8 +1,8 @@
 import { Stack } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { TripRow } from '../../src/itineraries/TripRow';
-import { useArchivedItineraries } from '../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../src/theme';
+import { TripRow } from '../../../src/itineraries/TripRow';
+import { useArchivedItineraries } from '../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../src/theme';
 
 
 export default function ArchivedTripsScreen() {

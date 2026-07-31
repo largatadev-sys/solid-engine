@@ -1,20 +1,20 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { track } from '../../../src/analytics/track';
-import { ApiError } from '../../../src/api/ApiError';
-import { Avatar } from '../../../src/components/Avatar';
-import { comingSoon } from '../../../src/components/comingSoon';
-import { COMING_SOON_SEEN } from '../../../src/components/comingSoonMessage';
+import { track } from '../../../../src/analytics/track';
+import { ApiError } from '../../../../src/api/ApiError';
+import { Avatar } from '../../../../src/components/Avatar';
+import { comingSoon } from '../../../../src/components/comingSoon';
+import { COMING_SOON_SEEN } from '../../../../src/components/comingSoonMessage';
 import {
   useInvite,
   useInviteByHandle,
   usePendingInvitations,
   useRevokeInvitation,
-} from '../../../src/query/invitationQueries';
-import { HANDLE_MIN_LENGTH, useTravelerByHandle } from '../../../src/query/travelerQueries';
-import { colors, radii, spacing, typography } from '../../../src/theme';
-import type { InvitationResponse } from '../../../src/types/api';
+} from '../../../../src/query/invitationQueries';
+import { HANDLE_MIN_LENGTH, useTravelerByHandle } from '../../../../src/query/travelerQueries';
+import { colors, radii, spacing, typography } from '../../../../src/theme';
+import type { InvitationResponse } from '../../../../src/types/api';
 
 
 export default function InviteTravelersScreen() {

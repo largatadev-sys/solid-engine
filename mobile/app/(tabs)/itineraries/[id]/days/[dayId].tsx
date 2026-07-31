@@ -1,19 +1,19 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ApiError } from '../../../../src/api/ApiError';
-import { comingSoon } from '../../../../src/components/comingSoon';
-import { archivedPlanNotice } from '../../../../src/components/editLockedMessage';
-import { Icon } from '../../../../src/components/Icon';
-import { missingItineraryMessage } from '../../../../src/components/missingItineraryMessage';
-import { ScreenHeader } from '../../../../src/components/ScreenHeader';
-import { useMe } from '../../../../src/hooks/useMe';
-import { formatTimeOfDay } from '../../../../src/itineraries/formatActivityCost';
-import { dayHeading } from '../../../../src/itineraries/dayHeading';
-import { attributionLine, leaseNotice } from '../../../../src/itineraries/leaseIndicator';
-import { initialsFor } from '../../../../src/onboarding/initials';
-import { useItinerary } from '../../../../src/query/itineraryQueries';
-import type { ActivityResponse } from '../../../../src/types/api';
-import { colors, radii, spacing, typography } from '../../../../src/theme';
+import { ApiError } from '../../../../../src/api/ApiError';
+import { comingSoon } from '../../../../../src/components/comingSoon';
+import { archivedPlanNotice } from '../../../../../src/components/editLockedMessage';
+import { Icon } from '../../../../../src/components/Icon';
+import { missingItineraryMessage } from '../../../../../src/components/missingItineraryMessage';
+import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
+import { useMe } from '../../../../../src/hooks/useMe';
+import { formatTimeOfDay } from '../../../../../src/itineraries/formatActivityCost';
+import { dayHeading } from '../../../../../src/itineraries/dayHeading';
+import { attributionLine, leaseNotice } from '../../../../../src/itineraries/leaseIndicator';
+import { initialsFor } from '../../../../../src/onboarding/initials';
+import { useItinerary } from '../../../../../src/query/itineraryQueries';
+import type { ActivityResponse } from '../../../../../src/types/api';
+import { colors, radii, spacing, typography } from '../../../../../src/theme';
 
 
 export default function DayDetailScreen() {

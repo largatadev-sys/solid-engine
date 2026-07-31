@@ -7,6 +7,7 @@ import { tripRowDestination } from '../src/itineraries/TripRow';
 const MOBILE_ROOT = join(__dirname, '..');
 const APP = join(MOBILE_ROOT, 'app');
 const TABS = join(APP, '(tabs)');
+const TRIPS = join(TABS, 'itineraries');
 
 function read(...parts: string[]): string {
   return readFileSync(join(...parts), 'utf8');
@@ -15,13 +16,43 @@ function read(...parts: string[]): string {
 describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('has one file per tab, and the app opens on Trips because Trips is the index', () => {
     expect(readdirSync(TABS).sort()).toEqual(
-      ['_layout.tsx', 'create.tsx', 'home.tsx', 'index.tsx', 'profile.tsx', 'search.tsx'].sort(),
+      [
+        '_layout.tsx',
+        'create.tsx',
+        'home.tsx',
+        'index.tsx',
+        'itineraries',
+        'members',
+        'profile.tsx',
+        'search.tsx',
+      ].sort(),
     );
   });
 
   it('leaves no second Trips screen behind at the old route', () => {
     expect(existsSync(join(APP, 'index.tsx'))).toBe(false);
     expect(existsSync(join(APP, 'me.tsx'))).toBe(false);
+  });
+
+  it('keeps the trip flow INSIDE the tab navigator, so the nav bar persists on every trip screen', () => {
+    expect(existsSync(join(APP, 'itineraries'))).toBe(false);
+    expect(existsSync(join(APP, 'members'))).toBe(false);
+    expect(existsSync(join(TRIPS, '_layout.tsx'))).toBe(true);
+  });
+
+  it('hides them from the tab bar — a route group under Tabs becomes a tab unless href is null', () => {
+    const layout = read(TABS, '_layout.tsx');
+
+    expect(layout).toContain('name="itineraries" options={{ href: null }}');
+    expect(layout).toContain('name="members" options={{ href: null }}');
+  });
+
+  it('insets only the two bare tabs — the trip screens get theirs from ScreenHeader, and both would double up', () => {
+    const layout = read(TABS, '_layout.tsx');
+
+    expect(layout).toContain('sceneStyle: bareScene(insets.top)');
+    expect(layout.match(/bareScene\(insets\.top\)/g) ?? []).toHaveLength(2);
+    expect(layout).not.toMatch(/screenOptions=\{\{[\s\S]*?paddingTop/);
   });
 
   it('declares every tab in the layout', () => {
@@ -52,11 +83,9 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(layout.match(/tabBarIcon:/g) ?? []).toHaveLength(5);
   });
 
-  it('insets the tab scenes, because no tab screen has a header to do it for them', () => {
-    const layout = read(TABS, '_layout.tsx');
-
-    expect(layout).toContain('headerShown: false');
-    expect(layout).toContain('paddingTop: insets.top');
+  it('shows no navigator header anywhere — every heading is drawn as page content', () => {
+    expect(read(TABS, '_layout.tsx')).toContain('headerShown: false');
+    expect(read(TRIPS, '_layout.tsx')).toContain('headerShown: false');
   });
 
   it('routes + to the chooser — decision 13 reversed, fork greyed until S4.7', () => {
@@ -65,7 +94,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   });
 
   it('the chooser offers scratch live and fork greyed', () => {
-    const chooser = read(APP, 'itineraries', 'create.tsx');
+    const chooser = read(TRIPS, 'create.tsx');
 
     expect(chooser).toContain("router.replace('/itineraries/new')");
     expect(chooser).toContain("comingSoon('fork')");
@@ -76,7 +105,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
 
 describe('the create form asks for a duration, never dates (S4.9 decision 13)', () => {
-  const create = read(APP, 'itineraries', 'new.tsx');
+  const create = read(TRIPS, 'new.tsx');
 
   it('has no date picker', () => {
     expect(create).not.toMatch(/DatePicker/);
@@ -102,22 +131,22 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13)', 
 
 
 describe('the two day surfaces, each with its own job (founder ruling 2026-07-31)', () => {
-  const DAYS = join(APP, 'itineraries', '[id]', 'days');
+  const DAYS = join(TRIPS, '[id]', 'days');
 
   it('has exactly two: the chips editor and the day detail', () => {
     expect(readdirSync(DAYS).sort()).toEqual(['[dayId].tsx', 'index.tsx']);
   });
 
   it('sends a workspace day card to the DETAIL screen, not the editor', () => {
-    const workspace = read(APP, 'itineraries', '[id]', 'index.tsx');
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
 
     expect(workspace).toContain("pathname: '/itineraries/[id]/days/[dayId]'");
     expect(workspace).toContain('dayId: day.id');
   });
 
   it('sends the create flow to the EDITOR, at Day 1 (decision 13)', () => {
-    expect(read(APP, 'itineraries', 'new.tsx')).toContain("pathname: '/itineraries/[id]/days'");
-    expect(read(APP, 'itineraries', 'new.tsx')).toContain("day: '1'");
+    expect(read(TRIPS, 'new.tsx')).toContain("pathname: '/itineraries/[id]/days'");
+    expect(read(TRIPS, 'new.tsx')).toContain("day: '1'");
   });
 
   it('sends a LIVE trip row to the editor too, and an ARCHIVED one to the workspace', () => {
@@ -129,7 +158,7 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
   });
 
   it('the activity form picks a time rather than asking anyone to type one', () => {
-    const form = read(APP, 'itineraries', '[id]', 'activity.tsx');
+    const form = read(TRIPS, '[id]', 'activity.tsx');
 
     expect(form).toContain('<TimePicker');
     expect(form).not.toMatch(/Time \(24h\)/);
@@ -158,7 +187,7 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
   });
 
   it('carries the archive link on the Details tab, with the archived banner above the tabs', () => {
-    const workspace = read(APP, 'itineraries', '[id]', 'index.tsx');
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
     const detailsTabAt = workspace.indexOf('function DetailsTab');
     const tabBarAt = workspace.indexOf('<View style={styles.tabBar}>');
 
@@ -167,7 +196,7 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
   });
 
   it('leaves the published eyebrow variant to S4.1 (decision 8)', () => {
-    const workspace = read(APP, 'itineraries', '[id]', 'index.tsx');
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
 
     expect(workspace).toContain("data.visibility === 'private'");
     expect(workspace).not.toMatch(/visibility\.toUpperCase/);
@@ -178,13 +207,13 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
 describe('every greyed affordance S4.9 ships is wired to the shared helper (register #2)', () => {
   const screens = [
     read(TABS, '_layout.tsx'),
-    read(APP, 'itineraries', 'new.tsx'),
-    read(APP, 'itineraries', 'create.tsx'),
-    read(APP, 'itineraries', '[id]', 'index.tsx'),
-    read(APP, 'itineraries', '[id]', 'days', 'index.tsx'),
-    read(APP, 'itineraries', '[id]', 'days', '[dayId].tsx'),
-    read(APP, 'itineraries', '[id]', 'activity.tsx'),
-    read(APP, 'itineraries', '[id]', 'invite.tsx'),
+    read(TRIPS, 'new.tsx'),
+    read(TRIPS, 'create.tsx'),
+    read(TRIPS, '[id]', 'index.tsx'),
+    read(TRIPS, '[id]', 'days', 'index.tsx'),
+    read(TRIPS, '[id]', 'days', '[dayId].tsx'),
+    read(TRIPS, '[id]', 'activity.tsx'),
+    read(TRIPS, '[id]', 'invite.tsx'),
     read(MOBILE_ROOT, 'src', 'components', 'ComingSoonScreen.tsx'),
   ].join('\n');
 

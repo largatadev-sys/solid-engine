@@ -9,19 +9,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ApiError } from '../../../src/api/ApiError';
-import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
-import { TimePicker } from '../../../src/components/TimePicker';
-import { useEditLock } from '../../../src/hooks/useEditLock';
-import { validateActivityForm } from '../../../src/itineraries/validateActivityForm';
+import { ApiError } from '../../../../src/api/ApiError';
+import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
+import { TimePicker } from '../../../../src/components/TimePicker';
+import { useEditLock } from '../../../../src/hooks/useEditLock';
+import { validateActivityForm } from '../../../../src/itineraries/validateActivityForm';
 import {
   useCreateActivity,
   useEditActivity,
   useItinerary,
   useMoveActivity,
-} from '../../../src/query/itineraryQueries';
-import type { ActivityRequest, ActivityResponse, DayResponse } from '../../../src/types/api';
-import { colors, radii, spacing, typography } from '../../../src/theme';
+} from '../../../../src/query/itineraryQueries';
+import type { ActivityRequest, ActivityResponse, DayResponse } from '../../../../src/types/api';
+import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
 export default function ActivityFormScreen() {

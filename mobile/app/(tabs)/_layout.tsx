@@ -20,6 +20,11 @@ function tabIcon(name: IconName) {
 }
 
 
+function bareScene(top: number) {
+  return { backgroundColor: colors.background, paddingTop: top };
+}
+
+
 function createButton() {
   return (
     <View style={styles.createButton}>
@@ -38,7 +43,7 @@ export default function TabsLayout() {
       backBehavior="history"
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: colors.background, paddingTop: insets.top },
+        sceneStyle: { backgroundColor: colors.background },
         tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
@@ -87,8 +92,16 @@ export default function TabsLayout() {
           },
         }}
       />
-      <Tabs.Screen name="index" options={{ title: 'Trips', tabBarIcon: tabIcon('map') }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: tabIcon('person') }} />
+      <Tabs.Screen
+        name="index"
+        options={{ title: 'Trips', tabBarIcon: tabIcon('map'), sceneStyle: bareScene(insets.top) }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{ title: 'Profile', tabBarIcon: tabIcon('person'), sceneStyle: bareScene(insets.top) }}
+      />
+      <Tabs.Screen name="itineraries" options={{ href: null }} />
+      <Tabs.Screen name="members" options={{ href: null }} />
     </Tabs>
   );
 }

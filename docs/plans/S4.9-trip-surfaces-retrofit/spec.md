@@ -183,3 +183,17 @@ Ticket 02 asked for *"One pending invitation per workspace+target … across bot
 **The hole was real and this story opened it.** Before S4.9 a traveler had exactly one email, so two email-addressed invitations could never resolve to the same person, and `accept` could safely trust issuance. Adding a second addressing mode broke that assumption: `admitMember` persists straight into `membership`'s `PRIMARY KEY (workspace_id, traveler_id)`, so the second accept was a **500**, not a conflict. Verified by sabotage — `thatSameTravelerCanOnlyEverJoinOnce` fails with `expected:<409> but was:<500>` when the guard is removed.
 
 Net effect on the ticket AC: two pending invitations to one traveler are now *possible* (one per door) and *harmless* — the inbox shows both, either one joins them, the other is refused cleanly and the owner can revoke it.
+
+### 2026-07-31 — the trip flow moves inside the tab group so the nav bar persists (founder-ruled, at the fidelity pass)
+
+Every mock frame — `create-trip-entry`, `trip-editor-days`, `collaborative-edit`, `trip-workspace` — draws the bottom navbar, but the build pushed those screens onto the **root** Stack, which renders *over* the tab navigator. Founder ruling: **persist the nav bar on those screens.**
+
+`app/itineraries/**` and `app/members/**` moved to `app/(tabs)/itineraries/**` and `app/(tabs)/members/**`, each with a nested Stack layout, and both declared `href: null` in the tabs layout — the expo-router idiom for a route that lives *in* the tab navigator without being a tab. **No URL changed**: a route group contributes no path segment, so every `router.push`, `Link href`, `largata://` deep link and the onboarding gate's `useSegments()[0]` (already `(tabs)` for the Trips tab) behave exactly as before.
+
+The safe-area inset moved with it. The navigator had been insetting *every* scene, which would now double up against `ScreenHeader`'s own inset on the trip screens. The rule is now one line — **whoever draws the top of the screen owns the inset**: `ScreenHeader` for the trip flow, `bareScene(insets.top)` on the two tab screens that have no header of their own.
+
+Still open, unchanged by this: `trip-editor-days` remains parked at the founder's request, and with it (a) the route from the workspace back to the editor once a plan exists, and (b) the drag-handle deferral.
+
+### 2026-07-31 — mock fidelity is a standing rule, not an S4.9 note (founder-ruled)
+
+*"if mocks are available, it should try to copy exact screen or icon."* Recorded in `CLAUDE.md` under Hard rules rather than here, because it binds every story that ships against a mock set, not just this one. The S4.9 corrections that prompted it — "Details" text where the frame draws a cog, a header bar where the frame blends the heading into the page, non-overlapping avatars, a currency code where the frame shows a sign — were all answerable from the mock's own markup before the screen was written.

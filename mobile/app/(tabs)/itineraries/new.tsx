@@ -9,11 +9,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ApiError } from '../../src/api/ApiError';
-import { GreyedMediaTile } from '../../src/components/GreyedMediaTile';
-import { validateItineraryForm } from '../../src/itineraries/validateItineraryForm';
-import { useCreateItinerary } from '../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../src/theme';
+import { ApiError } from '../../../src/api/ApiError';
+import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
+import { validateItineraryForm } from '../../../src/itineraries/validateItineraryForm';
+import { useCreateItinerary } from '../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../src/theme';
 
 
 export default function NewItineraryScreen() {
