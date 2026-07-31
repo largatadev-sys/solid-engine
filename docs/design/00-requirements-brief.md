@@ -31,7 +31,7 @@ _Transcribed from the founder discussion (largata.docx, 09/07/2026, as revised a
 
 **Trip-scoped roles** (domain fact → Artifact 02; authorization → Artifact 04): **Owner** and **Member**. The owner holds destructive/administrative rights within a trip (delete trip, remove members, publish the itinerary); members collaborate.
 
-**Visitor (unauthenticated)** — strictly read-only: can view public and unlisted published content, including its reviews and comments, and do nothing else. All interaction (review, comment, star, fork, collaborate) requires an account. **Email invite** is the onboarding path for co-travelers — an invited visitor authenticates and lands in the trip as a member.
+**Visitor (unauthenticated)** — strictly read-only: can view published content, including its reviews and comments, and do nothing else. All interaction (review, comment, star, fork, collaborate) requires an account. **Email invite** is the onboarding path for co-travelers — an invited visitor authenticates and lands in the trip as a member. *(Amended 2026-07-31, S4.1/ADR-017: visibility is binary — "unlisted" deleted; accountless reach itself arrives with the backlogged web read-only surface.)*
 
 **Future actors** (recorded, out of v1 scope): **Vendor** (businesses showcasing offerings), **Moderator** (content flagging/review), **Influencer** (marketing/growth program — implies a distinguishable account status later; no v1 design impact beyond not assuming all traveler accounts are forever identical).
 
@@ -49,12 +49,12 @@ _Transcribed from the founder discussion (largata.docx, 09/07/2026, as revised a
 - **Diary is a first-class object** — the shared-album model. One **author-owner** per diary; contributors join only by the owner's consent; publication is the owner's sole right. A diary **references one itinerary**; one itinerary (and its fork lineage) can have **many diaries** — the owner's, collaborators', forkers' — each an independent lived perspective on the same plan. Published diaries surface as **Highlights** on the itinerary.
 - **Fork copies the plan only.** Provenance is recorded as a Fork Relationship. A fork never copies diaries, ledger, comments, reviews, or membership.
 - **Itinerary Items carry a source** from day one: `manual | link_unfurl | api:<provider>` — so the future vendor-API upgrade slots in behind the same item model without rework.
-- **Visibility (v1 enum):** **public / unlisted (link-only) / private.** Friends-only is a designed-for, deferred fourth value — it arrives with the future friend-graph feature.
+- **Visibility (v1 enum):** ~~public / unlisted (link-only) / private~~ **`private / published` — binary since S4.1 (2026-07-31, ADR-017): unlisted deleted by founder ruling ("it's just private and published").** Friends-only remains a designed-for, deferred value — it arrives with the future friend-graph feature.
 - **Published cost:** aggregate trip cost only; ledger detail never leaves the workspace.
 
 **The journey.** Traveler signs up → creates an Itinerary from scratch or discovers and forks a public one → invites co-travelers (email invite → authenticate → join as member), forming the Trip Workspace → members collaboratively edit itinerary items, comment, vote → items link out to external bookings (the unfurler imports metadata in) → the trip happens; diaries and expenses accrete → trip completes → members leave reviews → the owner publishes the itinerary (choosing its visibility); diary authors independently publish their diaries, which surface as Highlights → other travelers discover, star, review, comment — and fork. **The loop closes: consumption feeds creation.**
 
-**Implied lifecycles (formalized as state machines in Artifact 02):** Itinerary: draft → active → completed → published. Workspace: forming → active → completed → archived.
+**Implied lifecycles (formalized as state machines in Artifact 02):** Itinerary: draft → active → completed → published. Workspace: forming → active → completed → archived. *(Both evolved in Artifact 02, which is authoritative: workspace `forming` collapsed at S1.2; at S4.1/ADR-017 the itinerary machine split in two — the dormant lifecycle `draft → active → completed` plus the orthogonal binary visibility fact `private ⇄ published`.)*
 
 **Resolution.** ☑ Agreed *(pending founder ratification)*
 
@@ -91,7 +91,7 @@ _Transcribed from the founder discussion (largata.docx, 09/07/2026, as revised a
 
 **Scale.** Alpha 2,000–3,000 users (capped) · Beta ~10,000. Overshoot is welcome: the architecture must absorb growth by addition, not rewrite — but the build targets these numbers.
 
-**Tenancy.** **Many shared** — one common world, no isolated organizations. Inside it, the **Trip Workspace is the access-control boundary**: membership gates all private content (INV-1); published content is world-readable per its visibility level (public / unlisted / private). *One world, walled rooms.*
+**Tenancy.** **Many shared** — one common world, no isolated organizations. Inside it, the **Trip Workspace is the access-control boundary**: membership gates all private content (INV-1); published content is world-readable *(visibility binary since S4.1/ADR-017 — `private / published`; an archived trip narrows to its owner alone)*. *One world, walled rooms.*
 
 **Resolution.** ☑ Agreed *(pending founder ratification)*
 

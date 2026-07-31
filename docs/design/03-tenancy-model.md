@@ -20,11 +20,11 @@ The isolation boundary is instead the **Trip Workspace**: *one world, walled roo
 
 | Sphere | Contents | Read rule |
 |---|---|---|
-| **World-readable** | Published itineraries (per visibility), Highlights (published diaries on published itineraries), reviews, public comments, stars, public profiles, **aggregate trip cost only** | `public`: anyone, including unauthenticated visitors · `unlisted`: anyone holding the link (unguessable ID) · writes always require an account (INV-3) |
-| **Workspace-walled** (INV-1) | Non-published workspace contents: the plan in progress, ledger detail (expenses, splits, transfers), votes, invitations, **membership itself** *(private comments removed from the domain 2026-07-24 — Comment is public-only, S4.6)* | Workspace members only, resolved per request |
+| **World-readable** | Published itineraries, Highlights (published diaries on published itineraries), reviews, public comments, stars, public profiles, **aggregate trip cost only** | `published`: anyone *(visibility is **binary** since S4.1/ADR-017 — unlisted deleted, `friends_only` reserved for the friend graph; accountless reach itself arrives with the backlogged web read-only surface)* · writes always require an account (INV-3) · the published projection obeys **the absence rule** (INV-2: no dates, lifecycle state, stamps, roster, or attribution) |
+| **Workspace-walled** (INV-1) | Non-published workspace contents: the plan in progress, ledger detail (expenses, splits, transfers), votes, invitations, **membership itself** *(private comments removed from the domain 2026-07-24 — Comment is public-only, S4.6)* | Workspace members only, resolved per request — **narrowing to the owner alone while the workspace is archived** *(the audience ladder, S4.1/ADR-017: members' reads mask to not-found, their lists exclude it, and a published trip's public page goes down too — archive dominates publish)* |
 | **Diary-walled** (INV-2a) | Any diary pre-publication; contribution rights always | Author-owner + granted contributors only; publication is the owner's sole act |
 
-**Never crosses the wall, ever:** ledger detail, individual contributions, raw diaries, workspace member list (INV-2).
+**Never crosses the wall, ever:** ledger detail, individual contributions, raw diaries, workspace member list (INV-2) — and, since S4.1, **anything revealing current or future absence**: absolute dates, lifecycle state, lifecycle stamps (the absence rule).
 
 ---
 
@@ -50,7 +50,7 @@ Mobile app ──(auth token)──▶ API boundary: token verified → requeste
                      carried in the verified Membership
 ```
 
-Public reads bypass the guard but pass a **visibility check** on the object (`public` / `unlisted`-by-ID / `private` → reject). Diary reads pass a **grant check** (author or contributor grant). No layer assumes another layer did the work — each hop is named and owned.
+Public reads bypass the guard but pass a **visibility check** on the object (`published` → serve the rule-scrubbed projection; `private` *or archived* → reject-as-not-found — binary since S4.1/ADR-017, and the projection is its own deliberate read path, never the member view stripped). Diary reads pass a **grant check** (author or contributor grant). No layer assumes another layer did the work — each hop is named and owned.
 
 ---
 
@@ -80,6 +80,6 @@ This is engineering principle **P6 (one typed gateway)** applied to authorizatio
 
 ## What a developer must be able to say (the done-bar)
 
-> *"Every workspace-scoped request passes through the authorization guard, which resolves the requester's membership or rejects. Service methods cannot execute without the resolved membership. Public reads check the object's visibility level; unlisted reads rely on unguessable IDs; diary reads check contributor grants. The database is one shared schema; the walls are the guard — and post-validation, RLS beneath it."*
+> *"Every workspace-scoped request passes through the authorization guard, which resolves the requester's membership or rejects — and an archived workspace resolves for its owner alone. Service methods cannot execute without the resolved membership. Public reads check the object's binary visibility and serve the rule-scrubbed projection; diary reads check contributor grants. The database is one shared schema; the walls are the guard — and post-validation, RLS beneath it."*
 
 **Resolution: ☑ Agreed** *(proposed solo — pending founder ratification)*

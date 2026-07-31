@@ -24,6 +24,7 @@ _Generated: 31/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 | ADR-014 | MVP concurrency: single-writer itinerary edit lock; supersedes S1.3's last-write-wins *(amended to subject-typed leases, 31/07/2026)* | Accepted · amended | 24/07/2026 · 31/07/2026 |
 | ADR-015 | Traveler handle (@username): unique, changeable label; the id stays the identifier | Accepted | 30/07/2026 |
 | ADR-016 | Brand palette & type: terracotta/navy/cream + Inter, adopted globally as token values | Accepted | 30/07/2026 |
+| ADR-017 | Publish: binary visibility flip, live rule-scrubbed projection, the audience ladder | Accepted | 31/07/2026 |
 
 ## Decisions
 
@@ -157,6 +158,14 @@ _Generated: 31/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 - **Alternatives rejected.** Interim tokens until S4.3 — decides twice, ships onboarding unlike its design. Onboarding-only palette — a two-toned product.
 - **Consequences.** Every screen re-skins in one commit with zero structural change; web/mobile parity holds; Inter loads as an app font on both surfaces.
 - **Invalidating condition.** A professional brand pass before public launch → same mechanism, new values.
+
+### ADR-017 — Publish: a binary visibility flip with a live rule-scrubbed projection; the audience ladder
+- **Status.** Accepted · 31/07/2026 (S4.1 grilling, founder-ruled) · resolves register #11 · re-rules S1.9's archive sight and S1.3's `notes` semantics (ADR-008 waivers renewed) · retires `completed` as a gate
+- **Context.** Register #11 accumulated snapshot-vs-transition, publish-from-creation (proposed twice), est-vs-actual, and the 2026-07-29 safety constraint: a published itinerary must not reveal that its traveler is currently away from home — binding the whole projection.
+- **Decision.** Publish flips a binary `private → published` visibility fact on the one itinerary, orthogonal to the dormant lifecycle; the public surface is a live projection scrubbed by rule (INV-2 amended), never a copy. No lifecycle gate; owner-only; symmetric unpublish (hidden-not-deleted; forks survive). The absence rule: no absolute dates, lifecycle state, or stamps ever cross — duration derives from day count. The audience ladder: archived = owner only · private = owner + collaborators · published = everyone; archive dominates publish, unarchive restores the prior audience. Unlisted deleted; `friends_only` reserved additively for the friend graph.
+- **Alternatives rejected.** Snapshot-publish — kills the live-derived cost, mints a second identity, makes publish side-effectful. Two modes — double semantics, no consumer. A `completed` gate — resurrects removed UI, can't classify dateless trips. Date opt-in — a consent surface for a fact with no consumer.
+- **Consequences.** Publish stays side-effect-free (S1.7's race exemption holds); post-publish edits are instantly public (reviews-vs-moving-target recorded for S4.5); members lose sight of archived trips; empty publishes accepted; the dormant lifecycle ships untouched.
+- **Invalidating condition.** Trust abuse of live-updating published plans → freeze/versioning additively; the friend graph → `friends_only`; the web read-only surface → the same projection serves accountless reach.
 
 ---
 
