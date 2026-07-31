@@ -187,6 +187,34 @@ function getJson(path) {
   await send('Page.navigate', { url: `${PREVIEW}/itineraries/${TRIP_ID}/edit` });
   await sleep(5000);
 
+  stage('typing a title change (entering the screen takes no lease since S4.9)');
+  const typed = await evaluate(`
+    (function () {
+      var field = document.querySelector('input[aria-label="Trip title"], textarea[aria-label="Trip title"]');
+      if (!field) return 'field not found';
+      var setter = Object.getOwnPropertyDescriptor(field.constructor.prototype, 'value').set;
+      setter.call(field, 'Lock probe ' + ${JSON.stringify(TAG)});
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      return 'typed';
+    })();
+  `);
+  stage(`title field: ${typed}`);
+
+  stage('clicking Save — THIS is what acquires the header lease');
+  const clicked = await evaluate(`
+    (function () {
+      var hits = Array.prototype.slice
+        .call(document.querySelectorAll('[role="button"]'))
+        .filter(function (n) { return /Save changes/i.test(n.innerText || ''); })
+        .filter(function (n) { return n.getClientRects().length > 0; });
+      if (hits.length === 0) return 'Save not found';
+      hits[hits.length - 1].click();
+      return 'clicked (' + hits.length + ' visible match(es))';
+    })();
+  `);
+  stage(`save: ${clicked}`);
+  await sleep(5000);
+
   stage('reading alerts (they live in localStorage, so a redirect cannot wipe them)');
   const alerts = (await evaluate(`localStorage.getItem('largata.driver.alerts') || '[]'`)) || '[]';
   stage('reading page text');
