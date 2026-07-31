@@ -224,6 +224,40 @@ public class ItineraryService {
     }
 
 
+    @Transactional
+    public Itinerary publish(Membership owner) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.publish();
+        return recordVisibility(itinerary, owner, "itinerary_published");
+    }
+
+
+    @Transactional
+    public Itinerary unpublish(Membership owner) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.unpublish();
+        return recordVisibility(itinerary, owner, "itinerary_unpublished");
+    }
+
+
+    private Itinerary recordVisibility(Itinerary itinerary, Membership owner, String eventName) {
+        itineraries.save(itinerary);
+        log.info(
+                "Itinerary visibility: id={} visibility={} owner={}",
+                itinerary.id(),
+                itinerary.visibility().wireName(),
+                owner.travelerId());
+        AfterCommit.run(
+                () ->
+                        analytics.emit(
+                                AnalyticsEvent.named(eventName)
+                                        .with("itineraryId", itinerary.id())
+                                        .with("travelerId", owner.travelerId())
+                                        .build()));
+        return itinerary;
+    }
+
+
     private Itinerary authorizeAndLoad(Membership owner) {
         if (!owner.isOwner()) {
             throw new NotTripOwnerException();

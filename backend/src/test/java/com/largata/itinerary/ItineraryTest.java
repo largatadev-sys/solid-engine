@@ -221,6 +221,50 @@ class ItineraryTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void publishingFlipsTheVisibilityFactAndUnpublishingFlipsItBack() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+
+        itinerary.publish();
+        assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLISHED);
+
+        itinerary.unpublish();
+        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
+    }
+
+    @Test
+    void publishingIsOrthogonalToTheLifecycleAndCanHappenFromAnyState() {
+        Itinerary neverStarted = draft("Draft", List.of("Cebu"));
+        neverStarted.publish();
+        assertThat(neverStarted.state()).isEqualTo(ItineraryState.DRAFT);
+        assertThat(neverStarted.visibility()).isEqualTo(Visibility.PUBLISHED);
+
+        Itinerary travelled = draft("Draft", List.of("Cebu"));
+        travelled.start(Instant.now());
+        travelled.complete(Instant.now());
+        travelled.publish();
+        assertThat(travelled.state()).isEqualTo(ItineraryState.COMPLETED);
+        assertThat(travelled.visibility()).isEqualTo(Visibility.PUBLISHED);
+    }
+
+    @Test
+    void repeatingEitherVisibilityActIsANoOpRatherThanATransition() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+
+        itinerary.unpublish();
+        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
+
+        itinerary.publish();
+        itinerary.publish();
+        assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLISHED);
+    }
+
+    @Test
+    void theVisibilityWireNamesAreTheOnesCanonNames() {
+        assertThat(Visibility.PRIVATE.wireName()).isEqualTo("private");
+        assertThat(Visibility.PUBLISHED.wireName()).isEqualTo("published");
+    }
+
     private Itinerary draft(String title, List<String> destinations) {
         return Itinerary.draft(owner, title, destinations, null, null, Instant.now());
     }

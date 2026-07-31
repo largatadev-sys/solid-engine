@@ -50,6 +50,15 @@ export const itineraryRepository = {
   },
 
 
+  async publishTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/publish`, undefined);
+  },
+
+  async unpublishTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unpublish`, undefined);
+  },
+
+
   async appendDay(itineraryId: string, request: DayRequest): Promise<DayResponse> {
     return apiClient.post<DayResponse>(`/v1/itineraries/${itineraryId}/days`, request);
   },

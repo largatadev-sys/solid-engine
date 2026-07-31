@@ -18,7 +18,13 @@ export type IconName =
   | 'mapPin'
   | 'settings'
   | 'filePlus'
-  | 'gitBranch';
+  | 'gitBranch'
+  | 'globe'
+  | 'eye'
+  | 'checkCircle'
+  | 'link'
+  | 'star'
+  | 'partyPopper';
 
 interface IconProps {
   readonly name: IconName;
@@ -154,6 +160,56 @@ export function Icon({ name, size, color }: IconProps) {
       )}
 
       {name === 'chevronDown' && <Polyline points="6 9 12 15 18 9" {...shared} />}
+
+      {name === 'globe' && (
+        <>
+          <Circle cx="12" cy="12" r="10" {...shared} />
+          <Path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" {...shared} />
+          <Line x1="2" y1="12" x2="22" y2="12" {...shared} />
+        </>
+      )}
+
+      {name === 'eye' && (
+        <>
+          <Path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" {...shared} />
+          <Circle cx="12" cy="12" r="3" {...shared} />
+        </>
+      )}
+
+      {name === 'checkCircle' && (
+        <>
+          <Circle cx="12" cy="12" r="10" {...shared} />
+          <Polyline points="8 12 11 15 16 9" {...shared} />
+        </>
+      )}
+
+      {name === 'link' && (
+        <>
+          <Path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" {...shared} />
+          <Path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" {...shared} />
+        </>
+      )}
+
+      {name === 'star' && (
+        <Polygon
+          points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"
+          {...shared}
+        />
+      )}
+
+      {name === 'partyPopper' && (
+        <>
+          <Path d="M5.8 11.3 2 22l10.7-3.8" {...shared} />
+          <Path d="M4 3h.01" {...shared} />
+          <Path d="M22 8h.01" {...shared} />
+          <Path d="M15 2h.01" {...shared} />
+          <Path d="M22 20h.01" {...shared} />
+          <Path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10" {...shared} />
+          <Path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17" {...shared} />
+          <Path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7" {...shared} />
+          <Path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z" {...shared} />
+        </>
+      )}
 
       {name === 'check' && (
         <>

@@ -6,19 +6,28 @@ import { comingSoon } from '../../../../src/components/comingSoon';
 import { Icon } from '../../../../src/components/Icon';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { confirmWith } from '../../../../src/components/confirmDestructive';
-import { leaveTripWording } from '../../../../src/components/confirmDestructiveMessage';
+import {
+  leaveTripWording,
+  publishTripWording,
+  unpublishTripWording,
+} from '../../../../src/components/confirmDestructiveMessage';
 import { missingItineraryMessage } from '../../../../src/components/missingItineraryMessage';
 import { useMe } from '../../../../src/hooks/useMe';
 import { dayHeading } from '../../../../src/itineraries/dayHeading';
 import { AvatarStack } from '../../../../src/itineraries/AvatarStack';
 import { canEditPlan } from '../../../../src/itineraries/archiveControls';
 import { formatDates } from '../../../../src/itineraries/formatDates';
+import { publishControl, workspaceEyebrow } from '../../../../src/itineraries/publishControls';
 import { ArchiveTripLink, TripArchiveBanner } from '../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceChip } from '../../../../src/itineraries/WorkspaceChip';
 import { memberControls } from '../../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../../src/members/OwnershipOfferBanner';
 import { useEndMembership, useMembers } from '../../../../src/query/invitationQueries';
-import { useItinerary } from '../../../../src/query/itineraryQueries';
+import {
+  useItinerary,
+  usePublishTrip,
+  useUnpublishTrip,
+} from '../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../src/theme';
 import type { DayResponse, ItineraryResponse } from '../../../../src/types/api';
 
@@ -41,6 +50,8 @@ export default function TripWorkspaceScreen() {
   const { isOwner, canInvite, canLeave } = memberControls(roster, myId, data?.archived ?? false);
 
   const endMembership = useEndMembership(id);
+  const publish = usePublishTrip(id);
+  const unpublish = useUnpublishTrip(id);
   const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'itinerary');
 
   if (isPending) {
@@ -70,6 +81,9 @@ export default function TripWorkspaceScreen() {
     });
   };
 
+  const control = publishControl(data, isOwner);
+  const eyebrow = workspaceEyebrow(data.visibility);
+
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -79,12 +93,10 @@ export default function TripWorkspaceScreen() {
           size="display"
           back
           eyebrow={
-            data.visibility === 'private' ? (
-              <View style={styles.eyebrowRow}>
-                <Icon name="users" size={EYEBROW_ICON_SIZE} color={colors.accent} />
-                <Text style={styles.eyebrow}>Private Workspace</Text>
-              </View>
-            ) : undefined
+            <View style={styles.eyebrowRow}>
+              <Icon name={eyebrow.icon} size={EYEBROW_ICON_SIZE} color={colors.accent} />
+              <Text style={styles.eyebrow}>{eyebrow.label}</Text>
+            </View>
           }
         />
 
@@ -130,16 +142,43 @@ export default function TripWorkspaceScreen() {
             canLeave={canLeave}
             leaving={endMembership.isPending}
             onLeave={leaveTrip}
+            canUnpublish={control?.act === 'unpublish'}
+            unpublishing={unpublish.isPending}
+            unpublishError={unpublish.isError ? unpublish.error.message : undefined}
+            onUnpublish={() => confirmWith(unpublishTripWording(), () => unpublish.mutate())}
           />
         )}
       </ScrollView>
 
-      {canInvite && (
-        <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
-          <Pressable style={styles.cta} accessibilityRole="button">
-            <Text style={styles.ctaText}>Invite Travelers</Text>
-          </Pressable>
-        </Link>
+      {(canInvite || control?.act === 'publish') && (
+        <View style={styles.actionBar}>
+          {control?.act === 'publish' && (
+            <Pressable
+              style={[styles.cta, publish.isPending && styles.busy]}
+              disabled={publish.isPending}
+              accessibilityRole="button"
+              onPress={() => confirmWith(publishTripWording(), () => publish.mutate())}
+            >
+              {publish.isPending ? (
+                <ActivityIndicator color={colors.textOnAccent} />
+              ) : (
+                <Text style={styles.ctaText}>Publish Itinerary</Text>
+              )}
+            </Pressable>
+          )}
+          {canInvite && (
+            <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
+              <Pressable
+                style={control?.act === 'publish' ? styles.secondaryCta : styles.cta}
+                accessibilityRole="button"
+              >
+                <Text style={control?.act === 'publish' ? styles.secondaryCtaText : styles.ctaText}>
+                  Invite Travelers
+                </Text>
+              </Pressable>
+            </Link>
+          )}
+        </View>
       )}
     </View>
   );
@@ -190,6 +229,10 @@ function DetailsTab(props: {
   canLeave: boolean;
   leaving: boolean;
   onLeave: () => void;
+  canUnpublish: boolean;
+  unpublishing: boolean;
+  unpublishError: string | undefined;
+  onUnpublish: () => void;
 }) {
   const { itinerary } = props;
 
@@ -231,6 +274,21 @@ function DetailsTab(props: {
           </Text>
         </Pressable>
       </Link>
+
+      {props.canUnpublish && (
+        <View style={styles.quiet}>
+          {props.unpublishing ? (
+            <ActivityIndicator color={colors.textSecondary} />
+          ) : (
+            <Pressable accessibilityRole="button" onPress={props.onUnpublish}>
+              <Text style={styles.quietText}>Unpublish this trip</Text>
+            </Pressable>
+          )}
+          {props.unpublishError !== undefined && (
+            <Text style={styles.errorCaption}>{props.unpublishError}</Text>
+          )}
+        </View>
+      )}
 
       <ArchiveTripLink itinerary={itinerary} />
 
@@ -347,14 +405,28 @@ const styles = StyleSheet.create({
   secondaryActionText: { ...typography.bodyStrong, color: colors.accent },
   leaveButton: { paddingVertical: spacing.sm, alignItems: 'flex-start' },
   leaveButtonText: { ...typography.caption, color: colors.danger },
+  actionBar: { flexDirection: 'row', gap: spacing.sm, margin: spacing.md },
   cta: {
-    margin: spacing.md,
+    flex: 1,
     paddingVertical: spacing.md,
     borderRadius: radii.pill,
     alignItems: 'center',
     backgroundColor: colors.accent,
   },
   ctaText: { ...typography.bodyStrong, color: colors.textOnAccent },
+  secondaryCta: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.accentMuted,
+    backgroundColor: colors.surface,
+  },
+  secondaryCtaText: { ...typography.bodyStrong, color: colors.accent },
+  quiet: { alignItems: 'flex-start', gap: spacing.xs },
+  quietText: { ...typography.caption, color: colors.textSecondary, textDecorationLine: 'underline' },
+  errorCaption: { ...typography.caption, color: colors.danger },
   busy: { opacity: 0.7 },
   errorTitle: { ...typography.heading, color: colors.danger },
   caption: { ...typography.caption, color: colors.textSecondary },

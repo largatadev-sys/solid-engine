@@ -217,6 +217,16 @@ public class Itinerary {
         }
     }
 
+
+    void publish() {
+        this.visibility = Visibility.PUBLISHED;
+    }
+
+
+    void unpublish() {
+        this.visibility = Visibility.PRIVATE;
+    }
+
     public UUID id() {
         return id;
     }

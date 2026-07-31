@@ -5,6 +5,8 @@ export type ConfirmWording = {
   body: string;
 
   confirmLabel: string;
+
+  tone?: 'destructive' | 'default';
 };
 
 
@@ -70,6 +72,25 @@ export function declineOwnershipWording(): ConfirmWording {
     title: 'Decline ownership?',
     body: 'The current owner keeps the trip. They can offer it to you again later.',
     confirmLabel: 'Decline',
+  };
+}
+
+
+export function publishTripWording(): ConfirmWording {
+  return {
+    title: 'Publish this trip?',
+    body: 'Every signed-in traveler with the link can read the plan. Your dates never appear on it. You can unpublish at any time.',
+    confirmLabel: 'Publish',
+    tone: 'default',
+  };
+}
+
+
+export function unpublishTripWording(): ConfirmWording {
+  return {
+    title: 'Unpublish this trip?',
+    body: 'The public page disappears. Anything travelers left on it is hidden, not deleted, and comes back if you publish again. Copies other travelers already made keep existing.',
+    confirmLabel: 'Unpublish',
   };
 }
 

@@ -230,11 +230,20 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(workspace.indexOf('<ArchiveTripLink')).toBeGreaterThan(detailsTabAt);
   });
 
-  it('leaves the published eyebrow variant to S4.1 (decision 8)', () => {
+  it('renders the visibility fact through the eyebrow helper, both variants (S4.1 decision 11)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(workspace).toContain("data.visibility === 'private'");
+    expect(workspace).toContain('workspaceEyebrow(data.visibility)');
+    expect(workspace).not.toMatch(/data\.visibility === '/);
     expect(workspace).not.toMatch(/visibility\.toUpperCase/);
+  });
+
+  it('puts publish on the workspace screen and unpublish quietly in the Details tab (S4.1 decision 11)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+    const detailsTabAt = workspace.indexOf('function DetailsTab');
+
+    expect(workspace.indexOf('Publish Itinerary')).toBeLessThan(detailsTabAt);
+    expect(workspace.indexOf('Unpublish this trip')).toBeGreaterThan(detailsTabAt);
   });
 });
 

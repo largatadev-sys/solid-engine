@@ -132,6 +132,22 @@ export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryRespons
   });
 }
 
+export function usePublishTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.publishTrip(id),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
+export function useUnpublishTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.unpublishTrip(id),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
 export function useArchivedItineraries(): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
   const { kind } = useAuth();
   return useInfiniteQuery({ ...archivedItinerariesOptions, enabled: kind === 'signedIn' });

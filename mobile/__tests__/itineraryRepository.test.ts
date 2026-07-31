@@ -84,6 +84,24 @@ describe('archiving (S1.9)', () => {
   });
 });
 
+describe('publishing (S4.1)', () => {
+  it('publishes with no body — the act carries no data, only authority', async () => {
+    apiClient.post.mockResolvedValue({ id: 'abc', visibility: 'published' });
+
+    await itineraryRepository.publishTrip('abc');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/publish', undefined);
+  });
+
+  it('unpublishes symmetrically, on the same itinerary id', async () => {
+    apiClient.post.mockResolvedValue({ id: 'abc', visibility: 'private' });
+
+    await itineraryRepository.unpublishTrip('abc');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/unpublish', undefined);
+  });
+});
+
 describe('reading one and creating', () => {
   it('fetches a single itinerary by id', async () => {
     apiClient.get.mockResolvedValue({ id: 'abc' });

@@ -59,6 +59,9 @@ export type VerificationResultResponse = {
 };
 
 
+export type Visibility = 'private' | 'published';
+
+
 export type ItineraryResponse = {
   id: string;
   title: string;
@@ -69,7 +72,7 @@ export type ItineraryResponse = {
   startDate: string | null;
   endDate: string | null;
   state: string;
-  visibility: string;
+  visibility: Visibility;
 
   archived: boolean;
 

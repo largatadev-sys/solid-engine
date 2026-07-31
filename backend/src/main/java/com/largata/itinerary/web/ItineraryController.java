@@ -100,6 +100,22 @@ class ItineraryController {
     }
 
 
+    @PostMapping("/{id}/publish")
+    ItineraryResponse publish(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        itineraries.publish(membership);
+        return ItineraryResponse.of(itineraries.viewPlan(membership));
+    }
+
+
+    @PostMapping("/{id}/unpublish")
+    ItineraryResponse unpublish(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        itineraries.unpublish(membership);
+        return ItineraryResponse.of(itineraries.viewPlan(membership));
+    }
+
+
     @GetMapping
     Page<ItineraryResponse> listMine(
             @CurrentTraveler Traveler traveler,
