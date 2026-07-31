@@ -127,16 +127,6 @@ export default function DaySurfaceScreen() {
           title={data.title}
           back
           backTo={{ pathname: '/itineraries/[id]', params: { id } }}
-          action={
-            <Pressable
-              onPress={() => router.push({ pathname: '/itineraries/[id]', params: { id, tab: 'details' } })}
-              accessibilityRole="button"
-              accessibilityLabel="Trip settings"
-              hitSlop={spacing.sm}
-            >
-              <Icon name="settings" size={SETTINGS_ICON_SIZE} color={colors.textPrimary} />
-            </Pressable>
-          }
         />
 
         {mutationMessage !== undefined && <Text style={styles.mutationError}>{mutationMessage}</Text>}

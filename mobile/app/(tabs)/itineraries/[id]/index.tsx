@@ -16,7 +16,7 @@ import { AvatarStack } from '../../../../src/itineraries/AvatarStack';
 import { canEditPlan } from '../../../../src/itineraries/archiveControls';
 import { formatDates } from '../../../../src/itineraries/formatDates';
 import { publishControl, workspaceEyebrow } from '../../../../src/itineraries/publishControls';
-import { ArchiveTripLink, TripArchiveBanner } from '../../../../src/itineraries/TripArchiveBanner';
+import { TripArchiveBanner } from '../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceChip } from '../../../../src/itineraries/WorkspaceChip';
 import { memberControls } from '../../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../../src/members/OwnershipOfferBanner';
@@ -96,7 +96,7 @@ export default function TripWorkspaceScreen() {
                   accessibilityLabel="Edit itinerary"
                   hitSlop={spacing.sm}
                 >
-                  <Icon name="settings" size={EDIT_ICON_SIZE} color={colors.textPrimary} />
+                  <Icon name="pencil" size={EDIT_ICON_SIZE} color={colors.textPrimary} />
                 </Pressable>
               </Link>
             ) : undefined
@@ -263,14 +263,6 @@ function DetailsTab(props: {
         <Text style={styles.value}>{formatDates(itinerary)}</Text>
       </Field>
 
-      <Link href={{ pathname: '/members/[itineraryId]', params: { itineraryId: itinerary.id } }} asChild>
-        <Pressable style={styles.secondaryAction} accessibilityRole="button">
-          <Text style={styles.secondaryActionText}>
-            {props.isOwner ? 'Members & ownership transfer' : 'Members'}
-          </Text>
-        </Pressable>
-      </Link>
-
       {props.canUnpublish && (
         <View style={styles.quiet}>
           {props.unpublishing ? (
@@ -285,8 +277,6 @@ function DetailsTab(props: {
           )}
         </View>
       )}
-
-      <ArchiveTripLink itinerary={itinerary} />
 
       {props.canLeave && (
         <Pressable

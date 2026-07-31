@@ -131,13 +131,6 @@ export function useUpdateItinerary(
 }
 
 
-export function useArchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: () => itineraryRepository.archiveTrip(id),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
-  });
-}
 
 export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
   const client = useQueryClient();

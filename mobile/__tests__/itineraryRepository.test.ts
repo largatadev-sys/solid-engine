@@ -66,14 +66,7 @@ describe('reading the list', () => {
   });
 });
 
-describe('archiving (S1.9)', () => {
-  it('archives with no body — the act carries no data', async () => {
-    apiClient.post.mockResolvedValue({ id: 'abc', archived: true });
-
-    await itineraryRepository.archiveTrip('abc');
-
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/archive', undefined);
-  });
+describe('unarchiving (S1.9 — the archive control itself was removed from the UI, founder 08/01)', () => {
 
   it('unarchives the same way', async () => {
     apiClient.post.mockResolvedValue({ id: 'abc', archived: false });

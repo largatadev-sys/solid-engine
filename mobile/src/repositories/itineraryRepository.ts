@@ -48,9 +48,6 @@ export const itineraryRepository = {
   },
 
 
-  async archiveTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/archive`, undefined);
-  },
 
   async unarchiveTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unarchive`, undefined);

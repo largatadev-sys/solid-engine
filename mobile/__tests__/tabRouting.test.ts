@@ -258,13 +258,26 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(detail).toContain('attributionLine');
   });
 
-  it('carries the archive link on the Details tab, with the archived banner above the tabs', () => {
+  it('keeps the archived banner above the tabs — an archived trip explains itself first', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
-    const detailsTabAt = workspace.indexOf('function DetailsTab');
     const tabBarAt = workspace.indexOf('<View style={styles.tabBar}>');
 
     expect(workspace.indexOf('<TripArchiveBanner')).toBeLessThan(tabBarAt);
-    expect(workspace.indexOf('<ArchiveTripLink')).toBeGreaterThan(detailsTabAt);
+  });
+
+  it('offers no way to archive from the UI — the control was pulled (founder, 08/01)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(workspace).not.toContain('ArchiveTripLink');
+    expect(workspace).not.toContain('Archive trip');
+  });
+
+  it('reaches members through the roster row alone, not a second Details button (founder, 08/01)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+    const detailsTabAt = workspace.indexOf('function DetailsTab');
+
+    expect(workspace).not.toContain('ownership transfer');
+    expect(workspace.indexOf("pathname: '/members/[itineraryId]'")).toBeLessThan(detailsTabAt);
   });
 
   it('renders the visibility fact through the eyebrow helper, both variants (S4.1 decision 11)', () => {

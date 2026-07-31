@@ -20,6 +20,7 @@ export type IconName =
   | 'filePlus'
   | 'gitBranch'
   | 'globe'
+  | 'pencil'
   | 'eye'
   | 'checkCircle'
   | 'link'
@@ -167,6 +168,10 @@ export function Icon({ name, size, color }: IconProps) {
           <Path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" {...shared} />
           <Line x1="2" y1="12" x2="22" y2="12" {...shared} />
         </>
+      )}
+
+      {name === 'pencil' && (
+        <Path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" {...shared} />
       )}
 
       {name === 'eye' && (
