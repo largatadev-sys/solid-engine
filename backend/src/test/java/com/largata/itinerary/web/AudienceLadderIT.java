@@ -71,8 +71,10 @@ class AudienceLadderIT extends PostgresTestBase {
 
         view(member, tripId).expectStatus().isNotFound().expectBody().jsonPath("$.code").isEqualTo("ITINERARY_NOT_FOUND");
         members(member, tripId).expectStatus().isNotFound();
+        invitations(member, tripId).expectStatus().isNotFound();
         view(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.archived").isEqualTo(true);
         members(owner, tripId).expectStatus().isOk();
+        invitations(owner, tripId).expectStatus().isOk();
     }
 
 
@@ -160,6 +162,13 @@ class AudienceLadderIT extends PostgresTestBase {
     private RestTestClient.ResponseSpec members(String token, String itineraryId) {
         return rest.get()
                 .uri("/v1/itineraries/" + itineraryId + "/members")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange();
+    }
+
+    private RestTestClient.ResponseSpec invitations(String token, String itineraryId) {
+        return rest.get()
+                .uri("/v1/itineraries/" + itineraryId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }

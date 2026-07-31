@@ -30,7 +30,7 @@ public record PublishedItinerary(
                 itinerary.coverImageUrl(),
                 plan.size(),
                 creator,
-                EstimatedCost.of(plan),
+                EstimatedCost.derivedFrom(plan).orElse(null),
                 plan);
     }
 }

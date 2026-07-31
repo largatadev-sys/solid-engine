@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
+import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
 import { colors, radii, spacing, typography } from '../theme';
 import type { PublishedActivityResponse, PublishedItineraryResponse } from '../types/api';
@@ -20,7 +21,7 @@ export const PUBLISHED_TABS = ['Overview', 'Day-by-Day', 'Diary Entry', 'Comment
 export type PublishedTab = (typeof PUBLISHED_TABS)[number];
 
 
-const GREYED_TABS: Record<string, 'diary' | 'comments' | 'reviews'> = {
+const GREYED_TABS: Partial<Record<PublishedTab, ComingSoonSurface>> = {
   'Diary Entry': 'diary',
   Comments: 'comments',
   Reviews: 'reviews',
@@ -116,6 +117,9 @@ function PublishedHeader({
           </View>
         )}
         {duration !== undefined && <Text style={styles.duration}>{duration}</Text>}
+        {projection.bestTimeOfYear !== null && (
+          <Text style={styles.bestTime}>{projection.bestTimeOfYear}</Text>
+        )}
       </View>
 
       <View style={styles.creatorRow}>
@@ -190,13 +194,6 @@ function Overview({ projection }: { projection: PublishedItineraryResponse }) {
 
       {projection.description !== null && <Text style={styles.description}>{projection.description}</Text>}
 
-      {projection.bestTimeOfYear !== null && (
-        <View style={styles.bestTime}>
-          <Text style={styles.bestTimeLabel}>Best time of year</Text>
-          <Text style={styles.bestTimeValue}>{projection.bestTimeOfYear}</Text>
-        </View>
-      )}
-
       {projection.standouts.length > 0 && (
         <View style={styles.standouts}>
           <Text style={styles.standoutsHeading}>Standouts</Text>
@@ -241,6 +238,7 @@ function DayByDay({ projection }: { projection: PublishedItineraryResponse }) {
 
 function ActivityCard({ activity }: { activity: PublishedActivityResponse }) {
   const meta = activityMetaLine(activity.timeOfDay, activity.costAmount, activity.costCurrency);
+  const booking = activity.externalUrl;
 
   return (
     <View style={styles.activityCard}>
@@ -256,12 +254,12 @@ function ActivityCard({ activity }: { activity: PublishedActivityResponse }) {
           <Text style={styles.tipsBody}>{activity.notes}</Text>
         </View>
       )}
-      {activity.externalUrl !== null && (
+      {booking !== null && (
         <Pressable
           accessibilityRole="link"
           accessibilityLabel="View booking options"
           onPress={() => {
-            void Linking.openURL(activity.externalUrl as string);
+            void Linking.openURL(booking);
           }}
         >
           <Text style={styles.bookingLink}>View Booking Options</Text>
@@ -294,7 +292,7 @@ const styles = StyleSheet.create({
   },
   coverHint: { ...typography.caption, color: colors.textSecondary },
   header: { gap: spacing.sm },
-  pillRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  pillRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm },
   pill: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -361,9 +359,7 @@ const styles = StyleSheet.create({
   },
   galleryHint: { ...typography.caption, color: colors.textSecondary },
   description: { ...typography.body, color: colors.textPrimary, lineHeight: 26 },
-  bestTime: { gap: spacing.xs },
-  bestTimeLabel: { ...typography.caption, color: colors.textSecondary },
-  bestTimeValue: { ...typography.bodyStrong, color: colors.textPrimary },
+  bestTime: { ...typography.caption, color: colors.textSecondary },
   standouts: { gap: spacing.sm },
   standoutsHeading: { ...typography.bodyStrong, color: colors.textPrimary },
   standoutRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

@@ -10,11 +10,7 @@ import {
 export const confirmWith: ConfirmWith = (wording, onConfirm) => {
   Alert.alert(wording.title, wording.body, [
     { text: 'Cancel', style: 'cancel' },
-    {
-      text: wording.confirmLabel,
-      style: wording.tone === 'default' ? 'default' : 'destructive',
-      onPress: onConfirm,
-    },
+    { text: wording.confirmLabel, style: 'destructive', onPress: onConfirm },
   ]);
 };
 

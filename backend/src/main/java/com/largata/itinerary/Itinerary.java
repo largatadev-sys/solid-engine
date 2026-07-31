@@ -98,10 +98,15 @@ public class Itinerary {
         this.title = fields.title();
         this.destinations = fields.destinations();
         this.description = fields.description();
-        this.standouts = fields.standouts();
-        this.bestTimeOfYear = fields.bestTimeOfYear();
         this.startDate = fields.startDate();
         this.endDate = fields.endDate();
+
+        if (fields.standouts() != null) {
+            this.standouts = fields.standouts();
+        }
+        if (fields.bestTimeOfYear() != null) {
+            this.bestTimeOfYear = fields.bestTimeOfYear().isEmpty() ? null : fields.bestTimeOfYear();
+        }
     }
 
 
@@ -148,7 +153,7 @@ public class Itinerary {
         return new Itinerary(
                 UuidV7.generate(),
                 ownerId,
-                ItineraryFields.untitledPlan(title, destinations, description, startDate, endDate),
+                ItineraryFields.withoutPublishMetadata(title, destinations, description, startDate, endDate),
                 createdAt);
     }
 

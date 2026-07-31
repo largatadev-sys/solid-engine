@@ -1,7 +1,6 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ApiError } from '../../../../src/api/ApiError';
 import { comingSoon } from '../../../../src/components/comingSoon';
 import { Icon } from '../../../../src/components/Icon';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
@@ -10,7 +9,7 @@ import {
   leaveTripWording,
   unpublishTripWording,
 } from '../../../../src/components/confirmDestructiveMessage';
-import { missingItineraryMessage } from '../../../../src/components/missingItineraryMessage';
+import { itineraryLoadMessage, ScreenMessage } from '../../../../src/components/ScreenMessage';
 import { useMe } from '../../../../src/hooks/useMe';
 import { dayHeading } from '../../../../src/itineraries/dayHeading';
 import { AvatarStack } from '../../../../src/itineraries/AvatarStack';
@@ -57,15 +56,7 @@ export default function TripWorkspaceScreen() {
   }
 
   if (isError) {
-    const missing = error instanceof ApiError && error.code === 'ITINERARY_NOT_FOUND';
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorTitle}>
-          {missing ? missingItineraryMessage.title : 'Could not load this trip'}
-        </Text>
-        <Text style={styles.caption}>{missing ? missingItineraryMessage.body : error.message}</Text>
-      </View>
-    );
+    return <ScreenMessage {...itineraryLoadMessage(error, 'Could not load this trip')} />;
   }
 
   const leaveTrip = () => {
@@ -136,7 +127,7 @@ export default function TripWorkspaceScreen() {
             canLeave={canLeave}
             leaving={endMembership.isPending}
             onLeave={leaveTrip}
-            canUnpublish={control?.act === 'unpublish'}
+            canUnpublish={control === 'unpublish'}
             unpublishing={unpublish.isPending}
             unpublishError={unpublish.isError ? unpublish.error.message : undefined}
             onUnpublish={() => confirmWith(unpublishTripWording(), () => unpublish.mutate())}
@@ -144,29 +135,22 @@ export default function TripWorkspaceScreen() {
         )}
       </ScrollView>
 
-      {(canInvite || control !== null) && (
+      {(canInvite || control === 'publish') && (
         <View style={styles.actionBar}>
-          {control?.act === 'publish' && (
+          {control === 'publish' && (
             <Link href={{ pathname: '/itineraries/[id]/preview', params: { id } }} asChild>
               <Pressable style={styles.cta} accessibilityRole="button">
                 <Text style={styles.ctaText}>Publish Itinerary</Text>
               </Pressable>
             </Link>
           )}
-          {control?.act === 'unpublish' && (
-            <Link href={{ pathname: '/published/[id]', params: { id } }} asChild>
-              <Pressable style={styles.cta} accessibilityRole="button">
-                <Text style={styles.ctaText}>View Published Page</Text>
-              </Pressable>
-            </Link>
-          )}
           {canInvite && (
             <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
               <Pressable
-                style={control !== null ? styles.secondaryCta : styles.cta}
+                style={control === 'publish' ? styles.secondaryCta : styles.cta}
                 accessibilityRole="button"
               >
-                <Text style={control !== null ? styles.secondaryCtaText : styles.ctaText}>
+                <Text style={control === 'publish' ? styles.secondaryCtaText : styles.ctaText}>
                   Invite Travelers
                 </Text>
               </Pressable>
@@ -422,6 +406,5 @@ const styles = StyleSheet.create({
   quietText: { ...typography.caption, color: colors.textSecondary, textDecorationLine: 'underline' },
   errorCaption: { ...typography.caption, color: colors.danger },
   busy: { opacity: 0.7 },
-  errorTitle: { ...typography.heading, color: colors.danger },
   caption: { ...typography.caption, color: colors.textSecondary },
 });

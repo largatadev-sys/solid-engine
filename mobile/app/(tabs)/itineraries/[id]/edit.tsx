@@ -7,14 +7,7 @@ import { archivedPlanNotice } from '../../../../src/components/editLockedMessage
 import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { useEditLock } from '../../../../src/hooks/useEditLock';
-import {
-  addDestination,
-  cleanDestinations,
-  removeDestination,
-  setDestination,
-} from '../../../../src/itineraries/destinationsEditor';
 import { addRow, cleanRows, moveRow, removeRow, setRow } from '../../../../src/itineraries/rowEditor';
-import { Icon } from '../../../../src/components/Icon';
 import { validateItineraryEdit } from '../../../../src/itineraries/validateItineraryForm';
 import { useItinerary, useUpdateItinerary } from '../../../../src/query/itineraryQueries';
 import type { UpdateItineraryRequest } from '../../../../src/types/api';
@@ -46,7 +39,7 @@ export default function EditItineraryScreen() {
   const [validationError, setValidationError] = useState<string | undefined>();
 
   function submit() {
-    const cleaned = cleanDestinations(destinations);
+    const cleaned = cleanRows(destinations);
     const problem = validateItineraryEdit({ title, destinations: cleaned, description, startDate, endDate });
     setValidationError(problem);
     if (problem !== undefined) return;
@@ -56,7 +49,7 @@ export default function EditItineraryScreen() {
       destinations: cleaned,
       ...(description.trim() !== '' ? { description: description.trim() } : {}),
       standouts: cleanRows(standouts),
-      ...(bestTimeOfYear.trim() !== '' ? { bestTimeOfYear: bestTimeOfYear.trim() } : {}),
+      bestTimeOfYear: bestTimeOfYear.trim(),
       ...(startDate !== '' ? { startDate } : {}),
       ...(endDate !== '' ? { endDate } : {}),
     };
@@ -94,14 +87,14 @@ export default function EditItineraryScreen() {
             <TextInput
               style={styles.destinationInput}
               value={destination}
-              onChangeText={(text) => setDestinations((prev) => setDestination(prev, index, text))}
+              onChangeText={(text) => setDestinations((prev) => setRow(prev, index, text))}
               accessibilityLabel={`Destination ${index + 1}`}
               placeholder="Palawan"
               placeholderTextColor={colors.textSecondary}
             />
             {destinations.length > 1 && (
               <Pressable
-                onPress={() => setDestinations((prev) => removeDestination(prev, index))}
+                onPress={() => setDestinations((prev) => removeRow(prev, index))}
                 accessibilityRole="button"
                 accessibilityLabel="Remove destination"
                 hitSlop={8}
@@ -112,7 +105,7 @@ export default function EditItineraryScreen() {
           </View>
         ))}
         <Pressable
-          onPress={() => setDestinations((prev) => addDestination(prev))}
+          onPress={() => setDestinations((prev) => addRow(prev))}
           accessibilityRole="button"
           style={styles.addDestination}
         >

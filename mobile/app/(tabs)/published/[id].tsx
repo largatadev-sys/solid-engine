@@ -1,8 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ApiError } from '../../../src/api/ApiError';
-import { ScreenHeader } from '../../../src/components/ScreenHeader';
-import { missingItineraryMessage } from '../../../src/components/missingItineraryMessage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { itineraryLoadMessage, ScreenMessage } from '../../../src/components/ScreenMessage';
 import { PublishedItineraryView } from '../../../src/itineraries/PublishedItineraryView';
 import { usePublishedItinerary } from '../../../src/query/itineraryQueries';
 import { colors, spacing, typography } from '../../../src/theme';
@@ -11,6 +10,7 @@ import { colors, spacing, typography } from '../../../src/theme';
 export default function PublishedItineraryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, isPending, isError, error } = usePublishedItinerary(id);
+  const insets = useSafeAreaInsets();
 
   if (isPending) {
     return (
@@ -21,20 +21,11 @@ export default function PublishedItineraryScreen() {
   }
 
   if (isError) {
-    const missing = error instanceof ApiError && error.code === 'ITINERARY_NOT_FOUND';
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorTitle}>
-          {missing ? missingItineraryMessage.title : 'Could not load this itinerary'}
-        </Text>
-        <Text style={styles.caption}>{missing ? missingItineraryMessage.body : error.message}</Text>
-      </View>
-    );
+    return <ScreenMessage {...itineraryLoadMessage(error, 'Could not load this itinerary')} />;
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <ScreenHeader title="" back />
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       <PublishedItineraryView projection={data} audience="consumer" />
     </ScrollView>
   );
@@ -50,6 +41,4 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: colors.background,
   },
-  errorTitle: { ...typography.heading, color: colors.danger },
-  caption: { ...typography.caption, color: colors.textSecondary },
 });

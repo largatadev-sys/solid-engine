@@ -2,10 +2,7 @@ import type { IconName } from '../components/Icon';
 import type { ItineraryResponse, Visibility } from '../types/api';
 
 
-export type PublishControl = {
-
-  act: 'publish' | 'unpublish';
-};
+export type PublishControl = 'publish' | 'unpublish';
 
 
 export function publishControl(
@@ -13,7 +10,7 @@ export function publishControl(
   isOwner: boolean,
 ): PublishControl | null {
   if (!isOwner || itinerary.archived) return null;
-  return { act: itinerary.visibility === 'published' ? 'unpublish' : 'publish' };
+  return itinerary.visibility === 'published' ? 'unpublish' : 'publish';
 }
 
 

@@ -230,6 +230,58 @@ class ItineraryTest {
     }
 
     @Test
+    void anEditThatOmitsThePublishMetadataLeavesItAloneRatherThanErasingIt() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+        itinerary.editFields(
+                new ItineraryFields("Trip", List.of("Cebu"), null, List.of("Kayaking"), "Dec – Apr", null, null),
+                UuidV7.generate(),
+                Instant.now());
+
+        itinerary.editFields(
+                new ItineraryFields("Renamed by an older client", List.of("Cebu"), null, null, null, null, null),
+                UuidV7.generate(),
+                Instant.now());
+
+        assertThat(itinerary.title()).isEqualTo("Renamed by an older client");
+        assertThat(itinerary.standouts())
+                .as("a client that cannot send standouts must not be able to destroy them — ADR-008")
+                .containsExactly("Kayaking");
+        assertThat(itinerary.bestTimeOfYear()).isEqualTo("Dec – Apr");
+    }
+
+    @Test
+    void anEmptyValueClearsThePublishMetadataBecauseAbsenceAlreadyMeansSomethingElse() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+        itinerary.editFields(
+                new ItineraryFields("Trip", List.of("Cebu"), null, List.of("Kayaking"), "Dec – Apr", null, null),
+                UuidV7.generate(),
+                Instant.now());
+
+        itinerary.editFields(
+                new ItineraryFields("Trip", List.of("Cebu"), null, List.of(), "", null, null),
+                UuidV7.generate(),
+                Instant.now());
+
+        assertThat(itinerary.standouts()).isEmpty();
+        assertThat(itinerary.bestTimeOfYear()).isNull();
+    }
+
+    @Test
+    void theShippedFieldsKeepTheirReplaceSemanticsBecauseChangingThoseWouldBeTheAdditivityBreak() {
+        Itinerary itinerary = draft("Draft", List.of("Cebu"));
+        itinerary.editFields(
+                new ItineraryFields("Trip", List.of("Cebu"), "A description.", null, null, null, null),
+                UuidV7.generate(),
+                Instant.now());
+
+        itinerary.editFields(renamedTo("Trip"), UuidV7.generate(), Instant.now());
+
+        assertThat(itinerary.description())
+                .as("description shipped as replace-or-null at S0.3; the new fields differ on purpose")
+                .isNull();
+    }
+
+    @Test
     void aStandoutListIsBoundedInBothLengthAndCount() {
         assertThatThrownBy(() -> withStandouts(List.of("x".repeat(Itinerary.MAX_STANDOUT_LENGTH + 1))))
                 .isInstanceOf(IllegalArgumentException.class);

@@ -5,8 +5,6 @@ export type ConfirmWording = {
   body: string;
 
   confirmLabel: string;
-
-  tone?: 'destructive' | 'default';
 };
 
 
@@ -101,6 +99,5 @@ export function unarchiveTripWording(published: boolean): ConfirmWording {
     title: 'Unarchive this trip?',
     body: `Everyone on the trip gets it back and can edit again.${page} Invites and offers cancelled by archiving are not restored.`,
     confirmLabel: 'Unarchive',
-    tone: 'default',
   };
 }

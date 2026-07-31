@@ -1,9 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ApiError } from '../../../../src/api/ApiError';
 import { Icon } from '../../../../src/components/Icon';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
-import { missingItineraryMessage } from '../../../../src/components/missingItineraryMessage';
+import { itineraryLoadMessage, ScreenMessage } from '../../../../src/components/ScreenMessage';
 import { PublishedItineraryView } from '../../../../src/itineraries/PublishedItineraryView';
 import { useItineraryPreview, usePublishTrip } from '../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../src/theme';
@@ -24,15 +23,7 @@ export default function ItineraryPreviewScreen() {
   }
 
   if (isError) {
-    const missing = error instanceof ApiError && error.code === 'ITINERARY_NOT_FOUND';
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorTitle}>
-          {missing ? missingItineraryMessage.title : 'Could not load this preview'}
-        </Text>
-        <Text style={styles.caption}>{missing ? missingItineraryMessage.body : error.message}</Text>
-      </View>
-    );
+    return <ScreenMessage {...itineraryLoadMessage(error, 'Could not load this preview')} />;
   }
 
   return (
@@ -118,6 +109,4 @@ const styles = StyleSheet.create({
   secondaryText: { ...typography.bodyStrong, color: colors.accent },
   busy: { opacity: 0.7 },
   error: { ...typography.caption, color: colors.danger },
-  errorTitle: { ...typography.heading, color: colors.danger },
-  caption: { ...typography.caption, color: colors.textSecondary },
 });

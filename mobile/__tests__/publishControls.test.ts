@@ -5,11 +5,11 @@ import {
 
 describe('publishControl', () => {
   it('offers publish to the owner of a private trip', () => {
-    expect(publishControl({ visibility: 'private', archived: false }, true)).toEqual({ act: 'publish' });
+    expect(publishControl({ visibility: 'private', archived: false }, true)).toBe('publish');
   });
 
   it('offers unpublish to the owner of a published trip', () => {
-    expect(publishControl({ visibility: 'published', archived: false }, true)).toEqual({ act: 'unpublish' });
+    expect(publishControl({ visibility: 'published', archived: false }, true)).toBe('unpublish');
   });
 
   it('offers nothing to a member — the visibility fact is the owner’s to change', () => {

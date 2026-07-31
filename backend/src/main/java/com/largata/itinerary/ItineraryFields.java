@@ -17,8 +17,8 @@ public record ItineraryFields(
         title = requireTitle(title);
         destinations = requireDestinations(destinations);
         description = boundedOrNull(description, Itinerary.MAX_DESCRIPTION_LENGTH, "description");
-        standouts = cleanStandouts(standouts);
-        bestTimeOfYear = boundedOrNull(bestTimeOfYear, Itinerary.MAX_BEST_TIME_LENGTH, "best time of year");
+        standouts = standouts == null ? null : cleanStandouts(standouts);
+        bestTimeOfYear = bestTimeOfYear == null ? null : bounded(bestTimeOfYear, Itinerary.MAX_BEST_TIME_LENGTH);
 
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new IllegalArgumentException("An itinerary cannot end before it starts");
@@ -26,9 +26,9 @@ public record ItineraryFields(
     }
 
 
-    static ItineraryFields untitledPlan(
+    static ItineraryFields withoutPublishMetadata(
             String title, List<String> destinations, String description, LocalDate startDate, LocalDate endDate) {
-        return new ItineraryFields(title, destinations, description, List.of(), null, startDate, endDate);
+        return new ItineraryFields(title, destinations, description, List.of(), "", startDate, endDate);
     }
 
 
@@ -84,6 +84,16 @@ public record ItineraryFields(
         String stripped = value.strip();
         if (stripped.length() > max) {
             throw new IllegalArgumentException("An itinerary's " + field + " is at most " + max + " characters");
+        }
+        return stripped;
+    }
+
+
+    private static String bounded(String value, int max) {
+        String stripped = value.strip();
+        if (stripped.length() > max) {
+            throw new IllegalArgumentException(
+                    "An itinerary's best time of year is at most " + max + " characters");
         }
         return stripped;
     }

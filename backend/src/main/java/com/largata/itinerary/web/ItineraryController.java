@@ -3,7 +3,7 @@ package com.largata.itinerary.web;
 import com.largata.common.api.Page;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
-import com.largata.common.authz.SightFence;
+import com.largata.common.authz.AudienceFence;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.ItineraryService;
@@ -35,19 +35,19 @@ class ItineraryController {
     private final PublishedItineraryService published;
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
-    private final SightFence sight;
+    private final AudienceFence audience;
 
     ItineraryController(
             ItineraryService itineraries,
             PublishedItineraryService published,
             MembershipService memberships,
             AuthorizationGuard guard,
-            SightFence sight) {
+            AudienceFence audience) {
         this.itineraries = itineraries;
         this.published = published;
         this.memberships = memberships;
         this.guard = guard;
-        this.sight = sight;
+        this.audience = audience;
     }
 
 
@@ -70,7 +70,7 @@ class ItineraryController {
     @GetMapping("/{id}")
     ItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        sight.requireInSight(membership);
+        audience.requireInAudience(membership);
         var plan = itineraries.viewPlan(membership);
         return ItineraryResponse.of(plan);
     }

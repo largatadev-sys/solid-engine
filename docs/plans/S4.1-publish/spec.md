@@ -133,3 +133,23 @@ Discovery feed (S4.3) · stars (S4.4) · reviews (S4.5) · public comments (S4.6
 ## Comments
 
 *(append-only; intent above is immutable)*
+
+### Implementation notes, tickets 01–05 *(2026-07-31, at the code review)*
+
+Deviations and judgement calls the build surfaced. None changes the intent above; each is recorded because the next reader would otherwise have to re-derive it.
+
+1. **The `visibility` column already existed** — V3 created `visibility TEXT NOT NULL DEFAULT 'private'` at S0.3, three epics before anything could write it. So ticket 01's "additive `visibility` column lands by migration" is satisfied in outcome (no shipped field changes shape, every existing row reads private) without adding a column. V18 instead asserts the premise that makes "no data migration" true rather than hoped-for, and drops V3's lower-case default — the same lying-default trap V12 removed from `state`.
+
+2. **`PATCH /v1/itineraries/{id}` is whole-header replace, and the two new fields deliberately break that symmetry.** `description` shipped at S0.3 as replace-or-null; changing *that* would itself be the ADR-008 break. But a client that predates Standouts and best-time cannot send them, and under replace semantics its ordinary title edit would silently erase both. So for the two **new** fields only, an absent value means *unchanged* and an empty value (`[]` / `""`) means *cleared*. The asymmetry is forced by additivity, not by carelessness, and `ItineraryTest` pins all three behaviours — including the shipped one — so the next person adding a header field can see which convention applies and why.
+
+3. **The audience fence shipped at two of its three doors.** `GET /v1/itineraries/{id}` and `/members` were fenced; `GET /v1/itineraries/{id}/invitations` was not, so a member of an archived trip could still read its pending invitations. Caught in review, not by a test — the same shape as the E1 gate's "fence tripwire watching 2 of its 4 doors". Fixed, and `AudienceFenceCoverageTest` now fails the build when a workspace-scoped GET resolves a membership without fencing or being named as an exception; the tripwire was sabotage-checked before it was trusted.
+
+4. **The preview shows two tabs, the consumer five.** Not an inconsistency: mock frame 6 hides Comments and Reviews with `display:none`, while the published-itinerary mock draws all five. Same component, one `audience` prop — each screen copies the frame it came from.
+
+5. **The cover slot renders on the preview too, though frame 6 does not draw it.** Decision 10 puts the cover slot in the *shared* header, and the preview's whole purpose is WYSIWYG — a preview missing a slot the public page has would defeat it. Spec over digest, deliberately.
+
+6. **The amber preview banner uses the terracotta tint, not the mock's `#FFF7ED`/`#C2410C`.** ADR-016 adopted the brand palette as token values globally and the 07/18 digest's own note says the token layer is authoritative for colour; the palette carries no amber. Flagged rather than silently approximated.
+
+7. **The success screen has no back affordance and no header bar**, per frame 7 — you cannot go back to a publish you already performed. It is the one named exception to S4.9's every-screen-draws-its-own-heading invariant, and the exception is *checked*: the exempt screen must take the safe-area inset itself, which is the reason that invariant exists.
+
+8. **No shared public URL exists yet.** Copy Link produces the browser origin on web and the `largata://` deep link on device. "The public" means signed-in travelers until the backlogged web read-only surface — the recorded scope, restated because the copied link's shape is the first place it becomes visible.
