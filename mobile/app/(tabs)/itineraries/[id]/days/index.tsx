@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError } from '../../../../../src/api/ApiError';
@@ -61,7 +61,6 @@ export default function DaySurfaceScreen() {
   if (isPending) {
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: 'Itinerary' }} />
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
@@ -71,7 +70,6 @@ export default function DaySurfaceScreen() {
     const missing = error instanceof ApiError && error.code === 'ITINERARY_NOT_FOUND';
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: 'Itinerary' }} />
         <Text style={styles.errorTitle}>
           {missing ? missingItineraryMessage.title : 'Could not load this plan'}
         </Text>
@@ -83,7 +81,6 @@ export default function DaySurfaceScreen() {
   if (data.archived) {
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: 'Itinerary' }} />
         <Text style={styles.errorTitle}>{archivedPlanNotice.title}</Text>
         <Text style={styles.caption}>{archivedPlanNotice.body}</Text>
       </View>
@@ -126,7 +123,6 @@ export default function DaySurfaceScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Stack.Screen options={{ headerShown: false }} />
         <ScreenHeader
           title={data.title}
           back
@@ -166,7 +162,6 @@ export default function DaySurfaceScreen() {
                   onPress={() => setSelectedOrdinal(day.ordinal)}
                 />
               ))}
-              {}
               {isOwner && <AddDayChip pending={appendDay.isPending} onPress={() => appendDay.mutate({})} />}
             </ScrollView>
 
@@ -240,7 +235,6 @@ export default function DaySurfaceScreen() {
         </Pressable>
       </ScrollView>
 
-      {}
       {selected !== undefined && (
         <Pressable
           style={styles.fab}
@@ -332,7 +326,6 @@ function SelectedDay(props: {
         />
       </View>
 
-      {}
       {props.day.activities.map((activity, index) => (
         <ActivityCard
           key={activity.id}
@@ -349,7 +342,6 @@ function SelectedDay(props: {
         />
       ))}
 
-      {}
       {props.isOwner && (
         <Pressable
           style={[styles.deleteButton, props.deleting && styles.busy]}
@@ -420,7 +412,6 @@ function ActivityCard({
         <Pressable style={styles.activityBody} onPress={onEdit} accessibilityRole="button">
           {clock !== undefined && <Text style={styles.activityTime}>{clock}</Text>}
           <Text style={styles.activityTitle}>{activity.title}</Text>
-          {}
           {meta !== undefined && (
             <View style={styles.activityPlaceRow}>
               {activity.place !== null && (
@@ -446,7 +437,6 @@ function ActivityCard({
         />
       </View>
 
-      {}
       {notice !== null && (
         <View style={styles.leaseRow}>
           <View style={styles.leaseAvatar}>

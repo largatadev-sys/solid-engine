@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../../../src/components/comingSoon';
 import { Icon, type IconName } from '../../../src/components/Icon';
@@ -11,7 +11,6 @@ export default function CreateTripScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ headerShown: false }} />
       <ScreenHeader title="Create a Trip" size="display" back />
 
       <View style={styles.choices}>
@@ -21,7 +20,6 @@ export default function CreateTripScreen() {
           detail="Build your itinerary step by step"
           onPress={() => router.replace('/itineraries/new')}
         />
-        {}
         <Choice
           icon="gitBranch"
           title="Fork an Existing Itinerary"

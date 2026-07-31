@@ -1,5 +1,5 @@
-import { Stack } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScreenHeader } from '../../../src/components/ScreenHeader';
 import { TripRow } from '../../../src/itineraries/TripRow';
 import { useArchivedItineraries } from '../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../src/theme';
@@ -13,14 +13,13 @@ export default function ArchivedTripsScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Archived trips' }} />
+      <ScreenHeader title="Archived Trips" back />
 
       {isPending && <ActivityIndicator size="large" color={colors.accent} style={styles.centered} />}
 
       {isError && (
         <View style={styles.centered}>
           <Text style={styles.errorTitle}>Could not load your archived trips</Text>
-          {}
           <Text style={styles.caption}>{error.message}</Text>
           <Pressable style={styles.button} onPress={() => void refetch()} accessibilityRole="button">
             <Text style={styles.buttonText}>Try again</Text>

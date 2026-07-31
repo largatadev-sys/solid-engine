@@ -1,4 +1,4 @@
-import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../../../src/api/ApiError';
@@ -46,7 +46,6 @@ export default function TripWorkspaceScreen() {
   if (isPending) {
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: 'Trip' }} />
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
@@ -56,7 +55,6 @@ export default function TripWorkspaceScreen() {
     const missing = error instanceof ApiError && error.code === 'ITINERARY_NOT_FOUND';
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: 'Trip' }} />
         <Text style={styles.errorTitle}>
           {missing ? missingItineraryMessage.title : 'Could not load this trip'}
         </Text>
@@ -75,10 +73,7 @@ export default function TripWorkspaceScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        {}
-        <Stack.Screen options={{ headerShown: false }} />
 
-        {}
         <ScreenHeader
           title={data.title}
           size="display"
@@ -109,7 +104,6 @@ export default function TripWorkspaceScreen() {
           <WorkspaceChip itinerary={data} />
         </View>
 
-        {}
         <TripArchiveBanner itinerary={data} />
         <OwnershipOfferBanner itineraryId={id} />
 
@@ -119,7 +113,6 @@ export default function TripWorkspaceScreen() {
             selected={active === 'itinerary'}
             onPress={() => setActive('itinerary')}
           />
-          {}
           <WorkspaceTabButton label="Chat" selected={false} greyed onPress={() => comingSoon('chat')} />
           <WorkspaceTabButton
             label="Details"
@@ -141,7 +134,6 @@ export default function TripWorkspaceScreen() {
         )}
       </ScrollView>
 
-      {}
       {canInvite && (
         <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
           <Pressable style={styles.cta} accessibilityRole="button">
@@ -170,7 +162,6 @@ function ItineraryTab({ itineraryId, days }: { itineraryId: string; days: DayRes
 
   return (
     <View style={styles.tabBody}>
-      {}
       {days.map((day) => (
         <Link
           key={day.id}
@@ -206,7 +197,6 @@ function DetailsTab(props: {
     <View style={styles.tabBody}>
       <View style={styles.detailsHeader}>
         <Text style={styles.sectionLabel}>Trip details</Text>
-        {}
         {canEditPlan(itinerary) && (
           <Link href={{ pathname: '/itineraries/[id]/edit', params: { id: itinerary.id } }} asChild>
             <Pressable accessibilityRole="button" hitSlop={spacing.sm}>
@@ -242,7 +232,6 @@ function DetailsTab(props: {
         </Pressable>
       </Link>
 
-      {}
       <ArchiveTripLink itinerary={itinerary} />
 
       {props.canLeave && (

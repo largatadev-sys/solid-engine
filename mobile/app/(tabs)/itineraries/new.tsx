@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
 import { GreyedMediaTile } from '../../../src/components/GreyedMediaTile';
+import { ScreenHeader } from '../../../src/components/ScreenHeader';
 import { validateItineraryForm } from '../../../src/itineraries/validateItineraryForm';
 import { useCreateItinerary } from '../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../src/theme';
@@ -49,7 +50,7 @@ export default function NewItineraryScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: 'Trip Details' }} />
+      <ScreenHeader title="Trip Details" size="display" back />
 
       <GreyedMediaTile surface="coverPhoto" />
 
@@ -74,7 +75,6 @@ export default function NewItineraryScreen() {
         Dates are optional and live in the trip&apos;s Details tab — a trip can be a someday plan.
       </Text>
 
-      {}
       {(validationError ?? serverMessage) !== undefined && (
         <Text style={styles.error}>{validationError ?? serverMessage}</Text>
       )}

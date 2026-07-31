@@ -1,10 +1,11 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError } from '../../../../src/api/ApiError';
 import { DatePicker } from '../../../../src/components/DatePicker';
 import { archivedPlanNotice } from '../../../../src/components/editLockedMessage';
 import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { useEditLock } from '../../../../src/hooks/useEditLock';
 import {
   addDestination,
@@ -66,7 +67,6 @@ export default function EditItineraryScreen() {
   if (data?.archived === true) {
     return (
       <ScrollView contentContainerStyle={styles.container}>
-        <Stack.Screen options={{ title: 'Edit trip' }} />
         <Text style={styles.archivedTitle}>{archivedPlanNotice.title}</Text>
         <Text style={styles.archivedBody}>{archivedPlanNotice.body}</Text>
       </ScrollView>
@@ -75,9 +75,8 @@ export default function EditItineraryScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: 'Edit trip' }} />
+      <ScreenHeader title="Edit Trip" back />
 
-      {}
       <GreyedMediaTile surface="coverPhoto" />
 
       <Field label="Trip title" value={title} onChangeText={setTitle} placeholder="Island Hopping in El Nido" />

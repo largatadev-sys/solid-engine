@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,6 +12,7 @@ import {
 import { ApiError } from '../../../../src/api/ApiError';
 import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
 import { TimePicker } from '../../../../src/components/TimePicker';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { useEditLock } from '../../../../src/hooks/useEditLock';
 import { validateActivityForm } from '../../../../src/itineraries/validateActivityForm';
 import {
@@ -90,11 +91,10 @@ export default function ActivityFormScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: isEdit ? 'Edit activity' : 'Add activity' }} />
+      <ScreenHeader title={isEdit ? 'Edit Activity' : 'Add Activity'} back />
 
       <Field label="Activity name" value={title} onChangeText={setTitle} placeholder="Airport Transfer" />
 
-      {}
       <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
 
       <View style={styles.row}>
@@ -116,7 +116,6 @@ export default function ActivityFormScreen() {
       <Field label="Description" value={description} onChangeText={setDescription} placeholder="What happens here?" multiline />
       <Field label="Notes & tips (private)" value={notes} onChangeText={setNotes} placeholder="Anything for your group" multiline />
 
-      {}
       <GreyedMediaTile surface="activityPhoto" />
 
       <Field label="Booking link" value={externalUrl} onChangeText={setExternalUrl} placeholder="https://…" keyboardType="url" />
@@ -138,7 +137,6 @@ export default function ActivityFormScreen() {
         )}
       </Pressable>
 
-      {}
       {isEdit && otherDays.length > 0 && (
         <View style={styles.moveSection}>
           <Text style={styles.label}>Move to another day</Text>

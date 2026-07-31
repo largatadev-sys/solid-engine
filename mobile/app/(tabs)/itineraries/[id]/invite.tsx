@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { track } from '../../../../src/analytics/track';
@@ -6,6 +6,7 @@ import { ApiError } from '../../../../src/api/ApiError';
 import { Avatar } from '../../../../src/components/Avatar';
 import { comingSoon } from '../../../../src/components/comingSoon';
 import { COMING_SOON_SEEN } from '../../../../src/components/comingSoonMessage';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import {
   useInvite,
   useInviteByHandle,
@@ -39,7 +40,7 @@ export default function InviteTravelersScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: 'Invite Travelers' }} />
+      <ScreenHeader title="Invite Travelers" back />
 
       <View style={styles.section}>
         <Text style={styles.label}>Find by username</Text>
@@ -69,7 +70,6 @@ export default function InviteTravelersScreen() {
 
         {found.isFetching && <ActivityIndicator color={colors.accent} />}
 
-        {}
         {notFound && <Text style={styles.hint}>Nobody goes by @{searched}.</Text>}
 
         {found.data !== undefined && (
@@ -143,7 +143,6 @@ export default function InviteTravelersScreen() {
         </View>
       </View>
 
-      {}
       {message !== null && <Text style={styles.message}>{message}</Text>}
 
       <View style={styles.section}>

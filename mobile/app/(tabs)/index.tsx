@@ -19,7 +19,6 @@ export default function MyTripsScreen() {
       {isError && (
         <View style={styles.centered}>
           <Text style={styles.errorTitle}>Could not load your trips</Text>
-          {}
           <Text style={styles.caption}>{error.message}</Text>
           <Pressable style={styles.button} onPress={() => void refetch()} accessibilityRole="button">
             <Text style={styles.buttonText}>Try again</Text>
@@ -44,7 +43,6 @@ export default function MyTripsScreen() {
           ListFooterComponent={
             <>
               {isFetchingNextPage && <ActivityIndicator color={colors.accent} style={styles.footer} />}
-              {}
               <Link href="/itineraries/archived" asChild>
                 <Pressable style={styles.archivedLink} accessibilityRole="button">
                   <Text style={styles.archivedLinkText}>Archived trips</Text>

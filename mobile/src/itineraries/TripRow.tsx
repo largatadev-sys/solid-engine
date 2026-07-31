@@ -15,7 +15,7 @@ export function tripRowDestination(itinerary: Pick<ItineraryResponse, 'id' | 'ar
 export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
   return (
     <Link href={tripRowDestination(itinerary)} asChild>
-      <Pressable style={styles.row} accessibilityRole="button">
+      <Pressable style={styles.row} accessibilityRole="button" accessibilityLabel={itinerary.title}>
         <View style={styles.rowHeader}>
           <Text style={styles.rowTitle} numberOfLines={1}>
             {itinerary.title}

@@ -39,7 +39,6 @@ export default function ProfileScreen() {
         {state.kind === 'error' && (
           <>
             <Text style={styles.errorTitle}>Could not load your profile</Text>
-            {}
             <Text style={styles.errorCode}>{state.error.code}</Text>
             <Text style={styles.caption}>{state.error.message}</Text>
             {state.error.traceId !== undefined && (

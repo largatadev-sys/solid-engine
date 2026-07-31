@@ -7,7 +7,6 @@ export function TimePicker({ label, value, onChange }: TimePickerProps) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      {}
       <input
         type="time"
         value={value}

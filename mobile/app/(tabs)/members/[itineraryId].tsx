@@ -1,4 +1,4 @@
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError } from '../../../src/api/ApiError';
@@ -11,6 +11,7 @@ import {
   removeMemberWording,
   revokeOwnershipOfferWording,
 } from '../../../src/components/confirmDestructiveMessage';
+import { ScreenHeader } from '../../../src/components/ScreenHeader';
 import { useMe } from '../../../src/hooks/useMe';
 import { memberControls } from '../../../src/members/memberControls';
 import {
@@ -122,7 +123,7 @@ export default function MembersScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ title: 'Members' }} />
+      <ScreenHeader title="Members" back />
 
       {members.isPending && <ActivityIndicator color={colors.accent} style={styles.centered} />}
       {members.isError && <Text style={styles.error}>Could not load members.</Text>}

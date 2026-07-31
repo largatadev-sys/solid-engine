@@ -13,6 +13,22 @@ function read(...parts: string[]): string {
   return readFileSync(join(...parts), 'utf8');
 }
 
+function tripScreens(): [string, string][] {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory()
+        ? walk(join(dir, entry.name))
+        : entry.name === '_layout.tsx'
+          ? []
+          : [join(dir, entry.name)],
+    );
+
+  return [...walk(TRIPS), ...walk(join(TABS, 'members'))].map((path) => [
+    path.slice(TABS.length + 1).replace(/\\/g, '/'),
+    readFileSync(path, 'utf8'),
+  ]);
+}
+
 describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('has one file per tab, and the app opens on Trips because Trips is the index', () => {
     expect(readdirSync(TABS).sort()).toEqual(
@@ -86,6 +102,14 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('shows no navigator header anywhere — every heading is drawn as page content', () => {
     expect(read(TABS, '_layout.tsx')).toContain('headerShown: false');
     expect(read(TRIPS, '_layout.tsx')).toContain('headerShown: false');
+  });
+
+  it.each(tripScreens())('%s draws its own heading — with no header bar, a navigator title renders nowhere', (_name, source) => {
+    expect(source).toMatch(/<ScreenHeader/);
+  });
+
+  it.each(tripScreens())('%s sets no navigator title — a dead option that reads as a heading', (_name, source) => {
+    expect(source).not.toMatch(/options=\{\{[^}]*title:/);
   });
 
   it('routes + to the chooser — decision 13 reversed, fork greyed until S4.7', () => {

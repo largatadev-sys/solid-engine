@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../../../../src/api/ApiError';
 import { comingSoon } from '../../../../../src/components/comingSoon';
@@ -27,7 +27,6 @@ export default function DayDetailScreen() {
   if (isPending) {
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: 'Day' }} />
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
@@ -37,7 +36,6 @@ export default function DayDetailScreen() {
     const missing = error instanceof ApiError && error.code === 'ITINERARY_NOT_FOUND';
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: 'Day' }} />
         <Text style={styles.errorTitle}>
           {missing ? missingItineraryMessage.title : 'Could not load this day'}
         </Text>
@@ -49,7 +47,6 @@ export default function DayDetailScreen() {
   if (data.archived) {
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: 'Day' }} />
         <Text style={styles.errorTitle}>{archivedPlanNotice.title}</Text>
         <Text style={styles.caption}>{archivedPlanNotice.body}</Text>
       </View>
@@ -61,7 +58,6 @@ export default function DayDetailScreen() {
   if (day === undefined) {
     return (
       <View style={styles.centered}>
-        <Stack.Screen options={{ title: 'Day' }} />
         <Text style={styles.errorTitle}>This day is no longer in the plan</Text>
         <Text style={styles.caption}>Somebody may have removed it. Open the trip to see what is there now.</Text>
       </View>
@@ -70,8 +66,6 @@ export default function DayDetailScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {}
-      <Stack.Screen options={{ headerShown: false }} />
       <ScreenHeader title={dayHeading(day)} size="heading" back />
 
       {day.activities.length === 0 ? (
@@ -92,7 +86,6 @@ export default function DayDetailScreen() {
         ))
       )}
 
-      {}
       <Pressable
         style={styles.historyLink}
         onPress={() => comingSoon('activityHistory')}
@@ -121,7 +114,6 @@ function ActivityBlock({
 
   return (
     <View style={styles.block}>
-      {}
       <Pressable
         style={[styles.card, notice !== null && styles.cardLeased]}
         onPress={onOpen}
@@ -138,7 +130,6 @@ function ActivityBlock({
         )}
       </Pressable>
 
-      {}
       {notice !== null && (
         <View style={styles.leaseRow}>
           <View style={styles.leaseAvatar}>
