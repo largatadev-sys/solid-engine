@@ -9,6 +9,8 @@ const APP = join(MOBILE_ROOT, 'app');
 const TABS = join(APP, '(tabs)');
 const TRIPS = join(TABS, 'itineraries');
 
+const MOCK_CFAB_SIZE = 40;
+
 function read(...parts: string[]): string {
   return readFileSync(join(...parts), 'utf8');
 }
@@ -83,6 +85,15 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     for (const screen of ['index.tsx', 'profile.tsx', 'home.tsx', 'search.tsx', 'create.tsx']) {
       expect(read(TABS, screen)).not.toMatch(/<Stack\.Screen/);
     }
+  });
+
+  it('makes the create button the showcase — larger than the mock, on the founder call', () => {
+    const layout = read(TABS, '_layout.tsx');
+    const size = Number(/CREATE_BUTTON_SIZE = (\d+)/.exec(layout)?.[1]);
+
+    expect(size).toBeGreaterThan(MOCK_CFAB_SIZE);
+    expect(layout).toContain('marginTop: -CREATE_BUTTON_LIFT');
+    expect(layout).toContain('height: TAB_BAR_HEIGHT + insets.bottom');
   });
 
   it('greys Home and Search rather than navigating to an empty screen', () => {

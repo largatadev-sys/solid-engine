@@ -197,3 +197,15 @@ Still open, unchanged by this: `trip-editor-days` remains parked at the founder'
 ### 2026-07-31 — mock fidelity is a standing rule, not an S4.9 note (founder-ruled)
 
 *"if mocks are available, it should try to copy exact screen or icon."* Recorded in `CLAUDE.md` under Hard rules rather than here, because it binds every story that ships against a mock set, not just this one. The S4.9 corrections that prompted it — "Details" text where the frame draws a cog, a header bar where the frame blends the heading into the page, non-overlapping avatars, a currency code where the frame shows a sign — were all answerable from the mock's own markup before the screen was written.
+
+### 2026-07-31 — the web preview renders in a phone-width frame (founder-ruled)
+
+*"the web preview should adjust based on the browser size but still true as mobile view. the nav bar at the bottom seems to overshoot with the screen."* The export filled the browser, so cards stretched to 1200px+ and the tab bar spanned the whole window — legible, but nothing like the artifact founders are being asked to judge.
+
+`MobileFrame` (a `.native`/`.web` fork on the established contract shape) caps the app at **393px — the mock's own `.phone` width** — centred, with the surrounding page in `surfaceMuted`. It is a **cap, not a fixed width**: below 393 the frame fills, so a phone browser sees no letterboxing. It wraps *outside* the navigator deliberately — react-navigation renders the tab bar as the last flex child of the navigator container, so constraining the container is what stops the bar overshooting; styling `tabBarStyle` alone would have left the scenes full-bleed. Native gets a passthrough fragment and no extra view in the tree.
+
+### 2026-07-31 — the create button is deliberately LARGER than the mock (founder-ruled)
+
+The mock's `.cfab` is **40×40**, which is what the build shipped — so this is not a fidelity gap being closed but a **deliberate override of the baseline**, recorded because the standing rule (`CLAUDE.md`, Hard rules) says deviations get stated rather than left to look like drift.
+
+*"let's enlarge the + icon on both web and mobile so the ux signal should be tap this to create trip, like that button will be the showcase."* Now 60×60 with a 30px glyph, lifted 18px above the bar with a background-coloured ring and a shadow, and the bar grown to 64 + inset so nothing clips. The test asserts it is **greater than the mock's 40**, naming `MOCK_CFAB_SIZE` — so the next person to read it sees the override is intentional rather than "wrong, per the frames".

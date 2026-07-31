@@ -8,9 +8,15 @@ import { colors, radii, typography } from '../../src/theme';
 
 const TAB_ICON_SIZE = 24;
 
-const CREATE_BUTTON_SIZE = 40;
+const CREATE_BUTTON_SIZE = 60;
 
-const CREATE_ICON_SIZE = 22;
+const CREATE_ICON_SIZE = 30;
+
+const CREATE_BUTTON_LIFT = 18;
+
+const CREATE_BUTTON_RING = 3;
+
+const TAB_BAR_HEIGHT = 64;
 
 
 function tabIcon(name: IconName) {
@@ -44,7 +50,12 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: colors.background },
-        tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+          height: TAB_BAR_HEIGHT + insets.bottom,
+          paddingBottom: insets.bottom,
+        },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: typography.caption,
@@ -110,9 +121,17 @@ const styles = StyleSheet.create({
   createButton: {
     width: CREATE_BUTTON_SIZE,
     height: CREATE_BUTTON_SIZE,
+    marginTop: -CREATE_BUTTON_LIFT,
     borderRadius: radii.pill,
     backgroundColor: colors.accent,
+    borderWidth: CREATE_BUTTON_RING,
+    borderColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.textPrimary,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
 });
