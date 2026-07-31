@@ -19,7 +19,12 @@ final class InvitationExceptions {
 
     static final class AlreadyMemberException extends ConflictException {
         AlreadyMemberException() {
-            super("ALREADY_A_MEMBER", "That person is already a member of this trip.");
+            this("That person is already a member of this trip.");
+        }
+
+
+        AlreadyMemberException(String message) {
+            super("ALREADY_A_MEMBER", message);
         }
     }
 

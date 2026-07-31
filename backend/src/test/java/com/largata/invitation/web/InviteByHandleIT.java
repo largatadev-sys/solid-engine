@@ -197,7 +197,7 @@ class InviteByHandleIT extends PostgresTestBase {
     }
 
     @Test
-    void anEmailPendingBlocksTheHandleDoorToo() {
+    void theHandleDoorNeverAsksWhatSomebodysEmailIs() {
         String ownerToken = travelerWithHandle("owner" + suffix());
         String tripId = createTrip(ownerToken);
         String inviteeHandle = "invitee" + suffix();
@@ -219,10 +219,42 @@ class InviteByHandleIT extends PostgresTestBase {
                 .body("{\"handle\":\"" + inviteeHandle + "\"}")
                 .exchange()
                 .expectStatus()
+                .isCreated();
+    }
+
+    @Test
+    void thatSameTravelerCanOnlyEverJoinOnce() {
+        String ownerToken = travelerWithHandle("owner" + suffix());
+        String tripId = createTrip(ownerToken);
+        String inviteeHandle = "invitee" + suffix();
+        String inviteeToken = travelerWithHandle(inviteeHandle);
+        String inviteeEmail = emailOf(inviteeToken);
+
+        byte[] byEmail =
+                rest.post()
+                        .uri("/v1/itineraries/" + tripId + "/invitations")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"email\":\"" + inviteeEmail + "\"}")
+                        .exchange()
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent();
+        String byHandle = inviteByHandle(ownerToken, tripId, inviteeHandle);
+
+        acceptInvitation(inviteeToken, byHandle);
+
+        rest.post()
+                .uri("/v1/invitations/" + fieldIn(byEmail, "id") + "/accept")
+                .header(HttpHeaders.AUTHORIZATION, bearer(inviteeToken))
+                .exchange()
+                .expectStatus()
                 .isEqualTo(409)
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("INVITATION_ALREADY_PENDING");
+                .isEqualTo("ALREADY_A_MEMBER");
     }
 
     @Test

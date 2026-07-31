@@ -131,3 +131,18 @@ Publish (S4.1) · chat build + history surface (S4.10) · fork + chooser activat
 ## Comments
 
 *(append-only; intent above is immutable)*
+
+### 2026-07-31 — the cross-mode duplicate check is one-directional by design (founder-ruled, during implementation)
+
+Ticket 02 asked for *"One pending invitation per workspace+target … across both addressing modes"*, and the first implementation held it both ways. The founder challenged the handle→email half on the merits and it does not survive:
+
+- **It made the handle path care about emails.** `inviteByHandle` resolved the invitee's account address (a `TravelerService.emailOf` added for that one line) purely to look for a pending email-invite. Identity handing an address to a module with no other reason to know it — the wrong coupling, and the wrong direction of dependency for two features whose whole distinction is that one addresses a **mailbox** and the other addresses a **traveler**.
+- **It was approximate anyway.** A traveler has one account email; the owner may have invited a different address they also control. So the check caught the common case and silently missed others — a check whose failure mode isn't clean, which this repo has been burned by three times.
+
+**Kept:** the email→id direction. `invite(email)` already calls `travelerIdsWithEmail` for the already-member check, so asking "does that traveler hold a pending id-invite" is free and **exact** — it asks who owns this precise address, not what address this person has.
+
+**Moved, not dropped:** the guarantee the removed half was standing in for now lives where it belongs. `accept` refuses when the caller is already a member (`ALREADY_A_MEMBER`, 409). That is strictly stronger than an issuance-time cross-check because it holds however the duplicate arose — cross-mode, a race between concurrent invites, or an address that changed after the invite went out.
+
+**The hole was real and this story opened it.** Before S4.9 a traveler had exactly one email, so two email-addressed invitations could never resolve to the same person, and `accept` could safely trust issuance. Adding a second addressing mode broke that assumption: `admitMember` persists straight into `membership`'s `PRIMARY KEY (workspace_id, traveler_id)`, so the second accept was a **500**, not a conflict. Verified by sabotage — `thatSameTravelerCanOnlyEverJoinOnce` fails with `expected:<409> but was:<500>` when the guard is removed.
+
+Net effect on the ticket AC: two pending invitations to one traveler are now *possible* (one per door) and *harmless* — the inbox shows both, either one joins them, the other is refused cleanly and the owner can revoke it.

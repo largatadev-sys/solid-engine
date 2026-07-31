@@ -68,12 +68,6 @@ public class TravelerService {
 
 
     @Transactional(readOnly = true)
-    public Optional<String> emailOf(UUID travelerId) {
-        return travelers.findById(travelerId).map(Traveler::email);
-    }
-
-
-    @Transactional(readOnly = true)
     public List<TravelerSummary> summariesByIds(Collection<UUID> ids) {
         return travelers.findAllById(ids).stream()
                 .map(t -> new TravelerSummary(t.id(), t.displayName(), t.handle(), t.avatarUrl()))

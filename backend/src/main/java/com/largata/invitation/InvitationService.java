@@ -113,7 +113,6 @@ public class InvitationService {
             throw new AlreadyMemberException();
         }
         reconcileExistingPendingFor(workspaceId, invitee.id());
-        travelers.emailOf(invitee.id()).ifPresent(email -> reconcileExistingPending(workspaceId, normalize(email)));
 
         Instant now = Instant.now(clock);
         Invitation invitation =
@@ -261,6 +260,9 @@ public class InvitationService {
         UUID workspaceId = invitation.workspaceId();
         UUID itineraryId =
                 workspaces.itineraryIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
+        if (workspaces.isMember(itineraryId, travelerId)) {
+            throw new AlreadyMemberException("You are already a member of this trip.");
+        }
 
         Instant now = Instant.now(clock);
         invitation.accept(travelerId, now);
