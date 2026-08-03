@@ -5,14 +5,14 @@ import java.util.Optional;
 
 
 public enum TripCategory {
-    DRAFT(ItineraryStatus.DRAFT),
-    PRIVATE(ItineraryStatus.PRIVATE),
-    PUBLIC(ItineraryStatus.PUBLIC);
+    DRAFT(ItineraryState.DRAFT),
+    ACTIVE(ItineraryState.ACTIVE),
+    COMPLETE(ItineraryState.COMPLETED);
 
-    private final ItineraryStatus status;
+    private final ItineraryState state;
 
-    TripCategory(ItineraryStatus status) {
-        this.status = status;
+    TripCategory(ItineraryState state) {
+        this.state = state;
     }
 
 
@@ -28,8 +28,8 @@ public enum TripCategory {
     }
 
 
-    ItineraryStatus status() {
-        return status;
+    ItineraryState state() {
+        return state;
     }
 
 

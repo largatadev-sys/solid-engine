@@ -40,42 +40,45 @@ class TripCategoryFilterIT extends PostgresTestBase {
         String fresh = createItinerary(owner, "A fresh draft");
 
         assertThat(idsIn(owner, "draft")).contains(fresh);
-        assertThat(idsIn(owner, "private"))
-                .as("a draft is not private — private means published, just not to everyone")
-                .doesNotContain(fresh);
-        assertThat(idsIn(owner, "public")).doesNotContain(fresh);
+        assertThat(idsIn(owner, "active")).doesNotContain(fresh);
+        assertThat(idsIn(owner, "complete")).doesNotContain(fresh);
     }
 
 
     @Test
-    void publishingMovesATripOutOfDraftEntirely() {
+    void theLifecycleMovesATripBetweenCategories_becauseTheCategoriesAreTheLifecycle() {
         String owner = freshTraveler();
         String trip = createItinerary(owner, "Island Hopping");
 
-        act(owner, trip, "publish");
+        act(owner, trip, "start");
 
-        assertThat(idsIn(owner, "public")).contains(trip);
-        assertThat(idsIn(owner, "draft"))
-                .as("a published trip is no longer a draft — the founder ruled these exclusive")
-                .doesNotContain(trip);
-        assertThat(idsIn(owner, "private")).doesNotContain(trip);
+        assertThat(idsIn(owner, "active")).contains(trip);
+        assertThat(idsIn(owner, "draft")).doesNotContain(trip);
 
-        act(owner, trip, "unpublish");
+        act(owner, trip, "complete");
 
-        assertThat(idsIn(owner, "draft")).contains(trip);
-        assertThat(idsIn(owner, "public")).doesNotContain(trip);
+        assertThat(idsIn(owner, "complete")).contains(trip);
+        assertThat(idsIn(owner, "active")).doesNotContain(trip);
+
+        act(owner, trip, "reopen");
+
+        assertThat(idsIn(owner, "active")).as("the one-step undo moves it back").contains(trip);
+        assertThat(idsIn(owner, "complete")).doesNotContain(trip);
     }
 
 
     @Test
-    void theLifecycleStateDoesNotMoveATripBetweenCategories() {
+    void publishingDoesNotMoveATripBetweenCategories() {
         String owner = freshTraveler();
         String trip = createItinerary(owner, "Under way");
         act(owner, trip, "start");
+        act(owner, trip, "complete");
+        act(owner, trip, "publish");
 
-        assertThat(idsIn(owner, "draft"))
-                .as("publication status is not the dormant lifecycle — starting a trip changes neither")
+        assertThat(idsIn(owner, "complete"))
+                .as("discovery is its own axis — publishing says nothing about where the trip is in its life")
                 .contains(trip);
+        assertThat(idsIn(owner, "draft")).doesNotContain(trip);
     }
 
 
@@ -84,7 +87,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
         String owner = freshTraveler();
         String one = createItinerary(owner, "One");
         String two = createItinerary(owner, "Two");
-        act(owner, two, "publish");
+        act(owner, two, "start");
 
         assertThat(idsIn(owner, null)).contains(one, two);
     }
@@ -95,8 +98,8 @@ class TripCategoryFilterIT extends PostgresTestBase {
         String owner = freshTraveler();
         createItinerary(owner, "Anything");
 
-        list(owner, "PUBLIC").expectStatus().isOk();
-        list(owner, "  public  ").expectStatus().isOk();
+        list(owner, "COMPLETE").expectStatus().isOk();
+        list(owner, "  complete  ").expectStatus().isOk();
 
         list(owner, "unlisted")
                 .expectStatus()
@@ -108,27 +111,42 @@ class TripCategoryFilterIT extends PostgresTestBase {
 
 
     @Test
+    void aPublicationValueIsNotACategory_theAxesDoNotShareAVocabulary() {
+        String owner = freshTraveler();
+        createItinerary(owner, "Anything");
+
+        list(owner, "public")
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("UNKNOWN_TRIP_CATEGORY");
+    }
+
+
+    @Test
     void theCategorySurvivesPagination_theFilterIsInTheQueryNotThePage() {
         String owner = freshTraveler();
-        List<String> published = new ArrayList<>();
+        List<String> travelled = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            createItinerary(owner, "Private " + i);
-            String trip = createItinerary(owner, "Published " + i);
-            act(owner, trip, "publish");
-            published.add(trip);
+            createItinerary(owner, "Draft " + i);
+            String trip = createItinerary(owner, "Travelled " + i);
+            act(owner, trip, "start");
+            act(owner, trip, "complete");
+            travelled.add(trip);
         }
 
-        List<String> firstPage = idsIn(owner, "public", 2);
-        assertThat(firstPage).hasSize(2).allSatisfy(id -> assertThat(published).contains(id));
+        List<String> firstPage = idsIn(owner, "complete", 2);
+        assertThat(firstPage).hasSize(2).allSatisfy(id -> assertThat(travelled).contains(id));
 
-        String cursor = cursorOf(owner, "public", 2);
+        String cursor = cursorOf(owner, "complete", 2);
         assertThat(cursor).as("a filtered page still carries a cursor when more remain").isNotNull();
 
-        List<String> secondPage = pageAfter(owner, "public", cursor);
+        List<String> secondPage = pageAfter(owner, "complete", cursor);
         assertThat(secondPage)
                 .as("the second page is filtered too — not a full page trimmed after the fact")
                 .isNotEmpty()
-                .allSatisfy(id -> assertThat(published).contains(id));
+                .allSatisfy(id -> assertThat(travelled).contains(id));
     }
 
 

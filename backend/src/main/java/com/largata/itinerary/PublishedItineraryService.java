@@ -35,18 +35,20 @@ public class PublishedItineraryService {
     @Transactional(readOnly = true)
     public PublishedItinerary view(UUID itineraryId, Optional<Membership> caller) {
         Itinerary itinerary = itineraries.findById(itineraryId).orElseThrow(ItineraryNotFoundException::new);
-        if (workspaces.isArchived(itineraryId) || !admits(itinerary.status(), caller)) {
+        if (workspaces.isArchived(itineraryId) || !admits(itinerary, caller)) {
             throw new ItineraryNotFoundException();
         }
         return project(itinerary);
     }
 
 
-    private static boolean admits(ItineraryStatus status, Optional<Membership> caller) {
-        return switch (status) {
+    private static boolean admits(Itinerary itinerary, Optional<Membership> caller) {
+        if (!itinerary.isPublished()) {
+            return false;
+        }
+        return switch (itinerary.visibility()) {
             case PUBLIC -> true;
             case PRIVATE -> caller.isPresent();
-            case DRAFT -> false;
         };
     }
 

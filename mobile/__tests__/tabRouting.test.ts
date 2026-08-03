@@ -198,25 +198,17 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(read(TRIPS, 'new.tsx')).toContain("day: '1'");
   });
 
-  it('sends a DRAFT row to the workspace and a PUBLISHED row to the overview (founder, 08/01)', () => {
-    const draft = tripRowDestination({ id: 'trip-1', archived: false, status: 'draft' });
-    const published = tripRowDestination({ id: 'trip-1', archived: false, status: 'public' });
+  it('routes on DISCOVERY: unpublished to the workspace, published to the overview (ADR-019)', () => {
+    const unpublished = tripRowDestination({ id: 'trip-1', archived: false, published: false });
+    const published = tripRowDestination({ id: 'trip-1', archived: false, published: true });
 
-    expect(draft.pathname).toBe('/itineraries/[id]');
+    expect(unpublished.pathname).toBe('/itineraries/[id]');
     expect(published.pathname).toBe('/published/[id]');
-  });
-
-  it('sends a PRIVATE row to the overview too — private is published, just not to everyone', () => {
-    const live = tripRowDestination({ id: 'trip-1', archived: false, status: 'private' });
-    const archived = tripRowDestination({ id: 'trip-1', archived: true, status: 'private' });
-
-    expect(live.pathname).toBe('/published/[id]');
-    expect(archived.pathname).toBe('/itineraries/[id]');
   });
 
   it('lets ARCHIVED win over published — an archived trip has no public page to open', () => {
     expect(
-      tripRowDestination({ id: 'trip-1', archived: true, status: 'public' })
+      tripRowDestination({ id: 'trip-1', archived: true, published: true })
         .pathname,
     ).toBe('/itineraries/[id]');
   });
@@ -272,12 +264,19 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(workspace.indexOf("pathname: '/members/[itineraryId]'")).toBeLessThan(detailsTabAt);
   });
 
-  it('renders the publication status through the eyebrow helper, all three (ADR-018)', () => {
+  it('reads the three axes through helpers, never by comparing them inline (ADR-019)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(workspace).toContain('workspaceEyebrow(data.status)');
-    expect(workspace).not.toMatch(/data\.status === '/);
-    expect(workspace).not.toMatch(/visibility/);
+    expect(workspace).toContain('workspaceEyebrow(data)');
+    expect(workspace).not.toMatch(/data\.visibility === '/);
+    expect(workspace).not.toMatch(/data\.state === '/);
+  });
+
+  it('lets the publish CTA explain the complete gate rather than vanishing (ADR-019, AC 13)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(workspace).toContain('canPublish(data)');
+    expect(workspace).toContain('publishNeedsCompleteBody');
   });
 
   it('puts an Edit itinerary cogwheel on the workspace, pointing at the day editor (founder, 08/01)', () => {

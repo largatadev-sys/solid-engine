@@ -56,6 +56,7 @@ const TRIPS = [
     bestTimeOfYear: 'Dec – Apr',
     standouts: ['Big Lagoon Kayaking', 'Secret Beach at low tide', 'Local Seafood Dinners'],
     durationDays: 3,
+    lifecycle: 'complete',
     publish: 'public',
     withMember: true,
     days: [
@@ -84,6 +85,7 @@ const TRIPS = [
     bestTimeOfYear: 'Jan – Feb',
     standouts: ['Otaru canal at night', 'Sapporo Snow Festival'],
     durationDays: 2,
+    lifecycle: 'complete',
     publish: 'private',
     withMember: false,
     days: [
@@ -104,6 +106,7 @@ const TRIPS = [
     bestTimeOfYear: 'Sep – Oct',
     standouts: ['Tram 28 end to end'],
     durationDays: 2,
+    lifecycle: 'active',
     publish: null,
     withMember: true,
     days: [
@@ -118,6 +121,7 @@ const TRIPS = [
     bestTimeOfYear: null,
     standouts: [],
     durationDays: 0,
+    lifecycle: 'draft',
     publish: null,
     withMember: false,
     days: [],
@@ -180,6 +184,13 @@ async function main() {
       must(await api(`/v1/invitations/${invite.id}/accept`, 'POST', member, {}), 'accept');
     }
 
+    if (spec.lifecycle === 'active' || spec.lifecycle === 'complete') {
+      must(await api(`/v1/itineraries/${created.id}/start`, 'POST', owner), 'start');
+    }
+    if (spec.lifecycle === 'complete') {
+      must(await api(`/v1/itineraries/${created.id}/complete`, 'POST', owner), 'complete');
+    }
+
     if (spec.publish !== null) {
       must(
         await api(`/v1/itineraries/${created.id}/publish`, 'POST', owner, { audience: spec.publish }),
@@ -188,12 +199,12 @@ async function main() {
     }
 
     console.log(
-      `  ${(spec.publish ?? 'draft').padEnd(7)}  ${spec.days.length} days  ` +
-      `${spec.withMember ? 'with t2 ' : 'solo    '}  ${created.id}  ${spec.title}`,
+      `  ${spec.lifecycle.padEnd(8)} ${(spec.publish ?? 'unpublished').padEnd(11)}  ` +
+      `${spec.days.length} days  ${spec.withMember ? 'with t2 ' : 'solo    '}  ${created.id}  ${spec.title}`,
     );
   }
 
-  console.log('\ndone. Trips opens on Published, so two of these show first.');
+  console.log('\ndone. Trips opens on Draft, so Patagonia shows first.');
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

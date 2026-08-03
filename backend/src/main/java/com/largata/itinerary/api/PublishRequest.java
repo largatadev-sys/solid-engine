@@ -1,17 +1,17 @@
 package com.largata.itinerary.api;
 
-import com.largata.itinerary.ItineraryStatus;
+import com.largata.itinerary.Visibility;
 
 
 public record PublishRequest(String audience) {
 
 
-    public ItineraryStatus toAudience() {
-        return ItineraryStatus.audience(audience);
+    public Visibility toAudience() {
+        return Visibility.audience(audience);
     }
 
 
-    public static ItineraryStatus audienceOf(PublishRequest request) {
-        return request == null ? ItineraryStatus.PUBLIC : request.toAudience();
+    public static Visibility audienceOf(PublishRequest request) {
+        return request == null ? Visibility.PUBLIC : request.toAudience();
     }
 }

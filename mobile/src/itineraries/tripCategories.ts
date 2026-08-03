@@ -1,16 +1,16 @@
 import type { ItineraryResponse, TripCategory } from '../types/api';
 
 
-export const TRIP_CATEGORIES: readonly TripCategory[] = ['draft', 'private', 'public'] as const;
+export const TRIP_CATEGORIES: readonly TripCategory[] = ['draft', 'active', 'complete'] as const;
 
 
-export const DEFAULT_TRIP_CATEGORY: TripCategory = 'public';
+export const DEFAULT_TRIP_CATEGORY: TripCategory = 'draft';
 
 
 const LABELS: Record<TripCategory, string> = {
   draft: 'Draft',
-  private: 'Private',
-  public: 'Public',
+  active: 'Active',
+  complete: 'Complete',
 };
 
 
@@ -19,15 +19,28 @@ export function tripCategoryLabel(category: TripCategory): string {
 }
 
 
-export function categoryOf(itinerary: Pick<ItineraryResponse, 'status'>): TripCategory {
-  return itinerary.status;
+export function categoryOf(itinerary: Pick<ItineraryResponse, 'state'>): TripCategory {
+  return itinerary.state === 'completed' ? 'complete' : itinerary.state;
 }
 
 
 export function emptyCategoryMessage(category: TripCategory): string {
   return {
-    draft: 'Nothing in progress. A trip stays a draft until you publish it.',
-    private: 'Nothing published privately. A private itinerary is readable by you and your collaborators.',
-    public: 'Nothing published publicly yet. Publish a trip to put it in front of every traveler.',
+    draft: 'Nothing being planned. A trip starts as a draft while you build the plan.',
+    active: 'No trip under way. Start a trip when you set off.',
+    complete: 'No finished trips yet. Mark a trip complete when you get back — then you can publish it.',
   }[category];
+}
+
+
+export type TripBadge = { label: string; tone: 'public' | 'private' };
+
+
+export function tripBadge(
+  itinerary: Pick<ItineraryResponse, 'published' | 'visibility'>,
+): TripBadge | null {
+  if (!itinerary.published) return null;
+  return itinerary.visibility === 'public'
+    ? { label: 'Published', tone: 'public' }
+    : { label: 'Private', tone: 'private' };
 }

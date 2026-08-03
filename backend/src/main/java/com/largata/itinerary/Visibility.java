@@ -4,20 +4,9 @@ import java.util.Locale;
 import java.util.Optional;
 
 
-public enum ItineraryStatus {
-    DRAFT,
-    PRIVATE,
-    PUBLIC;
-
-
-    public boolean isPublished() {
-        return this != DRAFT;
-    }
-
-
-    public boolean isEditable() {
-        return this == DRAFT;
-    }
+public enum Visibility {
+    PUBLIC,
+    PRIVATE;
 
 
     public boolean isVisibleToEveryone() {
@@ -25,16 +14,12 @@ public enum ItineraryStatus {
     }
 
 
-    public static ItineraryStatus audience(String wireName) {
-        ItineraryStatus requested = parse(wireName).orElse(PUBLIC);
-        if (requested == DRAFT) {
-            throw new UnknownAudienceException(wireName);
-        }
-        return requested;
+    public static Visibility audience(String wireName) {
+        return parse(wireName).orElse(PUBLIC);
     }
 
 
-    public static Optional<ItineraryStatus> parse(String wireName) {
+    public static Optional<Visibility> parse(String wireName) {
         if (wireName == null || wireName.isBlank()) {
             return Optional.empty();
         }

@@ -108,6 +108,15 @@ class ItineraryController {
     }
 
 
+    @PostMapping("/{id}/reopen")
+    ItineraryResponse reopen(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        itineraries.reopen(membership);
+        var plan = itineraries.viewPlan(membership);
+        return ItineraryResponse.of(plan);
+    }
+
+
     @GetMapping("/{id}/preview")
     PublishedItineraryResponse preview(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
@@ -122,6 +131,17 @@ class ItineraryController {
             @RequestBody(required = false) PublishRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.publish(membership, PublishRequest.audienceOf(request));
+        return ItineraryResponse.of(itineraries.viewPlan(membership));
+    }
+
+
+    @PostMapping("/{id}/audience")
+    ItineraryResponse audience(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID id,
+            @RequestBody(required = false) PublishRequest request) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        itineraries.showTo(membership, PublishRequest.audienceOf(request));
         return ItineraryResponse.of(itineraries.viewPlan(membership));
     }
 

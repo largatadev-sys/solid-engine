@@ -7,8 +7,10 @@ import com.largata.support.TestJwtSupport;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -187,18 +189,18 @@ class PublishedProjectionIT extends PostgresTestBase {
         publishTo(owner, tripId, "private");
         publicView(stranger, tripId).expectStatus().isNotFound();
 
-        publishTo(owner, tripId, "public");
+        showTo(owner, tripId, "public");
         publicView(stranger, tripId).expectStatus().isOk();
         publicView(member, tripId).expectStatus().isOk();
 
-        publishTo(owner, tripId, "private");
+        showTo(owner, tripId, "private");
         publicView(stranger, tripId).expectStatus().isNotFound();
         publicView(member, tripId).expectStatus().isOk();
     }
 
 
     @Test
-    void aDraftHasNoPublicPageForAnyone_noteEvenACollaborator() {
+    void anUnpublishedItineraryHasNoPublicPageForAnyone_notEvenACollaborator() {
         String owner = freshTraveler();
         String tripId = datedTripWithAPlan(owner);
         String member = admitMemberTo(tripId);
@@ -219,6 +221,27 @@ class PublishedProjectionIT extends PostgresTestBase {
                 .expectBody()
                 .jsonPath("$.id")
                 .isEqualTo(tripId);
+    }
+
+
+    @Test
+    void aCompletedButUnpublishedItineraryStillHasNoPage_evenThoughItsAudienceIsPublic() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        String stranger = freshTraveler();
+        travel(owner, tripId);
+
+        publicView(stranger, tripId)
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
+
+        act(owner, tripId, "publish");
+        publicView(stranger, tripId)
+                .expectStatus()
+                .isOk();
     }
 
 
@@ -429,18 +452,37 @@ class PublishedProjectionIT extends PostgresTestBase {
 
 
     private void publish(String token, String itineraryId) {
+        travel(token, itineraryId);
         act(token, itineraryId, "publish");
     }
 
     private void publishTo(String token, String itineraryId, String audience) {
+        travel(token, itineraryId);
+        audienceOf(token, itineraryId, audience, "publish");
+    }
+
+    private void showTo(String token, String itineraryId, String audience) {
+        audienceOf(token, itineraryId, audience, "audience");
+    }
+
+    private void audienceOf(String token, String itineraryId, String audience, String act) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/publish")
+                .uri("/v1/itineraries/" + itineraryId + "/" + act)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"audience\":\"" + audience + "\"}")
                 .exchange()
                 .expectStatus()
                 .isOk();
+    }
+
+    private final Set<String> travelled = new HashSet<>();
+
+    private void travel(String token, String itineraryId) {
+        if (travelled.add(itineraryId)) {
+            act(token, itineraryId, "start");
+            act(token, itineraryId, "complete");
+        }
     }
 
     private void act(String token, String itineraryId, String verb) {

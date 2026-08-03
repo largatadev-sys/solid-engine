@@ -73,6 +73,22 @@ export const itineraryRepository = {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unpublish`, undefined);
   },
 
+  async showTripTo(id: string, audience: PublishAudience): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/audience`, { audience });
+  },
+
+  async startTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/start`, undefined);
+  },
+
+  async completeTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/complete`, undefined);
+  },
+
+  async reopenTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/reopen`, undefined);
+  },
+
 
   async appendDay(itineraryId: string, request: DayRequest): Promise<DayResponse> {
     return apiClient.post<DayResponse>(`/v1/itineraries/${itineraryId}/days`, request);

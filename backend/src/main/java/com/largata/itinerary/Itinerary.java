@@ -69,7 +69,10 @@ public class Itinerary {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ItineraryStatus status;
+    private Visibility visibility;
+
+    @Column(nullable = false)
+    private boolean published;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -88,7 +91,8 @@ public class Itinerary {
         this.id = id;
         this.ownerId = ownerId;
         this.state = ItineraryState.DRAFT;
-        this.status = ItineraryStatus.DRAFT;
+        this.visibility = Visibility.PUBLIC;
+        this.published = false;
         this.createdAt = createdAt;
         apply(fields);
     }
@@ -187,20 +191,50 @@ public class Itinerary {
     }
 
 
+    void reopen() {
+        ItineraryState target = state.previous().orElseThrow(
+                () -> new IllegalStateTransitionException(state, state));
+        requireUnpublished(target);
+        if (target == ItineraryState.ACTIVE) {
+            this.completedAt = null;
+        } else {
+            this.startedAt = null;
+        }
+        this.state = target;
+    }
+
+
     private void requireState(ItineraryState required, ItineraryState target) {
+        requireUnpublished(target);
         if (this.state != required) {
             throw new IllegalStateTransitionException(this.state, target);
         }
     }
 
 
-    void publishTo(ItineraryStatus audience) {
-        this.status = audience;
+    private void requireUnpublished(ItineraryState target) {
+        if (published) {
+            throw new IllegalStateTransitionException(state, target);
+        }
+    }
+
+
+    void publishTo(Visibility audience) {
+        if (!state.admitsPublishing()) {
+            throw new NotCompleteException(state);
+        }
+        this.visibility = audience;
+        this.published = true;
+    }
+
+
+    void showTo(Visibility audience) {
+        this.visibility = audience;
     }
 
 
     void unpublish() {
-        this.status = ItineraryStatus.DRAFT;
+        this.published = false;
     }
 
     public UUID id() {
@@ -259,8 +293,13 @@ public class Itinerary {
         return state;
     }
 
-    public ItineraryStatus status() {
-        return status;
+    public Visibility visibility() {
+        return visibility;
+    }
+
+
+    public boolean isPublished() {
+        return published;
     }
 
     public Instant createdAt() {

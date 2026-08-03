@@ -219,10 +219,27 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary publish(Membership owner, ItineraryStatus audience) {
+    public Itinerary reopen(Membership owner) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.reopen();
+        workspaces.markActive(itinerary.id());
+        return record(itinerary, owner, "itinerary_reopened");
+    }
+
+
+    @Transactional
+    public Itinerary publish(Membership owner, Visibility audience) {
         Itinerary itinerary = authorizeAndLoad(owner);
         itinerary.publishTo(audience);
         return recordStatus(itinerary, owner, "itinerary_published");
+    }
+
+
+    @Transactional
+    public Itinerary showTo(Membership owner, Visibility audience) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.showTo(audience);
+        return recordStatus(itinerary, owner, "itinerary_audience_changed");
     }
 
 
@@ -237,9 +254,10 @@ public class ItineraryService {
     private Itinerary recordStatus(Itinerary itinerary, Membership owner, String eventName) {
         itineraries.save(itinerary);
         log.info(
-                "Itinerary status: id={} status={} owner={}",
+                "Itinerary publication: id={} published={} visibility={} owner={}",
                 itinerary.id(),
-                itinerary.status().wireName(),
+                itinerary.isPublished(),
+                itinerary.visibility().wireName(),
                 owner.travelerId());
         AfterCommit.run(
                 () ->
@@ -292,12 +310,12 @@ public class ItineraryService {
         if (itineraryIds.isEmpty()) {
             return Page.exhausted(List.of());
         }
-        ItineraryStatus status = category == null ? null : category.status();
+        ItineraryState state = category == null ? null : category.state();
         Limit probe = Limit.of(limit + 1);
         List<Itinerary> found =
                 decodedCursor == null
-                        ? itineraries.findFirstPage(itineraryIds, status, probe)
-                        : itineraries.findPageAfter(itineraryIds, decodedCursor, status, probe);
+                        ? itineraries.findFirstPage(itineraryIds, state, probe)
+                        : itineraries.findPageAfter(itineraryIds, decodedCursor, state, probe);
 
         if (found.size() <= limit) {
             return Page.exhausted(found);

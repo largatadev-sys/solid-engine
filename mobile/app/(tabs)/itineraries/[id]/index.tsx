@@ -5,6 +5,7 @@ import { comingSoon } from '../../../../src/components/comingSoon';
 import { Icon } from '../../../../src/components/Icon';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { confirmWith } from '../../../../src/components/confirmDestructive';
+import { notify } from '../../../../src/components/notify';
 import {
   leaveTripWording,
   unpublishTripWording,
@@ -18,7 +19,13 @@ import {
   audienceBlurb,
   audienceLabel,
   audienceOf,
+  canPublish,
   isEditable,
+  PUBLISH_NEEDS_COMPLETE_TITLE,
+  publishNeedsCompleteBody,
+  lifecycleBlurb,
+  lifecycleLabel,
+  nextLifecycleAct,
   otherAudience,
   publishControl,
   workspaceEyebrow,
@@ -30,9 +37,11 @@ import { OwnershipOfferBanner } from '../../../../src/members/OwnershipOfferBann
 import { useEndMembership, useMembers } from '../../../../src/query/invitationQueries';
 import {
   useItinerary,
-  usePublishTrip,
+  useShowTripTo,
+  useTripLifecycle,
   useUnpublishTrip,
 } from '../../../../src/query/itineraryQueries';
+import type { LifecycleAct } from '../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../src/theme';
 import type {
   DayResponse,
@@ -62,7 +71,8 @@ export default function TripWorkspaceScreen() {
 
   const endMembership = useEndMembership(id);
   const unpublish = useUnpublishTrip(id);
-  const publish = usePublishTrip(id);
+  const showTo = useShowTripTo(id);
+  const lifecycle = useTripLifecycle(id);
   const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'itinerary');
 
   if (isPending) {
@@ -85,7 +95,7 @@ export default function TripWorkspaceScreen() {
   };
 
   const control = publishControl(data, isOwner);
-  const eyebrow = workspaceEyebrow(data.status);
+  const eyebrow = workspaceEyebrow(data);
   const audience = audienceOf(data);
 
   return (
@@ -167,21 +177,35 @@ export default function TripWorkspaceScreen() {
             unpublishError={unpublish.isError ? unpublish.error.message : undefined}
             onUnpublish={() => confirmWith(unpublishTripWording(), () => unpublish.mutate())}
             audience={audience}
-            changingAudience={publish.isPending}
-            onChangeAudience={() => audience !== null && publish.mutate(otherAudience(audience))}
+            changingAudience={showTo.isPending}
+            onChangeAudience={() => showTo.mutate(otherAudience(audience))}
+            lifecycleBusy={lifecycle.isPending}
+            lifecycleError={lifecycle.isError ? lifecycle.error.message : undefined}
+            onLifecycle={(act) => lifecycle.mutate(act)}
           />
         )}
       </ScrollView>
 
       {(canInvite || control === 'publish') && (
         <View style={styles.actionBar}>
-          {control === 'publish' && (
-            <Link href={{ pathname: '/itineraries/[id]/preview', params: { id } }} asChild>
-              <Pressable style={styles.cta} accessibilityRole="button">
+          {control === 'publish' &&
+            (canPublish(data) ? (
+              <Link href={{ pathname: '/itineraries/[id]/preview', params: { id } }} asChild>
+                <Pressable style={styles.cta} accessibilityRole="button">
+                  <Text style={styles.ctaText}>Publish Itinerary</Text>
+                </Pressable>
+              </Link>
+            ) : (
+              <Pressable
+                style={styles.cta}
+                accessibilityRole="button"
+                onPress={() =>
+                  notify(PUBLISH_NEEDS_COMPLETE_TITLE, publishNeedsCompleteBody(data.state))
+                }
+              >
                 <Text style={styles.ctaText}>Publish Itinerary</Text>
               </Pressable>
-            </Link>
-          )}
+            ))}
           {canInvite && (
             <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
               <Pressable
@@ -249,11 +273,15 @@ function DetailsTab(props: {
   unpublishing: boolean;
   unpublishError: string | undefined;
   onUnpublish: () => void;
-  audience: PublishAudience | null;
+  audience: PublishAudience;
   changingAudience: boolean;
   onChangeAudience: () => void;
+  lifecycleBusy: boolean;
+  lifecycleError: string | undefined;
+  onLifecycle: (act: LifecycleAct) => void;
 }) {
   const { itinerary } = props;
+  const pinned = itinerary.published;
 
   return (
     <View style={styles.tabBody}>
@@ -286,7 +314,49 @@ function DetailsTab(props: {
         <Text style={styles.value}>{formatDates(itinerary)}</Text>
       </Field>
 
-      {props.audience !== null && props.canUnpublish && (
+      {props.isOwner && (
+        <Field label="Where this trip is">
+          <Text style={styles.value}>{lifecycleLabel(itinerary.state)}</Text>
+          <Text style={styles.caption}>
+            {pinned
+              ? 'A published trip is fixed. Unpublish it to move it along again.'
+              : lifecycleBlurb(itinerary.state)}
+          </Text>
+          {props.lifecycleBusy ? (
+            <ActivityIndicator color={colors.accent} />
+          ) : (
+            !pinned && (
+              <View style={styles.lifecycleRow}>
+                {nextLifecycleAct(itinerary.state) && (
+                  <Pressable
+                    style={styles.secondaryAction}
+                    accessibilityRole="button"
+                    onPress={() => props.onLifecycle(nextLifecycleAct(itinerary.state)!.act)}
+                  >
+                    <Text style={styles.secondaryActionText}>
+                      {nextLifecycleAct(itinerary.state)!.label}
+                    </Text>
+                  </Pressable>
+                )}
+                {itinerary.state !== 'draft' && (
+                  <Pressable
+                    style={styles.secondaryAction}
+                    accessibilityRole="button"
+                    onPress={() => props.onLifecycle('reopen')}
+                  >
+                    <Text style={styles.secondaryActionText}>Step back</Text>
+                  </Pressable>
+                )}
+              </View>
+            )
+          )}
+          {props.lifecycleError !== undefined && (
+            <Text style={styles.errorCaption}>{props.lifecycleError}</Text>
+          )}
+        </Field>
+      )}
+
+      {props.isOwner && (
         <Field label="Who can read this">
           <Text style={styles.value}>{audienceLabel(props.audience)}</Text>
           <Text style={styles.caption}>{audienceBlurb(props.audience)}</Text>
@@ -422,6 +492,7 @@ const styles = StyleSheet.create({
   field: { gap: spacing.xs },
   sectionLabel: { ...typography.caption, color: colors.textSecondary },
   value: { ...typography.body, color: colors.textPrimary },
+  lifecycleRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   secondaryAction: {
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.md,

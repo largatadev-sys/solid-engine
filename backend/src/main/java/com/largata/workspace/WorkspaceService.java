@@ -66,6 +66,12 @@ public class WorkspaceService {
 
 
     @Transactional(propagation = Propagation.MANDATORY)
+    public void markActive(UUID itineraryId) {
+        workspaces.findByItineraryId(itineraryId).ifPresent(Workspace::markActive);
+    }
+
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public void archive(UUID itineraryId) {
         workspaceFor(itineraryId).archive();
         log.info("Workspace archived: itineraryId={}", itineraryId);

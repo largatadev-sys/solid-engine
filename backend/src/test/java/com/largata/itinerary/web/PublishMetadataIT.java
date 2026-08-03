@@ -223,8 +223,14 @@ class PublishMetadataIT extends PostgresTestBase {
     }
 
     private void publish(String token, String itineraryId) {
+        act(token, itineraryId, "start");
+        act(token, itineraryId, "complete");
+        act(token, itineraryId, "publish");
+    }
+
+    private void act(String token, String itineraryId, String verb) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/publish")
+                .uri("/v1/itineraries/" + itineraryId + "/" + verb)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()

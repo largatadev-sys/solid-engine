@@ -57,7 +57,8 @@ const PROJECTION_FIELDS = [
 
 const FORBIDDEN = [
   'startDate', 'endDate', 'state', 'startedAt', 'completedAt', 'archived',
-  'workspaceState', 'lastEditedBy', 'lastEditedAt', 'lease', 'status', 'ownerId', 'createdAt',
+  'workspaceState', 'lastEditedBy', 'lastEditedAt', 'lease', 'published', 'visibility',
+  'ownerId', 'createdAt',
 ];
 
 async function main() {
@@ -65,7 +66,7 @@ async function main() {
     console.error('Missing env — run from mobile/ with: set -a && . ./.env && set +a');
     process.exit(2);
   }
-  console.log(`S4.1 publish walk against ${API}`);
+  console.log(`S4.11 three-axes publish walk against ${API}`);
   console.log('roles: t1 = owner (publishes), t2 = member, t3 = non-member consumer\n');
 
   const owner = await poolToken('t1');
@@ -87,8 +88,9 @@ async function main() {
     durationDays: 2,
   });
   check('a never-started trip is created (lifecycle draft)',
-    created.status === 201 && created.body.state === 'draft' && created.body.status === 'draft',
-    `${created.status} ${created.body?.state}/${created.body?.status}`);
+    created.status === 201 && created.body.state === 'draft'
+      && created.body.published === false && created.body.visibility === 'public',
+    `${created.status} ${created.body?.state}/${created.body?.published}/${created.body?.visibility}`);
   const trip = created.body.id;
   const dayOne = created.body.days[0].id;
   const dayTwo = created.body.days[1].id;
@@ -138,10 +140,32 @@ async function main() {
   check('AC7 publish by t2 (member) → 403',
     memberPublish.status === 403 && memberPublish.body.code === 'NOT_PERMITTED', 'got ' + memberPublish.status);
 
+  const tooEarly = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  check('AC4 publishing a DRAFT is refused, naming the precondition',
+    tooEarly.status === 409 && tooEarly.body.code === 'ITINERARY_NOT_COMPLETE',
+    `${tooEarly.status} ${tooEarly.body?.code}`);
+
+  await api(`/v1/itineraries/${trip}/start`, 'POST', owner);
+  const stillTooEarly = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  check('AC4 …and so is publishing an ACTIVE trip',
+    stillTooEarly.status === 409 && stillTooEarly.body.code === 'ITINERARY_NOT_COMPLETE',
+    `${stillTooEarly.status} ${stillTooEarly.body?.code}`);
+
+  const completed = await api(`/v1/itineraries/${trip}/complete`, 'POST', owner);
+  check('AC2 the lifecycle walks draft → active → complete on the traveler’s act',
+    completed.status === 200 && completed.body.state === 'completed',
+    `${completed.status} ${completed.body?.state}`);
+
   const published = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
-  check('AC7 publish by t1 (owner) → 200, status becomes public',
-    published.status === 200 && published.body.status === 'public',
-    `${published.status} ${published.body?.status}`);
+  check('AC4 publish by t1 (owner) on a COMPLETED trip → 200, public by default',
+    published.status === 200 && published.body.published === true
+      && published.body.visibility === 'public',
+    `${published.status} ${published.body?.published}/${published.body?.visibility}`);
+
+  const pinned = await api(`/v1/itineraries/${trip}/reopen`, 'POST', owner);
+  check('AC6 a published trip pins its lifecycle — reopen is refused',
+    pinned.status === 409 && pinned.body.code === 'ILLEGAL_STATE_TRANSITION',
+    `${pinned.status} ${pinned.body?.code}`);
 
   const seen = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   check('AC1 t3 opens the published page by direct route', seen.status === 200, 'got ' + seen.status);
@@ -170,16 +194,27 @@ async function main() {
   const frozenEdit = await api(`/v1/itineraries/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
     title: 'Ferry', costAmount: '40', costCurrency: 'USD',
   });
-  check('ADR-018 a published plan is frozen — the edit is refused, naming why',
+  check('AC5 a published plan is frozen — the edit is refused, naming why',
     frozenEdit.status === 409 && frozenEdit.body.code === 'ITINERARY_PUBLISHED',
     `${frozenEdit.status} ${frozenEdit.body?.code}`);
 
-  await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
+  const unpublished = await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
+  check('AC7 unpublishing leaves the trip COMPLETED — it does not un-travel it',
+    unpublished.status === 200 && unpublished.body.state === 'completed'
+      && unpublished.body.published === false,
+    `${unpublished.status} ${unpublished.body?.state}/${unpublished.body?.published}`);
+
   const thawed = await api(`/v1/itineraries/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
     title: 'Ferry', costAmount: '40', costCurrency: 'USD',
   });
-  check('ADR-018 unpublishing returns it to draft, and the plan is editable again',
+  check('AC7 …and the plan is editable again',
     thawed.status === 201, 'got ' + thawed.status);
+
+  const reopened = await api(`/v1/itineraries/${trip}/reopen`, 'POST', owner);
+  check('AC3 the one-step undo works once unpublished',
+    reopened.status === 200 && reopened.body.state === 'active',
+    `${reopened.status} ${reopened.body?.state}`);
+  await api(`/v1/itineraries/${trip}/complete`, 'POST', owner);
   await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
 
   const mixed = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
@@ -196,24 +231,32 @@ async function main() {
   check('the projection is one page for every audience — the member reads it too',
     memberSees.status === 200, 'got ' + memberSees.status);
 
-  await api(`/v1/itineraries/${trip}/publish`, 'POST', owner, { audience: 'private' });
+  const madePrivate = await api(`/v1/itineraries/${trip}/audience`, 'POST', owner, { audience: 'private' });
   const privateForMember = await api(`/v1/published-itineraries/${trip}`, 'GET', member);
   const privateForStranger = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
-  check('ADR-018 private is PUBLISHED — the collaborator reads the overview',
+  check('AC9 published + private is legal — it stays in the feed while the audience narrows',
+    madePrivate.status === 200 && madePrivate.body.published === true
+      && madePrivate.body.visibility === 'private',
+    `${madePrivate.status} ${madePrivate.body?.published}/${madePrivate.body?.visibility}`);
+  check('AC9 …the collaborator reads the overview',
     privateForMember.status === 200, 'got ' + privateForMember.status);
-  check('ADR-018 …and a stranger is masked, indistinguishably from never-existed',
+  check('AC9 …and a stranger is masked, indistinguishably from never-existed',
     privateForStranger.status === 404 && privateForStranger.body.code === 'ITINERARY_NOT_FOUND',
     'got ' + privateForStranger.status);
 
-  const backToPublic = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner, { audience: 'public' });
-  check('ADR-018 the audience moves without a round trip through draft',
-    backToPublic.status === 200 && backToPublic.body.status === 'public',
-    `${backToPublic.status} ${backToPublic.body?.status}`);
+  const backToPublic = await api(`/v1/itineraries/${trip}/audience`, 'POST', owner, { audience: 'public' });
+  check('AC8 the audience toggles without touching the other two axes',
+    backToPublic.status === 200 && backToPublic.body.visibility === 'public'
+      && backToPublic.body.published === true && backToPublic.body.state === 'completed',
+    `${backToPublic.status} ${backToPublic.body?.visibility}/${backToPublic.body?.state}`);
 
-  const unpublished = await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
+  const withdrawn = await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
   const goneAgain = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   check('AC3 unpublish → t3 masked again',
-    unpublished.status === 200 && goneAgain.status === 404, `${unpublished.status}/${goneAgain.status}`);
+    withdrawn.status === 200 && goneAgain.status === 404, `${withdrawn.status}/${goneAgain.status}`);
+  const stillNoPage = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
+  check('AC9 a COMPLETE + PUBLIC but unpublished trip still has no page — discovery is its own axis',
+    stillNoPage.status === 404, 'got ' + stillNoPage.status);
 
   const republished = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
   const backAgain = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
@@ -243,6 +286,8 @@ async function main() {
   const empty = await api('/v1/itineraries', 'POST', owner, {
     title: 'Someday, Japan', destinations: ['Japan'],
   });
+  await api(`/v1/itineraries/${empty.body.id}/start`, 'POST', owner);
+  await api(`/v1/itineraries/${empty.body.id}/complete`, 'POST', owner);
   const emptyPublish = await api(`/v1/itineraries/${empty.body.id}/publish`, 'POST', owner);
   const emptySeen = await api(`/v1/published-itineraries/${empty.body.id}`, 'GET', consumer);
   check('AC10 an empty itinerary publishes and projects cleanly',

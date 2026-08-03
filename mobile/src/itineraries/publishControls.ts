@@ -1,31 +1,39 @@
 import type { IconName } from '../components/Icon';
-import type { ItineraryResponse, ItineraryStatus, PublishAudience } from '../types/api';
+import type { ItineraryResponse, ItineraryState, PublishAudience, Visibility } from '../types/api';
 
 
 export type PublishControl = 'publish' | 'unpublish';
 
 
+type Axes = Pick<ItineraryResponse, 'state' | 'published' | 'visibility'>;
+
+
 export function publishControl(
-  itinerary: Pick<ItineraryResponse, 'status' | 'archived'>,
+  itinerary: Pick<ItineraryResponse, 'published' | 'archived'>,
   isOwner: boolean,
 ): PublishControl | null {
   if (!isOwner || itinerary.archived) return null;
-  return itinerary.status === 'draft' ? 'publish' : 'unpublish';
+  return itinerary.published ? 'unpublish' : 'publish';
 }
 
 
-export function isPublished(itinerary: Pick<ItineraryResponse, 'status'>): boolean {
-  return itinerary.status !== 'draft';
+export function isPublished(itinerary: Pick<ItineraryResponse, 'published'>): boolean {
+  return itinerary.published;
 }
 
 
-export function isEditable(itinerary: Pick<ItineraryResponse, 'status' | 'archived'>): boolean {
-  return !itinerary.archived && itinerary.status === 'draft';
+export function isEditable(itinerary: Pick<ItineraryResponse, 'published' | 'archived'>): boolean {
+  return !itinerary.archived && !itinerary.published;
 }
 
 
-export function audienceOf(itinerary: Pick<ItineraryResponse, 'status'>): PublishAudience | null {
-  return itinerary.status === 'draft' ? null : itinerary.status;
+export function canPublish(itinerary: Pick<ItineraryResponse, 'state'>): boolean {
+  return itinerary.state === 'completed';
+}
+
+
+export function audienceOf(itinerary: Pick<ItineraryResponse, 'visibility'>): PublishAudience {
+  return itinerary.visibility;
 }
 
 
@@ -37,15 +45,23 @@ export function otherAudience(audience: PublishAudience): PublishAudience {
 export type WorkspaceEyebrow = { icon: IconName; label: string };
 
 
-const EYEBROWS: Record<ItineraryStatus, WorkspaceEyebrow> = {
+const UNPUBLISHED_EYEBROWS: Record<ItineraryState, WorkspaceEyebrow> = {
   draft: { icon: 'users', label: 'Draft Workspace' },
-  private: { icon: 'users', label: 'Published — Private' },
-  public: { icon: 'globe', label: 'Published — Public' },
+  active: { icon: 'users', label: 'Trip Under Way' },
+  completed: { icon: 'users', label: 'Trip Complete' },
 };
 
 
-export function workspaceEyebrow(status: ItineraryStatus): WorkspaceEyebrow {
-  return EYEBROWS[status];
+const PUBLISHED_EYEBROWS: Record<Visibility, WorkspaceEyebrow> = {
+  public: { icon: 'globe', label: 'Published — Public' },
+  private: { icon: 'users', label: 'Published — Private' },
+};
+
+
+export function workspaceEyebrow(itinerary: Axes): WorkspaceEyebrow {
+  return itinerary.published
+    ? PUBLISHED_EYEBROWS[itinerary.visibility]
+    : UNPUBLISHED_EYEBROWS[itinerary.state];
 }
 
 
@@ -58,4 +74,47 @@ export function audienceBlurb(audience: PublishAudience): string {
   return audience === 'public'
     ? 'Everyone on Largata can find and read this itinerary.'
     : 'Only you and your collaborators can read it.';
+}
+
+
+const LIFECYCLE_LABELS: Record<ItineraryState, string> = {
+  draft: 'Draft — still being planned',
+  active: 'Active — the trip is under way',
+  completed: 'Complete — the trip is done',
+};
+
+
+export function lifecycleLabel(state: ItineraryState): string {
+  return LIFECYCLE_LABELS[state];
+}
+
+
+const LIFECYCLE_BLURBS: Record<ItineraryState, string> = {
+  draft: 'Build the plan here. Start the trip when you set off.',
+  active: 'Mark it complete when you get back — a completed trip is the one you can publish.',
+  completed: 'This trip is ready to publish whenever you want to share it.',
+};
+
+
+export function lifecycleBlurb(state: ItineraryState): string {
+  return LIFECYCLE_BLURBS[state];
+}
+
+
+export type LifecycleStep = { act: 'start' | 'complete'; label: string };
+
+
+export function nextLifecycleAct(state: ItineraryState): LifecycleStep | null {
+  if (state === 'draft') return { act: 'start', label: 'Start trip' };
+  if (state === 'active') return { act: 'complete', label: 'Mark complete' };
+  return null;
+}
+
+
+export const PUBLISH_NEEDS_COMPLETE_TITLE = 'This trip is not finished yet';
+
+
+export function publishNeedsCompleteBody(state: ItineraryState): string {
+  const where = state === 'draft' ? 'still a draft' : 'under way';
+  return `Only a completed trip can be published, because a published itinerary is a record of a trip that happened. This one is ${where} — mark it complete first, and you can publish it after.`;
 }

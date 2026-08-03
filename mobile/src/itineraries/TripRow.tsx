@@ -3,12 +3,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing, typography } from '../theme';
 import type { ItineraryResponse } from '../types/api';
 import { formatDates } from './formatDates';
+import { tripBadge } from './tripCategories';
 
 
 export function tripRowDestination(
-  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'status'>,
+  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'published'>,
 ) {
-  if (itinerary.archived || itinerary.status === 'draft') {
+  if (itinerary.archived || !itinerary.published) {
     return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
   }
   return { pathname: '/published/[id]' as const, params: { id: itinerary.id } };
@@ -16,6 +17,7 @@ export function tripRowDestination(
 
 
 export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
+  const badge = tripBadge(itinerary);
   return (
     <Link href={tripRowDestination(itinerary)} asChild>
       <Pressable style={styles.row} accessibilityRole="button" accessibilityLabel={itinerary.title}>
@@ -23,13 +25,21 @@ export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
           <Text style={styles.rowTitle} numberOfLines={1}>
             {itinerary.title}
           </Text>
-          {itinerary.archived && (
-            <View style={styles.badges}>
+          <View style={styles.badges}>
+            {badge && (
+              <View style={[styles.stateBadge, badge.tone === 'public' && styles.publishedBadge]}>
+                <Text
+                  style={[styles.stateBadgeText, badge.tone === 'public' && styles.publishedBadgeText]}>
+                  {badge.label}
+                </Text>
+              </View>
+            )}
+            {itinerary.archived && (
               <View style={[styles.stateBadge, styles.archivedBadge]}>
                 <Text style={[styles.stateBadgeText, styles.archivedBadgeText]}>Archived</Text>
               </View>
-            </View>
-          )}
+            )}
+          </View>
         </View>
         <Text style={styles.rowMeta} numberOfLines={1}>
           {itinerary.destinations.join(' · ')}
@@ -63,6 +73,8 @@ const styles = StyleSheet.create({
   stateBadgeText: { ...typography.caption, color: colors.textSecondary },
   archivedBadge: { borderColor: colors.accentMuted },
   archivedBadgeText: { color: colors.accent },
+  publishedBadge: { borderColor: colors.accentMuted, backgroundColor: colors.accentTint },
+  publishedBadgeText: { color: colors.accent },
   rowMeta: { ...typography.body, color: colors.textSecondary },
   rowDates: { ...typography.caption, color: colors.textSecondary },
 });

@@ -187,6 +187,35 @@ export function useUnpublishTrip(id: string): UseMutationResult<ItineraryRespons
   });
 }
 
+export function useShowTripTo(
+  id: string,
+): UseMutationResult<ItineraryResponse, Error, PublishAudience> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (audience: PublishAudience) => itineraryRepository.showTripTo(id, audience),
+    onSuccess: async (updated) => {
+      await onItineraryUpdated(client, updated);
+      await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
+    },
+  });
+}
+
+export type LifecycleAct = 'start' | 'complete' | 'reopen';
+
+export function useTripLifecycle(id: string): UseMutationResult<ItineraryResponse, Error, LifecycleAct> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (act: LifecycleAct) => {
+      if (act === 'start') return itineraryRepository.startTrip(id);
+      if (act === 'complete') return itineraryRepository.completeTrip(id);
+      return itineraryRepository.reopenTrip(id);
+    },
+    onSuccess: async (updated) => {
+      await onItineraryUpdated(client, updated);
+    },
+  });
+}
+
 export function useArchivedItineraries(): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
   const { kind } = useAuth();
   return useInfiniteQuery({ ...archivedItinerariesOptions, enabled: kind === 'signedIn' });

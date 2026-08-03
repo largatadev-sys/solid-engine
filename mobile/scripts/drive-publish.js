@@ -10,6 +10,7 @@ const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
 const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
 const PASSWORD = process.env.LARGATA_TEST_POOL_PASSWORD;
 const TRIP_ID = process.env.TRIP_ID;
+const DRAFT_TRIP_ID = process.env.DRAFT_TRIP_ID;
 
 const CHROME_CANDIDATES = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -192,7 +193,7 @@ const GREYED = [
     return tap(label);
   };
 
-  console.log(`\n=== S4.1 publish, web preview (${PREVIEW}) — trip ${TRIP_ID} ===`);
+  console.log(`\n=== S4.11 three axes, web preview (${PREVIEW}) — trip ${TRIP_ID} ===`);
   console.log('roles: t1 = owner (publishes), t3 = non-member consumer\n');
 
   await seat(owner);
@@ -200,20 +201,39 @@ const GREYED = [
   await goto(`/itineraries/${TRIP_ID}`);
   const workspace = await text();
   check('the workspace renders (not the S0.4 white screen)', (workspace || '').length > 0);
-  check('the eyebrow names the publication status (ADR-018)',
-    ['Draft Workspace', 'Published — Private', 'Published — Public'].some((l) => workspace.includes(l)),
+  check('the eyebrow names where the trip is (ADR-019 — lifecycle while out of the feed)',
+    ['Draft Workspace', 'Trip Under Way', 'Trip Complete', 'Published — Private', 'Published — Public']
+      .some((l) => workspace.includes(l)),
     workspace.split('\n')[0]);
 
-  if (!workspace.includes('Draft Workspace')) {
+  if (workspace.includes('Published')) {
     await goto(`/itineraries/${TRIP_ID}?tab=details`);
     await tapWithConfirm('Unpublish this trip', true);
     await goto(`/itineraries/${TRIP_ID}`);
   }
 
-  const asDraft = await text();
-  check('unpublishing returned it to a draft, which is where editing lives',
-    asDraft.includes('Draft Workspace'), asDraft.split('\n')[0]);
-  check('a draft offers the owner the Publish CTA', asDraft.includes('Publish Itinerary'));
+  const unpublished = await text();
+  check('ADR-019 unpublishing leaves the trip COMPLETE — it does not un-travel it',
+    unpublished.includes('Trip Complete'), unpublished.split('\n')[0]);
+  check('an unpublished trip offers the owner the Publish CTA',
+    unpublished.includes('Publish Itinerary'));
+
+  if (DRAFT_TRIP_ID) {
+    await goto(`/itineraries/${DRAFT_TRIP_ID}`);
+    const draft = await text();
+    check('a draft still offers the CTA rather than hiding it (AC13)',
+      draft.includes('Publish Itinerary'), draft.split('\n')[0]);
+
+    const refused = await tapExpectingAlert('Publish Itinerary');
+    check('AC13 …and tapping it EXPLAINS the complete gate instead of failing silently',
+      typeof refused.said === 'string' && /complete/i.test(refused.said),
+      String(refused.said).slice(0, 160));
+    check('AC13 …naming the trip’s actual state, not one generic sentence',
+      typeof refused.said === 'string' && /draft/i.test(refused.said),
+      String(refused.said).slice(0, 160));
+
+    await goto(`/itineraries/${TRIP_ID}`);
+  }
 
   const toPreview = await tap('Publish Itinerary');
   check('the Publish CTA is reachable and was clicked', toPreview.clicked,
@@ -226,8 +246,9 @@ const GREYED = [
     preview.includes('PALAWAN') && /\d+ Days/.test(preview));
   check('…Standouts render', preview.includes('Standouts') && preview.includes('Big Lagoon Kayaking'));
   check('…best time of year renders in the header', preview.includes('Dec'));
-  check('…a mixed-currency plan shows no derived total rather than a number that lies',
-    preview.includes('Est. Total') && !/[₱$]\s?\d/.test(preview));
+  check('…a single-currency plan derives its total (the mixed case is smoke-publish’s)',
+    preview.includes('Est. Total') && /₱\s?[\d,]+/.test(preview),
+    preview.replace(/\n/g, ' | ').slice(0, 140));
 
   const previewDays = await tap('Day-by-Day');
   const previewPlan = await text();

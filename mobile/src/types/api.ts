@@ -59,13 +59,16 @@ export type VerificationResultResponse = {
 };
 
 
-export type ItineraryStatus = 'draft' | 'private' | 'public';
+export type ItineraryState = 'draft' | 'active' | 'completed';
 
 
-export type TripCategory = ItineraryStatus;
+export type Visibility = 'public' | 'private';
 
 
-export type PublishAudience = Exclude<ItineraryStatus, 'draft'>;
+export type TripCategory = 'draft' | 'active' | 'complete';
+
+
+export type PublishAudience = Visibility;
 
 
 export type ItineraryResponse = {
@@ -83,8 +86,9 @@ export type ItineraryResponse = {
 
   startDate: string | null;
   endDate: string | null;
-  state: string;
-  status: ItineraryStatus;
+  state: ItineraryState;
+  published: boolean;
+  visibility: Visibility;
 
   archived: boolean;
 

@@ -18,7 +18,7 @@ class RowBackedPublicationState implements PublicationState {
     public boolean isPublished(UUID itineraryId) {
         return itineraries
                 .findById(itineraryId)
-                .map(itinerary -> itinerary.status().isPublished())
+                .map(Itinerary::isPublished)
                 .orElseThrow(() -> new IllegalStateException(
                         "No itinerary " + itineraryId + " to read publication status from"));
     }
