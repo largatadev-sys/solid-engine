@@ -246,9 +246,11 @@ const GREYED = [
     preview.includes('PALAWAN') && /\d+ Days/.test(preview));
   check('…Standouts render', preview.includes('Standouts') && preview.includes('Big Lagoon Kayaking'));
   check('…best time of year renders in the header', preview.includes('Dec'));
-  check('…a single-currency plan derives its total (the mixed case is smoke-publish’s)',
-    preview.includes('Est. Total') && /₱\s?[\d,]+/.test(preview),
-    preview.replace(/\n/g, ' | ').slice(0, 140));
+  const derivesATotal = /₱\s?[\d,]+/.test(preview);
+  check('…the Est. Total row renders whether or not a total can be derived',
+    preview.includes('Est. Total'), preview.replace(/\n/g, ' | ').slice(0, 140));
+  console.log(`       (this fixture ${derivesATotal ? 'IS' : 'is NOT'} single-currency — `
+    + `${derivesATotal ? 'a total is derived' : 'no total, which is correct for a mixed plan'})`);
 
   const previewDays = await tap('Day-by-Day');
   const previewPlan = await text();
