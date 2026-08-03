@@ -43,6 +43,19 @@ public class Itinerary {
     @Column private String description;
 
 
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(nullable = false)
+    private List<String> standouts;
+
+
+    @Column(name = "best_time_of_year")
+    private String bestTimeOfYear;
+
+
+    @Column(name = "cover_image_url")
+    private String coverImageUrl;
+
+
     @Column(name = "last_edited_by")
     private UUID lastEditedBy;
 
@@ -58,6 +71,9 @@ public class Itinerary {
     @Column(nullable = false)
     private Visibility visibility;
 
+    @Column(nullable = false)
+    private boolean published;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -71,25 +87,30 @@ public class Itinerary {
     protected Itinerary() {
     }
 
-    private Itinerary(
-            UUID id,
-            UUID ownerId,
-            String title,
-            List<String> destinations,
-            String description,
-            LocalDate startDate,
-            LocalDate endDate,
-            Instant createdAt) {
+    private Itinerary(UUID id, UUID ownerId, ItineraryFields fields, Instant createdAt) {
         this.id = id;
         this.ownerId = ownerId;
-        this.title = title;
-        this.destinations = destinations;
-        this.description = description;
-        this.startDate = startDate;
-        this.endDate = endDate;
         this.state = ItineraryState.DRAFT;
-        this.visibility = Visibility.PRIVATE;
+        this.visibility = Visibility.PUBLIC;
+        this.published = false;
         this.createdAt = createdAt;
+        apply(fields);
+    }
+
+
+    private void apply(ItineraryFields fields) {
+        this.title = fields.title();
+        this.destinations = fields.destinations();
+        this.description = fields.description();
+        this.startDate = fields.startDate();
+        this.endDate = fields.endDate();
+
+        if (fields.standouts() != null) {
+            this.standouts = fields.standouts();
+        }
+        if (fields.bestTimeOfYear() != null) {
+            this.bestTimeOfYear = fields.bestTimeOfYear().isEmpty() ? null : fields.bestTimeOfYear();
+        }
     }
 
 
@@ -103,6 +124,15 @@ public class Itinerary {
 
 
     public static final int MAX_DAY_TITLE_LENGTH = 120;
+
+
+    public static final int MAX_STANDOUTS = 12;
+
+
+    public static final int MAX_STANDOUT_LENGTH = 120;
+
+
+    public static final int MAX_BEST_TIME_LENGTH = 60;
 
 
     static Itinerary draft(
@@ -124,68 +154,18 @@ public class Itinerary {
             LocalDate startDate,
             LocalDate endDate,
             Instant createdAt) {
-        validateFields(title, destinations, startDate, endDate);
         return new Itinerary(
                 UuidV7.generate(),
                 ownerId,
-                title.strip(),
-                destinations.stream().map(String::strip).toList(),
-                normalizeDescription(description),
-                startDate,
-                endDate,
+                ItineraryFields.withoutPublishMetadata(title, destinations, description, startDate, endDate),
                 createdAt);
     }
 
 
-    void editFields(
-            String title,
-            List<String> destinations,
-            String description,
-            LocalDate startDate,
-            LocalDate endDate,
-            UUID editor,
-            Instant at) {
-        validateFields(title, destinations, startDate, endDate);
-        this.title = title.strip();
-        this.destinations = destinations.stream().map(String::strip).toList();
-        this.description = normalizeDescription(description);
-        this.startDate = startDate;
-        this.endDate = endDate;
+    void editFields(ItineraryFields fields, UUID editor, Instant at) {
+        apply(fields);
         this.lastEditedBy = editor;
         this.lastEditedAt = at;
-    }
-
-
-    private static void validateFields(
-            String title, List<String> destinations, LocalDate startDate, LocalDate endDate) {
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("An itinerary needs a title");
-        }
-        if (title.strip().length() > MAX_TITLE_LENGTH) {
-            throw new IllegalArgumentException("An itinerary's title is at most " + MAX_TITLE_LENGTH + " characters");
-        }
-        if (destinations == null || destinations.isEmpty()) {
-            throw new IllegalArgumentException("An itinerary needs at least one destination");
-        }
-        if (destinations.stream().anyMatch(d -> d == null || d.isBlank())) {
-            throw new IllegalArgumentException("An itinerary's destinations cannot be blank");
-        }
-        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("An itinerary cannot end before it starts");
-        }
-    }
-
-
-    private static String normalizeDescription(String description) {
-        if (description == null || description.isBlank()) {
-            return null;
-        }
-        String stripped = description.strip();
-        if (stripped.length() > MAX_DESCRIPTION_LENGTH) {
-            throw new IllegalArgumentException(
-                    "An itinerary's description is at most " + MAX_DESCRIPTION_LENGTH + " characters");
-        }
-        return stripped;
     }
 
 
@@ -211,10 +191,50 @@ public class Itinerary {
     }
 
 
+    void reopen() {
+        ItineraryState target = state.previous().orElseThrow(
+                () -> new IllegalStateTransitionException(state, state));
+        requireUnpublished(target);
+        if (target == ItineraryState.ACTIVE) {
+            this.completedAt = null;
+        } else {
+            this.startedAt = null;
+        }
+        this.state = target;
+    }
+
+
     private void requireState(ItineraryState required, ItineraryState target) {
+        requireUnpublished(target);
         if (this.state != required) {
             throw new IllegalStateTransitionException(this.state, target);
         }
+    }
+
+
+    private void requireUnpublished(ItineraryState target) {
+        if (published) {
+            throw new IllegalStateTransitionException(state, target);
+        }
+    }
+
+
+    void publishTo(Visibility audience) {
+        if (!state.admitsPublishing()) {
+            throw new NotCompleteException(state);
+        }
+        this.visibility = audience;
+        this.published = true;
+    }
+
+
+    void showTo(Visibility audience) {
+        this.visibility = audience;
+    }
+
+
+    void unpublish() {
+        this.published = false;
     }
 
     public UUID id() {
@@ -236,6 +256,21 @@ public class Itinerary {
 
     public String description() {
         return description;
+    }
+
+
+    public List<String> standouts() {
+        return List.copyOf(standouts);
+    }
+
+
+    public String bestTimeOfYear() {
+        return bestTimeOfYear;
+    }
+
+
+    public String coverImageUrl() {
+        return coverImageUrl;
     }
 
     public LocalDate startDate() {
@@ -260,6 +295,11 @@ public class Itinerary {
 
     public Visibility visibility() {
         return visibility;
+    }
+
+
+    public boolean isPublished() {
+        return published;
     }
 
     public Instant createdAt() {

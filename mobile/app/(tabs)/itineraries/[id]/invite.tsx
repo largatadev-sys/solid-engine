@@ -40,7 +40,11 @@ export default function InviteTravelersScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <ScreenHeader title="Invite Travelers" back />
+      <ScreenHeader
+        title="Invite Travelers"
+        back
+        backTo={{ pathname: '/itineraries/[id]', params: { id } }}
+      />
 
       <View style={styles.section}>
         <Text style={styles.label}>Find by username</Text>

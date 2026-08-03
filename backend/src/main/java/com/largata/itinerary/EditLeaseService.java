@@ -68,7 +68,7 @@ public class EditLeaseService {
 
     @Transactional
     public EditLeaseView acquire(Membership member, LeaseSubject subject) {
-        fence.requireWritable(member);
+        fence.requireEditable(member);
         requireSubjectBelongsTo(member.itineraryId(), subject);
         Instant now = clock.instant();
         Instant expiresAt = now.plus(ttl);
@@ -102,7 +102,7 @@ public class EditLeaseService {
 
     @Transactional
     public EditLeaseView renew(Membership member, LeaseSubject subject) {
-        fence.requireWritable(member);
+        fence.requireEditable(member);
         Instant now = clock.instant();
         EditLease lease =
                 liveOrStale(subject)
@@ -167,7 +167,7 @@ public class EditLeaseService {
 
     @Transactional
     public void requireHeldBy(Membership member, LeaseSubject subject) {
-        fence.requireWritable(member);
+        fence.requireEditable(member);
         Instant now = clock.instant();
         boolean held =
                 liveOrStale(subject)

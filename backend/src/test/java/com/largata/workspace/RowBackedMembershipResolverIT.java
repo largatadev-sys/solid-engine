@@ -92,8 +92,8 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
         UUID ana = UUID.randomUUID();
         UUID orphanedTrip = UUID.randomUUID();
         jdbc.update(
-                "INSERT INTO itinerary (id, owner_id, title, destinations, state, visibility, created_at) "
-                        + "VALUES (?, ?, 'Pre-E1 leftover', ?, 'DRAFT', 'PRIVATE', ?)",
+                "INSERT INTO itinerary (id, owner_id, title, destinations, standouts, state, published, visibility,"
+                        + " created_at) VALUES (?, ?, 'Pre-E1 leftover', ?, '{}', 'DRAFT', false, 'PUBLIC', ?)",
                 orphanedTrip,
                 ana,
                 new String[] {"nowhere"},

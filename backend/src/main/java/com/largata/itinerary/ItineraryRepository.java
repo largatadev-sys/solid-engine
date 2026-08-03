@@ -12,12 +12,22 @@ import org.springframework.data.repository.query.Param;
 interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
 
-    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds ORDER BY i.id DESC")
-    List<Itinerary> findFirstPage(@Param("itineraryIds") Collection<UUID> itineraryIds, Limit limit);
+    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds "
+            + "AND (:state IS NULL OR i.state = :state) "
+            + "ORDER BY i.id DESC")
+    List<Itinerary> findFirstPage(
+            @Param("itineraryIds") Collection<UUID> itineraryIds,
+            @Param("state") ItineraryState state,
+            Limit limit);
 
 
-    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds AND i.id < :cursor ORDER BY i.id DESC")
+    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds AND i.id < :cursor "
+            + "AND (:state IS NULL OR i.state = :state) "
+            + "ORDER BY i.id DESC")
     List<Itinerary> findPageAfter(
-            @Param("itineraryIds") Collection<UUID> itineraryIds, @Param("cursor") UUID cursor, Limit limit);
+            @Param("itineraryIds") Collection<UUID> itineraryIds,
+            @Param("cursor") UUID cursor,
+            @Param("state") ItineraryState state,
+            Limit limit);
 
 }

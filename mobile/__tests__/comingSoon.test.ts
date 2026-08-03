@@ -29,9 +29,24 @@ describe('comingSoonMessage — the wording both forks share', () => {
     expect(comingSoonMessage('coverPhoto').title).toBe('Cover photo — coming soon');
   });
 
-  it('covers every greyed affordance S4.9 ships', () => {
+  it('covers every greyed affordance S4.9 and S4.1 ship', () => {
     expect(Object.keys(COMING_SOON_SURFACES).sort()).toEqual(
-      ['activityHistory', 'activityPhoto', 'chat', 'coverPhoto', 'fork', 'home', 'network', 'search'].sort(),
+      [
+        'activityHistory',
+        'activityPhoto',
+        'booking',
+        'chat',
+        'comments',
+        'coverPhoto',
+        'diary',
+        'follow',
+        'fork',
+        'home',
+        'network',
+        'rating',
+        'reviews',
+        'search',
+      ].sort(),
     );
   });
 });

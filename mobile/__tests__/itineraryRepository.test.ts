@@ -66,14 +66,7 @@ describe('reading the list', () => {
   });
 });
 
-describe('archiving (S1.9)', () => {
-  it('archives with no body — the act carries no data', async () => {
-    apiClient.post.mockResolvedValue({ id: 'abc', archived: true });
-
-    await itineraryRepository.archiveTrip('abc');
-
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/archive', undefined);
-  });
+describe('unarchiving (S1.9 — the archive control itself was removed from the UI, founder 08/01)', () => {
 
   it('unarchives the same way', async () => {
     apiClient.post.mockResolvedValue({ id: 'abc', archived: false });
@@ -81,6 +74,24 @@ describe('archiving (S1.9)', () => {
     await itineraryRepository.unarchiveTrip('abc');
 
     expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/unarchive', undefined);
+  });
+});
+
+describe('publishing (S4.1)', () => {
+  it('publishes with the chosen audience — public is the default the screen offers', async () => {
+    apiClient.post.mockResolvedValue({ id: 'abc', status: 'public' });
+
+    await itineraryRepository.publishTrip('abc', 'public');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/publish', { audience: 'public' });
+  });
+
+  it('unpublishes symmetrically, on the same itinerary id', async () => {
+    apiClient.post.mockResolvedValue({ id: 'abc', status: 'draft' });
+
+    await itineraryRepository.unpublishTrip('abc');
+
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/unpublish', undefined);
   });
 });
 

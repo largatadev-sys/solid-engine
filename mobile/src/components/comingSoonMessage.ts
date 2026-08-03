@@ -7,6 +7,12 @@ export const COMING_SOON_SURFACES = {
   network: 'From your network',
   activityHistory: 'Activity history',
   fork: 'Forking an itinerary',
+  diary: 'Diary entries',
+  comments: 'Comments',
+  reviews: 'Reviews',
+  rating: 'Ratings',
+  follow: 'Following a creator',
+  booking: 'Booking options',
 } as const;
 
 export type ComingSoonSurface = keyof typeof COMING_SOON_SURFACES;

@@ -177,20 +177,14 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary editFields(
-            Membership member,
-            String title,
-            List<String> destinations,
-            String description,
-            LocalDate startDate,
-            LocalDate endDate) {
+    public Itinerary editFields(Membership member, ItineraryFields fields) {
         editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
         Itinerary itinerary =
                 itineraries
                         .findById(member.itineraryId())
                         .orElseThrow(() -> new IllegalStateException(
                                 "The guard authorized a membership for an itinerary that does not exist"));
-        itinerary.editFields(title, destinations, description, startDate, endDate, member.travelerId(), Instant.now());
+        itinerary.editFields(fields, member.travelerId(), Instant.now());
         itineraries.save(itinerary);
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(itinerary.id()));
         log.info("Itinerary edited: id={} editor={}", itinerary.id(), member.travelerId());
@@ -221,6 +215,58 @@ public class ItineraryService {
         itinerary.complete(Instant.now());
         workspaces.markCompleted(itinerary.id());
         return record(itinerary, owner, "itinerary_completed");
+    }
+
+
+    @Transactional
+    public Itinerary reopen(Membership owner) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.reopen();
+        workspaces.markActive(itinerary.id());
+        return record(itinerary, owner, "itinerary_reopened");
+    }
+
+
+    @Transactional
+    public Itinerary publish(Membership owner, Visibility audience) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.publishTo(audience);
+        return recordStatus(itinerary, owner, "itinerary_published");
+    }
+
+
+    @Transactional
+    public Itinerary showTo(Membership owner, Visibility audience) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.showTo(audience);
+        return recordStatus(itinerary, owner, "itinerary_audience_changed");
+    }
+
+
+    @Transactional
+    public Itinerary unpublish(Membership owner) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.unpublish();
+        return recordStatus(itinerary, owner, "itinerary_unpublished");
+    }
+
+
+    private Itinerary recordStatus(Itinerary itinerary, Membership owner, String eventName) {
+        itineraries.save(itinerary);
+        log.info(
+                "Itinerary publication: id={} published={} visibility={} owner={}",
+                itinerary.id(),
+                itinerary.isPublished(),
+                itinerary.visibility().wireName(),
+                owner.travelerId());
+        AfterCommit.run(
+                () ->
+                        analytics.emit(
+                                AnalyticsEvent.named(eventName)
+                                        .with("itineraryId", itinerary.id())
+                                        .with("travelerId", owner.travelerId())
+                                        .build()));
+        return itinerary;
     }
 
 
@@ -255,7 +301,8 @@ public class ItineraryService {
 
 
     @Transactional(readOnly = true)
-    public Page<Itinerary> listMine(UUID travelerId, String cursor, Integer requestedLimit, boolean archived) {
+    public Page<Itinerary> listMine(
+            UUID travelerId, String cursor, Integer requestedLimit, boolean archived, TripCategory category) {
         int limit = clamp(requestedLimit);
         UUID decodedCursor = cursor == null ? null : Cursor.decode(cursor);
 
@@ -263,11 +310,12 @@ public class ItineraryService {
         if (itineraryIds.isEmpty()) {
             return Page.exhausted(List.of());
         }
+        ItineraryState state = category == null ? null : category.state();
         Limit probe = Limit.of(limit + 1);
         List<Itinerary> found =
                 decodedCursor == null
-                        ? itineraries.findFirstPage(itineraryIds, probe)
-                        : itineraries.findPageAfter(itineraryIds, decodedCursor, probe);
+                        ? itineraries.findFirstPage(itineraryIds, state, probe)
+                        : itineraries.findPageAfter(itineraryIds, decodedCursor, state, probe);
 
         if (found.size() <= limit) {
             return Page.exhausted(found);

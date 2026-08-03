@@ -20,6 +20,9 @@ import type {
   DayResponse,
   ItineraryResponse,
   Page,
+  PublishAudience,
+  PublishedItineraryResponse,
+  TripCategory,
   UpdateItineraryRequest,
 } from '../types/api';
 
@@ -30,17 +33,28 @@ export const itineraryKeys = {
   all: ['itineraries'] as const,
 
   lists: () => [...itineraryKeys.all, 'list'] as const,
-  list: (archived = false) => [...itineraryKeys.lists(), { archived }] as const,
+  list: (archived = false, category?: TripCategory) =>
+    [...itineraryKeys.lists(), { archived, category: category ?? null }] as const,
   one: (id: string) => [...itineraryKeys.all, 'one', id] as const,
+
+  published: (id: string) => [...itineraryKeys.all, 'published', id] as const,
+
+  preview: (id: string) => [...itineraryKeys.all, 'preview', id] as const,
 };
 
 
-export const myItinerariesOptions = infiniteQueryOptions({
-  queryKey: itineraryKeys.list(false),
-  queryFn: ({ pageParam }: { pageParam: string | undefined }) => itineraryRepository.fetchMine(pageParam),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
-});
+export function myItinerariesOptionsFor(category?: TripCategory) {
+  return infiniteQueryOptions({
+    queryKey: itineraryKeys.list(false, category),
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+      itineraryRepository.fetchMine(pageParam, false, category),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
+  });
+}
+
+
+export const myItinerariesOptions = myItinerariesOptionsFor(undefined);
 
 
 export const archivedItinerariesOptions = infiniteQueryOptions({
@@ -80,9 +94,11 @@ export async function onPlanChanged(client: QueryClient, itineraryId: string): P
 }
 
 
-export function useMyItineraries(): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
+export function useMyItineraries(
+  category?: TripCategory,
+): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
   const { kind } = useAuth();
-  return useInfiniteQuery({ ...myItinerariesOptions, enabled: kind === 'signedIn' });
+  return useInfiniteQuery({ ...myItinerariesOptionsFor(category), enabled: kind === 'signedIn' });
 }
 
 export function useItinerary(id: string): UseQueryResult<ItineraryResponse> {
@@ -116,19 +132,87 @@ export function useUpdateItinerary(
 }
 
 
-export function useArchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: () => itineraryRepository.archiveTrip(id),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
-  });
-}
 
 export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => itineraryRepository.unarchiveTrip(id),
     onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
+export function usePublishedItinerary(id: string): UseQueryResult<PublishedItineraryResponse> {
+  const { kind } = useAuth();
+  return useQuery({
+    queryKey: itineraryKeys.published(id),
+    queryFn: () => itineraryRepository.fetchPublished(id),
+    enabled: kind === 'signedIn',
+    retry: false,
+  });
+}
+
+
+export function useItineraryPreview(id: string): UseQueryResult<PublishedItineraryResponse> {
+  const { kind } = useAuth();
+  return useQuery({
+    queryKey: itineraryKeys.preview(id),
+    queryFn: () => itineraryRepository.fetchPreview(id),
+    enabled: kind === 'signedIn',
+    retry: false,
+  });
+}
+
+
+export function usePublishTrip(
+  id: string,
+): UseMutationResult<ItineraryResponse, Error, PublishAudience> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (audience: PublishAudience) => itineraryRepository.publishTrip(id, audience),
+    onSuccess: async (updated) => {
+      await onItineraryUpdated(client, updated);
+      await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
+    },
+  });
+}
+
+export function useUnpublishTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.unpublishTrip(id),
+    onSuccess: async (updated) => {
+      await onItineraryUpdated(client, updated);
+      await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
+    },
+  });
+}
+
+export function useShowTripTo(
+  id: string,
+): UseMutationResult<ItineraryResponse, Error, PublishAudience> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (audience: PublishAudience) => itineraryRepository.showTripTo(id, audience),
+    onSuccess: async (updated) => {
+      await onItineraryUpdated(client, updated);
+      await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
+    },
+  });
+}
+
+export type LifecycleAct = 'start' | 'complete' | 'reopen';
+
+export function useTripLifecycle(id: string): UseMutationResult<ItineraryResponse, Error, LifecycleAct> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (act: LifecycleAct) => {
+      if (act === 'start') return itineraryRepository.startTrip(id);
+      if (act === 'complete') return itineraryRepository.completeTrip(id);
+      return itineraryRepository.reopenTrip(id);
+    },
+    onSuccess: async (updated) => {
+      await onItineraryUpdated(client, updated);
+    },
   });
 }
 

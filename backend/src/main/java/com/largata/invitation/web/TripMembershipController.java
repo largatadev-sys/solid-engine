@@ -3,6 +3,7 @@ package com.largata.invitation.web;
 import com.largata.common.api.Page;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.AudienceFence;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.invitation.InvitationService;
@@ -27,12 +28,17 @@ class TripMembershipController {
     private final InvitationService invitations;
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
+    private final AudienceFence audience;
 
     TripMembershipController(
-            InvitationService invitations, MembershipService memberships, AuthorizationGuard guard) {
+            InvitationService invitations,
+            MembershipService memberships,
+            AuthorizationGuard guard,
+            AudienceFence audience) {
         this.invitations = invitations;
         this.memberships = memberships;
         this.guard = guard;
+        this.audience = audience;
     }
 
     @PostMapping("/invitations")
@@ -58,6 +64,7 @@ class TripMembershipController {
     @GetMapping("/invitations")
     Page<InvitationResponse> pendingInvitations(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
+        audience.requireInAudience(membership);
         return Page.exhausted(invitations.pendingInvitations(membership).stream().map(InvitationResponse::of).toList());
     }
 
@@ -65,6 +72,7 @@ class TripMembershipController {
     @GetMapping("/members")
     Page<MemberResponse> members(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
+        audience.requireInAudience(membership);
         UUID offeredTo = memberships.pendingOfferTargetIn(membership).orElse(null);
         return Page.exhausted(
                 invitations.members(membership).stream()

@@ -73,7 +73,7 @@ class ArchivedTripListIT extends PostgresTestBase {
 
 
     @Test
-    void aMemberSeesTheArchivedTripInTheirArchivedViewNotJustTheOwner() {
+    void aMemberLosesTheArchivedTripFromBothViewsWhileTheOwnerKeepsIt() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
@@ -82,8 +82,15 @@ class ArchivedTripListIT extends PostgresTestBase {
 
         archive(owner, tripId).expectStatus().isOk();
 
-        assertThat(listIds(member, false)).as("it leaves their default list too").isEmpty();
-        assertThat(listIds(member, true)).as("but they can still find it").containsExactly(tripId);
+        assertThat(listIds(member, false)).as("it leaves their default list").isEmpty();
+        assertThat(listIds(member, true))
+                .as("and their archived view too — archived is owner-only sight, ADR-017's ladder")
+                .isEmpty();
+        assertThat(listIds(owner, true)).as("the owner is unaffected").containsExactly(tripId);
+
+        unarchive(owner, tripId).expectStatus().isOk();
+
+        assertThat(listIds(member, false)).as("unarchive restores their sight in full").containsExactly(tripId);
     }
 
 

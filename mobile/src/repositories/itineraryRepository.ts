@@ -10,17 +10,25 @@ import type {
   LeaseSubject,
   MoveActivityRequest,
   Page,
+  PublishedItineraryResponse,
+  PublishAudience,
   ReorderActivitiesRequest,
+  TripCategory,
   UpdateItineraryRequest,
 } from '../types/api';
 
 
 export const itineraryRepository = {
 
-  async fetchMine(cursor?: string, archived = false): Promise<Page<ItineraryResponse>> {
+  async fetchMine(
+    cursor?: string,
+    archived = false,
+    category?: TripCategory,
+  ): Promise<Page<ItineraryResponse>> {
     const params = [
       ...(cursor !== undefined ? [`cursor=${encodeURIComponent(cursor)}`] : []),
       ...(archived ? ['archived=true'] : []),
+      ...(category !== undefined ? [`category=${encodeURIComponent(category)}`] : []),
     ];
     return apiClient.get<Page<ItineraryResponse>>(
       `/v1/itineraries${params.length > 0 ? `?${params.join('&')}` : ''}`,
@@ -41,12 +49,44 @@ export const itineraryRepository = {
   },
 
 
-  async archiveTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/archive`, undefined);
-  },
 
   async unarchiveTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unarchive`, undefined);
+  },
+
+
+  async fetchPublished(id: string): Promise<PublishedItineraryResponse> {
+    return apiClient.get<PublishedItineraryResponse>(`/v1/published-itineraries/${id}`);
+  },
+
+
+  async fetchPreview(id: string): Promise<PublishedItineraryResponse> {
+    return apiClient.get<PublishedItineraryResponse>(`/v1/itineraries/${id}/preview`);
+  },
+
+
+  async publishTrip(id: string, audience: PublishAudience): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/publish`, { audience });
+  },
+
+  async unpublishTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unpublish`, undefined);
+  },
+
+  async showTripTo(id: string, audience: PublishAudience): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/audience`, { audience });
+  },
+
+  async startTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/start`, undefined);
+  },
+
+  async completeTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/complete`, undefined);
+  },
+
+  async reopenTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/reopen`, undefined);
   },
 
 

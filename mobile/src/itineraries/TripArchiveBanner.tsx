@@ -1,13 +1,14 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { archiveTripWording, unarchiveTripWording } from '../components/confirmDestructiveMessage';
+import { unarchiveTripWording } from '../components/confirmDestructiveMessage';
 import { confirmWith } from '../components/confirmDestructive';
 import { useMe } from '../hooks/useMe';
 import { useMembers } from '../query/invitationQueries';
 import { memberControls } from '../members/memberControls';
-import { useArchiveTrip, useUnarchiveTrip } from '../query/itineraryQueries';
+import { useUnarchiveTrip } from '../query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../theme';
 import type { ItineraryResponse } from '../types/api';
 import { archiveControl } from './archiveControls';
+import { isPublished } from './publishControls';
 
 
 function useIsOwner(itineraryId: string): boolean {
@@ -45,7 +46,9 @@ export function TripArchiveBanner({ itinerary }: { itinerary: ItineraryResponse 
             style={styles.action}
             accessibilityRole="button"
             disabled={unarchive.isPending}
-            onPress={() => confirmWith(unarchiveTripWording(), () => unarchive.mutate())}>
+            onPress={() =>
+              confirmWith(unarchiveTripWording(isPublished(itinerary)), () => unarchive.mutate())
+            }>
             <Text style={styles.actionText}>Unarchive</Text>
           </Pressable>
         ))}
@@ -53,30 +56,6 @@ export function TripArchiveBanner({ itinerary }: { itinerary: ItineraryResponse 
   );
 }
 
-
-export function ArchiveTripLink({ itinerary }: { itinerary: ItineraryResponse }) {
-  const isOwner = useIsOwner(itinerary.id);
-  const archive = useArchiveTrip(itinerary.id);
-  const control = archiveControl(itinerary, isOwner);
-
-  if (itinerary.archived || control === null) return null;
-
-  return (
-    <View style={styles.quiet}>
-      {archive.isPending ? (
-        <ActivityIndicator color={colors.textSecondary} />
-      ) : (
-        <Pressable
-          accessibilityRole="button"
-          disabled={archive.isPending}
-          onPress={() => confirmWith(archiveTripWording(), () => archive.mutate())}>
-          <Text style={styles.quietText}>Archive trip</Text>
-        </Pressable>
-      )}
-      {archive.isError && <Text style={styles.error}>{archive.error.message}</Text>}
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   banner: {
@@ -91,8 +70,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   archived: { borderColor: colors.accent },
-  quiet: { alignItems: 'flex-start', gap: spacing.xs },
-  quietText: { ...typography.caption, color: colors.textSecondary, textDecorationLine: 'underline' },
   text: { flexShrink: 1, gap: spacing.xs },
   title: { ...typography.bodyStrong, color: colors.textPrimary },
   body: { ...typography.caption, color: colors.textSecondary },

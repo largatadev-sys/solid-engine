@@ -113,6 +113,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen name="itineraries" options={{ href: null }} />
       <Tabs.Screen name="members" options={{ href: null }} />
+      <Tabs.Screen name="published" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -123,7 +123,11 @@ export default function MembersScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <ScreenHeader title="Members" back />
+      <ScreenHeader
+        title="Members"
+        back
+        backTo={{ pathname: '/itineraries/[id]', params: { id: itineraryId } }}
+      />
 
       {members.isPending && <ActivityIndicator color={colors.accent} style={styles.centered} />}
       {members.isError && <Text style={styles.error}>Could not load members.</Text>}

@@ -91,7 +91,11 @@ export default function ActivityFormScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <ScreenHeader title={isEdit ? 'Edit Activity' : 'Add Activity'} back />
+      <ScreenHeader
+        title={isEdit ? 'Edit Activity' : 'Add Activity'}
+        back
+        backTo={{ pathname: '/itineraries/[id]/days/[dayId]', params: { id, dayId } }}
+      />
 
       <Field label="Activity name" value={title} onChangeText={setTitle} placeholder="Airport Transfer" />
 
@@ -114,7 +118,14 @@ export default function ActivityFormScreen() {
 
       <Field label="Location" value={place} onChangeText={setPlace} placeholder="Describe a place or landmark" />
       <Field label="Description" value={description} onChangeText={setDescription} placeholder="What happens here?" multiline />
-      <Field label="Notes & tips (private)" value={notes} onChangeText={setNotes} placeholder="Anything for your group" multiline />
+      <Field
+        label="Notes & Creator Tips"
+        hint="Shown on your published page — write it for the traveler following your plan."
+        value={notes}
+        onChangeText={setNotes}
+        placeholder="Book the earliest slot at 8:00 AM to avoid the large tour groups!"
+        multiline
+      />
 
       <GreyedMediaTile surface="activityPhoto" />
 
@@ -188,12 +199,14 @@ function Field(props: {
   value: string;
   onChangeText: (value: string) => void;
   placeholder: string;
+  hint?: string;
   multiline?: boolean;
   keyboardType?: 'default' | 'decimal-pad' | 'url';
 }) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{props.label}</Text>
+      {props.hint !== undefined && <Text style={styles.hint}>{props.hint}</Text>}
       <TextInput
         style={[styles.input, props.multiline === true && styles.inputMultiline]}
         value={props.value}
@@ -216,6 +229,7 @@ const styles = StyleSheet.create({
   rowItemNarrow: { width: 88 },
   field: { gap: spacing.xs },
   label: { ...typography.caption, color: colors.textSecondary },
+  hint: { ...typography.caption, color: colors.accent },
   input: {
     ...typography.body,
     color: colors.textPrimary,

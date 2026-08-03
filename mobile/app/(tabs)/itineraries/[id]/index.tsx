@@ -1,29 +1,58 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ApiError } from '../../../../src/api/ApiError';
 import { comingSoon } from '../../../../src/components/comingSoon';
 import { Icon } from '../../../../src/components/Icon';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { confirmWith } from '../../../../src/components/confirmDestructive';
-import { leaveTripWording } from '../../../../src/components/confirmDestructiveMessage';
-import { missingItineraryMessage } from '../../../../src/components/missingItineraryMessage';
+import { notify } from '../../../../src/components/notify';
+import {
+  leaveTripWording,
+  unpublishTripWording,
+} from '../../../../src/components/confirmDestructiveMessage';
+import { itineraryLoadMessage, ScreenMessage } from '../../../../src/components/ScreenMessage';
 import { useMe } from '../../../../src/hooks/useMe';
 import { dayHeading } from '../../../../src/itineraries/dayHeading';
 import { AvatarStack } from '../../../../src/itineraries/AvatarStack';
-import { canEditPlan } from '../../../../src/itineraries/archiveControls';
 import { formatDates } from '../../../../src/itineraries/formatDates';
-import { ArchiveTripLink, TripArchiveBanner } from '../../../../src/itineraries/TripArchiveBanner';
+import {
+  audienceBlurb,
+  audienceLabel,
+  audienceOf,
+  canPublish,
+  isEditable,
+  PUBLISH_NEEDS_COMPLETE_TITLE,
+  publishNeedsCompleteBody,
+  lifecycleBlurb,
+  lifecycleLabel,
+  nextLifecycleAct,
+  otherAudience,
+  publishControl,
+  workspaceEyebrow,
+} from '../../../../src/itineraries/publishControls';
+import { TripArchiveBanner } from '../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceChip } from '../../../../src/itineraries/WorkspaceChip';
 import { memberControls } from '../../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../../src/members/OwnershipOfferBanner';
 import { useEndMembership, useMembers } from '../../../../src/query/invitationQueries';
-import { useItinerary } from '../../../../src/query/itineraryQueries';
+import {
+  useItinerary,
+  useShowTripTo,
+  useTripLifecycle,
+  useUnpublishTrip,
+} from '../../../../src/query/itineraryQueries';
+import type { LifecycleAct } from '../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../src/theme';
-import type { DayResponse, ItineraryResponse } from '../../../../src/types/api';
+import type {
+  DayResponse,
+  ItineraryResponse,
+  PublishAudience,
+} from '../../../../src/types/api';
 
 
 const EYEBROW_ICON_SIZE = 20;
+
+const EDIT_ICON_SIZE = 22;
 
 
 type WorkspaceTab = 'itinerary' | 'details';
@@ -41,6 +70,9 @@ export default function TripWorkspaceScreen() {
   const { isOwner, canInvite, canLeave } = memberControls(roster, myId, data?.archived ?? false);
 
   const endMembership = useEndMembership(id);
+  const unpublish = useUnpublishTrip(id);
+  const showTo = useShowTripTo(id);
+  const lifecycle = useTripLifecycle(id);
   const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'itinerary');
 
   if (isPending) {
@@ -52,15 +84,7 @@ export default function TripWorkspaceScreen() {
   }
 
   if (isError) {
-    const missing = error instanceof ApiError && error.code === 'ITINERARY_NOT_FOUND';
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorTitle}>
-          {missing ? missingItineraryMessage.title : 'Could not load this trip'}
-        </Text>
-        <Text style={styles.caption}>{missing ? missingItineraryMessage.body : error.message}</Text>
-      </View>
-    );
+    return <ScreenMessage {...itineraryLoadMessage(error, 'Could not load this trip')} />;
   }
 
   const leaveTrip = () => {
@@ -69,6 +93,10 @@ export default function TripWorkspaceScreen() {
       endMembership.mutate({ travelerId: myId, leaving: true }, { onSuccess: () => router.replace('/') });
     });
   };
+
+  const control = publishControl(data, isOwner);
+  const eyebrow = workspaceEyebrow(data);
+  const audience = audienceOf(data);
 
   return (
     <View style={styles.screen}>
@@ -79,11 +107,25 @@ export default function TripWorkspaceScreen() {
           size="display"
           back
           eyebrow={
-            data.visibility === 'private' ? (
-              <View style={styles.eyebrowRow}>
-                <Icon name="users" size={EYEBROW_ICON_SIZE} color={colors.accent} />
-                <Text style={styles.eyebrow}>Private Workspace</Text>
-              </View>
+            <View style={styles.eyebrowRow}>
+              <Icon name={eyebrow.icon} size={EYEBROW_ICON_SIZE} color={colors.accent} />
+              <Text style={styles.eyebrow}>{eyebrow.label}</Text>
+            </View>
+          }
+          action={
+            isEditable(data) ? (
+              <Link
+                href={{ pathname: '/itineraries/[id]/days', params: { id, day: '1' } }}
+                asChild
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit itinerary"
+                  hitSlop={spacing.sm}
+                >
+                  <Icon name="pencil" size={EDIT_ICON_SIZE} color={colors.textPrimary} />
+                </Pressable>
+              </Link>
             ) : undefined
           }
         />
@@ -130,16 +172,53 @@ export default function TripWorkspaceScreen() {
             canLeave={canLeave}
             leaving={endMembership.isPending}
             onLeave={leaveTrip}
+            canUnpublish={control === 'unpublish'}
+            unpublishing={unpublish.isPending}
+            unpublishError={unpublish.isError ? unpublish.error.message : undefined}
+            onUnpublish={() => confirmWith(unpublishTripWording(), () => unpublish.mutate())}
+            audience={audience}
+            changingAudience={showTo.isPending}
+            onChangeAudience={() => showTo.mutate(otherAudience(audience))}
+            lifecycleBusy={lifecycle.isPending}
+            lifecycleError={lifecycle.isError ? lifecycle.error.message : undefined}
+            onLifecycle={(act) => lifecycle.mutate(act)}
           />
         )}
       </ScrollView>
 
-      {canInvite && (
-        <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
-          <Pressable style={styles.cta} accessibilityRole="button">
-            <Text style={styles.ctaText}>Invite Travelers</Text>
-          </Pressable>
-        </Link>
+      {(canInvite || control === 'publish') && (
+        <View style={styles.actionBar}>
+          {control === 'publish' &&
+            (canPublish(data) ? (
+              <Link href={{ pathname: '/itineraries/[id]/preview', params: { id } }} asChild>
+                <Pressable style={styles.cta} accessibilityRole="button">
+                  <Text style={styles.ctaText}>Publish Itinerary</Text>
+                </Pressable>
+              </Link>
+            ) : (
+              <Pressable
+                style={styles.cta}
+                accessibilityRole="button"
+                onPress={() =>
+                  notify(PUBLISH_NEEDS_COMPLETE_TITLE, publishNeedsCompleteBody(data.state))
+                }
+              >
+                <Text style={styles.ctaText}>Publish Itinerary</Text>
+              </Pressable>
+            ))}
+          {canInvite && (
+            <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
+              <Pressable
+                style={control === 'publish' ? styles.secondaryCta : styles.cta}
+                accessibilityRole="button"
+              >
+                <Text style={control === 'publish' ? styles.secondaryCtaText : styles.ctaText}>
+                  Invite Travelers
+                </Text>
+              </Pressable>
+            </Link>
+          )}
+        </View>
       )}
     </View>
   );
@@ -190,14 +269,25 @@ function DetailsTab(props: {
   canLeave: boolean;
   leaving: boolean;
   onLeave: () => void;
+  canUnpublish: boolean;
+  unpublishing: boolean;
+  unpublishError: string | undefined;
+  onUnpublish: () => void;
+  audience: PublishAudience;
+  changingAudience: boolean;
+  onChangeAudience: () => void;
+  lifecycleBusy: boolean;
+  lifecycleError: string | undefined;
+  onLifecycle: (act: LifecycleAct) => void;
 }) {
   const { itinerary } = props;
+  const pinned = itinerary.published;
 
   return (
     <View style={styles.tabBody}>
       <View style={styles.detailsHeader}>
         <Text style={styles.sectionLabel}>Trip details</Text>
-        {canEditPlan(itinerary) && (
+        {isEditable(itinerary) && (
           <Link href={{ pathname: '/itineraries/[id]/edit', params: { id: itinerary.id } }} asChild>
             <Pressable accessibilityRole="button" hitSlop={spacing.sm}>
               <Text style={styles.editLink}>Edit</Text>
@@ -224,15 +314,82 @@ function DetailsTab(props: {
         <Text style={styles.value}>{formatDates(itinerary)}</Text>
       </Field>
 
-      <Link href={{ pathname: '/members/[itineraryId]', params: { itineraryId: itinerary.id } }} asChild>
-        <Pressable style={styles.secondaryAction} accessibilityRole="button">
-          <Text style={styles.secondaryActionText}>
-            {props.isOwner ? 'Members & ownership transfer' : 'Members'}
+      {props.isOwner && (
+        <Field label="Where this trip is">
+          <Text style={styles.value}>{lifecycleLabel(itinerary.state)}</Text>
+          <Text style={styles.caption}>
+            {pinned
+              ? 'A published trip is fixed. Unpublish it to move it along again.'
+              : lifecycleBlurb(itinerary.state)}
           </Text>
-        </Pressable>
-      </Link>
+          {props.lifecycleBusy ? (
+            <ActivityIndicator color={colors.accent} />
+          ) : (
+            !pinned && (
+              <View style={styles.lifecycleRow}>
+                {nextLifecycleAct(itinerary.state) && (
+                  <Pressable
+                    style={styles.secondaryAction}
+                    accessibilityRole="button"
+                    onPress={() => props.onLifecycle(nextLifecycleAct(itinerary.state)!.act)}
+                  >
+                    <Text style={styles.secondaryActionText}>
+                      {nextLifecycleAct(itinerary.state)!.label}
+                    </Text>
+                  </Pressable>
+                )}
+                {itinerary.state !== 'draft' && (
+                  <Pressable
+                    style={styles.secondaryAction}
+                    accessibilityRole="button"
+                    onPress={() => props.onLifecycle('reopen')}
+                  >
+                    <Text style={styles.secondaryActionText}>Step back</Text>
+                  </Pressable>
+                )}
+              </View>
+            )
+          )}
+          {props.lifecycleError !== undefined && (
+            <Text style={styles.errorCaption}>{props.lifecycleError}</Text>
+          )}
+        </Field>
+      )}
 
-      <ArchiveTripLink itinerary={itinerary} />
+      {props.isOwner && (
+        <Field label="Who can read this">
+          <Text style={styles.value}>{audienceLabel(props.audience)}</Text>
+          <Text style={styles.caption}>{audienceBlurb(props.audience)}</Text>
+          {props.changingAudience ? (
+            <ActivityIndicator color={colors.accent} />
+          ) : (
+            <Pressable
+              style={styles.secondaryAction}
+              accessibilityRole="button"
+              onPress={props.onChangeAudience}
+            >
+              <Text style={styles.secondaryActionText}>
+                Make it {audienceLabel(otherAudience(props.audience)).toLowerCase()}
+              </Text>
+            </Pressable>
+          )}
+        </Field>
+      )}
+
+      {props.canUnpublish && (
+        <View style={styles.quiet}>
+          {props.unpublishing ? (
+            <ActivityIndicator color={colors.textSecondary} />
+          ) : (
+            <Pressable accessibilityRole="button" onPress={props.onUnpublish}>
+              <Text style={styles.quietText}>Unpublish this trip</Text>
+            </Pressable>
+          )}
+          {props.unpublishError !== undefined && (
+            <Text style={styles.errorCaption}>{props.unpublishError}</Text>
+          )}
+        </View>
+      )}
 
       {props.canLeave && (
         <Pressable
@@ -335,6 +492,7 @@ const styles = StyleSheet.create({
   field: { gap: spacing.xs },
   sectionLabel: { ...typography.caption, color: colors.textSecondary },
   value: { ...typography.body, color: colors.textPrimary },
+  lifecycleRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   secondaryAction: {
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.md,
@@ -347,15 +505,28 @@ const styles = StyleSheet.create({
   secondaryActionText: { ...typography.bodyStrong, color: colors.accent },
   leaveButton: { paddingVertical: spacing.sm, alignItems: 'flex-start' },
   leaveButtonText: { ...typography.caption, color: colors.danger },
+  actionBar: { flexDirection: 'row', gap: spacing.sm, margin: spacing.md },
   cta: {
-    margin: spacing.md,
+    flex: 1,
     paddingVertical: spacing.md,
     borderRadius: radii.pill,
     alignItems: 'center',
     backgroundColor: colors.accent,
   },
   ctaText: { ...typography.bodyStrong, color: colors.textOnAccent },
+  secondaryCta: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.accentMuted,
+    backgroundColor: colors.surface,
+  },
+  secondaryCtaText: { ...typography.bodyStrong, color: colors.accent },
+  quiet: { alignItems: 'flex-start', gap: spacing.xs },
+  quietText: { ...typography.caption, color: colors.textSecondary, textDecorationLine: 'underline' },
+  errorCaption: { ...typography.caption, color: colors.danger },
   busy: { opacity: 0.7 },
-  errorTitle: { ...typography.heading, color: colors.danger },
   caption: { ...typography.caption, color: colors.textSecondary },
 });

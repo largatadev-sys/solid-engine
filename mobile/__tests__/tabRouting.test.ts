@@ -42,6 +42,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
         'itineraries',
         'members',
         'profile.tsx',
+        'published',
         'search.tsx',
       ].sort(),
     );
@@ -115,9 +116,22 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(read(TRIPS, '_layout.tsx')).toContain('headerShown: false');
   });
 
-  it.each(tripScreens())('%s draws its own heading — with no header bar, a navigator title renders nowhere', (_name, source) => {
-    expect(source).toMatch(/<ScreenHeader/);
-  });
+  const FULL_BLEED = ['itineraries/[id]/published.tsx'];
+
+  it.each(tripScreens().filter(([name]) => !FULL_BLEED.includes(name)))(
+    '%s draws its own heading — with no header bar, a navigator title renders nowhere',
+    (_name, source) => {
+      expect(source).toMatch(/<ScreenHeader/);
+    },
+  );
+
+  it.each(tripScreens().filter(([name]) => FULL_BLEED.includes(name)))(
+    '%s is exempt because the mock draws no header bar — so it must take the inset itself',
+    (_name, source) => {
+      expect(source).toMatch(/useSafeAreaInsets/);
+      expect(source).toMatch(/paddingTop: insets\.top/);
+    },
+  );
 
   it.each(tripScreens())('%s sets no navigator title — a dead option that reads as a heading', (_name, source) => {
     expect(source).not.toMatch(/options=\{\{[^}]*title:/);
@@ -184,12 +198,19 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(read(TRIPS, 'new.tsx')).toContain("day: '1'");
   });
 
-  it('sends a LIVE trip row to the editor too, and an ARCHIVED one to the workspace', () => {
-    const live = tripRowDestination({ id: 'trip-1', archived: false });
-    const archived = tripRowDestination({ id: 'trip-1', archived: true });
+  it('routes on DISCOVERY: unpublished to the workspace, published to the overview (ADR-019)', () => {
+    const unpublished = tripRowDestination({ id: 'trip-1', archived: false, published: false });
+    const published = tripRowDestination({ id: 'trip-1', archived: false, published: true });
 
-    expect(live.pathname).toBe('/itineraries/[id]/days');
-    expect(archived.pathname).toBe('/itineraries/[id]');
+    expect(unpublished.pathname).toBe('/itineraries/[id]');
+    expect(published.pathname).toBe('/published/[id]');
+  });
+
+  it('lets ARCHIVED win over published — an archived trip has no public page to open', () => {
+    expect(
+      tripRowDestination({ id: 'trip-1', archived: true, published: true })
+        .pathname,
+    ).toBe('/itineraries/[id]');
   });
 
   it('the activity form picks a time rather than asking anyone to type one', () => {
@@ -221,25 +242,63 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(detail).toContain('attributionLine');
   });
 
-  it('carries the archive link on the Details tab, with the archived banner above the tabs', () => {
+  it('keeps the archived banner above the tabs — an archived trip explains itself first', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
-    const detailsTabAt = workspace.indexOf('function DetailsTab');
     const tabBarAt = workspace.indexOf('<View style={styles.tabBar}>');
 
     expect(workspace.indexOf('<TripArchiveBanner')).toBeLessThan(tabBarAt);
-    expect(workspace.indexOf('<ArchiveTripLink')).toBeGreaterThan(detailsTabAt);
   });
 
-  it('leaves the published eyebrow variant to S4.1 (decision 8)', () => {
+  it('offers no way to archive from the UI — the control was pulled (founder, 08/01)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(workspace).toContain("data.visibility === 'private'");
-    expect(workspace).not.toMatch(/visibility\.toUpperCase/);
+    expect(workspace).not.toContain('ArchiveTripLink');
+    expect(workspace).not.toContain('Archive trip');
+  });
+
+  it('reaches members through the roster row alone, not a second Details button (founder, 08/01)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+    const detailsTabAt = workspace.indexOf('function DetailsTab');
+
+    expect(workspace).not.toContain('ownership transfer');
+    expect(workspace.indexOf("pathname: '/members/[itineraryId]'")).toBeLessThan(detailsTabAt);
+  });
+
+  it('reads the three axes through helpers, never by comparing them inline (ADR-019)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(workspace).toContain('workspaceEyebrow(data)');
+    expect(workspace).not.toMatch(/data\.visibility === '/);
+    expect(workspace).not.toMatch(/data\.state === '/);
+  });
+
+  it('lets the publish CTA explain the complete gate rather than vanishing (ADR-019, AC 13)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(workspace).toContain('canPublish(data)');
+    expect(workspace).toContain('publishNeedsCompleteBody');
+  });
+
+  it('puts an Edit itinerary cogwheel on the workspace, pointing at the day editor (founder, 08/01)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+    const headerEnds = workspace.indexOf('<View style={styles.identityRow}>');
+
+    expect(workspace.slice(0, headerEnds)).toContain('accessibilityLabel="Edit itinerary"');
+    expect(workspace.slice(0, headerEnds)).toContain("pathname: '/itineraries/[id]/days'");
+    expect(workspace).toContain('isEditable(data) ? (');
+  });
+
+  it('puts publish on the workspace screen and unpublish quietly in the Details tab (S4.1 decision 11)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+    const detailsTabAt = workspace.indexOf('function DetailsTab');
+
+    expect(workspace.indexOf('Publish Itinerary')).toBeLessThan(detailsTabAt);
+    expect(workspace.indexOf('Unpublish this trip')).toBeGreaterThan(detailsTabAt);
   });
 });
 
 
-describe('every greyed affordance S4.9 ships is wired to the shared helper (register #2)', () => {
+describe('every greyed affordance is wired to the shared helper (register #2)', () => {
   const screens = [
     read(TABS, '_layout.tsx'),
     read(TRIPS, 'new.tsx'),
@@ -250,6 +309,7 @@ describe('every greyed affordance S4.9 ships is wired to the shared helper (regi
     read(TRIPS, '[id]', 'activity.tsx'),
     read(TRIPS, '[id]', 'invite.tsx'),
     read(MOBILE_ROOT, 'src', 'components', 'ComingSoonScreen.tsx'),
+    read(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
   ].join('\n');
 
   it.each(Object.keys(COMING_SOON_SURFACES))('%s has a call site', (surface) => {

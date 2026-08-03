@@ -67,6 +67,14 @@ public class Workspace {
     }
 
 
+    void markActive() {
+        if (state == WorkspaceState.ARCHIVED) {
+            return;
+        }
+        this.state = WorkspaceState.ACTIVE;
+    }
+
+
     void archive() {
         if (state == WorkspaceState.ARCHIVED) {
             throw new IllegalStateException("Workspace " + id + " is already archived");

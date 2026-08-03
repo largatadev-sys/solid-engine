@@ -59,6 +59,18 @@ export type VerificationResultResponse = {
 };
 
 
+export type ItineraryState = 'draft' | 'active' | 'completed';
+
+
+export type Visibility = 'public' | 'private';
+
+
+export type TripCategory = 'draft' | 'active' | 'complete';
+
+
+export type PublishAudience = Visibility;
+
+
 export type ItineraryResponse = {
   id: string;
   title: string;
@@ -66,10 +78,17 @@ export type ItineraryResponse = {
 
   description: string | null;
 
+  standouts: string[];
+
+  bestTimeOfYear: string | null;
+
+  coverImageUrl: string | null;
+
   startDate: string | null;
   endDate: string | null;
-  state: string;
-  visibility: string;
+  state: ItineraryState;
+  published: boolean;
+  visibility: Visibility;
 
   archived: boolean;
 
@@ -131,6 +150,55 @@ export type ActivityResponse = {
 };
 
 
+export type EstimatedCostResponse = {
+  amount: string;
+
+  currency: string | null;
+};
+
+
+export type PublishedActivityResponse = {
+  id: string;
+  sortOrder: number;
+  title: string;
+  timeOfDay: string | null;
+  costAmount: string | null;
+  costCurrency: string | null;
+  place: string | null;
+  description: string | null;
+
+  notes: string | null;
+  externalUrl: string | null;
+};
+
+
+export type PublishedDayResponse = {
+  id: string;
+  ordinal: number;
+  title: string | null;
+  activities: PublishedActivityResponse[];
+};
+
+
+export type PublishedItineraryResponse = {
+  id: string;
+  title: string;
+  destinations: string[];
+  description: string | null;
+
+  standouts: string[];
+  bestTimeOfYear: string | null;
+  coverImageUrl: string | null;
+
+  durationDays: number;
+
+  creator: TravelerCardResponse;
+
+  estimatedCost: EstimatedCostResponse | null;
+  days: PublishedDayResponse[];
+};
+
+
 export type CreateItineraryRequest = {
   title: string;
   destinations: string[];
@@ -145,6 +213,10 @@ export type UpdateItineraryRequest = {
   title: string;
   destinations: string[];
   description?: string;
+
+  standouts?: string[];
+
+  bestTimeOfYear?: string;
   startDate?: string;
   endDate?: string;
 };

@@ -66,6 +66,12 @@ public class WorkspaceService {
 
 
     @Transactional(propagation = Propagation.MANDATORY)
+    public void markActive(UUID itineraryId) {
+        workspaces.findByItineraryId(itineraryId).ifPresent(Workspace::markActive);
+    }
+
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public void archive(UUID itineraryId) {
         workspaceFor(itineraryId).archive();
         log.info("Workspace archived: itineraryId={}", itineraryId);
@@ -127,7 +133,7 @@ public class WorkspaceService {
     @Transactional(readOnly = true)
     public List<UUID> itineraryIdsFor(UUID travelerId, boolean archived) {
         return archived
-                ? memberships.findItineraryIdsIn(travelerId, WorkspaceState.ARCHIVED)
+                ? memberships.findOwnedItineraryIdsIn(travelerId, WorkspaceState.ARCHIVED)
                 : memberships.findItineraryIdsNotIn(travelerId, WorkspaceState.ARCHIVED);
     }
 
