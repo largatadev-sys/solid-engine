@@ -13,17 +13,32 @@ import { itineraryLoadMessage, ScreenMessage } from '../../../../src/components/
 import { useMe } from '../../../../src/hooks/useMe';
 import { dayHeading } from '../../../../src/itineraries/dayHeading';
 import { AvatarStack } from '../../../../src/itineraries/AvatarStack';
-import { canEditPlan } from '../../../../src/itineraries/archiveControls';
 import { formatDates } from '../../../../src/itineraries/formatDates';
-import { publishControl, workspaceEyebrow } from '../../../../src/itineraries/publishControls';
+import {
+  audienceBlurb,
+  audienceLabel,
+  audienceOf,
+  isEditable,
+  otherAudience,
+  publishControl,
+  workspaceEyebrow,
+} from '../../../../src/itineraries/publishControls';
 import { TripArchiveBanner } from '../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceChip } from '../../../../src/itineraries/WorkspaceChip';
 import { memberControls } from '../../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../../src/members/OwnershipOfferBanner';
 import { useEndMembership, useMembers } from '../../../../src/query/invitationQueries';
-import { useItinerary, useUnpublishTrip } from '../../../../src/query/itineraryQueries';
+import {
+  useItinerary,
+  usePublishTrip,
+  useUnpublishTrip,
+} from '../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../src/theme';
-import type { DayResponse, ItineraryResponse } from '../../../../src/types/api';
+import type {
+  DayResponse,
+  ItineraryResponse,
+  PublishAudience,
+} from '../../../../src/types/api';
 
 
 const EYEBROW_ICON_SIZE = 20;
@@ -47,6 +62,7 @@ export default function TripWorkspaceScreen() {
 
   const endMembership = useEndMembership(id);
   const unpublish = useUnpublishTrip(id);
+  const publish = usePublishTrip(id);
   const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'itinerary');
 
   if (isPending) {
@@ -69,7 +85,8 @@ export default function TripWorkspaceScreen() {
   };
 
   const control = publishControl(data, isOwner);
-  const eyebrow = workspaceEyebrow(data.visibility);
+  const eyebrow = workspaceEyebrow(data.status);
+  const audience = audienceOf(data);
 
   return (
     <View style={styles.screen}>
@@ -86,7 +103,7 @@ export default function TripWorkspaceScreen() {
             </View>
           }
           action={
-            canEditPlan(data) ? (
+            isEditable(data) ? (
               <Link
                 href={{ pathname: '/itineraries/[id]/days', params: { id, day: '1' } }}
                 asChild
@@ -149,6 +166,9 @@ export default function TripWorkspaceScreen() {
             unpublishing={unpublish.isPending}
             unpublishError={unpublish.isError ? unpublish.error.message : undefined}
             onUnpublish={() => confirmWith(unpublishTripWording(), () => unpublish.mutate())}
+            audience={audience}
+            changingAudience={publish.isPending}
+            onChangeAudience={() => audience !== null && publish.mutate(otherAudience(audience))}
           />
         )}
       </ScrollView>
@@ -229,6 +249,9 @@ function DetailsTab(props: {
   unpublishing: boolean;
   unpublishError: string | undefined;
   onUnpublish: () => void;
+  audience: PublishAudience | null;
+  changingAudience: boolean;
+  onChangeAudience: () => void;
 }) {
   const { itinerary } = props;
 
@@ -236,7 +259,7 @@ function DetailsTab(props: {
     <View style={styles.tabBody}>
       <View style={styles.detailsHeader}>
         <Text style={styles.sectionLabel}>Trip details</Text>
-        {canEditPlan(itinerary) && (
+        {isEditable(itinerary) && (
           <Link href={{ pathname: '/itineraries/[id]/edit', params: { id: itinerary.id } }} asChild>
             <Pressable accessibilityRole="button" hitSlop={spacing.sm}>
               <Text style={styles.editLink}>Edit</Text>
@@ -262,6 +285,26 @@ function DetailsTab(props: {
       <Field label="Dates">
         <Text style={styles.value}>{formatDates(itinerary)}</Text>
       </Field>
+
+      {props.audience !== null && props.canUnpublish && (
+        <Field label="Who can read this">
+          <Text style={styles.value}>{audienceLabel(props.audience)}</Text>
+          <Text style={styles.caption}>{audienceBlurb(props.audience)}</Text>
+          {props.changingAudience ? (
+            <ActivityIndicator color={colors.accent} />
+          ) : (
+            <Pressable
+              style={styles.secondaryAction}
+              accessibilityRole="button"
+              onPress={props.onChangeAudience}
+            >
+              <Text style={styles.secondaryActionText}>
+                Make it {audienceLabel(otherAudience(props.audience)).toLowerCase()}
+              </Text>
+            </Pressable>
+          )}
+        </Field>
+      )}
 
       {props.canUnpublish && (
         <View style={styles.quiet}>

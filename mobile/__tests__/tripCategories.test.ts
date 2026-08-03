@@ -1,38 +1,31 @@
 import {
+  categoryOf,
   DEFAULT_TRIP_CATEGORY,
-  categoriesOf,
   emptyCategoryMessage,
   TRIP_CATEGORIES,
   tripCategoryLabel,
 } from '../src/itineraries/tripCategories';
 
-describe('the Trips categories (founder ruling, 2026-08-01)', () => {
-  it('ships the three the founder named, in that order', () => {
-    expect(TRIP_CATEGORIES).toEqual(['draft', 'private', 'published']);
-    expect(TRIP_CATEGORIES.map(tripCategoryLabel)).toEqual(['Draft', 'Private', 'Published']);
+describe('the Trips categories (ADR-018)', () => {
+  it('is the publication status itself, so the three are mutually exclusive', () => {
+    expect(TRIP_CATEGORIES).toEqual(['draft', 'private', 'public']);
+    expect(TRIP_CATEGORIES.map(tripCategoryLabel)).toEqual(['Draft', 'Private', 'Public']);
   });
 
-  it('puts a new trip under BOTH draft and private — the overlap is the ruling, not a bug', () => {
-    expect(categoriesOf({ state: 'draft', visibility: 'private' })).toEqual(['draft', 'private']);
+  it('puts every trip in exactly one category — the earlier overlap is gone', () => {
+    expect(categoryOf({ status: 'draft' })).toBe('draft');
+    expect(categoryOf({ status: 'private' })).toBe('private');
+    expect(categoryOf({ status: 'public' })).toBe('public');
   });
 
-  it('keeps a published trip in draft while it has never been started', () => {
-    expect(categoriesOf({ state: 'draft', visibility: 'published' })).toEqual(['draft', 'published']);
+  it('opens on Public', () => {
+    expect(DEFAULT_TRIP_CATEGORY).toBe('public');
+    expect(TRIP_CATEGORIES).toContain(DEFAULT_TRIP_CATEGORY);
   });
 
-  it('drops a started trip out of draft without touching its visibility', () => {
-    expect(categoriesOf({ state: 'active', visibility: 'published' })).toEqual(['published']);
-    expect(categoriesOf({ state: 'completed', visibility: 'private' })).toEqual(['private']);
-  });
-
-  it('explains an empty category rather than repeating the same line three times', () => {
+  it('explains an empty category rather than repeating one line three times', () => {
     const messages = TRIP_CATEGORIES.map(emptyCategoryMessage);
 
     expect(new Set(messages).size).toBe(TRIP_CATEGORIES.length);
-  });
-
-  it('opens on Published — there is no All any more (founder, 08/01)', () => {
-    expect(DEFAULT_TRIP_CATEGORY).toBe('published');
-    expect(TRIP_CATEGORIES).toContain(DEFAULT_TRIP_CATEGORY);
   });
 });

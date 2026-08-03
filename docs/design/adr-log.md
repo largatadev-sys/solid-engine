@@ -25,7 +25,7 @@ _Generated: 31/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 | ADR-015 | Traveler handle (@username): unique, changeable label; the id stays the identifier | Accepted | 30/07/2026 |
 | ADR-016 | Brand palette & type: terracotta/navy/cream + Inter, adopted globally as token values | Accepted | 30/07/2026 |
 | ADR-017 | Publish: binary visibility flip, live rule-scrubbed projection, the audience ladder | Accepted *(decisions 1/2/5/12 superseded by ADR-018)* | 31/07/2026 |
-| ADR-018 | Publication status is one three-valued fact (draft/private/public); publishing freezes the plan | **Proposed — not built** | 01/08/2026 |
+| ADR-018 | Publication status is one three-valued fact (draft/private/public); publishing freezes the plan | Accepted | 01/08/2026 |
 
 ## Decisions
 
@@ -169,7 +169,7 @@ _Generated: 31/07/2026 · Sources: `04-architecture.md`, `05-api-conventions.md`
 - **Invalidating condition.** Trust abuse of live-updating published plans → freeze/versioning additively; the friend graph → `friends_only`; the web read-only surface → the same projection serves accountless reach.
 
 ### ADR-018 — Publication status is one three-valued fact, and publishing freezes the plan *(supersedes ADR-017's decisions 1, 2, 5 and 12)*
-- **Status.** Proposed · 01/08/2026 (founder, on sight of the shipped S4.1 build) · **not built** — recorded here because it reverses a ratified ADR and must not live only in a conversation.
+- **Status.** Accepted · 01/08/2026 (founder, on sight of the shipped S4.1 build; confirmed and clarified 03/08/2026) · **built** — supersedes ADR-017 decisions 1, 2, 5 and 12. ADR-008 waived on the record for the wire break, the third time in this story, on the standing ground that the installed clients are the founders. own.
 - **Context.** S4.1 shipped ADR-017's model — binary `private ⇄ published`, a live projection, post-publish edits flowing straight to the public page. Looking at the running app, the founder re-drew it: *"public and private are both published, public being the default. draft will be the status when you are still working on the itinerary… you cannot edit a published itinerary."*
 - **Decision.** One three-valued publication status replaces the binary visibility fact: **`draft`** (traveler + collaborators, **editable**) · **`private`** (published, traveler + collaborators, **frozen**) · **`public`** (published, every onboarded traveler, **frozen**, and the default on publish). Transitions: `draft --publish--> public|private`, `public ⇄ private` while published, and **`unpublish` returns the itinerary to `draft`**, which is the only way back to editing. The freeze covers **the plan only** — title, destinations, description, Standouts, best time, days, activities — while membership acts (invite, remove, ownership transfer, archive) keep working, mirroring the archive fence's existing "acts on the plan freeze, acts on the relationship do not".
 - **What it reverses.** ADR-017 decision 1 (*"post-publish plan edits flow to the public page; no versioning, no freeze"*) — publishing is now a freeze. Decision 2's vocabulary — **`private` changes meaning**, from *not published* to *published, restricted*, and `published` as a wire value is replaced by `public`. Decision 5 — unpublish no longer returns to a private-but-unpublished state; it returns to draft. Decision 12's ladder re-derives on three values plus archived.

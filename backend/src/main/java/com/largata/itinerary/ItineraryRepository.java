@@ -13,25 +13,21 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
 
     @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds "
-            + "AND (:state IS NULL OR i.state = :state) "
-            + "AND (:visibility IS NULL OR i.visibility = :visibility) "
+            + "AND (:status IS NULL OR i.status = :status) "
             + "ORDER BY i.id DESC")
     List<Itinerary> findFirstPage(
             @Param("itineraryIds") Collection<UUID> itineraryIds,
-            @Param("state") ItineraryState state,
-            @Param("visibility") Visibility visibility,
+            @Param("status") ItineraryStatus status,
             Limit limit);
 
 
     @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds AND i.id < :cursor "
-            + "AND (:state IS NULL OR i.state = :state) "
-            + "AND (:visibility IS NULL OR i.visibility = :visibility) "
+            + "AND (:status IS NULL OR i.status = :status) "
             + "ORDER BY i.id DESC")
     List<Itinerary> findPageAfter(
             @Param("itineraryIds") Collection<UUID> itineraryIds,
             @Param("cursor") UUID cursor,
-            @Param("state") ItineraryState state,
-            @Param("visibility") Visibility visibility,
+            @Param("status") ItineraryStatus status,
             Limit limit);
 
 }

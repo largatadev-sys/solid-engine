@@ -111,8 +111,8 @@ class PublishedProjectionIT extends PostgresTestBase {
                 .doesNotContain("startedAt", "completedAt", "\"state\"", "workspaceState", "archived")
                 .as("the roster, the owner's raw id, and per-field edit attribution")
                 .doesNotContain("lastEditedBy", "lastEditedAt", "ownerId", "lease", "members")
-                .as("the visibility fact itself has no reader on a page that only exists when published")
-                .doesNotContain("visibility", "createdAt");
+                .as("the status itself has no reader on a page that only exists when published")
+                .doesNotContain("status", "createdAt");
     }
 
 
@@ -149,6 +149,76 @@ class PublishedProjectionIT extends PostgresTestBase {
 
         publish(owner, tripId);
         publicView(consumer, tripId).expectStatus().isOk().expectBody().jsonPath("$.id").isEqualTo(tripId);
+    }
+
+
+    @Test
+    void aPrivatelyPublishedItineraryIsReadableByCollaboratorsAndNobodyElse() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        String member = admitMemberTo(tripId);
+        String stranger = freshTraveler();
+
+        publishTo(owner, tripId, "private");
+
+        publicView(owner, tripId).expectStatus().isOk();
+        publicView(member, tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.id")
+                .isEqualTo(tripId);
+        publicView(stranger, tripId)
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
+    }
+
+
+    @Test
+    void movingTheAudienceToPublicOpensItToStrangersWithoutTouchingTheCollaborators() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        String member = admitMemberTo(tripId);
+        String stranger = freshTraveler();
+
+        publishTo(owner, tripId, "private");
+        publicView(stranger, tripId).expectStatus().isNotFound();
+
+        publishTo(owner, tripId, "public");
+        publicView(stranger, tripId).expectStatus().isOk();
+        publicView(member, tripId).expectStatus().isOk();
+
+        publishTo(owner, tripId, "private");
+        publicView(stranger, tripId).expectStatus().isNotFound();
+        publicView(member, tripId).expectStatus().isOk();
+    }
+
+
+    @Test
+    void aDraftHasNoPublicPageForAnyone_noteEvenACollaborator() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        String member = admitMemberTo(tripId);
+
+        publicView(member, tripId)
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
+        publicView(owner, tripId)
+                .expectStatus()
+                .isNotFound();
+
+        preview(owner, tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.id")
+                .isEqualTo(tripId);
     }
 
 
@@ -283,9 +353,11 @@ class PublishedProjectionIT extends PostgresTestBase {
                 .jsonPath("$.estimatedCost.currency")
                 .isEqualTo("PHP");
 
+        act(owner, tripId, "unpublish");
         addActivity(owner, tripId, secondDayOf(tripId), """
                 {"title":"Ferry","costAmount":"40","costCurrency":"USD"}
                 """);
+        publish(owner, tripId);
 
         publicView(freshTraveler(), tripId)
                 .expectStatus()
@@ -358,6 +430,17 @@ class PublishedProjectionIT extends PostgresTestBase {
 
     private void publish(String token, String itineraryId) {
         act(token, itineraryId, "publish");
+    }
+
+    private void publishTo(String token, String itineraryId, String audience) {
+        rest.post()
+                .uri("/v1/itineraries/" + itineraryId + "/publish")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"audience\":\"" + audience + "\"}")
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 
     private void act(String token, String itineraryId, String verb) {

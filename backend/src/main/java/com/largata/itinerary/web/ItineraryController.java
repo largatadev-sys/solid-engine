@@ -11,6 +11,7 @@ import com.largata.itinerary.PublishedItineraryService;
 import com.largata.itinerary.TripCategory;
 import com.largata.itinerary.api.CreateItineraryRequest;
 import com.largata.itinerary.api.ItineraryResponse;
+import com.largata.itinerary.api.PublishRequest;
 import com.largata.itinerary.api.PublishedItineraryResponse;
 import com.largata.itinerary.api.UpdateItineraryRequest;
 import com.largata.membership.MembershipService;
@@ -115,9 +116,12 @@ class ItineraryController {
 
 
     @PostMapping("/{id}/publish")
-    ItineraryResponse publish(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+    ItineraryResponse publish(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID id,
+            @RequestBody(required = false) PublishRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        itineraries.publish(membership);
+        itineraries.publish(membership, PublishRequest.audienceOf(request));
         return ItineraryResponse.of(itineraries.viewPlan(membership));
     }
 

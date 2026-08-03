@@ -57,7 +57,7 @@ const PROJECTION_FIELDS = [
 
 const FORBIDDEN = [
   'startDate', 'endDate', 'state', 'startedAt', 'completedAt', 'archived',
-  'workspaceState', 'lastEditedBy', 'lastEditedAt', 'lease', 'visibility', 'ownerId', 'createdAt',
+  'workspaceState', 'lastEditedBy', 'lastEditedAt', 'lease', 'status', 'ownerId', 'createdAt',
 ];
 
 async function main() {
@@ -87,8 +87,8 @@ async function main() {
     durationDays: 2,
   });
   check('a never-started trip is created (lifecycle draft)',
-    created.status === 201 && created.body.state === 'draft' && created.body.visibility === 'private',
-    `${created.status} ${created.body?.state}/${created.body?.visibility}`);
+    created.status === 201 && created.body.state === 'draft' && created.body.status === 'draft',
+    `${created.status} ${created.body?.state}/${created.body?.status}`);
   const trip = created.body.id;
   const dayOne = created.body.days[0].id;
   const dayTwo = created.body.days[1].id;
@@ -125,7 +125,7 @@ async function main() {
   await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner, { subjectType: 'header' });
 
   const beforePublish = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
-  check('AC3 t3 cannot see a private itinerary',
+  check('AC3 t3 cannot see a draft itinerary',
     beforePublish.status === 404 && beforePublish.body.code === 'ITINERARY_NOT_FOUND',
     'got ' + beforePublish.status);
 
@@ -139,9 +139,9 @@ async function main() {
     memberPublish.status === 403 && memberPublish.body.code === 'NOT_PERMITTED', 'got ' + memberPublish.status);
 
   const published = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
-  check('AC7 publish by t1 (owner) → 200, visibility flips',
-    published.status === 200 && published.body.visibility === 'published',
-    `${published.status} ${published.body?.visibility}`);
+  check('AC7 publish by t1 (owner) → 200, status becomes public',
+    published.status === 200 && published.body.status === 'public',
+    `${published.status} ${published.body?.status}`);
 
   const seen = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   check('AC1 t3 opens the published page by direct route', seen.status === 200, 'got ' + seen.status);
@@ -167,9 +167,21 @@ async function main() {
   check('AC6 standouts + best time reach the projection',
     seen.body.standouts.length === 2 && seen.body.bestTimeOfYear === 'Dec – Apr');
 
-  await api(`/v1/itineraries/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
+  const frozenEdit = await api(`/v1/itineraries/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
     title: 'Ferry', costAmount: '40', costCurrency: 'USD',
   });
+  check('ADR-018 a published plan is frozen — the edit is refused, naming why',
+    frozenEdit.status === 409 && frozenEdit.body.code === 'ITINERARY_PUBLISHED',
+    `${frozenEdit.status} ${frozenEdit.body?.code}`);
+
+  await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
+  const thawed = await api(`/v1/itineraries/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
+    title: 'Ferry', costAmount: '40', costCurrency: 'USD',
+  });
+  check('ADR-018 unpublishing returns it to draft, and the plan is editable again',
+    thawed.status === 201, 'got ' + thawed.status);
+  await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+
   const mixed = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   check('AC5 a mixed-currency plan shows prices and NO total',
     mixed.body.estimatedCost === null || mixed.body.estimatedCost === undefined,
@@ -183,6 +195,20 @@ async function main() {
   const memberSees = await api(`/v1/published-itineraries/${trip}`, 'GET', member);
   check('the projection is one page for every audience — the member reads it too',
     memberSees.status === 200, 'got ' + memberSees.status);
+
+  await api(`/v1/itineraries/${trip}/publish`, 'POST', owner, { audience: 'private' });
+  const privateForMember = await api(`/v1/published-itineraries/${trip}`, 'GET', member);
+  const privateForStranger = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
+  check('ADR-018 private is PUBLISHED — the collaborator reads the overview',
+    privateForMember.status === 200, 'got ' + privateForMember.status);
+  check('ADR-018 …and a stranger is masked, indistinguishably from never-existed',
+    privateForStranger.status === 404 && privateForStranger.body.code === 'ITINERARY_NOT_FOUND',
+    'got ' + privateForStranger.status);
+
+  const backToPublic = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner, { audience: 'public' });
+  check('ADR-018 the audience moves without a round trip through draft',
+    backToPublic.status === 200 && backToPublic.body.status === 'public',
+    `${backToPublic.status} ${backToPublic.body?.status}`);
 
   const unpublished = await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
   const goneAgain = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
@@ -224,11 +250,14 @@ async function main() {
       && emptySeen.body.days.length === 0 && emptySeen.body.standouts.length === 0,
     `${emptyPublish.status}/${emptySeen.status}`);
 
-  const olderClient = await api(`/v1/itineraries/${empty.body.id}/edit-lock`, 'POST', owner, { subjectType: 'header' })
-    .then(() => api(`/v1/itineraries/${empty.body.id}`, 'PATCH', owner, {
+  const stillADraft = await api('/v1/itineraries', 'POST', owner, {
+    title: 'Someday, Japan', destinations: ['Japan'],
+  });
+  const olderClient = await api(`/v1/itineraries/${stillADraft.body.id}/edit-lock`, 'POST', owner, { subjectType: 'header' })
+    .then(() => api(`/v1/itineraries/${stillADraft.body.id}`, 'PATCH', owner, {
       title: 'Someday, Japan', destinations: ['Japan'], standouts: ['Cherry blossoms'], bestTimeOfYear: 'Mar – Apr',
     }))
-    .then(() => api(`/v1/itineraries/${empty.body.id}`, 'PATCH', owner, {
+    .then(() => api(`/v1/itineraries/${stillADraft.body.id}`, 'PATCH', owner, {
       title: 'Renamed by a client that predates the fields', destinations: ['Japan'],
     }));
   check('ADR-008 a client that cannot send the new fields does not erase them',

@@ -16,11 +16,11 @@ class ItineraryTest {
     private final UUID owner = UuidV7.generate();
 
     @Test
-    void aDraftIsBornPrivateAndUnpublished() {
+    void anItineraryIsBornADraft() {
         Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
 
         assertThat(itinerary.state()).isEqualTo(ItineraryState.DRAFT);
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
+        assertThat(itinerary.status()).isEqualTo(ItineraryStatus.DRAFT);
         assertThat(itinerary.id()).isNotNull();
         assertThat(itinerary.ownerId()).isEqualTo(owner);
     }
@@ -216,7 +216,7 @@ class ItineraryTest {
 
         assertThat(itinerary.ownerId()).isEqualTo(owner);
         assertThat(itinerary.state()).isEqualTo(ItineraryState.DRAFT);
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
+        assertThat(itinerary.status()).isEqualTo(ItineraryStatus.DRAFT);
     }
 
     @Test
@@ -309,47 +309,80 @@ class ItineraryTest {
     }
 
     @Test
-    void publishingFlipsTheVisibilityFactAndUnpublishingFlipsItBack() {
+    void publishingSetsTheAudienceAndUnpublishingReturnsItToDraft() {
         Itinerary itinerary = draft("Draft", List.of("Cebu"));
 
-        itinerary.publish();
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLISHED);
+        itinerary.publishTo(ItineraryStatus.PUBLIC);
+        assertThat(itinerary.status()).isEqualTo(ItineraryStatus.PUBLIC);
+
+        itinerary.publishTo(ItineraryStatus.PRIVATE);
+        assertThat(itinerary.status())
+                .as("the audience moves without a round trip through draft")
+                .isEqualTo(ItineraryStatus.PRIVATE);
 
         itinerary.unpublish();
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
+        assertThat(itinerary.status())
+                .as("unpublish is the only way back to editing")
+                .isEqualTo(ItineraryStatus.DRAFT);
     }
 
     @Test
     void publishingIsOrthogonalToTheLifecycleAndCanHappenFromAnyState() {
         Itinerary neverStarted = draft("Draft", List.of("Cebu"));
-        neverStarted.publish();
+        neverStarted.publishTo(ItineraryStatus.PUBLIC);
         assertThat(neverStarted.state()).isEqualTo(ItineraryState.DRAFT);
-        assertThat(neverStarted.visibility()).isEqualTo(Visibility.PUBLISHED);
+        assertThat(neverStarted.status()).isEqualTo(ItineraryStatus.PUBLIC);
 
         Itinerary travelled = draft("Draft", List.of("Cebu"));
         travelled.start(Instant.now());
         travelled.complete(Instant.now());
-        travelled.publish();
+        travelled.publishTo(ItineraryStatus.PUBLIC);
         assertThat(travelled.state()).isEqualTo(ItineraryState.COMPLETED);
-        assertThat(travelled.visibility()).isEqualTo(Visibility.PUBLISHED);
+        assertThat(travelled.status()).isEqualTo(ItineraryStatus.PUBLIC);
     }
 
     @Test
-    void repeatingEitherVisibilityActIsANoOpRatherThanATransition() {
+    void repeatingEitherActIsANoOpRatherThanATransition() {
         Itinerary itinerary = draft("Draft", List.of("Cebu"));
 
         itinerary.unpublish();
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
+        assertThat(itinerary.status()).isEqualTo(ItineraryStatus.DRAFT);
 
-        itinerary.publish();
-        itinerary.publish();
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLISHED);
+        itinerary.publishTo(ItineraryStatus.PUBLIC);
+        itinerary.publishTo(ItineraryStatus.PUBLIC);
+        assertThat(itinerary.status()).isEqualTo(ItineraryStatus.PUBLIC);
     }
 
     @Test
-    void theVisibilityWireNamesAreTheOnesCanonNames() {
-        assertThat(Visibility.PRIVATE.wireName()).isEqualTo("private");
-        assertThat(Visibility.PUBLISHED.wireName()).isEqualTo("published");
+    void theStatusWireNamesAreTheOnesCanonNames() {
+        assertThat(ItineraryStatus.DRAFT.wireName()).isEqualTo("draft");
+        assertThat(ItineraryStatus.PRIVATE.wireName()).isEqualTo("private");
+        assertThat(ItineraryStatus.PUBLIC.wireName()).isEqualTo("public");
+    }
+
+    @Test
+    void draftIsTheOnlyEditableStatus_andPrivateIsPublishedJustNotToEveryone() {
+        assertThat(ItineraryStatus.DRAFT.isEditable()).isTrue();
+        assertThat(ItineraryStatus.PRIVATE.isEditable()).isFalse();
+        assertThat(ItineraryStatus.PUBLIC.isEditable()).isFalse();
+
+        assertThat(ItineraryStatus.DRAFT.isPublished()).isFalse();
+        assertThat(ItineraryStatus.PRIVATE.isPublished()).isTrue();
+        assertThat(ItineraryStatus.PUBLIC.isPublished()).isTrue();
+
+        assertThat(ItineraryStatus.PRIVATE.isVisibleToEveryone()).isFalse();
+        assertThat(ItineraryStatus.PUBLIC.isVisibleToEveryone()).isTrue();
+    }
+
+    @Test
+    void publishingDefaultsToPublicAndRefusesDraftAsAnAudience() {
+        assertThat(ItineraryStatus.audience(null)).isEqualTo(ItineraryStatus.PUBLIC);
+        assertThat(ItineraryStatus.audience("  ")).isEqualTo(ItineraryStatus.PUBLIC);
+        assertThat(ItineraryStatus.audience("PRIVATE")).isEqualTo(ItineraryStatus.PRIVATE);
+
+        assertThatThrownBy(() -> ItineraryStatus.audience("draft"))
+                .as("draft is a status you return to, never an audience you publish to")
+                .isInstanceOf(UnknownAudienceException.class);
     }
 
     private Itinerary draft(String title, List<String> destinations) {

@@ -1,5 +1,6 @@
 package com.largata.itinerary.web;
 
+import com.largata.common.authz.AuthorizationGuard;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.PublishedItineraryService;
@@ -16,14 +17,16 @@ import org.springframework.web.bind.annotation.RestController;
 class PublishedItineraryController {
 
     private final PublishedItineraryService published;
+    private final AuthorizationGuard guard;
 
-    PublishedItineraryController(PublishedItineraryService published) {
+    PublishedItineraryController(PublishedItineraryService published, AuthorizationGuard guard) {
         this.published = published;
+        this.guard = guard;
     }
 
 
     @GetMapping("/{id}")
     PublishedItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        return PublishedItineraryResponse.of(published.publicView(id));
+        return PublishedItineraryResponse.of(published.view(id, guard.membershipOf(traveler.id(), id)));
     }
 }

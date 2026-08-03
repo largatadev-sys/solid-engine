@@ -5,9 +5,15 @@ import java.util.Optional;
 
 
 public enum TripCategory {
-    DRAFT,
-    PRIVATE,
-    PUBLISHED;
+    DRAFT(ItineraryStatus.DRAFT),
+    PRIVATE(ItineraryStatus.PRIVATE),
+    PUBLIC(ItineraryStatus.PUBLIC);
+
+    private final ItineraryStatus status;
+
+    TripCategory(ItineraryStatus status) {
+        this.status = status;
+    }
 
 
     public static Optional<TripCategory> parse(String wireName) {
@@ -22,17 +28,8 @@ public enum TripCategory {
     }
 
 
-    ItineraryState state() {
-        return this == DRAFT ? ItineraryState.DRAFT : null;
-    }
-
-
-    Visibility visibility() {
-        return switch (this) {
-            case PRIVATE -> Visibility.PRIVATE;
-            case PUBLISHED -> Visibility.PUBLISHED;
-            case DRAFT -> null;
-        };
+    ItineraryStatus status() {
+        return status;
     }
 
 

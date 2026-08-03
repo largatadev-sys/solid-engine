@@ -1,5 +1,6 @@
 package com.largata.common.authz;
 
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,11 @@ public class AuthorizationGuard {
 
 
     public Membership requireMember(UUID travelerId, UUID itineraryId) {
-        return resolver.resolve(travelerId, itineraryId).orElseThrow(ItineraryNotFoundException::new);
+        return membershipOf(travelerId, itineraryId).orElseThrow(ItineraryNotFoundException::new);
+    }
+
+
+    public Optional<Membership> membershipOf(UUID travelerId, UUID itineraryId) {
+        return resolver.resolve(travelerId, itineraryId);
     }
 }

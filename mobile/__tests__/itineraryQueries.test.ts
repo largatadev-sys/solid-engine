@@ -49,7 +49,7 @@ const trip = (id: string, title: string): ItineraryResponse => ({
   startDate: null,
   endDate: null,
   state: 'draft',
-  visibility: 'private',
+  status: 'draft',
   archived: false,
   lastEditedBy: null,
   lastEditedAt: null,

@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
-class ItineraryVisibilityIT extends PostgresTestBase {
+class ItineraryPublicationIT extends PostgresTestBase {
 
     private RestTestClient rest;
 
@@ -36,27 +36,102 @@ class ItineraryVisibilityIT extends PostgresTestBase {
 
 
     @Test
-    void theOwnerFlipsTheTripPublicAndBackAgain() {
+    void publishingDefaultsToPublicAndUnpublishingReturnsTheTripToDraft() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
-        assertThat(visibilityOf(tripId)).isEqualTo("PRIVATE");
+        assertThat(statusOf(tripId)).isEqualTo("DRAFT");
 
         publish(owner, tripId)
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("$.visibility")
-                .isEqualTo("published");
-        assertThat(visibilityOf(tripId)).isEqualTo("PUBLISHED");
+                .jsonPath("$.status")
+                .isEqualTo("public");
+        assertThat(statusOf(tripId)).as("the default audience is public").isEqualTo("PUBLIC");
 
         unpublish(owner, tripId)
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("$.visibility")
-                .isEqualTo("private");
-        assertThat(visibilityOf(tripId)).isEqualTo("PRIVATE");
+                .jsonPath("$.status")
+                .isEqualTo("draft");
+        assertThat(statusOf(tripId))
+                .as("unpublish returns it to draft — the only way back to editing")
+                .isEqualTo("DRAFT");
+    }
+
+
+    @Test
+    void publishingPrivatelyIsStillPublishing_andTheAudienceMovesWithoutAnUnpublish() {
+        String owner = freshTraveler();
+        String tripId = createItinerary(owner);
+
+        publishTo(owner, tripId, "private").expectStatus().isOk().expectBody().jsonPath("$.status").isEqualTo("private");
+        assertThat(statusOf(tripId)).isEqualTo("PRIVATE");
+
+        publishTo(owner, tripId, "public").expectStatus().isOk();
+        assertThat(statusOf(tripId)).as("public ⇄ private needs no round trip through draft").isEqualTo("PUBLIC");
+
+        publishTo(owner, tripId, "private").expectStatus().isOk();
+        assertThat(statusOf(tripId)).isEqualTo("PRIVATE");
+    }
+
+
+    @Test
+    void draftIsNotAnAudienceYouCanPublishTo() {
+        String owner = freshTraveler();
+        String tripId = createItinerary(owner);
+
+        publishTo(owner, tripId, "draft")
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("UNKNOWN_AUDIENCE");
+        assertThat(statusOf(tripId)).isEqualTo("DRAFT");
+    }
+
+
+    @Test
+    void aPublishedPlanIsFrozen_andUnpublishingThawsIt() {
+        String owner = freshTraveler();
+        String tripId = createItinerary(owner);
+
+        addDay(owner, tripId).expectStatus().isCreated();
+
+        publish(owner, tripId).expectStatus().isOk();
+
+        rest.post()
+                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_PUBLISHED");
+
+        addDay(owner, tripId)
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_PUBLISHED");
+
+        unpublish(owner, tripId).expectStatus().isOk();
+
+        addDay(owner, tripId).expectStatus().isCreated();
+    }
+
+
+    private RestTestClient.ResponseSpec addDay(String token, String itineraryId) {
+        return rest.post()
+                .uri("/v1/itineraries/" + itineraryId + "/days")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{}")
+                .exchange();
     }
 
 
@@ -69,7 +144,7 @@ class ItineraryVisibilityIT extends PostgresTestBase {
         unpublish(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.id").isEqualTo(tripId);
         publish(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.id").isEqualTo(tripId);
 
-        assertThat(visibilityOf(tripId)).isEqualTo("PUBLISHED");
+        assertThat(statusOf(tripId)).isEqualTo("PUBLIC");
     }
 
 
@@ -85,7 +160,7 @@ class ItineraryVisibilityIT extends PostgresTestBase {
                 .expectBody()
                 .jsonPath("$.code")
                 .isEqualTo("NOT_PERMITTED");
-        assertThat(visibilityOf(tripId)).isEqualTo("PRIVATE");
+        assertThat(statusOf(tripId)).isEqualTo("DRAFT");
 
         publish(owner, tripId).expectStatus().isOk();
 
@@ -95,7 +170,7 @@ class ItineraryVisibilityIT extends PostgresTestBase {
                 .expectBody()
                 .jsonPath("$.code")
                 .isEqualTo("NOT_PERMITTED");
-        assertThat(visibilityOf(tripId)).isEqualTo("PUBLISHED");
+        assertThat(statusOf(tripId)).isEqualTo("PUBLIC");
     }
 
 
@@ -106,7 +181,7 @@ class ItineraryVisibilityIT extends PostgresTestBase {
 
         publish(stranger, tripId).expectStatus().isNotFound();
         unpublish(stranger, tripId).expectStatus().isNotFound();
-        assertThat(visibilityOf(tripId)).isEqualTo("PRIVATE");
+        assertThat(statusOf(tripId)).isEqualTo("DRAFT");
     }
 
 
@@ -138,11 +213,11 @@ class ItineraryVisibilityIT extends PostgresTestBase {
                 .expectBody()
                 .jsonPath("$.code")
                 .isEqualTo("TRIP_ARCHIVED");
-        assertThat(visibilityOf(tripId)).as("the published fact survives underneath the archive").isEqualTo("PUBLISHED");
+        assertThat(statusOf(tripId)).as("the published fact survives underneath the archive").isEqualTo("PUBLIC");
 
         unarchive(owner, tripId).expectStatus().isOk();
         unpublish(owner, tripId).expectStatus().isOk();
-        assertThat(visibilityOf(tripId)).isEqualTo("PRIVATE");
+        assertThat(statusOf(tripId)).isEqualTo("DRAFT");
     }
 
 
@@ -166,8 +241,8 @@ class ItineraryVisibilityIT extends PostgresTestBase {
                 .expectBody()
                 .jsonPath("$.state")
                 .isEqualTo("draft")
-                .jsonPath("$.visibility")
-                .isEqualTo("published");
+                .jsonPath("$.status")
+                .isEqualTo("public");
 
         rest.post()
                 .uri("/v1/itineraries/" + tripId + "/start")
@@ -176,13 +251,22 @@ class ItineraryVisibilityIT extends PostgresTestBase {
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("$.visibility")
-                .isEqualTo("published");
+                .jsonPath("$.status")
+                .isEqualTo("public");
     }
 
 
     private RestTestClient.ResponseSpec publish(String token, String itineraryId) {
         return post(token, itineraryId, "publish");
+    }
+
+    private RestTestClient.ResponseSpec publishTo(String token, String itineraryId, String audience) {
+        return rest.post()
+                .uri("/v1/itineraries/" + itineraryId + "/publish")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"audience\":\"" + audience + "\"}")
+                .exchange();
     }
 
     private RestTestClient.ResponseSpec unpublish(String token, String itineraryId) {
@@ -205,9 +289,9 @@ class ItineraryVisibilityIT extends PostgresTestBase {
     }
 
 
-    private String visibilityOf(String itineraryId) {
+    private String statusOf(String itineraryId) {
         return jdbc.queryForObject(
-                "SELECT visibility FROM itinerary WHERE id = ?", String.class, UUID.fromString(itineraryId));
+                "SELECT status FROM itinerary WHERE id = ?", String.class, UUID.fromString(itineraryId));
     }
 
     private String admitMemberTo(String itineraryId) {

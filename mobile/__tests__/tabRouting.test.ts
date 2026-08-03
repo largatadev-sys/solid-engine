@@ -199,32 +199,24 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
   });
 
   it('sends a DRAFT row to the workspace and a PUBLISHED row to the overview (founder, 08/01)', () => {
-    const draft = tripRowDestination({
-      id: 'trip-1', archived: false, state: 'draft', visibility: 'private',
-    });
-    const published = tripRowDestination({
-      id: 'trip-1', archived: false, state: 'draft', visibility: 'published',
-    });
+    const draft = tripRowDestination({ id: 'trip-1', archived: false, status: 'draft' });
+    const published = tripRowDestination({ id: 'trip-1', archived: false, status: 'public' });
 
     expect(draft.pathname).toBe('/itineraries/[id]');
     expect(published.pathname).toBe('/published/[id]');
   });
 
-  it('sends a trip that is under way to the editor, and an ARCHIVED one to the workspace', () => {
-    const live = tripRowDestination({
-      id: 'trip-1', archived: false, state: 'active', visibility: 'private',
-    });
-    const archived = tripRowDestination({
-      id: 'trip-1', archived: true, state: 'active', visibility: 'private',
-    });
+  it('sends a PRIVATE row to the overview too — private is published, just not to everyone', () => {
+    const live = tripRowDestination({ id: 'trip-1', archived: false, status: 'private' });
+    const archived = tripRowDestination({ id: 'trip-1', archived: true, status: 'private' });
 
-    expect(live.pathname).toBe('/itineraries/[id]/days');
+    expect(live.pathname).toBe('/published/[id]');
     expect(archived.pathname).toBe('/itineraries/[id]');
   });
 
   it('lets ARCHIVED win over published — an archived trip has no public page to open', () => {
     expect(
-      tripRowDestination({ id: 'trip-1', archived: true, state: 'draft', visibility: 'published' })
+      tripRowDestination({ id: 'trip-1', archived: true, status: 'public' })
         .pathname,
     ).toBe('/itineraries/[id]');
   });
@@ -280,12 +272,12 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(workspace.indexOf("pathname: '/members/[itineraryId]'")).toBeLessThan(detailsTabAt);
   });
 
-  it('renders the visibility fact through the eyebrow helper, both variants (S4.1 decision 11)', () => {
+  it('renders the publication status through the eyebrow helper, all three (ADR-018)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(workspace).toContain('workspaceEyebrow(data.visibility)');
-    expect(workspace).not.toMatch(/data\.visibility === '/);
-    expect(workspace).not.toMatch(/visibility\.toUpperCase/);
+    expect(workspace).toContain('workspaceEyebrow(data.status)');
+    expect(workspace).not.toMatch(/data\.status === '/);
+    expect(workspace).not.toMatch(/visibility/);
   });
 
   it('puts an Edit itinerary cogwheel on the workspace, pointing at the day editor (founder, 08/01)', () => {
@@ -294,7 +286,7 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
 
     expect(workspace.slice(0, headerEnds)).toContain('accessibilityLabel="Edit itinerary"');
     expect(workspace.slice(0, headerEnds)).toContain("pathname: '/itineraries/[id]/days'");
-    expect(workspace).toContain('canEditPlan(data) ? (');
+    expect(workspace).toContain('isEditable(data) ? (');
   });
 
   it('puts publish on the workspace screen and unpublish quietly in the Details tab (S4.1 decision 11)', () => {

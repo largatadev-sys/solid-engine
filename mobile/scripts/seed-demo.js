@@ -56,7 +56,7 @@ const TRIPS = [
     bestTimeOfYear: 'Dec – Apr',
     standouts: ['Big Lagoon Kayaking', 'Secret Beach at low tide', 'Local Seafood Dinners'],
     durationDays: 3,
-    publish: true,
+    publish: 'public',
     withMember: true,
     days: [
       [
@@ -84,7 +84,7 @@ const TRIPS = [
     bestTimeOfYear: 'Jan – Feb',
     standouts: ['Otaru canal at night', 'Sapporo Snow Festival'],
     durationDays: 2,
-    publish: true,
+    publish: 'private',
     withMember: false,
     days: [
       [
@@ -104,7 +104,7 @@ const TRIPS = [
     bestTimeOfYear: 'Sep – Oct',
     standouts: ['Tram 28 end to end'],
     durationDays: 2,
-    publish: false,
+    publish: null,
     withMember: true,
     days: [
       [{ title: 'Alfama wander', place: 'Alfama', notes: 'Start at the top and fall downhill.' }],
@@ -118,7 +118,7 @@ const TRIPS = [
     bestTimeOfYear: null,
     standouts: [],
     durationDays: 0,
-    publish: false,
+    publish: null,
     withMember: false,
     days: [],
   },
@@ -180,12 +180,15 @@ async function main() {
       must(await api(`/v1/invitations/${invite.id}/accept`, 'POST', member, {}), 'accept');
     }
 
-    if (spec.publish) {
-      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', owner), 'publish');
+    if (spec.publish !== null) {
+      must(
+        await api(`/v1/itineraries/${created.id}/publish`, 'POST', owner, { audience: spec.publish }),
+        'publish',
+      );
     }
 
     console.log(
-      `  ${spec.publish ? 'published' : 'private  '}  ${spec.days.length} days  ` +
+      `  ${(spec.publish ?? 'draft').padEnd(7)}  ${spec.days.length} days  ` +
       `${spec.withMember ? 'with t2 ' : 'solo    '}  ${created.id}  ${spec.title}`,
     );
   }

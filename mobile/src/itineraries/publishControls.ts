@@ -1,29 +1,61 @@
 import type { IconName } from '../components/Icon';
-import type { ItineraryResponse, Visibility } from '../types/api';
+import type { ItineraryResponse, ItineraryStatus, PublishAudience } from '../types/api';
 
 
 export type PublishControl = 'publish' | 'unpublish';
 
 
 export function publishControl(
-  itinerary: Pick<ItineraryResponse, 'visibility' | 'archived'>,
+  itinerary: Pick<ItineraryResponse, 'status' | 'archived'>,
   isOwner: boolean,
 ): PublishControl | null {
   if (!isOwner || itinerary.archived) return null;
-  return itinerary.visibility === 'published' ? 'unpublish' : 'publish';
+  return itinerary.status === 'draft' ? 'publish' : 'unpublish';
 }
 
 
-export function isPublished(itinerary: Pick<ItineraryResponse, 'visibility'>): boolean {
-  return itinerary.visibility === 'published';
+export function isPublished(itinerary: Pick<ItineraryResponse, 'status'>): boolean {
+  return itinerary.status !== 'draft';
+}
+
+
+export function isEditable(itinerary: Pick<ItineraryResponse, 'status' | 'archived'>): boolean {
+  return !itinerary.archived && itinerary.status === 'draft';
+}
+
+
+export function audienceOf(itinerary: Pick<ItineraryResponse, 'status'>): PublishAudience | null {
+  return itinerary.status === 'draft' ? null : itinerary.status;
+}
+
+
+export function otherAudience(audience: PublishAudience): PublishAudience {
+  return audience === 'public' ? 'private' : 'public';
 }
 
 
 export type WorkspaceEyebrow = { icon: IconName; label: string };
 
 
-export function workspaceEyebrow(visibility: Visibility): WorkspaceEyebrow {
-  return visibility === 'published'
-    ? { icon: 'globe', label: 'Published Itinerary' }
-    : { icon: 'users', label: 'Private Workspace' };
+const EYEBROWS: Record<ItineraryStatus, WorkspaceEyebrow> = {
+  draft: { icon: 'users', label: 'Draft Workspace' },
+  private: { icon: 'users', label: 'Published — Private' },
+  public: { icon: 'globe', label: 'Published — Public' },
+};
+
+
+export function workspaceEyebrow(status: ItineraryStatus): WorkspaceEyebrow {
+  return EYEBROWS[status];
+}
+
+
+export function audienceLabel(audience: PublishAudience): string {
+  return audience === 'public' ? 'Public' : 'Private';
+}
+
+
+export function audienceBlurb(audience: PublishAudience): string {
+  return audience === 'public'
+    ? 'Everyone on Largata can find and read this itinerary.'
+    : 'Only you and your collaborators can read it.';
 }

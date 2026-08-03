@@ -56,8 +56,8 @@ class ItineraryContractIT extends PostgresTestBase {
                 .isEqualTo("2027-01-20")
                 .jsonPath("$.state")
                 .isEqualTo("draft")
-                .jsonPath("$.visibility")
-                .isEqualTo("private")
+                .jsonPath("$.status")
+                .isEqualTo("draft")
                 .jsonPath("$.createdAt")
                 .exists();
     }

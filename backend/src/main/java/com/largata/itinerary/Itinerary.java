@@ -69,7 +69,7 @@ public class Itinerary {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Visibility visibility;
+    private ItineraryStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -88,7 +88,7 @@ public class Itinerary {
         this.id = id;
         this.ownerId = ownerId;
         this.state = ItineraryState.DRAFT;
-        this.visibility = Visibility.PRIVATE;
+        this.status = ItineraryStatus.DRAFT;
         this.createdAt = createdAt;
         apply(fields);
     }
@@ -194,13 +194,13 @@ public class Itinerary {
     }
 
 
-    void publish() {
-        this.visibility = Visibility.PUBLISHED;
+    void publishTo(ItineraryStatus audience) {
+        this.status = audience;
     }
 
 
     void unpublish() {
-        this.visibility = Visibility.PRIVATE;
+        this.status = ItineraryStatus.DRAFT;
     }
 
     public UUID id() {
@@ -259,8 +259,8 @@ public class Itinerary {
         return state;
     }
 
-    public Visibility visibility() {
-        return visibility;
+    public ItineraryStatus status() {
+        return status;
     }
 
     public Instant createdAt() {

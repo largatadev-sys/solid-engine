@@ -35,47 +35,47 @@ class TripCategoryFilterIT extends PostgresTestBase {
 
 
     @Test
-    void aTripCountsUnderBothDraftAndPrivateAtOnce_theOverlapIsTheRuleNotABug() {
+    void theThreeCategoriesAreMutuallyExclusive_aTripIsInExactlyOne() {
         String owner = freshTraveler();
         String fresh = createItinerary(owner, "A fresh draft");
 
         assertThat(idsIn(owner, "draft")).contains(fresh);
         assertThat(idsIn(owner, "private"))
-                .as("a new trip is draft AND private; the founder ruled the overlap acceptable")
-                .contains(fresh);
-        assertThat(idsIn(owner, "published")).doesNotContain(fresh);
+                .as("a draft is not private — private means published, just not to everyone")
+                .doesNotContain(fresh);
+        assertThat(idsIn(owner, "public")).doesNotContain(fresh);
     }
 
 
     @Test
-    void publishingMovesATripBetweenTheVisibilityCategoriesAndLeavesDraftAlone() {
+    void publishingMovesATripOutOfDraftEntirely() {
         String owner = freshTraveler();
         String trip = createItinerary(owner, "Island Hopping");
 
         act(owner, trip, "publish");
 
-        assertThat(idsIn(owner, "published")).contains(trip);
-        assertThat(idsIn(owner, "private")).doesNotContain(trip);
+        assertThat(idsIn(owner, "public")).contains(trip);
         assertThat(idsIn(owner, "draft"))
-                .as("publish is orthogonal to the lifecycle — a published trip is still a draft")
-                .contains(trip);
+                .as("a published trip is no longer a draft — the founder ruled these exclusive")
+                .doesNotContain(trip);
+        assertThat(idsIn(owner, "private")).doesNotContain(trip);
 
         act(owner, trip, "unpublish");
 
-        assertThat(idsIn(owner, "private")).contains(trip);
-        assertThat(idsIn(owner, "published")).doesNotContain(trip);
+        assertThat(idsIn(owner, "draft")).contains(trip);
+        assertThat(idsIn(owner, "public")).doesNotContain(trip);
     }
 
 
     @Test
-    void startingATripTakesItOutOfDraftWithoutTouchingItsVisibility() {
+    void theLifecycleStateDoesNotMoveATripBetweenCategories() {
         String owner = freshTraveler();
         String trip = createItinerary(owner, "Under way");
-        act(owner, trip, "publish");
         act(owner, trip, "start");
 
-        assertThat(idsIn(owner, "draft")).doesNotContain(trip);
-        assertThat(idsIn(owner, "published")).contains(trip);
+        assertThat(idsIn(owner, "draft"))
+                .as("publication status is not the dormant lifecycle — starting a trip changes neither")
+                .contains(trip);
     }
 
 
@@ -95,8 +95,8 @@ class TripCategoryFilterIT extends PostgresTestBase {
         String owner = freshTraveler();
         createItinerary(owner, "Anything");
 
-        list(owner, "PUBLISHED").expectStatus().isOk();
-        list(owner, "  published  ").expectStatus().isOk();
+        list(owner, "PUBLIC").expectStatus().isOk();
+        list(owner, "  public  ").expectStatus().isOk();
 
         list(owner, "unlisted")
                 .expectStatus()
@@ -118,13 +118,13 @@ class TripCategoryFilterIT extends PostgresTestBase {
             published.add(trip);
         }
 
-        List<String> firstPage = idsIn(owner, "published", 2);
+        List<String> firstPage = idsIn(owner, "public", 2);
         assertThat(firstPage).hasSize(2).allSatisfy(id -> assertThat(published).contains(id));
 
-        String cursor = cursorOf(owner, "published", 2);
+        String cursor = cursorOf(owner, "public", 2);
         assertThat(cursor).as("a filtered page still carries a cursor when more remain").isNotNull();
 
-        List<String> secondPage = pageAfter(owner, "published", cursor);
+        List<String> secondPage = pageAfter(owner, "public", cursor);
         assertThat(secondPage)
                 .as("the second page is filtered too — not a full page trimmed after the fact")
                 .isNotEmpty()

@@ -51,7 +51,7 @@ public class ActivityService {
 
     @Transactional
     public ActivityView create(Membership member, UUID dayId, ActivityFields fields) {
-        fence.requireWritable(member);
+        fence.requireEditable(member);
         requireDay(member.itineraryId(), dayId);
         if (activities.countByDayId(dayId) >= MAX_ACTIVITIES_PER_DAY) {
             throw new PlanLimitExceededException("A day holds at most " + MAX_ACTIVITIES_PER_DAY + " activities");
@@ -98,7 +98,7 @@ public class ActivityService {
     @Transactional
     public DayView reorder(
             Membership member, UUID dayId, List<UUID> expectedActivityIds, List<UUID> orderedActivityIds) {
-        fence.requireWritable(member);
+        fence.requireEditable(member);
         Day day = requireDay(member.itineraryId(), dayId);
         List<Activity> current = activities.findByDayIdOrderBySortOrderAscIdAsc(dayId);
         List<UUID> currentOrder = current.stream().map(Activity::id).toList();

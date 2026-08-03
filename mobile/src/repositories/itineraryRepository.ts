@@ -11,6 +11,7 @@ import type {
   MoveActivityRequest,
   Page,
   PublishedItineraryResponse,
+  PublishAudience,
   ReorderActivitiesRequest,
   TripCategory,
   UpdateItineraryRequest,
@@ -64,8 +65,8 @@ export const itineraryRepository = {
   },
 
 
-  async publishTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/publish`, undefined);
+  async publishTrip(id: string, audience: PublishAudience): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/publish`, { audience });
   },
 
   async unpublishTrip(id: string): Promise<ItineraryResponse> {

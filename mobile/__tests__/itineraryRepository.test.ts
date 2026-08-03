@@ -78,16 +78,16 @@ describe('unarchiving (S1.9 — the archive control itself was removed from the 
 });
 
 describe('publishing (S4.1)', () => {
-  it('publishes with no body — the act carries no data, only authority', async () => {
-    apiClient.post.mockResolvedValue({ id: 'abc', visibility: 'published' });
+  it('publishes with the chosen audience — public is the default the screen offers', async () => {
+    apiClient.post.mockResolvedValue({ id: 'abc', status: 'public' });
 
-    await itineraryRepository.publishTrip('abc');
+    await itineraryRepository.publishTrip('abc', 'public');
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/publish', undefined);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/publish', { audience: 'public' });
   });
 
   it('unpublishes symmetrically, on the same itinerary id', async () => {
-    apiClient.post.mockResolvedValue({ id: 'abc', visibility: 'private' });
+    apiClient.post.mockResolvedValue({ id: 'abc', status: 'draft' });
 
     await itineraryRepository.unpublishTrip('abc');
 

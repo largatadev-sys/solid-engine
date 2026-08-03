@@ -200,18 +200,20 @@ const GREYED = [
   await goto(`/itineraries/${TRIP_ID}`);
   const workspace = await text();
   check('the workspace renders (not the S0.4 white screen)', (workspace || '').length > 0);
-  check('the eyebrow names the visibility fact',
-    workspace.includes('Private Workspace') || workspace.includes('Published Itinerary'),
+  check('the eyebrow names the publication status (ADR-018)',
+    ['Draft Workspace', 'Published — Private', 'Published — Public'].some((l) => workspace.includes(l)),
     workspace.split('\n')[0]);
 
-  if (workspace.includes('Published Itinerary')) {
+  if (!workspace.includes('Draft Workspace')) {
     await goto(`/itineraries/${TRIP_ID}?tab=details`);
     await tapWithConfirm('Unpublish this trip', true);
     await goto(`/itineraries/${TRIP_ID}`);
   }
 
-  const asPrivate = await text();
-  check('a private trip offers the owner the Publish CTA', asPrivate.includes('Publish Itinerary'));
+  const asDraft = await text();
+  check('unpublishing returned it to a draft, which is where editing lives',
+    asDraft.includes('Draft Workspace'), asDraft.split('\n')[0]);
+  check('a draft offers the owner the Publish CTA', asDraft.includes('Publish Itinerary'));
 
   const toPreview = await tap('Publish Itinerary');
   check('the Publish CTA is reachable and was clicked', toPreview.clicked,
@@ -245,6 +247,9 @@ const GREYED = [
   check('…and no roster', !preview.includes('members'));
   check('the preview offers Publish and Continue Editing',
     preview.includes('Publish Itinerary') && preview.includes('Continue Editing'));
+  check('ADR-018 the preview asks which audience, defaulting to Public',
+    preview.includes('Public') && preview.includes('Private') && preview.includes('Everyone on Largata'),
+    preview.replace(/\n/g, ' | ').slice(-220));
   check('the preview carries the SAME five-tab shell the public page does (founder, 08/01)',
     ['Overview', 'Day-by-Day', 'Diary Entry', 'Comments', 'Reviews'].every((t) => preview.includes(t)),
     preview.replace(/\n/g, ' | ').slice(0, 220));

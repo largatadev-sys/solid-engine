@@ -20,6 +20,7 @@ import type {
   DayResponse,
   ItineraryResponse,
   Page,
+  PublishAudience,
   PublishedItineraryResponse,
   TripCategory,
   UpdateItineraryRequest,
@@ -162,10 +163,12 @@ export function useItineraryPreview(id: string): UseQueryResult<PublishedItinera
 }
 
 
-export function usePublishTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+export function usePublishTrip(
+  id: string,
+): UseMutationResult<ItineraryResponse, Error, PublishAudience> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => itineraryRepository.publishTrip(id),
+    mutationFn: (audience: PublishAudience) => itineraryRepository.publishTrip(id, audience),
     onSuccess: async (updated) => {
       await onItineraryUpdated(client, updated);
       await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });

@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError } from '../../../../src/api/ApiError';
 import { DatePicker } from '../../../../src/components/DatePicker';
-import { archivedPlanNotice } from '../../../../src/components/editLockedMessage';
+import { archivedPlanNotice, publishedPlanNotice } from '../../../../src/components/editLockedMessage';
 import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { useEditLock } from '../../../../src/hooks/useEditLock';
 import { addRow, cleanRows, moveRow, removeRow, setRow } from '../../../../src/itineraries/rowEditor';
+import { isEditable, isPublished } from '../../../../src/itineraries/publishControls';
 import { validateItineraryEdit } from '../../../../src/itineraries/validateItineraryForm';
 import { useItinerary, useUpdateItinerary } from '../../../../src/query/itineraryQueries';
 import type { UpdateItineraryRequest } from '../../../../src/types/api';
@@ -21,13 +22,13 @@ export default function EditItineraryScreen() {
   const update = useUpdateItinerary(id);
 
   const editLock = useEditLock(id);
-  const settledArchived = !isPlaceholderData && data !== undefined ? data.archived : undefined;
+  const settledEditable = !isPlaceholderData && data !== undefined ? isEditable(data) : undefined;
   useEffect(() => {
-    if (settledArchived !== false) return;
+    if (settledEditable !== true) return;
     void editLock.acquire({ subjectType: 'header' }).then((granted) => {
       if (!granted) router.back();
     });
-  }, [settledArchived]);
+  }, [settledEditable]);
 
   const [title, setTitle] = useState(data?.title ?? '');
   const [destinations, setDestinations] = useState<string[]>(data?.destinations ?? ['']);
@@ -63,11 +64,14 @@ export default function EditItineraryScreen() {
 
   const serverMessage = update.error instanceof ApiError ? update.error.message : undefined;
 
-  if (data?.archived === true) {
+  const frozen =
+    data === undefined ? undefined : data.archived ? archivedPlanNotice : isPublished(data) ? publishedPlanNotice : undefined;
+  if (frozen !== undefined) {
     return (
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.archivedTitle}>{archivedPlanNotice.title}</Text>
-        <Text style={styles.archivedBody}>{archivedPlanNotice.body}</Text>
+        <ScreenHeader title="Edit Trip" back backTo={{ pathname: '/itineraries/[id]', params: { id } }} />
+        <Text style={styles.archivedTitle}>{frozen.title}</Text>
+        <Text style={styles.archivedBody}>{frozen.body}</Text>
       </ScrollView>
     );
   }

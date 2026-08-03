@@ -141,7 +141,7 @@ public class DayService {
 
 
     private void requireOwnerOfWritableTrip(Membership member) {
-        fence.requireWritable(member);
+        fence.requireEditable(member);
         if (!member.isOwner()) {
             throw new NotTripOwnerException("Only the trip owner can add or remove days.");
         }

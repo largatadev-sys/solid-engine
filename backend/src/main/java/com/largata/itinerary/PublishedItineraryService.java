@@ -6,6 +6,7 @@ import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.workspace.WorkspaceService;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,12 +33,21 @@ public class PublishedItineraryService {
 
 
     @Transactional(readOnly = true)
-    public PublishedItinerary publicView(UUID itineraryId) {
+    public PublishedItinerary view(UUID itineraryId, Optional<Membership> caller) {
         Itinerary itinerary = itineraries.findById(itineraryId).orElseThrow(ItineraryNotFoundException::new);
-        if (!itinerary.visibility().isPublished() || workspaces.isArchived(itineraryId)) {
+        if (workspaces.isArchived(itineraryId) || !admits(itinerary.status(), caller)) {
             throw new ItineraryNotFoundException();
         }
         return project(itinerary);
+    }
+
+
+    private static boolean admits(ItineraryStatus status, Optional<Membership> caller) {
+        return switch (status) {
+            case PUBLIC -> true;
+            case PRIVATE -> caller.isPresent();
+            case DRAFT -> false;
+        };
     }
 
 

@@ -6,18 +6,12 @@ import { formatDates } from './formatDates';
 
 
 export function tripRowDestination(
-  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'state' | 'visibility'>,
+  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'status'>,
 ) {
-  if (itinerary.archived) {
+  if (itinerary.archived || itinerary.status === 'draft') {
     return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
   }
-  if (itinerary.visibility === 'published') {
-    return { pathname: '/published/[id]' as const, params: { id: itinerary.id } };
-  }
-  if (itinerary.state === 'draft') {
-    return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
-  }
-  return { pathname: '/itineraries/[id]/days' as const, params: { id: itinerary.id, day: '1' } };
+  return { pathname: '/published/[id]' as const, params: { id: itinerary.id } };
 }
 
 
