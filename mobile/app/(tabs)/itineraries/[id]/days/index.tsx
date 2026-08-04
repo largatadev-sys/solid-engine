@@ -187,6 +187,12 @@ export default function DaySurfaceScreen() {
                     );
                   })
                 }
+                onAddActivity={() =>
+                  router.push({
+                    pathname: '/itineraries/[id]/activity',
+                    params: { id, dayId: selected.id },
+                  })
+                }
                 onReorder={(move) =>
                   reorder(
                     selected.id,
@@ -225,19 +231,6 @@ export default function DaySurfaceScreen() {
           <Text style={styles.historyLinkText}>View Activity History</Text>
         </Pressable>
       </ScrollView>
-
-      {selected !== undefined && (
-        <Pressable
-          style={styles.fab}
-          onPress={() =>
-            router.push({ pathname: '/itineraries/[id]/activity', params: { id, dayId: selected.id } })
-          }
-          accessibilityRole="button"
-          accessibilityLabel="Add activity"
-        >
-          <Text style={styles.fabText}>+</Text>
-        </Pressable>
-      )}
 
       {isOwner && (
         <View style={styles.dock}>
@@ -303,6 +296,7 @@ function SelectedDay(props: {
   onDelete: () => void;
   onEditActivity: (activityId: string) => void;
   onDeleteActivity: (activity: ActivityResponse) => void;
+  onAddActivity: () => void;
   onReorder: (move: ReorderMove) => void;
   deleting: boolean;
 }) {
@@ -344,6 +338,16 @@ function SelectedDay(props: {
           }
         />
       ))}
+
+      <Pressable
+        style={styles.addActivity}
+        onPress={props.onAddActivity}
+        accessibilityRole="button"
+        accessibilityLabel="Add Activity"
+      >
+        <Text style={styles.addActivityText}>Add Activity</Text>
+        <Icon name="plus" size={20} color={colors.textPrimary} />
+      </Pressable>
 
       {props.isOwner && (
         <Pressable
@@ -455,8 +459,6 @@ function ActivityCard({
   );
 }
 
-const FAB_SIZE = 56;
-
 const RAISED_CARD = 20;
 
 const SETTINGS_ICON_SIZE = 24;
@@ -467,18 +469,18 @@ const PLACE_ICON_SIZE = 14;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    bottom: spacing.lg,
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    borderRadius: radii.pill,
+  addActivity: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.accent,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+    borderRadius: radii.sm,
   },
-  fabText: { ...typography.title, color: colors.textOnAccent },
+  addActivityText: { ...typography.bodyStrong, color: colors.textPrimary },
   container: { padding: spacing.md, gap: spacing.lg, backgroundColor: colors.background, flexGrow: 1 },
   centered: {
     flex: 1,

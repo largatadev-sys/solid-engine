@@ -196,6 +196,25 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(preview).not.toMatch(/preview of your published itinerary/);
   });
 
+  it('titles and labels the activity form as the frame draws it (S4.13 fidelity pass)', () => {
+    const activity = read(TRIPS, '[id]', 'activity.tsx');
+
+    expect(activity).toContain('title="Daily Activity"');
+    expect(activity).toContain('label="Activity Name"');
+    expect(activity).toContain('label="Estimated Cost"');
+    expect(activity).toContain('Describe a specific place or landmark');
+    expect(activity).toContain('Save Activity');
+    expect(activity).toContain('Photos');
+    expect(activity).not.toMatch(/label="Est\. cost"|Add Activity'|Edit Activity'/);
+  });
+
+  it('keeps the booking card collapsed behind the row the frame draws', () => {
+    const activity = read(TRIPS, '[id]', 'activity.tsx');
+
+    expect(activity).toContain('Add Booking Link / Option');
+    expect(activity).toContain('setBookingOpen(true)');
+  });
+
   it('draws the whole booking card the founder ruled in, one per activity', () => {
     const activity = read(TRIPS, '[id]', 'activity.tsx');
 
@@ -289,13 +308,14 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(read(DAYS, '[dayId].tsx')).toContain("comingSoon('activityHistory')");
   });
 
-  it('keeps building the plan on the editor: owner-only + chip, FAB, kebab', () => {
+  it('keeps building the plan on the editor: owner-only + chip, dashed Add Activity, kebab', () => {
     const editor = read(DAYS, 'index.tsx');
 
     expect(editor).toContain('{isOwner && <AddDayChip');
-    expect(editor).toContain('style={styles.fab}');
     expect(editor).toContain('<ActivityKebab');
-    expect(editor).not.toMatch(/\{isOwner && [^}]*fab/);
+    expect(editor).toContain('style={styles.addActivity}');
+    expect(editor).toContain("borderStyle: 'dashed'");
+    expect(editor).not.toMatch(/styles\.fab/);
   });
 
   it('keeps the detail screen to reading the day — no chips, no FAB, no day CRUD', () => {

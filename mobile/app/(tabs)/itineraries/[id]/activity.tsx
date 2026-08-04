@@ -15,6 +15,7 @@ import { Icon } from '../../../../src/components/Icon';
 import { TimePicker } from '../../../../src/components/TimePicker';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { useEditLock } from '../../../../src/hooks/useEditLock';
+import { useMe } from '../../../../src/hooks/useMe';
 import { validateActivityForm } from '../../../../src/itineraries/validateActivityForm';
 import {
   useCreateActivity,
@@ -52,7 +53,9 @@ export default function ActivityFormScreen() {
   const [title, setTitle] = useState(existing?.title ?? '');
   const [timeOfDay, setTimeOfDay] = useState(existing?.timeOfDay ?? '');
   const [costAmount, setCostAmount] = useState(existing?.costAmount ?? '');
-  const [costCurrency, setCostCurrency] = useState(existing?.costCurrency ?? '');
+  const { state: meState } = useMe();
+  const homeCurrency = meState.kind === 'ok' ? (meState.me.preferredCurrency ?? '') : '';
+  const [costCurrency, setCostCurrency] = useState(existing?.costCurrency ?? homeCurrency);
   const [place, setPlace] = useState(existing?.place ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
@@ -62,6 +65,10 @@ export default function ActivityFormScreen() {
   const [bookingPriceAmount, setBookingPriceAmount] = useState(existing?.bookingPriceAmount ?? '');
   const [bookingPriceCurrency, setBookingPriceCurrency] = useState(existing?.bookingPriceCurrency ?? '');
   const [validationError, setValidationError] = useState<string | undefined>();
+  const [bookingOpen, setBookingOpen] = useState(
+    (existing?.externalUrl ?? existing?.bookingPurpose ?? existing?.bookingProvider) !== null &&
+      (existing?.externalUrl ?? existing?.bookingPurpose ?? existing?.bookingProvider) !== undefined,
+  );
 
   function clearBooking() {
     setBookingPurpose('');
@@ -114,45 +121,65 @@ export default function ActivityFormScreen() {
   const serverMessage = mutation.error instanceof ApiError ? mutation.error.message : undefined;
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <ScreenHeader
-        title={isEdit ? 'Edit Activity' : 'Add Activity'}
+        title="Daily Activity"
         back
         backTo={{ pathname: '/itineraries/[id]/days/[dayId]', params: { id, dayId } }}
       />
 
-      <Field label="Activity name" value={title} onChangeText={setTitle} placeholder="Airport Transfer" />
-
-      <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
+      <Field label="Activity Name" value={title} onChangeText={setTitle} placeholder="Airport Transfer" />
 
       <View style={styles.row}>
         <View style={styles.rowItem}>
+          <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
+        </View>
+        <View style={styles.rowItem}>
           <Field
-            label="Est. cost"
+            label="Estimated Cost"
             value={costAmount}
             onChangeText={setCostAmount}
-            placeholder="500"
+            placeholder={costCurrency === '' ? 'Amount' : `Amount in ${costCurrency}`}
             keyboardType="decimal-pad"
           />
         </View>
-        <View style={styles.rowItemNarrow}>
-          <Field label="Currency" value={costCurrency} onChangeText={setCostCurrency} placeholder="PHP" />
-        </View>
       </View>
 
-      <Field label="Location" value={place} onChangeText={setPlace} placeholder="Describe a place or landmark" />
+      <Field
+        label="Location"
+        value={place}
+        onChangeText={setPlace}
+        placeholder="Describe a specific place or landmark"
+      />
       <Field label="Description" value={description} onChangeText={setDescription} placeholder="What happens here?" multiline />
       <Field
         label="Notes & Creator Tips"
-        hint="Shown on your published page — write it for the traveler following your plan."
         value={notes}
         onChangeText={setNotes}
         placeholder="Book the earliest slot at 8:00 AM to avoid the large tour groups!"
         multiline
       />
 
-      <GreyedMediaTile surface="activityPhoto" />
+      <View style={styles.field}>
+        <Text style={styles.label}>Photos</Text>
+        <GreyedMediaTile surface="activityPhoto" />
+      </View>
 
+      <View style={styles.field}>
+        <Text style={styles.label}>Booking Integration</Text>
+        {!bookingOpen ? (
+          <Pressable
+            style={styles.bookingRow}
+            accessibilityRole="button"
+            onPress={() => setBookingOpen(true)}>
+            <View style={styles.bookingRowLabel}>
+              <Icon name="link" size={16} color={colors.textPrimary} />
+              <Text style={styles.bookingRowText}>Add Booking Link / Option</Text>
+            </View>
+            <Icon name="plus" size={20} color={colors.textPrimary} />
+          </Pressable>
+        ) : (
       <View style={styles.bookingCard}>
         <View style={styles.bookingHeaderRow}>
           <Text style={styles.bookingHeader}>Booking</Text>
@@ -186,43 +213,20 @@ export default function ActivityFormScreen() {
           placeholder="https://klook.com/activity/1243-el-nido-underground"
           keyboardType="url"
         />
-        <View style={styles.row}>
-          <View style={styles.rowItem}>
-            <Field
-              label="Estimated Price"
-              value={bookingPriceAmount}
-              onChangeText={setBookingPriceAmount}
-              placeholder="1800"
-              keyboardType="decimal-pad"
-            />
-          </View>
-          <View style={styles.rowItemNarrow}>
-            <Field
-              label="Currency"
-              value={bookingPriceCurrency}
-              onChangeText={setBookingPriceCurrency}
-              placeholder="PHP"
-            />
-          </View>
-        </View>
+        <Field
+          label="Estimated Price"
+          value={bookingPriceAmount}
+          onChangeText={setBookingPriceAmount}
+          placeholder={bookingPriceCurrency === '' ? 'Amount' : `Amount in ${bookingPriceCurrency}`}
+          keyboardType="decimal-pad"
+        />
+      </View>
+        )}
       </View>
 
       {(validationError ?? serverMessage) !== undefined && (
         <Text style={styles.error}>{validationError ?? serverMessage}</Text>
       )}
-
-      <Pressable
-        style={[styles.button, mutation.isPending && styles.buttonBusy]}
-        onPress={submit}
-        disabled={mutation.isPending}
-        accessibilityRole="button"
-      >
-        {mutation.isPending ? (
-          <ActivityIndicator color={colors.textOnAccent} />
-        ) : (
-          <Text style={styles.buttonText}>{isEdit ? 'Save activity' : 'Add activity'}</Text>
-        )}
-      </Pressable>
 
       {isEdit && otherDays.length > 0 && (
         <View style={styles.moveSection}>
@@ -244,7 +248,23 @@ export default function ActivityFormScreen() {
           </View>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+
+      <View style={styles.dock}>
+        <Pressable
+          style={[styles.dockCta, mutation.isPending && styles.buttonBusy]}
+          onPress={submit}
+          disabled={mutation.isPending}
+          accessibilityRole="button"
+        >
+          {mutation.isPending ? (
+            <ActivityIndicator color={colors.textOnAccent} />
+          ) : (
+            <Text style={styles.dockCtaText}>Save Activity</Text>
+          )}
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -335,6 +355,32 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surfaceMuted,
   },
+  screen: { flex: 1, backgroundColor: colors.background },
+  bookingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.textPrimary,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+  },
+  bookingRowLabel: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  bookingRowText: { ...typography.bodyStrong, color: colors.textPrimary },
+  dock: {
+    padding: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  dockCta: {
+    paddingVertical: spacing.md,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    backgroundColor: colors.textPrimary,
+  },
+  dockCtaText: { ...typography.bodyStrong, color: colors.textOnAccent },
   bookingHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bookingHeader: { ...typography.overline, color: colors.textSecondary },
   bookingHint: { ...typography.caption, color: colors.textSecondary },

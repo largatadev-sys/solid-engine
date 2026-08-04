@@ -41,6 +41,11 @@ The board's one connector runs Trips landing's CTA → `create-entry`.
 
 **7 · published-success.** 72px `#F4F4F5` circle + party-popper 36px. "Your Itinerary is Live!" 24/29 w800; body: *"…is now available for travelers to discover and fork."* Trip mini-card (64px thumb). "SHARE WITH TRAVELERS" uppercase 12 w700 label; Copy Link + Share to… buttons (two-up, `#F4F4F5`). CTAs: "View Published Itinerary" + "Back to Feed". **Ruling: the whole frame re-homes to the publish act, untouched (decision 11)** — it fires when a `completed` trip publishes, never at creation's end.
 
+## Forced deviations, stated (the mock rule's one legitimate exception)
+
+- **The `₱PHP` placeholder ships as "Amount in PHP".** Frames 4 and 4a both draw `₱PHP` in the money fields. Rendered on the device, Inter has no peso glyph and Android substitutes a **struck-through P** — caught by opening the screenshot, invisible to every text assertion (regression line 12's exact shape). The currency code is carried in words instead, and it comes from the traveler's own `preferredCurrency` rather than a hardcoded PHP, so the field says what it means for a traveler outside the Philippines too. `currencySign.ts` still holds the symbols for display surfaces that render at larger sizes.
+- **One Estimated Cost field, not an amount+currency pair.** The frame draws a single 174.5px box; the model needs two values. The field takes the amount, the currency defaults from onboarding's `preferredCurrency`, and the pairing rule is enforced server-side (`@PairedMoney`). A traveler who needs a different currency per activity has no control for it — recorded as a knowing gap, not an oversight.
+
 ## Export self-contradictions (recorded so nobody "fixes" toward them)
 
 - Field border `#121212` at radius 4 on most frames, but the highlight rows and booking fields use `#E4E4E7`/radius 6–8 in their `display:none` variants — the visible-state values are the baseline.
