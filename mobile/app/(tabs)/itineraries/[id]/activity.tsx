@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { ApiError } from '../../../../src/api/ApiError';
 import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
+import { Icon } from '../../../../src/components/Icon';
 import { TimePicker } from '../../../../src/components/TimePicker';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { useEditLock } from '../../../../src/hooks/useEditLock';
@@ -61,6 +62,14 @@ export default function ActivityFormScreen() {
   const [bookingPriceAmount, setBookingPriceAmount] = useState(existing?.bookingPriceAmount ?? '');
   const [bookingPriceCurrency, setBookingPriceCurrency] = useState(existing?.bookingPriceCurrency ?? '');
   const [validationError, setValidationError] = useState<string | undefined>();
+
+  function clearBooking() {
+    setBookingPurpose('');
+    setBookingProvider('');
+    setExternalUrl('');
+    setBookingPriceAmount('');
+    setBookingPriceCurrency('');
+  }
 
   function submit() {
     const problem = validateActivityForm({
@@ -145,7 +154,16 @@ export default function ActivityFormScreen() {
       <GreyedMediaTile surface="activityPhoto" />
 
       <View style={styles.bookingCard}>
-        <Text style={styles.bookingHeader}>Booking</Text>
+        <View style={styles.bookingHeaderRow}>
+          <Text style={styles.bookingHeader}>Booking</Text>
+          <Pressable
+            onPress={clearBooking}
+            accessibilityRole="button"
+            accessibilityLabel="Clear booking"
+            hitSlop={8}>
+            <Icon name="trash" size={16} color={colors.textSecondary} />
+          </Pressable>
+        </View>
         <Text style={styles.bookingHint}>
           What you used to book this — it travels with the plan when someone forks it.
         </Text>
@@ -317,6 +335,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surfaceMuted,
   },
+  bookingHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bookingHeader: { ...typography.overline, color: colors.textSecondary },
   bookingHint: { ...typography.caption, color: colors.textSecondary },
   moveSection: { gap: spacing.sm, marginTop: spacing.md },

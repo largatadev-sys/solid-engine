@@ -181,9 +181,6 @@ function api(path, method, token, body) {
   };
   const text = () => evaluate('document.body.innerText');
 
-  // expo-router keeps visited screens MOUNTED beneath the current one, so a naive querySelectorAll
-  // find() returns the screen underneath and reports a click that changed nothing (the S4.0 trap).
-  // Prefer the LAST visible match, and say how many were seen.
   const tap = async (label) => {
     const result = await evaluate(`
       (() => {
@@ -268,10 +265,21 @@ function api(path, method, token, body) {
   await goto(`/itineraries/${trip}/days?day=1`);
   const days = await text();
   check('the day schedule renders with its day tabs', /Day 1/.test(days), days.split('\n').slice(0, 8).join(' / '));
-  check('Finish Planning docks on a draft — the creation flow’s terminal act',
-    days.includes('Finish Planning'), days.split('\n').slice(-4).join(' / '));
+  check('the mock’s CTA walks on to the preview', days.includes('Preview Itinerary'),
+    days.split('\n').slice(-4).join(' / '));
+
+  const toPreview = await tap('Preview Itinerary');
+  check('Preview Itinerary opens the reader’s view', toPreview.clicked, JSON.stringify(toPreview));
+  const previewScreen = await text();
+  check('the banner speaks the honest tense — nothing is published yet',
+    previewScreen.includes('what other travelers will see if you publish'),
+    previewScreen.split('\n').slice(0, 4).join(' / '));
+  check('Finish Planning is the terminal act on a draft’s preview',
+    previewScreen.includes('Finish Planning'), previewScreen.split('\n').slice(-4).join(' / '));
   check('and it is NOT called Complete — one word must not name two facts (ADR-018/020)',
-    !/Complete Itinerary/i.test(days));
+    !/Complete Itinerary/i.test(previewScreen));
+  check('a draft’s preview offers no publish controls — the gate is upstream of the screen',
+    !previewScreen.includes('Publish Itinerary'), previewScreen.split('\n').slice(-6).join(' / '));
 
   const finished = await tap('Finish Planning');
   check('tapping it moves the trip on', finished.clicked, JSON.stringify(finished));

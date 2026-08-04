@@ -155,11 +155,11 @@ class ActivityOrderingIT extends PostgresTestBase {
 
 
     private static ActivityFields named(String title) {
-        return ActivityFields.withoutBooking(title, null, null, null, null, null, null, null);
+        return UnbookedActivity.fields(title, null, null, null, null, null, null, null);
     }
 
     private static ActivityFields timed(String title, LocalTime time) {
-        return ActivityFields.withoutBooking(title, time, null, null, null, null, null, null);
+        return UnbookedActivity.fields(title, time, null, null, null, null, null, null);
     }
 
     private Membership tripWithOneDay() {

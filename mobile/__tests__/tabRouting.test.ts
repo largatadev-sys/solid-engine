@@ -166,13 +166,27 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     }
   });
 
-  it('ends the creation walk on Finish Planning, and only while the trip is a draft', () => {
+  it('walks the day schedules to the preview, as the mock draws it', () => {
     const days = read(TRIPS, '[id]', 'days', 'index.tsx');
 
-    expect(days).toContain('Finish Planning');
-    expect(days).toContain("finishPlanning.mutate('finish-planning'");
-    expect(days).toContain("data.state === 'draft'");
-    expect(days).not.toMatch(/>Complete Itinerary</);
+    expect(days).toContain('Preview Itinerary');
+    expect(days).toContain("pathname: '/itineraries/[id]/preview'");
+  });
+
+  it('ends the creation walk on Finish Planning, on the preview, and only while draft', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+
+    expect(preview).toContain('Finish Planning');
+    expect(preview).toContain("finishPlanning.mutate('finish-planning'");
+    expect(preview).toContain("trip.data?.state === 'draft'");
+    expect(preview).not.toMatch(/Complete Itinerary/);
+  });
+
+  it('shows honest zeros and "Est. Cost" on the published stats card (S4.13 decision 10)', () => {
+    const view = read(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx');
+
+    expect(view).toContain('Est. Cost');
+    expect(view).not.toMatch(/Est\. Total|\/Person/);
   });
 
   it('speaks the honest tense on the preview banner — nothing is published yet', () => {

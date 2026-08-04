@@ -36,13 +36,13 @@ export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
           {itinerary.destinations.join(' · ')}
         </Text>
         <Text style={styles.rowDates}>{formatDates(itinerary)}</Text>
+        {subtitle !== null && <Text style={styles.subtitle}>{subtitle}</Text>}
         {advisory !== null && (
           <View style={styles.advisory}>
             <View style={styles.advisoryDot} />
             <Text style={styles.advisoryText}>{advisory}</Text>
           </View>
         )}
-        {advisory === null && subtitle !== null && <Text style={styles.subtitle}>{subtitle}</Text>}
       </Pressable>
     </Link>
   );

@@ -85,29 +85,12 @@ public class ItineraryService {
             LocalDate startDate,
             LocalDate endDate,
             int durationDays) {
-        Itinerary itinerary =
-                itineraries.save(
-                        Itinerary.draft(ownerId, title, destinations, description, startDate, endDate, Instant.now()));
-        workspaces.formAround(itinerary.id(), itinerary.ownerId(), itinerary.createdAt());
-        days.seedDays(itinerary.id(), durationDays, itinerary.createdAt());
-        log.info("Itinerary created: id={} ownerId={}", itinerary.id(), itinerary.ownerId());
-        emitAfterCommit(itinerary);
-        return itinerary;
-    }
-
-
-    @Transactional
-    public ItineraryPlan createWithPlan(
-            UUID ownerId,
-            String title,
-            List<String> destinations,
-            String description,
-            LocalDate startDate,
-            LocalDate endDate,
-            int durationDays) {
-        Itinerary itinerary =
-                create(ownerId, title, destinations, description, startDate, endDate, durationDays);
-        return assemble(itinerary, days.plan(itinerary.id()));
+        return createWithPlan(
+                        ownerId,
+                        ItineraryFields.withoutPublishMetadata(
+                                title, destinations, description, startDate, endDate),
+                        durationDays)
+                .itinerary();
     }
 
 

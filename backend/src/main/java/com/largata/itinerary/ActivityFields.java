@@ -48,20 +48,6 @@ public record ActivityFields(
         }
     }
 
-    public static ActivityFields withoutBooking(
-            String title,
-            LocalTime timeOfDay,
-            BigDecimal costAmount,
-            String costCurrency,
-            String place,
-            String description,
-            String notes,
-            String externalUrl) {
-        return new ActivityFields(
-                title, timeOfDay, costAmount, costCurrency, place, description, notes, externalUrl,
-                null, null, null, null);
-    }
-
     private static String requireBoundedNonBlank(String value, int max, String blankMessage) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(blankMessage);

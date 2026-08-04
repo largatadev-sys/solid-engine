@@ -7,7 +7,12 @@ import { itineraryLoadMessage, ScreenMessage } from '../../../../src/components/
 import { PublishedItineraryView } from '../../../../src/itineraries/PublishedItineraryView';
 import { audienceBlurb, audienceLabel } from '../../../../src/itineraries/publishControls';
 import type { PublishAudience } from '../../../../src/types/api';
-import { useItineraryPreview, usePublishTrip } from '../../../../src/query/itineraryQueries';
+import {
+  useItinerary,
+  useItineraryPreview,
+  usePublishTrip,
+  useTripLifecycle,
+} from '../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
@@ -15,8 +20,11 @@ export default function ItineraryPreviewScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, isPending, isError, error } = useItineraryPreview(id);
+  const trip = useItinerary(id);
   const publish = usePublishTrip(id);
+  const finishPlanning = useTripLifecycle(id);
   const [audience, setAudience] = useState<PublishAudience>('public');
+  const stillPlanning = trip.data?.state === 'draft';
 
   if (isPending) {
     return (
@@ -49,6 +57,30 @@ export default function ItineraryPreviewScreen() {
         <PublishedItineraryView projection={data} audience="preview" />
       </ScrollView>
 
+      {stillPlanning ? (
+        <View style={styles.footer}>
+          {finishPlanning.isError && <Text style={styles.error}>{finishPlanning.error.message}</Text>}
+          <Pressable
+            style={[styles.primary, finishPlanning.isPending && styles.busy]}
+            disabled={finishPlanning.isPending}
+            accessibilityRole="button"
+            onPress={() =>
+              finishPlanning.mutate('finish-planning', {
+                onSuccess: () => router.replace({ pathname: '/itineraries/[id]', params: { id } }),
+              })
+            }
+          >
+            {finishPlanning.isPending ? (
+              <ActivityIndicator color={colors.textOnAccent} />
+            ) : (
+              <Text style={styles.primaryText}>Finish Planning</Text>
+            )}
+          </Pressable>
+          <Pressable style={styles.secondary} accessibilityRole="button" onPress={() => router.back()}>
+            <Text style={styles.secondaryText}>Continue Editing</Text>
+          </Pressable>
+        </View>
+      ) : (
       <View style={styles.footer}>
         <View style={styles.audienceRow}>
           {AUDIENCES.map((option) => (
@@ -95,6 +127,7 @@ export default function ItineraryPreviewScreen() {
           <Text style={styles.secondaryText}>Continue Editing</Text>
         </Pressable>
       </View>
+      )}
     </View>
   );
 }
