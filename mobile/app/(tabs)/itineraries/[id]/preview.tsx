@@ -24,7 +24,9 @@ export default function ItineraryPreviewScreen() {
   const publish = usePublishTrip(id);
   const finishPlanning = useTripLifecycle(id);
   const [audience, setAudience] = useState<PublishAudience>('public');
-  const stillPlanning = trip.data?.state === 'draft';
+  const state = trip.data?.state;
+  const stillPlanning = state === 'draft';
+  const readyToPublish = state === 'completed' && trip.data?.published === false;
 
   if (isPending) {
     return (
@@ -41,11 +43,7 @@ export default function ItineraryPreviewScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <ScreenHeader
-          title="Preview"
-          back
-          backTo={{ pathname: '/itineraries/[id]', params: { id } }}
-        />
+        <ScreenHeader title="Preview" back backTo={{ pathname: '/' }} />
 
         <View style={styles.banner}>
           <Icon name="eye" size={BANNER_ICON_SIZE} color={colors.accent} />
@@ -65,22 +63,26 @@ export default function ItineraryPreviewScreen() {
             disabled={finishPlanning.isPending}
             accessibilityRole="button"
             onPress={() =>
-              finishPlanning.mutate('finish-planning', {
-                onSuccess: () => router.replace({ pathname: '/itineraries/[id]', params: { id } }),
-              })
+              finishPlanning.mutate('finish-planning', { onSuccess: () => router.replace('/') })
             }
           >
             {finishPlanning.isPending ? (
               <ActivityIndicator color={colors.textOnAccent} />
             ) : (
-              <Text style={styles.primaryText}>Finish Planning</Text>
+              <Text style={styles.primaryText}>Finish Itinerary</Text>
             )}
           </Pressable>
-          <Pressable style={styles.secondary} accessibilityRole="button" onPress={() => router.back()}>
+          <Pressable
+            style={styles.secondary}
+            accessibilityRole="button"
+            onPress={() =>
+              router.push({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } })
+            }
+          >
             <Text style={styles.secondaryText}>Continue Editing</Text>
           </Pressable>
         </View>
-      ) : (
+      ) : readyToPublish ? (
       <View style={styles.footer}>
         <View style={styles.audienceRow}>
           {AUDIENCES.map((option) => (
@@ -123,10 +125,31 @@ export default function ItineraryPreviewScreen() {
             <Text style={styles.primaryText}>Publish Itinerary</Text>
           )}
         </Pressable>
-        <Pressable style={styles.secondary} accessibilityRole="button" onPress={() => router.back()}>
+        <Pressable
+          style={styles.secondary}
+          accessibilityRole="button"
+          onPress={() => router.push({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } })}
+        >
           <Text style={styles.secondaryText}>Continue Editing</Text>
         </Pressable>
       </View>
+      ) : (
+        <View style={styles.footer}>
+          <Pressable
+            style={styles.primary}
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: '/itineraries/[id]', params: { id } })}
+          >
+            <Text style={styles.primaryText}>Open Trip Workspace</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondary}
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } })}
+          >
+            <Text style={styles.secondaryText}>Continue Editing</Text>
+          </Pressable>
+        </View>
       )}
     </View>
   );

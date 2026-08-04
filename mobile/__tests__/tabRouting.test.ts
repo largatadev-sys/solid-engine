@@ -173,13 +173,27 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(days).toContain("pathname: '/itineraries/[id]/preview'");
   });
 
-  it('ends the creation walk on Finish Planning, on the preview, and only while draft', () => {
+  it('ends the creation walk on Finish Itinerary, on the preview, and only while draft', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 
-    expect(preview).toContain('Finish Planning');
+    expect(preview).toContain('Finish Itinerary');
     expect(preview).toContain("finishPlanning.mutate('finish-planning'");
-    expect(preview).toContain("trip.data?.state === 'draft'");
+    expect(preview).toContain("state === 'draft'");
     expect(preview).not.toMatch(/Complete Itinerary/);
+  });
+
+  it('reserves the publish footer for a completed, unpublished trip — frame 7 is the publish act', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+
+    expect(preview).toContain("state === 'completed' && trip.data?.published === false");
+    expect(preview).toMatch(/readyToPublish \? \(/);
+  });
+
+  it('opens an unpublished trip on its preview, not the old workspace (founder, 2026-08-04)', () => {
+    const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
+
+    expect(row).toContain("pathname: '/itineraries/[id]/preview'");
+    expect(row).toMatch(/if \(itinerary\.archived\)/);
   });
 
   it('shows honest zeros and "Est. Cost" on the published stats card (S4.13 decision 10)', () => {
@@ -281,11 +295,12 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(read(TRIPS, 'new.tsx')).toContain("day: '1'");
   });
 
-  it('routes on DISCOVERY: unpublished to the workspace, published to the overview (ADR-019)', () => {
+  it('routes on DISCOVERY: unpublished to its preview, published to the overview (founder, 2026-08-04)', () => {
     const unpublished = tripRowDestination({ id: 'trip-1', archived: false, published: false });
     const published = tripRowDestination({ id: 'trip-1', archived: false, published: true });
 
-    expect(unpublished.pathname).toBe('/itineraries/[id]');
+    expect(unpublished.pathname)
+      .toBe('/itineraries/[id]/preview');
     expect(published.pathname).toBe('/published/[id]');
   });
 

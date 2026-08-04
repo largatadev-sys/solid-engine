@@ -69,7 +69,7 @@ describe('the publish gate', () => {
 
 describe('the lifecycle', () => {
   it('steps forward one act at a time and stops at complete', () => {
-    expect(nextLifecycleAct('draft')).toEqual({ act: 'finish-planning', label: 'Finish Planning' });
+    expect(nextLifecycleAct('draft')).toEqual({ act: 'finish-planning', label: 'Finish Itinerary' });
     expect(nextLifecycleAct('upcoming')).toEqual({ act: 'start', label: 'Start trip' });
     expect(nextLifecycleAct('ongoing')).toEqual({ act: 'complete', label: 'Mark complete' });
     expect(nextLifecycleAct('completed')).toBeNull();

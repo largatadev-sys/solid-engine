@@ -110,7 +110,7 @@ export type LifecycleStep = { act: LifecycleAct; label: string };
 
 
 export function nextLifecycleAct(state: ItineraryState): LifecycleStep | null {
-  if (state === 'draft') return { act: 'finish-planning', label: 'Finish Planning' };
+  if (state === 'draft') return { act: 'finish-planning', label: 'Finish Itinerary' };
   if (state === 'upcoming') return { act: 'start', label: 'Start trip' };
   if (state === 'ongoing') return { act: 'complete', label: 'Mark complete' };
   return null;

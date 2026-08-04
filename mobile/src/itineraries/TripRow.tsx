@@ -9,8 +9,11 @@ import { draftSubtitle, editingAdvisory } from './tripSections';
 export function tripRowDestination(
   itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'published'>,
 ) {
-  if (itinerary.archived || !itinerary.published) {
+  if (itinerary.archived) {
     return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
+  }
+  if (!itinerary.published) {
+    return { pathname: '/itineraries/[id]/preview' as const, params: { id: itinerary.id } };
   }
   return { pathname: '/published/[id]' as const, params: { id: itinerary.id } };
 }
