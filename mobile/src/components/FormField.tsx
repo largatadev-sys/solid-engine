@@ -1,12 +1,21 @@
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Icon, type IconName } from './Icon';
 import { colors, controls, radii, spacing, typography } from '../theme';
+
+interface TrailingControl {
+  readonly onPress: () => void;
+  readonly accessibilityLabel: string;
+  readonly icon: IconName;
+}
 
 interface FormFieldProps extends TextInputProps {
   readonly label: string;
   readonly prefix?: string;
   readonly area?: boolean;
-  readonly trailing?: { readonly text: string; readonly onPress: () => void; readonly accessibilityLabel: string };
+  readonly trailing?: TrailingControl;
 }
+
+const TRAILING_GLYPH = 20;
 
 export function FormField({ label, prefix, area = false, trailing, style, ...inputProps }: FormFieldProps) {
   return (
@@ -30,7 +39,7 @@ export function FormField({ label, prefix, area = false, trailing, style, ...inp
             accessibilityLabel={trailing.accessibilityLabel}
             hitSlop={spacing.sm}
           >
-            <Text style={styles.trailing}>{trailing.text}</Text>
+            <Icon name={trailing.icon} size={TRAILING_GLYPH} color={colors.textSecondary} />
           </Pressable>
         )}
       </View>
@@ -56,5 +65,4 @@ const styles = StyleSheet.create({
   prefix: { ...typography.body, color: colors.textSecondary },
   input: { flex: 1, ...typography.body, color: colors.textPrimary },
   areaInput: { height: '100%', textAlignVertical: 'top' },
-  trailing: { ...typography.label, color: colors.accent },
 });

@@ -63,6 +63,7 @@ export const typography = {
   action: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 19, fontWeight: '600' },
   label: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 17, fontWeight: '600' },
   link: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 18, fontWeight: '400' },
+  linkStrong: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 18, fontWeight: '700' },
   caption: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 20, fontWeight: '400' },
   overline: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 1.5 },
   codeDigit: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 24, fontWeight: '700' },

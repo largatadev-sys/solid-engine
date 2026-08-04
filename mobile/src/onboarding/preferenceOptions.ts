@@ -35,18 +35,12 @@ export const INTERESTS: readonly Option[] = [
 
 
 export const MIN_INTERESTS = 3;
-export const MIN_GOALS = 1;
 
 
 export function toggle(selected: readonly string[], value: string): string[] {
   return selected.includes(value)
     ? selected.filter((entry) => entry !== value)
     : [...selected, value];
-}
-
-
-export function hasEnoughGoals(selected: readonly string[]): boolean {
-  return selected.length >= MIN_GOALS;
 }
 
 

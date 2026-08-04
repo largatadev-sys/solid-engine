@@ -58,7 +58,7 @@ export default function SignUpScreen() {
         autoCapitalize="none"
         autoComplete="new-password"
         trailing={{
-          text: reveal ? 'Hide' : 'Show',
+          icon: 'eye',
           onPress: () => setReveal(!reveal),
           accessibilityLabel: reveal ? 'Hide password' : 'Show password',
         }}

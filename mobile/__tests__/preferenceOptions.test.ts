@@ -3,7 +3,6 @@ import {
   GOALS,
   INTERESTS,
   MIN_INTERESTS,
-  hasEnoughGoals,
   hasEnoughInterests,
   interestsRemaining,
   labelsFor,
@@ -48,11 +47,6 @@ describe('selection rules', () => {
   it('toggling adds then removes without disturbing the rest', () => {
     expect(toggle(['a'], 'b')).toEqual(['a', 'b']);
     expect(toggle(['a', 'b'], 'a')).toEqual(['b']);
-  });
-
-  it('goals need at least one', () => {
-    expect(hasEnoughGoals([])).toBe(false);
-    expect(hasEnoughGoals(['discover'])).toBe(true);
   });
 
   it('interests need at least three (spec decision 6, ticket 04)', () => {
