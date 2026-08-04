@@ -17,6 +17,14 @@ function screen(...parts: string[]): string {
 }
 
 describe('the onboarding copy is the export, verbatim', () => {
+  it('welcome-landing', () => {
+    const source = screen('app', 'welcome.tsx');
+
+    expect(source).toContain('Largata');
+    expect(source).toContain('Plan less. Experience more.');
+    expect(source).not.toContain('Plan together. Travel better.');
+  });
+
   it('verification', () => {
     const source = screen('app', 'verify-code.tsx');
 

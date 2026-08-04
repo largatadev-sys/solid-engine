@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
       <View style={styles.hero}>
         <View style={styles.brand}>
           <Text style={styles.wordmark}>Largata</Text>
-          <Text style={styles.tagline}>Plan together. Travel better.</Text>
+          <Text style={styles.tagline}>Plan less. Experience more.</Text>
         </View>
       </View>
 

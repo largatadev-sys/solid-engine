@@ -6,7 +6,7 @@ import { OnboardingScreen } from '../../src/components/OnboardingScreen';
 import { SelectableOption } from '../../src/components/SelectableOption';
 import { useMe } from '../../src/hooks/useMe';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
-import { GOALS, hasEnoughGoals, toggle } from '../../src/onboarding/preferenceOptions';
+import { GOALS, toggle } from '../../src/onboarding/preferenceOptions';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { useUpdateProfile } from '../../src/query/travelerQueries';
 import { spacing } from '../../src/theme';
@@ -46,12 +46,7 @@ export default function GoalsStepScreen() {
       subtitle="Select all that apply"
       message={message}
       footer={
-        <Button
-          label="Continue"
-          onPress={() => void submit()}
-          busy={save.isPending}
-          disabled={!hasEnoughGoals(selected) || save.isPending}
-        />
+        <Button label="Continue" onPress={() => void submit()} busy={save.isPending} />
       }
     >
       <View style={styles.list}>

@@ -27,14 +27,13 @@ export const STEP_NUMBERS = {
 
 export type OnboardingProfile = Pick<
   MeResponse,
-  'handle' | 'goals' | 'interests' | 'country' | 'onboardingCompleted'
+  'handle' | 'interests' | 'country' | 'onboardingCompleted'
 >;
 
 
 export function nextOnboardingStep(profile: OnboardingProfile): string | null {
   if (profile.onboardingCompleted) return null;
   if (profile.handle === null) return ONBOARDING_ROUTES.profile;
-  if (profile.goals.length === 0) return ONBOARDING_ROUTES.goals;
   if (profile.interests.length === 0) return ONBOARDING_ROUTES.interests;
   if (profile.country === null) return ONBOARDING_ROUTES.travelSetup;
   return ONBOARDING_ROUTES.complete;

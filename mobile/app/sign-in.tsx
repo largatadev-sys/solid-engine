@@ -61,18 +61,10 @@ export default function SignInScreen() {
         autoCapitalize="none"
         autoComplete="current-password"
         trailing={{
-          text: reveal ? 'Hide' : 'Show',
+          icon: 'eye',
           onPress: () => setReveal(!reveal),
           accessibilityLabel: reveal ? 'Hide password' : 'Show password',
         }}
-      />
-
-      <Button
-        label="Sign In"
-        onPress={() => void run('email', () => authRepository.signInWithEmail(email.trim(), password))}
-        busy={busy === 'email'}
-        disabled={busy !== 'idle'}
-        style={styles.submit}
       />
 
       <Pressable
@@ -81,9 +73,18 @@ export default function SignInScreen() {
         }
         disabled={busy !== 'idle' || email.trim() === ''}
         accessibilityRole="button"
+        style={styles.forgotRow}
       >
         <Text style={[styles.forgot, email.trim() === '' && styles.forgotDisabled]}>Forgot password?</Text>
       </Pressable>
+
+      <Button
+        label="Sign In"
+        onPress={() => void run('email', () => authRepository.signInWithEmail(email.trim(), password))}
+        busy={busy === 'email'}
+        disabled={busy !== 'idle'}
+        style={styles.submit}
+      />
 
       <GoogleDoorway
         busy={busy === 'google'}
@@ -100,7 +101,8 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   submit: { marginTop: spacing.sm },
-  forgot: { ...typography.label, color: colors.accent, textAlign: 'center' },
+  forgotRow: { alignSelf: 'flex-end' },
+  forgot: { ...typography.linkStrong, color: colors.accent },
   forgotDisabled: { color: colors.textSecondary },
   notice: { ...typography.caption, color: colors.success, textAlign: 'center' },
   message: { ...typography.caption, color: colors.danger, textAlign: 'center' },

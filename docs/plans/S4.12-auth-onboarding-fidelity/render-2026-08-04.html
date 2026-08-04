@@ -1,0 +1,1153 @@
+<title>Sign-up &amp; Onboarding — render and reconciliation</title>
+<style>
+  :root {
+    --ground: #151A22;
+    --panel: #1D242E;
+    --panel-2: #232B37;
+    --ink: #E6EAF0;
+    --dim: #8E9AAB;
+    --faint: #5C6879;
+    --rule: #2C3644;
+    --accent: #D96C4A;
+    --accent-soft: rgba(217, 108, 74, 0.14);
+    --ok: #5BA37D;
+    --ok-soft: rgba(91, 163, 125, 0.14);
+    --warn: #DFA53C;
+    --warn-soft: rgba(223, 165, 60, 0.14);
+    --gap: #E0736A;
+    --gap-soft: rgba(224, 115, 106, 0.14);
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --step-0: 0.8125rem;
+    --step-1: 0.9375rem;
+    --step-2: 1.125rem;
+    --step-3: 1.5rem;
+    --step-4: 2.25rem;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground: #ECEEF1;
+      --panel: #FFFFFF;
+      --panel-2: #F5F6F8;
+      --ink: #1B263B;
+      --dim: #5C6470;
+      --faint: #8A93A1;
+      --rule: #DDE1E7;
+      --accent: #C25836;
+      --accent-soft: rgba(194, 88, 54, 0.12);
+      --ok: #2F6B47;
+      --ok-soft: rgba(47, 107, 71, 0.12);
+      --warn: #916312;
+      --warn-soft: rgba(145, 99, 18, 0.12);
+      --gap: #B3261E;
+      --gap-soft: rgba(179, 38, 30, 0.1);
+      --shadow: 0 18px 44px rgba(27, 38, 59, 0.14);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #151A22;
+    --panel: #1D242E;
+    --panel-2: #232B37;
+    --ink: #E6EAF0;
+    --dim: #8E9AAB;
+    --faint: #5C6879;
+    --rule: #2C3644;
+    --accent: #D96C4A;
+    --accent-soft: rgba(217, 108, 74, 0.14);
+    --ok: #5BA37D;
+    --ok-soft: rgba(91, 163, 125, 0.14);
+    --warn: #DFA53C;
+    --warn-soft: rgba(223, 165, 60, 0.14);
+    --gap: #E0736A;
+    --gap-soft: rgba(224, 115, 106, 0.14);
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  }
+
+  :root[data-theme="light"] {
+    --ground: #ECEEF1;
+    --panel: #FFFFFF;
+    --panel-2: #F5F6F8;
+    --ink: #1B263B;
+    --dim: #5C6470;
+    --faint: #8A93A1;
+    --rule: #DDE1E7;
+    --accent: #C25836;
+    --accent-soft: rgba(194, 88, 54, 0.12);
+    --ok: #2F6B47;
+    --ok-soft: rgba(47, 107, 71, 0.12);
+    --warn: #916312;
+    --warn-soft: rgba(145, 99, 18, 0.12);
+    --gap: #B3261E;
+    --gap-soft: rgba(179, 38, 30, 0.1);
+    --shadow: 0 18px 44px rgba(27, 38, 59, 0.14);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-1);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
+
+  /* ---------- page chrome ---------- */
+
+  .masthead { padding: clamp(40px, 7vw, 76px) 0 28px; display: flex; flex-direction: column; gap: 18px; }
+  .eyebrow {
+    font-size: 0.6875rem; letter-spacing: 0.14em; text-transform: uppercase;
+    font-weight: 700; color: var(--accent);
+  }
+  h1 {
+    margin: 0; font-size: clamp(1.75rem, 4.4vw, var(--step-4)); line-height: 1.08;
+    letter-spacing: -0.026em; font-weight: 800; text-wrap: balance; max-width: 20ch;
+  }
+  .standfirst { margin: 0; max-width: 66ch; color: var(--dim); font-size: var(--step-2); line-height: 1.5; }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  .verdict {
+    margin-top: 6px; display: flex; gap: 14px; align-items: flex-start;
+    padding: 16px 18px; border-radius: 12px;
+    background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 34%, transparent);
+  }
+  .verdict-key {
+    flex: none; font-size: 0.625rem; letter-spacing: 0.12em; text-transform: uppercase;
+    font-weight: 800; color: var(--warn); padding-top: 3px;
+  }
+  .verdict p { margin: 0; font-size: var(--step-1); max-width: 74ch; }
+  .verdict p + p { margin-top: 8px; color: var(--dim); }
+  .verdict code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.8em; background: color-mix(in srgb, var(--ink) 8%, transparent);
+    padding: 1px 5px; border-radius: 4px;
+  }
+
+  /* ---------- controls ---------- */
+
+  .controls {
+    position: sticky; top: 0; z-index: 40;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+    margin-top: 34px;
+  }
+  .controls-inner {
+    display: flex; flex-wrap: wrap; gap: 20px 26px; align-items: center;
+    padding: 13px 0;
+  }
+  .ctl { display: flex; align-items: center; gap: 10px; }
+  .ctl-label {
+    font-size: 0.625rem; letter-spacing: 0.12em; text-transform: uppercase;
+    font-weight: 700; color: var(--faint);
+  }
+  .segmented { display: flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  .segmented button {
+    appearance: none; border: 0; background: transparent; color: var(--dim);
+    font: inherit; font-size: var(--step-0); font-weight: 600;
+    padding: 7px 14px; cursor: pointer; transition: background 120ms, color 120ms;
+  }
+  .segmented button + button { border-left: 1px solid var(--rule); }
+  .segmented button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .segmented button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .switch { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; font-size: var(--step-0); color: var(--dim); font-weight: 600; }
+  .switch input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+  .switch:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  .hint { font-size: var(--step-0); color: var(--faint); margin-left: auto; }
+
+  /* ---------- filmstrip ---------- */
+
+  .strip-scroll { overflow-x: auto; padding: 34px 0 12px; scrollbar-width: thin; }
+  .strip { display: flex; gap: 28px; padding: 0 clamp(16px, 4vw, 40px); width: max-content; }
+  .slot { display: flex; flex-direction: column; gap: 12px; width: 393px; }
+  .slot-head { display: flex; flex-direction: column; gap: 2px; padding-left: 2px; }
+  .slot-name { font-size: var(--step-0); font-weight: 700; letter-spacing: -0.01em; }
+  .slot-route {
+    font-size: 0.6875rem; color: var(--faint);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .slot-route.absent { color: var(--gap); }
+
+  /* ---------- the phone frame ---------- */
+
+  .fr {
+    --f-bg: #FFFFFF; --f-surface: #FFFFFF;
+    --f-ink: #000000; --f-dim: #666666; --f-muted: #5C6470;
+    --f-border: #8F8F8F; --f-border-soft: #F7F7F7;
+    --f-fill: #B3B3B3; --f-on-fill: #FFFFFF;
+    --f-cta: #000000; --f-cta-ink: #FFFFFF;
+    --f-cta-radius: 4px; --f-input-radius: 4px; --f-landing-input-radius: 12px;
+    --f-accent: #FF751F;
+    --f-prog-on: #B3B3B3; --f-prog-off: #F7F7F7;
+    --f-avatar: #D7D7D7; --f-badge: #B3B3B3;
+    --f-icon: #666666; --f-icon-soft: #B3B3B3;
+    --f-verify-circle: #FFFFFF; --f-complete-circle: rgba(179, 179, 179, 0.0627);
+    --f-google-border: #D4D4D4; --f-google-ink: #404040; --f-google-radius: 8px;
+
+    position: relative;
+    width: 393px; height: 852px; flex: none;
+    background: var(--f-bg); color: var(--f-ink);
+    border-radius: 30px; box-shadow: var(--shadow);
+    outline: 1px solid var(--rule); outline-offset: 0;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    font-size: 16px; line-height: 19px;
+  }
+
+  [data-skin="largata"] .fr {
+    --f-bg: #FAF9F6; --f-surface: #FFFFFF;
+    --f-ink: #1B263B; --f-dim: #5C6470; --f-muted: #5C6470;
+    --f-border: #E2E4E8; --f-border-soft: #E2E4E8;
+    --f-fill: #D96C4A; --f-on-fill: #FFFFFF;
+    --f-cta: #D96C4A; --f-cta-ink: #FFFFFF;
+    --f-cta-radius: 12px; --f-input-radius: 12px; --f-landing-input-radius: 12px;
+    --f-accent: #D96C4A;
+    --f-prog-on: #D96C4A; --f-prog-off: #E2E4E8;
+    --f-avatar: #F2F1ED; --f-badge: #D96C4A;
+    --f-icon: #5C6470; --f-icon-soft: #EFC9BA;
+    --f-verify-circle: #F2F1ED; --f-complete-circle: rgba(217, 108, 74, 0.0627);
+    --f-google-border: #E2E4E8; --f-google-ink: #1B263B; --f-google-radius: 12px;
+  }
+
+  .fr * { box-sizing: border-box; }
+
+  /* status bar + home indicator */
+  .statusbar {
+    flex: none; height: 54px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 24px;
+  }
+  .clock { font-size: 16px; line-height: 19px; font-weight: 600; color: var(--f-ink); }
+  .sysicons { display: flex; align-items: center; gap: 8px; color: var(--f-ink); }
+  .homebar {
+    width: 139px; height: 5px; border-radius: 100px;
+    background: var(--f-ink); margin: 0 auto;
+  }
+  .homeslot { flex: none; height: 34px; display: flex; align-items: flex-start; justify-content: center; padding-top: 21px; }
+
+  /* generic frame body */
+  .pad { padding-left: 24px; padding-right: 24px; }
+  .col { display: flex; flex-direction: column; }
+  .grow { flex: 1 1 auto; min-height: 0; }
+
+  /* header row with back / step */
+  .navrow { height: 40px; display: flex; align-items: center; justify-content: space-between; }
+  .navbtn {
+    width: 40px; height: 40px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; color: var(--f-ink);
+  }
+  .navspacer { width: 40px; height: 40px; }
+  .stepnum { font-size: 14px; line-height: 17px; font-weight: 600; color: var(--f-dim); }
+
+  .progress { display: flex; gap: 8px; padding: 12px 0; }
+  .progress span { flex: 1; height: 4px; border-radius: 2px; background: var(--f-prog-off); }
+  .progress span.on { background: var(--f-prog-on); }
+
+  /* typography inside frames */
+  .h-title { font-size: 28px; line-height: 34px; font-weight: 700; margin: 0; color: var(--f-ink); }
+  .h-heading { font-size: 24px; line-height: 29px; font-weight: 700; margin: 0; color: var(--f-ink); }
+  .h-display { font-size: 32px; line-height: 39px; font-weight: 700; margin: 0; color: var(--f-ink); }
+  .wordmark { font-size: 42px; line-height: 51px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: var(--f-ink); }
+  .sub { font-size: 16px; line-height: 19px; color: var(--f-dim); margin: 0; }
+  .tagline { font-size: 18px; line-height: 22px; color: var(--f-dim); margin: 0; text-align: center; }
+  .fineprint { font-size: 13px; line-height: 20px; color: var(--f-muted); margin: 0; }
+  .linkline { font-size: 15px; line-height: 18px; color: var(--f-muted); margin: 0; }
+  .linkline b { font-weight: 400; color: var(--f-accent); }
+
+  /* fields */
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field-label { font-size: 14px; line-height: 17px; font-weight: 600; color: var(--f-ink); }
+  .input {
+    height: 50px; display: flex; align-items: center; gap: 8px; padding: 0 16px;
+    background: var(--f-surface); border: 1px solid var(--f-border);
+    border-radius: var(--f-input-radius); color: var(--f-dim);
+  }
+  .input .ph { flex: 1 1 auto; font-size: 16px; line-height: 19px; }
+  .input .val { flex: 1 1 auto; font-size: 16px; line-height: 19px; color: var(--f-ink); }
+  .input .trail { flex: none; color: var(--f-icon); display: flex; }
+  .input.soft { border-color: var(--f-border-soft); border-radius: var(--f-landing-input-radius); }
+  .input.area { height: 120px; align-items: flex-start; padding: 16px; }
+
+  /* buttons */
+  .cta {
+    height: 50px; display: flex; align-items: center; justify-content: center;
+    background: var(--f-cta); color: var(--f-cta-ink); border-radius: var(--f-cta-radius);
+    font-size: 16px; line-height: 19px; font-weight: 600;
+  }
+  .cta.tall { height: 51px; }
+  .cta.abs { position: absolute; left: 24px; right: 24px; }
+
+  .sns { display: flex; flex-direction: column; gap: 16px; }
+  .btn-apple {
+    height: 50px; display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--f-cta); color: var(--f-cta-ink); border-radius: var(--f-cta-radius);
+    font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.408px;
+  }
+  .btn-google {
+    height: 50px; display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--f-surface); border: 1px solid var(--f-google-border);
+    border-radius: var(--f-google-radius); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    color: var(--f-google-ink); font-size: 16px; line-height: 24px; font-weight: 600;
+  }
+
+  .divider { display: flex; align-items: center; gap: 16px; }
+  .divider .rule { flex: 1; height: 1px; background: var(--f-border); }
+  .divider .word { font-size: 16px; line-height: 19px; font-weight: 600; color: var(--f-ink); }
+
+  .forgot { font-size: 15px; line-height: 18px; font-weight: 700; color: var(--f-accent); align-self: flex-end; }
+
+  /* code boxes */
+  .codes { display: flex; gap: 10px; }
+  .codebox {
+    flex: 1; height: 56px; display: flex; align-items: center; justify-content: center;
+    background: var(--f-surface); border: 1px solid var(--f-border); border-radius: var(--f-input-radius);
+    font-size: 20px; line-height: 24px; font-weight: 700; color: var(--f-ink);
+  }
+
+  /* avatar */
+  .avatar {
+    width: 120px; height: 120px; border-radius: 60px; background: var(--f-avatar);
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .avatar-badge {
+    position: absolute; left: 40.5px; top: 40px; width: 40px; height: 40px; border-radius: 20px;
+    background: var(--f-badge); display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .upload { font-size: 14px; line-height: 17px; font-weight: 600; color: var(--f-ink); }
+
+  .bigcircle {
+    width: 128px; height: 128px; border-radius: 100px; background: var(--f-verify-circle);
+    display: flex; align-items: center; justify-content: center; color: var(--f-icon-soft);
+  }
+  .bigcircle.finish {
+    width: 120px; height: 120px; border-radius: 60px; background: var(--f-complete-circle);
+  }
+
+  /* option rows + chips */
+  .options { display: flex; flex-direction: column; gap: 16px; }
+  .option {
+    height: 50px; display: flex; align-items: center; gap: 16px; padding: 0 20px;
+    background: var(--f-surface); border: 1px solid var(--f-border);
+    border-radius: var(--f-cta-radius); color: var(--f-ink);
+    font-size: 16px; line-height: 19px; font-weight: 500;
+  }
+  .option .glyph { flex: none; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: var(--f-icon); }
+  .option.faint { border-color: var(--f-icon-soft); background: transparent; }
+  .option.on { background: var(--f-fill); border-color: var(--f-fill); color: var(--f-on-fill); }
+  .option.on .glyph { color: var(--f-on-fill); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; }
+  .chip {
+    height: 41px; display: inline-flex; align-items: center; padding: 0 20px;
+    background: var(--f-surface); border: 1px solid var(--f-border); border-radius: 100px;
+    font-size: 14px; line-height: 17px; font-weight: 600; color: var(--f-ink);
+  }
+  .chip.on { background: var(--f-fill); border-color: var(--f-fill); color: var(--f-on-fill); }
+
+  /* pins */
+  .pin {
+    position: absolute; z-index: 5;
+    min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px;
+    background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 800; line-height: 22px; text-align: center;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    opacity: 0; transform: scale(0.6); pointer-events: none;
+    transition: opacity 160ms ease, transform 160ms ease;
+  }
+  .pin.drift { background: var(--gap); }
+  .pin.mockbug { background: var(--warn); color: #1B1206; }
+  [data-pins="on"] .pin { opacity: 1; transform: scale(1); }
+  @media (prefers-reduced-motion: reduce) { .pin { transition: none; } }
+
+  /* ---------- ledger ---------- */
+
+  .ledger { padding: 26px 0 90px; display: flex; flex-direction: column; gap: 40px; }
+  .band { display: flex; flex-direction: column; gap: 14px; }
+  .band-head { display: flex; flex-direction: column; gap: 6px; }
+  h2 {
+    margin: 0; font-size: var(--step-3); line-height: 1.2; letter-spacing: -0.02em;
+    font-weight: 700; display: flex; align-items: center; gap: 11px; text-wrap: balance;
+  }
+  h2 .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .band.record h2 .dot { background: var(--ok); }
+  .band.drift h2 .dot { background: var(--gap); }
+  .band.mockbug h2 .dot { background: var(--warn); }
+  .band-note { margin: 0; color: var(--dim); max-width: 76ch; }
+
+  .rows { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; }
+  .row { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.9fr); gap: 0; background: var(--panel); }
+  .row.head { background: var(--panel-2); }
+  .row.head > * {
+    font-size: 0.625rem; letter-spacing: 0.12em; text-transform: uppercase;
+    font-weight: 700; color: var(--faint); padding: 10px 14px;
+  }
+  .row > * { padding: 13px 14px; font-size: var(--step-0); line-height: 1.5; min-width: 0; }
+  .row .k { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .band.drift .row .k { color: var(--gap); }
+  .band.mockbug .row .k { color: var(--warn); }
+  .row .drawn { color: var(--dim); }
+  .row .built { color: var(--ink); }
+  .row .why { color: var(--dim); }
+  .row .why b { color: var(--ink); font-weight: 600; }
+  .row code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86em; color: var(--ink);
+    background: color-mix(in srgb, var(--ink) 7%, transparent);
+    padding: 1px 5px; border-radius: 4px; word-break: break-word;
+  }
+
+  @media (max-width: 900px) {
+    .row { grid-template-columns: 36px 1fr; }
+    .row.head { display: none; }
+    .row > * { padding: 10px 12px; }
+    .row .k { grid-row: span 3; padding-top: 13px; }
+    .row .drawn::before { content: "Drawn — "; font-weight: 700; color: var(--faint); }
+    .row .built::before { content: "Built — "; font-weight: 700; color: var(--faint); }
+    .row .drawn, .row .built { padding-bottom: 2px; }
+  }
+
+  .closing { border-top: 1px solid var(--rule); padding: 26px 0 90px; display: flex; flex-direction: column; gap: 12px; }
+  .closing h2 { font-size: var(--step-2); }
+  .closing ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 9px; max-width: 78ch; color: var(--dim); }
+  .closing ol strong { color: var(--ink); }
+  .footnote { margin: 20px 0 0; font-size: var(--step-0); color: var(--faint); max-width: 78ch; }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <span class="eyebrow">Design reconciliation · 2026-08-04</span>
+    <h1>Sign-up &amp; onboarding, drawn against built</h1>
+    <p class="standfirst">
+      All eight Figma frames rendered at true size, in both the greyscale wireframe they were drawn in
+      and the <strong>ADR-016 Largata palette</strong> they ship in. Below the strip, every difference
+      between the drawing and the running app — sorted by whether someone decided it.
+    </p>
+
+    <div class="verdict">
+      <span class="verdict-key">First</span>
+      <div>
+        <p>
+          This board is <strong>already in the repo</strong>, at
+          <code>docs/plans/S1.2-email-invites/signup flow from figma</code> — and story <strong>S4.0</strong>
+          already walked it, locking fourteen decisions against it before building.
+        </p>
+        <p>
+          Verified rather than assumed: identical frame x-positions (212 · 685 · 1158 · 1631 · 2104 · 2577 · 3050 · 3523),
+          identical CTA strings, and identical step labels — including the broken run of three consecutive
+          “Step 3 of 4”. A revised export would have moved at least one. So the useful question is not
+          “what’s missing?” but “which gaps were decided, and which are drift?”
+        </p>
+      </div>
+    </div>
+  </header>
+</div>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="controls-inner">
+      <div class="ctl">
+        <span class="ctl-label">Skin</span>
+        <div class="segmented" role="group" aria-label="Colour treatment">
+          <button type="button" id="skin-wire" aria-pressed="false">Wireframe as drawn</button>
+          <button type="button" id="skin-largata" aria-pressed="true">Largata theme</button>
+        </div>
+      </div>
+
+      <label class="switch">
+        <input type="checkbox" id="pin-toggle" checked>
+        Show difference pins
+      </label>
+
+      <span class="hint">Frames scroll horizontally →</span>
+    </div>
+  </div>
+</div>
+
+<div class="strip-scroll" id="strip-scroll" data-skin="largata" data-pins="on">
+  <div class="strip">
+
+    <!-- ============ 1 · welcome-landing ============ -->
+    <div class="slot">
+      <div class="slot-head">
+        <span class="slot-name">1 · welcome-landing</span>
+        <span class="slot-route">mobile/app/welcome.tsx</span>
+      </div>
+      <div class="fr">
+        <span class="pin drift" style="left:126px; top:150px;">10</span>
+        <span class="pin mockbug" style="left:356px; top:296px;">15</span>
+        <span class="pin drift" style="left:356px; top:428px;">13</span>
+        <span class="pin" style="left:14px; top:436px;">1</span>
+        <span class="pin" style="left:356px; top:612px;">2</span>
+        <span class="pin mockbug" style="left:14px; top:670px;">16</span>
+        <span class="pin" style="left:356px; top:670px;">7</span>
+
+        <div class="statusbar">
+          <span class="clock">9:41</span>
+          <span class="sysicons">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="currentColor"><rect x="0" y="11" width="3" height="4" rx="1"/><rect x="5" y="8.5" width="3" height="6.5" rx="1"/><rect x="10" y="6" width="3" height="9" rx="1"/><rect x="15" y="4" width="3" height="11" rx="1"/></g></svg>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 7.2a12 12 0 0 1 16.8 0"/><path d="M4.6 10.4a8 8 0 0 1 10.8 0"/><path d="M7.6 13.5a4 4 0 0 1 4.8 0"/></g><circle cx="10" cy="16" r="1.3" fill="currentColor"/></svg>
+            <svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="5.5" width="23" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.5"/><rect x="2.8" y="7.3" width="19.4" height="6.4" rx="1.8" fill="currentColor"/><path d="M25.6 8.6v3.8a2.2 2.2 0 0 0 0-3.8z" fill="currentColor" opacity="0.5"/></svg>
+          </span>
+        </div>
+
+        <div class="col grow" style="gap:16px; padding-top:40px;">
+          <div class="col" style="align-items:center; padding:24px; gap:12px;">
+            <p class="wordmark">Largata</p>
+            <p class="tagline">Plan less. Experience more.</p>
+          </div>
+
+          <div class="col pad" style="justify-content:center; gap:24px; flex:1;">
+            <div class="col" style="gap:32px;">
+              <div class="col" style="gap:16px;">
+                <div class="field">
+                  <span class="field-label">Email</span>
+                  <div class="input soft"><span class="ph">email@example.com</span></div>
+                </div>
+                <div class="field">
+                  <span class="field-label">Password</span>
+                  <div class="input soft"><span class="ph">Min. 8 characters</span></div>
+                </div>
+                <span class="forgot">Forgot password?</span>
+              </div>
+              <div class="cta">Sign in</div>
+            </div>
+
+            <div class="divider"><span class="rule"></span><span class="word">Or</span><span class="rule"></span></div>
+
+            <div class="sns">
+              <div class="btn-apple">
+                <svg width="16" height="20" viewBox="0 0 16 20" fill="currentColor" aria-hidden="true"><path d="M13.2 10.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.9-3-.8-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.2 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.2 1.3-2.5 1.3-2.5s-2.5-1-2.5-3.6zM11 3.8c.6-.8 1-1.9.9-3-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-.9 2.9 1 .1 2-.5 2.7-1.3z"/></svg>
+                Sign in with Apple
+              </div>
+              <div class="btn-google">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path fill="#4285F4" d="M19.6 10.23c0-.71-.06-1.39-.18-2.05H10v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.89-1.74 2.98-4.3 2.98-7.36z"/><path fill="#34A853" d="M10 20c2.7 0 4.96-.9 6.62-2.41l-3.24-2.51c-.9.6-2.04.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H1.06v2.59A10 10 0 0 0 10 20z"/><path fill="#FBBC04" d="M4.41 11.92a6 6 0 0 1 0-3.83V5.5H1.06a10 10 0 0 0 0 9l3.35-2.58z"/><path fill="#EA4335" d="M10 3.96c1.47 0 2.79.51 3.83 1.5l2.87-2.87C14.95.99 12.7 0 10 0A10 10 0 0 0 1.06 5.5l3.35 2.59C5.2 5.72 7.4 3.96 10 3.96z"/></svg>
+                Sign in with Google
+              </div>
+            </div>
+
+            <p class="linkline" style="text-align:center;">Don’t have an account? <b>Sign up</b></p>
+          </div>
+        </div>
+
+        <div class="homeslot"><span class="homebar"></span></div>
+      </div>
+    </div>
+
+    <!-- ============ 2 · sign-up ============ -->
+    <div class="slot">
+      <div class="slot-head">
+        <span class="slot-name">2 · sign-up</span>
+        <span class="slot-route">mobile/app/sign-up.tsx</span>
+      </div>
+      <div class="fr">
+        <span class="pin drift" style="left:340px; top:296px;">12</span>
+        <span class="pin mockbug" style="left:14px; top:296px;">15</span>
+        <span class="pin" style="left:14px; top:352px;">4</span>
+        <span class="pin" style="left:14px; top:426px;">3</span>
+
+        <div class="statusbar" style="padding:0 48px;">
+          <span class="clock">9:41</span>
+          <span class="sysicons">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="currentColor"><rect x="0" y="11" width="3" height="4" rx="1"/><rect x="5" y="8.5" width="3" height="6.5" rx="1"/><rect x="10" y="6" width="3" height="9" rx="1"/><rect x="15" y="4" width="3" height="11" rx="1"/></g></svg>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 7.2a12 12 0 0 1 16.8 0"/><path d="M4.6 10.4a8 8 0 0 1 10.8 0"/><path d="M7.6 13.5a4 4 0 0 1 4.8 0"/></g><circle cx="10" cy="16" r="1.3" fill="currentColor"/></svg>
+            <svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="5.5" width="23" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.5"/><rect x="2.8" y="7.3" width="19.4" height="6.4" rx="1.8" fill="currentColor"/><path d="M25.6 8.6v3.8a2.2 2.2 0 0 0 0-3.8z" fill="currentColor" opacity="0.5"/></svg>
+          </span>
+        </div>
+
+        <div class="col pad grow">
+          <div class="navrow">
+            <span class="navbtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></span>
+            <span class="navspacer"></span>
+          </div>
+
+          <div class="col" style="padding-top:12px; gap:24px;">
+            <h2 class="h-title">Join the journey</h2>
+
+            <div class="col" style="gap:16px;">
+              <div class="field">
+                <span class="field-label">Email Address</span>
+                <div class="input"><span class="ph">you@example.com</span></div>
+              </div>
+              <div class="field">
+                <span class="field-label">Password</span>
+                <div class="input">
+                  <span class="ph">Min. 8 characters</span>
+                  <span class="trail"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+                </div>
+              </div>
+              <p class="fineprint">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="cta abs" style="top:441px;">Create account</div>
+
+        <div class="col pad" style="align-items:center; padding-bottom:12px;">
+          <p class="linkline">Already have an account? <b>Sign in</b></p>
+        </div>
+        <div class="homeslot"><span class="homebar"></span></div>
+      </div>
+    </div>
+
+    <!-- ============ 3 · email-verification ============ -->
+    <div class="slot">
+      <div class="slot-head">
+        <span class="slot-name">3 · email-verification</span>
+        <span class="slot-route">mobile/app/verify-code.tsx</span>
+      </div>
+      <div class="fr">
+        <span class="pin" style="left:14px; top:150px;">6</span>
+        <span class="pin" style="left:236px; top:238px;">8</span>
+
+        <div class="statusbar" style="padding:0 48px;">
+          <span class="clock">9:41</span>
+          <span class="sysicons">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="currentColor"><rect x="0" y="11" width="3" height="4" rx="1"/><rect x="5" y="8.5" width="3" height="6.5" rx="1"/><rect x="10" y="6" width="3" height="9" rx="1"/><rect x="15" y="4" width="3" height="11" rx="1"/></g></svg>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 7.2a12 12 0 0 1 16.8 0"/><path d="M4.6 10.4a8 8 0 0 1 10.8 0"/><path d="M7.6 13.5a4 4 0 0 1 4.8 0"/></g><circle cx="10" cy="16" r="1.3" fill="currentColor"/></svg>
+            <svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="5.5" width="23" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.5"/><rect x="2.8" y="7.3" width="19.4" height="6.4" rx="1.8" fill="currentColor"/><path d="M25.6 8.6v3.8a2.2 2.2 0 0 0 0-3.8z" fill="currentColor" opacity="0.5"/></svg>
+          </span>
+        </div>
+
+        <div class="col pad grow">
+          <div class="navrow">
+            <span class="navbtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></span>
+            <span class="navspacer"></span>
+          </div>
+
+          <div class="col" style="align-items:center; padding-top:40px; gap:32px;">
+            <div class="bigcircle">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><path d="m16 19 2 2 4-4"/></svg>
+            </div>
+
+            <div class="col" style="align-items:center; gap:12px; align-self:stretch;">
+              <h2 class="h-heading">Verify your email</h2>
+              <p class="sub" style="text-align:center;">We sent a 6-digit code to your email address.</p>
+            </div>
+
+            <div class="codes" style="align-self:stretch;">
+              <span class="codebox">4</span><span class="codebox"></span><span class="codebox"></span>
+              <span class="codebox"></span><span class="codebox"></span><span class="codebox"></span>
+            </div>
+
+            <p class="linkline">Didn’t receive code? <b>Resend code</b></p>
+          </div>
+        </div>
+
+        <div class="cta abs" style="top:544px;">Verify</div>
+        <div class="homeslot"><span class="homebar"></span></div>
+      </div>
+    </div>
+
+    <!-- ============ 4 · create-profile ============ -->
+    <div class="slot">
+      <div class="slot-head">
+        <span class="slot-name">4 · create-profile</span>
+        <span class="slot-route">mobile/app/onboarding/profile.tsx</span>
+      </div>
+      <div class="fr">
+        <span class="pin" style="left:170px; top:78px;">6</span>
+        <span class="pin" style="left:236px; top:210px;">5</span>
+
+        <div class="statusbar" style="padding:0 48px;">
+          <span class="clock">9:41</span>
+          <span class="sysicons">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="currentColor"><rect x="0" y="11" width="3" height="4" rx="1"/><rect x="5" y="8.5" width="3" height="6.5" rx="1"/><rect x="10" y="6" width="3" height="9" rx="1"/><rect x="15" y="4" width="3" height="11" rx="1"/></g></svg>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 7.2a12 12 0 0 1 16.8 0"/><path d="M4.6 10.4a8 8 0 0 1 10.8 0"/><path d="M7.6 13.5a4 4 0 0 1 4.8 0"/></g><circle cx="10" cy="16" r="1.3" fill="currentColor"/></svg>
+            <svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="5.5" width="23" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.5"/><rect x="2.8" y="7.3" width="19.4" height="6.4" rx="1.8" fill="currentColor"/><path d="M25.6 8.6v3.8a2.2 2.2 0 0 0 0-3.8z" fill="currentColor" opacity="0.5"/></svg>
+          </span>
+        </div>
+
+        <div class="col pad grow">
+          <div class="navrow">
+            <span class="navbtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></span>
+            <span class="stepnum">Step 2 of 4</span>
+            <span class="navspacer"></span>
+          </div>
+          <div class="progress"><span class="on"></span><span class="on"></span><span></span><span></span></div>
+
+          <div class="col" style="padding-top:24px; gap:32px;">
+            <div class="col" style="align-items:center; gap:16px;">
+              <div class="avatar">
+                <span class="avatar-badge">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                </span>
+              </div>
+              <span class="upload">Upload Photo</span>
+            </div>
+
+            <div class="col" style="gap:16px;">
+              <div class="field">
+                <span class="field-label">Display Name</span>
+                <div class="input"><span class="ph">Jane Dela Cruz</span></div>
+              </div>
+              <div class="field">
+                <span class="field-label">Username</span>
+                <div class="input"><span class="ph">@traveljunkie</span></div>
+              </div>
+              <div class="field">
+                <span class="field-label">Bio (Optional)</span>
+                <div class="input area"><span class="ph">Tell us about your travel style...</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cta abs" style="top:710px;">Continue</div>
+      </div>
+    </div>
+
+    <!-- ============ 5 · what-brings-you ============ -->
+    <div class="slot">
+      <div class="slot-head">
+        <span class="slot-name">5 · what-brings-you</span>
+        <span class="slot-route">mobile/app/onboarding/goals.tsx</span>
+      </div>
+      <div class="fr">
+        <span class="pin" style="left:170px; top:78px;">6</span>
+        <span class="pin drift" style="left:14px; top:280px;">14</span>
+        <span class="pin mockbug" style="left:356px; top:318px;">17</span>
+        <span class="pin" style="left:356px; top:582px;">9</span>
+
+        <div class="statusbar" style="padding:0 48px;">
+          <span class="clock">9:41</span>
+          <span class="sysicons">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="currentColor"><rect x="0" y="11" width="3" height="4" rx="1"/><rect x="5" y="8.5" width="3" height="6.5" rx="1"/><rect x="10" y="6" width="3" height="9" rx="1"/><rect x="15" y="4" width="3" height="11" rx="1"/></g></svg>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 7.2a12 12 0 0 1 16.8 0"/><path d="M4.6 10.4a8 8 0 0 1 10.8 0"/><path d="M7.6 13.5a4 4 0 0 1 4.8 0"/></g><circle cx="10" cy="16" r="1.3" fill="currentColor"/></svg>
+            <svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="5.5" width="23" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.5"/><rect x="2.8" y="7.3" width="19.4" height="6.4" rx="1.8" fill="currentColor"/><path d="M25.6 8.6v3.8a2.2 2.2 0 0 0 0-3.8z" fill="currentColor" opacity="0.5"/></svg>
+          </span>
+        </div>
+
+        <div class="col pad grow">
+          <div class="navrow">
+            <span class="navbtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></span>
+            <span class="stepnum">Step 3 of 4</span>
+            <span class="navspacer"></span>
+          </div>
+          <div class="progress"><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+
+          <div class="col" style="padding-top:24px; gap:12px;">
+            <h2 class="h-title">What are you hoping&nbsp;to do?</h2>
+            <p class="sub">Select all that apply</p>
+
+            <div class="options" style="padding-top:4px;">
+              <div class="option faint">
+                <span class="glyph"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span>
+                Discover trips
+              </div>
+              <div class="option">
+                <span class="glyph"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></span>
+                Plan a trip
+              </div>
+              <div class="option on">
+                <span class="glyph"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                Plan with friends
+              </div>
+              <div class="option">
+                <span class="glyph"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98"/><path d="M15.41 6.51l-6.82 3.98"/></svg></span>
+                Share an itinerary
+              </div>
+              <div class="option">
+                <span class="glyph"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+                Earn from my itineraries
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cta abs" style="top:623px;">Continue</div>
+      </div>
+    </div>
+
+    <!-- ============ 6 · travel-preferences ============ -->
+    <div class="slot">
+      <div class="slot-head">
+        <span class="slot-name">6 · travel-preferences</span>
+        <span class="slot-route">mobile/app/onboarding/interests.tsx</span>
+      </div>
+      <div class="fr">
+        <span class="pin" style="left:170px; top:78px;">6</span>
+
+        <div class="statusbar" style="padding:0 48px;">
+          <span class="clock">9:41</span>
+          <span class="sysicons">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="currentColor"><rect x="0" y="11" width="3" height="4" rx="1"/><rect x="5" y="8.5" width="3" height="6.5" rx="1"/><rect x="10" y="6" width="3" height="9" rx="1"/><rect x="15" y="4" width="3" height="11" rx="1"/></g></svg>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 7.2a12 12 0 0 1 16.8 0"/><path d="M4.6 10.4a8 8 0 0 1 10.8 0"/><path d="M7.6 13.5a4 4 0 0 1 4.8 0"/></g><circle cx="10" cy="16" r="1.3" fill="currentColor"/></svg>
+            <svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="5.5" width="23" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.5"/><rect x="2.8" y="7.3" width="19.4" height="6.4" rx="1.8" fill="currentColor"/><path d="M25.6 8.6v3.8a2.2 2.2 0 0 0 0-3.8z" fill="currentColor" opacity="0.5"/></svg>
+          </span>
+        </div>
+
+        <div class="col pad grow">
+          <div class="navrow">
+            <span class="navbtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></span>
+            <span class="stepnum">Step 3 of 4</span>
+            <span class="navspacer"></span>
+          </div>
+          <div class="progress"><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+
+          <div class="col" style="padding-top:24px; gap:12px;">
+            <h2 class="h-title">What kind of trips interest&nbsp;you?</h2>
+            <p class="sub">Pick at least 3</p>
+
+            <div class="chips" style="padding-top:4px;">
+              <span class="chip">Budget</span>
+              <span class="chip">Luxury</span>
+              <span class="chip on">Adventure</span>
+              <span class="chip on">Food &amp; Culture</span>
+              <span class="chip">Relaxation</span>
+              <span class="chip">Nightlife</span>
+              <span class="chip">Family Travel</span>
+              <span class="chip on">Solo Travel</span>
+              <span class="chip">Group Travel</span>
+              <span class="chip">Accessible Travel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cta abs" style="top:554px;">Continue</div>
+      </div>
+    </div>
+
+    <!-- ============ 7 · travel-setup ============ -->
+    <div class="slot">
+      <div class="slot-head">
+        <span class="slot-name">7 · travel-setup</span>
+        <span class="slot-route">mobile/app/onboarding/travel-setup.tsx</span>
+      </div>
+      <div class="fr">
+        <span class="pin" style="left:170px; top:78px;">6</span>
+
+        <div class="statusbar" style="padding:0 48px;">
+          <span class="clock">9:41</span>
+          <span class="sysicons">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="currentColor"><rect x="0" y="11" width="3" height="4" rx="1"/><rect x="5" y="8.5" width="3" height="6.5" rx="1"/><rect x="10" y="6" width="3" height="9" rx="1"/><rect x="15" y="4" width="3" height="11" rx="1"/></g></svg>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 7.2a12 12 0 0 1 16.8 0"/><path d="M4.6 10.4a8 8 0 0 1 10.8 0"/><path d="M7.6 13.5a4 4 0 0 1 4.8 0"/></g><circle cx="10" cy="16" r="1.3" fill="currentColor"/></svg>
+            <svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="5.5" width="23" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.5"/><rect x="2.8" y="7.3" width="19.4" height="6.4" rx="1.8" fill="currentColor"/><path d="M25.6 8.6v3.8a2.2 2.2 0 0 0 0-3.8z" fill="currentColor" opacity="0.5"/></svg>
+          </span>
+        </div>
+
+        <div class="col pad grow">
+          <div class="navrow">
+            <span class="navbtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></span>
+            <span class="stepnum">Step 3 of 4</span>
+            <span class="navspacer"></span>
+          </div>
+          <div class="progress"><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+
+          <div class="col" style="padding-top:24px; gap:24px;">
+            <h2 class="h-title">Set up your travel profile</h2>
+
+            <div class="col" style="gap:16px;">
+              <div class="field">
+                <span class="field-label">Country / Region</span>
+                <div class="input" style="justify-content:space-between;">
+                  <span class="val" style="flex:none;">Philippines</span>
+                  <span class="trail"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+                </div>
+              </div>
+              <div class="field">
+                <span class="field-label">Preferred Currency</span>
+                <div class="input" style="justify-content:space-between;">
+                  <span class="val" style="flex:none;">PHP (₱)</span>
+                  <span class="trail"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+                </div>
+              </div>
+              <div class="field">
+                <span class="field-label">Home City (Optional)</span>
+                <div class="input"><span class="ph">e.g. Manila</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cta abs" style="top:513px;">Continue</div>
+      </div>
+    </div>
+
+    <!-- ============ 8 · onboarding-complete ============ -->
+    <div class="slot">
+      <div class="slot-head">
+        <span class="slot-name">8 · onboarding-complete</span>
+        <span class="slot-route">mobile/app/onboarding/complete.tsx</span>
+      </div>
+      <div class="fr">
+        <span class="pin" style="left:170px; top:78px;">6</span>
+        <span class="pin drift" style="left:236px; top:250px;">11</span>
+        <span class="pin" style="left:14px; top:470px;">8</span>
+
+        <div class="statusbar" style="padding:0 48px;">
+          <span class="clock">9:41</span>
+          <span class="sysicons">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="currentColor"><rect x="0" y="11" width="3" height="4" rx="1"/><rect x="5" y="8.5" width="3" height="6.5" rx="1"/><rect x="10" y="6" width="3" height="9" rx="1"/><rect x="15" y="4" width="3" height="11" rx="1"/></g></svg>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 7.2a12 12 0 0 1 16.8 0"/><path d="M4.6 10.4a8 8 0 0 1 10.8 0"/><path d="M7.6 13.5a4 4 0 0 1 4.8 0"/></g><circle cx="10" cy="16" r="1.3" fill="currentColor"/></svg>
+            <svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true"><rect x="1" y="5.5" width="23" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.5"/><rect x="2.8" y="7.3" width="19.4" height="6.4" rx="1.8" fill="currentColor"/><path d="M25.6 8.6v3.8a2.2 2.2 0 0 0 0-3.8z" fill="currentColor" opacity="0.5"/></svg>
+          </span>
+        </div>
+
+        <div class="col pad grow">
+          <div class="navrow">
+            <span class="navspacer"></span>
+            <span class="stepnum">Step 4 of 4</span>
+            <span class="navspacer"></span>
+          </div>
+          <div class="progress"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span></div>
+
+          <div class="col" style="align-items:center; padding-top:40px; gap:40px;">
+            <div class="col" style="align-items:center; gap:20px; width:230px;">
+              <div class="bigcircle finish">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></svg>
+              </div>
+              <div class="col" style="align-items:center; gap:8px;">
+                <h2 class="h-display">You’re all set!</h2>
+                <p class="sub" style="text-align:center;">Your Largata account is ready.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col pad" style="padding-bottom:12px;">
+          <div class="cta tall">Explore Largata</div>
+        </div>
+        <div class="homeslot"><span class="homebar"></span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="wrap">
+  <section class="ledger">
+
+    <div class="band record">
+      <div class="band-head">
+        <h2><span class="dot"></span>Decided — S4.0 ruled it, the build follows the ruling</h2>
+        <p class="band-note">
+          Nine places where the running app deliberately departs from the drawing. Each has a numbered decision
+          in <code>docs/plans/S4.0-auth-onboarding-retrofit/spec.md</code>. Nothing here needs a new call —
+          it needs the mock updated so the next reader doesn’t re-open a settled question.
+        </p>
+      </div>
+      <div class="rows">
+        <div class="row head"><span>Pin</span><span>Drawn</span><span>Built</span><span>Ruling</span></div>
+
+        <div class="row">
+          <span class="k">1</span>
+          <span class="drawn">Landing carries the sign-in form inline — one screen does branding, email/password, social and the sign-up link.</span>
+          <span class="built">Three screens: <code>welcome</code> (wordmark + two buttons) → <code>sign-in</code> / <code>sign-up</code>.</span>
+          <span class="why"><b>Decision 1.</b> The flow is welcome → sign-up (or sign-in) → verify → four steps → complete.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">2</span>
+          <span class="drawn">“Sign in with Apple”, black, above the Google button.</span>
+          <span class="built">Absent.</span>
+          <span class="why"><b>Decision 3 + ADR-010.</b> Apple’s mandate applies only on iOS, and the alpha is Android-only. Ships at the iOS activation.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">3</span>
+          <span class="drawn">Sign-up has no social buttons at all — email/password only.</span>
+          <span class="built">Google doorway renders on <em>both</em> sign-up and sign-in.</span>
+          <span class="why"><b>Decision 3.</b> The wireframes omit Google; the flow gains it, reusing S0.5/S0.6 machinery unchanged.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">4</span>
+          <span class="drawn">“By continuing, you agree to our Terms of Service and Privacy Policy.”</span>
+          <span class="built">Absent.</span>
+          <span class="why"><b>Decision 9.</b> No consent line until the documents exist — a link to nothing is worse than no line. Pre-alpha trigger.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">5</span>
+          <span class="drawn">Avatar with a camera badge and “Upload Photo” beneath it.</span>
+          <span class="built">Avatar only — Google photo, or initials.</span>
+          <span class="why"><b>Decision 8.</b> The affordance is <em>absent</em>, not disabled, until the media pipeline lands at S3.3. The S1.3 dead-click lesson as law.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">6</span>
+          <span class="drawn">Step 2 of 4 → Step 3 of 4 → Step 3 of 4 → Step 3 of 4 → Step 4 of 4. Five screens, four labels, three collisions.</span>
+          <span class="built">profile 1 · goals 2 · interests 3 · travel-setup 4. Verification sits before the count; completion sits outside it.</span>
+          <span class="why"><b>Decision 1</b> resolves it explicitly — the wireframe’s inconsistency is named in the spec. <b>Re-confirmed by the founder 2026-08-04</b>, matching the build exactly.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">7</span>
+          <span class="drawn">Black CTAs at 4px radius; a single orange <code>#FF751F</code> on “Forgot password?”.</span>
+          <span class="built">Terracotta <code>#D96C4A</code> CTAs at 12px radius; the same terracotta as the only accent.</span>
+          <span class="why"><b>Decision 10 / ADR-016.</b> Explicitly “supersedes the 07/18 mock’s orange as brand evidence”. Note the CTA changes <em>shape</em>, not just colour.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">8</span>
+          <span class="drawn">Completion is icon + two lines + one button.</span>
+          <span class="built">Same, plus a summary card listing what was set up.</span>
+          <span class="why"><b>Decision 6.</b> The summary exists but “claims only true things” — goals and interests currently have no reader, and no line may imply otherwise.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">9</span>
+          <span class="drawn">“Earn from my itineraries” as the fifth goal.</span>
+          <span class="built">Present, stored, and analytics-measured.</span>
+          <span class="why"><b>Decision 5</b> narrows the 2026-07-17 cut rather than voiding it: it ships as <em>signal-gathering</em>, carrying no product promise.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="band drift">
+      <div class="band-head">
+        <h2><span class="dot"></span>Drift — settled by the founder, 2026-08-04 → <strong>S4.12</strong></h2>
+        <p class="band-note">
+          Five differences that traced to no ruling in the spec, the ADR log, or the epic map. All five are
+          now decided and specced as <code>docs/plans/S4.12-auth-onboarding-fidelity/</code>. Four resolved
+          toward the frame, one toward the copy. No backend change in any of them.
+        </p>
+      </div>
+      <div class="rows">
+        <div class="row head"><span>Pin</span><span>Drawn</span><span>Built</span><span>Ruling</span></div>
+
+        <div class="row">
+          <span class="k">10</span>
+          <span class="drawn">“Plan less. Experience more.”</span>
+          <span class="built">“Plan together. Travel better.” — <code>welcome.tsx:17</code></span>
+          <span class="why"><b>Adopt the frame.</b> The mock’s tagline ships. Two versions were in circulation on the first screen anyone sees; the founder settled it toward the drawing.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">11</span>
+          <span class="drawn"><code>party-popper</code> in the completion circle.</span>
+          <span class="built"><code>sparkle</code> — <code>complete.tsx:56</code></span>
+          <span class="why"><b>Adopt the frame.</b> The standing mock rule, and the glyph already exists. <code>sparkle</code> has one consumer, so it leaves with the change rather than lingering dead.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">12</span>
+          <span class="drawn">An <code>eye</code> icon inside the password field.</span>
+          <span class="built">The words “Show” / “Hide”.</span>
+          <span class="why"><b>Adopt the frame.</b> The eye ships on both auth screens; the “Show password” / “Hide password” accessibility labels stay, so nothing is lost to a screen reader.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">13</span>
+          <span class="drawn">“Forgot password?” right-aligned, bold, accent-coloured, inside the credentials block.</span>
+          <span class="built">Centred, below the Sign In button.</span>
+          <span class="why"><b>Adopt the frame’s placement.</b> Right-aligned under the password field. The frame expressed this on a landing that no longer exists — the placement carries over, the screen doesn’t.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">14</span>
+          <span class="drawn">“Select all that apply” — implies zero is a valid answer.</span>
+          <span class="built">Continue disabled until one goal is picked.</span>
+          <span class="why"><b>Adopt the copy.</b> The minimum goes; zero becomes valid. <em>This one has a consequence</em> — see below.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="band drift">
+      <div class="band-head">
+        <h2><span class="dot"></span>The consequence of pin 14 — a trap no straight-through test can see</h2>
+        <p class="band-note">
+          Dropping the goals minimum breaks the resume gate, and it is worth stating on its own because
+          it is the only place in this story where a copy decision reaches into behaviour.
+        </p>
+      </div>
+      <div class="rows">
+        <div class="row head"><span></span><span>Mechanism</span><span>Symptom</span><span>Resolution</span></div>
+        <div class="row">
+          <span class="k">!</span>
+          <span class="drawn">The gate resolves “where does this traveller resume?” by asking each step whether its data is absent — <code>handle === null</code>, <code>country === null</code>, and <code>goals.length === 0</code>.</span>
+          <span class="built">Once empty is a <em>legal answer</em>, that predicate can no longer tell <b>not asked</b> from <b>asked, chose none</b>. Pick nothing, force-quit, relaunch — back on the goals step, every cold start.</span>
+          <span class="why"><b>Goals leaves the resume ladder.</b> Still in the forward walk; an interrupted traveller resumes at interests. Costs one skipped optional question in the interrupted case. The nullable-goals alternative is truthful but is a column-semantics change for a step nothing reads — recorded, rejected.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="band mockbug">
+      <div class="band-head">
+        <h2><span class="dot"></span>The drawing contradicts itself — resolve before it becomes the baseline again</h2>
+        <p class="band-note">
+          Three places where the export disagrees with the export. The build already picked a side in each;
+          these are flagged so the <em>next</em> reconciliation doesn’t treat the losing side as a missed detail.
+        </p>
+      </div>
+      <div class="rows">
+        <div class="row head"><span>Pin</span><span>On one frame</span><span>On another</span><span>Where it lands</span></div>
+
+        <div class="row">
+          <span class="k">15</span>
+          <span class="drawn">Landing inputs: <code>1px #F7F7F7</code> border, <code>12px</code> radius — nearly borderless.</span>
+          <span class="built">Sign-up, profile and travel-setup inputs: <code>1px #8F8F8F</code>, <code>4px</code> radius.</span>
+          <span class="why">Same control, two treatments, two frames apart. The build runs one <code>FormField</code>, so it had to choose; the mock should say which.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">16</span>
+          <span class="drawn">Google button: <code>8px</code> radius with a drop shadow.</span>
+          <span class="built">Every other control on the board: <code>4px</code>, no shadow.</span>
+          <span class="why">Probably an unmodified vendor component pasted in. Google’s brand guidelines do constrain this button — if that’s the reason, it’s a legitimate exception worth stating.</span>
+        </div>
+
+        <div class="row">
+          <span class="k">17</span>
+          <span class="drawn">Goal rows declare <code>height: 50px</code>.</span>
+          <span class="built">…with <code>padding: 20px</code> around a <code>32px</code> icon — 72px of content in a 50px box.</span>
+          <span class="why">Figma clips it silently. The shipped token is <code>controls.optionHeight = 72</code>, which is what the content actually needs — the build is right and the frame is wrong.</span>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <section class="closing">
+    <h2>Where this landed — S4.12</h2>
+    <ol>
+      <li><strong>Nothing structural.</strong> All eight screens exist and route in the shipped order. No missing screen, no missing field — the retrofit already happened at S4.0.</li>
+      <li>
+        <strong>Two of the founder’s three rulings described the build as it already stands</strong>, and are
+        recorded so they aren’t raised a third time. <em>“Make sure the theme is applied”</em> — already true:
+        every <code>.tsx</code> and <code>.ts</code> under <code>mobile/</code> scanned, zero colour literals
+        outside <code>tokens.ts</code>. <em>“Step 1 after verification through step 4 setup profile, last
+        screen no step”</em> — already true, exactly, and shipped as S4.0 decision 1. Both were prompted by
+        this render drawing the <em>mock’s</em> labels faithfully; the correction was to the drawing.
+      </li>
+      <li><strong>The five drift items are specced</strong> as <code>docs/plans/S4.12-auth-onboarding-fidelity/</code> — three tickets, no blocking edges between them, no backend change in any of them.</li>
+      <li><strong>The mock gets annotated, not edited.</strong> The step-label collisions, the two input treatments and the clipped option rows stay in the file — with a header above it naming every element the build overrules and why. A superseded mock with no annotation misleads with authority, which is what cost this session an afternoon.</li>
+    </ol>
+    <p class="footnote">
+      Rendering note, stated rather than passed off as a choice: the frames specify <em>Inter</em>, and the
+      artifact sandbox blocks font CDNs. These render in the system UI face at Inter’s metrics. Everything
+      else — sizes, weights, spacing, radii, colour — is taken from the export verbatim, and the “Largata
+      theme” values from <code>mobile/src/theme/tokens.ts</code>.
+    </p>
+  </section>
+</div>
+
+<script>
+  (function () {
+    var scroll = document.getElementById('strip-scroll');
+    var wire = document.getElementById('skin-wire');
+    var largata = document.getElementById('skin-largata');
+    var pins = document.getElementById('pin-toggle');
+
+    function setSkin(name) {
+      scroll.setAttribute('data-skin', name);
+      wire.setAttribute('aria-pressed', String(name === 'wireframe'));
+      largata.setAttribute('aria-pressed', String(name === 'largata'));
+    }
+
+    wire.addEventListener('click', function () { setSkin('wireframe'); });
+    largata.addEventListener('click', function () { setSkin('largata'); });
+    pins.addEventListener('change', function () {
+      scroll.setAttribute('data-pins', pins.checked ? 'on' : 'off');
+    });
+  })();
+</script>

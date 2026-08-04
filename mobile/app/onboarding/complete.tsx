@@ -17,7 +17,7 @@ import { SIGNED_IN_HOME } from '../../src/navigation/authRoutes';
 import { useCompleteOnboarding } from '../../src/query/travelerQueries';
 import { colors, controls, radii, spacing, typography } from '../../src/theme';
 
-const SPARKLE_GLYPH = 64;
+const CELEBRATION_GLYPH = 64;
 const CHECK_GLYPH = 20;
 
 export default function CompleteStepScreen() {
@@ -53,7 +53,7 @@ export default function CompleteStepScreen() {
     >
       <View style={styles.hero}>
         <View style={styles.iconCircle}>
-          <Icon name="sparkle" size={SPARKLE_GLYPH} color={colors.accent} />
+          <Icon name="partyPopper" size={CELEBRATION_GLYPH} color={colors.accent} />
         </View>
 
         <View style={styles.headings}>

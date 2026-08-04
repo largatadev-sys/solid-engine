@@ -1,5 +1,7 @@
 import {
   ONBOARDING_ROUTES,
+  STEP_COUNT,
+  STEP_NUMBERS,
   VERIFY_CODE_ROUTE,
   destinationFor,
   isSettling,
@@ -11,7 +13,6 @@ import { SIGNED_IN_HOME, WELCOME_ROUTE } from '../src/navigation/authRoutes';
 
 const BLANK: OnboardingProfile = {
   handle: null,
-  goals: [],
   interests: [],
   country: null,
   onboardingCompleted: false,
@@ -19,7 +20,6 @@ const BLANK: OnboardingProfile = {
 
 const DONE: OnboardingProfile = {
   handle: 'anasilva',
-  goals: ['discover'],
   interests: ['food', 'hiking', 'art'],
   country: 'PH',
   onboardingCompleted: true,
@@ -36,33 +36,64 @@ function gate(overrides: Partial<GateInput>): GateInput {
   };
 }
 
+describe('the counted steps, pinned (S4.0 decision 1, re-confirmed 2026-08-04)', () => {
+  it('runs profile 1 through travel-setup 4, with verification and completion outside the count', () => {
+    expect(STEP_NUMBERS).toEqual({ profile: 1, goals: 2, interests: 3, travelSetup: 4 });
+    expect(STEP_COUNT).toBe(4);
+  });
+
+  it('counts every screen that declares a number, and no more', () => {
+    expect(Object.keys(STEP_NUMBERS)).toHaveLength(STEP_COUNT);
+    expect(Object.values(STEP_NUMBERS).sort()).toEqual([1, 2, 3, 4]);
+  });
+
+  it('gives the verification and completion screens no number to render', () => {
+    expect(Object.keys(STEP_NUMBERS)).not.toContain('complete');
+    expect(Object.keys(STEP_NUMBERS)).not.toContain('verify');
+  });
+});
+
 describe('which step the flow resumes at', () => {
   it('a brand new profile starts at the profile step', () => {
     expect(nextOnboardingStep(BLANK)).toBe(ONBOARDING_ROUTES.profile);
   });
 
   it('each answered step advances to the next one, in the counted order', () => {
-    expect(nextOnboardingStep({ ...BLANK, handle: 'ana' })).toBe(ONBOARDING_ROUTES.goals);
-    expect(nextOnboardingStep({ ...BLANK, handle: 'ana', goals: ['discover'] })).toBe(
-      ONBOARDING_ROUTES.interests,
+    expect(nextOnboardingStep({ ...BLANK, handle: 'ana' })).toBe(ONBOARDING_ROUTES.interests);
+    expect(nextOnboardingStep({ ...BLANK, handle: 'ana', interests: ['food'] })).toBe(
+      ONBOARDING_ROUTES.travelSetup,
     );
     expect(
-      nextOnboardingStep({ ...BLANK, handle: 'ana', goals: ['discover'], interests: ['food'] }),
-    ).toBe(ONBOARDING_ROUTES.travelSetup);
-    expect(
-      nextOnboardingStep({
-        ...BLANK,
-        handle: 'ana',
-        goals: ['discover'],
-        interests: ['food'],
-        country: 'PH',
-      }),
+      nextOnboardingStep({ ...BLANK, handle: 'ana', interests: ['food'], country: 'PH' }),
     ).toBe(ONBOARDING_ROUTES.complete);
   });
 
   it('a completed traveler has no next step, whatever the fields say', () => {
     expect(nextOnboardingStep({ ...BLANK, onboardingCompleted: true })).toBeNull();
     expect(nextOnboardingStep(DONE)).toBeNull();
+  });
+
+  it('resuming skips goals, because choosing none is a legal answer (S4.12 decision 5)', () => {
+    expect(nextOnboardingStep({ ...BLANK, handle: 'ana' })).toBe(ONBOARDING_ROUTES.interests);
+  });
+
+  it('and no resumable profile shape lands on goals, however the later fields are filled', () => {
+    const shapes: OnboardingProfile[] = [
+      { ...BLANK, handle: 'ana' },
+      { ...BLANK, handle: 'ana', interests: [] },
+      { ...BLANK, handle: 'ana', interests: ['food'] },
+      { ...BLANK, handle: 'ana', interests: ['food'], country: 'PH' },
+    ];
+
+    for (const shape of shapes) {
+      expect(nextOnboardingStep(shape)).not.toBe(ONBOARDING_ROUTES.goals);
+    }
+  });
+
+  it('resumes past a goal list the server still sends, which is what the traveler who chose none gets', () => {
+    const stillCarriesGoals = { ...BLANK, handle: 'ana', goals: [] } as OnboardingProfile;
+
+    expect(nextOnboardingStep(stillCarriesGoals)).toBe(ONBOARDING_ROUTES.interests);
   });
 });
 
