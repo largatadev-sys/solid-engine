@@ -41,7 +41,9 @@ export default function ItineraryPreviewScreen() {
 
         <View style={styles.banner}>
           <Icon name="eye" size={BANNER_ICON_SIZE} color={colors.accent} />
-          <Text style={styles.bannerText}>This is a preview of your published itinerary.</Text>
+          <Text style={styles.bannerText}>
+            This is a preview of your itinerary page — what other travelers will see if you publish.
+          </Text>
         </View>
 
         <PublishedItineraryView projection={data} audience="preview" />

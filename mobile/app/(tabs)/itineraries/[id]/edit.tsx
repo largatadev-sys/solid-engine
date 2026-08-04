@@ -120,7 +120,7 @@ export default function EditItineraryScreen() {
       <Field label="Description" value={description} onChangeText={setDescription} placeholder="What's this trip about?" multiline />
 
       <View style={styles.field}>
-        <Text style={styles.label}>Trip Highlights (Standouts)</Text>
+        <Text style={styles.label}>Standouts</Text>
         <Text style={styles.hint}>Shown on your published page.</Text>
         {standouts.map((standout, index) => (
           <View key={index} style={styles.destinationRow}>
@@ -163,7 +163,7 @@ export default function EditItineraryScreen() {
           accessibilityRole="button"
           style={styles.addDestination}
         >
-          <Text style={styles.addDestinationText}>+ Add Highlight</Text>
+          <Text style={styles.addDestinationText}>+ Add Standout</Text>
         </Pressable>
       </View>
 

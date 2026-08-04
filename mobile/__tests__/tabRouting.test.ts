@@ -159,6 +159,39 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(trips).toContain("comingSoon('addPastTrip')");
   });
 
+  it('says Standouts and never Highlights — the glossary reserved that word for diaries', () => {
+    for (const screen of [read(TRIPS, 'new.tsx'), read(TRIPS, '[id]', 'edit.tsx')]) {
+      expect(screen).toContain('Standout');
+      expect(screen).not.toMatch(/Highlight/);
+    }
+  });
+
+  it('ends the creation walk on Finish Planning, and only while the trip is a draft', () => {
+    const days = read(TRIPS, '[id]', 'days', 'index.tsx');
+
+    expect(days).toContain('Finish Planning');
+    expect(days).toContain("finishPlanning.mutate('finish-planning'");
+    expect(days).toContain("data.state === 'draft'");
+    expect(days).not.toMatch(/>Complete Itinerary</);
+  });
+
+  it('speaks the honest tense on the preview banner — nothing is published yet', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+
+    expect(preview).toMatch(/what other travelers will see if you publish/);
+    expect(preview).not.toMatch(/preview of your published itinerary/);
+  });
+
+  it('draws the whole booking card the founder ruled in, one per activity', () => {
+    const activity = read(TRIPS, '[id]', 'activity.tsx');
+
+    expect(activity).toContain('Booking Purpose');
+    expect(activity).toContain('Booking Provider');
+    expect(activity).toContain('Target URL');
+    expect(activity).toContain('Estimated Price');
+    expect(activity).not.toMatch(/PROVIDER \d|Add another/);
+  });
+
   it('the chooser offers scratch live and fork greyed', () => {
     const chooser = read(TRIPS, 'create.tsx');
 

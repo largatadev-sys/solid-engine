@@ -60,13 +60,7 @@ class ItineraryController {
     ItineraryResponse create(@CurrentTraveler Traveler traveler, @Valid @RequestBody CreateItineraryRequest request) {
         var created =
                 itineraries.createWithPlan(
-                        traveler.id(),
-                        request.title(),
-                        request.destinations(),
-                        request.description(),
-                        request.startDate(),
-                        request.endDate(),
-                        request.durationDaysOrZero());
+                        traveler.id(), request.toFields(), request.durationDaysOrZero());
         return ItineraryResponse.of(created);
     }
 

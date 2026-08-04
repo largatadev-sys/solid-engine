@@ -146,6 +146,11 @@ public class Itinerary {
     }
 
 
+    static Itinerary draft(UUID ownerId, ItineraryFields fields, Instant createdAt) {
+        return new Itinerary(UuidV7.generate(), ownerId, fields, createdAt);
+    }
+
+
     static Itinerary draft(
             UUID ownerId,
             String title,

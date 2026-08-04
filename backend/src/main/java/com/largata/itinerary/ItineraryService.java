@@ -111,6 +111,17 @@ public class ItineraryService {
     }
 
 
+    @Transactional
+    public ItineraryPlan createWithPlan(UUID ownerId, ItineraryFields fields, int durationDays) {
+        Itinerary itinerary = itineraries.save(Itinerary.draft(ownerId, fields, Instant.now()));
+        workspaces.formAround(itinerary.id(), itinerary.ownerId(), itinerary.createdAt());
+        days.seedDays(itinerary.id(), durationDays, itinerary.createdAt());
+        log.info("Itinerary created: id={} ownerId={}", itinerary.id(), itinerary.ownerId());
+        emitAfterCommit(itinerary);
+        return assemble(itinerary, days.plan(itinerary.id()));
+    }
+
+
     @Transactional(readOnly = true)
     public Itinerary view(Membership membership) {
         return itineraries

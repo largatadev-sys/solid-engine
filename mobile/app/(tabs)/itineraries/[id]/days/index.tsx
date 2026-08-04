@@ -22,6 +22,7 @@ import {
   useAppendDay,
   useDeleteActivity,
   useDeleteDay,
+  useTripLifecycle,
   useItinerary,
   useRenameDay,
   useReorderActivities,
@@ -43,6 +44,7 @@ export default function DaySurfaceScreen() {
   const appendDay = useAppendDay(id);
   const renameDay = useRenameDay(id);
   const deleteDay = useDeleteDay(id);
+  const finishPlanning = useTripLifecycle(id);
   const deleteActivity = useDeleteActivity(id);
   const reorderActivities = useReorderActivities(id);
 
@@ -237,6 +239,30 @@ export default function DaySurfaceScreen() {
         >
           <Text style={styles.fabText}>+</Text>
         </Pressable>
+      )}
+
+      {isOwner && data.state === 'draft' && (
+        <View style={styles.dock}>
+          {finishPlanning.isError && (
+            <Text style={styles.mutationError}>{finishPlanning.error.message}</Text>
+          )}
+          <Pressable
+            style={[styles.dockCta, finishPlanning.isPending && styles.busy]}
+            disabled={finishPlanning.isPending}
+            accessibilityRole="button"
+            onPress={() =>
+              finishPlanning.mutate('finish-planning', {
+                onSuccess: () => router.replace({ pathname: '/itineraries/[id]', params: { id } }),
+              })
+            }
+          >
+            {finishPlanning.isPending ? (
+              <ActivityIndicator color={colors.textOnAccent} />
+            ) : (
+              <Text style={styles.dockCtaText}>Finish Planning</Text>
+            )}
+          </Pressable>
+        </View>
       )}
     </View>
   );
@@ -579,6 +605,20 @@ const styles = StyleSheet.create({
   deleteButton: { paddingVertical: spacing.sm, alignItems: 'center' },
   deleteButtonText: { ...typography.caption, color: colors.danger },
   busy: { opacity: 0.7 },
+  dock: {
+    padding: spacing.md,
+    gap: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  dockCta: {
+    paddingVertical: spacing.md,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    backgroundColor: colors.textPrimary,
+  },
+  dockCtaText: { ...typography.bodyStrong, color: colors.textOnAccent },
   mutationError: { ...typography.caption, color: colors.danger },
   errorTitle: { ...typography.heading, color: colors.danger },
   caption: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },

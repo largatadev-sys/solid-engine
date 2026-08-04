@@ -56,10 +56,21 @@ export default function ActivityFormScreen() {
   const [description, setDescription] = useState(existing?.description ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [externalUrl, setExternalUrl] = useState(existing?.externalUrl ?? '');
+  const [bookingPurpose, setBookingPurpose] = useState(existing?.bookingPurpose ?? '');
+  const [bookingProvider, setBookingProvider] = useState(existing?.bookingProvider ?? '');
+  const [bookingPriceAmount, setBookingPriceAmount] = useState(existing?.bookingPriceAmount ?? '');
+  const [bookingPriceCurrency, setBookingPriceCurrency] = useState(existing?.bookingPriceCurrency ?? '');
   const [validationError, setValidationError] = useState<string | undefined>();
 
   function submit() {
-    const problem = validateActivityForm({ title, timeOfDay, costAmount, costCurrency });
+    const problem = validateActivityForm({
+      title,
+      timeOfDay,
+      costAmount,
+      costCurrency,
+      bookingPriceAmount,
+      bookingPriceCurrency,
+    });
     setValidationError(problem);
     if (problem !== undefined) return;
 
@@ -72,6 +83,10 @@ export default function ActivityFormScreen() {
       ...opt('description', description),
       ...opt('notes', notes),
       ...opt('externalUrl', externalUrl),
+      ...opt('bookingPurpose', bookingPurpose),
+      ...opt('bookingProvider', bookingProvider),
+      ...opt('bookingPriceAmount', bookingPriceAmount),
+      ...opt('bookingPriceCurrency', bookingPriceCurrency),
     };
 
     const onDone = {
@@ -129,7 +144,50 @@ export default function ActivityFormScreen() {
 
       <GreyedMediaTile surface="activityPhoto" />
 
-      <Field label="Booking link" value={externalUrl} onChangeText={setExternalUrl} placeholder="https://…" keyboardType="url" />
+      <View style={styles.bookingCard}>
+        <Text style={styles.bookingHeader}>Booking</Text>
+        <Text style={styles.bookingHint}>
+          What you used to book this — it travels with the plan when someone forks it.
+        </Text>
+        <Field
+          label="Booking Purpose"
+          value={bookingPurpose}
+          onChangeText={setBookingPurpose}
+          placeholder="River tour, restaurant reservation, etc."
+        />
+        <Field
+          label="Booking Provider"
+          value={bookingProvider}
+          onChangeText={setBookingProvider}
+          placeholder="Klook, Expedia, Booking.com, etc."
+        />
+        <Field
+          label="Target URL"
+          value={externalUrl}
+          onChangeText={setExternalUrl}
+          placeholder="https://klook.com/activity/1243-el-nido-underground"
+          keyboardType="url"
+        />
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <Field
+              label="Estimated Price"
+              value={bookingPriceAmount}
+              onChangeText={setBookingPriceAmount}
+              placeholder="1800"
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <View style={styles.rowItemNarrow}>
+            <Field
+              label="Currency"
+              value={bookingPriceCurrency}
+              onChangeText={setBookingPriceCurrency}
+              placeholder="PHP"
+            />
+          </View>
+        </View>
+      </View>
 
       {(validationError ?? serverMessage) !== undefined && (
         <Text style={styles.error}>{validationError ?? serverMessage}</Text>
@@ -251,6 +309,16 @@ const styles = StyleSheet.create({
   },
   buttonBusy: { opacity: 0.7 },
   buttonText: { ...typography.bodyStrong, color: colors.textOnAccent },
+  bookingCard: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+  },
+  bookingHeader: { ...typography.overline, color: colors.textSecondary },
+  bookingHint: { ...typography.caption, color: colors.textSecondary },
   moveSection: { gap: spacing.sm, marginTop: spacing.md },
   moveChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   moveChip: {

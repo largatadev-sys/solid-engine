@@ -4,6 +4,8 @@ export function validateActivityForm(form: {
   timeOfDay: string;
   costAmount: string;
   costCurrency: string;
+  bookingPriceAmount?: string;
+  bookingPriceCurrency?: string;
 }): string | undefined {
   if (form.title.trim() === '') return 'An activity needs a title.';
   if (form.title.trim().length > 200) return 'A title may be at most 200 characters.';
@@ -20,6 +22,18 @@ export function validateActivityForm(form: {
   }
   if (amount !== '' && currency === '') return 'An estimated cost needs a currency (e.g. PHP).';
   if (currency !== '' && amount === '') return 'Enter an amount, or clear the currency.';
+
+  const bookingAmount = (form.bookingPriceAmount ?? '').trim();
+  const bookingCurrency = (form.bookingPriceCurrency ?? '').trim();
+  if (bookingAmount !== '' && !/^\d+(\.\d{1,2})?$/.test(bookingAmount)) {
+    return 'A booking price must be a number like 1800 or 1800.00.';
+  }
+  if (bookingAmount !== '' && bookingCurrency === '') {
+    return 'A booking price needs a currency (e.g. PHP).';
+  }
+  if (bookingCurrency !== '' && bookingAmount === '') {
+    return 'Enter a booking price, or clear its currency.';
+  }
 
   return undefined;
 }
