@@ -68,7 +68,11 @@ class PublishedProjectionIT extends PostgresTestBase {
                     "place",
                     "description",
                     "notes",
-                    "externalUrl");
+                    "externalUrl",
+                    "bookingPurpose",
+                    "bookingProvider",
+                    "bookingPriceAmount",
+                    "bookingPriceCurrency");
 
 
     private static final List<String> CREATOR_FIELDS = List.of("id", "handle", "displayName", "avatarUrl");
@@ -362,6 +366,44 @@ class PublishedProjectionIT extends PostgresTestBase {
 
 
     @Test
+    void theBookingCardCrossesTheWall_itIsTheWholeReasonAForkerCanRebookTheTrip() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        publish(owner, tripId);
+
+        publicView(freshTraveler(), tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.days[0].activities[0].bookingProvider")
+                .isEqualTo("Klook")
+                .jsonPath("$.days[0].activities[0].bookingPurpose")
+                .isEqualTo("Van transfer")
+                .jsonPath("$.days[0].activities[0].bookingPriceAmount")
+                .isEqualTo("1800.00")
+                .jsonPath("$.days[0].activities[0].bookingPriceCurrency")
+                .isEqualTo("PHP");
+    }
+
+
+    @Test
+    void theBookingPriceIsItsOwnNumberAndNeverFeedsTheDerivedTotal() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        publish(owner, tripId);
+
+        publicView(freshTraveler(), tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.estimatedCost.amount")
+                .isEqualTo("800.00")
+                .jsonPath("$.days[0].activities[0].bookingPriceAmount")
+                .isEqualTo("1800.00");
+    }
+
+
+    @Test
     void oneCurrencyAcrossThePlanRendersATotalAndAMixedPlanRendersPricesButNone() {
         String owner = freshTraveler();
         String tripId = datedTripWithAPlan(owner);
@@ -480,6 +522,7 @@ class PublishedProjectionIT extends PostgresTestBase {
 
     private void travel(String token, String itineraryId) {
         if (travelled.add(itineraryId)) {
+            act(token, itineraryId, "finish-planning");
             act(token, itineraryId, "start");
             act(token, itineraryId, "complete");
         }
@@ -512,7 +555,9 @@ class PublishedProjectionIT extends PostgresTestBase {
                 {"title":"Airport Transfer","timeOfDay":"14:00","costAmount":"500","costCurrency":"PHP",
                  "place":"Lio Airport","description":"A van transfer to El Nido town proper.",
                  "notes":"Book the earliest slot at 8:00 AM to avoid the large tour groups!",
-                 "externalUrl":"https://example.test/transfer"}
+                 "externalUrl":"https://example.test/transfer",
+                 "bookingPurpose":"Van transfer","bookingProvider":"Klook",
+                 "bookingPriceAmount":"1800","bookingPriceCurrency":"PHP"}
                 """);
         addActivity(token, tripId, firstDayOf(tripId), """
                 {"title":"Sunset at Las Cabanas","costAmount":"300","costCurrency":"PHP"}

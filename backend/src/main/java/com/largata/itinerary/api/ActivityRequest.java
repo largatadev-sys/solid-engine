@@ -23,13 +23,20 @@ public record ActivityRequest(
         @Size(max = 500, message = "A place may be at most 500 characters.") String place,
         @Size(max = 4000, message = "A description may be at most 4000 characters.") String description,
         @Size(max = 4000, message = "Notes may be at most 4000 characters.") String notes,
-        @Size(max = 500, message = "A link may be at most 500 characters.") String externalUrl) {
+        @Size(max = 500, message = "A link may be at most 500 characters.") String externalUrl,
+        @Size(max = 500, message = "A booking purpose may be at most 500 characters.") String bookingPurpose,
+        @Size(max = 500, message = "A booking provider may be at most 500 characters.") String bookingProvider,
+        @Pattern(
+                        regexp = "^$|^\\d+(\\.\\d{1,2})?$",
+                        message = "A booking price must be a number like 1800 or 1800.00.")
+                String bookingPriceAmount,
+        @Size(max = 8, message = "A currency code may be at most 8 characters.") String bookingPriceCurrency) {
 
 
     public ActivityFields toFields() {
         return new ActivityFields(
                 title, parseTime(timeOfDay), parseAmount(costAmount), costCurrency, place, description, notes,
-                externalUrl);
+                externalUrl, bookingPurpose, bookingProvider, parseAmount(bookingPriceAmount), bookingPriceCurrency);
     }
 
     private static LocalTime parseTime(String value) {

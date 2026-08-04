@@ -6,7 +6,8 @@ import java.util.Optional;
 
 public enum TripCategory {
     DRAFT(ItineraryState.DRAFT),
-    ACTIVE(ItineraryState.ACTIVE),
+    UPCOMING(ItineraryState.UPCOMING),
+    ONGOING(ItineraryState.ONGOING),
     COMPLETE(ItineraryState.COMPLETED);
 
     private final ItineraryState state;

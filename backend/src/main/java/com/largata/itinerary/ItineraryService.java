@@ -202,6 +202,14 @@ public class ItineraryService {
 
 
     @Transactional
+    public Itinerary finishPlanning(Membership owner) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.finishPlanning();
+        return record(itinerary, owner, "itinerary_planning_finished");
+    }
+
+
+    @Transactional
     public Itinerary start(Membership owner) {
         Itinerary itinerary = authorizeAndLoad(owner);
         itinerary.start(Instant.now());

@@ -82,6 +82,10 @@ class EstimatedCostTest {
     }
 
     private static ActivityView activity(String amount, String currency) {
+        return everyActivityAlsoCarriesAnUnrelatedBookingPrice(amount, currency);
+    }
+
+    private static ActivityView everyActivityAlsoCarriesAnUnrelatedBookingPrice(String amount, String currency) {
         return new ActivityView(
                 UuidV7.generate(),
                 0,
@@ -93,6 +97,10 @@ class EstimatedCostTest {
                 null,
                 null,
                 null,
+                null,
+                null,
+                new BigDecimal("99999"),
+                "XXX",
                 UuidV7.generate(),
                 null);
     }

@@ -51,22 +51,31 @@ class TripArchiveContractIT extends PostgresTestBase {
 
 
     @Test
-    void archiveIsLegalFromDraftActiveAndCompletedAlike() {
+    void archiveIsLegalFromEveryLifecycleRungAlike() {
         String owner = freshTraveler();
 
         String draft = createItinerary(owner);
-        String active = createItinerary(owner);
-        start(owner, active).expectStatus().isOk();
+
+        String upcoming = createItinerary(owner);
+        finishPlanning(owner, upcoming).expectStatus().isOk();
+
+        String ongoing = createItinerary(owner);
+        finishPlanning(owner, ongoing).expectStatus().isOk();
+        start(owner, ongoing).expectStatus().isOk();
+
         String completed = createItinerary(owner);
+        finishPlanning(owner, completed).expectStatus().isOk();
         start(owner, completed).expectStatus().isOk();
         complete(owner, completed).expectStatus().isOk();
 
         archive(owner, draft).expectStatus().isOk();
-        archive(owner, active).expectStatus().isOk();
+        archive(owner, upcoming).expectStatus().isOk();
+        archive(owner, ongoing).expectStatus().isOk();
         archive(owner, completed).expectStatus().isOk();
 
         assertThat(workspaceStateOf(draft)).isEqualTo("ARCHIVED");
-        assertThat(workspaceStateOf(active)).isEqualTo("ARCHIVED");
+        assertThat(workspaceStateOf(upcoming)).isEqualTo("ARCHIVED");
+        assertThat(workspaceStateOf(ongoing)).isEqualTo("ARCHIVED");
         assertThat(workspaceStateOf(completed)).isEqualTo("ARCHIVED");
     }
 
@@ -76,6 +85,7 @@ class TripArchiveContractIT extends PostgresTestBase {
         String owner = freshTraveler();
 
         String completed = createItinerary(owner);
+        finishPlanning(owner, completed).expectStatus().isOk();
         start(owner, completed).expectStatus().isOk();
         complete(owner, completed).expectStatus().isOk();
         archive(owner, completed).expectStatus().isOk();
@@ -221,6 +231,10 @@ class TripArchiveContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec unarchive(String token, String itineraryId) {
         return post(token, "/v1/itineraries/" + itineraryId + "/unarchive");
+    }
+
+    private RestTestClient.ResponseSpec finishPlanning(String token, String itineraryId) {
+        return post(token, "/v1/itineraries/" + itineraryId + "/finish-planning");
     }
 
     private RestTestClient.ResponseSpec start(String token, String itineraryId) {

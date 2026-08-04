@@ -30,23 +30,47 @@ class ItineraryTest {
 
 
     @Test
-    void startingADraftMakesItActiveAndStampsTheMoment() {
+    void finishingPlanningMovesADraftToUpcomingAndStampsNothing() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+
+        itinerary.finishPlanning();
+
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.UPCOMING);
+        assertThat(itinerary.startedAt())
+                .as("planning finished is not travel started — only the acts that happen to the trip stamp")
+                .isNull();
+        assertThat(itinerary.completedAt()).isNull();
+    }
+
+    @Test
+    void startingAnUpcomingTripMakesItOngoingAndStampsTheMoment() {
         Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
         Instant at = Instant.parse("2027-01-10T09:00:00Z");
 
+        itinerary.finishPlanning();
         itinerary.start(at);
 
-        assertThat(itinerary.state()).isEqualTo(ItineraryState.ACTIVE);
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.ONGOING);
         assertThat(itinerary.startedAt()).isEqualTo(at);
         assertThat(itinerary.completedAt()).isNull();
     }
 
     @Test
-    void completingAnActiveTripStampsTheSecondMomentAndLeavesTheFirst() {
+    void aDraftCannotJumpStraightToTravelling() {
+        Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
+
+        assertThatThrownBy(() -> itinerary.start(Instant.now()))
+                .as("draft → ongoing skips the planning-finished rung; jumps are refused")
+                .isInstanceOf(IllegalStateTransitionException.class);
+    }
+
+    @Test
+    void completingAnOngoingTripStampsTheSecondMomentAndLeavesTheFirst() {
         Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
         Instant started = Instant.parse("2027-01-10T09:00:00Z");
         Instant completed = Instant.parse("2027-01-20T18:00:00Z");
 
+        itinerary.finishPlanning();
         itinerary.start(started);
         itinerary.complete(completed);
 
@@ -66,6 +90,7 @@ class ItineraryTest {
                         LocalDate.of(2027, 1, 20),
                         Instant.parse("2026-12-01T00:00:00Z"));
 
+        itinerary.finishPlanning();
         itinerary.start(Instant.parse("2027-01-12T09:00:00Z"));
         itinerary.complete(Instant.parse("2027-01-27T09:00:00Z"));
 
@@ -81,13 +106,15 @@ class ItineraryTest {
         assertThat(draftTrip.state()).isEqualTo(ItineraryState.DRAFT);
         assertThat(draftTrip.completedAt()).isNull();
 
-        Itinerary activeTrip = draft("Hokkaido", List.of("Sapporo"));
-        activeTrip.start(Instant.parse("2027-01-10T09:00:00Z"));
-        assertThatThrownBy(() -> activeTrip.start(Instant.now()))
+        Itinerary ongoingTrip = draft("Hokkaido", List.of("Sapporo"));
+        ongoingTrip.finishPlanning();
+        ongoingTrip.start(Instant.parse("2027-01-10T09:00:00Z"));
+        assertThatThrownBy(() -> ongoingTrip.start(Instant.now()))
                 .isInstanceOf(IllegalStateTransitionException.class);
-        assertThat(activeTrip.startedAt()).isEqualTo(Instant.parse("2027-01-10T09:00:00Z"));
+        assertThat(ongoingTrip.startedAt()).isEqualTo(Instant.parse("2027-01-10T09:00:00Z"));
 
         Itinerary completedTrip = draft("Hokkaido", List.of("Sapporo"));
+        completedTrip.finishPlanning();
         completedTrip.start(Instant.parse("2027-01-10T09:00:00Z"));
         completedTrip.complete(Instant.parse("2027-01-20T18:00:00Z"));
         assertThatThrownBy(() -> completedTrip.start(Instant.now()))
@@ -110,6 +137,7 @@ class ItineraryTest {
     void aTransitionDoesNotClaimAuthorshipOfAPlanEdit() {
         Itinerary itinerary = draft("Hokkaido", List.of("Sapporo"));
 
+        itinerary.finishPlanning();
         itinerary.start(Instant.now());
 
         assertThat(itinerary.lastEditedBy()).isNull();
@@ -336,7 +364,14 @@ class ItineraryTest {
                 .as("a plan nobody has travelled is not a record of anything")
                 .isInstanceOf(NotCompleteException.class);
 
+        Itinerary planned = draft("Draft", List.of("Cebu"));
+        planned.finishPlanning();
+        assertThatThrownBy(() -> planned.publishTo(Visibility.PUBLIC))
+                .as("planning finished is not the trip happening — the gate is about travel, not readiness")
+                .isInstanceOf(NotCompleteException.class);
+
         Itinerary travelling = draft("Draft", List.of("Cebu"));
+        travelling.finishPlanning();
         travelling.start(Instant.now());
         assertThatThrownBy(() -> travelling.publishTo(Visibility.PUBLIC))
                 .isInstanceOf(NotCompleteException.class);
@@ -381,7 +416,7 @@ class ItineraryTest {
         itinerary.unpublish();
         itinerary.reopen();
 
-        assertThat(itinerary.state()).isEqualTo(ItineraryState.ACTIVE);
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.ONGOING);
     }
 
     @Test
@@ -389,13 +424,18 @@ class ItineraryTest {
         Itinerary itinerary = completed();
 
         itinerary.reopen();
-        assertThat(itinerary.state()).isEqualTo(ItineraryState.ACTIVE);
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.ONGOING);
         assertThat(itinerary.completedAt()).as("the trip did not finish after all").isNull();
         assertThat(itinerary.startedAt()).as("…but it did start").isNotNull();
 
         itinerary.reopen();
-        assertThat(itinerary.state()).isEqualTo(ItineraryState.DRAFT);
-        assertThat(itinerary.startedAt()).isNull();
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.UPCOMING);
+        assertThat(itinerary.startedAt()).as("it never set off after all").isNull();
+
+        itinerary.reopen();
+        assertThat(itinerary.state())
+                .as("the last rung down is reopening planning itself")
+                .isEqualTo(ItineraryState.DRAFT);
     }
 
     @Test
@@ -423,14 +463,16 @@ class ItineraryTest {
         assertThat(Visibility.PRIVATE.wireName()).isEqualTo("private");
 
         assertThat(ItineraryState.DRAFT.wireName()).isEqualTo("draft");
-        assertThat(ItineraryState.ACTIVE.wireName()).isEqualTo("active");
+        assertThat(ItineraryState.UPCOMING.wireName()).isEqualTo("upcoming");
+        assertThat(ItineraryState.ONGOING.wireName()).isEqualTo("ongoing");
         assertThat(ItineraryState.COMPLETED.wireName()).isEqualTo("completed");
     }
 
     @Test
     void onlyCompletedAdmitsPublishing() {
         assertThat(ItineraryState.DRAFT.admitsPublishing()).isFalse();
-        assertThat(ItineraryState.ACTIVE.admitsPublishing()).isFalse();
+        assertThat(ItineraryState.UPCOMING.admitsPublishing()).isFalse();
+        assertThat(ItineraryState.ONGOING.admitsPublishing()).isFalse();
         assertThat(ItineraryState.COMPLETED.admitsPublishing()).isTrue();
     }
 
@@ -457,6 +499,7 @@ class ItineraryTest {
 
     private Itinerary completed() {
         Itinerary itinerary = draft("Draft", List.of("Cebu"));
+        itinerary.finishPlanning();
         itinerary.start(Instant.now());
         itinerary.complete(Instant.now());
         return itinerary;

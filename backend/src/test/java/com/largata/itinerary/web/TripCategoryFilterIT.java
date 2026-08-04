@@ -35,12 +35,13 @@ class TripCategoryFilterIT extends PostgresTestBase {
 
 
     @Test
-    void theThreeCategoriesAreMutuallyExclusive_aTripIsInExactlyOne() {
+    void theFourCategoriesAreMutuallyExclusive_aTripIsInExactlyOne() {
         String owner = freshTraveler();
         String fresh = createItinerary(owner, "A fresh draft");
 
         assertThat(idsIn(owner, "draft")).contains(fresh);
-        assertThat(idsIn(owner, "active")).doesNotContain(fresh);
+        assertThat(idsIn(owner, "upcoming")).doesNotContain(fresh);
+        assertThat(idsIn(owner, "ongoing")).doesNotContain(fresh);
         assertThat(idsIn(owner, "complete")).doesNotContain(fresh);
     }
 
@@ -50,19 +51,24 @@ class TripCategoryFilterIT extends PostgresTestBase {
         String owner = freshTraveler();
         String trip = createItinerary(owner, "Island Hopping");
 
+        act(owner, trip, "finish-planning");
+
+        assertThat(idsIn(owner, "upcoming")).contains(trip);
+        assertThat(idsIn(owner, "draft")).doesNotContain(trip);
+
         act(owner, trip, "start");
 
-        assertThat(idsIn(owner, "active")).contains(trip);
-        assertThat(idsIn(owner, "draft")).doesNotContain(trip);
+        assertThat(idsIn(owner, "ongoing")).contains(trip);
+        assertThat(idsIn(owner, "upcoming")).doesNotContain(trip);
 
         act(owner, trip, "complete");
 
         assertThat(idsIn(owner, "complete")).contains(trip);
-        assertThat(idsIn(owner, "active")).doesNotContain(trip);
+        assertThat(idsIn(owner, "ongoing")).doesNotContain(trip);
 
         act(owner, trip, "reopen");
 
-        assertThat(idsIn(owner, "active")).as("the one-step undo moves it back").contains(trip);
+        assertThat(idsIn(owner, "ongoing")).as("the one-step undo moves it back").contains(trip);
         assertThat(idsIn(owner, "complete")).doesNotContain(trip);
     }
 
@@ -71,6 +77,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
     void publishingDoesNotMoveATripBetweenCategories() {
         String owner = freshTraveler();
         String trip = createItinerary(owner, "Under way");
+        act(owner, trip, "finish-planning");
         act(owner, trip, "start");
         act(owner, trip, "complete");
         act(owner, trip, "publish");
@@ -87,6 +94,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
         String owner = freshTraveler();
         String one = createItinerary(owner, "One");
         String two = createItinerary(owner, "Two");
+        act(owner, two, "finish-planning");
         act(owner, two, "start");
 
         assertThat(idsIn(owner, null)).contains(one, two);
@@ -102,6 +110,20 @@ class TripCategoryFilterIT extends PostgresTestBase {
         list(owner, "  complete  ").expectStatus().isOk();
 
         list(owner, "unlisted")
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("UNKNOWN_TRIP_CATEGORY");
+    }
+
+
+    @Test
+    void theRetiredWordIsRefusedRatherThanSilentlyUnderstood() {
+        String owner = freshTraveler();
+        createItinerary(owner, "Anything");
+
+        list(owner, "active")
                 .expectStatus()
                 .isBadRequest()
                 .expectBody()
@@ -131,6 +153,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
         for (int i = 0; i < 3; i++) {
             createItinerary(owner, "Draft " + i);
             String trip = createItinerary(owner, "Travelled " + i);
+            act(owner, trip, "finish-planning");
             act(owner, trip, "start");
             act(owner, trip, "complete");
             travelled.add(trip);

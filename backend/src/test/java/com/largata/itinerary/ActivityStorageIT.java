@@ -33,7 +33,7 @@ class ActivityStorageIT extends PostgresTestBase {
                 activities.create(
                         member,
                         dayId,
-                        new ActivityFields(
+                        ActivityFields.withoutBooking(
                                 "Airport Transfer",
                                 LocalTime.of(14, 0),
                                 new BigDecimal("500.00"),
@@ -85,14 +85,14 @@ class ActivityStorageIT extends PostgresTestBase {
 
     @Test
     void anAmountWithoutACurrencyIsRefused() {
-        assertThatThrownBy(() -> new ActivityFields("x", null, new BigDecimal("10"), null, null, null, null, null))
+        assertThatThrownBy(() -> ActivityFields.withoutBooking("x", null, new BigDecimal("10"), null, null, null, null, null))
                 .as("amount and currency travel together")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void aNegativeCostIsRefused() {
-        assertThatThrownBy(() -> new ActivityFields("x", null, new BigDecimal("-1"), "PHP", null, null, null, null))
+        assertThatThrownBy(() -> ActivityFields.withoutBooking("x", null, new BigDecimal("-1"), "PHP", null, null, null, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -121,7 +121,7 @@ class ActivityStorageIT extends PostgresTestBase {
                         member,
                         dayId,
                         created.id(),
-                        new ActivityFields("Final", LocalTime.of(9, 30), null, null, "Beach", null, null, null));
+                        ActivityFields.withoutBooking("Final", LocalTime.of(9, 30), null, null, "Beach", null, null, null));
 
         assertThat(edited.id()).as("same activity, edited in place").isEqualTo(created.id());
         assertThat(edited.title()).isEqualTo("Final");
@@ -168,7 +168,7 @@ class ActivityStorageIT extends PostgresTestBase {
     }
 
     private static ActivityFields fields(String title, BigDecimal amount, String currency) {
-        return new ActivityFields(title, null, amount, currency, null, null, null, null);
+        return ActivityFields.withoutBooking(title, null, amount, currency, null, null, null, null);
     }
 
     private Membership tripWithOneDay() {

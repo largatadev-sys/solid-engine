@@ -90,6 +90,15 @@ class ItineraryController {
     }
 
 
+    @PostMapping("/{id}/finish-planning")
+    ItineraryResponse finishPlanning(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        itineraries.finishPlanning(membership);
+        var plan = itineraries.viewPlan(membership);
+        return ItineraryResponse.of(plan);
+    }
+
+
     @PostMapping("/{id}/start")
     ItineraryResponse start(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);

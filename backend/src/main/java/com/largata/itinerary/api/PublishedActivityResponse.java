@@ -16,7 +16,11 @@ public record PublishedActivityResponse(
         String place,
         String description,
         String notes,
-        String externalUrl) {
+        String externalUrl,
+        String bookingPurpose,
+        String bookingProvider,
+        @JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal bookingPriceAmount,
+        String bookingPriceCurrency) {
 
 
     static PublishedActivityResponse of(ActivityView activity) {
@@ -30,6 +34,10 @@ public record PublishedActivityResponse(
                 activity.place(),
                 activity.description(),
                 activity.notes(),
-                activity.externalUrl());
+                activity.externalUrl(),
+                activity.bookingPurpose(),
+                activity.bookingProvider(),
+                activity.bookingPriceAmount(),
+                activity.bookingPriceCurrency());
     }
 }

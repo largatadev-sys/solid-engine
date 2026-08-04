@@ -177,15 +177,21 @@ public class Itinerary {
     }
 
 
+    void finishPlanning() {
+        requireState(ItineraryState.DRAFT, ItineraryState.UPCOMING);
+        this.state = ItineraryState.UPCOMING;
+    }
+
+
     void start(Instant at) {
-        requireState(ItineraryState.DRAFT, ItineraryState.ACTIVE);
-        this.state = ItineraryState.ACTIVE;
+        requireState(ItineraryState.UPCOMING, ItineraryState.ONGOING);
+        this.state = ItineraryState.ONGOING;
         this.startedAt = at;
     }
 
 
     void complete(Instant at) {
-        requireState(ItineraryState.ACTIVE, ItineraryState.COMPLETED);
+        requireState(ItineraryState.ONGOING, ItineraryState.COMPLETED);
         this.state = ItineraryState.COMPLETED;
         this.completedAt = at;
     }
@@ -195,10 +201,11 @@ public class Itinerary {
         ItineraryState target = state.previous().orElseThrow(
                 () -> new IllegalStateTransitionException(state, state));
         requireUnpublished(target);
-        if (target == ItineraryState.ACTIVE) {
-            this.completedAt = null;
-        } else {
-            this.startedAt = null;
+        switch (target) {
+            case ONGOING -> this.completedAt = null;
+            case UPCOMING -> this.startedAt = null;
+            case DRAFT -> { }
+            case COMPLETED -> throw new IllegalStateTransitionException(state, target);
         }
         this.state = target;
     }

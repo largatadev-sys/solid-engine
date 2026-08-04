@@ -6,7 +6,8 @@ import java.util.Optional;
 
 public enum ItineraryState {
     DRAFT,
-    ACTIVE,
+    UPCOMING,
+    ONGOING,
     COMPLETED;
 
 
@@ -17,8 +18,9 @@ public enum ItineraryState {
 
     public Optional<ItineraryState> next() {
         return switch (this) {
-            case DRAFT -> Optional.of(ACTIVE);
-            case ACTIVE -> Optional.of(COMPLETED);
+            case DRAFT -> Optional.of(UPCOMING);
+            case UPCOMING -> Optional.of(ONGOING);
+            case ONGOING -> Optional.of(COMPLETED);
             case COMPLETED -> Optional.empty();
         };
     }
@@ -27,8 +29,9 @@ public enum ItineraryState {
     public Optional<ItineraryState> previous() {
         return switch (this) {
             case DRAFT -> Optional.empty();
-            case ACTIVE -> Optional.of(DRAFT);
-            case COMPLETED -> Optional.of(ACTIVE);
+            case UPCOMING -> Optional.of(DRAFT);
+            case ONGOING -> Optional.of(UPCOMING);
+            case COMPLETED -> Optional.of(ONGOING);
         };
     }
 

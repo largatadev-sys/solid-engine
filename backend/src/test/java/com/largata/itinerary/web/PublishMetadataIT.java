@@ -223,6 +223,7 @@ class PublishMetadataIT extends PostgresTestBase {
     }
 
     private void publish(String token, String itineraryId) {
+        act(token, itineraryId, "finish-planning");
         act(token, itineraryId, "start");
         act(token, itineraryId, "complete");
         act(token, itineraryId, "publish");
