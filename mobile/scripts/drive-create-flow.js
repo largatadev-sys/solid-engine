@@ -274,14 +274,14 @@ function api(path, method, token, body) {
   check('the banner speaks the honest tense — nothing is published yet',
     previewScreen.includes('what other travelers will see if you publish'),
     previewScreen.split('\n').slice(0, 4).join(' / '));
-  check('Finish Planning is the terminal act on a draft’s preview',
-    previewScreen.includes('Finish Planning'), previewScreen.split('\n').slice(-4).join(' / '));
+  check('Finish Itinerary is the terminal act on a draft’s preview',
+    previewScreen.includes('Finish Itinerary'), previewScreen.split('\n').slice(-4).join(' / '));
   check('and it is NOT called Complete — one word must not name two facts (ADR-018/020)',
     !/Complete Itinerary/i.test(previewScreen));
   check('a draft’s preview offers no publish controls — the gate is upstream of the screen',
     !previewScreen.includes('Publish Itinerary'), previewScreen.split('\n').slice(-6).join(' / '));
 
-  const finished = await tap('Finish Planning');
+  const finished = await tap('Finish Itinerary');
   check('tapping it moves the trip on', finished.clicked, JSON.stringify(finished));
   const stateAfter = (await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken)).state;
   check('…to upcoming, on the server — not just on the screen', stateAfter === 'upcoming',
@@ -295,6 +295,24 @@ function api(path, method, token, body) {
   await goto('/');
   const withUpcoming = await text();
   check('the trip now sits under Upcoming Trips', withUpcoming.includes('Upcoming Trips'));
+
+  const cardHref = await evaluate(`
+    (() => {
+      const card = Array.from(document.querySelectorAll('a'))
+        .find((n) => (n.innerText || '').includes('Driven by S4.13') && n.offsetParent !== null);
+      return card ? card.getAttribute('href') : null;
+    })()
+  `);
+  check('a trip card links to its PREVIEW, not the old workspace (founder, 2026-08-04)',
+    typeof cardHref === 'string' && cardHref.endsWith('/preview'), `href=${cardHref}`);
+
+  await goto(`/itineraries/${trip}/preview`);
+  const fromTrips = await text();
+  check('…and that preview is the itinerary view, banner and all',
+    fromTrips.includes('what other travelers will see if you publish'),
+    fromTrips.split('\n').slice(0, 3).join(' / '));
+  check('…offering an upcoming trip no publish button the gate would refuse',
+    !fromTrips.includes('Publish Itinerary'), fromTrips.split('\n').slice(-6).join(' / '));
 
   await goto(`/itineraries/${trip}`);
   const workspace = await text();
