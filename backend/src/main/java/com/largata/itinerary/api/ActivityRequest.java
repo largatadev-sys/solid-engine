@@ -9,6 +9,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 
 
+@PairedMoney
 public record ActivityRequest(
         @NotBlank(message = "An activity needs a title.")
                 @Size(max = 200, message = "A title may be at most 200 characters.")
@@ -30,7 +31,8 @@ public record ActivityRequest(
                         regexp = "^$|^\\d+(\\.\\d{1,2})?$",
                         message = "A booking price must be a number like 1800 or 1800.00.")
                 String bookingPriceAmount,
-        @Size(max = 8, message = "A currency code may be at most 8 characters.") String bookingPriceCurrency) {
+        @Size(max = 8, message = "A currency code may be at most 8 characters.") String bookingPriceCurrency)
+        implements HasPairedMoney {
 
 
     public ActivityFields toFields() {

@@ -240,8 +240,8 @@ const GREYED = [
     `seen ${toPreview.seen}, visible ${toPreview.visible}`);
 
   const preview = await text();
-  check('the preview screen renders the amber scrub banner',
-    preview.includes('This is a preview of your published itinerary'), preview.slice(0, 120));
+  check('the preview screen renders the amber scrub banner, in the honest tense (S4.13)',
+    preview.includes('what other travelers will see if you publish'), preview.slice(0, 160));
   check('the preview is WYSIWYG — the destination pill and derived duration',
     preview.includes('PALAWAN') && /\d+ Days/.test(preview));
   check('…Standouts render', preview.includes('Standouts') && preview.includes('Big Lagoon Kayaking'));

@@ -120,3 +120,21 @@ No new candidate. Every act this story adds — the lifecycle taps, Finish Plann
 ## Comments
 
 *(Append-only. Intent changes during implementation land here, never in the body above.)*
+
+**1 · The migration split in two, and the numbers moved.** The body says "one waiver covers all"; as built the lifecycle rename is **V21** and the booking card is **V22**, because they are unrelated changes with different justifications — V21 needs the ADR-008 waiver, V22 is purely additive and needs none. `ItineraryStateBackfillIT`/`ItineraryAxesBackfillIT` is really **`ItineraryLifecycleRenameIT`**.
+
+**2 · The sabotage check nearly recorded the wrong conclusion, and that is the story's sharpest lesson.** V21's remap was sabotaged to prove the stepping IT could fail. All 8 assertions stayed green — one step from writing down "this migration test has no failure mode". The cause was the *invocation*: `mvn failsafe:integration-test` skips `process-resources`, so Flyway loaded the **previous build's** `.sql` and the edit never reached the container. With `test-compile` added, the same sabotage failed 4 assertions immediately. Now CLAUDE.md's migration gotcha and **regression-checklist line 16**. No test can catch it — it is a property of the Maven lifecycle.
+
+**3 · A real 500 was found by the smoke, not the suite — and it pre-dated this story.** `costAmount` with no `costCurrency` has always thrown `IllegalArgumentException` out of `ActivityFields` as an **unhandled 500**; the booking price simply inherited the hole and the create-flow smoke tripped it. Fixed at the request layer with a `@PairedMoney` class-level constraint (the `@ChronologicalDates` pattern), covering both money pairs, with an IT that walks all four half-entered shapes. `ActivityContractIT` already had `aMalformedTimeIsA400NotA500` — the same bug class, one field over.
+
+**4 · `tripCategories.ts` and `drive-lifecycle.js` were deleted, not migrated.** The chips module had zero consumers once sections landed. `drive-lifecycle.js` had been dead since the **E1 promotion gate** removed the lifecycle banner and date nudge it drives — it asserts UI that has not existed for a week, and would have kept "passing" by never being run. Both are the E1 gate's dead-client-code precedent. `smoke-create-flow.js` and `drive-create-flow.js` replace them.
+
+**5 · Standouts and best time now ship at creation**, which the body implies but does not spell out: the mock draws them on the first screen, so `CreateItineraryRequest` gained both additively and `createWithPlan` gained a fields-taking sibling rather than a ninth positional parameter.
+
+**6 · The booking card crosses the publish wall.** Not stated in the body; it follows from the founder's ruling — *"if people fork that itinerary, they could just use the booking link they used"* — so the four fields join `PublishedActivityResponse` and are pinned in `PublishedProjectionIT`'s exact-field allowlist, which caught them on first run exactly as designed.
+
+**7 · The glossary rule caught a second violation on its first run.** `edit.tsx` said both *"Trip Highlights (Standouts)"* and *"+ Add Highlight"*; the new test found the label, the fix, then the link. Neither is in the creation flow the founder reviewed — which is the point: the word was already loose in the tree.
+
+**8 · Verification.** Backend **122 unit + 473 integration**; mobile **1633 + `tsc` clean**. Against a fresh local stack (`down -v`, V1→V22 applied clean): `smoke-lifecycle.js` **31/31**, `smoke-publish.js` **44/44**, `smoke-create-flow.js` **9/9**. In a **rebuilt** preview container: `drive-publish.js` **36/36**, `drive-create-flow.js` **27/27**, screenshots opened (regression line 12) — the Trips screen shows Upcoming/Draft sections, the orange Create Itinerary, the greyed Add a Past Trip and the four-tab bar with Discover.
+
+**9 · Not yet done: the device walk and the deployed-dev probe.** AC 15's post-deploy check and AC 16's emulator walk remain — the emulator walk is unblocked (a dev build takes its JS from Metro, and this story is JS-only on the mobile side), but the `ACTIVE → ONGOING` remap can only be proven on deployed `dev`, which has the rows. Both belong to the promotion, not the branch.

@@ -40,6 +40,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S4.1 | Publish itinerary + visibility *(resolves reg. #11; ADR-017, then ADR-018)* | ✅ | [spec](docs/plans/S4.1-publish/spec.md) |
 | S4.11 | Lifecycle, discovery and visibility as three axes *(ADR-019 — supersedes ADR-018's single-column shape; reinstates the `completed` publish gate ADR-017 retired)* | ✅ | [spec](docs/plans/S4.11-three-axes/spec.md) |
 | S4.12 | Auth & onboarding fidelity pass *(founder rulings 2026-08-04 on the re-surfaced 07/16 board — tagline, eye glyph, reset placement, completion glyph; the goals minimum drops and the resume ladder stops keying on goal emptiness; the archived export gains its reconciliation note)* | ✅ | [spec](docs/plans/S4.12-auth-onboarding-fidelity/spec.md) |
+| S4.13 | Create-flow rebuild + the four-state lifecycle *(ADR-020 — `upcoming` joins the ladder and `active` becomes `ongoing`; Finish Planning is the creation flow's terminal act, the publish gate stays at `completed` and the freeze stays on `published` alone; Trips renders four lifecycle sections, the tab bar drops to four, and the activity gains its booking card)* | ✅ | [spec](docs/plans/S4.13-create-flow-and-lifecycle/spec.md) |
 | S4.2 | Published diaries → Highlights *(resolves reg. #13; detached from the E4 pull 2026-07-29 — hard-depends on diaries, sequenced behind E3)* | ⬜ | — |
 | S4.3 | Discovery / browse feed (cursor) | ⬜ | — |
 | S4.4 | Stars | ⬜ | — |
