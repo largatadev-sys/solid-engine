@@ -39,6 +39,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S4.0 | Auth & onboarding retrofit *(grilled 2026-07-30 — full flow pulled forward from pre-alpha; 6-digit OTP + Resend + Admin SDK; handles ADR-015 + palette ADR-016 decided ahead of their pins; merges two backlog lines)* | ✅ | [spec](docs/plans/S4.0-auth-onboarding-retrofit/spec.md) |
 | S4.1 | Publish itinerary + visibility *(resolves reg. #11; ADR-017, then ADR-018)* | ✅ | [spec](docs/plans/S4.1-publish/spec.md) |
 | S4.11 | Lifecycle, discovery and visibility as three axes *(ADR-019 — supersedes ADR-018's single-column shape; reinstates the `completed` publish gate ADR-017 retired)* | ✅ | [spec](docs/plans/S4.11-three-axes/spec.md) |
+| S4.12 | Auth & onboarding fidelity pass *(founder rulings 2026-08-04 on the re-surfaced 07/16 board — tagline, eye glyph, reset placement, completion glyph; the goals minimum drops and the resume ladder stops keying on goal emptiness; the archived export gains its reconciliation note)* | ✅ | [spec](docs/plans/S4.12-auth-onboarding-fidelity/spec.md) |
 | S4.2 | Published diaries → Highlights *(resolves reg. #13; detached from the E4 pull 2026-07-29 — hard-depends on diaries, sequenced behind E3)* | ⬜ | — |
 | S4.3 | Discovery / browse feed (cursor) | ⬜ | — |
 | S4.4 | Stars | ⬜ | — |
