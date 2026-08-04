@@ -200,12 +200,13 @@ export function useShowTripTo(
   });
 }
 
-export type LifecycleAct = 'start' | 'complete' | 'reopen';
+export type LifecycleAct = 'finish-planning' | 'start' | 'complete' | 'reopen';
 
 export function useTripLifecycle(id: string): UseMutationResult<ItineraryResponse, Error, LifecycleAct> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (act: LifecycleAct) => {
+      if (act === 'finish-planning') return itineraryRepository.finishPlanning(id);
       if (act === 'start') return itineraryRepository.startTrip(id);
       if (act === 'complete') return itineraryRepository.completeTrip(id);
       return itineraryRepository.reopenTrip(id);

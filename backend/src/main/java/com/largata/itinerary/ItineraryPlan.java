@@ -25,6 +25,11 @@ public record ItineraryPlan(
     }
 
 
+    public boolean hasLiveLease() {
+        return !leaseHolders.isEmpty();
+    }
+
+
     public TravelerSummary editor(UUID travelerId) {
         return travelerId == null ? null : editors.get(travelerId);
     }

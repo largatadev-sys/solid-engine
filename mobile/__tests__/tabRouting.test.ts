@@ -88,27 +88,34 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     }
   });
 
-  it('makes the create button the showcase — larger than the mock, on the founder call', () => {
+  it('is four tabs with no centre button — the mock relocates creation to the Trips screen (S4.13)', () => {
     const layout = read(TABS, '_layout.tsx');
-    const size = Number(/CREATE_BUTTON_SIZE = (\d+)/.exec(layout)?.[1]);
 
-    expect(size).toBeGreaterThan(MOCK_CFAB_SIZE);
-    expect(layout).toContain('marginTop: -CREATE_BUTTON_LIFT');
+    expect(layout).not.toContain('CREATE_BUTTON_SIZE');
+    expect(layout).not.toContain('createButton');
+    expect(layout).toContain('name="create" options={{ href: null }}');
     expect(layout).toContain('height: TAB_BAR_HEIGHT + insets.bottom');
   });
 
-  it('greys Home and Search rather than navigating to an empty screen', () => {
+  it('calls the second tab Discover — the feed it opens is the discovery axis (ADR-019)', () => {
+    const layout = read(TABS, '_layout.tsx');
+
+    expect(layout).toContain("title: 'Discover'");
+    expect(layout).not.toMatch(/title: 'Search'/);
+  });
+
+  it('greys Home and Discover rather than navigating to an empty screen', () => {
     const layout = read(TABS, '_layout.tsx');
 
     expect(layout).toContain("comingSoon('home')");
     expect(layout).toContain("comingSoon('search')");
-    expect(layout.match(/event\.preventDefault\(\)/g) ?? []).toHaveLength(3);
+    expect(layout.match(/event\.preventDefault\(\)/g) ?? []).toHaveLength(2);
   });
 
   it('gives every tab a real icon — an unset one renders as a tofu box on Android', () => {
     const layout = read(TABS, '_layout.tsx');
 
-    expect(layout.match(/tabBarIcon:/g) ?? []).toHaveLength(5);
+    expect(layout.match(/tabBarIcon:/g) ?? []).toHaveLength(4);
   });
 
   it('shows no navigator header anywhere — every heading is drawn as page content', () => {
@@ -137,9 +144,19 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(source).not.toMatch(/options=\{\{[^}]*title:/);
   });
 
-  it('routes + to the chooser — decision 13 reversed, fork greyed until S4.7', () => {
-    expect(read(TABS, '_layout.tsx')).toContain("router.push('/itineraries/create')");
-    expect(read(TABS, 'create.tsx')).toContain('href="/itineraries/create"');
+  it('creates from the Trips screen, straight to trip details — the mock connector, not the chooser', () => {
+    const trips = read(TABS, 'index.tsx');
+
+    expect(trips).toContain('href="/itineraries/new"');
+    expect(trips).toContain('Create Itinerary');
+    expect(read(TABS, '_layout.tsx')).not.toContain("router.push('/itineraries/create')");
+  });
+
+  it('greys Add a Past Trip — the founder wants the argument before the door (S4.13)', () => {
+    const trips = read(TABS, 'index.tsx');
+
+    expect(trips).toContain('Add a Past Trip');
+    expect(trips).toContain("comingSoon('addPastTrip')");
   });
 
   it('the chooser offers scratch live and fork greyed', () => {
@@ -301,6 +318,7 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
 describe('every greyed affordance is wired to the shared helper (register #2)', () => {
   const screens = [
     read(TABS, '_layout.tsx'),
+    read(TABS, 'index.tsx'),
     read(TRIPS, 'new.tsx'),
     read(TRIPS, 'create.tsx'),
     read(TRIPS, '[id]', 'index.tsx'),

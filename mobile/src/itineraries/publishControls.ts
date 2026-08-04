@@ -47,7 +47,8 @@ export type WorkspaceEyebrow = { icon: IconName; label: string };
 
 const UNPUBLISHED_EYEBROWS: Record<ItineraryState, WorkspaceEyebrow> = {
   draft: { icon: 'users', label: 'Draft Workspace' },
-  active: { icon: 'users', label: 'Trip Under Way' },
+  upcoming: { icon: 'users', label: 'Planning Finished' },
+  ongoing: { icon: 'users', label: 'Trip Under Way' },
   completed: { icon: 'users', label: 'Trip Complete' },
 };
 
@@ -79,7 +80,8 @@ export function audienceBlurb(audience: PublishAudience): string {
 
 const LIFECYCLE_LABELS: Record<ItineraryState, string> = {
   draft: 'Draft — still being planned',
-  active: 'Active — the trip is under way',
+  upcoming: 'Upcoming — planning is finished',
+  ongoing: 'Ongoing — the trip is under way',
   completed: 'Complete — the trip is done',
 };
 
@@ -90,8 +92,9 @@ export function lifecycleLabel(state: ItineraryState): string {
 
 
 const LIFECYCLE_BLURBS: Record<ItineraryState, string> = {
-  draft: 'Build the plan here. Start the trip when you set off.',
-  active: 'Mark it complete when you get back — a completed trip is the one you can publish.',
+  draft: 'Build the plan here. Finish planning when it is ready.',
+  upcoming: 'The plan is set. Start the trip when you set off — you can still edit it until then.',
+  ongoing: 'Mark it complete when you get back — a completed trip is the one you can publish.',
   completed: 'This trip is ready to publish whenever you want to share it.',
 };
 
@@ -101,12 +104,15 @@ export function lifecycleBlurb(state: ItineraryState): string {
 }
 
 
-export type LifecycleStep = { act: 'start' | 'complete'; label: string };
+export type LifecycleAct = 'finish-planning' | 'start' | 'complete';
+
+export type LifecycleStep = { act: LifecycleAct; label: string };
 
 
 export function nextLifecycleAct(state: ItineraryState): LifecycleStep | null {
-  if (state === 'draft') return { act: 'start', label: 'Start trip' };
-  if (state === 'active') return { act: 'complete', label: 'Mark complete' };
+  if (state === 'draft') return { act: 'finish-planning', label: 'Finish Planning' };
+  if (state === 'upcoming') return { act: 'start', label: 'Start trip' };
+  if (state === 'ongoing') return { act: 'complete', label: 'Mark complete' };
   return null;
 }
 
@@ -114,7 +120,14 @@ export function nextLifecycleAct(state: ItineraryState): LifecycleStep | null {
 export const PUBLISH_NEEDS_COMPLETE_TITLE = 'This trip is not finished yet';
 
 
+const NOT_COMPLETE_WHERE: Record<Exclude<ItineraryState, 'completed'>, string> = {
+  draft: 'still a draft',
+  upcoming: 'planned but not travelled yet',
+  ongoing: 'under way',
+};
+
+
 export function publishNeedsCompleteBody(state: ItineraryState): string {
-  const where = state === 'draft' ? 'still a draft' : 'under way';
+  const where = state === 'completed' ? 'complete' : NOT_COMPLETE_WHERE[state];
   return `Only a completed trip can be published, because a published itinerary is a record of a trip that happened. This one is ${where} — mark it complete first, and you can publish it after.`;
 }

@@ -6,6 +6,7 @@ import com.largata.common.authz.Membership;
 import com.largata.common.authz.AudienceFence;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
+import com.largata.itinerary.Itinerary;
 import com.largata.itinerary.ItineraryService;
 import com.largata.itinerary.PublishedItineraryService;
 import com.largata.itinerary.TripCategory;
@@ -16,6 +17,7 @@ import com.largata.itinerary.api.PublishedItineraryResponse;
 import com.largata.itinerary.api.UpdateItineraryRequest;
 import com.largata.membership.MembershipService;
 import jakarta.validation.Valid;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -170,9 +172,14 @@ class ItineraryController {
             @RequestParam(required = false) Integer limit,
             @RequestParam(defaultValue = "false") boolean archived,
             @RequestParam(required = false) String category) {
-        return itineraries
-                .listMine(traveler.id(), cursor, limit, archived, TripCategory.parse(category).orElse(null))
-                .map(itinerary -> ItineraryResponse.summaryOf(itinerary, itineraries.stateOf(itinerary.id())));
+        Page<Itinerary> page =
+                itineraries.listMine(
+                        traveler.id(), cursor, limit, archived, TripCategory.parse(category).orElse(null));
+        Set<UUID> beingEdited =
+                itineraries.beingEditedAmong(page.items().stream().map(Itinerary::id).toList());
+        return page.map(itinerary ->
+                ItineraryResponse.summaryOf(
+                        itinerary, itineraries.stateOf(itinerary.id()), beingEdited.contains(itinerary.id())));
     }
 
 

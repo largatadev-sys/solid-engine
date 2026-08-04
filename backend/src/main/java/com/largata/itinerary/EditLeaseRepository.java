@@ -16,6 +16,9 @@ interface EditLeaseRepository extends JpaRepository<EditLease, UUID> {
     List<EditLease> findByItineraryId(UUID itineraryId);
 
 
+    List<EditLease> findByItineraryIdIn(Collection<UUID> itineraryIds);
+
+
     List<EditLease> findByItineraryIdAndHolderId(UUID itineraryId, UUID holderId);
 
 

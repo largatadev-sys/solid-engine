@@ -59,13 +59,13 @@ export type VerificationResultResponse = {
 };
 
 
-export type ItineraryState = 'draft' | 'active' | 'completed';
+export type ItineraryState = 'draft' | 'upcoming' | 'ongoing' | 'completed';
 
 
 export type Visibility = 'public' | 'private';
 
 
-export type TripCategory = 'draft' | 'active' | 'complete';
+export type TripCategory = 'draft' | 'upcoming' | 'ongoing' | 'complete';
 
 
 export type PublishAudience = Visibility;
@@ -91,6 +91,8 @@ export type ItineraryResponse = {
   visibility: Visibility;
 
   archived: boolean;
+
+  beingEdited?: boolean;
 
   workspaceState?: 'active' | 'completed' | 'archived';
 

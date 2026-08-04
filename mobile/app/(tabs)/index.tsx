@@ -1,43 +1,25 @@
 import { Link } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { comingSoon } from '../../src/components/comingSoon';
 import { InvitationInbox } from '../../src/components/InvitationInbox';
 import { TripRow } from '../../src/itineraries/TripRow';
-import {
-  DEFAULT_TRIP_CATEGORY,
-  emptyCategoryMessage,
-  TRIP_CATEGORIES,
-  tripCategoryLabel,
-} from '../../src/itineraries/tripCategories';
+import { groupIntoSections } from '../../src/itineraries/tripSections';
 import { useMyItineraries } from '../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../src/theme';
-import type { TripCategory } from '../../src/types/api';
 
 
 export default function MyTripsScreen() {
-  const [category, setCategory] = useState<TripCategory>(DEFAULT_TRIP_CATEGORY);
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMyItineraries(category);
+    useMyItineraries();
 
   const itineraries = data?.pages.flatMap((page) => page.items) ?? [];
+  const sections = groupIntoSections(itineraries);
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.chipBar}
-        contentContainerStyle={styles.chipRow}
-      >
-        {TRIP_CATEGORIES.map((option) => (
-          <CategoryChip
-            key={option}
-            label={tripCategoryLabel(option)}
-            selected={category === option}
-            onPress={() => setCategory(option)}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Trips</Text>
+      </View>
 
       {isPending && <ActivityIndicator size="large" color={colors.accent} style={styles.centered} />}
 
@@ -52,11 +34,13 @@ export default function MyTripsScreen() {
       )}
 
       {!isPending && !isError && (
-        <FlatList
-          data={itineraries}
+        <SectionList
+          sections={sections}
           keyExtractor={(itinerary) => itinerary.id}
-          contentContainerStyle={itineraries.length === 0 ? styles.emptyContainer : styles.listContainer}
+          contentContainerStyle={sections.length === 0 ? styles.emptyContainer : styles.listContainer}
           renderItem={({ item }) => <TripRow itinerary={item} />}
+          renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{section.label}</Text>}
+          stickySectionHeadersEnabled={false}
           onRefresh={() => void refetch()}
           refreshing={isRefetching}
           onEndReached={() => {
@@ -64,7 +48,7 @@ export default function MyTripsScreen() {
           }}
           onEndReachedThreshold={0.5}
           ListHeaderComponent={<InvitationInbox />}
-          ListEmptyComponent={<EmptyState category={category} />}
+          ListEmptyComponent={<EmptyState />}
           ListFooterComponent={
             <>
               {isFetchingNextPage && <ActivityIndicator color={colors.accent} style={styles.footer} />}
@@ -77,88 +61,50 @@ export default function MyTripsScreen() {
           }
         />
       )}
+
+      <View style={styles.ctas}>
+        <Link href="/itineraries/new" asChild>
+          <Pressable style={styles.primaryCta} accessibilityRole="button">
+            <Text style={styles.primaryCtaText}>Create Itinerary</Text>
+          </Pressable>
+        </Link>
+        <Pressable
+          style={styles.secondaryCta}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: true }}
+          onPress={() => comingSoon('addPastTrip')}>
+          <Text style={styles.secondaryCtaText}>Add a Past Trip</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
-function CategoryChip({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      style={[styles.chip, selected && styles.chipSelected]}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      accessibilityLabel={label}
-    >
-      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
-    </Pressable>
-  );
-}
 
-
-function EmptyState({ category }: { category: TripCategory }) {
+function EmptyState() {
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyTitle}>
-        {`No ${tripCategoryLabel(category).toLowerCase()} trips`}
+      <Text style={styles.emptyTitle}>No trips yet</Text>
+      <Text style={styles.caption}>
+        Every trip starts as a draft. Build the plan, finish planning, then travel it.
       </Text>
-      <Text style={styles.caption}>{emptyCategoryMessage(category)}</Text>
-      <Link href="/itineraries/new" asChild>
-        <Pressable style={styles.button} accessibilityRole="button">
-          <Text style={styles.buttonText}>Plan a trip</Text>
-        </Pressable>
-      </Link>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  chipBar: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.border },
-  chipRow: { flexDirection: 'row', gap: spacing.sm, padding: spacing.md },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
+  headerTitle: { ...typography.display, color: colors.textPrimary },
+  sectionTitle: {
+    ...typography.bodyStrong,
+    color: colors.textSecondary,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xs,
   },
-  chipSelected: { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary },
-  chipText: { ...typography.caption, color: colors.textSecondary },
-  chipTextSelected: { color: colors.textOnAccent, fontWeight: '700' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
-  listContainer: { padding: spacing.md, gap: spacing.sm },
+  listContainer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
   emptyContainer: { flexGrow: 1 },
-  row: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  rowTitle: { ...typography.bodyStrong, color: colors.textPrimary, flexShrink: 1 },
-  stateBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.accentMuted,
-    backgroundColor: colors.surface,
-  },
-  stateBadgeText: { ...typography.overline, color: colors.textSecondary },
-  rowMeta: { ...typography.caption, color: colors.textSecondary },
-  rowDates: { ...typography.caption, color: colors.textSecondary },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
   emptyTitle: { ...typography.heading, color: colors.textPrimary },
   errorTitle: { ...typography.heading, color: colors.danger },
@@ -166,6 +112,31 @@ const styles = StyleSheet.create({
   footer: { paddingVertical: spacing.md },
   archivedLink: { paddingVertical: spacing.md, alignItems: 'center' },
   archivedLinkText: { ...typography.body, color: colors.textSecondary },
+  ctas: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  primaryCta: {
+    paddingVertical: spacing.md,
+    borderRadius: radii.sm,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+  },
+  primaryCtaText: { ...typography.bodyStrong, color: colors.textOnAccent },
+  secondaryCta: {
+    paddingVertical: spacing.md,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    opacity: 0.5,
+  },
+  secondaryCtaText: { ...typography.bodyStrong, color: colors.textSecondary },
   button: {
     marginTop: spacing.md,
     paddingVertical: spacing.md,

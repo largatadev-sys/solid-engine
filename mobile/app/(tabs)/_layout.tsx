@@ -1,20 +1,12 @@
-import { Tabs, useRouter } from 'expo-router';
-import { StyleSheet, View, type ColorValue } from 'react-native';
+import { Tabs } from 'expo-router';
+import { type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { comingSoon } from '../../src/components/comingSoon';
 import { Icon, type IconName } from '../../src/components/Icon';
-import { colors, radii, typography } from '../../src/theme';
+import { colors, typography } from '../../src/theme';
 
 
 const TAB_ICON_SIZE = 24;
-
-const CREATE_BUTTON_SIZE = 60;
-
-const CREATE_ICON_SIZE = 30;
-
-const CREATE_BUTTON_LIFT = 18;
-
-const CREATE_BUTTON_RING = 3;
 
 const TAB_BAR_HEIGHT = 64;
 
@@ -31,17 +23,7 @@ function bareScene(top: number) {
 }
 
 
-function createButton() {
-  return (
-    <View style={styles.createButton}>
-      <Icon name="plus" size={CREATE_ICON_SIZE} color={colors.textOnAccent} />
-    </View>
-  );
-}
-
-
 export default function TabsLayout() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   return (
@@ -78,28 +60,14 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Search',
+          title: 'Discover',
           tabBarIcon: tabIcon('search'),
-          tabBarAccessibilityLabel: 'Search, coming soon',
+          tabBarAccessibilityLabel: 'Discover, coming soon',
         }}
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
             comingSoon('search');
-          },
-        }}
-      />
-      <Tabs.Screen
-        name="create"
-        options={{
-          tabBarIcon: createButton,
-          tabBarLabel: () => null,
-          tabBarAccessibilityLabel: 'Plan a trip',
-        }}
-        listeners={{
-          tabPress: (event) => {
-            event.preventDefault();
-            router.push('/itineraries/create');
           },
         }}
       />
@@ -111,28 +79,10 @@ export default function TabsLayout() {
         name="profile"
         options={{ title: 'Profile', tabBarIcon: tabIcon('person'), sceneStyle: bareScene(insets.top) }}
       />
+      <Tabs.Screen name="create" options={{ href: null }} />
       <Tabs.Screen name="itineraries" options={{ href: null }} />
       <Tabs.Screen name="members" options={{ href: null }} />
       <Tabs.Screen name="published" options={{ href: null }} />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  createButton: {
-    width: CREATE_BUTTON_SIZE,
-    height: CREATE_BUTTON_SIZE,
-    marginTop: -CREATE_BUTTON_LIFT,
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: CREATE_BUTTON_RING,
-    borderColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.textPrimary,
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-});

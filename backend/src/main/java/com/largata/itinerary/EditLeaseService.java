@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -194,6 +195,19 @@ public class EditLeaseService {
             bySubject.put(lease.subject(), holderOf(lease, holders.get(lease.holderId())));
         }
         return bySubject;
+    }
+
+
+    @Transactional(readOnly = true)
+    public Set<UUID> itinerariesBeingEdited(Collection<UUID> itineraryIds) {
+        if (itineraryIds.isEmpty()) {
+            return Set.of();
+        }
+        Instant now = clock.instant();
+        return leases.findByItineraryIdIn(itineraryIds).stream()
+                .filter(lease -> lease.isLiveAt(now))
+                .map(EditLease::itineraryId)
+                .collect(Collectors.toSet());
     }
 
 

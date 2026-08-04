@@ -309,6 +309,12 @@ public class ItineraryService {
 
 
     @Transactional(readOnly = true)
+    public Set<UUID> beingEditedAmong(Collection<UUID> itineraryIds) {
+        return editLease.itinerariesBeingEdited(itineraryIds);
+    }
+
+
+    @Transactional(readOnly = true)
     public Page<Itinerary> listMine(
             UUID travelerId, String cursor, Integer requestedLimit, boolean archived, TripCategory category) {
         int limit = clamp(requestedLimit);

@@ -13,6 +13,7 @@ export const COMING_SOON_SURFACES = {
   rating: 'Ratings',
   follow: 'Following a creator',
   booking: 'Booking options',
+  addPastTrip: 'Adding a past trip',
 } as const;
 
 export type ComingSoonSurface = keyof typeof COMING_SOON_SURFACES;

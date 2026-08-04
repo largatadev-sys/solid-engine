@@ -150,6 +150,38 @@ class PlanCollaborationIT extends PostgresTestBase {
     }
 
     @Test
+    void theTripsListSaysWhichTripsAreBeingEditedRightNow() {
+        String owner = rig.travelerWithHandle("owner" + suffix());
+        String held = rig.createTrip(owner, 1);
+        String quiet = rig.createTrip(owner, 1);
+
+        assertThat(beingEditedIn(owner)).isEmpty();
+
+        rig.hold(owner, held, "day", rig.dayAt(held, 1));
+
+        assertThat(beingEditedIn(owner))
+                .as("the advisory is the only thing the redrawn Trips card's status slot carries")
+                .containsExactly(held);
+        assertThat(beingEditedIn(owner)).doesNotContain(quiet);
+    }
+
+    @Test
+    void theAdvisorySelfHealsOnTheTripsListWhenTheHoldIsReleased() {
+        String owner = rig.travelerWithHandle("owner" + suffix());
+        String tripId = rig.createTrip(owner, 1);
+        UUID dayOne = rig.dayAt(tripId, 1);
+
+        rig.hold(owner, tripId, "day", dayOne);
+        assertThat(beingEditedIn(owner)).contains(tripId);
+
+        rig.releaseLease(owner, tripId, "day", dayOne).expectStatus().isNoContent();
+
+        assertThat(beingEditedIn(owner))
+                .as("a released lease must not leave a card claiming someone is still in there")
+                .doesNotContain(tripId);
+    }
+
+    @Test
     void anExpiredHoldIsAbsentFromTheReadPayloadSoTheIndicatorSelfHeals() {
         String owner = rig.travelerWithHandle("owner" + suffix());
         String tripId = rig.createTrip(owner, 1);
@@ -198,6 +230,24 @@ class PlanCollaborationIT extends PostgresTestBase {
         assertThat(titlesOf(dayOne)).containsExactly("Second", "First");
     }
 
+
+    private java.util.List<String> beingEditedIn(String token) {
+        byte[] body = rig.send(HttpMethod.GET, "/v1/itineraries", token, null)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .returnResult()
+                .getResponseBodyContent();
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        tools.jackson.databind.JsonNode items =
+                new tools.jackson.databind.ObjectMapper().readTree(new String(body)).get("items");
+        for (tools.jackson.databind.JsonNode item : items) {
+            if (item.get("beingEdited").asBoolean()) {
+                ids.add(item.get("id").asString());
+            }
+        }
+        return ids;
+    }
 
     private java.util.List<String> titlesOf(UUID dayId) {
         return jdbc.queryForList(
