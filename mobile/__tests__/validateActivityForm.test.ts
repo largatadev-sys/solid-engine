@@ -47,4 +47,18 @@ describe('what an activity form rejects', () => {
   it('rejects a currency with no amount', () => {
     expect(validateActivityForm({ ...valid, costCurrency: 'PHP' })).toMatch(/amount/);
   });
+
+  it('asks the booking price for nothing but a number — no currency to pair (founder, 2026-08-04)', () => {
+    expect(validateActivityForm({ ...valid, bookingPriceAmount: '1800' })).toBeUndefined();
+    expect(validateActivityForm({ ...valid, bookingPriceAmount: '1800.50' })).toBeUndefined();
+    expect(validateActivityForm({ ...valid, bookingPriceAmount: 'free' })).toMatch(/number/i);
+  });
+
+  it('still polices the activity cost, which feeds the derived total', () => {
+    expect(validateActivityForm({ ...valid, costAmount: 'lots', costCurrency: 'PHP' })).toMatch(/number/);
+  });
+
+  it('accepts an activity with no booking at all', () => {
+    expect(validateActivityForm({ ...valid })).toBeUndefined();
+  });
 });

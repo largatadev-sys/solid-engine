@@ -145,14 +145,20 @@ async function main() {
     tooEarly.status === 409 && tooEarly.body.code === 'ITINERARY_NOT_COMPLETE',
     `${tooEarly.status} ${tooEarly.body?.code}`);
 
+  await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', owner);
+  const plannedTooEarly = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  check('AC4 …and so is publishing an UPCOMING trip — planning finished is not the trip happening',
+    plannedTooEarly.status === 409 && plannedTooEarly.body.code === 'ITINERARY_NOT_COMPLETE',
+    `${plannedTooEarly.status} ${plannedTooEarly.body?.code}`);
+
   await api(`/v1/itineraries/${trip}/start`, 'POST', owner);
   const stillTooEarly = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
-  check('AC4 …and so is publishing an ACTIVE trip',
+  check('AC4 …and so is publishing an ONGOING trip',
     stillTooEarly.status === 409 && stillTooEarly.body.code === 'ITINERARY_NOT_COMPLETE',
     `${stillTooEarly.status} ${stillTooEarly.body?.code}`);
 
   const completed = await api(`/v1/itineraries/${trip}/complete`, 'POST', owner);
-  check('AC2 the lifecycle walks draft → active → complete on the traveler’s act',
+  check('AC2 the lifecycle walks draft → upcoming → ongoing → completed on the traveler’s act',
     completed.status === 200 && completed.body.state === 'completed',
     `${completed.status} ${completed.body?.state}`);
 
@@ -212,7 +218,7 @@ async function main() {
 
   const reopened = await api(`/v1/itineraries/${trip}/reopen`, 'POST', owner);
   check('AC3 the one-step undo works once unpublished',
-    reopened.status === 200 && reopened.body.state === 'active',
+    reopened.status === 200 && reopened.body.state === 'ongoing',
     `${reopened.status} ${reopened.body?.state}`);
   await api(`/v1/itineraries/${trip}/complete`, 'POST', owner);
   await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
@@ -286,6 +292,7 @@ async function main() {
   const empty = await api('/v1/itineraries', 'POST', owner, {
     title: 'Someday, Japan', destinations: ['Japan'],
   });
+  await api(`/v1/itineraries/${empty.body.id}/finish-planning`, 'POST', owner);
   await api(`/v1/itineraries/${empty.body.id}/start`, 'POST', owner);
   await api(`/v1/itineraries/${empty.body.id}/complete`, 'POST', owner);
   const emptyPublish = await api(`/v1/itineraries/${empty.body.id}/publish`, 'POST', owner);

@@ -142,7 +142,7 @@ function PublishedHeader({
           accessibilityLabel="Rating, coming soon"
           onPress={() => comingSoon('rating')}
         >
-          <Text style={styles.statValueGreyed}>—</Text>
+          <Text style={styles.statValue}>0</Text>
           <Text style={styles.statLabel}>Reviews</Text>
         </Pressable>
         <Pressable
@@ -152,12 +152,12 @@ function PublishedHeader({
           accessibilityLabel="Forks, coming soon"
           onPress={() => comingSoon('fork')}
         >
-          <Text style={styles.statValueGreyed}>—</Text>
+          <Text style={styles.statValue}>0</Text>
           <Text style={styles.statLabel}>Forked</Text>
         </Pressable>
         <View style={styles.stat}>
           <Text style={styles.statValue}>{total ?? '—'}</Text>
-          <Text style={styles.statLabel}>Est. Total</Text>
+          <Text style={styles.statLabel}>Est. Cost</Text>
         </View>
       </View>
     </View>

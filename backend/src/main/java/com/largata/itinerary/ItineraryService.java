@@ -85,28 +85,22 @@ public class ItineraryService {
             LocalDate startDate,
             LocalDate endDate,
             int durationDays) {
-        Itinerary itinerary =
-                itineraries.save(
-                        Itinerary.draft(ownerId, title, destinations, description, startDate, endDate, Instant.now()));
-        workspaces.formAround(itinerary.id(), itinerary.ownerId(), itinerary.createdAt());
-        days.seedDays(itinerary.id(), durationDays, itinerary.createdAt());
-        log.info("Itinerary created: id={} ownerId={}", itinerary.id(), itinerary.ownerId());
-        emitAfterCommit(itinerary);
-        return itinerary;
+        return createWithPlan(
+                        ownerId,
+                        ItineraryFields.withoutPublishMetadata(
+                                title, destinations, description, startDate, endDate),
+                        durationDays)
+                .itinerary();
     }
 
 
     @Transactional
-    public ItineraryPlan createWithPlan(
-            UUID ownerId,
-            String title,
-            List<String> destinations,
-            String description,
-            LocalDate startDate,
-            LocalDate endDate,
-            int durationDays) {
-        Itinerary itinerary =
-                create(ownerId, title, destinations, description, startDate, endDate, durationDays);
+    public ItineraryPlan createWithPlan(UUID ownerId, ItineraryFields fields, int durationDays) {
+        Itinerary itinerary = itineraries.save(Itinerary.draft(ownerId, fields, Instant.now()));
+        workspaces.formAround(itinerary.id(), itinerary.ownerId(), itinerary.createdAt());
+        days.seedDays(itinerary.id(), durationDays, itinerary.createdAt());
+        log.info("Itinerary created: id={} ownerId={}", itinerary.id(), itinerary.ownerId());
+        emitAfterCommit(itinerary);
         return assemble(itinerary, days.plan(itinerary.id()));
     }
 
@@ -198,6 +192,14 @@ public class ItineraryService {
                                         .with("destinationCount", itinerary.destinations().size())
                                         .build()));
         return itinerary;
+    }
+
+
+    @Transactional
+    public Itinerary finishPlanning(Membership owner) {
+        Itinerary itinerary = authorizeAndLoad(owner);
+        itinerary.finishPlanning();
+        return record(itinerary, owner, "itinerary_planning_finished");
     }
 
 
@@ -297,6 +299,12 @@ public class ItineraryService {
                                         .with("travelerId", owner.travelerId())
                                         .build()));
         return itinerary;
+    }
+
+
+    @Transactional(readOnly = true)
+    public Set<UUID> beingEditedAmong(Collection<UUID> itineraryIds) {
+        return editLease.itinerariesBeingEdited(itineraryIds);
     }
 
 

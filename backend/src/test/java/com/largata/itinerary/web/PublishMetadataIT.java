@@ -40,6 +40,46 @@ class PublishMetadataIT extends PostgresTestBase {
 
 
     @Test
+    void theCreationFlowSetsStandoutsAndBestTimeInOneAct_theMockPutsThemOnTheFirstScreen() {
+        String owner = freshTraveler();
+
+        String tripId = JSON.readTree(
+                        new String(
+                                rest.post()
+                                        .uri("/v1/itineraries")
+                                        .header(HttpHeaders.AUTHORIZATION, bearer(owner))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .body(
+                                                """
+                                                {"title":"Island Hopping in El Nido","destinations":["Palawan"],
+                                                 "durationDays":5,"bestTimeOfYear":"Dec - Apr",
+                                                 "standouts":["Big Lagoon Kayaking","Local Seafood Dinners"]}
+                                                """)
+                                        .exchange()
+                                        .expectStatus()
+                                        .isCreated()
+                                        .expectBody()
+                                        .returnResult()
+                                        .getResponseBodyContent()))
+                .get("id")
+                .asString();
+
+        view(owner, tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.standouts")
+                .isEqualTo(java.util.List.of("Big Lagoon Kayaking", "Local Seafood Dinners"))
+                .jsonPath("$.bestTimeOfYear")
+                .isEqualTo("Dec - Apr")
+                .jsonPath("$.days.length()")
+                .isEqualTo(5)
+                .jsonPath("$.state")
+                .isEqualTo("draft");
+    }
+
+
+    @Test
     void anExistingItineraryReadsAsEmptyMetadataAndPublishesWithoutArtifacts() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
@@ -223,6 +263,7 @@ class PublishMetadataIT extends PostgresTestBase {
     }
 
     private void publish(String token, String itineraryId) {
+        act(token, itineraryId, "finish-planning");
         act(token, itineraryId, "start");
         act(token, itineraryId, "complete");
         act(token, itineraryId, "publish");

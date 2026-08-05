@@ -37,16 +37,24 @@ class ItineraryLifecycleIT extends PostgresTestBase {
 
 
     @Test
-    void theOwnerStartsThenCompletesTheTripAndEachActStampsItsOwnMoment() {
+    void theOwnerWalksTheWholeLadderAndEachTravelActStampsItsOwnMoment() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
         assertThat(stateOf(tripId)).isEqualTo("DRAFT");
         assertThat(stampsOf(tripId)).containsEntry("started_at", null).containsEntry("completed_at", null);
 
-        start(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.state").isEqualTo("active");
+        finishPlanning(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.state").isEqualTo("upcoming");
 
-        assertThat(stateOf(tripId)).isEqualTo("ACTIVE");
+        assertThat(stateOf(tripId)).isEqualTo("UPCOMING");
+        assertThat(stampsOf(tripId))
+                .as("finishing planning is not a travel act — it stamps nothing")
+                .containsEntry("started_at", null)
+                .containsEntry("completed_at", null);
+
+        start(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.state").isEqualTo("ongoing");
+
+        assertThat(stateOf(tripId)).isEqualTo("ONGOING");
         Map<String, Object> afterStart = stampsOf(tripId);
         assertThat(afterStart.get("started_at")).as("start stamps its own moment").isNotNull();
         assertThat(afterStart.get("completed_at")).as("completion has not happened yet").isNull();
@@ -66,12 +74,13 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String owner = freshTraveler();
         String tripId = createItineraryWithDays(owner, 3);
 
+        finishPlanning(owner, tripId).expectStatus().isOk();
         start(owner, tripId)
                 .expectStatus()
                 .isOk()
                 .expectBody()
                 .jsonPath("$.state")
-                .isEqualTo("active")
+                .isEqualTo("ongoing")
                 .jsonPath("$.days.length()")
                 .isEqualTo(3)
                 .jsonPath("$.title")
@@ -80,10 +89,19 @@ class ItineraryLifecycleIT extends PostgresTestBase {
 
 
     @Test
-    void aMemberWhoIsNotTheOwnerCannotStartOrCompleteTheTrip() {
+    void aMemberWhoIsNotTheOwnerCannotMoveTheTripAlongAtAnyRung() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
+
+        finishPlanning(member, tripId)
+                .expectStatus()
+                .isForbidden()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("NOT_PERMITTED");
+
+        finishPlanning(owner, tripId).expectStatus().isOk();
 
         start(member, tripId)
                 .expectStatus()
@@ -101,7 +119,7 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .jsonPath("$.code")
                 .isEqualTo("NOT_PERMITTED");
 
-        assertThat(stateOf(tripId)).isEqualTo("ACTIVE");
+        assertThat(stateOf(tripId)).isEqualTo("ONGOING");
     }
 
     @Test
@@ -120,10 +138,18 @@ class ItineraryLifecycleIT extends PostgresTestBase {
 
 
     @Test
-    void startingAnAlreadyActiveOrCompletedTripIsRefused() {
+    void startingATripThatIsNotWaitingToSetOffIsRefused() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
-        start(owner, tripId).expectStatus().isOk();
+
+        start(owner, tripId)
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ILLEGAL_STATE_TRANSITION");
+
+        walkToOngoing(owner, tripId);
 
         start(owner, tripId)
                 .expectStatus()
@@ -143,7 +169,7 @@ class ItineraryLifecycleIT extends PostgresTestBase {
     }
 
     @Test
-    void completingADraftIsRefusedThereIsNoSkipEdge() {
+    void everyJumpUpTheLadderIsRefusedThereAreNoSkipEdges() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
@@ -156,12 +182,29 @@ class ItineraryLifecycleIT extends PostgresTestBase {
 
         assertThat(stateOf(tripId)).isEqualTo("DRAFT");
         assertThat(stampsOf(tripId)).containsEntry("started_at", null).containsEntry("completed_at", null);
+
+        finishPlanning(owner, tripId).expectStatus().isOk();
+
+        complete(owner, tripId).expectStatus().isEqualTo(409);
+
+        assertThat(stateOf(tripId))
+                .as("upcoming → completed skips the trip itself, so nothing moved")
+                .isEqualTo("UPCOMING");
     }
 
     @Test
-    void completingAnAlreadyCompletedTripIsRefused() {
+    void repeatingAnActThatHasAlreadyHappenedIsRefused() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
+        finishPlanning(owner, tripId).expectStatus().isOk();
+
+        finishPlanning(owner, tripId)
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ILLEGAL_STATE_TRANSITION");
+
         start(owner, tripId).expectStatus().isOk();
         complete(owner, tripId).expectStatus().isOk();
 
@@ -178,10 +221,10 @@ class ItineraryLifecycleIT extends PostgresTestBase {
     void arefusedTransitionLeavesTheStampsAndAttributionUntouched() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
-        start(owner, tripId).expectStatus().isOk();
-        complete(owner, tripId).expectStatus().isOk();
+        walkToCompleted(owner, tripId);
         Map<String, Object> stamped = stampsOf(tripId);
 
+        finishPlanning(owner, tripId).expectStatus().isEqualTo(409);
         start(owner, tripId).expectStatus().isEqualTo(409);
         complete(owner, tripId).expectStatus().isEqualTo(409);
 
@@ -214,12 +257,15 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         Map<String, Object> afterEdit = attributionOf(tripId);
         assertThat(afterEdit.get("last_edited_by")).isEqualTo(memberId);
 
+        finishPlanning(owner, tripId).expectStatus().isOk();
+        assertThat(attributionOf(tripId)).isEqualTo(afterEdit);
+
         start(owner, tripId).expectStatus().isOk();
         assertThat(attributionOf(tripId)).isEqualTo(afterEdit);
 
         complete(owner, tripId).expectStatus().isOk();
         assertThat(attributionOf(tripId))
-                .as("neither transition may overwrite the member's attribution with the owner's")
+                .as("no transition may overwrite the member's attribution with the owner's")
                 .isEqualTo(afterEdit);
     }
 
@@ -236,17 +282,17 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .expectStatus()
                 .isOk();
 
-        start(owner, tripId).expectStatus().isOk();
-        complete(owner, tripId).expectStatus().isOk();
+        walkToCompleted(owner, tripId);
     }
 
 
     @Test
-    void aNonMemberIsMaskedWithA404OnBothEndpoints() {
+    void aNonMemberIsMaskedWithA404OnEveryTransitionEndpoint() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
         String stranger = freshTraveler();
 
+        finishPlanning(stranger, tripId).expectStatus().isNotFound();
         start(stranger, tripId).expectStatus().isNotFound();
         complete(stranger, tripId).expectStatus().isNotFound();
         assertThat(stateOf(tripId)).isEqualTo("DRAFT");
@@ -260,6 +306,23 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         rest.post().uri("/v1/itineraries/" + tripId + "/complete").exchange().expectStatus().isUnauthorized();
     }
 
+
+    private void walkToOngoing(String token, String itineraryId) {
+        finishPlanning(token, itineraryId).expectStatus().isOk();
+        start(token, itineraryId).expectStatus().isOk();
+    }
+
+    private void walkToCompleted(String token, String itineraryId) {
+        walkToOngoing(token, itineraryId);
+        complete(token, itineraryId).expectStatus().isOk();
+    }
+
+    private RestTestClient.ResponseSpec finishPlanning(String token, String itineraryId) {
+        return rest.post()
+                .uri("/v1/itineraries/" + itineraryId + "/finish-planning")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange();
+    }
 
     private RestTestClient.ResponseSpec start(String token, String itineraryId) {
         return rest.post()

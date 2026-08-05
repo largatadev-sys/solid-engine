@@ -50,30 +50,39 @@ describe('the publish gate', () => {
   it('admits a completed trip and nothing else', () => {
     expect(canPublish({ state: 'completed' })).toBe(true);
     expect(canPublish({ state: 'draft' })).toBe(false);
-    expect(canPublish({ state: 'active' })).toBe(false);
+    expect(canPublish({ state: 'upcoming' })).toBe(false);
+    expect(canPublish({ state: 'ongoing' })).toBe(false);
   });
 
   it('explains the precondition in words that name the way through', () => {
     expect(publishNeedsCompleteBody('draft')).toMatch(/mark it complete/i);
-    expect(publishNeedsCompleteBody('active')).toMatch(/mark it complete/i);
+    expect(publishNeedsCompleteBody('upcoming')).toMatch(/mark it complete/i);
+    expect(publishNeedsCompleteBody('ongoing')).toMatch(/mark it complete/i);
   });
 
   it('describes the trip’s actual state rather than one generic sentence', () => {
-    expect(publishNeedsCompleteBody('draft')).not.toBe(publishNeedsCompleteBody('active'));
+    const bodies = (['draft', 'upcoming', 'ongoing'] as const).map(publishNeedsCompleteBody);
+
+    expect(new Set(bodies).size).toBe(3);
   });
 });
 
 describe('the lifecycle', () => {
   it('steps forward one act at a time and stops at complete', () => {
-    expect(nextLifecycleAct('draft')).toEqual({ act: 'start', label: 'Start trip' });
-    expect(nextLifecycleAct('active')).toEqual({ act: 'complete', label: 'Mark complete' });
+    expect(nextLifecycleAct('draft')).toEqual({ act: 'finish-planning', label: 'Finish Itinerary' });
+    expect(nextLifecycleAct('upcoming')).toEqual({ act: 'start', label: 'Start trip' });
+    expect(nextLifecycleAct('ongoing')).toEqual({ act: 'complete', label: 'Mark complete' });
     expect(nextLifecycleAct('completed')).toBeNull();
   });
 
-  it('names all three states distinctly', () => {
-    const labels = (['draft', 'active', 'completed'] as const).map(lifecycleLabel);
+  it('never calls the creation flow’s terminal act "Complete" — one word, one fact', () => {
+    expect(nextLifecycleAct('draft')?.label).not.toMatch(/complete/i);
+  });
 
-    expect(new Set(labels).size).toBe(3);
+  it('names all four states distinctly', () => {
+    const labels = (['draft', 'upcoming', 'ongoing', 'completed'] as const).map(lifecycleLabel);
+
+    expect(new Set(labels).size).toBe(4);
   });
 });
 
@@ -96,12 +105,12 @@ describe('the audience', () => {
 });
 
 describe('workspaceEyebrow', () => {
-  it('names the lifecycle while unpublished, so an active trip does not read as a draft', () => {
-    const labels = (['draft', 'active', 'completed'] as const).map(
+  it('names the lifecycle while unpublished, so an ongoing trip does not read as a draft', () => {
+    const labels = (['draft', 'upcoming', 'ongoing', 'completed'] as const).map(
       (state) => workspaceEyebrow({ state, published: false, visibility: 'public' }).label,
     );
 
-    expect(new Set(labels).size).toBe(3);
+    expect(new Set(labels).size).toBe(4);
     expect(labels[0]).toMatch(/Draft/);
   });
 

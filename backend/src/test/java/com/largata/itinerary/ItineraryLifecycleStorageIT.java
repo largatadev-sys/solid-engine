@@ -30,9 +30,13 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
 
         assertThat(storedState(owner.itineraryId())).isEqualTo("DRAFT");
 
+        itineraries.finishPlanning(owner);
+        assertThat(storedState(owner.itineraryId())).isEqualTo("UPCOMING");
+        assertThat(ItineraryState.UPCOMING.wireName()).isEqualTo("upcoming");
+
         itineraries.start(owner);
-        assertThat(storedState(owner.itineraryId())).isEqualTo("ACTIVE");
-        assertThat(ItineraryState.ACTIVE.wireName()).isEqualTo("active");
+        assertThat(storedState(owner.itineraryId())).isEqualTo("ONGOING");
+        assertThat(ItineraryState.ONGOING.wireName()).isEqualTo("ongoing");
 
         itineraries.complete(owner);
         assertThat(storedState(owner.itineraryId())).isEqualTo("COMPLETED");

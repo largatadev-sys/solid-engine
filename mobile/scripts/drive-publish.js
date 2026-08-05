@@ -240,15 +240,15 @@ const GREYED = [
     `seen ${toPreview.seen}, visible ${toPreview.visible}`);
 
   const preview = await text();
-  check('the preview screen renders the amber scrub banner',
-    preview.includes('This is a preview of your published itinerary'), preview.slice(0, 120));
+  check('the preview screen renders the amber scrub banner, in the honest tense (S4.13)',
+    preview.includes('what other travelers will see if you publish'), preview.slice(0, 160));
   check('the preview is WYSIWYG — the destination pill and derived duration',
     preview.includes('PALAWAN') && /\d+ Days/.test(preview));
   check('…Standouts render', preview.includes('Standouts') && preview.includes('Big Lagoon Kayaking'));
   check('…best time of year renders in the header', preview.includes('Dec'));
   const derivesATotal = /₱\s?[\d,]+/.test(preview);
-  check('…the Est. Total row renders whether or not a total can be derived',
-    preview.includes('Est. Total'), preview.replace(/\n/g, ' | ').slice(0, 140));
+  check('…the Est. Cost row renders whether or not a total can be derived (S4.13 decision 10)',
+    preview.includes('Est. Cost'), preview.replace(/\n/g, ' | ').slice(0, 140));
   console.log(`       (this fixture ${derivesATotal ? 'IS' : 'is NOT'} single-currency — `
     + `${derivesATotal ? 'a total is derived' : 'no total, which is correct for a mixed plan'})`);
 
@@ -299,7 +299,7 @@ const GREYED = [
   check('…the five-tab shell renders, Overview winning the mock inconsistency',
     ['Overview', 'Day-by-Day', 'Diary Entry', 'Comments', 'Reviews'].every((t) => consumerView.includes(t)));
   check('…the derived total is real and carries no "/Person"',
-    consumerView.includes('Est. Total') && !consumerView.includes('Person'));
+    consumerView.includes('Est. Cost') && !consumerView.includes('Person'));
   check('THE ABSENCE RULE holds on the consumer screen too',
     !consumerView.includes('2027-03-04') && !consumerView.includes('2027-03-08'));
 

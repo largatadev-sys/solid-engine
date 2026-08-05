@@ -143,7 +143,7 @@ class EditLeaseExpiryIT extends PostgresTestBase {
     }
 
     private static ActivityFields named(String title) {
-        return new ActivityFields(title, null, null, null, null, null, null, null);
+        return UnbookedActivity.fields(title, null, null, null, null, null, null, null);
     }
 
     private Membership ownerOfAFreshTrip() {

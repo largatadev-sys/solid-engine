@@ -53,6 +53,19 @@ class Activity {
     private String externalUrl;
 
 
+    @Column(name = "booking_purpose")
+    private String bookingPurpose;
+
+    @Column(name = "booking_provider")
+    private String bookingProvider;
+
+    @Column(name = "booking_price_amount")
+    private BigDecimal bookingPriceAmount;
+
+    @Column(name = "booking_price_currency")
+    private String bookingPriceCurrency;
+
+
     @Column(name = "last_edited_by", nullable = false)
     private UUID lastEditedBy;
 
@@ -106,6 +119,10 @@ class Activity {
         this.description = fields.description();
         this.notes = fields.notes();
         this.externalUrl = fields.externalUrl();
+        this.bookingPurpose = fields.bookingPurpose();
+        this.bookingProvider = fields.bookingProvider();
+        this.bookingPriceAmount = fields.bookingPriceAmount();
+        this.bookingPriceCurrency = fields.bookingPriceCurrency();
         this.lastEditedBy = editor;
         this.lastEditedAt = at;
     }
@@ -152,6 +169,22 @@ class Activity {
 
     String externalUrl() {
         return externalUrl;
+    }
+
+    String bookingPurpose() {
+        return bookingPurpose;
+    }
+
+    String bookingProvider() {
+        return bookingProvider;
+    }
+
+    BigDecimal bookingPriceAmount() {
+        return bookingPriceAmount;
+    }
+
+    String bookingPriceCurrency() {
+        return bookingPriceCurrency;
     }
 
     UUID lastEditedBy() {

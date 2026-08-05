@@ -17,6 +17,10 @@ public record ActivityView(
         String description,
         String notes,
         String externalUrl,
+        String bookingPurpose,
+        String bookingProvider,
+        BigDecimal bookingPriceAmount,
+        String bookingPriceCurrency,
         UUID lastEditedBy,
         Instant lastEditedAt) {
 
@@ -32,6 +36,10 @@ public record ActivityView(
                 a.description(),
                 a.notes(),
                 a.externalUrl(),
+                a.bookingPurpose(),
+                a.bookingProvider(),
+                a.bookingPriceAmount(),
+                a.bookingPriceCurrency(),
                 a.lastEditedBy(),
                 a.lastEditedAt());
     }

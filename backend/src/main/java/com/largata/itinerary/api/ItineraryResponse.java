@@ -32,10 +32,12 @@ public record ItineraryResponse(
         String workspaceState,
         String lastEditedByHandle,
         String lastEditedByName,
-        LeaseHolderResponse lease) {
+        LeaseHolderResponse lease,
+        boolean beingEdited) {
 
 
-    public static ItineraryResponse summaryOf(Itinerary itinerary, WorkspaceState workspaceState) {
+    public static ItineraryResponse summaryOf(
+            Itinerary itinerary, WorkspaceState workspaceState, boolean beingEdited) {
         return new ItineraryResponse(
                 itinerary.id(),
                 itinerary.title(),
@@ -57,7 +59,8 @@ public record ItineraryResponse(
                 workspaceState.wireName(),
                 null,
                 null,
-                null);
+                null,
+                beingEdited);
     }
 
 
@@ -85,6 +88,7 @@ public record ItineraryResponse(
                 plan.workspaceState().wireName(),
                 editor == null ? null : editor.handle(),
                 editor == null ? null : editor.displayName(),
-                LeaseHolderResponse.of(plan.holderOf(LeaseSubject.header(itinerary.id()))));
+                LeaseHolderResponse.of(plan.holderOf(LeaseSubject.header(itinerary.id()))),
+                plan.hasLiveLease());
     }
 }

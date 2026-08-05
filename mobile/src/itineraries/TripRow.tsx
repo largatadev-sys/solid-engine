@@ -3,21 +3,28 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing, typography } from '../theme';
 import type { ItineraryResponse } from '../types/api';
 import { formatDates } from './formatDates';
-import { tripBadge } from './tripCategories';
+import { draftSubtitle, editingAdvisory } from './tripSections';
 
 
 export function tripRowDestination(
-  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'published'>,
+  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'published' | 'state'>,
 ) {
-  if (itinerary.archived || !itinerary.published) {
+  if (itinerary.archived) {
     return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
+  }
+  if (itinerary.state === 'draft') {
+    return { pathname: '/itineraries/[id]/days' as const, params: { id: itinerary.id, day: '1' } };
+  }
+  if (!itinerary.published) {
+    return { pathname: '/itineraries/[id]/preview' as const, params: { id: itinerary.id } };
   }
   return { pathname: '/published/[id]' as const, params: { id: itinerary.id } };
 }
 
 
 export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
-  const badge = tripBadge(itinerary);
+  const advisory = editingAdvisory(itinerary);
+  const subtitle = draftSubtitle(itinerary);
   return (
     <Link href={tripRowDestination(itinerary)} asChild>
       <Pressable style={styles.row} accessibilityRole="button" accessibilityLabel={itinerary.title}>
@@ -25,26 +32,23 @@ export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
           <Text style={styles.rowTitle} numberOfLines={1}>
             {itinerary.title}
           </Text>
-          <View style={styles.badges}>
-            {badge && (
-              <View style={[styles.stateBadge, badge.tone === 'public' && styles.publishedBadge]}>
-                <Text
-                  style={[styles.stateBadgeText, badge.tone === 'public' && styles.publishedBadgeText]}>
-                  {badge.label}
-                </Text>
-              </View>
-            )}
-            {itinerary.archived && (
-              <View style={[styles.stateBadge, styles.archivedBadge]}>
-                <Text style={[styles.stateBadgeText, styles.archivedBadgeText]}>Archived</Text>
-              </View>
-            )}
-          </View>
+          {itinerary.archived && (
+            <View style={styles.archivedBadge}>
+              <Text style={styles.archivedBadgeText}>Archived</Text>
+            </View>
+          )}
         </View>
         <Text style={styles.rowMeta} numberOfLines={1}>
           {itinerary.destinations.join(' · ')}
         </Text>
         <Text style={styles.rowDates}>{formatDates(itinerary)}</Text>
+        {subtitle !== null && <Text style={styles.subtitle}>{subtitle}</Text>}
+        {advisory !== null && (
+          <View style={styles.advisory}>
+            <View style={styles.advisoryDot} />
+            <Text style={styles.advisoryText}>{advisory}</Text>
+          </View>
+        )}
       </Pressable>
     </Link>
   );
@@ -61,20 +65,19 @@ const styles = StyleSheet.create({
   },
   rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   rowTitle: { ...typography.bodyStrong, color: colors.textPrimary, flexShrink: 1 },
-  badges: { flexDirection: 'row', gap: spacing.xs },
-  stateBadge: {
+  archivedBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.accentMuted,
     backgroundColor: colors.background,
   },
-  stateBadgeText: { ...typography.caption, color: colors.textSecondary },
-  archivedBadge: { borderColor: colors.accentMuted },
-  archivedBadgeText: { color: colors.accent },
-  publishedBadge: { borderColor: colors.accentMuted, backgroundColor: colors.accentTint },
-  publishedBadgeText: { color: colors.accent },
+  archivedBadgeText: { ...typography.caption, color: colors.accent },
   rowMeta: { ...typography.body, color: colors.textSecondary },
   rowDates: { ...typography.caption, color: colors.textSecondary },
+  advisory: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  advisoryDot: { width: 8, height: 8, borderRadius: radii.pill, backgroundColor: colors.accent },
+  advisoryText: { ...typography.caption, color: colors.textSecondary },
+  subtitle: { ...typography.caption, color: colors.textSecondary },
 });

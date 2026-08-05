@@ -1,6 +1,7 @@
 package com.largata.itinerary.api;
 
 import com.largata.itinerary.Itinerary;
+import com.largata.itinerary.ItineraryFields;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -23,8 +24,23 @@ public record CreateItineraryRequest(
         LocalDate endDate,
         @PositiveOrZero(message = "Duration cannot be negative.")
                 @Max(value = Itinerary.MAX_DAYS, message = "An itinerary has at most 366 days.")
-                Integer durationDays)
+                Integer durationDays,
+        List<@NotBlank(message = "A standout cannot be blank.") String> standouts,
+        @Size(max = Itinerary.MAX_BEST_TIME_LENGTH, message = "Best time of year is at most 60 characters.")
+                String bestTimeOfYear)
         implements HasDateRange {
+
+
+    public ItineraryFields toFields() {
+        return new ItineraryFields(
+                title,
+                destinations,
+                description,
+                standouts == null ? List.of() : standouts,
+                bestTimeOfYear == null ? "" : bestTimeOfYear,
+                startDate,
+                endDate);
+    }
 
 
     public int durationDaysOrZero() {

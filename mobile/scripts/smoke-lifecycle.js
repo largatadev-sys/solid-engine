@@ -104,9 +104,23 @@ const stateOf = async (token, trip) => (await api(`/v1/itineraries/${trip}`, 'GE
   const masked = await api(`/v1/itineraries/${t2Trip}/start`, 'POST', t1.token);
   check('a non-member is masked with 404, never 403', masked.status === 404, String(masked.status));
 
+  const earlyStart = await api(`/v1/itineraries/${trip}/start`, 'POST', t1.token);
+  check('a draft cannot set off — planning must finish first (ADR-020): 409',
+    earlyStart.status === 409 && earlyStart.body?.code === 'ILLEGAL_STATE_TRANSITION',
+    `${earlyStart.status} ${earlyStart.body?.code}`);
+
+  const planned = await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', t1.token);
+  check('t1 finishes planning: 200, and the response says upcoming',
+    planned.status === 200 && planned.body?.state === 'upcoming', `${planned.status} state=${planned.body?.state}`);
+  check('finishing planning is a milestone, not a padlock — the plan is still editable',
+    planned.status === 200);
+
+  const replan = await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', t1.token);
+  check('finishing planning twice is refused: 409', replan.status === 409, `${replan.status} ${replan.body?.code}`);
+
   const started = await api(`/v1/itineraries/${trip}/start`, 'POST', t1.token);
-  check('t1 starts the trip: 200, and the response says active',
-    started.status === 200 && started.body?.state === 'active', `${started.status} state=${started.body?.state}`);
+  check('t1 starts the trip: 200, and the response says ongoing',
+    started.status === 200 && started.body?.state === 'ongoing', `${started.status} state=${started.body?.state}`);
   check('the write proves V12 applied — started_at is mapped, so this UPDATE could not have succeeded without it',
     started.status === 200);
   check('the response carries the whole resource, not just a status', typeof started.body?.title === 'string'
@@ -117,12 +131,12 @@ const stateOf = async (token, trip) => (await api(`/v1/itineraries/${trip}`, 'GE
     `startedAt=${started.body?.startedAt} completedAt=${started.body?.completedAt}`);
 
   const restart = await api(`/v1/itineraries/${trip}/start`, 'POST', t1.token);
-  check('starting an already-active trip is refused: 409',
+  check('starting an already-ongoing trip is refused: 409',
     restart.status === 409 && restart.body?.code === 'ILLEGAL_STATE_TRANSITION',
     `${restart.status} ${restart.body?.code}`);
 
   check('t2 (a member) sees the new state — it is a workspace-visible fact',
-    (await stateOf(t2.token, trip)) === 'active');
+    (await stateOf(t2.token, trip)) === 'ongoing');
 
   const completed = await api(`/v1/itineraries/${trip}/complete`, 'POST', t1.token);
   check('t1 completes the trip: 200, state completed',
@@ -133,7 +147,25 @@ const stateOf = async (token, trip) => (await api(`/v1/itineraries/${trip}`, 'GE
   check('completing an already-completed trip is refused: 409 — the machine is forward-only',
     recomplete.status === 409, `${recomplete.status} ${recomplete.body?.code}`);
   const backwards = await api(`/v1/itineraries/${trip}/start`, 'POST', t1.token);
-  check('and there is no way back to active: 409', backwards.status === 409, String(backwards.status));
+  check('and there is no way back to ongoing by starting again: 409',
+    backwards.status === 409, String(backwards.status));
+
+  const undoOne = await api(`/v1/itineraries/${trip}/reopen`, 'POST', t1.token);
+  check('the one-step undo walks completed → ongoing',
+    undoOne.status === 200 && undoOne.body?.state === 'ongoing', `state=${undoOne.body?.state}`);
+  const undoTwo = await api(`/v1/itineraries/${trip}/reopen`, 'POST', t1.token);
+  check('...then ongoing → upcoming', undoTwo.body?.state === 'upcoming', `state=${undoTwo.body?.state}`);
+  const undoThree = await api(`/v1/itineraries/${trip}/reopen`, 'POST', t1.token);
+  check('...and upcoming → draft, which is reopening planning itself',
+    undoThree.body?.state === 'draft', `state=${undoThree.body?.state}`);
+  const undoFour = await api(`/v1/itineraries/${trip}/reopen`, 'POST', t1.token);
+  check('a draft has nothing to step back to: 409', undoFour.status === 409, String(undoFour.status));
+
+  await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', t1.token);
+  await api(`/v1/itineraries/${trip}/start`, 'POST', t1.token);
+  await api(`/v1/itineraries/${trip}/complete`, 'POST', t1.token);
+  check('the trip walks the whole ladder again after the undo',
+    (await stateOf(t1.token, trip)) === 'completed');
 
   const lock = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', t2.token);
   check('a member can still take the edit lock on a completed trip', lock.status === 200, String(lock.status));

@@ -77,6 +77,10 @@ export const itineraryRepository = {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/audience`, { audience });
   },
 
+  async finishPlanning(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/finish-planning`, undefined);
+  },
+
   async startTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/start`, undefined);
   },

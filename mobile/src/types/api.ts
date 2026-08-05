@@ -59,13 +59,13 @@ export type VerificationResultResponse = {
 };
 
 
-export type ItineraryState = 'draft' | 'active' | 'completed';
+export type ItineraryState = 'draft' | 'upcoming' | 'ongoing' | 'completed';
 
 
 export type Visibility = 'public' | 'private';
 
 
-export type TripCategory = 'draft' | 'active' | 'complete';
+export type TripCategory = 'draft' | 'upcoming' | 'ongoing' | 'complete';
 
 
 export type PublishAudience = Visibility;
@@ -91,6 +91,8 @@ export type ItineraryResponse = {
   visibility: Visibility;
 
   archived: boolean;
+
+  beingEdited?: boolean;
 
   workspaceState?: 'active' | 'completed' | 'archived';
 
@@ -140,6 +142,10 @@ export type ActivityResponse = {
   description: string | null;
   notes: string | null;
   externalUrl: string | null;
+  bookingPurpose: string | null;
+  bookingProvider: string | null;
+  bookingPriceAmount: string | null;
+  bookingPriceCurrency: string | null;
   lastEditedBy: string;
   lastEditedAt: string;
 
@@ -169,6 +175,10 @@ export type PublishedActivityResponse = {
 
   notes: string | null;
   externalUrl: string | null;
+  bookingPurpose: string | null;
+  bookingProvider: string | null;
+  bookingPriceAmount: string | null;
+  bookingPriceCurrency: string | null;
 };
 
 
@@ -206,6 +216,8 @@ export type CreateItineraryRequest = {
   startDate?: string;
   endDate?: string;
   durationDays?: number;
+  standouts?: string[];
+  bestTimeOfYear?: string;
 };
 
 
@@ -236,6 +248,10 @@ export type ActivityRequest = {
   description?: string;
   notes?: string;
   externalUrl?: string;
+  bookingPurpose?: string;
+  bookingProvider?: string;
+  bookingPriceAmount?: string;
+  bookingPriceCurrency?: string;
 };
 
 

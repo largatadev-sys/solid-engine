@@ -7,7 +7,8 @@ import { tripRowDestination } from '../src/itineraries/TripRow';
 const MOBILE_ROOT = join(__dirname, '..');
 const APP = join(MOBILE_ROOT, 'app');
 const TABS = join(APP, '(tabs)');
-const TRIPS = join(TABS, 'itineraries');
+const TRIPS_GROUP = join(TABS, '(trips)');
+const TRIPS = join(TRIPS_GROUP, 'itineraries');
 
 const MOCK_CFAB_SIZE = 40;
 
@@ -25,26 +26,16 @@ function tripScreens(): [string, string][] {
           : [join(dir, entry.name)],
     );
 
-  return [...walk(TRIPS), ...walk(join(TABS, 'members'))].map((path) => [
-    path.slice(TABS.length + 1).replace(/\\/g, '/'),
+  return [...walk(TRIPS), ...walk(join(TRIPS_GROUP, 'members'))].map((path) => [
+    path.slice(TRIPS_GROUP.length + 1).replace(/\\/g, '/'),
     readFileSync(path, 'utf8'),
   ]);
 }
 
 describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
-  it('has one file per tab, and the app opens on Trips because Trips is the index', () => {
+  it('has one file per tab, and the trip flow is a single group rather than four sibling tabs', () => {
     expect(readdirSync(TABS).sort()).toEqual(
-      [
-        '_layout.tsx',
-        'create.tsx',
-        'home.tsx',
-        'index.tsx',
-        'itineraries',
-        'members',
-        'profile.tsx',
-        'published',
-        'search.tsx',
-      ].sort(),
+      ['_layout.tsx', '(trips)', 'home.tsx', 'profile.tsx', 'search.tsx'].sort(),
     );
   });
 
@@ -56,14 +47,25 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('keeps the trip flow INSIDE the tab navigator, so the nav bar persists on every trip screen', () => {
     expect(existsSync(join(APP, 'itineraries'))).toBe(false);
     expect(existsSync(join(APP, 'members'))).toBe(false);
-    expect(existsSync(join(TRIPS, '_layout.tsx'))).toBe(true);
+    expect(existsSync(join(TRIPS_GROUP, '_layout.tsx'))).toBe(true);
   });
 
-  it('hides them from the tab bar — a route group under Tabs becomes a tab unless href is null', () => {
+  it('roots the trip stack at Trips, so back always unwinds the way the traveler walked in', () => {
+    expect(existsSync(join(TRIPS_GROUP, 'index.tsx'))).toBe(true);
+    expect(read(TRIPS_GROUP, '_layout.tsx')).toContain('<Stack');
+  });
+
+  it('nests no second stack under the trip stack, which is what stranded back on a sibling', () => {
+    for (const nested of ['itineraries', 'members', 'published']) {
+      expect(existsSync(join(TRIPS_GROUP, nested, '_layout.tsx'))).toBe(false);
+    }
+  });
+
+  it('needs no href:null hiding, because the trip routes are no longer tabs of their own', () => {
     const layout = read(TABS, '_layout.tsx');
 
-    expect(layout).toContain('name="itineraries" options={{ href: null }}');
-    expect(layout).toContain('name="members" options={{ href: null }}');
+    expect(layout).not.toContain('href: null');
+    expect(layout).toContain('name="(trips)"');
   });
 
   it('insets only the two bare tabs — the trip screens get theirs from ScreenHeader, and both would double up', () => {
@@ -77,43 +79,53 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('declares every tab in the layout', () => {
     const layout = read(TABS, '_layout.tsx');
 
-    for (const name of ['home', 'search', 'create', 'index', 'profile']) {
+    for (const name of ['home', 'search', '(trips)', 'profile']) {
       expect(layout).toContain(`name="${name}"`);
     }
   });
 
   it('lets the layout own the tab labels — a screen-level title silently overrides them', () => {
-    for (const screen of ['index.tsx', 'profile.tsx', 'home.tsx', 'search.tsx', 'create.tsx']) {
+    for (const screen of ['profile.tsx', 'home.tsx', 'search.tsx']) {
       expect(read(TABS, screen)).not.toMatch(/<Stack\.Screen/);
+    }
+    for (const screen of ['index.tsx', 'create.tsx']) {
+      expect(read(TRIPS_GROUP, screen)).not.toMatch(/<Stack\.Screen/);
     }
   });
 
-  it('makes the create button the showcase — larger than the mock, on the founder call', () => {
+  it('is four tabs with no centre button — the mock relocates creation to the Trips screen (S4.13)', () => {
     const layout = read(TABS, '_layout.tsx');
-    const size = Number(/CREATE_BUTTON_SIZE = (\d+)/.exec(layout)?.[1]);
 
-    expect(size).toBeGreaterThan(MOCK_CFAB_SIZE);
-    expect(layout).toContain('marginTop: -CREATE_BUTTON_LIFT');
+    expect(layout).not.toContain('CREATE_BUTTON_SIZE');
+    expect(layout).not.toContain('createButton');
+    expect(layout.match(/<Tabs\.Screen/g) ?? []).toHaveLength(4);
     expect(layout).toContain('height: TAB_BAR_HEIGHT + insets.bottom');
   });
 
-  it('greys Home and Search rather than navigating to an empty screen', () => {
+  it('calls the second tab Discover — the feed it opens is the discovery axis (ADR-019)', () => {
+    const layout = read(TABS, '_layout.tsx');
+
+    expect(layout).toContain("title: 'Discover'");
+    expect(layout).not.toMatch(/title: 'Search'/);
+  });
+
+  it('greys Home and Discover rather than navigating to an empty screen', () => {
     const layout = read(TABS, '_layout.tsx');
 
     expect(layout).toContain("comingSoon('home')");
     expect(layout).toContain("comingSoon('search')");
-    expect(layout.match(/event\.preventDefault\(\)/g) ?? []).toHaveLength(3);
+    expect(layout.match(/event\.preventDefault\(\)/g) ?? []).toHaveLength(2);
   });
 
   it('gives every tab a real icon — an unset one renders as a tofu box on Android', () => {
     const layout = read(TABS, '_layout.tsx');
 
-    expect(layout.match(/tabBarIcon:/g) ?? []).toHaveLength(5);
+    expect(layout.match(/tabBarIcon:/g) ?? []).toHaveLength(4);
   });
 
   it('shows no navigator header anywhere — every heading is drawn as page content', () => {
     expect(read(TABS, '_layout.tsx')).toContain('headerShown: false');
-    expect(read(TRIPS, '_layout.tsx')).toContain('headerShown: false');
+    expect(read(TRIPS_GROUP, '_layout.tsx')).toContain('headerShown: false');
   });
 
   const FULL_BLEED = ['itineraries/[id]/published.tsx'];
@@ -137,9 +149,139 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(source).not.toMatch(/options=\{\{[^}]*title:/);
   });
 
-  it('routes + to the chooser — decision 13 reversed, fork greyed until S4.7', () => {
-    expect(read(TABS, '_layout.tsx')).toContain("router.push('/itineraries/create')");
-    expect(read(TABS, 'create.tsx')).toContain('href="/itineraries/create"');
+  it('creates from the Trips screen, straight to trip details — the mock connector, not the chooser', () => {
+    const trips = read(TRIPS_GROUP, 'index.tsx');
+
+    expect(trips).toContain('href="/itineraries/new"');
+    expect(trips).toContain('Create Itinerary');
+    expect(read(TABS, '_layout.tsx')).not.toContain("router.push('/itineraries/create')");
+  });
+
+  it('greys Add a Past Trip — the founder wants the argument before the door (S4.13)', () => {
+    const trips = read(TRIPS_GROUP, 'index.tsx');
+
+    expect(trips).toContain('Add a Past Trip');
+    expect(trips).toContain("comingSoon('addPastTrip')");
+  });
+
+  it('says Standouts and never Highlights — the glossary reserved that word for diaries', () => {
+    for (const screen of [read(TRIPS, 'new.tsx'), read(TRIPS, '[id]', 'edit.tsx')]) {
+      expect(screen).toContain('Standout');
+      expect(screen).not.toMatch(/Highlight/);
+    }
+  });
+
+  it('walks the day schedules to the preview, as the mock draws it', () => {
+    const days = read(TRIPS, '[id]', 'days', 'index.tsx');
+
+    expect(days).toContain('Preview Itinerary');
+    expect(days).toContain("pathname: '/itineraries/[id]/preview'");
+  });
+
+  it('ends the creation walk on Finish Itinerary, on the preview, and only while draft', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+
+    expect(preview).toContain('Finish Itinerary');
+    expect(preview).toContain("finishPlanning.mutate('finish-planning'");
+    expect(preview).toContain("state === 'draft'");
+    expect(preview).not.toMatch(/Complete Itinerary/);
+  });
+
+  it('names no origin at all — the stack remembers it, so no screen has to guess (founder, 2026-08-04)', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+    const editor = read(TRIPS, '[id]', 'days', 'index.tsx');
+
+    expect(preview).not.toMatch(/cameFromEditor|from === /);
+    expect(editor).not.toMatch(/from: 'days'/);
+  });
+
+  it('makes Continue Editing OPEN the editor — not go back, which returns to wherever you came from', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+
+    expect(preview).toMatch(/const continueEditing = \(\) =>\s*\n?\s*router\.push\(\{ pathname: '\/itineraries\/\[id\]\/days'/);
+    expect(preview).not.toMatch(/continueEditing[\s\S]{0,120}router\.back\(\)/);
+  });
+
+  it('PUSHES every forward move, so back pops the screen the traveler actually came from', () => {
+    for (const screen of [
+      read(TRIPS, '[id]', 'preview.tsx'),
+      read(TRIPS, '[id]', 'days', 'index.tsx'),
+    ]) {
+      expect(screen).not.toMatch(/router\.navigate\(/);
+    }
+  });
+
+  it('lets no screen override back — the previous page always wins (founder, 2026-08-04)', () => {
+    const header = read(MOBILE_ROOT, 'src', 'components', 'ScreenHeader.tsx');
+
+    expect(header).not.toMatch(/alwaysBackTo/);
+    expect(header).toContain('useSafeBack(backTo)');
+  });
+
+  it('reserves the publish footer for a completed, unpublished trip — frame 7 is the publish act', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+
+    expect(preview).toContain("state === 'completed' && trip.data?.published === false");
+    expect(preview).toMatch(/readyToPublish \? \(/);
+  });
+
+  it('opens an unpublished trip on its preview, not the old workspace (founder, 2026-08-04)', () => {
+    const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
+
+    expect(row).toContain("pathname: '/itineraries/[id]/preview'");
+    expect(row).toMatch(/if \(itinerary\.archived\)/);
+  });
+
+  it('shows honest zeros and "Est. Cost" on the published stats card (S4.13 decision 10)', () => {
+    const view = read(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx');
+
+    expect(view).toContain('Est. Cost');
+    expect(view).not.toMatch(/Est\. Total|\/Person/);
+  });
+
+  it('speaks the honest tense on the preview banner — nothing is published yet', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+
+    expect(preview).toMatch(/what other travelers will see if you publish/);
+    expect(preview).not.toMatch(/preview of your published itinerary/);
+  });
+
+  it('titles and labels the activity form as the frame draws it (S4.13 fidelity pass)', () => {
+    const activity = read(TRIPS, '[id]', 'activity.tsx');
+
+    expect(activity).toContain('title="Daily Activity"');
+    expect(activity).toContain('label="Activity Name"');
+    expect(activity).toContain('label="Estimated Cost"');
+    expect(activity).toContain('Describe a specific place or landmark');
+    expect(activity).toContain('Save Activity');
+    expect(activity).toContain('Photos');
+    expect(activity).not.toMatch(/label="Est\. cost"|Add Activity'|Edit Activity'/);
+  });
+
+  it('opens the booking card as a MODAL, not an inline expansion (founder, 2026-08-04)', () => {
+    const activity = read(TRIPS, '[id]', 'activity.tsx');
+
+    expect(activity).toContain('Add Booking Link / Option');
+    expect(activity).toContain('setBookingOpen(true)');
+    expect(activity).toMatch(/<Modal\s/);
+    expect(activity).toContain('onRequestClose');
+    expect(activity).toContain('styles.backdrop');
+  });
+
+  it('shows no edit attribution on activity cards — this is the create flow, not the workspace', () => {
+    const editor = read(TRIPS, '[id]', 'days', 'index.tsx');
+
+    expect(editor).not.toMatch(/attributionLine|styles\.attribution/);
+  });
+
+  it('draws the whole booking card the founder ruled in, one per activity', () => {
+    const activity = read(TRIPS, '[id]', 'activity.tsx');
+
+    expect(activity).toContain('Booking Purpose');
+    expect(activity).toContain('Booking Provider');
+    expect(activity).toContain('Target URL');
+    expect(activity).toContain('Estimated Price');
+    expect(activity).not.toMatch(/PROVIDER \d|Add another/);
   });
 
   it('the chooser offers scratch live and fork greyed', () => {
@@ -198,18 +340,31 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(read(TRIPS, 'new.tsx')).toContain("day: '1'");
   });
 
-  it('routes on DISCOVERY: unpublished to the workspace, published to the overview (ADR-019)', () => {
-    const unpublished = tripRowDestination({ id: 'trip-1', archived: false, published: false });
-    const published = tripRowDestination({ id: 'trip-1', archived: false, published: true });
+  it('opens a DRAFT straight in the day editor — there is nothing to preview yet', () => {
+    const draft = tripRowDestination({ id: 'trip-1', archived: false, published: false, state: 'draft' });
 
-    expect(unpublished.pathname).toBe('/itineraries/[id]');
-    expect(published.pathname).toBe('/published/[id]');
+    expect(draft.pathname).toBe('/itineraries/[id]/days');
   });
 
-  it('lets ARCHIVED win over published — an archived trip has no public page to open', () => {
+  it('routes on DISCOVERY: planned-but-unpublished to its preview, published to the overview', () => {
+    for (const state of ['upcoming', 'ongoing', 'completed'] as const) {
+      expect(
+        tripRowDestination({ id: 'trip-1', archived: false, published: false, state }).pathname,
+      ).toBe('/itineraries/[id]/preview');
+    }
     expect(
-      tripRowDestination({ id: 'trip-1', archived: true, published: true })
+      tripRowDestination({ id: 'trip-1', archived: false, published: true, state: 'completed' })
         .pathname,
+    ).toBe('/published/[id]');
+  });
+
+  it('lets ARCHIVED win over everything — an archived trip has no public page, and no flow to rejoin', () => {
+    expect(
+      tripRowDestination({ id: 'trip-1', archived: true, published: true, state: 'completed' })
+        .pathname,
+    ).toBe('/itineraries/[id]');
+    expect(
+      tripRowDestination({ id: 'trip-1', archived: true, published: false, state: 'draft' }).pathname,
     ).toBe('/itineraries/[id]');
   });
 
@@ -225,13 +380,14 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(read(DAYS, '[dayId].tsx')).toContain("comingSoon('activityHistory')");
   });
 
-  it('keeps building the plan on the editor: owner-only + chip, FAB, kebab', () => {
+  it('keeps building the plan on the editor: owner-only + chip, dashed Add Activity, kebab', () => {
     const editor = read(DAYS, 'index.tsx');
 
     expect(editor).toContain('{isOwner && <AddDayChip');
-    expect(editor).toContain('style={styles.fab}');
     expect(editor).toContain('<ActivityKebab');
-    expect(editor).not.toMatch(/\{isOwner && [^}]*fab/);
+    expect(editor).toContain('style={styles.addActivity}');
+    expect(editor).toContain("borderStyle: 'dashed'");
+    expect(editor).not.toMatch(/styles\.fab/);
   });
 
   it('keeps the detail screen to reading the day — no chips, no FAB, no day CRUD', () => {
@@ -301,6 +457,7 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
 describe('every greyed affordance is wired to the shared helper (register #2)', () => {
   const screens = [
     read(TABS, '_layout.tsx'),
+    read(TRIPS_GROUP, 'index.tsx'),
     read(TRIPS, 'new.tsx'),
     read(TRIPS, 'create.tsx'),
     read(TRIPS, '[id]', 'index.tsx'),

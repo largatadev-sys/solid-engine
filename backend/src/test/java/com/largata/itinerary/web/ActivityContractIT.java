@@ -185,6 +185,33 @@ class ActivityContractIT extends PostgresTestBase {
     }
 
     @Test
+    void aHalfEnteredMoneyPairIsA400NotA500_forBothTheCostAndTheBooking() {
+        String token = freshTraveler();
+        String tripId = createTripWithADay(token);
+        UUID dayId = firstDayId(tripId);
+
+        for (String body :
+                new String[] {
+                    "{\"title\":\"How much?\",\"costAmount\":\"500\"}",
+                    "{\"title\":\"How much?\",\"costCurrency\":\"PHP\"}",
+                    "{\"title\":\"How much?\",\"bookingPriceAmount\":\"1800\"}",
+                    "{\"title\":\"How much?\",\"bookingPriceCurrency\":\"PHP\"}"
+                }) {
+            rest.post()
+                    .uri(activitiesUri(tripId, dayId))
+                    .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .exchange()
+                    .expectStatus()
+                    .isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.code")
+                    .isEqualTo("VALIDATION_FAILED");
+        }
+    }
+
+    @Test
     void anActivityOfAnotherDayIsNotFound() {
         String token = freshTraveler();
         String tripId = createTripWithADay(token);

@@ -26,6 +26,7 @@ export function ScreenHeader({
   action?: ReactNode;
 }) {
   const goBack = useSafeBack(backTo);
+  
   const insets = useSafeAreaInsets();
 
   return (

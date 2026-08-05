@@ -20,3 +20,18 @@ describe('backAction — where "back" goes when there is no history', () => {
     expect(backAction(true, '/')).toEqual({ kind: 'pop' });
   });
 });
+
+describe('back means the previous screen — no screen overrides it (founder, 2026-08-04)', () => {
+  it('pops whatever the traveler actually came from, whichever screen that is', () => {
+    for (const parent of ['/', '/itineraries/abc', undefined]) {
+      expect(backAction(true, parent)).toEqual({ kind: 'pop' });
+    }
+  });
+
+  it('uses the named parent ONLY when there is no history to pop — a deep link or cold start', () => {
+    expect(backAction(false, '/itineraries/abc/days')).toEqual({
+      kind: 'replace',
+      to: '/itineraries/abc/days',
+    });
+  });
+});
