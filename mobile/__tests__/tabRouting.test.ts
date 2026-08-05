@@ -222,11 +222,20 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(activity).not.toMatch(/label="Est\. cost"|Add Activity'|Edit Activity'/);
   });
 
-  it('keeps the booking card collapsed behind the row the frame draws', () => {
+  it('opens the booking card as a MODAL, not an inline expansion (founder, 2026-08-04)', () => {
     const activity = read(TRIPS, '[id]', 'activity.tsx');
 
     expect(activity).toContain('Add Booking Link / Option');
     expect(activity).toContain('setBookingOpen(true)');
+    expect(activity).toMatch(/<Modal\s/);
+    expect(activity).toContain('onRequestClose');
+    expect(activity).toContain('styles.backdrop');
+  });
+
+  it('shows no edit attribution on activity cards — this is the create flow, not the workspace', () => {
+    const editor = read(TRIPS, '[id]', 'days', 'index.tsx');
+
+    expect(editor).not.toMatch(/attributionLine|styles\.attribution/);
   });
 
   it('draws the whole booking card the founder ruled in, one per activity', () => {
@@ -295,19 +304,31 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(read(TRIPS, 'new.tsx')).toContain("day: '1'");
   });
 
-  it('routes on DISCOVERY: unpublished to its preview, published to the overview (founder, 2026-08-04)', () => {
-    const unpublished = tripRowDestination({ id: 'trip-1', archived: false, published: false });
-    const published = tripRowDestination({ id: 'trip-1', archived: false, published: true });
+  it('opens a DRAFT straight in the day editor — there is nothing to preview yet', () => {
+    const draft = tripRowDestination({ id: 'trip-1', archived: false, published: false, state: 'draft' });
 
-    expect(unpublished.pathname)
-      .toBe('/itineraries/[id]/preview');
-    expect(published.pathname).toBe('/published/[id]');
+    expect(draft.pathname).toBe('/itineraries/[id]/days');
   });
 
-  it('lets ARCHIVED win over published — an archived trip has no public page to open', () => {
+  it('routes on DISCOVERY: planned-but-unpublished to its preview, published to the overview', () => {
+    for (const state of ['upcoming', 'ongoing', 'completed'] as const) {
+      expect(
+        tripRowDestination({ id: 'trip-1', archived: false, published: false, state }).pathname,
+      ).toBe('/itineraries/[id]/preview');
+    }
     expect(
-      tripRowDestination({ id: 'trip-1', archived: true, published: true })
+      tripRowDestination({ id: 'trip-1', archived: false, published: true, state: 'completed' })
         .pathname,
+    ).toBe('/published/[id]');
+  });
+
+  it('lets ARCHIVED win over everything — an archived trip has no public page, and no flow to rejoin', () => {
+    expect(
+      tripRowDestination({ id: 'trip-1', archived: true, published: true, state: 'completed' })
+        .pathname,
+    ).toBe('/itineraries/[id]');
+    expect(
+      tripRowDestination({ id: 'trip-1', archived: true, published: false, state: 'draft' }).pathname,
     ).toBe('/itineraries/[id]');
   });
 

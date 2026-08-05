@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -63,19 +64,22 @@ export default function ActivityFormScreen() {
   const [bookingPurpose, setBookingPurpose] = useState(existing?.bookingPurpose ?? '');
   const [bookingProvider, setBookingProvider] = useState(existing?.bookingProvider ?? '');
   const [bookingPriceAmount, setBookingPriceAmount] = useState(existing?.bookingPriceAmount ?? '');
-  const [bookingPriceCurrency, setBookingPriceCurrency] = useState(existing?.bookingPriceCurrency ?? '');
+  const bookingCurrency = existing?.bookingPriceCurrency ?? homeCurrency;
   const [validationError, setValidationError] = useState<string | undefined>();
-  const [bookingOpen, setBookingOpen] = useState(
-    (existing?.externalUrl ?? existing?.bookingPurpose ?? existing?.bookingProvider) !== null &&
-      (existing?.externalUrl ?? existing?.bookingPurpose ?? existing?.bookingProvider) !== undefined,
+  const [bookingOpen, setBookingOpen] = useState(false);
+
+  const hasBooking = [bookingPurpose, bookingProvider, externalUrl, bookingPriceAmount].some(
+    (value) => value.trim() !== '',
   );
+  const bookingSummary =
+    [bookingProvider.trim(), bookingPurpose.trim()].filter((part) => part !== '').join(' · ') ||
+    externalUrl.trim();
 
   function clearBooking() {
     setBookingPurpose('');
     setBookingProvider('');
     setExternalUrl('');
     setBookingPriceAmount('');
-    setBookingPriceCurrency('');
   }
 
   function submit() {
@@ -85,7 +89,6 @@ export default function ActivityFormScreen() {
       costAmount,
       costCurrency,
       bookingPriceAmount,
-      bookingPriceCurrency,
     });
     setValidationError(problem);
     if (problem !== undefined) return;
@@ -102,7 +105,7 @@ export default function ActivityFormScreen() {
       ...opt('bookingPurpose', bookingPurpose),
       ...opt('bookingProvider', bookingProvider),
       ...opt('bookingPriceAmount', bookingPriceAmount),
-      ...opt('bookingPriceCurrency', bookingPriceCurrency),
+      ...opt('bookingPriceCurrency', bookingPriceAmount.trim() === '' ? '' : bookingCurrency),
     };
 
     const onDone = {
@@ -126,7 +129,7 @@ export default function ActivityFormScreen() {
       <ScreenHeader
         title="Daily Activity"
         back
-        backTo={{ pathname: '/itineraries/[id]/days/[dayId]', params: { id, dayId } }}
+        backTo={{ pathname: '/itineraries/[id]/days', params: { id } }}
       />
 
       <Field label="Activity Name" value={title} onChangeText={setTitle} placeholder="Airport Transfer" />
@@ -168,61 +171,77 @@ export default function ActivityFormScreen() {
 
       <View style={styles.field}>
         <Text style={styles.label}>Booking Integration</Text>
-        {!bookingOpen ? (
-          <Pressable
-            style={styles.bookingRow}
-            accessibilityRole="button"
-            onPress={() => setBookingOpen(true)}>
-            <View style={styles.bookingRowLabel}>
-              <Icon name="link" size={16} color={colors.textPrimary} />
-              <Text style={styles.bookingRowText}>Add Booking Link / Option</Text>
+        <Pressable
+          style={styles.bookingRow}
+          accessibilityRole="button"
+          onPress={() => setBookingOpen(true)}>
+          <View style={styles.bookingRowLabel}>
+            <Icon name="link" size={16} color={colors.textPrimary} />
+            <Text style={styles.bookingRowText}>
+              {hasBooking ? bookingSummary : 'Add Booking Link / Option'}
+            </Text>
+          </View>
+          <Icon name="plus" size={20} color={colors.textPrimary} />
+        </Pressable>
+      </View>
+
+      <Modal
+        visible={bookingOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBookingOpen(false)}>
+        <View style={styles.backdrop}>
+          <View style={styles.sheet}>
+            <View style={styles.bookingHeaderRow}>
+              <Text style={styles.bookingHeader}>Booking</Text>
+              <Pressable
+                onPress={clearBooking}
+                accessibilityRole="button"
+                accessibilityLabel="Clear booking"
+                hitSlop={8}>
+                <Icon name="trash" size={16} color={colors.textSecondary} />
+              </Pressable>
             </View>
-            <Icon name="plus" size={20} color={colors.textPrimary} />
-          </Pressable>
-        ) : (
-      <View style={styles.bookingCard}>
-        <View style={styles.bookingHeaderRow}>
-          <Text style={styles.bookingHeader}>Booking</Text>
-          <Pressable
-            onPress={clearBooking}
-            accessibilityRole="button"
-            accessibilityLabel="Clear booking"
-            hitSlop={8}>
-            <Icon name="trash" size={16} color={colors.textSecondary} />
-          </Pressable>
+            <Text style={styles.bookingHint}>
+              What you used to book this — it travels with the plan when someone forks it.
+            </Text>
+            <ScrollView contentContainerStyle={styles.sheetBody} keyboardShouldPersistTaps="handled">
+              <Field
+                label="Booking Purpose"
+                value={bookingPurpose}
+                onChangeText={setBookingPurpose}
+                placeholder="River tour, restaurant reservation, etc."
+              />
+              <Field
+                label="Booking Provider"
+                value={bookingProvider}
+                onChangeText={setBookingProvider}
+                placeholder="Klook, Expedia, Booking.com, etc."
+              />
+              <Field
+                label="Target URL"
+                value={externalUrl}
+                onChangeText={setExternalUrl}
+                placeholder="https://klook.com/activity/1243-el-nido-underground"
+                keyboardType="url"
+              />
+              <Field
+                label="Estimated Price"
+                value={bookingPriceAmount}
+                onChangeText={setBookingPriceAmount}
+                placeholder={bookingCurrency === '' ? 'Amount' : `Amount in ${bookingCurrency}`}
+                keyboardType="decimal-pad"
+              />
+            </ScrollView>
+            <Pressable
+              style={styles.dockCta}
+              accessibilityRole="button"
+              onPress={() => setBookingOpen(false)}>
+              <Text style={styles.dockCtaText}>Save</Text>
+            </Pressable>
+          </View>
         </View>
-        <Text style={styles.bookingHint}>
-          What you used to book this — it travels with the plan when someone forks it.
-        </Text>
-        <Field
-          label="Booking Purpose"
-          value={bookingPurpose}
-          onChangeText={setBookingPurpose}
-          placeholder="River tour, restaurant reservation, etc."
-        />
-        <Field
-          label="Booking Provider"
-          value={bookingProvider}
-          onChangeText={setBookingProvider}
-          placeholder="Klook, Expedia, Booking.com, etc."
-        />
-        <Field
-          label="Target URL"
-          value={externalUrl}
-          onChangeText={setExternalUrl}
-          placeholder="https://klook.com/activity/1243-el-nido-underground"
-          keyboardType="url"
-        />
-        <Field
-          label="Estimated Price"
-          value={bookingPriceAmount}
-          onChangeText={setBookingPriceAmount}
-          placeholder={bookingPriceCurrency === '' ? 'Amount' : `Amount in ${bookingPriceCurrency}`}
-          keyboardType="decimal-pad"
-        />
-      </View>
-        )}
-      </View>
+      </Modal>
 
       {(validationError ?? serverMessage) !== undefined && (
         <Text style={styles.error}>{validationError ?? serverMessage}</Text>
@@ -381,6 +400,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.textPrimary,
   },
   dockCtaText: { ...typography.bodyStrong, color: colors.textOnAccent },
+  backdrop: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+    backgroundColor: colors.surfaceMuted,
+  },
+  sheet: {
+    width: '100%',
+    maxHeight: '85%',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  sheetBody: { gap: spacing.md, paddingBottom: spacing.sm },
   bookingHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bookingHeader: { ...typography.overline, color: colors.textSecondary },
   bookingHint: { ...typography.caption, color: colors.textSecondary },

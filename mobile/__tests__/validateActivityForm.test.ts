@@ -48,24 +48,14 @@ describe('what an activity form rejects', () => {
     expect(validateActivityForm({ ...valid, costCurrency: 'PHP' })).toMatch(/amount/);
   });
 
-  it('holds the booking price to the same both-or-neither rule as the cost', () => {
-    expect(validateActivityForm({ ...valid, bookingPriceAmount: '1800' })).toMatch(/currency/i);
-    expect(validateActivityForm({ ...valid, bookingPriceCurrency: 'PHP' })).toMatch(/booking price/i);
-    expect(validateActivityForm({ ...valid, bookingPriceAmount: 'free', bookingPriceCurrency: 'PHP' })).toMatch(
-      /number/,
-    );
+  it('asks the booking price for nothing but a number — no currency to pair (founder, 2026-08-04)', () => {
+    expect(validateActivityForm({ ...valid, bookingPriceAmount: '1800' })).toBeUndefined();
+    expect(validateActivityForm({ ...valid, bookingPriceAmount: '1800.50' })).toBeUndefined();
+    expect(validateActivityForm({ ...valid, bookingPriceAmount: 'free' })).toMatch(/number/i);
   });
 
-  it('accepts a booking price beside an unrelated activity cost — they are two facts', () => {
-    expect(
-      validateActivityForm({
-        ...valid,
-        costAmount: '500',
-        costCurrency: 'PHP',
-        bookingPriceAmount: '1800',
-        bookingPriceCurrency: 'PHP',
-      }),
-    ).toBeUndefined();
+  it('still polices the activity cost, which feeds the derived total', () => {
+    expect(validateActivityForm({ ...valid, costAmount: 'lots', costCurrency: 'PHP' })).toMatch(/number/);
   });
 
   it('accepts an activity with no booking at all', () => {

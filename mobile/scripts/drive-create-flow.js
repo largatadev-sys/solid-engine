@@ -262,9 +262,22 @@ function api(path, method, token, body) {
     bestTimeOfYear: 'Dec - Apr', standouts: ['Big Lagoon Kayaking'],
   })).id;
 
+  await goto('/');
+  const draftHref = await evaluate(`
+    (() => {
+      const card = Array.from(document.querySelectorAll('a'))
+        .find((n) => (n.innerText || '').includes('Driven by S4.13') && n.offsetParent !== null);
+      return card ? card.getAttribute('href') : null;
+    })()
+  `);
+  check('a DRAFT card opens the day editor, not the preview (founder, 2026-08-04)',
+    typeof draftHref === 'string' && draftHref.includes('/days'), `href=${draftHref}`);
+
   await goto(`/itineraries/${trip}/days?day=1`);
   const days = await text();
   check('the day schedule renders with its day tabs', /Day 1/.test(days), days.split('\n').slice(0, 8).join(' / '));
+  check('activity cards carry no edit attribution — this is not the workspace',
+    !/Edited by|Updated by|You edited/i.test(days), days.split('\n').slice(0, 10).join(' / '));
   check('the mock’s CTA walks on to the preview', days.includes('Preview Itinerary'),
     days.split('\n').slice(-4).join(' / '));
 
@@ -288,8 +301,8 @@ function api(path, method, token, body) {
     `state=${stateAfter}`);
 
   const afterFinish = await text();
-  check('it lands on the workspace, with no celebration screen',
-    !/is Live|discover and fork|Back to Feed/i.test(afterFinish),
+  check('it lands back on Trips, with no celebration screen — frame 7 belongs to publish',
+    afterFinish.includes('Upcoming Trips') && !/is Live|discover and fork|Back to Feed/i.test(afterFinish),
     afterFinish.split('\n').slice(0, 6).join(' / '));
 
   await goto('/');

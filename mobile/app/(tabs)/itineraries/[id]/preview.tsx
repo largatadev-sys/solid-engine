@@ -28,6 +28,14 @@ export default function ItineraryPreviewScreen() {
   const stillPlanning = state === 'draft';
   const readyToPublish = state === 'completed' && trip.data?.published === false;
 
+  const continueEditing = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } });
+  };
+
   if (isPending) {
     return (
       <View style={styles.centered}>
@@ -75,9 +83,7 @@ export default function ItineraryPreviewScreen() {
           <Pressable
             style={styles.secondary}
             accessibilityRole="button"
-            onPress={() =>
-              router.push({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } })
-            }
+            onPress={continueEditing}
           >
             <Text style={styles.secondaryText}>Continue Editing</Text>
           </Pressable>
@@ -128,7 +134,7 @@ export default function ItineraryPreviewScreen() {
         <Pressable
           style={styles.secondary}
           accessibilityRole="button"
-          onPress={() => router.push({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } })}
+          onPress={continueEditing}
         >
           <Text style={styles.secondaryText}>Continue Editing</Text>
         </Pressable>
@@ -145,7 +151,7 @@ export default function ItineraryPreviewScreen() {
           <Pressable
             style={styles.secondary}
             accessibilityRole="button"
-            onPress={() => router.push({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } })}
+            onPress={continueEditing}
           >
             <Text style={styles.secondaryText}>Continue Editing</Text>
           </Pressable>

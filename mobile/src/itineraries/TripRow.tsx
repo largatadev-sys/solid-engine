@@ -7,10 +7,13 @@ import { draftSubtitle, editingAdvisory } from './tripSections';
 
 
 export function tripRowDestination(
-  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'published'>,
+  itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'published' | 'state'>,
 ) {
   if (itinerary.archived) {
     return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
+  }
+  if (itinerary.state === 'draft') {
+    return { pathname: '/itineraries/[id]/days' as const, params: { id: itinerary.id, day: '1' } };
   }
   if (!itinerary.published) {
     return { pathname: '/itineraries/[id]/preview' as const, params: { id: itinerary.id } };

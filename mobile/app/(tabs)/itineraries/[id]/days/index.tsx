@@ -14,7 +14,7 @@ import { formatTimeOfDay } from '../../../../../src/itineraries/formatActivityCo
 import { initialsFor } from '../../../../../src/onboarding/initials';
 import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
 import { ActivityKebab } from '../../../../../src/itineraries/ActivityKebab';
-import { attributionLine, leaseNotice } from '../../../../../src/itineraries/leaseIndicator';
+import { leaseNotice } from '../../../../../src/itineraries/leaseIndicator';
 import { applyMove, type ReorderMove } from '../../../../../src/itineraries/reorderActivityIds';
 import { memberControls } from '../../../../../src/members/memberControls';
 import { useMembers } from '../../../../../src/query/invitationQueries';
@@ -123,11 +123,7 @@ export default function DaySurfaceScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <ScreenHeader
-          title={data.title}
-          back
-          backTo={{ pathname: '/itineraries/[id]', params: { id } }}
-        />
+        <ScreenHeader title={data.title} back backTo={{ pathname: '/' }} />
 
         {mutationMessage !== undefined && <Text style={styles.mutationError}>{mutationMessage}</Text>}
 
@@ -454,7 +450,6 @@ function ActivityCard({
           <Text style={styles.leaseNotice}>{notice}</Text>
         </View>
       )}
-      <Text style={styles.attribution}>{attributionLine(activity, Date.now())}</Text>
     </View>
   );
 }
@@ -530,16 +525,6 @@ const styles = StyleSheet.create({
   },
   leaseAvatarText: { ...typography.fine, color: colors.textPrimary },
   leaseNotice: { ...typography.caption, color: colors.accent, fontWeight: '700' },
-  attribution: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.sm,
-    backgroundColor: colors.accentMuted,
-    ...typography.fine,
-    color: colors.accent,
-    fontWeight: '700',
-  },
   input: {
     ...typography.body,
     color: colors.textPrimary,
