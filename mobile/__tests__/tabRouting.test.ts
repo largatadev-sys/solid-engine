@@ -182,6 +182,16 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(preview).not.toMatch(/Complete Itinerary/);
   });
 
+  it('sends the preview back where it came from — Trips or the editor (founder, 2026-08-04)', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+    const editor = read(TRIPS, '[id]', 'days', 'index.tsx');
+
+    expect(preview).toContain("const cameFromEditor = from === 'days'");
+    expect(preview).toMatch(/cameFromEditor[\s\S]{0,120}'\/itineraries\/\[id\]\/days'/);
+    expect(preview).toMatch(/:\s*\{ pathname: '\/' \}/);
+    expect(editor).toContain("from: 'days'");
+  });
+
   it('makes Continue Editing OPEN the editor — not go back, which returns to wherever you came from', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 

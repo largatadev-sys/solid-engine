@@ -18,7 +18,8 @@ import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 export default function ItineraryPreviewScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+  const cameFromEditor = from === 'days';
   const { data, isPending, isError, error } = useItineraryPreview(id);
   const trip = useItinerary(id);
   const publish = usePublishTrip(id);
@@ -46,7 +47,16 @@ export default function ItineraryPreviewScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <ScreenHeader title="Preview" back backTo={{ pathname: '/' }} />
+        <ScreenHeader
+          title="Preview"
+          back
+          alwaysBackTo
+          backTo={
+            cameFromEditor
+              ? { pathname: '/itineraries/[id]/days', params: { id, day: '1' } }
+              : { pathname: '/' }
+          }
+        />
 
         <View style={styles.banner}>
           <Icon name="eye" size={BANNER_ICON_SIZE} color={colors.accent} />

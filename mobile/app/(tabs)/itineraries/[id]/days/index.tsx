@@ -233,7 +233,12 @@ export default function DaySurfaceScreen() {
           <Pressable
             style={styles.dockCta}
             accessibilityRole="button"
-            onPress={() => router.navigate({ pathname: '/itineraries/[id]/preview', params: { id } })}
+            onPress={() =>
+              router.navigate({
+                pathname: '/itineraries/[id]/preview',
+                params: { id, from: 'days' },
+              })
+            }
           >
             <Text style={styles.dockCtaText}>Preview Itinerary</Text>
           </Pressable>
