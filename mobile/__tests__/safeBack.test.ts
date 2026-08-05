@@ -20,3 +20,21 @@ describe('backAction — where "back" goes when there is no history', () => {
     expect(backAction(true, '/')).toEqual({ kind: 'pop' });
   });
 });
+
+describe('alwaysBackTo — a screen that owns its exit (founder, 2026-08-04)', () => {
+  it('goes to the named parent even when history exists', () => {
+    expect(backAction(true, '/', true)).toEqual({ kind: 'replace', to: '/' });
+  });
+
+  it('is what stops the day editor unwinding into a preview visited earlier', () => {
+    expect(backAction(true, '/', true)).not.toEqual({ kind: 'pop' });
+  });
+
+  it('is ignored when the screen names no parent — there is nothing to always go to', () => {
+    expect(backAction(true, undefined, true)).toEqual({ kind: 'pop' });
+  });
+
+  it('leaves every other screen popping, so back still means back', () => {
+    expect(backAction(true, '/itineraries/abc')).toEqual({ kind: 'pop' });
+  });
+});

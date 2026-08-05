@@ -24,12 +24,7 @@ function trip(over: Partial<ItineraryResponse> = {}): ItineraryResponse {
 describe('the Trips sections (ADR-020)', () => {
   it('renders the lifecycle in the order a traveler cares about, not enum order', () => {
     expect(TRIP_SECTIONS).toEqual(['ongoing', 'upcoming', 'draft', 'completed']);
-    expect(TRIP_SECTIONS.map(sectionLabel)).toEqual([
-      'Ongoing Trips',
-      'Upcoming Trips',
-      'Draft Trips',
-      'Completed Trips',
-    ]);
+    expect(TRIP_SECTIONS.map(sectionLabel)).toEqual(['Ongoing', 'Upcoming', 'Draft', 'Completed']);
   });
 
   it('puts every trip in exactly one section, because sections are the lifecycle', () => {
@@ -43,7 +38,7 @@ describe('the Trips sections (ADR-020)', () => {
     const sections = groupIntoSections([trip({ id: 'a', state: 'draft' })]);
 
     expect(sections).toHaveLength(1);
-    expect(sections[0]).toMatchObject({ section: 'draft', label: 'Draft Trips' });
+    expect(sections[0]).toMatchObject({ section: 'draft', label: 'Draft' });
     expect(sections[0]?.data.map((t) => t.id)).toEqual(['a']);
   });
 

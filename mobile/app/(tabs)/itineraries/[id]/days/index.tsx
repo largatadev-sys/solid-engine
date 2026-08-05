@@ -123,7 +123,7 @@ export default function DaySurfaceScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <ScreenHeader title={data.title} back backTo={{ pathname: '/' }} />
+        <ScreenHeader title={data.title} back backTo={{ pathname: '/' }} alwaysBackTo />
 
         {mutationMessage !== undefined && <Text style={styles.mutationError}>{mutationMessage}</Text>}
 

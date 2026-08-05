@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
 import { useSafeBack, type BackTarget } from '../navigation/safeBack';
+import { useHardwareBack } from '../navigation/useHardwareBack';
 import { colors, radii, spacing, typography } from '../theme';
 
 
@@ -14,6 +15,7 @@ export function ScreenHeader({
   size = 'title',
   back = false,
   backTo,
+  alwaysBackTo = false,
   eyebrow,
   action,
 }: {
@@ -22,10 +24,12 @@ export function ScreenHeader({
   back?: boolean;
 
   backTo?: BackTarget;
+  alwaysBackTo?: boolean;
   eyebrow?: ReactNode;
   action?: ReactNode;
 }) {
-  const goBack = useSafeBack(backTo);
+  const goBack = useSafeBack(backTo, alwaysBackTo);
+  useHardwareBack(alwaysBackTo ? goBack : undefined);
   const insets = useSafeAreaInsets();
 
   return (
