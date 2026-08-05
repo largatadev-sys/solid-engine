@@ -1,10 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ScreenHeader } from '../../../src/components/ScreenHeader';
-import { itineraryLoadMessage, ScreenMessage } from '../../../src/components/ScreenMessage';
-import { PublishedItineraryView } from '../../../src/itineraries/PublishedItineraryView';
-import { usePublishedItinerary } from '../../../src/query/itineraryQueries';
-import { colors, spacing, typography } from '../../../src/theme';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
+import { itineraryLoadMessage, ScreenMessage } from '../../../../src/components/ScreenMessage';
+import { PublishedItineraryView } from '../../../../src/itineraries/PublishedItineraryView';
+import { usePublishedItinerary } from '../../../../src/query/itineraryQueries';
+import { colors, spacing, typography } from '../../../../src/theme';
 
 
 export default function PublishedItineraryScreen() {

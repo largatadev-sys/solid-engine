@@ -1,8 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ApiError } from '../../../src/api/ApiError';
-import { confirmWith } from '../../../src/components/confirmDestructive';
+import { ApiError } from '../../../../src/api/ApiError';
+import { confirmWith } from '../../../../src/components/confirmDestructive';
 import {
   acceptOwnershipWording,
   declineOwnershipWording,
@@ -10,10 +10,10 @@ import {
   offerOwnershipWording,
   removeMemberWording,
   revokeOwnershipOfferWording,
-} from '../../../src/components/confirmDestructiveMessage';
-import { ScreenHeader } from '../../../src/components/ScreenHeader';
-import { useMe } from '../../../src/hooks/useMe';
-import { memberControls } from '../../../src/members/memberControls';
+} from '../../../../src/components/confirmDestructiveMessage';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
+import { useMe } from '../../../../src/hooks/useMe';
+import { memberControls } from '../../../../src/members/memberControls';
 import {
   useAcceptOwnershipOffer,
   useDeclineOwnershipOffer,
@@ -24,10 +24,10 @@ import {
   usePendingInvitations,
   useRevokeOwnershipOffer,
   useRevokeInvitation,
-} from '../../../src/query/invitationQueries';
-import { useItinerary } from '../../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../../src/theme';
-import type { InvitationResponse, MemberResponse } from '../../../src/types/api';
+} from '../../../../src/query/invitationQueries';
+import { useItinerary } from '../../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../../src/theme';
+import type { InvitationResponse, MemberResponse } from '../../../../src/types/api';
 
 
 export default function MembersScreen() {

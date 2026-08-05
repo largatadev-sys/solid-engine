@@ -10,22 +10,22 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ApiError } from '../../../../src/api/ApiError';
-import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
-import { Icon } from '../../../../src/components/Icon';
-import { TimePicker } from '../../../../src/components/TimePicker';
-import { ScreenHeader } from '../../../../src/components/ScreenHeader';
-import { useEditLock } from '../../../../src/hooks/useEditLock';
-import { useMe } from '../../../../src/hooks/useMe';
-import { validateActivityForm } from '../../../../src/itineraries/validateActivityForm';
+import { ApiError } from '../../../../../src/api/ApiError';
+import { GreyedMediaTile } from '../../../../../src/components/GreyedMediaTile';
+import { Icon } from '../../../../../src/components/Icon';
+import { TimePicker } from '../../../../../src/components/TimePicker';
+import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
+import { useEditLock } from '../../../../../src/hooks/useEditLock';
+import { useMe } from '../../../../../src/hooks/useMe';
+import { validateActivityForm } from '../../../../../src/itineraries/validateActivityForm';
 import {
   useCreateActivity,
   useEditActivity,
   useItinerary,
   useMoveActivity,
-} from '../../../../src/query/itineraryQueries';
-import type { ActivityRequest, ActivityResponse, DayResponse } from '../../../../src/types/api';
-import { colors, radii, spacing, typography } from '../../../../src/theme';
+} from '../../../../../src/query/itineraryQueries';
+import type { ActivityRequest, ActivityResponse, DayResponse } from '../../../../../src/types/api';
+import { colors, radii, spacing, typography } from '../../../../../src/theme';
 
 
 export default function ActivityFormScreen() {

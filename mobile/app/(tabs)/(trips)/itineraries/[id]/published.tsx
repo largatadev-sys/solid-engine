@@ -2,16 +2,16 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Icon } from '../../../../src/components/Icon';
+import { Icon } from '../../../../../src/components/Icon';
 import {
   copyLink,
   publishedItineraryLink,
   shareLink,
-} from '../../../../src/itineraries/shareLink';
-import { copyLinkFeedback, shareFeedback } from '../../../../src/itineraries/shareLinkContract';
-import { destinationPillLabel, durationLabel } from '../../../../src/itineraries/publishedProjection';
-import { usePublishedItinerary } from '../../../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../../../src/theme';
+} from '../../../../../src/itineraries/shareLink';
+import { copyLinkFeedback, shareFeedback } from '../../../../../src/itineraries/shareLinkContract';
+import { destinationPillLabel, durationLabel } from '../../../../../src/itineraries/publishedProjection';
+import { usePublishedItinerary } from '../../../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../../../src/theme';
 
 
 export default function PublishSuccessScreen() {

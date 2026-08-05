@@ -1,25 +1,24 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Icon } from '../../../../src/components/Icon';
-import { ScreenHeader } from '../../../../src/components/ScreenHeader';
-import { itineraryLoadMessage, ScreenMessage } from '../../../../src/components/ScreenMessage';
-import { PublishedItineraryView } from '../../../../src/itineraries/PublishedItineraryView';
-import { audienceBlurb, audienceLabel } from '../../../../src/itineraries/publishControls';
-import type { PublishAudience } from '../../../../src/types/api';
+import { Icon } from '../../../../../src/components/Icon';
+import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
+import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/components/ScreenMessage';
+import { PublishedItineraryView } from '../../../../../src/itineraries/PublishedItineraryView';
+import { audienceBlurb, audienceLabel } from '../../../../../src/itineraries/publishControls';
+import type { PublishAudience } from '../../../../../src/types/api';
 import {
   useItinerary,
   useItineraryPreview,
   usePublishTrip,
   useTripLifecycle,
-} from '../../../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../../../src/theme';
+} from '../../../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../../../src/theme';
 
 
 export default function ItineraryPreviewScreen() {
   const router = useRouter();
-  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
-  const cameFromEditor = from === 'days';
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { data, isPending, isError, error } = useItineraryPreview(id);
   const trip = useItinerary(id);
   const publish = usePublishTrip(id);
@@ -47,15 +46,7 @@ export default function ItineraryPreviewScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <ScreenHeader
-          title="Preview"
-          back
-          backTo={
-            cameFromEditor
-              ? { pathname: '/itineraries/[id]/days', params: { id, day: '1' } }
-              : { pathname: '/' }
-          }
-        />
+        <ScreenHeader title="Preview" back backTo={{ pathname: '/' }} />
 
         <View style={styles.banner}>
           <Icon name="eye" size={BANNER_ICON_SIZE} color={colors.accent} />

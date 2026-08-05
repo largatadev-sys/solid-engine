@@ -1,20 +1,20 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { comingSoon } from '../../../../src/components/comingSoon';
-import { Icon } from '../../../../src/components/Icon';
-import { ScreenHeader } from '../../../../src/components/ScreenHeader';
-import { confirmWith } from '../../../../src/components/confirmDestructive';
-import { notify } from '../../../../src/components/notify';
+import { comingSoon } from '../../../../../src/components/comingSoon';
+import { Icon } from '../../../../../src/components/Icon';
+import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
+import { confirmWith } from '../../../../../src/components/confirmDestructive';
+import { notify } from '../../../../../src/components/notify';
 import {
   leaveTripWording,
   unpublishTripWording,
-} from '../../../../src/components/confirmDestructiveMessage';
-import { itineraryLoadMessage, ScreenMessage } from '../../../../src/components/ScreenMessage';
-import { useMe } from '../../../../src/hooks/useMe';
-import { dayHeading } from '../../../../src/itineraries/dayHeading';
-import { AvatarStack } from '../../../../src/itineraries/AvatarStack';
-import { formatDates } from '../../../../src/itineraries/formatDates';
+} from '../../../../../src/components/confirmDestructiveMessage';
+import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/components/ScreenMessage';
+import { useMe } from '../../../../../src/hooks/useMe';
+import { dayHeading } from '../../../../../src/itineraries/dayHeading';
+import { AvatarStack } from '../../../../../src/itineraries/AvatarStack';
+import { formatDates } from '../../../../../src/itineraries/formatDates';
 import {
   audienceBlurb,
   audienceLabel,
@@ -29,25 +29,25 @@ import {
   otherAudience,
   publishControl,
   workspaceEyebrow,
-} from '../../../../src/itineraries/publishControls';
-import { TripArchiveBanner } from '../../../../src/itineraries/TripArchiveBanner';
-import { WorkspaceChip } from '../../../../src/itineraries/WorkspaceChip';
-import { memberControls } from '../../../../src/members/memberControls';
-import { OwnershipOfferBanner } from '../../../../src/members/OwnershipOfferBanner';
-import { useEndMembership, useMembers } from '../../../../src/query/invitationQueries';
+} from '../../../../../src/itineraries/publishControls';
+import { TripArchiveBanner } from '../../../../../src/itineraries/TripArchiveBanner';
+import { WorkspaceChip } from '../../../../../src/itineraries/WorkspaceChip';
+import { memberControls } from '../../../../../src/members/memberControls';
+import { OwnershipOfferBanner } from '../../../../../src/members/OwnershipOfferBanner';
+import { useEndMembership, useMembers } from '../../../../../src/query/invitationQueries';
 import {
   useItinerary,
   useShowTripTo,
   useTripLifecycle,
   useUnpublishTrip,
-} from '../../../../src/query/itineraryQueries';
-import type { LifecycleAct } from '../../../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../../../src/theme';
+} from '../../../../../src/query/itineraryQueries';
+import type { LifecycleAct } from '../../../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../../../src/theme';
 import type {
   DayResponse,
   ItineraryResponse,
   PublishAudience,
-} from '../../../../src/types/api';
+} from '../../../../../src/types/api';
 
 
 const EYEBROW_ICON_SIZE = 20;

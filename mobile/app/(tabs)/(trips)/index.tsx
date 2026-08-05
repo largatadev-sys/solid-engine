@@ -1,11 +1,11 @@
 import { Link } from 'expo-router';
 import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
-import { comingSoon } from '../../src/components/comingSoon';
-import { InvitationInbox } from '../../src/components/InvitationInbox';
-import { TripRow } from '../../src/itineraries/TripRow';
-import { groupIntoSections } from '../../src/itineraries/tripSections';
-import { useMyItineraries } from '../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../src/theme';
+import { comingSoon } from '../../../src/components/comingSoon';
+import { InvitationInbox } from '../../../src/components/InvitationInbox';
+import { TripRow } from '../../../src/itineraries/TripRow';
+import { groupIntoSections } from '../../../src/itineraries/tripSections';
+import { useMyItineraries } from '../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../src/theme';
 
 
 export default function MyTripsScreen() {

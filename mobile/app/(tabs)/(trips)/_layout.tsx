@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { colors } from '../../../src/theme';
 
 
-export default function ItinerariesLayout() {
+export default function TripsLayout() {
   return (
     <Stack
       screenOptions={{

@@ -72,17 +72,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="(trips)"
         options={{ title: 'Trips', tabBarIcon: tabIcon('map'), sceneStyle: bareScene(insets.top) }}
       />
       <Tabs.Screen
         name="profile"
         options={{ title: 'Profile', tabBarIcon: tabIcon('person'), sceneStyle: bareScene(insets.top) }}
       />
-      <Tabs.Screen name="create" options={{ href: null }} />
-      <Tabs.Screen name="itineraries" options={{ href: null }} />
-      <Tabs.Screen name="members" options={{ href: null }} />
-      <Tabs.Screen name="published" options={{ href: null }} />
     </Tabs>
   );
 }

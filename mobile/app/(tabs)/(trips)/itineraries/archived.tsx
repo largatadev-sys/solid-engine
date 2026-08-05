@@ -1,8 +1,8 @@
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ScreenHeader } from '../../../src/components/ScreenHeader';
-import { TripRow } from '../../../src/itineraries/TripRow';
-import { useArchivedItineraries } from '../../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../../src/theme';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
+import { TripRow } from '../../../../src/itineraries/TripRow';
+import { useArchivedItineraries } from '../../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
 export default function ArchivedTripsScreen() {

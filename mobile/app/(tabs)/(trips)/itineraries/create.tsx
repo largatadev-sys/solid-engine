@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { comingSoon } from '../../../src/components/comingSoon';
-import { Icon, type IconName } from '../../../src/components/Icon';
-import { ScreenHeader } from '../../../src/components/ScreenHeader';
-import { colors, radii, spacing, typography } from '../../../src/theme';
+import { comingSoon } from '../../../../src/components/comingSoon';
+import { Icon, type IconName } from '../../../../src/components/Icon';
+import { ScreenHeader } from '../../../../src/components/ScreenHeader';
+import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
 export default function CreateTripScreen() {
