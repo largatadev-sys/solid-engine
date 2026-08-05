@@ -123,7 +123,7 @@ export default function DaySurfaceScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <ScreenHeader title={data.title} back backTo={{ pathname: '/' }} alwaysBackTo />
+        <ScreenHeader title={data.title} back backTo={{ pathname: '/' }} />
 
         {mutationMessage !== undefined && <Text style={styles.mutationError}>{mutationMessage}</Text>}
 
@@ -171,7 +171,7 @@ export default function DaySurfaceScreen() {
                   })
                 }
                 onEditActivity={(activityId) =>
-                  router.navigate({
+                  router.push({
                     pathname: '/itineraries/[id]/activity',
                     params: { id, dayId: selected.id, activityId },
                   })
@@ -184,7 +184,7 @@ export default function DaySurfaceScreen() {
                   })
                 }
                 onAddActivity={() =>
-                  router.navigate({
+                  router.push({
                     pathname: '/itineraries/[id]/activity',
                     params: { id, dayId: selected.id },
                   })
@@ -234,7 +234,7 @@ export default function DaySurfaceScreen() {
             style={styles.dockCta}
             accessibilityRole="button"
             onPress={() =>
-              router.navigate({
+              router.push({
                 pathname: '/itineraries/[id]/preview',
                 params: { id, from: 'days' },
               })

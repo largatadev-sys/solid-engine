@@ -195,18 +195,24 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('makes Continue Editing OPEN the editor — not go back, which returns to wherever you came from', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 
-    expect(preview).toMatch(/const continueEditing = \(\) =>\s*\n?\s*router\.navigate\(\{ pathname: '\/itineraries\/\[id\]\/days'/);
+    expect(preview).toMatch(/const continueEditing = \(\) =>\s*\n?\s*router\.push\(\{ pathname: '\/itineraries\/\[id\]\/days'/);
     expect(preview).not.toMatch(/continueEditing[\s\S]{0,120}router\.back\(\)/);
   });
 
-  it('navigates rather than pushes across the whole flow, so back walks the stack in order', () => {
+  it('PUSHES every forward move, so back pops the screen the traveler actually came from', () => {
     for (const screen of [
       read(TRIPS, '[id]', 'preview.tsx'),
       read(TRIPS, '[id]', 'days', 'index.tsx'),
-      read(TRIPS, '[id]', 'activity.tsx'),
     ]) {
-      expect(screen).not.toMatch(/router\.push\(/);
+      expect(screen).not.toMatch(/router\.navigate\(/);
     }
+  });
+
+  it('lets no screen override back — the previous page always wins (founder, 2026-08-04)', () => {
+    const header = read(MOBILE_ROOT, 'src', 'components', 'ScreenHeader.tsx');
+
+    expect(header).not.toMatch(/alwaysBackTo/);
+    expect(header).toContain('useSafeBack(backTo)');
   });
 
   it('reserves the publish footer for a completed, unpublished trip — frame 7 is the publish act', () => {

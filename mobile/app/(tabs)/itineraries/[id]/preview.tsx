@@ -30,7 +30,7 @@ export default function ItineraryPreviewScreen() {
   const readyToPublish = state === 'completed' && trip.data?.published === false;
 
   const continueEditing = () =>
-    router.navigate({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } });
+    router.push({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } });
 
   if (isPending) {
     return (
@@ -50,7 +50,6 @@ export default function ItineraryPreviewScreen() {
         <ScreenHeader
           title="Preview"
           back
-          alwaysBackTo
           backTo={
             cameFromEditor
               ? { pathname: '/itineraries/[id]/days', params: { id, day: '1' } }
@@ -149,7 +148,7 @@ export default function ItineraryPreviewScreen() {
           <Pressable
             style={styles.primary}
             accessibilityRole="button"
-            onPress={() => router.navigate({ pathname: '/itineraries/[id]', params: { id } })}
+            onPress={() => router.push({ pathname: '/itineraries/[id]', params: { id } })}
           >
             <Text style={styles.primaryText}>Open Trip Workspace</Text>
           </Pressable>
