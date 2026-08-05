@@ -171,7 +171,7 @@ export default function DaySurfaceScreen() {
                   })
                 }
                 onEditActivity={(activityId) =>
-                  router.push({
+                  router.navigate({
                     pathname: '/itineraries/[id]/activity',
                     params: { id, dayId: selected.id, activityId },
                   })
@@ -184,7 +184,7 @@ export default function DaySurfaceScreen() {
                   })
                 }
                 onAddActivity={() =>
-                  router.push({
+                  router.navigate({
                     pathname: '/itineraries/[id]/activity',
                     params: { id, dayId: selected.id },
                   })
@@ -233,7 +233,7 @@ export default function DaySurfaceScreen() {
           <Pressable
             style={styles.dockCta}
             accessibilityRole="button"
-            onPress={() => router.push({ pathname: '/itineraries/[id]/preview', params: { id } })}
+            onPress={() => router.navigate({ pathname: '/itineraries/[id]/preview', params: { id } })}
           >
             <Text style={styles.dockCtaText}>Preview Itinerary</Text>
           </Pressable>

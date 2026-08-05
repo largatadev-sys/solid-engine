@@ -189,10 +189,14 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(preview).not.toMatch(/continueEditing[\s\S]{0,120}router\.back\(\)/);
   });
 
-  it('navigates rather than pushes, so back walks the stack instead of unwinding duplicates', () => {
-    const preview = read(TRIPS, '[id]', 'preview.tsx');
-
-    expect(preview).not.toMatch(/router\.push\(/);
+  it('navigates rather than pushes across the whole flow, so back walks the stack in order', () => {
+    for (const screen of [
+      read(TRIPS, '[id]', 'preview.tsx'),
+      read(TRIPS, '[id]', 'days', 'index.tsx'),
+      read(TRIPS, '[id]', 'activity.tsx'),
+    ]) {
+      expect(screen).not.toMatch(/router\.push\(/);
+    }
   });
 
   it('reserves the publish footer for a completed, unpublished trip — frame 7 is the publish act', () => {
