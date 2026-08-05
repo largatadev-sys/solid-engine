@@ -182,6 +182,19 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(preview).not.toMatch(/Complete Itinerary/);
   });
 
+  it('makes Continue Editing OPEN the editor — not go back, which returns to wherever you came from', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+
+    expect(preview).toMatch(/const continueEditing = \(\) =>\s*\n?\s*router\.navigate\(\{ pathname: '\/itineraries\/\[id\]\/days'/);
+    expect(preview).not.toMatch(/continueEditing[\s\S]{0,120}router\.back\(\)/);
+  });
+
+  it('navigates rather than pushes, so back walks the stack instead of unwinding duplicates', () => {
+    const preview = read(TRIPS, '[id]', 'preview.tsx');
+
+    expect(preview).not.toMatch(/router\.push\(/);
+  });
+
   it('reserves the publish footer for a completed, unpublished trip — frame 7 is the publish act', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 
