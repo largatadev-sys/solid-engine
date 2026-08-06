@@ -137,6 +137,29 @@ export const itineraryRepository = {
     return apiClient.delete(`/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`);
   },
 
+  async addActivityPhoto(
+    itineraryId: string,
+    dayId: string,
+    activityId: string,
+    photo: PickedPhoto,
+  ): Promise<ActivityResponse> {
+    return apiClient.upload<ActivityResponse>(
+      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/photos`,
+      await photoPart(photo),
+    );
+  },
+
+  async removeActivityPhoto(
+    itineraryId: string,
+    dayId: string,
+    activityId: string,
+    photoId: string,
+  ): Promise<ActivityResponse> {
+    return apiClient.deleteReturning<ActivityResponse>(
+      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/photos/${photoId}`,
+    );
+  },
+
 
   async reorderActivities(
     itineraryId: string,

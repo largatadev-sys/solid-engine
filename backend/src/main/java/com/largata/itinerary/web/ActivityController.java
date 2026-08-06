@@ -10,10 +10,14 @@ import com.largata.itinerary.api.ActivityResponse;
 import com.largata.itinerary.api.DayResponse;
 import com.largata.itinerary.api.MoveActivityRequest;
 import com.largata.itinerary.api.ReorderActivitiesRequest;
+import com.largata.itinerary.ActivityPhotoService;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,10 +33,15 @@ import org.springframework.web.bind.annotation.RestController;
 class ActivityController {
 
     private final ActivityService activities;
+    private final ActivityPhotoService activityPhotos;
     private final AuthorizationGuard guard;
 
-    ActivityController(ActivityService activities, AuthorizationGuard guard) {
+    ActivityController(
+            ActivityService activities,
+            ActivityPhotoService activityPhotos,
+            AuthorizationGuard guard) {
         this.activities = activities;
+        this.activityPhotos = activityPhotos;
         this.guard = guard;
     }
 
@@ -67,6 +76,34 @@ class ActivityController {
             @PathVariable UUID activityId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
         activities.delete(member, dayId, activityId);
+    }
+
+
+    @PostMapping("/{activityId}/photos")
+    @ResponseStatus(HttpStatus.CREATED)
+    ActivityResponse addPhoto(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID itineraryId,
+            @PathVariable UUID dayId,
+            @PathVariable UUID activityId,
+            @RequestPart("photo") MultipartFile photo)
+            throws IOException {
+        Membership member = guard.requireMember(traveler.id(), itineraryId);
+        activityPhotos.add(member, activityId, photo.getBytes());
+        return ActivityResponse.of(activities.view(member, dayId, activityId));
+    }
+
+
+    @DeleteMapping("/{activityId}/photos/{photoId}")
+    ActivityResponse removePhoto(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID itineraryId,
+            @PathVariable UUID dayId,
+            @PathVariable UUID activityId,
+            @PathVariable UUID photoId) {
+        Membership member = guard.requireMember(traveler.id(), itineraryId);
+        activityPhotos.remove(member, activityId, photoId);
+        return ActivityResponse.of(activities.view(member, dayId, activityId));
     }
 
 

@@ -26,14 +26,13 @@ describe('comingSoonMessage — the wording both forks share', () => {
   });
 
   it('names whatever affordance it is given', () => {
-    expect(comingSoonMessage('activityPhoto').title).toBe('Activity photo — coming soon');
+    expect(comingSoonMessage('chat').title).toBe('Trip chat — coming soon');
   });
 
   it('covers every greyed affordance S4.9, S4.1 and S4.13 ship', () => {
     expect(Object.keys(COMING_SOON_SURFACES).sort()).toEqual(
       [
         'activityHistory',
-        'activityPhoto',
         'addPastTrip',
         'booking',
         'chat',

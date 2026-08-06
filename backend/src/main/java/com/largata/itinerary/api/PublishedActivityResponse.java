@@ -3,6 +3,7 @@ package com.largata.itinerary.api;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.largata.itinerary.ActivityView;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -20,7 +21,8 @@ public record PublishedActivityResponse(
         String bookingPurpose,
         String bookingProvider,
         @JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal bookingPriceAmount,
-        String bookingPriceCurrency) {
+        String bookingPriceCurrency,
+        List<ActivityPhotoResponse> photos) {
 
 
     static PublishedActivityResponse of(ActivityView activity) {
@@ -38,6 +40,7 @@ public record PublishedActivityResponse(
                 activity.bookingPurpose(),
                 activity.bookingProvider(),
                 activity.bookingPriceAmount(),
-                activity.bookingPriceCurrency());
+                activity.bookingPriceCurrency(),
+                ActivityPhotoResponse.allOf(activity.photos()));
     }
 }

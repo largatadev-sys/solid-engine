@@ -284,6 +284,30 @@ export function useCreateActivity(
 }
 
 
+export function useAddActivityPhoto(
+  itineraryId: string,
+): UseMutationResult<ActivityResponse, Error, { dayId: string; activityId: string; photo: PickedPhoto }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, activityId, photo }: { dayId: string; activityId: string; photo: PickedPhoto }) =>
+      itineraryRepository.addActivityPhoto(itineraryId, dayId, activityId, photo),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+
+export function useRemoveActivityPhoto(
+  itineraryId: string,
+): UseMutationResult<ActivityResponse, Error, { dayId: string; activityId: string; photoId: string }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, activityId, photoId }: { dayId: string; activityId: string; photoId: string }) =>
+      itineraryRepository.removeActivityPhoto(itineraryId, dayId, activityId, photoId),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+
 export function useEditActivity(
   itineraryId: string,
 ): UseMutationResult<ActivityResponse, Error, { dayId: string; activityId: string; request: ActivityRequest }> {

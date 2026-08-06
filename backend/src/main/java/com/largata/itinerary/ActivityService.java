@@ -4,6 +4,8 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
+import com.largata.media.PhotoService;
+import com.largata.media.PhotoSubject;
 import com.largata.common.tx.AfterCommit;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ public class ActivityService {
     private final ActivityHistoryService history;
     private final WriteFence fence;
     private final Analytics analytics;
+    private final PhotoService photos;
 
     ActivityService(
             DayRepository days,
@@ -39,13 +42,15 @@ public class ActivityService {
             EditLeaseService editLease,
             ActivityHistoryService history,
             WriteFence fence,
-            Analytics analytics) {
+            Analytics analytics,
+            PhotoService photos) {
         this.days = days;
         this.activities = activities;
         this.editLease = editLease;
         this.history = history;
         this.fence = fence;
         this.analytics = analytics;
+        this.photos = photos;
     }
 
 
@@ -78,7 +83,21 @@ public class ActivityService {
         history.record(member, HistoryAct.ACTIVITY_EDITED, LeaseSubject.activity(activityId));
         log.info("Activity edited: dayId={} activityId={} editor={}", dayId, activityId, member.travelerId());
         emit(member, "activity_edited", activityId);
-        return ActivityView.of(activity);
+        return withPhotos(activity);
+    }
+
+
+    @Transactional(readOnly = true)
+    public ActivityView view(Membership member, UUID dayId, UUID activityId) {
+        requireDay(member.itineraryId(), dayId);
+        return withPhotos(requireActivity(dayId, activityId));
+    }
+
+
+    private ActivityView withPhotos(Activity activity) {
+        return ActivityView.of(
+                activity,
+                ActivityPhotoView.allOf(photos.allOf(PhotoSubject.ACTIVITY, activity.id())));
     }
 
 

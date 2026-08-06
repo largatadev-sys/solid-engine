@@ -3,6 +3,7 @@ package com.largata.itinerary;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -22,9 +23,15 @@ public record ActivityView(
         BigDecimal bookingPriceAmount,
         String bookingPriceCurrency,
         UUID lastEditedBy,
-        Instant lastEditedAt) {
+        Instant lastEditedAt,
+        List<ActivityPhotoView> photos) {
 
     static ActivityView of(Activity a) {
+        return of(a, List.of());
+    }
+
+
+    static ActivityView of(Activity a, List<ActivityPhotoView> photos) {
         return new ActivityView(
                 a.id(),
                 a.sortOrder(),
@@ -41,6 +48,7 @@ public record ActivityView(
                 a.bookingPriceAmount(),
                 a.bookingPriceCurrency(),
                 a.lastEditedBy(),
-                a.lastEditedAt());
+                a.lastEditedAt(),
+                photos);
     }
 }

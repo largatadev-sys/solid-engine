@@ -188,6 +188,39 @@ async function upload(path, token, bytes, filename='photo.jpg') {
   const projection = await api(`/v1/itineraries/${trip}/preview`,'GET',t1);
   check('the published projection carries the cover', projection.body?.coverImageUrl===coverUrl, `${projection.body?.coverImageUrl}`);
 
+  // --- activity photos and the derived gallery ------------------------------------------------
+  const trip2 = (await api('/v1/itineraries','POST',t1,{ title:'Photo Trip', destinations:['Palawan'], durationDays:2 })).body;
+  const day1 = trip2.days[0].id;
+  const act = (await api(`/v1/itineraries/${trip2.id}/days/${day1}/activities`,'POST',t1,{ title:'Kayaking' })).body;
+  const photosUri = `/v1/itineraries/${trip2.id}/days/${day1}/activities/${act.id}/photos`;
+
+  const noActivityLease = await upload(photosUri, t1, solidJpeg());
+  check('an activity photo without the activity lease is refused', noActivityLease.status===409, String(noActivityLease.status));
+
+  await api(`/v1/itineraries/${trip2.id}/edit-lock`,'POST',t1,{ subjectType:'activity', subjectId: act.id });
+  const added = await upload(photosUri, t1, jpegWithExif());
+  check('an activity photo uploads and lands on the activity', added.status===201 && added.body.photos?.length===1, `${added.status} n=${added.body?.photos?.length}`);
+  check('the activity photo carries a thumb url too', typeof added.body.photos?.[0]?.thumbUrl==='string', added.body?.photos?.[0]?.thumbUrl);
+
+  for (let i = 1; i < 5; i++) await upload(photosUri, t1, solidJpeg());
+  const sixth = await upload(photosUri, t1, solidJpeg());
+  check('the sixth photo is refused, naming the cap', sixth.status===400 && sixth.body?.code==='TOO_MANY_ACTIVITY_PHOTOS', `${sixth.status} ${sixth.body?.code}`);
+
+  const activityPhotoUrl = added.body.photos[0].url;
+  const strangerOnActivityPhoto = await req(API+activityPhotoUrl, 'GET', undefined, {Authorization:'Bearer '+t2}, true);
+  check('a stranger cannot read a private activity photo', strangerOnActivityPhoto.status===404, String(strangerOnActivityPhoto.status));
+
+  await api(`/v1/itineraries/${trip2.id}/edit-lock`,'DELETE',t1);
+  for (const step of ['finish-planning','start','complete','publish']) {
+    await api(`/v1/itineraries/${trip2.id}/${step}`,'POST',t1);
+  }
+
+  const publicView = await api(`/v1/published-itineraries/${trip2.id}`,'GET',t2);
+  const projectedPhotos = publicView.body?.days?.[0]?.activities?.[0]?.photos ?? [];
+  check('activity photos cross to the published projection (the gallery source)', projectedPhotos.length===5, `n=${projectedPhotos.length}`);
+  const strangerAfterPublish = await req(API+activityPhotoUrl, 'GET', undefined, {Authorization:'Bearer '+t2}, true);
+  check('publishing opens activity photos to every traveler', strangerAfterPublish.status===200, String(strangerAfterPublish.status));
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();
