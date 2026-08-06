@@ -8,6 +8,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { useAuth } from '../hooks/authContext';
+import type { PickedPhoto } from '../media/pickedPhoto';
 import { travelerRepository } from '../repositories/travelerRepository';
 import { verificationRepository } from '../repositories/verificationRepository';
 import type {
@@ -76,6 +77,24 @@ export function useCompleteOnboarding(): UseMutationResult<MeResponse, Error, vo
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => travelerRepository.completeOnboarding(),
+    onSuccess: (updated) => onProfileChanged(client, updated),
+  });
+}
+
+
+export function useUploadAvatar(): UseMutationResult<MeResponse, Error, PickedPhoto> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (photo: PickedPhoto) => travelerRepository.uploadAvatar(photo),
+    onSuccess: (updated) => onProfileChanged(client, updated),
+  });
+}
+
+
+export function useRemoveAvatar(): UseMutationResult<MeResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => travelerRepository.removeAvatar(),
     onSuccess: (updated) => onProfileChanged(client, updated),
   });
 }

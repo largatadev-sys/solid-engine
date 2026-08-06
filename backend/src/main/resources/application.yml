@@ -16,6 +16,14 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      # Slightly above ImageIngest.MAX_UPLOAD_BYTES (10 MB) on purpose. Spring rejects at this bound
+      # with a container-level error; the domain rejects at 10 MB with a message naming the limit.
+      # Leaving room between them means a traveler a little over the line reads our refusal rather
+      # than the servlet's, while a wildly oversized upload is still stopped before it is buffered.
+      max-file-size: 12MB
+      max-request-size: 12MB
   security:
     oauth2:
       resourceserver:

@@ -4,6 +4,10 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.IdentityExceptions.HandleTakenException;
+import com.largata.media.MediaUrls;
+import com.largata.media.Photo;
+import com.largata.media.PhotoService;
+import com.largata.media.PhotoSubject;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -23,11 +27,14 @@ public class TravelerProfileService {
     private static final Logger log = LoggerFactory.getLogger(TravelerProfileService.class);
 
     private final TravelerRepository travelers;
+    private final PhotoService photos;
     private final Analytics analytics;
     private final Clock clock;
 
-    TravelerProfileService(TravelerRepository travelers, Analytics analytics, Clock clock) {
+    TravelerProfileService(
+            TravelerRepository travelers, PhotoService photos, Analytics analytics, Clock clock) {
         this.travelers = travelers;
+        this.photos = photos;
         this.analytics = analytics;
         this.clock = clock;
     }
@@ -87,6 +94,28 @@ public class TravelerProfileService {
         Traveler saved = flush(traveler);
         log.info("Traveler profile updated: id={}", travelerId);
         emitPreferenceSignals(travelerId, edit);
+        return saved;
+    }
+
+
+    @Transactional
+    public Traveler replaceAvatar(UUID travelerId, byte[] uploaded) {
+        Traveler traveler = travelers.findById(travelerId).orElseThrow();
+        Photo stored = photos.replaceSingle(PhotoSubject.TRAVELER_AVATAR, travelerId, uploaded, travelerId);
+        traveler.showPhoto(MediaUrls.of(stored));
+        Traveler saved = travelers.saveAndFlush(traveler);
+        log.info("Traveler avatar uploaded: id={} photoId={}", travelerId, stored.id());
+        return saved;
+    }
+
+
+    @Transactional
+    public Traveler removeAvatar(UUID travelerId) {
+        Traveler traveler = travelers.findById(travelerId).orElseThrow();
+        photos.deleteSingle(PhotoSubject.TRAVELER_AVATAR, travelerId);
+        traveler.showPhoto(null);
+        Traveler saved = travelers.saveAndFlush(traveler);
+        log.info("Traveler avatar removed: id={}", travelerId);
         return saved;
     }
 

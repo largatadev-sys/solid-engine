@@ -1,4 +1,6 @@
 import { apiClient } from '../api/apiClient';
+import { photoPart } from '../media/photoPart';
+import type { PickedPhoto } from '../media/pickedPhoto';
 import type {
   HandleAvailabilityResponse,
   MeResponse,
@@ -29,5 +31,13 @@ export const travelerRepository = {
     return apiClient.get<HandleAvailabilityResponse>(
       `/v1/handles/${encodeURIComponent(handle)}/availability`,
     );
+  },
+
+  async uploadAvatar(photo: PickedPhoto): Promise<MeResponse> {
+    return apiClient.upload<MeResponse>('/v1/me/avatar', await photoPart(photo));
+  },
+
+  async removeAvatar(): Promise<MeResponse> {
+    return apiClient.deleteReturning<MeResponse>('/v1/me/avatar');
   },
 };

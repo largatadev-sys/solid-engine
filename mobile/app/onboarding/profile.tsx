@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Avatar } from '../../src/components/Avatar';
 import { Button } from '../../src/components/Button';
 import { FormField } from '../../src/components/FormField';
 import { OnboardingScreen } from '../../src/components/OnboardingScreen';
@@ -14,7 +13,15 @@ import {
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
-import { useHandleAvailability, useUpdateProfile } from '../../src/query/travelerQueries';
+import { AvatarPicker } from '../../src/media/AvatarPicker';
+import { pickPhoto } from '../../src/media/pickPhoto';
+import { messageForPhotoFailure } from '../../src/media/photoMessages';
+import {
+  useHandleAvailability,
+  useRemoveAvatar,
+  useUpdateProfile,
+  useUploadAvatar,
+} from '../../src/query/travelerQueries';
 import { colors, spacing, typography } from '../../src/theme';
 
 const BIO_MAX_LENGTH = 500;
@@ -26,6 +33,8 @@ export default function ProfileStepScreen() {
 
   const { state } = useMe();
   const save = useUpdateProfile();
+  const uploadAvatar = useUploadAvatar();
+  const removeAvatar = useRemoveAvatar();
 
   const [handle, setHandle] = useState('');
   const [prefilled, setPrefilled] = useState(false);
@@ -56,6 +65,26 @@ export default function ProfileStepScreen() {
     }
   };
 
+  const choosePhoto = async () => {
+    setMessage(null);
+    const picked = await pickPhoto();
+    if (picked === null) return;
+    try {
+      await uploadAvatar.mutateAsync(picked);
+    } catch (error) {
+      setMessage(messageForPhotoFailure(error));
+    }
+  };
+
+  const dropPhoto = async () => {
+    setMessage(null);
+    try {
+      await removeAvatar.mutateAsync();
+    } catch (error) {
+      setMessage(messageForPhotoFailure(error));
+    }
+  };
+
   return (
     <OnboardingScreen
       step={editing ? undefined : STEP_NUMBERS.profile}
@@ -70,10 +99,13 @@ export default function ProfileStepScreen() {
       }
     >
       <View style={styles.avatarBlock}>
-        <Avatar
+        <AvatarPicker
           photoUrl={me?.avatarUrl ?? null}
           displayName={displayName}
           email={me?.email ?? null}
+          busy={uploadAvatar.isPending || removeAvatar.isPending}
+          onPick={() => void choosePhoto()}
+          onRemove={() => void dropPhoto()}
         />
       </View>
 

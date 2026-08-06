@@ -8,7 +8,8 @@
 
 - [ ] The decision-6 conditional executed: the Railway bucket-region dropdown checked at creation — an Asia region offered → Railway Buckets; none → Cloudflare R2 with the `apac` hint (the recorded fallback, no new decision) — and the outcome appended to the spec's `## Comments`.
 - [ ] Deployed-dev env vars wired through the platform UI — no secret touches a committed file (the structural rule).
-- [ ] The API smoke script covers upload/read/ladder across all four surfaces against the fresh local stack; the preview drive script covers avatar, cover, activity photos and the gallery — including a real web file upload via the CDP file-chooser path from ticket 02.
+- [ ] The API smoke script covers upload/read/ladder across all four surfaces against the fresh local stack; the preview drive script covers avatar, cover, activity photos and the gallery — including a real web file upload via CDP file-chooser interception (deferred here from ticket 02, comment 5).
+- [ ] The surface sweep: every place that already receives `avatarUrl` on the wire but renders initials only — `AvatarStack`, the published creator byline — renders the photo with initials as the fallback (deferred here from ticket 02, comment 5).
 - [ ] The emulator walk closes the device ACs end-to-end (avatar → cover → activity photos → gallery), on pool identities with roles stated (`t1 = owner, t2 = member` style — the self-identifying-fixtures rule).
 - [ ] AC 14 held: the whole story's diff carries zero entitlement code — no tier branch, no `can(`, greppable and clean.
 - [ ] BUILD_STATUS row updated — status + spec link, nothing else — in the last commit on the feature branch (never after the merge).
