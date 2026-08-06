@@ -23,20 +23,52 @@ services:
       timeout: 3s
       retries: 10
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
+  # The S3-class emulator (S3.3, ADR-021). GARAGE, NOT MINIO — swapped at S3.3 ticket 01, and the
+  # reason is distribution rather than taste: MinIO stopped publishing community images in Oct 2025
+  # and archived the repository in 2026, so `minio/minio:latest` now resolves to an archived
+  # repository whose last image carries unpatched CVEs. Garage is a single actively-maintained
+  # binary with a real health endpoint.
+  #
+  # `--default-bucket` is what makes "fresh bucket every redeploy" free: the bucket and its access
+  # key are minted from these env vars at startup, so there is no `mc mb` sidecar, no wait-for-ready
+  # race, and no step for a fresh clone to remember. Storage now matches the database's contract —
+  # up from clean, empty every time.
+  #
+  # Deployed rungs are NOT this: they point at Railway Buckets or R2 (ADR-021), whose bucket is
+  # provisioned once by the platform. Nothing in the backend creates a bucket, deliberately — its
+  # credential is scoped to object operations, and creation is infrastructure's job.
+  storage:
+    image: dxflrs/garage:v2.3.0
+    # The image declares no ENTRYPOINT — its Cmd is ["/garage","server"] — so `command:` must name
+    # the binary itself. Writing `command: server ...` (the shape every other service here uses)
+    # fails with `exec: "server": executable file not found in $PATH`, which reads like a broken
+    # image rather than a replaced argv[0].
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-largata}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-largata-local-dev}
+      # The access key must be at least 8 characters — Garage refuses to boot otherwise, with
+      # `Invalid default access key` well after a successful-looking cluster init. Hence
+      # `largata-local` rather than the `largata` every other service here uses.
+      GARAGE_DEFAULT_BUCKET: ${STORAGE_BUCKET:-largata-media}
+      GARAGE_DEFAULT_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-largata-local}
+      GARAGE_DEFAULT_SECRET_KEY: ${STORAGE_SECRET_KEY:-largata-local-dev}
+      # Garage will not boot without one. It guards a single-node RPC socket that never leaves the
+      # container, so this is a local-dev constant rather than a credential — but it stays out of
+      # the committed .toml so no file in the repo carries a credential-shaped literal.
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-0000000000000000000000000000000000000000000000000000000000000001}
+    # Garage refuses to boot without /etc/garage.toml and the image ships none — the env vars above
+    # configure the BUCKET, not the server. The file carries ports, data paths and the single-node
+    # RPC secret; it holds no real credential (see its own header).
+    volumes:
+      - ./infra/garage.toml:/etc/garage.toml:ro
     ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    # Container-only until S3.3 (spec Q1): no backend wiring, no bucket code, no storage client.
-    # The healthcheck is what stops the config rotting silently while nothing uses it — compose
-    # itself fails loudly if the emulator breaks.
+      - "${STORAGE_PORT:-3900}:3900"
+      - "${STORAGE_ADMIN_PORT:-3903}:3903"
+    # A FROM-scratch image: no shell, no wget, no curl — so the usual CMD-SHELL probe cannot run
+    # here. Garage's own binary answers `status` over its admin socket, which is the only executable
+    # in the image and therefore the only probe available. The healthcheck is what stops the config
+    # rotting silently while nothing uses it (S0.1's reason, still true).
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "/garage", "status"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -87,14 +119,25 @@ services:
       # UnconfiguredEmailVerificationFlag, which REFUSES with 503 rather than reporting a success
       # it cannot deliver. Everything except email verification still works.
       LARGATA_FIREBASE_CREDENTIALS: ${LARGATA_FIREBASE_CREDENTIALS:-}
+      # Object storage (S3.3, ADR-021). Endpoint-driven by design: the same four values point at
+      # Garage here, Railway Buckets or R2 on a deployed rung, and the code never knows which — the
+      # exit hatch is that no provider hostname is ever stored, only these settings.
+      #
+      # Unset endpoint is a supported posture and what a fresh clone gets if it runs the backend
+      # outside compose: no bucket binds UnconfiguredObjectStore, which REFUSES with 503 rather than
+      # reporting an upload it cannot deliver. Everything except media still works.
+      LARGATA_STORAGE_ENDPOINT: ${LARGATA_STORAGE_ENDPOINT:-http://storage:3900}
+      LARGATA_STORAGE_BUCKET: ${STORAGE_BUCKET:-largata-media}
+      LARGATA_STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-largata-local}
+      LARGATA_STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-largata-local-dev}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
-      # The backend does not talk to MinIO yet (S3.3), but the stack contract is "the whole local
-      # environment is up" — so a broken emulator fails the stack rather than lurking.
-      minio:
+      # A broken emulator fails the stack rather than lurking — and since S3.3 the backend genuinely
+      # talks to it, so this is now a real dependency rather than only a stack-health contract.
+      storage:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/v1/health"]
