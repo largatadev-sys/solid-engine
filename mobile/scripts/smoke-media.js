@@ -87,6 +87,20 @@ function wideJpeg() {
   return Buffer.concat([header, dqt, sof, dht, sos, scan, Buffer.from([0xFF,0xD9])]);
 }
 
+// Reads a baseline JPEG's SOF0 frame header for its real pixel dimensions — the only honest way to
+// assert a crop happened, since byte size alone would pass on a resize that kept the aspect ratio.
+function jpegDimensions(buf) {
+  for (let i = 2; i < buf.length - 9; ) {
+    if (buf[i] !== 0xFF) { i++; continue; }
+    const marker = buf[i + 1];
+    if (marker >= 0xC0 && marker <= 0xCF && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) {
+      return { height: buf.readUInt16BE(i + 5), width: buf.readUInt16BE(i + 7) };
+    }
+    i += 2 + buf.readUInt16BE(i + 2);
+  }
+  return { width: 0, height: 0 };
+}
+
 function multipart(bytes, filename) {
   const b = '----largatasmoke' + Date.now();
   const head = Buffer.from(
@@ -149,6 +163,14 @@ async function upload(path, token, bytes, filename='photo.jpg') {
   const oldOne = await req(API+bigUrl, 'GET', undefined, {Authorization:'Bearer '+t1}, true);
   check('the replaced photo is gone, bytes and all', oldOne.status===404, String(oldOne.status));
 
+  // The avatar renders in a circle everywhere, so a rectangular one is cropped by the mask rather
+  // than by the traveler — they lose whatever the circle cuts off. Squaring at ingest makes that
+  // true for EVERY client, including a browser file input that cannot crop at all.
+  const wide = await upload('/v1/me/avatar', t1, wideJpeg());
+  const wideBytes = await req(API+wide.body.avatarUrl, 'GET', undefined, {Authorization:'Bearer '+t1}, true);
+  const dims = jpegDimensions(wideBytes.bytes);
+  check('a wide avatar comes back SQUARE, so the circle crops nothing', dims.width===dims.height, `${dims.width}x${dims.height}`);
+
   const removed = await api('/v1/me/avatar','DELETE',t1);
   const afterRemoval = await api('/v1/me','GET',t1);
   check('removing answers 204 and clears the profile back to initials',
@@ -190,6 +212,21 @@ async function upload(path, token, bytes, filename='photo.jpg') {
 
   const projection = await api(`/v1/itineraries/${trip}/preview`,'GET',t1);
   check('the published projection carries the cover', projection.body?.coverImageUrl===coverUrl, `${projection.body?.coverImageUrl}`);
+
+  // The CREATE flow's cover, which is a different path from the edit screen's: the trip does not
+  // exist when the photo is chosen, so the client must create it, THEN take the header lease, then
+  // upload. Missing that lease is exactly the 409 a founder hit on 2026-08-06 — and it was silent,
+  // because the client swallowed the failure and navigated on.
+  const fresh = (await api('/v1/itineraries','POST',t1,{ title:'Created With Cover', destinations:['Palawan'], durationDays:2 })).body;
+  const noLeaseYet = await upload(`/v1/itineraries/${fresh.id}/cover`, t1, solidJpeg());
+  check('a cover straight after create is refused without the lease (the founder bug)', noLeaseYet.status===409, String(noLeaseYet.status));
+
+  await api(`/v1/itineraries/${fresh.id}/edit-lock`,'POST',t1,{ subjectType:'header' });
+  const withLease = await upload(`/v1/itineraries/${fresh.id}/cover`, t1, solidJpeg());
+  check('taking the header lease first makes the create-flow cover land', withLease.status===200 && typeof withLease.body.coverImageUrl==='string', `${withLease.status} ${withLease.body?.coverImageUrl}`);
+
+  const previewed = await api(`/v1/itineraries/${fresh.id}/preview`,'GET',t1);
+  check('and the preview carries it', previewed.body?.coverImageUrl===withLease.body.coverImageUrl, `${previewed.body?.coverImageUrl}`);
 
   // --- activity photos and the derived gallery ------------------------------------------------
   const trip2 = (await api('/v1/itineraries','POST',t1,{ title:'Photo Trip', destinations:['Palawan'], durationDays:2 })).body;

@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { ApiError } from '../../../../src/api/ApiError';
 import { CoverPicker } from '../../../../src/media/CoverPicker';
+import { notify } from '../../../../src/components/notify';
+import { COVER_NOT_ATTACHED } from '../../../../src/media/photoMessages';
 import { pickPhoto } from '../../../../src/media/pickPhoto';
 import type { PickedPhoto } from '../../../../src/media/pickedPhoto';
 import { itineraryRepository } from '../../../../src/repositories/itineraryRepository';
@@ -69,7 +71,18 @@ export default function NewItineraryScreen() {
 
   async function attachChosenCover(itineraryId: string) {
     if (chosenCover === null) return;
-    await itineraryRepository.uploadCover(itineraryId, chosenCover).catch(() => undefined);
+    try {
+      await itineraryRepository.acquireEditLock(itineraryId, { subjectType: 'header' });
+      await itineraryRepository.uploadCover(itineraryId, chosenCover);
+      await itineraryRepository.releaseEditLock(itineraryId, { subjectType: 'header' });
+    } catch {
+      keepTheTripAndSayTheCoverDidNotAttach();
+    }
+  }
+
+
+  function keepTheTripAndSayTheCoverDidNotAttach() {
+    notify(COVER_NOT_ATTACHED.title, COVER_NOT_ATTACHED.body);
   }
 
   const serverMessage = create.error instanceof ApiError ? create.error.message : undefined;

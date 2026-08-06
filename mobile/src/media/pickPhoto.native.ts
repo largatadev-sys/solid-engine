@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
-import type { PickedPhoto } from './pickedPhoto';
+import type { CropShape, PickedPhoto } from './pickedPhoto';
 
-export async function pickPhoto(): Promise<PickedPhoto | null> {
+export async function pickPhoto(shape: CropShape = 'free'): Promise<PickedPhoto | null> {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permission.granted) return null;
 
@@ -9,6 +9,7 @@ export async function pickPhoto(): Promise<PickedPhoto | null> {
     mediaTypes: ['images'],
     allowsEditing: true,
     quality: 1,
+    ...(shape === 'square' ? { aspect: [1, 1] as [number, number] } : {}),
   });
   if (result.canceled) return null;
 

@@ -64,7 +64,7 @@ export default function ProfileStepScreen() {
     }
   };
 
-  const photoAction = usePhotoAction();
+  const photoAction = usePhotoAction('square');
 
   return (
     <OnboardingScreen

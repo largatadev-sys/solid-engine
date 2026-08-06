@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { pickPhoto } from './pickPhoto';
 import { messageForPhotoFailure } from './photoMessages';
-import type { PickedPhoto } from './pickedPhoto';
+import type { CropShape, PickedPhoto } from './pickedPhoto';
 
 interface PhotoAction {
   readonly failure: string | undefined;
@@ -10,7 +10,7 @@ interface PhotoAction {
   readonly run: (action: () => Promise<unknown>) => Promise<void>;
 }
 
-export function usePhotoAction(): PhotoAction {
+export function usePhotoAction(shape: CropShape = 'free'): PhotoAction {
   const [failure, setFailure] = useState<string | undefined>();
 
   const run = async (action: () => Promise<unknown>) => {
@@ -28,7 +28,7 @@ export function usePhotoAction(): PhotoAction {
     run,
     pickAndRun: async (withPhoto) => {
       setFailure(undefined);
-      const picked = await pickPhoto();
+      const picked = await pickPhoto(shape);
       if (picked === null) return;
       await run(() => withPhoto(picked));
     },

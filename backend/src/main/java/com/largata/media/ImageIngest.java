@@ -28,19 +28,38 @@ public class ImageIngest {
 
 
     public IngestedImage accept(byte[] uploaded) {
+        return accept(uploaded, Framing.AS_UPLOADED);
+    }
+
+
+    public IngestedImage accept(byte[] uploaded, Framing framing) {
         if (uploaded.length > MAX_UPLOAD_BYTES) {
             throw new PhotoTooLargeException(MAX_UPLOAD_BYTES);
         }
 
         refuseIfTooManyPixels(uploaded);
         BufferedImage upright = uprightPixelsOf(uploaded);
+        BufferedImage framed = framing == Framing.SQUARE ? centreSquareOf(upright) : upright;
 
         return new IngestedImage(
-                variant(upright, DISPLAY_MAX_EDGE),
-                variant(upright, THUMBNAIL_MAX_EDGE),
+                variant(framed, DISPLAY_MAX_EDGE),
+                variant(framed, THUMBNAIL_MAX_EDGE),
                 OUTPUT_CONTENT_TYPE,
-                upright.getWidth(),
-                upright.getHeight());
+                framed.getWidth(),
+                framed.getHeight());
+    }
+
+
+    private static BufferedImage centreSquareOf(BufferedImage image) {
+        int edge = Math.min(image.getWidth(), image.getHeight());
+        return image.getSubimage(
+                (image.getWidth() - edge) / 2, (image.getHeight() - edge) / 2, edge, edge);
+    }
+
+
+    public enum Framing {
+        AS_UPLOADED,
+        SQUARE
     }
 
 

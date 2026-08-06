@@ -1,6 +1,6 @@
-import type { PickedPhoto } from './pickedPhoto';
+import type { CropShape, PickedPhoto } from './pickedPhoto';
 
-export async function pickPhoto(): Promise<PickedPhoto | null> {
+export async function pickPhoto(_shape: CropShape = 'free'): Promise<PickedPhoto | null> {
   if (typeof document === 'undefined') return null;
 
   return new Promise((resolve) => {

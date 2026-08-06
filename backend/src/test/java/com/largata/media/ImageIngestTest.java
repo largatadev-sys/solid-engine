@@ -49,6 +49,31 @@ class ImageIngestTest {
 
 
     @Test
+    void anAvatarIsSquaredSoTheCircleNeverCropsSurprises() throws IOException {
+        IngestedImage ingested = ingest.accept(photo(1200, 400), ImageIngest.Framing.SQUARE);
+
+        assertThat(widthOf(ingested.display())).isEqualTo(heightOf(ingested.display()));
+        assertThat(widthOf(ingested.thumbnail())).isEqualTo(heightOf(ingested.thumbnail()));
+    }
+
+
+    @Test
+    void theSquareIsTakenFromTheCentreRatherThanACorner() throws IOException {
+        IngestedImage ingested = ingest.accept(photo(1000, 400), ImageIngest.Framing.SQUARE);
+
+        assertThat(widthOf(ingested.display())).isEqualTo(400);
+    }
+
+
+    @Test
+    void aCoverKeepsItsShapeBecauseItRendersAsABanner() throws IOException {
+        IngestedImage ingested = ingest.accept(photo(1200, 400));
+
+        assertThat(widthOf(ingested.display())).isGreaterThan(heightOf(ingested.display()));
+    }
+
+
+    @Test
     void bytesThatAreNotAnImageAreRefused() {
         byte[] notAnImage = "<html>definitely not a photo</html>".getBytes(StandardCharsets.UTF_8);
 

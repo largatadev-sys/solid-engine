@@ -4,3 +4,5 @@ export interface PickedPhoto {
   readonly mimeType: string;
   readonly bytes?: Blob;
 }
+
+export type CropShape = 'square' | 'free';

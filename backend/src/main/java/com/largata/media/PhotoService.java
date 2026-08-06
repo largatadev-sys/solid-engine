@@ -42,7 +42,7 @@ public class PhotoService {
 
     @Transactional
     public Photo add(PhotoSubject subject, UUID subjectId, byte[] uploaded, UUID uploadedBy) {
-        IngestedImage image = ingest.accept(uploaded);
+        IngestedImage image = ingest.accept(uploaded, framingFor(subject));
         Photo photo = Photo.of(subject, subjectId, image, uploadedBy, Instant.now(clock));
 
         store.put(photo.storageKey(), image.display(), image.contentType());
@@ -101,6 +101,13 @@ public class PhotoService {
 
     public Optional<ObjectStore.StoredObject> bytesOf(Photo photo, Variant variant) {
         return store.get(variant == Variant.THUMBNAIL ? photo.thumbnailStorageKey() : photo.storageKey());
+    }
+
+
+    private static ImageIngest.Framing framingFor(PhotoSubject subject) {
+        return subject == PhotoSubject.TRAVELER_AVATAR
+                ? ImageIngest.Framing.SQUARE
+                : ImageIngest.Framing.AS_UPLOADED;
     }
 
 
