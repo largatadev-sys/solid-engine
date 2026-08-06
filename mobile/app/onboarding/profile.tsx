@@ -14,8 +14,7 @@ import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { AvatarPicker } from '../../src/media/AvatarPicker';
-import { pickPhoto } from '../../src/media/pickPhoto';
-import { messageForPhotoFailure } from '../../src/media/photoMessages';
+import { usePhotoAction } from '../../src/media/usePhotoAction';
 import {
   useHandleAvailability,
   useRemoveAvatar,
@@ -65,30 +64,12 @@ export default function ProfileStepScreen() {
     }
   };
 
-  const choosePhoto = async () => {
-    setMessage(null);
-    const picked = await pickPhoto();
-    if (picked === null) return;
-    try {
-      await uploadAvatar.mutateAsync(picked);
-    } catch (error) {
-      setMessage(messageForPhotoFailure(error));
-    }
-  };
-
-  const dropPhoto = async () => {
-    setMessage(null);
-    try {
-      await removeAvatar.mutateAsync();
-    } catch (error) {
-      setMessage(messageForPhotoFailure(error));
-    }
-  };
+  const photoAction = usePhotoAction();
 
   return (
     <OnboardingScreen
       step={editing ? undefined : STEP_NUMBERS.profile}
-      message={message}
+      message={photoAction.failure ?? message}
       footer={
         <Button
           label={editing ? 'Save' : 'Continue'}
@@ -104,8 +85,8 @@ export default function ProfileStepScreen() {
           displayName={displayName}
           email={me?.email ?? null}
           busy={uploadAvatar.isPending || removeAvatar.isPending}
-          onPick={() => void choosePhoto()}
-          onRemove={() => void dropPhoto()}
+          onPick={() => void photoAction.pickAndRun((photo) => uploadAvatar.mutateAsync(photo))}
+          onRemove={() => void photoAction.run(() => removeAvatar.mutateAsync())}
         />
       </View>
 

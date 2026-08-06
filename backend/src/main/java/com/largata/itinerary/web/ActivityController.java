@@ -95,15 +95,14 @@ class ActivityController {
 
 
     @DeleteMapping("/{activityId}/photos/{photoId}")
-    ActivityResponse removePhoto(
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void removePhoto(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID itineraryId,
             @PathVariable UUID dayId,
             @PathVariable UUID activityId,
             @PathVariable UUID photoId) {
-        Membership member = guard.requireMember(traveler.id(), itineraryId);
-        activityPhotos.remove(member, activityId, photoId);
-        return ActivityResponse.of(activities.view(member, dayId, activityId));
+        activityPhotos.remove(guard.requireMember(traveler.id(), itineraryId), activityId, photoId);
     }
 
 

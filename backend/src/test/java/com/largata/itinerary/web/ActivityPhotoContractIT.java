@@ -121,7 +121,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
-                .isOk();
+                .isNoContent();
 
         assertThat(photoUrlsOf(trip)).isEmpty();
         rest.get()
@@ -173,6 +173,47 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
                 .exchange()
                 .expectStatus()
                 .isOk();
+    }
+
+
+    @Test
+    void aPublishedTripRefusesAPhotoBecauseTheFreezeCoversMedia() throws IOException {
+        Fixture trip = tripWithAnActivity();
+        holdActivityLease(trip);
+        addPhoto(trip);
+        releaseAndPublish(trip);
+
+        rest.post()
+                .uri(photosUri(trip))
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(multipart(photo()))
+                .exchange()
+                .expectStatus()
+                .isEqualTo(409);
+    }
+
+
+    @Test
+    void anArchivedTripRefusesAPhotoBecauseTheFenceCoversMedia() throws IOException {
+        Fixture trip = tripWithAnActivity();
+        holdActivityLease(trip);
+
+        rest.post()
+                .uri("/v1/itineraries/" + trip.tripId() + "/archive")
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        rest.post()
+                .uri(photosUri(trip))
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(multipart(photo()))
+                .exchange()
+                .expectStatus()
+                .isEqualTo(409);
     }
 
 

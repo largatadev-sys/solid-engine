@@ -76,10 +76,9 @@ class ItineraryController {
 
 
     @DeleteMapping("/{id}/cover")
-    ItineraryResponse removeCover(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        Membership membership = guard.requireMember(traveler.id(), id);
-        covers.removeCover(membership);
-        return ItineraryResponse.of(itineraries.viewPlan(membership));
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void removeCover(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        covers.removeCover(guard.requireMember(traveler.id(), id));
     }
 
 

@@ -69,16 +69,7 @@ export default function NewItineraryScreen() {
 
   async function attachChosenCover(itineraryId: string) {
     if (chosenCover === null) return;
-    try {
-      await itineraryRepository.uploadCover(itineraryId, chosenCover);
-    } catch {
-      keepTheTripEvenIfItsCoverFailed();
-    }
-  }
-
-
-  function keepTheTripEvenIfItsCoverFailed() {
-    setValidationError(undefined);
+    await itineraryRepository.uploadCover(itineraryId, chosenCover).catch(() => undefined);
   }
 
   const serverMessage = create.error instanceof ApiError ? create.error.message : undefined;

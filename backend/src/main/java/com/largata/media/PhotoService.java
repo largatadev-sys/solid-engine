@@ -71,21 +71,9 @@ public class PhotoService {
     }
 
 
-    @Transactional
-    public void deleteAllFor(PhotoSubject subject, UUID subjectId) {
-        photos.findBySubjectKindAndSubjectIdOrderById(subject, subjectId).forEach(this::remove);
-    }
-
-
     @Transactional(readOnly = true)
     public Optional<Photo> find(UUID photoId) {
         return photos.findById(photoId);
-    }
-
-
-    @Transactional(readOnly = true)
-    public Optional<Photo> of(PhotoSubject subject, UUID subjectId) {
-        return photos.findBySubjectKindAndSubjectId(subject, subjectId);
     }
 
 

@@ -33,6 +33,9 @@ class AvatarContractIT extends ObjectStoreTestBase {
 
     @LocalServerPort private int port;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
+
     @BeforeEach
     void setUp() {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
@@ -126,6 +129,13 @@ class AvatarContractIT extends ObjectStoreTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
+                .isNoContent();
+
+        rest.get()
+                .uri("/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange()
+                .expectStatus()
                 .isOk()
                 .expectBody()
                 .jsonPath("$.avatarUrl")
@@ -154,6 +164,20 @@ class AvatarContractIT extends ObjectStoreTestBase {
                 .exchange()
                 .expectStatus()
                 .isNotFound();
+    }
+
+
+    @Test
+    void theColumnHoldsOurUrlAndNeverAProviderHostname() throws IOException {
+        String token = tokenFor("avatar-column");
+        String avatarUrl = uploadAvatar(token, photo(400, 400));
+
+        assertThat(jdbc.queryForObject(
+                        "SELECT avatar_url FROM traveler WHERE avatar_url = ?", String.class, avatarUrl))
+                .startsWith("/v1/media/");
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM traveler WHERE avatar_url LIKE 'http%'", Integer.class))
+                .isZero();
     }
 
 

@@ -33,4 +33,16 @@ public final class MediaExceptions {
                     "That photo is too large. The limit is " + (limitBytes / (1024 * 1024)) + " MB.");
         }
     }
+
+
+    public static final class TooManyPixelsException extends ValidationException {
+
+        TooManyPixelsException(long limitPixels) {
+            super(
+                    "PHOTO_TOO_LARGE",
+                    "That photo has too many pixels. The limit is "
+                            + (limitPixels / 1_000_000)
+                            + " megapixels.");
+        }
+    }
 }

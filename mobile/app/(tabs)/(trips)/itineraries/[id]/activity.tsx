@@ -12,8 +12,7 @@ import {
 } from 'react-native';
 import { ApiError } from '../../../../../src/api/ApiError';
 import { ActivityPhotoStrip } from '../../../../../src/media/ActivityPhotoStrip';
-import { pickPhoto } from '../../../../../src/media/pickPhoto';
-import { messageForPhotoFailure } from '../../../../../src/media/photoMessages';
+import { usePhotoAction } from '../../../../../src/media/usePhotoAction';
 import { Icon } from '../../../../../src/components/Icon';
 import { TimePicker } from '../../../../../src/components/TimePicker';
 import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
@@ -47,27 +46,7 @@ export default function ActivityFormScreen() {
   const removePhoto = useRemoveActivityPhoto(id);
   const mutation = isEdit ? edit : create;
 
-  const [photoError, setPhotoError] = useState<string | undefined>();
-
-  const choosePhoto = async (forActivity: string) => {
-    setPhotoError(undefined);
-    const picked = await pickPhoto();
-    if (picked === null) return;
-    try {
-      await addPhoto.mutateAsync({ dayId, activityId: forActivity, photo: picked });
-    } catch (error) {
-      setPhotoError(messageForPhotoFailure(error));
-    }
-  };
-
-  const dropPhoto = async (forActivity: string, photoId: string) => {
-    setPhotoError(undefined);
-    try {
-      await removePhoto.mutateAsync({ dayId, activityId: forActivity, photoId });
-    } catch (error) {
-      setPhotoError(messageForPhotoFailure(error));
-    }
-  };
+  const photoAction = usePhotoAction();
 
   const editLock = useEditLock(id);
   useEffect(() => {
@@ -198,13 +177,21 @@ export default function ActivityFormScreen() {
           <ActivityPhotoStrip
             photos={existing?.photos ?? []}
             busy={addPhoto.isPending || removePhoto.isPending}
-            onAdd={() => void choosePhoto(activityId)}
-            onRemove={(photoId) => void dropPhoto(activityId, photoId)}
+            onAdd={() =>
+              void photoAction.pickAndRun((photo) =>
+                addPhoto.mutateAsync({ dayId, activityId, photo }),
+              )
+            }
+            onRemove={(photoId) =>
+              void photoAction.run(() => removePhoto.mutateAsync({ dayId, activityId, photoId }))
+            }
           />
         ) : (
           <Text style={styles.photosHint}>{PHOTOS_AFTER_SAVE_HINT}</Text>
         )}
-        {photoError !== undefined && <Text style={styles.photoError}>{photoError}</Text>}
+        {photoAction.failure !== undefined && (
+          <Text style={styles.photoError}>{photoAction.failure}</Text>
+        )}
       </View>
 
       <View style={styles.field}>

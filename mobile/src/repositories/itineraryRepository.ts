@@ -49,8 +49,8 @@ export const itineraryRepository = {
     return apiClient.upload<ItineraryResponse>(`/v1/itineraries/${id}/cover`, await photoPart(photo));
   },
 
-  async removeCover(id: string): Promise<ItineraryResponse> {
-    return apiClient.deleteReturning<ItineraryResponse>(`/v1/itineraries/${id}/cover`);
+  async removeCover(id: string): Promise<void> {
+    return apiClient.delete(`/v1/itineraries/${id}/cover`);
   },
 
 
@@ -154,8 +154,8 @@ export const itineraryRepository = {
     dayId: string,
     activityId: string,
     photoId: string,
-  ): Promise<ActivityResponse> {
-    return apiClient.deleteReturning<ActivityResponse>(
+  ): Promise<void> {
+    return apiClient.delete(
       `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/photos/${photoId}`,
     );
   },

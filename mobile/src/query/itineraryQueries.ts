@@ -143,11 +143,11 @@ export function useUploadCover(id: string): UseMutationResult<ItineraryResponse,
 }
 
 
-export function useRemoveCover(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+export function useRemoveCover(id: string): UseMutationResult<void, Error, void> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => itineraryRepository.removeCover(id),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
+    onSuccess: () => onPlanChanged(client, id),
   });
 }
 
@@ -298,7 +298,7 @@ export function useAddActivityPhoto(
 
 export function useRemoveActivityPhoto(
   itineraryId: string,
-): UseMutationResult<ActivityResponse, Error, { dayId: string; activityId: string; photoId: string }> {
+): UseMutationResult<void, Error, { dayId: string; activityId: string; photoId: string }> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ dayId, activityId, photoId }: { dayId: string; activityId: string; photoId: string }) =>

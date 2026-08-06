@@ -91,11 +91,11 @@ export function useUploadAvatar(): UseMutationResult<MeResponse, Error, PickedPh
 }
 
 
-export function useRemoveAvatar(): UseMutationResult<MeResponse, Error, void> {
+export function useRemoveAvatar(): UseMutationResult<void, Error, void> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => travelerRepository.removeAvatar(),
-    onSuccess: (updated) => onProfileChanged(client, updated),
+    onSuccess: () => client.invalidateQueries({ queryKey: meKeys.me }),
   });
 }
 

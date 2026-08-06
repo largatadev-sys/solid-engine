@@ -169,6 +169,13 @@ class CoverContractIT extends ObjectStoreTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
+                .isNoContent();
+
+        rest.get()
+                .uri("/v1/itineraries/" + trip)
+                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
+                .exchange()
+                .expectStatus()
                 .isOk()
                 .expectBody()
                 .jsonPath("$.coverImageUrl")

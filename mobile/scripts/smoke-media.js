@@ -150,7 +150,10 @@ async function upload(path, token, bytes, filename='photo.jpg') {
   check('the replaced photo is gone, bytes and all', oldOne.status===404, String(oldOne.status));
 
   const removed = await api('/v1/me/avatar','DELETE',t1);
-  check('removing clears the profile back to initials', removed.status===200 && (removed.body.avatarUrl===null||removed.body.avatarUrl===undefined), `${removed.status} ${JSON.stringify(removed.body?.avatarUrl)}`);
+  const afterRemoval = await api('/v1/me','GET',t1);
+  check('removing answers 204 and clears the profile back to initials',
+    removed.status===204 && (afterRemoval.body?.avatarUrl===null||afterRemoval.body?.avatarUrl===undefined),
+    `${removed.status} then avatarUrl=${JSON.stringify(afterRemoval.body?.avatarUrl)}`);
 
   // --- the cover, and the audience ladder that governs it -------------------------------------
   const trip = (await api('/v1/itineraries','POST',t1,{ title:'Cover Trip', destinations:['Palawan'], durationDays:2 })).body.id;

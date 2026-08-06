@@ -2,6 +2,7 @@ package com.largata.media;
 
 import com.largata.media.MediaExceptions.NotAnImageException;
 import com.largata.media.MediaExceptions.PhotoTooLargeException;
+import com.largata.media.MediaExceptions.TooManyPixelsException;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,19 +32,35 @@ public class ImageIngest {
             throw new PhotoTooLargeException(MAX_UPLOAD_BYTES);
         }
 
-        Dimensions declared = readDimensions(uploaded);
-        BufferedImage decoded = decode(uploaded);
+        refuseIfTooManyPixels(uploaded);
+        BufferedImage upright = uprightPixelsOf(uploaded);
 
         return new IngestedImage(
-                variant(decoded, DISPLAY_MAX_EDGE),
-                variant(decoded, THUMBNAIL_MAX_EDGE),
+                variant(upright, DISPLAY_MAX_EDGE),
+                variant(upright, THUMBNAIL_MAX_EDGE),
                 OUTPUT_CONTENT_TYPE,
-                declared.width(),
-                declared.height());
+                upright.getWidth(),
+                upright.getHeight());
     }
 
 
-    private static Dimensions readDimensions(byte[] uploaded) {
+    private static BufferedImage uprightPixelsOf(byte[] uploaded) {
+        try {
+            ByteArrayOutputStream rotated = new ByteArrayOutputStream();
+            Thumbnails.of(new ByteArrayInputStream(uploaded))
+                    .scale(1)
+                    .useExifOrientation(true)
+                    .outputFormat("jpeg")
+                    .outputQuality(1.0)
+                    .toOutputStream(rotated);
+            return decode(rotated.toByteArray());
+        } catch (IOException unreadable) {
+            return decode(uploaded);
+        }
+    }
+
+
+    private static void refuseIfTooManyPixels(byte[] uploaded) {
         try (ImageInputStream stream = ImageIO.createImageInputStream(new ByteArrayInputStream(uploaded))) {
             if (stream == null) {
                 throw new NotAnImageException();
@@ -55,12 +72,9 @@ public class ImageIngest {
             ImageReader reader = readers.next();
             try {
                 reader.setInput(stream);
-                long width = reader.getWidth(0);
-                long height = reader.getHeight(0);
-                if (width * height > MAX_PIXELS) {
-                    throw new PhotoTooLargeException(MAX_UPLOAD_BYTES);
+                if ((long) reader.getWidth(0) * reader.getHeight(0) > MAX_PIXELS) {
+                    throw new TooManyPixelsException(MAX_PIXELS);
                 }
-                return new Dimensions((int) width, (int) height);
             } finally {
                 reader.dispose();
             }
@@ -85,10 +99,7 @@ public class ImageIngest {
 
     private static byte[] variant(BufferedImage decoded, int maxEdge) {
         try {
-            // Cap the target at the source's own size. Thumbnailator upscales to fill the requested
-            // box, so asking for 2048 from a 200px avatar returns a stretched 2048px image —
-            // blurrier than the original and an order of magnitude more bytes to serve.
-            int bounded = Math.min(maxEdge, Math.max(decoded.getWidth(), decoded.getHeight()));
+            int bounded = neverUpscale(decoded, maxEdge);
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             Thumbnails.of(decoded)
                     .size(bounded, bounded)
@@ -103,5 +114,7 @@ public class ImageIngest {
     }
 
 
-    private record Dimensions(int width, int height) {}
+    private static int neverUpscale(BufferedImage decoded, int maxEdge) {
+        return Math.min(maxEdge, Math.max(decoded.getWidth(), decoded.getHeight()));
+    }
 }

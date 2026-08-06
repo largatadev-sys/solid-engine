@@ -5,8 +5,7 @@ import { ApiError } from '../../../../../src/api/ApiError';
 import { DatePicker } from '../../../../../src/components/DatePicker';
 import { archivedPlanNotice, publishedPlanNotice } from '../../../../../src/components/editLockedMessage';
 import { CoverPicker } from '../../../../../src/media/CoverPicker';
-import { pickPhoto } from '../../../../../src/media/pickPhoto';
-import { messageForPhotoFailure } from '../../../../../src/media/photoMessages';
+import { usePhotoAction } from '../../../../../src/media/usePhotoAction';
 import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
 import { useEditLock } from '../../../../../src/hooks/useEditLock';
 import { addRow, cleanRows, moveRow, removeRow, setRow } from '../../../../../src/itineraries/rowEditor';
@@ -48,25 +47,7 @@ export default function EditItineraryScreen() {
   const [endDate, setEndDate] = useState(data?.endDate ?? '');
   const [validationError, setValidationError] = useState<string | undefined>();
 
-  const chooseCover = async () => {
-    setValidationError(undefined);
-    const picked = await pickPhoto();
-    if (picked === null) return;
-    try {
-      await uploadCover.mutateAsync(picked);
-    } catch (error) {
-      setValidationError(messageForPhotoFailure(error));
-    }
-  };
-
-  const dropCover = async () => {
-    setValidationError(undefined);
-    try {
-      await removeCover.mutateAsync();
-    } catch (error) {
-      setValidationError(messageForPhotoFailure(error));
-    }
-  };
+  const coverAction = usePhotoAction();
 
   function submit() {
     const cleaned = cleanRows(destinations);
@@ -112,8 +93,8 @@ export default function EditItineraryScreen() {
       <CoverPicker
         coverUrl={data?.coverImageUrl ?? null}
         busy={uploadCover.isPending || removeCover.isPending}
-        onPick={() => void chooseCover()}
-        onRemove={() => void dropCover()}
+        onPick={() => void coverAction.pickAndRun((photo) => uploadCover.mutateAsync(photo))}
+        onRemove={() => void coverAction.run(() => removeCover.mutateAsync())}
       />
 
       <Field label="Trip title" value={title} onChangeText={setTitle} placeholder="Island Hopping in El Nido" />
@@ -211,7 +192,7 @@ export default function EditItineraryScreen() {
       <DatePicker label="Start date" value={startDate} onChange={setStartDate} />
       <DatePicker label="End date" value={endDate} onChange={setEndDate} />
 
-      {(validationError ?? serverMessage) !== undefined && (
+      {(coverAction.failure ?? validationError ?? serverMessage) !== undefined && (
         <Text style={styles.error}>{validationError ?? serverMessage}</Text>
       )}
 

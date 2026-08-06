@@ -37,7 +37,7 @@ export const travelerRepository = {
     return apiClient.upload<MeResponse>('/v1/me/avatar', await photoPart(photo));
   },
 
-  async removeAvatar(): Promise<MeResponse> {
-    return apiClient.deleteReturning<MeResponse>('/v1/me/avatar');
+  async removeAvatar(): Promise<void> {
+    return apiClient.delete('/v1/me/avatar');
   },
 };
