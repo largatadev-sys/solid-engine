@@ -1,5 +1,12 @@
 import { photoPart } from '../src/media/photoPart.web';
 import { photoPart as nativePhotoPart } from '../src/media/photoPart.native';
+import { File as ExpoFile } from 'expo-file-system';
+
+jest.mock('expo-file-system', () => ({
+  File: jest.fn(function FakeExpoFile(this: Record<string, unknown>, uri: string) {
+    this.uri = uri;
+  }),
+}));
 
 describe('photoPart on the web', () => {
   it('uploads the picked File itself, never a re-read of its object URL', async () => {
@@ -24,8 +31,11 @@ describe('photoPart on the web', () => {
   });
 });
 
+// React Native 0.86 rejects the old {uri, name, type} FormData idiom with "Unsupported
+// FormDataPart implementation", and its Blob cannot be built from an ArrayBuffer — both proven
+// on a device at S3.3. expo-file-system's File IS a Blob, which is the one shape that works.
 describe('photoPart on native', () => {
-  it('sends the uri/name/type shape React Native requires for a file part', async () => {
+  it('appends the picked file as a real Blob, not a uri-shaped object', async () => {
     const appended: unknown[] = [];
     const capture = { append: (_name: string, value: unknown) => appended.push(value) };
     const original = globalThis.FormData;
@@ -43,10 +53,7 @@ describe('photoPart on native', () => {
       globalThis.FormData = original;
     }
 
-    expect(appended[0]).toEqual({
-      uri: 'file:///storage/holiday.jpg',
-      name: 'holiday.jpg',
-      type: 'image/jpeg',
-    });
+    expect(ExpoFile).toHaveBeenCalledWith('file:///storage/holiday.jpg');
+    expect(appended).toHaveLength(1);
   });
 });
