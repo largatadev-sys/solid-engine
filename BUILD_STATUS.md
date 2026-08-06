@@ -34,7 +34,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | **Epic 3 — The record** *(resequenced behind E4, 2026-07-29; S3.3 resliced into the E4 pull)* | | | | |
 | S3.1 | Diary create + contributor grants (INV-2a) | ⬜ | — |
 | S3.2 | Diary entries: text + geotag | ⬜ | — |
-| S3.3 | Photo/media pipeline (object storage) *(resliced into the E4 pull, 2026-07-29 — builds after S4.1, before S4.3)* | ⬜ | — |
+| S3.3 | Photo/media pipeline (object storage) *(resliced into the E4 pull, 2026-07-29 — builds after S4.1, before S4.3; ADR-021 — Garage locally / Railway Buckets or R2 deployed, backend-URL serving through the audience ladder, strip-and-re-encode at ingest per INV-11; all four greyed media surfaces activate)* | ✅ | [spec](docs/plans/S3.3-media-pipeline/spec.md) |
 | **Epic 4 — Social surface** *(pulled next, 2026-07-29 — order amended 2026-07-31: S4.9 → S4.1 → S3.3 → S4.3 → S4.10 → S4.4–S4.8)* | | | | |
 | S4.0 | Auth & onboarding retrofit *(grilled 2026-07-30 — full flow pulled forward from pre-alpha; 6-digit OTP + Resend + Admin SDK; handles ADR-015 + palette ADR-016 decided ahead of their pins; merges two backlog lines)* | ✅ | [spec](docs/plans/S4.0-auth-onboarding-retrofit/spec.md) |
 | S4.1 | Publish itinerary + visibility *(resolves reg. #11; ADR-017, then ADR-018)* | ✅ | [spec](docs/plans/S4.1-publish/spec.md) |

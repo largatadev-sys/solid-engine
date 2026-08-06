@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { mediaSourceFor, type MediaSource } from './mediaSource';
+import { mediaSourceFor } from './mediaSource';
+import type { MediaSource } from './mediaSourceContract';
 
 export function useMediaSource(url: string | null): MediaSource | null {
   const [source, setSource] = useState<MediaSource | null>(null);

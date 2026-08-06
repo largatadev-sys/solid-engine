@@ -35,6 +35,15 @@ for (let i = 0; i < args.length; i += 1) {
     steps.push({ kind: 'otp', label: args[i + 1] ?? 'Verification code' });
     continue;
   }
+  // A real file upload, not a simulated one: the picker opens a native file chooser the page
+  // cannot script, so CDP intercepts the chooser and hands it a path. Without this the web upload
+  // path is untestable, and "renders on web" would stand in for "works on web" (the S1.3 lesson).
+  if (args[i] === '--upload') {
+    const value = args[i + 1] ?? '';
+    const split = value.indexOf('=');
+    steps.push({ kind: 'upload', label: value.slice(0, split), file: value.slice(split + 1) });
+    continue;
+  }
   if (args[i] === '--fill' || args[i] === '--fill-env' || args[i] === '--click') {
     const value = args[i + 1] ?? '';
     const split = value.indexOf('=');
@@ -222,6 +231,19 @@ function getJson(path) {
       })()`);
   };
 
+  const clickLabel = (target) =>
+    evaluate(`(() => {
+        ${VISIBLE_LAST}
+        const wanted = ${target};
+        const clickable = '[role="button"],button,[role="checkbox"],[role="radio"],[role="link"],a';
+        const all = Array.from(document.querySelectorAll(clickable))
+          .filter(e => (e.getAttribute('aria-label') || e.innerText || '').trim() === wanted);
+        const shown = visible(all);
+        if (shown.length === 0) return all.length === 0 ? 'NOT FOUND' : 'FOUND BUT HIDDEN x' + all.length;
+        shown[shown.length - 1].click();
+        return shown.length > 1 ? 'ok (of ' + shown.length + ' visible)' : 'ok';
+      })()`);
+
   const stepLog = [];
   for (const step of steps) {
     const target = JSON.stringify(step.label);
@@ -241,21 +263,50 @@ function getJson(path) {
       continue;
     }
 
+    if (step.kind === 'upload') {
+      // PLANT THE FILE, THEN CLICK. A web picker creates a hidden input, clicks it, and removes it
+      // on settle — and in headless Chrome no chooser can open, so `cancel` fires immediately and
+      // the element is gone before any post-click CDP query can reach it. Pre-seeding
+      // HTMLInputElement.prototype.files means the picker's OWN input is already carrying the file
+      // the instant it is created, so the real change-handler → repository → multipart path runs
+      // exactly as it does for a traveler. The bytes are read from disk here, not faked.
+      const fileBytes = require('fs').readFileSync(require('path').resolve(step.file));
+      const planted = await evaluate(`(() => {
+          const bytes = Uint8Array.from(${JSON.stringify(Array.from(fileBytes))});
+          const file = new File([bytes], ${JSON.stringify(require('path').basename(step.file))}, { type: 'image/png' });
+          const transfer = new DataTransfer();
+          transfer.items.add(file);
+          const proto = HTMLInputElement.prototype;
+          if (!window.__drivenFilesHooked) {
+            window.__drivenFilesHooked = true;
+            const nativeClick = proto.click;
+            proto.click = function () {
+              if (this.type === 'file' && window.__drivenPlantedFiles) {
+                Object.defineProperty(this, 'files', {
+                  configurable: true,
+                  get: () => window.__drivenPlantedFiles,
+                });
+                this.dispatchEvent(new Event('change', { bubbles: true }));
+                return;
+              }
+              return nativeClick.call(this);
+            };
+          }
+          window.__drivenPlantedFiles = transfer.files;
+          return 'planted ' + file.size + ' bytes';
+        })()`);
+
+      const clicked = await clickLabel(target);
+      stepLog.push(`  upload ${step.label} -> ${planted}, click ${clicked}`);
+      await sleep(3500);
+      continue;
+    }
+
     if (step.kind === 'fill') {
       const ok = await fillField(step.label, step.value);
       stepLog.push(`  fill  ${step.label} -> ${ok === 'ok' ? `${step.value.length} chars` : ok}`);
     } else {
-      const ok = await evaluate(`(() => {
-        ${VISIBLE_LAST}
-        const wanted = ${target};
-        const clickable = '[role="button"],button,[role="checkbox"],[role="radio"],[role="link"],a';
-        const all = Array.from(document.querySelectorAll(clickable))
-          .filter(e => (e.getAttribute('aria-label') || e.innerText || '').trim() === wanted);
-        const shown = visible(all);
-        if (shown.length === 0) return all.length === 0 ? 'NOT FOUND' : 'FOUND BUT HIDDEN x' + all.length;
-        shown[shown.length - 1].click();
-        return shown.length > 1 ? 'ok (of ' + shown.length + ' visible)' : 'ok';
-      })()`);
+      const ok = await clickLabel(target);
       stepLog.push(`  click ${step.label} -> ${ok}`);
     }
 

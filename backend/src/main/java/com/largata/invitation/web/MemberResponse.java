@@ -6,7 +6,12 @@ import java.util.UUID;
 
 
 public record MemberResponse(
-        UUID travelerId, String displayName, String role, Instant joinedAt, boolean ownershipOffered) {
+        UUID travelerId,
+        String displayName,
+        String avatarUrl,
+        String role,
+        Instant joinedAt,
+        boolean ownershipOffered) {
 
 
     public static MemberResponse of(MemberSummary m) {
@@ -17,6 +22,7 @@ public record MemberResponse(
         return new MemberResponse(
                 m.travelerId(),
                 m.displayName(),
+                m.avatarUrl(),
                 m.role().name().toLowerCase(java.util.Locale.ROOT),
                 m.joinedAt(),
                 ownershipOffered);

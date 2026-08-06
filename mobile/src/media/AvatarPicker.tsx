@@ -41,7 +41,12 @@ export function AvatarPicker({
         </View>
       </Pressable>
 
-      <Pressable onPress={onPick} disabled={busy} accessibilityRole="button">
+      <Pressable
+        onPress={onPick}
+        disabled={busy}
+        accessibilityRole="button"
+        accessibilityLabel={UPLOAD_PHOTO_LABEL}
+      >
         <Text style={styles.upload}>{busy ? 'Uploading…' : UPLOAD_PHOTO_LABEL}</Text>
       </Pressable>
 

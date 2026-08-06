@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { initialsFor } from '../onboarding/initials';
+import { useMediaSource } from '../media/useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
 import type { MemberResponse } from '../types/api';
 
@@ -14,15 +15,34 @@ export function AvatarStack({ roster }: { roster: MemberResponse[] }) {
   return (
     <View style={styles.stack}>
       {shown.map((member) => (
-        <View key={member.travelerId} style={styles.bubble}>
-          <Text style={styles.initials}>{initialsFor(member.displayName, null)}</Text>
-        </View>
+        <MemberBubble key={member.travelerId} member={member} />
       ))}
       {overflow > 0 && (
         <View style={[styles.bubble, styles.overflow]}>
           <Text style={styles.initials}>+{overflow}</Text>
         </View>
       )}
+    </View>
+  );
+}
+
+function MemberBubble({ member }: { member: MemberResponse }) {
+  const source = useMediaSource(member.avatarUrl);
+
+  if (source !== null) {
+    return (
+      <Image
+        source={source}
+        style={styles.bubble}
+        accessibilityLabel={`${member.displayName}'s profile photo`}
+        accessibilityIgnoresInvertColors
+      />
+    );
+  }
+
+  return (
+    <View style={styles.bubble}>
+      <Text style={styles.initials}>{initialsFor(member.displayName, null)}</Text>
     </View>
   );
 }

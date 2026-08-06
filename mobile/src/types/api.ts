@@ -355,6 +355,7 @@ export type InboxInvitationResponse = {
 export type MemberResponse = {
   travelerId: string;
   displayName: string;
+  avatarUrl: string | null;
   role: string;
   joinedAt: string;
 
