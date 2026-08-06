@@ -285,6 +285,13 @@ public class Itinerary {
         return coverImageUrl;
     }
 
+
+    public void showCover(String url, UUID editorId, Instant at) {
+        this.coverImageUrl = url;
+        this.lastEditedBy = editorId;
+        this.lastEditedAt = at;
+    }
+
     public LocalDate startDate() {
         return startDate;
     }

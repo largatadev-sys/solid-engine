@@ -12,6 +12,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { useAuth } from '../hooks/authContext';
+import type { PickedPhoto } from '../media/pickedPhoto';
 import { itineraryRepository } from '../repositories/itineraryRepository';
 import type {
   ActivityRequest,
@@ -131,6 +132,24 @@ export function useUpdateItinerary(
   });
 }
 
+
+
+export function useUploadCover(id: string): UseMutationResult<ItineraryResponse, Error, PickedPhoto> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (photo: PickedPhoto) => itineraryRepository.uploadCover(id, photo),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
+
+export function useRemoveCover(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.removeCover(id),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
 
 
 export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {

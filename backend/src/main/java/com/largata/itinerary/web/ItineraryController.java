@@ -16,12 +16,17 @@ import com.largata.itinerary.api.PublishRequest;
 import com.largata.itinerary.api.PublishedItineraryResponse;
 import com.largata.itinerary.api.UpdateItineraryRequest;
 import com.largata.membership.MembershipService;
+import com.largata.itinerary.ItineraryCoverService;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 class ItineraryController {
 
     private final ItineraryService itineraries;
+    private final ItineraryCoverService covers;
     private final PublishedItineraryService published;
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
@@ -43,15 +49,37 @@ class ItineraryController {
 
     ItineraryController(
             ItineraryService itineraries,
+            ItineraryCoverService covers,
             PublishedItineraryService published,
             MembershipService memberships,
             AuthorizationGuard guard,
             AudienceFence audience) {
         this.itineraries = itineraries;
+        this.covers = covers;
         this.published = published;
         this.memberships = memberships;
         this.guard = guard;
         this.audience = audience;
+    }
+
+
+    @PostMapping("/{id}/cover")
+    ItineraryResponse uploadCover(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID id,
+            @RequestPart("photo") MultipartFile photo)
+            throws IOException {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        covers.replaceCover(membership, photo.getBytes());
+        return ItineraryResponse.of(itineraries.viewPlan(membership));
+    }
+
+
+    @DeleteMapping("/{id}/cover")
+    ItineraryResponse removeCover(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        Membership membership = guard.requireMember(traveler.id(), id);
+        covers.removeCover(membership);
+        return ItineraryResponse.of(itineraries.viewPlan(membership));
     }
 
 

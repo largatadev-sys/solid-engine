@@ -309,8 +309,9 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13)', 
     expect(create).not.toMatch(/placeholder="Search/);
   });
 
-  it('greys the cover drop-zone through the shared helper', () => {
-    expect(create).toContain('surface="coverPhoto"');
+  it('offers a live cover picker rather than a greyed tile (S3.3)', () => {
+    expect(create).toContain('<CoverPicker');
+    expect(create).not.toContain('surface="coverPhoto"');
   });
 
   it('lands Continue on the day editor at Day 1', () => {

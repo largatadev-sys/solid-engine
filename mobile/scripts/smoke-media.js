@@ -152,6 +152,42 @@ async function upload(path, token, bytes, filename='photo.jpg') {
   const removed = await api('/v1/me/avatar','DELETE',t1);
   check('removing clears the profile back to initials', removed.status===200 && (removed.body.avatarUrl===null||removed.body.avatarUrl===undefined), `${removed.status} ${JSON.stringify(removed.body?.avatarUrl)}`);
 
+  // --- the cover, and the audience ladder that governs it -------------------------------------
+  const trip = (await api('/v1/itineraries','POST',t1,{ title:'Cover Trip', destinations:['Palawan'], durationDays:2 })).body.id;
+
+  const noLease = await upload(`/v1/itineraries/${trip}/cover`, t1, solidJpeg());
+  check('a cover upload without the header lease is refused', noLease.status===409, String(noLease.status));
+
+  await api(`/v1/itineraries/${trip}/edit-lock`,'POST',t1,{ subjectType:'header' });
+  const cover = await upload(`/v1/itineraries/${trip}/cover`, t1, jpegWithExif());
+  check('the owner sets a cover under the header lease', cover.status===200 && typeof cover.body.coverImageUrl==='string', `${cover.status} ${cover.body?.coverImageUrl}`);
+  check('the cover url is OUR url', cover.body.coverImageUrl?.startsWith('/v1/media/'), cover.body?.coverImageUrl);
+
+  const coverUrl = cover.body.coverImageUrl;
+  const coverBytes = await req(API+coverUrl, 'GET', undefined, {Authorization:'Bearer '+t1}, true);
+  check('the cover strips its EXIF too (INV-11)', !coverBytes.bytes.includes(Buffer.from('Exif\0\0','binary')), 'no APP1/Exif header');
+
+  const strangerOnPrivate = await req(API+coverUrl, 'GET', undefined, {Authorization:'Bearer '+t2}, true);
+  check('a stranger cannot read a private trip cover', strangerOnPrivate.status===404, String(strangerOnPrivate.status));
+
+  await api(`/v1/itineraries/${trip}/finish-planning`,'POST',t1);
+  await api(`/v1/itineraries/${trip}/start`,'POST',t1);
+  await api(`/v1/itineraries/${trip}/complete`,'POST',t1);
+  await api(`/v1/itineraries/${trip}/publish`,'POST',t1);
+
+  const strangerOnPublished = await req(API+coverUrl, 'GET', undefined, {Authorization:'Bearer '+t2}, true);
+  check('publishing opens the cover to every traveler', strangerOnPublished.status===200, String(strangerOnPublished.status));
+
+  const frozen = await upload(`/v1/itineraries/${trip}/cover`, t1, solidJpeg());
+  check('a published trip refuses a cover change (the freeze covers media)', frozen.status===409, String(frozen.status));
+
+  await api(`/v1/itineraries/${trip}/unpublish`,'POST',t1);
+  const strangerAfterUnpublish = await req(API+coverUrl, 'GET', undefined, {Authorization:'Bearer '+t2}, true);
+  check('unpublishing closes the cover again', strangerAfterUnpublish.status===404, String(strangerAfterUnpublish.status));
+
+  const projection = await api(`/v1/itineraries/${trip}/preview`,'GET',t1);
+  check('the published projection carries the cover', projection.body?.coverImageUrl===coverUrl, `${projection.body?.coverImageUrl}`);
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();

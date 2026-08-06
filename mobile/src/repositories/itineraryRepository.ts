@@ -16,6 +16,8 @@ import type {
   TripCategory,
   UpdateItineraryRequest,
 } from '../types/api';
+import { photoPart } from '../media/photoPart';
+import type { PickedPhoto } from '../media/pickedPhoto';
 
 
 export const itineraryRepository = {
@@ -41,6 +43,14 @@ export const itineraryRepository = {
 
   async create(request: CreateItineraryRequest): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>('/v1/itineraries', request);
+  },
+
+  async uploadCover(id: string, photo: PickedPhoto): Promise<ItineraryResponse> {
+    return apiClient.upload<ItineraryResponse>(`/v1/itineraries/${id}/cover`, await photoPart(photo));
+  },
+
+  async removeCover(id: string): Promise<ItineraryResponse> {
+    return apiClient.deleteReturning<ItineraryResponse>(`/v1/itineraries/${id}/cover`);
   },
 
 

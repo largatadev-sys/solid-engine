@@ -10,7 +10,10 @@ import {
   View,
 } from 'react-native';
 import { ApiError } from '../../../../src/api/ApiError';
-import { GreyedMediaTile } from '../../../../src/components/GreyedMediaTile';
+import { CoverPicker } from '../../../../src/media/CoverPicker';
+import { pickPhoto } from '../../../../src/media/pickPhoto';
+import type { PickedPhoto } from '../../../../src/media/pickedPhoto';
+import { itineraryRepository } from '../../../../src/repositories/itineraryRepository';
 import { Icon } from '../../../../src/components/Icon';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { addRow, cleanRows, removeRow, setRow } from '../../../../src/itineraries/rowEditor';
@@ -29,7 +32,14 @@ export default function NewItineraryScreen() {
   const [bestTimeOfYear, setBestTimeOfYear] = useState('');
   const [description, setDescription] = useState('');
   const [standouts, setStandouts] = useState<string[]>(['']);
+  const [chosenCover, setChosenCover] = useState<PickedPhoto | null>(null);
   const [validationError, setValidationError] = useState<string | undefined>();
+
+
+  const chooseCover = async () => {
+    const picked = await pickPhoto();
+    if (picked !== null) setChosenCover(picked);
+  };
 
   function submit() {
     const problem = validateItineraryForm({ title, destination, description, duration });
@@ -48,10 +58,27 @@ export default function NewItineraryScreen() {
         ...(chosenStandouts.length > 0 ? { standouts: chosenStandouts } : {}),
       },
       {
-        onSuccess: (created) =>
-          router.replace({ pathname: '/itineraries/[id]/days', params: { id: created.id, day: '1' } }),
+        onSuccess: async (created) => {
+          await attachChosenCover(created.id);
+          router.replace({ pathname: '/itineraries/[id]/days', params: { id: created.id, day: '1' } });
+        },
       },
     );
+  }
+
+
+  async function attachChosenCover(itineraryId: string) {
+    if (chosenCover === null) return;
+    try {
+      await itineraryRepository.uploadCover(itineraryId, chosenCover);
+    } catch {
+      keepTheTripEvenIfItsCoverFailed();
+    }
+  }
+
+
+  function keepTheTripEvenIfItsCoverFailed() {
+    setValidationError(undefined);
   }
 
   const serverMessage = create.error instanceof ApiError ? create.error.message : undefined;
@@ -61,7 +88,12 @@ export default function NewItineraryScreen() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <ScreenHeader title="Create Itinerary" size="display" back />
 
-        <GreyedMediaTile surface="coverPhoto" />
+        <CoverPicker
+          coverUrl={chosenCover?.uri ?? null}
+          busy={create.isPending}
+          onPick={() => void chooseCover()}
+          onRemove={() => setChosenCover(null)}
+        />
 
         <Field label="Trip Title" value={title} onChangeText={setTitle} placeholder="Island Hopping in El Nido" />
 

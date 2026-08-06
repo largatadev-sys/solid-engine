@@ -26,7 +26,7 @@ describe('comingSoonMessage — the wording both forks share', () => {
   });
 
   it('names whatever affordance it is given', () => {
-    expect(comingSoonMessage('coverPhoto').title).toBe('Cover photo — coming soon');
+    expect(comingSoonMessage('activityPhoto').title).toBe('Activity photo — coming soon');
   });
 
   it('covers every greyed affordance S4.9, S4.1 and S4.13 ship', () => {
@@ -38,7 +38,6 @@ describe('comingSoonMessage — the wording both forks share', () => {
         'booking',
         'chat',
         'comments',
-        'coverPhoto',
         'diary',
         'follow',
         'fork',
