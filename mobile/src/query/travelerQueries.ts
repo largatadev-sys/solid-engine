@@ -20,7 +20,7 @@ import type {
 } from '../types/api';
 
 
-export const HANDLE_MIN_LENGTH = 3;
+export const HANDLE_MIN_LENGTH = 2;
 
 const HANDLE_FRESHNESS_MS = 30_000;
 

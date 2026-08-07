@@ -2,6 +2,7 @@ package com.largata.identity.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.largata.identity.api.MeResponse;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import java.util.List;
@@ -137,20 +138,16 @@ class VanityNumberAllocationIT extends PostgresTestBase {
 
 
     private String vanityNumberFor(String token) {
-        byte[] body =
-                rest.get()
-                        .uri("/v1/me")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                        .exchange()
-                        .expectStatus()
-                        .isOk()
-                        .expectBody()
-                        .returnResult()
-                        .getResponseBodyContent();
-        String json = new String(body);
-        String marker = "\"vanityNumber\":\"";
-        int start = json.indexOf(marker) + marker.length();
-        return json.substring(start, json.indexOf('"', start));
+        return rest.get()
+                .uri("/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody(MeResponse.class)
+                .returnResult()
+                .getResponseBody()
+                .vanityNumber();
     }
 
 

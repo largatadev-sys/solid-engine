@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -27,7 +28,7 @@ class VanityNumberAllocator {
     }
 
 
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    @Transactional(propagation = Propagation.MANDATORY)
     VanityNumber allocate() {
         short cohort = VanityNumber.cohortAt(Instant.now(clock), launchDate);
         return new VanityNumber(cohort, claimFrom(cohort));
@@ -48,7 +49,7 @@ class VanityNumberAllocator {
                 return drawn;
             }
         }
-        throw new IllegalStateException("Vanity pool claim did not settle for cohort " + cohort);
+        throw new IdentityExceptions.VanityPoolUnavailableException();
     }
 
 

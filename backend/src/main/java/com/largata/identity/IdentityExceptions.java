@@ -2,6 +2,7 @@ package com.largata.identity;
 
 import com.largata.common.error.ConflictException;
 import com.largata.common.error.NotFoundException;
+import com.largata.common.error.UnavailableException;
 import com.largata.common.error.ValidationException;
 
 
@@ -40,6 +41,13 @@ public final class IdentityExceptions {
     public static final class HandleTakenException extends ConflictException {
         HandleTakenException() {
             super("HANDLE_TAKEN", "That handle is already taken. Please choose another.");
+        }
+    }
+
+
+    public static final class VanityPoolUnavailableException extends UnavailableException {
+        VanityPoolUnavailableException() {
+            super("VANITY_POOL_UNAVAILABLE", "We could not finish setting up your account. Please try again.");
         }
     }
 }

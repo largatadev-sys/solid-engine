@@ -73,7 +73,7 @@ class ShortHandleSurvivesProfileSaveIT extends PostgresTestBase {
 
 
     @Test
-    void aGenuinelyNewShortHandleIsStillRefusedExactlyAsBefore() {
+    void aSingleCharacterHandleIsStillRefused() {
         String uid = freshUid();
         String token = signIn(uid);
         plantShortHandle(uid);
@@ -82,10 +82,30 @@ class ShortHandleSurvivesProfileSaveIT extends PostgresTestBase {
                 .uri("/v1/me")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"handle\":\"" + freshShortHandle() + "\"}")
+                .body("{\"handle\":\"x\"}")
                 .exchange()
                 .expectStatus()
                 .isBadRequest();
+    }
+
+
+    @Test
+    void aTakenShortHandleIsStillRefusedToEveryoneElse() {
+        String owner = freshUid();
+        signIn(owner);
+        String taken = plantShortHandle(owner);
+
+        String other = freshUid();
+        String otherToken = signIn(other);
+
+        rest.patch()
+                .uri("/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + otherToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"handle\":\"" + taken + "\"}")
+                .exchange()
+                .expectStatus()
+                .isEqualTo(org.springframework.http.HttpStatus.CONFLICT);
     }
 
 

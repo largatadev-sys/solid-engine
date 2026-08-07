@@ -110,7 +110,7 @@ class ProfileContractIT extends PostgresTestBase {
                 .jsonPath("$.status")
                 .isEqualTo("TAKEN");
 
-        availability(token, "ab").expectBody().jsonPath("$.status").isEqualTo("MALFORMED");
+        availability(token, "a").expectBody().jsonPath("$.status").isEqualTo("MALFORMED");
         availability(token, "admin").expectBody().jsonPath("$.status").isEqualTo("RESERVED");
     }
 

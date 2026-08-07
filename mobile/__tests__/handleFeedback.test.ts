@@ -30,7 +30,7 @@ describe('a handle the traveler already holds', () => {
   });
 
   it('leaves the ordinary rules alone for a traveler who holds no handle yet', () => {
-    expect(handleFeedbackFor('ab', false, undefined, null).submittable).toBe(false);
+    expect(handleFeedbackFor('a', false, undefined, null).submittable).toBe(false);
     expect(handleFeedbackFor('anasilva', false, verdict('anasilva', 'FREE'), null).submittable).toBe(
       true,
     );
@@ -62,7 +62,7 @@ describe('the live availability feedback', () => {
   });
 
   it('a too-short handle is guidance, not an error', () => {
-    expect(handleFeedbackFor('ab', false, undefined).tone).toBe('neutral');
+    expect(handleFeedbackFor('a', false, undefined).tone).toBe('neutral');
   });
 
   it('is never submittable while a check is in flight', () => {

@@ -96,8 +96,10 @@ WHERE p.cohort = 1
 -- against the deployed rung and the founders' handle choices were not settled, so the grant ships as
 -- its own follow-up migration rather than holding the rest of the story. Founders therefore hold
 -- ordinary beta numbers until it lands — visibly wrong to exactly four people, and reversible by an
--- UPDATE, which is why it was safe to defer. VanityBackfillIT plants a founder-shaped row and proves
--- the mechanism below works; what is missing is only the data.
+-- UPDATE, which is why it was safe to defer. VanityBackfillIT pins that the list is EMPTY and that a
+-- short-handled row survives the backfill; it does NOT exercise a populated grant, because there is
+-- none to exercise. THE FOLLOW-UP MIGRATION NEEDS ITS OWN STEPPING TEST — the same V5 trap applies to
+-- it in full, and nothing here discharges that obligation.
 --
 -- When that migration is written: resolve each founder's email to a traveler UUID against the named
 -- deployed database (`railway` on dev - the S1.1 rule: name the database in any query whose answer
@@ -107,17 +109,22 @@ UPDATE traveler
 SET vanity_cohort = 0, vanity_pool_number = 0
 WHERE id IN (SELECT id FROM traveler WHERE false);
 
--- The founders' short handles travel with that same follow-up, for the same reason and by the same
--- mechanism: a 2-character handle is below Handle.MIN_LENGTH and cannot be claimed through the app,
--- so it is written as DATA rather than unlocked in code.
+-- NO HANDLES ARE PLANTED HERE, and the reason changed mid-story. The original design planted each
+-- founder's 2-character handle as data, because 2 was below Handle.MIN_LENGTH and therefore
+-- unclaimable through the app. The founder then ruled the minimum down to 2 globally (2026-08-08,
+-- "we are just the ones onboarded with the app"), which makes a 2-character handle an ORDINARY
+-- CLAIM: founders pick theirs in the profile screen like anyone else, and no migration is involved.
+-- The follow-up migration therefore carries the (0, 0) grant ALONE.
 --
--- Validation stays 3+ for everyone, permanently. A founder-conditional minimum - whether an if, a
--- config key, or anything else the validator consults - is an improvised entitlement check, which
--- the standing rule forbids, and it would resurrect the runtime founder concept this design exists
--- to avoid. The capability is recorded as this story's candidate-capability note ("short handle"),
--- so it becomes can(traveler, capability) when the entitlement seam ships at register #14.
+-- What did not change, and is the reason the minimum can be raised back safely: a handle's minimum
+-- is a CLAIM-TIME rule, so any handle already stored below a later minimum must still survive an
+-- ordinary profile save. TravelerProfileService treats a submitted handle equal to the stored one as
+-- a no-op for exactly that reason, and ShortHandleSurvivesProfileSaveIT proves it against a stored
+-- 2-character handle. Raising the minimum to 3 before alpha - an epic-map backlog line with its own
+-- trigger - is therefore two constants and three boundary tests, and breaks nobody.
 --
--- What makes a planted short handle survivable is the unchanged-handle no-op in
--- TravelerProfileService: without it, a founder's own profile save fails on a handle they never
--- edited. That fix ships at S4.14 and is proven by ShortHandleSurvivesProfileSaveIT against a
--- genuinely planted 2-character handle, so the mechanism is ready and only the picks are missing.
+-- A founder-conditional minimum was considered and refused: an if, a config key, or anything else
+-- the validator consults per-traveler is an improvised entitlement check, which the standing rule
+-- forbids, and it would resurrect the runtime founder concept this file exists to avoid. The durable
+-- answer stays this story's candidate-capability note ("short handle") - at register #14 the minimum
+-- returns to 3 for everyone and founders hold theirs through can(traveler, capability).

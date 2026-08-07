@@ -35,7 +35,6 @@ export default function ProfileScreen() {
             {state.me.vanityNumber !== null && (
               <Text style={styles.vanityNumber}>{state.me.vanityNumber}</Text>
             )}
-            <Text style={styles.id}>{state.me.id}</Text>
           </>
         )}
 
@@ -108,7 +107,6 @@ const styles = StyleSheet.create({
   name: { ...typography.heading, color: colors.textPrimary },
   handle: { ...typography.bodyStrong, color: colors.accent },
   vanityNumber: { ...typography.mono, color: colors.accent, letterSpacing: 1 },
-  id: { ...typography.fineMono, color: colors.textSecondary },
   errorTitle: { ...typography.heading, color: colors.danger },
   errorCode: { ...typography.mono, color: colors.textPrimary },
   caption: { ...typography.caption, textAlign: 'center', color: colors.textSecondary },
