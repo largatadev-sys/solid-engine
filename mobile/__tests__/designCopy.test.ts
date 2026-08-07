@@ -72,14 +72,11 @@ describe('the onboarding copy is the export, verbatim', () => {
   });
 });
 
-describe('the three places the spec overrode the design stay overridden', () => {
-  it('no Upload Photo control until S3.3 (decision 8)', () => {
-    const profile = screen('app', 'onboarding', 'profile.tsx');
-    const avatar = screen('src', 'components', 'Avatar.tsx');
+describe('the places the spec overrode the design stay overridden', () => {
+  it('the camera badge is an empty-state affordance only — it never covers an uploaded photo', () => {
+    const picker = screen('src', 'media', 'AvatarPicker.tsx');
 
-    expect(profile).not.toMatch(/Upload Photo/i);
-    expect(avatar).not.toMatch(/Upload Photo/i);
-    expect(avatar).not.toMatch(/badge|camera/i);
+    expect(picker).toMatch(/\{!hasPhoto && \(\s*<View style=\{styles\.badge\}>/);
   });
 
   it('no ToS consent line until the documents exist (decision 9)', () => {

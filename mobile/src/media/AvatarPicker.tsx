@@ -36,9 +36,11 @@ export function AvatarPicker({
         style={styles.avatarWell}
       >
         <Avatar photoUrl={photoUrl} displayName={displayName} email={email} />
-        <View style={styles.badge}>
-          <Icon name="camera" size={BADGE_ICON} color={colors.textOnAccent} />
-        </View>
+        {!hasPhoto && (
+          <View style={styles.badge}>
+            <Icon name="camera" size={BADGE_ICON} color={colors.textOnAccent} />
+          </View>
+        )}
       </Pressable>
 
       <Pressable
