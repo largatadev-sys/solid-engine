@@ -5,4 +5,4 @@ export interface PickedPhoto {
   readonly bytes?: Blob;
 }
 
-export type CropShape = 'square' | 'free';
+export type CropShape = 'circle' | 'free';

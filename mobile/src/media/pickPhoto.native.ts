@@ -9,7 +9,9 @@ export async function pickPhoto(shape: CropShape = 'free'): Promise<PickedPhoto 
     mediaTypes: ['images'],
     allowsEditing: true,
     quality: 1,
-    ...(shape === 'square' ? { aspect: [1, 1] as [number, number] } : {}),
+    ...(shape === 'circle'
+      ? { aspect: [1, 1] as [number, number], shape: 'oval' as const }
+      : {}),
   });
   if (result.canceled) return null;
 
