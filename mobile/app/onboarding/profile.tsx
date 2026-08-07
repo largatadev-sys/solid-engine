@@ -54,8 +54,13 @@ export default function ProfileStepScreen() {
     setPrefilled(true);
   }, [me, prefilled]);
 
-  const availability = useHandleAvailability(handle);
-  const feedback = handleFeedbackFor(handle, availability.isFetching, availability.data);
+  const availability = useHandleAvailability(handle, me?.handle ?? null);
+  const feedback = handleFeedbackFor(
+    handle,
+    availability.isFetching,
+    availability.data,
+    me?.handle ?? null,
+  );
 
   const submit = async () => {
     setMessage(null);
@@ -68,7 +73,11 @@ export default function ProfileStepScreen() {
       return;
     }
     try {
-      await save.mutateAsync({ handle, displayName: displayName.trim(), bio: bio.trim() });
+      await save.mutateAsync({
+        ...(handle === me?.handle ? {} : { handle }),
+        displayName: displayName.trim(),
+        bio: bio.trim(),
+      });
       router.replace(editing ? PROFILE_TAB_ROUTE : ONBOARDING_ROUTES.goals);
     } catch (error) {
       setMessage(messageForVerificationFailure(error));

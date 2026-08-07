@@ -57,23 +57,43 @@ public class Traveler {
     @Column(name = "onboarding_completed_at")
     private Instant onboardingCompletedAt;
 
+    @Column(name = "vanity_cohort", updatable = false)
+    private Short vanityCohort;
+
+    @Column(name = "vanity_pool_number", updatable = false)
+    private Integer vanityPoolNumber;
+
     protected Traveler() {
     }
 
     private Traveler(
-            UUID id, String firebaseUid, String email, String displayName, String avatarUrl, Instant createdAt) {
+            UUID id,
+            String firebaseUid,
+            String email,
+            String displayName,
+            String avatarUrl,
+            Instant createdAt,
+            VanityNumber vanityNumber) {
         this.id = id;
         this.firebaseUid = firebaseUid;
         this.email = email;
         this.displayName = displayName;
         this.avatarUrl = avatarUrl;
         this.createdAt = createdAt;
+        this.vanityCohort = vanityNumber.cohort();
+        this.vanityPoolNumber = vanityNumber.poolNumber();
     }
 
 
     static Traveler provision(
-            String firebaseUid, String email, String displayName, String avatarUrl, Instant createdAt) {
-        return new Traveler(UuidV7.generate(), firebaseUid, email, displayName, avatarUrl, createdAt);
+            String firebaseUid,
+            String email,
+            String displayName,
+            String avatarUrl,
+            Instant createdAt,
+            VanityNumber vanityNumber) {
+        return new Traveler(
+                UuidV7.generate(), firebaseUid, email, displayName, avatarUrl, createdAt, vanityNumber);
     }
 
     public UUID id() {
@@ -134,6 +154,14 @@ public class Traveler {
 
     public boolean onboardingCompleted() {
         return onboardingCompletedAt != null;
+    }
+
+
+    public String vanityNumber() {
+        if (vanityCohort == null || vanityPoolNumber == null) {
+            return null;
+        }
+        return new VanityNumber(vanityCohort, vanityPoolNumber).formatted();
     }
 
 

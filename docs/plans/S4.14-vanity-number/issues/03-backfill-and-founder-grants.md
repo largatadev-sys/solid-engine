@@ -4,9 +4,9 @@
 
 **Blocked by:** 01 (schema and claim mechanism), 02 (the handles this plants must not brick the founders' profile editing).
 
-**Status:** ready-for-agent
+**Status:** ready-for-agent — **the founder grant is deferred to a follow-up migration** (founder call, 2026-08-08). The backfill itself shipped at S4.14; the two data inputs below were not available and the founder ruled against holding the story for them. Founders hold ordinary beta numbers until that migration lands.
 
-- [ ] **Owner inputs collected first, never committed:** founder emails resolved to traveler UUIDs by a one-off query that names the deployed dev database (the S1.1 rule); each founder's chosen 2-character handle (lowercase shape, not on the reserved list). Only the UUIDs enter the migration.
+- [ ] **DEFERRED — owner inputs, never committed:** founder emails resolved to traveler UUIDs by a one-off query that names the deployed dev database (the S1.1 rule); each founder's chosen 2-character handle (lowercase shape, not on the reserved list). Only the UUIDs enter the migration. *(The mechanism ships and is proven: `VanityBackfillIT` pins that the founder list is deliberately empty, and `ShortHandleSurvivesProfileSaveIT` proves a planted 2-character handle survives profile editing and stays invitable. What is missing is only the data.)*
 - [ ] The backfill migration generates month-`01`'s pool itself and claims from it for every existing traveler without a number (cohort derived from each row's creation timestamp), then grants `(0, 0)` and the chosen handle to each founder-UUID literal. One allocation path — backfilled numbers can never collide with live claims.
 - [ ] Migration-stepping integration test, own container (never the shared singleton): stepped to the prior version, legacy travelers seeded by raw SQL *including rows bearing the founder-UUID literals*, stepped to head — cohorts truthful, founders `(0, 0)` with their short handles, every backfilled number absent from the remaining pool.
 - [ ] The sabotage check is run with the resource-recompiling invocation and confirmed to **fail** before it is confirmed to pass.

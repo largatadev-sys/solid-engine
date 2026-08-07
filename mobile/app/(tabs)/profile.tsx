@@ -32,6 +32,9 @@ export default function ProfileScreen() {
             {state.me.handle !== null && <Text style={styles.handle}>@{state.me.handle}</Text>}
             <Text style={styles.caption}>{state.me.email}</Text>
             {state.me.bio !== null && <Text style={styles.caption}>{state.me.bio}</Text>}
+            {state.me.vanityNumber !== null && (
+              <Text style={styles.vanityNumber}>{state.me.vanityNumber}</Text>
+            )}
             <Text style={styles.id}>{state.me.id}</Text>
           </>
         )}
@@ -104,6 +107,7 @@ const styles = StyleSheet.create({
   },
   name: { ...typography.heading, color: colors.textPrimary },
   handle: { ...typography.bodyStrong, color: colors.accent },
+  vanityNumber: { ...typography.mono, color: colors.accent, letterSpacing: 1 },
   id: { ...typography.fineMono, color: colors.textSecondary },
   errorTitle: { ...typography.heading, color: colors.danger },
   errorCode: { ...typography.mono, color: colors.textPrimary },

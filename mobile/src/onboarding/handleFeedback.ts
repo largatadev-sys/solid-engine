@@ -15,7 +15,11 @@ export function handleFeedbackFor(
   typed: string,
   checking: boolean,
   result: HandleAvailabilityResponse | undefined,
+  stored: string | null = null,
 ): HandleFeedback {
+  if (stored !== null && typed === stored) {
+    return { text: `@${typed} is yours.`, tone: 'neutral', submittable: true };
+  }
   if (typed.length === 0) {
     return { text: 'Pick a handle people can find you by.', tone: 'neutral', submittable: false };
   }

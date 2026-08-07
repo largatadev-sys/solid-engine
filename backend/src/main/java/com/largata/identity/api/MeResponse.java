@@ -18,7 +18,8 @@ public record MeResponse(
         String country,
         String preferredCurrency,
         String homeCity,
-        boolean onboardingCompleted) {
+        boolean onboardingCompleted,
+        String vanityNumber) {
 
     public static MeResponse of(Traveler traveler, String suggestedHandle) {
         return new MeResponse(
@@ -34,6 +35,7 @@ public record MeResponse(
                 traveler.country(),
                 traveler.preferredCurrency(),
                 traveler.homeCity(),
-                traveler.onboardingCompleted());
+                traveler.onboardingCompleted(),
+                traveler.vanityNumber());
     }
 }

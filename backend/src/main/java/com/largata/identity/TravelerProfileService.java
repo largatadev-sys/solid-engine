@@ -66,7 +66,7 @@ public class TravelerProfileService {
     public Traveler update(UUID travelerId, ProfileEdit edit) {
         Traveler traveler = travelers.findById(travelerId).orElseThrow();
 
-        if (edit.handle() != null) {
+        if (edit.handle() != null && !Handle.normalize(edit.handle()).equals(traveler.handle())) {
             claim(traveler, Handle.of(edit.handle()));
         }
         if (edit.displayName() != null && !edit.displayName().isBlank()) {
