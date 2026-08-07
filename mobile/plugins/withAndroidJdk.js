@@ -1,5 +1,7 @@
 const { withGradleProperties } = require('expo/config-plugins');
 const { existsSync } = require('fs');
+const { spawnSync } = require('child_process');
+const { join } = require('path');
 
 /**
  * Pins the JDK the Android build runs on, because this repo's two release trains disagree about it.
@@ -26,10 +28,41 @@ const { existsSync } = require('fs');
  */
 const ANDROID_STUDIO_JBR = 'C:\\Program Files\\Android\\Android Studio\\jbr';
 
-module.exports = function withAndroidJdk(config) {
-  const javaHome = process.env.LARGATA_ANDROID_JAVA_HOME ?? ANDROID_STUDIO_JBR;
+const CANDIDATES = [
+  ANDROID_STUDIO_JBR,
+  'C:\\Program Files\\Java\\jdk-17',
+  'C:\\Program Files\\Eclipse Adoptium\\jdk-21',
+  'C:\\Program Files\\Eclipse Adoptium\\jdk-17',
+];
 
-  if (!existsSync(javaHome)) return config;
+const HIGHEST_SUPPORTED_MAJOR = 24;
+
+function majorVersionOf(javaHome) {
+  try {
+    const spoken = spawnSync(join(javaHome, 'bin', 'java'), ['-version'], { encoding: 'utf8' });
+    const named = /version "(\d+)/.exec(`${spoken.stderr ?? ''}${spoken.stdout ?? ''}`);
+    return named === null ? null : Number(named[1]);
+  } catch (notAJavaHome) {
+    return null;
+  }
+}
+
+function usableJdk() {
+  const declared = process.env.LARGATA_ANDROID_JAVA_HOME;
+  const searched = declared === undefined ? CANDIDATES : [declared, ...CANDIDATES];
+
+  for (const candidate of searched) {
+    if (!existsSync(candidate)) continue;
+    const major = majorVersionOf(candidate);
+    if (major !== null && major <= HIGHEST_SUPPORTED_MAJOR) return candidate;
+  }
+  return null;
+}
+
+module.exports = function withAndroidJdk(config) {
+  const javaHome = usableJdk();
+
+  if (javaHome === null) return config;
 
   return withGradleProperties(config, (modConfig) => {
     modConfig.modResults = modConfig.modResults.filter(

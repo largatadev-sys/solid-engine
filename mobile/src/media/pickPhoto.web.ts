@@ -1,4 +1,4 @@
-import { cropCircular } from './CropStation.web';
+import { cropCircular } from './CropStation';
 import type { CropShape, PickedPhoto } from './pickedPhoto';
 
 export async function pickPhoto(shape: CropShape = 'free'): Promise<PickedPhoto | null> {

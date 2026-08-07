@@ -1,27 +1,22 @@
-export interface CropArea {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
+import type { CropArea } from './cropGeometry';
+import type { CroppedImage } from './croppedImage';
 
-export async function cropToSquare(source: string, area: CropArea, name: string): Promise<Blob> {
+export async function cropToSquare(source: string, area: CropArea): Promise<CroppedImage> {
   const image = await loadImage(source);
   const canvas = document.createElement('canvas');
   canvas.width = area.width;
   canvas.height = area.height;
 
   const pen = canvas.getContext('2d');
-  if (pen === null) throw new Error(`Could not prepare ${name} for upload.`);
+  if (pen === null) throw new Error('That photo could not be prepared for upload.');
   pen.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, area.width, area.height);
 
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob === null ? reject(new Error(`Could not read ${name}.`)) : resolve(blob)),
-      'image/jpeg',
-      0.92,
-    );
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, 'image/jpeg', 0.92);
   });
+  if (blob === null) throw new Error('That photo could not be read.');
+
+  return { uri: URL.createObjectURL(blob), bytes: blob };
 }
 
 function loadImage(source: string): Promise<HTMLImageElement> {

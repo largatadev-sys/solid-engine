@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react';
-import { CircularCropper } from './CircularCropper.web';
-import { cropToSquare, type CropArea } from './cropToSquare.web';
+import { CircularCropper } from './CircularCropper';
+import type { CropArea, Size } from './cropGeometry';
+import { cropToSquare } from './cropToSquare';
+import { imageSize } from './imageSize';
 import type { PickedPhoto } from './pickedPhoto';
 
-type Pending = {
+interface Pending {
   readonly photo: PickedPhoto;
+  readonly size: Size;
   readonly settle: (cropped: PickedPhoto | null) => void;
-};
+}
 
-let open: ((pending: Pending) => void) | null = null;
+let present: ((pending: Pending) => void) | null = null;
 
-export function cropCircular(photo: PickedPhoto): Promise<PickedPhoto | null> {
-  if (open === null) return Promise.resolve(photo);
-  return new Promise((settle) => open?.({ photo, settle }));
+export async function cropCircular(photo: PickedPhoto): Promise<PickedPhoto | null> {
+  if (present === null) return photo;
+  const size = await imageSize(photo.uri).catch(() => null);
+  if (size === null) return photo;
+  return new Promise((settle) => present?.({ photo, size, settle }));
 }
 
 
@@ -20,9 +25,9 @@ export function CropStation() {
   const [pending, setPending] = useState<Pending | null>(null);
 
   useEffect(() => {
-    open = setPending;
+    present = setPending;
     return () => {
-      open = null;
+      present = null;
     };
   }, []);
 
@@ -31,12 +36,12 @@ export function CropStation() {
     const { photo, settle } = pending;
     setPending(null);
     try {
-      const bytes = await cropToSquare(photo.uri, area, photo.name);
+      const cropped = await cropToSquare(photo.uri, area);
       settle({
-        uri: URL.createObjectURL(bytes),
+        uri: cropped.uri,
         name: photo.name,
         mimeType: 'image/jpeg',
-        bytes,
+        ...(cropped.bytes === undefined ? {} : { bytes: cropped.bytes }),
       });
     } catch {
       settle(photo);
@@ -46,6 +51,7 @@ export function CropStation() {
   return (
     <CircularCropper
       source={pending?.photo.uri ?? null}
+      imageSize={pending?.size ?? null}
       onCancel={() => {
         pending?.settle(null);
         setPending(null);

@@ -1,4 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
+import { cropCircular } from './CropStation';
 import type { CropShape, PickedPhoto } from './pickedPhoto';
 
 export async function pickPhoto(shape: CropShape = 'free'): Promise<PickedPhoto | null> {
@@ -7,20 +8,19 @@ export async function pickPhoto(shape: CropShape = 'free'): Promise<PickedPhoto 
 
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
-    allowsEditing: true,
+    allowsEditing: shape !== 'circle',
     quality: 1,
-    ...(shape === 'circle'
-      ? { aspect: [1, 1] as [number, number], shape: 'oval' as const }
-      : {}),
   });
   if (result.canceled) return null;
 
   const asset = result.assets[0];
   if (asset === undefined) return null;
 
-  return {
+  const chosen = {
     uri: asset.uri,
     name: asset.fileName ?? 'photo.jpg',
     mimeType: asset.mimeType ?? 'image/jpeg',
   };
+
+  return shape === 'circle' ? cropCircular(chosen) : chosen;
 }
