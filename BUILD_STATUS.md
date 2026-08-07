@@ -185,6 +185,14 @@ Test-harness capture (post-S0.6, owner directive): `mobile/scripts/drive-preview
 
 ---
 
+**2026-08-08**
+
+**Traveler vanity number grilled and parked — backlog line in the epic map.** Founder idea stress-tested on the record: a pure status badge (founders share `0`; everyone else `nnxxxx` — cohort month + a random number from a per-month pre-shuffled pool), plus hand-planted 2-char founder handles in the same future backfill. Key rulings: no runtime founder concept and no super-admin (the `(0,0)` rows are the record) · a founder-conditional handle minimum rejected as an improvised entitlement check, recorded instead as the story's candidate capability (short handle, register #14) · deferral is free (cohort reconstructs from `created_at`; the pool number is random), so the whole build waits. **Trigger: the public-profile story.**
+
+*Why it wasn't a story —* Not a story: no code, no product surface — an idea analyzed together and written into the docs per the working agreement; same shape as the 2026-07-24 EDA parking line.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
