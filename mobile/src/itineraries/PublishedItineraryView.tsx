@@ -4,6 +4,7 @@ import { comingSoon } from '../components/comingSoon';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
 import { galleryOf, galleryOverflow, GALLERY_VISIBLE_TILES } from '../media/galleryOf';
+import { thumbOf } from '../media/mediaSourceContract';
 import { useMediaSource } from '../media/useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
 import type {
@@ -89,7 +90,7 @@ export function PublishedItineraryView({
 
 
 function CreatorAvatar({ creator }: { creator: TravelerCardResponse }) {
-  const source = useMediaSource(creator.avatarUrl);
+  const source = useMediaSource(thumbOf(creator.avatarUrl));
 
   if (source !== null) {
     return (

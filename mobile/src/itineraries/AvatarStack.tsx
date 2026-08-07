@@ -1,5 +1,6 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { initialsFor } from '../onboarding/initials';
+import { thumbOf } from '../media/mediaSourceContract';
 import { useMediaSource } from '../media/useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
 import type { MemberResponse } from '../types/api';
@@ -27,7 +28,7 @@ export function AvatarStack({ roster }: { roster: MemberResponse[] }) {
 }
 
 function MemberBubble({ member }: { member: MemberResponse }) {
-  const source = useMediaSource(member.avatarUrl);
+  const source = useMediaSource(thumbOf(member.avatarUrl));
 
   if (source !== null) {
     return (

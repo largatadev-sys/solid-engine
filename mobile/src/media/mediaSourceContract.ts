@@ -6,3 +6,8 @@ export interface MediaSource {
 export function isOurMedia(url: string): boolean {
   return url.startsWith('/v1/media/');
 }
+
+export function thumbOf(url: string | null): string | null {
+  if (url === null || url === '' || !isOurMedia(url)) return url;
+  return `${url}/thumb`;
+}

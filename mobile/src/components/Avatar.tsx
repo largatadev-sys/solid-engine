@@ -1,5 +1,6 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { initialsFor } from '../onboarding/initials';
+import { thumbOf } from '../media/mediaSourceContract';
 import { useMediaSource } from '../media/useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
 
@@ -11,7 +12,7 @@ interface AvatarProps {
 
 
 export function Avatar({ photoUrl, displayName, email }: AvatarProps) {
-  const source = useMediaSource(photoUrl);
+  const source = useMediaSource(thumbOf(photoUrl));
 
   if (source !== null) {
     return (

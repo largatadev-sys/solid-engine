@@ -1,6 +1,6 @@
 import { mediaSourceFor as nativeSource } from '../src/media/mediaSource.native';
 import { mediaSourceFor as webSource } from '../src/media/mediaSource.web';
-import { isOurMedia } from '../src/media/mediaSourceContract';
+import { isOurMedia, thumbOf } from '../src/media/mediaSourceContract';
 import { apiClient } from '../src/api/apiClient';
 import { File } from 'expo-file-system';
 
@@ -89,5 +89,22 @@ describe('isOurMedia', () => {
     expect(isOurMedia('/v1/media/x')).toBe(true);
     expect(isOurMedia('https://lh3.googleusercontent.com/a/abc')).toBe(false);
     expect(isOurMedia('https://evil.test/v1/media/x')).toBe(false);
+  });
+});
+
+describe('thumbOf — small renders fetch the thumb rung, never the full display image', () => {
+  it('points our media at its thumbnail variant', () => {
+    expect(thumbOf('/v1/media/abc')).toBe('/v1/media/abc/thumb');
+  });
+
+  it('leaves an external avatar URL untouched, because /thumb is our contract, not the web’s', () => {
+    expect(thumbOf('https://lh3.googleusercontent.com/a/abc')).toBe(
+      'https://lh3.googleusercontent.com/a/abc',
+    );
+  });
+
+  it('passes through the no-photo cases unchanged', () => {
+    expect(thumbOf(null)).toBeNull();
+    expect(thumbOf('')).toBe('');
   });
 });
