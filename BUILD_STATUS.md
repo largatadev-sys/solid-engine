@@ -177,6 +177,12 @@ Test-harness capture (post-S0.6, owner directive): `mobile/scripts/drive-preview
 
 *Why it wasn't a story —* Not a story: no code, no product surface — the living backlog absorbing a design artifact before its stories are elaborated, per the working agreement; the build lands as S4.9/S4.10.
 
+**2026-08-07**
+
+**Agent-skills sync from upstream (`mattpocock/skills`), landed at S3.3's close.** The lockfile-managed skill set under `.agents/skills/` + `.claude/skills/` updated to upstream head: 14 skills refreshed in both mirrors, `writing-great-skills` removed upstream and so removed here, `ask-matt` gains `PHASE-BOUNDARIES.md`, `skills-lock.json` re-hashed. Content is upstream's, taken as-is.
+
+*Why it wasn't a story —* Tooling sync, no product surface — the same housekeeping family as the 2026-07-15 agent-skills config line. Committed with S3.3's closeout so the working tree hands over clean.
+
 ---
 
 ## Standing off-epic work
