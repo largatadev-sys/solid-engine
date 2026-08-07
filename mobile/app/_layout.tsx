@@ -11,6 +11,7 @@ import { useAuth } from '../src/hooks/authContext';
 import { useMe } from '../src/hooks/useMe';
 import { AuthProvider } from '../src/hooks/useAuth';
 import { MobileFrame } from '../src/components/MobileFrame';
+import { PhotoCropHost } from '../src/media/PhotoCropHost';
 import { createQueryClient } from '../src/query/queryClient';
 import { destinationFor, isSettling, type GateInput } from '../src/onboarding/onboardingGate';
 import { colors, typography } from '../src/theme';
@@ -37,6 +38,7 @@ export default function RootLayout() {
         <MobileFrame>
           <AuthGate />
         </MobileFrame>
+        <PhotoCropHost />
       </AuthProvider>
     </QueryClientProvider>
   );

@@ -1,6 +1,14 @@
+import { cropCircular } from './CropStation.web';
 import type { CropShape, PickedPhoto } from './pickedPhoto';
 
-export async function pickPhoto(_shape: CropShape = 'free'): Promise<PickedPhoto | null> {
+export async function pickPhoto(shape: CropShape = 'free'): Promise<PickedPhoto | null> {
+  const chosen = await chooseFile();
+  if (chosen === null) return null;
+  return shape === 'circle' ? cropCircular(chosen) : chosen;
+}
+
+
+async function chooseFile(): Promise<PickedPhoto | null> {
   if (typeof document === 'undefined') return null;
 
   return new Promise((resolve) => {
