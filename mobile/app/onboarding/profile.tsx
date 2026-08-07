@@ -14,6 +14,8 @@ import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { AvatarPicker } from '../../src/media/AvatarPicker';
+import { messageForPhotoFailure } from '../../src/media/photoMessages';
+import { avatarPreviewOf, type StagedAvatar } from '../../src/media/stagedAvatar';
 import { usePhotoAction } from '../../src/media/usePhotoAction';
 import {
   useHandleAvailability,
@@ -40,6 +42,7 @@ export default function ProfileStepScreen() {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [message, setMessage] = useState<string | null>(null);
+  const [staged, setStaged] = useState<StagedAvatar>(null);
 
   const me = state.kind === 'ok' ? state.me : null;
 
@@ -56,6 +59,14 @@ export default function ProfileStepScreen() {
 
   const submit = async () => {
     setMessage(null);
+    try {
+      if (staged?.kind === 'photo') await uploadAvatar.mutateAsync(staged.photo);
+      if (staged?.kind === 'removed') await removeAvatar.mutateAsync();
+      setStaged(null);
+    } catch (error) {
+      setMessage(messageForPhotoFailure(error));
+      return;
+    }
     try {
       await save.mutateAsync({ handle, displayName: displayName.trim(), bio: bio.trim() });
       router.replace(editing ? PROFILE_TAB_ROUTE : ONBOARDING_ROUTES.goals);
@@ -74,19 +85,26 @@ export default function ProfileStepScreen() {
         <Button
           label={editing ? 'Save' : 'Continue'}
           onPress={() => void submit()}
-          busy={save.isPending}
-          disabled={!feedback.submittable || save.isPending}
+          busy={save.isPending || uploadAvatar.isPending || removeAvatar.isPending}
+          disabled={
+            !feedback.submittable ||
+            save.isPending ||
+            uploadAvatar.isPending ||
+            removeAvatar.isPending
+          }
         />
       }
     >
       <View style={styles.avatarBlock}>
         <AvatarPicker
-          photoUrl={me?.avatarUrl ?? null}
+          photoUrl={avatarPreviewOf(staged, me?.avatarUrl ?? null)}
           displayName={displayName}
           email={me?.email ?? null}
           busy={uploadAvatar.isPending || removeAvatar.isPending}
-          onPick={() => void photoAction.pickAndRun((photo) => uploadAvatar.mutateAsync(photo))}
-          onRemove={() => void photoAction.run(() => removeAvatar.mutateAsync())}
+          onPick={() =>
+            void photoAction.pickAndRun(async (photo) => setStaged({ kind: 'photo', photo }))
+          }
+          onRemove={() => setStaged(me?.avatarUrl ? { kind: 'removed' } : null)}
         />
       </View>
 
