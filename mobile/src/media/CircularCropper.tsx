@@ -185,7 +185,7 @@ const RING_WIDTH = 2;
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: colors.textPrimary,
+    backgroundColor: colors.scrim,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.md,
