@@ -62,9 +62,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Proves the composed artifact — Dockerfile, compose wiring, Flyway-on-boot, the MinIO
-      # healthcheck — on every push. Without this job, "compose up works from a clean checkout" is
-      # only ever proven on machines where it already worked.
+      # Proves the composed artifact — Dockerfile, compose wiring, Flyway-on-boot, the storage
+      # emulator's healthcheck and its bucket bootstrap — on every push. Without this job, "compose
+      # up works from a clean checkout" is only ever proven on machines where it already worked.
       - name: Build and start the stack
         run: docker compose up --build -d
 

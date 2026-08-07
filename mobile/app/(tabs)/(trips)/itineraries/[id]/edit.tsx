@@ -4,13 +4,19 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { ApiError } from '../../../../../src/api/ApiError';
 import { DatePicker } from '../../../../../src/components/DatePicker';
 import { archivedPlanNotice, publishedPlanNotice } from '../../../../../src/components/editLockedMessage';
-import { GreyedMediaTile } from '../../../../../src/components/GreyedMediaTile';
+import { CoverPicker } from '../../../../../src/media/CoverPicker';
+import { usePhotoAction } from '../../../../../src/media/usePhotoAction';
 import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
 import { useEditLock } from '../../../../../src/hooks/useEditLock';
 import { addRow, cleanRows, moveRow, removeRow, setRow } from '../../../../../src/itineraries/rowEditor';
 import { isEditable, isPublished } from '../../../../../src/itineraries/publishControls';
 import { validateItineraryEdit } from '../../../../../src/itineraries/validateItineraryForm';
-import { useItinerary, useUpdateItinerary } from '../../../../../src/query/itineraryQueries';
+import {
+  useItinerary,
+  useRemoveCover,
+  useUpdateItinerary,
+  useUploadCover,
+} from '../../../../../src/query/itineraryQueries';
 import type { UpdateItineraryRequest } from '../../../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../../../src/theme';
 
@@ -20,6 +26,8 @@ export default function EditItineraryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, isPlaceholderData } = useItinerary(id);
   const update = useUpdateItinerary(id);
+  const uploadCover = useUploadCover(id);
+  const removeCover = useRemoveCover(id);
 
   const editLock = useEditLock(id);
   const settledEditable = !isPlaceholderData && data !== undefined ? isEditable(data) : undefined;
@@ -38,6 +46,8 @@ export default function EditItineraryScreen() {
   const [startDate, setStartDate] = useState(data?.startDate ?? '');
   const [endDate, setEndDate] = useState(data?.endDate ?? '');
   const [validationError, setValidationError] = useState<string | undefined>();
+
+  const coverAction = usePhotoAction();
 
   function submit() {
     const cleaned = cleanRows(destinations);
@@ -80,7 +90,12 @@ export default function EditItineraryScreen() {
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <ScreenHeader title="Edit Trip" back backTo={{ pathname: '/itineraries/[id]', params: { id } }} />
 
-      <GreyedMediaTile surface="coverPhoto" />
+      <CoverPicker
+        coverUrl={data?.coverImageUrl ?? null}
+        busy={uploadCover.isPending || removeCover.isPending}
+        onPick={() => void coverAction.pickAndRun((photo) => uploadCover.mutateAsync(photo))}
+        onRemove={() => void coverAction.run(() => removeCover.mutateAsync())}
+      />
 
       <Field label="Trip title" value={title} onChangeText={setTitle} placeholder="Island Hopping in El Nido" />
 
@@ -177,7 +192,7 @@ export default function EditItineraryScreen() {
       <DatePicker label="Start date" value={startDate} onChange={setStartDate} />
       <DatePicker label="End date" value={endDate} onChange={setEndDate} />
 
-      {(validationError ?? serverMessage) !== undefined && (
+      {(coverAction.failure ?? validationError ?? serverMessage) !== undefined && (
         <Text style={styles.error}>{validationError ?? serverMessage}</Text>
       )}
 

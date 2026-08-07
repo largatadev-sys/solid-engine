@@ -72,7 +72,8 @@ class PublishedProjectionIT extends PostgresTestBase {
                     "bookingPurpose",
                     "bookingProvider",
                     "bookingPriceAmount",
-                    "bookingPriceCurrency");
+                    "bookingPriceCurrency",
+                    "photos");
 
 
     private static final List<String> CREATOR_FIELDS = List.of("id", "handle", "displayName", "avatarUrl");

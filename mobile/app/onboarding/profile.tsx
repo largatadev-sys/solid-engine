@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Avatar } from '../../src/components/Avatar';
 import { Button } from '../../src/components/Button';
 import { FormField } from '../../src/components/FormField';
 import { OnboardingScreen } from '../../src/components/OnboardingScreen';
@@ -14,7 +13,16 @@ import {
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
-import { useHandleAvailability, useUpdateProfile } from '../../src/query/travelerQueries';
+import { AvatarPicker } from '../../src/media/AvatarPicker';
+import { messageForPhotoFailure } from '../../src/media/photoMessages';
+import { avatarPreviewOf, type StagedAvatar } from '../../src/media/stagedAvatar';
+import { usePhotoAction } from '../../src/media/usePhotoAction';
+import {
+  useHandleAvailability,
+  useRemoveAvatar,
+  useUpdateProfile,
+  useUploadAvatar,
+} from '../../src/query/travelerQueries';
 import { colors, spacing, typography } from '../../src/theme';
 
 const BIO_MAX_LENGTH = 500;
@@ -26,12 +34,15 @@ export default function ProfileStepScreen() {
 
   const { state } = useMe();
   const save = useUpdateProfile();
+  const uploadAvatar = useUploadAvatar();
+  const removeAvatar = useRemoveAvatar();
 
   const [handle, setHandle] = useState('');
   const [prefilled, setPrefilled] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [message, setMessage] = useState<string | null>(null);
+  const [staged, setStaged] = useState<StagedAvatar>(null);
 
   const me = state.kind === 'ok' ? state.me : null;
 
@@ -49,6 +60,14 @@ export default function ProfileStepScreen() {
   const submit = async () => {
     setMessage(null);
     try {
+      if (staged?.kind === 'photo') await uploadAvatar.mutateAsync(staged.photo);
+      if (staged?.kind === 'removed') await removeAvatar.mutateAsync();
+      setStaged(null);
+    } catch (error) {
+      setMessage(messageForPhotoFailure(error));
+      return;
+    }
+    try {
       await save.mutateAsync({ handle, displayName: displayName.trim(), bio: bio.trim() });
       router.replace(editing ? PROFILE_TAB_ROUTE : ONBOARDING_ROUTES.goals);
     } catch (error) {
@@ -56,24 +75,36 @@ export default function ProfileStepScreen() {
     }
   };
 
+  const photoAction = usePhotoAction('circle');
+
   return (
     <OnboardingScreen
       step={editing ? undefined : STEP_NUMBERS.profile}
-      message={message}
+      message={photoAction.failure ?? message}
       footer={
         <Button
           label={editing ? 'Save' : 'Continue'}
           onPress={() => void submit()}
-          busy={save.isPending}
-          disabled={!feedback.submittable || save.isPending}
+          busy={save.isPending || uploadAvatar.isPending || removeAvatar.isPending}
+          disabled={
+            !feedback.submittable ||
+            save.isPending ||
+            uploadAvatar.isPending ||
+            removeAvatar.isPending
+          }
         />
       }
     >
       <View style={styles.avatarBlock}>
-        <Avatar
-          photoUrl={me?.avatarUrl ?? null}
+        <AvatarPicker
+          photoUrl={avatarPreviewOf(staged, me?.avatarUrl ?? null)}
           displayName={displayName}
           email={me?.email ?? null}
+          busy={uploadAvatar.isPending || removeAvatar.isPending}
+          onPick={() =>
+            void photoAction.pickAndRun(async (photo) => setStaged({ kind: 'photo', photo }))
+          }
+          onRemove={() => setStaged(me?.avatarUrl ? { kind: 'removed' } : null)}
         />
       </View>
 

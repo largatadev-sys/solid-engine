@@ -1,5 +1,7 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { initialsFor } from '../onboarding/initials';
+import { thumbOf } from '../media/mediaSourceContract';
+import { useMediaSource } from '../media/useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
 
 interface AvatarProps {
@@ -10,10 +12,12 @@ interface AvatarProps {
 
 
 export function Avatar({ photoUrl, displayName, email }: AvatarProps) {
-  if (photoUrl !== null && photoUrl !== '') {
+  const source = useMediaSource(thumbOf(photoUrl));
+
+  if (source !== null) {
     return (
       <Image
-        source={{ uri: photoUrl }}
+        source={source}
         style={styles.circle}
         accessibilityLabel="Your profile photo"
         accessibilityIgnoresInvertColors

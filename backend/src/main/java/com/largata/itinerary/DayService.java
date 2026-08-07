@@ -5,11 +5,16 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
+import com.largata.media.Photo;
+import com.largata.media.PhotoService;
+import com.largata.media.PhotoSubject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -28,6 +33,7 @@ public class DayService {
     private final ActivityHistoryService history;
     private final WriteFence fence;
     private final Analytics analytics;
+    private final PhotoService photos;
 
     @PersistenceContext private EntityManager entityManager;
 
@@ -37,13 +43,15 @@ public class DayService {
             EditLeaseService editLease,
             ActivityHistoryService history,
             WriteFence fence,
-            Analytics analytics) {
+            Analytics analytics,
+            PhotoService photos) {
         this.days = days;
         this.activities = activities;
         this.editLease = editLease;
         this.history = history;
         this.fence = fence;
         this.analytics = analytics;
+        this.photos = photos;
     }
 
 
@@ -66,8 +74,16 @@ public class DayService {
 
     @Transactional(readOnly = true)
     public List<DayView> plan(UUID itineraryId) {
-        return days.findByItineraryIdOrderByOrdinalAsc(itineraryId).stream()
-                .map(day -> DayView.of(day, activities.findByDayIdOrderBySortOrderAscIdAsc(day.id())))
+        List<Day> planDays = days.findByItineraryIdOrderByOrdinalAsc(itineraryId);
+        List<List<Activity>> activitiesPerDay =
+                planDays.stream().map(day -> activities.findByDayIdOrderBySortOrderAscIdAsc(day.id())).toList();
+
+        List<UUID> everyActivityId =
+                activitiesPerDay.stream().flatMap(List::stream).map(Activity::id).toList();
+        Map<UUID, List<Photo>> photosByActivity = photos.allOfEach(PhotoSubject.ACTIVITY, everyActivityId);
+
+        return IntStream.range(0, planDays.size())
+                .mapToObj(i -> DayView.of(planDays.get(i), activitiesPerDay.get(i), photosByActivity))
                 .toList();
     }
 

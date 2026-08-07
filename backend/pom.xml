@@ -25,7 +25,26 @@
   <properties>
     <java.version>25</java.version>
     <firebase-admin.version>9.4.3</firebase-admin.version>
+    <awssdk.version>2.51.1</awssdk.version>
   </properties>
+
+  <!--
+    The AWS SDK publishes its own BOM and Boot's parent does not manage it (no software.amazon.awssdk
+    coordinate exists in Boot 4.1's managed list), so this is the one place a version is named. Import
+    it rather than pinning `s3` directly: the SDK's modules must move in lockstep, and the BOM is how
+    that is expressed.
+  -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${awssdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -111,6 +130,59 @@
       ResendMailTransport and the ITs that care both name their request factory explicitly.
     -->
 
+    <!--
+      S3-class object storage (S3.3, ADR-021). The AWS SDK is the client for EVERY target we may
+      point at — Garage locally, Railway Buckets or Cloudflare R2 deployed — which is the whole
+      reason the provider is swappable by configuration. The MinIO SDK was rejected at the ticket:
+      it is maintained by a vendor mid-retreat from open source and drags OkHttp + the Kotlin
+      stdlib in as a second HTTP stack.
+
+      THE EXCLUSIONS ARE LOAD-BEARING, NOT TIDINESS. `s3` pulls BOTH apache-client (HttpClient 4.x)
+      and netty-nio-client at runtime scope even when only the sync client is used. We exclude both
+      and state url-connection-client explicitly, for the reason recorded on firebase-admin above:
+      Spring picks its ClientHttpRequestFactory by CLASSPATH DETECTION, so an HTTP stack arriving
+      transitively rewires transports the storage code never touches. Two specific consequences:
+
+        1. NEVER add `apache5-client` (the SDK's HttpClient 5.x option, and a future default). It
+           would put HttpClient 5 back on the classpath and re-flip every RestClient onto it —
+           precisely the S4.0 trap, whose first symptom was an unrelated test getting slower.
+        2. Every SDK client must name its httpClientBuilder. With one client on UrlConnection and
+           another defaulting, the SDK throws "multiple HTTP implementations found on the classpath"
+           — the same discipline as ResendMailTransport.statedTransport().
+    -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>apache-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>netty-nio-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>url-connection-client</artifactId>
+    </dependency>
+
+    <!--
+      Image ingest (INV-11). A single jar with zero transitive dependencies, wrapping ImageIO — so
+      decode-validation and metadata-stripping come from the JDK unchanged (a BufferedImage holds
+      pixels only, so re-encoding drops EXIF by construction; PRESERVING metadata is what would
+      need a library). The one thing ImageIO cannot do is honour EXIF orientation, and that is the
+      whole reason this dependency exists: strip the tag off an unrotated pixel grid and the photo
+      is permanently sideways.
+    -->
+    <dependency>
+      <groupId>net.coobird</groupId>
+      <artifactId>thumbnailator</artifactId>
+      <version>0.4.21</version>
+    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
@@ -146,6 +218,19 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!--
+      The storage IT's emulator. MinIO rather than Garage here — deliberately different from the
+      compose stack, and the difference is the point: the SDK code is identical against both, so
+      running the ITs on a second implementation is free evidence that nothing has quietly grown a
+      dependency on one vendor's behaviour. The image tag is pinned explicitly (MinIOContainer's
+      default tag would resolve against an archived repository — MinIO stopped publishing community
+      images in Oct 2025).
+    -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-minio</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

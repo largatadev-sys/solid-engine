@@ -57,8 +57,66 @@ async function request<T>(path: string, init?: { method: string; body?: unknown 
   return body as T;
 }
 
+async function upload<T>(path: string, part: FormData): Promise<T> {
+  const token = await currentToken();
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl()}${path}`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ...(token !== null ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: part,
+    });
+  } catch {
+    throw ApiError.offline();
+  }
+
+  const body: unknown = await response.json().catch(() => undefined);
+
+  if (!response.ok) {
+    if (isErrorEnvelope(body)) {
+      throw new ApiError({
+        code: body.code,
+        message: body.message,
+        status: response.status,
+        traceId: body.traceId,
+      });
+    }
+    throw new ApiError({
+      code: 'UNEXPECTED_RESPONSE',
+      message: 'The server returned an unexpected response.',
+      status: response.status,
+    });
+  }
+
+  return body as T;
+}
+
+async function fetchBlob(path: string): Promise<Blob | null> {
+  const token = await currentToken();
+  if (token === null) return null;
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl()}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw ApiError.offline();
+  }
+
+  return response.ok ? await response.blob() : null;
+}
+
 export const apiClient = {
   get: <T>(path: string): Promise<T> => request<T>(path),
+
+  upload: <T>(path: string, part: FormData): Promise<T> => upload<T>(path, part),
+
+  fetchBlob: (path: string): Promise<Blob | null> => fetchBlob(path),
 
   post: <T>(path: string, body: unknown): Promise<T> => request<T>(path, { method: 'POST', body }),
 

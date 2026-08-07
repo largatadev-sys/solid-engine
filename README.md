@@ -18,7 +18,7 @@ git config core.hooksPath .githooks    # activates the pre-commit secret scan
 ## Run the stack
 
 ```sh
-docker compose up --build              # backend + Postgres + MinIO; needs only Docker
+docker compose up --build              # backend + Postgres + Garage (S3-class storage); needs only Docker
 curl http://localhost:8080/v1/health   # {"status":"ok"}
 docker compose down                    # wipes the database (no volume — by design)
 ```

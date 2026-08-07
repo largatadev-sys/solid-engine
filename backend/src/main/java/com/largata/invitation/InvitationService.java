@@ -205,16 +205,21 @@ public class InvitationService {
     @Transactional(readOnly = true)
     public List<MemberSummary> members(Membership member) {
         List<MembershipView> rows = workspaces.membersOf(member.itineraryId());
-        Map<UUID, String> names = namesByIds(rows.stream().map(MembershipView::travelerId).toList());
-        return rows.stream()
-                .map(
-                        m ->
-                                new MemberSummary(
-                                        m.travelerId(),
-                                        names.getOrDefault(m.travelerId(), ""),
-                                        m.role(),
-                                        m.joinedAt()))
-                .toList();
+        Map<UUID, TravelerSummary> profiles =
+                travelers.summariesByIds(rows.stream().map(MembershipView::travelerId).toList()).stream()
+                        .collect(Collectors.toMap(TravelerSummary::id, summary -> summary));
+        return rows.stream().map(m -> memberSummaryOf(m, profileOf(profiles, m.travelerId()))).toList();
+    }
+
+
+    private static MemberSummary memberSummaryOf(MembershipView m, TravelerSummary profile) {
+        return new MemberSummary(
+                m.travelerId(), profile.displayName(), profile.avatarUrl(), m.role(), m.joinedAt());
+    }
+
+
+    private static TravelerSummary profileOf(Map<UUID, TravelerSummary> profiles, UUID travelerId) {
+        return profiles.getOrDefault(travelerId, new TravelerSummary(travelerId, "", null, null));
     }
 
 

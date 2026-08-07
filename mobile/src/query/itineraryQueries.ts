@@ -12,6 +12,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { useAuth } from '../hooks/authContext';
+import type { PickedPhoto } from '../media/pickedPhoto';
 import { itineraryRepository } from '../repositories/itineraryRepository';
 import type {
   ActivityRequest,
@@ -131,6 +132,24 @@ export function useUpdateItinerary(
   });
 }
 
+
+
+export function useUploadCover(id: string): UseMutationResult<ItineraryResponse, Error, PickedPhoto> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (photo: PickedPhoto) => itineraryRepository.uploadCover(id, photo),
+    onSuccess: (updated) => onItineraryUpdated(client, updated),
+  });
+}
+
+
+export function useRemoveCover(id: string): UseMutationResult<void, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.removeCover(id),
+    onSuccess: () => onPlanChanged(client, id),
+  });
+}
 
 
 export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
@@ -260,6 +279,30 @@ export function useCreateActivity(
   return useMutation({
     mutationFn: ({ dayId, request }: { dayId: string; request: ActivityRequest }) =>
       itineraryRepository.createActivity(itineraryId, dayId, request),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+
+export function useAddActivityPhoto(
+  itineraryId: string,
+): UseMutationResult<ActivityResponse, Error, { dayId: string; activityId: string; photo: PickedPhoto }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, activityId, photo }: { dayId: string; activityId: string; photo: PickedPhoto }) =>
+      itineraryRepository.addActivityPhoto(itineraryId, dayId, activityId, photo),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+
+export function useRemoveActivityPhoto(
+  itineraryId: string,
+): UseMutationResult<void, Error, { dayId: string; activityId: string; photoId: string }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dayId, activityId, photoId }: { dayId: string; activityId: string; photoId: string }) =>
+      itineraryRepository.removeActivityPhoto(itineraryId, dayId, activityId, photoId),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }

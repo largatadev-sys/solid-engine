@@ -1,0 +1,20 @@
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "sqlite"
+
+replication_factor = 1
+
+# Single-node local emulator: the RPC layer never leaves the container. Garage refuses to boot
+# without an rpc_secret, but it reads one from GARAGE_RPC_SECRET — so no credential-shaped literal
+# needs to exist in a committed file at all. That is the S4.0 lesson applied: assemble the value
+# from the environment rather than widening the pre-commit backstop to exempt this one line.
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+s3_region = "us-east-1"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.localhost"
+
+[admin]
+api_bind_addr = "[::]:3903"

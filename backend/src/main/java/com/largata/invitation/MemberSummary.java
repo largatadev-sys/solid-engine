@@ -5,4 +5,5 @@ import java.time.Instant;
 import java.util.UUID;
 
 
-public record MemberSummary(UUID travelerId, String displayName, Role role, Instant joinedAt) {}
+public record MemberSummary(
+        UUID travelerId, String displayName, String avatarUrl, Role role, Instant joinedAt) {}

@@ -14,6 +14,7 @@ const row = (
 ): MemberResponse => ({
   travelerId,
   displayName: travelerId,
+  avatarUrl: null,
   role,
   joinedAt: '2026-07-27T00:00:00Z',
   ...(ownershipOffered === undefined ? {} : { ownershipOffered }),

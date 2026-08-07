@@ -16,6 +16,14 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      # Slightly above ImageIngest.MAX_UPLOAD_BYTES (10 MB) on purpose. Spring rejects at this bound
+      # with a container-level error; the domain rejects at 10 MB with a message naming the limit.
+      # Leaving room between them means a traveler a little over the line reads our refusal rather
+      # than the servlet's, while a wildly oversized upload is still stopped before it is buffered.
+      max-file-size: 12MB
+      max-request-size: 12MB
   security:
     oauth2:
       resourceserver:
@@ -25,6 +33,20 @@ spring:
           # or its prod-mirrored Travelers (keyed by Firebase UID) match no one (spec, decision 1).
           # Not a secret: the issuer is public, and the JWKS behind it is public by design.
           issuer-uri: ${FIREBASE_ISSUER_URI:https://securetoken.google.com/largata-dev}
+
+largata:
+  storage:
+    # S3-class object storage (ADR-021). Endpoint-driven so the same code speaks to Garage locally
+    # and Railway Buckets or R2 on a deployed rung. Unset endpoint = no bucket = UnconfiguredObjectStore,
+    # which refuses honestly; media is the only thing that stops working.
+    #
+    # `region` is signing input, not routing: SigV4 requires one even when the endpoint is overridden,
+    # and any stable value satisfies a non-AWS store (R2 documents "auto").
+    endpoint: ${LARGATA_STORAGE_ENDPOINT:}
+    bucket: ${LARGATA_STORAGE_BUCKET:largata-media}
+    access-key: ${LARGATA_STORAGE_ACCESS_KEY:}
+    secret-key: ${LARGATA_STORAGE_SECRET_KEY:}
+    region: ${LARGATA_STORAGE_REGION:us-east-1}
 
 server:
   port: ${PORT:8080}

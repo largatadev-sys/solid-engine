@@ -26,7 +26,8 @@ export type IconName =
   | 'checkCircle'
   | 'link'
   | 'star'
-  | 'partyPopper';
+  | 'partyPopper'
+  | 'camera';
 
 interface IconProps {
   readonly name: IconName;
@@ -172,6 +173,13 @@ export function Icon({ name, size, color }: IconProps) {
       )}
 
       {name === 'chevronDown' && <Polyline points="6 9 12 15 18 9" {...shared} />}
+
+      {name === 'camera' && (
+        <>
+          <Path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" {...shared} />
+          <Circle cx="12" cy="13" r="3" {...shared} />
+        </>
+      )}
 
       {name === 'globe' && (
         <>

@@ -1,10 +1,17 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
+import { galleryOf, galleryOverflow, GALLERY_VISIBLE_TILES } from '../media/galleryOf';
+import { thumbOf } from '../media/mediaSourceContract';
+import { useMediaSource } from '../media/useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
-import type { PublishedActivityResponse, PublishedItineraryResponse } from '../types/api';
+import type {
+  PublishedActivityResponse,
+  PublishedItineraryResponse,
+  TravelerCardResponse,
+} from '../types/api';
 import { dayHeading } from './dayHeading';
 import { initialsFor } from '../onboarding/initials';
 import {
@@ -82,6 +89,53 @@ export function PublishedItineraryView({
 }
 
 
+function CreatorAvatar({ creator }: { creator: TravelerCardResponse }) {
+  const source = useMediaSource(thumbOf(creator.avatarUrl));
+
+  if (source !== null) {
+    return (
+      <Image
+        source={source}
+        style={styles.creatorAvatar}
+        accessibilityLabel={`${creator.displayName}'s profile photo`}
+        accessibilityIgnoresInvertColors
+      />
+    );
+  }
+
+  return (
+    <View style={styles.creatorAvatar}>
+      <Text style={styles.creatorInitials}>{initialsFor(creator.displayName, null)}</Text>
+    </View>
+  );
+}
+
+
+export const COVER_PLACEHOLDER_LABEL = 'No cover photo yet';
+
+function CoverSlot({ coverUrl }: { coverUrl: string | null }) {
+  const source = useMediaSource(coverUrl);
+
+  if (source === null) {
+    return (
+      <View style={styles.coverPlaceholder}>
+        <Text style={styles.coverPlaceholderText}>{COVER_PLACEHOLDER_LABEL}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={source}
+      style={styles.cover}
+      resizeMode="cover"
+      accessibilityLabel="Trip cover photo"
+      accessibilityIgnoresInvertColors
+    />
+  );
+}
+
+
 function PublishedHeader({
   projection,
   audience,
@@ -96,6 +150,8 @@ function PublishedHeader({
 
   return (
     <View style={styles.header}>
+      <CoverSlot coverUrl={projection.coverImageUrl} />
+
       <View style={styles.pillRow}>
         {pill !== undefined && (
           <View style={styles.pill}>
@@ -109,11 +165,7 @@ function PublishedHeader({
       </View>
 
       <View style={styles.creatorRow}>
-        <View style={styles.creatorAvatar}>
-          <Text style={styles.creatorInitials}>
-            {initialsFor(projection.creator.displayName, null)}
-          </Text>
-        </View>
+        <CreatorAvatar creator={projection.creator} />
         <View style={styles.creatorNames}>
           <Text style={styles.creatorName}>{projection.creator.displayName}</Text>
           {handle !== undefined && <Text style={styles.creatorHandle}>{handle}</Text>}
@@ -165,18 +217,57 @@ function PublishedHeader({
 }
 
 
+export const EMPTY_GALLERY_LABEL = 'No photos yet';
+
+function Gallery({ projection }: { projection: PublishedItineraryResponse }) {
+  const photos = galleryOf(projection);
+
+  if (photos.length === 0) {
+    return (
+      <View style={styles.gallery}>
+        <Text style={styles.galleryHint}>{EMPTY_GALLERY_LABEL}</Text>
+      </View>
+    );
+  }
+
+  const overflow = galleryOverflow(photos.length);
+
+  return (
+    <View style={styles.galleryGrid}>
+      {photos.slice(0, GALLERY_VISIBLE_TILES).map((photo, index) => (
+        <GalleryTile
+          key={photo.id}
+          thumbUrl={photo.thumbUrl}
+          overflow={index === GALLERY_VISIBLE_TILES - 1 ? overflow : 0}
+        />
+      ))}
+    </View>
+  );
+}
+
+
+function GalleryTile({ thumbUrl, overflow }: { thumbUrl: string; overflow: number }) {
+  const source = useMediaSource(thumbUrl);
+
+  return (
+    <View style={styles.galleryTile}>
+      {source !== null && (
+        <Image source={source} style={styles.galleryImage} accessibilityIgnoresInvertColors />
+      )}
+      {overflow > 0 && (
+        <View style={styles.galleryOverflow}>
+          <Text style={styles.galleryOverflowText}>{`+${overflow}`}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+
 function Overview({ projection }: { projection: PublishedItineraryResponse }) {
   return (
     <View style={styles.body}>
-      <Pressable
-        style={styles.gallery}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: true }}
-        accessibilityLabel="Photo gallery, coming soon"
-        onPress={() => comingSoon('activityPhoto')}
-      >
-        <Text style={styles.galleryHint}>Photos coming soon</Text>
-      </Pressable>
+      <Gallery projection={projection} />
 
       {projection.description !== null && <Text style={styles.description}>{projection.description}</Text>}
 
@@ -251,6 +342,12 @@ const FOLLOW_ICON_SIZE = 14;
 
 const CREATOR_AVATAR_SIZE = 36;
 
+const COVER_HEIGHT = 200;
+
+const GALLERY_EMPTY_HEIGHT = 132;
+
+const GALLERY_TILE = 96;
+
 const STANDOUT_ICON_SIZE = 18;
 
 const styles = StyleSheet.create({
@@ -265,6 +362,20 @@ const styles = StyleSheet.create({
   },
   pillText: { ...typography.overline, color: colors.textOnAccent },
   duration: { ...typography.label, color: colors.textSecondary },
+  cover: {
+    height: COVER_HEIGHT,
+    width: '100%',
+    borderRadius: radii.sm,
+    backgroundColor: colors.surfaceMuted,
+  },
+  coverPlaceholder: {
+    height: COVER_HEIGHT,
+    borderRadius: radii.sm,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverPlaceholderText: { ...typography.caption, color: colors.textSecondary },
   creatorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   creatorAvatar: {
     width: CREATOR_AVATAR_SIZE,
@@ -312,7 +423,7 @@ const styles = StyleSheet.create({
   tabTextGreyed: { opacity: 0.6 },
   body: { gap: spacing.md },
   gallery: {
-    height: 132,
+    height: GALLERY_EMPTY_HEIGHT,
     borderRadius: radii.lg,
     borderWidth: 1,
     borderStyle: 'dashed',
@@ -320,9 +431,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: 0.7,
   },
   galleryHint: { ...typography.caption, color: colors.textSecondary },
+  galleryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  galleryTile: {
+    width: GALLERY_TILE,
+    height: GALLERY_TILE,
+    borderRadius: radii.sm,
+    overflow: 'hidden',
+    backgroundColor: colors.surfaceMuted,
+  },
+  galleryImage: { width: '100%', height: '100%' },
+  galleryOverflow: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accentTint,
+  },
+  galleryOverflowText: { ...typography.bodyStrong, color: colors.textPrimary },
   description: { ...typography.body, color: colors.textPrimary, lineHeight: 26 },
   bestTime: { ...typography.caption, color: colors.textSecondary },
   standouts: { gap: spacing.sm },

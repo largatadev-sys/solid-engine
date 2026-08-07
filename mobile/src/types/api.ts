@@ -153,6 +153,15 @@ export type ActivityResponse = {
   lastEditedByName?: string | null;
 
   lease?: LeaseHolderResponse | null;
+
+  photos: ActivityPhotoResponse[];
+};
+
+
+export type ActivityPhotoResponse = {
+  id: string;
+  url: string;
+  thumbUrl: string;
 };
 
 
@@ -179,6 +188,8 @@ export type PublishedActivityResponse = {
   bookingProvider: string | null;
   bookingPriceAmount: string | null;
   bookingPriceCurrency: string | null;
+
+  photos: ActivityPhotoResponse[];
 };
 
 
@@ -344,6 +355,7 @@ export type InboxInvitationResponse = {
 export type MemberResponse = {
   travelerId: string;
   displayName: string;
+  avatarUrl: string | null;
   role: string;
   joinedAt: string;
 

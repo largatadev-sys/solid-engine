@@ -11,7 +11,8 @@ import {
   View,
 } from 'react-native';
 import { ApiError } from '../../../../../src/api/ApiError';
-import { GreyedMediaTile } from '../../../../../src/components/GreyedMediaTile';
+import { ActivityPhotoStrip } from '../../../../../src/media/ActivityPhotoStrip';
+import { usePhotoAction } from '../../../../../src/media/usePhotoAction';
 import { Icon } from '../../../../../src/components/Icon';
 import { TimePicker } from '../../../../../src/components/TimePicker';
 import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
@@ -19,10 +20,12 @@ import { useEditLock } from '../../../../../src/hooks/useEditLock';
 import { useMe } from '../../../../../src/hooks/useMe';
 import { validateActivityForm } from '../../../../../src/itineraries/validateActivityForm';
 import {
+  useAddActivityPhoto,
   useCreateActivity,
   useEditActivity,
   useItinerary,
   useMoveActivity,
+  useRemoveActivityPhoto,
 } from '../../../../../src/query/itineraryQueries';
 import type { ActivityRequest, ActivityResponse, DayResponse } from '../../../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../../../src/theme';
@@ -39,7 +42,11 @@ export default function ActivityFormScreen() {
   const create = useCreateActivity(id);
   const edit = useEditActivity(id);
   const move = useMoveActivity(id);
+  const addPhoto = useAddActivityPhoto(id);
+  const removePhoto = useRemoveActivityPhoto(id);
   const mutation = isEdit ? edit : create;
+
+  const photoAction = usePhotoAction();
 
   const editLock = useEditLock(id);
   useEffect(() => {
@@ -166,7 +173,25 @@ export default function ActivityFormScreen() {
 
       <View style={styles.field}>
         <Text style={styles.label}>Photos</Text>
-        <GreyedMediaTile surface="activityPhoto" />
+        {isEdit && activityId !== undefined ? (
+          <ActivityPhotoStrip
+            photos={existing?.photos ?? []}
+            busy={addPhoto.isPending || removePhoto.isPending}
+            onAdd={() =>
+              void photoAction.pickAndRun((photo) =>
+                addPhoto.mutateAsync({ dayId, activityId, photo }),
+              )
+            }
+            onRemove={(photoId) =>
+              void photoAction.run(() => removePhoto.mutateAsync({ dayId, activityId, photoId }))
+            }
+          />
+        ) : (
+          <Text style={styles.photosHint}>{PHOTOS_AFTER_SAVE_HINT}</Text>
+        )}
+        {photoAction.failure !== undefined && (
+          <Text style={styles.photoError}>{photoAction.failure}</Text>
+        )}
       </View>
 
       <View style={styles.field}>
@@ -337,6 +362,8 @@ function Field(props: {
   );
 }
 
+const PHOTOS_AFTER_SAVE_HINT = 'Save this activity first, then add its photos.';
+
 const styles = StyleSheet.create({
   container: { padding: spacing.md, gap: spacing.md, backgroundColor: colors.background, flexGrow: 1 },
   row: { flexDirection: 'row', gap: spacing.sm },
@@ -344,6 +371,8 @@ const styles = StyleSheet.create({
   rowItemNarrow: { width: 88 },
   field: { gap: spacing.xs },
   label: { ...typography.caption, color: colors.textSecondary },
+  photosHint: { ...typography.caption, color: colors.textSecondary },
+  photoError: { ...typography.caption, color: colors.danger },
   hint: { ...typography.caption, color: colors.accent },
   input: {
     ...typography.body,

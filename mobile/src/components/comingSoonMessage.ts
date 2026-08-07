@@ -2,8 +2,6 @@ export const COMING_SOON_SURFACES = {
   home: 'Home feed',
   search: 'Search',
   chat: 'Trip chat',
-  coverPhoto: 'Cover photo',
-  activityPhoto: 'Activity photo',
   network: 'From your network',
   activityHistory: 'Activity history',
   fork: 'Forking an itinerary',

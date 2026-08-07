@@ -8,6 +8,7 @@ import com.largata.itinerary.LeaseHolder;
 import com.largata.itinerary.LeaseSubject;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -30,7 +31,8 @@ public record ActivityResponse(
         Instant lastEditedAt,
         String lastEditedByHandle,
         String lastEditedByName,
-        LeaseHolderResponse lease) {
+        LeaseHolderResponse lease,
+        List<ActivityPhotoResponse> photos) {
 
 
     public static ActivityResponse of(ActivityView a) {
@@ -63,6 +65,7 @@ public record ActivityResponse(
                 a.lastEditedAt(),
                 editor == null ? null : editor.handle(),
                 editor == null ? null : editor.displayName(),
-                LeaseHolderResponse.of(holder));
+                LeaseHolderResponse.of(holder),
+                ActivityPhotoResponse.allOf(a.photos()));
     }
 }

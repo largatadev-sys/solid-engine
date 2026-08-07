@@ -16,6 +16,8 @@ import type {
   TripCategory,
   UpdateItineraryRequest,
 } from '../types/api';
+import { photoPart } from '../media/photoPart';
+import type { PickedPhoto } from '../media/pickedPhoto';
 
 
 export const itineraryRepository = {
@@ -41,6 +43,14 @@ export const itineraryRepository = {
 
   async create(request: CreateItineraryRequest): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>('/v1/itineraries', request);
+  },
+
+  async uploadCover(id: string, photo: PickedPhoto): Promise<ItineraryResponse> {
+    return apiClient.upload<ItineraryResponse>(`/v1/itineraries/${id}/cover`, await photoPart(photo));
+  },
+
+  async removeCover(id: string): Promise<void> {
+    return apiClient.delete(`/v1/itineraries/${id}/cover`);
   },
 
 
@@ -125,6 +135,29 @@ export const itineraryRepository = {
 
   async deleteActivity(itineraryId: string, dayId: string, activityId: string): Promise<void> {
     return apiClient.delete(`/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`);
+  },
+
+  async addActivityPhoto(
+    itineraryId: string,
+    dayId: string,
+    activityId: string,
+    photo: PickedPhoto,
+  ): Promise<ActivityResponse> {
+    return apiClient.upload<ActivityResponse>(
+      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/photos`,
+      await photoPart(photo),
+    );
+  },
+
+  async removeActivityPhoto(
+    itineraryId: string,
+    dayId: string,
+    activityId: string,
+    photoId: string,
+  ): Promise<void> {
+    return apiClient.delete(
+      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/photos/${photoId}`,
+    );
   },
 
 
