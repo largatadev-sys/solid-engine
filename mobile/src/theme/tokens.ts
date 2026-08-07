@@ -11,6 +11,7 @@ const palette = {
   crimson700: '#B3261E',
   forest600: '#2F6B47',
   terracotta016: 'rgba(217, 108, 74, 0.0627451)',
+  navy140: 'rgba(27, 38, 59, 0.5490196)',
 } as const;
 
 
@@ -35,6 +36,8 @@ export const colors = {
   accentMuted: palette.terracotta200,
 
   accentTint: palette.terracotta016,
+
+  scrim: palette.navy140,
 
   danger: palette.crimson700,
 
