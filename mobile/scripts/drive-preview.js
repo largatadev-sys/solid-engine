@@ -270,10 +270,24 @@ function getJson(path) {
       // HTMLInputElement.prototype.files means the picker's OWN input is already carrying the file
       // the instant it is created, so the real change-handler → repository → multipart path runs
       // exactly as it does for a traveler. The bytes are read from disk here, not faked.
+      // A JSON array literal of every byte melts V8 on multi-megabyte files (a 29MB photo becomes
+      // a ~110MB source string to parse), so the bytes travel as base64 in bounded slices instead.
       const fileBytes = require('fs').readFileSync(require('path').resolve(step.file));
+      const base64 = fileBytes.toString('base64');
+      const SLICE = 4 * 1024 * 1024;
+      await evaluate(`window.__drivenB64 = '';`);
+      for (let at = 0; at < base64.length; at += SLICE) {
+        await evaluate(
+          `(() => { window.__drivenB64 += ${JSON.stringify(base64.slice(at, at + SLICE))}; return window.__drivenB64.length; })()`,
+        );
+      }
+      const mime = /\.png$/i.test(step.file) ? 'image/png' : 'image/jpeg';
       const planted = await evaluate(`(() => {
-          const bytes = Uint8Array.from(${JSON.stringify(Array.from(fileBytes))});
-          const file = new File([bytes], ${JSON.stringify(require('path').basename(step.file))}, { type: 'image/png' });
+          const raw = atob(window.__drivenB64);
+          delete window.__drivenB64;
+          const bytes = new Uint8Array(raw.length);
+          for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
+          const file = new File([bytes], ${JSON.stringify(require('path').basename(step.file))}, { type: ${JSON.stringify(mime)} });
           const transfer = new DataTransfer();
           transfer.items.add(file);
           const proto = HTMLInputElement.prototype;

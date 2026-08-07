@@ -1,10 +1,11 @@
 import { cropCircular } from './CropStation';
+import { downscaleForUpload } from './downscale';
 import type { CropShape, PickedPhoto } from './pickedPhoto';
 
 export async function pickPhoto(shape: CropShape = 'free'): Promise<PickedPhoto | null> {
   const chosen = await chooseFile();
   if (chosen === null) return null;
-  return shape === 'circle' ? cropCircular(chosen) : chosen;
+  return shape === 'circle' ? cropCircular(chosen) : downscaleForUpload(chosen);
 }
 
 

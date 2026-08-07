@@ -5,6 +5,7 @@ import {
   cropAreaOf,
   displayedSize,
   distanceBetween,
+  downscaleTarget,
   MAX_ZOOM,
   MIN_ZOOM,
   zoomForPinch,
@@ -61,6 +62,27 @@ describe('zoomForPinch — spreading fingers zooms by their distance ratio', () 
 
   it('holds still when the starting distance is zero, instead of dividing by it', () => {
     expect(zoomForPinch(2, 0, 150)).toBe(2);
+  });
+});
+
+describe('downscaleTarget — a big photo shrinks before upload, a small one is left alone', () => {
+  it('bounds a landscape pro shot by its width, keeping the aspect', () => {
+    expect(downscaleTarget({ width: 6000, height: 4000 }, 2048)).toEqual({
+      width: 2048,
+      height: 1365,
+    });
+  });
+
+  it('bounds a portrait shot by its height', () => {
+    expect(downscaleTarget({ width: 4000, height: 6000 }, 2048)).toEqual({
+      width: 1365,
+      height: 2048,
+    });
+  });
+
+  it('returns null for a photo already within the bound, so no needless re-encode happens', () => {
+    expect(downscaleTarget({ width: 2048, height: 1200 }, 2048)).toBeNull();
+    expect(downscaleTarget({ width: 640, height: 480 }, 2048)).toBeNull();
   });
 });
 

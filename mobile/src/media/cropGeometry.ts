@@ -34,6 +34,14 @@ export function distanceBetween(a: Offset, b: Offset): number {
 }
 
 
+export function downscaleTarget(image: Size, maxEdge: number): Size | null {
+  const edge = Math.max(image.width, image.height);
+  if (edge <= maxEdge) return null;
+  const scale = maxEdge / edge;
+  return { width: Math.round(image.width * scale), height: Math.round(image.height * scale) };
+}
+
+
 export function zoomForPinch(startZoom: number, startDistance: number, distance: number): number {
   if (startDistance <= 0) return clampZoom(startZoom);
   return clampZoom(startZoom * (distance / startDistance));

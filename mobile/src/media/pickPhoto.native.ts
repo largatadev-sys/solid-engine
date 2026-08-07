@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { cropCircular } from './CropStation';
+import { downscaleForUpload } from './downscale';
 import type { CropShape, PickedPhoto } from './pickedPhoto';
 
 export async function pickPhoto(shape: CropShape = 'free'): Promise<PickedPhoto | null> {
@@ -22,5 +23,5 @@ export async function pickPhoto(shape: CropShape = 'free'): Promise<PickedPhoto 
     mimeType: asset.mimeType ?? 'image/jpeg',
   };
 
-  return shape === 'circle' ? cropCircular(chosen) : chosen;
+  return shape === 'circle' ? cropCircular(chosen) : downscaleForUpload(chosen);
 }
