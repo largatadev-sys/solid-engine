@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -11,7 +11,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { workspaceColors, workspaceMetrics, workspaceRadii } from '../theme/workspaceTokens';
-import { displacementFor, landingSlot, reorderActionsFor } from './landingSlot';
+import { displacementFor, landingSlot, movedTo, orderedBy, reorderActionsFor } from './landingSlot';
 import type { ActivityResponse } from '../types/api';
 import { ActivityRow } from './WorkspaceDayCard';
 import type { WorkspaceAffordances } from './workspaceControls';
@@ -58,9 +58,17 @@ export function DraggableActivityList({
 }: DraggableActivityListProps) {
   const draggingIndex = useSharedValue(-1);
   const dragTranslation = useSharedValue(0);
-  const settlingTarget = useSharedValue(-1);
-  const rowPitch = useSharedValue<number>(workspaceMetrics.activityRowHeight);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const settling = useSharedValue(false);
+  const rowPitch = useSharedValue<number>(workspaceMetrics.activityRowHeight + ROW_GAP);
+  const [localOrder, setLocalOrder] = useState<string[] | null>(null);
+
+  const serverOrder = activities.map((a) => a.id).join();
+
+  useEffect(() => {
+    setLocalOrder(null);
+  }, [serverOrder]);
+
+  const rows = orderedBy(activities, localOrder);
 
   const measure = (event: LayoutChangeEvent) => {
     const measured = event.nativeEvent.layout.height;
@@ -69,23 +77,33 @@ export function DraggableActivityList({
 
   return (
     <View style={styles.list}>
-      {activities.map((activity, index) => (
+      {rows.map((activity, index) => (
         <DraggableRow
           key={activity.id}
           activity={activity}
           index={index}
-          count={activities.length}
+          count={rows.length}
           affordances={affordances}
           draggingIndex={draggingIndex}
           dragTranslation={dragTranslation}
-          settlingTarget={settlingTarget}
+          settling={settling}
           rowPitch={rowPitch}
-          isDragging={draggingId === activity.id}
           onMeasure={index === 0 ? measure : undefined}
-          onDragStart={() => setDraggingId(activity.id)}
-          onDragEnd={(toIndex) => {
-            setDraggingId(null);
-            if (toIndex !== index) onDrop(activity.id, toIndex);
+          onDragEnd={(toIndex, translation) => {
+            const remainder = translation - (toIndex - index) * rowPitch.value;
+            if (toIndex !== index) {
+              setLocalOrder(movedTo(rows.map((a) => a.id), index, toIndex));
+              onDrop(activity.id, toIndex);
+            }
+            settling.value = true;
+            draggingIndex.value = toIndex;
+            dragTranslation.value = remainder;
+            dragTranslation.value = withSpring(0, SETTLE, (finished) => {
+              if (finished === true) {
+                draggingIndex.value = -1;
+                settling.value = false;
+              }
+            });
           }}
           onEdit={onEdit}
           onDelete={onDelete}
@@ -104,11 +122,9 @@ function DraggableRow({
   affordances,
   draggingIndex,
   dragTranslation,
-  settlingTarget,
+  settling,
   rowPitch,
-  isDragging,
   onMeasure,
-  onDragStart,
   onDragEnd,
   onEdit,
   onDelete,
@@ -120,12 +136,10 @@ function DraggableRow({
   affordances: WorkspaceAffordances;
   draggingIndex: SharedValue<number>;
   dragTranslation: SharedValue<number>;
-  settlingTarget: SharedValue<number>;
+  settling: SharedValue<boolean>;
   rowPitch: SharedValue<number>;
-  isDragging: boolean;
   onMeasure?: (event: LayoutChangeEvent) => void;
-  onDragStart: () => void;
-  onDragEnd: (toIndex: number) => void;
+  onDragEnd: (toIndex: number, translation: number) => void;
   onEdit: (activity: ActivityResponse) => void;
   onDelete: (activity: ActivityResponse) => void;
   onNudge: (activityId: string, direction: 'up' | 'down') => void;
@@ -135,27 +149,18 @@ function DraggableRow({
   const pan = Gesture.Pan()
     .activateAfterLongPress(LONG_PRESS_MS)
     .onStart(() => {
+      settling.value = false;
       draggingIndex.value = index;
-      settlingTarget.value = -1;
       dragTranslation.value = 0;
       lift.value = withTiming(1, { duration: LIFT_MS });
-      runOnJS(onDragStart)();
     })
     .onUpdate((event) => {
       dragTranslation.value = event.translationY;
     })
     .onEnd(() => {
       const target = landingSlot(dragTranslation.value, index, count, rowPitch.value);
-      settlingTarget.value = target;
-      dragTranslation.value = withSpring((target - index) * rowPitch.value, SETTLE, (finished) => {
-        if (finished === true) {
-          draggingIndex.value = -1;
-          settlingTarget.value = -1;
-          dragTranslation.value = 0;
-        }
-      });
       lift.value = withTiming(0, { duration: LIFT_MS });
-      runOnJS(onDragEnd)(target);
+      runOnJS(onDragEnd)(target, dragTranslation.value);
     });
 
   const style = useAnimatedStyle(() => {
@@ -163,18 +168,19 @@ function DraggableRow({
     const lifted = lift.value;
     const isHeld = held === index;
 
-    const settling = settlingTarget.value !== -1;
-
-    const target = settling
-      ? settlingTarget.value
-      : landingSlot(dragTranslation.value, held, count, rowPitch.value);
-
     const translateY = isHeld
       ? dragTranslation.value
-      : withSpring(
-          held === -1 ? 0 : displacementFor(index, held, target, rowPitch.value),
-          SETTLE,
-        );
+      : settling.value || held === -1
+        ? 0
+        : withSpring(
+            displacementFor(
+              index,
+              held,
+              landingSlot(dragTranslation.value, held, count, rowPitch.value),
+              rowPitch.value,
+            ),
+            SETTLE,
+          );
 
     return {
       transform: [{ translateY }, { scale: isHeld ? 1 + lifted * LIFT_SCALE : 1 }],

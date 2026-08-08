@@ -1,4 +1,10 @@
-import { displacementFor, landingSlot, reorderActionsFor } from '../src/itineraries/landingSlot';
+import {
+  displacementFor,
+  landingSlot,
+  movedTo,
+  orderedBy,
+  reorderActionsFor,
+} from '../src/itineraries/landingSlot';
 
 
 const ROW = 60;
@@ -76,6 +82,41 @@ describe('displacementFor — the gap opening under the finger, live, before rel
   it('opens exactly ONE gap: the shifted rows always equal the distance travelled', () => {
     const shifted = [0, 1, 2, 3].filter((i) => displacementFor(i, 0, 3, ROW) !== 0);
     expect(shifted).toEqual([1, 2, 3]);
+  });
+});
+
+
+describe('movedTo — the local order committed at the moment of release', () => {
+  it('moves an id down, closing the gap behind it', () => {
+    expect(movedTo(['a', 'b', 'c'], 0, 2)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('moves an id up', () => {
+    expect(movedTo(['a', 'b', 'c'], 2, 0)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('never mutates the list it was handed', () => {
+    const ids = ['a', 'b', 'c'];
+    movedTo(ids, 0, 2);
+    expect(ids).toEqual(['a', 'b', 'c']);
+  });
+});
+
+
+describe('orderedBy — the visual order while the server catches up', () => {
+  const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+
+  it('renders the local order when one is held', () => {
+    expect(orderedBy(items, ['c', 'a', 'b']).map((i) => i.id)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('renders the server order when no local order is held', () => {
+    expect(orderedBy(items, null)).toBe(items);
+  });
+
+  it('falls back to the server order when the local one no longer fits — an activity deleted elsewhere', () => {
+    expect(orderedBy(items, ['c', 'a', 'ghost'])).toBe(items);
+    expect(orderedBy(items, ['c', 'a'])).toBe(items);
   });
 });
 

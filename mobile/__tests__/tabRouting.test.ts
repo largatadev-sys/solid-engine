@@ -645,24 +645,29 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(web).toContain('reorderActionsFor(index, count)');
   });
 
-  it('settles a released row INTO its landing slot rather than snapping home (founder, 2026-08-09)', () => {
+  it('commits the new order LOCALLY at release, so the drop never waits for the server', () => {
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
     const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+    const queries = read(MOBILE_ROOT, 'src', 'query', 'itineraryQueries.ts');
 
-    expect(native).toContain('withSpring((target - index) * rowPitch.value');
-    expect(native).toContain('settlingTarget');
-    expect(native).toContain('overshootClamping: true');
+    for (const source of [native, web]) {
+      expect(source).toContain('setLocalOrder(movedTo(');
+      expect(source).toContain('setLocalOrder(null)');
+      expect(source).toContain('orderedBy(activities, localOrder)');
+    }
 
-    expect(web).toContain('(target - current.index) * pitch.current');
-    expect(web).toContain('settling: true');
+    expect(queries).toContain('onMutate');
+    expect(queries).toContain('reorderInPlanCache(client, itineraryId, dayId, activityIds)');
   });
 
-  it('holds the settled position until the reordered data arrives — no double move', () => {
+  it('settles only the REMAINDER after release — the sub-slot distance, never the whole travel', () => {
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
     const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
 
-    expect(native).toMatch(/settlingTarget\.value !== -1/);
-    expect(web).toMatch(/current\?\.settling === true \? null : current/);
+    expect(native).toContain('const remainder = translation - (toIndex - index) * rowPitch.value');
+    expect(native).toContain('overshootClamping: true');
+    expect(web).toContain('const remainder = translation.current - (target - index) * pitch.current');
+    expect(web).toContain('settling: true');
   });
 
   it('shifts the other rows LIVE during a drag, not only on release (founder, 2026-08-09)', () => {

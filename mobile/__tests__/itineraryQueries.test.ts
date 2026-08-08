@@ -8,6 +8,7 @@ import {
   onItineraryCreated,
   onItineraryUpdated,
   onPlanChanged,
+  reorderInPlanCache,
 } from '../src/query/itineraryQueries';
 import type { ItineraryResponse, Page } from '../src/types/api';
 
@@ -247,5 +248,69 @@ describe('after a day changes', () => {
     await onPlanChanged(client, 'trip-1');
 
     expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(false);
+  });
+});
+
+
+describe('the optimistic reorder — the cache moves at the drop, not at the response (S4.17)', () => {
+  const activity = (id: string) => ({
+    id,
+    sortOrder: 0,
+    title: id,
+    timeOfDay: null,
+    costAmount: null,
+    costCurrency: null,
+    place: null,
+    description: null,
+    notes: null,
+    externalUrl: null,
+    bookingPurpose: null,
+    bookingProvider: null,
+    bookingPriceAmount: null,
+    bookingPriceCurrency: null,
+    lastEditedBy: 't1',
+    lastEditedAt: '2026-08-09T00:00:00Z',
+    photos: [],
+  });
+
+  const tripWithDay = (): ItineraryResponse => ({
+    ...trip('trip-1', 'Palawan'),
+    days: [
+      {
+        id: 'day-1',
+        ordinal: 1,
+        title: null,
+        activities: [activity('a'), activity('b'), activity('c')],
+      },
+    ],
+  });
+
+  it('reorders the day in the cache synchronously and hands back the previous state', () => {
+    const client = freshClient();
+    client.setQueryData(itineraryKeys.one('trip-1'), tripWithDay());
+
+    const previous = reorderInPlanCache(client, 'trip-1', 'day-1', ['c', 'a', 'b']);
+
+    const cached = client.getQueryData<ItineraryResponse>(itineraryKeys.one('trip-1'));
+    expect(cached?.days[0]?.activities.map((a) => a.id)).toEqual(['c', 'a', 'b']);
+    expect(previous?.days[0]?.activities.map((a) => a.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('declines rather than corrupts when the ids do not match the day — a stale drop', () => {
+    const client = freshClient();
+    client.setQueryData(itineraryKeys.one('trip-1'), tripWithDay());
+
+    expect(reorderInPlanCache(client, 'trip-1', 'day-1', ['c', 'a', 'ghost'])).toBeUndefined();
+    expect(reorderInPlanCache(client, 'trip-1', 'day-1', ['c', 'a'])).toBeUndefined();
+    expect(reorderInPlanCache(client, 'trip-1', 'missing-day', ['a', 'b', 'c'])).toBeUndefined();
+
+    const cached = client.getQueryData<ItineraryResponse>(itineraryKeys.one('trip-1'));
+    expect(cached?.days[0]?.activities.map((a) => a.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('is a no-op with nothing to roll back when the trip was never cached', () => {
+    const client = freshClient();
+
+    expect(reorderInPlanCache(client, 'trip-1', 'day-1', ['a'])).toBeUndefined();
   });
 });

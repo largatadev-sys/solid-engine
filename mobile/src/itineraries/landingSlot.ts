@@ -25,6 +25,22 @@ export function displacementFor(
 }
 
 
+export function orderedBy<T extends { id: string }>(items: T[], order: string[] | null): T[] {
+  if (order === null) return items;
+  const byId = new Map(items.map((item) => [item.id, item]));
+  if (order.length !== items.length || order.some((id) => !byId.has(id))) return items;
+  return order.map((id) => byId.get(id) as T);
+}
+
+
+export function movedTo(ids: string[], fromIndex: number, toIndex: number): string[] {
+  const next = [...ids];
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, moved as string);
+  return next;
+}
+
+
 export function reorderActionsFor(
   index: number,
   count: number,
