@@ -99,3 +99,7 @@ The Trip Workspace redesign (mocks ready — the very next story; owns re-pointi
 *(append-only)*
 
 - *2026-08-08, pre-review transcription fix:* decision 7 and AC 1 originally wrote "the shim leaves the tree"; the approved answer (round-1 Q7) was that the shim **redirects to the form**. Corrected to match the decision as made — no intent change.
+
+- *2026-08-08, two deviations surfaced at implementation, stated per the mock rule (decision 9's family — mock-set drift resolved by picking one side):*
+  - **The card date ships abbreviated** (`Aug 2026`, `Jun 2026`). The mock disagrees with itself — its Ongoing card reads "Aug 2026" while a Completed card reads "June 2026" — so one had to be chosen. Abbreviated wins: it is what three of the four dated cards draw, and it cannot wrap the 76px-thumb card layout the way "September 2026" would. Derived from `startDate` (falling back to `endDate`), and **hidden entirely on an undated trip**, which is what the mock's Drafts cards do. The existing `formatDates` was not reused: its range form (`2026-08-14 → 2026-08-20`) visibly contradicts the frame, and it stays in use on the workspace details screen where a range is the right answer.
+  - **The cover zone was restyled with the form** (`CoverPicker`), not left alone: ticket 01 named the cover zone in decision 9's scope, and the component is shared with the edit screen, so that screen's cover zone moves with it. The change is the mock's geometry only — 4px radius and the accent upload pill.

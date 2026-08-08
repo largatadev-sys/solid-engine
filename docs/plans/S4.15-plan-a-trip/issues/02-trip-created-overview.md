@@ -6,11 +6,13 @@
 
 **Status:** ready-for-agent
 
-- [ ] Create Trip lands on the overview via replace; back lands on Trips on device and web (spec AC 3).
-- [ ] Copy matches spec decision 2 exactly; "available for travelers to discover and fork" appears nowhere.
-- [ ] Summary meta reads "Destination • N Days", destination alone without Duration.
-- [ ] The greyed "Open Trip Workspace" fires the coming-soon dialog on native **and** web (the dead-click rule); "Preview Trip" opens the preview (spec AC 4).
-- [ ] Publish-success behavior is unchanged and its existing tests stay green (spec AC 9).
+- [x] Create Trip lands on the overview via replace; back lands on Trips on device and web (spec AC 3).
+- [x] Copy matches spec decision 2 exactly; "available for travelers to discover and fork" appears nowhere.
+- [x] Summary meta reads "Destination • N Days", destination alone without Duration.
+- [x] The greyed "Open Trip Workspace" fires the coming-soon dialog on native **and** web (the dead-click rule); "Preview Trip" opens the preview (spec AC 4).
+- [x] Publish-success behavior is unchanged and its existing tests stay green (spec AC 9).
 - [ ] Copy strings and the meta-line branch are pinned by unit tests; emulator walk reaches the day builder via Preview → Continue Editing; the web-preview driver walks the same with the alert intercepted and asserted.
 
 ## Comments
+
+- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). The unticked box is compound — its **unit-test half is done** (`tripCreatedCopy.test.ts` pins the copy and both meta branches); the **walk half** (spec AC 8: emulator Preview → Continue Editing, and the web driver with the alert intercepted) needs the local rig and has not been run, so the box stays open rather than being claimed.

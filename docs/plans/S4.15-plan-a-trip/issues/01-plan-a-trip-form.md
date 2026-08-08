@@ -6,11 +6,13 @@
 
 **Status:** ready-for-agent
 
-- [ ] The form is titled "Plan a Trip" and submits via "Create Trip" (spec AC 2).
-- [ ] Placeholders are exactly the six strings above; required fields and validation behave as before.
-- [ ] Fields, labels, cover zone and footer dock render the mock's create-entry styling per spec decision 9.
-- [ ] No route in the app renders the chooser; the legacy create path redirects to the form; typecheck is clean after the removal (spec AC 1, chooser half).
-- [ ] Copy strings that encode decisions (title, submit label, placeholders) are pinned by unit tests.
+- [x] The form is titled "Plan a Trip" and submits via "Create Trip" (spec AC 2).
+- [x] Placeholders are exactly the six strings above; required fields and validation behave as before.
+- [x] Fields, labels, cover zone and footer dock render the mock's create-entry styling per spec decision 9.
+- [x] No route in the app renders the chooser; the legacy create path redirects to the form; typecheck is clean after the removal (spec AC 1, chooser half).
+- [x] Copy strings that encode decisions (title, submit label, placeholders) are pinned by unit tests.
 - [ ] The form walks end to end on the emulator and the web preview container.
 
 ## Comments
+
+- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). The unticked box is the **three-rung walk** (spec AC 8) — it needs the local rig (docker compose + the preview container + the emulator) and has not been run, so it stays open rather than being claimed. Everything a unit test or `tsc` can close is closed.

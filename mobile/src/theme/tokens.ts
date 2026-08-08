@@ -89,7 +89,7 @@ export const typography = {
   actionMedium: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 18, fontWeight: '600' },
   overviewBody: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, fontWeight: '400' },
 
-  cardDate: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '500' },
+  cardDate: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
   cardTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, fontWeight: '700' },
   cardSubtitle: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' },
   cardStatus: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
@@ -98,13 +98,14 @@ export const typography = {
 
 
 export const spacing = {
-  xxs: 2,
+  hair: 2,
   xs: 4,
-  xsPlus: 6,
+  xs2: 6,
   sm: 8,
-  smPlus: 12,
+  sm2: 10,
+  sm3: 12,
   md: 16,
-  lgMinus: 20,
+  md2: 20,
   lg: 24,
   xl: 32,
   xxl: 48,

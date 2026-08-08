@@ -6,11 +6,13 @@
 
 **Status:** ready-for-agent
 
-- [ ] The CTA reads "Plan a Trip" with the plus-circle icon and opens the form (spec AC 1).
-- [ ] The four plural section labels render per spec decision 4; empty sections hidden; membership derived from lifecycle state alone (spec AC 5).
-- [ ] Search and filter icons render in the header and fire the coming-soon dialog on native **and** web (spec AC 7).
-- [ ] The Trips tab shows the briefcase icon.
-- [ ] No archived-trips link and no "Add a Past Trip" button anywhere on the landing (spec AC 7).
+- [x] The CTA reads "Plan a Trip" with the plus-circle icon and opens the form (spec AC 1).
+- [x] The four plural section labels render per spec decision 4; empty sections hidden; membership derived from lifecycle state alone (spec AC 5).
+- [x] Search and filter icons render in the header and fire the coming-soon dialog on native **and** web (spec AC 7).
+- [x] The Trips tab shows the briefcase icon.
+- [x] No archived-trips link and no "Add a Past Trip" button anywhere on the landing (spec AC 7).
 - [ ] CTA and section-label strings pinned by unit tests; emulator + web preview confirm no dead clicks.
 
 ## Comments
+
+- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). The unticked box is compound — its **unit-test half is done** (`tripSections.test.ts` pins the four plural labels, `tabRouting.test.ts` the CTA and both greyed header icons); the **walk half** (spec AC 8: emulator + web preview confirming no dead clicks) needs the local rig and has not been run, so the box stays open rather than being claimed.
