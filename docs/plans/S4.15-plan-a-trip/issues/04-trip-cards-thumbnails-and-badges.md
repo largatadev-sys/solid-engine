@@ -7,12 +7,18 @@
 **Status:** ready-for-agent
 
 - [x] Cards render thumbnail · date-over-title · status slot per the mock; the destinations line is gone (spec AC 6).
-- [ ] A trip with an uploaded cover shows its thumbnail on the landing; the web driver's request list shows only bearer-authenticated media requests, and the backend logs no unauthenticated media rejection.
+- [x] A trip with an uploaded cover shows its thumbnail on the landing; the web driver's request list shows only bearer-authenticated media requests, and the backend logs no unauthenticated media rejection.
 - [x] Coverless trips render the placeholder tile.
 - [x] Published trips show the badge with public/private distinguished; unpublished trips show none — pinned by unit tests across the three publication shapes.
 - [x] Card taps keep their current per-state destinations.
-- [ ] Emulator + web preview verify the card grid against the mock frame.
+- [x] Emulator + web preview verify the card grid against the mock frame.
 
 ## Comments
 
-- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). **Two** boxes stay open, both needing the local rig (spec AC 8): the uploaded-cover thumbnail with the driver's request list watched for the S3.3 `ANON GET` tell, and the card grid checked against the mock frame. The authenticated path is pinned by a test that fails if anyone regresses to a bare `<Image>` URL, but a passing test is not the walk and is not claimed as one. Backend untouched by this story — no IT ran, and none needed to.
+- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). Backend untouched by this story — no IT ran, and none needed to.
+
+- *2026-08-08, walked on both rungs — all boxes close, including the one that mattered most.* A cover was uploaded through the real web picker (`--upload` plants the bytes before the click, so the actual change-handler → repository → multipart path ran), and the landing then requested it as **`bearer GET /v1/media/019fe041-…/thumb`** — authenticated, and the **thumbnail variant**, not the original. **Zero anonymous `/v1` requests**, and the backend logged **zero** `Security rejection` / `UNAUTHENTICATED` lines in the window. That is the S3.3 trap's tell watched directly rather than inferred from a green test.
+
+  The same cover renders on the **emulator** card, which matters because the two platforms take different `mediaSource` forks — web resolves an object URL, native downloads to `file://`, and only a device exercises the second. Coverless trips show the placeholder tile at the same 76px geometry on both rungs, and the card grid matches the mock frame: thumbnail, title, status slot, no destinations line. Card taps still open the day builder for a draft (decision 3c — unchanged this story).
+
+  *Not exercised:* the **publication badge**, which needs a published trip and the pool's second account; it is pinned by unit tests across all three publication shapes, and publish behaviour is untouched by this story (spec AC 9).

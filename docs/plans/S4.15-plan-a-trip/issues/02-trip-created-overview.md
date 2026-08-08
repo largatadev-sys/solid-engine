@@ -11,8 +11,12 @@
 - [x] Summary meta reads "Destination • N Days", destination alone without Duration.
 - [x] The greyed "Open Trip Workspace" fires the coming-soon dialog on native **and** web (the dead-click rule); "Preview Trip" opens the preview (spec AC 4).
 - [x] Publish-success behavior is unchanged and its existing tests stay green (spec AC 9).
-- [ ] Copy strings and the meta-line branch are pinned by unit tests; emulator walk reaches the day builder via Preview → Continue Editing; the web-preview driver walks the same with the alert intercepted and asserted.
+- [x] Copy strings and the meta-line branch are pinned by unit tests; emulator walk reaches the day builder via Preview → Continue Editing; the web-preview driver walks the same with the alert intercepted and asserted.
 
 ## Comments
 
-- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). The unticked box is compound — its **unit-test half is done** (`tripCreatedCopy.test.ts` pins the copy and both meta branches); the **walk half** (spec AC 8: emulator Preview → Continue Editing, and the web driver with the alert intercepted) needs the local rig and has not been run, so the box stays open rather than being claimed.
+- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests); `tripCreatedCopy.test.ts` pins the copy and both meta branches.
+
+- *2026-08-08, walked on both rungs — all boxes close.* **The `replace` is proven where it matters: hardware back from the overview landed on Trips**, with the new trip at the top of Drafts — not the spent form. **The greyed door speaks on both platforms**: the web driver intercepted the alert (`present  Trip Workspace`) and the emulator screenshot shows the native dialog *"The Trip Workspace — coming soon"* — no dead click on either fork. **Preview Trip** opened the preview and reached "Continue Editing" on web; on the emulator the card tap opened the day builder showing **Day 1 · Day 2 · Day 3** minted from Duration=3, so day-minting survives the new landing. Copy rendered exactly as decision 2 wrote it, straight quotes included.
+
+  *One diagnostic worth keeping:* the driver first reported `click Open Trip Workspace -> NOT FOUND` and raised no alert — which reads precisely like the S1.3 dead click this AC exists to catch. It was neither: the button's accessibility label is `"Open Trip Workspace, coming soon"` and the driver matches labels exactly, so the click never landed. **The `NOT FOUND` line is what distinguished the two** — a driver that had silently clicked nothing and reported `ok` would have produced the same missing alert and sent the investigation into the component.

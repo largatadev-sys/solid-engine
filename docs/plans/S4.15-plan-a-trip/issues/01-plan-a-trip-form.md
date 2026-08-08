@@ -11,8 +11,10 @@
 - [x] Fields, labels, cover zone and footer dock render the mock's create-entry styling per spec decision 9.
 - [x] No route in the app renders the chooser; the legacy create path redirects to the form; typecheck is clean after the removal (spec AC 1, chooser half).
 - [x] Copy strings that encode decisions (title, submit label, placeholders) are pinned by unit tests.
-- [ ] The form walks end to end on the emulator and the web preview container.
+- [x] The form walks end to end on the emulator and the web preview container.
 
 ## Comments
 
-- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). The unticked box is the **three-rung walk** (spec AC 8) — it needs the local rig (docker compose + the preview container + the emulator) and has not been run, so it stays open rather than being claimed. Everything a unit test or `tsc` can close is closed.
+- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests).
+
+- *2026-08-08, walked on both rungs — all boxes close.* **Web** (preview container, the true build path): `drive-preview.js` clicked Plan a Trip, filled all four fields, submitted Create Trip → reached the overview. Zero console errors, zero page errors, **zero anonymous `/v1` requests**. **Emulator** (dev build, Metro over `10.0.2.2:8082`): the form screenshot shows the title "Plan a Trip", all six prompt placeholders verbatim, the filled inputs with the near-black hairline, and the "Create Trip" submit — the mock's create-entry frame. The retired chooser is unreachable from either rung.

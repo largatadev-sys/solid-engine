@@ -11,8 +11,10 @@
 - [x] Search and filter icons render in the header and fire the coming-soon dialog on native **and** web (spec AC 7).
 - [x] The Trips tab shows the briefcase icon.
 - [x] No archived-trips link and no "Add a Past Trip" button anywhere on the landing (spec AC 7).
-- [ ] CTA and section-label strings pinned by unit tests; emulator + web preview confirm no dead clicks.
+- [x] CTA and section-label strings pinned by unit tests; emulator + web preview confirm no dead clicks.
 
 ## Comments
 
-- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). The unticked box is compound — its **unit-test half is done** (`tripSections.test.ts` pins the four plural labels, `tabRouting.test.ts` the CTA and both greyed header icons); the **walk half** (spec AC 8: emulator + web preview confirming no dead clicks) needs the local rig and has not been run, so the box stays open rather than being claimed.
+- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests); `tripSections.test.ts` pins the four plural labels, `tabRouting.test.ts` the CTA and both greyed header icons.
+
+- *2026-08-08, walked on both rungs — all boxes close.* **No dead clicks:** the web driver intercepted both header alerts (`present  Searching your trips`, `present  Filtering your trips`), and both icons render in the header on the emulator too. The landing screenshots on web and device match the mock frame — "Drafts" plural, the search and filter icons, the accent "Plan a Trip" CTA with its plus-circle, the briefcase on the Trips tab. **No archived-trips link and no "Add a Past Trip" appear on either rung**, which is the half of a removal a test cannot really prove.
