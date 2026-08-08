@@ -1,0 +1,104 @@
+# S4.17 — Trip Workspace redesign: one home surface, one exclusive editor
+
+**Status:** needs-triage · **Epic:** E4 · **Depends on:** S4.15 (shipped — the greyed CTA this story re-points), S4.13 (shipped — the lifecycle ladder this story surfaces), S4.9 (shipped — the leases this story reshapes), S3.3 (shipped — the media path the thumbnails ride)
+
+**Immutable point-in-time intent** (issue-tracker rule): if intent changes during implementation, append to `## Comments`; never rewrite this body.
+
+> **Context anchor.** ADR-022 (this story's decision record — the two-surface model, the soft lock, the Editing Session) · ADR-019/020 (three axes + the four-state ladder — **untouched**; the freeze stays on `published` alone) · ADR-014 as amended (the subject-typed leases this story supersedes for plan editing) · S4.15 (Trip/Itinerary split; the dead "Open Trip Workspace" CTA) · S4.9 (the planner + day surfaces this story retires; the version-checked reorder PUT the drag gesture drives) · S3.3/ADR-021 (authenticated media — never a bare `<Image>` URL) · the glossary amendments (Trip Workspace surface meaning · Draft Workspace · Editing Session · Finalize · Ready) land in `02-domain-model.md`.
+
+## The pull, on the record
+
+The founder brought the workspace mock set (2026-08-08, two CSS exports: `workspace.txt`, `add edit activity.txt`) for a render and reconciliation: *"every draft trip opens to here now."* The set was rendered 1:1 (`mock-render.html`), digested (`figma-mock-digest.md`), and grilled over four rounds plus a confirm. The epic map's "Trip Workspace redesign" backlog line — trigger already fired — pulls as this story. The poll frames in the set are **parked to E2** (no backend); the Notes tab is **cut**; the provider card is **archived as E6 input**.
+
+## Goal
+
+Every own unpublished trip opens into one **Trip Workspace** (viewer) showing its lifecycle honestly — badge, ladder CTA, day list — and all plan editing happens in one **Draft Workspace** (editor) behind **Edit Itinerary**, held exclusively by one traveler at a time. The planner, the read-only day view, and the old overview retire. The activity form takes the mock's shape. Wire change: one additive lease subject.
+
+## Locked decisions *(founder, 2026-08-08, in grilling order)*
+
+### 1 · Two surfaces replace three — the parked "three surfaces over one plan" question resolves
+
+The **Trip Workspace** (the mock's `Finalized workspace` layout) is the home surface: every own **unpublished** trip opens here from the trips list and from S4.15's re-pointed "Open Trip Workspace" CTA, in **every** lifecycle state. The **Draft Workspace** (the mock's `workspace-draft` layout) is the editor behind **Edit Itinerary**. The planner (`days/index`), the day view (`days/[dayId]`), and the old overview (`[id]/index` as it exists) retire; their inbound references migrate (decision 12). **Published trips are excluded** — they keep today's published-view destination. **Archived** trips show the viewer with the existing unarchive banner (the entry point stays hidden per the S4.15 backlog line).
+
+### 2 · The viewer is read-only and carries the whole lifecycle ladder — nothing stubbed
+
+Badge + CTA per state: **Draft** (amber badge, no ladder CTA — Edit Itinerary is the act) → **Ready** (green) with **Start Trip** → **Ongoing** (blue) with **Complete Trip** → **Completed** (grey) with **Publish Itinerary** routing into the existing preview → publish flow. All three transitions wire to the shipped endpoints — the founder's initial "stub beyond Start" was reversed on the record once it surfaced that Complete/Publish are live acts whose current UI dies with the old surfaces (*"yes we can wire all three"*). Going back: **"Step back"** ships as a quiet text link under the primary CTA on ongoing/completed (one `reopen` rung per tap); Ready's step-back is Edit Itinerary itself (decision 3). Ongoing/Completed badges and Step back are **named deviations** — those states have no mock frames (epic-map line).
+
+### 3 · Finalize is the traveler-facing act, Ready the traveler-facing state, and the lock is presentation
+
+The Draft Workspace's CTA is **"Finalize Itinerary"** → the mock's confirmation sheet ("Ready to go?" / Finalize / Keep Editing) → the existing `finish-planning` act → back to the viewer showing **Ready**. The viewer renders Ready (and beyond) read-only; **Edit Itinerary on a Ready trip fires `reopen` and enters the editor in one tap** — the sheet's "locked … switch back to editing later" copy is honored as a *soft* lock built from existing transitions. The domain rule is untouched: the hard freeze belongs to `published` alone (ADR-019/020). Glossary amended: Finalize/Ready are the traveler-facing labels; wire and canon keep `finish-planning`/`upcoming`.
+
+### 4 · The Editing Session — Edit Itinerary locks the whole itinerary; Save Changes ends the session
+
+Pressing Edit Itinerary acquires an **exclusive whole-itinerary hold** (a new, additive lease subject). Holder = the traveler who pressed it. Other members see the viewer with Edit Itinerary disabled and "being edited by X"; server-side, their plan writes refuse while the session is held. **Save Changes** stays on the editor rail as the session's end — release + return to the viewer; it persists nothing, because every edit already saves per action (structure ops immediate, day title on blur, activity form on its own screen — unchanged). Back-exit releases too; the TTL self-heals abandonment. Founder's rationale on the record: *"live editing for collaborators is not implemented here"* — exclusive editing is honest until it is. Supersedes the subject-typed leases for plan editing (ADR-022; ADR-014's live-editing invalidating condition carries over). CTA order takes frame 1: Finalize above Save Changes.
+
+### 5 · The tab row: six tabs, shared across both surfaces
+
+**Day-by-Day · Polls · Travelers · Photo Dump · Chat · Details** — mock order preserved, Notes cut, Chat and Details appended (deliberate additions; the mock draws neither). Polls (E2), Photo Dump (Gallery), and Chat (S4.10) ship **greyed coming-soon** via the existing registry pattern; the S4.10 line's "Chat tab ships greyed" obligation moves to this row. The row is identical on viewer and editor and scrolls horizontally; only Day-by-Day's content differs between the two.
+
+### 6 · Day-by-Day: read-only stubs on the viewer, the editing accordion on the editor
+
+**Viewer:** collapsed day stubs, expandable inline to a read-only peek at activities. **Editor:** the accordion — single day open at a time, Day 1 expanded by default, tapping a stub expands it (chevron ⇄ minus) · activity rows with **drag handles** (decision 7) and pencil/trash · **Add Activity** per day · **Add a Day** appends via the existing endpoint, then expands the new day with its title focused · day titles edit inline (tap → input, save on blur — today's pattern) · **day delete** ships as a trash affordance in the expanded day's header row (named deviation — the mock draws none, and dropping it would regress a shipped capability; owner-only per the S4.9 interim ruling, unchanged). Empty states: a day with no activities shows just the Add Activity CTA; a trip with no days shows just Add a Day.
+
+### 7 · Drag-to-reorder un-parks; the arrows graduate
+
+The grip handles become a real drag gesture driving S4.9's version-checked `PUT /order` (*"arrows will graduate"* — the backlog line discharges here). The gesture-library decision (native lib + the weak-web-support fork weighed in that line) lands at the ticket; arrows remain the screen-reader path wherever they survive.
+
+### 8 · The activity form takes the mock's five fields; four shipped fields cull, on the record
+
+**Ships:** Activity Name · Time · Location/Venue · Estimated Price (**corrected** to a price input with a currency affordance — the mock's map-pin/"Search for a place..." is an export slip, per the digest) · Booking Link, a **pasted URL** into `externalUrl`. Add's secondary CTA is **"Cancel"** (corrected slip); Edit's is "Discard Changes"; primary "Save Activity" unchanged in behavior. **Culled** (founder: *"remove these"*, consequences named twice and accepted): Description, Notes & Creator Tips, Photos strip, Move-to-day. Wire fields stay additive; the orphaned-capability consequences are an epic-map backlog line. The **booking card's editing UI goes dormant** with them — the provider card frame is E6 input, not built (*"ignore this screen for now … just accept pasted urls"*).
+
+### 9 · Travelers tab shows the roster; the flows stay one tap away
+
+The tab renders the traveler list only; **tapping a row opens the existing member-management flows** (remove, leave, ownership offer). **Invite Traveler** lives on the workspace header (both surfaces' mock position) → the existing invite flow. Owner-only acts hide for members (Finalize, Start/Complete/Publish, Add a Day, day delete, Step back); activity editing stays member-wide — the server's authority rules are untouched.
+
+### 10 · Details tab carries the plan details; the lifecycle field retires
+
+Details shows the plan fields (destinations, dates, description, standouts, best time, cover) with the edit path to the existing edit screen; **the plan title also edits via the header pencil** (the mock's hidden `edit` icon, un-hidden). The old Details tab's "Where this trip is" lifecycle control **retires** — the badge + CTA rail own lifecycle now; two controls for one state machine is how contradictory UI happens. Publish/preview/archive controls live here where state-appropriate.
+
+### 11 · "Original by" is fork provenance — hidden until forks exist
+
+The subtitle renders only on a forked trip, naming the original owner (Fork Relationship, INV-6). No fork exists yet (S4.7), so nothing renders this story; the slot is reserved.
+
+### 12 · Old-surface references migrate; the thumbnail extraction rides along
+
+Re-point: S4.15's "Open Trip Workspace" (goes live), the trips-list card tap for all own unpublished states, publish-success's "Back to Trip Workspace", the preview's published-state button. The **`MediaThumb` extraction** discharges from the backlog into this story (its recorded trigger — this redesign — fired; five hand-copies of the S3.3 authenticated-image defence become one component).
+
+## Deviations from the mock *(stated per the mock rule; full table in the digest)*
+
+| Mock | Ships | Why |
+|---|---|---|
+| Estimated Price drawn as a location field | Price input + currency affordance | Export slip (copy-paste); the provider card's "₱PHP" shows intent |
+| Add screen secondary CTA "Save Changes" | "Cancel" | Export slip; Edit's own "Discard Changes" is the pattern |
+| Finalize sheet in `#FF6B35` + Inter | `#EA580C` + app families | Mock-set drift; one system |
+| Notes tab | Cut | Founder ruling |
+| No Chat/Details tabs | Added, Chat greyed | Founder ruling (S4.10 home; Details carries the plan fields) |
+| No day-delete affordance | Trash in expanded day header | Regression otherwise; founder-approved deviation |
+| No ongoing/completed frames | Badges + Step back, proposed values | Unmocked states; epic-map line awaits the mock pass |
+| CTA order flips between draft frames | Finalize above Save | Frame 1 is the resting state |
+| Poll frames · provider card | Not built | Parked E2 · E6 input |
+| iOS status bar / home indicator | OS-drawn | Platform |
+
+## Wire changes
+
+**One, additive:** the edit-lease subject set gains an **itinerary-wide session subject** (acquire on Edit Itinerary · release on Save Changes/exit · TTL; plan writes by non-holders refuse while held; the "being edited by" advisory read covers it). Everything else this story does rides shipped endpoints: `finish-planning`/`start`/`complete`/`reopen`, publish flow, day/activity CRUD, the version-checked reorder PUT, rename-on-blur. No /v1 renames, removals, or semantic changes.
+
+## Candidate-capability note *(ADR-009)*
+
+None — this story adds no footprint-growing capability; it re-surfaces existing acts. The greyed tabs (Polls · Photo Dump · Chat) carry their candidate notes at their own stories (E2, Gallery, S4.10).
+
+## Acceptance criteria
+
+1. Every own unpublished trip — draft, upcoming, ongoing, completed, archived — opens the Trip Workspace; published trips keep the published view. S4.15's CTA is live and lands there.
+2. The full ladder walks on the viewer: Finalize (via the editor + sheet) → Ready → Start Trip → Ongoing → Complete Trip → Completed → Publish (existing flow); Step back walks it down one rung at a time. Badges match state.
+3. A Ready trip is read-only until Edit Itinerary, which reopens to draft and enters the editor in one tap.
+4. While traveler A holds the Editing Session, traveler B sees "being edited by A" with Edit Itinerary disabled, and B's plan writes refuse server-side; A's Save Changes (or exit, or TTL expiry) releases; B can then enter.
+5. The editor's accordion: expand/collapse, add day (appends + expands + focuses title), inline day rename on blur, owner-only day delete, add/edit/delete activity, and drag-to-reorder persisting through the version-checked PUT.
+6. The activity form shows exactly the five mocked fields with the ruled corrections; saved values round-trip; the culled fields are absent.
+7. Travelers tab lists the roster; a row tap reaches remove/leave/ownership; Invite Traveler works from the header. Member view hides every owner-only act.
+8. The planner, day-view and old-overview routes are gone; no reference in the app reaches them.
+9. Dev-verified on the three rungs (API · emulator · web preview) — the smoke rule; screenshots against the mock frames for the fidelity pass.
+
+## Comments
+
+*(append-only)*

@@ -1,0 +1,749 @@
+<title>Workspace screens — mock render</title>
+<style>
+  :root{
+    --pg-bg:#f5f4f1; --pg-ink:#1c1917; --pg-muted:#78716c; --pg-card:#ffffff;
+    --pg-border:#e2e0dc; --pg-accent:#ea580c; --pg-chip-ok-bg:#ffedd5; --pg-chip-ok-ink:#9a3412;
+    --pg-chip-park-bg:#e7e5e4; --pg-chip-park-ink:#57534e;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --pg-bg:#191817; --pg-ink:#e7e5e4; --pg-muted:#a8a29e; --pg-card:#211f1e;
+      --pg-border:#39352f; --pg-accent:#fb923c; --pg-chip-ok-bg:#3b2410; --pg-chip-ok-ink:#fdba74;
+      --pg-chip-park-bg:#2c2a27; --pg-chip-park-ink:#a8a29e;
+    }
+  }
+  :root[data-theme="dark"]{
+    --pg-bg:#191817; --pg-ink:#e7e5e4; --pg-muted:#a8a29e; --pg-card:#211f1e;
+    --pg-border:#39352f; --pg-accent:#fb923c; --pg-chip-ok-bg:#3b2410; --pg-chip-ok-ink:#fdba74;
+    --pg-chip-park-bg:#2c2a27; --pg-chip-park-ink:#a8a29e;
+  }
+  html,body{margin:0;padding:0}
+  body{background:var(--pg-bg);color:var(--pg-ink);font-family:'Geist','Inter',system-ui,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+  .page{max-width:1560px;margin:0 auto;padding:40px 28px 72px}
+  .page h1{font-family:'Outfit','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:26px;margin:0 0 6px;text-wrap:balance}
+  .page .sub{color:var(--pg-muted);font-size:14px;line-height:1.5;margin:0 0 18px;max-width:70ch}
+  .notes{background:var(--pg-card);border:1px solid var(--pg-border);border-radius:10px;padding:14px 18px;margin:0 0 36px;max-width:860px}
+  .notes h3{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--pg-muted);font-weight:700}
+  .notes ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.65;color:var(--pg-ink)}
+  .section{margin:0 0 48px}
+  .section > h2{font-family:'Outfit','Segoe UI',system-ui,sans-serif;font-size:17px;font-weight:700;margin:0 0 16px;display:flex;align-items:center;gap:10px}
+  .chip{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 10px;border-radius:999px}
+  .chip.scope{background:var(--pg-chip-ok-bg);color:var(--pg-chip-ok-ink)}
+  .chip.park{background:var(--pg-chip-park-bg);color:var(--pg-chip-park-ink)}
+  .row{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+  .cell{display:flex;flex-direction:column;gap:8px}
+  .cell .cap{font-size:13px;font-weight:600}
+  .cell .cap small{display:block;font-weight:400;color:var(--pg-muted);margin-top:2px}
+  .device{width:393px;border:1px solid var(--pg-border);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+  .device.narrow{width:390px}
+
+  /* ---------- mock frames (fixed light — these ARE the mock) ---------- */
+  .fr{position:relative;display:flex;flex-direction:column;background:#fff;color:#1C1917;font-family:'Geist','Inter',system-ui,'Segoe UI',sans-serif}
+  .fr *{box-sizing:border-box;margin:0}
+  .ic{display:block;flex:none}
+  .f-outfit{font-family:'Outfit','Segoe UI',system-ui,sans-serif}
+  .f-inter{font-family:'Inter',system-ui,'Segoe UI',sans-serif}
+
+  .status{display:flex;justify-content:space-between;align-items:center;height:44px;padding:0 20px;flex:none}
+  .status.p24{padding:0 24px}
+  .st-time{font-weight:600;font-size:14px;line-height:18px;color:#1C1917}
+  .st-ic{display:flex;align-items:center;gap:6px;color:#1C1917}
+
+  .ws-head{display:flex;flex-direction:column;gap:12px;padding:12px 16px 8px;background:#fff;flex:none}
+  .top-row{display:flex;justify-content:space-between;align-items:center;height:40px}
+  .bb{display:flex;align-items:center;gap:8px}
+  .back{padding:8px 8px 8px 0;color:#000}
+  .badge{display:flex;align-items:center;padding:4px 10px;border-radius:999px;font-weight:700;font-size:11px;line-height:14px;text-transform:uppercase}
+  .badge.draft{background:#FEF3C7;border:1px solid #D97706;color:#D97706}
+  .badge.ready{background:#DCFCE7;border:1px solid #15803D;color:#15803D}
+  .tbtn{display:flex;align-items:center;gap:6px;padding:8px 0;font-weight:700;font-size:13px;line-height:17px;color:#EA580C}
+  .title{font-family:'Outfit','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:22px;line-height:28px;color:#1C1917}
+  .subtitle{font-weight:400;font-size:13px;line-height:17px;color:#78716C;margin-top:4px}
+
+  .tabs{display:flex;gap:12px;padding:0 16px;height:43px;border-bottom:1px solid #E7E5E4;background:#fff;flex:none;overflow:hidden}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 8px 0;font-weight:500;font-size:14px;line-height:18px;color:#78716C;white-space:nowrap}
+  .tab .bar{height:3px;border-radius:100px 100px 0 0;align-self:stretch}
+  .tab.on{font-weight:700;color:#EA580C}
+  .tab.on .bar{background:#EA580C}
+
+  .body16{display:flex;flex-direction:column;gap:16px;padding:16px 16px 32px}
+
+  .day-card{background:#fff;border:1px solid #E7E5E4;border-radius:12px}
+  .day-head{display:flex;align-items:center;padding:16px 16px 12px}
+  .day-title{display:flex;align-items:center;gap:8px;font-family:'Outfit','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:18px;line-height:23px;color:#1C1917}
+  .hr{height:1px;background:#E7E5E4}
+  .acts{display:flex;flex-direction:column;gap:16px;padding:12px 16px 16px}
+  .act-list{display:flex;flex-direction:column;gap:8px}
+  .act{display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border:1px solid #E7E5E4;border-radius:12px}
+  .act-info{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+  .act-name{font-weight:600;font-size:14px;line-height:18px;color:#1C1917}
+  .act-time{font-weight:400;font-size:12px;line-height:16px;color:#78716C}
+  .act-x{display:flex;align-items:center;gap:10px;color:#EA580C}
+  .btn-add-act{display:flex;justify-content:center;align-items:center;gap:8px;padding:16px 24px;background:#fff;border:1px solid #EA580C;border-radius:12px;font-weight:700;font-size:16px;line-height:21px;color:#EA580C}
+  .stub{display:flex;justify-content:space-between;align-items:center;padding:16px;background:#fff;border:1px solid #E7E5E4;border-radius:12px}
+  .stub b{font-family:'Outfit','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:16px;line-height:20px;color:#1C1917}
+  .add-day{align-self:flex-end;display:flex;align-items:center;gap:6px;padding:8px 0;font-weight:700;font-size:13px;line-height:17px;color:#EA580C}
+
+  .ctas{display:flex;flex-direction:column;gap:10px;padding:0 16px 16px}
+  .btn-solid{display:flex;justify-content:center;align-items:center;gap:8px;padding:16px 24px;background:#EA580C;border-radius:4px;font-weight:700;font-size:16px;line-height:21px;color:#fff}
+  .btn-line{display:flex;justify-content:center;align-items:center;gap:8px;padding:16px 24px;background:transparent;border:1px solid #ECE8E5;border-radius:4px;font-weight:700;font-size:14px;line-height:18px;color:#000}
+  .btn-line.black{border-color:#000}
+  .btn-line.b16{font-size:16px;line-height:21px}
+
+  .nav-wrap{margin-top:auto;flex:none}
+  .bnav{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 16px 0;height:53px;background:#fff;border-top:1px solid #F7F7F7}
+  .nv{display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;font-family:'Inter',system-ui,sans-serif;font-weight:500;font-size:11px;line-height:13px;color:#666}
+  .nv.bold{font-weight:700}
+  .nv.on{font-weight:700;color:#000}
+  .h-ind{display:flex;justify-content:center;padding:21px 0 8px;background:#fff}
+  .h-ind i{width:139px;height:5px;background:#000;border-radius:100px}
+
+  /* finalize sheet */
+  .overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:6}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.15);z-index:7;display:flex;flex-direction:column}
+  .grab{display:flex;justify-content:center;padding:12px 0 8px}
+  .grab i{width:36px;height:5px;background:#1C1917;border-radius:10px}
+  .sheet-c{display:flex;flex-direction:column;align-items:center;gap:24px;padding:16px 24px 12px}
+  .ring{width:72px;height:72px;border-radius:50%;background:rgba(255,107,53,.10);display:flex;align-items:center;justify-content:center}
+  .ring i{width:56px;height:56px;border-radius:50%;background:#FF6B35;display:flex;align-items:center;justify-content:center}
+  .sheet-c h4{font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:22px;line-height:27px;text-align:center;color:#1C1917}
+  .sheet-c p{font-family:'Inter',system-ui,sans-serif;font-weight:400;font-size:14px;line-height:21px;text-align:center;color:#68615E}
+  .sheet-btns{display:flex;flex-direction:column;gap:12px;padding-top:8px;align-self:stretch}
+  .btn-fin{display:flex;justify-content:center;align-items:center;height:52px;background:#FF6B35;box-shadow:0 4px 12px rgba(255,107,53,.17);border-radius:4px;font-family:'Inter',system-ui,sans-serif;font-weight:700;font-size:16px;color:#fff}
+  .btn-keep{display:flex;justify-content:center;align-items:center;height:52px;border:1.5px solid #ECE8E5;border-radius:4px;font-family:'Inter',system-ui,sans-serif;font-weight:600;font-size:16px;color:#68615E}
+  .sheet .h-ind2{display:flex;justify-content:center;align-items:center;height:34px}
+  .sheet .h-ind2 i{width:134px;height:5px;background:#1C1917;border-radius:100px}
+
+  /* add / edit activity */
+  .form{display:flex;flex-direction:column;gap:20px;padding:16px 20px 32px}
+  .field{display:flex;flex-direction:column;gap:8px}
+  .field.g6{gap:6px}
+  .flabel{font-family:'Inter',system-ui,sans-serif;font-weight:600;font-size:16px;line-height:19px;text-transform:capitalize;color:#000;display:flex;align-items:center;gap:4px}
+  .flabel .opt{font-style:italic;font-weight:400;font-size:14px;line-height:17px;color:#71717A}
+  .inp{display:flex;align-items:center;gap:10px;height:48px;padding:14px;background:#fff;border:1px solid #757575;border-radius:4px}
+  .inp.focus{border:1.5px solid #E8613A}
+  .ph{font-weight:400;font-size:15px;line-height:20px;color:#A59E99}
+  .val{font-weight:500;font-size:15px;line-height:20px;color:#1C1917}
+  .ellip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* provider card */
+  .prov{width:361px;display:flex;flex-direction:column;gap:12px;background:#F4F4F5;border:1px solid #E4E4E7;border-radius:12px;padding:16px;color:#1C1917;font-family:'Inter',system-ui,sans-serif}
+  .prov *{box-sizing:border-box;margin:0}
+  .prov-h{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px;line-height:16px;color:#71717A}
+  .prov-body{display:flex;flex-direction:column;gap:24px}
+  .prov-fields{display:flex;flex-direction:column;gap:12px}
+  .pf{display:flex;flex-direction:column;gap:6px}
+  .pf label{font-weight:600;font-size:12px;line-height:15px;text-transform:capitalize;color:#71717A}
+  .pf .pin{padding:12px;background:#F4F4F5;border:1px solid #121212;border-radius:8px;font-weight:400;font-size:14px;line-height:17px;color:#888}
+  .prov-save{display:flex;justify-content:center;padding:14px 0;background:#09090B;border-radius:8px;font-weight:700;font-size:15px;line-height:18px;color:#fff}
+
+  /* polls */
+  .polls-body{display:flex;flex-direction:column;gap:24px;padding:16px 16px 18px}
+  .sec-label{font-weight:700;font-size:12px;line-height:16px;letter-spacing:.02em;text-transform:uppercase;color:#78716C}
+  .active-group{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+  .open-poll{display:flex;flex-direction:column;gap:16px;align-self:stretch}
+  .poll-h{display:flex;justify-content:space-between;align-items:flex-start}
+  .poll-q{display:flex;flex-direction:column;gap:4px}
+  .poll-q b{font-family:'Outfit','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:16px;line-height:20px;color:#1C1917}
+  .poll-q span{font-weight:400;font-size:12px;line-height:16px;color:#78716C}
+  .pbadge{padding:4px 8px;border-radius:6px;font-weight:700;font-size:10px;line-height:13px;text-transform:uppercase;flex:none}
+  .pbadge.open{background:#FEF3C7;color:#D97706}
+  .pbadge.closed{background:#F3F4F6;color:#6B7280}
+  .vopts{display:flex;flex-direction:column;gap:10px}
+  .vopt{display:flex;flex-direction:column;gap:8px;padding:12px;background:#fff;border:1px solid #E7E5E4;border-radius:12px}
+  .vopt.sel{background:#FFEDD5;border:1.5px solid #EA580C}
+  .vrow{display:flex;justify-content:space-between;align-items:center}
+  .vleft{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;line-height:18px;color:#1C1917}
+  .radio{width:16px;height:16px;border-radius:50%;border:2px solid #78716C;flex:none}
+  .radio.on{background:#EA580C;border-color:#EA580C}
+  .votes{display:flex;align-items:center;gap:6px;align-self:flex-start}
+  .avs{display:flex}
+  .av{width:16px;height:16px;border-radius:50%;border:1.5px solid #fff;margin-right:-6px}
+  .av:last-child{margin-right:0}
+  .av.a1{background:#F59E0B}.av.a2{background:#60A5FA}.av.a3{background:#34D399}.av.a4{background:#F472B6}.av.a5{background:#A78BFA}
+  .vcount{font-weight:700;font-size:12px;line-height:16px;color:#44403C}
+  .prog{display:flex;flex-direction:column;gap:6px}
+  .prog-l{display:flex;justify-content:space-between;align-items:center;font-size:12px;line-height:16px}
+  .prog-l span{font-weight:400;color:#44403C}
+  .prog-l b{font-weight:700;color:#1C1917}
+  .track{height:6px;background:#F5F5F4;border-radius:100px;overflow:hidden}
+  .fill{height:6px;background:#EA580C;width:74.8%}
+  .btn-submit{display:flex;justify-content:center;align-items:center;gap:8px;padding:16px 24px;background:#fff;border:1px solid #EA580C;border-radius:12px;font-weight:700;font-size:16px;line-height:21px;color:#EA580C}
+  .completed{display:flex;flex-direction:column;gap:12px}
+  .closed-card{display:flex;flex-direction:column;gap:12px;padding:16px;background:#fff;border:1px solid #E7E5E4;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+  .results{display:flex;flex-direction:column;gap:10px}
+  .winner{display:flex;flex-direction:column;gap:8px;padding:12px;background:#F9FAFB;border:1px solid #E7E5E4;border-radius:12px}
+  .added{display:flex;align-items:center;gap:6px;padding:8px 10px;background:#DCFCE7;border-radius:8px;font-weight:600;font-size:12px;line-height:16px;color:#15803D}
+
+  /* create poll */
+  .cp-head{display:flex;flex-direction:column;padding:0 24px 16px}
+  .cp-title{display:flex;justify-content:space-between;align-items:center;padding:16px 0;font-family:'Inter',system-ui,sans-serif;font-weight:700;font-size:18px;line-height:22px;color:#000}
+  .cp-form{display:flex;flex-direction:column;gap:20px;padding:16px 24px}
+  .cp-label{font-weight:600;font-size:14px;line-height:18px;color:#44403C}
+  .cp-inp{display:flex;align-items:center;padding:12px 16px;background:#fff;border:1px solid #E7E5E4;border-radius:12px;font-weight:400;font-size:15px;line-height:20px;color:#1C1917}
+  .cp-opt{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border:1px solid #E7E5E4;border-radius:12px;font-weight:400;font-size:14px;line-height:18px;color:#1C1917}
+  .cp-add{display:flex;align-items:center;gap:6px;padding-top:4px;font-weight:600;font-size:14px;line-height:18px;color:#EA580C}
+  .cp-settings{display:flex;flex-direction:column;padding:16px;background:#fff;border:1px solid #E7E5E4;border-radius:12px}
+  .cp-picker{display:flex;justify-content:space-between;align-items:center}
+  .cp-picker b{font-weight:600;font-size:14px;line-height:18px;color:#1C1917}
+  .dtrig{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#FAF9F6;border-radius:8px;font-weight:600;font-size:13px;line-height:17px;color:#44403C}
+  .btn-black{display:flex;justify-content:center;padding:16px 24px;background:#000;border-radius:4px;font-weight:700;font-size:16px;line-height:21px;color:#fff}
+  .btn-black-line{display:flex;justify-content:center;padding:16px 24px;border:1px solid #000;border-radius:4px;font-weight:700;font-size:16px;line-height:21px;color:#000}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-signal" viewBox="0 0 18 18"><rect x="1" y="10" width="2.6" height="4" rx=".6" fill="currentColor"/><rect x="5.2" y="8" width="2.6" height="6" rx=".6" fill="currentColor"/><rect x="9.4" y="6" width="2.6" height="8" rx=".6" fill="currentColor"/><rect x="13.6" y="4" width="2.6" height="10" rx=".6" fill="currentColor"/></symbol>
+<symbol id="i-wifi" viewBox="0 0 18 18"><path d="M2.2 7.4a10.2 10.2 0 0 1 13.6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4.8 10.1a6.4 6.4 0 0 1 8.4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.3 12.7a3 3 0 0 1 3.4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="14.5" r="1.2" fill="currentColor"/></symbol>
+<symbol id="i-batt" viewBox="0 0 24 16"><rect x=".8" y="3" width="19" height="10" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="2.8" y="5" width="15" height="6" rx="1.4" fill="currentColor"/><path d="M21.4 6.2v3.6a1.9 1.9 0 0 0 0-3.6z" fill="currentColor"/></symbol>
+<symbol id="i-chevl" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-chevd" viewBox="0 0 18 18"><path d="M4.5 6.8 9 11.3l4.5-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-minus" viewBox="0 0 18 18"><rect x="4" y="8.2" width="10" height="1.6" rx=".8" fill="currentColor"/></symbol>
+<symbol id="i-plus3" viewBox="0 0 16 16"><path d="M8 3.3v9.4M3.3 8h9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+<symbol id="i-plus2" viewBox="0 0 14 14"><path d="M7 2.9v8.2M2.9 7h8.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-grip" viewBox="0 0 16 16"><path d="M3 4.2h10M3 8h10M3 11.8h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 16 16"><path d="M12.1 1.3a1.35 1.35 0 0 1 1.9 1.9L7.3 9.9l-2.5.6.6-2.5 6.7-6.7z" fill="currentColor"/><path d="M11.2 8.8V13a1.6 1.6 0 0 1-1.6 1.6H3A1.6 1.6 0 0 1 1.4 13V6.6A1.6 1.6 0 0 1 3 5h4.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="i-trash" viewBox="0 0 16 16"><path d="M2.2 4.2h11.6M6 4.2V3a1.1 1.1 0 0 1 1.1-1.1h1.8A1.1 1.1 0 0 1 10 3v1.2M3.8 4.2l.6 8.8a1.5 1.5 0 0 0 1.5 1.4h4.2a1.5 1.5 0 0 0 1.5-1.4l.6-8.8M6.5 7v4.4M9.5 7v4.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-userplus" viewBox="0 0 14 14"><circle cx="5.6" cy="4.4" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M1.2 12.4c.6-2.2 2.3-3.4 4.4-3.4 1.5 0 2.9.6 3.7 1.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M11.3 6.2v4M9.3 8.2h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-calplus" viewBox="0 0 16 16"><rect x="1.6" y="2.6" width="12.8" height="12" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.8 1v3M11.2 1v3M1.6 6.2h12.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 8.4v3.8M6.1 10.3h3.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-clock" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 5.2V9l2.6 1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-pin" viewBox="0 0 18 18"><path d="M9 16.5S3.4 12 3.4 7.6a5.6 5.6 0 1 1 11.2 0C14.6 12 9 16.5 9 16.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="9" cy="7.6" r="1.9" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+<symbol id="i-link" viewBox="0 0 18 18"><path d="M7.4 10.6l5-5M9.5 4.4l1.6-1.6a3 3 0 0 1 4.2 4.2l-2 2a3 3 0 0 1-4.2 0M8.5 13.6l-1.6 1.6a3 3 0 0 1-4.2-4.2l2-2a3 3 0 0 1 4.2 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-chart" viewBox="0 0 16 16"><rect x="0" y="0" width="1.6" height="16" rx=".8" fill="currentColor"/><rect x="3.2" y="1" width="5" height="2.2" rx="1.1" fill="currentColor"/><rect x="4.6" y="5.6" width="7.4" height="2.2" rx="1.1" fill="currentColor"/><rect x="6" y="10.2" width="10" height="2.2" rx="1.1" fill="currentColor"/></symbol>
+<symbol id="i-star" viewBox="0 0 16 16"><path d="M8 1.4l2 4.1 4.6.6-3.3 3.2.8 4.5L8 11.6l-4.1 2.2.8-4.5L1.4 6.1 6 5.5z" fill="currentColor"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.8l5 5L19.5 7.2" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-check2" viewBox="0 0 14 14"><path d="M2.6 7.4l3 3 5.8-6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-cal" viewBox="0 0 14 14"><rect x="1.6" y="2.2" width="10.8" height="10.2" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.4 1v2.4M9.6 1v2.4M1.6 5.4h10.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4.5 10.2 12 4.2l7.5 6v8.1a1.5 1.5 0 0 1-1.5 1.5h-3.8v-4.6h-4.4v4.6H6a1.5 1.5 0 0 1-1.5-1.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 20.5 20.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-brief" viewBox="0 0 24 24"><path d="M9.2 5.4a2 2 0 0 1 2-1.9h1.6a2 2 0 0 1 2 1.9v.4h3.7A1.5 1.5 0 0 1 20 7.3v2.4c0 .7-.5 1.3-1.2 1.4l-5.3.9h-3l-5.3-.9A1.4 1.4 0 0 1 4 9.7V7.3a1.5 1.5 0 0 1 1.5-1.5h3.7zM10.7 5.8h2.6v-.4a.6.6 0 0 0-.6-.5h-1.4a.6.6 0 0 0-.6.5z" fill="currentColor"/><path d="M4 12.9l5.5.9h5l5.5-.9v4.6a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" fill="currentColor"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 19.8c.9-3.4 3.4-5.2 6.5-5.2s5.6 1.8 6.5 5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+</defs></svg>
+
+<div class="page">
+  <h1>Workspace screens — mock render</h1>
+  <p class="sub">Rendered 1:1 from the two Figma CSS dumps (<b>workspace.txt</b>, <b>add edit activity.txt</b>) for the workspace reconciliation. Every draft trip opens into this workspace. Polls are rendered but <b>parked</b> (no backend yet); the Notes tab exists in the mock but will be <b>omitted</b> in the build.</p>
+  <div class="notes">
+    <h3>Platform-forced deviations (everything else is as-mocked)</h3>
+    <ul>
+      <li><b>Fonts</b> — Geist / Outfit / Inter can't be fetched inside an artifact (CSP blocks font CDNs); system fallbacks are used at the mock's exact sizes, weights and line-heights. The app itself ships the real faces.</li>
+      <li><b>Avatars</b> — the mock's avatar fills are AI-image prompt URLs, not assets; rendered as flat placeholder circles at the mocked 16px size, white ring, −6px overlap.</li>
+      <li><b>Text encoding fixed</b> — the dump's mojibake is restored: "â¢" → "•", "â±PHP" → "₱PHP".</li>
+      <li>Mock oddities (the Estimated Price field's map-pin icon + "Search for a place..." placeholder, the Add screen's second CTA reading "Save Changes", the finalize sheet's #FF6B35/Inter styling) are <b>kept as-mocked</b> — they're queued as reconciliation questions, not silently corrected.</li>
+    </ul>
+  </div>
+
+  <!-- ============================== DRAFT WORKSPACE ============================== -->
+  <div class="section">
+    <h2>Draft workspace <span class="chip scope">in scope</span></h2>
+    <div class="row">
+
+      <!-- Frame 1: workspace-draft, Day 1 expanded -->
+      <div class="cell">
+        <div class="cap">workspace-draft<small>Day-by-Day tab · Day 1 expanded · Finalize above Save</small></div>
+        <div class="device"><div class="fr" style="min-height:1018px">
+          <div class="status">
+            <span class="st-time">9:41</span>
+            <span class="st-ic"><svg class="ic" width="18" height="18"><use href="#i-signal"/></svg><svg class="ic" width="18" height="18"><use href="#i-wifi"/></svg><svg class="ic" width="24" height="16"><use href="#i-batt"/></svg></span>
+          </div>
+          <div class="ws-head">
+            <div class="top-row">
+              <div class="bb">
+                <span class="back"><svg class="ic" width="24" height="24"><use href="#i-chevl"/></svg></span>
+                <span class="badge draft">Draft TRIP Workspace</span>
+              </div>
+              <span class="tbtn">Invite Traveler <svg class="ic" width="14" height="14"><use href="#i-userplus"/></svg></span>
+            </div>
+            <div>
+              <div class="title">Island Hopping in El Nido</div>
+              <div class="subtitle">Original by Jose Reyes</div>
+            </div>
+          </div>
+          <div class="tabs">
+            <span class="tab on">Day-by-Day<span class="bar"></span></span>
+            <span class="tab">Polls<span class="bar"></span></span>
+            <span class="tab">Travelers<span class="bar"></span></span>
+            <span class="tab">Notes<span class="bar"></span></span>
+            <span class="tab">Photo Dump<span class="bar"></span></span>
+          </div>
+          <div class="body16">
+            <div class="day-card">
+              <div class="day-head">
+                <div class="day-title">Day 1: Lagoon Tour A <svg class="ic" width="18" height="18" style="color:#000"><use href="#i-minus"/></svg></div>
+              </div>
+              <div class="hr"></div>
+              <div class="acts">
+                <div class="act-list">
+                  <div class="act">
+                    <svg class="ic" width="16" height="16" style="color:#78716C"><use href="#i-grip"/></svg>
+                    <div class="act-info"><span class="act-name">Big Lagoon Kayaking</span><span class="act-time">09:00 AM</span></div>
+                    <div class="act-x"><svg class="ic" width="16" height="16"><use href="#i-pencil"/></svg><svg class="ic" width="16" height="16"><use href="#i-trash"/></svg></div>
+                  </div>
+                  <div class="act">
+                    <svg class="ic" width="16" height="16" style="color:#78716C"><use href="#i-grip"/></svg>
+                    <div class="act-info"><span class="act-name">Lunch at Shimizu Island</span><span class="act-time">12:30 PM</span></div>
+                    <div class="act-x"><svg class="ic" width="16" height="16"><use href="#i-pencil"/></svg><svg class="ic" width="16" height="16"><use href="#i-trash"/></svg></div>
+                  </div>
+                  <div class="act">
+                    <svg class="ic" width="16" height="16" style="color:#78716C"><use href="#i-grip"/></svg>
+                    <div class="act-info"><span class="act-name">Sunset at Las Cabanas</span><span class="act-time">05:30 PM</span></div>
+                    <div class="act-x"><svg class="ic" width="16" height="16"><use href="#i-pencil"/></svg><svg class="ic" width="16" height="16"><use href="#i-trash"/></svg></div>
+                  </div>
+                </div>
+                <div class="btn-add-act">Add Activity <svg class="ic" width="16" height="16"><use href="#i-plus3"/></svg></div>
+              </div>
+            </div>
+            <div class="stub"><b>Day 2: Secret Beaches</b><svg class="ic" width="18" height="18" style="color:#78716C"><use href="#i-chevd"/></svg></div>
+            <div class="stub"><b>Day 3: Underground River</b><svg class="ic" width="18" height="18" style="color:#78716C"><use href="#i-chevd"/></svg></div>
+            <div class="add-day">Add a Day <svg class="ic" width="16" height="16"><use href="#i-calplus"/></svg></div>
+          </div>
+          <div class="ctas">
+            <div class="btn-solid">Finalize Itinerary</div>
+            <div class="btn-line">Save Changes</div>
+          </div>
+          <div class="nav-wrap">
+            <div class="bnav">
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-home"/></svg>Home</span>
+              <span class="nv bold"><svg class="ic" width="24" height="24"><use href="#i-search"/></svg>Discover</span>
+              <span class="nv on"><svg class="ic" width="24" height="24" style="color:#000"><use href="#i-brief"/></svg>Trips</span>
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-user"/></svg>Profile</span>
+            </div>
+            <div class="h-ind"><i></i></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- Frame 2: workspace-draft with finalize sheet -->
+      <div class="cell">
+        <div class="cap">workspace-draft — finalize confirmation<small>Save above Finalize (black-border Save) · overlay + bottom sheet</small></div>
+        <div class="device"><div class="fr" style="min-height:1018px">
+          <div class="status">
+            <span class="st-time">9:41</span>
+            <span class="st-ic"><svg class="ic" width="18" height="18"><use href="#i-signal"/></svg><svg class="ic" width="18" height="18"><use href="#i-wifi"/></svg><svg class="ic" width="24" height="16"><use href="#i-batt"/></svg></span>
+          </div>
+          <div class="ws-head">
+            <div class="top-row">
+              <div class="bb">
+                <span class="back"><svg class="ic" width="24" height="24"><use href="#i-chevl"/></svg></span>
+                <span class="badge draft">Draft TRIP Workspace</span>
+              </div>
+              <span class="tbtn">Invite Traveler <svg class="ic" width="14" height="14"><use href="#i-userplus"/></svg></span>
+            </div>
+            <div>
+              <div class="title">Island Hopping in El Nido</div>
+              <div class="subtitle">Original by Jose Reyes</div>
+            </div>
+          </div>
+          <div class="tabs">
+            <span class="tab on">Day-by-Day<span class="bar"></span></span>
+            <span class="tab">Polls<span class="bar"></span></span>
+            <span class="tab">Travelers<span class="bar"></span></span>
+            <span class="tab">Notes<span class="bar"></span></span>
+            <span class="tab">Photo Dump<span class="bar"></span></span>
+          </div>
+          <div class="body16">
+            <div class="day-card">
+              <div class="day-head">
+                <div class="day-title">Day 1: Lagoon Tour A <svg class="ic" width="18" height="18" style="color:#000"><use href="#i-minus"/></svg></div>
+              </div>
+              <div class="hr"></div>
+              <div class="acts">
+                <div class="act-list">
+                  <div class="act">
+                    <svg class="ic" width="16" height="16" style="color:#78716C"><use href="#i-grip"/></svg>
+                    <div class="act-info"><span class="act-name">Big Lagoon Kayaking</span><span class="act-time">09:00 AM</span></div>
+                    <div class="act-x"><svg class="ic" width="16" height="16"><use href="#i-pencil"/></svg><svg class="ic" width="16" height="16"><use href="#i-trash"/></svg></div>
+                  </div>
+                  <div class="act">
+                    <svg class="ic" width="16" height="16" style="color:#78716C"><use href="#i-grip"/></svg>
+                    <div class="act-info"><span class="act-name">Lunch at Shimizu Island</span><span class="act-time">12:30 PM</span></div>
+                    <div class="act-x"><svg class="ic" width="16" height="16"><use href="#i-pencil"/></svg><svg class="ic" width="16" height="16"><use href="#i-trash"/></svg></div>
+                  </div>
+                  <div class="act">
+                    <svg class="ic" width="16" height="16" style="color:#78716C"><use href="#i-grip"/></svg>
+                    <div class="act-info"><span class="act-name">Sunset at Las Cabanas</span><span class="act-time">05:30 PM</span></div>
+                    <div class="act-x"><svg class="ic" width="16" height="16"><use href="#i-pencil"/></svg><svg class="ic" width="16" height="16"><use href="#i-trash"/></svg></div>
+                  </div>
+                </div>
+                <div class="btn-add-act">Add Activity <svg class="ic" width="16" height="16"><use href="#i-plus3"/></svg></div>
+              </div>
+            </div>
+            <div class="stub"><b>Day 2: Secret Beaches</b><svg class="ic" width="18" height="18" style="color:#78716C"><use href="#i-chevd"/></svg></div>
+            <div class="stub"><b>Day 3: Underground River</b><svg class="ic" width="18" height="18" style="color:#78716C"><use href="#i-chevd"/></svg></div>
+            <div class="add-day">Add a Day <svg class="ic" width="16" height="16"><use href="#i-calplus"/></svg></div>
+          </div>
+          <div class="ctas">
+            <div class="btn-line black">Save Changes</div>
+            <div class="btn-solid">Finalize Itinerary</div>
+          </div>
+          <div class="nav-wrap">
+            <div class="bnav">
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-home"/></svg>Home</span>
+              <span class="nv bold"><svg class="ic" width="24" height="24"><use href="#i-search"/></svg>Discover</span>
+              <span class="nv on"><svg class="ic" width="24" height="24" style="color:#000"><use href="#i-brief"/></svg>Trips</span>
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-user"/></svg>Profile</span>
+            </div>
+            <div class="h-ind"><i></i></div>
+          </div>
+          <div class="overlay"></div>
+          <div class="sheet">
+            <div class="grab"><i></i></div>
+            <div class="sheet-c">
+              <div class="ring"><i><svg class="ic" width="24" height="24" style="color:#fff"><use href="#i-check"/></svg></i></div>
+              <div style="display:flex;flex-direction:column;gap:8px;align-self:stretch">
+                <h4>Ready to go?</h4>
+                <p>Once finalized, the itinerary will be locked for your group to follow. You can always switch back to editing later.</p>
+              </div>
+              <div class="sheet-btns">
+                <div class="btn-fin">Finalize</div>
+                <div class="btn-keep">Keep Editing</div>
+              </div>
+            </div>
+            <div class="h-ind2"><i></i></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- Frame 3: Finalized workspace -->
+      <div class="cell">
+        <div class="cap">Finalized workspace<small>Ready badge · Edit Itinerary · all days collapsed · Start Trip</small></div>
+        <div class="device"><div class="fr" style="min-height:852px">
+          <div class="status">
+            <span class="st-time">9:41</span>
+            <span class="st-ic"><svg class="ic" width="18" height="18"><use href="#i-signal"/></svg><svg class="ic" width="18" height="18"><use href="#i-wifi"/></svg><svg class="ic" width="24" height="16"><use href="#i-batt"/></svg></span>
+          </div>
+          <div class="ws-head">
+            <div class="top-row">
+              <div class="bb">
+                <span class="back"><svg class="ic" width="24" height="24"><use href="#i-chevl"/></svg></span>
+                <span class="badge ready">Ready</span>
+              </div>
+              <span class="tbtn">Edit Itinerary <svg class="ic" width="16" height="16"><use href="#i-pencil"/></svg></span>
+            </div>
+            <div>
+              <div class="title">Island Hopping in El Nido</div>
+              <div class="subtitle">Original by Jose Reyes</div>
+            </div>
+          </div>
+          <div class="tabs">
+            <span class="tab on">Day-by-Day<span class="bar"></span></span>
+            <span class="tab">Polls<span class="bar"></span></span>
+            <span class="tab">Travelers<span class="bar"></span></span>
+            <span class="tab">Notes<span class="bar"></span></span>
+            <span class="tab">Photo Dump<span class="bar"></span></span>
+          </div>
+          <div class="body16">
+            <div class="stub"><b>Day 1: Arrival at Sunset</b><svg class="ic" width="18" height="18" style="color:#78716C"><use href="#i-chevd"/></svg></div>
+            <div class="stub"><b>Day 2: Secret Beaches</b><svg class="ic" width="18" height="18" style="color:#78716C"><use href="#i-chevd"/></svg></div>
+            <div class="stub"><b>Day 3: Underground River</b><svg class="ic" width="18" height="18" style="color:#78716C"><use href="#i-chevd"/></svg></div>
+            <div class="stub"><b>Day 4: Island Hopping Tour</b><svg class="ic" width="18" height="18" style="color:#78716C"><use href="#i-chevd"/></svg></div>
+            <div class="stub"><b>Day 5: Beach Relaxation</b><svg class="ic" width="18" height="18" style="color:#78716C"><use href="#i-chevd"/></svg></div>
+            <div style="padding-top:8px"><div class="btn-solid">Start Trip</div></div>
+          </div>
+          <div class="nav-wrap">
+            <div class="bnav">
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-home"/></svg>Home</span>
+              <span class="nv bold"><svg class="ic" width="24" height="24"><use href="#i-search"/></svg>Discover</span>
+              <span class="nv on"><svg class="ic" width="24" height="24" style="color:#000"><use href="#i-brief"/></svg>Trips</span>
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-user"/></svg>Profile</span>
+            </div>
+            <div class="h-ind"><i></i></div>
+          </div>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================== ADD / EDIT ACTIVITY ============================== -->
+  <div class="section">
+    <h2>Add / Edit Activity <span class="chip scope">in scope</span></h2>
+    <div class="row">
+
+      <!-- add-activity -->
+      <div class="cell">
+        <div class="cap">add-activity<small>Empty form · placeholders as-mocked (incl. the Estimated Price quirk)</small></div>
+        <div class="device narrow"><div class="fr" style="min-height:950px">
+          <div class="status p24">
+            <span class="st-time">9:41</span>
+            <span class="st-ic"><svg class="ic" width="18" height="18"><use href="#i-signal"/></svg><svg class="ic" width="18" height="18"><use href="#i-wifi"/></svg><svg class="ic" width="24" height="16"><use href="#i-batt"/></svg></span>
+          </div>
+          <div class="ws-head">
+            <div class="top-row" style="justify-content:flex-start">
+              <span class="back"><svg class="ic" width="24" height="24"><use href="#i-chevl"/></svg></span>
+            </div>
+            <div class="title">Add Activity</div>
+          </div>
+          <div class="form">
+            <div class="field g6">
+              <span class="flabel">Activity name</span>
+              <div class="inp"><span class="ph ellip">e.g. Big Lagoon Kayaking</span></div>
+            </div>
+            <div class="field">
+              <span class="flabel">Time</span>
+              <div class="inp"><svg class="ic" width="18" height="18" style="color:#EA580C"><use href="#i-clock"/></svg><span class="ph">09:00 AM</span></div>
+            </div>
+            <div class="field">
+              <span class="flabel">Location / Venue</span>
+              <div class="inp"><svg class="ic" width="18" height="18" style="color:#EA580C"><use href="#i-pin"/></svg><span class="ph ellip">Search for a place...</span></div>
+            </div>
+            <div class="field">
+              <span class="flabel">Estimated Price</span>
+              <div class="inp"><svg class="ic" width="18" height="18" style="color:#EA580C"><use href="#i-pin"/></svg><span class="ph ellip">Search for a place...</span></div>
+            </div>
+            <div class="field">
+              <span class="flabel">Booking Link <span class="opt">(Optional)</span></span>
+              <div class="inp"><svg class="ic" width="18" height="18" style="color:#EA580C"><use href="#i-link"/></svg><span class="ph ellip">Paste booking URL here...</span></div>
+            </div>
+          </div>
+          <div class="ctas">
+            <div class="btn-solid">Save Activity</div>
+            <div class="btn-line">Save Changes</div>
+          </div>
+          <div class="nav-wrap">
+            <div class="bnav">
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-home"/></svg>Home</span>
+              <span class="nv bold"><svg class="ic" width="24" height="24"><use href="#i-search"/></svg>Discover</span>
+              <span class="nv on"><svg class="ic" width="24" height="24" style="color:#000"><use href="#i-brief"/></svg>Trips</span>
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-user"/></svg>Profile</span>
+            </div>
+            <div class="h-ind"><i></i></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- edit-activity -->
+      <div class="cell">
+        <div class="cap">edit-activity<small>Filled · name field focused (1.5px #E8613A) · Discard Changes secondary</small></div>
+        <div class="device narrow"><div class="fr" style="min-height:950px">
+          <div class="status p24">
+            <span class="st-time">9:41</span>
+            <span class="st-ic"><svg class="ic" width="18" height="18"><use href="#i-signal"/></svg><svg class="ic" width="18" height="18"><use href="#i-wifi"/></svg><svg class="ic" width="24" height="16"><use href="#i-batt"/></svg></span>
+          </div>
+          <div class="ws-head">
+            <div class="top-row" style="justify-content:flex-start">
+              <span class="back"><svg class="ic" width="24" height="24"><use href="#i-chevl"/></svg></span>
+            </div>
+            <div class="title">Edit Activity</div>
+          </div>
+          <div class="form">
+            <div class="field">
+              <span class="flabel">Activity Name</span>
+              <div class="inp focus"><span class="val ellip">Big Lagoon Kayaking</span></div>
+            </div>
+            <div class="field">
+              <span class="flabel">Time</span>
+              <div class="inp"><svg class="ic" width="18" height="18" style="color:#EA580C"><use href="#i-clock"/></svg><span class="val">09:20 AM</span></div>
+            </div>
+            <div class="field">
+              <span class="flabel">Location / Venue</span>
+              <div class="inp"><svg class="ic" width="18" height="18" style="color:#E8613A"><use href="#i-pin"/></svg><span class="val ellip">Big Lagoon, Miniloc Island, El Nido</span></div>
+            </div>
+            <div class="field">
+              <span class="flabel">Estimated Price</span>
+              <div class="inp"><svg class="ic" width="18" height="18" style="color:#E8613A"><use href="#i-pin"/></svg><span class="val ellip">Big Lagoon, Miniloc Island, El Nido</span></div>
+            </div>
+            <div class="field">
+              <span class="flabel">Booking Link <span class="opt">(Optional)</span></span>
+              <div class="inp"><svg class="ic" width="18" height="18" style="color:#EA580C"><use href="#i-link"/></svg><span class="val ellip">https://klook.com/mamamo/1234</span></div>
+            </div>
+          </div>
+          <div class="ctas">
+            <div class="btn-solid">Save Activity</div>
+            <div class="btn-line">Discard Changes</div>
+          </div>
+          <div class="nav-wrap">
+            <div class="bnav">
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-home"/></svg>Home</span>
+              <span class="nv bold"><svg class="ic" width="24" height="24"><use href="#i-search"/></svg>Discover</span>
+              <span class="nv on"><svg class="ic" width="24" height="24" style="color:#000"><use href="#i-brief"/></svg>Trips</span>
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-user"/></svg>Profile</span>
+            </div>
+            <div class="h-ind"><i></i></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- provider card -->
+      <div class="cell">
+        <div class="cap">Add Booking Link / Option clicked<small>Standalone card fragment — one provider entry</small></div>
+        <div class="prov">
+          <div class="prov-h">PROVIDER 1 <svg class="ic" width="16" height="16" style="color:#71717A"><use href="#i-trash"/></svg></div>
+          <div class="prov-body">
+            <div class="prov-fields">
+              <div class="pf"><label>Booking Purpose</label><div class="pin">River tour, restaurant reservation, etc.</div></div>
+              <div class="pf"><label>Booking Provider</label><div class="pin">Klook, Expedia, Booking.com, etc.</div></div>
+              <div class="pf"><label>Target URL</label><div class="pin ellip">https://klook.com/activity/1243-el-nido-underground</div></div>
+              <div class="pf"><label>Estimated Price</label><div class="pin">₱PHP</div></div>
+            </div>
+            <div class="prov-save">Save</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================== POLLS (PARKED) ============================== -->
+  <div class="section">
+    <h2>Polls <span class="chip park">parked — no backend yet</span></h2>
+    <div class="row">
+
+      <!-- workspace-voting -->
+      <div class="cell">
+        <div class="cap">workspace-voting<small>Polls tab active · open poll + completed polls</small></div>
+        <div class="device"><div class="fr" style="min-height:1560px">
+          <div class="status">
+            <span class="st-time">9:41</span>
+            <span class="st-ic"><svg class="ic" width="18" height="18"><use href="#i-signal"/></svg><svg class="ic" width="18" height="18"><use href="#i-wifi"/></svg><svg class="ic" width="24" height="16"><use href="#i-batt"/></svg></span>
+          </div>
+          <div class="ws-head">
+            <div class="top-row">
+              <div class="bb">
+                <span class="back"><svg class="ic" width="24" height="24"><use href="#i-chevl"/></svg></span>
+                <span class="badge draft">Draft TRIP Workspace</span>
+              </div>
+              <span class="tbtn">Invite Traveler <svg class="ic" width="14" height="14"><use href="#i-userplus"/></svg></span>
+            </div>
+            <div>
+              <div class="title">Island Hopping in El Nido</div>
+              <div class="subtitle">Original by Jose Reyes</div>
+            </div>
+          </div>
+          <div class="tabs">
+            <span class="tab">Day-by-Day<span class="bar"></span></span>
+            <span class="tab on">Polls<span class="bar"></span></span>
+            <span class="tab">Travelers<span class="bar"></span></span>
+            <span class="tab">Notes<span class="bar"></span></span>
+            <span class="tab">Photo Dump<span class="bar"></span></span>
+          </div>
+          <div class="polls-body">
+            <div class="active-group">
+              <span class="sec-label">Active polls</span>
+              <div class="open-poll">
+                <div class="poll-h">
+                  <div class="poll-q"><b>Day 2 Afternoon Activity</b><span>Poll closes in 3 hours • Oct 24, 6:00 PM</span></div>
+                  <span class="pbadge open">Voting Open</span>
+                </div>
+                <div class="vopts">
+                  <div class="vopt sel">
+                    <div class="vrow"><span class="vleft"><span class="radio on"></span>Island Hopping Tour A</span></div>
+                    <div class="votes"><span class="avs"><i class="av a1"></i><i class="av a2"></i><i class="av a3"></i></span><span class="vcount">3 votes</span></div>
+                  </div>
+                  <div class="vopt">
+                    <div class="vrow"><span class="vleft"><span class="radio"></span>Snorkeling at Shimizu</span></div>
+                    <div class="votes"><span class="avs"><i class="av a4"></i><i class="av a5"></i></span><span class="vcount">2 votes</span></div>
+                  </div>
+                  <div class="vopt">
+                    <div class="vrow"><span class="vleft"><span class="radio"></span>Beach Rest Day</span></div>
+                    <div class="votes"><span class="vcount">0 votes</span></div>
+                  </div>
+                </div>
+                <div class="prog">
+                  <div class="prog-l"><span>Voting Progress</span><b>5 of 6 voted</b></div>
+                  <div class="track"><div class="fill"></div></div>
+                </div>
+                <div class="btn-submit">Submit Vote</div>
+              </div>
+              <span class="tbtn">Create a Poll <svg class="ic" width="16" height="16" style="color:#EA580C"><use href="#i-chart"/></svg></span>
+            </div>
+            <div class="completed">
+              <span class="sec-label">Completed Polls</span>
+              <div class="closed-card">
+                <div class="poll-h">
+                  <div class="poll-q"><b>Day 1 Dinner Spot</b><span>Poll closed • Oct 24, 6:00 PM</span></div>
+                  <span class="pbadge closed">CLOSED</span>
+                </div>
+                <div class="results">
+                  <div class="winner">
+                    <div class="vrow"><span class="vleft">Seafood Dinners at El Nido <svg class="ic" width="16" height="16" style="color:#EA580C"><use href="#i-star"/></svg></span></div>
+                    <div class="added"><svg class="ic" width="14" height="14" style="color:#15803D"><use href="#i-check2"/></svg>Added to Itinerary</div>
+                    <div class="votes"><span class="avs"><i class="av a1"></i><i class="av a2"></i><i class="av a3"></i><i class="av a4"></i><i class="av a5"></i></span><span class="vcount">5 votes</span></div>
+                  </div>
+                  <div class="vopt">
+                    <div class="vrow"><span class="vleft">Street Food Tour</span></div>
+                    <div class="votes"><span class="avs"><i class="av a4"></i></span><span class="vcount">1 vote</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="closed-card">
+                <div class="poll-h">
+                  <div class="poll-q"><b>Day 3 Morning Activity</b><span>Poll closed • Oct 24, 6:00 PM</span></div>
+                  <span class="pbadge closed">CLOSED</span>
+                </div>
+                <div class="results">
+                  <div class="winner">
+                    <div class="vrow"><span class="vleft">Underground River Tour <svg class="ic" width="16" height="16" style="color:#EA580C"><use href="#i-star"/></svg></span></div>
+                    <div class="added"><svg class="ic" width="14" height="14" style="color:#15803D"><use href="#i-check2"/></svg>Added to Itinerary</div>
+                    <div class="votes"><span class="avs"><i class="av a1"></i><i class="av a2"></i><i class="av a3"></i><i class="av a4"></i></span><span class="vcount">4 votes</span></div>
+                  </div>
+                  <div class="vopt">
+                    <div class="vrow"><span class="vleft">Beach Yoga</span></div>
+                    <div class="votes"><span class="avs"><i class="av a4"></i><i class="av a5"></i></span><span class="vcount">2 votes</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ctas">
+            <div class="btn-solid">Finalize Itinerary</div>
+            <div class="btn-line">Save Changes</div>
+          </div>
+          <div class="nav-wrap">
+            <div class="bnav">
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-home"/></svg>Home</span>
+              <span class="nv bold"><svg class="ic" width="24" height="24"><use href="#i-search"/></svg>Discover</span>
+              <span class="nv on"><svg class="ic" width="24" height="24" style="color:#000"><use href="#i-brief"/></svg>Trips</span>
+              <span class="nv"><svg class="ic" width="24" height="24"><use href="#i-user"/></svg>Profile</span>
+            </div>
+            <div class="h-ind"><i></i></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- create-poll -->
+      <div class="cell">
+        <div class="cap">create-poll<small>No bottom nav in mock · black CTA pair</small></div>
+        <div class="device"><div class="fr" style="min-height:852px">
+          <div class="cp-head">
+            <div class="status" style="padding:0;height:54px">
+              <span class="st-time f-inter" style="font-size:16px;line-height:19px;color:#000">9:41</span>
+              <span class="st-ic" style="gap:8px;color:#000"><svg class="ic" width="20" height="20"><use href="#i-signal"/></svg><svg class="ic" width="20" height="20"><use href="#i-wifi"/></svg><svg class="ic" width="28" height="20" viewBox="0 0 24 16"><use href="#i-batt"/></svg></span>
+            </div>
+            <div class="top-row" style="justify-content:space-between">
+              <span class="back"><svg class="ic" width="24" height="24"><use href="#i-chevl"/></svg></span>
+              <span style="width:40px;height:40px"></span>
+            </div>
+            <div class="cp-title">Create a Poll</div>
+          </div>
+          <div class="cp-form">
+            <div class="field">
+              <span class="cp-label">Poll Question</span>
+              <div class="cp-inp">Day 2 Afternoon Activity</div>
+            </div>
+            <div class="field" style="gap:10px">
+              <span class="cp-label">Options</span>
+              <div class="cp-opt">Island Hopping Tour A <svg class="ic" width="16" height="16" style="color:#78716C"><use href="#i-trash"/></svg></div>
+              <div class="cp-opt">Snorkeling at Shimizu <svg class="ic" width="16" height="16" style="color:#78716C"><use href="#i-trash"/></svg></div>
+              <div class="cp-opt">Beach Rest Day <svg class="ic" width="16" height="16" style="color:#78716C"><use href="#i-trash"/></svg></div>
+              <div class="cp-add"><svg class="ic" width="14" height="14" style="color:#EA580C"><use href="#i-plus2"/></svg>Add Option</div>
+            </div>
+            <div class="cp-settings">
+              <div class="cp-picker">
+                <b>Poll closes</b>
+                <span class="dtrig"><svg class="ic" width="14" height="14" style="color:#44403C"><use href="#i-cal"/></svg>Oct 24, 6:00 PM</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="btn-black">Create Poll</div>
+              <div class="btn-black-line">Cancel</div>
+            </div>
+          </div>
+          <div class="nav-wrap">
+            <div class="h-ind" style="padding:0;height:34px;align-items:center"><i style="width:134px;background:#1C1917"></i></div>
+          </div>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
