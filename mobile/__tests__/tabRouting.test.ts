@@ -206,6 +206,22 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     }
   });
 
+  it('never says "Uploading…" on the create form, where the only request in flight is the trip', () => {
+    const create = read(TRIPS, 'new.tsx');
+    const edit = read(TRIPS, '[id]', 'edit.tsx');
+
+    expect(create).not.toMatch(/uploading=/);
+    expect(create).toContain('busy={create.isPending}');
+    expect(edit).toContain('uploading={uploadCover.isPending}');
+  });
+
+  it('binds the uploading label to a real upload, never to whatever else is pending', () => {
+    const picker = read(MOBILE_ROOT, 'src', 'media', 'CoverPicker.tsx');
+
+    expect(picker).not.toMatch(/busy \? UPLOADING_COVER_LABEL/);
+    expect(picker.match(/uploading \? UPLOADING_COVER_LABEL/g) ?? []).toHaveLength(2);
+  });
+
   it('fetches a card thumbnail through the AUTHENTICATED media path — a bare URL 401s (S3.3)', () => {
     const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
 

@@ -3,18 +3,20 @@ import { useMediaSource } from './useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
 
 export const UPLOAD_COVER_LABEL = 'Upload photo(s)';
+export const UPLOADING_COVER_LABEL = 'Uploading…';
 export const REPLACE_COVER_LABEL = 'Replace photo';
 export const REMOVE_COVER_LABEL = 'Remove photo';
 
 interface CoverPickerProps {
   readonly coverUrl: string | null;
   readonly busy: boolean;
+  readonly uploading?: boolean;
   readonly onPick: () => void;
   readonly onRemove: () => void;
 }
 
 
-export function CoverPicker({ coverUrl, busy, onPick, onRemove }: CoverPickerProps) {
+export function CoverPicker({ coverUrl, busy, uploading = false, onPick, onRemove }: CoverPickerProps) {
   const source = useMediaSource(coverUrl);
 
   if (source !== null) {
@@ -29,7 +31,7 @@ export function CoverPicker({ coverUrl, busy, onPick, onRemove }: CoverPickerPro
         />
         <View style={styles.actions}>
           <Pressable onPress={onPick} disabled={busy} accessibilityRole="button">
-            <Text style={styles.action}>{busy ? 'Uploading…' : REPLACE_COVER_LABEL}</Text>
+            <Text style={styles.action}>{uploading ? UPLOADING_COVER_LABEL : REPLACE_COVER_LABEL}</Text>
           </Pressable>
           <Pressable onPress={onRemove} disabled={busy} accessibilityRole="button">
             <Text style={styles.remove}>{REMOVE_COVER_LABEL}</Text>
@@ -48,7 +50,7 @@ export function CoverPicker({ coverUrl, busy, onPick, onRemove }: CoverPickerPro
       accessibilityLabel={UPLOAD_COVER_LABEL}
     >
       <View style={styles.pill}>
-        <Text style={styles.pillLabel}>{busy ? 'Uploading…' : UPLOAD_COVER_LABEL}</Text>
+        <Text style={styles.pillLabel}>{uploading ? UPLOADING_COVER_LABEL : UPLOAD_COVER_LABEL}</Text>
       </View>
     </Pressable>
   );
