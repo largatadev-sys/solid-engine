@@ -598,7 +598,19 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(web).toContain('nudge={{');
     expect(web).not.toContain('Gesture.Pan');
     expect(native).toContain('Gesture.Pan');
-    expect(native).toContain("{ name: 'moveUp', label: 'Move up' }");
+    expect(native).toContain('reorderActionsFor(index, count)');
+    expect(read(MOBILE_ROOT, 'src', 'itineraries', 'landingSlot.ts')).toContain(
+      "{ name: 'moveUp', label: 'Move up' }",
+    );
+  });
+
+  it('shifts the other rows LIVE during a drag, not only on release (founder, 2026-08-09)', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+
+    expect(native).toContain('displacementFor(index, held, target, rowHeight.value)');
+    expect(native).toContain('draggingIndex');
+    expect(native).toContain('withSpring(displaced');
+    expect(native).toContain('onLayout');
   });
 
   it('holds the Editing Session for as long as the editor is open (S4.17 decision 4)', () => {

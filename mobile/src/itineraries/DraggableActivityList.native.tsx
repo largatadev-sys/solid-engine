@@ -1,18 +1,24 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
+  withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
-import { workspaceMetrics } from '../theme/workspaceTokens';
+import { workspaceColors, workspaceMetrics } from '../theme/workspaceTokens';
+import { displacementFor, landingSlot, reorderActionsFor } from './landingSlot';
 import type { ActivityResponse } from '../types/api';
 import { ActivityRow } from './WorkspaceDayCard';
 import type { WorkspaceAffordances } from './workspaceControls';
 
 
-const ROW_HEIGHT = workspaceMetrics.activityRowHeight;
+const SETTLE = { damping: 20, stiffness: 220, mass: 0.6 };
+
+const LIFT_MS = 140;
 
 
 interface DraggableActivityListProps {
@@ -33,7 +39,15 @@ export function DraggableActivityList({
   onDrop,
   onNudge,
 }: DraggableActivityListProps) {
+  const draggingIndex = useSharedValue(-1);
+  const dragTranslation = useSharedValue(0);
+  const rowHeight = useSharedValue<number>(workspaceMetrics.activityRowHeight);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  const measure = (event: LayoutChangeEvent) => {
+    const measured = event.nativeEvent.layout.height;
+    if (measured > 0) rowHeight.value = measured;
+  };
 
   return (
     <View>
@@ -44,7 +58,11 @@ export function DraggableActivityList({
           index={index}
           count={activities.length}
           affordances={affordances}
-          dragging={draggingId === activity.id}
+          draggingIndex={draggingIndex}
+          dragTranslation={dragTranslation}
+          rowHeight={rowHeight}
+          isDragging={draggingId === activity.id}
+          onMeasure={index === 0 ? measure : undefined}
           onDragStart={() => setDraggingId(activity.id)}
           onDragEnd={(toIndex) => {
             setDraggingId(null);
@@ -65,7 +83,11 @@ function DraggableRow({
   index,
   count,
   affordances,
-  dragging,
+  draggingIndex,
+  dragTranslation,
+  rowHeight,
+  isDragging,
+  onMeasure,
   onDragStart,
   onDragEnd,
   onEdit,
@@ -76,38 +98,67 @@ function DraggableRow({
   index: number;
   count: number;
   affordances: WorkspaceAffordances;
-  dragging: boolean;
+  draggingIndex: SharedValue<number>;
+  dragTranslation: SharedValue<number>;
+  rowHeight: SharedValue<number>;
+  isDragging: boolean;
+  onMeasure?: (event: LayoutChangeEvent) => void;
   onDragStart: () => void;
   onDragEnd: (toIndex: number) => void;
   onEdit: (activity: ActivityResponse) => void;
   onDelete: (activity: ActivityResponse) => void;
   onNudge: (activityId: string, direction: 'up' | 'down') => void;
 }) {
-  const offsetY = useSharedValue(0);
+  const lift = useSharedValue(0);
 
   const pan = Gesture.Pan()
     .activateAfterLongPress(200)
     .onStart(() => {
+      draggingIndex.value = index;
+      dragTranslation.value = 0;
+      lift.value = withTiming(1, { duration: LIFT_MS });
       runOnJS(onDragStart)();
     })
     .onUpdate((event) => {
-      offsetY.value = event.translationY;
+      dragTranslation.value = event.translationY;
     })
     .onEnd(() => {
-      const slots = Math.round(offsetY.value / ROW_HEIGHT);
-      const target = Math.max(0, Math.min(index + slots, count - 1));
-      offsetY.value = 0;
+      const target = landingSlot(dragTranslation.value, index, count, rowHeight.value);
+      draggingIndex.value = -1;
+      dragTranslation.value = 0;
+      lift.value = withTiming(0, { duration: LIFT_MS });
       runOnJS(onDragEnd)(target);
     });
 
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateY: offsetY.value }],
-    zIndex: offsetY.value === 0 ? 0 : 1,
-  }));
+  const style = useAnimatedStyle(() => {
+    const held = draggingIndex.value;
+
+    if (held === index) {
+      return {
+        transform: [{ translateY: dragTranslation.value }, { scale: 1 + lift.value * 0.03 }],
+        zIndex: 2,
+        elevation: 4 * lift.value,
+        opacity: 1 - lift.value * 0.06,
+        shadowOpacity: lift.value * 0.18,
+      };
+    }
+
+    if (held === -1) {
+      return { transform: [{ translateY: withSpring(0, SETTLE) }, { scale: 1 }], zIndex: 0 };
+    }
+
+    const target = landingSlot(dragTranslation.value, held, count, rowHeight.value);
+    const displaced = displacementFor(index, held, target, rowHeight.value);
+
+    return {
+      transform: [{ translateY: withSpring(displaced, SETTLE) }, { scale: 1 }],
+      zIndex: 0,
+    };
+  });
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View style={[style, dragging && styles.lifted]}>
+      <Animated.View style={[styles.row, style]} onLayout={onMeasure}>
         <ActivityRow
           activity={activity}
           affordances={affordances}
@@ -126,20 +177,11 @@ function DraggableRow({
 }
 
 
-export function reorderActionsFor(
-  index: number,
-  count: number,
-): Array<{ name: 'moveUp' | 'moveDown'; label: string }> {
-  const actions: Array<{ name: 'moveUp' | 'moveDown'; label: string }> = [];
-  if (index > 0) actions.push({ name: 'moveUp', label: 'Move up' });
-  if (index < count - 1) actions.push({ name: 'moveDown', label: 'Move down' });
-  return actions;
-}
-
-
 const styles = StyleSheet.create({
-  lifted: {
-    opacity: 0.9,
-    elevation: 4,
+  row: {
+    backgroundColor: workspaceColors.surface,
+    shadowColor: workspaceColors.title,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
   },
 });
