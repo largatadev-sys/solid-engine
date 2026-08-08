@@ -179,6 +179,20 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(trips).toContain('name="filter"');
   });
 
+  it('fetches a card thumbnail through the AUTHENTICATED media path — a bare URL 401s (S3.3)', () => {
+    const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
+
+    expect(row).toContain('useMediaSource(thumbOf(coverImageUrl))');
+    expect(row).not.toMatch(/source=\{\{\s*uri:/);
+  });
+
+  it('drops the destinations line the mock has no room for (S4.15 decision 5)', () => {
+    const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
+
+    expect(row).not.toMatch(/destinations\.join/);
+    expect(row).not.toMatch(/formatDates/);
+  });
+
   it('wears the briefcase on the Trips tab, as the mock draws it (icon fidelity)', () => {
     const layout = read(TABS, '_layout.tsx');
 

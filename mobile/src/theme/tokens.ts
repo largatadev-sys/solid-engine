@@ -98,9 +98,13 @@ export const typography = {
 
 
 export const spacing = {
+  xxs: 2,
   xs: 4,
+  xsPlus: 6,
   sm: 8,
+  smPlus: 12,
   md: 16,
+  lgMinus: 20,
   lg: 24,
   xl: 32,
   xxl: 48,
@@ -109,6 +113,7 @@ export const spacing = {
 
 export const radii = {
   xs: 2,
+  control: 4,
   sm: 8,
   md: 12,
   lg: 16,

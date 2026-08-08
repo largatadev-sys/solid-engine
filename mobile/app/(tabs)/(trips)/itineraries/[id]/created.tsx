@@ -116,12 +116,14 @@ const SECONDARY_HEIGHT = 46;
 
 const CONTENT_GAP = 28;
 
+const CONTENT_TOP = 40;
+
 const styles = StyleSheet.create({
   screen: { flex: 1, justifyContent: 'space-between', backgroundColor: colors.surface },
   content: {
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl + spacing.sm,
+    paddingTop: CONTENT_TOP,
     gap: CONTENT_GAP,
   },
   halo: {
@@ -139,8 +141,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'stretch',
-    gap: spacing.sm + spacing.xs,
-    padding: spacing.sm + spacing.xs,
+    gap: spacing.smPlus,
+    padding: spacing.smPlus,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -156,11 +158,11 @@ const styles = StyleSheet.create({
   summaryText: { flex: 1, gap: spacing.xs },
   summaryTitle: { ...typography.summaryTitle, color: colors.textPrimary },
   summaryMeta: { ...typography.summaryMeta, color: colors.textSecondary },
-  actions: { paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.sm + spacing.xs },
+  actions: { paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.smPlus },
   primary: {
     flexDirection: 'row',
     height: PRIMARY_HEIGHT,
-    borderRadius: radii.xs,
+    borderRadius: radii.control,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
@@ -170,7 +172,7 @@ const styles = StyleSheet.create({
   primaryText: { ...typography.actionLarge, color: colors.textOnAccent },
   secondary: {
     height: SECONDARY_HEIGHT,
-    borderRadius: radii.xs,
+    borderRadius: radii.control,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',

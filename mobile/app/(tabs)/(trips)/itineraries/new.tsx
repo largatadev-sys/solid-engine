@@ -227,9 +227,9 @@ const inputSurface = {
   backgroundColor: colors.surfaceMuted,
   borderWidth: 1,
   borderColor: colors.inputBorder,
-  borderRadius: radii.xs,
-  paddingHorizontal: spacing.sm + spacing.xs,
-  paddingVertical: spacing.sm + spacing.xs,
+  borderRadius: radii.control,
+  paddingHorizontal: spacing.smPlus,
+  paddingVertical: spacing.smPlus,
 } as const;
 
 const styles = StyleSheet.create({
@@ -241,16 +241,16 @@ const styles = StyleSheet.create({
     gap: FORM_GAP,
     flexGrow: 1,
   },
-  row: { flexDirection: 'row', gap: spacing.sm + spacing.xs },
+  row: { flexDirection: 'row', gap: spacing.smPlus },
   rowWide: { flex: 1 },
   rowNarrow: { width: DURATION_WIDTH },
-  field: { gap: spacing.xs + 2 },
+  field: { gap: spacing.xsPlus },
   label: { ...typography.fieldLabel, color: colors.textSecondary },
   input: { ...inputSurface, ...typography.input, color: colors.textPrimary },
   inputMultiline: { height: MULTILINE_HEIGHT, textAlignVertical: 'top' },
   standoutRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   standoutInput: { ...inputSurface, ...typography.input, flex: 1, color: colors.textPrimary },
-  addStandout: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2, paddingTop: spacing.xs },
+  addStandout: { flexDirection: 'row', alignItems: 'center', gap: spacing.xsPlus, paddingTop: spacing.xs },
   addStandoutText: { ...typography.fieldAction, color: colors.textPrimary },
   error: { ...typography.caption, color: colors.danger },
   dock: {
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   },
   cta: {
     height: CTA_HEIGHT,
-    borderRadius: radii.xs,
+    borderRadius: radii.control,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.accent,

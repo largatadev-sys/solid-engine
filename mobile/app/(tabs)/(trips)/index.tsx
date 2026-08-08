@@ -115,12 +115,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   headerTitle: { ...typography.title, color: colors.textPrimary },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + spacing.xs },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.smPlus },
   sectionTitle: {
     ...typography.sectionLabel,
     color: colors.textSecondary,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.sm + spacing.xs,
+    paddingBottom: spacing.smPlus,
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
   listContainer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   primaryCta: {
     flexDirection: 'row',
     height: CTA_HEIGHT,
-    borderRadius: radii.xs,
+    borderRadius: radii.control,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
