@@ -3,7 +3,6 @@ export const COMING_SOON_SURFACES = {
   search: 'Search',
   chat: 'Trip chat',
   network: 'From your network',
-  activityHistory: 'Activity history',
   fork: 'Forking an itinerary',
   diary: 'Diary entries',
   comments: 'Comments',
@@ -11,9 +10,10 @@ export const COMING_SOON_SURFACES = {
   rating: 'Ratings',
   follow: 'Following a creator',
   booking: 'Booking options',
-  tripWorkspace: 'The Trip Workspace',
   tripSearch: 'Searching your trips',
   tripFilter: 'Filtering your trips',
+  polls: 'Trip polls',
+  photoDump: 'The photo dump',
 } as const;
 
 export type ComingSoonSurface = keyof typeof COMING_SOON_SURFACES;

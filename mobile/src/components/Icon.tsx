@@ -1,4 +1,4 @@
-import Svg, { Circle, Line, Path, Polygon, Polyline } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Polygon, Polyline, Rect } from 'react-native-svg';
 
 export type IconName =
   | 'back'
@@ -31,7 +31,12 @@ export type IconName =
   | 'camera'
   | 'briefcase'
   | 'plusCircle'
-  | 'filter';
+  | 'filter'
+  | 'pencilSquare'
+  | 'userPlus'
+  | 'calendarPlus'
+  | 'grip'
+  | 'clock';
 
 interface IconProps {
   readonly name: IconName;
@@ -278,6 +283,50 @@ export function Icon({ name, size, color }: IconProps) {
           <Line x1="14" y1="3" x2="14" y2="7" {...shared} />
           <Line x1="10" y1="10" x2="10" y2="14" {...shared} />
           <Line x1="16" y1="17" x2="16" y2="21" {...shared} />
+        </>
+      )}
+
+      {name === 'pencilSquare' && (
+        <>
+          <Path
+            d="M18.15 1.95a2.03 2.03 0 0 1 2.85 2.85l-10.05 10.05-3.75.9.9-3.75 10.05-10.05z"
+            fill={color}
+            stroke="none"
+          />
+          <Path
+            d="M16.8 13.2V19.5a2.4 2.4 0 0 1-2.4 2.4H4.5A2.4 2.4 0 0 1 2.1 19.5V9.9A2.4 2.4 0 0 1 4.5 7.5h6.3"
+            {...shared}
+            strokeWidth={2.25}
+          />
+        </>
+      )}
+
+      {name === 'userPlus' && (
+        <>
+          <Circle cx="9.6" cy="7.54" r="4.29" {...shared} strokeWidth={2.74} />
+          <Path
+            d="M2.06 21.26c1.03-3.77 3.94-5.83 7.54-5.83 2.57 0 4.97 1.03 6.34 3.09"
+            {...shared}
+            strokeWidth={2.74}
+          />
+          <Path d="M19.37 10.63v6.86M15.94 14.06h6.86" {...shared} strokeWidth={2.74} />
+        </>
+      )}
+
+      {name === 'calendarPlus' && (
+        <>
+          <Rect x="2.4" y="3.9" width="19.2" height="18" rx="2.7" {...shared} strokeWidth={2.4} />
+          <Path d="M7.2 1.5v4.5M16.8 1.5v4.5M2.4 9.3h19.2" {...shared} strokeWidth={2.4} />
+          <Path d="M12 12.6v5.7M9.15 15.45h5.7" {...shared} strokeWidth={2.4} />
+        </>
+      )}
+
+      {name === 'grip' && <Path d="M4.5 6.3h15M4.5 12h15M4.5 17.7h15" {...shared} strokeWidth={3} />}
+
+      {name === 'clock' && (
+        <>
+          <Circle cx="12" cy="12" r="9.6" {...shared} strokeWidth={2.67} />
+          <Path d="M12 6.93V12l3.47 2.4" {...shared} strokeWidth={2.67} />
         </>
       )}
 

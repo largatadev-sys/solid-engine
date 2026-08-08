@@ -1,7 +1,6 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { initialsFor } from '../onboarding/initials';
-import { thumbOf } from '../media/mediaSourceContract';
-import { useMediaSource } from '../media/useMediaSource';
+import { MediaThumb } from '../media/MediaThumb';
 import { colors, radii, spacing, typography } from '../theme';
 
 interface AvatarProps {
@@ -12,23 +11,14 @@ interface AvatarProps {
 
 
 export function Avatar({ photoUrl, displayName, email }: AvatarProps) {
-  const source = useMediaSource(thumbOf(photoUrl));
-
-  if (source !== null) {
-    return (
-      <Image
-        source={source}
-        style={styles.circle}
-        accessibilityLabel="Your profile photo"
-        accessibilityIgnoresInvertColors
-      />
-    );
-  }
-
   return (
-    <View style={[styles.circle, styles.initialsGround]} accessibilityLabel="Your initials">
-      <Text style={styles.initials}>{initialsFor(displayName, email)}</Text>
-    </View>
+    <MediaThumb
+      url={photoUrl}
+      style={styles.circle}
+      fallbackStyle={styles.initialsGround}
+      accessibilityLabel="Your profile photo"
+      fallback={<Text style={styles.initials}>{initialsFor(displayName, email)}</Text>}
+    />
   );
 }
 

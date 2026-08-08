@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
 import { galleryOf, galleryOverflow, GALLERY_VISIBLE_TILES } from '../media/galleryOf';
-import { thumbOf } from '../media/mediaSourceContract';
-import { useMediaSource } from '../media/useMediaSource';
+import { MediaThumb } from '../media/MediaThumb';
 import { colors, radii, spacing, typography } from '../theme';
 import type {
   PublishedActivityResponse,
@@ -90,23 +89,13 @@ export function PublishedItineraryView({
 
 
 function CreatorAvatar({ creator }: { creator: TravelerCardResponse }) {
-  const source = useMediaSource(thumbOf(creator.avatarUrl));
-
-  if (source !== null) {
-    return (
-      <Image
-        source={source}
-        style={styles.creatorAvatar}
-        accessibilityLabel={`${creator.displayName}'s profile photo`}
-        accessibilityIgnoresInvertColors
-      />
-    );
-  }
-
   return (
-    <View style={styles.creatorAvatar}>
-      <Text style={styles.creatorInitials}>{initialsFor(creator.displayName, null)}</Text>
-    </View>
+    <MediaThumb
+      url={creator.avatarUrl}
+      style={styles.creatorAvatar}
+      accessibilityLabel={`${creator.displayName}'s profile photo`}
+      fallback={<Text style={styles.creatorInitials}>{initialsFor(creator.displayName, null)}</Text>}
+    />
   );
 }
 
@@ -114,23 +103,14 @@ function CreatorAvatar({ creator }: { creator: TravelerCardResponse }) {
 export const COVER_PLACEHOLDER_LABEL = 'No cover photo yet';
 
 function CoverSlot({ coverUrl }: { coverUrl: string | null }) {
-  const source = useMediaSource(coverUrl);
-
-  if (source === null) {
-    return (
-      <View style={styles.coverPlaceholder}>
-        <Text style={styles.coverPlaceholderText}>{COVER_PLACEHOLDER_LABEL}</Text>
-      </View>
-    );
-  }
-
   return (
-    <Image
-      source={source}
+    <MediaThumb
+      url={coverUrl}
+      full
       style={styles.cover}
-      resizeMode="cover"
+      fallbackStyle={styles.coverPlaceholder}
       accessibilityLabel="Trip cover photo"
-      accessibilityIgnoresInvertColors
+      fallback={<Text style={styles.coverPlaceholderText}>{COVER_PLACEHOLDER_LABEL}</Text>}
     />
   );
 }
@@ -247,13 +227,9 @@ function Gallery({ projection }: { projection: PublishedItineraryResponse }) {
 
 
 function GalleryTile({ thumbUrl, overflow }: { thumbUrl: string; overflow: number }) {
-  const source = useMediaSource(thumbUrl);
-
   return (
     <View style={styles.galleryTile}>
-      {source !== null && (
-        <Image source={source} style={styles.galleryImage} accessibilityIgnoresInvertColors />
-      )}
+      <MediaThumb url={thumbUrl} full style={styles.galleryImage} accessibilityLabel="Trip photo" />
       {overflow > 0 && (
         <View style={styles.galleryOverflow}>
           <Text style={styles.galleryOverflowText}>{`+${overflow}`}</Text>

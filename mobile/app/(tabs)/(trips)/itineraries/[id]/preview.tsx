@@ -29,7 +29,7 @@ export default function ItineraryPreviewScreen() {
   const readyToPublish = state === 'completed' && trip.data?.published === false;
 
   const continueEditing = () =>
-    router.push({ pathname: '/itineraries/[id]/days', params: { id, day: '1' } });
+    router.push({ pathname: '/itineraries/[id]/edit-plan', params: { id } });
 
   if (isPending) {
     return (
