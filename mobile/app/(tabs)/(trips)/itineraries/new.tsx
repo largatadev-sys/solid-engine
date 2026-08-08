@@ -62,7 +62,7 @@ export default function NewItineraryScreen() {
       {
         onSuccess: async (created) => {
           await attachChosenCover(created.id);
-          router.replace({ pathname: '/itineraries/[id]/days', params: { id: created.id, day: '1' } });
+          router.replace({ pathname: '/itineraries/[id]/created', params: { id: created.id } });
         },
       },
     );

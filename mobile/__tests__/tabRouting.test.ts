@@ -128,7 +128,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(read(TRIPS_GROUP, '_layout.tsx')).toContain('headerShown: false');
   });
 
-  const FULL_BLEED = ['itineraries/[id]/published.tsx'];
+  const FULL_BLEED = ['itineraries/[id]/published.tsx', 'itineraries/[id]/created.tsx'];
 
   it.each(tripScreens().filter(([name]) => !FULL_BLEED.includes(name)))(
     '%s draws its own heading — with no header bar, a navigator title renders nowhere',
@@ -283,6 +283,27 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(activity).not.toMatch(/PROVIDER \d|Add another/);
   });
 
+  it('greys the workspace door on the overview — the redesign it opens is the next story (S4.15 decision 3)', () => {
+    const overview = read(TRIPS, '[id]', 'created.tsx');
+
+    expect(overview).toContain("comingSoon('tripWorkspace')");
+    expect(overview).toContain('accessibilityState={{ disabled: true }}');
+    expect(overview).not.toMatch(/pathname: '\/itineraries\/\[id\]'/);
+  });
+
+  it('keeps Preview Trip live and PUSHED, so back returns to the overview (S4.15 decision 3)', () => {
+    const overview = read(TRIPS, '[id]', 'created.tsx');
+
+    expect(overview).toMatch(/router\.push\(\{ pathname: '\/itineraries\/\[id\]\/preview'/);
+  });
+
+  it('leaves the publish-success screen alone — a different act, a different moment (spec AC 9)', () => {
+    const published = read(TRIPS, '[id]', 'published.tsx');
+
+    expect(published).toContain('Your Itinerary is Live!');
+    expect(published).toContain('is now available for travelers to discover.');
+  });
+
   it('retires the create-method chooser — a door with one exit (S4.15 decision 7)', () => {
     expect(existsSync(join(TRIPS, 'create.tsx'))).toBe(false);
   });
@@ -348,9 +369,11 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(workspace).toContain('dayId: day.id');
   });
 
-  it('sends the create flow to the EDITOR, at Day 1 (decision 13)', () => {
-    expect(read(TRIPS, 'new.tsx')).toContain("pathname: '/itineraries/[id]/days'");
-    expect(read(TRIPS, 'new.tsx')).toContain("day: '1'");
+  it('lands the create flow on the overview, REPLACING the spent form so back reaches Trips (S4.15 decision 2)', () => {
+    const create = read(TRIPS, 'new.tsx');
+
+    expect(create).toMatch(/router\.replace\(\{ pathname: '\/itineraries\/\[id\]\/created'/);
+    expect(create).not.toMatch(/pathname: '\/itineraries\/\[id\]\/days'/);
   });
 
   it('opens a DRAFT straight in the day editor — there is nothing to preview yet', () => {
@@ -472,6 +495,7 @@ describe('every greyed affordance is wired to the shared helper (register #2)', 
     read(TABS, '_layout.tsx'),
     read(TRIPS_GROUP, 'index.tsx'),
     read(TRIPS, 'new.tsx'),
+    read(TRIPS, '[id]', 'created.tsx'),
     read(TRIPS, '[id]', 'index.tsx'),
     read(TRIPS, '[id]', 'days', 'index.tsx'),
     read(TRIPS, '[id]', 'days', '[dayId].tsx'),

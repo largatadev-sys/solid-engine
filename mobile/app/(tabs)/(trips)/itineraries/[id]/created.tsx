@@ -1,0 +1,180 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { comingSoon } from '../../../../../src/components/comingSoon';
+import { Icon } from '../../../../../src/components/Icon';
+import {
+  OPEN_WORKSPACE_LABEL,
+  PREVIEW_TRIP_LABEL,
+  TRIP_CREATED_TITLE,
+  tripCreatedBody,
+  tripCreatedMeta,
+} from '../../../../../src/itineraries/tripCreatedCopy';
+import { thumbOf } from '../../../../../src/media/mediaSourceContract';
+import { useMediaSource } from '../../../../../src/media/useMediaSource';
+import { useItinerary } from '../../../../../src/query/itineraryQueries';
+import { colors, radii, spacing, typography } from '../../../../../src/theme';
+
+
+export default function TripCreatedScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data } = useItinerary(id);
+  const insets = useSafeAreaInsets();
+
+  const title = data?.title ?? 'Your trip';
+
+  return (
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={styles.content}>
+        <View style={styles.halo}>
+          <Icon name="partyPopper" size={HALO_ICON_SIZE} color={colors.textPrimary} />
+        </View>
+
+        <View style={styles.message}>
+          <Text style={styles.title}>{TRIP_CREATED_TITLE}</Text>
+          <Text style={styles.body}>{tripCreatedBody(title)}</Text>
+        </View>
+
+        {data === undefined ? (
+          <ActivityIndicator color={colors.accent} />
+        ) : (
+          <View style={styles.summary}>
+            <SummaryThumb coverImageUrl={data.coverImageUrl} />
+            <View style={styles.summaryText}>
+              <Text style={styles.summaryTitle} numberOfLines={1}>
+                {data.title}
+              </Text>
+              <Text style={styles.summaryMeta} numberOfLines={1}>
+                {tripCreatedMeta({ destinations: data.destinations, days: data.days.length })}
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
+
+      <View style={[styles.actions, { paddingBottom: insets.bottom + spacing.md }]}>
+        <Pressable
+          style={styles.primary}
+          onPress={() => comingSoon('tripWorkspace')}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: true }}
+          accessibilityLabel={`${OPEN_WORKSPACE_LABEL}, coming soon`}
+        >
+          <Text style={styles.primaryText}>{OPEN_WORKSPACE_LABEL}</Text>
+          <Icon name="chevronRight" size={PRIMARY_ICON_SIZE} color={colors.textOnAccent} />
+        </Pressable>
+
+        <Pressable
+          style={styles.secondary}
+          onPress={() => router.push({ pathname: '/itineraries/[id]/preview', params: { id } })}
+          accessibilityRole="button"
+        >
+          <Text style={styles.secondaryText}>{PREVIEW_TRIP_LABEL}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+
+function SummaryThumb({ coverImageUrl }: { coverImageUrl: string | null }) {
+  const source = useMediaSource(thumbOf(coverImageUrl));
+
+  if (source === null) {
+    return (
+      <View style={[styles.summaryThumb, styles.summaryThumbEmpty]}>
+        <Icon name="map" size={THUMB_ICON_SIZE} color={colors.textSecondary} />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={source}
+      style={styles.summaryThumb}
+      resizeMode="cover"
+      accessibilityLabel="Trip cover photo"
+      accessibilityIgnoresInvertColors
+    />
+  );
+}
+
+const HALO_SIZE = 72;
+
+const HALO_ICON_SIZE = 36;
+
+const THUMB_SIZE = 64;
+
+const THUMB_ICON_SIZE = 24;
+
+const PRIMARY_ICON_SIZE = 18;
+
+const PRIMARY_HEIGHT = 53;
+
+const SECONDARY_HEIGHT = 46;
+
+const CONTENT_GAP = 28;
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, justifyContent: 'space-between', backgroundColor: colors.surface },
+  content: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl + spacing.sm,
+    gap: CONTENT_GAP,
+  },
+  halo: {
+    width: HALO_SIZE,
+    height: HALO_SIZE,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  message: { alignItems: 'center', gap: spacing.sm },
+  title: { ...typography.heading, color: colors.textPrimary, textAlign: 'center' },
+  body: { ...typography.overviewBody, color: colors.textSecondary, textAlign: 'center' },
+  summary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: spacing.sm + spacing.xs,
+    padding: spacing.sm + spacing.xs,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+  },
+  summaryThumb: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: radii.sm,
+    backgroundColor: colors.border,
+  },
+  summaryThumbEmpty: { alignItems: 'center', justifyContent: 'center' },
+  summaryText: { flex: 1, gap: spacing.xs },
+  summaryTitle: { ...typography.summaryTitle, color: colors.textPrimary },
+  summaryMeta: { ...typography.summaryMeta, color: colors.textSecondary },
+  actions: { paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.sm + spacing.xs },
+  primary: {
+    flexDirection: 'row',
+    height: PRIMARY_HEIGHT,
+    borderRadius: radii.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.accent,
+    opacity: 0.5,
+  },
+  primaryText: { ...typography.primaryCta, color: colors.textOnAccent },
+  secondary: {
+    height: SECONDARY_HEIGHT,
+    borderRadius: radii.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryText: { ...typography.secondaryCta, color: colors.textPrimary },
+});

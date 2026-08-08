@@ -10,6 +10,7 @@ export type IconName =
   | 'share'
   | 'dollar'
   | 'chevronDown'
+  | 'chevronRight'
   | 'check'
   | 'search'
   | 'plus'
@@ -173,6 +174,8 @@ export function Icon({ name, size, color }: IconProps) {
       )}
 
       {name === 'chevronDown' && <Polyline points="6 9 12 15 18 9" {...shared} />}
+
+      {name === 'chevronRight' && <Polyline points="9 18 15 12 9 6" {...shared} />}
 
       {name === 'camera' && (
         <>
