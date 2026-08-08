@@ -25,4 +25,9 @@ public record LeaseSubject(LeaseSubjectType type, UUID id) {
     public static LeaseSubject activity(UUID activityId) {
         return new LeaseSubject(LeaseSubjectType.ACTIVITY, activityId);
     }
+
+
+    public static LeaseSubject session(UUID itineraryId) {
+        return new LeaseSubject(LeaseSubjectType.SESSION, itineraryId);
+    }
 }

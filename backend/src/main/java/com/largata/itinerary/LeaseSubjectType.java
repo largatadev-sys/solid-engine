@@ -6,7 +6,8 @@ import java.util.Locale;
 public enum LeaseSubjectType {
     HEADER,
     DAY,
-    ACTIVITY;
+    ACTIVITY,
+    SESSION;
 
 
     public String wireName() {

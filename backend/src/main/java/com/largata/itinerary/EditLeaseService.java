@@ -71,6 +71,7 @@ public class EditLeaseService {
     public EditLeaseView acquire(Membership member, LeaseSubject subject) {
         fence.requireEditable(member);
         requireSubjectBelongsTo(member.itineraryId(), subject);
+        requireNoCompetingHold(member, subject);
         Instant now = clock.instant();
         Instant expiresAt = now.plus(ttl);
         UUID travelerId = member.travelerId();
@@ -170,6 +171,15 @@ public class EditLeaseService {
     public void requireHeldBy(Membership member, LeaseSubject subject) {
         fence.requireEditable(member);
         Instant now = clock.instant();
+        Optional<EditLease> session = liveSession(member.itineraryId(), now);
+        if (session.isPresent()) {
+            EditLease held = session.get();
+            if (held.isHeldBy(member.travelerId())) {
+                return;
+            }
+            emitNow(member, "edit_lock_denied", subject);
+            throw new EditLockedException(labelOf(held.holderId()), LeaseSubjectType.SESSION);
+        }
         boolean held =
                 liveOrStale(subject)
                         .filter(l -> l.isLiveAt(now))
@@ -179,6 +189,34 @@ public class EditLeaseService {
             emitNow(member, "edit_lock_denied", subject);
             throw new EditLockedException(currentHolderLabel(subject, now), subject.type());
         }
+    }
+
+
+    @Transactional
+    public void requireNoForeignSession(Membership member) {
+        fence.requireEditable(member);
+        Instant now = clock.instant();
+        liveSession(member.itineraryId(), now)
+                .filter(session -> !session.isHeldBy(member.travelerId()))
+                .ifPresent(
+                        session -> {
+                            emitNow(member, "edit_lock_denied", LeaseSubject.session(member.itineraryId()));
+                            throw new EditLockedException(labelOf(session.holderId()), LeaseSubjectType.SESSION);
+                        });
+    }
+
+
+    private Optional<EditLease> liveSession(UUID itineraryId, Instant now) {
+        return leases
+                .findBySubjectTypeAndSubjectId(LeaseSubjectType.SESSION, itineraryId)
+                .filter(lease -> lease.isLiveAt(now));
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<LeaseHolder> sessionHolderOf(UUID itineraryId) {
+        return liveSession(itineraryId, clock.instant())
+                .map(lease -> holderOf(lease, summariesOf(List.of(lease.holderId())).get(lease.holderId())));
     }
 
 
@@ -245,9 +283,31 @@ public class EditLeaseService {
     }
 
 
+    private void requireNoCompetingHold(Membership member, LeaseSubject wanted) {
+        Instant now = clock.instant();
+        Optional<EditLease> competing =
+                leases.findByItineraryId(member.itineraryId()).stream()
+                        .filter(lease -> lease.isLiveAt(now))
+                        .filter(lease -> !lease.isHeldBy(member.travelerId()))
+                        .filter(lease -> !lease.subject().equals(wanted))
+                        .filter(lease -> excludes(wanted.type(), lease.subject().type()))
+                        .findFirst();
+        if (competing.isPresent()) {
+            EditLease held = competing.get();
+            emitNow(member, "edit_lock_denied", wanted);
+            throw new EditLockedException(labelOf(held.holderId()), wanted.type());
+        }
+    }
+
+
+    private static boolean excludes(LeaseSubjectType wanted, LeaseSubjectType held) {
+        return wanted == LeaseSubjectType.SESSION || held == LeaseSubjectType.SESSION;
+    }
+
+
     private void requireSubjectBelongsTo(UUID itineraryId, LeaseSubject subject) {
         switch (subject.type()) {
-            case HEADER -> {
+            case HEADER, SESSION -> {
                 if (!subject.id().equals(itineraryId)) {
                     throw new UnknownLeaseSubjectException(subject.id().toString());
                 }
