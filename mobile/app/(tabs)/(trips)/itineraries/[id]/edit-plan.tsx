@@ -258,7 +258,9 @@ export default function DraftWorkspaceScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Add a Day"
               >
-                <Text style={styles.addDayLabel}>Add a Day</Text>
+                <Text style={styles.addDayLabel} numberOfLines={1}>
+                  Add a Day
+                </Text>
                 <Icon name="calendarPlus" size={16} color={workspaceColors.accent} />
               </Pressable>
             ) : null}
@@ -345,6 +347,7 @@ const styles = StyleSheet.create({
   addDayLabel: {
     ...workspaceTypography.headerAction,
     color: workspaceColors.accent,
+    flexShrink: 0,
   },
   rail: {
     padding: 16,

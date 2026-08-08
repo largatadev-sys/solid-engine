@@ -2,11 +2,11 @@ export function landingSlot(
   translationY: number,
   fromIndex: number,
   count: number,
-  rowHeight: number,
+  rowPitch: number,
 ): number {
   'worklet';
-  if (rowHeight <= 0) return fromIndex;
-  const travelled = translationY / rowHeight;
+  if (rowPitch <= 0) return fromIndex;
+  const travelled = translationY / rowPitch;
   const slots = travelled < 0 ? -Math.round(-travelled) : Math.round(travelled);
   return Math.max(0, Math.min(fromIndex + slots, count - 1));
 }
@@ -16,11 +16,11 @@ export function displacementFor(
   index: number,
   heldIndex: number,
   targetIndex: number,
-  rowHeight: number,
+  rowPitch: number,
 ): number {
   'worklet';
-  if (index > heldIndex && index <= targetIndex) return -rowHeight;
-  if (index < heldIndex && index >= targetIndex) return rowHeight;
+  if (index > heldIndex && index <= targetIndex) return -rowPitch;
+  if (index < heldIndex && index >= targetIndex) return rowPitch;
   return 0;
 }
 

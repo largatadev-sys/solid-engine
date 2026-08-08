@@ -628,7 +628,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
 
     expect(native).toContain('displacementFor(');
-    expect(native).toContain('landingSlot(dragTranslation.value, held, count, rowHeight.value)');
+    expect(native).toContain('landingSlot(dragTranslation.value, held, count, rowPitch.value)');
     expect(native).toContain('draggingIndex');
     expect(native).toContain('withSpring(');
     expect(native).toContain('onLayout');

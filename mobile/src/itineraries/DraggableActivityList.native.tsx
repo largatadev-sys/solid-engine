@@ -28,6 +28,8 @@ const LIFT_FADE = 0.06;
 
 const LIFT_SHADOW = 0.18;
 
+const ROW_GAP = 8;
+
 
 interface DraggableActivityListProps {
   readonly activities: ActivityResponse[];
@@ -49,16 +51,16 @@ export function DraggableActivityList({
 }: DraggableActivityListProps) {
   const draggingIndex = useSharedValue(-1);
   const dragTranslation = useSharedValue(0);
-  const rowHeight = useSharedValue<number>(workspaceMetrics.activityRowHeight);
+  const rowPitch = useSharedValue<number>(workspaceMetrics.activityRowHeight);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const measure = (event: LayoutChangeEvent) => {
     const measured = event.nativeEvent.layout.height;
-    if (measured > 0) rowHeight.value = measured;
+    if (measured > 0) rowPitch.value = measured + ROW_GAP;
   };
 
   return (
-    <View>
+    <View style={styles.list}>
       {activities.map((activity, index) => (
         <DraggableRow
           key={activity.id}
@@ -68,7 +70,7 @@ export function DraggableActivityList({
           affordances={affordances}
           draggingIndex={draggingIndex}
           dragTranslation={dragTranslation}
-          rowHeight={rowHeight}
+          rowPitch={rowPitch}
           isDragging={draggingId === activity.id}
           onMeasure={index === 0 ? measure : undefined}
           onDragStart={() => setDraggingId(activity.id)}
@@ -93,7 +95,7 @@ function DraggableRow({
   affordances,
   draggingIndex,
   dragTranslation,
-  rowHeight,
+  rowPitch,
   isDragging,
   onMeasure,
   onDragStart,
@@ -108,7 +110,7 @@ function DraggableRow({
   affordances: WorkspaceAffordances;
   draggingIndex: SharedValue<number>;
   dragTranslation: SharedValue<number>;
-  rowHeight: SharedValue<number>;
+  rowPitch: SharedValue<number>;
   isDragging: boolean;
   onMeasure?: (event: LayoutChangeEvent) => void;
   onDragStart: () => void;
@@ -131,7 +133,7 @@ function DraggableRow({
       dragTranslation.value = event.translationY;
     })
     .onEnd(() => {
-      const target = landingSlot(dragTranslation.value, index, count, rowHeight.value);
+      const target = landingSlot(dragTranslation.value, index, count, rowPitch.value);
       draggingIndex.value = -1;
       dragTranslation.value = 0;
       lift.value = withTiming(0, { duration: LIFT_MS });
@@ -151,8 +153,8 @@ function DraggableRow({
             : displacementFor(
                 index,
                 held,
-                landingSlot(dragTranslation.value, held, count, rowHeight.value),
-                rowHeight.value,
+                landingSlot(dragTranslation.value, held, count, rowPitch.value),
+                rowPitch.value,
               ),
           SETTLE,
         );
@@ -189,6 +191,9 @@ function DraggableRow({
 
 
 const styles = StyleSheet.create({
+  list: {
+    gap: ROW_GAP,
+  },
   row: {
     borderRadius: workspaceRadii.card,
     shadowColor: workspaceColors.title,

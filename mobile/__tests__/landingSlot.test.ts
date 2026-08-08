@@ -30,11 +30,18 @@ describe('landingSlot — where a drag would drop, asked continuously during the
     expect(landingSlot(200, 1, 4, 0)).toBe(1);
   });
 
-  it('uses the MEASURED row height, so a taller row still lands where it looks', () => {
+  it('uses the MEASURED pitch, so a taller row still lands where it looks', () => {
     expect(landingSlot(60, 0, 4, 100)).toBe(1);
     expect(landingSlot(60, 0, 4, 60)).toBe(1);
     expect(landingSlot(59, 0, 4, 100)).toBe(1);
     expect(landingSlot(40, 0, 4, 100)).toBe(0);
+  });
+
+  it('measures PITCH, not height — the gap between rows is part of the travel', () => {
+    const height = 60;
+    const gap = 8;
+    expect(landingSlot(height + gap, 0, 4, height + gap)).toBe(1);
+    expect(landingSlot(2 * (height + gap), 0, 4, height + gap)).toBe(2);
   });
 });
 

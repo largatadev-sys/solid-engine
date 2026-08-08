@@ -107,7 +107,9 @@ export function WorkspaceDayCard({
           accessibilityRole="button"
           accessibilityLabel={`Add an activity to ${heading}`}
         >
-          <Text style={styles.addActivityLabel}>Add Activity</Text>
+          <Text style={styles.addActivityLabel} numberOfLines={1}>
+            Add Activity
+          </Text>
           <Icon name="plus" size={16} color={workspaceColors.accent} />
         </Pressable>
       ) : null}
@@ -272,6 +274,8 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 12,
     borderRadius: workspaceRadii.card,
+    borderWidth: 1,
+    borderColor: workspaceColors.hairline,
     minHeight: workspaceMetrics.activityRowHeight,
   },
   nudgeColumn: {
@@ -308,5 +312,6 @@ const styles = StyleSheet.create({
   addActivityLabel: {
     ...workspaceTypography.ctaOutlined,
     color: workspaceColors.accent,
+    flexShrink: 0,
   },
 });
