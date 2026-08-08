@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { comingSoon } from '../../../../../src/components/comingSoon';
 import { Icon } from '../../../../../src/components/Icon';
 import {
   OPEN_WORKSPACE_LABEL,
@@ -11,8 +10,7 @@ import {
   tripCreatedMeta,
 } from '../../../../../src/itineraries/tripCreatedCopy';
 import { coverPreviewFor } from '../../../../../src/media/coverInFlight';
-import { thumbOf } from '../../../../../src/media/mediaSourceContract';
-import { useMediaSource } from '../../../../../src/media/useMediaSource';
+import { MediaThumb } from '../../../../../src/media/MediaThumb';
 import { useItinerary } from '../../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../../src/theme';
 
@@ -57,10 +55,9 @@ export default function TripCreatedScreen() {
       <View style={[styles.actions, { paddingBottom: insets.bottom + spacing.md }]}>
         <Pressable
           style={styles.primary}
-          onPress={() => comingSoon('tripWorkspace')}
+          onPress={() => router.push({ pathname: '/itineraries/[id]', params: { id } })}
           accessibilityRole="button"
-          accessibilityState={{ disabled: true }}
-          accessibilityLabel={`${OPEN_WORKSPACE_LABEL}, coming soon`}
+          accessibilityLabel={OPEN_WORKSPACE_LABEL}
         >
           <Text style={styles.primaryText}>{OPEN_WORKSPACE_LABEL}</Text>
           <Icon name="chevronRight" size={PRIMARY_ICON_SIZE} color={colors.textOnAccent} />
@@ -86,24 +83,14 @@ function SummaryThumb({
   coverImageUrl: string | null;
   localPreview: string | null;
 }) {
-  const uploaded = useMediaSource(thumbOf(coverImageUrl));
-  const source = uploaded ?? (localPreview === null ? null : { uri: localPreview });
-
-  if (source === null) {
-    return (
-      <View style={[styles.summaryThumb, styles.summaryThumbEmpty]}>
-        <Icon name="map" size={THUMB_ICON_SIZE} color={colors.textSecondary} />
-      </View>
-    );
-  }
-
   return (
-    <Image
-      source={source}
+    <MediaThumb
+      url={coverImageUrl}
+      localPreview={localPreview}
       style={styles.summaryThumb}
-      resizeMode="cover"
+      fallbackStyle={styles.summaryThumbEmpty}
       accessibilityLabel="Trip cover photo"
-      accessibilityIgnoresInvertColors
+      fallback={<Icon name="map" size={THUMB_ICON_SIZE} color={colors.textSecondary} />}
     />
   );
 }
@@ -175,7 +162,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.accent,
-    opacity: 0.5,
   },
   primaryText: { ...typography.actionLarge, color: colors.textOnAccent },
   secondary: {

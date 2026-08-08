@@ -1,311 +1,158 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { ApiError } from '../../../../../src/api/ApiError';
-import { ActivityPhotoStrip } from '../../../../../src/media/ActivityPhotoStrip';
-import { usePhotoAction } from '../../../../../src/media/usePhotoAction';
-import { Icon } from '../../../../../src/components/Icon';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Icon, type IconName } from '../../../../../src/components/Icon';
 import { TimePicker } from '../../../../../src/components/TimePicker';
-import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
-import { useEditLock } from '../../../../../src/hooks/useEditLock';
 import { useMe } from '../../../../../src/hooks/useMe';
+import { buildActivityRequest } from '../../../../../src/itineraries/buildActivityRequest';
 import { validateActivityForm } from '../../../../../src/itineraries/validateActivityForm';
 import {
-  useAddActivityPhoto,
-  useCreateActivity,
-  useEditActivity,
-  useItinerary,
-  useMoveActivity,
-  useRemoveActivityPhoto,
-} from '../../../../../src/query/itineraryQueries';
-import type { ActivityRequest, ActivityResponse, DayResponse } from '../../../../../src/types/api';
-import { colors, radii, spacing, typography } from '../../../../../src/theme';
+  workspaceColors,
+  workspaceMetrics,
+  workspaceRadii,
+  workspaceTypography,
+} from '../../../../../src/theme/workspaceTokens';
+import { useCreateActivity, useEditActivity, useItinerary } from '../../../../../src/query/itineraryQueries';
+import { colors, typography } from '../../../../../src/theme';
+import type { ActivityResponse, DayResponse } from '../../../../../src/types/api';
 
 
 export default function ActivityFormScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id, dayId, activityId } = useLocalSearchParams<{ id: string; dayId: string; activityId?: string }>();
   const { data } = useItinerary(id);
+  const { state: meState } = useMe();
 
   const existing = findActivity(data?.days, dayId, activityId);
   const isEdit = activityId !== undefined;
 
   const create = useCreateActivity(id);
   const edit = useEditActivity(id);
-  const move = useMoveActivity(id);
-  const addPhoto = useAddActivityPhoto(id);
-  const removePhoto = useRemoveActivityPhoto(id);
   const mutation = isEdit ? edit : create;
 
-  const photoAction = usePhotoAction();
-
-  const editLock = useEditLock(id);
-  useEffect(() => {
-    if (activityId === undefined) return;
-    void editLock.acquire({ subjectType: 'activity', subjectId: activityId }).then((granted) => {
-      if (!granted) router.back();
-    });
-  }, [activityId]);
-
-  const otherDays = (data?.days ?? []).filter((d) => d.id !== dayId);
+  const homeCurrency = meState.kind === 'ok' ? (meState.me.preferredCurrency ?? '') : '';
 
   const [title, setTitle] = useState(existing?.title ?? '');
   const [timeOfDay, setTimeOfDay] = useState(existing?.timeOfDay ?? '');
-  const [costAmount, setCostAmount] = useState(existing?.costAmount ?? '');
-  const { state: meState } = useMe();
-  const homeCurrency = meState.kind === 'ok' ? (meState.me.preferredCurrency ?? '') : '';
-  const [costCurrency, setCostCurrency] = useState(existing?.costCurrency ?? homeCurrency);
   const [place, setPlace] = useState(existing?.place ?? '');
-  const [description, setDescription] = useState(existing?.description ?? '');
-  const [notes, setNotes] = useState(existing?.notes ?? '');
+  const [costAmount, setCostAmount] = useState(existing?.costAmount ?? '');
+  const [costCurrency, setCostCurrency] = useState(existing?.costCurrency ?? homeCurrency);
   const [externalUrl, setExternalUrl] = useState(existing?.externalUrl ?? '');
-  const [bookingPurpose, setBookingPurpose] = useState(existing?.bookingPurpose ?? '');
-  const [bookingProvider, setBookingProvider] = useState(existing?.bookingProvider ?? '');
-  const [bookingPriceAmount, setBookingPriceAmount] = useState(existing?.bookingPriceAmount ?? '');
-  const bookingCurrency = existing?.bookingPriceCurrency ?? homeCurrency;
-  const [validationError, setValidationError] = useState<string | undefined>();
-  const [bookingOpen, setBookingOpen] = useState(false);
+  const [problem, setProblem] = useState<string | undefined>(undefined);
 
-  const hasBooking = [bookingPurpose, bookingProvider, externalUrl, bookingPriceAmount].some(
-    (value) => value.trim() !== '',
-  );
-  const bookingSummary =
-    [bookingProvider.trim(), bookingPurpose.trim()].filter((part) => part !== '').join(' · ') ||
-    externalUrl.trim();
-
-  function clearBooking() {
-    setBookingPurpose('');
-    setBookingProvider('');
-    setExternalUrl('');
-    setBookingPriceAmount('');
-  }
-
-  function submit() {
-    const problem = validateActivityForm({
-      title,
-      timeOfDay,
-      costAmount,
-      costCurrency,
-      bookingPriceAmount,
-    });
-    setValidationError(problem);
-    if (problem !== undefined) return;
-
-    const request: ActivityRequest = {
-      title: title.trim(),
-      ...opt('timeOfDay', timeOfDay),
-      ...opt('costAmount', costAmount),
-      ...opt('costCurrency', costCurrency),
-      ...opt('place', place),
-      ...opt('description', description),
-      ...opt('notes', notes),
-      ...opt('externalUrl', externalUrl),
-      ...opt('bookingPurpose', bookingPurpose),
-      ...opt('bookingProvider', bookingProvider),
-      ...opt('bookingPriceAmount', bookingPriceAmount),
-      ...opt('bookingPriceCurrency', bookingPriceAmount.trim() === '' ? '' : bookingCurrency),
-    };
-
-    const onDone = {
-      onSuccess: () => {
-        editLock.release();
-        router.back();
-      },
-    };
-    if (isEdit) {
-      edit.mutate({ dayId, activityId, request }, onDone);
-    } else {
-      create.mutate({ dayId, request }, onDone);
+  const save = () => {
+    const complaint = validateActivityForm({ title, timeOfDay, costAmount, costCurrency });
+    if (complaint !== undefined) {
+      setProblem(complaint);
+      return;
     }
-  }
+    setProblem(undefined);
 
-  const serverMessage = mutation.error instanceof ApiError ? mutation.error.message : undefined;
+    const request = buildActivityRequest(
+      { title, timeOfDay, place, costAmount, costCurrency, externalUrl },
+      existing,
+    );
+
+    if (isEdit) {
+      edit.mutate({ dayId, activityId, request }, { onSuccess: () => router.back() });
+    } else {
+      create.mutate({ dayId, request }, { onSuccess: () => router.back() });
+    }
+  };
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <ScreenHeader
-        title="Daily Activity"
-        back
-        backTo={{ pathname: '/itineraries/[id]/days', params: { id } }}
-      />
-
-      <Field label="Activity Name" value={title} onChangeText={setTitle} placeholder="Airport Transfer" />
-
-      <View style={styles.row}>
-        <View style={styles.rowItem}>
-          <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
-        </View>
-        <View style={styles.rowItem}>
-          <Field
-            label="Estimated Cost"
-            value={costAmount}
-            onChangeText={setCostAmount}
-            placeholder={costCurrency === '' ? 'Amount' : `Amount in ${costCurrency}`}
-            keyboardType="decimal-pad"
-          />
-        </View>
-      </View>
-
-      <Field
-        label="Location"
-        value={place}
-        onChangeText={setPlace}
-        placeholder="Describe a specific place or landmark"
-      />
-      <Field label="Description" value={description} onChangeText={setDescription} placeholder="What happens here?" multiline />
-      <Field
-        label="Notes & Creator Tips"
-        value={notes}
-        onChangeText={setNotes}
-        placeholder="Book the earliest slot at 8:00 AM to avoid the large tour groups!"
-        multiline
-      />
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Photos</Text>
-        {isEdit && activityId !== undefined ? (
-          <ActivityPhotoStrip
-            photos={existing?.photos ?? []}
-            busy={addPhoto.isPending || removePhoto.isPending}
-            onAdd={() =>
-              void photoAction.pickAndRun((photo) =>
-                addPhoto.mutateAsync({ dayId, activityId, photo }),
-              )
-            }
-            onRemove={(photoId) =>
-              void photoAction.run(() => removePhoto.mutateAsync({ dayId, activityId, photoId }))
-            }
-          />
-        ) : (
-          <Text style={styles.photosHint}>{PHOTOS_AFTER_SAVE_HINT}</Text>
-        )}
-        {photoAction.failure !== undefined && (
-          <Text style={styles.photoError}>{photoAction.failure}</Text>
-        )}
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Booking Integration</Text>
-        <Pressable
-          style={styles.bookingRow}
-          accessibilityRole="button"
-          onPress={() => setBookingOpen(true)}>
-          <View style={styles.bookingRowLabel}>
-            <Icon name="link" size={16} color={colors.textPrimary} />
-            <Text style={styles.bookingRowText}>
-              {hasBooking ? bookingSummary : 'Add Booking Link / Option'}
-            </Text>
-          </View>
-          <Icon name="plus" size={20} color={colors.textPrimary} />
+      <View style={[styles.header, { paddingTop: insets.top + HEADER_TOP_PADDING }]}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8}>
+          <Icon name="back" size={24} color={workspaceColors.title} />
         </Pressable>
+        <Text style={styles.headerTitle}>{isEdit ? 'Edit Activity' : 'Add Activity'}</Text>
       </View>
 
-      <Modal
-        visible={bookingOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setBookingOpen(false)}>
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            <View style={styles.bookingHeaderRow}>
-              <Text style={styles.bookingHeader}>Booking</Text>
-              <Pressable
-                onPress={clearBooking}
-                accessibilityRole="button"
-                accessibilityLabel="Clear booking"
-                hitSlop={8}>
-                <Icon name="trash" size={16} color={colors.textSecondary} />
-              </Pressable>
+      <ScrollView contentContainerStyle={styles.form}>
+        <Field label="Activity Name">
+          <Input
+            value={title}
+            onChangeText={setTitle}
+            placeholder="e.g. Big Lagoon Kayaking"
+            accessibilityLabel="Activity name"
+          />
+        </Field>
+
+        <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
+
+        <Field label="Location / Venue">
+          <Input
+            icon="mapPin"
+            value={place}
+            onChangeText={setPlace}
+            placeholder="Search for a place..."
+            accessibilityLabel="Location or venue"
+          />
+        </Field>
+
+        <Field label="Estimated Price">
+          <View style={styles.priceRow}>
+            <View style={styles.currencySlot}>
+              <TextInput
+                style={styles.currencyInput}
+                value={costCurrency}
+                onChangeText={setCostCurrency}
+                placeholder="PHP"
+                placeholderTextColor={workspaceColors.placeholder}
+                autoCapitalize="characters"
+                maxLength={8}
+                accessibilityLabel="Currency"
+              />
             </View>
-            <Text style={styles.bookingHint}>
-              What you used to book this — it travels with the plan when someone forks it.
-            </Text>
-            <ScrollView contentContainerStyle={styles.sheetBody} keyboardShouldPersistTaps="handled">
-              <Field
-                label="Booking Purpose"
-                value={bookingPurpose}
-                onChangeText={setBookingPurpose}
-                placeholder="River tour, restaurant reservation, etc."
-              />
-              <Field
-                label="Booking Provider"
-                value={bookingProvider}
-                onChangeText={setBookingProvider}
-                placeholder="Klook, Expedia, Booking.com, etc."
-              />
-              <Field
-                label="Target URL"
-                value={externalUrl}
-                onChangeText={setExternalUrl}
-                placeholder="https://klook.com/activity/1243-el-nido-underground"
-                keyboardType="url"
-              />
-              <Field
-                label="Estimated Price"
-                value={bookingPriceAmount}
-                onChangeText={setBookingPriceAmount}
-                placeholder={bookingCurrency === '' ? 'Amount' : `Amount in ${bookingCurrency}`}
+            <View style={styles.amountSlot}>
+              <Input
+                value={costAmount}
+                onChangeText={setCostAmount}
+                placeholder="0.00"
                 keyboardType="decimal-pad"
+                accessibilityLabel="Estimated price"
               />
-            </ScrollView>
-            <Pressable
-              style={styles.dockCta}
-              accessibilityRole="button"
-              onPress={() => setBookingOpen(false)}>
-              <Text style={styles.dockCtaText}>Save</Text>
-            </Pressable>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Field>
 
-      {(validationError ?? serverMessage) !== undefined && (
-        <Text style={styles.error}>{validationError ?? serverMessage}</Text>
-      )}
+        <Field label="Booking Link" optional>
+          <Input
+            icon="link"
+            value={externalUrl}
+            onChangeText={setExternalUrl}
+            placeholder="Paste booking URL here..."
+            autoCapitalize="none"
+            keyboardType="url"
+            accessibilityLabel="Booking link"
+          />
+        </Field>
 
-      {isEdit && otherDays.length > 0 && (
-        <View style={styles.moveSection}>
-          <Text style={styles.label}>Move to another day</Text>
-          <View style={styles.moveChips}>
-            {otherDays.map((day) => (
-              <Pressable
-                key={day.id}
-                style={styles.moveChip}
-                disabled={move.isPending}
-                onPress={() =>
-                  move.mutate({ dayId, activityId, targetDayId: day.id }, { onSuccess: () => router.back() })
-                }
-                accessibilityRole="button"
-              >
-                <Text style={styles.moveChipText}>{dayLabel(day)}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      )}
+        {problem !== undefined ? <Text style={styles.problem}>{problem}</Text> : null}
+        {mutation.isError ? <Text style={styles.problem}>{mutation.error.message}</Text> : null}
       </ScrollView>
 
-      <View style={styles.dock}>
+      <View style={styles.rail}>
         <Pressable
-          style={[styles.dockCta, mutation.isPending && styles.buttonBusy]}
-          onPress={submit}
+          style={styles.primaryCta}
+          onPress={save}
           disabled={mutation.isPending}
           accessibilityRole="button"
+          accessibilityLabel="Save Activity"
         >
-          {mutation.isPending ? (
-            <ActivityIndicator color={colors.textOnAccent} />
-          ) : (
-            <Text style={styles.dockCtaText}>Save Activity</Text>
-          )}
+          <Text style={styles.primaryCtaLabel}>Save Activity</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.secondaryCta}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel={isEdit ? 'Discard Changes' : 'Cancel'}
+        >
+          <Text style={styles.secondaryCtaLabel}>{isEdit ? 'Discard Changes' : 'Cancel'}</Text>
         </Pressable>
       </View>
     </View>
@@ -313,152 +160,172 @@ export default function ActivityFormScreen() {
 }
 
 
-function dayLabel(day: DayResponse): string {
-  return day.title !== null && day.title !== '' ? day.title : `Day ${day.ordinal}`;
-}
-
-
-function findActivity(
-  days: ItineraryDays | undefined,
-  dayId: string,
-  activityId: string | undefined,
-): ActivityResponse | undefined {
-  if (activityId === undefined || days === undefined) return undefined;
-  return days.find((d) => d.id === dayId)?.activities.find((a) => a.id === activityId);
-}
-
-type ItineraryDays = NonNullable<ReturnType<typeof useItinerary>['data']>['days'];
-
-
-function opt(key: keyof ActivityRequest, value: string): Partial<ActivityRequest> {
-  return value.trim() !== '' ? { [key]: value.trim() } : {};
-}
-
-function Field(props: {
+function Field({
+  label,
+  optional = false,
+  children,
+}: {
   label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-  hint?: string;
-  multiline?: boolean;
-  keyboardType?: 'default' | 'decimal-pad' | 'url';
+  optional?: boolean;
+  children: React.ReactNode;
 }) {
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{props.label}</Text>
-      {props.hint !== undefined && <Text style={styles.hint}>{props.hint}</Text>}
+      <Text style={styles.label}>
+        {label}
+        {optional ? <Text style={styles.optional}> (Optional)</Text> : null}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
+
+function Input({
+  icon,
+  accessibilityLabel,
+  ...props
+}: {
+  icon?: IconName;
+  accessibilityLabel: string;
+} & React.ComponentProps<typeof TextInput>) {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <View style={[styles.input, focused && styles.inputFocused]}>
+      {icon !== undefined ? <Icon name={icon} size={18} color={workspaceColors.accent} /> : null}
       <TextInput
-        style={[styles.input, props.multiline === true && styles.inputMultiline]}
-        value={props.value}
-        onChangeText={props.onChangeText}
-        accessibilityLabel={props.label}
-        placeholder={props.placeholder}
-        placeholderTextColor={colors.textSecondary}
-        autoCapitalize={props.keyboardType === 'url' ? 'none' : 'sentences'}
-        keyboardType={props.keyboardType ?? 'default'}
-        multiline={props.multiline ?? false}
+        style={styles.inputText}
+        accessibilityLabel={accessibilityLabel}
+        placeholderTextColor={workspaceColors.placeholder}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        {...props}
       />
     </View>
   );
 }
 
-const PHOTOS_AFTER_SAVE_HINT = 'Save this activity first, then add its photos.';
+
+const HEADER_TOP_PADDING = 12;
+
+
+function findActivity(
+  days: DayResponse[] | undefined,
+  dayId: string,
+  activityId: string | undefined,
+): ActivityResponse | undefined {
+  if (days === undefined || activityId === undefined) return undefined;
+  return days.find((day) => day.id === dayId)?.activities.find((a) => a.id === activityId);
+}
+
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.md, gap: spacing.md, backgroundColor: colors.background, flexGrow: 1 },
-  row: { flexDirection: 'row', gap: spacing.sm },
-  rowItem: { flex: 1 },
-  rowItemNarrow: { width: 88 },
-  field: { gap: spacing.xs },
-  label: { ...typography.caption, color: colors.textSecondary },
-  photosHint: { ...typography.caption, color: colors.textSecondary },
-  photoError: { ...typography.caption, color: colors.danger },
-  hint: { ...typography.caption, color: colors.accent },
-  input: {
-    ...typography.body,
-    color: colors.textPrimary,
+  screen: {
+    flex: 1,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
   },
-  inputMultiline: { minHeight: 88, textAlignVertical: 'top' },
-  error: { ...typography.caption, color: colors.danger },
-  button: {
-    marginTop: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    backgroundColor: colors.accent,
-  },
-  buttonBusy: { opacity: 0.7 },
-  buttonText: { ...typography.bodyStrong, color: colors.textOnAccent },
-  bookingCard: {
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
-  },
-  screen: { flex: 1, backgroundColor: colors.background },
-  bookingRow: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.textPrimary,
-    borderRadius: radii.sm,
-    padding: spacing.md,
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
-  bookingRowLabel: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  bookingRowText: { ...typography.bodyStrong, color: colors.textPrimary },
-  dock: {
-    padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
+  headerTitle: {
+    ...workspaceTypography.screenTitle,
+    color: workspaceColors.title,
   },
-  dockCta: {
-    paddingVertical: spacing.md,
-    borderRadius: radii.sm,
+  form: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 32,
+    gap: 20,
+  },
+  field: {
+    gap: 8,
+  },
+  label: {
+    ...workspaceTypography.fieldLabel,
+    color: workspaceColors.fieldLabel,
+    textTransform: 'capitalize',
+  },
+  optional: {
+    ...workspaceTypography.fieldOptional,
+    fontStyle: 'italic',
+    color: workspaceColors.optionalNote,
+    textTransform: 'none',
+  },
+  input: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.textPrimary,
+    gap: 10,
+    height: workspaceMetrics.inputHeight,
+    borderWidth: 1,
+    borderColor: workspaceColors.inputBorder,
+    borderRadius: workspaceRadii.control,
+    paddingHorizontal: 14,
   },
-  dockCtaText: { ...typography.bodyStrong, color: colors.textOnAccent },
-  backdrop: {
+  inputFocused: {
+    borderWidth: 1.5,
+    borderColor: workspaceColors.accentFocus,
+  },
+  inputText: {
+    ...workspaceTypography.fieldInput,
+    color: workspaceColors.title,
     flex: 1,
+    padding: 0,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  currencySlot: {
+    width: workspaceMetrics.currencyFieldWidth,
+  },
+  currencyInput: {
+    ...workspaceTypography.fieldInput,
+    color: workspaceColors.title,
+    height: workspaceMetrics.inputHeight,
+    borderWidth: 1,
+    borderColor: workspaceColors.inputBorder,
+    borderRadius: workspaceRadii.control,
+    paddingHorizontal: 14,
+  },
+  amountSlot: {
+    flex: 1,
+  },
+  problem: {
+    ...typography.caption,
+    color: colors.danger,
+  },
+  rail: {
+    padding: 16,
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: workspaceColors.railBorder,
+  },
+  primaryCta: {
+    height: workspaceMetrics.primaryCtaHeight,
+    borderRadius: workspaceRadii.control,
+    backgroundColor: workspaceColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.lg,
-    backgroundColor: colors.surfaceMuted,
   },
-  sheet: {
-    width: '100%',
-    maxHeight: '85%',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radii.lg,
+  primaryCtaLabel: {
+    ...workspaceTypography.ctaPrimary,
+    color: workspaceColors.onAccent,
+  },
+  secondaryCta: {
+    height: workspaceMetrics.secondaryCtaHeight,
+    borderRadius: workspaceRadii.control,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: workspaceColors.railBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  sheetBody: { gap: spacing.md, paddingBottom: spacing.sm },
-  bookingHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bookingHeader: { ...typography.overline, color: colors.textSecondary },
-  bookingHint: { ...typography.caption, color: colors.textSecondary },
-  moveSection: { gap: spacing.sm, marginTop: spacing.md },
-  moveChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  moveChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+  secondaryCtaLabel: {
+    ...workspaceTypography.ctaSecondary,
+    color: workspaceColors.secondaryLabel,
   },
-  moveChipText: { ...typography.caption, color: colors.textPrimary },
 });

@@ -13,6 +13,23 @@ export function reorderActivityIds(ids: string[], index: number, direction: 'up'
 }
 
 
+export type ReorderDrop = { activityId: string; toIndex: number };
+
+
+export function applyDrop(currentIds: string[], drop: ReorderDrop): string[] | null {
+  const from = currentIds.indexOf(drop.activityId);
+  if (from === -1) return null;
+
+  const to = Math.max(0, Math.min(drop.toIndex, currentIds.length - 1));
+  if (to === from) return null;
+
+  const next = [...currentIds];
+  next.splice(from, 1);
+  next.splice(to, 0, drop.activityId);
+  return next;
+}
+
+
 export type ReorderMove = { activityId: string; direction: 'up' | 'down' };
 
 

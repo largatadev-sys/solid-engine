@@ -1,7 +1,34 @@
-import { applyMove, reorderActivityIds } from '../src/itineraries/reorderActivityIds';
+import { applyDrop, applyMove, reorderActivityIds } from '../src/itineraries/reorderActivityIds';
 
 
 describe('applyMove — the id-keyed intent a 409 can be re-applied from (spec AC 7)', () => {
+  it('drops an activity onto a position further down, closing the gap behind it', () => {
+    expect(applyDrop(['a', 'b', 'c', 'd'], { activityId: 'a', toIndex: 2 })).toEqual(['b', 'c', 'a', 'd']);
+  });
+
+  it('drops an activity onto a position further up', () => {
+    expect(applyDrop(['a', 'b', 'c', 'd'], { activityId: 'd', toIndex: 1 })).toEqual(['a', 'd', 'b', 'c']);
+  });
+
+  it('declines a drop that changes nothing, so no pointless PUT is sent', () => {
+    expect(applyDrop(['a', 'b', 'c'], { activityId: 'b', toIndex: 1 })).toBeNull();
+  });
+
+  it('declines a drop whose activity is gone from the list underneath it', () => {
+    expect(applyDrop(['a', 'b'], { activityId: 'ghost', toIndex: 0 })).toBeNull();
+  });
+
+  it('clamps a drop past either end rather than dropping the activity out of the list', () => {
+    expect(applyDrop(['a', 'b', 'c'], { activityId: 'a', toIndex: 99 })).toEqual(['b', 'c', 'a']);
+    expect(applyDrop(['a', 'b', 'c'], { activityId: 'c', toIndex: -5 })).toEqual(['c', 'a', 'b']);
+  });
+
+  it('never mutates the list it was handed', () => {
+    const ids = ['a', 'b', 'c'];
+    applyDrop(ids, { activityId: 'a', toIndex: 2 });
+    expect(ids).toEqual(['a', 'b', 'c']);
+  });
+
   it('moves the named activity, wherever it currently sits', () => {
     expect(applyMove(['a', 'b', 'c'], { activityId: 'c', direction: 'up' })).toEqual(['a', 'c', 'b']);
   });

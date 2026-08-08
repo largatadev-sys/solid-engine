@@ -29,10 +29,9 @@ describe('comingSoonMessage — the wording both forks share', () => {
     expect(comingSoonMessage('chat').title).toBe('Trip chat — coming soon');
   });
 
-  it('covers every greyed affordance S4.9, S4.1, S4.13 and S4.15 ship', () => {
+  it('covers every greyed affordance S4.9, S4.1, S4.13, S4.15 and S4.17 ship', () => {
     expect(Object.keys(COMING_SOON_SURFACES).sort()).toEqual(
       [
-        'activityHistory',
         'booking',
         'chat',
         'comments',
@@ -41,12 +40,13 @@ describe('comingSoonMessage — the wording both forks share', () => {
         'fork',
         'home',
         'network',
+        'photoDump',
+        'polls',
         'rating',
         'reviews',
         'search',
         'tripFilter',
         'tripSearch',
-        'tripWorkspace',
       ].sort(),
     );
   });

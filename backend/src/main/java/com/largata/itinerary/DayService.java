@@ -91,6 +91,7 @@ public class DayService {
     @Transactional
     public DayView appendDay(Membership member, String title) {
         requireOwnerOfWritableTrip(member);
+        editLease.requireNoForeignSession(member);
         UUID itineraryId = member.itineraryId();
         long existing = days.countByItineraryId(itineraryId);
         if (existing >= Itinerary.MAX_DAYS) {

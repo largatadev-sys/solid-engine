@@ -1,9 +1,8 @@
 import { Link } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { coverPreviewFor } from '../media/coverInFlight';
-import { thumbOf } from '../media/mediaSourceContract';
-import { useMediaSource } from '../media/useMediaSource';
+import { MediaThumb } from '../media/MediaThumb';
 import { colors, radii, spacing, typography } from '../theme';
 import type { ItineraryResponse } from '../types/api';
 import { publicationBadge, tripCardDate } from './tripCardAnatomy';
@@ -13,16 +12,10 @@ import { draftSubtitle, editingAdvisory } from './tripSections';
 export function tripRowDestination(
   itinerary: Pick<ItineraryResponse, 'id' | 'archived' | 'published' | 'state'>,
 ) {
-  if (itinerary.archived) {
-    return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
+  if (!itinerary.archived && itinerary.published) {
+    return { pathname: '/published/[id]' as const, params: { id: itinerary.id } };
   }
-  if (itinerary.state === 'draft') {
-    return { pathname: '/itineraries/[id]/days' as const, params: { id: itinerary.id, day: '1' } };
-  }
-  if (!itinerary.published) {
-    return { pathname: '/itineraries/[id]/preview' as const, params: { id: itinerary.id } };
-  }
-  return { pathname: '/published/[id]' as const, params: { id: itinerary.id } };
+  return { pathname: '/itineraries/[id]' as const, params: { id: itinerary.id } };
 }
 
 
@@ -83,24 +76,14 @@ function CoverThumb({
   coverImageUrl: string | null;
   localPreview: string | null;
 }) {
-  const uploaded = useMediaSource(thumbOf(coverImageUrl));
-  const source = uploaded ?? (localPreview === null ? null : { uri: localPreview });
-
-  if (source === null) {
-    return (
-      <View style={[styles.thumb, styles.thumbEmpty]}>
-        <Icon name="map" size={THUMB_ICON_SIZE} color={colors.textSecondary} />
-      </View>
-    );
-  }
-
   return (
-    <Image
-      source={source}
+    <MediaThumb
+      url={coverImageUrl}
+      localPreview={localPreview}
       style={styles.thumb}
-      resizeMode="cover"
+      fallbackStyle={styles.thumbEmpty}
       accessibilityLabel="Trip cover photo"
-      accessibilityIgnoresInvertColors
+      fallback={<Icon name="map" size={THUMB_ICON_SIZE} color={colors.textSecondary} />}
     />
   );
 }

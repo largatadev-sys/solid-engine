@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { installFirebaseTokenSource } from '../src/auth/firebaseTokenSource';
 import { installGoogleSignIn } from '../src/auth/googleSignInConfig';
 import { authCapabilities } from '../src/repositories/authRepository';
@@ -32,15 +33,17 @@ export default function RootLayout() {
   if (!fontsLoaded && fontError === null) return <Splash />;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <StatusBar style="dark" />
-      <AuthProvider>
-        <MobileFrame>
-          <AuthGate />
-        </MobileFrame>
-        <CropStation />
-      </AuthProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <QueryClientProvider client={queryClient}>
+        <StatusBar style="dark" />
+        <AuthProvider>
+          <MobileFrame>
+            <AuthGate />
+          </MobileFrame>
+          <CropStation />
+        </AuthProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -90,6 +93,9 @@ function Splash() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   splash: {
     flex: 1,
     alignItems: 'center',

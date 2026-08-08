@@ -15,6 +15,7 @@ class EditLockedException extends ConflictException {
             case HEADER -> "this trip's details";
             case DAY -> "this day";
             case ACTIVITY -> "this activity";
+            case SESSION -> "this itinerary";
         };
     }
 }

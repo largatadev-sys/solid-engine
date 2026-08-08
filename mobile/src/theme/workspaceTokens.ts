@@ -1,0 +1,100 @@
+const fonts = {
+  regular: 'Inter_400Regular',
+  semiBold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+  extraBold: 'Inter_800ExtraBold',
+} as const;
+
+
+export const workspaceColors = {
+  accent: '#EA580C',
+  accentFocus: '#E8613A',
+  accentRing: 'rgba(234, 88, 12, 0.1)',
+  onAccent: '#FFFFFF',
+  title: '#1C1917',
+  muted: '#78716C',
+  hairline: '#E7E5E4',
+  railBorder: '#ECE8E5',
+  inputBorder: '#757575',
+  placeholder: '#A59E99',
+  sheetBody: '#68615E',
+  optionalNote: '#71717A',
+  fieldLabel: '#000000',
+  secondaryLabel: '#000000',
+  surface: '#FFFFFF',
+  scrim: 'rgba(0, 0, 0, 0.4)',
+  none: 'transparent',
+  pressed: '#F5F5F4',
+  accentWash: 'rgba(234, 88, 12, 0.06)',
+} as const;
+
+
+export const workspaceBadgeColors = {
+  draft: { background: '#FEF3C7', foreground: '#D97706' },
+  upcoming: { background: '#DCFCE7', foreground: '#15803D' },
+  ongoing: { background: '#E0F2FE', foreground: '#0369A1' },
+  completed: { background: '#F3F4F6', foreground: '#6B7280' },
+} as const;
+
+
+export const workspaceTypography = {
+  screenTitle: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28, fontWeight: '700' },
+  badgeLabel: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 0.5 },
+  headerAction: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16, fontWeight: '700' },
+  provenance: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, fontWeight: '400' },
+  tabLabel: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  tabLabelActive: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  dayTitle: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 23, fontWeight: '700' },
+  stubTitle: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, fontWeight: '700' },
+  activityName: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  activityTime: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 15, fontWeight: '400' },
+  ctaPrimary: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, fontWeight: '700' },
+  ctaSecondary: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  ctaOutlined: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  sheetTitle: { fontFamily: fonts.extraBold, fontSize: 22, lineHeight: 28, fontWeight: '800' },
+  sheetBody: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, fontWeight: '400' },
+  sheetDismiss: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 20, fontWeight: '600' },
+  fieldLabel: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 20, fontWeight: '600' },
+  fieldOptional: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 18, fontWeight: '400' },
+  fieldInput: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 19, fontWeight: '400' },
+  detailLabel: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  detailValue: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, fontWeight: '400' },
+  memberName: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  memberRole: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 15, fontWeight: '400' },
+  note: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, fontWeight: '400' },
+} as const;
+
+
+export const workspaceCardShadow = {
+  shadowColor: workspaceColors.title,
+  shadowOffset: { width: 0, height: 1 },
+  shadowRadius: 3,
+  shadowOpacity: 0.06,
+  elevation: 1,
+} as const;
+
+
+export const workspaceRadii = {
+  control: 4,
+  card: 12,
+  sheet: 24,
+  pill: 999,
+} as const;
+
+
+export const workspaceMetrics = {
+  tabRowHeight: 43,
+  tabUnderlineHeight: 3,
+  activityRowHeight: 60,
+  primaryCtaHeight: 53,
+  secondaryCtaHeight: 50,
+  sheetCtaHeight: 52,
+  inputHeight: 48,
+  grabberWidth: 36,
+  grabberHeight: 5,
+  finalizeRingSize: 72,
+  finalizeDiscSize: 56,
+  avatarRendered: 96,
+  avatarRow: 40,
+  currencyFieldWidth: 92,
+} as const;

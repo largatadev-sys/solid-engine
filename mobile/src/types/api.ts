@@ -106,6 +106,8 @@ export type ItineraryResponse = {
 
   lease?: LeaseHolderResponse | null;
 
+  editingSession?: LeaseHolderResponse | null;
+
   days: DayResponse[];
   createdAt: string;
 };
@@ -280,7 +282,7 @@ export type MoveActivityRequest = {
 };
 
 
-export type LeaseSubjectType = 'header' | 'day' | 'activity';
+export type LeaseSubjectType = 'header' | 'day' | 'activity' | 'session';
 
 
 export type LeaseSubject = {

@@ -128,14 +128,46 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(read(TRIPS_GROUP, '_layout.tsx')).toContain('headerShown: false');
   });
 
-  const FULL_BLEED = ['itineraries/[id]/published.tsx', 'itineraries/[id]/created.tsx'];
+  const FULL_BLEED = [
+    'itineraries/[id]/published.tsx',
+    'itineraries/[id]/created.tsx',
+    'itineraries/[id]/activity.tsx',
+  ];
 
-  it.each(tripScreens().filter(([name]) => !FULL_BLEED.includes(name)))(
-    '%s draws its own heading — with no header bar, a navigator title renders nowhere',
+  const WORKSPACE_HEADER = ['itineraries/[id]/index.tsx', 'itineraries/[id]/edit-plan.tsx'];
+
+  const REDIRECT_STUBS = ['itineraries/[id]/days/index.tsx', 'itineraries/[id]/days/[dayId].tsx'];
+
+  it.each(tripScreens().filter(([name]) => REDIRECT_STUBS.includes(name)))(
+    '%s draws no chrome at all — a retired route redirects, it does not render',
     (_name, source) => {
-      expect(source).toMatch(/<ScreenHeader/);
+      expect(source).toContain('<Redirect');
+      expect(source).not.toMatch(/<ScreenHeader|<WorkspaceHeader/);
     },
   );
+
+  it.each(tripScreens().filter(([name]) => WORKSPACE_HEADER.includes(name)))(
+    '%s draws the workspace header, which takes the inset for it (S4.17)',
+    (_name, source) => {
+      expect(source).toMatch(/<WorkspaceHeader/);
+    },
+  );
+
+  it('makes the workspace header take the status-bar inset — the mock draws no header bar', () => {
+    const header = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceHeader.tsx');
+
+    expect(header).toMatch(/useSafeAreaInsets/);
+    expect(header).toMatch(/paddingTop: insets\.top/);
+  });
+
+  it.each(
+    tripScreens().filter(
+      ([name]) =>
+        !FULL_BLEED.includes(name) && !WORKSPACE_HEADER.includes(name) && !REDIRECT_STUBS.includes(name),
+    ),
+  )('%s draws its own heading — with no header bar, a navigator title renders nowhere', (_name, source) => {
+    expect(source).toMatch(/<ScreenHeader/);
+  });
 
   it.each(tripScreens().filter(([name]) => FULL_BLEED.includes(name)))(
     '%s is exempt because the mock draws no header bar — so it must take the inset itself',
@@ -202,8 +234,12 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
     for (const source of [read(TRIPS, '[id]', 'created.tsx'), read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx')]) {
       expect(source).toContain('coverPreviewFor(');
-      expect(source).toMatch(/uploaded \?\? \(localPreview === null \? null : \{ uri: localPreview \}\)/);
+      expect(source).toContain('localPreview={localPreview}');
     }
+
+    expect(read(MOBILE_ROOT, 'src', 'media', 'MediaThumb.tsx')).toMatch(
+      /uploaded \?\? \(localPreview === null \? null : \{ uri: localPreview \}\)/,
+    );
   });
 
   it('never says "Uploading…" on the create form, where the only request in flight is the trip', () => {
@@ -222,11 +258,26 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(picker.match(/uploading \? UPLOADING_COVER_LABEL/g) ?? []).toHaveLength(2);
   });
 
-  it('fetches a card thumbnail through the AUTHENTICATED media path — a bare URL 401s (S3.3)', () => {
-    const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
+  it('fetches every thumbnail through the AUTHENTICATED media path — a bare URL 401s (S3.3)', () => {
+    const thumb = read(MOBILE_ROOT, 'src', 'media', 'MediaThumb.tsx');
 
-    expect(row).toContain('useMediaSource(thumbOf(coverImageUrl))');
-    expect(row).not.toMatch(/source=\{\{\s*uri:/);
+    expect(thumb).toContain('useMediaSource(full ? url : thumbOf(url))');
+
+    const consumers = [
+      join(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx'),
+      join(MOBILE_ROOT, 'src', 'itineraries', 'AvatarStack.tsx'),
+      join(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
+      join(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx'),
+      join(MOBILE_ROOT, 'src', 'components', 'Avatar.tsx'),
+      join(TRIPS, '[id]', 'created.tsx'),
+    ];
+
+    for (const file of consumers) {
+      const source = readFileSync(file, 'utf8');
+      expect(source).toContain('<MediaThumb');
+      expect(source).not.toMatch(/source=\{\{\s*uri:/);
+      expect(source).not.toContain('useMediaSource(');
+    }
   });
 
   it('drops the destinations line the mock has no room for (S4.15 decision 5)', () => {
@@ -250,11 +301,11 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     }
   });
 
-  it('walks the day schedules to the preview, as the mock draws it', () => {
-    const days = read(TRIPS, '[id]', 'days', 'index.tsx');
+  it('walks a completed trip from the viewer rail into the preview, where publishing happens', () => {
+    const viewer = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(days).toContain('Preview Itinerary');
-    expect(days).toContain("pathname: '/itineraries/[id]/preview'");
+    expect(viewer).toContain("pathname: '/itineraries/[id]/preview'");
+    expect(viewer).toContain('canPublish(data)');
   });
 
   it('ends the creation walk on Finish Itinerary, on the preview, and only while draft', () => {
@@ -268,23 +319,26 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
   it('names no origin at all — the stack remembers it, so no screen has to guess (founder, 2026-08-04)', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
-    const editor = read(TRIPS, '[id]', 'days', 'index.tsx');
+    const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
 
     expect(preview).not.toMatch(/cameFromEditor|from === /);
-    expect(editor).not.toMatch(/from: 'days'/);
+    expect(editor).not.toMatch(/from: '/);
   });
 
   it('makes Continue Editing OPEN the editor — not go back, which returns to wherever you came from', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 
-    expect(preview).toMatch(/const continueEditing = \(\) =>\s*\n?\s*router\.push\(\{ pathname: '\/itineraries\/\[id\]\/days'/);
+    expect(preview).toMatch(
+      /const continueEditing = \(\) =>\s*\n?\s*router\.push\(\{ pathname: '\/itineraries\/\[id\]\/edit-plan'/,
+    );
     expect(preview).not.toMatch(/continueEditing[\s\S]{0,120}router\.back\(\)/);
   });
 
   it('PUSHES every forward move, so back pops the screen the traveler actually came from', () => {
     for (const screen of [
       read(TRIPS, '[id]', 'preview.tsx'),
-      read(TRIPS, '[id]', 'days', 'index.tsx'),
+      read(TRIPS, '[id]', 'edit-plan.tsx'),
+      read(TRIPS, '[id]', 'index.tsx'),
     ]) {
       expect(screen).not.toMatch(/router\.navigate\(/);
     }
@@ -304,11 +358,12 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(preview).toMatch(/readyToPublish \? \(/);
   });
 
-  it('opens an unpublished trip on its preview, not the old workspace (founder, 2026-08-04)', () => {
+  it('opens an unpublished trip on the Trip Workspace, its one home surface (S4.17 decision 1)', () => {
     const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
 
-    expect(row).toContain("pathname: '/itineraries/[id]/preview'");
-    expect(row).toMatch(/if \(itinerary\.archived\)/);
+    expect(row).toContain("pathname: '/itineraries/[id]'");
+    expect(row).not.toContain("pathname: '/itineraries/[id]/preview'");
+    expect(row).not.toContain("pathname: '/itineraries/[id]/days'");
   });
 
   it('shows honest zeros and "Est. Cost" on the published stats card (S4.13 decision 10)', () => {
@@ -325,50 +380,55 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(preview).not.toMatch(/preview of your published itinerary/);
   });
 
-  it('titles and labels the activity form as the frame draws it (S4.13 fidelity pass)', () => {
+  it('titles and labels the activity form as the workspace mock draws it (S4.17 decision 8)', () => {
     const activity = read(TRIPS, '[id]', 'activity.tsx');
 
-    expect(activity).toContain('title="Daily Activity"');
+    expect(activity).toContain("'Edit Activity' : 'Add Activity'");
     expect(activity).toContain('label="Activity Name"');
-    expect(activity).toContain('label="Estimated Cost"');
-    expect(activity).toContain('Describe a specific place or landmark');
+    expect(activity).toContain('label="Location / Venue"');
+    expect(activity).toContain('label="Estimated Price"');
+    expect(activity).toContain('label="Booking Link"');
     expect(activity).toContain('Save Activity');
-    expect(activity).toContain('Photos');
-    expect(activity).not.toMatch(/label="Est\. cost"|Add Activity'|Edit Activity'/);
+    expect(activity).toContain("'Discard Changes' : 'Cancel'");
+    expect(activity).not.toContain('Daily Activity');
   });
 
-  it('opens the booking card as a MODAL, not an inline expansion (founder, 2026-08-04)', () => {
+  it('culls description, tips, photos and the booking card editor from the form (S4.17 decision 8)', () => {
     const activity = read(TRIPS, '[id]', 'activity.tsx');
 
-    expect(activity).toContain('Add Booking Link / Option');
-    expect(activity).toContain('setBookingOpen(true)');
-    expect(activity).toMatch(/<Modal\s/);
-    expect(activity).toContain('onRequestClose');
-    expect(activity).toContain('styles.backdrop');
+    expect(activity).not.toContain('Notes & Creator Tips');
+    expect(activity).not.toContain('ActivityPhotoStrip');
+    expect(activity).not.toContain('Booking Purpose');
+    expect(activity).not.toContain('Booking Provider');
+    expect(activity).not.toContain('Move to another day');
   });
 
-  it('shows no edit attribution on activity cards — this is the create flow, not the workspace', () => {
-    const editor = read(TRIPS, '[id]', 'days', 'index.tsx');
-
-    expect(editor).not.toMatch(/attributionLine|styles\.attribution/);
-  });
-
-  it('draws the whole booking card the founder ruled in, one per activity', () => {
+  it('preserves the culled wire fields through the shared request builder (S4.17 decision 8)', () => {
     const activity = read(TRIPS, '[id]', 'activity.tsx');
 
-    expect(activity).toContain('Booking Purpose');
-    expect(activity).toContain('Booking Provider');
-    expect(activity).toContain('Target URL');
-    expect(activity).toContain('Estimated Price');
-    expect(activity).not.toMatch(/PROVIDER \d|Add another/);
+    expect(activity).toContain('buildActivityRequest');
   });
 
-  it('greys the workspace door on the overview — the redesign it opens is the next story (S4.15 decision 3)', () => {
+  it('shows no edit attribution on activity rows — the mock draws a name and a time, nothing else', () => {
+    const card = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDayCard.tsx');
+
+    expect(card).not.toMatch(/attributionLine|styles\.attribution/);
+  });
+
+  it('takes a booking link as a pasted URL, the provider card being E6 input (S4.17 decision 8)', () => {
+    const activity = read(TRIPS, '[id]', 'activity.tsx');
+
+    expect(activity).toContain('Paste booking URL here...');
+    expect(activity).toContain('externalUrl');
+    expect(activity).not.toMatch(/PROVIDER \d|Add another|Target URL/);
+  });
+
+  it('opens the workspace door S4.15 greyed — the redesign it waited for is this story (S4.17 decision 12)', () => {
     const overview = read(TRIPS, '[id]', 'created.tsx');
 
-    expect(overview).toContain("comingSoon('tripWorkspace')");
-    expect(overview).toContain('accessibilityState={{ disabled: true }}');
-    expect(overview).not.toMatch(/pathname: '\/itineraries\/\[id\]'/);
+    expect(overview).toMatch(/router\.push\(\{ pathname: '\/itineraries\/\[id\]', params: \{ id \} \}\)/);
+    expect(overview).not.toContain("comingSoon('tripWorkspace')");
+    expect(overview).not.toContain('accessibilityState={{ disabled: true }}');
   });
 
   it('keeps Preview Trip live and PUSHED, so back returns to the overview (S4.15 decision 3)', () => {
@@ -435,18 +495,44 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13)', 
 });
 
 
-describe('the two day surfaces, each with its own job (founder ruling 2026-07-31)', () => {
-  const DAYS = join(TRIPS, '[id]', 'days');
+describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the 2026-07-31 ruling)', () => {
+  it('retires the planner and the day view to redirect stubs — old deep links must not dead-end', () => {
+    for (const name of ['index.tsx', '[dayId].tsx']) {
+      const stub = read(TRIPS, '[id]', 'days', name);
 
-  it('has exactly two: the chips editor and the day detail', () => {
-    expect(readdirSync(DAYS).sort()).toEqual(['[dayId].tsx', 'index.tsx']);
+      expect(stub).toContain('<Redirect');
+      expect(stub).toContain("pathname: '/itineraries/[id]'");
+      expect(stub).not.toContain('useItinerary');
+    }
   });
 
-  it('sends a workspace day card to the DETAIL screen, not the editor', () => {
+  it('carries a ?day= deep link through to the workspace, landing on that day expanded', () => {
+    expect(read(TRIPS, '[id]', 'days', 'index.tsx')).toContain('{ id, day }');
+    expect(read(TRIPS, '[id]', 'index.tsx')).toContain('defaultOpenDay(dayIds, requestedDay)');
+  });
+
+  it('ships exactly the two workspace surfaces the redesign names', () => {
+    expect(existsSync(join(TRIPS, '[id]', 'index.tsx'))).toBe(true);
+    expect(existsSync(join(TRIPS, '[id]', 'edit-plan.tsx'))).toBe(true);
+  });
+
+  it('reaches the editor from nowhere but Edit Itinerary and Continue Editing', () => {
+    const reachers = tripScreens().filter(([, source]) =>
+      source.includes("pathname: '/itineraries/[id]/edit-plan'"),
+    );
+
+    expect(reachers.map(([name]) => name).sort()).toEqual([
+      'itineraries/[id]/index.tsx',
+      'itineraries/[id]/preview.tsx',
+    ]);
+  });
+
+  it('expands a viewer day card in place rather than routing to a day screen (S4.17 decision 6)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(workspace).toContain("pathname: '/itineraries/[id]/days/[dayId]'");
-    expect(workspace).toContain('dayId: day.id');
+    expect(workspace).toContain('<WorkspaceDayCard');
+    expect(workspace).toContain('toggleOpenDay');
+    expect(workspace).not.toContain("pathname: '/itineraries/[id]/days/[dayId]'");
   });
 
   it('lands the create flow on the overview, REPLACING the spent form so back reaches Trips (S4.15 decision 2)', () => {
@@ -456,18 +542,15 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(create).not.toMatch(/pathname: '\/itineraries\/\[id\]\/days'/);
   });
 
-  it('opens a DRAFT straight in the day editor — there is nothing to preview yet', () => {
-    const draft = tripRowDestination({ id: 'trip-1', archived: false, published: false, state: 'draft' });
-
-    expect(draft.pathname).toBe('/itineraries/[id]/days');
-  });
-
-  it('routes on DISCOVERY: planned-but-unpublished to its preview, published to the overview', () => {
-    for (const state of ['upcoming', 'ongoing', 'completed'] as const) {
+  it('opens EVERY own unpublished trip in the Trip Workspace, whatever its state (S4.17 decision 1)', () => {
+    for (const state of ['draft', 'upcoming', 'ongoing', 'completed'] as const) {
       expect(
         tripRowDestination({ id: 'trip-1', archived: false, published: false, state }).pathname,
-      ).toBe('/itineraries/[id]/preview');
+      ).toBe('/itineraries/[id]');
     }
+  });
+
+  it('keeps a published trip on its published view — the workspace is for unpublished trips', () => {
     expect(
       tripRowDestination({ id: 'trip-1', archived: false, published: true, state: 'completed' })
         .pathname,
@@ -491,34 +574,153 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(form).not.toMatch(/Time \(24h\)/);
   });
 
-  it('greys the history link on both, until S4.10', () => {
-    expect(read(DAYS, 'index.tsx')).toContain("comingSoon('activityHistory')");
-    expect(read(DAYS, '[dayId].tsx')).toContain("comingSoon('activityHistory')");
+  it('keeps building the plan on the editor: accordion, Add a Day, per-activity edit and delete', () => {
+    const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
+
+    expect(editor).toContain('<WorkspaceDayCard');
+    expect(editor).toContain('Add a Day');
+    expect(editor).toContain('<DraggableActivityList');
+    expect(editor).toContain('onDeleteDay');
   });
 
-  it('keeps building the plan on the editor: owner-only + chip, dashed Add Activity, kebab', () => {
-    const editor = read(DAYS, 'index.tsx');
+  it('persists a drop through the version-checked PUT, surfacing 409 rather than overwriting (ticket 04)', () => {
+    const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
 
-    expect(editor).toContain('{isOwner && <AddDayChip');
-    expect(editor).toContain('<ActivityKebab');
-    expect(editor).toContain('style={styles.addActivity}');
-    expect(editor).toContain("borderStyle: 'dashed'");
-    expect(editor).not.toMatch(/styles\.fab/);
+    expect(editor).toContain('expectedActivityIds');
+    expect(editor).toContain("reorderError.code !== 'STALE_REORDER'");
+    expect(editor).toContain('applyDrop');
   });
 
-  it('keeps the detail screen to reading the day — no chips, no FAB, no day CRUD', () => {
-    const detail = read(DAYS, '[dayId].tsx');
+  it('keeps a non-drag reorder path on both platforms — keys on web, a11y actions on native', () => {
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
 
-    expect(detail).not.toMatch(/AddDayChip|styles\.fab|Delete Day/);
-    expect(detail).toContain('leaseNotice');
-    expect(detail).toContain('attributionLine');
+    expect(web).toContain('onKeyDown');
+    expect(native).toContain('Gesture.Pan');
+    expect(native).toContain('reorderActionsFor(index, count)');
+    expect(read(MOBILE_ROOT, 'src', 'itineraries', 'landingSlot.ts')).toContain(
+      "{ name: 'moveUp', label: 'Move up' }",
+    );
+  });
+
+  it('returns every animated key on EVERY branch, so the lift resets when the drag ends', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+    const body = native.slice(native.indexOf('useAnimatedStyle'), native.indexOf('return (\n    <GestureDetector'));
+
+    for (const key of ['elevation', 'opacity', 'shadowOpacity', 'backgroundColor', 'zIndex']) {
+      expect(body.match(new RegExp(`\\b${key}:`, 'g')) ?? []).toHaveLength(1);
+      expect(body).toMatch(new RegExp(`\\b${key}:\\s*isHeld`));
+    }
+
+    expect(body.match(/return \{/g) ?? []).toHaveLength(1);
+  });
+
+  it('leaves a resting row unpainted — the lift belongs to the drag, not the list', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+    const staticStyle = native.slice(native.indexOf('StyleSheet.create'));
+
+    expect(staticStyle).not.toContain('backgroundColor');
+    expect(staticStyle).not.toContain('shadowOpacity');
+  });
+
+  it('drags on BOTH platforms off one shared drop calculation (founder, 2026-08-09)', () => {
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+
+    expect(web).toContain('onPointerDown');
+    expect(web).toContain('setPointerCapture');
+    expect(web).not.toContain('Gesture.Pan');
+
+    for (const source of [web, native]) {
+      expect(source).toContain('landingSlot(');
+    }
+    expect(web).toContain('displacementFor(');
+  });
+
+  it('keyboard reorder lives on the focusable grip — the arrows retired, the capability did not', () => {
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+
+    expect(web).toContain('focusable: true');
+    expect(web).toContain('onKeyDown');
+    expect(web).toContain("key !== 'ArrowUp' && key !== 'ArrowDown'");
+    expect(web).toContain('reorderActionsFor(index, count)');
+    expect(web).not.toContain('canMoveUp');
+  });
+
+  it('commits the new order LOCALLY at release, so the drop never waits for the server', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+    const queries = read(MOBILE_ROOT, 'src', 'query', 'itineraryQueries.ts');
+
+    for (const source of [native, web]) {
+      expect(source).toContain('setLocalOrder(null)');
+      expect(source).toContain('orderedBy(activities, localOrder)');
+    }
+    expect(web).toContain('setLocalOrder(movedTo(');
+    expect(native).toContain('setLocalOrder(order)');
+
+    expect(queries).toContain('onMutate');
+    expect(queries).toContain('reorderInPlanCache(client, itineraryId, dayId, activityIds)');
+  });
+
+  it('settles only the REMAINDER after release — the sub-slot distance, never the whole travel', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+
+    expect(native).toContain('withSpring(slot * rowPitch.value, SETTLE');
+    expect(native).toContain('overshootClamping: true');
+    expect(web).toContain('const remainder = translation.current - (target - index) * pitch.current');
+  });
+
+  it('native positions rows by a UI-thread slot map, so a re-key can never move a pixel', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+
+    expect(native).toContain('slotsFromIds(');
+    expect(native).toContain('orderFromSlots(slots.value)');
+    expect(native).toContain("position: 'absolute'");
+    expect(native).not.toContain('displacementFor(');
+  });
+
+  it('web settles through the Web Animations API — a CSS transition dies when React moves the node', () => {
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+
+    expect(web).toContain('element.animate(');
+    expect(web).toContain('translateY(${remainder}px)');
+    expect(web).toContain('running.cancel()');
+    expect(web).not.toContain('settling');
+  });
+
+  it('shifts the other rows LIVE during a drag — slots reassign progressively as the finger passes', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+
+    expect(native).toContain('reassigned(slots.value, activity.id, hovered)');
+    expect(native).toContain('landingSlot(dragY.value, 0, count, rowPitch.value)');
+    expect(native).toContain('withSpring(');
+    expect(native).toContain('onLayout');
+  });
+
+  it('holds the Editing Session for as long as the editor is open (S4.17 decision 4)', () => {
+    const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
+
+    expect(editor).toContain("acquire({ subjectType: 'session' })");
+    expect(editor).toContain('session.release()');
+  });
+
+  it('keeps the viewer read-only — it renders no editing affordance at all (S4.17 decision 2)', () => {
+    const viewer = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(viewer).toContain("workspaceAffordances('viewer', isOwner)");
+    expect(viewer).not.toContain('onDeleteActivity');
+    expect(viewer).not.toContain('onAddActivity');
+    expect(viewer).not.toContain('Add a Day');
   });
 
   it('keeps the archived banner above the tabs — an archived trip explains itself first', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
-    const tabBarAt = workspace.indexOf('<View style={styles.tabBar}>');
+    const tabRowAt = workspace.indexOf('<WorkspaceTabRow');
 
-    expect(workspace.indexOf('<TripArchiveBanner')).toBeLessThan(tabBarAt);
+    expect(tabRowAt).toBeGreaterThan(-1);
+    expect(workspace.indexOf('<TripArchiveBanner')).toBeLessThan(tabRowAt);
   });
 
   it('offers no way to archive from the UI — the control was pulled (founder, 08/01)', () => {
@@ -528,18 +730,19 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(workspace).not.toContain('Archive trip');
   });
 
-  it('reaches members through the roster row alone, not a second Details button (founder, 08/01)', () => {
-    const workspace = read(TRIPS, '[id]', 'index.tsx');
-    const detailsTabAt = workspace.indexOf('function DetailsTab');
+  it('reaches members through the Travelers roster row alone, never from Details (founder, 08/01)', () => {
+    const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
+    const details = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDetailsTab.tsx');
 
-    expect(workspace).not.toContain('ownership transfer');
-    expect(workspace.indexOf("pathname: '/members/[itineraryId]'")).toBeLessThan(detailsTabAt);
+    expect(travelers).toContain("pathname: '/members/[itineraryId]'");
+    expect(details).not.toContain("pathname: '/members/[itineraryId]'");
   });
 
   it('reads the three axes through helpers, never by comparing them inline (ADR-019)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(workspace).toContain('workspaceEyebrow(data)');
+    expect(workspace).toContain('stateBadge(data)');
+    expect(workspace).toContain('ladderCta(data, isOwner)');
     expect(workspace).not.toMatch(/data\.visibility === '/);
     expect(workspace).not.toMatch(/data\.state === '/);
   });
@@ -551,21 +754,21 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(workspace).toContain('publishNeedsCompleteBody');
   });
 
-  it('puts an Edit itinerary cogwheel on the workspace, pointing at the day editor (founder, 08/01)', () => {
+  it('puts Edit Itinerary in the viewer header, pointing at the Draft Workspace (S4.17 decision 4)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
-    const headerEnds = workspace.indexOf('<View style={styles.identityRow}>');
 
-    expect(workspace.slice(0, headerEnds)).toContain('accessibilityLabel="Edit itinerary"');
-    expect(workspace.slice(0, headerEnds)).toContain("pathname: '/itineraries/[id]/days'");
-    expect(workspace).toContain('isEditable(data) ? (');
+    expect(workspace).toContain("actionLabel={editAction.kind === 'hidden' ? undefined : 'Edit Itinerary'}");
+    expect(workspace).toContain("pathname: '/itineraries/[id]/edit-plan'");
+    expect(workspace).toContain('editItineraryAction(data, canEditPlan(data), myId, isOwner)');
   });
 
-  it('puts publish on the workspace screen and unpublish quietly in the Details tab (S4.1 decision 11)', () => {
+  it('puts publish on the viewer rail and unpublish quietly in the Details tab (S4.1 decision 11)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
-    const detailsTabAt = workspace.indexOf('function DetailsTab');
+    const details = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDetailsTab.tsx');
 
-    expect(workspace.indexOf('Publish Itinerary')).toBeLessThan(detailsTabAt);
-    expect(workspace.indexOf('Unpublish this trip')).toBeGreaterThan(detailsTabAt);
+    expect(workspace).toContain('runLadder');
+    expect(workspace).not.toContain('Unpublish');
+    expect(details).toContain('Unpublish');
   });
 });
 
@@ -577,12 +780,12 @@ describe('every greyed affordance is wired to the shared helper (register #2)', 
     read(TRIPS, 'new.tsx'),
     read(TRIPS, '[id]', 'created.tsx'),
     read(TRIPS, '[id]', 'index.tsx'),
-    read(TRIPS, '[id]', 'days', 'index.tsx'),
-    read(TRIPS, '[id]', 'days', '[dayId].tsx'),
+    read(TRIPS, '[id]', 'edit-plan.tsx'),
     read(TRIPS, '[id]', 'activity.tsx'),
     read(TRIPS, '[id]', 'invite.tsx'),
     read(MOBILE_ROOT, 'src', 'components', 'ComingSoonScreen.tsx'),
     read(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
+    read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTabRow.tsx'),
   ].join('\n');
 
   it.each(Object.keys(COMING_SOON_SURFACES))('%s has a call site', (surface) => {

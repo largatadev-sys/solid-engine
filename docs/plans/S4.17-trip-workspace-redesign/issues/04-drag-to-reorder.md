@@ -1,0 +1,48 @@
+# 04 — Drag-to-reorder: the grip becomes a gesture, the arrows graduate
+
+**What to build:** the backlog line's reserved decision, discharged here (spec decision 7) — a real drag gesture on the editor's activity rows driving S4.9's version-checked `PUT /order`.
+
+**Blocked by:** 03 (the accordion the rows live in).
+
+**Status:** done
+
+- [x] The gesture-library decision is made and recorded in this ticket's comments (candidates per the backlog line: `react-native-draggable-flatlist` / `react-native-reorderable-list`, each pulling gesture-handler + reanimated — a config-plugin-scale dependency; prebuild required).
+- [x] Native: long-press-drag on the grip reorders within the day; drop persists through the version-checked PUT; a stale reorder surfaces the 409 refresh path, never a silent overwrite.
+- [x] Web: the backlog line's weighed fork is decided — native drag + arrows-kept-on-web is the recorded cheaper option; whichever ships, reorder works on the web preview.
+- [x] The arrows graduate from the default UI; they remain wherever they are the accessibility path (screen-reader reorder must still be possible — the line's own constraint).
+- [x] Reorder inside the holder's session needs no per-subject lease (ticket 01's subsumption).
+
+## Comments
+
+**2026-08-08 — the gesture-library decision: neither candidate; `react-native-gesture-handler` directly, which is already a dependency.**
+
+The backlog line reserved this decision on the premise that a drag gesture *"needs a native gesture library … a config-plugin-scale dependency decision no single ticket had a mandate to make."* **That premise expired before this story reached it.** `react-native-gesture-handler` and `react-native-reanimated` are already **direct dependencies** in `mobile/package.json`, required by `expo-router` and `expo-modules-core`; their natives compile into every dev build this repo makes (CLAUDE.md's JDK gotcha records builds reaching `:react-native-worklets:configureCMakeDebug` — worklets *is* reanimated 4's engine). So there is **no new dependency, no config plugin, and no prebuild decision** left in this line. Verified rather than assumed, because the cost of being wrong was a native-build detour:
+
+- `babel-preset-expo` (nested under `expo/node_modules`) **auto-injects the worklets plugin when the package is installed** — `configs/expo.js`: *"Automatically add worklets or reanimated plugin when package is installed."* No `babel.config.js` is needed, and hand-adding the plugin on top would double-apply it.
+- `GestureHandlerRootView` is **not** mounted by expo-router — grepped its build output and found none — so this ticket adds it at `app/_layout.tsx`. Without it the pan gesture is silently inert, which is the failure mode this repo keeps naming: a control that renders and does nothing.
+
+**Why neither `react-native-draggable-flatlist` nor `react-native-reorderable-list`:** both are **FlatList replacements that want to own scrolling**, and our rows live inside an expanded day card inside the editor's `ScrollView`. That nesting is precisely where they fight the outer scroll. Adopting one to reorder a capped, short list (activity rows within a single day) would buy autoscroll-during-drag we do not need and cost a scroll-ownership conflict we would then work around. `Gesture.Pan` on the grip, translating the row and mapping the drop to a slot index, is ~100 lines with no new dependency. **The gesture library *is* gesture-handler.**
+
+**2026-08-09 — the web gets the drag too (founder: "can we mimic this drag behavior to the web preview?"). The cheaper option below is superseded, and its premise is now recorded as wrong.**
+
+The backlog line reserved "weak to nonexistent web support" as the reason to keep web on arrows. That was true of the **FlatList-replacement libraries** it named — and this story shipped neither. `react-native-gesture-handler` has a real web implementation (`lib/module/web/`), and reanimated already runs in our web bundle: the accordion transitions verified at 44/44 the same day are reanimated animations executing in a browser. **The stated obstacle did not apply to the approach actually taken.**
+
+Web drives it with **pointer events** rather than `Gesture.Pan` — a mouse is not a touch, so `onPointerDown/Move/Up` with `setPointerCapture` is the honest primitive, and it needs no long-press (a long-press exists on touch to disambiguate from scroll; a mouse has no such ambiguity, so the drag starts immediately and feels *more* direct than native). Rows settle with a CSS `transition` instead of a spring.
+
+**What is shared is the part that matters:** `landingSlot`, `displacementFor` and the version-checked `PUT /order` are identical, so both platforms compute the same drop from the same numbers and persist the same way. Only the input and the settle animation are platform-specific.
+
+**The arrows STAY on web, beside the grip.** Keeping both is better than mimicking native exactly: a mouse gets the drag, and keyboard/screen-reader users keep a control they can actually operate — a pointer drag is not keyboard-reachable, so removing the arrows to match native would have been a straight accessibility regression. Verified in a real browser (`drive-workspace.js`, 46/46): a synthetic pointer drag reorders `Alpha, Bravo, Charlie` → `Bravo, Alpha, Charlie` through the version-checked PUT.
+
+*(Superseded, kept for the record:)* **The web fork takes the line's own recorded cheaper option: native drag, arrows kept on web.** `DraggableActivityList.native.tsx` carries the pan; `DraggableActivityList.web.tsx` renders the same rows with up/down controls. A drag is a native gesture, so this is the standing "web ≈ mobile except native gestures" principle, not a shortfall.
+
+**The arrows do not disappear — they change platform and role.** On web they are the reorder UI. On native they survive as `accessibilityActions` (`moveUp`/`moveDown`) on each row, wired to the same `applyMove` reducer the drag's `applyDrop` sits beside — so **screen-reader reorder stays possible on both platforms**, which was the line's own constraint.
+
+**Both paths share one persistence route:** `applyDrop`/`applyMove` → the version-checked `PUT /order` with `expectedActivityIds`, and a `STALE_REORDER` 409 re-reads the day and re-applies the *intent* against fresh ids rather than overwriting. That recovery is not new code — it was lifted from the retired `days/index.tsx` (`git show` on the commit that deleted it) rather than reinvented.
+
+**2026-08-09 — the web arrows retire (founder: "can you also remove the arrow buttons in web"); keyboard reorder moves onto the grip.**
+
+The arrows were kept as the web's keyboard path — *"a pointer drag is not keyboard-reachable"* — and that constraint still holds, so they were not simply deleted. **The grip is now focusable, and ArrowUp/ArrowDown on a focused grip nudges the row** through the same `applyMove` → version-checked PUT path the arrows drove. Same capability, no buttons; Tab reaches every grip in order.
+
+**Verified in a real browser rather than assumed, deliberately:** react-native-web has a documented history in this repo of props that silently do nothing (`Alert.alert`, `<Image source.headers>`, the picker's crop options), and `onKeyDown` could have been another. The driver focuses a grip, dispatches a real `keydown`, and asserts the order changed **through the API** — `focused=true`, `Bravo, Charlie, Alpha → Bravo, Alpha, Charlie`, and `0` arrow buttons left in the DOM. Had RNW swallowed the event, the check would have failed and the arrows would have stayed.
+
+Native is untouched: its screen-reader path was never the arrows but `accessibilityActions` on each row, which remain.

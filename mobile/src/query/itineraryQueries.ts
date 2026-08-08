@@ -335,6 +335,35 @@ export function useDeleteActivity(
 export type ReorderIntent = { dayId: string; activityIds: string[]; expectedActivityIds: string[] };
 
 
+export function reorderInPlanCache(
+  client: QueryClient,
+  itineraryId: string,
+  dayId: string,
+  orderedActivityIds: string[],
+): ItineraryResponse | undefined {
+  const previous = client.getQueryData<ItineraryResponse>(itineraryKeys.one(itineraryId));
+  if (previous === undefined) return undefined;
+
+  const day = previous.days.find((d) => d.id === dayId);
+  if (day === undefined) return undefined;
+
+  const byId = new Map(day.activities.map((a) => [a.id, a]));
+  if (orderedActivityIds.some((id) => !byId.has(id)) || byId.size !== orderedActivityIds.length) {
+    return undefined;
+  }
+
+  client.setQueryData<ItineraryResponse>(itineraryKeys.one(itineraryId), {
+    ...previous,
+    days: previous.days.map((d) =>
+      d.id === dayId
+        ? { ...d, activities: orderedActivityIds.map((id) => byId.get(id) as ActivityResponse) }
+        : d,
+    ),
+  });
+  return previous;
+}
+
+
 export function useReorderActivities(
   itineraryId: string,
 ): UseMutationResult<DayResponse, Error, ReorderIntent> {
@@ -342,6 +371,15 @@ export function useReorderActivities(
   return useMutation({
     mutationFn: ({ dayId, activityIds, expectedActivityIds }: ReorderIntent) =>
       itineraryRepository.reorderActivities(itineraryId, dayId, { activityIds, expectedActivityIds }),
+    onMutate: async ({ dayId, activityIds }: ReorderIntent) => {
+      await client.cancelQueries({ queryKey: itineraryKeys.one(itineraryId) });
+      return { previous: reorderInPlanCache(client, itineraryId, dayId, activityIds) };
+    },
+    onError: (_error, _intent, context) => {
+      if (context?.previous !== undefined) {
+        client.setQueryData(itineraryKeys.one(itineraryId), context.previous);
+      }
+    },
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }

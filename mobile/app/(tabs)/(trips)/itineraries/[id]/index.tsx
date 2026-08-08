@@ -1,79 +1,56 @@
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { comingSoon } from '../../../../../src/components/comingSoon';
-import { Icon } from '../../../../../src/components/Icon';
-import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
-import { confirmWith } from '../../../../../src/components/confirmDestructive';
-import { notify } from '../../../../../src/components/notify';
-import {
-  leaveTripWording,
-  unpublishTripWording,
-} from '../../../../../src/components/confirmDestructiveMessage';
 import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/components/ScreenMessage';
+import { notify } from '../../../../../src/components/notify';
 import { useMe } from '../../../../../src/hooks/useMe';
-import { dayHeading } from '../../../../../src/itineraries/dayHeading';
-import { AvatarStack } from '../../../../../src/itineraries/AvatarStack';
-import { formatDates } from '../../../../../src/itineraries/formatDates';
+import { canEditPlan } from '../../../../../src/itineraries/archiveControls';
+import { defaultOpenDay, toggleOpenDay } from '../../../../../src/itineraries/dayAccordion';
 import {
-  audienceBlurb,
-  audienceLabel,
-  audienceOf,
   canPublish,
-  isEditable,
   PUBLISH_NEEDS_COMPLETE_TITLE,
   publishNeedsCompleteBody,
-  lifecycleBlurb,
-  lifecycleLabel,
-  nextLifecycleAct,
-  otherAudience,
-  publishControl,
-  workspaceEyebrow,
 } from '../../../../../src/itineraries/publishControls';
 import { TripArchiveBanner } from '../../../../../src/itineraries/TripArchiveBanner';
-import { WorkspaceChip } from '../../../../../src/itineraries/WorkspaceChip';
+import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
+import { WorkspaceDetailsTab } from '../../../../../src/itineraries/WorkspaceDetailsTab';
+import { WorkspaceHeader } from '../../../../../src/itineraries/WorkspaceHeader';
+import { WorkspaceTabRow, type WorkspaceTab } from '../../../../../src/itineraries/WorkspaceTabRow';
+import { WorkspaceTravelersTab } from '../../../../../src/itineraries/WorkspaceTravelersTab';
+import {
+  editItineraryAction,
+  ladderCta,
+  showsStepBack,
+  stateBadge,
+  workspaceAffordances,
+} from '../../../../../src/itineraries/workspaceControls';
+import {
+  workspaceColors,
+  workspaceMetrics,
+  workspaceRadii,
+  workspaceTypography,
+} from '../../../../../src/theme/workspaceTokens';
 import { memberControls } from '../../../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../../../src/members/OwnershipOfferBanner';
-import { useEndMembership, useMembers } from '../../../../../src/query/invitationQueries';
-import {
-  useItinerary,
-  useShowTripTo,
-  useTripLifecycle,
-  useUnpublishTrip,
-} from '../../../../../src/query/itineraryQueries';
-import type { LifecycleAct } from '../../../../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../../../../src/theme';
-import type {
-  DayResponse,
-  ItineraryResponse,
-  PublishAudience,
-} from '../../../../../src/types/api';
-
-
-const EYEBROW_ICON_SIZE = 20;
-
-const EDIT_ICON_SIZE = 22;
-
-
-type WorkspaceTab = 'itinerary' | 'details';
+import { useMembers } from '../../../../../src/query/invitationQueries';
+import { useItinerary, useTripLifecycle } from '../../../../../src/query/itineraryQueries';
+import { colors, typography } from '../../../../../src/theme';
 
 
 export default function TripWorkspaceScreen() {
   const router = useRouter();
-  const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
+  const { id, day, tab } = useLocalSearchParams<{ id: string; day?: string; tab?: string }>();
   const { data, isPending, isError, error } = useItinerary(id);
 
   const members = useMembers(id);
   const { state: meState } = useMe();
   const myId = meState.kind === 'ok' ? meState.me.id : undefined;
   const roster = members.data?.items ?? [];
-  const { isOwner, canInvite, canLeave } = memberControls(roster, myId, data?.archived ?? false);
+  const { isOwner } = memberControls(roster, myId, data?.archived ?? false);
 
-  const endMembership = useEndMembership(id);
-  const unpublish = useUnpublishTrip(id);
-  const showTo = useShowTripTo(id);
   const lifecycle = useTripLifecycle(id);
-  const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'itinerary');
+  const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'day-by-day');
+  const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
 
   if (isPending) {
     return (
@@ -87,446 +64,164 @@ export default function TripWorkspaceScreen() {
     return <ScreenMessage {...itineraryLoadMessage(error, 'Could not load this trip')} />;
   }
 
-  const leaveTrip = () => {
-    if (myId === undefined) return;
-    confirmWith(leaveTripWording(), () => {
-      endMembership.mutate({ travelerId: myId, leaving: true }, { onSuccess: () => router.replace('/') });
-    });
+  if (data.published && !data.archived) {
+    return <Redirect href={{ pathname: '/published/[id]', params: { id } }} />;
+  }
+
+  const dayIds = data.days.map((d) => d.id);
+  const requestedDay = day !== undefined ? data.days.find((d) => String(d.ordinal) === day)?.id : undefined;
+  const expandedDayId = openDayId === undefined ? defaultOpenDay(dayIds, requestedDay) : openDayId;
+
+  const badge = stateBadge(data);
+  const ladder = ladderCta(data, isOwner);
+  const editAction = editItineraryAction(data, canEditPlan(data), myId, isOwner);
+  const affordances = workspaceAffordances('viewer', isOwner);
+
+  const openEditor = () => {
+    if (editAction.kind === 'edit') {
+      router.push({ pathname: '/itineraries/[id]/edit-plan', params: { id } });
+      return;
+    }
+    if (editAction.kind === 'reopen-then-edit') {
+      lifecycle.mutate('reopen', {
+        onSuccess: () => router.push({ pathname: '/itineraries/[id]/edit-plan', params: { id } }),
+      });
+    }
   };
 
-  const control = publishControl(data, isOwner);
-  const eyebrow = workspaceEyebrow(data);
-  const audience = audienceOf(data);
+  const runLadder = () => {
+    if (ladder === null) return;
+    if (ladder.act === 'publish') {
+      if (canPublish(data)) {
+        router.push({ pathname: '/itineraries/[id]/preview', params: { id } });
+      } else {
+        notify(PUBLISH_NEEDS_COMPLETE_TITLE, publishNeedsCompleteBody(data.state));
+      }
+      return;
+    }
+    lifecycle.mutate(ladder.act);
+  };
 
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-
-        <ScreenHeader
+        <WorkspaceHeader
+          badge={badge}
           title={data.title}
-          size="display"
-          back
-          eyebrow={
-            <View style={styles.eyebrowRow}>
-              <Icon name={eyebrow.icon} size={EYEBROW_ICON_SIZE} color={colors.accent} />
-              <Text style={styles.eyebrow}>{eyebrow.label}</Text>
-            </View>
-          }
-          action={
-            isEditable(data) ? (
-              <Link
-                href={{ pathname: '/itineraries/[id]/days', params: { id, day: '1' } }}
-                asChild
-              >
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Edit itinerary"
-                  hitSlop={spacing.sm}
-                >
-                  <Icon name="pencil" size={EDIT_ICON_SIZE} color={colors.textPrimary} />
-                </Pressable>
-              </Link>
-            ) : undefined
-          }
+          onBack={() => router.push('/')}
+          actionLabel={editAction.kind === 'hidden' ? undefined : 'Edit Itinerary'}
+          actionIcon="pencilSquare"
+          onAction={editAction.kind === 'blocked' ? () => undefined : openEditor}
+          actionDisabled={editAction.kind === 'blocked' || lifecycle.isPending}
+          actionHint={editAction.kind === 'blocked' ? `being edited by ${editAction.holder}` : null}
         />
-
-        <View style={styles.identityRow}>
-          <Link href={{ pathname: '/members/[itineraryId]', params: { itineraryId: id } }} asChild>
-            <Pressable
-              style={styles.rosterLink}
-              accessibilityRole="button"
-              accessibilityLabel={`${roster.length} members`}
-            >
-              <AvatarStack roster={roster} />
-              <Text style={styles.rosterCount}>
-                {roster.length} {roster.length === 1 ? 'member' : 'members'}
-              </Text>
-            </Pressable>
-          </Link>
-          <WorkspaceChip itinerary={data} />
-        </View>
 
         <TripArchiveBanner itinerary={data} />
         <OwnershipOfferBanner itineraryId={id} />
 
-        <View style={styles.tabBar}>
-          <WorkspaceTabButton
-            label="Itinerary"
-            selected={active === 'itinerary'}
-            onPress={() => setActive('itinerary')}
-          />
-          <WorkspaceTabButton label="Chat" selected={false} greyed onPress={() => comingSoon('chat')} />
-          <WorkspaceTabButton
-            label="Details"
-            selected={active === 'details'}
-            onPress={() => setActive('details')}
-          />
-        </View>
+        <WorkspaceTabRow active={active} onSelect={setActive} />
 
-        {active === 'itinerary' ? (
-          <ItineraryTab itineraryId={id} days={data.days} />
-        ) : (
-          <DetailsTab
-            itinerary={data}
-            isOwner={isOwner}
-            canLeave={canLeave}
-            leaving={endMembership.isPending}
-            onLeave={leaveTrip}
-            canUnpublish={control === 'unpublish'}
-            unpublishing={unpublish.isPending}
-            unpublishError={unpublish.isError ? unpublish.error.message : undefined}
-            onUnpublish={() => confirmWith(unpublishTripWording(), () => unpublish.mutate())}
-            audience={audience}
-            changingAudience={showTo.isPending}
-            onChangeAudience={() => showTo.mutate(otherAudience(audience))}
-            lifecycleBusy={lifecycle.isPending}
-            lifecycleError={lifecycle.isError ? lifecycle.error.message : undefined}
-            onLifecycle={(act) => lifecycle.mutate(act)}
-          />
-        )}
+        {active === 'day-by-day' ? (
+          <View style={styles.tabBody}>
+            {data.days.length === 0 ? (
+              <Text style={styles.empty}>No days yet. Edit the itinerary to build this trip out.</Text>
+            ) : (
+              data.days.map((d) => (
+                <WorkspaceDayCard
+                  key={d.id}
+                  day={d}
+                  expanded={d.id === expandedDayId}
+                  affordances={affordances}
+                  onToggle={() => setOpenDayId(toggleOpenDay(expandedDayId, d.id))}
+                />
+              ))
+            )}
+          </View>
+        ) : null}
+
+        {active === 'travelers' ? <WorkspaceTravelersTab itineraryId={id} /> : null}
+
+        {active === 'details' ? <WorkspaceDetailsTab itinerary={data} isOwner={isOwner} /> : null}
       </ScrollView>
 
-      {(canInvite || control === 'publish') && (
-        <View style={styles.actionBar}>
-          {control === 'publish' &&
-            (canPublish(data) ? (
-              <Link href={{ pathname: '/itineraries/[id]/preview', params: { id } }} asChild>
-                <Pressable style={styles.cta} accessibilityRole="button">
-                  <Text style={styles.ctaText}>Publish Itinerary</Text>
-                </Pressable>
-              </Link>
-            ) : (
-              <Pressable
-                style={styles.cta}
-                accessibilityRole="button"
-                onPress={() =>
-                  notify(PUBLISH_NEEDS_COMPLETE_TITLE, publishNeedsCompleteBody(data.state))
-                }
-              >
-                <Text style={styles.ctaText}>Publish Itinerary</Text>
-              </Pressable>
-            ))}
-          {canInvite && (
-            <Link href={{ pathname: '/itineraries/[id]/invite', params: { id } }} asChild>
-              <Pressable
-                style={control === 'publish' ? styles.secondaryCta : styles.cta}
-                accessibilityRole="button"
-              >
-                <Text style={control === 'publish' ? styles.secondaryCtaText : styles.ctaText}>
-                  Invite Travelers
-                </Text>
-              </Pressable>
-            </Link>
-          )}
-        </View>
-      )}
-    </View>
-  );
-}
-
-
-function ItineraryTab({ itineraryId, days }: { itineraryId: string; days: DayResponse[] }) {
-  if (days.length === 0) {
-    return (
-      <View style={styles.tabBody}>
-        <Text style={styles.caption}>No days yet. Open the planner to build this trip out.</Text>
-        <Link href={{ pathname: '/itineraries/[id]/days', params: { id: itineraryId, day: '1' } }} asChild>
-          <Pressable style={styles.secondaryAction} accessibilityRole="button">
-            <Text style={styles.secondaryActionText}>Open the planner</Text>
-          </Pressable>
-        </Link>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.tabBody}>
-      {days.map((day) => (
-        <Link
-          key={day.id}
-          href={{
-            pathname: '/itineraries/[id]/days/[dayId]',
-            params: { id: itineraryId, dayId: day.id },
-          }}
-          asChild
-        >
-          <Pressable style={styles.dayCard} accessibilityRole="button">
-            <Text style={styles.dayCardTitle}>{dayHeading(day)}</Text>
-            <Text style={styles.dayCardMeta}>
-              {day.activities.length} {day.activities.length === 1 ? 'activity' : 'activities'}
-            </Text>
-          </Pressable>
-        </Link>
-      ))}
-    </View>
-  );
-}
-
-
-function DetailsTab(props: {
-  itinerary: ItineraryResponse;
-  isOwner: boolean;
-  canLeave: boolean;
-  leaving: boolean;
-  onLeave: () => void;
-  canUnpublish: boolean;
-  unpublishing: boolean;
-  unpublishError: string | undefined;
-  onUnpublish: () => void;
-  audience: PublishAudience;
-  changingAudience: boolean;
-  onChangeAudience: () => void;
-  lifecycleBusy: boolean;
-  lifecycleError: string | undefined;
-  onLifecycle: (act: LifecycleAct) => void;
-}) {
-  const { itinerary } = props;
-  const pinned = itinerary.published;
-
-  return (
-    <View style={styles.tabBody}>
-      <View style={styles.detailsHeader}>
-        <Text style={styles.sectionLabel}>Trip details</Text>
-        {isEditable(itinerary) && (
-          <Link href={{ pathname: '/itineraries/[id]/edit', params: { id: itinerary.id } }} asChild>
-            <Pressable accessibilityRole="button" hitSlop={spacing.sm}>
-              <Text style={styles.editLink}>Edit</Text>
-            </Pressable>
-          </Link>
-        )}
-      </View>
-
-      {itinerary.description !== null && (
-        <Field label="Description">
-          <Text style={styles.value}>{itinerary.description}</Text>
-        </Field>
-      )}
-
-      <Field label="Destinations">
-        {itinerary.destinations.map((destination) => (
-          <Text key={destination} style={styles.value}>
-            {destination}
-          </Text>
-        ))}
-      </Field>
-
-      <Field label="Dates">
-        <Text style={styles.value}>{formatDates(itinerary)}</Text>
-      </Field>
-
-      {props.isOwner && (
-        <Field label="Where this trip is">
-          <Text style={styles.value}>{lifecycleLabel(itinerary.state)}</Text>
-          <Text style={styles.caption}>
-            {pinned
-              ? 'A published trip is fixed. Unpublish it to move it along again.'
-              : lifecycleBlurb(itinerary.state)}
-          </Text>
-          {props.lifecycleBusy ? (
-            <ActivityIndicator color={colors.accent} />
-          ) : (
-            !pinned && (
-              <View style={styles.lifecycleRow}>
-                {nextLifecycleAct(itinerary.state) && (
-                  <Pressable
-                    style={styles.secondaryAction}
-                    accessibilityRole="button"
-                    onPress={() => props.onLifecycle(nextLifecycleAct(itinerary.state)!.act)}
-                  >
-                    <Text style={styles.secondaryActionText}>
-                      {nextLifecycleAct(itinerary.state)!.label}
-                    </Text>
-                  </Pressable>
-                )}
-                {itinerary.state !== 'draft' && (
-                  <Pressable
-                    style={styles.secondaryAction}
-                    accessibilityRole="button"
-                    onPress={() => props.onLifecycle('reopen')}
-                  >
-                    <Text style={styles.secondaryActionText}>Step back</Text>
-                  </Pressable>
-                )}
-              </View>
-            )
-          )}
-          {props.lifecycleError !== undefined && (
-            <Text style={styles.errorCaption}>{props.lifecycleError}</Text>
-          )}
-        </Field>
-      )}
-
-      {props.isOwner && (
-        <Field label="Who can read this">
-          <Text style={styles.value}>{audienceLabel(props.audience)}</Text>
-          <Text style={styles.caption}>{audienceBlurb(props.audience)}</Text>
-          {props.changingAudience ? (
-            <ActivityIndicator color={colors.accent} />
-          ) : (
+      {ladder !== null || showsStepBack(data, isOwner) ? (
+        <View style={styles.rail}>
+          {ladder !== null ? (
             <Pressable
-              style={styles.secondaryAction}
+              style={styles.primaryCta}
+              onPress={runLadder}
+              disabled={lifecycle.isPending}
               accessibilityRole="button"
-              onPress={props.onChangeAudience}
+              accessibilityLabel={ladder.label}
             >
-              <Text style={styles.secondaryActionText}>
-                Make it {audienceLabel(otherAudience(props.audience)).toLowerCase()}
-              </Text>
+              <Text style={styles.primaryCtaLabel}>{ladder.label}</Text>
             </Pressable>
-          )}
-        </Field>
-      )}
+          ) : null}
 
-      {props.canUnpublish && (
-        <View style={styles.quiet}>
-          {props.unpublishing ? (
-            <ActivityIndicator color={colors.textSecondary} />
-          ) : (
-            <Pressable accessibilityRole="button" onPress={props.onUnpublish}>
-              <Text style={styles.quietText}>Unpublish this trip</Text>
+          {showsStepBack(data, isOwner) ? (
+            <Pressable
+              style={styles.stepBack}
+              onPress={() => lifecycle.mutate('reopen')}
+              disabled={lifecycle.isPending}
+              accessibilityRole="button"
+              accessibilityLabel="Step back"
+            >
+              <Text style={styles.stepBackLabel}>Step back</Text>
             </Pressable>
-          )}
-          {props.unpublishError !== undefined && (
-            <Text style={styles.errorCaption}>{props.unpublishError}</Text>
-          )}
+          ) : null}
         </View>
-      )}
-
-      {props.canLeave && (
-        <Pressable
-          style={[styles.leaveButton, props.leaving && styles.busy]}
-          onPress={props.onLeave}
-          disabled={props.leaving}
-          accessibilityRole="button"
-        >
-          <Text style={styles.leaveButtonText}>{props.leaving ? 'Leaving…' : 'Leave trip'}</Text>
-        </Pressable>
-      )}
+      ) : null}
     </View>
   );
 }
 
-
-function WorkspaceTabButton(props: {
-  label: string;
-  selected: boolean;
-  greyed?: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      style={[styles.tabButton, props.selected && styles.tabButtonSelected]}
-      onPress={props.onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: props.selected, disabled: props.greyed === true }}
-      accessibilityLabel={props.greyed === true ? `${props.label}, coming soon` : props.label}
-    >
-      <Text
-        style={[
-          styles.tabButtonText,
-          props.selected && styles.tabButtonTextSelected,
-          props.greyed === true && styles.tabButtonTextGreyed,
-        ]}
-      >
-        {props.label}
-      </Text>
-    </Pressable>
-  );
-}
-
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.sectionLabel}>{label}</Text>
-      {children}
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  container: { padding: spacing.md, gap: spacing.md, backgroundColor: colors.background, flexGrow: 1 },
+  screen: {
+    flex: 1,
+    backgroundColor: colors.surface,
+  },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    padding: spacing.lg,
-    backgroundColor: colors.background,
-  },
-  eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  eyebrow: { ...typography.label, color: colors.accent },
-  title: { ...typography.title, color: colors.textPrimary },
-  identityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  rosterLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
-  rosterCount: { ...typography.caption, color: colors.textSecondary },
-  tabBar: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  tabButton: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  tabButtonSelected: { borderBottomWidth: 2, borderBottomColor: colors.accent },
-  tabButtonText: { ...typography.body, color: colors.textSecondary },
-  tabButtonTextSelected: { color: colors.accent, fontWeight: '700' },
-  tabButtonTextGreyed: { opacity: 0.6 },
-  tabBody: { gap: spacing.md, paddingTop: spacing.sm },
-  dayCard: {
-    gap: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  dayCardTitle: { ...typography.bodyStrong, color: colors.textPrimary },
-  dayCardMeta: { ...typography.caption, color: colors.textSecondary },
-  detailsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  editLink: { ...typography.bodyStrong, color: colors.accent },
-  field: { gap: spacing.xs },
-  sectionLabel: { ...typography.caption, color: colors.textSecondary },
-  value: { ...typography.body, color: colors.textPrimary },
-  lifecycleRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  secondaryAction: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.accentMuted,
-    backgroundColor: colors.surface,
+  container: {
+    paddingBottom: 24,
   },
-  secondaryActionText: { ...typography.bodyStrong, color: colors.accent },
-  leaveButton: { paddingVertical: spacing.sm, alignItems: 'flex-start' },
-  leaveButtonText: { ...typography.caption, color: colors.danger },
-  actionBar: { flexDirection: 'row', gap: spacing.sm, margin: spacing.md },
-  cta: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: radii.pill,
+  tabBody: {
+    padding: 16,
+    gap: 12,
+  },
+  empty: {
+    ...workspaceTypography.note,
+    color: workspaceColors.muted,
+  },
+  rail: {
+    padding: 16,
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: workspaceColors.railBorder,
+  },
+  primaryCta: {
+    height: workspaceMetrics.primaryCtaHeight,
+    borderRadius: workspaceRadii.control,
+    backgroundColor: workspaceColors.accent,
     alignItems: 'center',
-    backgroundColor: colors.accent,
+    justifyContent: 'center',
   },
-  ctaText: { ...typography.bodyStrong, color: colors.textOnAccent },
-  secondaryCta: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: radii.pill,
+  primaryCtaLabel: {
+    ...workspaceTypography.ctaPrimary,
+    color: workspaceColors.onAccent,
+  },
+  stepBack: {
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.accentMuted,
-    backgroundColor: colors.surface,
+    paddingVertical: 8,
   },
-  secondaryCtaText: { ...typography.bodyStrong, color: colors.accent },
-  quiet: { alignItems: 'flex-start', gap: spacing.xs },
-  quietText: { ...typography.caption, color: colors.textSecondary, textDecorationLine: 'underline' },
-  errorCaption: { ...typography.caption, color: colors.danger },
-  busy: { opacity: 0.7 },
-  caption: { ...typography.caption, color: colors.textSecondary },
+  stepBackLabel: {
+    ...workspaceTypography.note,
+    color: workspaceColors.muted,
+    textDecorationLine: 'underline',
+  },
 });

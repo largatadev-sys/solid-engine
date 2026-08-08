@@ -15,6 +15,7 @@ public record LeaseSubjectRequest(String subjectType, UUID subjectId) {
         LeaseSubjectType type = LeaseSubjectType.fromWireName(request.subjectType());
         return switch (type) {
             case HEADER -> LeaseSubject.header(itineraryId);
+            case SESSION -> LeaseSubject.session(itineraryId);
             case DAY -> new LeaseSubject(LeaseSubjectType.DAY, required(request.subjectId()));
             case ACTIVITY -> new LeaseSubject(LeaseSubjectType.ACTIVITY, required(request.subjectId()));
         };
