@@ -81,9 +81,14 @@ export function WorkspaceDayCard({
         ) : null}
       </View>
 
-      <View style={styles.divider} />
+      {day.activities.length > 0 || affordances.showsActivityEditing ? (
+        <View style={styles.divider} />
+      ) : null}
 
-      {activitySlot ??
+      {day.activities.length === 0 && !affordances.showsActivityEditing ? (
+        <Text style={styles.emptyPeek}>Nothing planned for this day yet.</Text>
+      ) : (
+        activitySlot ??
         day.activities.map((activity) => (
           <ActivityRow
             key={activity.id}
@@ -92,8 +97,8 @@ export function WorkspaceDayCard({
             onEdit={onEditActivity}
             onDelete={onDeleteActivity}
           />
-        ))}
-
+        ))
+      )}
 
       {affordances.showsActivityEditing && onAddActivity !== undefined ? (
         <Pressable
@@ -256,6 +261,10 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: workspaceColors.hairline,
+  },
+  emptyPeek: {
+    ...workspaceTypography.activityTime,
+    color: workspaceColors.muted,
   },
   activityRow: {
     flexDirection: 'row',

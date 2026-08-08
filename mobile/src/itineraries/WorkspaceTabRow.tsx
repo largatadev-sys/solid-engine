@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   labelGreyed: {
-    opacity: 0.6,
+    opacity: 0.45,
   },
   underline: {
     position: 'absolute',
