@@ -1,8 +1,18 @@
 # S4.16 — The cover and the trip: making creation one act instead of four
 
-**Status:** needs-grilling · **Epic:** E4 · **Depends on:** S3.3 (media pipeline, shipped) · S4.15 (the create flow this changes, shipped)
+**Status: `wontfix` — rejected by the founder, 2026-08-08, the day it was written.** · **Epic:** E4 · **Depends on:** S3.3 (media pipeline, shipped) · S4.15 (the create flow this would have changed, shipped)
 
-**This spec is a proposal, not a set of ratified decisions.** It was written at the founder's request on 2026-08-08, immediately after S4.15's cover-upload fixes, to capture the argument while it was fresh. Every "open question" below is genuinely open — the grilling decides them, and only then does this body become immutable per the issue-tracker rule.
+> ## Rejected — and why the record is kept
+>
+> **Founder ruling, 2026-08-08:** *"i think this is a better behavior than earlier. we can reject 4.16 now."*
+>
+> The complaint this story existed to answer was the **ordering** — that a trip is born coverless and the photo chases it. Three S4.15 fixes plus the `Uploading…` label fix closed the gap that was actually visible: the traveler's own photo now renders on the overview the instant the trip is created, the landing card carries the real thumbnail without a reload, and nothing claims to be uploading when it isn't. **What remains is invisible** — four sequential round-trips instead of one, finishing a second or two after a screen the traveler has already moved past.
+>
+> So the cost was never worth it: **shape A** (born-together) needs a multipart create endpoint, a founder ruling on whether broadening an endpoint's content types stays additive under ADR-008, and a compensating delete for a non-transactional object store — to remove a delay nobody can see. **Shape B** (staged upload-at-pick) needs all of that plus a staging endpoint, a TTL sweep this codebase has no scheduler for, and a storage quota that is a possible ADR-009 candidate. **Shape C** would have carved an exception into ADR-014's single-writer lease to save two calls, and did not answer the complaint at all.
+>
+> **This file stays rather than being deleted.** The investigation it holds is the durable part: the four-call sequence, the finding that `ItineraryCoverService.editableHeaderOf` enforces the header lease server-side (so **no client-side change can reorder creation** — the thing that would otherwise be rediscovered by someone attempting exactly that), and the three shapes with their real costs. If this pull returns — a founder on a slow connection with a 12 MB photo, or activity photos and avatars wanting the same staging — the argument is already made and the reasons it was declined are on the record instead of being re-derived.
+>
+> **Nothing was built.** No endpoint, no migration, no wire change. The only code that came out of this thread shipped under S4.15.
 
 > **Context anchor.** S3.3/ADR-021 (the media pipeline: ingest strips and re-encodes, variants generated eagerly, `TRAVELER_AVATAR` centre-squares) · S4.15 (the create flow, and the three fixes that made the *current* upload feel instant without moving when it happens) · ADR-008 (`/v1` additive only) · P3 (never log or commit PII) · ADR-002 (modules reference each other by ID + service interface).
 
