@@ -23,6 +23,7 @@ export const workspaceColors = {
   secondaryLabel: '#000000',
   surface: '#FFFFFF',
   scrim: 'rgba(0, 0, 0, 0.4)',
+  none: 'transparent',
 } as const;
 
 

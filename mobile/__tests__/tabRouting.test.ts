@@ -604,12 +604,33 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     );
   });
 
+  it('returns every animated key on EVERY branch, so the lift resets when the drag ends', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+    const body = native.slice(native.indexOf('useAnimatedStyle'), native.indexOf('return (\n    <GestureDetector'));
+
+    for (const key of ['elevation', 'opacity', 'shadowOpacity', 'backgroundColor', 'zIndex']) {
+      expect(body.match(new RegExp(`\\b${key}:`, 'g')) ?? []).toHaveLength(1);
+      expect(body).toMatch(new RegExp(`\\b${key}:\\s*isHeld`));
+    }
+
+    expect(body.match(/return \{/g) ?? []).toHaveLength(1);
+  });
+
+  it('leaves a resting row unpainted — the lift belongs to the drag, not the list', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+    const staticStyle = native.slice(native.indexOf('StyleSheet.create'));
+
+    expect(staticStyle).not.toContain('backgroundColor');
+    expect(staticStyle).not.toContain('shadowOpacity');
+  });
+
   it('shifts the other rows LIVE during a drag, not only on release (founder, 2026-08-09)', () => {
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
 
-    expect(native).toContain('displacementFor(index, held, target, rowHeight.value)');
+    expect(native).toContain('displacementFor(');
+    expect(native).toContain('landingSlot(dragTranslation.value, held, count, rowHeight.value)');
     expect(native).toContain('draggingIndex');
-    expect(native).toContain('withSpring(displaced');
+    expect(native).toContain('withSpring(');
     expect(native).toContain('onLayout');
   });
 

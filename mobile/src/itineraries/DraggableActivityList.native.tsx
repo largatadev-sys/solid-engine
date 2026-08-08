@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import { workspaceColors, workspaceMetrics } from '../theme/workspaceTokens';
+import { workspaceColors, workspaceMetrics, workspaceRadii } from '../theme/workspaceTokens';
 import { displacementFor, landingSlot, reorderActionsFor } from './landingSlot';
 import type { ActivityResponse } from '../types/api';
 import { ActivityRow } from './WorkspaceDayCard';
@@ -19,6 +19,14 @@ import type { WorkspaceAffordances } from './workspaceControls';
 const SETTLE = { damping: 20, stiffness: 220, mass: 0.6 };
 
 const LIFT_MS = 140;
+
+const LIFT_SCALE = 0.03;
+
+const LIFT_ELEVATION = 4;
+
+const LIFT_FADE = 0.06;
+
+const LIFT_SHADOW = 0.18;
 
 
 interface DraggableActivityListProps {
@@ -132,27 +140,30 @@ function DraggableRow({
 
   const style = useAnimatedStyle(() => {
     const held = draggingIndex.value;
+    const lifted = lift.value;
+    const isHeld = held === index;
 
-    if (held === index) {
-      return {
-        transform: [{ translateY: dragTranslation.value }, { scale: 1 + lift.value * 0.03 }],
-        zIndex: 2,
-        elevation: 4 * lift.value,
-        opacity: 1 - lift.value * 0.06,
-        shadowOpacity: lift.value * 0.18,
-      };
-    }
-
-    if (held === -1) {
-      return { transform: [{ translateY: withSpring(0, SETTLE) }, { scale: 1 }], zIndex: 0 };
-    }
-
-    const target = landingSlot(dragTranslation.value, held, count, rowHeight.value);
-    const displaced = displacementFor(index, held, target, rowHeight.value);
+    const translateY = isHeld
+      ? dragTranslation.value
+      : withSpring(
+          held === -1
+            ? 0
+            : displacementFor(
+                index,
+                held,
+                landingSlot(dragTranslation.value, held, count, rowHeight.value),
+                rowHeight.value,
+              ),
+          SETTLE,
+        );
 
     return {
-      transform: [{ translateY: withSpring(displaced, SETTLE) }, { scale: 1 }],
-      zIndex: 0,
+      transform: [{ translateY }, { scale: isHeld ? 1 + lifted * LIFT_SCALE : 1 }],
+      zIndex: isHeld ? 2 : 0,
+      elevation: isHeld ? lifted * LIFT_ELEVATION : 0,
+      opacity: isHeld ? 1 - lifted * LIFT_FADE : 1,
+      shadowOpacity: isHeld ? lifted * LIFT_SHADOW : 0,
+      backgroundColor: isHeld && lifted > 0 ? workspaceColors.surface : workspaceColors.none,
     };
   });
 
@@ -179,7 +190,7 @@ function DraggableRow({
 
 const styles = StyleSheet.create({
   row: {
-    backgroundColor: workspaceColors.surface,
+    borderRadius: workspaceRadii.card,
     shadowColor: workspaceColors.title,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
