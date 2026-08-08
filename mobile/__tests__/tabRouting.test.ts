@@ -149,11 +149,10 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(source).not.toMatch(/options=\{\{[^}]*title:/);
   });
 
-  it('creates from the Trips screen, straight to trip details — the mock connector, not the chooser', () => {
+  it('creates from the Trips screen, straight to the form — the mock connector, not the chooser', () => {
     const trips = read(TRIPS_GROUP, 'index.tsx');
 
     expect(trips).toContain('href="/itineraries/new"');
-    expect(trips).toContain('Create Itinerary');
     expect(read(TABS, '_layout.tsx')).not.toContain("router.push('/itineraries/create')");
   });
 
@@ -284,13 +283,12 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(activity).not.toMatch(/PROVIDER \d|Add another/);
   });
 
-  it('the chooser offers scratch live and fork greyed', () => {
-    const chooser = read(TRIPS, 'create.tsx');
+  it('retires the create-method chooser — a door with one exit (S4.15 decision 7)', () => {
+    expect(existsSync(join(TRIPS, 'create.tsx'))).toBe(false);
+  });
 
-    expect(chooser).toContain("router.replace('/itineraries/new')");
-    expect(chooser).toContain("comingSoon('fork')");
-    expect(chooser).toContain('Start from Scratch');
-    expect(chooser).toContain('Fork an Existing Itinerary');
+  it('keeps the legacy create path resolving, pointed at the form rather than the retired chooser', () => {
+    expect(read(TRIPS_GROUP, 'create.tsx')).toContain('href="/itineraries/new"');
   });
 });
 
@@ -314,10 +312,24 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13)', 
     expect(create).not.toContain('surface="coverPhoto"');
   });
 
-  it('lands Continue on the day editor at Day 1', () => {
-    expect(create).toContain("pathname: '/itineraries/[id]/days'");
-    expect(create).toContain("day: '1'");
-    expect(create).toContain('Continue');
+  it('speaks the ratified language: Plan a Trip to enter, Create Trip to submit (S4.15 decision 8)', () => {
+    expect(create).toContain('title="Plan a Trip"');
+    expect(create).toContain('Create Trip');
+    expect(create).not.toMatch(/Create Itinerary|Continue to Daily Schedules/);
+  });
+
+  it('prompts in every field rather than showing sample content (S4.15 decision 8)', () => {
+    for (const prompt of [
+      'Name your trip',
+      'Where to?',
+      'Days',
+      'Best months to go',
+      "What's this trip about?",
+      'Add a standout',
+    ]) {
+      expect(create).toContain(`placeholder="${prompt}"`);
+    }
+    expect(create).not.toMatch(/Island Hopping in El Nido|Palawan"|Dec - Apr|Big Lagoon Kayaking/);
   });
 });
 
@@ -460,7 +472,6 @@ describe('every greyed affordance is wired to the shared helper (register #2)', 
     read(TABS, '_layout.tsx'),
     read(TRIPS_GROUP, 'index.tsx'),
     read(TRIPS, 'new.tsx'),
-    read(TRIPS, 'create.tsx'),
     read(TRIPS, '[id]', 'index.tsx'),
     read(TRIPS, '[id]', 'days', 'index.tsx'),
     read(TRIPS, '[id]', 'days', '[dayId].tsx'),

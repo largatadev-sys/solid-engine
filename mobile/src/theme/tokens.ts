@@ -12,6 +12,7 @@ const palette = {
   forest600: '#2F6B47',
   terracotta016: 'rgba(217, 108, 74, 0.0627451)',
   navy140: 'rgba(27, 38, 59, 0.5490196)',
+  ink900: '#121212',
 } as const;
 
 
@@ -42,6 +43,8 @@ export const colors = {
   danger: palette.crimson700,
 
   success: palette.forest600,
+
+  inputBorder: palette.ink900,
 } as const;
 
 
@@ -74,6 +77,17 @@ export const typography = {
 
   fine: { fontFamily: fonts.regular, fontSize: 10, lineHeight: 14, fontWeight: '400' },
   fineMono: { fontSize: 10, fontFamily: 'monospace' },
+
+  fieldLabel: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  input: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 17, fontWeight: '400' },
+  fieldAction: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16, fontWeight: '700' },
+  ctaLabel: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 18, fontWeight: '700' },
+
+  cardDate: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '500' },
+  cardTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, fontWeight: '700' },
+  cardSubtitle: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  cardStatus: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  sectionLabel: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
 } as const;
 
 
