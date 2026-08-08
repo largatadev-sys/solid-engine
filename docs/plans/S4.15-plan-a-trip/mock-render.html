@@ -1,0 +1,375 @@
+<meta charset="utf-8">
+<title>Create-flow mocks — pixel render</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#ECEDF0; }
+  body { font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; padding:32px 24px 64px; color:#111827; }
+  .page-head { max-width:1400px; margin:0 auto 24px; }
+  .page-head h1 { font-size:18px; font-weight:800; }
+  .page-head p { font-size:12px; color:#6B7280; margin-top:4px; }
+  .frames { display:flex; gap:48px; justify-content:center; align-items:flex-start; flex-wrap:wrap; }
+  .frame-col { display:flex; flex-direction:column; gap:12px; }
+  .frame-label { font-size:12px; font-weight:700; color:#374151; }
+  .phone { width:393px; border-radius:24px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.18); border:1px solid #D1D5DB; flex-shrink:0; }
+  .notes { width:393px; font-size:11.5px; line-height:1.5; color:#6B7280; }
+  .notes b { color:#B91C1C; font-weight:700; }
+  .geist { font-family:'Geist','Inter',system-ui,sans-serif; }
+  svg { display:block; }
+
+  /* ---------- Screen 1: Trips landing ---------- */
+  .s1 { background:#F9FAFB; }
+  .s1 .statusbar { display:flex; justify-content:space-between; align-items:flex-start; padding:14px 24px 0; height:44px; }
+  .s1 .clock { font-weight:600; font-size:14px; line-height:18px; color:#111827; }
+  .statusicons { display:flex; align-items:center; gap:6px; }
+  .s1 .header { display:flex; justify-content:space-between; align-items:center; padding:16px 24px 8px; height:60px; }
+  .s1 .header h2 { font-weight:800; font-size:28px; line-height:36px; color:#111827; }
+  .s1 .header-actions { display:flex; gap:12px; }
+  .s1 .trips-container { display:flex; flex-direction:column; padding:0 20px; gap:32px; }
+  .s1 .sections { display:flex; flex-direction:column; gap:20px; }
+  .s1 .section { display:flex; flex-direction:column; gap:10px; }
+  .s1 .section-label { font-weight:700; font-size:14px; line-height:18px; text-transform:capitalize; color:#4B5563; }
+  .s1 .cards { display:flex; flex-direction:column; gap:12px; }
+  .trip-card { display:flex; align-items:center; padding:12px; gap:12px; height:100px; background:#FFFFFF; border:1px solid #F3F4F6; box-shadow:0 4px 12px rgba(0,0,0,.0392); border-radius:16px; }
+  .trip-img { width:76px; height:76px; border-radius:12px; flex-shrink:0; }
+  .trip-info { display:flex; flex-direction:column; gap:6px; flex-grow:1; min-width:0; }
+  .t-date { font-weight:500; font-size:11px; line-height:14px; color:#9CA3AF; }
+  .t-title { font-weight:700; font-size:15px; line-height:20px; color:#111827; }
+  .t-sub { font-weight:400; font-size:12px; line-height:16px; color:#4B5563; }
+  .t-status { display:flex; align-items:center; gap:6px; }
+  .t-dot { width:8px; height:8px; border-radius:50%; }
+  .t-status-txt { font-weight:600; font-size:11px; line-height:14px; color:#4B5563; }
+  .title-wrap { display:flex; flex-direction:column; gap:2px; }
+  .s1 .cta-wrap { padding:0 20px; margin-top:32px; }
+  .s1 .bottom-cta { display:flex; justify-content:center; align-items:center; gap:8px; height:52px; background:#F05A28; border-radius:4px; }
+  .s1 .bottom-cta span { font-weight:600; font-size:15px; line-height:20px; color:#FFFFFF; }
+  .s1 .bottom-nav { display:flex; justify-content:space-between; padding:12px 16px 0; height:53px; background:#FFFFFF; border-top:1px solid #F7F7F7; margin-top:28px; }
+  .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; width:64px; }
+  .nav-item span { font-size:11px; line-height:13px; }
+  .home-indicator { display:flex; justify-content:center; padding:21px 0 8px; background:#FFFFFF; }
+  .hi-pill { width:139px; height:5px; background:#000; border-radius:100px; }
+
+  /* ---------- Screen 2: create-entry ---------- */
+  .s2 { background:#FFFFFF; }
+  .s2 .statusbar { display:flex; justify-content:space-between; align-items:center; padding:14px 24px 0; height:54px; }
+  .s2 .clock { font-weight:600; font-size:16px; line-height:19px; color:#000; }
+  .s2 .headrow { display:flex; justify-content:space-between; align-items:center; padding:0 24px; height:40px; }
+  .s2 .back { display:flex; padding:8px 8px 8px 0; border-radius:8px; }
+  .s2 .pagetitle { padding:12px 24px; }
+  .s2 .pagetitle h2 { font-weight:800; font-size:28px; line-height:34px; color:#09090B; }
+  .s2 .form { display:flex; flex-direction:column; padding:24px 16px; gap:20px; }
+  .coverphoto { display:flex; justify-content:center; align-items:center; height:150px; background:#F9FAFB; border:1px dashed #E5E7EB; border-radius:4px; }
+  .btn-upload { display:flex; justify-content:center; align-items:center; padding:10px 16px; background:#F05A28; border-radius:4px; }
+  .btn-upload span { font-weight:700; font-size:13px; line-height:16px; color:#FFFFFF; }
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field-label { font-weight:600; font-size:12px; line-height:15px; text-transform:capitalize; color:#71717A; }
+  .input { background:#F4F4F5; border:1px solid #121212; border-radius:4px; padding:12px; }
+  .input-txt { font-weight:400; font-size:14px; line-height:17px; color:#09090B; }
+  .input-ph { font-weight:400; font-size:13px; line-height:16px; color:#71717A; }
+  .fieldrow { display:flex; gap:12px; }
+  .grow { flex-grow:1; }
+  .input-sm { display:flex; align-items:center; gap:8px; background:#F4F4F5; border:1px solid #121212; border-radius:4px; padding:10px 12px; height:36px; }
+  .input-dd { display:flex; justify-content:space-between; align-items:center; background:#F4F4F5; border:1px solid #121212; border-radius:4px; padding:10px; height:37px; width:120px; }
+  .desc-box { background:#F4F4F5; border:1px solid #121212; border-radius:4px; padding:12px; height:108px; }
+  .desc-box p { font-weight:400; font-size:14px; line-height:150%; color:#09090B; }
+  .hl-list { display:flex; flex-direction:column; gap:6px; }
+  .hl-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; height:40px; background:#F4F4F5; border:1px solid #121212; border-radius:4px; }
+  .hl-row span { font-weight:400; font-size:13px; line-height:16px; color:#09090B; }
+  .hl-add { display:flex; align-items:center; gap:6px; padding-top:4px; }
+  .hl-add span { font-weight:700; font-size:13px; line-height:16px; color:#09090B; }
+  .s2 .bottombar { padding:16px; background:#FFFFFF; border:1px solid #E4E4E7; border-left:0; border-right:0; border-bottom:0; }
+  .btn-primary { display:flex; justify-content:center; align-items:center; height:46px; background:#F05A28; border-radius:4px; }
+  .btn-primary span { font-weight:700; font-size:15px; line-height:18px; color:#FFFFFF; }
+  .s2 .home-indicator, .s3 .home-indicator { background:transparent; padding:16px 0 8px; }
+
+  /* ---------- Screen 3: published-success ---------- */
+  .s3 { background:#FFFFFF; display:flex; flex-direction:column; justify-content:space-between; min-height:852px; }
+  .s3 .statusbar { display:flex; justify-content:space-between; align-items:center; padding:14px 24px 8px; height:54px; }
+  .s3 .clock { font-weight:600; font-size:15px; line-height:18px; color:#000; }
+  .s3 .content { display:flex; flex-direction:column; align-items:center; padding:40px 24px 24px; gap:28px; }
+  .s3 .halo { display:flex; justify-content:center; align-items:center; width:72px; height:72px; background:#F4F4F5; border-radius:100px; }
+  .s3 .msg { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .s3 .msg h2 { font-weight:800; font-size:24px; line-height:29px; text-align:center; color:#09090B; }
+  .s3 .msg p { font-weight:400; font-size:14px; line-height:150%; text-align:center; color:#71717A; width:345px; }
+  .s3 .summary { display:flex; align-items:center; padding:12px; gap:12px; width:345px; height:88px; background:#F4F4F5; border:1px solid #E4E4E7; border-radius:12px; }
+  .s3 .summary-img { width:64px; height:64px; border-radius:8px; flex-shrink:0; }
+  .s3 .summary-info { display:flex; flex-direction:column; gap:4px; }
+  .s3 .summary-info b { font-weight:700; font-size:14px; line-height:17px; color:#09090B; }
+  .s3 .summary-info small { font-weight:400; font-size:12px; line-height:15px; color:#71717A; }
+  .s3 .actions { display:flex; flex-direction:column; padding:16px; gap:12px; }
+  .btn-workspace { display:flex; justify-content:center; align-items:center; gap:8px; height:53px; background:#F05A28; border-radius:4px; }
+  .btn-workspace span { font-weight:700; font-size:16px; line-height:21px; color:#FFFFFF; }
+  .btn-outline { display:flex; justify-content:center; align-items:center; height:46px; border:1px solid #E4E4E7; border-radius:4px; }
+  .btn-outline span { font-weight:600; font-size:15px; line-height:18px; color:#09090B; }
+
+  /* image placeholders */
+  .ph-amalfi  { background:linear-gradient(135deg,#7FB2D9,#E8C9A0); }
+  .ph-tokyo   { background:linear-gradient(135deg,#2B2D5E,#E06A9A); }
+  .ph-river   { background:linear-gradient(135deg,#2E7D5B,#A8D8B9); }
+  .ph-palawan { background:linear-gradient(135deg,#1F8A8A,#F0E6C8); }
+  .ph-iceland { background:linear-gradient(135deg,#5A6E7F,#CFE0E8); }
+  .ph-paris   { background:linear-gradient(135deg,#B0673F,#E8D5A3); }
+  .ph-elnido  { background:linear-gradient(135deg,#1FA2B0,#7FD8C9); }
+</style>
+
+<div class="page-head">
+  <h1>Create-flow mocks — rendered from the pasted Figma CSS</h1>
+  <p>Faithful to the dump: colors, sizes, spacing, weights, and visibility (display:none nodes omitted). Photos are gradient placeholders; Geist/Inter fall back to system fonts if not installed; icons are close approximations — implementation copies the real mock's symbol defs per the standing ruling. Red notes under each frame = the requested changes, not part of the mock.</p>
+</div>
+
+<div class="frames">
+
+  <!-- ================= SCREEN 1 ================= -->
+  <div class="frame-col">
+    <div class="frame-label">1 · Trips landing <span style="color:#9CA3AF">(Geist)</span></div>
+    <div class="phone s1 geist">
+      <div class="statusbar">
+        <span class="clock">9:41</span>
+        <span class="statusicons">
+          <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111827"/><rect x="4.3" y="5" width="3" height="6" rx="1" fill="#111827"/><rect x="8.6" y="3" width="3" height="8" rx="1" fill="#111827"/><rect x="12.9" y="1" width="3" height="10" rx="1" fill="#111827"/></svg>
+          <svg width="15" height="11" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="3" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01" stroke-width="4"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#111827"/><rect x="2" y="2" width="18" height="8" rx="1.5" fill="#111827"/><path d="M23 4v4a2 2 0 0 0 0-4z" fill="#111827"/></svg>
+        </span>
+      </div>
+      <div class="header">
+        <h2>Trips</h2>
+        <span class="header-actions">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round"><line x1="21" y1="5" x2="14" y2="5"/><line x1="10" y1="5" x2="3" y2="5"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="19" x2="16" y2="19"/><line x1="12" y1="19" x2="3" y2="19"/><line x1="14" y1="3" x2="14" y2="7"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="16" y1="17" x2="16" y2="21"/></svg>
+        </span>
+      </div>
+      <div class="trips-container">
+        <div class="sections">
+          <div class="section">
+            <div class="section-label">Ongoing Trips</div>
+            <div class="cards">
+              <div class="trip-card">
+                <div class="trip-img ph-amalfi"></div>
+                <div class="trip-info">
+                  <div class="title-wrap">
+                    <div class="t-date">Aug 2026</div>
+                    <div class="t-title">Amalfi Coast Exploration</div>
+                  </div>
+                  <div class="t-status"><span class="t-dot" style="background:#D97706"></span><span class="t-status-txt">Currently being edited</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-label">Published Trips</div>
+            <div class="cards">
+              <div class="trip-card">
+                <div class="trip-img ph-tokyo"></div>
+                <div class="trip-info">
+                  <div class="title-wrap"><div class="t-title">Nippon 2027 w/ besties</div></div>
+                  <div class="t-sub">Continue editing your Trip Workspace</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-label">Drafts</div>
+            <div class="cards">
+              <div class="trip-card">
+                <div class="trip-img ph-tokyo"></div>
+                <div class="trip-info">
+                  <div class="title-wrap"><div class="t-title">Nippon 2027 w/ besties</div></div>
+                  <div class="t-sub">Continue editing your Trip Workspace</div>
+                </div>
+              </div>
+              <div class="trip-card">
+                <div class="trip-img ph-river"></div>
+                <div class="trip-info">
+                  <div class="title-wrap"><div class="t-title">Siargao Adventures</div></div>
+                  <div class="t-sub">Continue editing your Trip Workspace</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-label">Completed Trips</div>
+            <div class="cards">
+              <div class="trip-card">
+                <div class="trip-img ph-palawan"></div>
+                <div class="trip-info">
+                  <div class="t-date">June 2026</div>
+                  <div class="title-wrap"><div class="t-title">Palawan with the fam</div></div>
+                </div>
+              </div>
+              <div class="trip-card">
+                <div class="trip-img ph-iceland"></div>
+                <div class="trip-info">
+                  <div class="t-date">Feb 2026</div>
+                  <div class="title-wrap"><div class="t-title">Iceland Ring Road Solo</div></div>
+                </div>
+              </div>
+              <div class="trip-card">
+                <div class="trip-img ph-paris"></div>
+                <div class="trip-info">
+                  <div class="t-date">Oct 2025</div>
+                  <div class="title-wrap"><div class="t-title">Paris Autumn Escapade</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cta-wrap">
+        <div class="bottom-cta">
+          <span>Add Itinerary</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </div>
+      </div>
+      <div class="bottom-nav" style="font-family:'Inter',system-ui,sans-serif">
+        <div class="nav-item">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 3l9 7.2V20a1.8 1.8 0 0 1-1.8 1.8H4.8A1.8 1.8 0 0 1 3 20Z"/><path d="M9.5 21.8v-6.3h5v6.3"/></svg>
+          <span style="font-weight:500;color:#666666">Home</span>
+        </div>
+        <div class="nav-item">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666666" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
+          <span style="font-weight:700;color:#666666">Discover</span>
+        </div>
+        <div class="nav-item">
+          <svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 10.3h20V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z" fill="#000"/><path d="M2 6.5A1.5 1.5 0 0 1 3.5 5h17A1.5 1.5 0 0 1 22 6.5v2.3a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 8.8Z" fill="#000"/><path d="M9 5V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1" fill="none" stroke="#000" stroke-width="1.8"/></svg>
+          <span style="font-weight:700;color:#000000">Trips</span>
+        </div>
+        <div class="nav-item">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666666" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"/></svg>
+          <span style="font-weight:500;color:#666666">Profile</span>
+        </div>
+      </div>
+      <div class="home-indicator"><div class="hi-pill"></div></div>
+    </div>
+    <div class="notes">
+      <b>Change:</b> bottom CTA "Add Itinerary" → <b>"Plan a Trip"</b>.<br>
+      <b>Change:</b> cards get real cover thumbnails from the media pipeline.<br>
+      Mock quirks to reconcile: "Nippon 2027 w/ besties" appears under both Published and Drafts; published card's subtitle still says "Continue editing your Trip Workspace"; chevrons and status dots are display:none on most cards.
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 2 ================= -->
+  <div class="frame-col">
+    <div class="frame-label">2 · create-entry <span style="color:#9CA3AF">(Inter)</span></div>
+    <div class="phone s2">
+      <div class="statusbar">
+        <span class="clock">9:41</span>
+        <span class="statusicons" style="gap:8px">
+          <svg width="20" height="14" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#000"/><rect x="4.3" y="5" width="3" height="6" rx="1" fill="#000"/><rect x="8.6" y="3" width="3" height="8" rx="1" fill="#000"/><rect x="12.9" y="1" width="3" height="10" rx="1" fill="#000"/></svg>
+          <svg width="18" height="13" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01" stroke-width="4"/></svg>
+          <svg width="28" height="14" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#000"/><rect x="2" y="2" width="18" height="8" rx="1.5" fill="#000"/><path d="M23 4v4a2 2 0 0 0 0-4z" fill="#000"/></svg>
+        </span>
+      </div>
+      <div class="headrow">
+        <span class="back">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </span>
+        <span style="width:40px"></span>
+      </div>
+      <div class="pagetitle"><h2>Create Itinerary</h2></div>
+      <div class="form">
+        <div class="coverphoto">
+          <div class="btn-upload"><span>Upload from camera roll</span></div>
+        </div>
+        <div class="field">
+          <div class="field-label">Trip Title</div>
+          <div class="input"><span class="input-txt">Island Hopping in El Nido</span></div>
+        </div>
+        <div class="fieldrow">
+          <div class="field grow">
+            <div class="field-label">Destination</div>
+            <div class="input-sm"><span class="input-ph">Change...</span></div>
+          </div>
+          <div class="field">
+            <div class="field-label">Duration</div>
+            <div class="input-dd">
+              <span class="input-txt">5 Days</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">Best Time of year</div>
+          <div class="input"><span class="input-txt">Dec - Apr</span></div>
+        </div>
+        <div class="field">
+          <div class="field-label">Trip Description</div>
+          <div class="desc-box"><p>Discover the breathtaking beauty of El Nido's lagoons, limestone cliffs, and secret beaches. This 5-day itinerary covers the best of Tour A and Tour C, with local hidden gems. Lez goo!</p></div>
+        </div>
+        <div class="field" style="gap:8px">
+          <div class="field-label">Trip Highlights (standouts)</div>
+          <div class="hl-list">
+            <div class="hl-row">
+              <span>Big Lagoon Kayaking</span>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round"><line x1="5.3" y1="12" x2="18.7" y2="12"/></svg>
+            </div>
+            <div class="hl-row">
+              <span>Local Seafood Dinners</span>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round"><line x1="5.3" y1="12" x2="18.7" y2="12"/></svg>
+            </div>
+          </div>
+          <div class="hl-add">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#09090B" stroke-width="2" stroke-linecap="round"><line x1="5.3" y1="12" x2="18.7" y2="12"/><line x1="12" y1="5.3" x2="12" y2="18.7"/></svg>
+            <span>Add Highlight</span>
+          </div>
+        </div>
+      </div>
+      <div class="bottombar">
+        <div class="btn-primary"><span>Create Itinerary</span></div>
+      </div>
+      <div class="home-indicator"><div class="hi-pill"></div></div>
+    </div>
+    <div class="notes">
+      <b>Change:</b> submit button "Create Itinerary" → <b>"Create Trip"</b>; placeholders simplified (wording open).<br>
+      Open: does the screen title stay "Create Itinerary" or become "Plan a Trip"?<br>
+      Mock quirks: filled inputs carry a near-black 1px border (#121212); two highlight rows ("Sunset at Las Cabanas", "Hidden Beach Exploring") are display:none in the dump and omitted here.
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 3 ================= -->
+  <div class="frame-col">
+    <div class="frame-label">3 · published-success <span style="color:#9CA3AF">(Inter, CTA in Geist)</span></div>
+    <div class="phone s3">
+      <div>
+        <div class="statusbar">
+          <span class="clock">9:41</span>
+          <span class="statusicons" style="gap:8px">
+            <svg width="20" height="14" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#000"/><rect x="4.3" y="5" width="3" height="6" rx="1" fill="#000"/><rect x="8.6" y="3" width="3" height="8" rx="1" fill="#000"/><rect x="12.9" y="1" width="3" height="10" rx="1" fill="#000"/></svg>
+            <svg width="18" height="13" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01" stroke-width="4"/></svg>
+            <svg width="28" height="14" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#000"/><rect x="2" y="2" width="18" height="8" rx="1.5" fill="#000"/><path d="M23 4v4a2 2 0 0 0 0-4z" fill="#000"/></svg>
+          </span>
+        </div>
+        <div class="content">
+          <div class="halo">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#09090B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></svg>
+          </div>
+          <div class="msg">
+            <h2>Itinerary Created!</h2>
+            <p>"Island Hopping in El Nido" is now available for travelers to discover and fork.</p>
+          </div>
+          <div class="summary">
+            <div class="summary-img ph-elnido"></div>
+            <div class="summary-info">
+              <b>Island Hopping in El Nido</b>
+              <small>Palawan • 5 Days</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="actions">
+          <div class="btn-workspace geist">
+            <span>Open Trip Workspace</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div class="btn-outline"><span>Save Draft</span></div>
+        </div>
+        <div class="home-indicator"><div class="hi-pill"></div></div>
+      </div>
+    </div>
+    <div class="notes">
+      <b>Change:</b> this becomes the post-create overview — the trip already exists when you land here.<br>
+      <b>Change:</b> secondary "Save Draft" → <b>"Back to Trips"</b> / <b>"Preview Trip"</b> (one or both — open).<br>
+      Open: title says "Itinerary Created!" and the copy claims it's "available for travelers to discover and fork" — that's <i>published</i> language, but the trip is created unpublished. Copy must be reconciled with the actual state.
+    </div>
+  </div>
+
+</div>
