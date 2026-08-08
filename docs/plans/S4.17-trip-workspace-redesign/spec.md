@@ -99,6 +99,13 @@ None — this story adds no footprint-growing capability; it re-surfaces existin
 8. The planner, day-view and old-overview routes are gone; no reference in the app reaches them.
 9. Dev-verified on the three rungs (API · emulator · web preview) — the smoke rule; screenshots against the mock frames for the fidelity pass.
 
+## Testing decisions *(the seams — highest existing ones, no new seams; confirm at review)*
+
+- **Controller IT seam** for the Editing Session (ticket 01): the S4.9 lease suites are the prior art — acquire/refuse/release/expiry and the non-holder write-refusal walk the same path the subject-lease ITs walk today. External behavior only: wire responses and named refusal codes, never lease-row internals.
+- **Unit seam** for the activity form's request builder (preserve-culled-fields — an untouched field stays untouched on the wire) and the corrected slips (price input, Cancel), plus the badge/CTA-per-state mapping (the `publishControls` pure-logic family is the precedent).
+- **Component-behavior seam** for the accordion's single-open rule and the viewer's read-only guarantee (no edit affordance renders outside the editor).
+- **The story gate is the highest seam** (ticket 08): the three-rung walk — API IT suite · emulator with two pool travelers · web preview through the container + `drive-preview.js` — per the smoke rule; green tests alone have hidden real bugs twice in this repo.
+
 ## Comments
 
 *(append-only)*
