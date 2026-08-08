@@ -73,7 +73,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="(trips)"
-        options={{ title: 'Trips', tabBarIcon: tabIcon('map'), sceneStyle: bareScene(insets.top) }}
+        options={{ title: 'Trips', tabBarIcon: tabIcon('briefcase'), sceneStyle: bareScene(insets.top) }}
       />
       <Tabs.Screen
         name="profile"

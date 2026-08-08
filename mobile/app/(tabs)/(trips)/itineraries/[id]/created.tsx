@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     opacity: 0.5,
   },
-  primaryText: { ...typography.primaryCta, color: colors.textOnAccent },
+  primaryText: { ...typography.actionLarge, color: colors.textOnAccent },
   secondary: {
     height: SECONDARY_HEIGHT,
     borderRadius: radii.xs,
@@ -176,5 +176,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  secondaryText: { ...typography.secondaryCta, color: colors.textPrimary },
+  secondaryText: { ...typography.actionMedium, color: colors.textPrimary },
 });

@@ -85,8 +85,8 @@ export const typography = {
 
   summaryTitle: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 17, fontWeight: '700' },
   summaryMeta: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 15, fontWeight: '400' },
-  primaryCta: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, fontWeight: '700' },
-  secondaryCta: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 18, fontWeight: '600' },
+  actionLarge: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, fontWeight: '700' },
+  actionMedium: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 18, fontWeight: '600' },
   overviewBody: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, fontWeight: '400' },
 
   cardDate: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '500' },

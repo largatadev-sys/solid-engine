@@ -153,14 +153,37 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     const trips = read(TRIPS_GROUP, 'index.tsx');
 
     expect(trips).toContain('href="/itineraries/new"');
+    expect(trips).toContain('Plan a Trip');
+    expect(trips).toContain('name="plusCircle"');
+    expect(trips).not.toMatch(/Create Itinerary/);
     expect(read(TABS, '_layout.tsx')).not.toContain("router.push('/itineraries/create')");
   });
 
-  it('greys Add a Past Trip — the founder wants the argument before the door (S4.13)', () => {
+  it('scraps Add a Past Trip for good — the founder ruled it wontfix (S4.15 decision 6)', () => {
     const trips = read(TRIPS_GROUP, 'index.tsx');
 
-    expect(trips).toContain('Add a Past Trip');
-    expect(trips).toContain("comingSoon('addPastTrip')");
+    expect(trips).not.toMatch(/Add a Past Trip/);
+    expect(trips).not.toMatch(/addPastTrip/);
+  });
+
+  it('closes the archived-trips door while the archive itself stays reachable (S4.15 decision 6)', () => {
+    expect(read(TRIPS_GROUP, 'index.tsx')).not.toMatch(/Archived trips|itineraries\/archived/);
+    expect(existsSync(join(TRIPS, 'archived.tsx'))).toBe(true);
+  });
+
+  it('greys the header search and filter rather than navigating nowhere (S4.15 decision 6)', () => {
+    const trips = read(TRIPS_GROUP, 'index.tsx');
+
+    expect(trips).toContain("comingSoon('tripSearch')");
+    expect(trips).toContain("comingSoon('tripFilter')");
+    expect(trips).toContain('name="filter"');
+  });
+
+  it('wears the briefcase on the Trips tab, as the mock draws it (icon fidelity)', () => {
+    const layout = read(TABS, '_layout.tsx');
+
+    expect(layout).toContain("tabIcon('briefcase')");
+    expect(layout).not.toContain("tabIcon('map')");
   });
 
   it('says Standouts and never Highlights — the glossary reserved that word for diaries', () => {
