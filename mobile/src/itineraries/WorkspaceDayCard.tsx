@@ -60,15 +60,6 @@ export function WorkspaceDayCard({
     <View style={styles.card}>
       <View style={styles.titleRow}>
         {titleSlot ?? <Text style={styles.cardTitle}>{heading}</Text>}
-        <Pressable
-          onPress={onToggle}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: true }}
-          accessibilityLabel={`${heading}, collapse`}
-          hitSlop={8}
-        >
-          <Icon name="minus" size={18} color={workspaceColors.muted} />
-        </Pressable>
         <View style={styles.titleSpacer} />
         {affordances.showsDayDelete && onDeleteDay !== undefined ? (
           <Pressable
@@ -80,6 +71,15 @@ export function WorkspaceDayCard({
             <Icon name="trash" size={16} color={workspaceColors.accent} />
           </Pressable>
         ) : null}
+        <Pressable
+          onPress={onToggle}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: true }}
+          accessibilityLabel={`${heading}, collapse`}
+          hitSlop={8}
+        >
+          <Icon name="chevronUp" size={18} color={workspaceColors.muted} />
+        </Pressable>
       </View>
 
       {day.activities.length > 0 || affordances.showsActivityEditing ? (
