@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  Easing,
   FadeIn,
-  LinearTransition,
   useAnimatedStyle,
+  useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { Icon } from '../components/Icon';
@@ -48,11 +50,49 @@ export function WorkspaceDayCard({
 }: WorkspaceDayCardProps) {
   const heading = dayHeading(day);
 
-  if (!expanded) {
-    return (
-      <Animated.View layout={CARD_TRANSITION}>
+  const reveal = useSharedValue(expanded ? 1 : 0);
+  const contentHeight = useSharedValue(0);
+
+  useEffect(() => {
+    reveal.value = withTiming(expanded ? 1 : 0, {
+      duration: EXPAND_MS,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [expanded, reveal]);
+
+  const bodyStyle = useAnimatedStyle(() => ({
+    height: reveal.value * contentHeight.value,
+  }));
+
+  return (
+    <View style={styles.card}>
+      {expanded ? (
+        <View style={styles.headerRow}>
+          {titleSlot ?? <Text style={styles.cardTitle}>{heading}</Text>}
+          <View style={styles.titleSpacer} />
+          {affordances.showsDayDelete && onDeleteDay !== undefined ? (
+            <Pressable
+              onPress={onDeleteDay}
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${heading}`}
+              hitSlop={8}
+            >
+              <Icon name="trash" size={16} color={workspaceColors.accent} />
+            </Pressable>
+          ) : null}
+          <Pressable
+            onPress={onToggle}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: true }}
+            accessibilityLabel={`${heading}, collapse`}
+            hitSlop={8}
+          >
+            <Chevron expanded />
+          </Pressable>
+        </View>
+      ) : (
         <Pressable
-          style={({ pressed }) => [styles.stub, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.headerRow, pressed && styles.pressed]}
           onPress={onToggle}
           accessibilityRole="button"
           accessibilityState={{ expanded: false }}
@@ -61,75 +101,62 @@ export function WorkspaceDayCard({
           <Text style={styles.stubTitle} numberOfLines={1}>
             {heading}
           </Text>
+          <View style={styles.titleSpacer} />
           <Chevron expanded={false} />
         </Pressable>
-      </Animated.View>
-    );
-  }
-
-  return (
-    <Animated.View style={styles.card} layout={CARD_TRANSITION}>
-      <View style={styles.titleRow}>
-        {titleSlot ?? <Text style={styles.cardTitle}>{heading}</Text>}
-        <View style={styles.titleSpacer} />
-        {affordances.showsDayDelete && onDeleteDay !== undefined ? (
-          <Pressable
-            onPress={onDeleteDay}
-            accessibilityRole="button"
-            accessibilityLabel={`Delete ${heading}`}
-            hitSlop={8}
-          >
-            <Icon name="trash" size={16} color={workspaceColors.accent} />
-          </Pressable>
-        ) : null}
-        <Pressable
-          onPress={onToggle}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: true }}
-          accessibilityLabel={`${heading}, collapse`}
-          hitSlop={8}
-        >
-          <Chevron expanded />
-        </Pressable>
-      </View>
-
-      {day.activities.length > 0 || affordances.showsActivityEditing ? (
-        <View style={styles.divider} />
-      ) : null}
-
-      {day.activities.length === 0 && !affordances.showsActivityEditing ? (
-        <Text style={styles.emptyPeek}>Nothing planned for this day yet.</Text>
-      ) : (
-        activitySlot ??
-        day.activities.map((activity, index) => (
-          <Animated.View
-            key={activity.id}
-            entering={FadeIn.duration(ROW_ENTRY_MS).delay(index * ROW_STAGGER_MS)}
-          >
-            <ActivityRow
-              activity={activity}
-              affordances={affordances}
-              onEdit={onEditActivity}
-              onDelete={onDeleteActivity}
-            />
-          </Animated.View>
-        ))
       )}
 
-      {affordances.showsActivityEditing && onAddActivity !== undefined ? (
-        <Pressable
-          style={({ pressed }) => [styles.addActivity, pressed && styles.addActivityPressed]}
-          onPress={onAddActivity}
-          accessibilityRole="button"
-          accessibilityLabel={`Add an activity to ${heading}`}
+      <Animated.View
+        style={[styles.body, bodyStyle]}
+        pointerEvents={expanded ? 'auto' : 'none'}
+        accessibilityElementsHidden={!expanded}
+        importantForAccessibility={expanded ? 'auto' : 'no-hide-descendants'}
+      >
+        <View
+          style={styles.bodyContent}
+          onLayout={(event) => {
+            contentHeight.value = event.nativeEvent.layout.height;
+          }}
         >
-          <Text style={styles.addActivityLabel} numberOfLines={1}>
-            Add Activity
-          </Text>
-          <Icon name="plus" size={16} color={workspaceColors.accent} />
-        </Pressable>
-      ) : null}
-    </Animated.View>
+          {day.activities.length > 0 || affordances.showsActivityEditing ? (
+            <View style={styles.divider} />
+          ) : null}
+
+          {day.activities.length === 0 && !affordances.showsActivityEditing ? (
+            <Text style={styles.emptyPeek}>Nothing planned for this day yet.</Text>
+          ) : (
+            activitySlot ??
+            day.activities.map((activity, index) => (
+              <Animated.View
+                key={activity.id}
+                entering={FadeIn.duration(ROW_ENTRY_MS).delay(index * ROW_STAGGER_MS)}
+              >
+                <ActivityRow
+                  activity={activity}
+                  affordances={affordances}
+                  onEdit={onEditActivity}
+                  onDelete={onDeleteActivity}
+                />
+              </Animated.View>
+            ))
+          )}
+
+          {affordances.showsActivityEditing && onAddActivity !== undefined ? (
+            <Pressable
+              style={({ pressed }) => [styles.addActivity, pressed && styles.addActivityPressed]}
+              onPress={onAddActivity}
+              accessibilityRole="button"
+              accessibilityLabel={`Add an activity to ${heading}`}
+            >
+              <Text style={styles.addActivityLabel} numberOfLines={1}>
+                Add Activity
+              </Text>
+              <Icon name="plus" size={16} color={workspaceColors.accent} />
+            </Pressable>
+          ) : null}
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -225,7 +252,7 @@ const GRAB_CURSOR = webStyle({ cursor: 'grab', userSelect: 'none', touchAction: 
 
 const CHEVRON_MS = 200;
 
-const CARD_TRANSITION = LinearTransition.duration(240);
+const EXPAND_MS = 240;
 
 const ROW_ENTRY_MS = 180;
 
@@ -238,17 +265,6 @@ const styles = StyleSheet.create({
   addActivityPressed: {
     backgroundColor: workspaceColors.accentWash,
   },
-  stub: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    borderRadius: workspaceRadii.card,
-    padding: 16,
-    backgroundColor: workspaceColors.surface,
-    ...workspaceCardShadow,
-  },
   stubTitle: {
     ...workspaceTypography.stubTitle,
     color: workspaceColors.title,
@@ -258,15 +274,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: workspaceColors.hairline,
     borderRadius: workspaceRadii.card,
-    padding: 16,
-    gap: 12,
     backgroundColor: workspaceColors.surface,
     ...workspaceCardShadow,
   },
-  titleRow: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    padding: 16,
+    borderRadius: workspaceRadii.card,
+  },
+  body: {
+    overflow: 'hidden',
+  },
+  bodyContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 12,
   },
   titleSpacer: {
     flex: 1,

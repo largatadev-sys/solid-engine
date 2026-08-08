@@ -200,7 +200,7 @@ function getJson(path) {
       (() => {
         const all = Array.from(document.querySelectorAll('div[role="button"],button,a'))
           .filter((n) => (n.innerText || '').trim() === ${JSON.stringify(label)});
-        const visible = all.filter((n) => n.offsetParent !== null);
+        const visible = all.filter((n) => n.offsetParent !== null && n.closest('[aria-hidden="true"]') === null);
         const target = visible[visible.length - 1];
         if (!target) return { clicked: false, seen: all.length, visible: visible.length };
         target.click();
@@ -216,7 +216,7 @@ function getJson(path) {
       (() => {
         const all = Array.from(document.querySelectorAll('[aria-label]'))
           .filter((n) => (n.getAttribute('aria-label') || '').trim() === ${JSON.stringify(label)});
-        const visible = all.filter((n) => n.offsetParent !== null);
+        const visible = all.filter((n) => n.offsetParent !== null && n.closest('[aria-hidden="true"]') === null);
         const target = visible[visible.length - 1];
         if (!target) return { clicked: false, seen: all.length, visible: visible.length };
         target.click();
@@ -375,7 +375,7 @@ function getJson(path) {
     (() => {
       const all = Array.from(document.querySelectorAll('div[role="button"],button,a'))
         .filter((n) => (n.getAttribute('aria-label') || '') === 'Edit Alpha');
-      const visible = all.filter((n) => n.offsetParent !== null);
+      const visible = all.filter((n) => n.offsetParent !== null && n.closest('[aria-hidden="true"]') === null);
       const target = visible[visible.length - 1];
       if (!target) return { clicked: false, seen: all.length };
       target.click();
@@ -410,7 +410,7 @@ function getJson(path) {
   const dragged = await evaluate(`
     (async () => {
       const grip = Array.from(document.querySelectorAll('[aria-label^="Drag "]'))
-        .filter((n) => n.offsetParent !== null)[0];
+        .filter((n) => n.offsetParent !== null && n.closest('[aria-hidden="true"]') === null)[0];
       if (!grip) return { ok: false, why: 'no grip handle rendered' };
 
       const box = grip.getBoundingClientRect();
@@ -447,7 +447,7 @@ function getJson(path) {
   const upDrag = await evaluate(`
     (async () => {
       const grips = Array.from(document.querySelectorAll('[aria-label^="Drag "]'))
-        .filter((n) => n.offsetParent !== null);
+        .filter((n) => n.offsetParent !== null && n.closest('[aria-hidden="true"]') === null);
       if (grips.length < 2) return { ok: false, why: 'need two rows to drag up' };
 
       const grip = grips[grips.length - 1];
@@ -501,7 +501,7 @@ function getJson(path) {
   const keyNudge = await evaluate(`
     (() => {
       const grips = Array.from(document.querySelectorAll('[aria-label^="Drag "]'))
-        .filter((n) => n.offsetParent !== null);
+        .filter((n) => n.offsetParent !== null && n.closest('[aria-hidden="true"]') === null);
       const grip = grips[grips.length - 1];
       if (!grip) return { ok: false, why: 'no grip' };
       grip.focus();
