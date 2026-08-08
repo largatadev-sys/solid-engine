@@ -16,6 +16,7 @@ import {
 import type { ActivityResponse, DayResponse } from '../types/api';
 import { dayHeading } from './dayHeading';
 import { formatTimeOfDay } from './formatActivityCost';
+import { webStyle } from './webStyle';
 import type { WorkspaceAffordances } from './workspaceControls';
 
 
@@ -160,6 +161,7 @@ interface ActivityRowProps {
   readonly onEdit?: (activity: ActivityResponse) => void;
   readonly onDelete?: (activity: ActivityResponse) => void;
   readonly nudge?: RowNudge;
+  readonly grabHandlers?: Record<string, unknown>;
   readonly accessibilityActions?: ReadonlyArray<{ name: string; label: string }>;
   readonly onAccessibilityAction?: (actionName: string) => void;
 }
@@ -171,6 +173,7 @@ export function ActivityRow({
   onEdit,
   onDelete,
   nudge,
+  grabHandlers,
   accessibilityActions,
   onAccessibilityAction,
 }: ActivityRowProps) {
@@ -186,7 +189,15 @@ export function ActivityRow({
           : (event) => onAccessibilityAction(event.nativeEvent.actionName)
       }
     >
-      {affordances.showsDragHandles && nudge === undefined ? (
+      {affordances.showsDragHandles && grabHandlers !== undefined ? (
+        <View
+          {...grabHandlers}
+          style={[styles.grip, GRAB_CURSOR]}
+          accessibilityLabel={`Drag ${activity.title} to reorder`}
+        >
+          <Icon name="grip" size={16} color={workspaceColors.muted} />
+        </View>
+      ) : affordances.showsDragHandles && nudge === undefined ? (
         <Icon name="grip" size={16} color={workspaceColors.muted} />
       ) : null}
 
@@ -252,6 +263,8 @@ export function ActivityRow({
   );
 }
 
+
+const GRAB_CURSOR = webStyle({ cursor: 'grab', userSelect: 'none', touchAction: 'none' });
 
 const CHEVRON_MS = 200;
 
@@ -323,6 +336,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: workspaceColors.hairline,
     minHeight: workspaceMetrics.activityRowHeight,
+  },
+  grip: {
+    padding: 4,
+    margin: -4,
   },
   nudgeColumn: {
     gap: 2,

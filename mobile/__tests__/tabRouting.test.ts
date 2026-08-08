@@ -596,7 +596,6 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
 
     expect(web).toContain('nudge={{');
-    expect(web).not.toContain('Gesture.Pan');
     expect(native).toContain('Gesture.Pan');
     expect(native).toContain('reorderActionsFor(index, count)');
     expect(read(MOBILE_ROOT, 'src', 'itineraries', 'landingSlot.ts')).toContain(
@@ -622,6 +621,28 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
 
     expect(staticStyle).not.toContain('backgroundColor');
     expect(staticStyle).not.toContain('shadowOpacity');
+  });
+
+  it('drags on BOTH platforms off one shared drop calculation (founder, 2026-08-09)', () => {
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+
+    expect(web).toContain('onPointerDown');
+    expect(web).toContain('setPointerCapture');
+    expect(web).not.toContain('Gesture.Pan');
+
+    for (const source of [web, native]) {
+      expect(source).toContain('landingSlot(');
+      expect(source).toContain('displacementFor(');
+    }
+  });
+
+  it('keeps the arrows on web beside the grip — a pointer drag is not keyboard-reachable', () => {
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+
+    expect(web).toContain('canMoveUp');
+    expect(web).toContain('canMoveDown');
+    expect(web).toContain('reorderActionsFor(index, count)');
   });
 
   it('shifts the other rows LIVE during a drag, not only on release (founder, 2026-08-09)', () => {

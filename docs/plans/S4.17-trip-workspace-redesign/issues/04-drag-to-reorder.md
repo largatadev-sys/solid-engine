@@ -23,7 +23,17 @@ The backlog line reserved this decision on the premise that a drag gesture *"nee
 
 **Why neither `react-native-draggable-flatlist` nor `react-native-reorderable-list`:** both are **FlatList replacements that want to own scrolling**, and our rows live inside an expanded day card inside the editor's `ScrollView`. That nesting is precisely where they fight the outer scroll. Adopting one to reorder a capped, short list (activity rows within a single day) would buy autoscroll-during-drag we do not need and cost a scroll-ownership conflict we would then work around. `Gesture.Pan` on the grip, translating the row and mapping the drop to a slot index, is ~100 lines with no new dependency. **The gesture library *is* gesture-handler.**
 
-**The web fork takes the line's own recorded cheaper option: native drag, arrows kept on web.** `DraggableActivityList.native.tsx` carries the pan; `DraggableActivityList.web.tsx` renders the same rows with up/down controls. A drag is a native gesture, so this is the standing "web ≈ mobile except native gestures" principle, not a shortfall.
+**2026-08-09 — the web gets the drag too (founder: "can we mimic this drag behavior to the web preview?"). The cheaper option below is superseded, and its premise is now recorded as wrong.**
+
+The backlog line reserved "weak to nonexistent web support" as the reason to keep web on arrows. That was true of the **FlatList-replacement libraries** it named — and this story shipped neither. `react-native-gesture-handler` has a real web implementation (`lib/module/web/`), and reanimated already runs in our web bundle: the accordion transitions verified at 44/44 the same day are reanimated animations executing in a browser. **The stated obstacle did not apply to the approach actually taken.**
+
+Web drives it with **pointer events** rather than `Gesture.Pan` — a mouse is not a touch, so `onPointerDown/Move/Up` with `setPointerCapture` is the honest primitive, and it needs no long-press (a long-press exists on touch to disambiguate from scroll; a mouse has no such ambiguity, so the drag starts immediately and feels *more* direct than native). Rows settle with a CSS `transition` instead of a spring.
+
+**What is shared is the part that matters:** `landingSlot`, `displacementFor` and the version-checked `PUT /order` are identical, so both platforms compute the same drop from the same numbers and persist the same way. Only the input and the settle animation are platform-specific.
+
+**The arrows STAY on web, beside the grip.** Keeping both is better than mimicking native exactly: a mouse gets the drag, and keyboard/screen-reader users keep a control they can actually operate — a pointer drag is not keyboard-reachable, so removing the arrows to match native would have been a straight accessibility regression. Verified in a real browser (`drive-workspace.js`, 46/46): a synthetic pointer drag reorders `Alpha, Bravo, Charlie` → `Bravo, Alpha, Charlie` through the version-checked PUT.
+
+*(Superseded, kept for the record:)* **The web fork takes the line's own recorded cheaper option: native drag, arrows kept on web.** `DraggableActivityList.native.tsx` carries the pan; `DraggableActivityList.web.tsx` renders the same rows with up/down controls. A drag is a native gesture, so this is the standing "web ≈ mobile except native gestures" principle, not a shortfall.
 
 **The arrows do not disappear — they change platform and role.** On web they are the reorder UI. On native they survive as `accessibilityActions` (`moveUp`/`moveDown`) on each row, wired to the same `applyMove` reducer the drag's `applyDrop` sits beside — so **screen-reader reorder stays possible on both platforms**, which was the line's own constraint.
 

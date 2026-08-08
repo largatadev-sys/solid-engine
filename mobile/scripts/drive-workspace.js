@@ -402,6 +402,45 @@ function getJson(path) {
     bookingPlaceholder === true && !form.includes('Booking Purpose') && !form.includes('Target URL'),
     `placeholder=${bookingPlaceholder}`);
 
+  await goto(`/itineraries/${trip}/edit-plan`);
+
+  const beforeDrag = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
+  const orderBefore = beforeDrag.body.days[0].activities.map((a) => a.title);
+
+  const dragged = await evaluate(`
+    (async () => {
+      const grip = Array.from(document.querySelectorAll('[aria-label^="Drag "]'))
+        .filter((n) => n.offsetParent !== null)[0];
+      if (!grip) return { ok: false, why: 'no grip handle rendered' };
+
+      const box = grip.getBoundingClientRect();
+      const x = box.x + box.width / 2;
+      const y = box.y + box.height / 2;
+      const pitch = 68;
+      const fire = (type, clientY) => grip.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, cancelable: true, pointerId: 1, clientX: x, clientY,
+      }));
+
+      fire('pointerdown', y);
+      for (const step of [0.3, 0.6, 0.9, 1.1]) {
+        fire('pointermove', y + pitch * step);
+        await new Promise((r) => setTimeout(r, 40));
+      }
+      fire('pointerup', y + pitch * 1.1);
+      return { ok: true };
+    })()
+  `);
+  await sleep(2500);
+
+  const afterDrag = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
+  const orderAfter = afterDrag.body.days[0].activities.map((a) => a.title);
+
+  check('the grip is draggable on the web, not arrows-only (founder, 2026-08-09)',
+    dragged?.ok === true, dragged?.why ?? '');
+  check('…and a web drag reorders through the same version-checked PUT',
+    orderBefore.join() !== orderAfter.join(),
+    `${orderBefore.join(' , ')}  ->  ${orderAfter.join(' , ')}`);
+
   const anonymous = apiCalls.filter((c) => !c.bearer);
   check('every /v1 call from the workspace carried a bearer token (S3.3 media trap)',
     anonymous.length === 0, `${anonymous.length} anonymous: ${anonymous.map((a) => a.verb + ' ' + a.url).join(', ')}`);
