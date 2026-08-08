@@ -17,9 +17,11 @@ import { ActivityRow } from './WorkspaceDayCard';
 import type { WorkspaceAffordances } from './workspaceControls';
 
 
-const SETTLE = { damping: 20, stiffness: 220, mass: 0.6 };
+const SETTLE = { damping: 26, stiffness: 320, mass: 0.5, overshootClamping: true };
 
-const LIFT_MS = 140;
+const LONG_PRESS_MS = 120;
+
+const LIFT_MS = 90;
 
 const LIFT_SCALE = 0.03;
 
@@ -56,6 +58,7 @@ export function DraggableActivityList({
 }: DraggableActivityListProps) {
   const draggingIndex = useSharedValue(-1);
   const dragTranslation = useSharedValue(0);
+  const settlingTarget = useSharedValue(-1);
   const rowPitch = useSharedValue<number>(workspaceMetrics.activityRowHeight);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
@@ -75,6 +78,7 @@ export function DraggableActivityList({
           affordances={affordances}
           draggingIndex={draggingIndex}
           dragTranslation={dragTranslation}
+          settlingTarget={settlingTarget}
           rowPitch={rowPitch}
           isDragging={draggingId === activity.id}
           onMeasure={index === 0 ? measure : undefined}
@@ -100,6 +104,7 @@ function DraggableRow({
   affordances,
   draggingIndex,
   dragTranslation,
+  settlingTarget,
   rowPitch,
   isDragging,
   onMeasure,
@@ -115,6 +120,7 @@ function DraggableRow({
   affordances: WorkspaceAffordances;
   draggingIndex: SharedValue<number>;
   dragTranslation: SharedValue<number>;
+  settlingTarget: SharedValue<number>;
   rowPitch: SharedValue<number>;
   isDragging: boolean;
   onMeasure?: (event: LayoutChangeEvent) => void;
@@ -127,9 +133,10 @@ function DraggableRow({
   const lift = useSharedValue(0);
 
   const pan = Gesture.Pan()
-    .activateAfterLongPress(200)
+    .activateAfterLongPress(LONG_PRESS_MS)
     .onStart(() => {
       draggingIndex.value = index;
+      settlingTarget.value = -1;
       dragTranslation.value = 0;
       lift.value = withTiming(1, { duration: LIFT_MS });
       runOnJS(onDragStart)();
@@ -139,8 +146,14 @@ function DraggableRow({
     })
     .onEnd(() => {
       const target = landingSlot(dragTranslation.value, index, count, rowPitch.value);
-      draggingIndex.value = -1;
-      dragTranslation.value = 0;
+      settlingTarget.value = target;
+      dragTranslation.value = withSpring((target - index) * rowPitch.value, SETTLE, (finished) => {
+        if (finished === true) {
+          draggingIndex.value = -1;
+          settlingTarget.value = -1;
+          dragTranslation.value = 0;
+        }
+      });
       lift.value = withTiming(0, { duration: LIFT_MS });
       runOnJS(onDragEnd)(target);
     });
@@ -150,17 +163,16 @@ function DraggableRow({
     const lifted = lift.value;
     const isHeld = held === index;
 
+    const settling = settlingTarget.value !== -1;
+
+    const target = settling
+      ? settlingTarget.value
+      : landingSlot(dragTranslation.value, held, count, rowPitch.value);
+
     const translateY = isHeld
       ? dragTranslation.value
       : withSpring(
-          held === -1
-            ? 0
-            : displacementFor(
-                index,
-                held,
-                landingSlot(dragTranslation.value, held, count, rowPitch.value),
-                rowPitch.value,
-              ),
+          held === -1 ? 0 : displacementFor(index, held, target, rowPitch.value),
           SETTLE,
         );
 

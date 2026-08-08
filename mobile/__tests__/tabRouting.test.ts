@@ -645,6 +645,26 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(web).toContain('reorderActionsFor(index, count)');
   });
 
+  it('settles a released row INTO its landing slot rather than snapping home (founder, 2026-08-09)', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+
+    expect(native).toContain('withSpring((target - index) * rowPitch.value');
+    expect(native).toContain('settlingTarget');
+    expect(native).toContain('overshootClamping: true');
+
+    expect(web).toContain('(target - current.index) * pitch.current');
+    expect(web).toContain('settling: true');
+  });
+
+  it('holds the settled position until the reordered data arrives — no double move', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+
+    expect(native).toMatch(/settlingTarget\.value !== -1/);
+    expect(web).toMatch(/current\?\.settling === true \? null : current/);
+  });
+
   it('shifts the other rows LIVE during a drag, not only on release (founder, 2026-08-09)', () => {
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
 

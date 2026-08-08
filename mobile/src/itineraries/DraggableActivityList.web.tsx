@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { workspaceColors, workspaceMetrics, workspaceRadii } from '../theme/workspaceTokens';
 import type { ActivityResponse } from '../types/api';
@@ -32,7 +32,7 @@ interface DraggableActivityListProps {
 }
 
 
-type DragState = { index: number; translation: number } | null;
+type DragState = { index: number; translation: number; settling?: boolean } | null;
 
 
 export function DraggableActivityList({
@@ -47,6 +47,11 @@ export function DraggableActivityList({
   const pitch = useRef(workspaceMetrics.activityRowHeight + ROW_GAP);
   const origin = useRef(0);
   const moved = useRef(false);
+  const order = activities.map((a) => a.id).join();
+
+  useEffect(() => {
+    setDrag((current) => (current?.settling === true ? null : current));
+  }, [order]);
 
   const measure = (event: LayoutChangeEvent) => {
     const measured = event.nativeEvent.layout.height;
@@ -70,12 +75,14 @@ export function DraggableActivityList({
 
   const endDrag = () => {
     setDrag((current) => {
-      if (current !== null && moved.current) {
-        const target = landingSlot(current.translation, current.index, activities.length, pitch.current);
-        const activity = activities[current.index];
-        if (activity !== undefined && target !== current.index) onDrop(activity.id, target);
-      }
-      return null;
+      if (current === null) return null;
+      if (!moved.current) return null;
+
+      const target = landingSlot(current.translation, current.index, activities.length, pitch.current);
+      const activity = activities[current.index];
+      if (activity !== undefined && target !== current.index) onDrop(activity.id, target);
+
+      return { ...current, translation: (target - current.index) * pitch.current, settling: true };
     });
   };
 
@@ -134,6 +141,7 @@ function DraggableRow({
   onNudge: (activityId: string, direction: 'up' | 'down') => void;
 }) {
   const isHeld = drag !== null && drag.index === index;
+  const settling = drag?.settling === true;
   const target = drag === null ? index : landingSlot(drag.translation, drag.index, count, pitch);
   const offset = isHeld
     ? drag.translation
@@ -160,7 +168,7 @@ function DraggableRow({
       style={[
         styles.row,
         { transform: [{ translateY: offset }] },
-        isHeld ? HELD_CURSOR : SETTLING,
+        isHeld && !settling ? HELD_CURSOR : SETTLING,
         isHeld && styles.held,
       ]}
       onLayout={onMeasure}
