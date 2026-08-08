@@ -32,7 +32,24 @@ interface DraggableActivityListProps {
 }
 
 
-type DragState = { index: number; translation: number; settling?: boolean } | null;
+type DragState = { index: number; translation: number } | null;
+
+
+export function settleWith(element: HTMLElement | undefined, remainder: number): void {
+  if (element === undefined || typeof element.animate !== 'function') return;
+  for (const running of element.getAnimations()) running.cancel();
+  element.style.zIndex = '2';
+  const settle = element.animate(
+    [{ transform: `translateY(${remainder}px)` }, { transform: 'translateY(0px)' }],
+    { duration: SETTLE_MS, easing: 'cubic-bezier(0.2, 0, 0, 1)' },
+  );
+  settle.onfinish = () => {
+    element.style.zIndex = '';
+  };
+  settle.oncancel = () => {
+    element.style.zIndex = '';
+  };
+}
 
 
 export function DraggableActivityList({
@@ -49,19 +66,13 @@ export function DraggableActivityList({
   const origin = useRef(0);
   const translation = useRef(0);
   const moved = useRef(false);
-  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rowElements = useRef(new Map<string, HTMLElement>());
 
   const serverOrder = activities.map((a) => a.id).join();
 
   useEffect(() => {
     setLocalOrder(null);
   }, [serverOrder]);
-
-  useEffect(() => {
-    return () => {
-      if (settleTimer.current !== null) clearTimeout(settleTimer.current);
-    };
-  }, []);
 
   const rows = orderedBy(activities, localOrder);
 
@@ -71,7 +82,6 @@ export function DraggableActivityList({
   };
 
   const startDrag = (index: number, clientY: number) => {
-    if (settleTimer.current !== null) clearTimeout(settleTimer.current);
     origin.current = clientY;
     translation.current = 0;
     moved.current = false;
@@ -81,11 +91,7 @@ export function DraggableActivityList({
   const moveDrag = (clientY: number) => {
     translation.current = clientY - origin.current;
     if (Math.abs(translation.current) > DRAG_THRESHOLD) moved.current = true;
-    setDrag((current) =>
-      current === null || current.settling === true
-        ? current
-        : { ...current, translation: translation.current },
-    );
+    setDrag((current) => (current === null ? null : { ...current, translation: translation.current }));
   };
 
   const endDrag = (index: number, activityId: string) => {
@@ -102,13 +108,8 @@ export function DraggableActivityList({
       onDrop(activityId, target);
     }
 
-    setDrag({ index: target, translation: remainder, settling: true });
-    requestAnimationFrame(() => {
-      setDrag((current) => (current?.settling === true ? { ...current, translation: 0 } : current));
-    });
-    settleTimer.current = setTimeout(() => {
-      setDrag((current) => (current?.settling === true ? null : current));
-    }, SETTLE_MS + 40);
+    setDrag(null);
+    requestAnimationFrame(() => settleWith(rowElements.current.get(activityId), remainder));
   };
 
   return (
@@ -129,6 +130,10 @@ export function DraggableActivityList({
           onEdit={onEdit}
           onDelete={onDelete}
           onNudge={onNudge}
+          onElement={(element) => {
+            if (element === null) rowElements.current.delete(activity.id);
+            else rowElements.current.set(activity.id, element);
+          }}
         />
       ))}
     </View>
@@ -150,6 +155,7 @@ function DraggableRow({
   onEdit,
   onDelete,
   onNudge,
+  onElement,
 }: {
   activity: ActivityResponse;
   index: number;
@@ -164,13 +170,13 @@ function DraggableRow({
   onEdit: (activity: ActivityResponse) => void;
   onDelete: (activity: ActivityResponse) => void;
   onNudge: (activityId: string, direction: 'up' | 'down') => void;
+  onElement: (element: HTMLElement | null) => void;
 }) {
   const isHeld = drag !== null && drag.index === index;
-  const settling = drag?.settling === true;
   const target = drag === null ? index : landingSlot(drag.translation, drag.index, count, pitch);
   const offset = isHeld
     ? drag.translation
-    : drag === null || settling
+    : drag === null
       ? 0
       : displacementFor(index, drag.index, target, pitch);
 
@@ -182,7 +188,7 @@ function DraggableRow({
       onGrabStart(native.clientY);
     },
     onPointerMove: (event: { nativeEvent: PointerEvent }) => {
-      if (drag !== null && drag.settling !== true) onGrabMove(event.nativeEvent.clientY);
+      if (drag !== null) onGrabMove(event.nativeEvent.clientY);
     },
     onPointerUp: () => onGrabEnd(),
     onPointerCancel: () => onGrabEnd(),
@@ -190,10 +196,11 @@ function DraggableRow({
 
   return (
     <View
+      ref={(node) => onElement(node as unknown as HTMLElement | null)}
       style={[
         styles.row,
         { transform: [{ translateY: offset }] },
-        isHeld ? (settling ? EASING : HELD_CURSOR) : drag !== null && !settling ? EASING : null,
+        isHeld ? HELD_CURSOR : drag !== null ? EASING : null,
         isHeld && styles.held,
       ]}
       onLayout={onMeasure}

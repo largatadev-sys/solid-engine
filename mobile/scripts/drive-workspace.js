@@ -441,6 +441,60 @@ function getJson(path) {
     orderBefore.join() !== orderAfter.join(),
     `${orderBefore.join(' , ')}  ->  ${orderAfter.join(' , ')}`);
 
+  const beforeUp = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
+  const upOrderBefore = beforeUp.body.days[0].activities.map((a) => a.title);
+
+  const upDrag = await evaluate(`
+    (async () => {
+      const grips = Array.from(document.querySelectorAll('[aria-label^="Drag "]'))
+        .filter((n) => n.offsetParent !== null);
+      if (grips.length < 2) return { ok: false, why: 'need two rows to drag up' };
+
+      const grip = grips[grips.length - 1];
+      const pitchPx = grips[1].getBoundingClientRect().top - grips[0].getBoundingClientRect().top;
+      const startTop = grip.getBoundingClientRect().top;
+      const box = grip.getBoundingClientRect();
+      const x = box.x + box.width / 2;
+      const y = box.y + box.height / 2;
+      const fire = (type, clientY) => grip.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, cancelable: true, pointerId: 1, clientX: x, clientY,
+      }));
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      fire('pointerdown', y);
+      for (const step of [0.4, 0.8, 1.2, 1.4]) {
+        fire('pointermove', y - pitchPx * step);
+        await wait(40);
+      }
+      const preTop = grip.getBoundingClientRect().top;
+      fire('pointerup', y - pitchPx * 1.4);
+      await wait(60);
+      const midTop = grip.getBoundingClientRect().top;
+      await wait(300);
+      const finalTop = grip.getBoundingClientRect().top;
+
+      return { ok: true, pitchPx, startTop, preTop, midTop, finalTop, slotTop: startTop - pitchPx };
+    })()
+  `);
+  await sleep(2000);
+
+  const upEased =
+    upDrag?.ok === true &&
+    Math.abs(upDrag.finalTop - upDrag.slotTop) <= 2 &&
+    upDrag.midTop > Math.min(upDrag.preTop, upDrag.slotTop) - 1 &&
+    upDrag.midTop < Math.max(upDrag.preTop, upDrag.slotTop) + 1;
+  check('an UPWARD drag settles by easing to its slot — no jerk when React moves the node (founder, 2026-08-09)',
+    upEased,
+    upDrag?.ok === true
+      ? `pre=${Math.round(upDrag.preTop)} mid=${Math.round(upDrag.midTop)} final=${Math.round(upDrag.finalTop)} slot=${Math.round(upDrag.slotTop)}`
+      : upDrag?.why ?? '');
+
+  const afterUp = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
+  const upOrderAfter = afterUp.body.days[0].activities.map((a) => a.title);
+  check('…and the upward drop persists through the version-checked PUT',
+    upOrderBefore.join() !== upOrderAfter.join(),
+    `${upOrderBefore.join(' , ')}  ->  ${upOrderAfter.join(' , ')}`);
+
   const anonymous = apiCalls.filter((c) => !c.bearer);
   check('every /v1 call from the workspace carried a bearer token (S3.3 media trap)',
     anonymous.length === 0, `${anonymous.length} anonymous: ${anonymous.map((a) => a.verb + ' ' + a.url).join(', ')}`);

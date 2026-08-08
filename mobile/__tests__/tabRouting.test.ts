@@ -667,7 +667,15 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(native).toContain('const remainder = translation - (toIndex - index) * rowPitch.value');
     expect(native).toContain('overshootClamping: true');
     expect(web).toContain('const remainder = translation.current - (target - index) * pitch.current');
-    expect(web).toContain('settling: true');
+  });
+
+  it('web settles through the Web Animations API — a CSS transition dies when React moves the node', () => {
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+
+    expect(web).toContain('element.animate(');
+    expect(web).toContain('translateY(${remainder}px)');
+    expect(web).toContain('running.cancel()');
+    expect(web).not.toContain('settling');
   });
 
   it('shifts the other rows LIVE during a drag, not only on release (founder, 2026-08-09)', () => {
