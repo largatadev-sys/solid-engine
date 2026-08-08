@@ -181,6 +181,7 @@ function DraggableRow({
       : displacementFor(index, drag.index, target, pitch);
 
   const grabHandlers = {
+    focusable: true,
     onPointerDown: (event: { nativeEvent: PointerEvent }) => {
       const native = event.nativeEvent;
       native.preventDefault();
@@ -192,6 +193,12 @@ function DraggableRow({
     },
     onPointerUp: () => onGrabEnd(),
     onPointerCancel: () => onGrabEnd(),
+    onKeyDown: (event: { nativeEvent: KeyboardEvent; preventDefault?: () => void }) => {
+      const key = event.nativeEvent.key;
+      if (key !== 'ArrowUp' && key !== 'ArrowDown') return;
+      event.preventDefault?.();
+      onNudge(activity.id, key === 'ArrowUp' ? 'up' : 'down');
+    },
   };
 
   return (
@@ -211,12 +218,6 @@ function DraggableRow({
         onEdit={onEdit}
         onDelete={onDelete}
         grabHandlers={affordances.showsDragHandles ? grabHandlers : undefined}
-        nudge={{
-          canMoveUp: index > 0,
-          canMoveDown: index < count - 1,
-          onMoveUp: () => onNudge(activity.id, 'up'),
-          onMoveDown: () => onNudge(activity.id, 'down'),
-        }}
         accessibilityActions={reorderActionsFor(index, count)}
         onAccessibilityAction={(action) => {
           if (action === 'moveUp' || action === 'moveDown') {

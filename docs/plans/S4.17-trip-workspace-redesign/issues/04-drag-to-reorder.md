@@ -38,3 +38,11 @@ Web drives it with **pointer events** rather than `Gesture.Pan` — a mouse is n
 **The arrows do not disappear — they change platform and role.** On web they are the reorder UI. On native they survive as `accessibilityActions` (`moveUp`/`moveDown`) on each row, wired to the same `applyMove` reducer the drag's `applyDrop` sits beside — so **screen-reader reorder stays possible on both platforms**, which was the line's own constraint.
 
 **Both paths share one persistence route:** `applyDrop`/`applyMove` → the version-checked `PUT /order` with `expectedActivityIds`, and a `STALE_REORDER` 409 re-reads the day and re-applies the *intent* against fresh ids rather than overwriting. That recovery is not new code — it was lifted from the retired `days/index.tsx` (`git show` on the commit that deleted it) rather than reinvented.
+
+**2026-08-09 — the web arrows retire (founder: "can you also remove the arrow buttons in web"); keyboard reorder moves onto the grip.**
+
+The arrows were kept as the web's keyboard path — *"a pointer drag is not keyboard-reachable"* — and that constraint still holds, so they were not simply deleted. **The grip is now focusable, and ArrowUp/ArrowDown on a focused grip nudges the row** through the same `applyMove` → version-checked PUT path the arrows drove. Same capability, no buttons; Tab reaches every grip in order.
+
+**Verified in a real browser rather than assumed, deliberately:** react-native-web has a documented history in this repo of props that silently do nothing (`Alert.alert`, `<Image source.headers>`, the picker's crop options), and `onKeyDown` could have been another. The driver focuses a grip, dispatches a real `keydown`, and asserts the order changed **through the API** — `focused=true`, `Bravo, Charlie, Alpha → Bravo, Alpha, Charlie`, and `0` arrow buttons left in the DOM. Had RNW swallowed the event, the check would have failed and the arrows would have stayed.
+
+Native is untouched: its screen-reader path was never the arrows but `accessibilityActions` on each row, which remain.

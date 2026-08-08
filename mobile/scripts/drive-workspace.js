@@ -495,6 +495,33 @@ function getJson(path) {
     upOrderBefore.join() !== upOrderAfter.join(),
     `${upOrderBefore.join(' , ')}  ->  ${upOrderAfter.join(' , ')}`);
 
+  const beforeKey = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
+  const keyOrderBefore = beforeKey.body.days[0].activities.map((a) => a.title);
+
+  const keyNudge = await evaluate(`
+    (() => {
+      const grips = Array.from(document.querySelectorAll('[aria-label^="Drag "]'))
+        .filter((n) => n.offsetParent !== null);
+      const grip = grips[grips.length - 1];
+      if (!grip) return { ok: false, why: 'no grip' };
+      grip.focus();
+      grip.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+      return { ok: true, focused: document.activeElement === grip };
+    })()
+  `);
+  await sleep(2500);
+
+  const afterKey = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
+  const keyOrderAfter = afterKey.body.days[0].activities.map((a) => a.title);
+  check('the grip is keyboard-operable — ArrowUp on a focused grip reorders (no visible arrows needed)',
+    keyNudge?.ok === true && keyOrderBefore.join() !== keyOrderAfter.join(),
+    `focused=${keyNudge?.focused} ${keyOrderBefore.join(' , ')}  ->  ${keyOrderAfter.join(' , ')}`);
+
+  const arrowButtons = await evaluate(
+    `document.querySelectorAll('[aria-label^="Move "]').length`,
+  );
+  check('…and the arrow buttons are gone from the rows', arrowButtons === 0, `${arrowButtons} arrow buttons`);
+
   const anonymous = apiCalls.filter((c) => !c.bearer);
   check('every /v1 call from the workspace carried a bearer token (S3.3 media trap)',
     anonymous.length === 0, `${anonymous.length} anonymous: ${anonymous.map((a) => a.verb + ' ' + a.url).join(', ')}`);

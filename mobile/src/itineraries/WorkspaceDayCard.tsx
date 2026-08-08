@@ -147,20 +147,11 @@ function Chevron({ expanded }: { expanded: boolean }) {
 }
 
 
-export type RowNudge = {
-  canMoveUp: boolean;
-  canMoveDown: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-};
-
-
 interface ActivityRowProps {
   readonly activity: ActivityResponse;
   readonly affordances: WorkspaceAffordances;
   readonly onEdit?: (activity: ActivityResponse) => void;
   readonly onDelete?: (activity: ActivityResponse) => void;
-  readonly nudge?: RowNudge;
   readonly grabHandlers?: Record<string, unknown>;
   readonly accessibilityActions?: ReadonlyArray<{ name: string; label: string }>;
   readonly onAccessibilityAction?: (actionName: string) => void;
@@ -172,7 +163,6 @@ export function ActivityRow({
   affordances,
   onEdit,
   onDelete,
-  nudge,
   grabHandlers,
   accessibilityActions,
   onAccessibilityAction,
@@ -197,41 +187,8 @@ export function ActivityRow({
         >
           <Icon name="grip" size={16} color={workspaceColors.muted} />
         </View>
-      ) : affordances.showsDragHandles && nudge === undefined ? (
+      ) : affordances.showsDragHandles ? (
         <Icon name="grip" size={16} color={workspaceColors.muted} />
-      ) : null}
-
-      {nudge !== undefined ? (
-        <View style={styles.nudgeColumn}>
-          <Pressable
-            onPress={nudge.onMoveUp}
-            disabled={!nudge.canMoveUp}
-            accessibilityRole="button"
-            accessibilityLabel={`Move ${activity.title} up`}
-            accessibilityState={{ disabled: !nudge.canMoveUp }}
-            hitSlop={4}
-          >
-            <Icon
-              name="chevronUp"
-              size={14}
-              color={nudge.canMoveUp ? workspaceColors.muted : workspaceColors.hairline}
-            />
-          </Pressable>
-          <Pressable
-            onPress={nudge.onMoveDown}
-            disabled={!nudge.canMoveDown}
-            accessibilityRole="button"
-            accessibilityLabel={`Move ${activity.title} down`}
-            accessibilityState={{ disabled: !nudge.canMoveDown }}
-            hitSlop={4}
-          >
-            <Icon
-              name="chevronDown"
-              size={14}
-              color={nudge.canMoveDown ? workspaceColors.muted : workspaceColors.hairline}
-            />
-          </Pressable>
-        </View>
       ) : null}
 
       <View style={styles.activityText}>
@@ -340,10 +297,6 @@ const styles = StyleSheet.create({
   grip: {
     padding: 4,
     margin: -4,
-  },
-  nudgeColumn: {
-    gap: 2,
-    alignItems: 'center',
   },
   activityText: {
     flex: 1,

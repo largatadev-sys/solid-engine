@@ -591,11 +591,11 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(editor).toContain('applyDrop');
   });
 
-  it('keeps the arrows on web and gives the native rows screen-reader reorder actions', () => {
+  it('keeps a non-drag reorder path on both platforms — keys on web, a11y actions on native', () => {
     const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
 
-    expect(web).toContain('nudge={{');
+    expect(web).toContain('onKeyDown');
     expect(native).toContain('Gesture.Pan');
     expect(native).toContain('reorderActionsFor(index, count)');
     expect(read(MOBILE_ROOT, 'src', 'itineraries', 'landingSlot.ts')).toContain(
@@ -637,12 +637,14 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(web).toContain('displacementFor(');
   });
 
-  it('keeps the arrows on web beside the grip — a pointer drag is not keyboard-reachable', () => {
+  it('keyboard reorder lives on the focusable grip — the arrows retired, the capability did not', () => {
     const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
 
-    expect(web).toContain('canMoveUp');
-    expect(web).toContain('canMoveDown');
+    expect(web).toContain('focusable: true');
+    expect(web).toContain('onKeyDown');
+    expect(web).toContain("key !== 'ArrowUp' && key !== 'ArrowDown'");
     expect(web).toContain('reorderActionsFor(index, count)');
+    expect(web).not.toContain('canMoveUp');
   });
 
   it('commits the new order LOCALLY at release, so the drop never waits for the server', () => {
