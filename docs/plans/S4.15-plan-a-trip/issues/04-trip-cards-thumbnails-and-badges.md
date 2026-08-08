@@ -15,4 +15,4 @@
 
 ## Comments
 
-- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). The unticked box is the **three-rung walk** (spec AC 8) — it needs the local rig (docker compose + the preview container + the emulator) and has not been run, so it stays open rather than being claimed. Everything a unit test or `tsc` can close is closed.
+- *2026-08-08, implementation:* code complete, typecheck clean, full mobile suite green (1933 tests). **Two** boxes stay open, both needing the local rig (spec AC 8): the uploaded-cover thumbnail with the driver's request list watched for the S3.3 `ANON GET` tell, and the card grid checked against the mock frame. The authenticated path is pinned by a test that fails if anyone regresses to a bare `<Image>` URL, but a passing test is not the walk and is not claimed as one. Backend untouched by this story — no IT ran, and none needed to.
