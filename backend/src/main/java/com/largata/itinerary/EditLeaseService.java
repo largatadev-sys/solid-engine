@@ -171,14 +171,8 @@ public class EditLeaseService {
     public void requireHeldBy(Membership member, LeaseSubject subject) {
         fence.requireEditable(member);
         Instant now = clock.instant();
-        Optional<EditLease> session = liveSession(member.itineraryId(), now);
-        if (session.isPresent()) {
-            EditLease held = session.get();
-            if (held.isHeldBy(member.travelerId())) {
-                return;
-            }
-            emitNow(member, "edit_lock_denied", subject);
-            throw new EditLockedException(labelOf(held.holderId()), LeaseSubjectType.SESSION);
+        if (subsumedBySession(member, now)) {
+            return;
         }
         boolean held =
                 liveOrStale(subject)
@@ -195,14 +189,21 @@ public class EditLeaseService {
     @Transactional
     public void requireNoForeignSession(Membership member) {
         fence.requireEditable(member);
-        Instant now = clock.instant();
-        liveSession(member.itineraryId(), now)
-                .filter(session -> !session.isHeldBy(member.travelerId()))
-                .ifPresent(
-                        session -> {
-                            emitNow(member, "edit_lock_denied", LeaseSubject.session(member.itineraryId()));
-                            throw new EditLockedException(labelOf(session.holderId()), LeaseSubjectType.SESSION);
-                        });
+        subsumedBySession(member, clock.instant());
+    }
+
+
+    private boolean subsumedBySession(Membership member, Instant now) {
+        Optional<EditLease> session = liveSession(member.itineraryId(), now);
+        if (session.isEmpty()) {
+            return false;
+        }
+        EditLease held = session.get();
+        if (held.isHeldBy(member.travelerId())) {
+            return true;
+        }
+        emitNow(member, "edit_lock_denied", LeaseSubject.session(member.itineraryId()));
+        throw new EditLockedException(labelOf(held.holderId()), LeaseSubjectType.SESSION);
     }
 
 

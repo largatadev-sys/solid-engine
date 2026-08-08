@@ -77,8 +77,10 @@ export function editItineraryAction(
   },
   canEditPlan: boolean,
   viewerTravelerId?: string,
+  isOwner = true,
 ): EditItineraryAction {
   if (!canEditPlan || itinerary.archived || itinerary.published) return { kind: 'hidden' };
+  if (itinerary.state !== 'draft' && !isOwner) return { kind: 'hidden' };
 
   const session = itinerary.editingSession;
   if (session && session.travelerId !== viewerTravelerId) {

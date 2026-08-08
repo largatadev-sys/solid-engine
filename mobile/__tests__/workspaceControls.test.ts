@@ -126,6 +126,22 @@ describe('editItineraryAction', () => {
     expect(editItineraryAction(mine, true, 't1')).toEqual({ kind: 'edit' });
   });
 
+  it('lets a MEMBER edit a draft plan — activity editing is member-wide (decision 9)', () => {
+    expect(editItineraryAction(trip({ state: 'draft' }), true, undefined, false)).toEqual({ kind: 'edit' });
+  });
+
+  it('hides Edit Itinerary from a member on Ready and beyond, because reopen is owner-only', () => {
+    for (const state of ['upcoming', 'ongoing', 'completed'] as const) {
+      expect(editItineraryAction(trip({ state }), true, undefined, false)).toEqual({ kind: 'hidden' });
+    }
+  });
+
+  it('still reopens for the owner on Ready and beyond', () => {
+    expect(editItineraryAction(trip({ state: 'upcoming' }), true, undefined, true)).toEqual({
+      kind: 'reopen-then-edit',
+    });
+  });
+
   it('is hidden on archived and published trips', () => {
     expect(editItineraryAction(trip({ archived: true }), true)).toEqual({ kind: 'hidden' });
     expect(editItineraryAction(trip({ published: true, state: 'completed' }), true)).toEqual({ kind: 'hidden' });

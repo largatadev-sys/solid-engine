@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** needs-triage
+**Status:** done
 
-- [ ] The lease subject set gains an itinerary-wide session value, additively — the shipped header/day/activity subjects keep resolving (no /v1 rename/retype/removal).
-- [ ] Acquire refuses while any other traveler holds the session **or any subject lease** on the same itinerary (a mid-edit S4.9-style hold must not be steamrolled); the refusal names the holder.
-- [ ] While the session is held, every plan write by a non-holder refuses (days, activities, reorder, move, rename, header) — membership guard first, then lease, the S4.9 order; membership acts (invite, remove, ownership, archive) stay unaffected.
-- [ ] The holder's own writes succeed without acquiring per-subject leases — the session subsumes them inside the Draft Workspace.
-- [ ] Release on explicit end; TTL expiry self-heals abandonment (the ADR-014 shape); renewal while the editor stays open.
-- [ ] The advisory read surface reports the session holder so the viewer can render "being edited by X" and disable Edit Itinerary — pull-based, never presence.
-- [ ] ITs cover: acquire/refuse/release/expiry · non-holder write refusal naming why · membership acts passing while held · the archived and published fences still dominating.
+- [x] The lease subject set gains an itinerary-wide session value, additively — the shipped header/day/activity subjects keep resolving (no /v1 rename/retype/removal).
+- [x] Acquire refuses while any other traveler holds the session **or any subject lease** on the same itinerary (a mid-edit S4.9-style hold must not be steamrolled); the refusal names the holder.
+- [x] While the session is held, every plan write by a non-holder refuses (days, activities, reorder, move, rename, header) — membership guard first, then lease, the S4.9 order; membership acts (invite, remove, ownership, archive) stay unaffected.
+- [x] The holder's own writes succeed without acquiring per-subject leases — the session subsumes them inside the Draft Workspace.
+- [x] Release on explicit end; TTL expiry self-heals abandonment (the ADR-014 shape); renewal while the editor stays open.
+- [x] The advisory read surface reports the session holder so the viewer can render "being edited by X" and disable Edit Itinerary — pull-based, never presence.
+- [x] ITs cover: acquire/refuse/release/expiry · non-holder write refusal naming why · membership acts passing while held · the archived and published fences still dominating.

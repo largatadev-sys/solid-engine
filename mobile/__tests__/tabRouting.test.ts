@@ -136,6 +136,16 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
   const WORKSPACE_HEADER = ['itineraries/[id]/index.tsx', 'itineraries/[id]/edit-plan.tsx'];
 
+  const REDIRECT_STUBS = ['itineraries/[id]/days/index.tsx', 'itineraries/[id]/days/[dayId].tsx'];
+
+  it.each(tripScreens().filter(([name]) => REDIRECT_STUBS.includes(name)))(
+    '%s draws no chrome at all — a retired route redirects, it does not render',
+    (_name, source) => {
+      expect(source).toContain('<Redirect');
+      expect(source).not.toMatch(/<ScreenHeader|<WorkspaceHeader/);
+    },
+  );
+
   it.each(tripScreens().filter(([name]) => WORKSPACE_HEADER.includes(name)))(
     '%s draws the workspace header, which takes the inset for it (S4.17)',
     (_name, source) => {
@@ -151,7 +161,10 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   });
 
   it.each(
-    tripScreens().filter(([name]) => !FULL_BLEED.includes(name) && !WORKSPACE_HEADER.includes(name)),
+    tripScreens().filter(
+      ([name]) =>
+        !FULL_BLEED.includes(name) && !WORKSPACE_HEADER.includes(name) && !REDIRECT_STUBS.includes(name),
+    ),
   )('%s draws its own heading — with no header bar, a navigator title renders nowhere', (_name, source) => {
     expect(source).toMatch(/<ScreenHeader/);
   });
@@ -483,8 +496,19 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13)', 
 
 
 describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the 2026-07-31 ruling)', () => {
-  it('leaves no day routes behind — the planner and the day view retired (S4.17 decision 1)', () => {
-    expect(existsSync(join(TRIPS, '[id]', 'days'))).toBe(false);
+  it('retires the planner and the day view to redirect stubs — old deep links must not dead-end', () => {
+    for (const name of ['index.tsx', '[dayId].tsx']) {
+      const stub = read(TRIPS, '[id]', 'days', name);
+
+      expect(stub).toContain('<Redirect');
+      expect(stub).toContain("pathname: '/itineraries/[id]'");
+      expect(stub).not.toContain('useItinerary');
+    }
+  });
+
+  it('carries a ?day= deep link through to the workspace, landing on that day expanded', () => {
+    expect(read(TRIPS, '[id]', 'days', 'index.tsx')).toContain('{ id, day }');
+    expect(read(TRIPS, '[id]', 'index.tsx')).toContain('defaultOpenDay(dayIds, requestedDay)');
   });
 
   it('ships exactly the two workspace surfaces the redesign names', () => {
@@ -637,7 +661,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
 
     expect(workspace).toContain("actionLabel={editAction.kind === 'hidden' ? undefined : 'Edit Itinerary'}");
     expect(workspace).toContain("pathname: '/itineraries/[id]/edit-plan'");
-    expect(workspace).toContain('editItineraryAction(data, isOwner, myId)');
+    expect(workspace).toContain('editItineraryAction(data, canEditPlan(data), myId, isOwner)');
   });
 
   it('puts publish on the viewer rail and unpublish quietly in the Details tab (S4.1 decision 11)', () => {

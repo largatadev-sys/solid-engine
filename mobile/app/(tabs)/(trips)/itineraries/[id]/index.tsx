@@ -1,9 +1,10 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/components/ScreenMessage';
 import { notify } from '../../../../../src/components/notify';
 import { useMe } from '../../../../../src/hooks/useMe';
+import { canEditPlan } from '../../../../../src/itineraries/archiveControls';
 import { defaultOpenDay, toggleOpenDay } from '../../../../../src/itineraries/dayAccordion';
 import {
   canPublish,
@@ -63,13 +64,17 @@ export default function TripWorkspaceScreen() {
     return <ScreenMessage {...itineraryLoadMessage(error, 'Could not load this trip')} />;
   }
 
+  if (data.published && !data.archived) {
+    return <Redirect href={{ pathname: '/published/[id]', params: { id } }} />;
+  }
+
   const dayIds = data.days.map((d) => d.id);
   const requestedDay = day !== undefined ? data.days.find((d) => String(d.ordinal) === day)?.id : undefined;
   const expandedDayId = openDayId === undefined ? defaultOpenDay(dayIds, requestedDay) : openDayId;
 
   const badge = stateBadge(data);
   const ladder = ladderCta(data, isOwner);
-  const editAction = editItineraryAction(data, isOwner, myId);
+  const editAction = editItineraryAction(data, canEditPlan(data), myId, isOwner);
   const affordances = workspaceAffordances('viewer', isOwner);
 
   const openEditor = () => {
