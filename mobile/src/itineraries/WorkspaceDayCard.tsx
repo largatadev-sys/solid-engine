@@ -1,4 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  FadeIn,
+  LinearTransition,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import { Icon } from '../components/Icon';
 import {
   workspaceCardShadow,
@@ -43,21 +49,25 @@ export function WorkspaceDayCard({
 
   if (!expanded) {
     return (
-      <Pressable
-        style={styles.stub}
-        onPress={onToggle}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: false }}
-        accessibilityLabel={`${heading}, expand`}
-      >
-        <Text style={styles.stubTitle}>{heading}</Text>
-        <Icon name="chevronDown" size={18} color={workspaceColors.muted} />
-      </Pressable>
+      <Animated.View layout={CARD_TRANSITION}>
+        <Pressable
+          style={({ pressed }) => [styles.stub, pressed && styles.pressed]}
+          onPress={onToggle}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: false }}
+          accessibilityLabel={`${heading}, expand`}
+        >
+          <Text style={styles.stubTitle} numberOfLines={1}>
+            {heading}
+          </Text>
+          <Chevron expanded={false} />
+        </Pressable>
+      </Animated.View>
     );
   }
 
   return (
-    <View style={styles.card}>
+    <Animated.View style={styles.card} layout={CARD_TRANSITION}>
       <View style={styles.titleRow}>
         {titleSlot ?? <Text style={styles.cardTitle}>{heading}</Text>}
         <View style={styles.titleSpacer} />
@@ -78,7 +88,7 @@ export function WorkspaceDayCard({
           accessibilityLabel={`${heading}, collapse`}
           hitSlop={8}
         >
-          <Icon name="chevronUp" size={18} color={workspaceColors.muted} />
+          <Chevron expanded />
         </Pressable>
       </View>
 
@@ -90,20 +100,24 @@ export function WorkspaceDayCard({
         <Text style={styles.emptyPeek}>Nothing planned for this day yet.</Text>
       ) : (
         activitySlot ??
-        day.activities.map((activity) => (
-          <ActivityRow
+        day.activities.map((activity, index) => (
+          <Animated.View
             key={activity.id}
-            activity={activity}
-            affordances={affordances}
-            onEdit={onEditActivity}
-            onDelete={onDeleteActivity}
-          />
+            entering={FadeIn.duration(ROW_ENTRY_MS).delay(index * ROW_STAGGER_MS)}
+          >
+            <ActivityRow
+              activity={activity}
+              affordances={affordances}
+              onEdit={onEditActivity}
+              onDelete={onDeleteActivity}
+            />
+          </Animated.View>
         ))
       )}
 
       {affordances.showsActivityEditing && onAddActivity !== undefined ? (
         <Pressable
-          style={styles.addActivity}
+          style={({ pressed }) => [styles.addActivity, pressed && styles.addActivityPressed]}
           onPress={onAddActivity}
           accessibilityRole="button"
           accessibilityLabel={`Add an activity to ${heading}`}
@@ -114,7 +128,20 @@ export function WorkspaceDayCard({
           <Icon name="plus" size={16} color={workspaceColors.accent} />
         </Pressable>
       ) : null}
-    </View>
+    </Animated.View>
+  );
+}
+
+
+function Chevron({ expanded }: { expanded: boolean }) {
+  const style = useAnimatedStyle(() => ({
+    transform: [{ rotate: withTiming(expanded ? '180deg' : '0deg', { duration: CHEVRON_MS }) }],
+  }));
+
+  return (
+    <Animated.View style={style}>
+      <Icon name="chevronDown" size={18} color={workspaceColors.muted} />
+    </Animated.View>
   );
 }
 
@@ -226,7 +253,21 @@ export function ActivityRow({
 }
 
 
+const CHEVRON_MS = 200;
+
+const CARD_TRANSITION = LinearTransition.duration(240);
+
+const ROW_ENTRY_MS = 180;
+
+const ROW_STAGGER_MS = 40;
+
 const styles = StyleSheet.create({
+  pressed: {
+    backgroundColor: workspaceColors.pressed,
+  },
+  addActivityPressed: {
+    backgroundColor: workspaceColors.accentWash,
+  },
   stub: {
     flexDirection: 'row',
     alignItems: 'center',

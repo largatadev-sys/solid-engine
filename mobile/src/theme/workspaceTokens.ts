@@ -24,6 +24,8 @@ export const workspaceColors = {
   surface: '#FFFFFF',
   scrim: 'rgba(0, 0, 0, 0.4)',
   none: 'transparent',
+  pressed: '#F5F5F4',
+  accentWash: 'rgba(234, 88, 12, 0.06)',
 } as const;
 
 

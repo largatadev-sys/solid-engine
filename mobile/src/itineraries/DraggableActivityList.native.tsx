@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  FadeIn,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -29,6 +30,10 @@ const LIFT_FADE = 0.06;
 const LIFT_SHADOW = 0.18;
 
 const ROW_GAP = 8;
+
+const ROW_ENTRY_MS = 180;
+
+const ROW_STAGGER_MS = 40;
 
 
 interface DraggableActivityListProps {
@@ -171,7 +176,11 @@ function DraggableRow({
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View style={[styles.row, style]} onLayout={onMeasure}>
+      <Animated.View
+        style={[styles.row, style]}
+        onLayout={onMeasure}
+        entering={FadeIn.duration(ROW_ENTRY_MS).delay(index * ROW_STAGGER_MS)}
+      >
         <ActivityRow
           activity={activity}
           affordances={affordances}

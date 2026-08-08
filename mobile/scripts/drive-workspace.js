@@ -160,7 +160,7 @@ function getJson(path) {
     }
     if (msg.method === 'Network.requestWillBeSent') {
       const { url, method: verb, headers } = msg.params.request;
-      if (url.includes('/v1/') && verb !== 'OPTIONS') {
+      if (url.startsWith(`${API}/v1/`) && verb !== 'OPTIONS') {
         apiCalls.push({ url, verb, bearer: Boolean(headers.Authorization || headers.authorization) });
       }
     }
