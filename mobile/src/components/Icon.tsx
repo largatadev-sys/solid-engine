@@ -10,6 +10,7 @@ export type IconName =
   | 'share'
   | 'dollar'
   | 'chevronDown'
+  | 'chevronRight'
   | 'check'
   | 'search'
   | 'plus'
@@ -27,7 +28,10 @@ export type IconName =
   | 'link'
   | 'star'
   | 'partyPopper'
-  | 'camera';
+  | 'camera'
+  | 'briefcase'
+  | 'plusCircle'
+  | 'filter';
 
 interface IconProps {
   readonly name: IconName;
@@ -174,6 +178,8 @@ export function Icon({ name, size, color }: IconProps) {
 
       {name === 'chevronDown' && <Polyline points="6 9 12 15 18 9" {...shared} />}
 
+      {name === 'chevronRight' && <Polyline points="9 18 15 12 9 6" {...shared} />}
+
       {name === 'camera' && (
         <>
           <Path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" {...shared} />
@@ -239,6 +245,39 @@ export function Icon({ name, size, color }: IconProps) {
         <>
           <Path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" {...shared} />
           <Polyline points="22 4 12 14.01 9 11.01" {...shared} />
+        </>
+      )}
+
+      {name === 'briefcase' && (
+        <>
+          <Path d="M2 10.3h20V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z" fill={color} />
+          <Path
+            d="M2 6.5A1.5 1.5 0 0 1 3.5 5h17A1.5 1.5 0 0 1 22 6.5v2.3a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 8.8Z"
+            fill={color}
+          />
+          <Path d="M9 5V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1" {...shared} strokeWidth={1.8} />
+        </>
+      )}
+
+      {name === 'plusCircle' && (
+        <>
+          <Circle cx="12" cy="12" r="10" {...shared} />
+          <Line x1="12" y1="8" x2="12" y2="16" {...shared} />
+          <Line x1="8" y1="12" x2="16" y2="12" {...shared} />
+        </>
+      )}
+
+      {name === 'filter' && (
+        <>
+          <Line x1="21" y1="5" x2="14" y2="5" {...shared} />
+          <Line x1="10" y1="5" x2="3" y2="5" {...shared} />
+          <Line x1="21" y1="12" x2="12" y2="12" {...shared} />
+          <Line x1="8" y1="12" x2="3" y2="12" {...shared} />
+          <Line x1="21" y1="19" x2="16" y2="19" {...shared} />
+          <Line x1="12" y1="19" x2="3" y2="19" {...shared} />
+          <Line x1="14" y1="3" x2="14" y2="7" {...shared} />
+          <Line x1="10" y1="10" x2="10" y2="14" {...shared} />
+          <Line x1="16" y1="17" x2="16" y2="21" {...shared} />
         </>
       )}
 

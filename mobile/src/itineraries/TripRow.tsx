@@ -1,8 +1,12 @@
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Icon } from '../components/Icon';
+import { coverPreviewFor } from '../media/coverInFlight';
+import { thumbOf } from '../media/mediaSourceContract';
+import { useMediaSource } from '../media/useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
 import type { ItineraryResponse } from '../types/api';
-import { formatDates } from './formatDates';
+import { publicationBadge, tripCardDate } from './tripCardAnatomy';
 import { draftSubtitle, editingAdvisory } from './tripSections';
 
 
@@ -25,59 +29,134 @@ export function tripRowDestination(
 export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
   const advisory = editingAdvisory(itinerary);
   const subtitle = draftSubtitle(itinerary);
+  const date = tripCardDate(itinerary);
+  const badge = publicationBadge(itinerary);
+
   return (
     <Link href={tripRowDestination(itinerary)} asChild>
-      <Pressable style={styles.row} accessibilityRole="button" accessibilityLabel={itinerary.title}>
-        <View style={styles.rowHeader}>
-          <Text style={styles.rowTitle} numberOfLines={1}>
-            {itinerary.title}
-          </Text>
+      <Pressable style={styles.card} accessibilityRole="button" accessibilityLabel={itinerary.title}>
+        <CoverThumb
+          coverImageUrl={itinerary.coverImageUrl}
+          localPreview={coverPreviewFor(itinerary.id)}
+        />
+
+        <View style={styles.info}>
+          <View style={styles.titleWrap}>
+            {date !== null && <Text style={styles.date}>{date}</Text>}
+            <Text style={styles.title} numberOfLines={1}>
+              {itinerary.title}
+            </Text>
+          </View>
+
+          {subtitle !== null && <Text style={styles.subtitle}>{subtitle}</Text>}
+
+          {advisory !== null && (
+            <View style={styles.status}>
+              <View style={styles.statusDot} />
+              <Text style={styles.statusText}>{advisory}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.badges}>
           {itinerary.archived && (
             <View style={styles.archivedBadge}>
               <Text style={styles.archivedBadgeText}>Archived</Text>
             </View>
           )}
+          {badge !== null && (
+            <View style={styles.publicationBadge}>
+              <Text style={styles.publicationBadgeText}>{badge}</Text>
+            </View>
+          )}
         </View>
-        <Text style={styles.rowMeta} numberOfLines={1}>
-          {itinerary.destinations.join(' · ')}
-        </Text>
-        <Text style={styles.rowDates}>{formatDates(itinerary)}</Text>
-        {subtitle !== null && <Text style={styles.subtitle}>{subtitle}</Text>}
-        {advisory !== null && (
-          <View style={styles.advisory}>
-            <View style={styles.advisoryDot} />
-            <Text style={styles.advisoryText}>{advisory}</Text>
-          </View>
-        )}
       </Pressable>
     </Link>
   );
 }
 
+
+function CoverThumb({
+  coverImageUrl,
+  localPreview,
+}: {
+  coverImageUrl: string | null;
+  localPreview: string | null;
+}) {
+  const uploaded = useMediaSource(thumbOf(coverImageUrl));
+  const source = uploaded ?? (localPreview === null ? null : { uri: localPreview });
+
+  if (source === null) {
+    return (
+      <View style={[styles.thumb, styles.thumbEmpty]}>
+        <Icon name="map" size={THUMB_ICON_SIZE} color={colors.textSecondary} />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={source}
+      style={styles.thumb}
+      resizeMode="cover"
+      accessibilityLabel="Trip cover photo"
+      accessibilityIgnoresInvertColors
+    />
+  );
+}
+
+const THUMB_SIZE = 76;
+
+const THUMB_ICON_SIZE = 24;
+
+const STATUS_DOT_SIZE = 8;
+
 const styles = StyleSheet.create({
-  row: {
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm3,
+    padding: spacing.sm3,
     backgroundColor: colors.surface,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.xs,
   },
-  rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  rowTitle: { ...typography.bodyStrong, color: colors.textPrimary, flexShrink: 1 },
+  thumb: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceMuted,
+  },
+  thumbEmpty: { alignItems: 'center', justifyContent: 'center' },
+  info: { flex: 1, gap: spacing.xs2 },
+  titleWrap: { gap: spacing.hair },
+  date: { ...typography.cardDate, color: colors.textSecondary },
+  title: { ...typography.cardTitle, color: colors.textPrimary },
+  subtitle: { ...typography.cardSubtitle, color: colors.textSecondary },
+  status: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs2 },
+  statusDot: {
+    width: STATUS_DOT_SIZE,
+    height: STATUS_DOT_SIZE,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+  },
+  statusText: { ...typography.cardStatus, color: colors.textSecondary },
+  badges: { alignItems: 'flex-end', gap: spacing.xs },
   archivedBadge: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: spacing.hair,
     borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.accentMuted,
     backgroundColor: colors.background,
   },
-  archivedBadgeText: { ...typography.caption, color: colors.accent },
-  rowMeta: { ...typography.body, color: colors.textSecondary },
-  rowDates: { ...typography.caption, color: colors.textSecondary },
-  advisory: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  advisoryDot: { width: 8, height: 8, borderRadius: radii.pill, backgroundColor: colors.accent },
-  advisoryText: { ...typography.caption, color: colors.textSecondary },
-  subtitle: { ...typography.caption, color: colors.textSecondary },
+  archivedBadgeText: { ...typography.cardStatus, color: colors.accent },
+  publicationBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.hair,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accentTint,
+  },
+  publicationBadgeText: { ...typography.cardStatus, color: colors.accent },
 });

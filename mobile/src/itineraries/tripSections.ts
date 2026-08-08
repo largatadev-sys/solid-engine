@@ -13,10 +13,10 @@ export const TRIP_SECTIONS: readonly TripSection[] = [
 
 
 const LABELS: Record<TripSection, string> = {
-  ongoing: 'Ongoing',
-  upcoming: 'Upcoming',
-  draft: 'Draft',
-  completed: 'Completed',
+  ongoing: 'Ongoing Trips',
+  upcoming: 'Upcoming Trips',
+  draft: 'Drafts',
+  completed: 'Completed Trips',
 };
 
 

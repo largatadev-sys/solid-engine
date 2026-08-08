@@ -128,7 +128,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(read(TRIPS_GROUP, '_layout.tsx')).toContain('headerShown: false');
   });
 
-  const FULL_BLEED = ['itineraries/[id]/published.tsx'];
+  const FULL_BLEED = ['itineraries/[id]/published.tsx', 'itineraries/[id]/created.tsx'];
 
   it.each(tripScreens().filter(([name]) => !FULL_BLEED.includes(name)))(
     '%s draws its own heading — with no header bar, a navigator title renders nowhere',
@@ -149,19 +149,98 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(source).not.toMatch(/options=\{\{[^}]*title:/);
   });
 
-  it('creates from the Trips screen, straight to trip details — the mock connector, not the chooser', () => {
+  it('creates from the Trips screen, straight to the form — the mock connector, not the chooser', () => {
     const trips = read(TRIPS_GROUP, 'index.tsx');
 
     expect(trips).toContain('href="/itineraries/new"');
-    expect(trips).toContain('Create Itinerary');
+    expect(trips).toContain('Plan a Trip');
+    expect(trips).toContain('name="plusCircle"');
+    expect(trips).not.toMatch(/Create Itinerary/);
     expect(read(TABS, '_layout.tsx')).not.toContain("router.push('/itineraries/create')");
   });
 
-  it('greys Add a Past Trip — the founder wants the argument before the door (S4.13)', () => {
+  it('scraps Add a Past Trip for good — the founder ruled it wontfix (S4.15 decision 6)', () => {
     const trips = read(TRIPS_GROUP, 'index.tsx');
 
-    expect(trips).toContain('Add a Past Trip');
-    expect(trips).toContain("comingSoon('addPastTrip')");
+    expect(trips).not.toMatch(/Add a Past Trip/);
+    expect(trips).not.toMatch(/addPastTrip/);
+  });
+
+  it('closes the archived-trips door while the archive itself stays reachable (S4.15 decision 6)', () => {
+    expect(read(TRIPS_GROUP, 'index.tsx')).not.toMatch(/Archived trips|itineraries\/archived/);
+    expect(existsSync(join(TRIPS, 'archived.tsx'))).toBe(true);
+  });
+
+  it('greys the header search and filter rather than navigating nowhere (S4.15 decision 6)', () => {
+    const trips = read(TRIPS_GROUP, 'index.tsx');
+
+    expect(trips).toContain("comingSoon('tripSearch')");
+    expect(trips).toContain("comingSoon('tripFilter')");
+    expect(trips).toContain('name="filter"');
+  });
+
+  it('TELLS THE CACHE the cover landed — the upload bypasses the mutation hook, so nothing else will', () => {
+    const create = read(TRIPS, 'new.tsx');
+
+    expect(create).toMatch(/const withCover = await itineraryRepository\.uploadCover\(/);
+    expect(create).toContain('await onItineraryUpdated(client, withCover)');
+  });
+
+  it('navigates BEFORE the upload, so Create Trip never blocks on bytes going up', () => {
+    const create = read(TRIPS, 'new.tsx');
+    const uploadAt = create.indexOf('void attachChosenCover(created.id)');
+    const navigateAt = create.indexOf("router.replace({ pathname: '/itineraries/[id]/created'");
+
+    expect(uploadAt).toBeGreaterThan(-1);
+    expect(navigateAt).toBeGreaterThan(uploadAt);
+    expect(create).not.toMatch(/await attachChosenCover/);
+  });
+
+  it('shows the picked photo while it uploads — a placeholder for a cover the traveler just chose reads as loss', () => {
+    expect(read(TRIPS, 'new.tsx')).toContain('rememberCoverPreview(created.id, chosenCover.uri)');
+    expect(read(TRIPS, 'new.tsx')).toContain('forgetCoverPreview(itineraryId)');
+
+    for (const source of [read(TRIPS, '[id]', 'created.tsx'), read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx')]) {
+      expect(source).toContain('coverPreviewFor(');
+      expect(source).toMatch(/uploaded \?\? \(localPreview === null \? null : \{ uri: localPreview \}\)/);
+    }
+  });
+
+  it('never says "Uploading…" on the create form, where the only request in flight is the trip', () => {
+    const create = read(TRIPS, 'new.tsx');
+    const edit = read(TRIPS, '[id]', 'edit.tsx');
+
+    expect(create).not.toMatch(/uploading=/);
+    expect(create).toContain('busy={create.isPending}');
+    expect(edit).toContain('uploading={uploadCover.isPending}');
+  });
+
+  it('binds the uploading label to a real upload, never to whatever else is pending', () => {
+    const picker = read(MOBILE_ROOT, 'src', 'media', 'CoverPicker.tsx');
+
+    expect(picker).not.toMatch(/busy \? UPLOADING_COVER_LABEL/);
+    expect(picker.match(/uploading \? UPLOADING_COVER_LABEL/g) ?? []).toHaveLength(2);
+  });
+
+  it('fetches a card thumbnail through the AUTHENTICATED media path — a bare URL 401s (S3.3)', () => {
+    const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
+
+    expect(row).toContain('useMediaSource(thumbOf(coverImageUrl))');
+    expect(row).not.toMatch(/source=\{\{\s*uri:/);
+  });
+
+  it('drops the destinations line the mock has no room for (S4.15 decision 5)', () => {
+    const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
+
+    expect(row).not.toMatch(/destinations\.join/);
+    expect(row).not.toMatch(/formatDates/);
+  });
+
+  it('wears the briefcase on the Trips tab, as the mock draws it (icon fidelity)', () => {
+    const layout = read(TABS, '_layout.tsx');
+
+    expect(layout).toContain("tabIcon('briefcase')");
+    expect(layout).not.toContain("tabIcon('map')");
   });
 
   it('says Standouts and never Highlights — the glossary reserved that word for diaries', () => {
@@ -284,13 +363,33 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(activity).not.toMatch(/PROVIDER \d|Add another/);
   });
 
-  it('the chooser offers scratch live and fork greyed', () => {
-    const chooser = read(TRIPS, 'create.tsx');
+  it('greys the workspace door on the overview — the redesign it opens is the next story (S4.15 decision 3)', () => {
+    const overview = read(TRIPS, '[id]', 'created.tsx');
 
-    expect(chooser).toContain("router.replace('/itineraries/new')");
-    expect(chooser).toContain("comingSoon('fork')");
-    expect(chooser).toContain('Start from Scratch');
-    expect(chooser).toContain('Fork an Existing Itinerary');
+    expect(overview).toContain("comingSoon('tripWorkspace')");
+    expect(overview).toContain('accessibilityState={{ disabled: true }}');
+    expect(overview).not.toMatch(/pathname: '\/itineraries\/\[id\]'/);
+  });
+
+  it('keeps Preview Trip live and PUSHED, so back returns to the overview (S4.15 decision 3)', () => {
+    const overview = read(TRIPS, '[id]', 'created.tsx');
+
+    expect(overview).toMatch(/router\.push\(\{ pathname: '\/itineraries\/\[id\]\/preview'/);
+  });
+
+  it('leaves the publish-success screen alone — a different act, a different moment (spec AC 9)', () => {
+    const published = read(TRIPS, '[id]', 'published.tsx');
+
+    expect(published).toContain('Your Itinerary is Live!');
+    expect(published).toContain('is now available for travelers to discover.');
+  });
+
+  it('retires the create-method chooser — a door with one exit (S4.15 decision 7)', () => {
+    expect(existsSync(join(TRIPS, 'create.tsx'))).toBe(false);
+  });
+
+  it('keeps the legacy create path resolving, pointed at the form rather than the retired chooser', () => {
+    expect(read(TRIPS_GROUP, 'create.tsx')).toContain('href="/itineraries/new"');
   });
 });
 
@@ -314,10 +413,24 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13)', 
     expect(create).not.toContain('surface="coverPhoto"');
   });
 
-  it('lands Continue on the day editor at Day 1', () => {
-    expect(create).toContain("pathname: '/itineraries/[id]/days'");
-    expect(create).toContain("day: '1'");
-    expect(create).toContain('Continue');
+  it('speaks the ratified language: Plan a Trip to enter, Create Trip to submit (S4.15 decision 8)', () => {
+    expect(create).toContain('title="Plan a Trip"');
+    expect(create).toContain('Create Trip');
+    expect(create).not.toMatch(/Create Itinerary|Continue to Daily Schedules/);
+  });
+
+  it('prompts in every field rather than showing sample content (S4.15 decision 8)', () => {
+    for (const prompt of [
+      'Name your trip',
+      'Where to?',
+      'Days',
+      'Best months to go',
+      "What's this trip about?",
+      'Add a standout',
+    ]) {
+      expect(create).toContain(`placeholder="${prompt}"`);
+    }
+    expect(create).not.toMatch(/Island Hopping in El Nido|Palawan"|Dec - Apr|Big Lagoon Kayaking/);
   });
 });
 
@@ -336,9 +449,11 @@ describe('the two day surfaces, each with its own job (founder ruling 2026-07-31
     expect(workspace).toContain('dayId: day.id');
   });
 
-  it('sends the create flow to the EDITOR, at Day 1 (decision 13)', () => {
-    expect(read(TRIPS, 'new.tsx')).toContain("pathname: '/itineraries/[id]/days'");
-    expect(read(TRIPS, 'new.tsx')).toContain("day: '1'");
+  it('lands the create flow on the overview, REPLACING the spent form so back reaches Trips (S4.15 decision 2)', () => {
+    const create = read(TRIPS, 'new.tsx');
+
+    expect(create).toMatch(/router\.replace\(\{ pathname: '\/itineraries\/\[id\]\/created'/);
+    expect(create).not.toMatch(/pathname: '\/itineraries\/\[id\]\/days'/);
   });
 
   it('opens a DRAFT straight in the day editor — there is nothing to preview yet', () => {
@@ -460,7 +575,7 @@ describe('every greyed affordance is wired to the shared helper (register #2)', 
     read(TABS, '_layout.tsx'),
     read(TRIPS_GROUP, 'index.tsx'),
     read(TRIPS, 'new.tsx'),
-    read(TRIPS, 'create.tsx'),
+    read(TRIPS, '[id]', 'created.tsx'),
     read(TRIPS, '[id]', 'index.tsx'),
     read(TRIPS, '[id]', 'days', 'index.tsx'),
     read(TRIPS, '[id]', 'days', '[dayId].tsx'),

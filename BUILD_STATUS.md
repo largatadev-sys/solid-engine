@@ -6,7 +6,7 @@
 
 **Update this before the merge, not after.** A story's row reaches its final state in the last commit *on the feature branch*, so the squash-merge lands a truthful tracker and nothing follows it. Updating after the merge means committing straight to `dev`, which the git workflow doesn't allow.
 
-Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
+Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wontfix *(specced, then declined — the spec stays as the record of why)*
 
 ## Story table *(derived from `07-epic-map.md`)*
 
@@ -42,6 +42,8 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S4.12 | Auth & onboarding fidelity pass *(founder rulings 2026-08-04 on the re-surfaced 07/16 board — tagline, eye glyph, reset placement, completion glyph; the goals minimum drops and the resume ladder stops keying on goal emptiness; the archived export gains its reconciliation note)* | ✅ | [spec](docs/plans/S4.12-auth-onboarding-fidelity/spec.md) |
 | S4.13 | Create-flow rebuild + the four-state lifecycle *(ADR-020 — `upcoming` joins the ladder and `active` becomes `ongoing`; Finish Planning is the creation flow's terminal act, the publish gate stays at `completed` and the freeze stays on `published` alone; Trips renders four lifecycle sections, the tab bar drops to four, and the activity gains its booking card)* | ✅ | [spec](docs/plans/S4.13-create-flow-and-lifecycle/spec.md) |
 | S4.14 | Traveler vanity number *(grilled, parked and pulled the same day, 2026-08-08 — cohort badge + per-month shuffled-pool allocation, replacing the raw id on the profile; the handle minimum drops to 2 by founder call, to be raised before alpha (epic-map line); the founder `0` grant is deferred to a follow-up migration; candidate capability: short handle → reg. #14)* | ✅ | [spec](docs/plans/S4.14-vanity-number/spec.md) |
+| S4.15 | "Plan a Trip" — the simplified create flow + Trips landing reconciliation *(grilled 2026-08-08 — Trip/Itinerary split ratified, register #3 closed; the Trip Created overview partially reverses S4.13 decision 11 on the record; cover thumbnails + publication badges reach the cards; chooser retired; "Add a Past Trip" wontfix)* | ✅ | [spec](docs/plans/S4.15-plan-a-trip/spec.md) |
+| S4.16 | The cover and the trip — making creation one act instead of four *(raised, specced and **declined the same day, 2026-08-08**. S4.15's local preview, cache invalidation and honest upload label closed the gap the traveler could see; what remained was four sequential calls finishing a second after a screen already left behind. All three shapes cost a wire change, and two needed a scheduler and a storage quota this codebase does not have — to remove an invisible delay. **The spec is kept, not deleted:** it records the four-call sequence and the finding that the header lease is enforced server-side, so no client-side change can reorder creation)* | 🚫 | [spec](docs/plans/S4.16-upload-on-pick/spec.md) |
 | S4.2 | Published diaries → Highlights *(resolves reg. #13; detached from the E4 pull 2026-07-29 — hard-depends on diaries, sequenced behind E3)* | ⬜ | — |
 | S4.3 | Discovery / browse feed (cursor) | ⬜ | — |
 | S4.4 | Stars | ⬜ | — |

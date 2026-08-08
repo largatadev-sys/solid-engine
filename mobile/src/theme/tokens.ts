@@ -12,6 +12,7 @@ const palette = {
   forest600: '#2F6B47',
   terracotta016: 'rgba(217, 108, 74, 0.0627451)',
   navy140: 'rgba(27, 38, 59, 0.5490196)',
+  ink900: '#121212',
 } as const;
 
 
@@ -42,6 +43,8 @@ export const colors = {
   danger: palette.crimson700,
 
   success: palette.forest600,
+
+  inputBorder: palette.ink900,
 } as const;
 
 
@@ -74,13 +77,35 @@ export const typography = {
 
   fine: { fontFamily: fonts.regular, fontSize: 10, lineHeight: 14, fontWeight: '400' },
   fineMono: { fontSize: 10, fontFamily: 'monospace' },
+
+  fieldLabel: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  input: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 17, fontWeight: '400' },
+  fieldAction: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16, fontWeight: '700' },
+  ctaLabel: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 18, fontWeight: '700' },
+
+  summaryTitle: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 17, fontWeight: '700' },
+  summaryMeta: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 15, fontWeight: '400' },
+  actionLarge: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, fontWeight: '700' },
+  actionMedium: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 18, fontWeight: '600' },
+  overviewBody: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, fontWeight: '400' },
+
+  cardDate: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  cardTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, fontWeight: '700' },
+  cardSubtitle: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  cardStatus: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  sectionLabel: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
 } as const;
 
 
 export const spacing = {
+  hair: 2,
   xs: 4,
+  xs2: 6,
   sm: 8,
+  sm2: 10,
+  sm3: 12,
   md: 16,
+  md2: 20,
   lg: 24,
   xl: 32,
   xxl: 48,
@@ -89,6 +114,7 @@ export const spacing = {
 
 export const radii = {
   xs: 2,
+  control: 4,
   sm: 8,
   md: 12,
   lg: 16,

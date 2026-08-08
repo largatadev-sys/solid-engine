@@ -6,14 +6,15 @@ _Derived from Artifact 00 (§3–4) and the working sessions. Status: **proposed
 
 ---
 
-## Glossary — the ubiquitous language  `OPEN → register #3 (UX confirms nouns canonical)`
+## Glossary — the ubiquitous language  *(register #3 resolved 2026-08-08 — S4.15 grilling: the Trip / Itinerary split ratified)*
 
 | Term | Precise meaning |
 |---|---|
 | **Traveler (User)** | An authenticated account. The sole platform actor in v1. |
 | **Handle (@username)** | The Traveler's unique, changeable public label (`@janedoe`): 3–20 chars, lowercase, globally unique. **A label, never a key** — ids remain the identifier everywhere, which is what makes free change safe (ADR-015). Distinct from **display name**, which stays non-unique. *(Added 2026-07-30, S4.0 grilling — supersedes the 07-17 "no handles in MVP" ruling.)* |
 | **Visitor** | An unauthenticated reader. Strictly read-only (INV-3). Not an entity — an access level. |
-| **Itinerary** | The plan: a standalone, forkable, publishable object owning Days and their Activities. |
+| **Trip** | The traveler's journey-object through its whole lifecycle — the word every own-surface uses (the Trips tab, trip cards, **Trip Workspace**, Plan a Trip, Create Trip). A Trip *has* an Itinerary and never stops being a trip: **Finish Planning turns the working plan into a finished itinerary** — the plan crystallizes, the object does not rename under the traveler's feet. UI language only — code, routes, entities and the wire stay `Itinerary`. *(Ratified 2026-08-08, S4.15 grilling — closes register #3.)* |
+| **Itinerary** | The plan: a standalone, forkable, publishable object owning Days and their Activities. In traveler-facing copy it names **the plan document a Trip carries** — the thing Finish Planning completes and publishing makes discoverable/forkable; discovery surfaces say "itinerary", own surfaces say "trip". *(Split ratified 2026-08-08, S4.15 grilling.)* |
 | **Day** | One ordinal slot of the plan (Day 1…N), optionally titled ("Arrival & Sunsets"). Owns its Activities and their order. Plans are **day-indexed, not date-anchored** (ADR-013); when the itinerary has dates, a Day's calendar date is derived, never stored. *(Added at the S1.3 grilling, 2026-07-23.)* |
 | **Activity** | One element of a Day's plan — transport, meal, stay, sight, anything scheduled. The name reads narrower than it means, deliberately *(renamed from **Itinerary Item** at the S1.3 grilling, 2026-07-23 — founder call: the UI says "Activity" and canon follows; the wire noun is permanent within /v1, accepted knowingly in ADR-013)*. Carries a `source`. |
 | **Fork Relationship** | Provenance record: this Itinerary was copied from that one. |
@@ -171,7 +172,7 @@ _Derived from Artifact 00 (§3–4) and the working sessions. Status: **proposed
 
 | Register # | Item | Blocks |
 |---|---|---|
-| 3 | Glossary nouns confirmed canonical (UX) *(drift observed 2026-07-17: UX artifacts say "User" and "workspace leader" — canon remains **Traveler** and **owner**)* | Nothing structural; naming in code |
+| 3 | ~~Glossary nouns confirmed canonical (UX)~~ **Resolved 2026-08-08 (S4.15 grilling): the Trip / Itinerary split ratified — Trip = the traveler's journey-object through its whole lifecycle (every own surface); Itinerary = the plan document the trip carries, finished at Finish Planning, discoverable at publish. Code and the wire keep `Itinerary`. The 07-17 drift rulings stand: canon remains **Traveler** and **owner**.** *(Original: drift observed 2026-07-17: UX artifacts say "User" and "workspace leader")* | ~~Nothing structural; naming in code~~ closed |
 | 4 | Review rules: who, how many, editable *(UX proposal on record, 2026-07-17, flow 11: eligible = confirmed members of a **completed, forked** workspace; the review lands on the **original** published itinerary; dimensions overall/accuracy/pacing/value + optional photos)* *(enriched 2026-07-27, S1.5 grilling: membership rows are **hard-deleted** at removal/leave, so "was a member" has no durable record after departure — if eligibility needs membership-at-completion, S4.5 must capture that fact itself (e.g. snapshot at completion) or gate on something that survives)* | The review story |
 | 5 | Public-comment surface details *(UX inputs 2026-07-17, flow 9: threaded replies, report action, creator badge; public comments are **not copied on fork**)* *(enriched 2026-07-24, S1.4 grilling: the founder's published-itinerary mock is design input — five-tab view, flat comment list + composer, one threaded "(Creator)" reply; digest archived in `docs/plans/S1.4-itinerary-edit-lock/`. Comment is now **public-only** — the private half was deleted at the S1.4 re-scope, so this register owns the entire comment surface.)* | The public-itinerary story |
 | 10 | ~~draft→active trigger (owner-start vs date)~~ **Resolved 2026-07-28 (S1.7 grilling): owner-explicit for both transitions, the date as a pull-based client-side nudge — never automatic.** *(The UX input — 2026-07-17, flow 11 — supported exactly this.)* | ~~The itinerary lifecycle story~~ closed |

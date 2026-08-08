@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
 import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../../../src/components/comingSoon';
+import { Icon } from '../../../src/components/Icon';
 import { InvitationInbox } from '../../../src/components/InvitationInbox';
 import { TripRow } from '../../../src/itineraries/TripRow';
 import { groupIntoSections } from '../../../src/itineraries/tripSections';
@@ -19,6 +20,24 @@ export default function MyTripsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Trips</Text>
+        <View style={styles.headerActions}>
+          <Pressable
+            onPress={() => comingSoon('tripSearch')}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: true }}
+            accessibilityLabel="Search trips, coming soon"
+            hitSlop={8}>
+            <Icon name="search" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
+          </Pressable>
+          <Pressable
+            onPress={() => comingSoon('tripFilter')}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: true }}
+            accessibilityLabel="Filter trips, coming soon"
+            hitSlop={8}>
+            <Icon name="filter" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
+          </Pressable>
+        </View>
       </View>
 
       {isPending && <ActivityIndicator size="large" color={colors.accent} style={styles.centered} />}
@@ -50,14 +69,7 @@ export default function MyTripsScreen() {
           ListHeaderComponent={<InvitationInbox />}
           ListEmptyComponent={<EmptyState />}
           ListFooterComponent={
-            <>
-              {isFetchingNextPage && <ActivityIndicator color={colors.accent} style={styles.footer} />}
-              <Link href="/itineraries/archived" asChild>
-                <Pressable style={styles.archivedLink} accessibilityRole="button">
-                  <Text style={styles.archivedLinkText}>Archived trips</Text>
-                </Pressable>
-              </Link>
-            </>
+            isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={styles.footer} /> : null
           }
         />
       )}
@@ -65,16 +77,10 @@ export default function MyTripsScreen() {
       <View style={styles.ctas}>
         <Link href="/itineraries/new" asChild>
           <Pressable style={styles.primaryCta} accessibilityRole="button">
-            <Text style={styles.primaryCtaText}>Create Itinerary</Text>
+            <Text style={styles.primaryCtaText}>Plan a Trip</Text>
+            <Icon name="plusCircle" size={CTA_ICON_SIZE} color={colors.textOnAccent} />
           </Pressable>
         </Link>
-        <Pressable
-          style={styles.secondaryCta}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: true }}
-          onPress={() => comingSoon('addPastTrip')}>
-          <Text style={styles.secondaryCtaText}>Add a Past Trip</Text>
-        </Pressable>
       </View>
     </View>
   );
@@ -92,15 +98,29 @@ function EmptyState() {
   );
 }
 
+const HEADER_ICON_SIZE = 20;
+
+const CTA_ICON_SIZE = 18;
+
+const CTA_HEIGHT = 52;
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
-  headerTitle: { ...typography.display, color: colors.textPrimary },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  headerTitle: { ...typography.title, color: colors.textPrimary },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm3 },
   sectionTitle: {
-    ...typography.bodyStrong,
+    ...typography.sectionLabel,
     color: colors.textSecondary,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.sm3,
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
   listContainer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
@@ -110,33 +130,22 @@ const styles = StyleSheet.create({
   errorTitle: { ...typography.heading, color: colors.danger },
   caption: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   footer: { paddingVertical: spacing.md },
-  archivedLink: { paddingVertical: spacing.md, alignItems: 'center' },
-  archivedLinkText: { ...typography.body, color: colors.textSecondary },
   ctas: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
-    gap: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
     backgroundColor: colors.background,
   },
   primaryCta: {
-    paddingVertical: spacing.md,
-    borderRadius: radii.sm,
+    flexDirection: 'row',
+    height: CTA_HEIGHT,
+    borderRadius: radii.control,
     backgroundColor: colors.accent,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
-  primaryCtaText: { ...typography.bodyStrong, color: colors.textOnAccent },
-  secondaryCta: {
-    paddingVertical: spacing.md,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    opacity: 0.5,
-  },
-  secondaryCtaText: { ...typography.bodyStrong, color: colors.textSecondary },
+  primaryCtaText: { ...typography.actionMedium, color: colors.textOnAccent },
   button: {
     marginTop: spacing.md,
     paddingVertical: spacing.md,

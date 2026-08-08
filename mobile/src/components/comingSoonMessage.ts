@@ -11,7 +11,9 @@ export const COMING_SOON_SURFACES = {
   rating: 'Ratings',
   follow: 'Following a creator',
   booking: 'Booking options',
-  addPastTrip: 'Adding a past trip',
+  tripWorkspace: 'The Trip Workspace',
+  tripSearch: 'Searching your trips',
+  tripFilter: 'Filtering your trips',
 } as const;
 
 export type ComingSoonSurface = keyof typeof COMING_SOON_SURFACES;

@@ -93,6 +93,7 @@ export default function EditItineraryScreen() {
       <CoverPicker
         coverUrl={data?.coverImageUrl ?? null}
         busy={uploadCover.isPending || removeCover.isPending}
+        uploading={uploadCover.isPending}
         onPick={() => void coverAction.pickAndRun((photo) => uploadCover.mutateAsync(photo))}
         onRemove={() => void coverAction.run(() => removeCover.mutateAsync())}
       />

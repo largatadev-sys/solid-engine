@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -15,17 +16,19 @@ import { notify } from '../../../../src/components/notify';
 import { COVER_NOT_ATTACHED } from '../../../../src/media/photoMessages';
 import { pickPhoto } from '../../../../src/media/pickPhoto';
 import type { PickedPhoto } from '../../../../src/media/pickedPhoto';
+import { forgetCoverPreview, rememberCoverPreview } from '../../../../src/media/coverInFlight';
 import { itineraryRepository } from '../../../../src/repositories/itineraryRepository';
 import { Icon } from '../../../../src/components/Icon';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { addRow, cleanRows, removeRow, setRow } from '../../../../src/itineraries/rowEditor';
 import { validateItineraryForm } from '../../../../src/itineraries/validateItineraryForm';
-import { useCreateItinerary } from '../../../../src/query/itineraryQueries';
+import { onItineraryUpdated, useCreateItinerary } from '../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
 export default function NewItineraryScreen() {
   const router = useRouter();
+  const client = useQueryClient();
   const create = useCreateItinerary();
 
   const [title, setTitle] = useState('');
@@ -60,9 +63,10 @@ export default function NewItineraryScreen() {
         ...(chosenStandouts.length > 0 ? { standouts: chosenStandouts } : {}),
       },
       {
-        onSuccess: async (created) => {
-          await attachChosenCover(created.id);
-          router.replace({ pathname: '/itineraries/[id]/days', params: { id: created.id, day: '1' } });
+        onSuccess: (created) => {
+          if (chosenCover !== null) rememberCoverPreview(created.id, chosenCover.uri);
+          void attachChosenCover(created.id);
+          router.replace({ pathname: '/itineraries/[id]/created', params: { id: created.id } });
         },
       },
     );
@@ -73,10 +77,13 @@ export default function NewItineraryScreen() {
     if (chosenCover === null) return;
     try {
       await itineraryRepository.acquireEditLock(itineraryId, { subjectType: 'header' });
-      await itineraryRepository.uploadCover(itineraryId, chosenCover);
+      const withCover = await itineraryRepository.uploadCover(itineraryId, chosenCover);
       await itineraryRepository.releaseEditLock(itineraryId, { subjectType: 'header' });
+      await onItineraryUpdated(client, withCover);
     } catch {
       keepTheTripAndSayTheCoverDidNotAttach();
+    } finally {
+      forgetCoverPreview(itineraryId);
     }
   }
 
@@ -90,7 +97,7 @@ export default function NewItineraryScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <ScreenHeader title="Create Itinerary" size="display" back />
+        <ScreenHeader title="Plan a Trip" size="title" back />
 
         <CoverPicker
           coverUrl={chosenCover?.uri ?? null}
@@ -99,7 +106,7 @@ export default function NewItineraryScreen() {
           onRemove={() => setChosenCover(null)}
         />
 
-        <Field label="Trip Title" value={title} onChangeText={setTitle} placeholder="Island Hopping in El Nido" />
+        <Field label="Trip Title" value={title} onChangeText={setTitle} placeholder="Name your trip" />
 
         <View style={styles.row}>
           <View style={styles.rowWide}>
@@ -107,7 +114,7 @@ export default function NewItineraryScreen() {
               label="Destination"
               value={destination}
               onChangeText={setDestination}
-              placeholder="Palawan"
+              placeholder="Where to?"
             />
           </View>
           <View style={styles.rowNarrow}>
@@ -115,7 +122,7 @@ export default function NewItineraryScreen() {
               label="Duration"
               value={duration}
               onChangeText={setDuration}
-              placeholder="5"
+              placeholder="Days"
               keyboardType="number-pad"
             />
           </View>
@@ -125,14 +132,14 @@ export default function NewItineraryScreen() {
           label="Best Time of Year"
           value={bestTimeOfYear}
           onChangeText={setBestTimeOfYear}
-          placeholder="Dec - Apr"
+          placeholder="Best months to go"
         />
 
         <Field
           label="Trip Description"
           value={description}
           onChangeText={setDescription}
-          placeholder="Discover the breathtaking beauty of El Nido's lagoons."
+          placeholder="What's this trip about?"
           multiline
         />
 
@@ -145,7 +152,7 @@ export default function NewItineraryScreen() {
                 value={standout}
                 onChangeText={(text) => setStandouts((prev) => setRow(prev, index, text))}
                 accessibilityLabel={`Standout ${index + 1}`}
-                placeholder="Big Lagoon Kayaking"
+                placeholder="Add a standout"
                 placeholderTextColor={colors.textSecondary}
               />
               <Pressable
@@ -181,7 +188,7 @@ export default function NewItineraryScreen() {
           {create.isPending ? (
             <ActivityIndicator color={colors.textOnAccent} />
           ) : (
-            <Text style={styles.ctaText}>Continue to Daily Schedules</Text>
+            <Text style={styles.ctaText}>Create Trip</Text>
           )}
         </Pressable>
       </View>
@@ -215,39 +222,41 @@ function Field(props: {
   );
 }
 
+const CTA_HEIGHT = 46;
+
+const MULTILINE_HEIGHT = 108;
+
+const DURATION_WIDTH = 120;
+
+const inputSurface = {
+  backgroundColor: colors.surfaceMuted,
+  borderWidth: 1,
+  borderColor: colors.inputBorder,
+  borderRadius: radii.control,
+  paddingHorizontal: spacing.sm3,
+  paddingVertical: spacing.sm3,
+} as const;
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  container: { padding: spacing.md, gap: spacing.md, flexGrow: 1 },
-  row: { flexDirection: 'row', gap: spacing.sm },
+  screen: { flex: 1, backgroundColor: colors.surface },
+  container: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+    gap: spacing.md2,
+    flexGrow: 1,
+  },
+  row: { flexDirection: 'row', gap: spacing.sm3 },
   rowWide: { flex: 1 },
-  rowNarrow: { width: 110 },
-  field: { gap: spacing.xs },
-  label: { ...typography.caption, color: colors.textSecondary },
-  input: {
-    ...typography.body,
-    color: colors.textPrimary,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.textPrimary,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  inputMultiline: { minHeight: 96, textAlignVertical: 'top' },
+  rowNarrow: { width: DURATION_WIDTH },
+  field: { gap: spacing.xs2 },
+  label: { ...typography.fieldLabel, color: colors.textSecondary },
+  input: { ...inputSurface, ...typography.input, color: colors.textPrimary },
+  inputMultiline: { height: MULTILINE_HEIGHT, textAlignVertical: 'top' },
   standoutRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  standoutInput: {
-    ...typography.body,
-    flex: 1,
-    color: colors.textPrimary,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.textPrimary,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  addStandout: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingTop: spacing.xs },
-  addStandoutText: { ...typography.bodyStrong, color: colors.textPrimary },
+  standoutInput: { ...inputSurface, ...typography.input, flex: 1, color: colors.textPrimary },
+  addStandout: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs2, paddingTop: spacing.xs },
+  addStandoutText: { ...typography.fieldAction, color: colors.textPrimary },
   error: { ...typography.caption, color: colors.danger },
   dock: {
     padding: spacing.md,
@@ -256,11 +265,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   cta: {
-    paddingVertical: spacing.md,
-    borderRadius: radii.sm,
+    height: CTA_HEIGHT,
+    borderRadius: radii.control,
     alignItems: 'center',
-    backgroundColor: colors.textPrimary,
+    justifyContent: 'center',
+    backgroundColor: colors.accent,
   },
   ctaBusy: { opacity: 0.7 },
-  ctaText: { ...typography.bodyStrong, color: colors.textOnAccent },
+  ctaText: { ...typography.ctaLabel, color: colors.textOnAccent },
 });
