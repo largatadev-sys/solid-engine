@@ -555,9 +555,26 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
 
     expect(editor).toContain('<WorkspaceDayCard');
     expect(editor).toContain('Add a Day');
-    expect(editor).toContain('onEditActivity');
-    expect(editor).toContain('onDeleteActivity');
+    expect(editor).toContain('<DraggableActivityList');
     expect(editor).toContain('onDeleteDay');
+  });
+
+  it('persists a drop through the version-checked PUT, surfacing 409 rather than overwriting (ticket 04)', () => {
+    const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
+
+    expect(editor).toContain('expectedActivityIds');
+    expect(editor).toContain("reorderError.code !== 'STALE_REORDER'");
+    expect(editor).toContain('applyDrop');
+  });
+
+  it('keeps the arrows on web and gives the native rows screen-reader reorder actions', () => {
+    const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+
+    expect(web).toContain('nudge={{');
+    expect(web).not.toContain('Gesture.Pan');
+    expect(native).toContain('Gesture.Pan');
+    expect(native).toContain("{ name: 'moveUp', label: 'Move up' }");
   });
 
   it('holds the Editing Session for as long as the editor is open (S4.17 decision 4)', () => {

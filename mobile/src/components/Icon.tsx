@@ -36,7 +36,8 @@ export type IconName =
   | 'userPlus'
   | 'calendarPlus'
   | 'grip'
-  | 'clock';
+  | 'clock'
+  | 'chevronUp';
 
 interface IconProps {
   readonly name: IconName;
@@ -322,6 +323,8 @@ export function Icon({ name, size, color }: IconProps) {
       )}
 
       {name === 'grip' && <Path d="M4.5 6.3h15M4.5 12h15M4.5 17.7h15" {...shared} strokeWidth={3} />}
+
+      {name === 'chevronUp' && <Polyline points="6 15 12 9 18 15" {...shared} />}
 
       {name === 'clock' && (
         <>

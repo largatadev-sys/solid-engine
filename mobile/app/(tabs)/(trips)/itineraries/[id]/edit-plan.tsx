@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { ApiError } from '../../../../../src/api/ApiError';
 import { Icon } from '../../../../../src/components/Icon';
 import { confirmWith } from '../../../../../src/components/confirmDestructive';
 import { confirmDestructiveMessage } from '../../../../../src/components/confirmDestructiveMessage';
@@ -16,7 +17,9 @@ import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/componen
 import { useEditLock } from '../../../../../src/hooks/useEditLock';
 import { useMe } from '../../../../../src/hooks/useMe';
 import { defaultOpenDay, toggleOpenDay } from '../../../../../src/itineraries/dayAccordion';
+import { DraggableActivityList } from '../../../../../src/itineraries/DraggableActivityList';
 import { FinalizeSheet } from '../../../../../src/itineraries/FinalizeSheet';
+import { applyDrop, applyMove } from '../../../../../src/itineraries/reorderActivityIds';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
 import { WorkspaceDetailsTab } from '../../../../../src/itineraries/WorkspaceDetailsTab';
 import { WorkspaceHeader } from '../../../../../src/itineraries/WorkspaceHeader';
@@ -37,6 +40,7 @@ import {
   useDeleteDay,
   useItinerary,
   useRenameDay,
+  useReorderActivities,
   useTripLifecycle,
 } from '../../../../../src/query/itineraryQueries';
 import { colors, typography } from '../../../../../src/theme';
@@ -46,7 +50,7 @@ import type { ActivityResponse } from '../../../../../src/types/api';
 export default function DraftWorkspaceScreen() {
   const router = useRouter();
   const { id, day } = useLocalSearchParams<{ id: string; day?: string }>();
-  const { data, isPending, isError, error } = useItinerary(id);
+  const { data, isPending, isError, error, refetch } = useItinerary(id);
 
   const members = useMembers(id);
   const { state: meState } = useMe();
@@ -59,6 +63,7 @@ export default function DraftWorkspaceScreen() {
   const renameDay = useRenameDay(id);
   const deleteDay = useDeleteDay(id);
   const deleteActivity = useDeleteActivity(id);
+  const reorderActivities = useReorderActivities(id);
   const lifecycle = useTripLifecycle(id);
 
   const [active, setActive] = useState<WorkspaceTab>('day-by-day');
@@ -118,6 +123,38 @@ export default function DraftWorkspaceScreen() {
     renameDay.mutate({ dayId, title: draftTitle.trim() === '' ? undefined : draftTitle.trim() });
   };
 
+  const persistOrder = (dayId: string, currentIds: string[], desired: string[], retry: (freshIds: string[]) => string[] | null) => {
+    reorderActivities.mutate(
+      { dayId, activityIds: desired, expectedActivityIds: currentIds },
+      {
+        onError: (reorderError) => {
+          if (!(reorderError instanceof ApiError) || reorderError.code !== 'STALE_REORDER') return;
+          void refetch().then((fresh) => {
+            const freshIds = fresh.data?.days.find((d) => d.id === dayId)?.activities.map((a) => a.id) ?? null;
+            if (freshIds === null) return;
+            const reapplied = retry(freshIds);
+            if (reapplied === null) return;
+            reorderActivities.mutate({ dayId, activityIds: reapplied, expectedActivityIds: freshIds });
+          });
+        },
+      },
+    );
+  };
+
+  const dropActivity = (dayId: string, activityId: string, toIndex: number) => {
+    const currentIds = data.days.find((d) => d.id === dayId)?.activities.map((a) => a.id) ?? [];
+    const desired = applyDrop(currentIds, { activityId, toIndex });
+    if (desired === null) return;
+    persistOrder(dayId, currentIds, desired, (freshIds) => applyDrop(freshIds, { activityId, toIndex }));
+  };
+
+  const nudgeActivity = (dayId: string, activityId: string, direction: 'up' | 'down') => {
+    const currentIds = data.days.find((d) => d.id === dayId)?.activities.map((a) => a.id) ?? [];
+    const desired = applyMove(currentIds, { activityId, direction });
+    if (desired === null) return;
+    persistOrder(dayId, currentIds, desired, (freshIds) => applyMove(freshIds, { activityId, direction }));
+  };
+
   const openActivityForm = (dayId: string, activity?: ActivityResponse) => {
     router.push({
       pathname: '/itineraries/[id]/activity',
@@ -162,11 +199,19 @@ export default function DraftWorkspaceScreen() {
                 affordances={affordances}
                 onToggle={() => setOpenDayId(toggleOpenDay(expandedDayId, d.id))}
                 onAddActivity={() => openActivityForm(d.id)}
-                onEditActivity={(activity) => openActivityForm(d.id, activity)}
-                onDeleteActivity={(activity) =>
-                  confirmWith(confirmDestructiveMessage(activity.title), () =>
-                    deleteActivity.mutate({ dayId: d.id, activityId: activity.id }),
-                  )
+                activitySlot={
+                  <DraggableActivityList
+                    activities={d.activities}
+                    affordances={affordances}
+                    onEdit={(activity) => openActivityForm(d.id, activity)}
+                    onDelete={(activity) =>
+                      confirmWith(confirmDestructiveMessage(activity.title), () =>
+                        deleteActivity.mutate({ dayId: d.id, activityId: activity.id }),
+                      )
+                    }
+                    onDrop={(activityId, toIndex) => dropActivity(d.id, activityId, toIndex)}
+                    onNudge={(activityId, direction) => nudgeActivity(d.id, activityId, direction)}
+                  />
                 }
                 onDeleteDay={() =>
                   confirmWith(
