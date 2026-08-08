@@ -63,6 +63,15 @@ export const workspaceTypography = {
 } as const;
 
 
+export const workspaceCardShadow = {
+  shadowColor: workspaceColors.title,
+  shadowOffset: { width: 0, height: 1 },
+  shadowRadius: 3,
+  shadowOpacity: 0.06,
+  elevation: 1,
+} as const;
+
+
 export const workspaceRadii = {
   control: 4,
   card: 12,

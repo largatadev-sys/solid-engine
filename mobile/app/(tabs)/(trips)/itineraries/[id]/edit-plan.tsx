@@ -17,6 +17,7 @@ import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/componen
 import { useEditLock } from '../../../../../src/hooks/useEditLock';
 import { useMe } from '../../../../../src/hooks/useMe';
 import { defaultOpenDay, toggleOpenDay } from '../../../../../src/itineraries/dayAccordion';
+import { dayName, dayPrefix, dayTitleLine } from '../../../../../src/itineraries/dayTitle';
 import { DraggableActivityList } from '../../../../../src/itineraries/DraggableActivityList';
 import { FinalizeSheet } from '../../../../../src/itineraries/FinalizeSheet';
 import { applyDrop, applyMove } from '../../../../../src/itineraries/reorderActivityIds';
@@ -221,28 +222,33 @@ export default function DraftWorkspaceScreen() {
                 }
                 titleSlot={
                   editingTitleOf === d.id ? (
-                    <TextInput
-                      style={styles.titleInput}
-                      value={draftTitle}
-                      onChangeText={setDraftTitle}
-                      onBlur={() => commitTitle(d.id)}
-                      autoFocus
-                      accessibilityLabel={`Day ${d.ordinal} title`}
-                      placeholder={`Day ${d.ordinal}`}
-                      placeholderTextColor={workspaceColors.placeholder}
-                    />
+                    <View style={styles.titleRow}>
+                      <Text style={styles.dayTitle} numberOfLines={1}>
+                        {dayPrefix(d)}:
+                      </Text>
+                      <TextInput
+                        style={styles.titleInput}
+                        value={draftTitle}
+                        onChangeText={setDraftTitle}
+                        onBlur={() => commitTitle(d.id)}
+                        autoFocus
+                        accessibilityLabel={`Name for ${dayPrefix(d)}`}
+                        placeholder="Name this day"
+                        placeholderTextColor={workspaceColors.placeholder}
+                      />
+                    </View>
                   ) : (
                     <Pressable
                       style={styles.titlePress}
                       onPress={() => {
                         setEditingTitleOf(d.id);
-                        setDraftTitle(d.title ?? '');
+                        setDraftTitle(dayName(d));
                       }}
                       accessibilityRole="button"
-                      accessibilityLabel={`Rename day ${d.ordinal}`}
+                      accessibilityLabel={`Rename ${dayPrefix(d)}`}
                     >
-                      <Text style={styles.dayTitle}>
-                        {d.title !== null && d.title !== '' ? `Day ${d.ordinal}: ${d.title}` : `Day ${d.ordinal}`}
+                      <Text style={styles.dayTitle} numberOfLines={1}>
+                        {dayTitleLine(d)}
                       </Text>
                     </Pressable>
                   )
@@ -305,6 +311,8 @@ export default function DraftWorkspaceScreen() {
 }
 
 
+const TITLE_ROW_BASIS = 200;
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -326,14 +334,25 @@ const styles = StyleSheet.create({
   titlePress: {
     flexShrink: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: TITLE_ROW_BASIS,
+    minWidth: 0,
+  },
   dayTitle: {
     ...workspaceTypography.dayTitle,
     color: workspaceColors.title,
+    flexShrink: 0,
   },
   titleInput: {
     ...workspaceTypography.dayTitle,
     color: workspaceColors.title,
     flex: 1,
+    minWidth: 0,
     borderBottomWidth: 1,
     borderBottomColor: workspaceColors.accent,
     paddingVertical: 2,

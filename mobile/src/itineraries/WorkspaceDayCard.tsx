@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import {
+  workspaceCardShadow,
   workspaceColors,
   workspaceMetrics,
   workspaceRadii,
@@ -234,6 +235,8 @@ const styles = StyleSheet.create({
     borderColor: workspaceColors.hairline,
     borderRadius: workspaceRadii.card,
     padding: 16,
+    backgroundColor: workspaceColors.surface,
+    ...workspaceCardShadow,
   },
   stubTitle: {
     ...workspaceTypography.stubTitle,
@@ -246,6 +249,8 @@ const styles = StyleSheet.create({
     borderRadius: workspaceRadii.card,
     padding: 16,
     gap: 12,
+    backgroundColor: workspaceColors.surface,
+    ...workspaceCardShadow,
   },
   titleRow: {
     flexDirection: 'row',
