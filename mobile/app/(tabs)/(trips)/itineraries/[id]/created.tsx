@@ -10,6 +10,7 @@ import {
   tripCreatedBody,
   tripCreatedMeta,
 } from '../../../../../src/itineraries/tripCreatedCopy';
+import { coverPreviewFor } from '../../../../../src/media/coverInFlight';
 import { thumbOf } from '../../../../../src/media/mediaSourceContract';
 import { useMediaSource } from '../../../../../src/media/useMediaSource';
 import { useItinerary } from '../../../../../src/query/itineraryQueries';
@@ -40,7 +41,7 @@ export default function TripCreatedScreen() {
           <ActivityIndicator color={colors.accent} />
         ) : (
           <View style={styles.summary}>
-            <SummaryThumb coverImageUrl={data.coverImageUrl} />
+            <SummaryThumb coverImageUrl={data.coverImageUrl} localPreview={coverPreviewFor(id)} />
             <View style={styles.summaryText}>
               <Text style={styles.summaryTitle} numberOfLines={1}>
                 {data.title}
@@ -78,8 +79,15 @@ export default function TripCreatedScreen() {
 }
 
 
-function SummaryThumb({ coverImageUrl }: { coverImageUrl: string | null }) {
-  const source = useMediaSource(thumbOf(coverImageUrl));
+function SummaryThumb({
+  coverImageUrl,
+  localPreview,
+}: {
+  coverImageUrl: string | null;
+  localPreview: string | null;
+}) {
+  const uploaded = useMediaSource(thumbOf(coverImageUrl));
+  const source = uploaded ?? (localPreview === null ? null : { uri: localPreview });
 
   if (source === null) {
     return (

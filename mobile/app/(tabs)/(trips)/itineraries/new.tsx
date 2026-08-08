@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -15,17 +16,19 @@ import { notify } from '../../../../src/components/notify';
 import { COVER_NOT_ATTACHED } from '../../../../src/media/photoMessages';
 import { pickPhoto } from '../../../../src/media/pickPhoto';
 import type { PickedPhoto } from '../../../../src/media/pickedPhoto';
+import { forgetCoverPreview, rememberCoverPreview } from '../../../../src/media/coverInFlight';
 import { itineraryRepository } from '../../../../src/repositories/itineraryRepository';
 import { Icon } from '../../../../src/components/Icon';
 import { ScreenHeader } from '../../../../src/components/ScreenHeader';
 import { addRow, cleanRows, removeRow, setRow } from '../../../../src/itineraries/rowEditor';
 import { validateItineraryForm } from '../../../../src/itineraries/validateItineraryForm';
-import { useCreateItinerary } from '../../../../src/query/itineraryQueries';
+import { onItineraryUpdated, useCreateItinerary } from '../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../src/theme';
 
 
 export default function NewItineraryScreen() {
   const router = useRouter();
+  const client = useQueryClient();
   const create = useCreateItinerary();
 
   const [title, setTitle] = useState('');
@@ -60,8 +63,9 @@ export default function NewItineraryScreen() {
         ...(chosenStandouts.length > 0 ? { standouts: chosenStandouts } : {}),
       },
       {
-        onSuccess: async (created) => {
-          await attachChosenCover(created.id);
+        onSuccess: (created) => {
+          if (chosenCover !== null) rememberCoverPreview(created.id, chosenCover.uri);
+          void attachChosenCover(created.id);
           router.replace({ pathname: '/itineraries/[id]/created', params: { id: created.id } });
         },
       },
@@ -73,10 +77,13 @@ export default function NewItineraryScreen() {
     if (chosenCover === null) return;
     try {
       await itineraryRepository.acquireEditLock(itineraryId, { subjectType: 'header' });
-      await itineraryRepository.uploadCover(itineraryId, chosenCover);
+      const withCover = await itineraryRepository.uploadCover(itineraryId, chosenCover);
       await itineraryRepository.releaseEditLock(itineraryId, { subjectType: 'header' });
+      await onItineraryUpdated(client, withCover);
     } catch {
       keepTheTripAndSayTheCoverDidNotAttach();
+    } finally {
+      forgetCoverPreview(itineraryId);
     }
   }
 

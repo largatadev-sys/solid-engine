@@ -179,6 +179,33 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(trips).toContain('name="filter"');
   });
 
+  it('TELLS THE CACHE the cover landed — the upload bypasses the mutation hook, so nothing else will', () => {
+    const create = read(TRIPS, 'new.tsx');
+
+    expect(create).toMatch(/const withCover = await itineraryRepository\.uploadCover\(/);
+    expect(create).toContain('await onItineraryUpdated(client, withCover)');
+  });
+
+  it('navigates BEFORE the upload, so Create Trip never blocks on bytes going up', () => {
+    const create = read(TRIPS, 'new.tsx');
+    const uploadAt = create.indexOf('void attachChosenCover(created.id)');
+    const navigateAt = create.indexOf("router.replace({ pathname: '/itineraries/[id]/created'");
+
+    expect(uploadAt).toBeGreaterThan(-1);
+    expect(navigateAt).toBeGreaterThan(uploadAt);
+    expect(create).not.toMatch(/await attachChosenCover/);
+  });
+
+  it('shows the picked photo while it uploads — a placeholder for a cover the traveler just chose reads as loss', () => {
+    expect(read(TRIPS, 'new.tsx')).toContain('rememberCoverPreview(created.id, chosenCover.uri)');
+    expect(read(TRIPS, 'new.tsx')).toContain('forgetCoverPreview(itineraryId)');
+
+    for (const source of [read(TRIPS, '[id]', 'created.tsx'), read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx')]) {
+      expect(source).toContain('coverPreviewFor(');
+      expect(source).toMatch(/uploaded \?\? \(localPreview === null \? null : \{ uri: localPreview \}\)/);
+    }
+  });
+
   it('fetches a card thumbnail through the AUTHENTICATED media path — a bare URL 401s (S3.3)', () => {
     const row = read(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx');
 

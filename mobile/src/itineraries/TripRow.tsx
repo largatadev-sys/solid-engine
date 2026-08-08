@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
+import { coverPreviewFor } from '../media/coverInFlight';
 import { thumbOf } from '../media/mediaSourceContract';
 import { useMediaSource } from '../media/useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
@@ -34,7 +35,10 @@ export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
   return (
     <Link href={tripRowDestination(itinerary)} asChild>
       <Pressable style={styles.card} accessibilityRole="button" accessibilityLabel={itinerary.title}>
-        <CoverThumb coverImageUrl={itinerary.coverImageUrl} />
+        <CoverThumb
+          coverImageUrl={itinerary.coverImageUrl}
+          localPreview={coverPreviewFor(itinerary.id)}
+        />
 
         <View style={styles.info}>
           <View style={styles.titleWrap}>
@@ -72,8 +76,15 @@ export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
 }
 
 
-function CoverThumb({ coverImageUrl }: { coverImageUrl: string | null }) {
-  const source = useMediaSource(thumbOf(coverImageUrl));
+function CoverThumb({
+  coverImageUrl,
+  localPreview,
+}: {
+  coverImageUrl: string | null;
+  localPreview: string | null;
+}) {
+  const uploaded = useMediaSource(thumbOf(coverImageUrl));
+  const source = uploaded ?? (localPreview === null ? null : { uri: localPreview });
 
   if (source === null) {
     return (
