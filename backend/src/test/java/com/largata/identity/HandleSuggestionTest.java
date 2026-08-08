@@ -21,7 +21,7 @@ class HandleSuggestionTest {
 
     @Test
     void aNameTooShortToBeAHandleFallsThroughToTheEmail() {
-        assertThat(suggest("Jo", "joanna@example.com", NOTHING_TAKEN)).isEqualTo("joanna");
+        assertThat(suggest("J", "joanna@example.com", NOTHING_TAKEN)).isEqualTo("joanna");
     }
 
     @Test

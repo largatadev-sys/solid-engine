@@ -41,6 +41,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked
 | S4.11 | Lifecycle, discovery and visibility as three axes *(ADR-019 — supersedes ADR-018's single-column shape; reinstates the `completed` publish gate ADR-017 retired)* | ✅ | [spec](docs/plans/S4.11-three-axes/spec.md) |
 | S4.12 | Auth & onboarding fidelity pass *(founder rulings 2026-08-04 on the re-surfaced 07/16 board — tagline, eye glyph, reset placement, completion glyph; the goals minimum drops and the resume ladder stops keying on goal emptiness; the archived export gains its reconciliation note)* | ✅ | [spec](docs/plans/S4.12-auth-onboarding-fidelity/spec.md) |
 | S4.13 | Create-flow rebuild + the four-state lifecycle *(ADR-020 — `upcoming` joins the ladder and `active` becomes `ongoing`; Finish Planning is the creation flow's terminal act, the publish gate stays at `completed` and the freeze stays on `published` alone; Trips renders four lifecycle sections, the tab bar drops to four, and the activity gains its booking card)* | ✅ | [spec](docs/plans/S4.13-create-flow-and-lifecycle/spec.md) |
+| S4.14 | Traveler vanity number *(grilled, parked and pulled the same day, 2026-08-08 — cohort badge + per-month shuffled-pool allocation, replacing the raw id on the profile; the handle minimum drops to 2 by founder call, to be raised before alpha (epic-map line); the founder `0` grant is deferred to a follow-up migration; candidate capability: short handle → reg. #14)* | ✅ | [spec](docs/plans/S4.14-vanity-number/spec.md) |
 | S4.2 | Published diaries → Highlights *(resolves reg. #13; detached from the E4 pull 2026-07-29 — hard-depends on diaries, sequenced behind E3)* | ⬜ | — |
 | S4.3 | Discovery / browse feed (cursor) | ⬜ | — |
 | S4.4 | Stars | ⬜ | — |
@@ -182,6 +183,14 @@ Test-harness capture (post-S0.6, owner directive): `mobile/scripts/drive-preview
 **Agent-skills sync from upstream (`mattpocock/skills`), landed at S3.3's close.** The lockfile-managed skill set under `.agents/skills/` + `.claude/skills/` updated to upstream head: 14 skills refreshed in both mirrors, `writing-great-skills` removed upstream and so removed here, `ask-matt` gains `PHASE-BOUNDARIES.md`, `skills-lock.json` re-hashed. Content is upstream's, taken as-is.
 
 *Why it wasn't a story —* Tooling sync, no product surface — the same housekeeping family as the 2026-07-15 agent-skills config line. Committed with S3.3's closeout so the working tree hands over clean.
+
+---
+
+**2026-08-08**
+
+**Traveler vanity number grilled and parked — backlog line in the epic map.** Founder idea stress-tested on the record: a pure status badge (founders share `0`; everyone else `nnxxxx` — cohort month + a random number from a per-month pre-shuffled pool), plus hand-planted 2-char founder handles in the same future backfill. Key rulings: no runtime founder concept and no super-admin (the `(0,0)` rows are the record) · a founder-conditional handle minimum rejected as an improvised entitlement check, recorded instead as the story's candidate capability (short handle, register #14) · deferral is free (cohort reconstructs from `created_at`; the pool number is random), so the whole build waits. **Trigger: the public-profile story.**
+
+*Why it wasn't a story —* Not a story: no code, no product surface — an idea analyzed together and written into the docs per the working agreement; same shape as the 2026-07-24 EDA parking line.
 
 ---
 

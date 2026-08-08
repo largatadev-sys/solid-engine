@@ -12,6 +12,31 @@ function verdict(
   return { handle, available: status === 'FREE', status };
 }
 
+describe('a handle the traveler already holds', () => {
+  it('is submittable however short it is, so a planted 2-character handle never locks Save', () => {
+    const feedback = handleFeedbackFor('ea', false, undefined, 'ea');
+
+    expect(feedback.submittable).toBe(true);
+    expect(feedback.tone).toBe('neutral');
+  });
+
+  it('needs no availability verdict, because nothing is being claimed', () => {
+    expect(handleFeedbackFor('ea', true, undefined, 'ea').submittable).toBe(true);
+  });
+
+  it('stops being exempt the moment it is edited away from the stored value', () => {
+    expect(handleFeedbackFor('e', false, undefined, 'ea').submittable).toBe(false);
+    expect(handleFeedbackFor('eab', false, undefined, 'ea').submittable).toBe(false);
+  });
+
+  it('leaves the ordinary rules alone for a traveler who holds no handle yet', () => {
+    expect(handleFeedbackFor('a', false, undefined, null).submittable).toBe(false);
+    expect(handleFeedbackFor('anasilva', false, verdict('anasilva', 'FREE'), null).submittable).toBe(
+      true,
+    );
+  });
+});
+
 describe('what the traveler is allowed to type', () => {
   it('uppercase is folded as they type, so what they see is what is stored', () => {
     expect(normalizeHandleInput('AnaSilva')).toBe('anasilva');
@@ -37,7 +62,7 @@ describe('the live availability feedback', () => {
   });
 
   it('a too-short handle is guidance, not an error', () => {
-    expect(handleFeedbackFor('ab', false, undefined).tone).toBe('neutral');
+    expect(handleFeedbackFor('a', false, undefined).tone).toBe('neutral');
   });
 
   it('is never submittable while a check is in flight', () => {

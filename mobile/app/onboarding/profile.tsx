@@ -10,6 +10,7 @@ import {
   handleFeedbackFor,
   normalizeHandleInput,
 } from '../../src/onboarding/handleFeedback';
+import { profileSaveFor } from '../../src/onboarding/handleSubmission';
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
@@ -54,8 +55,13 @@ export default function ProfileStepScreen() {
     setPrefilled(true);
   }, [me, prefilled]);
 
-  const availability = useHandleAvailability(handle);
-  const feedback = handleFeedbackFor(handle, availability.isFetching, availability.data);
+  const availability = useHandleAvailability(handle, me?.handle ?? null);
+  const feedback = handleFeedbackFor(
+    handle,
+    availability.isFetching,
+    availability.data,
+    me?.handle ?? null,
+  );
 
   const submit = async () => {
     setMessage(null);
@@ -68,7 +74,7 @@ export default function ProfileStepScreen() {
       return;
     }
     try {
-      await save.mutateAsync({ handle, displayName: displayName.trim(), bio: bio.trim() });
+      await save.mutateAsync(profileSaveFor({ handle, displayName, bio }, me));
       router.replace(editing ? PROFILE_TAB_ROUTE : ONBOARDING_ROUTES.goals);
     } catch (error) {
       setMessage(messageForVerificationFailure(error));

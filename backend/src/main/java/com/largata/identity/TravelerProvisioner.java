@@ -10,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 class TravelerProvisioner {
 
     private final TravelerRepository travelers;
+    private final VanityNumberAllocator vanityNumbers;
 
-    TravelerProvisioner(TravelerRepository travelers) {
+    TravelerProvisioner(TravelerRepository travelers, VanityNumberAllocator vanityNumbers) {
         this.travelers = travelers;
+        this.vanityNumbers = vanityNumbers;
     }
 
 
@@ -24,6 +26,7 @@ class TravelerProvisioner {
                         claims.email(),
                         claims.displayName(),
                         claims.photoUrl(),
-                        Instant.now()));
+                        Instant.now(),
+                        vanityNumbers.allocate()));
     }
 }

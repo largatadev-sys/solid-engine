@@ -23,6 +23,8 @@ export type MeResponse = {
   preferredCurrency: string | null;
   homeCity: string | null;
   onboardingCompleted: boolean;
+
+  vanityNumber: string | null;
 };
 
 

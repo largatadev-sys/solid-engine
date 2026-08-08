@@ -20,7 +20,7 @@ import type {
 } from '../types/api';
 
 
-export const HANDLE_MIN_LENGTH = 3;
+export const HANDLE_MIN_LENGTH = 2;
 
 const HANDLE_FRESHNESS_MS = 30_000;
 
@@ -41,12 +41,15 @@ export const meOptions = queryOptions({
 });
 
 
-export function useHandleAvailability(handle: string): UseQueryResult<HandleAvailabilityResponse> {
+export function useHandleAvailability(
+  handle: string,
+  stored: string | null = null,
+): UseQueryResult<HandleAvailabilityResponse> {
   const { kind } = useAuth();
   return useQuery({
     queryKey: meKeys.handle(handle),
     queryFn: () => travelerRepository.checkHandle(handle),
-    enabled: kind === 'signedIn' && handle.length >= HANDLE_MIN_LENGTH,
+    enabled: kind === 'signedIn' && handle !== stored && handle.length >= HANDLE_MIN_LENGTH,
     staleTime: HANDLE_FRESHNESS_MS,
   });
 }
