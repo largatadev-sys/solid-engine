@@ -2,8 +2,11 @@ import {
   displacementFor,
   landingSlot,
   movedTo,
+  orderFromSlots,
   orderedBy,
+  reassigned,
   reorderActionsFor,
+  slotsFromIds,
 } from '../src/itineraries/landingSlot';
 
 
@@ -117,6 +120,45 @@ describe('orderedBy — the visual order while the server catches up', () => {
   it('falls back to the server order when the local one no longer fits — an activity deleted elsewhere', () => {
     expect(orderedBy(items, ['c', 'a', 'ghost'])).toBe(items);
     expect(orderedBy(items, ['c', 'a'])).toBe(items);
+  });
+});
+
+
+describe('the slot map — the order as the UI thread owns it during a native drag', () => {
+  it('derives slots from an id list and the order back from slots, round-tripping', () => {
+    const slots = slotsFromIds(['a', 'b', 'c']);
+    expect(slots).toEqual({ a: 0, b: 1, c: 2 });
+    expect(orderFromSlots(slots)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('reassigns one slot down and shifts exactly the rows in between', () => {
+    expect(reassigned({ a: 0, b: 1, c: 2 }, 'a', 2)).toEqual({ a: 2, b: 0, c: 1 });
+  });
+
+  it('reassigns one slot up the same way', () => {
+    expect(reassigned({ a: 0, b: 1, c: 2 }, 'c', 0)).toEqual({ a: 1, b: 2, c: 0 });
+  });
+
+  it('reassigns a single-step hop — the progressive swap mid-drag', () => {
+    expect(reassigned({ a: 0, b: 1, c: 2 }, 'a', 1)).toEqual({ a: 1, b: 0, c: 2 });
+  });
+
+  it('returns the SAME object when nothing moves, so no spring restarts for free', () => {
+    const slots = { a: 0, b: 1, c: 2 };
+    expect(reassigned(slots, 'a', 0)).toBe(slots);
+    expect(reassigned(slots, 'ghost', 1)).toBe(slots);
+  });
+
+  it('never mutates the map it was handed', () => {
+    const slots = { a: 0, b: 1, c: 2 };
+    reassigned(slots, 'a', 2);
+    expect(slots).toEqual({ a: 0, b: 1, c: 2 });
+  });
+
+  it('keeps every slot occupied exactly once, whatever the hop', () => {
+    const after = reassigned({ a: 0, b: 1, c: 2, d: 3 }, 'd', 1);
+    expect(Object.values(after).sort()).toEqual([0, 1, 2, 3]);
+    expect(orderFromSlots(after)).toEqual(['a', 'd', 'b', 'c']);
   });
 });
 

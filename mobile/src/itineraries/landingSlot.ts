@@ -41,6 +41,43 @@ export function movedTo(ids: string[], fromIndex: number, toIndex: number): stri
 }
 
 
+export function slotsFromIds(ids: string[]): Record<string, number> {
+  'worklet';
+  const slots: Record<string, number> = {};
+  for (let index = 0; index < ids.length; index += 1) {
+    slots[ids[index] as string] = index;
+  }
+  return slots;
+}
+
+
+export function orderFromSlots(slots: Record<string, number>): string[] {
+  'worklet';
+  return Object.keys(slots).sort((a, b) => (slots[a] as number) - (slots[b] as number));
+}
+
+
+export function reassigned(
+  slots: Record<string, number>,
+  id: string,
+  toSlot: number,
+): Record<string, number> {
+  'worklet';
+  const from = slots[id];
+  if (from === undefined || from === toSlot) return slots;
+
+  const next: Record<string, number> = {};
+  for (const key in slots) {
+    const slot = slots[key] as number;
+    if (key === id) next[key] = toSlot;
+    else if (from < toSlot && slot > from && slot <= toSlot) next[key] = slot - 1;
+    else if (from > toSlot && slot >= toSlot && slot < from) next[key] = slot + 1;
+    else next[key] = slot;
+  }
+  return next;
+}
+
+
 export function reorderActionsFor(
   index: number,
   count: number,

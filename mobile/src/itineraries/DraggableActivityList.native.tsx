@@ -11,7 +11,14 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { workspaceColors, workspaceMetrics, workspaceRadii } from '../theme/workspaceTokens';
-import { displacementFor, landingSlot, movedTo, orderedBy, reorderActionsFor } from './landingSlot';
+import {
+  landingSlot,
+  orderFromSlots,
+  orderedBy,
+  reassigned,
+  reorderActionsFor,
+  slotsFromIds,
+} from './landingSlot';
 import type { ActivityResponse } from '../types/api';
 import { ActivityRow } from './WorkspaceDayCard';
 import type { WorkspaceAffordances } from './workspaceControls';
@@ -56,11 +63,8 @@ export function DraggableActivityList({
   onDrop,
   onNudge,
 }: DraggableActivityListProps) {
-  const draggingIndex = useSharedValue(-1);
-  const dragTranslation = useSharedValue(0);
-  const settling = useSharedValue(false);
-  const rowPitch = useSharedValue<number>(workspaceMetrics.activityRowHeight + ROW_GAP);
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
+  const [pitch, setPitch] = useState<number>(workspaceMetrics.activityRowHeight + ROW_GAP);
 
   const serverOrder = activities.map((a) => a.id).join();
 
@@ -69,14 +73,34 @@ export function DraggableActivityList({
   }, [serverOrder]);
 
   const rows = orderedBy(activities, localOrder);
+  const idsKey = rows.map((a) => a.id).join();
+
+  const slots = useSharedValue<Record<string, number>>(slotsFromIds(rows.map((a) => a.id)));
+  const draggingId = useSharedValue<string | null>(null);
+  const dragY = useSharedValue(0);
+  const grabTop = useSharedValue(0);
+  const rowPitch = useSharedValue<number>(pitch);
+
+  useEffect(() => {
+    slots.value = slotsFromIds(idsKey === '' ? [] : idsKey.split(','));
+  }, [idsKey, slots]);
 
   const measure = (event: LayoutChangeEvent) => {
     const measured = event.nativeEvent.layout.height;
-    if (measured > 0) rowPitch.value = measured + ROW_GAP;
+    if (measured > 0) {
+      setPitch(measured + ROW_GAP);
+      rowPitch.value = measured + ROW_GAP;
+    }
+  };
+
+  const finishDrop = (activityId: string, order: string[]) => {
+    if (order.join() === idsKey) return;
+    setLocalOrder(order);
+    onDrop(activityId, order.indexOf(activityId));
   };
 
   return (
-    <View style={styles.list}>
+    <View style={{ height: Math.max(0, rows.length * pitch - ROW_GAP) }}>
       {rows.map((activity, index) => (
         <DraggableRow
           key={activity.id}
@@ -84,27 +108,13 @@ export function DraggableActivityList({
           index={index}
           count={rows.length}
           affordances={affordances}
-          draggingIndex={draggingIndex}
-          dragTranslation={dragTranslation}
-          settling={settling}
+          slots={slots}
+          draggingId={draggingId}
+          dragY={dragY}
+          grabTop={grabTop}
           rowPitch={rowPitch}
           onMeasure={index === 0 ? measure : undefined}
-          onDragEnd={(toIndex, translation) => {
-            const remainder = translation - (toIndex - index) * rowPitch.value;
-            if (toIndex !== index) {
-              setLocalOrder(movedTo(rows.map((a) => a.id), index, toIndex));
-              onDrop(activity.id, toIndex);
-            }
-            settling.value = true;
-            draggingIndex.value = toIndex;
-            dragTranslation.value = remainder;
-            dragTranslation.value = withSpring(0, SETTLE, (finished) => {
-              if (finished === true) {
-                draggingIndex.value = -1;
-                settling.value = false;
-              }
-            });
-          }}
+          onRelease={finishDrop}
           onEdit={onEdit}
           onDelete={onDelete}
           onNudge={onNudge}
@@ -120,12 +130,13 @@ function DraggableRow({
   index,
   count,
   affordances,
-  draggingIndex,
-  dragTranslation,
-  settling,
+  slots,
+  draggingId,
+  dragY,
+  grabTop,
   rowPitch,
   onMeasure,
-  onDragEnd,
+  onRelease,
   onEdit,
   onDelete,
   onNudge,
@@ -134,12 +145,13 @@ function DraggableRow({
   index: number;
   count: number;
   affordances: WorkspaceAffordances;
-  draggingIndex: SharedValue<number>;
-  dragTranslation: SharedValue<number>;
-  settling: SharedValue<boolean>;
+  slots: SharedValue<Record<string, number>>;
+  draggingId: SharedValue<string | null>;
+  dragY: SharedValue<number>;
+  grabTop: SharedValue<number>;
   rowPitch: SharedValue<number>;
   onMeasure?: (event: LayoutChangeEvent) => void;
-  onDragEnd: (toIndex: number, translation: number) => void;
+  onRelease: (activityId: string, order: string[]) => void;
   onEdit: (activity: ActivityResponse) => void;
   onDelete: (activity: ActivityResponse) => void;
   onNudge: (activityId: string, direction: 'up' | 'down') => void;
@@ -149,38 +161,42 @@ function DraggableRow({
   const pan = Gesture.Pan()
     .activateAfterLongPress(LONG_PRESS_MS)
     .onStart(() => {
-      settling.value = false;
-      draggingIndex.value = index;
-      dragTranslation.value = 0;
+      const slot = slots.value[activity.id] ?? index;
+      grabTop.value = slot * rowPitch.value;
+      dragY.value = grabTop.value;
+      draggingId.value = activity.id;
       lift.value = withTiming(1, { duration: LIFT_MS });
     })
     .onUpdate((event) => {
-      dragTranslation.value = event.translationY;
+      dragY.value = grabTop.value + event.translationY;
+      const hovered = landingSlot(dragY.value, 0, count, rowPitch.value);
+      if (hovered !== slots.value[activity.id]) {
+        slots.value = reassigned(slots.value, activity.id, hovered);
+      }
     })
     .onEnd(() => {
-      const target = landingSlot(dragTranslation.value, index, count, rowPitch.value);
+      const slot = slots.value[activity.id] ?? index;
+      const order = orderFromSlots(slots.value);
       lift.value = withTiming(0, { duration: LIFT_MS });
-      runOnJS(onDragEnd)(target, dragTranslation.value);
+      dragY.value = withSpring(slot * rowPitch.value, SETTLE, (finished) => {
+        if (finished === true) {
+          draggingId.value = null;
+        }
+      });
+      runOnJS(onRelease)(activity.id, order);
     });
 
   const style = useAnimatedStyle(() => {
-    const held = draggingIndex.value;
+    const isHeld = draggingId.value === activity.id;
     const lifted = lift.value;
-    const isHeld = held === index;
+    const slot = slots.value[activity.id] ?? index;
+    const restingTop = slot * rowPitch.value;
 
     const translateY = isHeld
-      ? dragTranslation.value
-      : settling.value || held === -1
-        ? 0
-        : withSpring(
-            displacementFor(
-              index,
-              held,
-              landingSlot(dragTranslation.value, held, count, rowPitch.value),
-              rowPitch.value,
-            ),
-            SETTLE,
-          );
+      ? dragY.value
+      : draggingId.value === null
+        ? restingTop
+        : withSpring(restingTop, SETTLE);
 
     return {
       transform: [{ translateY }, { scale: isHeld ? 1 + lifted * LIFT_SCALE : 1 }],
@@ -218,10 +234,11 @@ function DraggableRow({
 
 
 const styles = StyleSheet.create({
-  list: {
-    gap: ROW_GAP,
-  },
   row: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
     borderRadius: workspaceRadii.card,
     shadowColor: workspaceColors.title,
     shadowOffset: { width: 0, height: 2 },

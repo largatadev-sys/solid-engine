@@ -633,8 +633,8 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
 
     for (const source of [web, native]) {
       expect(source).toContain('landingSlot(');
-      expect(source).toContain('displacementFor(');
     }
+    expect(web).toContain('displacementFor(');
   });
 
   it('keeps the arrows on web beside the grip — a pointer drag is not keyboard-reachable', () => {
@@ -651,10 +651,11 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     const queries = read(MOBILE_ROOT, 'src', 'query', 'itineraryQueries.ts');
 
     for (const source of [native, web]) {
-      expect(source).toContain('setLocalOrder(movedTo(');
       expect(source).toContain('setLocalOrder(null)');
       expect(source).toContain('orderedBy(activities, localOrder)');
     }
+    expect(web).toContain('setLocalOrder(movedTo(');
+    expect(native).toContain('setLocalOrder(order)');
 
     expect(queries).toContain('onMutate');
     expect(queries).toContain('reorderInPlanCache(client, itineraryId, dayId, activityIds)');
@@ -664,9 +665,18 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
     const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
 
-    expect(native).toContain('const remainder = translation - (toIndex - index) * rowPitch.value');
+    expect(native).toContain('withSpring(slot * rowPitch.value, SETTLE');
     expect(native).toContain('overshootClamping: true');
     expect(web).toContain('const remainder = translation.current - (target - index) * pitch.current');
+  });
+
+  it('native positions rows by a UI-thread slot map, so a re-key can never move a pixel', () => {
+    const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
+
+    expect(native).toContain('slotsFromIds(');
+    expect(native).toContain('orderFromSlots(slots.value)');
+    expect(native).toContain("position: 'absolute'");
+    expect(native).not.toContain('displacementFor(');
   });
 
   it('web settles through the Web Animations API — a CSS transition dies when React moves the node', () => {
@@ -678,12 +688,11 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(web).not.toContain('settling');
   });
 
-  it('shifts the other rows LIVE during a drag, not only on release (founder, 2026-08-09)', () => {
+  it('shifts the other rows LIVE during a drag — slots reassign progressively as the finger passes', () => {
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
 
-    expect(native).toContain('displacementFor(');
-    expect(native).toContain('landingSlot(dragTranslation.value, held, count, rowPitch.value)');
-    expect(native).toContain('draggingIndex');
+    expect(native).toContain('reassigned(slots.value, activity.id, hovered)');
+    expect(native).toContain('landingSlot(dragY.value, 0, count, rowPitch.value)');
     expect(native).toContain('withSpring(');
     expect(native).toContain('onLayout');
   });
