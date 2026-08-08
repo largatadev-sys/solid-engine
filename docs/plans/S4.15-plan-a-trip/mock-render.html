@@ -113,7 +113,7 @@
 
 <div class="page-head">
   <h1>Create-flow mocks — rendered from the pasted Figma CSS</h1>
-  <p>Faithful to the dump: colors, sizes, spacing, weights, and visibility (display:none nodes omitted). Photos are gradient placeholders; Geist/Inter fall back to system fonts if not installed; icons are close approximations — implementation copies the real mock's symbol defs per the standing ruling. Red notes under each frame = the requested changes, not part of the mock.</p>
+  <p>Faithful to the dump: colors, sizes, spacing, weights, and visibility (display:none nodes omitted). Photos are gradient placeholders; Geist/Inter fall back to system fonts if not installed; icons are close approximations — implementation copies the real mock's symbol defs per the standing ruling. Notes under each frame record the settled decisions from the 2026-08-08 grilling — spec.md is authoritative; they are not part of the mock.</p>
 </div>
 
 <div class="frames">
@@ -240,9 +240,8 @@
       <div class="home-indicator"><div class="hi-pill"></div></div>
     </div>
     <div class="notes">
-      <b>Change:</b> bottom CTA "Add Itinerary" → <b>"Plan a Trip"</b>.<br>
-      <b>Change:</b> cards get real cover thumbnails from the media pipeline.<br>
-      Mock quirks to reconcile: "Nippon 2027 w/ besties" appears under both Published and Drafts; published card's subtitle still says "Continue editing your Trip Workspace"; chevrons and status dots are display:none on most cards.
+      <b>Settled (spec dec. 4–6):</b> CTA ships as <b>"Plan a Trip"</b> + plus-circle; cards get S3.3 cover thumbnails and publication badges; sections stay lifecycle-only with plural labels — the "Published Trips" section is not adopted; the archived link and "Add a Past Trip" are removed; header search/filter ship greyed.<br>
+      Mock sample-content quirks (not shipped): "Nippon 2027 w/ besties" duplicated across sections; the published card's subtitle reads "Continue editing your Trip Workspace"; chevrons/status dots display:none on most cards.
     </div>
   </div>
 
@@ -318,9 +317,8 @@
       <div class="home-indicator"><div class="hi-pill"></div></div>
     </div>
     <div class="notes">
-      <b>Change:</b> submit button "Create Itinerary" → <b>"Create Trip"</b>; placeholders simplified (wording open).<br>
-      Open: does the screen title stay "Create Itinerary" or become "Plan a Trip"?<br>
-      Mock quirks: filled inputs carry a near-black 1px border (#121212); two highlight rows ("Sunset at Las Cabanas", "Hidden Beach Exploring") are display:none in the dump and omitted here.
+      <b>Settled (spec dec. 8–9):</b> screen title <b>"Plan a Trip"</b>, submit <b>"Create Trip"</b>; placeholders simplified to the spec's exact strings; the #121212 input border and the mock's geometry ship, normalized to Inter + the theme tokens.<br>
+      Mock quirks: two highlight rows ("Sunset at Las Cabanas", "Hidden Beach Exploring") are display:none in the dump and omitted here.
     </div>
   </div>
 
@@ -366,9 +364,8 @@
       </div>
     </div>
     <div class="notes">
-      <b>Change:</b> this becomes the post-create overview — the trip already exists when you land here.<br>
-      <b>Change:</b> secondary "Save Draft" → <b>"Back to Trips"</b> / <b>"Preview Trip"</b> (one or both — open).<br>
-      Open: title says "Itinerary Created!" and the copy claims it's "available for travelers to discover and fork" — that's <i>published</i> language, but the trip is created unpublished. Copy must be reconciled with the actual state.
+      <b>Settled (spec dec. 2–3):</b> this is the post-create overview — title <b>"Trip Created!"</b> with state-honest body copy; the mock's "available for travelers to discover and fork" does not ship (born draft; ADR-019 gates publish on completed).<br>
+      <b>Settled:</b> primary <b>"Open Trip Workspace"</b> ships greyed (comingSoon) until the workspace-redesign story re-points it; secondary "Save Draft" → <b>"Preview Trip"</b>; back lands on Trips.
     </div>
   </div>
 

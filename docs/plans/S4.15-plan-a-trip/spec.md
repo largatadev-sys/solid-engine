@@ -24,7 +24,7 @@ A traveler taps **Plan a Trip**, fills a simplified form, taps **Create Trip**, 
 
 ### 2 · Creation gains a **Trip Created** overview screen — S4.13 decision 11 partially reversed
 
-Reversed on the record, four days after it was made: creation now ends on a dedicated overview screen (S4.13 had ruled "no celebration screen at creation" and routed create → Day 1). What **stands** from decision 11: the publish-success chrome (`[id]/published.tsx`) remains the publish act's screen, untouched — this new screen is a different route for a different moment. The trip is created on **Create Trip** (born `draft`, Duration mints Day 1…N per S4.13 decision 8 — both unchanged), then `router.replace` to the overview so back lands on Trips. Copy is **state-honest** — the mock's "is now available for travelers to discover and fork" is impossible for a born-`draft` trip under ADR-019 and does not ship. Shipping copy: title **"Trip Created!"**; body **"「title」 is saved to your trips. Open the workspace to start building the days."** Summary card: cover thumb (or placeholder) · title · "Destination • N Days" (destination alone when Duration was skipped).
+Reversed on the record, four days after it was made: creation now ends on a dedicated overview screen (S4.13 had ruled "no celebration screen at creation" and routed create → Day 1). What **stands** from decision 11: the publish-success chrome (`[id]/published.tsx`) remains the publish act's screen, untouched — this new screen is a different route for a different moment. The trip is created on **Create Trip** (born `draft`, Duration mints Day 1…N per S4.13 decision 8 — both unchanged), then `router.replace` to the overview so back lands on Trips. Copy is **state-honest** — the mock's "is now available for travelers to discover and fork" is impossible for a born-`draft` trip under ADR-019 and does not ship. Shipping copy: title **"Trip Created!"**; body — the trip's title in regular double quotes — **“⟨trip title⟩” is saved to your trips. Open the workspace to start building the days.** Summary card: cover thumb (or placeholder) · title · "Destination • N Days" (destination alone when Duration was skipped).
 
 ### 3 · The overview's buttons: a greyed workspace door + a live preview
 
@@ -44,7 +44,7 @@ Header gains the mock's **search + filter icons**, wired to `comingSoon` (the S1
 
 ### 7 · The create-method chooser retires
 
-The "Create a Trip" chooser (Start from Scratch / Fork) and its redirect shim leave the tree — a door with one exit, already off the primary path. S4.7 (fork) supplies its own entry when it arrives; the epic-map line carrying the chooser's activation is annotated.
+The "Create a Trip" chooser (Start from Scratch / Fork) leaves the tree — a door with one exit, already off the primary path — and the `/create` shim **repoints to the form**, so the path keeps resolving. S4.7 (fork) supplies its own entry when it arrives; the epic-map line carrying the chooser's activation is annotated.
 
 ### 8 · The form simplifies its words, not its fields
 
@@ -72,7 +72,7 @@ The mock set disagrees with itself (landing in Geist, the other frames in Inter;
 
 ## Acceptance criteria
 
-1. Trips landing CTA reads **"Plan a Trip"** with the plus-circle icon and opens the form directly; the chooser screen and its shim are gone from the tree.
+1. Trips landing CTA reads **"Plan a Trip"** with the plus-circle icon and opens the form directly; the chooser screen is gone from the tree and the `/create` shim redirects to the form.
 2. The form is titled **"Plan a Trip"**, submits as **"Create Trip"**, and carries the simplified placeholders (decision 8's exact strings); required-field behavior unchanged.
 3. Create Trip → overview screen via `replace`: back (hardware and web) lands on Trips, never the spent form. Overview shows the state-honest copy and the summary card (cover thumb or placeholder · title · "Destination • N Days", destination alone without Duration).
 4. Overview primary "Open Trip Workspace" is greyed and fires `comingSoon` on both platforms (web alert fork included — the S1.3 dead-click rule); secondary "Preview Trip" opens the preview.
@@ -97,3 +97,5 @@ The Trip Workspace redesign (mocks ready — the very next story; owns re-pointi
 ## Comments
 
 *(append-only)*
+
+- *2026-08-08, pre-review transcription fix:* decision 7 and AC 1 originally wrote "the shim leaves the tree"; the approved answer (round-1 Q7) was that the shim **redirects to the form**. Corrected to match the decision as made — no intent change.
