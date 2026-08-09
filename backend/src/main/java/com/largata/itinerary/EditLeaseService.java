@@ -193,6 +193,12 @@ public class EditLeaseService {
     }
 
 
+    @Transactional
+    public void requireSessionFreeForLifecycle(Membership member) {
+        subsumedBySession(member, clock.instant());
+    }
+
+
     private boolean subsumedBySession(Membership member, Instant now) {
         Optional<EditLease> session = liveSession(member.itineraryId(), now);
         if (session.isEmpty()) {

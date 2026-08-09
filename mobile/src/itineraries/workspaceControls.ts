@@ -9,7 +9,7 @@ export type StateBadge = { label: string; background: string; foreground: string
 
 export type LadderAct = 'finish-planning' | 'start' | 'complete' | 'publish';
 
-export type LadderCta = { act: LadderAct; label: string };
+export type LadderCta = { act: LadderAct; label: string; blockedBy?: string };
 
 export type EditItineraryAction =
   | { kind: 'edit' }
@@ -54,11 +54,21 @@ export function stateBadge(
 
 
 export function ladderCta(
-  itinerary: Pick<ItineraryResponse, 'state' | 'archived' | 'published'>,
+  itinerary: Pick<ItineraryResponse, 'state' | 'archived' | 'published'> & {
+    editingSession?: LeaseHolderResponse | null;
+  },
   isOwner: boolean,
+  viewerTravelerId?: string,
 ): LadderCta | null {
   if (!isOwner || itinerary.archived || itinerary.published) return null;
-  return LADDER[itinerary.state];
+
+  const rung = LADDER[itinerary.state];
+  if (rung === null) return null;
+
+  const session = itinerary.editingSession;
+  return session && session.travelerId !== viewerTravelerId
+    ? { ...rung, blockedBy: holderLabel(session) }
+    : rung;
 }
 
 

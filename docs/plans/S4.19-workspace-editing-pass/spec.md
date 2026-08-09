@@ -92,6 +92,24 @@ S4.18's buffering (parked; when it lands it stages the same rename input this st
 
 *(append-only)*
 
+### 2026-08-09 — founder addendum 2: no lifecycle act may run while another traveler holds the Editing Session
+
+*Founder: "the owner cant finalize an itinerary if it is still locked, like someone is still editing it."*
+
+**This was a real hole in the backend, not a missing button state, and it predates this story.** `ItineraryService.finishPlanning` did `authorizeAndLoad` → mutate → record, with **no lease check at all** — and neither did `start`, `complete`, `reopen` or `publish`. An owner could end planning while a member was mid-edit, and the member's editor would keep writing into a trip that was no longer a draft. A parameterized IT proved it before the fix: **all 5 refusal cases failed, while the holder-passes and lease-expiry cases already passed** — so the guard was the only thing missing on every act.
+
+**Why it stayed invisible until now:** Finalize used to live *inside* the Draft Workspace, so reaching it required holding the session. Moving it to the viewer (addendum 1, above) turned a latent hole into a reachable one — the founder found it the same day the door opened.
+
+**Fix: a lease-only guard on all five acts** (founder's scope choice). It throws `EditLockedException` → **409 `EDIT_LOCKED`** naming the holder, and correctly lets the session *holder* through, so an owner editing their own trip is never blocked by themselves.
+
+**The first attempt reused `requireNoForeignSession` and was wrong — caught by the full suite, not by the new test.** That method opens with `fence.requireEditable`, which refuses **any published trip**, so putting it on the lifecycle acts made a published trip answer `ITINERARY_PUBLISHED` where it had always answered `ILLEGAL_STATE_TRANSITION` (`ItineraryPublicationIT.aPublishedTripPinsItsLifecycleUntilItIsUnpublished`). The publication fence is a *different* concern that these acts already enforce through their own domain rules, and folding it in would have masked the real refusal with a misleading code. `requireSessionFreeForLifecycle` checks the session and nothing else; the existing method is untouched for its `DayService`/`ActivityService` callers. **The new IT gained a case pinning exactly this** — reopening a published trip must still raise `IllegalStateTransitionException`, so the guard can never swallow that refusal again.
+
+**Semantics change, stated rather than assumed.** `publish` gains a failure mode it never had, which touches CLAUDE.md's *"changing publish/visibility semantics"* stop rule — raised with the founder, who chose all five knowing that. It is **additive under ADR-008** (no rename, retype or removal; a new error path on an existing endpoint), so no waiver is needed, but old app versions can now see a 409 from `publish` where they previously could not.
+
+**Client half:** `ladderCta` takes the viewer's traveler id and returns `blockedBy` when a foreign session is live; the workspace greys the CTA and prints *"Being edited by @handle"* above it (founder's choice over hiding it — a disappearing button reads as a bug). Verified the greyed control is genuinely inert, not merely dim: the click raises no sheet and the state does not move — the S1.3 dead-click check.
+
+Walked on both rungs with the verified pool (t1 owner, t2 member, seeded through the real invite → accept): owner's `finish-planning` returned **409** with the trip still `DRAFT`; after t2 released, the same call returned **200** → `upcoming`. Web showed Finalize greyed on a draft, mobile showed **Start Trip** greyed on a Ready trip — the same guard on two different rungs.
+
 ### 2026-08-09 — founder addendum: Finalize moves to the Trip Workspace, and the editor's rail becomes Save Changes alone
 
 *Founder, on the running build: "you don't need to edit the workspace to be able to finalize it. just like how the start trip button appears, its not on the workspace mode."*

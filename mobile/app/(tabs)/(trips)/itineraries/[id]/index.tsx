@@ -75,7 +75,7 @@ export default function TripWorkspaceScreen() {
   const expandedDayId = openDayId === undefined ? defaultOpenDay(dayIds, requestedDay) : openDayId;
 
   const badge = stateBadge(data);
-  const ladder = ladderCta(data, isOwner);
+  const ladder = ladderCta(data, isOwner, myId);
   const editAction = editItineraryAction(data, canEditPlan(data), myId, isOwner);
   const affordances = workspaceAffordances('viewer', isOwner);
 
@@ -153,15 +153,21 @@ export default function TripWorkspaceScreen() {
       {ladder !== null || showsStepBack(data, isOwner) ? (
         <View style={styles.rail}>
           {ladder !== null ? (
-            <Pressable
-              style={styles.primaryCta}
-              onPress={runLadder}
-              disabled={lifecycle.isPending}
-              accessibilityRole="button"
-              accessibilityLabel={ladder.label}
-            >
-              <Text style={styles.primaryCtaLabel}>{ladder.label}</Text>
-            </Pressable>
+            <>
+              {ladder.blockedBy !== undefined ? (
+                <Text style={styles.blockedNote}>{`Being edited by ${ladder.blockedBy}`}</Text>
+              ) : null}
+              <Pressable
+                style={[styles.primaryCta, ladder.blockedBy !== undefined && styles.ctaBlocked]}
+                onPress={runLadder}
+                disabled={lifecycle.isPending || ladder.blockedBy !== undefined}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: ladder.blockedBy !== undefined }}
+                accessibilityLabel={ladder.label}
+              >
+                <Text style={styles.primaryCtaLabel}>{ladder.label}</Text>
+              </Pressable>
+            </>
           ) : null}
 
           {showsStepBack(data, isOwner) ? (
@@ -229,6 +235,14 @@ const styles = StyleSheet.create({
   primaryCtaLabel: {
     ...workspaceTypography.ctaPrimary,
     color: workspaceColors.onAccent,
+  },
+  ctaBlocked: {
+    opacity: 0.5,
+  },
+  blockedNote: {
+    ...workspaceTypography.activityTime,
+    color: workspaceColors.muted,
+    textAlign: 'center',
   },
   stepBack: {
     alignItems: 'center',

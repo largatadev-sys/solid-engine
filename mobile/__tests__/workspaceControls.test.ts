@@ -85,6 +85,28 @@ describe('ladderCta', () => {
   it('hides the ladder on an archived trip', () => {
     expect(ladderCta(trip({ state: 'upcoming', archived: true }), true)).toBeNull();
   });
+
+  it('blocks every rung while another traveler holds the editing session, and names them (S4.19)', () => {
+    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
+
+    states.forEach((state) => {
+      const held = trip({ state, editingSession: holder('t2') });
+      expect(ladderCta(held, true, 't1')).toEqual({
+        act: expect.any(String),
+        label: expect.any(String),
+        blockedBy: '@largata.dev+t2',
+      });
+    });
+  });
+
+  it('does not block the rung on the session holder-s own lease', () => {
+    const mine = trip({ state: 'draft', editingSession: holder('t1') });
+
+    expect(ladderCta(mine, true, 't1')).toEqual({
+      act: 'finish-planning',
+      label: 'Finalize Itinerary',
+    });
+  });
 });
 
 

@@ -198,6 +198,7 @@ public class ItineraryService {
     @Transactional
     public Itinerary finishPlanning(Membership owner) {
         Itinerary itinerary = authorizeAndLoad(owner);
+        editLease.requireSessionFreeForLifecycle(owner);
         itinerary.finishPlanning();
         return record(itinerary, owner, "itinerary_planning_finished");
     }
@@ -206,6 +207,7 @@ public class ItineraryService {
     @Transactional
     public Itinerary start(Membership owner) {
         Itinerary itinerary = authorizeAndLoad(owner);
+        editLease.requireSessionFreeForLifecycle(owner);
         itinerary.start(Instant.now());
         return record(itinerary, owner, "itinerary_started");
     }
@@ -214,6 +216,7 @@ public class ItineraryService {
     @Transactional
     public Itinerary complete(Membership owner) {
         Itinerary itinerary = authorizeAndLoad(owner);
+        editLease.requireSessionFreeForLifecycle(owner);
         itinerary.complete(Instant.now());
         workspaces.markCompleted(itinerary.id());
         return record(itinerary, owner, "itinerary_completed");
@@ -223,6 +226,7 @@ public class ItineraryService {
     @Transactional
     public Itinerary reopen(Membership owner) {
         Itinerary itinerary = authorizeAndLoad(owner);
+        editLease.requireSessionFreeForLifecycle(owner);
         itinerary.reopen();
         workspaces.markActive(itinerary.id());
         return record(itinerary, owner, "itinerary_reopened");
@@ -232,6 +236,7 @@ public class ItineraryService {
     @Transactional
     public Itinerary publish(Membership owner, Visibility audience) {
         Itinerary itinerary = authorizeAndLoad(owner);
+        editLease.requireSessionFreeForLifecycle(owner);
         itinerary.publishTo(audience);
         return recordStatus(itinerary, owner, "itinerary_published");
     }

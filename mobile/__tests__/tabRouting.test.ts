@@ -785,7 +785,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
     expect(workspace).toContain('stateBadge(data)');
-    expect(workspace).toContain('ladderCta(data, isOwner)');
+    expect(workspace).toContain('ladderCta(data, isOwner, myId)');
     expect(workspace).not.toMatch(/data\.visibility === '/);
     expect(workspace).not.toMatch(/data\.state === '/);
   });
