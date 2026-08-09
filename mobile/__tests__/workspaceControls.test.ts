@@ -47,8 +47,12 @@ describe('stateBadge', () => {
     expect(stateBadge(trip({ state }))).toEqual({ label, background, foreground });
   });
 
-  it('says Draft TRIP Workspace on the editor, per the mock header', () => {
-    expect(stateBadge(trip({ state: 'draft' }), 'editor').label).toBe('Draft TRIP Workspace');
+  it('says Trip Workspace on the editor — the chip is where you are, not where the trip is (S4.19)', () => {
+    expect(stateBadge(trip({ state: 'draft' }), 'editor').label).toBe('Trip Workspace');
+  });
+
+  it.each(cases)('leaves the viewer chip on %s speaking lifecycle only', (state, label) => {
+    expect(stateBadge(trip({ state }), 'viewer').label).toBe(label);
   });
 });
 
@@ -156,6 +160,7 @@ describe('workspaceAffordances', () => {
     expect(viewer.showsActivityEditing).toBe(false);
     expect(viewer.showsAddDay).toBe(false);
     expect(viewer.showsDayDelete).toBe(false);
+    expect(viewer.showsDayRename).toBe(false);
     expect(viewer.showsFinalize).toBe(false);
   });
 
@@ -165,6 +170,7 @@ describe('workspaceAffordances', () => {
     expect(editor.showsActivityEditing).toBe(true);
     expect(editor.showsAddDay).toBe(true);
     expect(editor.showsDayDelete).toBe(true);
+    expect(editor.showsDayRename).toBe(true);
     expect(editor.showsFinalize).toBe(true);
   });
 
@@ -175,5 +181,11 @@ describe('workspaceAffordances', () => {
     expect(member.showsAddDay).toBe(false);
     expect(member.showsDayDelete).toBe(false);
     expect(member.showsFinalize).toBe(false);
+  });
+
+  it('lets a member rename a day while only the owner may delete it (S4.19 — renaming is plan editing)', () => {
+    const member = workspaceAffordances('editor', false);
+    expect(member.showsDayRename).toBe(true);
+    expect(member.showsDayDelete).toBe(false);
   });
 });

@@ -22,6 +22,7 @@ export type WorkspaceAffordances = {
   showsActivityEditing: boolean;
   showsAddDay: boolean;
   showsDayDelete: boolean;
+  showsDayRename: boolean;
   showsFinalize: boolean;
 };
 
@@ -48,7 +49,7 @@ export function stateBadge(
 ): StateBadge {
   const badge = BADGES[itinerary.state];
   return surface === 'editor' && itinerary.state === 'draft'
-    ? { ...badge, label: 'Draft TRIP Workspace' }
+    ? { ...badge, label: 'Trip Workspace' }
     : badge;
 }
 
@@ -101,6 +102,7 @@ export function workspaceAffordances(
     showsActivityEditing: editing,
     showsAddDay: editing && isOwner,
     showsDayDelete: editing && isOwner,
+    showsDayRename: editing,
     showsFinalize: editing && isOwner,
   };
 }

@@ -17,6 +17,7 @@ import {
 } from '../theme/workspaceTokens';
 import type { ActivityResponse, DayResponse } from '../types/api';
 import { dayHeading } from './dayHeading';
+import { dayPrefix } from './dayTitle';
 import { formatTimeOfDay } from './formatActivityCost';
 import { webStyle } from './webStyle';
 import type { WorkspaceAffordances } from './workspaceControls';
@@ -31,6 +32,7 @@ interface WorkspaceDayCardProps {
   readonly onEditActivity?: (activity: ActivityResponse) => void;
   readonly onDeleteActivity?: (activity: ActivityResponse) => void;
   readonly onDeleteDay?: () => void;
+  readonly onRenameDay?: () => void;
   readonly titleSlot?: React.ReactNode;
   readonly activitySlot?: React.ReactNode;
 }
@@ -45,6 +47,7 @@ export function WorkspaceDayCard({
   onEditActivity,
   onDeleteActivity,
   onDeleteDay,
+  onRenameDay,
   titleSlot,
   activitySlot,
 }: WorkspaceDayCardProps) {
@@ -70,6 +73,16 @@ export function WorkspaceDayCard({
         <View style={styles.headerRow}>
           {titleSlot ?? <Text style={styles.cardTitle}>{heading}</Text>}
           <View style={styles.titleSpacer} />
+          {affordances.showsDayRename && onRenameDay !== undefined ? (
+            <Pressable
+              onPress={onRenameDay}
+              accessibilityRole="button"
+              accessibilityLabel={`Rename ${dayPrefix(day)}`}
+              hitSlop={8}
+            >
+              <Icon name="pencilSquare" size={16} color={workspaceColors.accent} />
+            </Pressable>
+          ) : null}
           {affordances.showsDayDelete && onDeleteDay !== undefined ? (
             <Pressable
               onPress={onDeleteDay}

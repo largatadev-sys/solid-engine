@@ -17,7 +17,7 @@ import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/componen
 import { useEditLock } from '../../../../../src/hooks/useEditLock';
 import { useMe } from '../../../../../src/hooks/useMe';
 import { defaultOpenDay, toggleOpenDay } from '../../../../../src/itineraries/dayAccordion';
-import { dayName, dayPrefix, dayTitleLine } from '../../../../../src/itineraries/dayTitle';
+import { dayName, dayPrefix } from '../../../../../src/itineraries/dayTitle';
 import { DraggableActivityList } from '../../../../../src/itineraries/DraggableActivityList';
 import { FinalizeSheet } from '../../../../../src/itineraries/FinalizeSheet';
 import { applyDrop, applyMove } from '../../../../../src/itineraries/reorderActivityIds';
@@ -220,6 +220,10 @@ export default function DraftWorkspaceScreen() {
                     () => deleteDay.mutate({ dayId: d.id }),
                   )
                 }
+                onRenameDay={() => {
+                  setEditingTitleOf(d.id);
+                  setDraftTitle(dayName(d));
+                }}
                 titleSlot={
                   editingTitleOf === d.id ? (
                     <View style={styles.titleRow}>
@@ -237,21 +241,7 @@ export default function DraftWorkspaceScreen() {
                         placeholderTextColor={workspaceColors.placeholder}
                       />
                     </View>
-                  ) : (
-                    <Pressable
-                      style={styles.titlePress}
-                      onPress={() => {
-                        setEditingTitleOf(d.id);
-                        setDraftTitle(dayName(d));
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Rename ${dayPrefix(d)}`}
-                    >
-                      <Text style={styles.dayTitle} numberOfLines={1}>
-                        {dayTitleLine(d)}
-                      </Text>
-                    </Pressable>
-                  )
+                  ) : undefined
                 }
               />
             ))}
@@ -330,9 +320,6 @@ const styles = StyleSheet.create({
   tabBody: {
     padding: 16,
     gap: 12,
-  },
-  titlePress: {
-    flexShrink: 1,
   },
   titleRow: {
     flexDirection: 'row',

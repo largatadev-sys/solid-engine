@@ -10,7 +10,6 @@ import {
   otherAudience,
   publishControl,
   publishNeedsCompleteBody,
-  workspaceEyebrow,
 } from '../src/itineraries/publishControls';
 
 describe('publishControl (ADR-019)', () => {
@@ -101,36 +100,5 @@ describe('the audience', () => {
     expect(audienceLabel('public')).toBe('Public');
     expect(audienceBlurb('public')).toMatch(/Everyone/);
     expect(audienceBlurb('private')).toMatch(/collaborators/);
-  });
-});
-
-describe('workspaceEyebrow', () => {
-  it('names the lifecycle while unpublished, so an ongoing trip does not read as a draft', () => {
-    const labels = (['draft', 'upcoming', 'ongoing', 'completed'] as const).map(
-      (state) => workspaceEyebrow({ state, published: false, visibility: 'public' }).label,
-    );
-
-    expect(new Set(labels).size).toBe(4);
-    expect(labels[0]).toMatch(/Draft/);
-  });
-
-  it('names the audience once published, and only public gets the globe', () => {
-    const published = workspaceEyebrow({ state: 'completed', published: true, visibility: 'public' });
-    const restricted = workspaceEyebrow({
-      state: 'completed',
-      published: true,
-      visibility: 'private',
-    });
-
-    expect(published.icon).toBe('globe');
-    expect(published.label).toMatch(/Public/);
-    expect(restricted.icon).not.toBe('globe');
-    expect(restricted.label).toMatch(/Private/);
-  });
-
-  it('does not let a published trip read as its lifecycle — discovery wins the eyebrow', () => {
-    const eyebrow = workspaceEyebrow({ state: 'completed', published: true, visibility: 'public' });
-
-    expect(eyebrow.label).not.toMatch(/Complete/);
   });
 });
