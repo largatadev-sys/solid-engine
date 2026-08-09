@@ -92,6 +92,20 @@ S4.18's buffering (parked; when it lands it stages the same rename input this st
 
 *(append-only)*
 
+### 2026-08-09 — founder addendum 4: the form goes back to the S4.15 mock, and multi-destination is reversed
+
+*Founder, with `S4.15-plan-a-trip/mock-render.html` open: "why did we change the overall look of the screen? there was a mock screen there for create itinerary. that is the one we should use. just change the texts to what we have now."*
+
+**The founder was right and the mock rule was not followed.** Rendering frame 2 beside the shipped screen showed four structural drifts nobody had recorded as deviations: the mock stacks a **bare chevron above a large 28px title** (we put a circled chevron inline beside a smaller one) · its cover button reads **"Upload from camera roll"** (we shipped "Upload photo(s)") · **Destination and Duration share one row** via `.fieldrow` (we stacked them full-width) · and **Duration is a dropdown** `.input-dd`, 120px wide with a `⌄` (we shipped a free-text number input). The text changes *were* correct — the mock's own note ratifies "Plan a Trip"/"Create Trip"/simplified placeholders — so the founder's summary was exact: keep the texts, restore the frame. Values were read from the mock's own CSS per the standing rule, not eyeballed.
+
+**Duration becomes a dropdown, 1–30 days plus a blank.** It reuses the existing `OptionPicker` (modal + `⌄`, already cross-platform) rather than a new component, and it makes the *"Duration must be a whole number of days"* validation unreachable from the UI. The server's 366-day cap is no longer expressible on create — a deliberate narrowing, since the mock draws a picker and 30 days covers the trips this flow is for.
+
+**Multi-destination is reversed in BOTH modes — and the founder then settled the question underneath it: "a trip can only have one destination."** That ruling is what makes the reversal correct rather than merely mock-faithful. S4.19 decision 3 (multi in both modes, the founder's own amendment at this story's grilling) is superseded on the record, and edit loses a capability it had *before* S4.19 — deliberately, because it was modelling something the domain does not have.
+
+**Consequence, asked as its own question before the ruling arrived and unchanged by it: destinations 2+ are dropped on save.** `tripFormValuesFrom` keeps only `destinations[0]`, so the first save of a legacy multi-destination row writes one. Walked for real: `{Hanoi,Sapa,"Ha Long","Ninh Binh"}` → **`{Hanoi}`**. With one destination ruled canonical this is a **model correction, not data loss** — the extras were never reachable for editing and should not have existed. The contract test pins the behaviour so it stays deliberate.
+
+**What is left over is plumbing, and it is on the epic map:** `destinations` is still a `List<String>` on the wire and in the column, and `TripRow`/`tripCardAnatomy`/the published projection still join every entry — so a legacy row *displays* four until someone saves it. Narrowing to a single `destination` is a `/v1` change needing the ADR-008 waiver conversation plus a backfill decision, so it is parked with the next schema-touching story rather than smuggled into this one.
+
 ### 2026-08-09 — founder addendum 3: the date pickers retire, reversing the same day's "keep them" call
 
 *Founder, third pass on the same question: "the edit screen is different from the create screen right? why can't we reuse the create screen for editing?"*

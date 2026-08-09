@@ -3,6 +3,7 @@ import { join } from 'path';
 import {
   tripFormChrome,
   tripFormFields,
+  tripFormValuesFrom,
   updateRequestFrom,
   validateTripForm,
   type TripFormMode,
@@ -31,7 +32,7 @@ const filled: TripFormValues = { ...blank, title: 'Hokkaido in winter', destinat
 describe('what both modes share — the fields that stopped drifting (S4.19 decision 3)', () => {
   const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
 
-  it.each(['Trip Title', 'Destinations', 'Trip Description', 'Standouts', 'Best Time of Year'])(
+  it.each(['Trip Title', 'Destination', 'Trip Description', 'Standouts', 'Best Time of Year'])(
     'draws %s unconditionally, so neither mode can quietly lose it',
     (label) => {
       expect(form).toContain(label);
@@ -43,8 +44,23 @@ describe('what both modes share — the fields that stopped drifting (S4.19 deci
     expect(tripFormFields(mode).showsCover).toBe(true);
   });
 
-  it.each(MODES)('lets %s add more than one destination — multi in both modes', (mode) => {
-    expect(tripFormFields(mode).destinationsAreMulti).toBe(true);
+  it('takes ONE destination in both modes, as the S4.15 mock draws it (addendum 4)', () => {
+    const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
+
+    expect(form).toContain('label="Destination"');
+    expect(form).not.toMatch(/Add destination/);
+    expect(form).not.toMatch(/destinationsAreMulti/);
+  });
+
+  it('narrows a legacy multi-destination row to its first — a trip has ONE destination (founder, 2026-08-09)', () => {
+    const values = tripFormValuesFrom({
+      title: 'Vietnam',
+      destinations: ['Hanoi', 'Sapa', 'Ha Long'],
+      standouts: [],
+    } as never);
+
+    expect(values.destinations).toEqual(['Hanoi']);
+    expect(updateRequestFrom(values).destinations).toEqual(['Hanoi']);
   });
 });
 

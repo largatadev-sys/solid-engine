@@ -8,11 +8,27 @@ import {
   View,
 } from 'react-native';
 import { Icon } from '../components/Icon';
+import { OptionPicker } from '../components/OptionPicker';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { CoverPicker } from '../media/CoverPicker';
 import { colors, radii, spacing, typography } from '../theme';
 import { addRow, moveRow, removeRow, setRow } from './rowEditor';
-import { tripFormChrome, tripFormFields, type TripFormMode, type TripFormValues } from './tripFormContract';
+import {
+  DURATION_CHOICES,
+  tripFormChrome,
+  tripFormFields,
+  type TripFormMode,
+  type TripFormValues,
+} from './tripFormContract';
+
+
+const DURATION_OPTIONS = [
+  { value: '', label: 'Days' },
+  ...DURATION_CHOICES.map((days) => ({
+    value: String(days),
+    label: days === 1 ? '1 Day' : `${days} Days`,
+  })),
+];
 
 
 export interface TripFormCover {
@@ -57,7 +73,9 @@ export function TripForm({
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <ScreenHeader title={chrome.headline} size="title" back backTo={backTo} />
+        <ScreenHeader title="" size="title" back backTo={backTo} />
+
+        <Text style={styles.pageTitle}>{chrome.headline}</Text>
 
         {fields.showsCover ? (
           <CoverPicker
@@ -76,54 +94,27 @@ export function TripForm({
           placeholder="Name your trip"
         />
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Destinations</Text>
-          {values.destinations.map((destination, index) => (
-            <View key={index} style={styles.rowEntry}>
-              <TextInput
-                style={styles.rowInput}
-                value={destination}
-                onChangeText={(text) => set('destinations', setRow(values.destinations, index, text))}
-                accessibilityLabel={`Destination ${index + 1}`}
-                placeholder="Where to?"
-                placeholderTextColor={colors.textSecondary}
-              />
-              {values.destinations.length > 1 ? (
-                <Pressable
-                  onPress={() => set('destinations', removeRow(values.destinations, index))}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove destination ${index + 1}`}
-                  hitSlop={8}
-                >
-                  <Icon name="minus" size={20} color={colors.textSecondary} />
-                </Pressable>
-              ) : null}
-            </View>
-          ))}
-          {fields.destinationsAreMulti ? (
-            <Pressable
-              style={styles.addRow}
-              onPress={() => set('destinations', addRow(values.destinations))}
-              accessibilityRole="button"
-              accessibilityLabel="Add destination"
-            >
-              <Icon name="plus" size={20} color={colors.textPrimary} />
-              <Text style={styles.addRowText}>Add destination</Text>
-            </Pressable>
-          ) : null}
-        </View>
-
-        {fields.showsDuration ? (
-          <View style={styles.rowNarrow}>
+        <View style={styles.fieldRow}>
+          <View style={styles.rowGrow}>
             <Field
-              label="Duration"
-              value={values.duration}
-              onChangeText={(text) => set('duration', text)}
-              placeholder="Days"
-              keyboardType="number-pad"
+              label="Destination"
+              value={values.destinations[0] ?? ''}
+              onChangeText={(text) => set('destinations', [text])}
+              placeholder="Where to?"
             />
           </View>
-        ) : null}
+
+          {fields.showsDuration ? (
+            <View style={styles.rowNarrow}>
+              <OptionPicker
+                label="Duration"
+                value={values.duration}
+                options={DURATION_OPTIONS}
+                onSelect={(next) => set('duration', next)}
+              />
+            </View>
+          ) : null}
+        </View>
 
         <Field
           label="Best Time of Year"
@@ -266,6 +257,9 @@ const styles = StyleSheet.create({
     gap: spacing.md2,
     flexGrow: 1,
   },
+  pageTitle: { ...typography.display, color: colors.textPrimary },
+  fieldRow: { flexDirection: 'row', gap: spacing.sm3, alignItems: 'flex-start' },
+  rowGrow: { flexGrow: 1, flexShrink: 1 },
   rowNarrow: { width: DURATION_WIDTH },
   field: { gap: spacing.xs2 },
   label: { ...typography.fieldLabel, color: colors.textSecondary },

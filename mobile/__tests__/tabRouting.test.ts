@@ -182,11 +182,12 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     },
   );
 
-  it('makes the shared trip form draw the heading its mode names', () => {
+  it('makes the shared trip form draw the heading its mode names, stacked under a bare chevron (the S4.15 mock)', () => {
     const form = read(MOBILE_ROOT, 'src', 'itineraries', 'TripForm.tsx');
 
     expect(form).toMatch(/<ScreenHeader/);
-    expect(form).toContain('title={chrome.headline}');
+    expect(form).toContain('{chrome.headline}</Text>');
+    expect(form).toContain('styles.pageTitle');
   });
 
   it.each(tripScreens().filter(([name]) => FULL_BLEED.includes(name)))(
@@ -505,8 +506,8 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13; re
     expect(contract).toMatch(/endDate: form\.endDate/);
   });
 
-  it('takes free-text destinations and never says "Search"', () => {
-    expect(form).toContain('<Text style={styles.label}>Destinations</Text>');
+  it('takes a free-text destination and never says "Search"', () => {
+    expect(form).toContain('label="Destination"');
     expect(create).toContain("createRequestFrom(values)");
     expect(form).not.toMatch(/placeholder="Search/);
   });
@@ -518,7 +519,7 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13; re
 
   it('speaks the ratified language: Plan a Trip to enter, Create Trip to submit (S4.15 decision 8)', () => {
     expect(tripFormChrome('create')).toEqual({ headline: 'Plan a Trip', submitLabel: 'Create Trip' });
-    expect(form).toContain('title={chrome.headline}');
+    expect(form).toContain('{chrome.headline}</Text>');
     expect(form).toContain('{chrome.submitLabel}');
     expect(form).not.toMatch(/Create Itinerary|Continue to Daily Schedules/);
   });
@@ -527,19 +528,21 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13; re
     for (const prompt of [
       'Name your trip',
       'Where to?',
-      'Days',
       'Best months to go',
       "What's this trip about?",
       'Add a standout',
     ]) {
       expect(form).toContain(`placeholder="${prompt}"`);
     }
+    expect(form).toContain("label: 'Days' }");
     expect(form).not.toMatch(/Island Hopping in El Nido|Palawan"|Dec - Apr|Big Lagoon Kayaking/);
   });
 
-  it('adds destinations rather than settling for one (S4.19 decision 3 — the S4.15 mock amendment)', () => {
-    expect(tripFormFields('create').destinationsAreMulti).toBe(true);
-    expect(form).toContain('accessibilityLabel="Add destination"');
+  it('draws the mock-s Destination + Duration row, one destination and a dropdown (addendum 4)', () => {
+    expect(form).toContain('label="Destination"');
+    expect(form).toContain('<OptionPicker');
+    expect(form).toContain('styles.fieldRow');
+    expect(form).not.toMatch(/Add destination|keyboardType="number-pad"/);
   });
 });
 

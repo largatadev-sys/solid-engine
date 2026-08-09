@@ -2,7 +2,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useMediaSource } from './useMediaSource';
 import { colors, radii, spacing, typography } from '../theme';
 
-export const UPLOAD_COVER_LABEL = 'Upload photo(s)';
+export const UPLOAD_COVER_LABEL = 'Upload from camera roll';
 export const UPLOADING_COVER_LABEL = 'Uploading…';
 export const REPLACE_COVER_LABEL = 'Replace photo';
 export const REMOVE_COVER_LABEL = 'Remove photo';

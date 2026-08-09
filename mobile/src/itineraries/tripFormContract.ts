@@ -19,10 +19,12 @@ export type TripFormValues = {
 
 export type TripFormFields = {
   showsCover: boolean;
-  destinationsAreMulti: boolean;
   standoutsReorder: boolean;
   showsDuration: boolean;
 };
+
+
+export const DURATION_CHOICES = Array.from({ length: 30 }, (_, i) => i + 1);
 
 
 export type TripFormChrome = { headline: string; submitLabel: string };
@@ -31,13 +33,11 @@ export type TripFormChrome = { headline: string; submitLabel: string };
 const FIELDS: Record<TripFormMode, TripFormFields> = {
   create: {
     showsCover: true,
-    destinationsAreMulti: true,
     standoutsReorder: false,
     showsDuration: true,
   },
   edit: {
     showsCover: true,
-    destinationsAreMulti: true,
     standoutsReorder: true,
     showsDuration: false,
   },
@@ -123,7 +123,7 @@ export function updateRequestFrom(form: TripFormValues): UpdateItineraryRequest 
 export function tripFormValuesFrom(itinerary: ItineraryResponse): TripFormValues {
   return {
     title: itinerary.title,
-    destinations: itinerary.destinations.length > 0 ? [...itinerary.destinations] : [''],
+    destinations: [itinerary.destinations[0] ?? ''],
     description: itinerary.description ?? '',
     standouts: itinerary.standouts ?? [],
     bestTimeOfYear: itinerary.bestTimeOfYear ?? '',
