@@ -91,3 +91,15 @@ S4.18's buffering (parked; when it lands it stages the same rename input this st
 ## Comments
 
 *(append-only)*
+
+### 2026-08-09 — implementation: the edit screen took create's styling, and the Standouts hint is the one real loss
+
+Raised by the spec review, recorded here rather than in the deviation table because the body is immutable point-in-time intent.
+
+Decision 3 pinned edit's *chrome* ("Edit Trip", "Save") but not its **skin**, and one component cannot wear two. The unification had to pick a visual language, and AC 3 pins create as behavior-identical to what S4.15 shipped while edit carries no equivalent pin — so create's styling won and the edit screen moved to meet it: docked CTA instead of the pill, `colors.surface` instead of `colors.background`, prompt placeholders instead of sample content ("Island Hopping in El Nido", "Palawan", "Dec – Apr" are gone), minus icons instead of text "Remove" buttons, and Best Time of Year now above Trip Description.
+
+**The one content loss is the Standouts hint, "Shown on your published page."** — an explanation of where standouts surface, which create never had and edit now no longer shows. Nothing else deleted here carries information; that line does. It is a backlog line rather than a silent drop.
+
+**Standouts reordering is per-mode, and the contract says so out loud.** Decision 3 lists Standouts flatly under "shared in both modes", but edit shipped ↑↓ arrows and create never had them: giving create the arrows regresses the pixels AC 3 protects, and taking them from edit drops a shipped feature nobody asked to lose. The mode contract carries `standoutsReorder` so the asymmetry is declared and tested rather than left to whichever screen was edited last — which is the drift this story exists to end.
+
+**Clearing a date is still a no-op** (`updateRequestFrom` omits an empty `startDate`/`endDate`, exactly as the pre-S4.19 edit screen did). Carried over verbatim, not introduced here, and out of scope for a re-housing — but AC 4's "round-trips every field" is not strictly true in that one direction. Backlog line.

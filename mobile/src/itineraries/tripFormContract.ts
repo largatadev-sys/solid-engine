@@ -19,12 +19,8 @@ export type TripFormValues = {
 
 export type TripFormFields = {
   showsCover: boolean;
-  showsDestinations: boolean;
   destinationsAreMulti: boolean;
-  showsDescription: boolean;
-  showsStandouts: boolean;
   standoutsReorder: boolean;
-  showsBestTimeOfYear: boolean;
   showsDuration: boolean;
   showsDates: boolean;
 };
@@ -36,23 +32,15 @@ export type TripFormChrome = { headline: string; submitLabel: string };
 const FIELDS: Record<TripFormMode, TripFormFields> = {
   create: {
     showsCover: true,
-    showsDestinations: true,
     destinationsAreMulti: true,
-    showsDescription: true,
-    showsStandouts: true,
     standoutsReorder: false,
-    showsBestTimeOfYear: true,
     showsDuration: true,
     showsDates: false,
   },
   edit: {
     showsCover: true,
-    showsDestinations: true,
     destinationsAreMulti: true,
-    showsDescription: true,
-    showsStandouts: true,
     standoutsReorder: true,
-    showsBestTimeOfYear: true,
     showsDuration: false,
     showsDates: true,
   },

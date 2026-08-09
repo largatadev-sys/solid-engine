@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import {
   tripFormChrome,
   tripFormFields,
@@ -26,14 +28,18 @@ const filled: TripFormValues = { ...blank, title: 'Hokkaido in winter', destinat
 
 
 describe('what both modes share — the fields that stopped drifting (S4.19 decision 3)', () => {
-  it.each(MODES)('gives %s the cover, title, destinations, description, standouts and best time', (mode) => {
-    const fields = tripFormFields(mode);
+  const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
 
-    expect(fields.showsCover).toBe(true);
-    expect(fields.showsDestinations).toBe(true);
-    expect(fields.showsDescription).toBe(true);
-    expect(fields.showsStandouts).toBe(true);
-    expect(fields.showsBestTimeOfYear).toBe(true);
+  it.each(['Trip Title', 'Destinations', 'Trip Description', 'Standouts', 'Best Time of Year'])(
+    'draws %s unconditionally, so neither mode can quietly lose it',
+    (label) => {
+      expect(form).toContain(label);
+      expect(form).not.toMatch(new RegExp(`shows${label.replace(/[^A-Za-z]/g, '')}`));
+    },
+  );
+
+  it.each(MODES)('offers %s a cover picker', (mode) => {
+    expect(tripFormFields(mode).showsCover).toBe(true);
   });
 
   it.each(MODES)('lets %s add more than one destination — multi in both modes', (mode) => {
