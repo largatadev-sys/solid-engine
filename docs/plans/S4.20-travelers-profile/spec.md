@@ -1,6 +1,6 @@
 # S4.20 — Travelers → profile: the stub, the owner-only tag, the members soft-retirement
 
-**Status:** needs-triage · **Epic:** E4 · **Depends on:** S4.17 (shipped — the Travelers tab this story re-points), S4.14 (shipped — the vanity number the card carries), S4.0/ADR-015 (shipped — handles), S3.3 (shipped — the authenticated avatar path), S1.5/S1.6 (shipped — the member flows going dormant)
+**Status:** ready-for-agent *(owner review passed 2026-08-09 — "all good")* · **Epic:** E4 · **Depends on:** S4.17 (shipped — the Travelers tab this story re-points), S4.14 (shipped — the vanity number the card carries), S4.0/ADR-015 (shipped — handles), S3.3 (shipped — the authenticated avatar path), S1.5/S1.6 (shipped — the member flows going dormant)
 
 **Immutable point-in-time intent** (issue-tracker rule): if intent changes during implementation, append to `## Comments`; never rewrite this body.
 

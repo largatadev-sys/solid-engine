@@ -1,6 +1,6 @@
 # S4.19 — Workspace editing pass: the chip, the day pencil, one trip form
 
-**Status:** needs-triage · **Epic:** E4 · **Depends on:** S4.17 (shipped — both workspace surfaces this story edits), S4.15 (shipped — the create form the unification absorbs)
+**Status:** ready-for-agent *(owner review passed 2026-08-09 — "all good")* · **Epic:** E4 · **Depends on:** S4.17 (shipped — both workspace surfaces this story edits), S4.15 (shipped — the create form the unification absorbs)
 
 **Immutable point-in-time intent** (issue-tracker rule): if intent changes during implementation, append to `## Comments`; never rewrite this body.
 
