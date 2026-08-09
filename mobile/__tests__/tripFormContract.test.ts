@@ -93,6 +93,15 @@ describe('what each mode owns alone', () => {
     expect(form).toMatch(/dropdown: \{\s*\.\.\.inputSurface/);
   });
 
+  it('sizes the dropdown and the text inputs from ONE height, so the row cannot fall out of line', () => {
+    const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
+    const heights = form.match(/height: CONTROL_HEIGHT/g) ?? [];
+
+    expect(heights).toHaveLength(2);
+    expect(form).toMatch(/const CONTROL_HEIGHT = controls\.tripFormControlHeight/);
+    expect(form).toMatch(/\[styles\.field, styles\.rowNarrow\]/);
+  });
+
   it('edits no dates in either mode — the pickers retired, the wire fields did not (S4.19 addendum 3)', () => {
     const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
 

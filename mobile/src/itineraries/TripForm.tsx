@@ -12,7 +12,7 @@ import {
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { CoverPicker } from '../media/CoverPicker';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, controls, radii, spacing, typography } from '../theme';
 import { addRow, moveRow, removeRow, setRow } from './rowEditor';
 import {
   DURATION_CHOICES,
@@ -103,7 +103,7 @@ export function TripForm({
           </View>
 
           {fields.showsDuration ? (
-            <View style={styles.rowNarrow}>
+            <View style={[styles.field, styles.rowNarrow]}>
               <Text style={styles.label}>Duration</Text>
               <DurationField value={values.duration} onSelect={(next) => set('duration', next)} />
             </View>
@@ -291,6 +291,8 @@ const MULTILINE_HEIGHT = 108;
 
 const DURATION_WIDTH = 120;
 
+const CONTROL_HEIGHT = controls.tripFormControlHeight;
+
 const SHEET_MAX_HEIGHT = 420;
 
 const SHEET_MAX_WIDTH = 320;
@@ -319,9 +321,10 @@ const styles = StyleSheet.create({
   rowNarrow: { width: DURATION_WIDTH },
   field: { gap: spacing.xs2 },
   label: { ...typography.fieldLabel, color: colors.textSecondary },
-  input: { ...inputSurface, ...typography.input, color: colors.textPrimary },
+  input: { ...inputSurface, ...typography.input, height: CONTROL_HEIGHT, color: colors.textPrimary },
   dropdown: {
     ...inputSurface,
+    height: CONTROL_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
