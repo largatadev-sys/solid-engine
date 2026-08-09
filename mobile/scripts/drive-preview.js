@@ -44,6 +44,7 @@ for (let i = 0; i < args.length; i += 1) {
     steps.push({ kind: 'upload', label: value.slice(0, split), file: value.slice(split + 1) });
     continue;
   }
+  if (args[i] === '--blur') steps.push({ kind: 'blur', label: 'focused field' });
   if (args[i] === '--fill' || args[i] === '--fill-env' || args[i] === '--click') {
     const value = args[i + 1] ?? '';
     const split = value.indexOf('=');
@@ -223,7 +224,11 @@ function getJson(path) {
         const shown = visible(all);
         if (shown.length === 0) return all.length === 0 ? 'NOT FOUND' : 'FOUND BUT HIDDEN x' + all.length;
         const el = shown[shown.length - 1];
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        const proto = el.tagName === 'TEXTAREA'
+          ? window.HTMLTextAreaElement.prototype
+          : window.HTMLInputElement.prototype;
+        const setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+        el.focus();
         setter.call(el, ${JSON.stringify(value)});
         el.dispatchEvent(new Event('input', { bubbles: true }));
         el.dispatchEvent(new Event('change', { bubbles: true }));
@@ -316,7 +321,19 @@ function getJson(path) {
       continue;
     }
 
-    if (step.kind === 'fill') {
+    if (step.kind === 'blur') {
+      const ok = await evaluate(
+        `(() => {
+          const el = document.activeElement;
+          if (el === null || el === document.body) return 'NOTHING FOCUSED';
+          el.blur();
+          el.dispatchEvent(new FocusEvent('blur', { bubbles: false }));
+          el.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+          return 'ok';
+        })()`,
+      );
+      stepLog.push(`  blur  -> ${ok}`);
+    } else if (step.kind === 'fill') {
       const ok = await fillField(step.label, step.value);
       stepLog.push(`  fill  ${step.label} -> ${ok === 'ok' ? `${step.value.length} chars` : ok}`);
     } else {
@@ -324,7 +341,7 @@ function getJson(path) {
       stepLog.push(`  click ${step.label} -> ${ok}`);
     }
 
-    await sleep(step.kind === 'click' ? 6000 : 300);
+    await sleep(step.kind === 'fill' ? 300 : 6000);
 
     if (shotStepsDir !== null) {
       fs.mkdirSync(shotStepsDir, { recursive: true });
