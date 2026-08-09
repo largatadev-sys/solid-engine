@@ -1,6 +1,9 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
+  createRequestFrom,
+  DURATION_CHOICES,
+  EMPTY_TRIP_FORM,
   tripFormChrome,
   tripFormFields,
   tripFormValuesFrom,
@@ -69,6 +72,25 @@ describe('what each mode owns alone', () => {
   it('mints days from Duration on create only (S4.13 decision 8)', () => {
     expect(tripFormFields('create').showsDuration).toBe(true);
     expect(tripFormFields('edit').showsDuration).toBe(false);
+  });
+
+  it('opens the create form at 1 Day rather than blank (founder, 2026-08-09)', () => {
+    expect(EMPTY_TRIP_FORM.duration).toBe('1');
+    expect(createRequestFrom(EMPTY_TRIP_FORM).durationDays).toBe(1);
+  });
+
+  it('offers no blank duration — every choice mints at least one day', () => {
+    const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
+
+    expect(form).not.toMatch(/value: '', label: 'Days'/);
+    expect(DURATION_CHOICES[0]).toBe(1);
+  });
+
+  it('dresses the duration dropdown in the form-s own input skin, not the shared picker-s', () => {
+    const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
+
+    expect(form).not.toMatch(/OptionPicker/);
+    expect(form).toMatch(/dropdown: \{\s*\.\.\.inputSurface/);
   });
 
   it('edits no dates in either mode — the pickers retired, the wire fields did not (S4.19 addendum 3)', () => {

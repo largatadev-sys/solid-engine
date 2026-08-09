@@ -134,13 +134,16 @@ export function tripFormValuesFrom(itinerary: ItineraryResponse): TripFormValues
 }
 
 
+export const DEFAULT_DURATION = '1';
+
+
 export const EMPTY_TRIP_FORM: TripFormValues = {
   title: '',
   destinations: [''],
   description: '',
   standouts: [''],
   bestTimeOfYear: '',
-  duration: '',
+  duration: DEFAULT_DURATION,
   startDate: '',
   endDate: '',
 };

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { Icon } from '../components/Icon';
-import { OptionPicker } from '../components/OptionPicker';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { CoverPicker } from '../media/CoverPicker';
 import { colors, radii, spacing, typography } from '../theme';
@@ -22,13 +23,10 @@ import {
 } from './tripFormContract';
 
 
-const DURATION_OPTIONS = [
-  { value: '', label: 'Days' },
-  ...DURATION_CHOICES.map((days) => ({
-    value: String(days),
-    label: days === 1 ? '1 Day' : `${days} Days`,
-  })),
-];
+const DURATION_OPTIONS = DURATION_CHOICES.map((days) => ({
+  value: String(days),
+  label: days === 1 ? '1 Day' : `${days} Days`,
+}));
 
 
 export interface TripFormCover {
@@ -106,12 +104,8 @@ export function TripForm({
 
           {fields.showsDuration ? (
             <View style={styles.rowNarrow}>
-              <OptionPicker
-                label="Duration"
-                value={values.duration}
-                options={DURATION_OPTIONS}
-                onSelect={(next) => set('duration', next)}
-              />
+              <Text style={styles.label}>Duration</Text>
+              <DurationField value={values.duration} onSelect={(next) => set('duration', next)} />
             </View>
           ) : null}
         </View>
@@ -206,6 +200,64 @@ export function TripForm({
 }
 
 
+function DurationField({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = DURATION_OPTIONS.find((option) => option.value === value);
+
+  return (
+    <>
+      <Pressable
+        style={styles.dropdown}
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`Duration: ${current?.label ?? DURATION_OPTIONS[0]?.label}`}
+      >
+        <Text style={styles.dropdownValue} numberOfLines={1}>
+          {current?.label ?? DURATION_OPTIONS[0]?.label}
+        </Text>
+        <Icon name="chevronDown" size={16} color={colors.textSecondary} />
+      </Pressable>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setOpen(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        >
+          <View style={styles.sheet}>
+            <ScrollView>
+              {DURATION_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.value}
+                  style={styles.optionRow}
+                  accessibilityRole="button"
+                  accessibilityLabel={option.label}
+                  onPress={() => {
+                    onSelect(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Text style={[styles.optionText, option.value === value && styles.optionSelected]}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
+
 function Field(props: {
   label: string;
   value: string;
@@ -239,6 +291,10 @@ const MULTILINE_HEIGHT = 108;
 
 const DURATION_WIDTH = 120;
 
+const SHEET_MAX_HEIGHT = 420;
+
+const SHEET_MAX_WIDTH = 320;
+
 const inputSurface = {
   backgroundColor: colors.surfaceMuted,
   borderWidth: 1,
@@ -264,6 +320,33 @@ const styles = StyleSheet.create({
   field: { gap: spacing.xs2 },
   label: { ...typography.fieldLabel, color: colors.textSecondary },
   input: { ...inputSurface, ...typography.input, color: colors.textPrimary },
+  dropdown: {
+    ...inputSurface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.xs2,
+  },
+  dropdownValue: { ...typography.input, color: colors.textPrimary },
+  backdrop: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+    backgroundColor: colors.scrim,
+  },
+  sheet: {
+    width: '100%',
+    maxWidth: SHEET_MAX_WIDTH,
+    maxHeight: SHEET_MAX_HEIGHT,
+    borderRadius: radii.control,
+    borderWidth: 1,
+    borderColor: colors.inputBorder,
+    backgroundColor: colors.surface,
+  },
+  optionRow: { paddingVertical: spacing.sm3, paddingHorizontal: spacing.md },
+  optionText: { ...typography.input, color: colors.textPrimary },
+  optionSelected: { color: colors.accent },
   inputMultiline: { height: MULTILINE_HEIGHT, textAlignVertical: 'top' },
   rowEntry: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   rowInput: { ...inputSurface, ...typography.input, flex: 1, color: colors.textPrimary },

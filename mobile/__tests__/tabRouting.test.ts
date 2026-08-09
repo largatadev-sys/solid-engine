@@ -534,13 +534,13 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13; re
     ]) {
       expect(form).toContain(`placeholder="${prompt}"`);
     }
-    expect(form).toContain("label: 'Days' }");
+    expect(form).toContain("`${days} Days`");
     expect(form).not.toMatch(/Island Hopping in El Nido|Palawan"|Dec - Apr|Big Lagoon Kayaking/);
   });
 
   it('draws the mock-s Destination + Duration row, one destination and a dropdown (addendum 4)', () => {
     expect(form).toContain('label="Destination"');
-    expect(form).toContain('<OptionPicker');
+    expect(form).toContain('<DurationField');
     expect(form).toContain('styles.fieldRow');
     expect(form).not.toMatch(/Add destination|keyboardType="number-pad"/);
   });
