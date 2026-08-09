@@ -22,7 +22,6 @@ export type TripFormFields = {
   destinationsAreMulti: boolean;
   standoutsReorder: boolean;
   showsDuration: boolean;
-  showsDates: boolean;
 };
 
 
@@ -35,14 +34,12 @@ const FIELDS: Record<TripFormMode, TripFormFields> = {
     destinationsAreMulti: true,
     standoutsReorder: false,
     showsDuration: true,
-    showsDates: false,
   },
   edit: {
     showsCover: true,
     destinationsAreMulti: true,
     standoutsReorder: true,
     showsDuration: false,
-    showsDates: true,
   },
 };
 
@@ -79,7 +76,7 @@ export function validateTripForm(mode: TripFormMode, form: TripFormValues): stri
     }
   }
 
-  if (fields.showsDates) {
+  if (mode === 'edit') {
     if (form.startDate !== '' && !isCalendarDate(form.startDate)) {
       return 'Start date must look like 2027-01-10.';
     }

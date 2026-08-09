@@ -7,7 +7,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { DatePicker } from '../components/DatePicker';
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { CoverPicker } from '../media/CoverPicker';
@@ -193,13 +192,6 @@ export function TripForm({
             <Text style={styles.addRowText}>Add Standout</Text>
           </Pressable>
         </View>
-
-        {fields.showsDates ? (
-          <>
-            <DatePicker label="Start date" value={values.startDate} onChange={(next) => set('startDate', next)} />
-            <DatePicker label="End date" value={values.endDate} onChange={(next) => set('endDate', next)} />
-          </>
-        ) : null}
 
         {error !== undefined ? <Text style={styles.error}>{error}</Text> : null}
       </ScrollView>

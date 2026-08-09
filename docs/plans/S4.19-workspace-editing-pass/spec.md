@@ -92,6 +92,18 @@ S4.18's buffering (parked; when it lands it stages the same rename input this st
 
 *(append-only)*
 
+### 2026-08-09 — founder addendum 3: the date pickers retire, reversing the same day's "keep them" call
+
+*Founder, third pass on the same question: "the edit screen is different from the create screen right? why can't we reuse the create screen for editing?"*
+
+**The premise was already false and the third asking is what made that worth investigating rather than restating.** `/edit` had shared `TripForm` with `/new` since ticket 04; screenshotting both side by side showed identical cover tile, field styling, labels and docked CTA, differing only in headline, submit label, Duration and dates. **The question was not "why are they different screens" but "why does one have fields the other lacks"** — and the founder's answer, when the two images were put side by side, was to drop the dates.
+
+**Reverses the "Keep the pickers" call made hours earlier in this same session, with the same consequence restated before proceeding:** `startDate`/`endDate` stay on the wire and existing values keep rendering, but **nothing can now set them** — the pickers were their only writer, so `tripCardAnatomy`'s "Mar 2027" eyebrow will be blank on every new trip. Stated twice, chosen twice; recorded here so it is not rediscovered as a bug.
+
+**The trap this could have shipped, and the check that caught it:** removing a field from a form removes it from the *wire* when the endpoint replaces rather than merges (regression checklist line 22). `updateRequestFrom` still sends the hydrated `startDate`/`endDate`, and the walk proved it on a trip that **had** dates — title changed to "S4.19 dates survive", `2027-11-02`/`2027-11-14` unchanged in the database afterwards. Verifying on a fresh trip would have proven nothing, because a fresh trip has no dates to lose.
+
+**The validator keeps its date rules**, now keyed on `mode === 'edit'` rather than a field flag: the values still arrive from the server and a malformed row must not silently pass. `showsDates` is deleted rather than left `false` in both modes — an unread flag is exactly what the code review made this story delete once already.
+
 ### 2026-08-09 — founder addendum 2: no lifecycle act may run while another traveler holds the Editing Session
 
 *Founder: "the owner cant finalize an itinerary if it is still locked, like someone is still editing it."*

@@ -3,6 +3,7 @@ import { join } from 'path';
 import {
   tripFormChrome,
   tripFormFields,
+  updateRequestFrom,
   validateTripForm,
   type TripFormMode,
   type TripFormValues,
@@ -54,10 +55,25 @@ describe('what each mode owns alone', () => {
     expect(tripFormFields('edit').showsDuration).toBe(false);
   });
 
-  it('edits dates on edit only — and no Duration there, because dates never touch the day list', () => {
-    expect(tripFormFields('edit').showsDates).toBe(true);
-    expect(tripFormFields('create').showsDates).toBe(false);
-    expect(tripFormFields('edit').showsDuration).toBe(false);
+  it('edits no dates in either mode — the pickers retired, the wire fields did not (S4.19 addendum 3)', () => {
+    const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
+
+    expect(form).not.toMatch(/DatePicker/);
+    expect(form).not.toMatch(/Start date|End date/);
+    expect(tripFormFields('edit')).not.toHaveProperty('showsDates');
+  });
+
+  it('keeps dates on the wire so existing values survive a save (S4.19 addendum 3)', () => {
+    const request = updateRequestFrom({
+      ...blank,
+      title: 'Kept',
+      destinations: ['Hanoi'],
+      startDate: '2027-03-01',
+      endDate: '2027-03-09',
+    });
+
+    expect(request.startDate).toBe('2027-03-01');
+    expect(request.endDate).toBe('2027-03-09');
   });
 
   it('reorders standouts on edit only — create keeps the S4.15 add-and-remove row', () => {
@@ -110,16 +126,15 @@ describe('validation converges — one validator, two modes', () => {
     expect(validateTripForm('edit', { ...filled, duration: 'five' })).toBeUndefined();
   });
 
-  it('applies the date rules to edit only', () => {
+  it('still guards dates it carries from the server, though no field can enter one (S4.19 addendum 3)', () => {
     expect(validateTripForm('edit', { ...filled, startDate: 'next June' })).toMatch(/2027-01-10/);
     expect(validateTripForm('edit', { ...filled, startDate: '2027-02-31' })).toMatch(/2027-01-10/);
     expect(
       validateTripForm('edit', { ...filled, startDate: '2027-06-10', endDate: '2027-06-03' }),
     ).toBe('A trip cannot end before it starts.');
-    expect(validateTripForm('create', { ...filled, startDate: 'next June' })).toBeUndefined();
   });
 
-  it('accepts an open-ended edit — a start with no end, and an end with no start', () => {
+  it('accepts the date shapes a server row can hold — open-ended, and same-day', () => {
     expect(validateTripForm('edit', { ...filled, startDate: '2027-06-03' })).toBeUndefined();
     expect(validateTripForm('edit', { ...filled, endDate: '2027-06-03' })).toBeUndefined();
     expect(

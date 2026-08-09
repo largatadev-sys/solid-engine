@@ -492,11 +492,17 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13; re
   const create = read(TRIPS, 'new.tsx');
   const form = read(MOBILE_ROOT, 'src', 'itineraries', 'TripForm.tsx');
 
-  it('has no date picker — the mode contract, not the markup, is what withholds it now', () => {
+  it('has no date picker in EITHER mode — the pickers retired at S4.19 addendum 3', () => {
     expect(create).not.toMatch(/DatePicker/);
     expect(create).not.toMatch(/startDate|endDate/);
-    expect(tripFormFields('create').showsDates).toBe(false);
-    expect(form).toMatch(/fields\.showsDates \?/);
+    expect(form).not.toMatch(/DatePicker/);
+  });
+
+  it('still sends the dates it was handed, so an edit cannot wipe them (checklist line 22)', () => {
+    const contract = read(MOBILE_ROOT, 'src', 'itineraries', 'tripFormContract.ts');
+
+    expect(contract).toMatch(/startDate: form\.startDate/);
+    expect(contract).toMatch(/endDate: form\.endDate/);
   });
 
   it('takes free-text destinations and never says "Search"', () => {
