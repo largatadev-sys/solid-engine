@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The expanded day header shows pencil + trash for owners, pencil alone for members (spec AC 2).
-- [ ] The pencil opens the rename input with the current name; a committed name persists on blur and renders after the "Day N" prefix.
-- [ ] Tapping the day title does nothing — the old Pressable and its accessibility label are gone.
-- [ ] Accessibility: the pencil carries a "Rename Day N" label, hitSlop matching the activity row's pencil.
-- [ ] Affordance visibility rides the existing pure-logic family if logic is needed; unit tests pin member-vs-owner visibility.
-- [ ] The rename walks on the emulator and the web preview (blur-commit on both platforms).
+- [x] The expanded day header shows pencil + trash for owners, pencil alone for members (spec AC 2).
+- [x] The pencil opens the rename input with the current name; a committed name persists on blur and renders after the "Day N" prefix.
+- [x] Tapping the day title does nothing — the old Pressable and its accessibility label are gone.
+- [x] Accessibility: the pencil carries a "Rename Day N" label, hitSlop matching the activity row's pencil.
+- [x] Affordance visibility rides the existing pure-logic family if logic is needed; unit tests pin member-vs-owner visibility.
+- [x] The rename walks on the emulator and the web preview (blur-commit on both platforms).

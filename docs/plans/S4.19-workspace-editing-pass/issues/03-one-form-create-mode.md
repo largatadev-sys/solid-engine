@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately. *(04 builds on this component; do this first.)*
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The mode contract is a pure module with table-driven unit tests: create's field set (cover · title · destinations multi · description · standouts · best time · Duration), chrome strings, and submit shape.
-- [ ] The create walk is behavior-identical to S4.15 apart from the destination rows: placeholders, validation, day-minting, Trip Created overview, back-to-Trips (spec AC 3).
-- [ ] A trip created with three destinations carries all three on the wire (the list field already exists — no wire change).
-- [ ] A trip created with a cover still attaches it through the staged post-create sequence, local preview intact (spec AC 5, create half).
-- [ ] The converged validator's unit tests pin required fields for create mode; the S4.15 copy tests still pass or move onto the contract.
-- [ ] The create walk runs on the emulator and the web preview container.
+- [x] The mode contract is a pure module with table-driven unit tests: create's field set (cover · title · destinations multi · description · standouts · best time · Duration), chrome strings, and submit shape.
+- [x] The create walk is behavior-identical to S4.15 apart from the destination rows: placeholders, validation, day-minting, Trip Created overview, back-to-Trips (spec AC 3).
+- [x] A trip created with three destinations carries all three on the wire (the list field already exists — no wire change).
+- [x] A trip created with a cover still attaches it through the staged post-create sequence, local preview intact (spec AC 5, create half).
+- [x] The converged validator's unit tests pin required fields for create mode; the S4.15 copy tests still pass or move onto the contract.
+- [x] The create walk runs on the emulator and the web preview container.

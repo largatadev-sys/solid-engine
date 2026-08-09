@@ -4,9 +4,9 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The editor surface's chip renders "TRIP WORKSPACE"; the badge-mapping unit tests pin the new label and re-pin all four viewer states unchanged (spec AC 1).
-- [ ] The glossary amendment lands in `02-domain-model.md`: badge copy only, surface canon names untouched.
-- [ ] `workspaceEyebrow` and its test are deleted; typecheck is clean and nothing else references the family (spec AC 7).
-- [ ] Screenshot of the editor header beside S4.17 frame 1, the chip being the only difference (spec's deviation table).
+- [x] The editor surface's chip renders "TRIP WORKSPACE"; the badge-mapping unit tests pin the new label and re-pin all four viewer states unchanged (spec AC 1).
+- [x] The glossary amendment lands in `02-domain-model.md`: badge copy only, surface canon names untouched.
+- [x] `workspaceEyebrow` and its test are deleted; typecheck is clean and nothing else references the family (spec AC 7).
+- [x] Screenshot of the editor header beside S4.17 frame 1, the chip being the only difference (spec's deviation table).
