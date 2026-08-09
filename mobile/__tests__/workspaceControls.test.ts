@@ -58,8 +58,11 @@ describe('stateBadge', () => {
 
 
 describe('ladderCta', () => {
-  it('offers no ladder CTA on a draft — Edit Itinerary is the act', () => {
-    expect(ladderCta(trip({ state: 'draft' }), true)).toBeNull();
+  it('offers Finalize Itinerary on a draft — every lifecycle step is one tap from the workspace (S4.19)', () => {
+    expect(ladderCta(trip({ state: 'draft' }), true)).toEqual({
+      act: 'finish-planning',
+      label: 'Finalize Itinerary',
+    });
   });
 
   it('offers Start Trip on Ready', () => {
@@ -161,7 +164,6 @@ describe('workspaceAffordances', () => {
     expect(viewer.showsAddDay).toBe(false);
     expect(viewer.showsDayDelete).toBe(false);
     expect(viewer.showsDayRename).toBe(false);
-    expect(viewer.showsFinalize).toBe(false);
   });
 
   it('opens every editing affordance for the owner in the editor', () => {
@@ -171,7 +173,6 @@ describe('workspaceAffordances', () => {
     expect(editor.showsAddDay).toBe(true);
     expect(editor.showsDayDelete).toBe(true);
     expect(editor.showsDayRename).toBe(true);
-    expect(editor.showsFinalize).toBe(true);
   });
 
   it('keeps activity editing member-wide but hides the owner-only acts', () => {
@@ -180,7 +181,6 @@ describe('workspaceAffordances', () => {
     expect(member.showsDragHandles).toBe(true);
     expect(member.showsAddDay).toBe(false);
     expect(member.showsDayDelete).toBe(false);
-    expect(member.showsFinalize).toBe(false);
   });
 
   it('lets a member rename a day while only the owner may delete it (S4.19 — renaming is plan editing)', () => {

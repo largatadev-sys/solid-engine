@@ -19,7 +19,6 @@ import { useMe } from '../../../../../src/hooks/useMe';
 import { defaultOpenDay, toggleOpenDay } from '../../../../../src/itineraries/dayAccordion';
 import { dayName, dayPrefix } from '../../../../../src/itineraries/dayTitle';
 import { DraggableActivityList } from '../../../../../src/itineraries/DraggableActivityList';
-import { FinalizeSheet } from '../../../../../src/itineraries/FinalizeSheet';
 import { applyDrop, applyMove } from '../../../../../src/itineraries/reorderActivityIds';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
 import { WorkspaceDetailsTab } from '../../../../../src/itineraries/WorkspaceDetailsTab';
@@ -42,7 +41,6 @@ import {
   useItinerary,
   useRenameDay,
   useReorderActivities,
-  useTripLifecycle,
 } from '../../../../../src/query/itineraryQueries';
 import { colors, typography } from '../../../../../src/theme';
 import type { ActivityResponse } from '../../../../../src/types/api';
@@ -65,13 +63,11 @@ export default function DraftWorkspaceScreen() {
   const deleteDay = useDeleteDay(id);
   const deleteActivity = useDeleteActivity(id);
   const reorderActivities = useReorderActivities(id);
-  const lifecycle = useTripLifecycle(id);
 
   const [active, setActive] = useState<WorkspaceTab>('day-by-day');
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
   const [editingTitleOf, setEditingTitleOf] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
-  const [sheetOpen, setSheetOpen] = useState(false);
 
   const acquire = session.acquire;
   const asked = useRef(false);
@@ -162,16 +158,6 @@ export default function DraftWorkspaceScreen() {
       params: activity === undefined
         ? { id, dayId }
         : { id, dayId, activityId: activity.id },
-    });
-  };
-
-  const finalize = () => {
-    lifecycle.mutate('finish-planning', {
-      onSuccess: () => {
-        setSheetOpen(false);
-        session.release();
-        router.back();
-      },
     });
   };
 
@@ -269,17 +255,6 @@ export default function DraftWorkspaceScreen() {
       </ScrollView>
 
       <View style={styles.rail}>
-        {affordances.showsFinalize ? (
-          <Pressable
-            style={styles.primaryCta}
-            onPress={() => setSheetOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Finalize Itinerary"
-          >
-            <Text style={styles.primaryCtaLabel}>Finalize Itinerary</Text>
-          </Pressable>
-        ) : null}
-
         <Pressable
           style={styles.secondaryCta}
           onPress={leaveEditor}
@@ -289,13 +264,6 @@ export default function DraftWorkspaceScreen() {
           <Text style={styles.secondaryCtaLabel}>Save Changes</Text>
         </Pressable>
       </View>
-
-      <FinalizeSheet
-        visible={sheetOpen}
-        busy={lifecycle.isPending}
-        onConfirm={finalize}
-        onDismiss={() => setSheetOpen(false)}
-      />
     </View>
   );
 }
@@ -360,17 +328,6 @@ const styles = StyleSheet.create({
     gap: 8,
     borderTopWidth: 1,
     borderTopColor: workspaceColors.railBorder,
-  },
-  primaryCta: {
-    height: workspaceMetrics.primaryCtaHeight,
-    borderRadius: workspaceRadii.control,
-    backgroundColor: workspaceColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryCtaLabel: {
-    ...workspaceTypography.ctaPrimary,
-    color: workspaceColors.onAccent,
   },
   secondaryCta: {
     height: workspaceMetrics.secondaryCtaHeight,

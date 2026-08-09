@@ -92,6 +92,18 @@ S4.18's buffering (parked; when it lands it stages the same rename input this st
 
 *(append-only)*
 
+### 2026-08-09 — founder addendum: Finalize moves to the Trip Workspace, and the editor's rail becomes Save Changes alone
+
+*Founder, on the running build: "you don't need to edit the workspace to be able to finalize it. just like how the start trip button appears, its not on the workspace mode."*
+
+**The asymmetry, which nobody had named:** `LADDER` carried `draft: null`, so Start Trip, Complete Trip and Publish Itinerary all sat on the **viewer** as one-tap acts, while Finalize — the act that ends planning — was reachable *only* by entering the Draft Workspace and acquiring an Editing Session. Three of four lifecycle steps were free; the fourth demanded a lease. Draft now gets its rung (`finish-planning` / "Finalize Itinerary") and the rule reads cleanly in one line: **the workspace drives the lifecycle, the editor edits.**
+
+**Moved, not duplicated** (founder's choice when asked): the editor's rail is now **Save Changes alone**. `showsFinalize` is deleted from `WorkspaceAffordances` rather than left unread — the viewer's Finalize is gated by `ladderCta`'s existing `isOwner` check, so owner-only holds without a second flag, and the member case was already covered by the "hides every ladder CTA from a member" test that loops all four states.
+
+**The confirmation sheet travels with the button** (founder's choice): `FinalizeSheet` now renders on the viewer, so a tap on the trip list's workspace cannot end planning by accident. Verified on both rungs — the tap opens the sheet with the state still `DRAFT`, and only confirming flips it to `UPCOMING`.
+
+Three of the founder's four notes in the same message needed **no change** — they described behaviour that already shipped, which is worth recording so it is not "fixed" again: only the owner can finalize (`showsFinalize` was already `editing && isOwner`); the editor rail already had exactly one Save Changes; and the edit screen already *is* the create screen (this story's own unification — the founder read the new shared form as the old screen because it still carries dates). The dates were queried as leftovers and **kept** on the founder's call: they are the only writer of `startDate`/`endDate`, which `tripCardAnatomy` reads for the Trips card eyebrow.
+
 ### 2026-08-09 — implementation: the edit screen took create's styling, and the Standouts hint is the one real loss
 
 Raised by the spec review, recorded here rather than in the deviation table because the body is immutable point-in-time intent.

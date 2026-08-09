@@ -7,7 +7,7 @@ export type WorkspaceSurface = 'viewer' | 'editor';
 
 export type StateBadge = { label: string; background: string; foreground: string };
 
-export type LadderAct = 'start' | 'complete' | 'publish';
+export type LadderAct = 'finish-planning' | 'start' | 'complete' | 'publish';
 
 export type LadderCta = { act: LadderAct; label: string };
 
@@ -23,7 +23,6 @@ export type WorkspaceAffordances = {
   showsAddDay: boolean;
   showsDayDelete: boolean;
   showsDayRename: boolean;
-  showsFinalize: boolean;
 };
 
 
@@ -36,7 +35,7 @@ const BADGES: Record<ItineraryState, StateBadge> = {
 
 
 const LADDER: Record<ItineraryState, LadderCta | null> = {
-  draft: null,
+  draft: { act: 'finish-planning', label: 'Finalize Itinerary' },
   upcoming: { act: 'start', label: 'Start Trip' },
   ongoing: { act: 'complete', label: 'Complete Trip' },
   completed: { act: 'publish', label: 'Publish Itinerary' },
@@ -103,6 +102,5 @@ export function workspaceAffordances(
     showsAddDay: editing && isOwner,
     showsDayDelete: editing && isOwner,
     showsDayRename: editing,
-    showsFinalize: editing && isOwner,
   };
 }

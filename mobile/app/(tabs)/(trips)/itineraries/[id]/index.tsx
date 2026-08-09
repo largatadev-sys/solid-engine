@@ -11,6 +11,7 @@ import {
   PUBLISH_NEEDS_COMPLETE_TITLE,
   publishNeedsCompleteBody,
 } from '../../../../../src/itineraries/publishControls';
+import { FinalizeSheet } from '../../../../../src/itineraries/FinalizeSheet';
 import { TripArchiveBanner } from '../../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
 import { WorkspaceDetailsTab } from '../../../../../src/itineraries/WorkspaceDetailsTab';
@@ -51,6 +52,7 @@ export default function TripWorkspaceScreen() {
   const lifecycle = useTripLifecycle(id);
   const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'day-by-day');
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   if (isPending) {
     return (
@@ -91,6 +93,10 @@ export default function TripWorkspaceScreen() {
 
   const runLadder = () => {
     if (ladder === null) return;
+    if (ladder.act === 'finish-planning') {
+      setSheetOpen(true);
+      return;
+    }
     if (ladder.act === 'publish') {
       if (canPublish(data)) {
         router.push({ pathname: '/itineraries/[id]/preview', params: { id } });
@@ -171,6 +177,15 @@ export default function TripWorkspaceScreen() {
           ) : null}
         </View>
       ) : null}
+
+      <FinalizeSheet
+        visible={sheetOpen}
+        busy={lifecycle.isPending}
+        onConfirm={() =>
+          lifecycle.mutate('finish-planning', { onSuccess: () => setSheetOpen(false) })
+        }
+        onDismiss={() => setSheetOpen(false)}
+      />
     </View>
   );
 }
