@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
 import { tripRowDestination } from '../src/itineraries/TripRow';
+import { tripFormChrome, tripFormFields } from '../src/itineraries/tripFormContract';
 
 
 const MOBILE_ROOT = join(__dirname, '..');
@@ -138,6 +139,8 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
   const REDIRECT_STUBS = ['itineraries/[id]/days/index.tsx', 'itineraries/[id]/days/[dayId].tsx'];
 
+  const TRIP_FORM = ['itineraries/new.tsx'];
+
   it.each(tripScreens().filter(([name]) => REDIRECT_STUBS.includes(name)))(
     '%s draws no chrome at all — a retired route redirects, it does not render',
     (_name, source) => {
@@ -163,10 +166,27 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it.each(
     tripScreens().filter(
       ([name]) =>
-        !FULL_BLEED.includes(name) && !WORKSPACE_HEADER.includes(name) && !REDIRECT_STUBS.includes(name),
+        !FULL_BLEED.includes(name) &&
+        !WORKSPACE_HEADER.includes(name) &&
+        !REDIRECT_STUBS.includes(name) &&
+        !TRIP_FORM.includes(name),
     ),
   )('%s draws its own heading — with no header bar, a navigator title renders nowhere', (_name, source) => {
     expect(source).toMatch(/<ScreenHeader/);
+  });
+
+  it.each(tripScreens().filter(([name]) => TRIP_FORM.includes(name)))(
+    '%s hands its heading to the shared trip form, which draws one per mode (S4.19)',
+    (_name, source) => {
+      expect(source).toMatch(/<TripForm/);
+    },
+  );
+
+  it('makes the shared trip form draw the heading its mode names', () => {
+    const form = read(MOBILE_ROOT, 'src', 'itineraries', 'TripForm.tsx');
+
+    expect(form).toMatch(/<ScreenHeader/);
+    expect(form).toContain('title={chrome.headline}');
   });
 
   it.each(tripScreens().filter(([name]) => FULL_BLEED.includes(name)))(
@@ -246,9 +266,18 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     const create = read(TRIPS, 'new.tsx');
     const edit = read(TRIPS, '[id]', 'edit.tsx');
 
-    expect(create).not.toMatch(/uploading=/);
-    expect(create).toContain('busy={create.isPending}');
-    expect(edit).toContain('uploading={uploadCover.isPending}');
+    expect(create).not.toMatch(/uploading:/);
+    expect(create).toContain('busy: create.isPending');
+    expect(edit).toContain('uploading: uploadCover.isPending');
+  });
+
+  it('takes cover behaviour from the mode, never from the shared form (S4.19 decision 5)', () => {
+    const form = read(MOBILE_ROOT, 'src', 'itineraries', 'TripForm.tsx');
+    const create = read(TRIPS, 'new.tsx');
+
+    expect(form).not.toMatch(/useUploadCover|acquireEditLock|pickPhoto/);
+    expect(form).toContain('uploading={cover.uploading ?? false}');
+    expect(create).toContain('await itineraryRepository.acquireEditLock(itineraryId');
   });
 
   it('binds the uploading label to a real upload, never to whatever else is pending', () => {
@@ -295,8 +324,13 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   });
 
   it('says Standouts and never Highlights — the glossary reserved that word for diaries', () => {
-    for (const screen of [read(TRIPS, 'new.tsx'), read(TRIPS, '[id]', 'edit.tsx')]) {
-      expect(screen).toContain('Standout');
+    expect(read(MOBILE_ROOT, 'src', 'itineraries', 'TripForm.tsx')).toContain('Standout');
+
+    for (const screen of [
+      read(TRIPS, 'new.tsx'),
+      read(TRIPS, '[id]', 'edit.tsx'),
+      read(MOBILE_ROOT, 'src', 'itineraries', 'TripForm.tsx'),
+    ]) {
       expect(screen).not.toMatch(/Highlight/);
     }
   });
@@ -454,29 +488,33 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 });
 
 
-describe('the create form asks for a duration, never dates (S4.9 decision 13)', () => {
+describe('the create form asks for a duration, never dates (S4.9 decision 13; re-housed on the shared form at S4.19)', () => {
   const create = read(TRIPS, 'new.tsx');
+  const form = read(MOBILE_ROOT, 'src', 'itineraries', 'TripForm.tsx');
 
-  it('has no date picker', () => {
+  it('has no date picker — the mode contract, not the markup, is what withholds it now', () => {
     expect(create).not.toMatch(/DatePicker/);
     expect(create).not.toMatch(/startDate|endDate/);
+    expect(tripFormFields('create').showsDates).toBe(false);
+    expect(form).toMatch(/fields\.showsDates \?/);
   });
 
-  it('takes a single free-text destination and never says "Search"', () => {
-    expect(create).toContain('label="Destination"');
-    expect(create).toContain('destinations: [destination.trim()]');
-    expect(create).not.toMatch(/placeholder="Search/);
+  it('takes free-text destinations and never says "Search"', () => {
+    expect(form).toContain('<Text style={styles.label}>Destinations</Text>');
+    expect(create).toContain("createRequestFrom(values)");
+    expect(form).not.toMatch(/placeholder="Search/);
   });
 
   it('offers a live cover picker rather than a greyed tile (S3.3)', () => {
-    expect(create).toContain('<CoverPicker');
-    expect(create).not.toContain('surface="coverPhoto"');
+    expect(form).toContain('<CoverPicker');
+    expect(form).not.toContain('surface="coverPhoto"');
   });
 
   it('speaks the ratified language: Plan a Trip to enter, Create Trip to submit (S4.15 decision 8)', () => {
-    expect(create).toContain('title="Plan a Trip"');
-    expect(create).toContain('Create Trip');
-    expect(create).not.toMatch(/Create Itinerary|Continue to Daily Schedules/);
+    expect(tripFormChrome('create')).toEqual({ headline: 'Plan a Trip', submitLabel: 'Create Trip' });
+    expect(form).toContain('title={chrome.headline}');
+    expect(form).toContain('{chrome.submitLabel}');
+    expect(form).not.toMatch(/Create Itinerary|Continue to Daily Schedules/);
   });
 
   it('prompts in every field rather than showing sample content (S4.15 decision 8)', () => {
@@ -488,9 +526,14 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13)', 
       "What's this trip about?",
       'Add a standout',
     ]) {
-      expect(create).toContain(`placeholder="${prompt}"`);
+      expect(form).toContain(`placeholder="${prompt}"`);
     }
-    expect(create).not.toMatch(/Island Hopping in El Nido|Palawan"|Dec - Apr|Big Lagoon Kayaking/);
+    expect(form).not.toMatch(/Island Hopping in El Nido|Palawan"|Dec - Apr|Big Lagoon Kayaking/);
+  });
+
+  it('adds destinations rather than settling for one (S4.19 decision 3 — the S4.15 mock amendment)', () => {
+    expect(tripFormFields('create').destinationsAreMulti).toBe(true);
+    expect(form).toContain('accessibilityLabel="Add destination"');
   });
 });
 
