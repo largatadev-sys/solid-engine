@@ -4,11 +4,11 @@
 
 **Blocked by:** 03 — One form, create mode (the shared component and mode contract are born there).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Edit round-trips every field — title, destinations, description, standouts, best time, dates — through the existing update endpoint (spec AC 4).
-- [ ] The submit button reads "Save"; success pops back to the origin; back-exit releases the lock and persists nothing new.
-- [ ] Editing dates in any direction leaves the day list untouched: count, names, activities (spec AC 6).
-- [ ] Edit mode shows no Duration field; the mode contract's unit tests pin edit's field set and chrome.
-- [ ] Cover upload and remove still work live under the lease; the frozen notices still render for archived/published trips (spec AC 5, edit half; AC 4).
-- [ ] The old standalone edit-screen form code is gone; typecheck clean; the edit walk runs on the emulator and the web preview container.
+- [x] Edit round-trips every field — title, destinations, description, standouts, best time, dates — through the existing update endpoint (spec AC 4).
+- [x] The submit button reads "Save"; success pops back to the origin; back-exit releases the lock and persists nothing new.
+- [x] Editing dates in any direction leaves the day list untouched: count, names, activities (spec AC 6).
+- [x] Edit mode shows no Duration field; the mode contract's unit tests pin edit's field set and chrome.
+- [x] Cover upload and remove still work live under the lease; the frozen notices still render for archived/published trips (spec AC 5, edit half; AC 4).
+- [x] The old standalone edit-screen form code is gone; typecheck clean; the edit walk runs on the emulator and the web preview container.

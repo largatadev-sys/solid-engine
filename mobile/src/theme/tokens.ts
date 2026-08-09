@@ -125,6 +125,7 @@ export const radii = {
 
 export const controls = {
   inputHeight: 51,
+  tripFormControlHeight: 43,
   buttonHeight: 51,
   optionHeight: 72,
   codeBoxHeight: 56,

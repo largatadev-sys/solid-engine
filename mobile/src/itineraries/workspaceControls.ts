@@ -7,9 +7,9 @@ export type WorkspaceSurface = 'viewer' | 'editor';
 
 export type StateBadge = { label: string; background: string; foreground: string };
 
-export type LadderAct = 'start' | 'complete' | 'publish';
+export type LadderAct = 'finish-planning' | 'start' | 'complete' | 'publish';
 
-export type LadderCta = { act: LadderAct; label: string };
+export type LadderCta = { act: LadderAct; label: string; blockedBy?: string };
 
 export type EditItineraryAction =
   | { kind: 'edit' }
@@ -22,7 +22,7 @@ export type WorkspaceAffordances = {
   showsActivityEditing: boolean;
   showsAddDay: boolean;
   showsDayDelete: boolean;
-  showsFinalize: boolean;
+  showsDayRename: boolean;
 };
 
 
@@ -35,7 +35,7 @@ const BADGES: Record<ItineraryState, StateBadge> = {
 
 
 const LADDER: Record<ItineraryState, LadderCta | null> = {
-  draft: null,
+  draft: { act: 'finish-planning', label: 'Finalize Itinerary' },
   upcoming: { act: 'start', label: 'Start Trip' },
   ongoing: { act: 'complete', label: 'Complete Trip' },
   completed: { act: 'publish', label: 'Publish Itinerary' },
@@ -48,17 +48,27 @@ export function stateBadge(
 ): StateBadge {
   const badge = BADGES[itinerary.state];
   return surface === 'editor' && itinerary.state === 'draft'
-    ? { ...badge, label: 'Draft TRIP Workspace' }
+    ? { ...badge, label: 'Trip Workspace' }
     : badge;
 }
 
 
 export function ladderCta(
-  itinerary: Pick<ItineraryResponse, 'state' | 'archived' | 'published'>,
+  itinerary: Pick<ItineraryResponse, 'state' | 'archived' | 'published'> & {
+    editingSession?: LeaseHolderResponse | null;
+  },
   isOwner: boolean,
+  viewerTravelerId?: string,
 ): LadderCta | null {
   if (!isOwner || itinerary.archived || itinerary.published) return null;
-  return LADDER[itinerary.state];
+
+  const rung = LADDER[itinerary.state];
+  if (rung === null) return null;
+
+  const session = itinerary.editingSession;
+  return session && session.travelerId !== viewerTravelerId
+    ? { ...rung, blockedBy: holderLabel(session) }
+    : rung;
 }
 
 
@@ -101,6 +111,6 @@ export function workspaceAffordances(
     showsActivityEditing: editing,
     showsAddDay: editing && isOwner,
     showsDayDelete: editing && isOwner,
-    showsFinalize: editing && isOwner,
+    showsDayRename: editing,
   };
 }

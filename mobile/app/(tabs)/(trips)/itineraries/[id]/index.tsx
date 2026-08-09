@@ -11,6 +11,7 @@ import {
   PUBLISH_NEEDS_COMPLETE_TITLE,
   publishNeedsCompleteBody,
 } from '../../../../../src/itineraries/publishControls';
+import { FinalizeSheet } from '../../../../../src/itineraries/FinalizeSheet';
 import { TripArchiveBanner } from '../../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
 import { WorkspaceDetailsTab } from '../../../../../src/itineraries/WorkspaceDetailsTab';
@@ -51,6 +52,7 @@ export default function TripWorkspaceScreen() {
   const lifecycle = useTripLifecycle(id);
   const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'day-by-day');
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   if (isPending) {
     return (
@@ -73,7 +75,7 @@ export default function TripWorkspaceScreen() {
   const expandedDayId = openDayId === undefined ? defaultOpenDay(dayIds, requestedDay) : openDayId;
 
   const badge = stateBadge(data);
-  const ladder = ladderCta(data, isOwner);
+  const ladder = ladderCta(data, isOwner, myId);
   const editAction = editItineraryAction(data, canEditPlan(data), myId, isOwner);
   const affordances = workspaceAffordances('viewer', isOwner);
 
@@ -91,6 +93,10 @@ export default function TripWorkspaceScreen() {
 
   const runLadder = () => {
     if (ladder === null) return;
+    if (ladder.act === 'finish-planning') {
+      setSheetOpen(true);
+      return;
+    }
     if (ladder.act === 'publish') {
       if (canPublish(data)) {
         router.push({ pathname: '/itineraries/[id]/preview', params: { id } });
@@ -147,15 +153,21 @@ export default function TripWorkspaceScreen() {
       {ladder !== null || showsStepBack(data, isOwner) ? (
         <View style={styles.rail}>
           {ladder !== null ? (
-            <Pressable
-              style={styles.primaryCta}
-              onPress={runLadder}
-              disabled={lifecycle.isPending}
-              accessibilityRole="button"
-              accessibilityLabel={ladder.label}
-            >
-              <Text style={styles.primaryCtaLabel}>{ladder.label}</Text>
-            </Pressable>
+            <>
+              {ladder.blockedBy !== undefined ? (
+                <Text style={styles.blockedNote}>{`Being edited by ${ladder.blockedBy}`}</Text>
+              ) : null}
+              <Pressable
+                style={[styles.primaryCta, ladder.blockedBy !== undefined && styles.ctaBlocked]}
+                onPress={runLadder}
+                disabled={lifecycle.isPending || ladder.blockedBy !== undefined}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: ladder.blockedBy !== undefined }}
+                accessibilityLabel={ladder.label}
+              >
+                <Text style={styles.primaryCtaLabel}>{ladder.label}</Text>
+              </Pressable>
+            </>
           ) : null}
 
           {showsStepBack(data, isOwner) ? (
@@ -171,6 +183,15 @@ export default function TripWorkspaceScreen() {
           ) : null}
         </View>
       ) : null}
+
+      <FinalizeSheet
+        visible={sheetOpen}
+        busy={lifecycle.isPending}
+        onConfirm={() =>
+          lifecycle.mutate('finish-planning', { onSuccess: () => setSheetOpen(false) })
+        }
+        onDismiss={() => setSheetOpen(false)}
+      />
     </View>
   );
 }
@@ -214,6 +235,14 @@ const styles = StyleSheet.create({
   primaryCtaLabel: {
     ...workspaceTypography.ctaPrimary,
     color: workspaceColors.onAccent,
+  },
+  ctaBlocked: {
+    opacity: 0.5,
+  },
+  blockedNote: {
+    ...workspaceTypography.activityTime,
+    color: workspaceColors.muted,
+    textAlign: 'center',
   },
   stepBack: {
     alignItems: 'center',

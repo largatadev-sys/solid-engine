@@ -47,15 +47,22 @@ describe('stateBadge', () => {
     expect(stateBadge(trip({ state }))).toEqual({ label, background, foreground });
   });
 
-  it('says Draft TRIP Workspace on the editor, per the mock header', () => {
-    expect(stateBadge(trip({ state: 'draft' }), 'editor').label).toBe('Draft TRIP Workspace');
+  it('says Trip Workspace on the editor — the chip is where you are, not where the trip is (S4.19)', () => {
+    expect(stateBadge(trip({ state: 'draft' }), 'editor').label).toBe('Trip Workspace');
+  });
+
+  it.each(cases)('leaves the viewer chip on %s speaking lifecycle only', (state, label) => {
+    expect(stateBadge(trip({ state }), 'viewer').label).toBe(label);
   });
 });
 
 
 describe('ladderCta', () => {
-  it('offers no ladder CTA on a draft — Edit Itinerary is the act', () => {
-    expect(ladderCta(trip({ state: 'draft' }), true)).toBeNull();
+  it('offers Finalize Itinerary on a draft — every lifecycle step is one tap from the workspace (S4.19)', () => {
+    expect(ladderCta(trip({ state: 'draft' }), true)).toEqual({
+      act: 'finish-planning',
+      label: 'Finalize Itinerary',
+    });
   });
 
   it('offers Start Trip on Ready', () => {
@@ -77,6 +84,28 @@ describe('ladderCta', () => {
 
   it('hides the ladder on an archived trip', () => {
     expect(ladderCta(trip({ state: 'upcoming', archived: true }), true)).toBeNull();
+  });
+
+  it('blocks every rung while another traveler holds the editing session, and names them (S4.19)', () => {
+    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
+
+    states.forEach((state) => {
+      const held = trip({ state, editingSession: holder('t2') });
+      expect(ladderCta(held, true, 't1')).toEqual({
+        act: expect.any(String),
+        label: expect.any(String),
+        blockedBy: '@largata.dev+t2',
+      });
+    });
+  });
+
+  it('does not block the rung on the session holder-s own lease', () => {
+    const mine = trip({ state: 'draft', editingSession: holder('t1') });
+
+    expect(ladderCta(mine, true, 't1')).toEqual({
+      act: 'finish-planning',
+      label: 'Finalize Itinerary',
+    });
   });
 });
 
@@ -156,7 +185,7 @@ describe('workspaceAffordances', () => {
     expect(viewer.showsActivityEditing).toBe(false);
     expect(viewer.showsAddDay).toBe(false);
     expect(viewer.showsDayDelete).toBe(false);
-    expect(viewer.showsFinalize).toBe(false);
+    expect(viewer.showsDayRename).toBe(false);
   });
 
   it('opens every editing affordance for the owner in the editor', () => {
@@ -165,7 +194,7 @@ describe('workspaceAffordances', () => {
     expect(editor.showsActivityEditing).toBe(true);
     expect(editor.showsAddDay).toBe(true);
     expect(editor.showsDayDelete).toBe(true);
-    expect(editor.showsFinalize).toBe(true);
+    expect(editor.showsDayRename).toBe(true);
   });
 
   it('keeps activity editing member-wide but hides the owner-only acts', () => {
@@ -174,6 +203,11 @@ describe('workspaceAffordances', () => {
     expect(member.showsDragHandles).toBe(true);
     expect(member.showsAddDay).toBe(false);
     expect(member.showsDayDelete).toBe(false);
-    expect(member.showsFinalize).toBe(false);
+  });
+
+  it('lets a member rename a day while only the owner may delete it (S4.19 — renaming is plan editing)', () => {
+    const member = workspaceAffordances('editor', false);
+    expect(member.showsDayRename).toBe(true);
+    expect(member.showsDayDelete).toBe(false);
   });
 });

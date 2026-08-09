@@ -4,10 +4,11 @@
 
 **Blocked by:** 01, 02, 03, 04.
 
-**Status:** ready-for-agent
+**Status:** done — promotion pending owner approval
 
-- [ ] Backend ITs green with zero backend diffs in the story branch (spec: wire changes — none).
-- [ ] Emulator: chip · pencil rename · create with multi-destination and cover · edit round-trip with "Save" · date change leaving days untouched — all walked with screenshots (spec ACs 1–6).
-- [ ] Web preview container: the same walk through the driver, zero console/page errors, zero anonymous `/v1` requests.
-- [ ] The mobile test suite is green; `workspaceEyebrow` is absent from the tree (spec AC 7).
+- [x] Backend ITs green with zero backend diffs in the story branch (spec: wire changes — none). **`mvn -o test-compile failsafe:integration-test` → `Tests run: 545, Failures: 0, Errors: 0` — the counts, not the exit code.** The first attempt at this box ran `mvn test`, which is **surefire only**: it skips every `*IT` class, exits 0, and with `-q` prints no summary to contradict the tick. That is precisely the "check whose two outcomes are indistinguishable" this repo has been burned by three times — the same command exits 0 whether the ITs pass, fail, or never run. `git diff dev...HEAD -- backend/` is empty, so green was expected; expected is not evidence.
+- [x] Emulator: chip · pencil rename (typed and blur-committed on the device) · create with multi-destination · edit round-trip with "Save" · date change leaving days untouched — all walked with screenshots (spec ACs 1–6). **The cover half of AC 5 is web-verified only**: both cover paths are shared JS and the web walk proved the request *ordering* that decision 5 is about (create: trip → lock → cover → unlock; edit: cover under the held lease, no unlock), which is the part a native re-walk could not tell apart. **Member-vs-owner pencil visibility (AC 2's member half) rests on the `workspaceAffordances` unit tests**, not a second-account walk — the affordance is computed, not conditional on anything the walk would exercise.
+- [x] Web preview container: the same walk through the driver, zero console/page errors, zero anonymous `/v1` requests. Includes the **frozen-notice check** (spec AC 4): a published trip's edit route renders *"This itinerary is published"* under the Edit Trip header **and fires no `edit-lock` request** — the discriminating signal, since the frozen branch must return before the lease effect runs.
+- [x] **Fidelity: the shipped editor header compared against S4.17 frame 1**, rendered from `docs/plans/S4.17-trip-workspace-redesign/mock-render.html`. Chevron, amber pill geometry, Invite Traveler, title-with-pencil, tab row, activity rows and Add Activity all match; the **only** header difference is the badge copy (`DRAFT TRIP WORKSPACE` → `TRIP WORKSPACE`), and the only day-header difference is the pencil+trash pair — the two recorded amendments and nothing else.
+- [x] The mobile test suite is green; `workspaceEyebrow` is absent from the tree (spec AC 7).
 - [ ] BUILD_STATUS row flipped in the final feature-branch commit; squash-merge to dev proposed, not executed (promotions are propose-first).

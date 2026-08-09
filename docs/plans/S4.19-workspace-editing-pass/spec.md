@@ -91,3 +91,71 @@ S4.18's buffering (parked; when it lands it stages the same rename input this st
 ## Comments
 
 *(append-only)*
+
+### 2026-08-09 — founder addendum 4: the form goes back to the S4.15 mock, and multi-destination is reversed
+
+*Founder, with `S4.15-plan-a-trip/mock-render.html` open: "why did we change the overall look of the screen? there was a mock screen there for create itinerary. that is the one we should use. just change the texts to what we have now."*
+
+**The founder was right and the mock rule was not followed.** Rendering frame 2 beside the shipped screen showed four structural drifts nobody had recorded as deviations: the mock stacks a **bare chevron above a large 28px title** (we put a circled chevron inline beside a smaller one) · its cover button reads **"Upload from camera roll"** (we shipped "Upload photo(s)") · **Destination and Duration share one row** via `.fieldrow` (we stacked them full-width) · and **Duration is a dropdown** `.input-dd`, 120px wide with a `⌄` (we shipped a free-text number input). The text changes *were* correct — the mock's own note ratifies "Plan a Trip"/"Create Trip"/simplified placeholders — so the founder's summary was exact: keep the texts, restore the frame. Values were read from the mock's own CSS per the standing rule, not eyeballed.
+
+**Duration becomes a dropdown, 1–30 days plus a blank.** It reuses the existing `OptionPicker` (modal + `⌄`, already cross-platform) rather than a new component, and it makes the *"Duration must be a whole number of days"* validation unreachable from the UI. The server's 366-day cap is no longer expressible on create — a deliberate narrowing, since the mock draws a picker and 30 days covers the trips this flow is for.
+
+**Multi-destination is reversed in BOTH modes — and the founder then settled the question underneath it: "a trip can only have one destination."** That ruling is what makes the reversal correct rather than merely mock-faithful. S4.19 decision 3 (multi in both modes, the founder's own amendment at this story's grilling) is superseded on the record, and edit loses a capability it had *before* S4.19 — deliberately, because it was modelling something the domain does not have.
+
+**Consequence, asked as its own question before the ruling arrived and unchanged by it: destinations 2+ are dropped on save.** `tripFormValuesFrom` keeps only `destinations[0]`, so the first save of a legacy multi-destination row writes one. Walked for real: `{Hanoi,Sapa,"Ha Long","Ninh Binh"}` → **`{Hanoi}`**. With one destination ruled canonical this is a **model correction, not data loss** — the extras were never reachable for editing and should not have existed. The contract test pins the behaviour so it stays deliberate.
+
+**What is left over is plumbing, and it is on the epic map:** `destinations` is still a `List<String>` on the wire and in the column, and `TripRow`/`tripCardAnatomy`/the published projection still join every entry — so a legacy row *displays* four until someone saves it. Narrowing to a single `destination` is a `/v1` change needing the ADR-008 waiver conversation plus a backfill decision, so it is parked with the next schema-touching story rather than smuggled into this one.
+
+### 2026-08-09 — founder addendum 3: the date pickers retire, reversing the same day's "keep them" call
+
+*Founder, third pass on the same question: "the edit screen is different from the create screen right? why can't we reuse the create screen for editing?"*
+
+**The premise was already false and the third asking is what made that worth investigating rather than restating.** `/edit` had shared `TripForm` with `/new` since ticket 04; screenshotting both side by side showed identical cover tile, field styling, labels and docked CTA, differing only in headline, submit label, Duration and dates. **The question was not "why are they different screens" but "why does one have fields the other lacks"** — and the founder's answer, when the two images were put side by side, was to drop the dates.
+
+**Reverses the "Keep the pickers" call made hours earlier in this same session, with the same consequence restated before proceeding:** `startDate`/`endDate` stay on the wire and existing values keep rendering, but **nothing can now set them** — the pickers were their only writer, so `tripCardAnatomy`'s "Mar 2027" eyebrow will be blank on every new trip. Stated twice, chosen twice; recorded here so it is not rediscovered as a bug.
+
+**The trap this could have shipped, and the check that caught it:** removing a field from a form removes it from the *wire* when the endpoint replaces rather than merges (regression checklist line 22). `updateRequestFrom` still sends the hydrated `startDate`/`endDate`, and the walk proved it on a trip that **had** dates — title changed to "S4.19 dates survive", `2027-11-02`/`2027-11-14` unchanged in the database afterwards. Verifying on a fresh trip would have proven nothing, because a fresh trip has no dates to lose.
+
+**The validator keeps its date rules**, now keyed on `mode === 'edit'` rather than a field flag: the values still arrive from the server and a malformed row must not silently pass. `showsDates` is deleted rather than left `false` in both modes — an unread flag is exactly what the code review made this story delete once already.
+
+### 2026-08-09 — founder addendum 2: no lifecycle act may run while another traveler holds the Editing Session
+
+*Founder: "the owner cant finalize an itinerary if it is still locked, like someone is still editing it."*
+
+**This was a real hole in the backend, not a missing button state, and it predates this story.** `ItineraryService.finishPlanning` did `authorizeAndLoad` → mutate → record, with **no lease check at all** — and neither did `start`, `complete`, `reopen` or `publish`. An owner could end planning while a member was mid-edit, and the member's editor would keep writing into a trip that was no longer a draft. A parameterized IT proved it before the fix: **all 5 refusal cases failed, while the holder-passes and lease-expiry cases already passed** — so the guard was the only thing missing on every act.
+
+**Why it stayed invisible until now:** Finalize used to live *inside* the Draft Workspace, so reaching it required holding the session. Moving it to the viewer (addendum 1, above) turned a latent hole into a reachable one — the founder found it the same day the door opened.
+
+**Fix: a lease-only guard on all five acts** (founder's scope choice). It throws `EditLockedException` → **409 `EDIT_LOCKED`** naming the holder, and correctly lets the session *holder* through, so an owner editing their own trip is never blocked by themselves.
+
+**The first attempt reused `requireNoForeignSession` and was wrong — caught by the full suite, not by the new test.** That method opens with `fence.requireEditable`, which refuses **any published trip**, so putting it on the lifecycle acts made a published trip answer `ITINERARY_PUBLISHED` where it had always answered `ILLEGAL_STATE_TRANSITION` (`ItineraryPublicationIT.aPublishedTripPinsItsLifecycleUntilItIsUnpublished`). The publication fence is a *different* concern that these acts already enforce through their own domain rules, and folding it in would have masked the real refusal with a misleading code. `requireSessionFreeForLifecycle` checks the session and nothing else; the existing method is untouched for its `DayService`/`ActivityService` callers. **The new IT gained a case pinning exactly this** — reopening a published trip must still raise `IllegalStateTransitionException`, so the guard can never swallow that refusal again.
+
+**Semantics change, stated rather than assumed.** `publish` gains a failure mode it never had, which touches CLAUDE.md's *"changing publish/visibility semantics"* stop rule — raised with the founder, who chose all five knowing that. It is **additive under ADR-008** (no rename, retype or removal; a new error path on an existing endpoint), so no waiver is needed, but old app versions can now see a 409 from `publish` where they previously could not.
+
+**Client half:** `ladderCta` takes the viewer's traveler id and returns `blockedBy` when a foreign session is live; the workspace greys the CTA and prints *"Being edited by @handle"* above it (founder's choice over hiding it — a disappearing button reads as a bug). Verified the greyed control is genuinely inert, not merely dim: the click raises no sheet and the state does not move — the S1.3 dead-click check.
+
+Walked on both rungs with the verified pool (t1 owner, t2 member, seeded through the real invite → accept): owner's `finish-planning` returned **409** with the trip still `DRAFT`; after t2 released, the same call returned **200** → `upcoming`. Web showed Finalize greyed on a draft, mobile showed **Start Trip** greyed on a Ready trip — the same guard on two different rungs.
+
+### 2026-08-09 — founder addendum: Finalize moves to the Trip Workspace, and the editor's rail becomes Save Changes alone
+
+*Founder, on the running build: "you don't need to edit the workspace to be able to finalize it. just like how the start trip button appears, its not on the workspace mode."*
+
+**The asymmetry, which nobody had named:** `LADDER` carried `draft: null`, so Start Trip, Complete Trip and Publish Itinerary all sat on the **viewer** as one-tap acts, while Finalize — the act that ends planning — was reachable *only* by entering the Draft Workspace and acquiring an Editing Session. Three of four lifecycle steps were free; the fourth demanded a lease. Draft now gets its rung (`finish-planning` / "Finalize Itinerary") and the rule reads cleanly in one line: **the workspace drives the lifecycle, the editor edits.**
+
+**Moved, not duplicated** (founder's choice when asked): the editor's rail is now **Save Changes alone**. `showsFinalize` is deleted from `WorkspaceAffordances` rather than left unread — the viewer's Finalize is gated by `ladderCta`'s existing `isOwner` check, so owner-only holds without a second flag, and the member case was already covered by the "hides every ladder CTA from a member" test that loops all four states.
+
+**The confirmation sheet travels with the button** (founder's choice): `FinalizeSheet` now renders on the viewer, so a tap on the trip list's workspace cannot end planning by accident. Verified on both rungs — the tap opens the sheet with the state still `DRAFT`, and only confirming flips it to `UPCOMING`.
+
+Three of the founder's four notes in the same message needed **no change** — they described behaviour that already shipped, which is worth recording so it is not "fixed" again: only the owner can finalize (`showsFinalize` was already `editing && isOwner`); the editor rail already had exactly one Save Changes; and the edit screen already *is* the create screen (this story's own unification — the founder read the new shared form as the old screen because it still carries dates). The dates were queried as leftovers and **kept** on the founder's call: they are the only writer of `startDate`/`endDate`, which `tripCardAnatomy` reads for the Trips card eyebrow.
+
+### 2026-08-09 — implementation: the edit screen took create's styling, and the Standouts hint is the one real loss
+
+Raised by the spec review, recorded here rather than in the deviation table because the body is immutable point-in-time intent.
+
+Decision 3 pinned edit's *chrome* ("Edit Trip", "Save") but not its **skin**, and one component cannot wear two. The unification had to pick a visual language, and AC 3 pins create as behavior-identical to what S4.15 shipped while edit carries no equivalent pin — so create's styling won and the edit screen moved to meet it: docked CTA instead of the pill, `colors.surface` instead of `colors.background`, prompt placeholders instead of sample content ("Island Hopping in El Nido", "Palawan", "Dec – Apr" are gone), minus icons instead of text "Remove" buttons, and Best Time of Year now above Trip Description.
+
+**The one content loss is the Standouts hint, "Shown on your published page."** — an explanation of where standouts surface, which create never had and edit now no longer shows. Nothing else deleted here carries information; that line does. It is a backlog line rather than a silent drop.
+
+**Standouts reordering is per-mode, and the contract says so out loud.** Decision 3 lists Standouts flatly under "shared in both modes", but edit shipped ↑↓ arrows and create never had them: giving create the arrows regresses the pixels AC 3 protects, and taking them from edit drops a shipped feature nobody asked to lose. The mode contract carries `standoutsReorder` so the asymmetry is declared and tested rather than left to whichever screen was edited last — which is the drift this story exists to end.
+
+**Clearing a date is still a no-op** (`updateRequestFrom` omits an empty `startDate`/`endDate`, exactly as the pre-S4.19 edit screen did). Carried over verbatim, not introduced here, and out of scope for a re-housing — but AC 4's "round-trips every field" is not strictly true in that one direction. Backlog line.

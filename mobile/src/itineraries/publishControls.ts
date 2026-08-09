@@ -1,11 +1,7 @@
-import type { IconName } from '../components/Icon';
-import type { ItineraryResponse, ItineraryState, PublishAudience, Visibility } from '../types/api';
+import type { ItineraryResponse, ItineraryState, PublishAudience } from '../types/api';
 
 
 export type PublishControl = 'publish' | 'unpublish';
-
-
-type Axes = Pick<ItineraryResponse, 'state' | 'published' | 'visibility'>;
 
 
 export function publishControl(
@@ -39,30 +35,6 @@ export function audienceOf(itinerary: Pick<ItineraryResponse, 'visibility'>): Pu
 
 export function otherAudience(audience: PublishAudience): PublishAudience {
   return audience === 'public' ? 'private' : 'public';
-}
-
-
-export type WorkspaceEyebrow = { icon: IconName; label: string };
-
-
-const UNPUBLISHED_EYEBROWS: Record<ItineraryState, WorkspaceEyebrow> = {
-  draft: { icon: 'users', label: 'Draft Workspace' },
-  upcoming: { icon: 'users', label: 'Planning Finished' },
-  ongoing: { icon: 'users', label: 'Trip Under Way' },
-  completed: { icon: 'users', label: 'Trip Complete' },
-};
-
-
-const PUBLISHED_EYEBROWS: Record<Visibility, WorkspaceEyebrow> = {
-  public: { icon: 'globe', label: 'Published — Public' },
-  private: { icon: 'users', label: 'Published — Private' },
-};
-
-
-export function workspaceEyebrow(itinerary: Axes): WorkspaceEyebrow {
-  return itinerary.published
-    ? PUBLISHED_EYEBROWS[itinerary.visibility]
-    : UNPUBLISHED_EYEBROWS[itinerary.state];
 }
 
 
