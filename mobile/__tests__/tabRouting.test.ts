@@ -685,7 +685,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
 
     expect(editor).toContain('discardStagedEditsWording()');
     expect(editor).toContain('onBack={attemptExit}');
-    expect(editor).toContain('useExitGuard(true, attemptExit)');
+    expect(editor).toContain('useExitGuard(dirty,');
   });
 
   it('keeps a non-drag reorder path on both platforms — keys on web, a11y actions on native', () => {

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -85,12 +85,11 @@ export default function DraftWorkspaceScreen() {
   const [draftTitle, setDraftTitle] = useState('');
 
   const acquire = session.acquire;
-  const asked = useRef(false);
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
-    if (asked.current) return;
-    asked.current = true;
     void acquire({ subjectType: 'session' }).then((granted) => {
+      setSettled(true);
       if (!granted) router.back();
     });
   }, [acquire, router]);
@@ -100,13 +99,18 @@ export default function DraftWorkspaceScreen() {
     openDraft(id, planFrom(data));
   }, [data, id]);
 
-  const dirty = staged !== undefined && isDirty(staged.draft, staged.base);
+  const [leaving, setLeaving] = useState(false);
+  const dirty = !leaving && staged !== undefined && isDirty(staged.draft, staged.base);
 
   const leaveWithoutSaving = useCallback(() => {
+    setLeaving(true);
     closeDraft(id);
     session.release();
-    router.back();
-  }, [id, router, session]);
+  }, [id, session]);
+
+  useEffect(() => {
+    if (leaving) router.back();
+  }, [leaving, router]);
 
   const attemptExit = useCallback(() => {
     if (!dirty) {
@@ -116,9 +120,16 @@ export default function DraftWorkspaceScreen() {
     confirmWith(discardStagedEditsWording(), leaveWithoutSaving);
   }, [dirty, leaveWithoutSaving]);
 
-  useExitGuard(true, attemptExit);
+  useExitGuard(dirty, useCallback((proceed: () => void) => {
+    confirmWith(discardStagedEditsWording(), () => {
+      setLeaving(true);
+      closeDraft(id);
+      session.release();
+      proceed();
+    });
+  }, [id, session]));
 
-  if (isPending || staged === undefined || session.state.kind === 'acquiring' || session.state.kind === 'idle') {
+  if (isPending || staged === undefined || !settled) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.accent} />
