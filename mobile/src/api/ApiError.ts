@@ -4,12 +4,27 @@ export class ApiError extends Error {
   readonly status: number;
   readonly traceId: string | undefined;
 
-  constructor(args: { code: string; message: string; status: number; traceId?: string }) {
+  readonly details: Record<string, unknown> | undefined;
+
+  constructor(args: {
+    code: string;
+    message: string;
+    status: number;
+    traceId?: string;
+    details?: Record<string, unknown>;
+  }) {
     super(args.message);
     this.name = 'ApiError';
     this.code = args.code;
     this.status = args.status;
     this.traceId = args.traceId;
+    this.details = args.details;
+  }
+
+
+  detailNumber(field: string): number | undefined {
+    const value = this.details?.[field];
+    return typeof value === 'number' ? value : undefined;
   }
 
 

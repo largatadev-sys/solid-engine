@@ -326,6 +326,8 @@ export type ErrorEnvelope = {
   message: string;
   traceId: string;
   timestamp: string;
+
+  details?: Record<string, unknown>;
 };
 
 

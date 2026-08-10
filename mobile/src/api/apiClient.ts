@@ -45,6 +45,7 @@ async function request<T>(path: string, init?: { method: string; body?: unknown 
         message: body.message,
         status: response.status,
         traceId: body.traceId,
+        details: body.details,
       });
     }
     throw new ApiError({
@@ -83,6 +84,7 @@ async function upload<T>(path: string, part: FormData): Promise<T> {
         message: body.message,
         status: response.status,
         traceId: body.traceId,
+        details: body.details,
       });
     }
     throw new ApiError({
