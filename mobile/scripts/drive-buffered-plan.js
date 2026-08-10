@@ -409,6 +409,34 @@ function getJson(path) {
     planWrites().length === 0,
     planWrites().map((c) => `${c.verb} ${c.url.replace(API, '')}`).join(' , ') || 'silent');
 
+  await enterEditor();
+  const orderBefore = (await serverPlan()).days[0].activities.map((a) => a.title);
+  resetLog();
+  const nudged = await evaluate(`
+    (() => {
+      const grips = Array.from(document.querySelectorAll('[aria-label^="Drag "]'))
+        .filter((n) => n.offsetParent !== null);
+      if (grips.length < 2) return { ok: false, why: 'grips=' + grips.length };
+      grips[0].focus();
+      grips[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      return { ok: true, why: '' };
+    })()
+  `);
+  await sleep(2500);
+  const orderStaged = (await serverPlan()).days[0].activities.map((a) => a.title);
+  check('a reorder STAGES — the server still reads the old order (AC 1, the op the founder reported)',
+    nudged?.ok === true && orderStaged.join() === orderBefore.join(),
+    `${orderBefore.join(' , ')} — server unchanged: ${orderStaged.join() === orderBefore.join()}`);
+  check('…and it reached the server through no write of its own',
+    planWrites().length === 0, planWrites().map((c) => c.verb).join(',') || 'silent');
+
+  resetLog();
+  await tapLabel('Save Changes', 5000);
+  const orderSaved = (await serverPlan()).days[0].activities.map((a) => a.title);
+  check('…then Save Changes commits it in the one bulk write (AC 2)',
+    planWrites().length === 1 && orderSaved.join() !== orderBefore.join(),
+    `${orderBefore.join(' , ')}  ->  ${orderSaved.join(' , ')}`);
+
   const history = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
   check('the trip survives the whole walk readable', history.status === 200, 'got ' + history.status);
 

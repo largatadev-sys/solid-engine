@@ -437,9 +437,9 @@ function getJson(path) {
 
   check('the grip is draggable on the web, not arrows-only (founder, 2026-08-09)',
     dragged?.ok === true, dragged?.why ?? '');
-  check('…and a web drag reorders through the same version-checked PUT',
-    orderBefore.join() !== orderAfter.join(),
-    `${orderBefore.join(' , ')}  ->  ${orderAfter.join(' , ')}`);
+  check('…and the drop STAGES rather than persisting — S4.18 buffers every plan op until Save Changes',
+    orderBefore.join() === orderAfter.join(),
+    `server unchanged: ${orderBefore.join(' , ')}  (the commit is drive-buffered-plan.js's job)`);
 
   const beforeUp = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
   const upOrderBefore = beforeUp.body.days[0].activities.map((a) => a.title);
@@ -491,9 +491,9 @@ function getJson(path) {
 
   const afterUp = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
   const upOrderAfter = afterUp.body.days[0].activities.map((a) => a.title);
-  check('…and the upward drop persists through the version-checked PUT',
-    upOrderBefore.join() !== upOrderAfter.join(),
-    `${upOrderBefore.join(' , ')}  ->  ${upOrderAfter.join(' , ')}`);
+  check('…and the upward drop stages too, writing nothing until Save Changes (S4.18)',
+    upOrderBefore.join() === upOrderAfter.join(),
+    `server unchanged: ${upOrderBefore.join(' , ')}`);
 
   const beforeKey = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
   const keyOrderBefore = beforeKey.body.days[0].activities.map((a) => a.title);
@@ -513,9 +513,17 @@ function getJson(path) {
 
   const afterKey = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
   const keyOrderAfter = afterKey.body.days[0].activities.map((a) => a.title);
-  check('the grip is keyboard-operable — ArrowUp on a focused grip reorders (no visible arrows needed)',
-    keyNudge?.ok === true && keyOrderBefore.join() !== keyOrderAfter.join(),
-    `focused=${keyNudge?.focused} ${keyOrderBefore.join(' , ')}  ->  ${keyOrderAfter.join(' , ')}`);
+  const keyOrderOnScreen = await evaluate(
+    `Array.from(document.querySelectorAll('[aria-label^="Drag "]'))
+       .filter((n) => n.offsetParent !== null)
+       .map((n) => n.getAttribute('aria-label').replace(/^Drag | to reorder$/g, ''))`,
+  );
+  check('the grip is keyboard-operable — ArrowUp on a focused grip reorders the SCREEN (S4.18 stages it)',
+    keyNudge?.ok === true && keyOrderOnScreen.join() !== keyOrderBefore.join(),
+    `focused=${keyNudge?.focused} server ${keyOrderBefore.join(' , ')} | screen ${keyOrderOnScreen.join(' , ')}`);
+  check('…and the keyboard reorder writes nothing either — one buffer, one commit',
+    keyOrderBefore.join() === keyOrderAfter.join(),
+    `server unchanged: ${keyOrderAfter.join(' , ')}`);
 
   const arrowButtons = await evaluate(
     `document.querySelectorAll('[aria-label^="Move "]').length`,
