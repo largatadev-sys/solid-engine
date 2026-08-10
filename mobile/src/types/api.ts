@@ -364,6 +364,10 @@ export type MemberResponse = {
   joinedAt: string;
 
   ownershipOffered?: boolean;
+
+  handle?: string | null;
+  bio?: string | null;
+  vanityNumber?: string | null;
 };
 
 

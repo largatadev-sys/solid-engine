@@ -29,7 +29,7 @@ describe('comingSoonMessage — the wording both forks share', () => {
     expect(comingSoonMessage('chat').title).toBe('Trip chat — coming soon');
   });
 
-  it('covers every greyed affordance S4.9, S4.1, S4.13, S4.15 and S4.17 ship', () => {
+  it('covers every greyed affordance S4.9, S4.1, S4.13, S4.15, S4.17 and S4.20 ship', () => {
     expect(Object.keys(COMING_SOON_SURFACES).sort()).toEqual(
       [
         'booking',
@@ -42,6 +42,7 @@ describe('comingSoonMessage — the wording both forks share', () => {
         'network',
         'photoDump',
         'polls',
+        'profile',
         'rating',
         'reviews',
         'search',

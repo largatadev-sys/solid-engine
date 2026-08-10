@@ -85,6 +85,15 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     }
   });
 
+  it('sends the Trips tab to the Trips list, never back into the trip last opened (S4.20 addendum 4)', () => {
+    const layout = read(TABS, '_layout.tsx');
+    const tripsTab = layout.slice(layout.indexOf('name="(trips)"'));
+
+    expect(tripsTab).toContain('tabPress');
+    expect(tripsTab).toContain("router.dismissTo('/')");
+    expect(tripsTab).toContain('router.canDismiss()');
+  });
+
   it('lets the layout own the tab labels — a screen-level title silently overrides them', () => {
     for (const screen of ['profile.tsx', 'home.tsx', 'search.tsx']) {
       expect(read(TABS, screen)).not.toMatch(/<Stack\.Screen/);
@@ -115,7 +124,8 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
     expect(layout).toContain("comingSoon('home')");
     expect(layout).toContain("comingSoon('search')");
-    expect(layout.match(/event\.preventDefault\(\)/g) ?? []).toHaveLength(2);
+    expect(layout.match(/comingSoon\('(home|search)'\)/g) ?? []).toHaveLength(2);
+    expect(layout).not.toMatch(/comingSoon\('(?!home|search)/);
   });
 
   it('gives every tab a real icon — an unset one renders as a tofu box on Android', () => {
@@ -299,6 +309,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
       join(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
       join(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx'),
       join(MOBILE_ROOT, 'src', 'components', 'Avatar.tsx'),
+      join(MOBILE_ROOT, 'src', 'profile', 'ProfileCardView.tsx'),
       join(TRIPS, '[id]', 'created.tsx'),
     ];
 
@@ -782,12 +793,65 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).not.toContain('Archive trip');
   });
 
-  it('reaches members through the Travelers roster row alone, never from Details (founder, 08/01)', () => {
+  it('opens a Travelers row in place, navigating nowhere at all (S4.20 addendum)', () => {
     const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
     const details = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDetailsTab.tsx');
 
-    expect(travelers).toContain("pathname: '/members/[itineraryId]'");
+    expect(travelers).toContain('<TravelerDialog');
+    expect(travelers).not.toContain('router.push');
+    expect(travelers).not.toContain("pathname: '/members/[itineraryId]'");
     expect(details).not.toContain("pathname: '/members/[itineraryId]'");
+  });
+
+  it('centres the traveler dialog rather than docking it (S4.20 addendum 2)', () => {
+    const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
+
+    expect(dialog).toContain("justifyContent: 'center'");
+    expect(dialog).not.toContain("justifyContent: 'flex-end'");
+    expect(dialog).not.toContain('grabber');
+    expect(dialog).not.toMatch(/borderTopLeftRadius/);
+  });
+
+  it('closes the dialog on the frame it is tapped, animating nothing (S4.20 addendum 3)', () => {
+    const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
+
+    expect(dialog).toContain('animationType="none"');
+    expect(dialog).not.toContain('animationType="fade"');
+    expect(dialog).not.toContain('animationType="slide"');
+  });
+
+  it('never blanks the card before the window it lives in (S4.20 addendum 3)', () => {
+    const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
+
+    expect(dialog).toContain('const shown = useRetainedWhileClosing(traveler)');
+    expect(dialog).toContain('{shown !== null && (');
+    expect(dialog).not.toContain('{traveler !== null && (');
+  });
+
+  it('leaves the offer banner as the members screen’s one surviving door (S4.20 decision 4)', () => {
+    const banner = read(MOBILE_ROOT, 'src', 'members', 'OwnershipOfferBanner.tsx');
+
+    expect(banner).toContain('/members/');
+    expect(existsSync(join(TRIPS_GROUP, 'members', '[itineraryId].tsx'))).toBe(true);
+  });
+
+  it('opens the dialog on the tapped traveler, so two rows cannot show one profile', () => {
+    const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
+
+    expect(travelers).toContain('setOpened(member)');
+    expect(travelers).toContain('traveler={opened}');
+  });
+
+  it('retires the stub route the dialog replaced, leaving no screen nothing reaches', () => {
+    expect(existsSync(join(TRIPS, '[id]', 'travelers'))).toBe(false);
+  });
+
+  it('greys Visit Profile through the shared helper, so it SAYS something on both platforms', () => {
+    const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
+
+    expect(dialog).toContain("comingSoon('profile')");
+    expect(dialog).not.toMatch(/disabled=\{true\}/);
+    expect(COMING_SOON_SURFACES).toHaveProperty('profile');
   });
 
   it('reads the three axes through helpers, never by comparing them inline (ADR-019)', () => {

@@ -20,6 +20,14 @@ export type MemberControls = {
   isOfferedToMe: boolean;
 };
 
+export const OWNER_TAG = 'Owner';
+
+
+export function roleTagFor(member: MemberResponse): string | null {
+  return member.role === 'owner' ? OWNER_TAG : null;
+}
+
+
 export function memberControls(
   roster: MemberResponse[],
   myId: string | undefined,

@@ -1,8 +1,9 @@
 import { Link } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Avatar } from '../../src/components/Avatar';
 import { useMe } from '../../src/hooks/useMe';
 import { ONBOARDING_ROUTES } from '../../src/onboarding/onboardingGate';
+import { ProfileCardView } from '../../src/profile/ProfileCardView';
+import { profileCardOf } from '../../src/profile/profileCard';
 import { authRepository } from '../../src/repositories/authRepository';
 import { colors, radii, spacing, typography } from '../../src/theme';
 
@@ -18,37 +19,24 @@ export default function ProfileScreen() {
         <Text style={styles.tagline}>SIGNED IN</Text>
       </View>
 
-      <View style={styles.card}>
-        {state.kind === 'loading' && <ActivityIndicator size="large" color={colors.accent} />}
+      {state.kind === 'ok' ? (
+        <ProfileCardView card={profileCardOf(state.me)} photoLabel="Your profile photo" />
+      ) : (
+        <View style={styles.card}>
+          {state.kind === 'loading' && <ActivityIndicator size="large" color={colors.accent} />}
 
-        {state.kind === 'ok' && (
-          <>
-            <Avatar
-              photoUrl={state.me.avatarUrl}
-              displayName={state.me.displayName}
-              email={state.me.email}
-            />
-            <Text style={styles.name}>{state.me.displayName}</Text>
-            {state.me.handle !== null && <Text style={styles.handle}>@{state.me.handle}</Text>}
-            <Text style={styles.caption}>{state.me.email}</Text>
-            {state.me.bio !== null && <Text style={styles.caption}>{state.me.bio}</Text>}
-            {state.me.vanityNumber !== null && (
-              <Text style={styles.vanityNumber}>{state.me.vanityNumber}</Text>
-            )}
-          </>
-        )}
-
-        {state.kind === 'error' && (
-          <>
-            <Text style={styles.errorTitle}>Could not load your profile</Text>
-            <Text style={styles.errorCode}>{state.error.code}</Text>
-            <Text style={styles.caption}>{state.error.message}</Text>
-            {state.error.traceId !== undefined && (
-              <Text style={styles.trace}>traceId: {state.error.traceId}</Text>
-            )}
-          </>
-        )}
-      </View>
+          {state.kind === 'error' && (
+            <>
+              <Text style={styles.errorTitle}>Could not load your profile</Text>
+              <Text style={styles.errorCode}>{state.error.code}</Text>
+              <Text style={styles.caption}>{state.error.message}</Text>
+              {state.error.traceId !== undefined && (
+                <Text style={styles.trace}>traceId: {state.error.traceId}</Text>
+              )}
+            </>
+          )}
+        </View>
+      )}
 
       <Link href={`${ONBOARDING_ROUTES.profile}?mode=edit`} asChild>
         <Pressable style={styles.button} accessibilityRole="button">
@@ -104,9 +92,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accentMuted,
   },
-  name: { ...typography.heading, color: colors.textPrimary },
-  handle: { ...typography.bodyStrong, color: colors.accent },
-  vanityNumber: { ...typography.mono, color: colors.accent, letterSpacing: 1 },
   errorTitle: { ...typography.heading, color: colors.danger },
   errorCode: { ...typography.mono, color: colors.textPrimary },
   caption: { ...typography.caption, textAlign: 'center', color: colors.textSecondary },

@@ -1,8 +1,10 @@
-import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
+import { roleTagFor } from '../members/memberControls';
 import { initialsFor } from '../onboarding/initials';
+import { TravelerDialog } from '../profile/TravelerDialog';
 import { useMembers } from '../query/invitationQueries';
 import {
   workspaceColors,
@@ -22,8 +24,8 @@ interface WorkspaceTravelersTabProps {
 
 
 export function WorkspaceTravelersTab({ itineraryId }: WorkspaceTravelersTabProps) {
-  const router = useRouter();
   const members = useMembers(itineraryId);
+  const [opened, setOpened] = useState<MemberResponse | null>(null);
 
   if (members.isPending) {
     return (
@@ -42,14 +44,14 @@ export function WorkspaceTravelersTab({ itineraryId }: WorkspaceTravelersTabProp
   }
 
   const roster = members.data?.items ?? [];
-  const openMemberFlows = () =>
-    router.push({ pathname: '/members/[itineraryId]', params: { itineraryId } });
 
   return (
     <View style={styles.body}>
       {roster.map((member) => (
-        <TravelerRow key={member.travelerId} member={member} onPress={openMemberFlows} />
+        <TravelerRow key={member.travelerId} member={member} onPress={() => setOpened(member)} />
       ))}
+
+      <TravelerDialog traveler={opened} onDismiss={() => setOpened(null)} />
     </View>
   );
 }
@@ -57,13 +59,14 @@ export function WorkspaceTravelersTab({ itineraryId }: WorkspaceTravelersTabProp
 
 function TravelerRow({ member, onPress }: { member: MemberResponse; onPress: () => void }) {
   const name = member.displayName;
+  const tag = roleTagFor(member);
 
   return (
     <Pressable
       style={styles.row}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, manage`}
+      accessibilityLabel={`${name}, view profile`}
     >
       <MediaThumb
         url={member.avatarUrl}
@@ -73,7 +76,7 @@ function TravelerRow({ member, onPress }: { member: MemberResponse; onPress: () 
       />
       <View style={styles.rowText}>
         <Text style={styles.name}>{name}</Text>
-        <Text style={styles.role}>{member.role === 'owner' ? 'Owner' : 'Traveler'}</Text>
+        {tag !== null && <Text style={styles.role}>{tag}</Text>}
       </View>
       <Icon name="chevronRight" size={18} color={workspaceColors.muted} />
     </Pressable>

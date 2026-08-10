@@ -4,11 +4,11 @@
 
 **Blocked by:** 01 — The roster fattens (the stub's fields ride it) · 02 — The shared profile card (the stub renders it).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The Travelers tab shows "Owner" on the owner's row only; anatomy otherwise unchanged (spec AC 1).
-- [ ] Row tap opens the stub for that traveler; self-tap opens the same stub for yourself; every field absent when null; no email, no role badge, no edit affordance (spec AC 2).
-- [ ] The tab no longer navigates to the members screen; `largata://members/<id>` still resolves; the offer banner still links there (spec AC 4, static half).
-- [ ] The owner-only tag rule is pinned in the `memberControls` pure-logic family's table-driven test.
-- [ ] Accessibility labels change from the "manage" phrasing to a view-profile phrasing; the driver's visible-match rule still finds the rows.
-- [ ] The stub walks on emulator and web preview with two pool travelers (t1 = owner, t2 = member).
+- [x] The Travelers tab shows "Owner" on the owner's row only; anatomy otherwise unchanged (spec AC 1).
+- [x] Row tap opens the stub for that traveler; self-tap opens the same stub for yourself; every field absent when null; no email, no role badge, no edit affordance (spec AC 2).
+- [x] The tab no longer navigates to the members screen; `largata://members/<id>` still resolves; the offer banner still links there (spec AC 4, static half).
+- [x] The owner-only tag rule is pinned in the `memberControls` pure-logic family's table-driven test.
+- [x] Accessibility labels change from the "manage" phrasing to a view-profile phrasing; the driver's visible-match rule still finds the rows.
+- [x] The stub walks on emulator and web preview with two pool travelers (t1 = owner, t2 = member).

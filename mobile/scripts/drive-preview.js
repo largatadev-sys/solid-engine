@@ -195,6 +195,8 @@ function getJson(path) {
     source: `
       window.__largataAlerts = [];
       window.alert = (message) => { window.__largataAlerts.push(String(message)); };
+      window.__largataConfirms = [];
+      window.confirm = (message) => { window.__largataConfirms.push(String(message)); return true; };
     `,
   });
 
@@ -240,7 +242,8 @@ function getJson(path) {
     evaluate(`(() => {
         ${VISIBLE_LAST}
         const wanted = ${target};
-        const clickable = '[role="button"],button,[role="checkbox"],[role="radio"],[role="link"],a';
+        const clickable =
+          '[role="button"],button,[role="checkbox"],[role="radio"],[role="link"],a,[role="tab"]';
         const all = Array.from(document.querySelectorAll(clickable))
           .filter(e => (e.getAttribute('aria-label') || e.innerText || '').trim() === wanted);
         const shown = visible(all);
@@ -415,6 +418,11 @@ function getJson(path) {
   const spoken = JSON.parse(alerts);
   console.log('\nALERTS THE PAGE RAISED (a greyed control that raises none is a DEAD CLICK — S1.3):');
   console.log(spoken.length ? spoken.map((a) => `  ${a.replace(/\n+/g, ' | ')}`).join('\n') : '  (none)');
+
+  const confirms = (await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]';
+  const asked = JSON.parse(confirms);
+  console.log('\nCONFIRMS THE PAGE RAISED (auto-accepted, so a destructive flow runs to completion):');
+  console.log(asked.length ? asked.map((c) => `  ${c.replace(/\n+/g, ' | ')}`).join('\n') : '  (none)');
 
   const missingAlerts = alertExpectations.filter(
     (wanted) => !spoken.some((a) => a.includes(wanted)),
