@@ -34,7 +34,8 @@ public record ItineraryResponse(
         String lastEditedByName,
         LeaseHolderResponse lease,
         boolean beingEdited,
-        LeaseHolderResponse editingSession) {
+        LeaseHolderResponse editingSession,
+        long planVersion) {
 
 
     public static ItineraryResponse summaryOf(
@@ -62,7 +63,8 @@ public record ItineraryResponse(
                 null,
                 null,
                 beingEdited,
-                null);
+                null,
+                itinerary.planVersion());
     }
 
 
@@ -92,6 +94,7 @@ public record ItineraryResponse(
                 editor == null ? null : editor.displayName(),
                 LeaseHolderResponse.of(plan.holderOf(LeaseSubject.header(itinerary.id()))),
                 plan.hasLiveLease(),
-                LeaseHolderResponse.of(plan.holderOf(LeaseSubject.session(itinerary.id()))));
+                LeaseHolderResponse.of(plan.holderOf(LeaseSubject.session(itinerary.id()))),
+                itinerary.planVersion());
     }
 }

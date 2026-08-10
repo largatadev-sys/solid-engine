@@ -78,6 +78,10 @@ public class Itinerary {
     private Instant createdAt;
 
 
+    @Column(name = "plan_version", nullable = false, insertable = false, updatable = false)
+    private long planVersion;
+
+
     @Column(name = "started_at")
     private Instant startedAt;
 
@@ -323,6 +327,11 @@ public class Itinerary {
 
     public Instant createdAt() {
         return createdAt;
+    }
+
+
+    public long planVersion() {
+        return planVersion;
     }
 
 

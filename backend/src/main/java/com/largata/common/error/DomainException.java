@@ -1,5 +1,7 @@
 package com.largata.common.error;
 
+import java.util.Map;
+
 
 public abstract class DomainException extends RuntimeException {
 
@@ -18,5 +20,10 @@ public abstract class DomainException extends RuntimeException {
 
     public String code() {
         return code;
+    }
+
+
+    public Map<String, Object> details() {
+        return null;
     }
 }
