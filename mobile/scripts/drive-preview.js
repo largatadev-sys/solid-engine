@@ -191,10 +191,16 @@ function getJson(path) {
   // native dialogs, so the only way to see one is to replace window.alert before the app loads and
   // record what it was asked to say. Recorded, not suppressed: --expect-alert then gives the check
   // a failure mode, which a click that merely "succeeded" does not have.
+  // window.confirm gets the same treatment for the same reason, plus one of its own: an unhandled
+  // confirm BLOCKS headless Chrome outright, so a destructive flow does not fail — it hangs, and
+  // the run has to be killed. Confirming (rather than dismissing) is what lets accept/remove/leave
+  // be driven end to end; the wording is recorded so the dialog is still evidence (S4.20).
   await send('Page.addScriptToEvaluateOnNewDocument', {
     source: `
       window.__largataAlerts = [];
       window.alert = (message) => { window.__largataAlerts.push(String(message)); };
+      window.__largataConfirms = [];
+      window.confirm = (message) => { window.__largataConfirms.push(String(message)); return true; };
     `,
   });
 
@@ -240,7 +246,8 @@ function getJson(path) {
     evaluate(`(() => {
         ${VISIBLE_LAST}
         const wanted = ${target};
-        const clickable = '[role="button"],button,[role="checkbox"],[role="radio"],[role="link"],a';
+        const clickable =
+          '[role="button"],button,[role="checkbox"],[role="radio"],[role="link"],a,[role="tab"]';
         const all = Array.from(document.querySelectorAll(clickable))
           .filter(e => (e.getAttribute('aria-label') || e.innerText || '').trim() === wanted);
         const shown = visible(all);
@@ -415,6 +422,11 @@ function getJson(path) {
   const spoken = JSON.parse(alerts);
   console.log('\nALERTS THE PAGE RAISED (a greyed control that raises none is a DEAD CLICK — S1.3):');
   console.log(spoken.length ? spoken.map((a) => `  ${a.replace(/\n+/g, ' | ')}`).join('\n') : '  (none)');
+
+  const confirms = (await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]';
+  const asked = JSON.parse(confirms);
+  console.log('\nCONFIRMS THE PAGE RAISED (auto-accepted, so a destructive flow runs to completion):');
+  console.log(asked.length ? asked.map((c) => `  ${c.replace(/\n+/g, ' | ')}`).join('\n') : '  (none)');
 
   const missingAlerts = alertExpectations.filter(
     (wanted) => !spoken.some((a) => a.includes(wanted)),
