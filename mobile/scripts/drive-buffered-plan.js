@@ -360,6 +360,55 @@ function getJson(path) {
       && overwritten.planVersion > beforeIntrusion.planVersion + 1,
     `v${beforeIntrusion.planVersion} -> v${overwritten.planVersion}`);
 
+  await enterEditor();
+  await tapLabel('Add a Day');
+  const beforeDiscardIntrusion = await serverPlan();
+  await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner.idToken, { subjectType: 'session' });
+  await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', other.idToken, { subjectType: 'session' });
+  await api(`/v1/itineraries/${trip}/plan`, 'PUT', other.idToken, {
+    basePlanVersion: beforeDiscardIntrusion.planVersion,
+    days: [...beforeDiscardIntrusion.days.map((d) => ({
+      id: d.id, title: d.title, activities: d.activities.map((a) => ({ id: a.id, fields: { title: a.title } })),
+    })), { id: null, title: 'Only the other traveler saved this', activities: [] }],
+  });
+  await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', other.idToken, { subjectType: 'session' });
+
+  await answerConfirmsWith([true]);
+  resetLog();
+  await tapLabel('Save Changes', 5000);
+  const discardScreen = await text();
+  check('Discard reloads the other writer\'s plan and stays in the editor (AC 5)',
+    discardScreen.includes('Only the other traveler saved this') && discardScreen.includes('Save Changes'),
+    discardScreen.includes('Save Changes') ? 'still editing' : 'left the editor');
+  const afterDiscardChoice = await serverPlan();
+  check('…with the buffer gone — nothing of ours reached the server (AC 5)',
+    !JSON.stringify(afterDiscardChoice).includes('"title":null')
+      || afterDiscardChoice.days.length === beforeDiscardIntrusion.days.length + 1,
+    `days ${beforeDiscardIntrusion.days.length} -> ${afterDiscardChoice.days.length}`);
+
+  await answerConfirmsWith([]);
+  resetLog();
+  await tapLabel('Save Changes', 4500);
+  check('…and the reloaded buffer reads CLEAN — Save Changes exits with no write, no confirm (AC 5)',
+    planWrites().length === 0 && (await confirmsAsked()).length === 0,
+    `${planWrites().length} writes, ${(await confirmsAsked()).length} confirms`);
+
+  await enterEditor();
+  await tapLabel('Add a Day');
+  await answerConfirmsWith([true]);
+  resetLog();
+  await evaluate('window.history.go(-1); true');
+  await sleep(4000);
+  const routerBackWording = await confirmsAsked();
+  console.log('  KNOWN  the browser BACK BUTTON does not confirm — expo-router 57 does not route a raw');
+  console.log('         popstate through beforeRemove, so usePreventRemove never sees it. Recorded on the');
+  console.log('         epic map with its trigger; the pushState/history.forward workaround was built and');
+  console.log('         REVERTED here because it desyncs the router stack and breaks the activity form.');
+  console.log(`         asked=${JSON.stringify(routerBackWording)}`);
+  check('…and the browser back button still writes NOTHING to the server — the buffer is lost, never saved',
+    planWrites().length === 0,
+    planWrites().map((c) => `${c.verb} ${c.url.replace(API, '')}`).join(' , ') || 'silent');
+
   const history = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
   check('the trip survives the whole walk readable', history.status === 200, 'got ' + history.status);
 
