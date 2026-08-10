@@ -4,11 +4,11 @@
 
 **Blocked by:** 01, 02, 03.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Backend ITs green, including the roster round-trip and the non-member refusal (spec AC 5).
-- [ ] Emulator + web preview: owner-only tag · member stub · self-stub · own profile without email — screenshots, roles stated (t1 = owner, t2 = member) (spec ACs 1–3, 6).
-- [ ] The offer path: t1 offers to t2, t2's banner deep-links into the members screen, accept completes; withdraw/decline spot-checked (spec AC 4).
-- [ ] `largata://members/<id>` resolves on the emulator via the deep-link recipe.
-- [ ] Zero anonymous `/v1` requests in the driver's list (the avatar rides the authenticated path).
-- [ ] BUILD_STATUS row flipped in the final feature-branch commit; squash-merge to dev proposed, not executed.
+- [x] Backend ITs green, including the roster round-trip and the non-member refusal (spec AC 5).
+- [x] Emulator + web preview: owner-only tag · member stub · self-stub · own profile without email — screenshots, roles stated (t1 = owner, t2 = member) (spec ACs 1–3, 6).
+- [x] The offer path: t1 offers to t2, t2's banner deep-links into the members screen, accept completes; withdraw/decline spot-checked (spec AC 4).
+- [x] `largata://members/<id>` resolves on the emulator via the deep-link recipe.
+- [x] Zero anonymous `/v1` requests in the driver's list (the avatar rides the authenticated path).
+- [x] BUILD_STATUS row flipped in the final feature-branch commit; squash-merge to dev proposed, not executed.

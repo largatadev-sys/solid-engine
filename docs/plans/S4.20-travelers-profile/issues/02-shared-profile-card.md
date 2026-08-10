@@ -4,9 +4,9 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The own-profile page renders the shared card with no email line; avatar, name, handle, bio, vanity number render as today, null fields hidden (spec AC 3).
-- [ ] A pure props-mapping/visibility module pins the rule, ban-list style: no email string can reach the card (spec testing decisions).
-- [ ] Edit profile still works and still edits handle, display name, bio.
-- [ ] The card renders on emulator and web preview; the avatar arrives as a bearer-authenticated request on both (the S3.3 tell watched in the driver).
+- [x] The own-profile page renders the shared card with no email line; avatar, name, handle, bio, vanity number render as today, null fields hidden (spec AC 3).
+- [x] A pure props-mapping/visibility module pins the rule, ban-list style: no email string can reach the card (spec testing decisions).
+- [x] Edit profile still works and still edits handle, display name, bio.
+- [x] The card renders on emulator and web preview; the avatar arrives as a bearer-authenticated request on both (the S3.3 tell watched in the driver).

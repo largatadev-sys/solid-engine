@@ -119,7 +119,16 @@ class RosterProfileFieldsIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(verified("stranger@example.com")))
                 .exchange()
                 .expectStatus()
-                .isNotFound();
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND")
+                .jsonPath("$.handle")
+                .doesNotExist()
+                .jsonPath("$.bio")
+                .doesNotExist()
+                .jsonPath("$.vanityNumber")
+                .doesNotExist();
     }
 
 
