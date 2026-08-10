@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Draft initialization reproduces the server plan exactly; dirty is false; the derived request round-trips it unchanged.
-- [ ] Each of the seven ops is covered table-driven, including: rename to empty (clears the optional name), delete a day carrying activities, reorder within a day, create-then-edit and create-then-delete cycles entirely inside the buffer (the latter leaves no trace in the derived request — spec AC 4's pure half).
-- [ ] Temp ids never appear in the derived request: staged creations serialize id-less; existing entries keep their ids; array order is the order.
-- [ ] Dirty flips true on any effective change and back to false when ops restore the base shape.
-- [ ] The module is import-safe in Jest with no native or component dependency.
+- [x] Draft initialization reproduces the server plan exactly; dirty is false; the derived request round-trips it unchanged.
+- [x] Each of the seven ops is covered table-driven, including: rename to empty (clears the optional name), delete a day carrying activities, reorder within a day, create-then-edit and create-then-delete cycles entirely inside the buffer (the latter leaves no trace in the derived request — spec AC 4's pure half).
+- [x] Temp ids never appear in the derived request: staged creations serialize id-less; existing entries keep their ids; array order is the order.
+- [x] Dirty flips true on any effective change and back to false when ops restore the base shape.
+- [x] The module is import-safe in Jest with no native or component dependency.

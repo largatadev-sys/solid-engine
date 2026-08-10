@@ -4,10 +4,10 @@
 
 **Blocked by:** 01 — the plan version (the check reads it; the save bumps it).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A mixed-op save (day added, day renamed, day deleted, activity created, activity edited, activity deleted, a reorder) lands in one call; a fresh read shows exactly the submitted plan and a bumped `planVersion` (spec AC 2's server half).
-- [ ] A stale base refuses with the named stale-plan code and the current `planVersion` in the refusal; re-submitting with that version succeeds — the explicit-overwrite path, proven at the IT seam under the controlled clock (spec AC 5's server half: stage → lapse → second writer saves → stale base refused).
-- [ ] A non-holder is refused with the existing edit-locked code; archived and published trips refuse through the existing fence codes — the bulk path inherits the whole write regime.
-- [ ] Transactionality proven: a save that fails validation partway (e.g. one malformed activity among valid ops) changes nothing — no partial days, no partial deletes, version unbumped.
-- [ ] Controller ITs ride the S4.9/S4.17 lease-suite prior art — external behavior only: wire responses and named refusal codes, never lease-row internals (spec testing decisions).
+- [x] A mixed-op save (day added, day renamed, day deleted, activity created, activity edited, activity deleted, a reorder) lands in one call; a fresh read shows exactly the submitted plan and a bumped `planVersion` (spec AC 2's server half).
+- [x] A stale base refuses with the named stale-plan code and the current `planVersion` in the refusal; re-submitting with that version succeeds — the explicit-overwrite path, proven at the IT seam under the controlled clock (spec AC 5's server half: stage → lapse → second writer saves → stale base refused).
+- [x] A non-holder is refused with the existing edit-locked code; archived and published trips refuse through the existing fence codes — the bulk path inherits the whole write regime.
+- [x] Transactionality proven: a save that fails validation partway (e.g. one malformed activity among valid ops) changes nothing — no partial days, no partial deletes, version unbumped.
+- [x] Controller ITs ride the S4.9/S4.17 lease-suite prior art — external behavior only: wire responses and named refusal codes, never lease-row internals (spec testing decisions).

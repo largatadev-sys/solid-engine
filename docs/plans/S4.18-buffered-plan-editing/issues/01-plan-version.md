@@ -4,9 +4,9 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The itinerary response carries `planVersion`; a fresh itinerary has a defined starting value (additive column with a default — no data migration, so no migration-stepping IT owed; spec testing decisions).
-- [ ] An IT sweeps every per-action plan endpoint and asserts each bumps `planVersion` exactly once per write (spec AC 7) — pinned where it would silently rot.
-- [ ] Reads never bump; lifecycle acts, publish/unpublish, trip-field edits and cover upload never bump — the version tracks the plan document, not the itinerary.
-- [ ] Existing ITs pass unchanged (additivity: nothing renamed, retyped, removed).
+- [x] The itinerary response carries `planVersion`; a fresh itinerary has a defined starting value (additive column with a default — no data migration, so no migration-stepping IT owed; spec testing decisions).
+- [x] An IT sweeps every per-action plan endpoint and asserts each bumps `planVersion` exactly once per write (spec AC 7) — pinned where it would silently rot.
+- [x] Reads never bump; lifecycle acts, publish/unpublish, trip-field edits and cover upload never bump — the version tracks the plan document, not the itinerary.
+- [x] Existing ITs pass unchanged (additivity: nothing renamed, retyped, removed).

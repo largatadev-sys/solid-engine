@@ -103,3 +103,14 @@ Photo surfaces of any kind (the S4.17 cull line carries the trigger; its inherit
 ## Comments
 
 *(append-only)*
+
+**2026-08-11 — implemented and dev-verified across the three rungs.** Every AC closed; no deviations from the locked decisions.
+
+- **AC 1 / 2 / 3 / 4 / 5** closed on the web rung by `mobile/scripts/drive-buffered-plan.js` — **17 passed, 0 failed** against the preview *container* (the true build path), with the no-write assertion read off the CDP request log rather than the render, and the confirm wording printed by the S4.20 stub.
+- **AC 5 / 7** additionally closed at the API rung by `mobile/scripts/smoke-buffered-plan.js` — **15 passed, 0 failed** against the local stack on the verified pool. Roles: **t1 = the holder whose buffer goes stale, t2 = the intervening saver**. The stale refusal returns `STALE_PLAN` carrying `details.currentPlanVersion`, and re-submitting against that number is the whole Save-anyway path.
+- **AC 6 / 7** closed at the IT seam: `PlanSaveHistoryIT` (diff → typed entries, no-op saves narrate nothing, entry *shape* pinned against a per-action write of the same op) and `PlanVersionBumpIT` (all eight per-action endpoints bump; reads, lifecycle and trip-field edits do not). Both have proven failure modes — deleting the reorder bump fails the sweep by name.
+- **AC 9 walked once on the emulator, on the record.** Day 6 staged (server silent), `am force-stop`, relaunch: `planVersion` unchanged at 6, Day 5 from the prior save still present, Day 6 gone. The accepted loss, observed.
+- **AC 10:** backend **582 ITs green**, mobile **Jest 2338 green**, `tsc` clean, emulator walk minding the LogBox banner, web preview walked in the container.
+- **AC 8** holds structurally — the bulk endpoint carries days and activities only, so trip-field edits and invitations were never routed through it. The epic map's dormant date-clear trigger therefore did **not** fire, as decision 8 predicted.
+
+**Three defects the walks caught that every green test missed**, all recorded as CLAUDE.md gotchas: expo-router unmounts the screen beneath a pushed one on web (releasing the Editing Session when the activity form opened — diagnosed from the *backend log*, not the render); a hand-rolled `history.pushState` exit guard desyncs the router stack (replaced with `usePreventRemove`, which is vendored at `expo-router/build/react-navigation/core` even though `@react-navigation/native` is not a dependency); and a driver entering the editor by direct URL fails a navigation assertion against a correct product.

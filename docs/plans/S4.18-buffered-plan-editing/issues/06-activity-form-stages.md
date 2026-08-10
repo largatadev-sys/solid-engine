@@ -4,11 +4,11 @@
 
 **Blocked by:** 05 — the editor stages (the draft state the form stages into, and the save/discard flow that commits it).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] An activity created through the form appears in the editor's staged plan immediately and on the server only after Save Changes (spec AC 4).
-- [ ] Create-then-edit: a staged activity re-opened in the form shows its staged values and edits in place; create-then-delete leaves no trace in the save request (spec AC 4).
-- [ ] Editing an existing (server-id) activity stages the change; the server shows the old values until Save Changes.
-- [ ] The form's Cancel (create) / Discard Changes (edit) abandons only the form; the editor's buffer is exactly as it was.
-- [ ] Back-exit from the editor after form-staged work discards it with everything else — one buffer, one confirm.
-- [ ] Client-side validation behaves exactly as today; no server error path is reachable from the form anymore (the save's errors surface at Save Changes).
+- [x] An activity created through the form appears in the editor's staged plan immediately and on the server only after Save Changes (spec AC 4).
+- [x] Create-then-edit: a staged activity re-opened in the form shows its staged values and edits in place; create-then-delete leaves no trace in the save request (spec AC 4).
+- [x] Editing an existing (server-id) activity stages the change; the server shows the old values until Save Changes.
+- [x] The form's Cancel (create) / Discard Changes (edit) abandons only the form; the editor's buffer is exactly as it was.
+- [x] Back-exit from the editor after form-staged work discards it with everything else — one buffer, one confirm.
+- [x] Client-side validation behaves exactly as today; no server error path is reachable from the form anymore (the save's errors surface at Save Changes).

@@ -4,11 +4,11 @@
 
 **Blocked by:** 02 — the bulk save endpoint (the diff runs inside its transaction).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] After a mixed-op save, history holds exactly the diff's typed entries, attributed to the saver, and nothing else (spec AC 6).
-- [ ] An activity created and deleted within one staged buffer leaves no entry; a day renamed twice before saving leaves one rename entry (the diff sees only endpoints, not the path).
-- [ ] A reorder-only save emits the reorder entry; a no-op save (submitted plan identical to committed) emits nothing.
-- [ ] A same-id day change lands as the capture's move entry — the wire permits it even though no S4.18 UI stages one.
-- [ ] The entry types match per-action capture's exactly — S4.10 inherits no format fork; an IT asserts a per-action write and a diff-derived write of the same op produce the same entry shape.
-- [ ] The diff and entry emission happen inside the save's transaction: a failed save captures nothing.
+- [x] After a mixed-op save, history holds exactly the diff's typed entries, attributed to the saver, and nothing else (spec AC 6).
+- [x] An activity created and deleted within one staged buffer leaves no entry; a day renamed twice before saving leaves one rename entry (the diff sees only endpoints, not the path).
+- [x] A reorder-only save emits the reorder entry; a no-op save (submitted plan identical to committed) emits nothing.
+- [x] A same-id day change lands as the capture's move entry — the wire permits it even though no S4.18 UI stages one.
+- [x] The entry types match per-action capture's exactly — S4.10 inherits no format fork; an IT asserts a per-action write and a diff-derived write of the same op produce the same entry shape.
+- [x] The diff and entry emission happen inside the save's transaction: a failed save captures nothing.

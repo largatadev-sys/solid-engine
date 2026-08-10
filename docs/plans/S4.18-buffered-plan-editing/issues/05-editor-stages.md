@@ -4,12 +4,12 @@
 
 **Blocked by:** 02 — the bulk save endpoint · 04 — the staged-plan module.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] While the session is held, none of the in-editor ops produces a network write — asserted on the driver's API-request log and the backend log's silence, never the render (spec AC 1).
-- [ ] Save Changes with a dirty buffer issues exactly one plan write; a fresh read shows the staged plan; the session is released; the viewer is shown. Clean buffer: exits with no write and no confirm (spec AC 2).
-- [ ] Back-exit with staged edits confirms on all three doors; Discard leaves the server plan untouched (proven by reload) and releases the session; dismissing keeps editor and buffer (spec AC 3).
-- [ ] A failed save keeps buffer, session and editor, shows the error, and the button re-enables.
-- [ ] The stale-reorder retry code and its per-drop mutations are gone; reorder is buffer-only until save.
-- [ ] Trip-field edit and invite from inside the editor persist immediately, unchanged (spec AC 8).
-- [ ] Save Changes keeps the mock's secondary styling — semantics change, pixels don't (spec deviations: none).
+- [x] While the session is held, none of the in-editor ops produces a network write — asserted on the driver's API-request log and the backend log's silence, never the render (spec AC 1).
+- [x] Save Changes with a dirty buffer issues exactly one plan write; a fresh read shows the staged plan; the session is released; the viewer is shown. Clean buffer: exits with no write and no confirm (spec AC 2).
+- [x] Back-exit with staged edits confirms on all three doors; Discard leaves the server plan untouched (proven by reload) and releases the session; dismissing keeps editor and buffer (spec AC 3).
+- [x] A failed save keeps buffer, session and editor, shows the error, and the button re-enables.
+- [x] The stale-reorder retry code and its per-drop mutations are gone; reorder is buffer-only until save.
+- [x] Trip-field edit and invite from inside the editor persist immediately, unchanged (spec AC 8).
+- [x] Save Changes keeps the mock's secondary styling — semantics change, pixels don't (spec deviations: none).

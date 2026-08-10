@@ -4,11 +4,11 @@
 
 **Blocked by:** 03 — history by diff · 06 — the activity form stages · 07 — the stale refusal.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Backend ITs green by `Tests run:` count; mobile Jest green; `tsc` clean.
-- [ ] The three new/updated editor walks pass against the local stack: stage-and-save, stage-and-discard, refusal dialog — with the request-log staging assertion in each.
-- [ ] Two-account stale walk on the pool (e.g. t1 = holder whose session lapses, t2 = intervening saver), both refusal choices exercised, history attribution checked.
-- [ ] Emulator walk: acquire → stage all seven op kinds → save → verify on reload; back-discard verified; crash-loss walked once (spec AC 9/10).
-- [ ] Web preview container walk green; shared Chrome profile wiped before comparison runs.
-- [ ] Every spec AC ticked or its deviation recorded in the spec's Comments; BUILD_STATUS row flipped on the branch.
+- [x] Backend ITs green by `Tests run:` count; mobile Jest green; `tsc` clean.
+- [x] The three new/updated editor walks pass against the local stack: stage-and-save, stage-and-discard, refusal dialog — with the request-log staging assertion in each.
+- [x] Two-account stale walk on the pool (e.g. t1 = holder whose session lapses, t2 = intervening saver), both refusal choices exercised, history attribution checked.
+- [x] Emulator walk: acquire → stage all seven op kinds → save → verify on reload; back-discard verified; crash-loss walked once (spec AC 9/10).
+- [x] Web preview container walk green; shared Chrome profile wiped before comparison runs.
+- [x] Every spec AC ticked or its deviation recorded in the spec's Comments; BUILD_STATUS row flipped on the branch.
