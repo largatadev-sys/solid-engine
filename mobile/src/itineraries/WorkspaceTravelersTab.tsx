@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { roleTagFor } from '../members/memberControls';
 import { initialsFor } from '../onboarding/initials';
-import { TravelerSheet } from '../profile/TravelerSheet';
+import { TravelerDialog } from '../profile/TravelerDialog';
 import { useMembers } from '../query/invitationQueries';
 import {
   workspaceColors,
@@ -51,7 +51,7 @@ export function WorkspaceTravelersTab({ itineraryId }: WorkspaceTravelersTabProp
         <TravelerRow key={member.travelerId} member={member} onPress={() => setOpened(member)} />
       ))}
 
-      <TravelerSheet traveler={opened} onDismiss={() => setOpened(null)} />
+      <TravelerDialog traveler={opened} onDismiss={() => setOpened(null)} />
     </View>
   );
 }

@@ -1,6 +1,5 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
-import { MOBILE_FRAME_WIDTH } from '../components/mobileFrameContract';
 import {
   workspaceColors,
   workspaceMetrics,
@@ -13,27 +12,24 @@ import { ProfileCardView } from './ProfileCardView';
 
 export const VISIT_PROFILE_LABEL = 'Visit Profile';
 
-export const TRAVELER_SHEET_DISMISS_LABEL = 'Close';
+export const TRAVELER_DIALOG_DISMISS_LABEL = 'Close';
+
+const DIALOG_MAX_WIDTH = 380;
+
+const GREYED_OPACITY = 0.45;
 
 
-interface TravelerSheetProps {
+interface TravelerDialogProps {
   readonly traveler: MemberResponse | null;
   readonly onDismiss: () => void;
 }
 
 
-export function TravelerSheet({ traveler, onDismiss }: TravelerSheetProps) {
+export function TravelerDialog({ traveler, onDismiss }: TravelerDialogProps) {
   return (
-    <Modal
-      visible={traveler !== null}
-      transparent
-      animationType="slide"
-      onRequestClose={onDismiss}
-    >
-      <Pressable style={styles.scrim} onPress={onDismiss} accessibilityLabel="Close profile">
-        <Pressable style={styles.sheet} onPress={() => undefined}>
-          <View style={styles.grabber} />
-
+    <Modal visible={traveler !== null} transparent animationType="fade" onRequestClose={onDismiss}>
+      <Pressable style={styles.backdrop} onPress={onDismiss} accessibilityLabel="Close profile">
+        <Pressable style={styles.dialog} onPress={() => undefined}>
           {traveler !== null && (
             <ProfileCardView
               card={profileCardOfMember(traveler)}
@@ -54,9 +50,9 @@ export function TravelerSheet({ traveler, onDismiss }: TravelerSheetProps) {
             style={styles.dismiss}
             onPress={onDismiss}
             accessibilityRole="button"
-            accessibilityLabel={TRAVELER_SHEET_DISMISS_LABEL}
+            accessibilityLabel={TRAVELER_DIALOG_DISMISS_LABEL}
           >
-            <Text style={styles.dismissLabel}>{TRAVELER_SHEET_DISMISS_LABEL}</Text>
+            <Text style={styles.dismissLabel}>{TRAVELER_DIALOG_DISMISS_LABEL}</Text>
           </Pressable>
         </Pressable>
       </Pressable>
@@ -65,30 +61,22 @@ export function TravelerSheet({ traveler, onDismiss }: TravelerSheetProps) {
 }
 
 
-const GREYED_OPACITY = 0.45;
-
 const styles = StyleSheet.create({
-  scrim: {
+  backdrop: {
     flex: 1,
     backgroundColor: workspaceColors.scrim,
-    justifyContent: 'flex-end',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
   },
-  sheet: {
+  dialog: {
     width: '100%',
-    maxWidth: MOBILE_FRAME_WIDTH,
+    maxWidth: DIALOG_MAX_WIDTH,
     backgroundColor: workspaceColors.surface,
-    borderTopLeftRadius: workspaceRadii.sheet,
-    borderTopRightRadius: workspaceRadii.sheet,
+    borderRadius: workspaceRadii.card,
     padding: 24,
     gap: 16,
     alignItems: 'center',
-  },
-  grabber: {
-    width: workspaceMetrics.grabberWidth,
-    height: workspaceMetrics.grabberHeight,
-    borderRadius: workspaceRadii.pill,
-    backgroundColor: workspaceColors.hairline,
   },
   visit: {
     alignSelf: 'stretch',

@@ -787,10 +787,20 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
     const details = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDetailsTab.tsx');
 
-    expect(travelers).toContain('<TravelerSheet');
+    expect(travelers).toContain('<TravelerDialog');
     expect(travelers).not.toContain('router.push');
     expect(travelers).not.toContain("pathname: '/members/[itineraryId]'");
     expect(details).not.toContain("pathname: '/members/[itineraryId]'");
+  });
+
+  it('centres the traveler dialog rather than docking it, and fades it in (S4.20 addendum 2)', () => {
+    const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
+
+    expect(dialog).toContain('animationType="fade"');
+    expect(dialog).toContain("justifyContent: 'center'");
+    expect(dialog).not.toContain("justifyContent: 'flex-end'");
+    expect(dialog).not.toContain('grabber');
+    expect(dialog).not.toMatch(/borderTopLeftRadius/);
   });
 
   it('leaves the offer banner as the members screen’s one surviving door (S4.20 decision 4)', () => {
@@ -800,22 +810,22 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(existsSync(join(TRIPS_GROUP, 'members', '[itineraryId].tsx'))).toBe(true);
   });
 
-  it('opens the sheet on the tapped traveler, so two rows cannot show one profile', () => {
+  it('opens the dialog on the tapped traveler, so two rows cannot show one profile', () => {
     const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
 
     expect(travelers).toContain('setOpened(member)');
     expect(travelers).toContain('traveler={opened}');
   });
 
-  it('retires the stub route the sheet replaced, leaving no screen nothing reaches', () => {
+  it('retires the stub route the dialog replaced, leaving no screen nothing reaches', () => {
     expect(existsSync(join(TRIPS, '[id]', 'travelers'))).toBe(false);
   });
 
   it('greys Visit Profile through the shared helper, so it SAYS something on both platforms', () => {
-    const sheet = read(MOBILE_ROOT, 'src', 'profile', 'TravelerSheet.tsx');
+    const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
 
-    expect(sheet).toContain("comingSoon('profile')");
-    expect(sheet).not.toMatch(/disabled=\{true\}/);
+    expect(dialog).toContain("comingSoon('profile')");
+    expect(dialog).not.toMatch(/disabled=\{true\}/);
     expect(COMING_SOON_SURFACES).toHaveProperty('profile');
   });
 
