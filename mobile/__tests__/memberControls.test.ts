@@ -1,4 +1,4 @@
-import { memberControls } from '../src/members/memberControls';
+import { OWNER_TAG, memberControls, roleTagFor } from '../src/members/memberControls';
 import type { MemberResponse } from '../src/types/api';
 
 
@@ -181,5 +181,28 @@ describe('an archived trip (S1.9)', () => {
 
   it('defaults to a live trip when the flag is omitted, so pre-S1.9 call sites are unchanged', () => {
     expect(memberControls(ROSTER, OWNER)).toMatchObject(memberControls(ROSTER, OWNER, false));
+  });
+});
+
+
+describe('the Travelers tab tags the owner and nobody else (S4.20 decision 1)', () => {
+  const cases: Array<[string, MemberResponse, string | null]> = [
+    ['the owner wears the one surviving role fact', row(OWNER, 'owner'), OWNER_TAG],
+    ['a member wears nothing — no "Traveler" line', row(MEMBER, 'member'), null],
+    ['a second member likewise', row(OTHER, 'member'), null],
+    ['an owner with a pending offer out is still the owner', row(OWNER, 'owner', true), OWNER_TAG],
+    ['a member being offered ownership is not one yet', row(MEMBER, 'member', true), null],
+  ];
+
+  it.each(cases)('%s', (_name, member, expected) => {
+    expect(roleTagFor(member)).toBe(expected);
+  });
+
+  it('tags exactly one row on a roster with one owner', () => {
+    expect(ROSTER.map(roleTagFor).filter((tag) => tag !== null)).toEqual([OWNER_TAG]);
+  });
+
+  it('never renders the word the tab used to put on every row', () => {
+    expect(ROSTER.map(roleTagFor)).not.toContain('Traveler');
   });
 });

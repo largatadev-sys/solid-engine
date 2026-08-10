@@ -299,6 +299,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
       join(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
       join(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx'),
       join(MOBILE_ROOT, 'src', 'components', 'Avatar.tsx'),
+      join(MOBILE_ROOT, 'src', 'profile', 'ProfileCardView.tsx'),
       join(TRIPS, '[id]', 'created.tsx'),
     ];
 
@@ -782,12 +783,27 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).not.toContain('Archive trip');
   });
 
-  it('reaches members through the Travelers roster row alone, never from Details (founder, 08/01)', () => {
+  it('sends a Travelers row to the profile stub, not the members screen (S4.20 decision 4)', () => {
     const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
     const details = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDetailsTab.tsx');
 
-    expect(travelers).toContain("pathname: '/members/[itineraryId]'");
+    expect(travelers).toContain("pathname: '/itineraries/[id]/travelers/[travelerId]'");
+    expect(travelers).not.toContain("pathname: '/members/[itineraryId]'");
     expect(details).not.toContain("pathname: '/members/[itineraryId]'");
+  });
+
+  it('leaves the offer banner as the members screen’s one surviving door (S4.20 decision 4)', () => {
+    const banner = read(MOBILE_ROOT, 'src', 'members', 'OwnershipOfferBanner.tsx');
+
+    expect(banner).toContain('/members/');
+    expect(existsSync(join(TRIPS_GROUP, 'members', '[itineraryId].tsx'))).toBe(true);
+  });
+
+  it('opens the stub per traveler, so two rows cannot land on one profile', () => {
+    const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
+
+    expect(travelers).toContain('openProfile(member.travelerId)');
+    expect(travelers).toMatch(/params: \{ id: itineraryId, travelerId \}/);
   });
 
   it('reads the three axes through helpers, never by comparing them inline (ADR-019)', () => {

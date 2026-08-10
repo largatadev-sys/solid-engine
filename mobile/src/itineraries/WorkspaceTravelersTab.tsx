@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
+import { roleTagFor } from '../members/memberControls';
 import { initialsFor } from '../onboarding/initials';
 import { useMembers } from '../query/invitationQueries';
 import {
@@ -42,13 +43,20 @@ export function WorkspaceTravelersTab({ itineraryId }: WorkspaceTravelersTabProp
   }
 
   const roster = members.data?.items ?? [];
-  const openMemberFlows = () =>
-    router.push({ pathname: '/members/[itineraryId]', params: { itineraryId } });
+  const openProfile = (travelerId: string) =>
+    router.push({
+      pathname: '/itineraries/[id]/travelers/[travelerId]',
+      params: { id: itineraryId, travelerId },
+    });
 
   return (
     <View style={styles.body}>
       {roster.map((member) => (
-        <TravelerRow key={member.travelerId} member={member} onPress={openMemberFlows} />
+        <TravelerRow
+          key={member.travelerId}
+          member={member}
+          onPress={() => openProfile(member.travelerId)}
+        />
       ))}
     </View>
   );
@@ -57,13 +65,14 @@ export function WorkspaceTravelersTab({ itineraryId }: WorkspaceTravelersTabProp
 
 function TravelerRow({ member, onPress }: { member: MemberResponse; onPress: () => void }) {
   const name = member.displayName;
+  const tag = roleTagFor(member);
 
   return (
     <Pressable
       style={styles.row}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, manage`}
+      accessibilityLabel={`${name}, view profile`}
     >
       <MediaThumb
         url={member.avatarUrl}
@@ -73,7 +82,7 @@ function TravelerRow({ member, onPress }: { member: MemberResponse; onPress: () 
       />
       <View style={styles.rowText}>
         <Text style={styles.name}>{name}</Text>
-        <Text style={styles.role}>{member.role === 'owner' ? 'Owner' : 'Traveler'}</Text>
+        {tag !== null && <Text style={styles.role}>{tag}</Text>}
       </View>
       <Icon name="chevronRight" size={18} color={workspaceColors.muted} />
     </Pressable>
