@@ -20,6 +20,15 @@ export function confirmDestructiveMessage(what: string): ConfirmWording {
 }
 
 
+export function discardStagedEditsWording(): ConfirmWording {
+  return {
+    title: 'Discard unsaved changes?',
+    body: 'Nothing you changed here has been saved yet. Leaving now loses it.',
+    confirmLabel: 'Discard',
+  };
+}
+
+
 export function removeMemberWording(displayName: string): ConfirmWording {
   return {
     title: `Remove ${displayName}?`,

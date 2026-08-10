@@ -173,6 +173,24 @@ public final class TripRig {
     }
 
 
+    public byte[] readTrip(String token, String tripId) {
+        return rest.get()
+                .uri("/v1/itineraries/" + tripId)
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .returnResult()
+                .getResponseBodyContent();
+    }
+
+
+    public long planVersionOf(String token, String tripId) {
+        return Long.parseLong(numberIn(readTrip(token, tripId), "planVersion"));
+    }
+
+
     public static String activitiesUri(String tripId, UUID dayId) {
         return "/v1/itineraries/" + tripId + "/days/" + dayId + "/activities";
     }
@@ -193,6 +211,18 @@ public final class TripRig {
         String needle = "\"" + field + "\":\"";
         int start = json.indexOf(needle) + needle.length();
         return json.substring(start, json.indexOf('"', start));
+    }
+
+
+    public static String numberIn(byte[] body, String field) {
+        String json = new String(body);
+        String needle = "\"" + field + "\":";
+        int start = json.indexOf(needle) + needle.length();
+        int end = start;
+        while (end < json.length() && "-0123456789.".indexOf(json.charAt(end)) >= 0) {
+            end++;
+        }
+        return json.substring(start, end);
     }
 
 

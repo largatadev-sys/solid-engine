@@ -1,4 +1,4 @@
-import type { ActivityRequest, ActivityResponse } from '../types/api';
+import type { ActivityRequest } from '../types/api';
 
 
 export type ActivityFormValues = {
@@ -21,9 +21,14 @@ const CARRIED_OVER = [
 ] as const;
 
 
+export type CarriedOverFields = {
+  [K in (typeof CARRIED_OVER)[number]]?: string | null;
+};
+
+
 export function buildActivityRequest(
   form: ActivityFormValues,
-  existing: ActivityResponse | undefined,
+  existing: CarriedOverFields | undefined,
 ): ActivityRequest {
   const request: ActivityRequest = { title: form.title.trim() };
 
@@ -46,7 +51,7 @@ export function buildActivityRequest(
   if (existing !== undefined) {
     for (const field of CARRIED_OVER) {
       const value = existing[field];
-      if (value !== null && value !== '') request[field] = value;
+      if (value !== null && value !== undefined && value !== '') request[field] = value;
     }
   }
 

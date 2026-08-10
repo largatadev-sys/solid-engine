@@ -646,12 +646,46 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(editor).toContain('onDeleteDay');
   });
 
-  it('persists a drop through the version-checked PUT, surfacing 409 rather than overwriting (ticket 04)', () => {
+  it('stages a drop into the buffer instead of persisting it — the per-drop retry died with S4.18', () => {
     const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
 
-    expect(editor).toContain('expectedActivityIds');
-    expect(editor).toContain("reorderError.code !== 'STALE_REORDER'");
     expect(editor).toContain('applyDrop');
+    expect(editor).toContain('stageReorder(plan, dayId, desired)');
+    expect(editor).not.toContain('expectedActivityIds');
+    expect(editor).not.toContain('STALE_REORDER');
+  });
+
+  it('writes to the server exactly once, at Save Changes — no per-action mutation survives in the editor', () => {
+    const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
+
+    for (const retired of [
+      'useAppendDay',
+      'useRenameDay',
+      'useDeleteDay',
+      'useDeleteActivity',
+      'useReorderActivities',
+    ]) {
+      expect(editor).not.toContain(retired);
+    }
+    expect(editor).toContain('useSavePlan');
+    expect(editor).toContain('commit(saveRequestFor(staged.draft))');
+  });
+
+  it('re-acquires the session at save, so a lapse mid-edit does not strand the buffer (S4.18 ticket 07)', () => {
+    const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
+
+    expect(editor).toContain("session.acquire({ subjectType: 'session' }).then");
+    expect(editor).toContain("saveError.code !== 'STALE_PLAN'");
+    expect(editor).toContain("detailNumber('currentPlanVersion')");
+    expect(editor).toContain('chooseOnStalePlan(stalePlanWording()');
+  });
+
+  it('confirms before discarding staged edits, on every exit door (S4.18 decision 2)', () => {
+    const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
+
+    expect(editor).toContain('discardStagedEditsWording()');
+    expect(editor).toContain('onBack={attemptExit}');
+    expect(editor).toContain('useExitGuard(dirty,');
   });
 
   it('keeps a non-drag reorder path on both platforms — keys on web, a11y actions on native', () => {

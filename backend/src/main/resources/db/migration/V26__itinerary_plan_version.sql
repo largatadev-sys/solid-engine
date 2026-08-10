@@ -1,0 +1,36 @@
+-- V26 — the plan document gets a revision number (S4.18, ADR-023, founder-ruled 2026-08-10).
+--
+-- WHY A NUMBER EXISTS AT ALL. Until S4.18 every plan edit persisted the instant it was made, so
+-- the window between reading the plan and writing it was one action long and ADR-014's exclusive
+-- lease closed it. S4.18 buffers: the traveler now stages a whole session's worth of edits and
+-- commits them in one bulk write, so the read the buffer was built on can be minutes old. The
+-- scenario the founder put on the record at the grilling: A stages edits and pockets the phone,
+-- renewal stops, the TTL lapses, B enters and saves and leaves, A returns and presses Save
+-- Changes. Without this column A's stale plan silently erases B's work. With it, A's save is
+-- refused by name and A chooses — discard, or re-base and overwrite explicitly.
+--
+-- WHAT IT COUNTS: WRITES TO THE PLAN DOCUMENT, AND NOTHING ELSE. Days and activities — append,
+-- rename, delete, create, edit, delete, reorder, cross-day move, and activity photo add/remove.
+-- NOT reads, NOT lifecycle transitions, NOT publish/unpublish, NOT trip-field edits, NOT the
+-- cover image. Those change the itinerary; they do not change the thing a buffered plan save
+-- would overwrite, so bumping on them would refuse saves that conflict with nothing and teach
+-- travelers to click through the refusal — the fastest way to make a safety check worthless.
+--
+-- THE BUMP MUST BE UNIVERSAL OR THE CHECK IS A LIE, and that is why this lands before the bulk
+-- save exists. The per-action endpoints stay live under ADR-008 for installed clients, so an old
+-- app editing the same trip must move this number too — otherwise a new client's buffer looks
+-- current while the plan underneath it has changed, which is precisely the failure the column is
+-- bought to prevent, arriving silently through the door we left open on purpose.
+--
+-- NOT NULL DEFAULT 0, so no backfill and no data migration: every existing plan is at revision
+-- zero, which is true rather than invented, and the first write of any kind moves it to 1. This
+-- is the one shape where the S1.1 migration-stepping rule does NOT apply — there is no legacy row
+-- to interpret, so there is nothing a stepping IT could catch. Stated here so the absence of one
+-- reads as a decision rather than an omission.
+--
+-- BIGINT rather than INT because it costs nothing and a monotonic counter that can wrap is a
+-- correctness bug wearing a storage optimisation. It is a revision counter, never an identifier:
+-- nothing joins on it, nothing orders by it, and it carries no meaning beyond "different from
+-- what you were holding".
+
+ALTER TABLE itinerary ADD COLUMN plan_version BIGINT NOT NULL DEFAULT 0;

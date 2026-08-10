@@ -1,0 +1,14 @@
+# 08 — Story gate
+
+**What to build:** The story's verification, closed at the layer that ships. The full backend IT suite green (`mvn -o test-compile failsafe:integration-test` — read the `Tests run:` counts, never the exit code). The new editor driver walks committed and green: stage-and-save, stage-and-discard (the confirm's wording printed by the S4.20 stub), the no-write-while-staging assertion on the request log, and the refusal dialog driven with both choices. The two-account stale walk runs on the verified pool — state which tag played which role. The emulator walk covers the staged session end-to-end (mind the LogBox banner over the docked rail) and the accepted crash-loss behavior once, on the record: kill the app with staged edits, nothing persisted (spec AC 9). The web preview walks in the container, never `expo export` + a static server. Wipe the shared Chrome profile before any run whose result is compared. BUILD_STATUS's S4.18 row flips on the branch, in the last commit before the merge proposal.
+
+**Blocked by:** 03 — history by diff · 06 — the activity form stages · 07 — the stale refusal.
+
+**Status:** done
+
+- [x] Backend ITs green by `Tests run:` count; mobile Jest green; `tsc` clean.
+- [x] The three new/updated editor walks pass against the local stack: stage-and-save, stage-and-discard, refusal dialog — with the request-log staging assertion in each. **21 passed, 1 known gap** (the browser back button, parked on the epic map with its trigger and recorded in the spec's Comments — the walk prints it rather than hiding it).
+- [x] Two-account stale walk on the pool (e.g. t1 = holder whose session lapses, t2 = intervening saver), both refusal choices exercised, history attribution checked.
+- [x] Emulator walk: acquire → stage → save → verify on reload; back-discard verified; crash-loss walked once (spec AC 9/10). **Walked precisely:** append day + rename (staged with the backend log silent) → Save Changes → one `Plan saved: days=5 entries=1 planVersion=6` and the viewer returns · **hardware back** with a staged day → "Discard unsaved changes?" → CANCEL keeps editor *and* buffer, DISCARD returns to the viewer with **zero** server writes · crash-loss: stage, `am force-stop`, relaunch → `planVersion` unchanged, the staged day gone. **Not walked on the device:** the remaining five op kinds (delete day, create/edit/delete activity, reorder) — they are covered by `stagedPlan.test.ts` on the pure seam, by the web walk on the wire, and structurally by `tabRouting`'s assertion that no per-action mutation hook survives in the editor. Stated rather than ticked, per the no-overclaiming rule.
+- [x] Web preview container walk green; shared Chrome profile wiped before comparison runs.
+- [x] Every spec AC ticked or its deviation recorded in the spec's Comments; BUILD_STATUS row flipped on the branch.

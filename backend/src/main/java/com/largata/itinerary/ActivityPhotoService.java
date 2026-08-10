@@ -25,6 +25,7 @@ public class ActivityPhotoService {
     private final DayRepository days;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
+    private final PlanVersionService planVersion;
     private final PhotoService photos;
 
     ActivityPhotoService(
@@ -32,11 +33,13 @@ public class ActivityPhotoService {
             DayRepository days,
             EditLeaseService editLease,
             ActivityHistoryService history,
+            PlanVersionService planVersion,
             PhotoService photos) {
         this.activities = activities;
         this.days = days;
         this.editLease = editLease;
         this.history = history;
+        this.planVersion = planVersion;
         this.photos = photos;
     }
 
@@ -53,6 +56,7 @@ public class ActivityPhotoService {
         Photo stored =
                 photos.add(PhotoSubject.ACTIVITY, activityId, uploaded, member.travelerId());
         history.record(member, HistoryAct.ACTIVITY_EDITED, LeaseSubject.activity(activityId));
+        planVersion.bump(member.itineraryId());
         log.info("Activity photo added: activityId={} photoId={}", activityId, stored.id());
         return stored;
     }
@@ -70,6 +74,7 @@ public class ActivityPhotoService {
 
         photos.delete(photoId);
         history.record(member, HistoryAct.ACTIVITY_EDITED, LeaseSubject.activity(activityId));
+        planVersion.bump(member.itineraryId());
         log.info("Activity photo removed: activityId={} photoId={}", activityId, photoId);
     }
 

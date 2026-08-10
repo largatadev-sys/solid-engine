@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,8 +11,13 @@ import {
 } from 'react-native';
 import { ApiError } from '../../../../../src/api/ApiError';
 import { Icon } from '../../../../../src/components/Icon';
+import { chooseOnStalePlan } from '../../../../../src/components/chooseOnStalePlan';
+import { stalePlanWording } from '../../../../../src/components/stalePlanMessage';
 import { confirmWith } from '../../../../../src/components/confirmDestructive';
-import { confirmDestructiveMessage } from '../../../../../src/components/confirmDestructiveMessage';
+import {
+  confirmDestructiveMessage,
+  discardStagedEditsWording,
+} from '../../../../../src/components/confirmDestructiveMessage';
 import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/components/ScreenMessage';
 import { useEditLock } from '../../../../../src/hooks/useEditLock';
 import { useMe } from '../../../../../src/hooks/useMe';
@@ -34,16 +39,29 @@ import {
 } from '../../../../../src/theme/workspaceTokens';
 import { memberControls } from '../../../../../src/members/memberControls';
 import { useMembers } from '../../../../../src/query/invitationQueries';
+import { useItinerary, useSavePlan } from '../../../../../src/query/itineraryQueries';
 import {
-  useAppendDay,
-  useDeleteActivity,
-  useDeleteDay,
-  useItinerary,
-  useRenameDay,
-  useReorderActivities,
-} from '../../../../../src/query/itineraryQueries';
+  baseOf,
+  closeDraft,
+  draftOf,
+  openDraft,
+  stageInto,
+  useDraft,
+} from '../../../../../src/itineraries/draftStore';
+import {
+  appendDay as stageAppendDay,
+  deleteActivity as stageDeleteActivity,
+  deleteDay as stageDeleteDay,
+  isDirty,
+  planFrom,
+  renameDay as stageRenameDay,
+  reorderActivities as stageReorder,
+  saveRequestFor,
+} from '../../../../../src/itineraries/stagedPlan';
+import { stagedDays } from '../../../../../src/itineraries/stagedView';
+import { useExitGuard } from '../../../../../src/navigation/useExitGuard';
 import { colors, typography } from '../../../../../src/theme';
-import type { ActivityResponse } from '../../../../../src/types/api';
+import type { ActivityResponse, SavePlanRequest } from '../../../../../src/types/api';
 
 
 export default function DraftWorkspaceScreen() {
@@ -58,11 +76,8 @@ export default function DraftWorkspaceScreen() {
   const { isOwner } = memberControls(roster, myId, data?.archived ?? false);
 
   const session = useEditLock(id);
-  const appendDay = useAppendDay(id);
-  const renameDay = useRenameDay(id);
-  const deleteDay = useDeleteDay(id);
-  const deleteActivity = useDeleteActivity(id);
-  const reorderActivities = useReorderActivities(id);
+  const savePlan = useSavePlan(id);
+  const staged = useDraft(id);
 
   const [active, setActive] = useState<WorkspaceTab>('day-by-day');
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
@@ -70,17 +85,55 @@ export default function DraftWorkspaceScreen() {
   const [draftTitle, setDraftTitle] = useState('');
 
   const acquire = session.acquire;
-  const asked = useRef(false);
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
-    if (asked.current) return;
-    asked.current = true;
     void acquire({ subjectType: 'session' }).then((granted) => {
+      setSettled(true);
       if (!granted) router.back();
     });
   }, [acquire, router]);
 
-  if (isPending || session.state.kind === 'acquiring' || session.state.kind === 'idle') {
+  useEffect(() => {
+    if (data === undefined || draftOf(id) !== undefined) return;
+    openDraft(id, planFrom(data));
+  }, [data, id]);
+
+  const [leaving, setLeaving] = useState(false);
+  const [popping, setPopping] = useState(false);
+  const dirty = !leaving && staged !== undefined && isDirty(staged.draft, staged.base);
+
+  const abandonBuffer = useCallback(() => {
+    setLeaving(true);
+    closeDraft(id);
+    session.release();
+  }, [id, session]);
+
+  const leaveWithoutSaving = useCallback(() => {
+    abandonBuffer();
+    setPopping(true);
+  }, [abandonBuffer]);
+
+  useEffect(() => {
+    if (popping) router.back();
+  }, [popping, router]);
+
+  const attemptExit = useCallback(() => {
+    if (!dirty) {
+      leaveWithoutSaving();
+      return;
+    }
+    confirmWith(discardStagedEditsWording(), leaveWithoutSaving);
+  }, [dirty, leaveWithoutSaving]);
+
+  useExitGuard(dirty, useCallback((proceed: () => void) => {
+    confirmWith(discardStagedEditsWording(), () => {
+      abandonBuffer();
+      proceed();
+    });
+  }, [abandonBuffer]));
+
+  if (isPending || staged === undefined || !settled) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.accent} />
@@ -92,64 +145,70 @@ export default function DraftWorkspaceScreen() {
     return <ScreenMessage {...itineraryLoadMessage(error, 'Could not load this trip')} />;
   }
 
-  const dayIds = data.days.map((d) => d.id);
-  const requestedDay = day !== undefined ? data.days.find((d) => String(d.ordinal) === day)?.id : undefined;
+  const shownDays = stagedDays(staged.draft);
+  const dayIds = shownDays.map((d) => d.id);
+  const requestedDay = day !== undefined ? shownDays.find((d) => String(d.ordinal) === day)?.id : undefined;
   const expandedDayId = openDayId === undefined ? defaultOpenDay(dayIds, requestedDay) : openDayId;
   const affordances = workspaceAffordances('editor', isOwner);
 
-  const leaveEditor = () => {
-    session.release();
-    router.back();
+  const commit = (request: SavePlanRequest) => {
+    savePlan.mutate(request, {
+      onSuccess: leaveWithoutSaving,
+      onError: (saveError) => {
+        if (!(saveError instanceof ApiError) || saveError.code !== 'STALE_PLAN') return;
+        const current = saveError.detailNumber('currentPlanVersion');
+        if (current === undefined) return;
+        chooseOnStalePlan(stalePlanWording(), (choice) => {
+          if (choice === 'discard') void reloadOntoTheirPlan();
+          if (choice === 'overwrite') commit({ ...request, basePlanVersion: current });
+        });
+      },
+    });
+  };
+
+  const reloadOntoTheirPlan = async () => {
+    const fresh = await refetch();
+    if (fresh.data === undefined) return;
+    openDraft(id, planFrom(fresh.data));
+  };
+
+  const saveChanges = () => {
+    if (!dirty) {
+      leaveWithoutSaving();
+      return;
+    }
+    void session.acquire({ subjectType: 'session' }).then((granted) => {
+      if (granted) commit(saveRequestFor(staged.draft));
+    });
   };
 
   const addDay = () => {
-    appendDay.mutate(
-      {},
-      {
-        onSuccess: (created) => {
-          setOpenDayId(created.id);
-          setEditingTitleOf(created.id);
-          setDraftTitle(created.title ?? '');
-        },
-      },
-    );
+    const before = draftOf(id)?.days.length ?? 0;
+    stageInto(id, stageAppendDay);
+    const appended = draftOf(id)?.days[before];
+    if (appended === undefined) return;
+    setOpenDayId(appended.id);
+    setEditingTitleOf(appended.id);
+    setDraftTitle('');
   };
 
   const commitTitle = (dayId: string) => {
     setEditingTitleOf(null);
-    renameDay.mutate({ dayId, title: draftTitle.trim() === '' ? undefined : draftTitle.trim() });
-  };
-
-  const persistOrder = (dayId: string, currentIds: string[], desired: string[], retry: (freshIds: string[]) => string[] | null) => {
-    reorderActivities.mutate(
-      { dayId, activityIds: desired, expectedActivityIds: currentIds },
-      {
-        onError: (reorderError) => {
-          if (!(reorderError instanceof ApiError) || reorderError.code !== 'STALE_REORDER') return;
-          void refetch().then((fresh) => {
-            const freshIds = fresh.data?.days.find((d) => d.id === dayId)?.activities.map((a) => a.id) ?? null;
-            if (freshIds === null) return;
-            const reapplied = retry(freshIds);
-            if (reapplied === null) return;
-            reorderActivities.mutate({ dayId, activityIds: reapplied, expectedActivityIds: freshIds });
-          });
-        },
-      },
-    );
+    stageInto(id, (plan) => stageRenameDay(plan, dayId, draftTitle));
   };
 
   const dropActivity = (dayId: string, activityId: string, toIndex: number) => {
-    const currentIds = data.days.find((d) => d.id === dayId)?.activities.map((a) => a.id) ?? [];
+    const currentIds = shownDays.find((d) => d.id === dayId)?.activities.map((a) => a.id) ?? [];
     const desired = applyDrop(currentIds, { activityId, toIndex });
     if (desired === null) return;
-    persistOrder(dayId, currentIds, desired, (freshIds) => applyDrop(freshIds, { activityId, toIndex }));
+    stageInto(id, (plan) => stageReorder(plan, dayId, desired));
   };
 
   const nudgeActivity = (dayId: string, activityId: string, direction: 'up' | 'down') => {
-    const currentIds = data.days.find((d) => d.id === dayId)?.activities.map((a) => a.id) ?? [];
+    const currentIds = shownDays.find((d) => d.id === dayId)?.activities.map((a) => a.id) ?? [];
     const desired = applyMove(currentIds, { activityId, direction });
     if (desired === null) return;
-    persistOrder(dayId, currentIds, desired, (freshIds) => applyMove(freshIds, { activityId, direction }));
+    stageInto(id, (plan) => stageReorder(plan, dayId, desired));
   };
 
   const openActivityForm = (dayId: string, activity?: ActivityResponse) => {
@@ -167,7 +226,7 @@ export default function DraftWorkspaceScreen() {
         <WorkspaceHeader
           badge={stateBadge(data, 'editor')}
           title={data.title}
-          onBack={leaveEditor}
+          onBack={attemptExit}
           actionLabel="Invite Traveler"
           actionIcon="userPlus"
           onAction={() => router.push({ pathname: '/itineraries/[id]/invite', params: { id } })}
@@ -178,7 +237,7 @@ export default function DraftWorkspaceScreen() {
 
         {active === 'day-by-day' ? (
           <View style={styles.tabBody}>
-            {data.days.map((d) => (
+            {shownDays.map((d) => (
               <WorkspaceDayCard
                 key={d.id}
                 day={d}
@@ -193,7 +252,7 @@ export default function DraftWorkspaceScreen() {
                     onEdit={(activity) => openActivityForm(d.id, activity)}
                     onDelete={(activity) =>
                       confirmWith(confirmDestructiveMessage(activity.title), () =>
-                        deleteActivity.mutate({ dayId: d.id, activityId: activity.id }),
+                        stageInto(id, (plan) => stageDeleteActivity(plan, activity.id)),
                       )
                     }
                     onDrop={(activityId, toIndex) => dropActivity(d.id, activityId, toIndex)}
@@ -203,7 +262,7 @@ export default function DraftWorkspaceScreen() {
                 onDeleteDay={() =>
                   confirmWith(
                     confirmDestructiveMessage(`Day ${d.ordinal} and everything in it`),
-                    () => deleteDay.mutate({ dayId: d.id }),
+                    () => stageInto(id, (plan) => stageDeleteDay(plan, d.id)),
                   )
                 }
                 onRenameDay={() => {
@@ -236,7 +295,6 @@ export default function DraftWorkspaceScreen() {
               <Pressable
                 style={styles.addDay}
                 onPress={addDay}
-                disabled={appendDay.isPending}
                 accessibilityRole="button"
                 accessibilityLabel="Add a Day"
               >
@@ -255,9 +313,11 @@ export default function DraftWorkspaceScreen() {
       </ScrollView>
 
       <View style={styles.rail}>
+        {savePlan.isError ? <Text style={styles.saveProblem}>{savePlan.error.message}</Text> : null}
         <Pressable
           style={styles.secondaryCta}
-          onPress={leaveEditor}
+          onPress={saveChanges}
+          disabled={savePlan.isPending}
           accessibilityRole="button"
           accessibilityLabel="Save Changes"
         >
@@ -340,5 +400,9 @@ const styles = StyleSheet.create({
   secondaryCtaLabel: {
     ...workspaceTypography.ctaSecondary,
     color: workspaceColors.secondaryLabel,
+  },
+  saveProblem: {
+    ...typography.caption,
+    color: colors.danger,
   },
 });

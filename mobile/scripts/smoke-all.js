@@ -4,8 +4,13 @@ const http = require('http');
 const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 const PREVIEW = process.env.LARGATA_PREVIEW_URL || 'http://localhost:8081';
 
-const API_SMOKES = ['smoke-lifecycle.js', 'smoke-create-flow.js', 'smoke-publish.js'];
-const WEB_WALKS = ['drive-create-flow.js', 'drive-workspace.js'];
+const API_SMOKES = [
+  'smoke-lifecycle.js',
+  'smoke-create-flow.js',
+  'smoke-publish.js',
+  'smoke-buffered-plan.js',
+];
+const WEB_WALKS = ['drive-create-flow.js', 'drive-workspace.js', 'drive-buffered-plan.js'];
 
 function reachable(url) {
   return new Promise((resolve) => {

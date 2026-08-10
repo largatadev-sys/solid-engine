@@ -2,6 +2,7 @@ package com.largata.common.error;
 
 import com.largata.common.logging.LogContextFilter;
 import java.time.Instant;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -40,7 +41,7 @@ public class GlobalExceptionHandler {
                     e.code(),
                     status.value());
         }
-        return respond(status, e.code(), e.getMessage());
+        return respond(status, e.code(), e.getMessage(), e.details());
     }
 
 
@@ -95,7 +96,13 @@ public class GlobalExceptionHandler {
     }
 
     private static ResponseEntity<ErrorResponse> respond(HttpStatus status, String code, String message) {
+        return respond(status, code, message, null);
+    }
+
+    private static ResponseEntity<ErrorResponse> respond(
+            HttpStatus status, String code, String message, Map<String, Object> details) {
         String traceId = MDC.get(LogContextFilter.TRACE_ID);
-        return ResponseEntity.status(status).body(new ErrorResponse(code, message, traceId, Instant.now()));
+        return ResponseEntity.status(status)
+                .body(new ErrorResponse(code, message, traceId, Instant.now(), details));
     }
 }

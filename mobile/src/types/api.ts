@@ -110,6 +110,19 @@ export type ItineraryResponse = {
 
   days: DayResponse[];
   createdAt: string;
+
+  planVersion?: number;
+};
+
+
+export type SavePlanRequest = {
+  basePlanVersion: number;
+
+  days: Array<{
+    id: string | null;
+    title: string | null;
+    activities: Array<{ id: string | null; fields: ActivityRequest }>;
+  }>;
 };
 
 
@@ -313,6 +326,8 @@ export type ErrorEnvelope = {
   message: string;
   traceId: string;
   timestamp: string;
+
+  details?: Record<string, unknown>;
 };
 
 

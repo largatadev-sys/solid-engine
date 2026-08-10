@@ -13,24 +13,26 @@ import {
   workspaceRadii,
   workspaceTypography,
 } from '../../../../../src/theme/workspaceTokens';
-import { useCreateActivity, useEditActivity, useItinerary } from '../../../../../src/query/itineraryQueries';
+import { draftOf, stageInto } from '../../../../../src/itineraries/draftStore';
+import {
+  activityIn,
+  createActivity as stageCreateActivity,
+  editActivity as stageEditActivity,
+  type StagedPlan,
+} from '../../../../../src/itineraries/stagedPlan';
 import { colors, typography } from '../../../../../src/theme';
-import type { ActivityResponse, DayResponse } from '../../../../../src/types/api';
+import type { ActivityRequest } from '../../../../../src/types/api';
 
 
 export default function ActivityFormScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id, dayId, activityId } = useLocalSearchParams<{ id: string; dayId: string; activityId?: string }>();
-  const { data } = useItinerary(id);
   const { state: meState } = useMe();
 
-  const existing = findActivity(data?.days, dayId, activityId);
+  const staged = activityId === undefined ? undefined : activityIn(draftOf(id) ?? emptyPlan, activityId);
+  const existing: ActivityRequest | undefined = staged?.fields;
   const isEdit = activityId !== undefined;
-
-  const create = useCreateActivity(id);
-  const edit = useEditActivity(id);
-  const mutation = isEdit ? edit : create;
 
   const homeCurrency = meState.kind === 'ok' ? (meState.me.preferredCurrency ?? '') : '';
 
@@ -55,11 +57,12 @@ export default function ActivityFormScreen() {
       existing,
     );
 
-    if (isEdit) {
-      edit.mutate({ dayId, activityId, request }, { onSuccess: () => router.back() });
-    } else {
-      create.mutate({ dayId, request }, { onSuccess: () => router.back() });
-    }
+    stageInto(id, (plan) =>
+      isEdit
+        ? stageEditActivity(plan, activityId, request)
+        : stageCreateActivity(plan, dayId, request),
+    );
+    router.back();
   };
 
   return (
@@ -132,14 +135,12 @@ export default function ActivityFormScreen() {
         </Field>
 
         {problem !== undefined ? <Text style={styles.problem}>{problem}</Text> : null}
-        {mutation.isError ? <Text style={styles.problem}>{mutation.error.message}</Text> : null}
       </ScrollView>
 
       <View style={styles.rail}>
         <Pressable
           style={styles.primaryCta}
           onPress={save}
-          disabled={mutation.isPending}
           accessibilityRole="button"
           accessibilityLabel="Save Activity"
         >
@@ -210,14 +211,7 @@ function Input({
 const HEADER_TOP_PADDING = 12;
 
 
-function findActivity(
-  days: DayResponse[] | undefined,
-  dayId: string,
-  activityId: string | undefined,
-): ActivityResponse | undefined {
-  if (days === undefined || activityId === undefined) return undefined;
-  return days.find((day) => day.id === dayId)?.activities.find((a) => a.id === activityId);
-}
+const emptyPlan: StagedPlan = { basePlanVersion: 0, days: [] };
 
 
 const styles = StyleSheet.create({

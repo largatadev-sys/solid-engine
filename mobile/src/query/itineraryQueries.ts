@@ -23,6 +23,7 @@ import type {
   Page,
   PublishAudience,
   PublishedItineraryResponse,
+  SavePlanRequest,
   TripCategory,
   UpdateItineraryRequest,
 } from '../types/api';
@@ -327,6 +328,17 @@ export function useDeleteActivity(
   return useMutation({
     mutationFn: ({ dayId, activityId }: { dayId: string; activityId: string }) =>
       itineraryRepository.deleteActivity(itineraryId, dayId, activityId),
+    onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+
+export function useSavePlan(
+  itineraryId: string,
+): UseMutationResult<ItineraryResponse, Error, SavePlanRequest> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (request: SavePlanRequest) => itineraryRepository.savePlan(itineraryId, request),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }

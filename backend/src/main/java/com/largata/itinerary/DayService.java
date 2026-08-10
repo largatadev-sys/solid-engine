@@ -31,6 +31,7 @@ public class DayService {
     private final ActivityRepository activities;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
+    private final PlanVersionService planVersion;
     private final WriteFence fence;
     private final Analytics analytics;
     private final PhotoService photos;
@@ -42,6 +43,7 @@ public class DayService {
             ActivityRepository activities,
             EditLeaseService editLease,
             ActivityHistoryService history,
+            PlanVersionService planVersion,
             WriteFence fence,
             Analytics analytics,
             PhotoService photos) {
@@ -49,6 +51,7 @@ public class DayService {
         this.activities = activities;
         this.editLease = editLease;
         this.history = history;
+        this.planVersion = planVersion;
         this.fence = fence;
         this.analytics = analytics;
         this.photos = photos;
@@ -100,6 +103,7 @@ public class DayService {
         int ordinal = (int) existing + 1;
         Day day = days.save(Day.at(itineraryId, ordinal, title, Instant.now()));
         history.record(member, HistoryAct.DAY_ADDED, LeaseSubject.day(day.id()));
+        planVersion.bump(itineraryId);
         log.info("Day appended: itineraryId={} dayId={} ordinal={}", itineraryId, day.id(), ordinal);
         emit(member, "day_added", itineraryId);
         return DayView.of(day, List.of());
@@ -113,6 +117,7 @@ public class DayService {
         day.rename(title);
         days.save(day);
         history.record(member, HistoryAct.DAY_RENAMED, LeaseSubject.day(dayId));
+        planVersion.bump(member.itineraryId());
         log.info("Day renamed: itineraryId={} dayId={}", member.itineraryId(), dayId);
         return DayView.of(day, activities.findByDayIdOrderBySortOrderAscIdAsc(day.id()));
     }
@@ -148,6 +153,7 @@ public class DayService {
             days.save(above);
         }
         history.record(member, HistoryAct.DAY_DELETED, LeaseSubject.day(dayId));
+        planVersion.bump(itineraryId);
         log.info("Day deleted: itineraryId={} dayId={} renumbered={}", itineraryId, dayId, toRenumber.size());
         emit(member, "day_removed", itineraryId);
     }

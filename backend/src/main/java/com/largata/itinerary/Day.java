@@ -66,6 +66,10 @@ class Day {
         this.ordinal = newOrdinal;
     }
 
+    static String normalizedTitle(String title) {
+        return normalizeTitle(title);
+    }
+
     private static String normalizeTitle(String title) {
         if (title == null || title.isBlank()) {
             return null;

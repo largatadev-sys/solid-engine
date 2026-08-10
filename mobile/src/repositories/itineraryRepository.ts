@@ -13,6 +13,7 @@ import type {
   PublishedItineraryResponse,
   PublishAudience,
   ReorderActivitiesRequest,
+  SavePlanRequest,
   TripCategory,
   UpdateItineraryRequest,
 } from '../types/api';
@@ -180,6 +181,11 @@ export const itineraryRepository = {
       `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/move`,
       request,
     );
+  },
+
+
+  async savePlan(itineraryId: string, request: SavePlanRequest): Promise<ItineraryResponse> {
+    return apiClient.put<ItineraryResponse>(`/v1/itineraries/${itineraryId}/plan`, request);
   },
 
 

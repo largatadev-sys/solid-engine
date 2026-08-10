@@ -32,6 +32,7 @@ public class ActivityService {
     private final ActivityRepository activities;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
+    private final PlanVersionService planVersion;
     private final WriteFence fence;
     private final Analytics analytics;
     private final PhotoService photos;
@@ -41,6 +42,7 @@ public class ActivityService {
             ActivityRepository activities,
             EditLeaseService editLease,
             ActivityHistoryService history,
+            PlanVersionService planVersion,
             WriteFence fence,
             Analytics analytics,
             PhotoService photos) {
@@ -48,6 +50,7 @@ public class ActivityService {
         this.activities = activities;
         this.editLease = editLease;
         this.history = history;
+        this.planVersion = planVersion;
         this.fence = fence;
         this.analytics = analytics;
         this.photos = photos;
@@ -68,6 +71,7 @@ public class ActivityService {
         Activity activity =
                 activities.save(Activity.create(dayId, sortOrder, fields, member.travelerId(), Instant.now()));
         history.record(member, HistoryAct.ACTIVITY_ADDED, LeaseSubject.activity(activity.id()));
+        planVersion.bump(member.itineraryId());
         log.info("Activity created: dayId={} activityId={}", dayId, activity.id());
         emit(member, "activity_created", activity.id());
         return ActivityView.of(activity);
@@ -82,6 +86,7 @@ public class ActivityService {
         activity.edit(fields, member.travelerId(), Instant.now());
         activities.save(activity);
         history.record(member, HistoryAct.ACTIVITY_EDITED, LeaseSubject.activity(activityId));
+        planVersion.bump(member.itineraryId());
         log.info("Activity edited: dayId={} activityId={} editor={}", dayId, activityId, member.travelerId());
         emit(member, "activity_edited", activityId);
         return withPhotos(activity);
@@ -110,6 +115,7 @@ public class ActivityService {
         activities.delete(activity);
         editLease.releaseSubjects(LeaseSubjectType.ACTIVITY, List.of(activityId));
         history.record(member, HistoryAct.ACTIVITY_DELETED, LeaseSubject.activity(activityId));
+        planVersion.bump(member.itineraryId());
         log.info("Activity deleted: dayId={} activityId={}", dayId, activityId);
         emit(member, "activity_deleted", activityId);
     }
@@ -145,6 +151,7 @@ public class ActivityService {
             reordered.add(activities.save(activity));
         }
         history.record(member, HistoryAct.ACTIVITIES_REORDERED, LeaseSubject.day(dayId));
+        planVersion.bump(member.itineraryId());
         log.info("Activities reordered: dayId={} count={}", dayId, orderedActivityIds.size());
         emitForDay(member, "activities_reordered", dayId);
         return DayView.of(day, reordered);
@@ -166,6 +173,7 @@ public class ActivityService {
         activity.moveToDay(targetDayId, sortOrder);
         activities.save(activity);
         history.record(member, HistoryAct.ACTIVITY_MOVED, LeaseSubject.activity(activityId));
+        planVersion.bump(member.itineraryId());
         log.info("Activity moved: activityId={} fromDay={} toDay={}", activityId, dayId, targetDayId);
         emit(member, "activity_moved", activityId);
         return ActivityView.of(activity);
