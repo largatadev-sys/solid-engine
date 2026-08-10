@@ -11,7 +11,10 @@ public record MemberResponse(
         String avatarUrl,
         String role,
         Instant joinedAt,
-        boolean ownershipOffered) {
+        boolean ownershipOffered,
+        String handle,
+        String bio,
+        String vanityNumber) {
 
 
     public static MemberResponse of(MemberSummary m) {
@@ -25,6 +28,9 @@ public record MemberResponse(
                 m.avatarUrl(),
                 m.role().name().toLowerCase(java.util.Locale.ROOT),
                 m.joinedAt(),
-                ownershipOffered);
+                ownershipOffered,
+                m.handle(),
+                m.bio(),
+                m.vanityNumber());
     }
 }

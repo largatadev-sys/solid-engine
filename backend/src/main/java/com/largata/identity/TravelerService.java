@@ -63,14 +63,18 @@ public class TravelerService {
         }
         return travelers
                 .findByHandle(normalized)
-                .map(t -> new TravelerSummary(t.id(), t.displayName(), t.handle(), t.avatarUrl()));
+                .map(TravelerService::summaryOf);
     }
 
 
     @Transactional(readOnly = true)
     public List<TravelerSummary> summariesByIds(Collection<UUID> ids) {
-        return travelers.findAllById(ids).stream()
-                .map(t -> new TravelerSummary(t.id(), t.displayName(), t.handle(), t.avatarUrl()))
-                .toList();
+        return travelers.findAllById(ids).stream().map(TravelerService::summaryOf).toList();
+    }
+
+
+    private static TravelerSummary summaryOf(Traveler t) {
+        return new TravelerSummary(
+                t.id(), t.displayName(), t.handle(), t.avatarUrl(), t.bio(), t.vanityNumber());
     }
 }

@@ -214,12 +214,20 @@ public class InvitationService {
 
     private static MemberSummary memberSummaryOf(MembershipView m, TravelerSummary profile) {
         return new MemberSummary(
-                m.travelerId(), profile.displayName(), profile.avatarUrl(), m.role(), m.joinedAt());
+                m.travelerId(),
+                profile.displayName(),
+                profile.avatarUrl(),
+                m.role(),
+                m.joinedAt(),
+                profile.handle(),
+                profile.bio(),
+                profile.vanityNumber());
     }
 
 
     private static TravelerSummary profileOf(Map<UUID, TravelerSummary> profiles, UUID travelerId) {
-        return profiles.getOrDefault(travelerId, new TravelerSummary(travelerId, "", null, null));
+        return profiles.getOrDefault(
+                travelerId, new TravelerSummary(travelerId, "", null, null, null, null));
     }
 
 
