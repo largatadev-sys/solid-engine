@@ -1,4 +1,5 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Modal, Pressable, StyleSheet, Text } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
 import {
   workspaceColors,
@@ -7,7 +8,7 @@ import {
   workspaceTypography,
 } from '../theme/workspaceTokens';
 import type { MemberResponse } from '../types/api';
-import { profileCardOfMember } from './profileCard';
+import { profileCardOfMember, stillShowing } from './profileCard';
 import { ProfileCardView } from './ProfileCardView';
 
 export const VISIT_PROFILE_LABEL = 'Visit Profile';
@@ -25,15 +26,24 @@ interface TravelerDialogProps {
 }
 
 
+function useRetainedWhileClosing(traveler: MemberResponse | null): MemberResponse | null {
+  const last = useRef<MemberResponse | null>(traveler);
+  if (traveler !== null) last.current = traveler;
+  return stillShowing(traveler, last.current);
+}
+
+
 export function TravelerDialog({ traveler, onDismiss }: TravelerDialogProps) {
+  const shown = useRetainedWhileClosing(traveler);
+
   return (
-    <Modal visible={traveler !== null} transparent animationType="fade" onRequestClose={onDismiss}>
+    <Modal visible={traveler !== null} transparent animationType="none" onRequestClose={onDismiss}>
       <Pressable style={styles.backdrop} onPress={onDismiss} accessibilityLabel="Close profile">
         <Pressable style={styles.dialog} onPress={() => undefined}>
-          {traveler !== null && (
+          {shown !== null && (
             <ProfileCardView
-              card={profileCardOfMember(traveler)}
-              photoLabel={`${traveler.displayName}'s profile photo`}
+              card={profileCardOfMember(shown)}
+              photoLabel={`${shown.displayName}'s profile photo`}
             />
           )}
 

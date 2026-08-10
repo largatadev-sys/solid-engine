@@ -793,14 +793,29 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(details).not.toContain("pathname: '/members/[itineraryId]'");
   });
 
-  it('centres the traveler dialog rather than docking it, and fades it in (S4.20 addendum 2)', () => {
+  it('centres the traveler dialog rather than docking it (S4.20 addendum 2)', () => {
     const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
 
-    expect(dialog).toContain('animationType="fade"');
     expect(dialog).toContain("justifyContent: 'center'");
     expect(dialog).not.toContain("justifyContent: 'flex-end'");
     expect(dialog).not.toContain('grabber');
     expect(dialog).not.toMatch(/borderTopLeftRadius/);
+  });
+
+  it('closes the dialog on the frame it is tapped, animating nothing (S4.20 addendum 3)', () => {
+    const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
+
+    expect(dialog).toContain('animationType="none"');
+    expect(dialog).not.toContain('animationType="fade"');
+    expect(dialog).not.toContain('animationType="slide"');
+  });
+
+  it('never blanks the card before the window it lives in (S4.20 addendum 3)', () => {
+    const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
+
+    expect(dialog).toContain('const shown = useRetainedWhileClosing(traveler)');
+    expect(dialog).toContain('{shown !== null && (');
+    expect(dialog).not.toContain('{traveler !== null && (');
   });
 
   it('leaves the offer banner as the members screen’s one surviving door (S4.20 decision 4)', () => {

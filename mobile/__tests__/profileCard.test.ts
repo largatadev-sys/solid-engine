@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { profileCardOf, profileCardOfMember } from '../src/profile/profileCard';
+import { profileCardOf, profileCardOfMember, stillShowing } from '../src/profile/profileCard';
 import type { MemberResponse, MeResponse } from '../src/types/api';
 
 const MOBILE_ROOT = join(__dirname, '..');
@@ -83,6 +83,22 @@ describe('the card the profile surfaces share', () => {
       bio: null,
       vanityNumber: null,
     });
+  });
+});
+
+describe('the card outlives the window it is closing with (S4.20 addendum 3)', () => {
+  it('keeps rendering the traveler the dialog was opened on while it tears down', () => {
+    expect(stillShowing(null, MEMBER)).toBe(MEMBER);
+  });
+
+  it('prefers the live traveler over the retained one whenever there is one', () => {
+    const other = { ...MEMBER, travelerId: 'traveler-9', displayName: 'Cara Dee' };
+
+    expect(stillShowing(other, MEMBER)).toBe(other);
+  });
+
+  it('has nothing to show before a row has ever been tapped', () => {
+    expect(stillShowing(null, null)).toBeNull();
   });
 });
 
