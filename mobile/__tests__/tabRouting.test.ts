@@ -85,6 +85,15 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     }
   });
 
+  it('sends the Trips tab to the Trips list, never back into the trip last opened (S4.20 addendum 4)', () => {
+    const layout = read(TABS, '_layout.tsx');
+    const tripsTab = layout.slice(layout.indexOf('name="(trips)"'));
+
+    expect(tripsTab).toContain('tabPress');
+    expect(tripsTab).toContain("router.dismissTo('/')");
+    expect(tripsTab).toContain('router.canDismiss()');
+  });
+
   it('lets the layout own the tab labels — a screen-level title silently overrides them', () => {
     for (const screen of ['profile.tsx', 'home.tsx', 'search.tsx']) {
       expect(read(TABS, screen)).not.toMatch(/<Stack\.Screen/);
@@ -115,7 +124,8 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
     expect(layout).toContain("comingSoon('home')");
     expect(layout).toContain("comingSoon('search')");
-    expect(layout.match(/event\.preventDefault\(\)/g) ?? []).toHaveLength(2);
+    expect(layout.match(/comingSoon\('(home|search)'\)/g) ?? []).toHaveLength(2);
+    expect(layout).not.toMatch(/comingSoon\('(?!home|search)/);
   });
 
   it('gives every tab a real icon — an unset one renders as a tofu box on Android', () => {

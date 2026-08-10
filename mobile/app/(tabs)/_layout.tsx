@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { comingSoon } from '../../src/components/comingSoon';
@@ -74,6 +74,12 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="(trips)"
         options={{ title: 'Trips', tabBarIcon: tabIcon('briefcase'), sceneStyle: bareScene(insets.top) }}
+        listeners={{
+          tabPress: (event) => {
+            event.preventDefault();
+            router.canDismiss() ? router.dismissTo('/') : router.navigate('/');
+          },
+        }}
       />
       <Tabs.Screen
         name="profile"
