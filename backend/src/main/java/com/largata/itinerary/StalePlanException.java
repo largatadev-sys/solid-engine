@@ -17,11 +17,6 @@ public class StalePlanException extends ConflictException {
     }
 
 
-    public long currentPlanVersion() {
-        return currentPlanVersion;
-    }
-
-
     @Override
     public Map<String, Object> details() {
         return Map.of("currentPlanVersion", currentPlanVersion);

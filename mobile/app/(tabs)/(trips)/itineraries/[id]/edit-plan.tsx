@@ -100,17 +100,23 @@ export default function DraftWorkspaceScreen() {
   }, [data, id]);
 
   const [leaving, setLeaving] = useState(false);
+  const [popping, setPopping] = useState(false);
   const dirty = !leaving && staged !== undefined && isDirty(staged.draft, staged.base);
 
-  const leaveWithoutSaving = useCallback(() => {
+  const abandonBuffer = useCallback(() => {
     setLeaving(true);
     closeDraft(id);
     session.release();
   }, [id, session]);
 
+  const leaveWithoutSaving = useCallback(() => {
+    abandonBuffer();
+    setPopping(true);
+  }, [abandonBuffer]);
+
   useEffect(() => {
-    if (leaving) router.back();
-  }, [leaving, router]);
+    if (popping) router.back();
+  }, [popping, router]);
 
   const attemptExit = useCallback(() => {
     if (!dirty) {
@@ -122,12 +128,10 @@ export default function DraftWorkspaceScreen() {
 
   useExitGuard(dirty, useCallback((proceed: () => void) => {
     confirmWith(discardStagedEditsWording(), () => {
-      setLeaving(true);
-      closeDraft(id);
-      session.release();
+      abandonBuffer();
       proceed();
     });
-  }, [id, session]));
+  }, [abandonBuffer]));
 
   if (isPending || staged === undefined || !settled) {
     return (

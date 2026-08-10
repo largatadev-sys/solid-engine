@@ -83,6 +83,40 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
 
 
     @Test
+    void bothPhotoWiresBumpThePlanVersion() throws IOException {
+        Fixture trip = tripWithAnActivity();
+        holdActivityLease(trip);
+
+        long beforeAdd = rig.planVersionOf(trip.owner(), trip.tripId());
+        ActivityBody added =
+                rest.post()
+                        .uri(photosUri(trip))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .body(multipart(photo()))
+                        .exchange()
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody(ActivityBody.class)
+                        .returnResult()
+                        .getResponseBody();
+        assertThat(added).isNotNull();
+        long afterAdd = rig.planVersionOf(trip.owner(), trip.tripId());
+        assertThat(afterAdd).as("a photo is part of the plan document old clients can still change").isEqualTo(beforeAdd + 1);
+
+        rest.delete()
+                .uri(photosUri(trip) + "/" + added.photos().getLast().id())
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+        assertThat(rig.planVersionOf(trip.owner(), trip.tripId()))
+                .as("removal moves it too — S4.18's coexistence guarantee covers every live per-action wire")
+                .isEqualTo(afterAdd + 1);
+    }
+
+
+    @Test
     void addingAPhotoWithoutTheActivityLeaseIsRefused() throws IOException {
         Fixture trip = tripWithAnActivity();
 

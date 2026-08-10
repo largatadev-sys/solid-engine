@@ -38,6 +38,7 @@ _Status: **proposed — pending founder ratification.** Conventions, not per-end
 - `code`: stable machine string (`WORKSPACE_NOT_FOUND`, `SPLITS_DO_NOT_SUM`, `ILLEGAL_TRANSITION`…) — the mobile client branches on codes, never on messages.
 - `message`: human-readable, safe to show.
 - `traceId`: correlates to the server log line (P3).
+- `details`: **optional, omitted unless a code needs it** — a small map of code-specific data the client must act on rather than merely display. Added S4.18 (ADR-023) for `STALE_PLAN`, which carries `currentPlanVersion` so a refused save can offer an explicit re-based overwrite without a force flag. Additive under ADR-008: absent on every previously shipped refusal, so no response shape moved. **The bar is deliberately high** — a field here is a wire contract, so it exists only where the client's *next act* depends on the value; anything the traveler merely reads belongs in `message`. Never PII, never internals (P2/P3).
 - **Never**: raw stack traces, SQL, Spring default error pages, internal exception class names (P2).
 
 ## The one pagination shape

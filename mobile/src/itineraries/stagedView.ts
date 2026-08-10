@@ -1,5 +1,5 @@
 import type { ActivityResponse, DayResponse } from '../types/api';
-import type { StagedActivity, StagedDay, StagedPlan } from './stagedPlan';
+import type { StagedActivity, StagedPlan } from './stagedPlan';
 
 
 export function stagedDays(plan: StagedPlan): DayResponse[] {
@@ -36,6 +36,3 @@ function shownActivity(activity: StagedActivity, sortOrder: number): ActivityRes
 }
 
 
-export function dayHolding(plan: StagedPlan, activityId: string): StagedDay | undefined {
-  return plan.days.find((day) => day.activities.some((activity) => activity.id === activityId));
-}

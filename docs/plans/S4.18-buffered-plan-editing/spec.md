@@ -74,6 +74,8 @@ None — buffering re-expresses existing plan-edit acts through one endpoint; no
 
 None. The S4.17 frames ship pixel-unchanged; this story changes what Save Changes *does* — which is what the mock's label always claimed.
 
+*(Amended at implementation, 2026-08-11 — one platform-forced deviation, stated rather than let pass as a choice.)* **The stale refusal's "visually quieter" hierarchy exists on native only.** Decision 5 asks for **Save anyway** as the quieter control; `Alert.alert`'s three-button form delivers exactly that. The web has no equivalent — `Alert` is a no-op there (the S1.3 trap) and S4.20 established `window.confirm` as the only dialog the browser rung actually shows — so the web fork asks the discard question first and the overwrite question second. Both choices are reachable and both are driven green, but *quieter* becomes *later*, and a traveler who declines the first dialog is asked the second rather than returned straight to editing. The real fix is an in-app modal owned by the app rather than the browser; it is not this story's scope, and it would be the natural home if the two-choice pattern recurs.
+
 ## Acceptance criteria
 
 1. While the Editing Session is held, none of the seven ops produces a network write — verified by the driver's API-request log and the backend log's silence (the discriminating signal, never the render).
