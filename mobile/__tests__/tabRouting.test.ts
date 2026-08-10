@@ -812,6 +812,29 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(dialog).not.toMatch(/borderTopLeftRadius/);
   });
 
+  it('caps every Modal at the phone frame — RN renders them outside MobileFrame on web', () => {
+    const sourcesUnder = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+        entry.isDirectory()
+          ? sourcesUnder(join(dir, entry.name))
+          : entry.name.endsWith('.tsx')
+            ? [join(dir, entry.name)]
+            : [],
+      );
+
+    const overlays = [...sourcesUnder(join(MOBILE_ROOT, 'src')), ...sourcesUnder(APP)].filter((file) =>
+      readFileSync(file, 'utf8').includes('<Modal'),
+    );
+
+    expect(overlays.length).toBeGreaterThanOrEqual(2);
+
+    for (const file of overlays) {
+      const source = readFileSync(file, 'utf8');
+      expect(source).toMatch(/maxWidth:/);
+      expect(source).toContain("alignItems: 'center'");
+    }
+  });
+
   it('closes the dialog on the frame it is tapped, animating nothing (S4.20 addendum 3)', () => {
     const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
 
