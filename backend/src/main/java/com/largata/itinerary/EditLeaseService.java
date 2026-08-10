@@ -187,6 +187,21 @@ public class EditLeaseService {
 
 
     @Transactional
+    public void requireSessionHeldBy(Membership member) {
+        fence.requireEditable(member);
+        Instant now = clock.instant();
+        Optional<EditLease> session = liveSession(member.itineraryId(), now);
+        if (session.isPresent() && session.get().isHeldBy(member.travelerId())) {
+            return;
+        }
+        LeaseSubject subject = LeaseSubject.session(member.itineraryId());
+        emitNow(member, "edit_lock_denied", subject);
+        throw new EditLockedException(
+                session.map(held -> labelOf(held.holderId())).orElse(ANONYMOUS_HOLDER), LeaseSubjectType.SESSION);
+    }
+
+
+    @Transactional
     public void requireNoForeignSession(Membership member) {
         fence.requireEditable(member);
         subsumedBySession(member, clock.instant());

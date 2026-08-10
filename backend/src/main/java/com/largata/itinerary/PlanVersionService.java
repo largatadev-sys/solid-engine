@@ -24,13 +24,9 @@ public class PlanVersionService {
 
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public long bumpFrom(UUID itineraryId, long expected) {
-        long current = currentVersion(itineraryId);
-        if (current != expected) {
-            throw new StalePlanException(current);
-        }
+    public long bumpTo(UUID itineraryId, long committed) {
         itineraries.bumpPlanVersion(itineraryId);
-        return current + 1;
+        return committed + 1;
     }
 
 
