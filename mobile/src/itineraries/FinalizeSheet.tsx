@@ -1,5 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
+import { MOBILE_FRAME_WIDTH } from '../components/mobileFrameContract';
 import {
   workspaceColors,
   workspaceMetrics,
@@ -77,8 +78,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: workspaceColors.scrim,
     justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   sheet: {
+    width: '100%',
+    maxWidth: MOBILE_FRAME_WIDTH,
     backgroundColor: workspaceColors.surface,
     borderTopLeftRadius: workspaceRadii.sheet,
     borderTopRightRadius: workspaceRadii.sheet,
