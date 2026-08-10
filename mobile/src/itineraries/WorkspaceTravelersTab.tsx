@@ -1,9 +1,10 @@
-import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { roleTagFor } from '../members/memberControls';
 import { initialsFor } from '../onboarding/initials';
+import { TravelerSheet } from '../profile/TravelerSheet';
 import { useMembers } from '../query/invitationQueries';
 import {
   workspaceColors,
@@ -23,8 +24,8 @@ interface WorkspaceTravelersTabProps {
 
 
 export function WorkspaceTravelersTab({ itineraryId }: WorkspaceTravelersTabProps) {
-  const router = useRouter();
   const members = useMembers(itineraryId);
+  const [opened, setOpened] = useState<MemberResponse | null>(null);
 
   if (members.isPending) {
     return (
@@ -43,21 +44,14 @@ export function WorkspaceTravelersTab({ itineraryId }: WorkspaceTravelersTabProp
   }
 
   const roster = members.data?.items ?? [];
-  const openProfile = (travelerId: string) =>
-    router.push({
-      pathname: '/itineraries/[id]/travelers/[travelerId]',
-      params: { id: itineraryId, travelerId },
-    });
 
   return (
     <View style={styles.body}>
       {roster.map((member) => (
-        <TravelerRow
-          key={member.travelerId}
-          member={member}
-          onPress={() => openProfile(member.travelerId)}
-        />
+        <TravelerRow key={member.travelerId} member={member} onPress={() => setOpened(member)} />
       ))}
+
+      <TravelerSheet traveler={opened} onDismiss={() => setOpened(null)} />
     </View>
   );
 }

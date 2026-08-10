@@ -14,6 +14,7 @@ export const COMING_SOON_SURFACES = {
   tripFilter: 'Filtering your trips',
   polls: 'Trip polls',
   photoDump: 'The photo dump',
+  profile: 'Traveler profiles',
 } as const;
 
 export type ComingSoonSurface = keyof typeof COMING_SOON_SURFACES;

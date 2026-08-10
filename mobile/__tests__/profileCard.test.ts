@@ -115,12 +115,9 @@ describe('email reaches no surface the card renders on', () => {
   it('renders no email on either surface the card reaches (S4.20 decision 2)', () => {
     const card = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'ProfileCardView.tsx'), 'utf8');
     const ownProfile = readFileSync(join(MOBILE_ROOT, 'app', '(tabs)', 'profile.tsx'), 'utf8');
-    const stub = readFileSync(
-      join(MOBILE_ROOT, 'app', '(tabs)', '(trips)', 'itineraries', '[id]', 'travelers', '[travelerId].tsx'),
-      'utf8',
-    );
+    const sheet = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'TravelerSheet.tsx'), 'utf8');
 
-    for (const source of [card, ownProfile, stub]) {
+    for (const source of [card, ownProfile, sheet]) {
       expect(source).not.toMatch(/\.email\b/);
     }
   });

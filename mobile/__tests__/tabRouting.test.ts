@@ -783,11 +783,12 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).not.toContain('Archive trip');
   });
 
-  it('sends a Travelers row to the profile stub, not the members screen (S4.20 decision 4)', () => {
+  it('opens a Travelers row in place, navigating nowhere at all (S4.20 addendum)', () => {
     const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
     const details = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDetailsTab.tsx');
 
-    expect(travelers).toContain("pathname: '/itineraries/[id]/travelers/[travelerId]'");
+    expect(travelers).toContain('<TravelerSheet');
+    expect(travelers).not.toContain('router.push');
     expect(travelers).not.toContain("pathname: '/members/[itineraryId]'");
     expect(details).not.toContain("pathname: '/members/[itineraryId]'");
   });
@@ -799,11 +800,23 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(existsSync(join(TRIPS_GROUP, 'members', '[itineraryId].tsx'))).toBe(true);
   });
 
-  it('opens the stub per traveler, so two rows cannot land on one profile', () => {
+  it('opens the sheet on the tapped traveler, so two rows cannot show one profile', () => {
     const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
 
-    expect(travelers).toContain('openProfile(member.travelerId)');
-    expect(travelers).toMatch(/params: \{ id: itineraryId, travelerId \}/);
+    expect(travelers).toContain('setOpened(member)');
+    expect(travelers).toContain('traveler={opened}');
+  });
+
+  it('retires the stub route the sheet replaced, leaving no screen nothing reaches', () => {
+    expect(existsSync(join(TRIPS, '[id]', 'travelers'))).toBe(false);
+  });
+
+  it('greys Visit Profile through the shared helper, so it SAYS something on both platforms', () => {
+    const sheet = read(MOBILE_ROOT, 'src', 'profile', 'TravelerSheet.tsx');
+
+    expect(sheet).toContain("comingSoon('profile')");
+    expect(sheet).not.toMatch(/disabled=\{true\}/);
+    expect(COMING_SOON_SURFACES).toHaveProperty('profile');
   });
 
   it('reads the three axes through helpers, never by comparing them inline (ADR-019)', () => {
