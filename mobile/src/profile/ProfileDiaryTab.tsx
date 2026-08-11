@@ -13,6 +13,7 @@ import {
 } from '../theme/workspaceTokens';
 import { PROFILE_DIARY_EMPTY } from './profileCopy';
 import { isExpanded, toggleExpanded } from './profileViewState';
+import { showcaseMetaLine } from './showcaseCard';
 import { stubLikeCount } from './stubMetrics';
 import type { DiaryTripResponse } from '../types/api';
 
@@ -76,7 +77,10 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
           <Text style={styles.sectionTitle} numberOfLines={1}>
             {trip.title ?? 'Untitled trip'}
           </Text>
-          <Text style={styles.sectionMeta}>{tripEntryCountLabel(trip.entryCount)}</Text>
+          <Text style={styles.sectionMeta} numberOfLines={1}>
+            {showcaseMetaLine(trip.destinations ?? [], trip.dayCount ?? 0) ??
+              tripEntryCountLabel(trip.entryCount)}
+          </Text>
         </View>
         <View style={open ? styles.chevronOpen : styles.chevronClosed} />
       </Pressable>
@@ -93,7 +97,7 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
                 likes={stubLikeCount()}
                 onPress={() =>
                   router.push({
-                    pathname: '/itineraries/[id]/diary/[entryId]',
+                    pathname: '/diary/[id]/[entryId]',
                     params: { id: trip.itineraryId, entryId: entry.id },
                   })
                 }

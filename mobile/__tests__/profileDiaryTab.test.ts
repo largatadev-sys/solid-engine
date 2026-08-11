@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   forgetProfileView,
@@ -78,8 +78,32 @@ describe('the Diary tab renders the diary as the mock groups it', () => {
     expect(TAB).toContain("rotate: '-45deg'");
   });
 
-  it('opens the existing entry screen on tap — a doorway, not a dead end', () => {
-    expect(TAB).toContain('/itineraries/[id]/diary/[entryId]');
+  it('opens the entry screen on tap — a doorway, not a dead end', () => {
+    expect(TAB).toContain('/diary/[id]/[entryId]');
+  });
+
+  it('opens it inside the PROFILE stack, so back returns here rather than into Trips (S4.13)', () => {
+    expect(TAB).not.toContain('/itineraries/[id]/diary/[entryId]');
+    expect(
+      existsSync(join(MOBILE_ROOT, 'app', '(tabs)', '(profile)', 'diary', '[id]', '[entryId].tsx')),
+    ).toBe(true);
+  });
+
+  it('leaves the trip stack its own route to the same screen, so the diary stream is unmoved', () => {
+    expect(
+      existsSync(
+        join(MOBILE_ROOT, 'app', '(tabs)', '(trips)', 'itineraries', '[id]', 'diary', '[entryId].tsx'),
+      ),
+    ).toBe(true);
+  });
+
+  it('exits to the stack it was opened from, never across (S4.13)', () => {
+    const profileRoute = readFileSync(
+      join(MOBILE_ROOT, 'app', '(tabs)', '(profile)', 'diary', '[id]', '[entryId].tsx'),
+      'utf8',
+    );
+
+    expect(profileRoute).toContain('exit="profile"');
   });
 
   it('takes its likes from the stub module and nowhere else', () => {

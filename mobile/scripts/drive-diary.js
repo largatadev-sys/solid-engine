@@ -557,8 +557,14 @@ function writeFixture() {
   // S4.21 moved this surface: the My Diary LIST became the profile's Diary TAB, so the diary is
   // still grouped by trip with a count on the profile — it is now sections rather than rows, and
   // the heading it used to carry went with the wordmark.
-  check('AC 9: the diary shows on the profile, grouped by trip with a count',
-    profileScreen.includes('S3.1 diary smoke') && profileScreen.includes('1 entry'),
+  // The section's SUB-LINE became the trip's location at the founder's 08/11 pass, so the entry
+  // count now lives on the accessibility label rather than in the rendered text.
+  check('AC 9: the diary shows on the profile, grouped by trip',
+    profileScreen.includes('S3.1 diary smoke') &&
+      (await evaluate(`
+        (() => Array.from(document.querySelectorAll('[aria-label]'))
+          .some((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || '')))()
+      `)) === true,
     profileScreen.replace(/\n/g, ' | ').slice(0, 200));
 
   // expo-router keeps the profile MOUNTED beneath the pushed stream, so body.innerText carries

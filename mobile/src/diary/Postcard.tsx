@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
+import { SHOW_SCROLLBAR } from './photoStripScroll';
 import { spacing } from '../theme';
 import {
   profileColors,
@@ -52,19 +53,15 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
     setPage(pageOfOffset(event.nativeEvent.contentOffset.x, pitch, photoCount));
 
   return (
-    <Pressable
-      style={styles.postcard}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
-    >
+    <View style={styles.postcard}>
       <View style={styles.stage} onLayout={measure}>
         <ScrollView
           horizontal
           snapToInterval={pitch}
           decelerationRate="fast"
-          showsHorizontalScrollIndicator={false}
+          showsHorizontalScrollIndicator={SHOW_SCROLLBAR}
           contentContainerStyle={styles.strip}
+          onScroll={settle}
           onMomentumScrollEnd={settle}
           scrollEventThrottle={16}
         >
@@ -93,7 +90,12 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
         )}
       </View>
 
-      <View style={styles.body}>
+      <Pressable
+        style={styles.body}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
+      >
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={2}>
             {entry.activityTitle}
@@ -117,8 +119,8 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
             <Text style={styles.likesLabel}>{likesLabel(likes)}</Text>
           </View>
         )}
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 

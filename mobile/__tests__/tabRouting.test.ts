@@ -175,6 +175,21 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
   const TRIP_FORM = ['itineraries/new.tsx'];
 
+  const SHARED_SCREENS: [string, string][] = [
+    ['itineraries/[id]/diary/[entryId].tsx', 'src/diary/DiaryEntryScreen.tsx'],
+  ];
+
+  it.each(SHARED_SCREENS)(
+    '%s is a thin route over %s — two stacks reach one screen (S4.21)',
+    (route, shared) => {
+      const wrapper = read(TRIPS_GROUP, ...route.split('/'));
+
+      expect(wrapper).toMatch(/DiaryEntryScreen/);
+      expect(wrapper).not.toMatch(/<ScreenHeader/);
+      expect(read(MOBILE_ROOT, ...shared.split('/'))).toMatch(/<ScreenHeader/);
+    },
+  );
+
   it.each(tripScreens().filter(([name]) => REDIRECT_STUBS.includes(name)))(
     '%s draws no chrome at all — a retired route redirects, it does not render',
     (_name, source) => {
@@ -203,7 +218,8 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
         !FULL_BLEED.includes(name) &&
         !WORKSPACE_HEADER.includes(name) &&
         !REDIRECT_STUBS.includes(name) &&
-        !TRIP_FORM.includes(name),
+        !TRIP_FORM.includes(name) &&
+        !SHARED_SCREENS.some(([route]) => route === name),
     ),
   )('%s draws its own heading — with no header bar, a navigator title renders nowhere', (_name, source) => {
     expect(source).toMatch(/<ScreenHeader/);

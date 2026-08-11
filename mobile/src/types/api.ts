@@ -355,6 +355,8 @@ export type DiaryTripResponse = {
   itineraryId: string;
   title: string | null;
   entryCount: number;
+  destinations?: string[];
+  dayCount?: number;
 };
 
 

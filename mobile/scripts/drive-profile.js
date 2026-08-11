@@ -258,16 +258,23 @@ async function publishedTrip(token, title, destinations, days) {
   ).body;
   await api(`/v1/itineraries/${diaryTrip}/finish-planning`, 'POST', me.idToken);
   await api(`/v1/itineraries/${diaryTrip}/start`, 'POST', me.idToken);
-  const dumped = await postPhoto(`/v1/itineraries/${diaryTrip}/photo-dump`, me.idToken, fixture, 'photo');
+  // Three photos, not one: the mock's defining postcard is a CAROUSEL, and its counter pill,
+  // dots and peek only render above one photo — so a single-photo fixture can never show them.
+  const dumped = [];
+  for (let i = 0; i < 3; i += 1) {
+    dumped.push(
+      await postPhoto(`/v1/itineraries/${diaryTrip}/photo-dump`, me.idToken, fixture, 'photo'),
+    );
+  }
   const entry = await postDiaryEntry(diaryTrip, me.idToken, {
     activityId: activity.id,
     caption: 'The most magical sunset we have ever seen',
-    fromDump: [dumped.body.id],
+    fromDump: dumped.map((photo) => photo.body.id),
   });
-  if (entry.status !== 201) {
+  if (entry.status !== 201 || entry.body.photos?.length !== 3) {
     throw new Error(
-      `fixture failed: the diary entry did not post (${entry.status}) — ${JSON.stringify(entry.body)}. ` +
-        `dump=${dumped.status}`,
+      `fixture failed: the diary entry did not post three photos (${entry.status}) — ` +
+        `${JSON.stringify(entry.body).slice(0, 200)}. dumps=${dumped.map((d) => d.status).join(',')}`,
     );
   }
 
@@ -451,6 +458,10 @@ async function publishedTrip(token, title, destinations, days) {
     profile.includes(firstSection.title) && firstSection.itineraryId === diaryTrip,
     `first=${firstSection.title} planted=${diaryTitle}`);
 
+  check('a section is subtitled with its trip-s location and length, not an entry count (founder, 08/11)',
+    profile.includes('Palawan · 2 days') && firstSection.destinations?.includes('Palawan') === true,
+    `destinations=${JSON.stringify(firstSection.destinations)} days=${firstSection.dayCount}`);
+
   const postcard = await evaluate(`
     (() => {
       const header = Array.from(document.querySelectorAll('[aria-label]'))
@@ -484,6 +495,43 @@ async function publishedTrip(token, title, destinations, days) {
     await sleep(wait);
     return result;
   };
+
+  // The pill sits on the STAGE, which is a sibling of the tappable body (the photos have to be
+  // draggable, so the Pressable no longer wraps them) — so read the whole section, not the card.
+  const sectionText = await evaluate(`
+    (() => {
+      const header = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)[0];
+      return header ? header.parentElement.innerText.replace(/\\n/g, ' | ') : '(no section)';
+    })()
+  `);
+  check('AC 2: a multi-photo postcard wears the mock-s counter pill',
+    /\b1\/3\b/.test(sectionText), sectionText.slice(0, 140));
+
+  const peek = await evaluate(`
+    (() => {
+      const header = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)[0];
+      const photos = Array.from((header ? header.parentElement : document).querySelectorAll('img'))
+        .filter((n) => n.offsetParent !== null);
+      if (photos.length < 2) return { photos: photos.length };
+      // The SCROLLER is the clipping viewport; its parent is the content strip, which is as wide
+      // as every photo laid end to end — measuring that reports ~846px and hides the peek.
+      let scroller = photos[0];
+      while (scroller && scroller.scrollWidth <= scroller.clientWidth) scroller = scroller.parentElement;
+      return {
+        photos: photos.length,
+        photoWidth: Math.round(photos[0].getBoundingClientRect().width),
+        stageWidth: scroller === null ? 0 : Math.round(scroller.clientWidth),
+      };
+    })()
+  `);
+  check('AC 2: the next photo peeks past the active one, as the mock draws it',
+    peek.photos >= 2 && peek.stageWidth - peek.photoWidth >= 25 &&
+      peek.stageWidth - peek.photoWidth <= 35,
+    JSON.stringify(peek));
 
   const collapsed = await tapFirstSection(2500);
   const afterCollapse = (await evaluate(`
@@ -534,8 +582,20 @@ async function publishedTrip(token, title, destinations, days) {
   `);
   const openedEntry = await tapLabel(entryLabel, 5000);
   check('AC 2: tapping a postcard opens its entry screen — a doorway, not a dead end',
-    openedEntry.clicked === true && /\/diary\/[0-9a-f-]{36}$/.test(await url()),
+    openedEntry.clicked === true && /\/diary\/[0-9a-f-]{36}\/[0-9a-f-]{36}$/.test(await url()),
     `${entryLabel} -> ${await url()}`);
+
+  // The entry screen lives in BOTH stacks (S4.13: a stack cannot pop onto a screen it does not
+  // contain), so back from the profile's copy must land on the profile — not in Trips.
+  const wentBackFromEntry = await tapLabel('Go back', 4500);
+  check('AC 2: back from the entry returns to the PROFILE, not into the trip stack (S4.13)',
+    wentBackFromEntry.clicked === true && (await url()).includes('/profile'),
+    await url());
+
+  const diaryStillSelected = (await text()) || '';
+  check('AC 2: …with the Diary tab still selected and its section still open',
+    diaryStillSelected.includes('Sunset at Las Cabanas'),
+    diaryStillSelected.replace(/\n/g, ' | ').slice(0, 140));
 
   // --- the Itineraries tab: the showcase, and only the showcase (AC 3) ----------------------
   await goto('/profile');
