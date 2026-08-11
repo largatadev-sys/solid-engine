@@ -9,8 +9,15 @@ const API_SMOKES = [
   'smoke-create-flow.js',
   'smoke-publish.js',
   'smoke-buffered-plan.js',
+  'smoke-media.js',
+  'smoke-photo-dump.js',
 ];
-const WEB_WALKS = ['drive-create-flow.js', 'drive-workspace.js', 'drive-buffered-plan.js'];
+const WEB_WALKS = [
+  'drive-create-flow.js',
+  'drive-workspace.js',
+  'drive-buffered-plan.js',
+  'drive-photo-dump.js',
+];
 
 function reachable(url) {
   return new Promise((resolve) => {

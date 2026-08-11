@@ -8,7 +8,8 @@ import {
   workspaceTypography,
 } from '../theme/workspaceTokens';
 import type { MemberResponse } from '../types/api';
-import { profileCardOfMember, stillShowing } from './profileCard';
+import { stillShowing } from '../components/stillShowing';
+import { profileCardOfMember } from './profileCard';
 import { ProfileCardView } from './ProfileCardView';
 
 export const VISIT_PROFILE_LABEL = 'Visit Profile';

@@ -20,11 +20,6 @@ export function profileCardOf(me: MeResponse): ProfileCard {
 }
 
 
-export function stillShowing<T>(current: T | null, last: T | null): T | null {
-  return current ?? last;
-}
-
-
 export function profileCardOfMember(member: MemberResponse): ProfileCard {
   return {
     avatarUrl: member.avatarUrl,

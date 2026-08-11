@@ -182,6 +182,15 @@ export type ActivityPhotoResponse = {
 };
 
 
+export type PhotoDumpEntryResponse = {
+  id: string;
+  url: string;
+  thumbUrl: string;
+  uploadedBy: string;
+  createdAt: string;
+};
+
+
 export type EstimatedCostResponse = {
   amount: string;
 

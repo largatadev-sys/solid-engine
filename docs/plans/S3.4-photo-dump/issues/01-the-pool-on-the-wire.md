@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** needs-triage
+**Status:** done
 
-- [ ] A member uploads, lists, and deletes their own photo over the API; the owner deletes anyone's; a member deleting another member's photo gets the named refusal (spec AC 3).
-- [ ] Non-member masking IT on all three endpoints, and the load-bearing audience IT: a non-member's `/v1/media` GET for a dump photo 404s while a member's succeeds (spec AC 2, 5).
-- [ ] Ingested dump photos carry no embedded metadata and serve in two variants; deletion removes the row and both stored objects (spec AC 4, 5 — the S3.3 IT families extended to the new kind).
-- [ ] Archived trip refuses upload/delete while the owner still reads; a **published** trip accepts uploads — the freeze-is-the-plan check (spec AC 6).
-- [ ] The list pages in the standard cursor shape, upload order (spec AC 8).
+- [x] A member uploads, lists, and deletes their own photo over the API; the owner deletes anyone's; a member deleting another member's photo gets the named refusal (spec AC 3).
+- [x] Non-member masking IT on all three endpoints, and the load-bearing audience IT: a non-member's `/v1/media` GET for a dump photo 404s while a member's succeeds (spec AC 2, 5).
+- [x] Ingested dump photos carry no embedded metadata and serve in two variants; deletion removes the row and both stored objects (spec AC 4, 5 — the S3.3 IT families extended to the new kind).
+- [x] Archived trip refuses upload/delete while the owner still reads; a **published** trip accepts uploads — the freeze-is-the-plan check (spec AC 6).
+- [x] The list pages in the standard cursor shape, upload order (spec AC 8).

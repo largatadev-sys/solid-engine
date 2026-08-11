@@ -66,3 +66,6 @@ tmp/
 
 # Editor config (personal, not project rules - those live in CLAUDE.md)
 .vscode/
+
+# Testcontainers credential-helper workaround (CLAUDE.md, S1.2) — a throwaway DOCKER_CONFIG dir
+backend/cfg/

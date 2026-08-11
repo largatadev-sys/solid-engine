@@ -3,11 +3,29 @@ import { itineraryRepository } from '../src/repositories/itineraryRepository';
 
 
 jest.mock('../src/api/apiClient', () => ({
-  apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), put: jest.fn(), delete: jest.fn() },
+  apiClient: {
+    get: jest.fn(),
+    post: jest.fn(),
+    patch: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    upload: jest.fn(),
+  },
+}));
+
+jest.mock('../src/media/photoPart', () => ({
+  photoPart: jest.fn(async () => 'the-multipart-body'),
 }));
 
 const { apiClient } = jest.requireMock('../src/api/apiClient') as {
-  apiClient: { get: jest.Mock; post: jest.Mock; patch: jest.Mock; put: jest.Mock; delete: jest.Mock };
+  apiClient: {
+    get: jest.Mock;
+    post: jest.Mock;
+    patch: jest.Mock;
+    put: jest.Mock;
+    delete: jest.Mock;
+    upload: jest.Mock;
+  };
 };
 
 beforeEach(() => {
@@ -264,5 +282,50 @@ describe('edit lease (S1.4 / ADR-014 as amended at S4.9 — every call names its
       subjectType: 'activity',
       subjectId: 'a-1',
     });
+  });
+});
+
+
+describe('the photo dump (S3.4)', () => {
+  it('asks for the first page of the pool with no cursor at all', async () => {
+    apiClient.get.mockResolvedValue({ items: [] });
+
+    await itineraryRepository.photoDump('trip-1');
+
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries/trip-1/photo-dump');
+  });
+
+  it('encodes the cursor it was handed, since base64url can carry padding', async () => {
+    apiClient.get.mockResolvedValue({ items: [] });
+
+    await itineraryRepository.photoDump('trip-1', 'MDE5-abc=');
+
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/v1/itineraries/trip-1/photo-dump?cursor=MDE5-abc%3D',
+    );
+  });
+
+  it('uploads one photo per request as multipart, never as JSON', async () => {
+    apiClient.upload.mockResolvedValue({ id: 'p1' });
+
+    await itineraryRepository.addPhotoDumpEntry('trip-1', {
+      uri: 'file:///tmp/a.jpg',
+      name: 'a.jpg',
+      mimeType: 'image/jpeg',
+    });
+
+    expect(apiClient.upload).toHaveBeenCalledWith(
+      '/v1/itineraries/trip-1/photo-dump',
+      'the-multipart-body',
+    );
+    expect(apiClient.post).not.toHaveBeenCalled();
+  });
+
+  it('deletes a photo by id under the trip that owns the pool', async () => {
+    apiClient.delete.mockResolvedValue(undefined);
+
+    await itineraryRepository.removePhotoDumpEntry('trip-1', 'p1');
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/photo-dump/p1');
   });
 });

@@ -10,6 +10,7 @@ import type {
   LeaseSubject,
   MoveActivityRequest,
   Page,
+  PhotoDumpEntryResponse,
   PublishedItineraryResponse,
   PublishAudience,
   ReorderActivitiesRequest,
@@ -159,6 +160,27 @@ export const itineraryRepository = {
     return apiClient.delete(
       `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/photos/${photoId}`,
     );
+  },
+
+
+  async photoDump(itineraryId: string, cursor?: string): Promise<Page<PhotoDumpEntryResponse>> {
+    const query = cursor === undefined ? '' : `?cursor=${encodeURIComponent(cursor)}`;
+    return apiClient.get<Page<PhotoDumpEntryResponse>>(
+      `/v1/itineraries/${itineraryId}/photo-dump${query}`,
+    );
+  },
+
+
+  async addPhotoDumpEntry(itineraryId: string, photo: PickedPhoto): Promise<PhotoDumpEntryResponse> {
+    return apiClient.upload<PhotoDumpEntryResponse>(
+      `/v1/itineraries/${itineraryId}/photo-dump`,
+      await photoPart(photo),
+    );
+  },
+
+
+  async removePhotoDumpEntry(itineraryId: string, photoId: string): Promise<void> {
+    return apiClient.delete(`/v1/itineraries/${itineraryId}/photo-dump/${photoId}`);
   },
 
 

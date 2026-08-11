@@ -33,5 +33,31 @@ class PhotoStorageIT extends ObjectStoreTestBase {
         assertThat(predicate).contains(PhotoSubject.TRAVELER_AVATAR.name());
         assertThat(predicate).contains(PhotoSubject.ITINERARY_COVER.name());
         assertThat(predicate).doesNotContain(PhotoSubject.ACTIVITY.name());
+        assertThat(predicate)
+                .as("the dump is multi-valued: one trip holds a whole pool")
+                .doesNotContain(PhotoSubject.ITINERARY_PHOTO_DUMP.name());
+    }
+
+
+    @Test
+    void everySubjectKindIsEitherSingleValuedByTheIndexOrDeliberatelyNot() {
+        List<String> predicateValues =
+                jdbc.queryForList(
+                        """
+                        SELECT pg_get_expr(i.indpred, i.indrelid) AS predicate
+                        FROM pg_index i
+                        JOIN pg_class c ON c.oid = i.indexrelid
+                        WHERE c.relname = 'photo_single_valued_subject_idx'
+                        """,
+                        String.class);
+        String predicate = predicateValues.getFirst();
+
+        List<PhotoSubject> singleValued =
+                List.of(PhotoSubject.TRAVELER_AVATAR, PhotoSubject.ITINERARY_COVER);
+        for (PhotoSubject subject : PhotoSubject.values()) {
+            assertThat(predicate.contains("'" + subject.name() + "'"))
+                    .as("a new kind must be classified here, not silently defaulted: %s", subject)
+                    .isEqualTo(singleValued.contains(subject));
+        }
     }
 }

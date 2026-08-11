@@ -4,8 +4,26 @@
 
 **Blocked by:** 01 — The pool on the wire · 02 — The tab goes live.
 
-**Status:** needs-triage
+**Status:** done
 
-- [ ] Backend ITs and mobile tests green with counts read from the summaries; typecheck clean.
-- [ ] The two-traveler walk closes spec ACs 1–3 on web preview and emulator against the local stack, entered through the real tab, screenshots captured.
-- [ ] BUILD_STATUS row updated in the final branch commit; squash-merge to `dev` proposed, not executed (promotions are propose-first).
+- [x] Backend ITs and mobile tests green with counts read from the summaries; typecheck clean.
+- [x] The two-traveler walk closes spec ACs 1–3 on web preview and emulator against the local stack, entered through the real tab, screenshots captured.
+- [x] BUILD_STATUS row updated in the final branch commit; squash-merge to `dev` proposed, not executed (promotions are propose-first).
+
+## Comments
+
+**Rung results.** Backend **605 ITs**, 0 failures (`mvn -o test-compile failsafe:integration-test`, counts read from the summary). Mobile **68 suites / 2380 tests**, `tsc --noEmit` clean. API rung `smoke-photo-dump.js` **20/20**; web rung `drive-photo-dump.js` **19/19** against the preview container. Emulator: dev build, JS from Metro on 8082, real native picker → crop → upload, verified by the backend log line `Photo stored: … subject=ITINERARY_PHOTO_DUMP` and both `photo_dump_*` analytics events in logcat.
+
+**Roles.** `t1` = owner · `t2` = member · `t3` = the stranger on no trip (API rung only). Both delete authorities were exercised *through the UI*, not only at the IT seam: the member deleted their own photo, and the owner deleted **the member's** photo — which is what makes it owner authority rather than uploader authority, and which rendered the owner-branch confirm wording ("As the trip owner you can remove any traveler's photo") for the first time.
+
+**The two sabotages.** Before trusting the suite, the two load-bearing decisions were deliberately inverted and the tests confirmed to catch them: swapping `requireWritable` → `requireEditable` fails `aPublishedTripStillTakesPhotosBecauseTheFreezeIsThePlan`; pointing the audience at `admits` instead of `admitsToTheWorkspace` fails `publishingNeverOpensThePoolToTravellersOutsideTheTrip` with a stranger reading a dump photo 200. Both restored.
+
+**Code review, two findings actioned.** (1) An IT was added asserting the trip's own activity photos and cover stay out of the pool — decision 1's negative was structural (the subject discriminator) but untested, and it is the one collision that matters since both are keyed to the same itinerary id. (2) `TripMediaAudience`'s two ladders shared a duplicated archived-owner predicate; extracted, so `admits` is now visibly `admitsToTheWorkspace` plus the published-and-public tail and archive dominance cannot drift between them. The analytics event names moved out of the copy module into `photoDumpEvents.ts`. One flagged smell was declined: the `(myId, isOwner, archived)` trio stays positional — the pure module's tests pin every combination, and a wrapper type for one call site is speculative generality.
+
+**The e2e pass went back for three ACs that were only ever proven on the wire (2026-08-11).** Comparing the layers showed AC 2 (non-member masking), AC 6 (the fences) and AC 8 (cursor paging) each pinned by an IT *and* the API rung, and never once exercised through the tab — the exact S1.3 shape where a green server sits behind a dead control. The walk now covers all three in the browser and runs **27/27**: a non-member lands on *"Trip unavailable"* rather than a crash or a hung spinner; an archived trip shows its read-only notice with no Add Photos tile; and a 31-photo pool renders **30 tiles → Load more → 31**, which is the only proof that button is wired to `fetchNextPage` rather than being another dead click.
+
+**Two of those three failed on the first run, and neither was the product.** The paging trip was later archived by the AC 6 step, so every subsequent navigation hit a read-only trip and the empty grid read as *"paging is broken"*; each scenario now gets its own trip. And `countTiles` filtered on `tagName === 'IMG'`, which react-native-web does not guarantee for `<Image>` — it silently returned `0`, indistinguishable from "no photos rendered". A direct DOM probe settled both in one run by printing what the page actually contained, instead of inferring from a failed assertion.
+
+**The third failure was real, and is a product gap this story cannot close.** A published trip accepts dump uploads on the wire — decision 5, green at both the IT and API rungs — but the workspace **redirects a published, unarchived trip to its published view** (S4.17), which has no Photo Dump tab. So the capability is granted and unreachable, precisely at the moment the founder's capture flow describes: mid-trip, already published. Every server-side rung passed while the feature was unusable, which is the whole argument for walking the UI. Fixing it is a routing decision about the published own-surface (and brushes INV-1 plus the consent must-answer S4.2 already carries), so it is backlogged with its trigger rather than improvised here. The walk asserts it as `KNOWN GAP`, so it turns into a real assertion the day someone closes it instead of quietly starting to lie.
+
+**One behaviour change beyond the ticket, recorded rather than reverted.** Tab selection moved from `tab === 'details' ? 'details' : 'day-by-day'` to `workspaceTabFrom`, which resolves `?tab=` against the live tab list. That is what makes `photo-dump` deep-linkable, but it also makes `travelers` reachable by URL where it previously was not, and every future live tab automatically. It refuses greyed tabs structurally, which the old ternary never had to. Judged an improvement on the ticket's "changes only this tab" line, not a violation of it.

@@ -22,10 +22,18 @@ export const WORKSPACE_TABS: readonly TabDefinition[] = [
   { key: 'day-by-day', label: 'Day-by-Day' },
   { key: 'polls', label: 'Polls', comingSoonSurface: 'polls' },
   { key: 'travelers', label: 'Travelers' },
-  { key: 'photo-dump', label: 'Photo Dump', comingSoonSurface: 'photoDump' },
+  { key: 'photo-dump', label: 'Photo Dump' },
   { key: 'chat', label: 'Chat', comingSoonSurface: 'chat' },
   { key: 'details', label: 'Details' },
 ];
+
+
+export function workspaceTabFrom(requested: string | undefined): WorkspaceTab {
+  const match = WORKSPACE_TABS.find(
+    (tab) => tab.key === requested && tab.comingSoonSurface === undefined,
+  );
+  return match?.key ?? 'day-by-day';
+}
 
 
 interface WorkspaceTabRowProps {

@@ -1,5 +1,7 @@
 package com.largata.media;
 
+import com.largata.common.api.Cursor;
+import com.largata.common.api.Page;
 import com.largata.common.storage.ObjectStore;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import java.time.Clock;
@@ -11,6 +13,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,6 +83,23 @@ public class PhotoService {
     @Transactional(readOnly = true)
     public List<Photo> allOf(PhotoSubject subject, UUID subjectId) {
         return photos.findBySubjectKindAndSubjectIdOrderById(subject, subjectId);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<Photo> pageOf(PhotoSubject subject, UUID subjectId, String cursor, int limit) {
+        Limit probe = Limit.of(limit + 1);
+        List<Photo> found =
+                cursor == null
+                        ? photos.findBySubjectKindAndSubjectIdOrderById(subject, subjectId, probe)
+                        : photos.findBySubjectKindAndSubjectIdAndIdGreaterThanOrderById(
+                                subject, subjectId, Cursor.decode(cursor), probe);
+
+        if (found.size() <= limit) {
+            return Page.exhausted(found);
+        }
+        List<Photo> page = found.subList(0, limit);
+        return Page.of(page, Cursor.encode(page.getLast().id()));
     }
 
 
