@@ -328,11 +328,15 @@ function writeFixture() {
     `${mediaCalls.filter((c) => c.bearer).length}/${mediaCalls.length} bearer`);
 
   // --- delete: the member's own goes, the owner's does not -------------------------------------
+  const membersPhotoId = shared.body.items?.find((p) => p.id !== ownersPhotoId)?.id;
   const beforeDelete = (await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]';
   const deleteTap = await tapLabel('Delete this photo');
   const confirms = JSON.parse((await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]');
   check('deleting asks for confirmation first, and says what it will do',
     deleteTap.clicked === true && confirms.length > JSON.parse(beforeDelete).length,
+    confirms[confirms.length - 1]?.slice(0, 90) ?? 'no confirm recorded');
+  check('the member is told their own photo leaves the trip for everyone',
+    (confirms[confirms.length - 1] ?? '').includes('for everyone'),
     confirms[confirms.length - 1]?.slice(0, 90) ?? 'no confirm recorded');
 
   const afterMemberDelete = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', member.idToken);
@@ -345,16 +349,40 @@ function writeFixture() {
     poaching.status === 403 && poaching.body?.code === 'NOT_PERMITTED',
     `${poaching.status} ${poaching.body?.code}`);
 
-  // --- the owner deletes anyone's ---------------------------------------------------------------
+  // --- owner authority proper: a photo the owner did NOT upload ---------------------------------
+  // The member's photo is re-added so the owner deletes somebody else's, not their own — deleting
+  // your own only proves uploader authority, which the owner holds regardless.
+  await seat(member);
+  await goto(`/itineraries/${trip}?tab=photo-dump`);
+  await plantFile(fixture);
+  await tapLabel('Add Photos');
+  await sleep(3000);
+  const restocked = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', member.idToken);
+  check('the member re-adds a photo for the owner to remove', restocked.body.items?.length === 2,
+    `n=${restocked.body.items?.length}`);
+  const foreignPhotoId = restocked.body.items?.find((p) => p.id !== ownersPhotoId)?.id;
+
   await seat(owner);
   await goto(`/itineraries/${trip}?tab=photo-dump`);
+  const beforeOwnerDelete = JSON.parse(
+    (await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]',
+  );
   const ownerDeleteTap = await tapLabel('Delete this photo');
+  const ownerConfirms = JSON.parse(
+    (await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]',
+  );
   check('the owner can reach delete on a photo in the pool (AC 3)', ownerDeleteTap.clicked === true,
     JSON.stringify(ownerDeleteTap));
+  check('the owner is told they are removing another traveler\'s photo',
+    ownerConfirms.length > beforeOwnerDelete.length
+      && (ownerConfirms[ownerConfirms.length - 1] ?? '').includes('any traveler'),
+    ownerConfirms[ownerConfirms.length - 1]?.slice(0, 110) ?? 'no confirm recorded');
 
-  const emptied = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', owner.idToken);
-  check('the pool is empty once the owner removes the last photo (AC 3)',
-    emptied.body.items?.length === 0, `n=${emptied.body.items?.length}`);
+  const afterOwnerDelete = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', owner.idToken);
+  const survivingIds = (afterOwnerDelete.body.items ?? []).map((p) => p.id);
+  check('the owner removed ANOTHER member\'s photo, not their own (AC 3)',
+    !survivingIds.includes(foreignPhotoId) && survivingIds.includes(ownersPhotoId),
+    `left: ${survivingIds.length}`);
 
   check('no page errors during the walk', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));
   check('no console errors during the walk', consoleErrors.length === 0,

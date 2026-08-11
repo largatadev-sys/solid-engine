@@ -14,7 +14,7 @@ import {
 import { track } from '../analytics/track';
 import { useAuth } from '../hooks/authContext';
 import type { PickedPhoto } from '../media/pickedPhoto';
-import { PHOTO_DUMP_PHOTO_ADDED, PHOTO_DUMP_PHOTO_REMOVED } from '../media/photoDumpMessages';
+import { PHOTO_DUMP_PHOTO_ADDED, PHOTO_DUMP_PHOTO_REMOVED } from '../media/photoDumpEvents';
 import { itineraryRepository } from '../repositories/itineraryRepository';
 import type {
   ActivityRequest,

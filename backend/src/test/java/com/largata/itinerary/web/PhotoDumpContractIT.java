@@ -330,6 +330,19 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
 
 
     @Test
+    void theTripsOwnActivityPhotosAndCoverStayOutOfThePool() throws IOException {
+        Fixture trip = tripWithAMember();
+        DumpPhoto dumped = upload(trip.owner(), trip);
+        addAnActivityPhoto(trip);
+        addACover(trip);
+
+        assertThat(idsIn(listAs(trip.owner(), trip)))
+                .as("the dump is uploads only — it never shows plan media keyed to the same trip")
+                .containsExactly(dumped.id());
+    }
+
+
+    @Test
     void anAvatarIsNotDeletableThroughTheDumpCollection() throws IOException {
         Fixture trip = tripWithAMember();
         UUID avatarId = avatarPhotoIdOf(trip.owner());
@@ -519,6 +532,35 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
         return jdbc.queryForObject(
                 "SELECT id FROM photo WHERE subject_kind = 'TRAVELER_AVATAR' ORDER BY created_at DESC LIMIT 1",
                 UUID.class);
+    }
+
+
+    private void addAnActivityPhoto(Fixture trip) throws IOException {
+        UUID dayId = rig.dayAt(trip.tripId(), 1);
+        UUID activityId = rig.addActivity(trip.owner(), trip.tripId(), dayId, "Kayaking");
+        rig.hold(trip.owner(), trip.tripId(), "activity", activityId);
+        rest.post()
+                .uri("/v1/itineraries/" + trip.tripId() + "/days/" + dayId + "/activities/" + activityId
+                        + "/photos")
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(multipart(photo()))
+                .exchange()
+                .expectStatus()
+                .isCreated();
+    }
+
+
+    private void addACover(Fixture trip) throws IOException {
+        rig.hold(trip.owner(), trip.tripId(), "header", UUID.fromString(trip.tripId()));
+        rest.post()
+                .uri("/v1/itineraries/" + trip.tripId() + "/cover")
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(multipart(photo()))
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 
 

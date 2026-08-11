@@ -4,9 +4,9 @@
 
 **Blocked by:** 01 — The pool on the wire.
 
-**Status:** needs-triage
+**Status:** done
 
-- [ ] A member uploads from the tab and the photo appears in every member's grid, web preview and emulator both, all media arriving bearer-authenticated — the ANON-GET tell watched in the driver (spec AC 1).
-- [ ] Delete: own photo for a member, any photo for the owner, confirm-before-delete on both platforms (the `window.confirm` stub printing its wording on web).
-- [ ] The `comingSoon` gate is gone from this tab only; empty state renders when the pool is empty; analytics events emit for upload and delete (spec AC 7).
-- [ ] Jest covers the grid/anatomy pure module and the repository mapping; no raw fetch anywhere (ADR-001).
+- [x] A member uploads from the tab and the photo appears in every member's grid, web preview and emulator both, all media arriving bearer-authenticated — the ANON-GET tell watched in the driver (spec AC 1).
+- [x] Delete: own photo for a member, any photo for the owner, confirm-before-delete on both platforms (the `window.confirm` stub printing its wording on web).
+- [x] The `comingSoon` gate is gone from this tab only; empty state renders when the pool is empty; analytics events emit for upload and delete (spec AC 7).
+- [x] Jest covers the grid/anatomy pure module and the repository mapping; no raw fetch anywhere (ADR-001).

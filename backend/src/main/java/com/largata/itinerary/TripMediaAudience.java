@@ -30,20 +30,28 @@ class TripMediaAudience {
 
     @Transactional(readOnly = true)
     boolean admitsToTheWorkspace(UUID itineraryId, UUID travelerId) {
-        if (workspaces.isArchived(itineraryId)) {
-            return workspaces.roleOf(itineraryId, travelerId).filter(Role.OWNER::equals).isPresent();
-        }
-        return workspaces.isMember(itineraryId, travelerId);
+        return archivedNarrowsToTheOwner(itineraryId)
+                ? isOwner(itineraryId, travelerId)
+                : workspaces.isMember(itineraryId, travelerId);
     }
 
 
     private boolean admits(Itinerary itinerary, UUID travelerId) {
-        if (workspaces.isArchived(itinerary.id())) {
-            return workspaces.roleOf(itinerary.id(), travelerId).filter(Role.OWNER::equals).isPresent();
-        }
-        if (workspaces.isMember(itinerary.id(), travelerId)) {
+        if (admitsToTheWorkspace(itinerary.id(), travelerId)) {
             return true;
         }
-        return itinerary.isPublished() && itinerary.visibility() == Visibility.PUBLIC;
+        return !archivedNarrowsToTheOwner(itinerary.id())
+                && itinerary.isPublished()
+                && itinerary.visibility() == Visibility.PUBLIC;
+    }
+
+
+    private boolean archivedNarrowsToTheOwner(UUID itineraryId) {
+        return workspaces.isArchived(itineraryId);
+    }
+
+
+    private boolean isOwner(UUID itineraryId, UUID travelerId) {
+        return workspaces.roleOf(itineraryId, travelerId).filter(Role.OWNER::equals).isPresent();
     }
 }

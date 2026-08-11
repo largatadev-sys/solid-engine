@@ -179,8 +179,16 @@ async function upload(path, token, bytes, filename='dump.jpg') {
   check('deletion takes both stored variants with it',
     goneBytes.status===404 && goneThumb.status===404, `${goneBytes.status}/${goneThumb.status}`);
 
-  const ownerDeletesTheirs = await api(`${dump}/${theirs.body.id}`,'DELETE',t1);
-  check('the owner takes out anyone\'s photo', ownerDeletesTheirs.status===204, String(ownerDeletesTheirs.status));
+  const ownersOwn = await api(`${dump}/${theirs.body.id}`,'DELETE',t1);
+  check('the owner takes out their own photo', ownersOwn.status===204, String(ownersOwn.status));
+
+  // Owner authority proper: a photo the OWNER did not upload. The check above only proves uploader
+  // authority, which the owner has anyway — it would pass on a build where owners had no extra say.
+  const membersPhoto = await upload(dump, t2, solidJpeg());
+  const ownerDeletesTheirs = await api(`${dump}/${membersPhoto.body?.id}`,'DELETE',t1);
+  check('the owner takes out ANOTHER member\'s photo — owner authority, not uploader authority',
+    membersPhoto.status===201 && ownerDeletesTheirs.status===204,
+    `${membersPhoto.status}/${ownerDeletesTheirs.status}`);
 
   // The freeze is the plan: a published trip still accepts photos. This is the check that would
   // have caught the dump being scoped as plan data.

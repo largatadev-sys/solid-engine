@@ -9,10 +9,6 @@ export const PHOTO_DUMP_LOAD_FAILURE = 'Could not load this trip’s photos.';
 
 export const PHOTO_DUMP_ARCHIVED_NOTE = 'This trip is archived, so its photo pool is read-only.';
 
-export const PHOTO_DUMP_PHOTO_ADDED = 'photo_dump_photo_added';
-
-export const PHOTO_DUMP_PHOTO_REMOVED = 'photo_dump_photo_removed';
-
 
 export function photoDumpDeleteWording(mine: boolean) {
   return {
