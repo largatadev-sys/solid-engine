@@ -1,20 +1,31 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { MyDiarySection } from '../../src/diary/MyDiarySection';
-import { useMe } from '../../src/hooks/useMe';
-import { ONBOARDING_ROUTES } from '../../src/onboarding/onboardingGate';
-import { ProfileCardView } from '../../src/profile/ProfileCardView';
-import { profileCardOf } from '../../src/profile/profileCard';
-import { authRepository } from '../../src/repositories/authRepository';
-import { colors, radii, spacing, typography } from '../../src/theme';
+import { Icon } from '../../../src/components/Icon';
+import { useMe } from '../../../src/hooks/useMe';
+import { ONBOARDING_ROUTES } from '../../../src/onboarding/onboardingGate';
+import { ACCOUNT_BACK_LABEL } from '../../../src/profile/profileCopy';
+import { ProfileCardView } from '../../../src/profile/ProfileCardView';
+import { profileCardOf } from '../../../src/profile/profileCard';
+import { authRepository } from '../../../src/repositories/authRepository';
+import { colors, radii, spacing, typography } from '../../../src/theme';
 
 
 
-export default function ProfileScreen() {
+export default function AccountScreen() {
   const { state, refresh } = useMe();
+  const router = useRouter();
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Pressable
+        style={styles.back}
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel={ACCOUNT_BACK_LABEL}
+      >
+        <Icon name="back" size={24} color={colors.textPrimary} />
+      </Pressable>
+
       <View style={styles.brand}>
         <Text style={styles.wordmark}>Largata</Text>
         <Text style={styles.tagline}>SIGNED IN</Text>
@@ -38,8 +49,6 @@ export default function ProfileScreen() {
           )}
         </View>
       )}
-
-      {state.kind === 'ok' ? <MyDiarySection /> : null}
 
       <Link href={`${ONBOARDING_ROUTES.profile}?mode=edit`} asChild>
         <Pressable style={styles.button} accessibilityRole="button">
@@ -79,6 +88,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: colors.background,
   },
+  back: { alignSelf: 'flex-start', padding: spacing.xs, marginBottom: spacing.md },
   brand: { alignItems: 'center', marginBottom: spacing.xl },
   wordmark: { ...typography.wordmark, color: colors.accent },
   tagline: { ...typography.overline, color: colors.textSecondary, marginTop: spacing.xs },

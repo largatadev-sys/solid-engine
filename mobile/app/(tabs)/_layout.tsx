@@ -3,6 +3,7 @@ import { type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { comingSoon } from '../../src/components/comingSoon';
 import { Icon, type IconName } from '../../src/components/Icon';
+import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import { colors, typography } from '../../src/theme';
 
 
@@ -82,8 +83,16 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="(profile)"
         options={{ title: 'Profile', tabBarIcon: tabIcon('person'), sceneStyle: bareScene(insets.top) }}
+        listeners={{
+          tabPress: (event) => {
+            event.preventDefault();
+            router.canDismiss()
+              ? router.dismissTo(PROFILE_TAB_ROUTE)
+              : router.navigate(PROFILE_TAB_ROUTE);
+          },
+        }}
       />
     </Tabs>
   );

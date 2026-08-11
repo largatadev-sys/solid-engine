@@ -358,6 +358,21 @@ export type DiaryTripResponse = {
 };
 
 
+export type ProfileStatsResponse = {
+  publishedCount: number;
+  tripCount: number;
+};
+
+
+export type ShowcaseItineraryResponse = {
+  id: string;
+  title: string;
+  destinations: string[];
+  durationDays: number;
+  coverImageUrl: string | null;
+};
+
+
 export type PostDiaryEntryRequest = {
   activityId: string;
   caption: string | null;

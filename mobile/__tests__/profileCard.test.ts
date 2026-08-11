@@ -129,14 +129,24 @@ describe('email reaches no surface the card renders on', () => {
     expect(JSON.stringify(profileCardOf(neverOnboarded))).not.toContain(EMAIL);
   });
 
-  it('renders no email on either surface the card reaches (S4.20 decision 2)', () => {
-    const card = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'ProfileCardView.tsx'), 'utf8');
-    const ownProfile = readFileSync(join(MOBILE_ROOT, 'app', '(tabs)', 'profile.tsx'), 'utf8');
-    const dialog = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx'), 'utf8');
+  it('renders no email on any surface the card reaches (S4.20 decision 2, S4.21 profile page)', () => {
+    const sources = [
+      join(MOBILE_ROOT, 'src', 'profile', 'ProfileCardView.tsx'),
+      join(MOBILE_ROOT, 'src', 'profile', 'ProfileHeader.tsx'),
+      join(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx'),
+      join(MOBILE_ROOT, 'app', '(tabs)', '(profile)', 'profile.tsx'),
+      join(MOBILE_ROOT, 'app', '(tabs)', '(profile)', 'account.tsx'),
+    ];
 
-    for (const source of [card, ownProfile, dialog]) {
-      expect(source).not.toMatch(/\.email\b/);
+    for (const path of sources) {
+      expect(readFileSync(path, 'utf8')).not.toMatch(/\.email\b/);
     }
+  });
+
+  it('the profile header feeds its initials fallback a null second argument, never the email', () => {
+    const header = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'ProfileHeader.tsx'), 'utf8');
+
+    expect(header).toContain('initialsFor(card.displayName, null)');
   });
 
   it('the initials fallback is fed a null second argument, never the email (S4.20)', () => {

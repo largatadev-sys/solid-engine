@@ -95,6 +95,79 @@ export const diaryMetrics = {
 } as const;
 
 
+export const profileColors = {
+  avatarWell: '#FDE4CF',
+  avatarInk: '#C2410C',
+  meta: '#78716C',
+  bio: '#44403C',
+  cellDivider: '#F5F5F4',
+  chevron: '#A8A29E',
+  likeHeart: '#EA580C',
+  likeCount: '#78716C',
+  badgeWell: '#FFEDD5',
+  badgeInk: '#C2410C',
+  publishedWell: '#DCFCE7',
+  publishedInk: '#15803D',
+  pricePill: 'rgba(28, 25, 23, 0.75)',
+  counterPill: 'rgba(28, 25, 23, 0.72)',
+  onPill: '#FFFFFF',
+  star: '#F59E0B',
+  starMuted: '#D6D3D1',
+  dotActive: '#FFFFFF',
+  dotIdle: 'rgba(255, 255, 255, 0.5)',
+  postcardBorder: '#F5F5F4',
+  coverWell: '#E7E5E4',
+} as const;
+
+
+export const profileTypography = {
+  displayName: { fontFamily: fonts.extraBold, fontSize: 22, lineHeight: 28, fontWeight: '800' },
+  initials: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28, fontWeight: '700' },
+  meta: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 17, fontWeight: '400' },
+  bio: { fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 18, fontWeight: '400' },
+  statValue: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, fontWeight: '700' },
+  statLabel: { fontFamily: fonts.regular, fontSize: 11, lineHeight: 14, fontWeight: '400' },
+  editPill: { fontFamily: fonts.bold, fontSize: 13.5, lineHeight: 17, fontWeight: '700' },
+  sectionTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, fontWeight: '700' },
+  sectionMeta: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 15, fontWeight: '400' },
+  postcardTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, fontWeight: '700' },
+  dayBadge: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  caption: { fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 19.6, fontWeight: '400' },
+  likes: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  counter: { fontFamily: fonts.bold, fontSize: 10, lineHeight: 13, fontWeight: '700' },
+  cardTitle: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  cardMeta: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 17, fontWeight: '400' },
+  publishedBadge: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  pricePill: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  rating: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, fontWeight: '700' },
+} as const;
+
+
+export const profileMetrics = {
+  avatarSize: 72,
+  cogSize: 38,
+  editPillHeight: 40,
+  statsRadius: 14,
+  sectionRadius: 16,
+  sectionThumb: 44,
+  sectionThumbRadius: 10,
+  postcardRadius: 14,
+  postcardPhotoHeight: 200,
+  photoPeek: 30,
+  coverHeight: 140,
+  chevronSize: 9,
+  chevronStroke: 2.5,
+  dotSize: 6,
+  pillInset: 10,
+} as const;
+
+
 export const workspaceBadgeColors = {
   draft: { background: '#FEF3C7', foreground: '#D97706' },
   upcoming: { background: '#DCFCE7', foreground: '#15803D' },
