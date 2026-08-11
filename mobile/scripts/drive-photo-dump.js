@@ -76,6 +76,34 @@ function api(path, method, token, body) {
   });
 }
 
+// Seeding a pool big enough to page is the one thing the UI is a bad tool for — 31 picker journeys
+// to prove one button. The photos still arrive through the real endpoint; only the tapping is
+// skipped, and the assertion that matters is what the tab does with them.
+function uploadTo(itineraryId, token, file) {
+  return new Promise((resolve, reject) => {
+    const boundary = '----largatadrive' + Math.floor(Number(process.hrtime.bigint() % 1000000n));
+    const head = Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="photo"; filename="seed.jpg"\r\n` +
+      'Content-Type: image/jpeg\r\n\r\n', 'utf8');
+    const body = Buffer.concat([head, fs.readFileSync(file), Buffer.from(`\r\n--${boundary}--\r\n`)]);
+    const req = http.request(
+      new URL(`${API}/v1/itineraries/${itineraryId}/photo-dump`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': body.length,
+        },
+      },
+      (res) => { res.resume(); res.on('end', () => resolve(res.statusCode)); },
+    );
+    req.on('error', reject);
+    req.end(body);
+  });
+}
+
+
 function chromePath() {
   const found = CHROME_CANDIDATES.find((p) => fs.existsSync(p));
   if (found === undefined) throw new Error(`Chrome not found. Tried:\n  ${CHROME_CANDIDATES.join('\n  ')}`);
@@ -250,6 +278,16 @@ function writeFixture() {
     return result;
   };
 
+  // One tile is a Pressable wrapping an Image, both labelled "Trip photo" — so count the outer
+  // ones only, or every photo scores two. react-native-web does not reliably render <Image> as an
+  // <img>, so filtering by tagName is not the way (it silently returned 0).
+  const countTiles = () =>
+    evaluate(`
+      (() => Array.from(document.querySelectorAll('[aria-label="Trip photo"]'))
+        .filter((n) => n.offsetParent !== null
+          && n.querySelector('[aria-label="Trip photo"]') !== null).length)()
+    `);
+
   const plantFile = async (file) => {
     const bytes = fs.readFileSync(file).toString('base64');
     await evaluate(`window.__drivenB64 = ${JSON.stringify(bytes)}; true`);
@@ -391,6 +429,76 @@ function writeFixture() {
   check('the owner removed ANOTHER member\'s photo, not their own (AC 3)',
     !survivingIds.includes(foreignPhotoId) && survivingIds.includes(ownersPhotoId),
     `left: ${survivingIds.length}`);
+
+  // --- a non-member LOOKS AT THE SCREEN (AC 2) -------------------------------------------------
+  // The masking is pinned at the API and in the ITs. What no other rung answers is what the app
+  // does with a 404 on this tab: an unhandled one is a crash or a spinner that never resolves.
+  const stranger = await signIn('t3');
+  await seat(stranger);
+  await goto(`/itineraries/${trip}?tab=photo-dump`);
+  const strangerScreen = (await text()) || '';
+  check('a non-member sees no photos and no crash on the tab (AC 2)',
+    strangerScreen.length > 0 && !strangerScreen.includes('Add Photos'),
+    strangerScreen.slice(0, 110));
+
+  // --- paging through the tab's own control (AC 8) ---------------------------------------------
+  // The cursor shape is pinned at the API and in an IT. Whether the tab's Load more button is
+  // wired to fetchNextPage — or is another S1.3 dead click — only the UI can answer.
+  const paged = await api('/v1/itineraries', 'POST', owner.idToken, {
+    title: 'S3.4 paging', destinations: ['Coron'], durationDays: 2,
+  });
+  const pagedTrip = paged.body.id;
+  for (let i = 0; i < 31; i += 1) {
+    await uploadTo(pagedTrip, owner.idToken, fixture);
+  }
+  await seat(owner);
+  await goto(`/itineraries/${pagedTrip}?tab=photo-dump`);
+  const firstPageTiles = await countTiles();
+  check('the first page stops at the server\'s page size rather than the whole pool (AC 8)',
+    firstPageTiles === 30, `${firstPageTiles} tiles`);
+
+  const morePressed = await tapLabel('Load more photos');
+  const afterMoreTiles = await countTiles();
+  check('Load more is wired to the cursor, not a dead click (AC 8)',
+    morePressed.clicked === true && afterMoreTiles === 31,
+    `${firstPageTiles} -> ${afterMoreTiles} tiles`);
+
+  // --- the fences, on the screen rather than only on the wire (AC 6) ---------------------------
+  // Its own trip on purpose: archiving the paging one would leave every later step navigating a
+  // read-only trip, and the resulting empty grid reads as "paging broke" rather than "I archived
+  // the fixture out from under myself".
+  const archivedTrip = (await api('/v1/itineraries', 'POST', owner.idToken, {
+    title: 'S3.4 archived pool', destinations: ['Sagada'], durationDays: 2,
+  })).body.id;
+  await uploadTo(archivedTrip, owner.idToken, fixture);
+  await api(`/v1/itineraries/${archivedTrip}/archive`, 'POST', owner.idToken);
+  await goto(`/itineraries/${archivedTrip}?tab=photo-dump`);
+  const archivedScreen = (await text()) || '';
+  check('an archived trip tells the owner the pool is read-only and hides Add Photos (AC 6)',
+    archivedScreen.includes('archived') && !archivedScreen.includes('Add Photos'),
+    archivedScreen.slice(0, 130));
+
+  // A published trip accepts dump uploads on the wire — decision 5, pinned by the API rung and by
+  // aPublishedTripStillTakesPhotosBecauseTheFreezeIsThePlan. The WORKSPACE, however, redirects a
+  // published trip to its published view (S4.17), so the tab is unreachable there and no traveler
+  // can use the capability the server grants. Asserted as it actually is, with the gap named,
+  // rather than left as a check that quietly fails on somebody else's routing decision.
+  const publishTrip = (await api('/v1/itineraries', 'POST', owner.idToken, {
+    title: 'S3.4 published pool', destinations: ['Bohol'], durationDays: 2,
+  })).body.id;
+  for (const step of ['finish-planning', 'start', 'complete', 'publish']) {
+    await api(`/v1/itineraries/${publishTrip}/${step}`, 'POST', owner.idToken);
+  }
+  const publishedUpload = await uploadTo(publishTrip, owner.idToken, fixture);
+  const publishedPool = await api(`/v1/itineraries/${publishTrip}/photo-dump`, 'GET', owner.idToken);
+  check('a PUBLISHED trip still takes photos — the freeze is the plan, not the pool (AC 6)',
+    publishedUpload === 201 && publishedPool.body.items?.length === 1,
+    `${publishedUpload}, n=${publishedPool.body.items?.length}`);
+
+  await goto(`/itineraries/${publishTrip}?tab=photo-dump`);
+  const publishedScreen = (await text()) || '';
+  check('KNOWN GAP: the workspace redirects a published trip, so its pool has no UI door',
+    !publishedScreen.includes('Add Photos'), publishedScreen.slice(0, 90));
 
   check('no page errors during the walk', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));
   check('no console errors during the walk', consoleErrors.length === 0,
