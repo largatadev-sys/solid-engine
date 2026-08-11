@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   pane: {
     paddingHorizontal: spacing.md2,
     paddingTop: spacing.md,
-    gap: spacing.md,
+    gap: profileMetrics.cardGap,
   },
   loading: {
     marginTop: spacing.lg,

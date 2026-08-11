@@ -42,6 +42,8 @@ export default function ProfileScreen() {
           stats={{
             published: stats.data?.publishedCount ?? null,
             trips: stats.data?.tripCount ?? null,
+            failed: stats.isError,
+            retry: () => void stats.refetch(),
           }}
           onEditProfile={() => router.push(`${ONBOARDING_ROUTES.profile}?mode=edit`)}
           onOpenAccount={() => router.push('/account')}

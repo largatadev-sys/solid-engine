@@ -160,6 +160,7 @@ export const profileMetrics = {
   postcardRadius: 14,
   postcardPhotoHeight: 200,
   photoPeek: 30,
+  cardGap: 14,
   coverHeight: 140,
   chevronSize: 9,
   chevronStroke: 2.5,

@@ -356,6 +356,19 @@ async function publishedTrip(token, title, destinations, days) {
   const url = () => evaluate('location.pathname');
   const text = () => evaluate('document.body.innerText');
 
+  // The fidelity verdict needs pixels, not assertions: --shots <dir> writes the two tabs so they
+  // can be held beside mock frames 2a and 2b.
+  const shotsDir = (() => {
+    const at = process.argv.indexOf('--shots');
+    return at === -1 ? null : process.argv[at + 1];
+  })();
+  const shoot = async (name) => {
+    if (shotsDir === null) return;
+    fs.mkdirSync(shotsDir, { recursive: true });
+    const shot = await send('Page.captureScreenshot', {});
+    fs.writeFileSync(`${shotsDir}/${name}.png`, Buffer.from(shot.data, 'base64'));
+  };
+
   const tapLabel = async (label, wait = 4000) => {
     const result = await evaluate(`
       (() => {
@@ -392,6 +405,8 @@ async function publishedTrip(token, title, destinations, days) {
   check('AC 1: the handle and vanity number render on one line, prefixed',
     metaLine === null || profile.includes(metaLine),
     `handle=${mine.handle} vanity=${mine.vanityNumber}`);
+
+  await shoot('web-2a-diary');
 
   check('AC 1/4: the stats row draws all four cells',
     ['Published', 'Trips', 'Followers', 'Following'].every((cell) => profile.includes(cell)),
@@ -529,6 +544,8 @@ async function publishedTrip(token, title, destinations, days) {
   check('AC 3: the tab switches to Itineraries',
     toItineraries.clicked === true && showcase.includes('PUBLISHED'),
     showcase.replace(/\n/g, ' | ').slice(0, 200));
+
+  await shoot('web-2b-itineraries');
 
   check('AC 3: it shows the published trips the traveler owns',
     showcase.includes(showcaseTitle) && showcase.includes('El Nido, Palawan · 5 days'),

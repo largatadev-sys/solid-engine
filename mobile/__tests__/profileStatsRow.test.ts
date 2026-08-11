@@ -51,8 +51,18 @@ describe('the stats row: two counts that are true, two that are dressing', () =>
     expect(SCREEN).toContain('?? null');
   });
 
-  it('makes no cell tappable — the row reports, it does not navigate (spec mechanics)', () => {
-    expect(ROW).not.toContain('Pressable');
-    expect(ROW).not.toContain('onPress');
+  it('makes no CELL tappable — the row reports, it does not navigate (spec mechanics)', () => {
+    const cells = ROW.slice(ROW.indexOf('{cells.map('), ROW.indexOf('{stats.failed'));
+
+    expect(cells).not.toContain('Pressable');
+    expect(cells).not.toContain('onPress');
+  });
+
+  it('says so and offers a retry when the counts fail, rather than holding an em dash forever', () => {
+    expect(ROW).toContain('stats.failed &&');
+    expect(ROW).toContain('STATS_UNAVAILABLE');
+    expect(ROW).toContain('onPress={stats.retry}');
+    expect(SCREEN).toContain('failed: stats.isError');
+    expect(SCREEN).toContain('stats.refetch()');
   });
 });

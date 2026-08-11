@@ -34,6 +34,17 @@ export function ProfileDiaryTab() {
           <TripSection key={trip.itineraryId} trip={trip} first={index === 0} />
         ))
       )}
+
+      {trips.hasNextPage === true && (
+        <Pressable
+          style={styles.more}
+          onPress={() => void trips.fetchNextPage()}
+          accessibilityRole="button"
+          accessibilityLabel="Show more diary trips"
+        >
+          <Text style={styles.moreLabel}>Show more</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -159,5 +170,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm3,
     paddingBottom: spacing.sm3,
     gap: spacing.sm3,
+  },
+  more: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  moreLabel: {
+    ...profileTypography.sectionTitle,
+    color: workspaceColors.accent,
   },
 });

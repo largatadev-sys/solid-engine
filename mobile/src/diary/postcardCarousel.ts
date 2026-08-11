@@ -1,5 +1,9 @@
+import { profileMetrics } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
 import { postcardClock } from './postcardAnatomy';
+
+
+const PHOTO_PEEK = profileMetrics.photoPeek;
 
 
 export function pageOfOffset(offset: number, photoWidth: number, photoCount: number): number {
@@ -7,6 +11,14 @@ export function pageOfOffset(offset: number, photoWidth: number, photoCount: num
 
   const landed = Math.round(offset / photoWidth);
   return Math.min(Math.max(landed, 0), Math.max(photoCount - 1, 0));
+}
+
+
+export function carouselPhotoWidth(stageWidth: number, photoCount: number): number {
+  if (stageWidth <= 0 || photoCount <= 1) return Math.max(stageWidth, 0);
+
+  const peeked = stageWidth - PHOTO_PEEK;
+  return peeked <= 0 ? stageWidth : peeked;
 }
 
 

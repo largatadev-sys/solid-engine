@@ -1,5 +1,6 @@
 import {
   carouselCounter,
+  carouselPhotoWidth,
   dayTimeBadge,
   likesLabel,
   pageOfOffset,
@@ -36,6 +37,25 @@ describe('pageOfOffset — which photo the carousel has settled on', () => {
 
   it('stays on the only page there is when a postcard holds one photo', () => {
     expect(pageOfOffset(900, WIDTH, 1)).toBe(0);
+  });
+});
+
+
+describe('carouselPhotoWidth — the mock lets the next photo peek past the active one', () => {
+  it('narrows the active photo so the next one shows at its edge', () => {
+    expect(carouselPhotoWidth(360, 5)).toBe(330);
+  });
+
+  it('gives a single-photo postcard the whole stage — there is nothing to peek at', () => {
+    expect(carouselPhotoWidth(360, 1)).toBe(360);
+  });
+
+  it('has no width to divide before the stage has been measured', () => {
+    expect(carouselPhotoWidth(0, 5)).toBe(0);
+  });
+
+  it('refuses to go negative on a stage narrower than the peek itself', () => {
+    expect(carouselPhotoWidth(20, 5)).toBe(20);
   });
 });
 

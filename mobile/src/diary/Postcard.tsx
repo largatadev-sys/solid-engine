@@ -21,6 +21,7 @@ import {
 import type { DiaryEntryResponse } from '../types/api';
 import {
   carouselCounter,
+  carouselPhotoWidth,
   dayTimeBadge,
   likesLabel,
   pageOfOffset,
@@ -42,10 +43,13 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
   const photoCount = entry.photos.length;
   const chrome = showsCarouselChrome(photoCount);
 
-  const measure = (event: LayoutChangeEvent) => setPhotoWidth(event.nativeEvent.layout.width);
+  const measure = (event: LayoutChangeEvent) =>
+    setPhotoWidth(carouselPhotoWidth(event.nativeEvent.layout.width, photoCount));
+
+  const pitch = photoWidth + spacing.xs2;
 
   const settle = (event: NativeSyntheticEvent<NativeScrollEvent>) =>
-    setPage(pageOfOffset(event.nativeEvent.contentOffset.x, photoWidth, photoCount));
+    setPage(pageOfOffset(event.nativeEvent.contentOffset.x, pitch, photoCount));
 
   return (
     <Pressable
@@ -57,8 +61,10 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
       <View style={styles.stage} onLayout={measure}>
         <ScrollView
           horizontal
-          pagingEnabled
+          snapToInterval={pitch}
+          decelerationRate="fast"
           showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.strip}
           onMomentumScrollEnd={settle}
           scrollEventThrottle={16}
         >
@@ -128,6 +134,9 @@ const styles = StyleSheet.create({
   stage: {
     height: profileMetrics.postcardPhotoHeight,
     backgroundColor: profileColors.coverWell,
+  },
+  strip: {
+    gap: spacing.xs2,
   },
   photo: {
     height: profileMetrics.postcardPhotoHeight,

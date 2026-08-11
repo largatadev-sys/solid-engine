@@ -26,3 +26,7 @@ export const PUBLISHED_BADGE = 'PUBLISHED';
 export const PER_PERSON_SUFFIX = '/ person';
 
 export const PROFILE_LOAD_FAILED = 'Could not load your profile';
+
+export const STATS_UNAVAILABLE = 'Counts unavailable — tap to retry';
+
+export const STATS_RETRY_LABEL = 'Retry loading your counts';
