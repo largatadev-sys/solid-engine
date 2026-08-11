@@ -140,6 +140,18 @@ public class WorkspaceService {
 
 
     @Transactional(readOnly = true)
+    public List<UUID> ownedItineraryIdsFor(UUID travelerId) {
+        return memberships.findOwnedItineraryIdsNotIn(travelerId, WorkspaceState.ARCHIVED);
+    }
+
+
+    @Transactional(readOnly = true)
+    public long itineraryCountFor(UUID travelerId) {
+        return memberships.countItinerariesNotIn(travelerId, WorkspaceState.ARCHIVED);
+    }
+
+
+    @Transactional(readOnly = true)
     public Optional<UUID> ownerOf(UUID itineraryId) {
         return memberships.findOwnerTravelerId(itineraryId);
     }

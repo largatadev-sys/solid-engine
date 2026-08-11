@@ -9,6 +9,8 @@ import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
+import com.largata.itinerary.api.ProfileStatsResponse;
+import com.largata.itinerary.api.ShowcaseItineraryResponse;
 import com.largata.workspace.WorkspaceService;
 import com.largata.workspace.WorkspaceState;
 import java.time.Instant;
@@ -335,6 +337,46 @@ public class ItineraryService {
         }
         List<Itinerary> page = found.subList(0, limit);
         return Page.of(page, Cursor.encode(page.getLast().id()));
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<ShowcaseItineraryResponse> listMyShowcase(
+            UUID travelerId, String cursor, Integer requestedLimit) {
+        int limit = clamp(requestedLimit);
+        UUID decodedCursor = cursor == null ? null : Cursor.decode(cursor);
+
+        List<UUID> ownedIds = workspaces.ownedItineraryIdsFor(travelerId);
+        if (ownedIds.isEmpty()) {
+            return Page.exhausted(List.of());
+        }
+        Limit probe = Limit.of(limit + 1);
+        List<Itinerary> found =
+                decodedCursor == null
+                        ? itineraries.findFirstPublishedPage(ownedIds, probe)
+                        : itineraries.findPublishedPageAfter(ownedIds, decodedCursor, probe);
+
+        boolean more = found.size() > limit;
+        List<Itinerary> rows = more ? found.subList(0, limit) : found;
+        Map<UUID, Long> dayCounts = days.dayCountsOf(rows.stream().map(Itinerary::id).toList());
+        List<ShowcaseItineraryResponse> page =
+                rows.stream()
+                        .map(
+                                itinerary ->
+                                        ShowcaseItineraryResponse.of(
+                                                itinerary,
+                                                dayCounts.getOrDefault(itinerary.id(), 0L).intValue()))
+                        .toList();
+
+        return more ? Page.of(page, Cursor.encode(rows.getLast().id())) : Page.exhausted(page);
+    }
+
+
+    @Transactional(readOnly = true)
+    public ProfileStatsResponse statsFor(UUID travelerId) {
+        List<UUID> ownedIds = workspaces.ownedItineraryIdsFor(travelerId);
+        long publishedCount = ownedIds.isEmpty() ? 0 : itineraries.countPublishedAmong(ownedIds);
+        return new ProfileStatsResponse(publishedCount, workspaces.itineraryCountFor(travelerId));
     }
 
 
