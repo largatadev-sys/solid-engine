@@ -518,10 +518,54 @@ async function publishedTrip(token, title, destinations, days) {
       };
     })()
   `);
-  check('AC 2: the next photo peeks past the active one, as the mock draws it',
-    peek.photos >= 2 && peek.stageWidth - peek.photoWidth >= 25 &&
-      peek.stageWidth - peek.photoWidth <= 35,
+  check('AC 2: one photo owns the viewport — no sliver of the next (founder, 08/12)',
+    peek.photos >= 2 && peek.stageWidth > 0 && peek.photoWidth === peek.stageWidth,
     JSON.stringify(peek));
+
+  // The scrollbar is gone on web (the dots carry navigation), so a mouse must be able to DRAG the
+  // strip or the carousel is unreachable there — the S1.3 dead-click shape with a new cause. A
+  // real pointer sequence is the only honest check: react-native-web renders a native overflow
+  // div, which a synthetic scroll would move without proving the handlers exist.
+  const stripBox = await evaluate(`
+    (() => {
+      const img = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)[0];
+      const strip = img ? img.parentElement.parentElement : null;
+      if (!strip) return null;
+      const r = strip.getBoundingClientRect();
+      return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2), before: strip.scrollLeft };
+    })()
+  `);
+
+  if (stripBox !== null) {
+    await send('Input.dispatchMouseEvent', {
+      type: 'mousePressed', x: stripBox.x, y: stripBox.y, button: 'left', clickCount: 1,
+    });
+    for (const step of [60, 140, 220, 300]) {
+      await send('Input.dispatchMouseEvent', {
+        type: 'mouseMoved', x: stripBox.x - step, y: stripBox.y, button: 'left',
+      });
+    }
+    await send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased', x: stripBox.x - 300, y: stripBox.y, button: 'left',
+    });
+    await sleep(900);
+  }
+
+  const dragged = await evaluate(`
+    (() => {
+      const img = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)[0];
+      const strip = img ? img.parentElement.parentElement : null;
+      return strip ? strip.scrollLeft : -1;
+    })()
+  `);
+
+  check('AC 2: a mouse drag scrolls the photo strip on web, now that the scrollbar is gone',
+    stripBox !== null && dragged > stripBox.before,
+    `before=${stripBox === null ? 'no strip' : stripBox.before} after=${dragged}`);
 
   const collapsed = await tapFirstSection(2500);
   const afterCollapse = (await evaluate(`

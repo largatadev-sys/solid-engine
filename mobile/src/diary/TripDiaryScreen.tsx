@@ -1,6 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 import { Icon } from '../components/Icon';
 import { itineraryLoadMessage, ScreenMessage } from '../components/ScreenMessage';
 import { useSafeBack } from '../navigation/safeBack';
@@ -16,7 +24,7 @@ import {
 import type { DiaryEntryResponse } from '../types/api';
 import { DIARY_STREAM_EMPTY, MY_DIARY_TITLE } from './diaryCopy';
 import { entryEditorRoute, type DiaryEntryExit } from './diaryEntryExit';
-import { SHOW_SCROLLBAR } from './photoStripScroll';
+import { dragToScroll, SHOW_SCROLLBAR } from './photoStripScroll';
 import { inTripDayOrder, snapshotEyebrow } from './postcardAnatomy';
 import { PostcardPreview } from './PostcardPreview';
 
@@ -68,35 +76,7 @@ export function TripDiaryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntryE
           <Text style={styles.empty}>{DIARY_STREAM_EMPTY}</Text>
         ) : (
           postcards.map((entry) => (
-            <Pressable
-              key={entry.id}
-              style={styles.entry}
-              onPress={() => setPreviewing(entry)}
-              accessibilityRole="button"
-              accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
-            >
-              <Text style={styles.eyebrow}>{snapshotEyebrow(entry)}</Text>
-              <Text style={styles.entryTitle}>{entry.activityTitle}</Text>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={SHOW_SCROLLBAR}
-                style={styles.strip}
-                contentContainerStyle={styles.stripContent}
-              >
-                {entry.photos.map((photo, index) => (
-                  <MediaThumb
-                    key={photo.id}
-                    url={photo.url}
-                    full
-                    style={styles.photo}
-                    accessibilityLabel={`${entry.activityTitle}, photo ${index + 1}`}
-                  />
-                ))}
-              </ScrollView>
-
-              {entry.caption !== null && <Text style={styles.caption}>{entry.caption}</Text>}
-            </Pressable>
+            <StreamEntry key={entry.id} entry={entry} onOpen={() => setPreviewing(entry)} />
           ))
         )}
       </ScrollView>
@@ -111,6 +91,53 @@ export function TripDiaryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntryE
         onDismiss={() => setPreviewing(null)}
       />
     </View>
+  );
+}
+
+
+function StreamEntry({
+  entry,
+  onOpen,
+}: {
+  readonly entry: DiaryEntryResponse;
+  readonly onOpen: () => void;
+}) {
+  const [drag] = useState(dragToScroll);
+  const [photoWidth, setPhotoWidth] = useState(0);
+
+  const measure = (event: LayoutChangeEvent) => setPhotoWidth(event.nativeEvent.layout.width);
+
+  return (
+    <Pressable
+      style={styles.entry}
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
+    >
+      <Text style={styles.eyebrow}>{snapshotEyebrow(entry)}</Text>
+      <Text style={styles.entryTitle}>{entry.activityTitle}</Text>
+
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={SHOW_SCROLLBAR}
+        style={styles.strip}
+        onLayout={measure}
+        {...drag}
+      >
+        {entry.photos.map((photo, index) => (
+          <MediaThumb
+            key={photo.id}
+            url={photo.url}
+            full
+            style={{ ...styles.photo, width: photoWidth }}
+            accessibilityLabel={`${entry.activityTitle}, photo ${index + 1}`}
+          />
+        ))}
+      </ScrollView>
+
+      {entry.caption !== null && <Text style={styles.caption}>{entry.caption}</Text>}
+    </Pressable>
   );
 }
 
@@ -184,14 +211,8 @@ const styles = StyleSheet.create({
   strip: {
     marginHorizontal: -STREAM_INSET,
   },
-  stripContent: {
-    gap: spacing.sm,
-    paddingHorizontal: STREAM_INSET,
-  },
   photo: {
-    width: diaryScreenMetrics.streamPhotoWidth,
     height: diaryScreenMetrics.streamPhotoHeight,
-    borderRadius: diaryScreenMetrics.photoRadius,
     backgroundColor: diaryScreenColors.photoWell,
   },
   caption: {

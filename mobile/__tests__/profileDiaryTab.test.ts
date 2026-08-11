@@ -158,10 +158,11 @@ describe('the trip diary stream wears the founder-s frame-1 anatomy (08/12 mock)
     expect(DIARY_STREAM).not.toContain('<Postcard ');
   });
 
-  it('draws the mock-s stream photo, edge-to-edge past the screen inset', () => {
-    expect(DIARY_STREAM).toContain('diaryScreenMetrics.streamPhotoWidth');
+  it('gives one photo the whole viewport, paged rather than peeked (founder, 08/12)', () => {
     expect(DIARY_STREAM).toContain('diaryScreenMetrics.streamPhotoHeight');
     expect(DIARY_STREAM).toContain('marginHorizontal: -STREAM_INSET');
+    expect(DIARY_STREAM).toContain('pagingEnabled');
+    expect(DIARY_STREAM).toContain('width: photoWidth');
   });
 
   it('opens the postcard preview on an entry tap rather than pushing the editor', () => {

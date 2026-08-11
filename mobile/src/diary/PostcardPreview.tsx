@@ -22,6 +22,7 @@ import {
 } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
 import { PREVIEW_CLOSE, PREVIEW_EDIT, PREVIEW_HINT, PREVIEW_SHARE } from './diaryCopy';
+import { dragToScroll } from './photoStripScroll';
 import { snapshotEyebrow } from './postcardAnatomy';
 import { pageOfOffset, previewCount } from './postcardCarousel';
 
@@ -37,6 +38,7 @@ interface PostcardPreviewProps {
 export function PostcardPreview({ entry, tripTitle, onEdit, onDismiss }: PostcardPreviewProps) {
   const [page, setPage] = useState(0);
   const [photoWidth, setPhotoWidth] = useState(0);
+  const [drag] = useState(dragToScroll);
   const retained = useRef<DiaryEntryResponse | null>(null);
 
   if (entry !== null) retained.current = entry;
@@ -68,6 +70,7 @@ export function PostcardPreview({ entry, tripTitle, onEdit, onDismiss }: Postcar
               onScroll={settle}
               onMomentumScrollEnd={settle}
               scrollEventThrottle={16}
+              {...drag}
             >
               {showing.photos.map((photo, index) => (
                 <MediaThumb

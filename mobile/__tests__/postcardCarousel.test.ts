@@ -43,12 +43,12 @@ describe('pageOfOffset — which photo the carousel has settled on', () => {
 });
 
 
-describe('carouselPhotoWidth — the mock lets the next photo peek past the active one', () => {
-  it('narrows the active photo so the next one shows at its edge', () => {
-    expect(carouselPhotoWidth(360, 5)).toBe(330);
+describe('carouselPhotoWidth — one photo owns the viewport, scrolled rather than peeked', () => {
+  it('gives the active photo the whole stage, however many follow it (founder, 08/12)', () => {
+    expect(carouselPhotoWidth(360, 5)).toBe(360);
   });
 
-  it('gives a single-photo postcard the whole stage — there is nothing to peek at', () => {
+  it('gives a single-photo postcard the whole stage too', () => {
     expect(carouselPhotoWidth(360, 1)).toBe(360);
   });
 

@@ -160,10 +160,8 @@ export const diaryScreenTypography = {
 
 export const diaryScreenMetrics = {
   backButton: 36,
-  backGlyph: 20,
-  streamPhotoWidth: 332,
-  streamPhotoHeight: 250,
-  photoRadius: 12,
+  backGlyph: 20,
+  streamPhotoHeight: 500,
   entryGap: 24,
   previewCardWidth: 345,
   previewPhotoHeight: 300,
@@ -239,8 +237,8 @@ export const profileMetrics = {
   sectionThumb: 44,
   sectionThumbRadius: 10,
   postcardRadius: 14,
-  postcardPhotoHeight: 200,
-  photoPeek: 30,
+  postcardPhotoHeight: 400,
+  photoPeek: 0,
   cardGap: 14,
   coverHeight: 140,
   chevronSize: 9,
