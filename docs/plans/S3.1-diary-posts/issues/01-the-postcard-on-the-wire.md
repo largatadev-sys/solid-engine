@@ -4,11 +4,11 @@
 
 **Blocked by:** S3.4 ticket 01 — The pool on the wire *(cross-story: the from-dump copy path needs dump photos to exist; every device-photo path is buildable before it)*.
 
-**Status:** needs-triage
+**Status:** done
 
-- [ ] Create with device photos + a dump photo round-trips; the dump photo is copied (new row, new bytes) and survives its deletion from the dump (spec AC 7).
-- [ ] Lifecycle gate: `draft`/`upcoming` create refuses with the named code; `ongoing` and `completed` both accept (spec AC 2, 3).
-- [ ] Second create for the same activity refuses; the index would catch the race (spec AC 4).
-- [ ] Snapshot: rename → move → delete the activity via the plan endpoints; the entry reads unchanged throughout, provenance nulled at the delete (spec AC 5).
-- [ ] Author-only, the discriminating checks: mine-list returns only the caller's; a co-member's media GET for a diary photo 404s while the author's succeeds (spec AC 6).
-- [ ] Caps and floor at create: zero photos refuses, six refuses (spec AC 8); non-member masking on every endpoint; archived trip refuses create while existing entries stay readable (fence IT).
+- [x] Create with device photos + a dump photo round-trips; the dump photo is copied (new row, new bytes) and survives its deletion from the dump (spec AC 7).
+- [x] Lifecycle gate: `draft`/`upcoming` create refuses with the named code; `ongoing` and `completed` both accept (spec AC 2, 3).
+- [x] Second create for the same activity refuses; the index would catch the race (spec AC 4).
+- [x] Snapshot: rename → move → delete the activity via the plan endpoints; the entry reads unchanged throughout, provenance nulled at the delete (spec AC 5).
+- [x] Author-only, the discriminating checks: mine-list returns only the caller's; a co-member's media GET for a diary photo 404s while the author's succeeds (spec AC 6).
+- [x] Caps and floor at create: zero photos refuses, six refuses (spec AC 8); non-member masking on every endpoint; archived trip refuses create while existing entries stay readable (fence IT).

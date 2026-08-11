@@ -4,10 +4,10 @@
 
 **Blocked by:** 01 — The postcard on the wire · 02 — Entry management · S3.4 ticket 01 *(the composer's dump section reads the pool's list)*.
 
-**Status:** needs-triage
+**Status:** done
 
-- [ ] The end-to-end walk: ongoing trip → Add to Diary → two device photos + one dump photo + caption → success screen → Added ✓ on the row — web preview and emulator both, media bearer-authenticated throughout, entered through the real affordance, never a direct route (spec AC 1; the S4.18 lesson).
-- [ ] No links render on `draft`/`upcoming` trips; a completed trip shows them (spec AC 2, 3 — client half).
-- [ ] The info-note copy is exact (spec AC 11); the composer refuses submit with zero photos client-side and surfaces the server's named refusals honestly.
-- [ ] Added ✓ opens the entry; edit and delete round-trip; delete reverts the row's link (spec AC 10 — client half).
-- [ ] Jest: pure modules for added-state derivation and snapshot/anatomy mapping (the `landingSlot.ts` extraction precedent); repository tests; analytics events for create/edit/delete (spec AC 12).
+- [x] The end-to-end walk: ongoing trip → Add to Diary → two device photos + one dump photo + caption → success screen → Added ✓ on the row — web preview and emulator both, media bearer-authenticated throughout, entered through the real affordance, never a direct route (spec AC 1; the S4.18 lesson).
+- [x] No links render on `draft`/`upcoming` trips; a completed trip shows them (spec AC 2, 3 — client half).
+- [x] The info-note copy is exact (spec AC 11); the composer refuses submit with zero photos client-side and surfaces the server's named refusals honestly.
+- [x] Added ✓ opens the entry; edit and delete round-trip; delete reverts the row's link (spec AC 10 — client half).
+- [x] Jest: pure modules for added-state derivation and snapshot/anatomy mapping (the `landingSlot.ts` extraction precedent); repository tests; analytics events for create/edit/delete (spec AC 12).

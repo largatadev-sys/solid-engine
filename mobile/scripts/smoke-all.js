@@ -11,12 +11,14 @@ const API_SMOKES = [
   'smoke-buffered-plan.js',
   'smoke-media.js',
   'smoke-photo-dump.js',
+  'smoke-diary.js',
 ];
 const WEB_WALKS = [
   'drive-create-flow.js',
   'drive-workspace.js',
   'drive-buffered-plan.js',
   'drive-photo-dump.js',
+  'drive-diary.js',
 ];
 
 function reachable(url) {

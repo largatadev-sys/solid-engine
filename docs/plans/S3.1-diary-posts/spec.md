@@ -100,4 +100,10 @@ Highlights, diary publish, any diary-level state (S4.2) · co-traveler or public
 
 ## Comments
 
-*(none yet)*
+**2026-08-11, at implementation — three things the build surfaced, none of which changes the intent above.**
+
+1. **A published trip's capture links are unreachable, and it is S3.4's gap exactly.** Decision 5 pins retro posting on `completed` trips, and the wire honours it — but the workspace **redirects a published trip to its published view**, which has no Day-by-Day, so on a completed *and published* trip the links have nowhere to render. This is the same shape S3.4 recorded and backlogged for the Photo Dump tab (capability granted on the wire, unreachable in the UI), it has the same fix, and changing the redirect is publish/visibility semantics — a stop rule. **AC 3 was therefore walked on a completed, unpublished trip**, which is the state the ruling actually named; the published case rides the backlogged line with S3.4's.
+
+2. **A removed member keeps a dead row in My Diary — asked, not answered.** `GET /v1/me/diary/trips` is author-scoped with no membership filter (a diary belongs to its traveler, decision 1), while the per-trip stream is guard-first (non-members masked). A traveler removed from a trip therefore still sees that trip listed with its count, and opening it 404s. Shipping the guard-consistent behaviour was the conservative call — no read path was widened — but **which side gives is a founder question for the story that owns visibility (S4.2 / the profiles story):** does losing membership take your own memories off your profile, or should the stream serve an ex-member their own entries? Recorded rather than improvised.
+
+3. **The entry part of the create multipart is a string on the wire, parsed server-side.** The obvious shape — a typed `application/json` part bound straight to `PostDiaryEntryRequest` — would have made this repo's first RN-sent JSON part, which is the S3.3 family (`{uri,name,type}`, `Blob` from `ArrayBuffer`) where RN's FormData does less than its types promise and the failure reads as a network error. The endpoint takes the part as `String` and reads it with the injected `ObjectMapper`, so no client content-type negotiation exists to get wrong, and the IT sends it **untyped** for the same reason — a test posting a part no client can produce would prove nothing.

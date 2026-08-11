@@ -32,7 +32,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | S2.1 | Decision + votes (one per member, INV-10) | ⬜ | — |
 | S2.2 | Close decision with outcome | ⬜ | — |
 | **Epic 3 — The record** *(resequenced behind E4, 2026-07-29; S3.3 resliced into the E4 pull; resliced again 2026-08-11 at the diary grilling — ADR-024)* | | | | |
-| S3.1 | Diary: activity-derived posts *(re-scoped 2026-08-11, ADR-024 — the postcard model; grilled with S3.4, pulled ahead of S4.3; absorbs what survived of S3.2)* | ⬜ | [spec](docs/plans/S3.1-diary-posts/spec.md) |
+| S3.1 | Diary: activity-derived posts *(re-scoped 2026-08-11, ADR-024 — the postcard model; grilled with S3.4, pulled ahead of S4.3; absorbs what survived of S3.2)* | ✅ | [spec](docs/plans/S3.1-diary-posts/spec.md) |
 | S3.2 | Diary entries: text + geotag *(dissolved 2026-08-11 — ADR-024's postcard model has no free-standing entries; text+geotag park on the epic map, the rest lives in S3.1)* | 🚫 | — |
 | S3.4 | Photo Dump — the trip's shared photo pool *(raised 2026-08-11 at the diary grilling: the composer's second source; uploads only, the tab's Gallery association retires)* | ✅ | [spec](docs/plans/S3.4-photo-dump/spec.md) |
 | S3.3 | Photo/media pipeline (object storage) *(resliced into the E4 pull, 2026-07-29 — builds after S4.1, before S4.3; ADR-021 — Garage locally / Railway Buckets or R2 deployed, backend-URL serving through the audience ladder, strip-and-re-encode at ingest per INV-11; all four greyed media surfaces activate)* | ✅ | [spec](docs/plans/S3.3-media-pipeline/spec.md) |

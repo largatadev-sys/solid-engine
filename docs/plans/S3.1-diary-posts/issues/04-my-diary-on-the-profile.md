@@ -4,9 +4,9 @@
 
 **Blocked by:** 01 — The postcard on the wire *(reads only; independent of tickets 02–03)*.
 
-**Status:** needs-triage
+**Status:** done
 
-- [ ] The profile shows My Diary grouped by trip; a trip's stream renders every postcard with snapshot header, photos, caption — web preview and emulator (spec AC 9).
-- [ ] The summary endpoint pages in the standard cursor shape and returns only the caller's trips-with-entries (IT).
-- [ ] Entries of an archived trip render in the stream while new writes refuse (spec AC 9).
-- [ ] The co-traveler profile stub is untouched — asserted in the walk, not assumed (spec AC 6, stub half).
+- [x] The profile shows My Diary grouped by trip; a trip's stream renders every postcard with snapshot header, photos, caption — web preview and emulator (spec AC 9).
+- [x] The summary endpoint pages in the standard cursor shape and returns only the caller's trips-with-entries (IT).
+- [x] Entries of an archived trip render in the stream while new writes refuse (spec AC 9).
+- [x] The co-traveler profile stub is untouched — asserted in the walk, not assumed (spec AC 6, stub half).

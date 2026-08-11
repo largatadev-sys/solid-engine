@@ -42,7 +42,14 @@ export const diaryColors = {
 
 
 export const diaryTypography = {
-  eyebrow: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 15, fontWeight: '700', letterSpacing: 0.5 },
+  eyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
   activityTitle: { fontFamily: fonts.extraBold, fontSize: 24, lineHeight: 29, fontWeight: '800' },
   sectionLabel: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
   tileLabel: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
