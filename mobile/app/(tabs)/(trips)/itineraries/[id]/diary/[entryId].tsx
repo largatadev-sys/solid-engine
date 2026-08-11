@@ -128,7 +128,14 @@ export default function DiaryEntryScreen() {
   };
 
   const saveEntry = () => {
-    void photoAction.run(() => save.mutateAsync(editing));
+    void photoAction.run(async () => {
+      await save.mutateAsync(editing);
+      setStaged(null);
+      router.replace({
+        pathname: '/itineraries/[id]/diary/posted',
+        params: { id, title: entry.activityTitle, saved: 'true' },
+      });
+    });
   };
 
   const deleteEntry = () => {

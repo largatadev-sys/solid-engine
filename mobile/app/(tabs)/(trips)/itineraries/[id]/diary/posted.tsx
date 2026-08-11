@@ -2,8 +2,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../../../../../../src/components/Icon';
-import { POSTED_TITLE } from '../../../../../../src/diary/diaryCopy';
-import { successMessage } from '../../../../../../src/diary/diaryCapture';
+import { POSTED_TITLE, SAVED_TITLE } from '../../../../../../src/diary/diaryCopy';
+import { savedMessage, successMessage } from '../../../../../../src/diary/diaryCapture';
 import { colors, radii, spacing } from '../../../../../../src/theme';
 import {
   diaryColors,
@@ -14,11 +14,19 @@ import {
 
 const HALO_SIZE = diaryMetrics.postedHalo;
 
+const HALO_ICON_SIZE = 32;
+
 
 export default function DiaryEntryPostedScreen() {
   const router = useRouter();
-  const { id, title } = useLocalSearchParams<{ id: string; title: string }>();
+  const { id, title, saved } = useLocalSearchParams<{
+    id: string;
+    title: string;
+    saved?: string;
+  }>();
   const insets = useSafeAreaInsets();
+
+  const wasEdit = saved === 'true';
 
   const backToPlan = () =>
     router.replace({ pathname: '/itineraries/[id]', params: { id } });
@@ -27,11 +35,13 @@ export default function DiaryEntryPostedScreen() {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.content}>
         <View style={styles.halo}>
-          <Icon name="check" size={32} color={colors.surface} />
+          <Icon name="check" size={HALO_ICON_SIZE} color={colors.surface} />
         </View>
 
-        <Text style={styles.title}>{POSTED_TITLE}</Text>
-        <Text style={styles.body}>{successMessage(title)}</Text>
+        <Text style={styles.title}>{wasEdit ? SAVED_TITLE : POSTED_TITLE}</Text>
+        <Text style={styles.body}>
+          {wasEdit ? savedMessage(title) : successMessage(title)}
+        </Text>
       </View>
 
       <View style={[styles.actions, { paddingBottom: insets.bottom + spacing.md }]}>

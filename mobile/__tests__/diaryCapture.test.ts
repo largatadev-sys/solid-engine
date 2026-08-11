@@ -8,6 +8,7 @@ import {
   entryForActivity,
   MAX_DIARY_PHOTOS,
   roomLeft,
+  savedMessage,
   successMessage,
   togglePick,
 } from '../src/diary/diaryCapture';
@@ -122,6 +123,13 @@ describe('the copy the founder pinned', () => {
     expect(successMessage('Sunset at Las Cabanas')).toBe(
       'Sunset at Las Cabanas is now part of your Diary.',
     );
+  });
+
+  it('tells an edit apart from a first post — a save never claims the entry is new', () => {
+    expect(savedMessage('Sunset at Las Cabanas')).toBe(
+      'Your entry for Sunset at Las Cabanas is up to date.',
+    );
+    expect(savedMessage('Sunset at Las Cabanas')).not.toContain('is now part of');
   });
 });
 

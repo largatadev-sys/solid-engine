@@ -33,6 +33,8 @@ export const CAPTION_PLACEHOLDER = 'Write something about this moment…';
 
 export const POSTED_TITLE = 'Activity Added!';
 
+export const SAVED_TITLE = 'Changes Saved!';
+
 export const ENTRY_TITLE = 'Your Diary Entry';
 
 export const MY_DIARY_TITLE = 'My Diary';

@@ -43,6 +43,11 @@ export function successMessage(activityTitle: string): string {
 }
 
 
+export function savedMessage(activityTitle: string): string {
+  return `Your entry for ${activityTitle} is up to date.`;
+}
+
+
 export function togglePick(picked: readonly string[], photoId: string, room: number): string[] {
   if (picked.includes(photoId)) {
     return picked.filter((candidate) => candidate !== photoId);

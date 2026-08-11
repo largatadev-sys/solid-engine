@@ -470,6 +470,17 @@ function writeFixture() {
     afterSave?.photos?.length === photosBeforeStaging + 1 && afterSave?.caption === 'First edit',
     `photos=${afterSave?.photos?.length}, caption=${JSON.stringify(afterSave?.caption)}`);
 
+  // A save lands on the same confirmation the create does, worded for an edit rather than a first
+  // post — so the traveler is told it worked instead of being dropped back on the form.
+  const savedScreen = (await text()) || '';
+  check('saving confirms on the success screen, worded as an edit',
+    savedScreen.includes('Changes Saved!') &&
+    savedScreen.includes('is up to date') &&
+    !savedScreen.includes('Activity Added!'),
+    savedScreen.replace(/\n/g, ' | ').slice(0, 140));
+
+  await tapLabel('Back to Day-by-Day', 5000);
+  await tapLabel('Added ✓: Sunset at Las Cabanas', 4000);
   await typeCaption('Second edit');
   await tapLabel('Save to Diary', 4000);
 
@@ -478,6 +489,9 @@ function writeFixture() {
     resaved.body.items[0]?.caption === 'Second edit',
     `caption=${JSON.stringify(resaved.body.items[0]?.caption)}`);
 
+  // Back through the affordance again — the second save also lands on the confirmation.
+  await tapLabel('Back to Day-by-Day', 5000);
+  await tapLabel('Added ✓: Sunset at Las Cabanas', 4000);
   await tapLabel('Delete entry', 5000);
   const confirms = await evaluate('JSON.stringify(window.__largataConfirms || [])');
   check('deleting asks first, in words (the confirm is evidence, not an invisible yes)',
