@@ -201,6 +201,14 @@ Test-harness capture (post-S0.6, owner directive): `mobile/scripts/drive-preview
 
 ---
 
+**2026-08-11**
+
+**The Photo Dump tab takes several photos per pick, and drops its crop step — S3.4's surface, changed while S3.1 was open.** The founder's UI passes on S3.1's composer produced a multi-select upload (`pickPhotos()` on both forks) and asked for the same on the dump, which had stayed single-pick-with-crop: a traveler emptying a day's photos into a shared pool was opening the picker once per photo. The endpoint still takes one photo per call, so the mutation walks the selection serially and invalidates once, batch-bounded at 20 because the uploads are sequential and an unbounded pick would stall the tab with no progress to show. **Android cannot offer `allowsEditing` alongside multi-select**, so multi-picking skips the crop — acceptable here, since dump photos ingest as-uploaded. Verified on both rungs (`drive-photo-dump` 28/28, up two; `smoke-photo-dump` 20/20) and on the device through the real Android multi-picker, 7 → 9 photos in one pass.
+
+*Why it wasn't a story —* S3.4 had already shipped, and this is one interaction on one shipped tab, arriving as a founder pass on the running build rather than new scope. It rides S3.1's branch because that is where the shared `pickPhotos` seam was built; splitting it into its own story would have meant a second branch over the same three files. **Its walk was also repaired here**: `drive-photo-dump.js` still carried the pre-S3.1 single-file `plantFile` (so it could not have proven multi-upload at all), and its owner-removes-another-member's-photo check tapped the *last* tile while naming the *first* foreign one — which coincided while the owner had one photo, so it had been passing for the wrong reason.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
