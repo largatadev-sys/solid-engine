@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   DEVICE_PICKER_BODY,
@@ -33,23 +32,10 @@ export function DevicePickerModal({
   onPick,
   onDismiss,
 }: DevicePickerModalProps) {
-  const opened = useRef(false);
-
-  useEffect(() => {
-    if (!visible) {
-      opened.current = false;
-      return;
-    }
-    if (opened.current) return;
-    opened.current = true;
-    onPick();
-  }, [visible, onPick]);
-
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <Pressable style={styles.backdrop} onPress={onDismiss} accessibilityLabel={DUMP_PICKER_CANCEL}>
         <Pressable style={styles.sheet} onPress={() => undefined}>
-          <View style={styles.grabber} />
           <Text style={styles.title}>{DEVICE_PICKER_TITLE}</Text>
           <Text style={styles.body}>{DEVICE_PICKER_BODY}</Text>
 
@@ -94,24 +80,18 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: workspaceColors.scrim,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
+    padding: spacing.md,
   },
   sheet: {
     width: '100%',
     maxWidth: SHEET_MAX_WIDTH,
     backgroundColor: workspaceColors.surface,
-    borderTopLeftRadius: workspaceRadii.sheet,
-    borderTopRightRadius: workspaceRadii.sheet,
+    borderRadius: workspaceRadii.card,
     padding: spacing.md,
     gap: spacing.sm3,
     alignItems: 'center',
-  },
-  grabber: {
-    width: workspaceMetrics.grabberWidth,
-    height: workspaceMetrics.grabberHeight,
-    borderRadius: workspaceRadii.pill,
-    backgroundColor: workspaceColors.hairline,
   },
   title: {
     ...workspaceTypography.sheetTitle,

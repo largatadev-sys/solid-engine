@@ -16,7 +16,7 @@ export const DUMP_PICKER_FULL = 'That is five photos — the most a diary entry 
 
 export const DEVICE_PICKER_TITLE = 'Add photos';
 
-export const DEVICE_PICKER_BODY = 'Choose a photo from your device.';
+export const DEVICE_PICKER_BODY = 'Choose one or more photos from your device.';
 
 export const DEVICE_PICKER_OPEN = 'Open camera roll';
 

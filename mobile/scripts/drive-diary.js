@@ -272,7 +272,9 @@ function writeFixture() {
     return result;
   };
 
-  const plantFile = async (file) => {
+  // `copies` plants the same bytes under distinct names, so a multi-select picker returns more
+  // than one file — the single-file plant would silently prove nothing about `input.multiple`.
+  const plantFile = async (file, copies = 1) => {
     const bytes = fs.readFileSync(file).toString('base64');
     await evaluate(`window.__drivenB64 = ${JSON.stringify(bytes)}; true`);
     return evaluate(`(() => {
@@ -280,16 +282,21 @@ function writeFixture() {
       delete window.__drivenB64;
       const arr = new Uint8Array(raw.length);
       for (let i = 0; i < raw.length; i += 1) arr[i] = raw.charCodeAt(i);
-      const f = new File([arr], ${JSON.stringify(path.basename(file))}, { type: 'image/jpeg' });
       const transfer = new DataTransfer();
-      transfer.items.add(f);
+      for (let n = 0; n < ${copies}; n += 1) {
+        transfer.items.add(new File([arr], n + '-' + ${JSON.stringify(path.basename(file))}, { type: 'image/jpeg' }));
+      }
       const proto = HTMLInputElement.prototype;
       if (!window.__drivenFilesHooked) {
         window.__drivenFilesHooked = true;
         const nativeClick = proto.click;
         proto.click = function () {
           if (this.type === 'file' && window.__drivenPlantedFiles) {
-            Object.defineProperty(this, 'files', { configurable: true, get: () => window.__drivenPlantedFiles });
+            // Single-use: a plant left armed re-fires on the NEXT input.click() too, which reads
+            // as the app picking twice. Consume it here so each plant answers exactly one open.
+            const planted = window.__drivenPlantedFiles;
+            window.__drivenPlantedFiles = null;
+            Object.defineProperty(this, 'files', { configurable: true, get: () => planted });
             this.dispatchEvent(new Event('change', { bubbles: true }));
             return;
           }
@@ -297,7 +304,7 @@ function writeFixture() {
         };
       }
       window.__drivenPlantedFiles = transfer.files;
-      return 'planted ' + f.size + ' bytes';
+      return 'planted ' + transfer.files.length + ' file(s)';
     })()`);
   };
 
@@ -343,15 +350,18 @@ function writeFixture() {
 
   // Both Add More tiles open a modal now. The camera roll's relays straight to the device
   // picker on mount, so planting the file first is what makes that relay land a real photo.
-  await plantFile(fixture);
+  await plantFile(fixture, 2);
   const openedDevicePicker = await tapLabel('Add a photo from your camera roll', 4000);
+  // A tile labels BOTH its Pressable and the Image inside it, so a naive count doubles every
+  // photo (the S3.4 countTiles trap) — keep only the outer node of each pair.
   const devicePhotoLanded = await evaluate(`
     (() => Array.from(document.querySelectorAll('[aria-label]'))
       .filter((n) => (n.getAttribute('aria-label') || '').startsWith('Selected photo'))
-      .filter((n) => n.offsetParent !== null).length)()
+      .filter((n) => n.offsetParent !== null)
+      .filter((n) => n.querySelector('[aria-label^="Selected photo"]') !== null).length)()
   `);
-  check('the camera-roll tile opens the picker modal, which reaches the device and returns a photo',
-    openedDevicePicker.clicked === true && devicePhotoLanded >= 1,
+  check('the camera-roll picker takes MULTIPLE photos in one trip to the device',
+    openedDevicePicker.clicked === true && devicePhotoLanded === 2,
     `${devicePhotoLanded} device photo(s) on the composer`);
 
   const openedDumpPicker = await tapLabel('Add a photo from the Photo Dump', 2500);
@@ -393,8 +403,8 @@ function writeFixture() {
 
   const entries = await api(`/v1/itineraries/${trip}/diary/entries`, 'GET', author.idToken);
   const entry = entries.body.items[0];
-  check('the postcard landed with both sources and the caption',
-    entries.body.items.length === 1 && entry.photos.length === 2 &&
+  check('the postcard landed with both sources and the caption (2 device + 1 dump)',
+    entries.body.items.length === 1 && entry.photos.length === 3 &&
     entry.caption === 'Golden hour, no filter',
     `${entry?.photos?.length} photos, caption=${JSON.stringify(entry?.caption)}`);
 

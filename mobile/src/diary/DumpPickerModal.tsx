@@ -45,10 +45,9 @@ export function DumpPickerModal({
   const roomLeft = room - picked.length;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <Pressable style={styles.backdrop} onPress={onDismiss} accessibilityLabel={DUMP_PICKER_CANCEL}>
         <Pressable style={styles.sheet} onPress={() => undefined}>
-          <View style={styles.grabber} />
           <Text style={styles.title}>{DUMP_PICKER_TITLE}</Text>
 
           {photos.length === 0 ? (
@@ -107,24 +106,18 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: workspaceColors.scrim,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
+    padding: spacing.md,
   },
   sheet: {
     width: '100%',
     maxWidth: SHEET_MAX_WIDTH,
     backgroundColor: workspaceColors.surface,
-    borderTopLeftRadius: workspaceRadii.sheet,
-    borderTopRightRadius: workspaceRadii.sheet,
+    borderRadius: workspaceRadii.card,
     padding: spacing.md,
     gap: spacing.sm3,
     alignItems: 'center',
-  },
-  grabber: {
-    width: workspaceMetrics.grabberWidth,
-    height: workspaceMetrics.grabberHeight,
-    borderRadius: workspaceRadii.pill,
-    backgroundColor: workspaceColors.hairline,
   },
   title: {
     ...workspaceTypography.sheetTitle,

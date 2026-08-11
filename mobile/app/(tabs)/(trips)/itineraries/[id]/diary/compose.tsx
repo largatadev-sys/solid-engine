@@ -86,8 +86,8 @@ export default function ComposeDiaryEntryScreen() {
     .filter((photo): photo is PhotoDumpEntryResponse => photo !== undefined);
 
   const pickFromDevice = () => {
-    void photoAction.pickAndRun(async (picked) => {
-      setDevicePhotos((chosen) => [...chosen, picked]);
+    void photoAction.pickManyAndRun(room, async (picked) => {
+      setDevicePhotos((chosen) => [...chosen, ...picked]);
       setDevicePickerOpen(false);
     });
   };
@@ -141,7 +141,10 @@ export default function ComposeDiaryEntryScreen() {
                 label="Add More"
                 accessibilityLabel="Add a photo from your camera roll"
                 disabled={room === 0}
-                onPress={() => setDevicePickerOpen(true)}
+                onPress={() => {
+                  setDevicePickerOpen(true);
+                  pickFromDevice();
+                }}
               />
             </View>
           </ScrollView>
