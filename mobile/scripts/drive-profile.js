@@ -20,6 +20,30 @@ const CHROME_CANDIDATES = [
 ];
 const PORT = Number(process.env.LARGATA_CDP_PORT || 9241);
 
+// CDP Input.dispatchMouseEvent does NOT synthesize PointerEvents, so React onPointerDown never
+// fires and a drag reads as dead — the product is fine, the probe is not. Dispatch the real
+// events in-page instead, which is what a traveler-s finger produces.
+const DRAG_IN_PAGE = (fraction) => `
+  (() => {
+    const img = Array.from(document.querySelectorAll('[aria-label]'))
+      .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+      .filter((n) => n.offsetParent !== null)[0];
+    let s = img;
+    while (s && !(s.scrollWidth > s.clientWidth && /auto|scroll/.test(getComputedStyle(s).overflowX))) s = s.parentElement;
+    if (!s) return null;
+    const r = s.getBoundingClientRect();
+    const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+    const travel = Math.round(s.clientWidth * ${fraction});
+    const before = Math.round(s.scrollLeft);
+    const mk = (t, x, b) => new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 1, pointerType: "mouse", clientX: x, clientY: cy, button: 0, buttons: b });
+    s.dispatchEvent(mk("pointerdown", cx, 1));
+    for (const f of [0.25, 0.5, 0.75, 1]) s.dispatchEvent(mk("pointermove", cx - travel * f, 1));
+    const dragged = Math.round(s.scrollLeft);
+    s.dispatchEvent(mk("pointerup", cx - travel, 0));
+    return { before, dragged, pitch: Math.round(s.clientWidth) };
+  })()
+`;
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const address = (tag) => BASE.replace('@', `+${tag}@`);
 
@@ -526,46 +550,30 @@ async function publishedTrip(token, title, destinations, days) {
   // strip or the carousel is unreachable there — the S1.3 dead-click shape with a new cause. A
   // real pointer sequence is the only honest check: react-native-web renders a native overflow
   // div, which a synthetic scroll would move without proving the handlers exist.
-  const stripBox = await evaluate(`
+  const postcardDrag = await evaluate(DRAG_IN_PAGE(0.7));
+  check('AC 2: a pointer drag scrolls the photo strip on web, now that the scrollbar is gone',
+    postcardDrag !== null && postcardDrag.dragged > postcardDrag.before,
+    JSON.stringify(postcardDrag));
+
+  // The drag released 70% of a photo in, so a strip that merely stopped where the pointer left
+  // it would rest mid-photo. The founder asked for a slide: the release settles on a MULTIPLE of
+  // the photo width.
+  await sleep(900);
+  const settled = await evaluate(`
     (() => {
       const img = Array.from(document.querySelectorAll('[aria-label]'))
         .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
         .filter((n) => n.offsetParent !== null)[0];
-      const strip = img ? img.parentElement.parentElement : null;
-      if (!strip) return null;
-      const r = strip.getBoundingClientRect();
-      return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2), before: strip.scrollLeft };
+      let s = img;
+      while (s && !(s.scrollWidth > s.clientWidth && /auto|scroll/.test(getComputedStyle(s).overflowX))) s = s.parentElement;
+      if (!s) return null;
+      return { left: Math.round(s.scrollLeft), pitch: Math.round(s.clientWidth) };
     })()
   `);
 
-  if (stripBox !== null) {
-    await send('Input.dispatchMouseEvent', {
-      type: 'mousePressed', x: stripBox.x, y: stripBox.y, button: 'left', clickCount: 1,
-    });
-    for (const step of [60, 140, 220, 300]) {
-      await send('Input.dispatchMouseEvent', {
-        type: 'mouseMoved', x: stripBox.x - step, y: stripBox.y, button: 'left',
-      });
-    }
-    await send('Input.dispatchMouseEvent', {
-      type: 'mouseReleased', x: stripBox.x - 300, y: stripBox.y, button: 'left',
-    });
-    await sleep(900);
-  }
-
-  const dragged = await evaluate(`
-    (() => {
-      const img = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
-        .filter((n) => n.offsetParent !== null)[0];
-      const strip = img ? img.parentElement.parentElement : null;
-      return strip ? strip.scrollLeft : -1;
-    })()
-  `);
-
-  check('AC 2: a mouse drag scrolls the photo strip on web, now that the scrollbar is gone',
-    stripBox !== null && dragged > stripBox.before,
-    `before=${stripBox === null ? 'no strip' : stripBox.before} after=${dragged}`);
+  check('AC 2: releasing a drag slides to the nearest photo rather than stopping mid-swipe',
+    settled !== null && settled.pitch > 0 && settled.left > 0 && settled.left % settled.pitch === 0,
+    JSON.stringify(settled));
 
   const collapsed = await tapFirstSection(2500);
   const afterCollapse = (await evaluate(`
@@ -675,37 +683,12 @@ async function publishedTrip(token, title, destinations, days) {
   // Dragging the stream's photos must NOT open the preview: the whole entry used to be one
   // Pressable, so a swipe released over a photo landed as a tap and the postcard flew open
   // mid-scroll (founder, 08/12). The tap target is now the heading and caption only.
-  const streamStrip = await evaluate(`
-    (() => {
-      const img = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
-        .filter((n) => n.offsetParent !== null)[0];
-      const strip = img ? img.parentElement.parentElement : null;
-      if (!strip) return null;
-      const r = strip.getBoundingClientRect();
-      return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2), before: strip.scrollLeft };
-    })()
-  `);
-
-  if (streamStrip !== null) {
-    await send('Input.dispatchMouseEvent', {
-      type: 'mousePressed', x: streamStrip.x, y: streamStrip.y, button: 'left', clickCount: 1,
-    });
-    for (const step of [80, 180, 260]) {
-      await send('Input.dispatchMouseEvent', {
-        type: 'mouseMoved', x: streamStrip.x - step, y: streamStrip.y, button: 'left',
-      });
-    }
-    await send('Input.dispatchMouseEvent', {
-      type: 'mouseReleased', x: streamStrip.x - 260, y: streamStrip.y, button: 'left',
-    });
-    await sleep(900);
-  }
-
+  const streamDrag = await evaluate(DRAG_IN_PAGE(0.7));
+  await sleep(900);
   const afterStreamDrag = (await text()) || '';
-  check('AC 2: dragging the stream-s photos scrolls them and does NOT open the preview (founder, 08/12)',
-    streamStrip !== null && !afterStreamDrag.includes('Edit entry'),
-    `strip=${streamStrip === null ? 'not found' : 'found'} preview=${afterStreamDrag.includes('Edit entry')}`);
+  check('AC 2: dragging the stream-s photos SCROLLS them and does NOT open the preview (founder, 08/12)',
+    streamDrag !== null && streamDrag.dragged > streamDrag.before && !afterStreamDrag.includes('Edit entry'),
+    JSON.stringify(streamDrag) + ' preview=' + afterStreamDrag.includes('Edit entry'));
 
   const previewFromStream = await tapLabel('Open your entry for Sunset at Las Cabanas', 4500);
   check('AC 2: an entry in the stream opens the same postcard preview',
@@ -746,16 +729,24 @@ async function publishedTrip(token, title, destinations, days) {
 
   const openedCard = await tapLabel(`Open the published view of ${showcaseTitle}`, 5000);
   check('AC 3: tapping a card opens the published view — what an audience sees',
-    openedCard.clicked === true && (await url()).includes(`/published/${showcased}`),
+    openedCard.clicked === true && (await url()).includes(`/showcase/${showcased}`),
     await url());
 
   // --- back returns to the profile with the tab still selected (tickets 04/05) --------------
-  await evaluate('history.back(); true');
-  await sleep(4000);
+  // The card opens the PROFILE stack's own copy of the screen. It used to push /published/[id],
+  // which lives in (trips) — a different navigator, so back unwound the trip stack and dumped the
+  // traveler wherever that stack happened to be (founder: "sometimes it doesn't go to the
+  // previous screen"). S4.13 again: a stack cannot pop onto a screen it does not contain.
+  check('AC 3: the showcase card opens the profile stack-s copy, not the trip stack-s (S4.13)',
+    (await url()).includes('/showcase/'), await url());
+
+  // Press the screen's own back control, not history.back() — the browser button would unwind the
+  // URL whatever the app did, which is a check with no failure mode.
+  const backFromShowcase = await tapLabel('Go back', 4000);
   const returned = (await text()) || '';
   check('back returns to the profile with Itineraries still selected (S4.18: web unmounts beneath a push)',
-    (await url()).includes('/profile') && returned.includes('PUBLISHED') &&
-      !returned.includes('Sunset at Las Cabanas'),
+    backFromShowcase.clicked === true && (await url()).includes('/profile') &&
+      returned.includes('PUBLISHED') && !returned.includes('Sunset at Las Cabanas'),
     `${await url()} :: ${returned.replace(/\n/g, ' | ').slice(0, 140)}`);
 
   // --- the cogwheel opens the account page (AC 6) -------------------------------------------

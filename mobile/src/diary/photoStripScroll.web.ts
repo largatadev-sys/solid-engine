@@ -3,10 +3,15 @@ import type { GestureResponderEvent } from 'react-native';
 export const SHOW_SCROLLBAR = false;
 
 
+export const PAGING = {} as const;
+
+
 const DRAG_BUTTON = 0;
 
 interface DragTarget {
   scrollLeft: number;
+  clientWidth?: number;
+  style?: { scrollBehavior: string };
   setPointerCapture?: (pointerId: number) => void;
   releasePointerCapture?: (pointerId: number) => void;
 }
@@ -38,10 +43,21 @@ export function dragToScroll(): {
   const stop = (event: GestureResponderEvent) => {
     const native = event as unknown as DragEvent;
     const target = scroller(native.currentTarget);
-    if (target !== null && native.pointerId !== undefined) {
-      target.releasePointerCapture?.(native.pointerId);
+    if (target === null) {
+      from = null;
+      return;
     }
+    if (native.pointerId !== undefined) target.releasePointerCapture?.(native.pointerId);
+
+    const dragged = from !== null;
     from = null;
+    if (!dragged) return;
+
+    const pitch = target.clientWidth ?? 0;
+    if (pitch <= 0) return;
+
+    if (target.style !== undefined) target.style.scrollBehavior = 'smooth';
+    target.scrollLeft = Math.round(target.scrollLeft / pitch) * pitch;
   };
 
   return {
@@ -53,6 +69,7 @@ export function dragToScroll(): {
 
       from = native.clientX;
       startedAt = target.scrollLeft;
+      if (target.style !== undefined) target.style.scrollBehavior = 'auto';
       if (native.pointerId !== undefined) target.setPointerCapture?.(native.pointerId);
     },
 

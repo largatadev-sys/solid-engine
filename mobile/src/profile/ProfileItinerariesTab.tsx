@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
+import { publishedRoute } from '../itineraries/publishedExit';
 import { MediaThumb } from '../media/MediaThumb';
 import { useMyPublishedItineraries } from '../query/profileQueries';
 import { colors, spacing } from '../theme';
@@ -35,7 +36,7 @@ export function ProfileItinerariesTab() {
             <ShowcaseCard
               key={card.id}
               card={card}
-              onPress={() => router.push({ pathname: '/published/[id]', params: { id: card.id } })}
+              onPress={() => router.push(publishedRoute('profile', card.id))}
             />
           ))}
 

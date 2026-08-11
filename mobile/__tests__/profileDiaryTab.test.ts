@@ -161,7 +161,7 @@ describe('the trip diary stream wears the founder-s frame-1 anatomy (08/12 mock)
   it('gives one photo the whole viewport, paged rather than peeked (founder, 08/12)', () => {
     expect(DIARY_STREAM).toContain('diaryScreenMetrics.streamPhotoHeight');
     expect(DIARY_STREAM).toContain('marginHorizontal: -STREAM_INSET');
-    expect(DIARY_STREAM).toContain('pagingEnabled');
+    expect(DIARY_STREAM).toContain('{...PAGING}');
     expect(DIARY_STREAM).toContain('width: photoWidth');
   });
 

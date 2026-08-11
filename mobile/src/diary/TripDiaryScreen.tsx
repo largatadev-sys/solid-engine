@@ -8,6 +8,8 @@ import {
   Text,
   View,
   type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { Icon } from '../components/Icon';
 import { itineraryLoadMessage, ScreenMessage } from '../components/ScreenMessage';
@@ -20,12 +22,16 @@ import {
   diaryScreenColors,
   diaryScreenMetrics,
   diaryScreenTypography,
+  profileColors,
+  profileMetrics,
+  profileTypography,
 } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
 import { DIARY_STREAM_EMPTY, MY_DIARY_TITLE } from './diaryCopy';
 import { entryEditorRoute, type DiaryEntryExit } from './diaryEntryExit';
-import { dragToScroll, SHOW_SCROLLBAR } from './photoStripScroll';
+import { dragToScroll, PAGING, SHOW_SCROLLBAR } from './photoStripScroll';
 import { inTripDayOrder, snapshotEyebrow } from './postcardAnatomy';
+import { carouselCounter, pageOfOffset, showsCarouselChrome } from './postcardCarousel';
 import { PostcardPreview } from './PostcardPreview';
 
 
@@ -104,8 +110,15 @@ function StreamEntry({
 }) {
   const [drag] = useState(dragToScroll);
   const [photoWidth, setPhotoWidth] = useState(0);
+  const [page, setPage] = useState(0);
+
+  const photoCount = entry.photos.length;
+  const chrome = showsCarouselChrome(photoCount);
 
   const measure = (event: LayoutChangeEvent) => setPhotoWidth(event.nativeEvent.layout.width);
+
+  const settle = (event: NativeSyntheticEvent<NativeScrollEvent>) =>
+    setPage(pageOfOffset(event.nativeEvent.contentOffset.x, photoWidth, photoCount));
 
   return (
     <View style={styles.entry}>
@@ -119,24 +132,41 @@ function StreamEntry({
         <Text style={styles.entryTitle}>{entry.activityTitle}</Text>
       </Pressable>
 
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={SHOW_SCROLLBAR}
-        style={styles.strip}
-        onLayout={measure}
-        {...drag}
-      >
-        {entry.photos.map((photo, index) => (
-          <MediaThumb
-            key={photo.id}
-            url={photo.url}
-            full
-            style={{ ...styles.photo, width: photoWidth }}
-            accessibilityLabel={`${entry.activityTitle}, photo ${index + 1}`}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.stage}>
+        <ScrollView
+          horizontal
+          {...PAGING}
+          showsHorizontalScrollIndicator={SHOW_SCROLLBAR}
+          onLayout={measure}
+          onScroll={settle}
+          onMomentumScrollEnd={settle}
+          scrollEventThrottle={16}
+          {...drag}
+        >
+          {entry.photos.map((photo, index) => (
+            <MediaThumb
+              key={photo.id}
+              url={photo.url}
+              full
+              style={{ ...styles.photo, width: photoWidth }}
+              accessibilityLabel={`${entry.activityTitle}, photo ${index + 1}`}
+            />
+          ))}
+        </ScrollView>
+
+        {chrome && (
+          <>
+            <View style={styles.counter}>
+              <Text style={styles.counterLabel}>{carouselCounter(page, photoCount)}</Text>
+            </View>
+            <View style={styles.dots}>
+              {entry.photos.map((photo, index) => (
+                <View key={photo.id} style={index === page ? styles.dotActive : styles.dot} />
+              ))}
+            </View>
+          </>
+        )}
+      </View>
 
       {entry.caption !== null && (
         <Pressable
@@ -221,12 +251,46 @@ const styles = StyleSheet.create({
     ...diaryScreenTypography.entryTitle,
     color: diaryScreenColors.caption,
   },
-  strip: {
+  stage: {
     marginHorizontal: -STREAM_INSET,
   },
   photo: {
     height: diaryScreenMetrics.streamPhotoHeight,
     backgroundColor: diaryScreenColors.photoWell,
+  },
+  counter: {
+    position: 'absolute',
+    top: profileMetrics.pillInset,
+    right: profileMetrics.pillInset,
+    backgroundColor: profileColors.counterPill,
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+  },
+  counterLabel: {
+    ...profileTypography.counter,
+    color: profileColors.onPill,
+  },
+  dots: {
+    position: 'absolute',
+    bottom: profileMetrics.pillInset,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  dot: {
+    width: profileMetrics.dotSize,
+    height: profileMetrics.dotSize,
+    borderRadius: profileMetrics.dotSize / 2,
+    backgroundColor: profileColors.dotIdle,
+  },
+  dotActive: {
+    width: profileMetrics.dotSize,
+    height: profileMetrics.dotSize,
+    borderRadius: profileMetrics.dotSize / 2,
+    backgroundColor: profileColors.dotActive,
   },
   caption: {
     ...diaryScreenTypography.caption,

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
-import { dragToScroll, SHOW_SCROLLBAR } from './photoStripScroll';
+import { dragToScroll, PAGING, SHOW_SCROLLBAR } from './photoStripScroll';
 import { spacing } from '../theme';
 import {
   profileColors,
@@ -47,21 +47,18 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
   const measure = (event: LayoutChangeEvent) =>
     setPhotoWidth(carouselPhotoWidth(event.nativeEvent.layout.width, photoCount));
 
-  const pitch = photoWidth;
   const [drag] = useState(dragToScroll);
 
   const settle = (event: NativeSyntheticEvent<NativeScrollEvent>) =>
-    setPage(pageOfOffset(event.nativeEvent.contentOffset.x, pitch, photoCount));
+    setPage(pageOfOffset(event.nativeEvent.contentOffset.x, photoWidth, photoCount));
 
   return (
     <View style={styles.postcard}>
       <View style={styles.stage} onLayout={measure}>
         <ScrollView
           horizontal
-          snapToInterval={pitch}
-          decelerationRate="fast"
+          {...PAGING}
           showsHorizontalScrollIndicator={SHOW_SCROLLBAR}
-          contentContainerStyle={styles.strip}
           onScroll={settle}
           onMomentumScrollEnd={settle}
           scrollEventThrottle={16}
@@ -139,7 +136,6 @@ const styles = StyleSheet.create({
     height: profileMetrics.postcardPhotoHeight,
     backgroundColor: profileColors.coverWell,
   },
-  strip: {},
   photo: {
     height: profileMetrics.postcardPhotoHeight,
   },
