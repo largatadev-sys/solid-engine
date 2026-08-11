@@ -134,6 +134,7 @@ export const profileTypography = {
   dayBadge: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700' },
   caption: { fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 19.6, fontWeight: '400' },
   likes: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  heart: { fontSize: 14, lineHeight: 18 },
   counter: { fontFamily: fonts.bold, fontSize: 10, lineHeight: 13, fontWeight: '700' },
   cardTitle: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, fontWeight: '700' },
   cardMeta: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 17, fontWeight: '400' },
@@ -163,6 +164,8 @@ export const profileMetrics = {
   coverHeight: 140,
   chevronSize: 9,
   chevronStroke: 2.5,
+  starSize: 13,
+  cogGlyph: 16,
   dotSize: 6,
   pillInset: 10,
 } as const;

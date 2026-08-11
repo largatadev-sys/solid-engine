@@ -198,8 +198,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs2,
   },
   heart: {
+    ...profileTypography.heart,
     color: profileColors.likeHeart,
-    fontSize: 14,
   },
   likesLabel: {
     ...profileTypography.likes,

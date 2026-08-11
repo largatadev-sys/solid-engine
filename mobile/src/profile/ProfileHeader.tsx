@@ -56,7 +56,7 @@ export function ProfileHeader({ card, stats, onEditProfile, onOpenAccount }: Pro
           accessibilityRole="button"
           accessibilityLabel={ACCOUNT_LABEL}
         >
-          <Icon name="settings" size={16} color={workspaceColors.sheetBody} />
+          <Icon name="settings" size={profileMetrics.cogGlyph} color={workspaceColors.sheetBody} />
         </Pressable>
       </View>
 
