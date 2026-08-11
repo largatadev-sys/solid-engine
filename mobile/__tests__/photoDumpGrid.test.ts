@@ -1,3 +1,4 @@
+import { stillShowing } from '../src/components/stillShowing';
 import { flattenPhotoDumpPages, photoDumpTiles } from '../src/media/photoDumpGrid';
 import { workspaceTabFrom, WORKSPACE_TABS } from '../src/itineraries/WorkspaceTabRow';
 import type { PhotoDumpEntryResponse } from '../src/types/api';
@@ -53,6 +54,28 @@ describe('photoDumpTiles', () => {
 
     expect(tiles).toHaveLength(2);
     expect(tiles.map((tile) => tile.photo.id)).toEqual(['p1', 'p2']);
+  });
+});
+
+
+describe('the preview outlives the window it is closing with', () => {
+  const tile = { photo: photo('p1', 't1'), deletable: true };
+
+  it('retains the WHOLE tile, so Delete does not vanish a frame before the dialog does', () => {
+    const retained = stillShowing(null, tile);
+
+    expect(retained).toBe(tile);
+    expect(retained?.deletable).toBe(true);
+  });
+
+  it('prefers the live tile over the retained one whenever there is one', () => {
+    const other = { photo: photo('p2', 't2'), deletable: false };
+
+    expect(stillShowing(other, tile)).toBe(other);
+  });
+
+  it('has nothing to show before a photo has ever been tapped', () => {
+    expect(stillShowing(null, null)).toBeNull();
   });
 });
 

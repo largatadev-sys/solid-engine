@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { stillShowing } from '../components/stillShowing';
 import { colors } from '../theme';
 import {
   workspaceColors,
@@ -7,8 +8,8 @@ import {
   workspaceRadii,
   workspaceTypography,
 } from '../theme/workspaceTokens';
-import type { PhotoDumpEntryResponse } from '../types/api';
 import { MediaThumb } from './MediaThumb';
+import type { DumpTile } from './photoDumpGrid';
 import {
   PHOTO_DUMP_PREVIEW_CLOSE_LABEL,
   PHOTO_DUMP_PREVIEW_DELETE_LABEL,
@@ -17,39 +18,26 @@ import {
 
 
 interface PhotoDumpPreviewProps {
-  readonly photo: PhotoDumpEntryResponse | null;
-  readonly deletable: boolean;
+  readonly tile: DumpTile | null;
   readonly busy: boolean;
   readonly onDelete: () => void;
   readonly onDismiss: () => void;
 }
 
 
-function useRetainedWhileClosing(
-  photo: PhotoDumpEntryResponse | null,
-): PhotoDumpEntryResponse | null {
-  const last = useRef<PhotoDumpEntryResponse | null>(photo);
-  if (photo !== null) last.current = photo;
-  return photo ?? last.current;
+function useRetainedWhileClosing(tile: DumpTile | null): DumpTile | null {
+  const last = useRef<DumpTile | null>(tile);
+  if (tile !== null) last.current = tile;
+  return stillShowing(tile, last.current);
 }
 
 
-export function PhotoDumpPreview({
-  photo,
-  deletable,
-  busy,
-  onDelete,
-  onDismiss,
-}: PhotoDumpPreviewProps) {
-  const shown = useRetainedWhileClosing(photo);
+export function PhotoDumpPreview({ tile, busy, onDelete, onDismiss }: PhotoDumpPreviewProps) {
+  const shown = useRetainedWhileClosing(tile);
+  const deletable = shown?.deletable ?? false;
 
   return (
-    <Modal
-      visible={photo !== null}
-      transparent
-      animationType="fade"
-      onRequestClose={onDismiss}
-    >
+    <Modal visible={tile !== null} transparent animationType="fade" onRequestClose={onDismiss}>
       <Pressable
         style={styles.backdrop}
         onPress={onDismiss}
@@ -58,7 +46,7 @@ export function PhotoDumpPreview({
         <Pressable style={styles.dialog} onPress={() => undefined}>
           {shown !== null && (
             <MediaThumb
-              url={shown.url}
+              url={shown.photo.url}
               full
               style={styles.photo}
               accessibilityLabel={PHOTO_DUMP_PREVIEW_LABEL}

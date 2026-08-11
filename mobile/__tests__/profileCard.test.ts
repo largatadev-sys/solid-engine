@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { profileCardOf, profileCardOfMember, stillShowing } from '../src/profile/profileCard';
+import { stillShowing } from '../src/components/stillShowing';
+import { profileCardOf, profileCardOfMember } from '../src/profile/profileCard';
 import type { MemberResponse, MeResponse } from '../src/types/api';
 
 const MOBILE_ROOT = join(__dirname, '..');

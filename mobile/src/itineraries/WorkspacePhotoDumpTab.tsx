@@ -122,8 +122,7 @@ export function WorkspacePhotoDumpTab({
       </View>
 
       <PhotoDumpPreview
-        photo={opened?.photo ?? null}
-        deletable={opened?.deletable ?? false}
+        tile={opened}
         busy={busy}
         onDelete={() => opened !== null && onDelete(opened.photo)}
         onDismiss={() => setOpenedId(null)}
