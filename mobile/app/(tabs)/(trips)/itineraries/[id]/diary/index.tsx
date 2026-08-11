@@ -8,6 +8,7 @@ import {
 import { DIARY_STREAM_EMPTY, MY_DIARY_TITLE } from '../../../../../../src/diary/diaryCopy';
 import { inTripDayOrder, snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { MediaThumb } from '../../../../../../src/media/MediaThumb';
+import { SHOW_SCROLLBAR } from '../../../../../../src/diary/photoStripScroll';
 import { useMyDiaryEntries } from '../../../../../../src/query/diaryQueries';
 import { useItinerary } from '../../../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../../../src/theme';
@@ -66,7 +67,7 @@ export default function TripDiaryScreen() {
               <Text style={styles.eyebrow}>{snapshotEyebrow(entry)}</Text>
               <Text style={styles.title}>{entry.activityTitle}</Text>
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={SHOW_SCROLLBAR}>
                 <View style={styles.photos}>
                   {entry.photos.map((photo, index) => (
                     <MediaThumb

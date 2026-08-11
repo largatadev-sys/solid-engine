@@ -28,10 +28,14 @@ import { canSubmit, roomLeft } from '../../../../../../src/diary/diaryCapture';
 import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { DiaryAddTile, DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
+import { DevicePickerModal } from '../../../../../../src/diary/DevicePickerModal';
+import { DumpPickerModal } from '../../../../../../src/diary/DumpPickerModal';
+import { SHOW_SCROLLBAR } from '../../../../../../src/diary/photoStripScroll';
 import { dayHeading } from '../../../../../../src/itineraries/dayHeading';
 import { flattenPhotoDumpPages } from '../../../../../../src/media/photoDumpGrid';
 import { usePhotoAction } from '../../../../../../src/media/usePhotoAction';
 import type { PickedPhoto } from '../../../../../../src/media/pickedPhoto';
+import type { PhotoDumpEntryResponse } from '../../../../../../src/types/api';
 import { usePostDiaryEntry } from '../../../../../../src/query/diaryQueries';
 import { useItinerary, usePhotoDump } from '../../../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../../../src/theme';
@@ -60,6 +64,8 @@ export default function ComposeDiaryEntryScreen() {
   const [devicePhotos, setDevicePhotos] = useState<PickedPhoto[]>([]);
   const [fromDump, setFromDump] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
+  const [devicePickerOpen, setDevicePickerOpen] = useState(false);
+  const [dumpPickerOpen, setDumpPickerOpen] = useState(false);
 
   if (isPending) return <ActivityIndicator style={styles.loading} color={colors.accent} />;
   if (isError) return <ScreenMessage {...itineraryLoadMessage(error, 'Trip unavailable')} />;
@@ -75,14 +81,15 @@ export default function ComposeDiaryEntryScreen() {
   const total = devicePhotos.length + fromDump.length;
   const room = roomLeft(total);
 
-  const toggleDumpPhoto = (photoId: string) => {
-    setFromDump((chosen) =>
-      chosen.includes(photoId)
-        ? chosen.filter((candidate) => candidate !== photoId)
-        : room === 0
-          ? chosen
-          : [...chosen, photoId],
-    );
+  const chosenFromDump = fromDump
+    .map((id) => dumpPhotos.find((photo) => photo.id === id))
+    .filter((photo): photo is PhotoDumpEntryResponse => photo !== undefined);
+
+  const pickFromDevice = () => {
+    void photoAction.pickAndRun(async (picked) => {
+      setDevicePhotos((chosen) => [...chosen, picked]);
+      setDevicePickerOpen(false);
+    });
   };
 
   const submit = () => {
@@ -116,30 +123,28 @@ export default function ComposeDiaryEntryScreen() {
 
         <View>
           <Text style={styles.sectionLabel}>{CAMERA_ROLL_LABEL}</Text>
-          <View style={styles.grid}>
-            {devicePhotos.map((photo, index) => (
-              <DiaryPhotoTile
-                key={`${photo.uri}-${index}`}
-                url={null}
-                localPreview={photo.uri}
-                accessibilityLabel={`Selected photo ${index + 1}`}
-                selected
-                onPress={() =>
-                  setDevicePhotos((chosen) => chosen.filter((_, at) => at !== index))
-                }
+          <ScrollView horizontal showsHorizontalScrollIndicator={SHOW_SCROLLBAR}>
+            <View style={styles.grid}>
+              {devicePhotos.map((photo, index) => (
+                <DiaryPhotoTile
+                  key={`${photo.uri}-${index}`}
+                  url={null}
+                  localPreview={photo.uri}
+                  accessibilityLabel={`Selected photo ${index + 1}`}
+                  selected
+                  onPress={() =>
+                    setDevicePhotos((chosen) => chosen.filter((_, at) => at !== index))
+                  }
+                />
+              ))}
+              <DiaryAddTile
+                label="Add More"
+                accessibilityLabel="Add a photo from your camera roll"
+                disabled={room === 0}
+                onPress={() => setDevicePickerOpen(true)}
               />
-            ))}
-            <DiaryAddTile
-              label="Add More"
-              accessibilityLabel="Add a photo from your camera roll"
-              disabled={room === 0}
-              onPress={() => {
-                void photoAction.pickAndRun(async (picked) => {
-                  setDevicePhotos((chosen) => [...chosen, picked]);
-                });
-              }}
-            />
-          </View>
+            </View>
+          </ScrollView>
         </View>
 
         <View>
@@ -147,17 +152,23 @@ export default function ComposeDiaryEntryScreen() {
           {dumpPhotos.length === 0 ? (
             <Text style={styles.dumpEmpty}>{DUMP_EMPTY}</Text>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={SHOW_SCROLLBAR}>
               <View style={styles.grid}>
-                {dumpPhotos.map((photo) => (
+                {chosenFromDump.map((photo) => (
                   <DiaryPhotoTile
                     key={photo.id}
                     url={photo.url}
-                    accessibilityLabel={`Photo Dump photo${fromDump.includes(photo.id) ? ', selected' : ''}`}
-                    selected={fromDump.includes(photo.id)}
-                    onPress={() => toggleDumpPhoto(photo.id)}
+                    accessibilityLabel="Selected Photo Dump photo"
+                    selected
+                    onPress={() => setFromDump((chosen) => chosen.filter((id) => id !== photo.id))}
                   />
                 ))}
+                <DiaryAddTile
+                  label="Add More"
+                  accessibilityLabel="Add a photo from the Photo Dump"
+                  disabled={room === 0}
+                  onPress={() => setDumpPickerOpen(true)}
+                />
               </View>
             </ScrollView>
           )}
@@ -197,6 +208,28 @@ export default function ComposeDiaryEntryScreen() {
           )}
         </Pressable>
       </ScrollView>
+
+      <DevicePickerModal
+        visible={devicePickerOpen}
+        busy={false}
+        failure={photoAction.failure}
+        onPick={pickFromDevice}
+        onDismiss={() => {
+          photoAction.clearFailure();
+          setDevicePickerOpen(false);
+        }}
+      />
+
+      <DumpPickerModal
+        visible={dumpPickerOpen}
+        photos={dumpPhotos}
+        room={room}
+        onAdd={(photoIds) => {
+          setFromDump((chosen) => [...chosen, ...photoIds]);
+          setDumpPickerOpen(false);
+        }}
+        onDismiss={() => setDumpPickerOpen(false)}
+      />
     </View>
   );
 }

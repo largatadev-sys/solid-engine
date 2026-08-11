@@ -41,3 +41,17 @@ export function canRemovePhoto(photoCount: number): boolean {
 export function successMessage(activityTitle: string): string {
   return `${activityTitle} is now part of your Diary.`;
 }
+
+
+export function togglePick(picked: readonly string[], photoId: string, room: number): string[] {
+  if (picked.includes(photoId)) {
+    return picked.filter((candidate) => candidate !== photoId);
+  }
+  return room <= 0 ? [...picked] : [...picked, photoId];
+}
+
+
+export function addPhotosLabel(count: number): string {
+  if (count === 0) return 'Select photos';
+  return count === 1 ? 'Add 1 photo' : `Add ${count} photos`;
+}

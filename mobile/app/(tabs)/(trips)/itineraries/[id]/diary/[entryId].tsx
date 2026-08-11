@@ -29,6 +29,7 @@ import { canRemovePhoto, roomLeft } from '../../../../../../src/diary/diaryCaptu
 import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { DiaryAddTile, DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
+import { SHOW_SCROLLBAR } from '../../../../../../src/diary/photoStripScroll';
 import { flattenPhotoDumpPages } from '../../../../../../src/media/photoDumpGrid';
 import { usePhotoAction } from '../../../../../../src/media/usePhotoAction';
 import {
@@ -119,7 +120,7 @@ export default function DiaryEntryScreen() {
 
         <View>
           <Text style={styles.sectionLabel}>Photos</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={SHOW_SCROLLBAR}>
             <View style={styles.grid}>
               {entry.photos.map((photo, index) => (
                 <View key={photo.id}>
@@ -158,7 +159,7 @@ export default function DiaryEntryScreen() {
         {editable && dumpPhotos.length > 0 ? (
           <View>
             <Text style={styles.sectionLabel}>{DUMP_LABEL}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={SHOW_SCROLLBAR}>
               <View style={styles.grid}>
                 {dumpPhotos.map((photo) => (
                   <DiaryPhotoTile

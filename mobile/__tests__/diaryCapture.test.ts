@@ -1,4 +1,5 @@
 import {
+  addPhotosLabel,
   canRemovePhoto,
   canSubmit,
   captureLabel,
@@ -8,6 +9,7 @@ import {
   MAX_DIARY_PHOTOS,
   roomLeft,
   successMessage,
+  togglePick,
 } from '../src/diary/diaryCapture';
 import {
   inTripDayOrder,
@@ -80,6 +82,33 @@ describe('the photo floor and cap', () => {
   it('never lets the last photo be removed', () => {
     expect(canRemovePhoto(1)).toBe(false);
     expect(canRemovePhoto(2)).toBe(true);
+  });
+});
+
+
+describe('picking from the dump', () => {
+  it('adds a photo, and tapping it again takes it back out', () => {
+    expect(togglePick([], 'p1', 5)).toEqual(['p1']);
+    expect(togglePick(['p1', 'p2'], 'p1', 3)).toEqual(['p2']);
+  });
+
+  it('refuses a new pick with no room left, but still lets you deselect', () => {
+    expect(togglePick(['p1'], 'p2', 0)).toEqual(['p1']);
+    expect(togglePick(['p1'], 'p1', 0)).toEqual([]);
+  });
+
+  it('never mutates the array it was handed', () => {
+    const picked = ['p1'];
+
+    togglePick(picked, 'p2', 5);
+
+    expect(picked).toEqual(['p1']);
+  });
+
+  it('counts the selection in the confirm button, in words', () => {
+    expect(addPhotosLabel(0)).toBe('Select photos');
+    expect(addPhotosLabel(1)).toBe('Add 1 photo');
+    expect(addPhotosLabel(3)).toBe('Add 3 photos');
   });
 });
 

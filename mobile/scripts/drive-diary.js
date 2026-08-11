@@ -335,21 +335,38 @@ function writeFixture() {
   check('AC 11: the info note reads exactly as the founder approved it',
     composerScreen.includes('Only you can see your diary. It shows up on your profile.'));
 
-  // The dump tile renders from our media endpoint, which needs a bearer — a raw <Image> URL would
-  // show as an ANON GET here and a broken tile on screen (the S3.3 tell).
+  // The dump tiles live inside the picker modal now, so the bearer check moves to the modal
+  // below — it is asserted once for the whole walk at the end regardless.
   const anonBefore = apiCalls.filter((c) => c.url.includes('/v1/media/') && !c.bearer);
-  check('the dump photo in the composer is fetched WITH a bearer (S3.3)',
-    apiCalls.some((c) => c.url.includes('/v1/media/') && c.bearer) && anonBefore.length === 0,
-    `${anonBefore.length} anon media GETs`);
+  check('no anonymous media GET so far — a raw <Image> URL would show up here (S3.3)',
+    anonBefore.length === 0, `${anonBefore.length} anon media GETs`);
 
+  // Both Add More tiles open a modal now. The camera roll's relays straight to the device
+  // picker on mount, so planting the file first is what makes that relay land a real photo.
   await plantFile(fixture);
-  const addedDevice = await tapLabel('Add a photo from your camera roll', 3000);
-  check('the camera-roll tile drives the real picker', addedDevice.clicked === true,
-    JSON.stringify(addedDevice));
+  const openedDevicePicker = await tapLabel('Add a photo from your camera roll', 4000);
+  const devicePhotoLanded = await evaluate(`
+    (() => Array.from(document.querySelectorAll('[aria-label]'))
+      .filter((n) => (n.getAttribute('aria-label') || '').startsWith('Selected photo'))
+      .filter((n) => n.offsetParent !== null).length)()
+  `);
+  check('the camera-roll tile opens the picker modal, which reaches the device and returns a photo',
+    openedDevicePicker.clicked === true && devicePhotoLanded >= 1,
+    `${devicePhotoLanded} device photo(s) on the composer`);
 
-  const pickedDump = await tapLabel('Photo Dump photo', 2000);
-  check('a Photo Dump tile can be selected as a source', pickedDump.clicked === true,
+  const openedDumpPicker = await tapLabel('Add a photo from the Photo Dump', 2500);
+  const dumpSheet = (await text()) || '';
+  check('the Photo Dump tile opens its own picker modal',
+    openedDumpPicker.clicked === true && dumpSheet.includes('From the Photo Dump'),
+    dumpSheet.replace(/\n/g, ' | ').slice(0, 120));
+
+  const pickedDump = await tapLabel('Photo Dump photo', 1500);
+  check('a dump photo can be selected inside the modal', pickedDump.clicked === true,
     JSON.stringify(pickedDump));
+
+  const confirmed = await tapLabel('Add 1 photo', 2500);
+  check('the confirm button counts the selection and commits it',
+    confirmed.clicked === true, JSON.stringify(confirmed));
 
   await evaluate(`
     (() => {
