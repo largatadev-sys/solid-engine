@@ -329,14 +329,20 @@ export function usePhotoDump(
 }
 
 
-export function useAddPhotoDumpEntry(
+export function useAddPhotoDumpEntries(
   itineraryId: string,
-): UseMutationResult<PhotoDumpEntryResponse, Error, PickedPhoto> {
+): UseMutationResult<PhotoDumpEntryResponse | undefined, Error, readonly PickedPhoto[]> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (photo: PickedPhoto) => itineraryRepository.addPhotoDumpEntry(itineraryId, photo),
-    onSuccess: () => {
-      track(PHOTO_DUMP_PHOTO_ADDED, { itineraryId });
+    mutationFn: async (photos: readonly PickedPhoto[]) => {
+      let latest: PhotoDumpEntryResponse | undefined;
+      for (const photo of photos) {
+        latest = await itineraryRepository.addPhotoDumpEntry(itineraryId, photo);
+      }
+      return latest;
+    },
+    onSuccess: (_added, photos) => {
+      photos.forEach(() => track(PHOTO_DUMP_PHOTO_ADDED, { itineraryId }));
       return client.invalidateQueries({ queryKey: itineraryKeys.photoDump(itineraryId) });
     },
   });
