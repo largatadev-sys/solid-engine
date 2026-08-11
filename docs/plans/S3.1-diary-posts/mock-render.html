@@ -1,0 +1,429 @@
+<title>Diary flow mock — 08/11 export</title>
+<style>
+  :root {
+    --page-bg: #F6F4F1;
+    --page-ink: #1C1917;
+    --page-muted: #78716C;
+    --page-line: #E3DFDA;
+    --page-card: #FFFFFF;
+    --accent: #EA580C;
+  }
+  :root:not([data-theme="light"]) { }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page-bg: #191614;
+      --page-ink: #F1EEEB;
+      --page-muted: #A8A29E;
+      --page-line: #35302C;
+      --page-card: #211E1B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg: #191614;
+    --page-ink: #F1EEEB;
+    --page-muted: #A8A29E;
+    --page-line: #35302C;
+    --page-card: #211E1B;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--page-bg);
+    color: var(--page-ink);
+    font-family: "Geist", "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 32px 24px 48px;
+  }
+  .page-head { max-width: 900px; margin: 0 auto 28px; }
+  .page-head h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; text-wrap: balance; }
+  .page-head .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .page-head p { margin-top: 10px; font-size: 13.5px; line-height: 1.55; color: var(--page-muted); max-width: 68ch; }
+  .frames { display: flex; gap: 40px; overflow-x: auto; padding: 8px 4px 24px; align-items: flex-start; }
+  .frame-col { flex: none; width: 393px; display: flex; flex-direction: column; gap: 14px; }
+  .frame-col.narrow { width: 390px; }
+  .caption { font-size: 12.5px; line-height: 1.5; color: var(--page-muted); padding: 0 4px; }
+  .caption b { color: var(--page-ink); font-weight: 700; }
+  .caption ul { margin: 6px 0 0; padding-left: 16px; }
+  .caption li { margin-top: 3px; }
+
+  .phone {
+    width: 100%; background: #FFFFFF; color: #1C1917;
+    border: 1px solid var(--page-line); border-radius: 28px; overflow: hidden;
+    box-shadow: 0 16px 32px rgba(28,25,23,0.08);
+    position: relative;
+    font-family: "Geist", "Inter", -apple-system, sans-serif;
+  }
+  .statusbar { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 44px; font-weight: 600; font-size: 14px; }
+  .statusicons { display: flex; gap: 6px; align-items: center; color: #1C1917; font-size: 11px; letter-spacing: 1px; }
+
+  .ws-header { padding: 12px 16px 8px; display: flex; flex-direction: column; gap: 12px; }
+  .ws-toprow { display: flex; justify-content: space-between; align-items: center; height: 40px; }
+  .back-badge { display: flex; align-items: center; gap: 8px; }
+  .chev { width: 24px; height: 24px; display: inline-flex; }
+  .badge-progress { background: #15803D; color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; line-height: 14px; }
+  .edit-link { color: #EA580C; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+  .ws-title { font-family: "Outfit", "Geist", sans-serif; font-weight: 700; font-size: 22px; line-height: 28px; }
+  .ws-sub { font-size: 13px; color: #78716C; margin-top: 4px; }
+  .tabs { display: flex; gap: 12px; padding: 0 16px; border-bottom: 1px solid #E7E5E4; }
+  .tab { padding: 12px 8px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: #78716C; }
+  .tab .bar { height: 3px; width: 100%; border-radius: 100px 100px 0 0; }
+  .tab.active { color: #EA580C; font-weight: 700; }
+  .tab.active .bar { background: #EA580C; }
+
+  .ws-scroll { padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .day-card { border: 1px solid #E7E5E4; border-radius: 12px; background: #fff; }
+  .day-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 12px; }
+  .day-title { display: flex; align-items: center; gap: 8px; font-family: "Outfit", "Geist", sans-serif; font-weight: 700; font-size: 16px; }
+  .day-dot { width: 24px; height: 24px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .dot-done { background: #DCFCE7; color: #15803D; }
+  .dot-live { background: #F97316; color: #fff; }
+  .dot-lock { background: #E2E4E8; color: #A8A29E; }
+  .divider { height: 1px; background: #E7E5E4; }
+  .acts { padding: 12px 16px 16px; }
+  .acts-inner { padding-left: 34px; display: flex; flex-direction: column; gap: 12px; }
+  .act-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .act-name { font-weight: 600; font-size: 13px; line-height: 16px; font-family: "Inter", sans-serif; }
+  .act-meta { font-size: 11px; color: #78716C; margin-top: 2px; font-family: "Inter", sans-serif; }
+  .act-added { color: #15803D; font-weight: 700; font-size: 12px; white-space: nowrap; font-family: "Inter", sans-serif; }
+  .act-add { color: #F97316; font-weight: 700; font-size: 12px; white-space: nowrap; font-family: "Inter", sans-serif; }
+  .act-line { border-top: 1px solid #F1F0EC; }
+  .day-live { border: 1px solid #1C1917; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .day-live .day-head-live { display: flex; justify-content: space-between; align-items: center; }
+  .day-live .day-name { display: flex; align-items: center; gap: 10px; font-family: "Inter", sans-serif; font-weight: 800; font-size: 15px; }
+  .skip-btn { color: #F97316; font-weight: 700; font-size: 12px; padding: 8px 12px; border-radius: 4px; background: #fff; }
+  .start-btn { color: #F97316; font-weight: 700; font-size: 12px; padding: 8px 12px; border-radius: 4px; border: 1px solid #F97316; background: #fff; white-space: nowrap; }
+  .started-at { font-size: 11px; color: #78716C; font-family: "Inter", sans-serif; }
+  .day-live .acts-inner { padding-left: 34px; }
+  .act-line-dark { border-top: 1px solid #1C1917; }
+  .day-row { border: 1px solid #E7E5E4; border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .day-row .day-title.muted { color: #6B6661; }
+  .cta-complete { margin-top: 8px; background: #EA580C; color: #fff; font-weight: 700; font-size: 16px; border-radius: 4px; height: 53px; display: flex; align-items: center; justify-content: center; }
+  .sticky-progress { border-top: 1px solid #E7E5E4; padding: 16px 24px 12px; display: flex; flex-direction: column; gap: 12px; background: #fff; }
+  .sticky-progress .row { display: flex; justify-content: space-between; align-items: center; font-family: "Inter", sans-serif; }
+  .sticky-progress .label { font-weight: 700; font-size: 15px; }
+  .sticky-progress .pct { font-weight: 600; font-size: 13px; color: #F97316; }
+  .track { height: 8px; background: #F1F0EC; border-radius: 4px; overflow: hidden; }
+  .fill { height: 100%; width: 40%; background: #F97316; }
+  .bottom-nav { border-top: 1px solid #F7F7F7; display: flex; justify-content: space-between; padding: 12px 16px 0; font-family: "Inter", sans-serif; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px; font-size: 11px; font-weight: 500; color: #666; padding-bottom: 10px; }
+  .nav-item.active { font-weight: 700; color: #000; }
+  .nav-ic { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; }
+  .home-pill { display: flex; justify-content: center; padding: 8px 0 8px; }
+  .home-pill span { width: 139px; height: 5px; background: #000; border-radius: 100px; display: block; }
+
+  .overlay-wrap { position: relative; }
+  .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); border-radius: 27px; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 24px rgba(0,0,0,0.15); padding: 12px 24px 0; }
+  .sheet-handle { display: flex; justify-content: center; padding-bottom: 8px; }
+  .sheet-handle span { width: 36px; height: 5px; background: #1C1917; border-radius: 10px; display: block; }
+  .sheet-body { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 16px 0 12px; font-family: "Inter", sans-serif; }
+  .ring { width: 72px; height: 72px; border-radius: 36px; background: rgba(255,107,53,0.10); display: flex; align-items: center; justify-content: center; }
+  .ring-in { width: 56px; height: 56px; border-radius: 28px; background: #FF6B35; display: flex; align-items: center; justify-content: center; color: #fff; }
+  .sheet-h { font-weight: 800; font-size: 22px; text-align: center; }
+  .sheet-p { font-size: 14px; line-height: 21px; text-align: center; color: #68615E; max-width: 345px; margin-top: 8px; }
+  .sheet-btns { width: 100%; display: flex; flex-direction: column; gap: 12px; padding-top: 8px; }
+  .btn-orange { background: #EA580C; box-shadow: 0 4px 12px rgba(255,107,53,0.17); border-radius: 4px; height: 52px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 16px; }
+  .btn-ghost { border: 1.5px solid #ECE8E5; border-radius: 4px; height: 52px; display: flex; align-items: center; justify-content: center; color: #68615E; font-weight: 600; font-size: 16px; }
+  .sheet .home-pill span { background: #1C1917; width: 134px; }
+
+  .diary-head { padding: 8px 24px 16px; }
+  .diary-head .hrow { display: flex; align-items: center; gap: 4px; height: 46px; }
+  .diary-head .ptitle { font-family: "Inter", sans-serif; font-weight: 700; font-size: 18px; }
+  .diary-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 24px; }
+  .eyebrow-sm { font-family: "Figtree", "Geist", sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: #FF5A3C; }
+  .diary-title { font-family: "Figtree", "Geist", sans-serif; font-weight: 800; font-size: 24px; line-height: 29px; margin-top: 4px; }
+  .sec-label { font-weight: 600; font-size: 14px; color: #44403C; }
+  .pgrid { display: flex; gap: 8px; margin-top: 12px; }
+  .pcard { width: 104px; height: 104px; border-radius: 12px; position: relative; overflow: hidden; flex: none; }
+  .pcard .chk { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 11px; background: #FF5A3C; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .pcard .ph-label { position: absolute; left: 6px; bottom: 5px; font-size: 8px; font-weight: 600; color: rgba(255,255,255,0.9); text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+  .ph-sunset { background: linear-gradient(160deg, #F59E0B 0%, #F97316 45%, #DB2777 100%); }
+  .ph-golden { background: linear-gradient(180deg, #FCD34D 0%, #F59E0B 55%, #92400E 100%); }
+  .ph-friends { background: linear-gradient(150deg, #FB923C 0%, #EA580C 50%, #7C2D12 100%); }
+  .ph-market { background: linear-gradient(140deg, #34D399 0%, #FBBF24 50%, #EF4444 100%); }
+  .addtile { width: 104px; height: 104px; border-radius: 12px; background: #FAF9F5; border: 1px dashed #EBE9E2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #78716C; font-family: "Figtree", sans-serif; font-weight: 600; font-size: 11px; flex: none; }
+  .cap-input { margin-top: 10px; background: #FAF9F5; border: 1px solid #EBE9E2; border-radius: 4px; min-height: 80px; padding: 14px; font-family: "Figtree", sans-serif; font-size: 14px; line-height: 20px; color: #A8A29E; }
+  .info-note { display: flex; gap: 10px; font-family: "Figtree", sans-serif; font-size: 13px; line-height: 18px; color: #78716C; }
+  .info-note .ic { flex: none; padding-top: 2px; color: #FF5A3C; }
+  .btn-diary { background: #EA580C; box-shadow: 0 4px 12px rgba(255,90,60,0.2); border-radius: 4px; height: 54px; display: flex; align-items: center; justify-content: center; color: #fff; font-family: "Figtree", sans-serif; font-weight: 700; font-size: 16px; }
+  .recon { color: #B45309; font-style: italic; }
+
+  .success-body { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 235px 20px 0; text-align: center; }
+  .success-circle { width: 64px; height: 64px; border-radius: 32px; background: #10B981; display: flex; align-items: center; justify-content: center; color: #fff; }
+  .success-h { font-family: "Inter", sans-serif; font-weight: 700; font-size: 32px; line-height: 39px; }
+  .success-p { font-family: "DM Sans", "Inter", sans-serif; font-size: 14px; color: #6E6A66; }
+  .success-spacer { height: 300px; }
+
+  svg { display: block; }
+</style>
+
+<div class="page-head">
+  <div class="eyebrow">Founder mock · received 2026-08-11 · diary.txt (Figma CSS export)</div>
+  <h1>Diary flow — four frames, reconstructed</h1>
+  <p>Faithful rebuild from the export: layout, copy, colors, and states as drawn. The export's fonts (Geist, Outfit, Inter, Figtree, DM Sans) fall back to system faces here — a rendering limitation, not a proposal. Photos in the export are generative-prompt placeholders; rendered as gradients labeled with each prompt's subject. Text that is <span class="recon">amber-italic</span> in the captions was not in the export (Figma exported those layers by role name, not content) and is reconstructed — flagged for your correction.</p>
+</div>
+
+<div class="frames">
+
+  <div class="frame-col">
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="statusicons">▮▮ ᯤ ▐▊</span></div>
+      <div class="ws-header">
+        <div class="ws-toprow">
+          <div class="back-badge">
+            <span class="chev"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="badge-progress">Trip in progress</span>
+          </div>
+          <span class="edit-link">Edit Itinerary
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.3 2.3a1.5 1.5 0 012.4 2.4L6 12.4 3 13l.6-3L11.3 2.3z" stroke="#EA580C" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+        <div>
+          <div class="ws-title">Island Hopping in El Nido</div>
+          <div class="ws-sub">Original by Jose Reyes</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab active"><span>Day-by-Day</span><span class="bar"></span></div>
+        <div class="tab"><span>Polls</span><span class="bar"></span></div>
+        <div class="tab"><span>Travelers</span><span class="bar"></span></div>
+        <div class="tab"><span>Notes</span><span class="bar"></span></div>
+        <div class="tab"><span>Photo Dump</span><span class="bar"></span></div>
+      </div>
+      <div class="ws-scroll">
+        <div class="day-card">
+          <div class="day-head">
+            <div class="day-title">
+              <span class="day-dot dot-done"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5L10 3.5" stroke="#15803D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Day 1: Arrival at Sunset
+            </div>
+            <svg width="18" height="18" viewBox="0 0 18 18"><rect x="4" y="8.3" width="10" height="1.6" fill="#000"/></svg>
+          </div>
+          <div class="divider"></div>
+          <div class="acts"><div class="acts-inner">
+            <div class="act-row"><div><div class="act-name">Airport pickup &amp; private boat transfer</div><div class="act-meta">2:30 PM • Bora Bora Airport</div></div><span class="act-added">Added ✓</span></div>
+            <div class="act-line"></div>
+            <div class="act-row"><div><div class="act-name">Bungalow check-in</div><div class="act-meta">4:00 PM • St. Regis Resort</div></div><span class="act-add">Add to Diary</span></div>
+            <div class="act-line"></div>
+            <div class="act-row"><div><div class="act-name">Sunset dinner on the beach</div><div class="act-meta">7:00 PM • Lagoon Restaurant</div></div><span class="act-add">Add to Diary</span></div>
+          </div></div>
+        </div>
+
+        <div class="day-live">
+          <div class="day-head-live">
+            <div class="day-name">
+              <span class="day-dot dot-live"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Day 2: Lagoon Exploration
+            </div>
+            <span class="skip-btn">Skip Day</span>
+          </div>
+          <div class="acts-inner" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="started-at">Started at 8:30 AM</div>
+            <div class="act-row"><div><div class="act-name" style="font-weight:700;">Snorkeling with stingrays</div><div class="act-meta">9:00 AM • Main Lagoon</div></div><span class="act-add">Add to Diary</span></div>
+            <div class="act-line-dark"></div>
+            <div class="act-row"><div><div class="act-name" style="font-weight:700;">Coral garden boat tour</div><div class="act-meta">1:30 PM • Coral Reef Sanctuary</div></div><span class="act-added">Added ✓</span></div>
+            <div class="act-line-dark"></div>
+            <div class="act-row"><div><div class="act-name" style="font-weight:700;">Traditional dinner show</div><div class="act-meta">6:30 PM • Otemanu Pavilion</div></div><span class="act-add">Add to Diary</span></div>
+          </div>
+        </div>
+
+        <div class="day-row">
+          <div class="day-title">
+            <span class="day-dot dot-lock"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2.5" y="5" width="7" height="5" rx="1" stroke="#A8A29E" stroke-width="1.6"/><path d="M4 5V3.8a2 2 0 014 0V5" stroke="#A8A29E" stroke-width="1.6"/></svg></span>
+            Day 3: Underground River
+          </div>
+          <span class="start-btn">Start Day</span>
+        </div>
+        <div class="day-row">
+          <div class="day-title muted">
+            <span class="day-dot dot-lock"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2.5" y="5" width="7" height="5" rx="1" stroke="#A8A29E" stroke-width="1.6"/><path d="M4 5V3.8a2 2 0 014 0V5" stroke="#A8A29E" stroke-width="1.6"/></svg></span>
+            Day 4: Island Hopping Tour
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#78716C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="day-row">
+          <div class="day-title muted">
+            <span class="day-dot dot-lock"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2.5" y="5" width="7" height="5" rx="1" stroke="#A8A29E" stroke-width="1.6"/><path d="M4 5V3.8a2 2 0 014 0V5" stroke="#A8A29E" stroke-width="1.6"/></svg></span>
+            Day 5: Beach Relaxation
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#78716C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="cta-complete">Complete Trip</div>
+      </div>
+      <div class="sticky-progress">
+        <div class="row"><span class="label">Day 2 in progress</span><span class="pct">40% Completed</span></div>
+        <div class="track"><div class="fill"></div></div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item"><span class="nav-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-4.5v-6h-5v6H5a1 1 0 01-1-1v-9.5z" stroke="#666" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Home</div>
+        <div class="nav-item"><span class="nav-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="#666" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="#666" stroke-width="2" stroke-linecap="round"/></svg></span>Discover</div>
+        <div class="nav-item active"><span class="nav-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="7.5" width="18" height="12" rx="2" fill="#000"/><path d="M9 7V5.5A1.5 1.5 0 0110.5 4h3A1.5 1.5 0 0115 5.5V7" stroke="#000" stroke-width="2"/></svg></span>Trips</div>
+        <div class="nav-item"><span class="nav-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="#666" stroke-width="2"/><path d="M6 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" stroke="#666" stroke-width="2" stroke-linecap="round"/></svg></span>Profile</div>
+      </div>
+      <div class="home-pill"><span></span></div>
+    </div>
+    <div class="caption">
+      <b>Frame 1 · "Active/Ongoing workspace"</b> — the workspace mid-trip. New mechanics drawn here: green TRIP IN PROGRESS badge, per-day execution (Day 1 checked done · Day 2 started 8:30 AM with Skip Day · Day 3 locked with Start Day · Days 4–5 locked), a sticky "Day 2 in progress / 40% Completed" progress bar, per-activity <b>Add to Diary / Added ✓</b> links, and a Complete Trip CTA. Tab row reads Day-by-Day · Polls · Travelers · <b>Notes</b> · Photo Dump — no Chat, no Details.
+    </div>
+  </div>
+
+  <div class="frame-col">
+    <div class="phone overlay-wrap">
+      <div class="statusbar"><span>9:41</span><span class="statusicons">▮▮ ᯤ ▐▊</span></div>
+      <div class="ws-header">
+        <div class="ws-toprow">
+          <div class="back-badge">
+            <span class="chev"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="badge-progress">Trip in progress</span>
+          </div>
+          <span class="edit-link">Edit Itinerary
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.3 2.3a1.5 1.5 0 012.4 2.4L6 12.4 3 13l.6-3L11.3 2.3z" stroke="#EA580C" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+        <div>
+          <div class="ws-title">Island Hopping in El Nido</div>
+          <div class="ws-sub">Original by Jose Reyes</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab active"><span>Day-by-Day</span><span class="bar"></span></div>
+        <div class="tab"><span>Polls</span><span class="bar"></span></div>
+        <div class="tab"><span>Travelers</span><span class="bar"></span></div>
+        <div class="tab"><span>Notes</span><span class="bar"></span></div>
+        <div class="tab"><span>Photo Dump</span><span class="bar"></span></div>
+      </div>
+      <div class="ws-scroll">
+        <div class="day-card">
+          <div class="day-head">
+            <div class="day-title">
+              <span class="day-dot dot-done"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5L10 3.5" stroke="#15803D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Day 1: Arrival at Sunset
+            </div>
+            <svg width="18" height="18" viewBox="0 0 18 18"><rect x="4" y="8.3" width="10" height="1.6" fill="#000"/></svg>
+          </div>
+          <div class="divider"></div>
+          <div class="acts"><div class="acts-inner">
+            <div class="act-row"><div><div class="act-name">Airport pickup &amp; private boat transfer</div><div class="act-meta">2:30 PM • Bora Bora Airport</div></div><span class="act-added">Added ✓</span></div>
+            <div class="act-line"></div>
+            <div class="act-row"><div><div class="act-name">Bungalow check-in</div><div class="act-meta">4:00 PM • St. Regis Resort</div></div><span class="act-add">Add to Diary</span></div>
+            <div class="act-line"></div>
+            <div class="act-row"><div><div class="act-name">Sunset dinner on the beach</div><div class="act-meta">7:00 PM • Lagoon Restaurant</div></div><span class="act-add">Add to Diary</span></div>
+          </div></div>
+        </div>
+        <div class="day-live">
+          <div class="day-head-live">
+            <div class="day-name">
+              <span class="day-dot dot-live"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Day 2: Lagoon Exploration
+            </div>
+          </div>
+          <div class="acts-inner" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="started-at">Started at 8:30 AM</div>
+            <div class="act-row"><div><div class="act-name" style="font-weight:700;">Snorkeling with stingrays</div><div class="act-meta">9:00 AM • Main Lagoon</div></div><span class="act-add">Add to Diary</span></div>
+            <div class="act-line-dark"></div>
+            <div class="act-row"><div><div class="act-name" style="font-weight:700;">Coral garden boat tour</div><div class="act-meta">1:30 PM • Coral Reef Sanctuary</div></div><span class="act-added">Added ✓</span></div>
+            <div class="act-line-dark"></div>
+            <div class="act-row"><div><div class="act-name" style="font-weight:700;">Traditional dinner show</div><div class="act-meta">6:30 PM • Otemanu Pavilion</div></div><span class="act-add">Add to Diary</span></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-title">
+            <span class="day-dot dot-lock"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2.5" y="5" width="7" height="5" rx="1" stroke="#A8A29E" stroke-width="1.6"/><path d="M4 5V3.8a2 2 0 014 0V5" stroke="#A8A29E" stroke-width="1.6"/></svg></span>
+            Day 3: Underground River
+          </div>
+          <span class="start-btn">Start Day</span>
+        </div>
+        <div class="cta-complete">Complete Trip</div>
+      </div>
+      <div class="overlay"></div>
+      <div class="sheet">
+        <div class="sheet-handle"><span></span></div>
+        <div class="sheet-body">
+          <div class="ring"><div class="ring-in"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div>
+            <div class="sheet-h">Complete this trip?</div>
+            <div class="sheet-p">This marks the end of your trip and lets your group know it's a wrap. This itinerary and all the details will be saved to your Completed Trips.</div>
+          </div>
+          <div class="sheet-btns">
+            <div class="btn-orange">Complete Trip</div>
+            <div class="btn-ghost">Cancel</div>
+          </div>
+        </div>
+        <div class="home-pill"><span style="background:#1C1917;width:134px;"></span></div>
+      </div>
+    </div>
+    <div class="caption">
+      <b>Frame 2 · "Finalized workspace"</b> — same screen under a 40% scrim with the <b>Complete this trip?</b> bottom sheet: "This marks the end of your trip and lets your group know it's a wrap. This itinerary and all the details will be saved to your Completed Trips." Buttons: Complete Trip / Cancel. (In this frame Day 2 has no Skip Day button.)
+    </div>
+  </div>
+
+  <div class="frame-col narrow">
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="statusicons">▮▮ ᯤ ▐▊</span></div>
+      <div class="diary-head">
+        <div class="hrow">
+          <span class="chev"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="ptitle">Add to Diary</span>
+        </div>
+      </div>
+      <div class="diary-body">
+        <div>
+          <div class="eyebrow-sm">Day 1 • 5:30 PM</div>
+          <div class="diary-title">Sunset at Las Cabanas</div>
+        </div>
+        <div>
+          <div class="sec-label">Select photos from your camera roll</div>
+          <div class="pgrid">
+            <div class="pcard ph-sunset"><span class="chk"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5L10 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ph-label">sunset · palms</span></div>
+            <div class="pcard ph-golden"><span class="chk"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5L10 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ph-label">golden waves</span></div>
+            <div class="addtile"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="#78716C" stroke-width="2" stroke-linecap="round"/></svg>Add More</div>
+          </div>
+        </div>
+        <div>
+          <div class="sec-label">From the Photo Dump</div>
+          <div class="pgrid">
+            <div class="pcard ph-friends"><span class="chk"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5L10 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ph-label">friends · sunset</span></div>
+            <div class="pcard ph-market"><span class="chk"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5L10 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ph-label">market</span></div>
+            <div class="addtile"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="#78716C" stroke-width="2" stroke-linecap="round"/></svg>Add More</div>
+          </div>
+        </div>
+        <div>
+          <div class="sec-label">Add a caption</div>
+          <div class="cap-input">Write something about this moment…</div>
+        </div>
+        <div class="info-note">
+          <span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#FF5A3C" stroke-width="2"/><path d="M8 7.5V11M8 5v.2" stroke="#FF5A3C" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <span class="recon">(two-line info note — copy not in the export)</span>
+        </div>
+        <div class="btn-diary">Add to Diary</div>
+      </div>
+      <div class="home-pill" style="padding-top:24px;"><span style="width:134px;background:#1C1917;"></span></div>
+    </div>
+    <div class="caption">
+      <b>Frame 3 · "Add to Diary" (pushed screen)</b> — the composer: activity header (eyebrow + title), two photo sections — one picking from the device, one from the <b>Photo Dump</b> — selected photos carry a check badge, an Add More tile in each, a caption field, an info note, and the Add to Diary CTA. <span class="recon">Reconstructed (layer names only in the export): the eyebrow text, the activity title (inferred from Frame 4's copy), both section labels, the caption placeholder, and the info note's copy.</span>
+    </div>
+  </div>
+
+  <div class="frame-col">
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span class="statusicons">▮▮ ᯤ ▐▊</span></div>
+      <div class="success-body">
+        <div class="success-circle"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" stroke="#fff" stroke-width="2"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div>
+          <div class="success-h">Activity Added!</div>
+          <div class="success-p">Sunset at Las Cabanas is now part of your Diary.</div>
+        </div>
+      </div>
+      <div class="success-spacer"></div>
+      <div class="bottom-nav">
+        <div class="nav-item"><span class="nav-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-4.5v-6h-5v6H5a1 1 0 01-1-1v-9.5z" stroke="#666" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Home</div>
+        <div class="nav-item"><span class="nav-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="#666" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="#666" stroke-width="2" stroke-linecap="round"/></svg></span>Discover</div>
+        <div class="nav-item active"><span class="nav-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="7.5" width="18" height="12" rx="2" fill="#000"/><path d="M9 7V5.5A1.5 1.5 0 0110.5 4h3A1.5 1.5 0 0115 5.5V7" stroke="#000" stroke-width="2"/></svg></span>Trips</div>
+        <div class="nav-item"><span class="nav-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="#666" stroke-width="2"/><path d="M6 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" stroke="#666" stroke-width="2" stroke-linecap="round"/></svg></span>Profile</div>
+      </div>
+      <div class="home-pill"><span></span></div>
+    </div>
+    <div class="caption">
+      <b>Frame 4 · "retro-success"</b> — confirmation: green check, <b>"Activity Added!"</b>, "Sunset at Las Cabanas is now part of your Diary." Note the frame's own name says <i>retro</i> — suggesting retrospective (post-trip) adding is intended, worth confirming.
+    </div>
+  </div>
+
+</div>

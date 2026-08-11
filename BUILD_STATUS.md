@@ -31,9 +31,10 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | **Epic 2 — Decisions** *(deferred behind E4, 2026-07-29 — trigger: the founders' E2 UX-flow discussion)* | | | | |
 | S2.1 | Decision + votes (one per member, INV-10) | ⬜ | — |
 | S2.2 | Close decision with outcome | ⬜ | — |
-| **Epic 3 — The record** *(resequenced behind E4, 2026-07-29; S3.3 resliced into the E4 pull)* | | | | |
-| S3.1 | Diary create + contributor grants (INV-2a) | ⬜ | — |
-| S3.2 | Diary entries: text + geotag | ⬜ | — |
+| **Epic 3 — The record** *(resequenced behind E4, 2026-07-29; S3.3 resliced into the E4 pull; resliced again 2026-08-11 at the diary grilling — ADR-024)* | | | | |
+| S3.1 | Diary: activity-derived posts *(re-scoped 2026-08-11, ADR-024 — the postcard model; grilled with S3.4, pulled ahead of S4.3; absorbs what survived of S3.2)* | ⬜ | [spec](docs/plans/S3.1-diary-posts/spec.md) |
+| S3.2 | Diary entries: text + geotag *(dissolved 2026-08-11 — ADR-024's postcard model has no free-standing entries; text+geotag park on the epic map, the rest lives in S3.1)* | 🚫 | — |
+| S3.4 | Photo Dump — the trip's shared photo pool *(raised 2026-08-11 at the diary grilling: the composer's second source; uploads only, the tab's Gallery association retires)* | ⬜ | [spec](docs/plans/S3.4-photo-dump/spec.md) |
 | S3.3 | Photo/media pipeline (object storage) *(resliced into the E4 pull, 2026-07-29 — builds after S4.1, before S4.3; ADR-021 — Garage locally / Railway Buckets or R2 deployed, backend-URL serving through the audience ladder, strip-and-re-encode at ingest per INV-11; all four greyed media surfaces activate)* | ✅ | [spec](docs/plans/S3.3-media-pipeline/spec.md) |
 | **Epic 4 — Social surface** *(pulled next, 2026-07-29 — order amended 2026-07-31: S4.9 → S4.1 → S3.3 → S4.3 → S4.10 → S4.4–S4.8)* | | | | |
 | S4.0 | Auth & onboarding retrofit *(grilled 2026-07-30 — full flow pulled forward from pre-alpha; 6-digit OTP + Resend + Admin SDK; handles ADR-015 + palette ADR-016 decided ahead of their pins; merges two backlog lines)* | ✅ | [spec](docs/plans/S4.0-auth-onboarding-retrofit/spec.md) |
@@ -48,7 +49,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | S4.18 | Buffered plan editing *(founder ruling 2026-08-09 on the running S4.17 build — "nothing is saved up until save changes is pressed"; grilled 2026-08-10, ADR-023: the seven plan ops stage, one version-checked transactional bulk save, confirm-then-discard on exit, crash loss accepted, history by server diff; supersedes ADR-022 decision 3's saving semantics)* | ✅ | [spec](docs/plans/S4.18-buffered-plan-editing/spec.md) |
 | S4.19 | Workspace editing pass *(grilled 2026-08-09 with S4.20, split on the record — the editor chip reads "Trip Workspace"; the day-rename pencil replaces the tap-the-title; create/edit unify into one mode-contracted form, destinations go multi; dates never touch days; no wire change)* | ✅ | [spec](docs/plans/S4.19-workspace-editing-pass/spec.md) |
 | S4.20 | Travelers → profile *(grilled 2026-08-09 with S4.19 — owner-only tag; row taps open a read-only profile stub from the shared card, email hidden everywhere it renders; members screen soft-retires behind the offer banner's door; one additive wire change: the roster gains handle/bio/vanityNumber)* | ✅ | [spec](docs/plans/S4.20-travelers-profile/spec.md) |
-| S4.2 | Published diaries → Highlights *(resolves reg. #13; detached from the E4 pull 2026-07-29 — hard-depends on diaries, sequenced behind E3)* | ⬜ | — |
+| S4.2 | Published diaries → Highlights *(resolves reg. #13; detached from the E4 pull 2026-07-29 — hard-depends on diaries, sequenced behind E3; re-pointed 2026-08-11: diary-publish + Highlights + the dump-photo consent must-answer live here — S3.1 ships capture author-only)* | ⬜ | — |
 | S4.3 | Discovery / browse feed (cursor) | ⬜ | — |
 | S4.4 | Stars | ⬜ | — |
 | S4.5 | Reviews *(resolves reg. #4)* | ⬜ | — |
