@@ -11,8 +11,6 @@ import org.springframework.data.repository.query.Param;
 
 interface DiaryEntryRepository extends JpaRepository<DiaryEntry, UUID> {
 
-    List<DiaryEntry> findByTravelerIdAndItineraryIdOrderById(UUID travelerId, UUID itineraryId);
-
     List<DiaryEntry> findByTravelerIdAndItineraryIdOrderById(
             UUID travelerId, UUID itineraryId, Limit limit);
 

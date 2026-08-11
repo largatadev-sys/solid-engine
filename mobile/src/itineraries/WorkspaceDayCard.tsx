@@ -272,12 +272,16 @@ export function ActivityRow({
 
       {diaryLink !== null && diaryLink !== undefined ? (
         <Pressable
+          style={styles.diaryLinkTap}
           onPress={diaryLink.onPress}
           accessibilityRole="button"
           accessibilityLabel={`${diaryLink.label}: ${activity.title}`}
           hitSlop={8}
         >
-          <Text style={[styles.diaryLink, diaryLink.added && styles.diaryLinkAdded]}>
+          <Text
+            style={[styles.diaryLink, diaryLink.added && styles.diaryLinkAdded]}
+            numberOfLines={1}
+          >
             {diaryLink.label}
           </Text>
         </Pressable>
@@ -377,6 +381,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  diaryLinkTap: {
+    flexShrink: 0,
   },
   diaryLink: {
     ...diaryTypography.link,
