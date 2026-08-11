@@ -335,7 +335,7 @@ function writeFixture() {
     composerScreen.includes('DAY 1 • 5:30 PM') &&
     composerScreen.includes('Sunset at Las Cabanas') &&
     composerScreen.includes('Photos in this memory') &&
-    composerScreen.includes('Add from phone') &&
+    composerScreen.includes('Add from camera roll') &&
     composerScreen.includes('Pick from Photo Dump') &&
     composerScreen.includes('Add a caption'),
     composerScreen.replace(/\n/g, ' | ').slice(0, 200));
@@ -432,6 +432,34 @@ function writeFixture() {
     openedEntry.clicked === true && entryScreen.includes('Your Diary Entry') &&
     entryScreen.includes('Sunset at Las Cabanas') && shownCaption === 'Golden hour, no filter',
     `caption=${JSON.stringify(shownCaption)}`);
+
+  // The founder's bug: after one successful save the screen kept comparing against the caption
+  // it loaded WITH, so every later edit looked unchanged and the save silently did nothing.
+  // Two saves in a row is the only shape that catches it — the first always worked.
+  const typeCaption = async (text) => evaluate(`
+    (() => {
+      const field = Array.from(document.querySelectorAll('textarea,input'))
+        .filter((n) => (n.getAttribute('aria-label') || '') === 'Add a caption')
+        .filter((n) => n.offsetParent !== null).pop();
+      if (!field) return 'no caption field';
+      const setter = Object.getOwnPropertyDescriptor(
+        field instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype,
+        'value').set;
+      setter.call(field, ${JSON.stringify(text)});
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      return 'typed';
+    })()
+  `);
+
+  await typeCaption('First edit');
+  await tapLabel('Save caption', 4000);
+  await typeCaption('Second edit');
+  await tapLabel('Save caption', 4000);
+
+  const resaved = await api(`/v1/itineraries/${trip}/diary/entries`, 'GET', author.idToken);
+  check('an entry can be edited AGAIN after a save — not just the first time',
+    resaved.body.items[0]?.caption === 'Second edit',
+    `caption=${JSON.stringify(resaved.body.items[0]?.caption)}`);
 
   await tapLabel('Delete entry', 5000);
   const confirms = await evaluate('JSON.stringify(window.__largataConfirms || [])');

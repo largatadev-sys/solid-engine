@@ -10,9 +10,11 @@ export const PHOTOS_LABEL = 'Photos in this memory';
 
 export const PHOTOS_EMPTY = 'No photos yet — a diary entry needs at least one.';
 
-export const ADD_FROM_PHONE = 'Add from phone';
+export const ADD_FROM_CAMERA_ROLL = 'Add from camera roll';
 
 export const PICK_FROM_DUMP = 'Pick from Photo Dump';
+
+export const SAVE_CAPTION_LABEL = 'Save caption';
 
 export const DUMP_EMPTY = 'No photos in the trip’s Photo Dump yet.';
 

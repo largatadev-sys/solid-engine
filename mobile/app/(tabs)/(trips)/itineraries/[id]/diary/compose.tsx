@@ -16,7 +16,7 @@ import {
   ScreenMessage,
 } from '../../../../../../src/components/ScreenMessage';
 import {
-  ADD_FROM_PHONE,
+  ADD_FROM_CAMERA_ROLL,
   CAPTION_LABEL,
   CAPTION_PLACEHOLDER,
   COMPOSE_CTA,
@@ -158,7 +158,7 @@ export default function ComposeDiaryEntryScreen() {
 
           <View style={styles.addRow}>
             <DiaryAddTile
-              label={ADD_FROM_PHONE}
+              label={ADD_FROM_CAMERA_ROLL}
               accessibilityLabel="Add a photo from your camera roll"
               disabled={room === 0}
               onPress={pickFromDevice}

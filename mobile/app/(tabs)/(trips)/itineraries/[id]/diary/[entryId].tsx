@@ -9,7 +9,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Icon } from '../../../../../../src/components/Icon';
 import { confirmDestructive } from '../../../../../../src/components/confirmDestructive';
 import { ScreenHeader } from '../../../../../../src/components/ScreenHeader';
 import {
@@ -17,24 +16,30 @@ import {
   ScreenMessage,
 } from '../../../../../../src/components/ScreenMessage';
 import {
-  CAMERA_ROLL_LABEL,
+  ADD_FROM_CAMERA_ROLL,
   CAPTION_LABEL,
   CAPTION_PLACEHOLDER,
   DELETE_ENTRY_LABEL,
   DELETE_ENTRY_SUBJECT,
-  DUMP_LABEL,
   ENTRY_TITLE,
+  PHOTOS_LABEL,
+  PICK_FROM_DUMP,
+  SAVE_CAPTION_LABEL,
 } from '../../../../../../src/diary/diaryCopy';
-import { canRemovePhoto, roomLeft } from '../../../../../../src/diary/diaryCapture';
+import {
+  canRemovePhoto,
+  MAX_DIARY_PHOTOS,
+  roomLeft,
+} from '../../../../../../src/diary/diaryCapture';
 import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { DiaryAddTile, DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
-import { SHOW_SCROLLBAR } from '../../../../../../src/diary/photoStripScroll';
+import { DumpPickerModal } from '../../../../../../src/diary/DumpPickerModal';
 import { flattenPhotoDumpPages } from '../../../../../../src/media/photoDumpGrid';
 import { usePhotoAction } from '../../../../../../src/media/usePhotoAction';
 import {
-  useAddDiaryDevicePhoto,
-  useAddDiaryPhotoFromDump,
+  useAddDiaryDevicePhotos,
+  useAddDiaryPhotosFromDump,
   useDeleteDiaryEntry,
   useMyDiaryEntries,
   useRecaptionDiaryEntry,
@@ -48,10 +53,8 @@ import {
   diaryTypography,
   workspaceColors,
   workspaceMetrics,
+  workspaceRadii,
 } from '../../../../../../src/theme/workspaceTokens';
-
-
-const REMOVE_ICON_SIZE = 14;
 
 
 export default function DiaryEntryScreen() {
@@ -66,17 +69,19 @@ export default function DiaryEntryScreen() {
   const archived = trip.data?.archived ?? false;
 
   const recaption = useRecaptionDiaryEntry(id, entryId);
-  const addDevicePhoto = useAddDiaryDevicePhoto(id, entryId);
-  const addFromDump = useAddDiaryPhotoFromDump(id, entryId);
+  const addDevicePhotos = useAddDiaryDevicePhotos(id, entryId);
+  const addFromDump = useAddDiaryPhotosFromDump(id, entryId);
   const removePhoto = useRemoveDiaryPhoto(id, entryId);
   const remove = useDeleteDiaryEntry(id);
   const photoAction = usePhotoAction();
 
-  const [caption, setCaption] = useState<string | null>(null);
+  const saved = entry?.caption ?? '';
+  const [draft, setDraft] = useState<string | null>(null);
+  const [dumpPickerOpen, setDumpPickerOpen] = useState(false);
 
   useEffect(() => {
-    if (entry !== undefined && caption === null) setCaption(entry.caption ?? '');
-  }, [entry, caption]);
+    setDraft(null);
+  }, [saved]);
 
   if (entries.isPending || trip.isPending) {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
@@ -89,14 +94,20 @@ export default function DiaryEntryScreen() {
   }
 
   const dumpPhotos = flattenPhotoDumpPages(dump.data?.pages);
-  const chosenIds = new Set(entry.photos.map((photo) => photo.id));
-  const room = roomLeft(entry.photos.length);
+  const total = entry.photos.length;
+  const room = roomLeft(total);
   const editable = !archived;
+  const shown = draft ?? saved;
+  const dirty = shown.trim() !== saved;
 
   const saveCaption = () => {
-    const next = (caption ?? '').trim();
-    if (next === (entry.caption ?? '')) return;
+    if (!dirty) return;
+    const next = shown.trim();
     void photoAction.run(() => recaption.mutateAsync(next === '' ? null : next));
+  };
+
+  const pickFromDevice = () => {
+    void photoAction.pickManyAndRun(room, (picked) => addDevicePhotos.mutateAsync(picked));
   };
 
   const deleteEntry = () => {
@@ -118,74 +129,52 @@ export default function DiaryEntryScreen() {
           <Text style={styles.title}>{entry.activityTitle}</Text>
         </View>
 
-        <View>
-          <Text style={styles.sectionLabel}>Photos</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={SHOW_SCROLLBAR}>
-            <View style={styles.grid}>
-              {entry.photos.map((photo, index) => (
-                <View key={photo.id}>
-                  <DiaryPhotoTile
-                    url={photo.url}
-                    accessibilityLabel={`Diary photo ${index + 1}`}
-                    selected={false}
-                  />
-                  {editable && canRemovePhoto(entry.photos.length) ? (
-                    <Pressable
-                      style={styles.removePhoto}
-                      onPress={() => void photoAction.run(() => removePhoto.mutateAsync(photo.id))}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove diary photo ${index + 1}`}
-                      hitSlop={6}
-                    >
-                      <Icon name="trash" size={REMOVE_ICON_SIZE} color={colors.surface} />
-                    </Pressable>
-                  ) : null}
-                </View>
-              ))}
-              {editable ? (
-                <DiaryAddTile
-                  label="Add More"
-                  accessibilityLabel={CAMERA_ROLL_LABEL}
-                  disabled={room === 0}
-                  onPress={() => {
-                    void photoAction.pickAndRun((picked) => addDevicePhoto.mutateAsync(picked));
-                  }}
-                />
-              ) : null}
-            </View>
-          </ScrollView>
-        </View>
-
-        {editable && dumpPhotos.length > 0 ? (
-          <View>
-            <Text style={styles.sectionLabel}>{DUMP_LABEL}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={SHOW_SCROLLBAR}>
-              <View style={styles.grid}>
-                {dumpPhotos.map((photo) => (
-                  <DiaryPhotoTile
-                    key={photo.id}
-                    url={photo.url}
-                    accessibilityLabel="Add this Photo Dump photo to your entry"
-                    selected={chosenIds.has(photo.id)}
-                    onPress={() =>
-                      room === 0
-                        ? undefined
-                        : void photoAction.run(() => addFromDump.mutateAsync(photo.id))
-                    }
-                  />
-                ))}
-              </View>
-            </ScrollView>
+        <View style={styles.photoBlock}>
+          <View style={styles.photoHeader}>
+            <Text style={styles.sectionLabel}>{PHOTOS_LABEL}</Text>
+            <Text style={styles.count}>{`${total} / ${MAX_DIARY_PHOTOS}`}</Text>
           </View>
-        ) : null}
+
+          <View style={styles.grid}>
+            {entry.photos.map((photo, index) => (
+              <DiaryPhotoTile
+                key={photo.id}
+                url={photo.url}
+                accessibilityLabel={`Diary photo ${index + 1}`}
+                onRemove={
+                  editable && canRemovePhoto(total)
+                    ? () => void photoAction.run(() => removePhoto.mutateAsync(photo.id))
+                    : undefined
+                }
+              />
+            ))}
+          </View>
+
+          {editable ? (
+            <View style={styles.addRow}>
+              <DiaryAddTile
+                label={ADD_FROM_CAMERA_ROLL}
+                accessibilityLabel="Add a photo from your camera roll"
+                disabled={room === 0}
+                onPress={pickFromDevice}
+              />
+              <DiaryAddTile
+                label={PICK_FROM_DUMP}
+                accessibilityLabel="Add a photo from the Photo Dump"
+                emphasis="dump"
+                disabled={room === 0}
+                onPress={() => setDumpPickerOpen(true)}
+              />
+            </View>
+          ) : null}
+        </View>
 
         <View>
           <Text style={styles.sectionLabel}>{CAPTION_LABEL}</Text>
           <TextInput
             style={styles.caption}
-            value={caption ?? ''}
-            onChangeText={setCaption}
-            onBlur={saveCaption}
+            value={shown}
+            onChangeText={setDraft}
             editable={editable}
             placeholder={CAPTION_PLACEHOLDER}
             placeholderTextColor={workspaceColors.placeholder}
@@ -203,13 +192,18 @@ export default function DiaryEntryScreen() {
         {editable ? (
           <>
             <Pressable
-              style={styles.saveCaption}
+              style={[styles.saveCaption, !dirty && styles.saveDisabled]}
               onPress={saveCaption}
-              disabled={recaption.isPending}
+              disabled={!dirty || recaption.isPending}
               accessibilityRole="button"
-              accessibilityLabel="Save caption"
+              accessibilityLabel={SAVE_CAPTION_LABEL}
+              accessibilityState={{ disabled: !dirty || recaption.isPending }}
             >
-              <Text style={styles.saveCaptionLabel}>Save caption</Text>
+              {recaption.isPending ? (
+                <ActivityIndicator color={workspaceColors.onAccent} />
+              ) : (
+                <Text style={styles.saveCaptionLabel}>{SAVE_CAPTION_LABEL}</Text>
+              )}
             </Pressable>
 
             <Pressable
@@ -224,6 +218,17 @@ export default function DiaryEntryScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      <DumpPickerModal
+        visible={dumpPickerOpen}
+        photos={dumpPhotos}
+        room={room}
+        onAdd={(photoIds) => {
+          setDumpPickerOpen(false);
+          void photoAction.run(() => addFromDump.mutateAsync(photoIds));
+        }}
+        onDismiss={() => setDumpPickerOpen(false)}
+      />
     </View>
   );
 }
@@ -256,28 +261,33 @@ const styles = StyleSheet.create({
     ...diaryTypography.sectionLabel,
     color: diaryColors.sectionLabel,
   },
+  photoBlock: {
+    gap: spacing.sm3,
+  },
+  photoHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  count: {
+    ...diaryTypography.count,
+    color: diaryColors.count,
+  },
   grid: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm3,
+    flexWrap: 'wrap',
+    gap: diaryMetrics.tileGap,
   },
-  removePhoto: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    width: diaryMetrics.removeBadge,
-    height: diaryMetrics.removeBadge,
-    borderRadius: radii.pill,
-    backgroundColor: colors.danger,
-    alignItems: 'center',
-    justifyContent: 'center',
+  addRow: {
+    flexDirection: 'row',
+    gap: diaryMetrics.tileGap,
   },
   caption: {
     marginTop: spacing.sm2,
     backgroundColor: diaryColors.tileWell,
     borderWidth: 1,
-    borderColor: diaryColors.tileDash,
-    borderRadius: radii.control,
+    borderColor: diaryColors.fieldBorder,
+    borderRadius: radii.md,
     minHeight: diaryMetrics.captionMinHeight,
     padding: diaryMetrics.captionPadding,
     textAlignVertical: 'top',
@@ -290,10 +300,13 @@ const styles = StyleSheet.create({
   },
   saveCaption: {
     height: diaryMetrics.ctaHeight,
-    borderRadius: radii.control,
+    borderRadius: diaryMetrics.ctaRadius,
     backgroundColor: workspaceColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  saveDisabled: {
+    opacity: 0.5,
   },
   saveCaptionLabel: {
     ...diaryTypography.cta,
@@ -301,7 +314,7 @@ const styles = StyleSheet.create({
   },
   deleteEntry: {
     height: workspaceMetrics.inputHeight,
-    borderRadius: radii.control,
+    borderRadius: workspaceRadii.control,
     borderWidth: 1,
     borderColor: colors.danger,
     alignItems: 'center',

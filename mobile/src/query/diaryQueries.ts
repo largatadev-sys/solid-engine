@@ -100,14 +100,19 @@ export function useRecaptionDiaryEntry(
 }
 
 
-export function useAddDiaryDevicePhoto(
+export function useAddDiaryDevicePhotos(
   itineraryId: string,
   entryId: string,
-): UseMutationResult<DiaryEntryResponse, Error, PickedPhoto> {
+): UseMutationResult<DiaryEntryResponse | undefined, Error, readonly PickedPhoto[]> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (photo: PickedPhoto) =>
-      diaryRepository.addDevicePhoto(itineraryId, entryId, photo),
+    mutationFn: async (photos: readonly PickedPhoto[]) => {
+      let latest: DiaryEntryResponse | undefined;
+      for (const photo of photos) {
+        latest = await diaryRepository.addDevicePhoto(itineraryId, entryId, photo);
+      }
+      return latest;
+    },
     onSuccess: async () => {
       track(DIARY_ENTRY_EDITED, { itineraryId, diaryEntryId: entryId });
       await invalidateDiary(client, itineraryId);
@@ -116,14 +121,19 @@ export function useAddDiaryDevicePhoto(
 }
 
 
-export function useAddDiaryPhotoFromDump(
+export function useAddDiaryPhotosFromDump(
   itineraryId: string,
   entryId: string,
-): UseMutationResult<DiaryEntryResponse, Error, string> {
+): UseMutationResult<DiaryEntryResponse | undefined, Error, readonly string[]> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (photoId: string) =>
-      diaryRepository.addPhotoFromDump(itineraryId, entryId, photoId),
+    mutationFn: async (photoIds: readonly string[]) => {
+      let latest: DiaryEntryResponse | undefined;
+      for (const photoId of photoIds) {
+        latest = await diaryRepository.addPhotoFromDump(itineraryId, entryId, photoId);
+      }
+      return latest;
+    },
     onSuccess: async () => {
       track(DIARY_ENTRY_EDITED, { itineraryId, diaryEntryId: entryId });
       await invalidateDiary(client, itineraryId);
