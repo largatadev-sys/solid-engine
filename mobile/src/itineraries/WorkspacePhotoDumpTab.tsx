@@ -15,7 +15,7 @@ import {
 } from '../media/photoDumpMessages';
 import { usePhotoAction } from '../media/usePhotoAction';
 import {
-  useAddPhotoDumpEntry,
+  useAddPhotoDumpEntries,
   usePhotoDump,
   useRemovePhotoDumpEntry,
 } from '../query/itineraryQueries';
@@ -43,7 +43,7 @@ export function WorkspacePhotoDumpTab({
   archived,
 }: WorkspacePhotoDumpTabProps) {
   const pool = usePhotoDump(itineraryId);
-  const add = useAddPhotoDumpEntry(itineraryId);
+  const add = useAddPhotoDumpEntries(itineraryId);
   const remove = useRemovePhotoDumpEntry(itineraryId);
   const photoAction = usePhotoAction();
   const [openedId, setOpenedId] = useState<string | null>(null);
@@ -112,7 +112,11 @@ export function WorkspacePhotoDumpTab({
           <Pressable
             style={styles.addTile}
             disabled={busy}
-            onPress={() => void photoAction.pickAndRun((photo) => add.mutateAsync(photo))}
+            onPress={() =>
+              void photoAction.pickManyAndRun(PHOTO_DUMP_BATCH_LIMIT, (photos) =>
+                add.mutateAsync(photos),
+              )
+            }
             accessibilityRole="button"
             accessibilityLabel={PHOTO_DUMP_ADD_LABEL}
           >
@@ -147,6 +151,8 @@ export function WorkspacePhotoDumpTab({
 
 
 const TILE = 104;
+
+const PHOTO_DUMP_BATCH_LIMIT = 20;
 
 
 const styles = StyleSheet.create({

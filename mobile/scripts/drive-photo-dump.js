@@ -288,7 +288,10 @@ function writeFixture() {
           && n.querySelector('[aria-label="Trip photo"]') !== null).length)()
     `);
 
-  const plantFile = async (file) => {
+  // `copies` plants distinct files so a multi-select picker returns more than one; the plant is
+  // consumed on use, since one left armed re-fires on the NEXT input.click() and reads as the app
+  // picking twice (both learned at S3.1).
+  const plantFile = async (file, copies = 1) => {
     const bytes = fs.readFileSync(file).toString('base64');
     await evaluate(`window.__drivenB64 = ${JSON.stringify(bytes)}; true`);
     return evaluate(`(() => {
@@ -296,16 +299,19 @@ function writeFixture() {
       delete window.__drivenB64;
       const arr = new Uint8Array(raw.length);
       for (let i = 0; i < raw.length; i += 1) arr[i] = raw.charCodeAt(i);
-      const f = new File([arr], ${JSON.stringify(path.basename(file))}, { type: 'image/jpeg' });
       const transfer = new DataTransfer();
-      transfer.items.add(f);
+      for (let n = 0; n < ${copies}; n += 1) {
+        transfer.items.add(new File([arr], n + '-' + ${JSON.stringify(path.basename(file))}, { type: 'image/jpeg' }));
+      }
       const proto = HTMLInputElement.prototype;
       if (!window.__drivenFilesHooked) {
         window.__drivenFilesHooked = true;
         const nativeClick = proto.click;
         proto.click = function () {
           if (this.type === 'file' && window.__drivenPlantedFiles) {
-            Object.defineProperty(this, 'files', { configurable: true, get: () => window.__drivenPlantedFiles });
+            const planted = window.__drivenPlantedFiles;
+            window.__drivenPlantedFiles = null;
+            Object.defineProperty(this, 'files', { configurable: true, get: () => planted });
             this.dispatchEvent(new Event('change', { bubbles: true }));
             return;
           }
@@ -313,7 +319,7 @@ function writeFixture() {
         };
       }
       window.__drivenPlantedFiles = transfer.files;
-      return 'planted ' + f.size + ' bytes';
+      return 'planted ' + transfer.files.length + ' file(s)';
     })()`);
   };
 
@@ -331,15 +337,15 @@ function writeFixture() {
   check('no coming-soon dialog fired on the tab',
     (await evaluate('JSON.stringify(window.__largataAlerts || [])')) === '[]');
 
-  await plantFile(fixture);
+  await plantFile(fixture, 2);
   const uploadTap = await tapLabel('Add Photos');
-  await sleep(3000);
+  await sleep(4000);
   check('the upload tile drives the real multipart route (AC 1)', uploadTap.clicked === true,
     JSON.stringify(uploadTap));
 
   const afterOwner = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', owner.idToken);
-  check('the owner\'s photo landed in the pool, server-side (AC 1)',
-    afterOwner.body.items?.length === 1, `n=${afterOwner.body.items?.length}`);
+  check('one trip to the picker uploads MULTIPLE photos to the pool',
+    afterOwner.body.items?.length === 2, `n=${afterOwner.body.items?.length}`);
 
   const ownersPhotoId = afterOwner.body.items?.[0]?.id;
 
@@ -357,7 +363,7 @@ function writeFixture() {
     JSON.stringify(memberUpload));
 
   const shared = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', member.idToken);
-  check('both members\' photos are in one pool (AC 1)', shared.body.items?.length === 2,
+  check('both members\' photos are in one pool (AC 1)', shared.body.items?.length === 3,
     `n=${shared.body.items?.length}`);
 
   const mediaCalls = apiCalls.filter((c) => c.url.includes('/v1/media/'));
@@ -372,7 +378,7 @@ function writeFixture() {
     previewTap.clicked === true && previewText.includes('Close'), previewText.slice(0, 90));
   const stillThere = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', member.idToken);
   check('the tap deleted nothing — the pool is untouched by opening a photo',
-    stillThere.body.items?.length === 2, `n=${stillThere.body.items?.length}`);
+    stillThere.body.items?.length === 3, `n=${stillThere.body.items?.length}`);
 
   const beforeDelete = (await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]';
   const deleteTap = await tapLabel('Delete Photo');
@@ -386,7 +392,7 @@ function writeFixture() {
 
   const afterMemberDelete = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', member.idToken);
   check('the member took out their own photo and the owner\'s survives (AC 3)',
-    afterMemberDelete.body.items?.length === 1 && afterMemberDelete.body.items[0].id === ownersPhotoId,
+    afterMemberDelete.body.items?.length === 2 && afterMemberDelete.body.items.some((p) => p.id === ownersPhotoId),
     `n=${afterMemberDelete.body.items?.length}`);
 
   const poaching = await api(`/v1/itineraries/${trip}/photo-dump/${ownersPhotoId}`, 'DELETE', member.idToken);
@@ -403,9 +409,17 @@ function writeFixture() {
   await tapLabel('Add Photos');
   await sleep(3000);
   const restocked = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', member.idToken);
-  check('the member re-adds a photo for the owner to remove', restocked.body.items?.length === 2,
+  check('the member re-adds a photo for the owner to remove', restocked.body.items?.length === 3,
     `n=${restocked.body.items?.length}`);
-  const foreignPhotoId = restocked.body.items?.find((p) => p.id !== ownersPhotoId)?.id;
+  // The tap below opens the LAST visible tile, and the pool is oldest-first — so the photo the
+  // owner is about to remove is the newest one. Assert whose it is rather than assume: if it were
+  // the owner's own, the check below would prove uploader authority, not owner authority.
+  const foreign = (restocked.body.items ?? []).at(-1);
+  const foreignPhotoId = foreign?.id;
+  const memberTravelerId = (await api('/v1/me', 'GET', member.idToken)).body.id;
+  check('the photo the owner is about to remove belongs to the MEMBER',
+    foreign?.uploadedBy === memberTravelerId,
+    `uploadedBy=${foreign?.uploadedBy}`);
 
   await seat(owner);
   await goto(`/itineraries/${trip}?tab=photo-dump`);

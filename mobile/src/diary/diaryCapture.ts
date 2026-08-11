@@ -1,0 +1,56 @@
+import type { DiaryEntryResponse, ItineraryState } from '../types/api';
+
+export const MAX_DIARY_PHOTOS = 5;
+
+
+
+export function capturesAreOpen(state: ItineraryState): boolean {
+  return state === 'ongoing' || state === 'completed';
+}
+
+
+export function entryForActivity(
+  entries: readonly DiaryEntryResponse[],
+  activityId: string,
+): DiaryEntryResponse | null {
+  return entries.find((entry) => entry.activityId === activityId) ?? null;
+}
+
+
+export function captureLabel(entry: DiaryEntryResponse | null): string {
+  return entry === null ? 'Add to Diary' : 'Added ✓';
+}
+
+
+export function roomLeft(photoCount: number): number {
+  return Math.max(0, MAX_DIARY_PHOTOS - photoCount);
+}
+
+
+export function canSubmit(photoCount: number): boolean {
+  return photoCount >= 1 && photoCount <= MAX_DIARY_PHOTOS;
+}
+
+
+export function successMessage(activityTitle: string): string {
+  return `${activityTitle} is now part of your Diary.`;
+}
+
+
+export function savedMessage(activityTitle: string): string {
+  return `Your entry for ${activityTitle} is up to date.`;
+}
+
+
+export function togglePick(picked: readonly string[], photoId: string, room: number): string[] {
+  if (picked.includes(photoId)) {
+    return picked.filter((candidate) => candidate !== photoId);
+  }
+  return room <= 0 ? [...picked] : [...picked, photoId];
+}
+
+
+export function addPhotosLabel(count: number): string {
+  if (count === 0) return 'Select photos';
+  return count === 1 ? 'Add 1 photo' : `Add ${count} photos`;
+}

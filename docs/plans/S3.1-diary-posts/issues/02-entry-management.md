@@ -4,9 +4,9 @@
 
 **Blocked by:** 01 — The postcard on the wire.
 
-**Status:** needs-triage
+**Status:** done
 
-- [ ] Caption-only edit works; photo add honors the cap (6th refuses) and the copy rule for dump photos; photo remove honors the floor (removing the last refuses) (spec AC 8).
-- [ ] Entry delete removes rows and bytes and frees the (traveler, activity) pair — a fresh create for that activity succeeds after (spec AC 10).
-- [ ] Only the author can touch an entry: another member's edit/delete masks to not-found (IT).
-- [ ] Archived trip refuses all four writes; the author still reads (fence family).
+- [x] Caption-only edit works; photo add honors the cap (6th refuses) and the copy rule for dump photos; photo remove honors the floor (removing the last refuses) (spec AC 8).
+- [x] Entry delete removes rows and bytes and frees the (traveler, activity) pair — a fresh create for that activity succeeds after (spec AC 10).
+- [x] Only the author can touch an entry: another member's edit/delete masks to not-found (IT).
+- [x] Archived trip refuses all four writes; the author still reads (fence family).

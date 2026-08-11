@@ -26,6 +26,72 @@ export const workspaceColors = {
   none: 'transparent',
   pressed: '#F5F5F4',
   accentWash: 'rgba(234, 88, 12, 0.06)',
+  captured: '#15803D',
+} as const;
+
+
+export const diaryColors = {
+  eyebrow: '#EA580C',
+  check: '#EA580C',
+  sectionLabel: '#1C1917',
+  tileWell: '#FAFAF9',
+  tileDash: '#D6D3D1',
+  posted: '#10B981',
+  postedBody: '#6E6A66',
+  count: '#78716C',
+  addLabel: '#57534E',
+  dumpWell: '#FFF7ED',
+  dumpBorder: '#FED7AA',
+  dumpLabel: '#C2410C',
+  badgeInk: 'rgba(28, 25, 23, 0.72)',
+  badgeText: '#FFFFFF',
+  fieldBorder: '#E7E5E4',
+} as const;
+
+
+export const diaryTypography = {
+  eyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  activityTitle: { fontFamily: fonts.extraBold, fontSize: 25, lineHeight: 30, fontWeight: '800' },
+  sectionLabel: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  count: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  addTile: { fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 16, fontWeight: '600' },
+  dumpTile: { fontFamily: fonts.bold, fontSize: 12.5, lineHeight: 16, fontWeight: '700' },
+  sourceBadge: {
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    lineHeight: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  caption: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, fontWeight: '400' },
+  note: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, fontWeight: '400' },
+  cta: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, fontWeight: '700' },
+  link: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 15, fontWeight: '700' },
+  postedTitle: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 39, fontWeight: '700' },
+  postedBody: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, fontWeight: '400' },
+  postcardTitle: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 22, fontWeight: '700' },
+} as const;
+
+
+export const diaryMetrics = {
+  tileRadius: 14,
+  tileGap: 8,
+  checkSize: 20,
+  badgeInset: 7,
+  ctaHeight: 52,
+  ctaRadius: 14,
+  captionMinHeight: 80,
+  captionPadding: 14,
+  postedHalo: 64,
+  postcardPhotoWidth: 280,
+  postcardPhotoHeight: 220,
 } as const;
 
 

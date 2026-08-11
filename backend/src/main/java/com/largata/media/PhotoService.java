@@ -4,6 +4,9 @@ import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
 import com.largata.common.storage.ObjectStore;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -58,6 +61,24 @@ public class PhotoService {
                 subject,
                 subjectId,
                 saved.byteSize());
+        return saved;
+    }
+
+
+    @Transactional
+    public Photo copyTo(Photo source, PhotoSubject subject, UUID subjectId, UUID uploadedBy) {
+        Photo copy = Photo.copyOf(source, subject, subjectId, uploadedBy, Instant.now(clock));
+
+        copyBytes(source.storageKey(), copy.storageKey());
+        copyBytes(source.thumbnailStorageKey(), copy.thumbnailStorageKey());
+        Photo saved = photos.saveAndFlush(copy);
+
+        log.info(
+                "Photo copied: from={} to={} subject={} subjectId={}",
+                source.id(),
+                saved.id(),
+                subject,
+                subjectId);
         return saved;
     }
 
@@ -128,6 +149,16 @@ public class PhotoService {
         return subject == PhotoSubject.TRAVELER_AVATAR
                 ? ImageIngest.Framing.SQUARE
                 : ImageIngest.Framing.AS_UPLOADED;
+    }
+
+
+    private void copyBytes(String sourceKey, String targetKey) {
+        ObjectStore.StoredObject source = store.get(sourceKey).orElseThrow(PhotoNotFoundException::new);
+        try (InputStream bytes = source.bytes()) {
+            store.put(targetKey, bytes.readAllBytes(), source.contentType());
+        } catch (IOException unreadable) {
+            throw new UncheckedIOException(unreadable);
+        }
     }
 
 

@@ -32,7 +32,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | S2.1 | Decision + votes (one per member, INV-10) | ⬜ | — |
 | S2.2 | Close decision with outcome | ⬜ | — |
 | **Epic 3 — The record** *(resequenced behind E4, 2026-07-29; S3.3 resliced into the E4 pull; resliced again 2026-08-11 at the diary grilling — ADR-024)* | | | | |
-| S3.1 | Diary: activity-derived posts *(re-scoped 2026-08-11, ADR-024 — the postcard model; grilled with S3.4, pulled ahead of S4.3; absorbs what survived of S3.2)* | ⬜ | [spec](docs/plans/S3.1-diary-posts/spec.md) |
+| S3.1 | Diary: activity-derived posts *(re-scoped 2026-08-11, ADR-024 — the postcard model; grilled with S3.4, pulled ahead of S4.3; absorbs what survived of S3.2)* | ✅ | [spec](docs/plans/S3.1-diary-posts/spec.md) |
 | S3.2 | Diary entries: text + geotag *(dissolved 2026-08-11 — ADR-024's postcard model has no free-standing entries; text+geotag park on the epic map, the rest lives in S3.1)* | 🚫 | — |
 | S3.4 | Photo Dump — the trip's shared photo pool *(raised 2026-08-11 at the diary grilling: the composer's second source; uploads only, the tab's Gallery association retires)* | ✅ | [spec](docs/plans/S3.4-photo-dump/spec.md) |
 | S3.3 | Photo/media pipeline (object storage) *(resliced into the E4 pull, 2026-07-29 — builds after S4.1, before S4.3; ADR-021 — Garage locally / Railway Buckets or R2 deployed, backend-URL serving through the audience ladder, strip-and-re-encode at ingest per INV-11; all four greyed media surfaces activate)* | ✅ | [spec](docs/plans/S3.3-media-pipeline/spec.md) |
@@ -198,6 +198,14 @@ Test-harness capture (post-S0.6, owner directive): `mobile/scripts/drive-preview
 **Traveler vanity number grilled and parked — backlog line in the epic map.** Founder idea stress-tested on the record: a pure status badge (founders share `0`; everyone else `nnxxxx` — cohort month + a random number from a per-month pre-shuffled pool), plus hand-planted 2-char founder handles in the same future backfill. Key rulings: no runtime founder concept and no super-admin (the `(0,0)` rows are the record) · a founder-conditional handle minimum rejected as an improvised entitlement check, recorded instead as the story's candidate capability (short handle, register #14) · deferral is free (cohort reconstructs from `created_at`; the pool number is random), so the whole build waits. **Trigger: the public-profile story.**
 
 *Why it wasn't a story —* Not a story: no code, no product surface — an idea analyzed together and written into the docs per the working agreement; same shape as the 2026-07-24 EDA parking line.
+
+---
+
+**2026-08-11**
+
+**The Photo Dump tab takes several photos per pick, and drops its crop step — S3.4's surface, changed while S3.1 was open.** The founder's UI passes on S3.1's composer produced a multi-select upload (`pickPhotos()` on both forks) and asked for the same on the dump, which had stayed single-pick-with-crop: a traveler emptying a day's photos into a shared pool was opening the picker once per photo. The endpoint still takes one photo per call, so the mutation walks the selection serially and invalidates once, batch-bounded at 20 because the uploads are sequential and an unbounded pick would stall the tab with no progress to show. **Android cannot offer `allowsEditing` alongside multi-select**, so multi-picking skips the crop — acceptable here, since dump photos ingest as-uploaded. Verified on both rungs (`drive-photo-dump` 28/28, up two; `smoke-photo-dump` 20/20) and on the device through the real Android multi-picker, 7 → 9 photos in one pass.
+
+*Why it wasn't a story —* S3.4 had already shipped, and this is one interaction on one shipped tab, arriving as a founder pass on the running build rather than new scope. It rides S3.1's branch because that is where the shared `pickPhotos` seam was built; splitting it into its own story would have meant a second branch over the same three files. **Its walk was also repaired here**: `drive-photo-dump.js` still carried the pre-S3.1 single-file `plantFile` (so it could not have proven multi-upload at all), and its owner-removes-another-member's-photo check tapped the *last* tile while naming the *first* foreign one — which coincided while the owner had one photo, so it had been passing for the wrong reason.
 
 ---
 

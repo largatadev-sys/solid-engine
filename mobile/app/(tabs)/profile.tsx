@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { MyDiarySection } from '../../src/diary/MyDiarySection';
 import { useMe } from '../../src/hooks/useMe';
 import { ONBOARDING_ROUTES } from '../../src/onboarding/onboardingGate';
 import { ProfileCardView } from '../../src/profile/ProfileCardView';
@@ -13,7 +14,7 @@ export default function ProfileScreen() {
   const { state, refresh } = useMe();
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.brand}>
         <Text style={styles.wordmark}>Largata</Text>
         <Text style={styles.tagline}>SIGNED IN</Text>
@@ -38,6 +39,8 @@ export default function ProfileScreen() {
         </View>
       )}
 
+      {state.kind === 'ok' ? <MyDiarySection /> : null}
+
       <Link href={`${ONBOARDING_ROUTES.profile}?mode=edit`} asChild>
         <Pressable style={styles.button} accessibilityRole="button">
           <Text style={styles.buttonText}>Edit profile</Text>
@@ -61,7 +64,7 @@ export default function ProfileScreen() {
       >
         <Text style={styles.secondaryButtonText}>Sign out</Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -70,7 +73,7 @@ const CARD_MAX_WIDTH = 420;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
