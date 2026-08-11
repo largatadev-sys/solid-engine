@@ -6,6 +6,14 @@ export const CAMERA_ROLL_LABEL = 'Select photos from your camera roll';
 
 export const DUMP_LABEL = 'From the Photo Dump';
 
+export const PHOTOS_LABEL = 'Photos in this memory';
+
+export const PHOTOS_EMPTY = 'No photos yet — a diary entry needs at least one.';
+
+export const ADD_FROM_PHONE = 'Add from phone';
+
+export const PICK_FROM_DUMP = 'Pick from Photo Dump';
+
 export const DUMP_EMPTY = 'No photos in the trip’s Photo Dump yet.';
 
 export const DUMP_PICKER_TITLE = 'From the Photo Dump';
@@ -14,11 +22,8 @@ export const DUMP_PICKER_CANCEL = 'Cancel';
 
 export const DUMP_PICKER_FULL = 'That is five photos — the most a diary entry holds.';
 
-export const DEVICE_PICKER_TITLE = 'Add photos';
 
-export const DEVICE_PICKER_BODY = 'Choose one or more photos from your device.';
 
-export const DEVICE_PICKER_OPEN = 'Open camera roll';
 
 export const CAPTION_LABEL = 'Add a caption';
 

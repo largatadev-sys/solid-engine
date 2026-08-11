@@ -16,21 +16,24 @@ import {
   ScreenMessage,
 } from '../../../../../../src/components/ScreenMessage';
 import {
-  CAMERA_ROLL_LABEL,
+  ADD_FROM_PHONE,
   CAPTION_LABEL,
   CAPTION_PLACEHOLDER,
   COMPOSE_CTA,
   COMPOSE_TITLE,
-  DUMP_EMPTY,
-  DUMP_LABEL,
+  PHOTOS_EMPTY,
+  PHOTOS_LABEL,
+  PICK_FROM_DUMP,
 } from '../../../../../../src/diary/diaryCopy';
-import { canSubmit, roomLeft } from '../../../../../../src/diary/diaryCapture';
+import {
+  canSubmit,
+  MAX_DIARY_PHOTOS,
+  roomLeft,
+} from '../../../../../../src/diary/diaryCapture';
 import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { DiaryAddTile, DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
-import { DevicePickerModal } from '../../../../../../src/diary/DevicePickerModal';
 import { DumpPickerModal } from '../../../../../../src/diary/DumpPickerModal';
-import { SHOW_SCROLLBAR } from '../../../../../../src/diary/photoStripScroll';
 import { dayHeading } from '../../../../../../src/itineraries/dayHeading';
 import { flattenPhotoDumpPages } from '../../../../../../src/media/photoDumpGrid';
 import { usePhotoAction } from '../../../../../../src/media/usePhotoAction';
@@ -64,7 +67,6 @@ export default function ComposeDiaryEntryScreen() {
   const [devicePhotos, setDevicePhotos] = useState<PickedPhoto[]>([]);
   const [fromDump, setFromDump] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
-  const [devicePickerOpen, setDevicePickerOpen] = useState(false);
   const [dumpPickerOpen, setDumpPickerOpen] = useState(false);
 
   if (isPending) return <ActivityIndicator style={styles.loading} color={colors.accent} />;
@@ -88,7 +90,6 @@ export default function ComposeDiaryEntryScreen() {
   const pickFromDevice = () => {
     void photoAction.pickManyAndRun(room, async (picked) => {
       setDevicePhotos((chosen) => [...chosen, ...picked]);
-      setDevicePickerOpen(false);
     });
   };
 
@@ -121,9 +122,13 @@ export default function ComposeDiaryEntryScreen() {
           <Text style={styles.title}>{activity.title}</Text>
         </View>
 
-        <View>
-          <Text style={styles.sectionLabel}>{CAMERA_ROLL_LABEL}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={SHOW_SCROLLBAR}>
+        <View style={styles.photoBlock}>
+          <View style={styles.photoHeader}>
+            <Text style={styles.sectionLabel}>{PHOTOS_LABEL}</Text>
+            <Text style={styles.count}>{`${total} / ${MAX_DIARY_PHOTOS}`}</Text>
+          </View>
+
+          {total > 0 ? (
             <View style={styles.grid}>
               {devicePhotos.map((photo, index) => (
                 <DiaryPhotoTile
@@ -131,50 +136,41 @@ export default function ComposeDiaryEntryScreen() {
                   url={null}
                   localPreview={photo.uri}
                   accessibilityLabel={`Selected photo ${index + 1}`}
-                  selected
-                  onPress={() =>
+                  source="phone"
+                  onRemove={() =>
                     setDevicePhotos((chosen) => chosen.filter((_, at) => at !== index))
                   }
                 />
               ))}
-              <DiaryAddTile
-                label="Add More"
-                accessibilityLabel="Add a photo from your camera roll"
-                disabled={room === 0}
-                onPress={() => {
-                  setDevicePickerOpen(true);
-                  pickFromDevice();
-                }}
-              />
-            </View>
-          </ScrollView>
-        </View>
-
-        <View>
-          <Text style={styles.sectionLabel}>{DUMP_LABEL}</Text>
-          {dumpPhotos.length === 0 ? (
-            <Text style={styles.dumpEmpty}>{DUMP_EMPTY}</Text>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={SHOW_SCROLLBAR}>
-              <View style={styles.grid}>
-                {chosenFromDump.map((photo) => (
-                  <DiaryPhotoTile
-                    key={photo.id}
-                    url={photo.url}
-                    accessibilityLabel="Selected Photo Dump photo"
-                    selected
-                    onPress={() => setFromDump((chosen) => chosen.filter((id) => id !== photo.id))}
-                  />
-                ))}
-                <DiaryAddTile
-                  label="Add More"
-                  accessibilityLabel="Add a photo from the Photo Dump"
-                  disabled={room === 0}
-                  onPress={() => setDumpPickerOpen(true)}
+              {chosenFromDump.map((photo) => (
+                <DiaryPhotoTile
+                  key={photo.id}
+                  url={photo.url}
+                  accessibilityLabel="Selected Photo Dump photo"
+                  source="dump"
+                  onRemove={() => setFromDump((chosen) => chosen.filter((id) => id !== photo.id))}
                 />
-              </View>
-            </ScrollView>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.dumpEmpty}>{PHOTOS_EMPTY}</Text>
           )}
+
+          <View style={styles.addRow}>
+            <DiaryAddTile
+              label={ADD_FROM_PHONE}
+              accessibilityLabel="Add a photo from your camera roll"
+              disabled={room === 0}
+              onPress={pickFromDevice}
+            />
+            <DiaryAddTile
+              label={PICK_FROM_DUMP}
+              accessibilityLabel="Add a photo from the Photo Dump"
+              emphasis="dump"
+              disabled={room === 0}
+              onPress={() => setDumpPickerOpen(true)}
+            />
+          </View>
         </View>
 
         <View>
@@ -211,17 +207,6 @@ export default function ComposeDiaryEntryScreen() {
           )}
         </Pressable>
       </ScrollView>
-
-      <DevicePickerModal
-        visible={devicePickerOpen}
-        busy={false}
-        failure={photoAction.failure}
-        onPick={pickFromDevice}
-        onDismiss={() => {
-          photoAction.clearFailure();
-          setDevicePickerOpen(false);
-        }}
-      />
 
       <DumpPickerModal
         visible={dumpPickerOpen}
@@ -265,10 +250,30 @@ const styles = StyleSheet.create({
     ...diaryTypography.sectionLabel,
     color: diaryColors.sectionLabel,
   },
+  photoBlock: {
+    gap: spacing.sm3,
+  },
+  photoHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  count: {
+    ...diaryTypography.count,
+    color: diaryColors.count,
+  },
   grid: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm3,
+    flexWrap: 'wrap',
+    gap: diaryMetrics.tileGap,
+  },
+  filler: {
+    flex: 1,
+    aspectRatio: 1,
+  },
+  addRow: {
+    flexDirection: 'row',
+    gap: diaryMetrics.tileGap,
   },
   dumpEmpty: {
     ...typography.caption,

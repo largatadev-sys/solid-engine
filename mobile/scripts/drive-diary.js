@@ -334,8 +334,9 @@ function writeFixture() {
   check('the composer draws the mock: eyebrow, title, both photo sections, the caption (frame 3)',
     composerScreen.includes('DAY 1 • 5:30 PM') &&
     composerScreen.includes('Sunset at Las Cabanas') &&
-    composerScreen.includes('Select photos from your camera roll') &&
-    composerScreen.includes('From the Photo Dump') &&
+    composerScreen.includes('Photos in this memory') &&
+    composerScreen.includes('Add from phone') &&
+    composerScreen.includes('Pick from Photo Dump') &&
     composerScreen.includes('Add a caption'),
     composerScreen.replace(/\n/g, ' | ').slice(0, 200));
 
@@ -351,6 +352,7 @@ function writeFixture() {
   // Both Add More tiles open a modal now. The camera roll's relays straight to the device
   // picker on mount, so planting the file first is what makes that relay land a real photo.
   await plantFile(fixture, 2);
+  // No modal on this one — Add from phone goes straight to the device picker.
   const openedDevicePicker = await tapLabel('Add a photo from your camera roll', 4000);
   // A tile labels BOTH its Pressable and the Image inside it, so a naive count doubles every
   // photo (the S3.4 countTiles trap) — keep only the outer node of each pair.
