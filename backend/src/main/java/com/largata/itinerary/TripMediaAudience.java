@@ -28,6 +28,15 @@ class TripMediaAudience {
     }
 
 
+    @Transactional(readOnly = true)
+    boolean admitsToTheWorkspace(UUID itineraryId, UUID travelerId) {
+        if (workspaces.isArchived(itineraryId)) {
+            return workspaces.roleOf(itineraryId, travelerId).filter(Role.OWNER::equals).isPresent();
+        }
+        return workspaces.isMember(itineraryId, travelerId);
+    }
+
+
     private boolean admits(Itinerary itinerary, UUID travelerId) {
         if (workspaces.isArchived(itinerary.id())) {
             return workspaces.roleOf(itinerary.id(), travelerId).filter(Role.OWNER::equals).isPresent();
