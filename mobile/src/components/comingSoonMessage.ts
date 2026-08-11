@@ -13,7 +13,6 @@ export const COMING_SOON_SURFACES = {
   tripSearch: 'Searching your trips',
   tripFilter: 'Filtering your trips',
   polls: 'Trip polls',
-  photoDump: 'The photo dump',
   profile: 'Traveler profiles',
 } as const;
 

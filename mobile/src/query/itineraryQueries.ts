@@ -11,8 +11,10 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
+import { track } from '../analytics/track';
 import { useAuth } from '../hooks/authContext';
 import type { PickedPhoto } from '../media/pickedPhoto';
+import { PHOTO_DUMP_PHOTO_ADDED, PHOTO_DUMP_PHOTO_REMOVED } from '../media/photoDumpMessages';
 import { itineraryRepository } from '../repositories/itineraryRepository';
 import type {
   ActivityRequest,
@@ -21,6 +23,7 @@ import type {
   DayResponse,
   ItineraryResponse,
   Page,
+  PhotoDumpEntryResponse,
   PublishAudience,
   PublishedItineraryResponse,
   SavePlanRequest,
@@ -42,6 +45,8 @@ export const itineraryKeys = {
   published: (id: string) => [...itineraryKeys.all, 'published', id] as const,
 
   preview: (id: string) => [...itineraryKeys.all, 'preview', id] as const,
+
+  photoDump: (id: string) => [...itineraryKeys.all, 'photo-dump', id] as const,
 };
 
 
@@ -305,6 +310,49 @@ export function useRemoveActivityPhoto(
     mutationFn: ({ dayId, activityId, photoId }: { dayId: string; activityId: string; photoId: string }) =>
       itineraryRepository.removeActivityPhoto(itineraryId, dayId, activityId, photoId),
     onSuccess: () => onPlanChanged(client, itineraryId),
+  });
+}
+
+
+export function usePhotoDump(
+  itineraryId: string,
+): UseInfiniteQueryResult<InfiniteData<Page<PhotoDumpEntryResponse>>, Error> {
+  const { kind } = useAuth();
+  return useInfiniteQuery({
+    queryKey: itineraryKeys.photoDump(itineraryId),
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+      itineraryRepository.photoDump(itineraryId, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: Page<PhotoDumpEntryResponse>) => lastPage.nextCursor,
+    enabled: kind === 'signedIn',
+  });
+}
+
+
+export function useAddPhotoDumpEntry(
+  itineraryId: string,
+): UseMutationResult<PhotoDumpEntryResponse, Error, PickedPhoto> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (photo: PickedPhoto) => itineraryRepository.addPhotoDumpEntry(itineraryId, photo),
+    onSuccess: () => {
+      track(PHOTO_DUMP_PHOTO_ADDED, { itineraryId });
+      return client.invalidateQueries({ queryKey: itineraryKeys.photoDump(itineraryId) });
+    },
+  });
+}
+
+
+export function useRemovePhotoDumpEntry(
+  itineraryId: string,
+): UseMutationResult<void, Error, string> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (photoId: string) => itineraryRepository.removePhotoDumpEntry(itineraryId, photoId),
+    onSuccess: () => {
+      track(PHOTO_DUMP_PHOTO_REMOVED, { itineraryId });
+      return client.invalidateQueries({ queryKey: itineraryKeys.photoDump(itineraryId) });
+    },
   });
 }
 

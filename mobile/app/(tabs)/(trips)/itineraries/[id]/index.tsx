@@ -16,7 +16,12 @@ import { TripArchiveBanner } from '../../../../../src/itineraries/TripArchiveBan
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
 import { WorkspaceDetailsTab } from '../../../../../src/itineraries/WorkspaceDetailsTab';
 import { WorkspaceHeader } from '../../../../../src/itineraries/WorkspaceHeader';
-import { WorkspaceTabRow, type WorkspaceTab } from '../../../../../src/itineraries/WorkspaceTabRow';
+import {
+  WorkspaceTabRow,
+  workspaceTabFrom,
+  type WorkspaceTab,
+} from '../../../../../src/itineraries/WorkspaceTabRow';
+import { WorkspacePhotoDumpTab } from '../../../../../src/itineraries/WorkspacePhotoDumpTab';
 import { WorkspaceTravelersTab } from '../../../../../src/itineraries/WorkspaceTravelersTab';
 import {
   editItineraryAction,
@@ -50,7 +55,7 @@ export default function TripWorkspaceScreen() {
   const { isOwner } = memberControls(roster, myId, data?.archived ?? false);
 
   const lifecycle = useTripLifecycle(id);
-  const [active, setActive] = useState<WorkspaceTab>(tab === 'details' ? 'details' : 'day-by-day');
+  const [active, setActive] = useState<WorkspaceTab>(workspaceTabFrom(tab));
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -146,6 +151,15 @@ export default function TripWorkspaceScreen() {
         ) : null}
 
         {active === 'travelers' ? <WorkspaceTravelersTab itineraryId={id} /> : null}
+
+        {active === 'photo-dump' ? (
+          <WorkspacePhotoDumpTab
+            itineraryId={id}
+            myId={myId}
+            isOwner={isOwner}
+            archived={data.archived ?? false}
+          />
+        ) : null}
 
         {active === 'details' ? <WorkspaceDetailsTab itinerary={data} isOwner={isOwner} /> : null}
       </ScrollView>
