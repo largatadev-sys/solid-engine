@@ -672,6 +672,41 @@ async function publishedTrip(token, title, destinations, days) {
       tripDiary.includes(diaryTitle),
     `-> ${await url()}`);
 
+  // Dragging the stream's photos must NOT open the preview: the whole entry used to be one
+  // Pressable, so a swipe released over a photo landed as a tap and the postcard flew open
+  // mid-scroll (founder, 08/12). The tap target is now the heading and caption only.
+  const streamStrip = await evaluate(`
+    (() => {
+      const img = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)[0];
+      const strip = img ? img.parentElement.parentElement : null;
+      if (!strip) return null;
+      const r = strip.getBoundingClientRect();
+      return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2), before: strip.scrollLeft };
+    })()
+  `);
+
+  if (streamStrip !== null) {
+    await send('Input.dispatchMouseEvent', {
+      type: 'mousePressed', x: streamStrip.x, y: streamStrip.y, button: 'left', clickCount: 1,
+    });
+    for (const step of [80, 180, 260]) {
+      await send('Input.dispatchMouseEvent', {
+        type: 'mouseMoved', x: streamStrip.x - step, y: streamStrip.y, button: 'left',
+      });
+    }
+    await send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased', x: streamStrip.x - 260, y: streamStrip.y, button: 'left',
+    });
+    await sleep(900);
+  }
+
+  const afterStreamDrag = (await text()) || '';
+  check('AC 2: dragging the stream-s photos scrolls them and does NOT open the preview (founder, 08/12)',
+    streamStrip !== null && !afterStreamDrag.includes('Edit entry'),
+    `strip=${streamStrip === null ? 'not found' : 'found'} preview=${afterStreamDrag.includes('Edit entry')}`);
+
   const previewFromStream = await tapLabel('Open your entry for Sunset at Las Cabanas', 4500);
   check('AC 2: an entry in the stream opens the same postcard preview',
     previewFromStream.clicked === true && ((await text()) || '').includes('Edit entry'),

@@ -108,14 +108,16 @@ function StreamEntry({
   const measure = (event: LayoutChangeEvent) => setPhotoWidth(event.nativeEvent.layout.width);
 
   return (
-    <Pressable
-      style={styles.entry}
-      onPress={onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
-    >
-      <Text style={styles.eyebrow}>{snapshotEyebrow(entry)}</Text>
-      <Text style={styles.entryTitle}>{entry.activityTitle}</Text>
+    <View style={styles.entry}>
+      <Pressable
+        style={styles.heading}
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
+      >
+        <Text style={styles.eyebrow}>{snapshotEyebrow(entry)}</Text>
+        <Text style={styles.entryTitle}>{entry.activityTitle}</Text>
+      </Pressable>
 
       <ScrollView
         horizontal
@@ -136,8 +138,16 @@ function StreamEntry({
         ))}
       </ScrollView>
 
-      {entry.caption !== null && <Text style={styles.caption}>{entry.caption}</Text>}
-    </Pressable>
+      {entry.caption !== null && (
+        <Pressable
+          onPress={onOpen}
+          accessibilityRole="button"
+          accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
+        >
+          <Text style={styles.caption}>{entry.caption}</Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -199,6 +209,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: diaryScreenColors.divider,
+  },
+  heading: {
+    gap: spacing.sm,
   },
   eyebrow: {
     ...diaryScreenTypography.eyebrow,

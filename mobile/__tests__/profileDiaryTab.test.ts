@@ -170,6 +170,17 @@ describe('the trip diary stream wears the founder-s frame-1 anatomy (08/12 mock)
     expect(DIARY_STREAM).toContain('setPreviewing(entry)');
   });
 
+  it('keeps the tap target off the photo strip, so a swipe cannot land as a tap (founder, 08/12)', () => {
+    const row = DIARY_STREAM.slice(
+      DIARY_STREAM.indexOf('function StreamEntry'),
+      DIARY_STREAM.indexOf('const STREAM_INSET'),
+    );
+    const opener = row.slice(row.indexOf('<Pressable'), row.indexOf('</Pressable>'));
+
+    expect(opener).not.toContain('<ScrollView');
+    expect(row).toContain('<View style={styles.entry}>');
+  });
+
   it('omits the caption entirely when the entry has none, rather than drawing an empty line', () => {
     expect(DIARY_STREAM).toContain('entry.caption !== null &&');
   });
