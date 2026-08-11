@@ -29,6 +29,7 @@ export type IconName =
   | 'star'
   | 'starFilled'
   | 'heartFilled'
+  | 'close'
   | 'partyPopper'
   | 'camera'
   | 'briefcase'
@@ -243,6 +244,13 @@ export function Icon({ name, size, color }: IconProps) {
           {...shared}
           fill={color}
         />
+      )}
+
+      {name === 'close' && (
+        <>
+          <Line x1="6" y1="6" x2="18" y2="18" {...shared} />
+          <Line x1="18" y1="6" x2="6" y2="18" {...shared} />
+        </>
       )}
 
       {name === 'heartFilled' && (

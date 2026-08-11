@@ -4,8 +4,10 @@ import {
   dayTimeBadge,
   likesLabel,
   pageOfOffset,
+  previewCount,
   showsCarouselChrome,
 } from '../src/diary/postcardCarousel';
+import { snapshotEyebrow } from '../src/diary/postcardAnatomy';
 
 
 const WIDTH = 300;
@@ -89,6 +91,28 @@ describe('dayTimeBadge — the mock joins with a middle dot, the diary stream wi
 
   it('renders the day alone when the entry carries no time', () => {
     expect(dayTimeBadge({ dayLabel: 'Day 3', timeOfDay: null })).toBe('Day 3');
+  });
+});
+
+
+describe('previewCount — the mock writes the count in words on the right, not in a pill', () => {
+  it('counts from one for the traveler', () => {
+    expect(previewCount(0, 3)).toBe('1 of 3');
+    expect(previewCount(2, 3)).toBe('3 of 3');
+  });
+
+  it('says nothing at all for a single-photo entry — there is nothing to count through', () => {
+    expect(previewCount(0, 1)).toBeNull();
+  });
+});
+
+
+describe('the two eyebrows differ by their separator, deliberately — both are mocked', () => {
+  it('joins with a bullet on the stream and a middle dot on the profile', () => {
+    const entry = { dayLabel: 'Day 2', timeOfDay: '16:30' };
+
+    expect(snapshotEyebrow(entry)).toBe('Day 2 • 4:30 PM');
+    expect(dayTimeBadge(entry)).toBe('Day 2 · 4:30 PM');
   });
 });
 

@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Range/shape tests over many draws: integers in 1–100; rating in 1.0–5.0 with one decimal; price in 10,000–20,000 divisible by 100
-- [ ] No test asserts a specific value (reroll-per-render is the ruling)
-- [ ] Switch off returns the honest-fallback shapes for all four derivations, proven by test
-- [ ] Everything lives in the one module — no `Math.random()` for these numbers anywhere else
+- [x] Range/shape tests over many draws: integers in 1–100; rating in 1.0–5.0 with one decimal; price in 10,000–20,000 divisible by 100
+- [x] No test asserts a specific value (reroll-per-render is the ruling)
+- [x] Switch off returns the honest-fallback shapes for all four derivations, proven by test
+- [x] Everything lives in the one module — no `Math.random()` for these numbers anywhere else
 
 ## Comments

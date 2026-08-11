@@ -175,18 +175,20 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
   const TRIP_FORM = ['itineraries/new.tsx'];
 
-  const SHARED_SCREENS: [string, string][] = [
-    ['itineraries/[id]/diary/[entryId].tsx', 'src/diary/DiaryEntryScreen.tsx'],
+  const SHARED_SCREENS: [string, string, RegExp][] = [
+    ['itineraries/[id]/diary/[entryId].tsx', 'src/diary/DiaryEntryScreen.tsx', /<ScreenHeader/],
+    ['itineraries/[id]/diary/index.tsx', 'src/diary/TripDiaryScreen.tsx', /styles\.title/],
   ];
 
   it.each(SHARED_SCREENS)(
     '%s is a thin route over %s — two stacks reach one screen (S4.21)',
-    (route, shared) => {
+    (route, shared, heading) => {
+      const component = shared.split('/').at(-1)?.replace('.tsx', '') ?? '';
       const wrapper = read(TRIPS_GROUP, ...route.split('/'));
 
-      expect(wrapper).toMatch(/DiaryEntryScreen/);
+      expect(wrapper).toMatch(new RegExp(component));
       expect(wrapper).not.toMatch(/<ScreenHeader/);
-      expect(read(MOBILE_ROOT, ...shared.split('/'))).toMatch(/<ScreenHeader/);
+      expect(read(MOBILE_ROOT, ...shared.split('/'))).toMatch(heading);
     },
   );
 
@@ -1000,6 +1002,7 @@ describe('every greyed affordance is wired to the shared helper (register #2)', 
     read(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
     read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTabRow.tsx'),
     read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx'),
+    read(MOBILE_ROOT, 'src', 'diary', 'PostcardPreview.tsx'),
   ].join('\n');
 
   it.each(Object.keys(COMING_SOON_SURFACES))('%s has a call site', (surface) => {

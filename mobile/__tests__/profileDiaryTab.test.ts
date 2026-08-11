@@ -12,10 +12,7 @@ const MOBILE_ROOT = join(__dirname, '..');
 
 const TAB = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'ProfileDiaryTab.tsx'), 'utf8');
 const POSTCARD = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'Postcard.tsx'), 'utf8');
-const DIARY_STREAM = readFileSync(
-  join(MOBILE_ROOT, 'app', '(tabs)', '(trips)', 'itineraries', '[id]', 'diary', 'index.tsx'),
-  'utf8',
-);
+const DIARY_STREAM = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'TripDiaryScreen.tsx'), 'utf8');
 
 beforeEach(forgetProfileView);
 
@@ -78,8 +75,16 @@ describe('the Diary tab renders the diary as the mock groups it', () => {
     expect(TAB).toContain("rotate: '-45deg'");
   });
 
-  it('opens the entry screen on tap — a doorway, not a dead end', () => {
-    expect(TAB).toContain('/diary/[id]/[entryId]');
+  it('opens the postcard preview on tap, and reaches the editor through it (the founder-s second frame)', () => {
+    expect(TAB).toContain('<PostcardPreview');
+    expect(TAB).toContain('setPreviewing(entry)');
+    expect(TAB).toContain("entryEditorRoute('profile', trip.itineraryId, entry.id)");
+  });
+
+  it('navigates the section row to that trip-s diary while the chevron still expands it (founder, 08/12)', () => {
+    expect(TAB).toContain("pathname: '/diary/[id]'");
+    expect(TAB).toContain('Open the diary for');
+    expect(TAB).toContain('onPress={toggle}');
   });
 
   it('opens it inside the PROFILE stack, so back returns here rather than into Trips (S4.13)', () => {
@@ -103,7 +108,16 @@ describe('the Diary tab renders the diary as the mock groups it', () => {
       'utf8',
     );
 
-    expect(profileRoute).toContain('exit="profile"');
+    expect(profileRoute).toContain('profileStackExit(from)');
+  });
+
+  it('gives the trip diary its own exit, so a save returns to the stream rather than the tab', () => {
+    const tripDiaryRoute = readFileSync(
+      join(MOBILE_ROOT, 'app', '(tabs)', '(profile)', 'diary', '[id]', 'index.tsx'),
+      'utf8',
+    );
+
+    expect(tripDiaryRoute).toContain('exit="tripDiary"');
   });
 
   it('takes its likes from the stub module and nowhere else', () => {
@@ -138,10 +152,25 @@ describe('the postcard the profile draws, per the mock', () => {
 });
 
 
-describe('the diary stream is untouched by this story (ticket 04)', () => {
-  it('still renders its own postcards inline, on its own anatomy', () => {
+describe('the trip diary stream wears the founder-s frame-1 anatomy (08/12 mock)', () => {
+  it('renders its entries inline on its own anatomy, not as profile postcards', () => {
     expect(DIARY_STREAM).toContain('snapshotEyebrow');
-    expect(DIARY_STREAM).not.toContain('Postcard');
+    expect(DIARY_STREAM).not.toContain('<Postcard ');
+  });
+
+  it('draws the mock-s stream photo, edge-to-edge past the screen inset', () => {
+    expect(DIARY_STREAM).toContain('diaryScreenMetrics.streamPhotoWidth');
+    expect(DIARY_STREAM).toContain('diaryScreenMetrics.streamPhotoHeight');
+    expect(DIARY_STREAM).toContain('marginHorizontal: -STREAM_INSET');
+  });
+
+  it('opens the postcard preview on an entry tap rather than pushing the editor', () => {
+    expect(DIARY_STREAM).toContain('<PostcardPreview');
+    expect(DIARY_STREAM).toContain('setPreviewing(entry)');
+  });
+
+  it('omits the caption entirely when the entry has none, rather than drawing an empty line', () => {
+    expect(DIARY_STREAM).toContain('entry.caption !== null &&');
   });
 
   it('wears no likes row — the stubs live on the profile only', () => {

@@ -4,13 +4,13 @@
 
 **Blocked by:** 01 (the screen), 02 (the stub module).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Sections list diary trips newest-first; first expanded, rest collapsed; tap toggles with the mock's chevron treatment
-- [ ] Expanding loads and renders that trip's postcards; carousel, title, badge, and caption match the mock's anatomy
-- [ ] The likes row renders stub integers 1–100 on this surface only; with the switch off, no likes row — and the diary surface's own rendering is unchanged (its existing tests still pass)
-- [ ] Postcard tap opens the entry screen; back returns to the profile with tab and expansion state intact
-- [ ] Empty state renders when the traveler has no diary trips
-- [ ] Screen tests cover ordering, expansion state, empty state; the optional likes-row prop is pinned where the postcard component's tests live
+- [x] Sections list diary trips newest-first; first expanded, rest collapsed; tap toggles with the mock's chevron treatment
+- [x] Expanding loads and renders that trip's postcards; carousel, title, badge, and caption match the mock's anatomy
+- [x] The likes row renders stub integers 1–100 on this surface only; with the switch off, no likes row — and the diary surface's own rendering is unchanged (its existing tests still pass)
+- [x] Postcard tap opens the entry screen; back returns to the profile with tab and expansion state intact
+- [x] Empty state renders when the traveler has no diary trips
+- [x] Screen tests cover ordering, expansion state, empty state; the optional likes-row prop is pinned where the postcard component's tests live
 
 ## Comments

@@ -1,7 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { entryEditorRoute } from '../diary/diaryEntryExit';
 import { Postcard } from '../diary/Postcard';
+import { PostcardPreview } from '../diary/PostcardPreview';
 import { inTripDayOrder, tripEntryCountLabel } from '../diary/postcardAnatomy';
 import { useMyDiaryEntries, useMyDiaryTrips } from '../query/diaryQueries';
 import { colors, spacing } from '../theme';
@@ -15,7 +17,7 @@ import { PROFILE_DIARY_EMPTY } from './profileCopy';
 import { isExpanded, toggleExpanded } from './profileViewState';
 import { showcaseMetaLine } from './showcaseCard';
 import { stubLikeCount } from './stubMetrics';
-import type { DiaryTripResponse } from '../types/api';
+import type { DiaryEntryResponse, DiaryTripResponse } from '../types/api';
 
 
 export function ProfileDiaryTab() {
@@ -62,28 +64,40 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
   };
 
   const postcards = entries.data === undefined ? [] : inTripDayOrder(entries.data);
+  const [previewing, setPreviewing] = useState<DiaryEntryResponse | null>(null);
 
   return (
     <View style={styles.section}>
-      <Pressable
-        style={styles.sectionHeader}
-        onPress={toggle}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        accessibilityLabel={`${trip.title ?? 'Untitled trip'}, ${tripEntryCountLabel(trip.entryCount)}`}
-      >
-        <View style={styles.thumb} />
-        <View style={styles.sectionText}>
-          <Text style={styles.sectionTitle} numberOfLines={1}>
-            {trip.title ?? 'Untitled trip'}
-          </Text>
-          <Text style={styles.sectionMeta} numberOfLines={1}>
-            {showcaseMetaLine(trip.destinations ?? [], trip.dayCount ?? 0) ??
-              tripEntryCountLabel(trip.entryCount)}
-          </Text>
-        </View>
-        <View style={open ? styles.chevronOpen : styles.chevronClosed} />
-      </Pressable>
+      <View style={styles.sectionHeader}>
+        <Pressable
+          style={styles.sectionOpen}
+          onPress={() =>
+            router.push({ pathname: '/diary/[id]', params: { id: trip.itineraryId } })
+          }
+          accessibilityRole="button"
+          accessibilityLabel={`Open the diary for ${trip.title ?? 'Untitled trip'}, ${tripEntryCountLabel(trip.entryCount)}`}
+        >
+          <View style={styles.thumb} />
+          <View style={styles.sectionText}>
+            <Text style={styles.sectionTitle} numberOfLines={1}>
+              {trip.title ?? 'Untitled trip'}
+            </Text>
+            <Text style={styles.sectionMeta} numberOfLines={1}>
+              {showcaseMetaLine(trip.destinations ?? [], trip.dayCount ?? 0) ??
+                tripEntryCountLabel(trip.entryCount)}
+            </Text>
+          </View>
+        </Pressable>
+        <Pressable
+          style={styles.chevronHit}
+          onPress={toggle}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          accessibilityLabel={`${open ? 'Collapse' : 'Expand'} entries for ${trip.title ?? 'Untitled trip'}`}
+        >
+          <View style={open ? styles.chevronOpen : styles.chevronClosed} />
+        </Pressable>
+      </View>
 
       {open && (
         <View style={styles.sectionBody}>
@@ -95,17 +109,22 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
                 key={entry.id}
                 entry={entry}
                 likes={stubLikeCount()}
-                onPress={() =>
-                  router.push({
-                    pathname: '/diary/[id]/[entryId]',
-                    params: { id: trip.itineraryId, entryId: entry.id },
-                  })
-                }
+                onPress={() => setPreviewing(entry)}
               />
             ))
           )}
         </View>
       )}
+
+      <PostcardPreview
+        entry={previewing}
+        tripTitle={trip.title}
+        onEdit={(entry) => {
+          setPreviewing(null);
+          router.push(entryEditorRoute('profile', trip.itineraryId, entry.id));
+        }}
+        onDismiss={() => setPreviewing(null)}
+      />
     </View>
   );
 }
@@ -145,8 +164,19 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm2,
     padding: spacing.sm3,
+  },
+  sectionOpen: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm2,
+  },
+  chevronHit: {
+    paddingLeft: spacing.sm2,
+    paddingVertical: spacing.xs,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   thumb: {
     width: profileMetrics.sectionThumb,

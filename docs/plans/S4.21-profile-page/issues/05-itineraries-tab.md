@@ -4,13 +4,13 @@
 
 **Blocked by:** 01 (the screen), 02 (the stub module).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Integration test at the controller seam, the discriminating case: owned-published trips returned; owned drafts and member-only published trips excluded; cursor paging works
-- [ ] Cards render cover, title, PUBLISHED badge, destinations · N days per the mock; a missing cover renders a clean placeholder
-- [ ] ★ and ₱ render stub values in their ruled ranges; with the switch off, muted star with no number and no price pill
-- [ ] Card tap opens the published view; back returns to the profile with the tab still selected
-- [ ] Empty state renders when the traveler owns nothing published
-- [ ] Screen tests cover list rendering, empty state, and navigation
+- [x] Integration test at the controller seam, the discriminating case: owned-published trips returned; owned drafts and member-only published trips excluded; cursor paging works
+- [x] Cards render cover, title, PUBLISHED badge, destinations · N days per the mock; a missing cover renders a clean placeholder
+- [x] ★ and ₱ render stub values in their ruled ranges; with the switch off, muted star with no number and no price pill
+- [x] Card tap opens the published view; back returns to the profile with the tab still selected
+- [x] Empty state renders when the traveler owns nothing published
+- [x] Screen tests cover list rendering, empty state, and navigation
 
 ## Comments

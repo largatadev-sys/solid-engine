@@ -32,6 +32,11 @@ export function carouselCounter(page: number, photoCount: number): string {
 }
 
 
+export function previewCount(page: number, photoCount: number): string | null {
+  return photoCount > 1 ? `${page + 1} of ${photoCount}` : null;
+}
+
+
 export function dayTimeBadge(
   entry: Pick<DiaryEntryResponse, 'dayLabel' | 'timeOfDay'>,
 ): string {

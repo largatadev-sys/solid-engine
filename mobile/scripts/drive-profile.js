@@ -155,27 +155,14 @@ function getJson(path) {
   });
 }
 
+// A REAL jpeg, committed rather than assembled byte-by-byte. The hand-built version passed ingest
+// (valid markers) but its scan data was filler, so every device screenshot this walk produced was
+// decode garbage — a black band, square-looking corners — indistinguishable from a layout defect.
+// S4.21 spent a session proving the component was innocent. A fixture must render something a
+// screenshot can vouch for.
 function writeFixture() {
   const file = path.join(os.tmpdir(), `largata-profile-${Date.now()}.jpg`);
-  const w = 1200, h = 900;
-  const header = Buffer.from([
-    0xFF,0xD8, 0xFF,0xE0,0x00,0x10,0x4A,0x46,0x49,0x46,0x00,0x01,0x01,0x00,0x00,0x01,0x00,0x01,0x00,0x00,
-  ]);
-  const dqt = Buffer.concat([Buffer.from([0xFF,0xDB,0x00,0x43,0x00]), Buffer.alloc(64, 0x10)]);
-  const sof = Buffer.from([
-    0xFF,0xC0,0x00,0x0B,0x08, (h>>8)&0xFF, h&0xFF, (w>>8)&0xFF, w&0xFF, 0x01, 0x01,0x11,0x00,
-  ]);
-  const dht = Buffer.concat([
-    Buffer.from([0xFF,0xC4,0x00,0x1F,0x00]),
-    Buffer.from([0,1,5,1,1,1,1,1,1,0,0,0,0,0,0,0]),
-    Buffer.from([0,1,2,3,4,5,6,7,8,9,10,11]),
-    Buffer.from([0xFF,0xC4,0x00,0xB5,0x10]),
-    Buffer.from([0,2,1,3,3,2,4,3,5,5,4,4,0,0,1,0x7D]),
-    Buffer.alloc(162, 0x01),
-  ]);
-  const sos = Buffer.from([0xFF,0xDA,0x00,0x08,0x01,0x01,0x00,0x00,0x3F,0x00]);
-  const scan = Buffer.alloc(24000, 0x5A);
-  fs.writeFileSync(file, Buffer.concat([header, dqt, sof, dht, sos, scan, Buffer.from([0xFF,0xD9])]));
+  fs.copyFileSync(path.join(__dirname, 'fixtures', 'photo.jpg'), file);
   return file;
 }
 
@@ -465,8 +452,9 @@ async function publishedTrip(token, title, destinations, days) {
   const postcard = await evaluate(`
     (() => {
       const header = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || ''))
-        .filter((n) => n.offsetParent !== null)[0];
+        .filter((n) => /^Open the diary for /.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)
+        .map((n) => n.parentElement)[0];
       const card = Array.from((header ? header.parentElement : document).querySelectorAll('[aria-label]'))
         .filter((n) => (n.getAttribute('aria-label') || '').startsWith('Open your entry for'))
         .filter((n) => n.offsetParent !== null)[0];
@@ -484,11 +472,11 @@ async function publishedTrip(token, title, destinations, days) {
   const tapFirstSection = async (wait) => {
     const result = await evaluate(`
       (() => {
-        const header = Array.from(document.querySelectorAll('[aria-label]'))
-          .filter((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || ''))
+        const chevron = Array.from(document.querySelectorAll('[aria-label]'))
+          .filter((n) => /^(Expand|Collapse) entries for /.test(n.getAttribute('aria-label') || ''))
           .filter((n) => n.offsetParent !== null)[0];
-        if (!header) return { clicked: false };
-        header.click();
+        if (!chevron) return { clicked: false };
+        chevron.click();
         return { clicked: true };
       })()
     `);
@@ -501,8 +489,9 @@ async function publishedTrip(token, title, destinations, days) {
   const sectionText = await evaluate(`
     (() => {
       const header = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || ''))
-        .filter((n) => n.offsetParent !== null)[0];
+        .filter((n) => /^Open the diary for /.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)
+        .map((n) => n.parentElement)[0];
       return header ? header.parentElement.innerText.replace(/\\n/g, ' | ') : '(no section)';
     })()
   `);
@@ -512,8 +501,9 @@ async function publishedTrip(token, title, destinations, days) {
   const peek = await evaluate(`
     (() => {
       const header = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || ''))
-        .filter((n) => n.offsetParent !== null)[0];
+        .filter((n) => /^Open the diary for /.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)
+        .map((n) => n.parentElement)[0];
       const photos = Array.from((header ? header.parentElement : document).querySelectorAll('img'))
         .filter((n) => n.offsetParent !== null);
       if (photos.length < 2) return { photos: photos.length };
@@ -539,8 +529,9 @@ async function publishedTrip(token, title, destinations, days) {
       // expo-router keeps previously-visited screens mounted beneath the current one, so the
       // count is taken from the section's OWN subtree rather than the whole document (S4.0).
       const header = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || ''))
-        .filter((n) => n.offsetParent !== null)[0];
+        .filter((n) => /^Open the diary for /.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)
+        .map((n) => n.parentElement)[0];
       const section = header ? header.parentElement : null;
       if (!section) return -1;
       return Array.from(section.querySelectorAll('[aria-label]'))
@@ -557,8 +548,9 @@ async function publishedTrip(token, title, destinations, days) {
       // expo-router keeps previously-visited screens mounted beneath the current one, so the
       // count is taken from the section's OWN subtree rather than the whole document (S4.0).
       const header = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || ''))
-        .filter((n) => n.offsetParent !== null)[0];
+        .filter((n) => /^Open the diary for /.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)
+        .map((n) => n.parentElement)[0];
       const section = header ? header.parentElement : null;
       if (!section) return -1;
       return Array.from(section.querySelectorAll('[aria-label]'))
@@ -572,18 +564,38 @@ async function publishedTrip(token, title, destinations, days) {
   const entryLabel = await evaluate(`
     (() => {
       const header = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || ''))
-        .filter((n) => n.offsetParent !== null)[0];
+        .filter((n) => /^Open the diary for /.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)
+        .map((n) => n.parentElement)[0];
       const card = Array.from((header ? header.parentElement : document).querySelectorAll('[aria-label]'))
         .filter((n) => (n.getAttribute('aria-label') || '').startsWith('Open your entry for'))
         .filter((n) => n.offsetParent !== null)[0];
       return card ? card.getAttribute('aria-label') : '';
     })()
   `);
-  const openedEntry = await tapLabel(entryLabel, 5000);
-  check('AC 2: tapping a postcard opens its entry screen — a doorway, not a dead end',
-    openedEntry.clicked === true && /\/diary\/[0-9a-f-]{36}\/[0-9a-f-]{36}$/.test(await url()),
+  // A postcard opens the PREVIEW (the founder's second diary mock), not the editor: the editor is
+  // one more tap, behind Edit entry. Asserting the URL alone would pass on either surface, so the
+  // discriminating signal is the preview's own chrome plus the URL NOT having moved.
+  const urlBeforePreview = await url();
+  const openedPreview = await tapLabel(entryLabel, 5000);
+  const previewText = (await text()) || '';
+  check('AC 2: tapping a postcard opens the postcard preview, not the editor',
+    openedPreview.clicked === true &&
+      previewText.includes('Edit entry') &&
+      previewText.includes('Share') &&
+      (await url()) === urlBeforePreview,
     `${entryLabel} -> ${await url()}`);
+
+  const sharedComingSoon = await tapLabel('Share', 3000);
+  const shareSaid = await evaluate('(window.__largataAlerts || []).join(" | ")');
+  check('AC 2: Share is drawn as the mock has it, and says coming soon rather than doing nothing',
+    sharedComingSoon.clicked === true && /coming soon/i.test(shareSaid),
+    String(shareSaid).slice(0, 140));
+
+  const toEditor = await tapLabel('Edit entry', 5000);
+  check('AC 2: Edit entry carries the traveler through to the editor — a doorway, not a dead end',
+    toEditor.clicked === true && /\/diary\/[0-9a-f-]{36}\/[0-9a-f-]{36}$/.test(await url()),
+    `-> ${await url()}`);
 
   // The entry screen lives in BOTH stacks (S4.13: a stack cannot pop onto a screen it does not
   // contain), so back from the profile's copy must land on the profile — not in Trips.
@@ -596,6 +608,40 @@ async function publishedTrip(token, title, destinations, days) {
   check('AC 2: …with the Diary tab still selected and its section still open',
     diaryStillSelected.includes('Sunset at Las Cabanas'),
     diaryStillSelected.replace(/\n/g, ' | ').slice(0, 140));
+
+  // --- the trip diary screen, reached by tapping the section ROW (the founder's first frame) ---
+  const toTripDiary = await evaluate(`
+    (() => {
+      const row = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /^Open the diary for /.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)[0];
+      if (!row) return { clicked: false };
+      row.click();
+      return { clicked: true };
+    })()
+  `);
+  await sleep(5000);
+  const tripDiary = (await text()) || '';
+  check('AC 2: tapping the section row opens that trip’s diary screen',
+    toTripDiary.clicked === true &&
+      /\/diary\/[0-9a-f-]{36}$/.test(await url()) &&
+      tripDiary.includes(diaryTitle),
+    `-> ${await url()}`);
+
+  const previewFromStream = await tapLabel('Open your entry for Sunset at Las Cabanas', 4500);
+  check('AC 2: an entry in the stream opens the same postcard preview',
+    previewFromStream.clicked === true && ((await text()) || '').includes('Edit entry'),
+    ((await text()) || '').replace(/\n/g, ' | ').slice(0, 120));
+
+  const closedPreview = await tapLabel('Close this postcard', 3500);
+  check('AC 2: closing the preview leaves the traveler on the diary screen',
+    closedPreview.clicked === true && ((await text()) || '').includes(diaryTitle),
+    await url());
+
+  const backFromTripDiary = await tapLabel('Go back', 4500);
+  check('AC 2: back from the trip diary returns to the profile, not into the trip stack (S4.13)',
+    backFromTripDiary.clicked === true && (await url()).includes('/profile'),
+    await url());
 
   // --- the Itineraries tab: the showcase, and only the showcase (AC 3) ----------------------
   await goto('/profile');

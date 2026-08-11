@@ -4,13 +4,13 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The profile tab renders the new header with real data; a traveler with null handle, bio, or vanity number gets a clean header with those lines absent
-- [ ] Edit Profile opens the existing editor prefilled; saving returns with the change visible
-- [ ] The tab switcher renders Diary selected by default, Itineraries switchable, mock treatment (active color + underline), placeholder panes
-- [ ] The cogwheel opens the account screen; Sign out signs out; Reload reloads; the My Diary section is gone from it
-- [ ] The Largata wordmark header no longer renders on the profile tab
-- [ ] Existing navigation intact: tab bar unchanged, back behavior sane from both new routes
+- [x] The profile tab renders the new header with real data; a traveler with null handle, bio, or vanity number gets a clean header with those lines absent
+- [x] Edit Profile opens the existing editor prefilled; saving returns with the change visible
+- [x] The tab switcher renders Diary selected by default, Itineraries switchable, mock treatment (active color + underline), placeholder panes
+- [x] The cogwheel opens the account screen; Sign out signs out; Reload reloads; the My Diary section is gone from it
+- [x] The Largata wordmark header no longer renders on the profile tab
+- [x] Existing navigation intact: tab bar unchanged, back behavior sane from both new routes
 
 ## Comments

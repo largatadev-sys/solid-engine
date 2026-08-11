@@ -95,6 +95,87 @@ export const diaryMetrics = {
 } as const;
 
 
+export const diaryScreenColors = {
+  title: '#1B263B',
+  overline: '#5C6470',
+  backBorder: '#E2E4E8',
+  divider: '#E7E5E4',
+  caption: '#1C1917',
+  eyebrow: '#EA580C',
+  scrim: 'rgba(27, 38, 59, 0.55)',
+  card: '#FFFFFF',
+  closeInk: 'rgba(28, 25, 23, 0.55)',
+  onPhoto: '#FFFFFF',
+  dotIdle: 'rgba(255, 255, 255, 0.45)',
+  previewCaption: '#44403C',
+  previewCount: '#78716C',
+  previewTrip: '#A8A29E',
+  hint: 'rgba(255, 255, 255, 0.75)',
+  photoWell: '#F2F1ED',
+  editInk: '#1C1917',
+  shareInk: '#EA580C',
+} as const;
+
+
+export const diaryScreenTypography = {
+  overline: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+  screenTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 24,
+    lineHeight: 29,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  eyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  entryTitle: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 22, fontWeight: '700' },
+  caption: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 22, fontWeight: '400' },
+  previewTitle: { fontFamily: fonts.extraBold, fontSize: 22, lineHeight: 27, fontWeight: '800' },
+  previewCaption: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, fontWeight: '400' },
+  previewCount: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  previewTrip: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  action: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  hint: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' },
+} as const;
+
+
+export const diaryScreenMetrics = {
+  backButton: 36,
+  backGlyph: 20,
+  streamPhotoWidth: 332,
+  streamPhotoHeight: 250,
+  photoRadius: 12,
+  entryGap: 24,
+  previewCardWidth: 345,
+  previewPhotoHeight: 300,
+  previewRadius: 20,
+  closeButton: 32,
+  closeGlyph: 14,
+  previewDot: 8,
+  previewInset: 12,
+  actionGlyph: 15,
+} as const;
+
+
 export const profileColors = {
   avatarWell: '#FDE4CF',
   avatarInk: '#C2410C',

@@ -4,11 +4,11 @@
 
 **Blocked by:** 01 (the screen), 02 (the stub module).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Integration test at the controller seam: a fixture traveler owning published trips, owning drafts, and holding plain membership in someone else's published trip gets exactly the right two counts
-- [ ] The row renders true Published and Trips values against the live backend
-- [ ] Followers and Following render stub integers in 1–100; with the switch off they render 0
-- [ ] Screen test covers the row's loading and error presentation
+- [x] Integration test at the controller seam: a fixture traveler owning published trips, owning drafts, and holding plain membership in someone else's published trip gets exactly the right two counts
+- [x] The row renders true Published and Trips values against the live backend
+- [x] Followers and Following render stub integers in 1–100; with the switch off they render 0
+- [x] Screen test covers the row's loading and error presentation
 
 ## Comments

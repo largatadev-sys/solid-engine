@@ -1,6 +1,10 @@
+import { useLocalSearchParams } from 'expo-router';
 import { DiaryEntryScreen } from '../../../../../src/diary/DiaryEntryScreen';
+import { profileStackExit } from '../../../../../src/diary/diaryEntryExit';
 
 
 export default function ProfileDiaryEntryRoute() {
-  return <DiaryEntryScreen exit="profile" />;
+  const { from } = useLocalSearchParams<{ from?: string }>();
+
+  return <DiaryEntryScreen exit={profileStackExit(from)} />;
 }
