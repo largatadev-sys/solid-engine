@@ -451,10 +451,27 @@ function writeFixture() {
     })()
   `);
 
+  // Nothing reaches the server until Save. Stage a photo AND a caption, confirm the entry on the
+  // wire is untouched, then save and confirm both landed together.
+  const photosBeforeStaging = (await api(`/v1/itineraries/${trip}/diary/entries`, 'GET', author.idToken))
+    .body.items[0]?.photos?.length;
+  await plantFile(fixture, 1);
+  await tapLabel('Add a photo from your camera roll', 3500);
   await typeCaption('First edit');
-  await tapLabel('Save caption', 4000);
+
+  const midStage = (await api(`/v1/itineraries/${trip}/diary/entries`, 'GET', author.idToken)).body.items[0];
+  check('a staged photo and caption reach the server ONLY on Save, never on pick',
+    midStage?.photos?.length === photosBeforeStaging && midStage?.caption !== 'First edit',
+    `photos=${midStage?.photos?.length} (was ${photosBeforeStaging}), caption=${JSON.stringify(midStage?.caption)}`);
+
+  await tapLabel('Save to Diary', 5000);
+  const afterSave = (await api(`/v1/itineraries/${trip}/diary/entries`, 'GET', author.idToken)).body.items[0];
+  check('Save commits the photo and the caption in one act',
+    afterSave?.photos?.length === photosBeforeStaging + 1 && afterSave?.caption === 'First edit',
+    `photos=${afterSave?.photos?.length}, caption=${JSON.stringify(afterSave?.caption)}`);
+
   await typeCaption('Second edit');
-  await tapLabel('Save caption', 4000);
+  await tapLabel('Save to Diary', 4000);
 
   const resaved = await api(`/v1/itineraries/${trip}/diary/entries`, 'GET', author.idToken);
   check('an entry can be edited AGAIN after a save — not just the first time',

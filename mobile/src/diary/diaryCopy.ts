@@ -14,7 +14,7 @@ export const ADD_FROM_CAMERA_ROLL = 'Add from camera roll';
 
 export const PICK_FROM_DUMP = 'Pick from Photo Dump';
 
-export const SAVE_CAPTION_LABEL = 'Save caption';
+export const SAVE_TO_DIARY_LABEL = 'Save to Diary';
 
 export const DUMP_EMPTY = 'No photos in the trip’s Photo Dump yet.';
 

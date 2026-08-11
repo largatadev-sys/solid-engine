@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,7 +9,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { confirmDestructive } from '../../../../../../src/components/confirmDestructive';
+import {
+  confirmDestructive,
+  confirmWith,
+} from '../../../../../../src/components/confirmDestructive';
+import { discardStagedEditsWording } from '../../../../../../src/components/confirmDestructiveMessage';
 import { ScreenHeader } from '../../../../../../src/components/ScreenHeader';
 import {
   itineraryLoadMessage,
@@ -24,26 +28,28 @@ import {
   ENTRY_TITLE,
   PHOTOS_LABEL,
   PICK_FROM_DUMP,
-  SAVE_CAPTION_LABEL,
+  SAVE_TO_DIARY_LABEL,
 } from '../../../../../../src/diary/diaryCopy';
+import { MAX_DIARY_PHOTOS, roomLeft } from '../../../../../../src/diary/diaryCapture';
 import {
-  canRemovePhoto,
-  MAX_DIARY_PHOTOS,
-  roomLeft,
-} from '../../../../../../src/diary/diaryCapture';
+  hasUnsavedChanges,
+  stagedFrom,
+  stagedPhotoCount,
+  tilesOf,
+  withoutTile,
+  type StagedEntry,
+} from '../../../../../../src/diary/stagedEntry';
 import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { DiaryAddTile, DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
 import { DumpPickerModal } from '../../../../../../src/diary/DumpPickerModal';
 import { flattenPhotoDumpPages } from '../../../../../../src/media/photoDumpGrid';
 import { usePhotoAction } from '../../../../../../src/media/usePhotoAction';
+import { useExitGuard } from '../../../../../../src/navigation/useExitGuard';
 import {
-  useAddDiaryDevicePhotos,
-  useAddDiaryPhotosFromDump,
   useDeleteDiaryEntry,
   useMyDiaryEntries,
-  useRecaptionDiaryEntry,
-  useRemoveDiaryPhoto,
+  useSaveDiaryEntry,
 } from '../../../../../../src/query/diaryQueries';
 import { useItinerary, usePhotoDump } from '../../../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../../../src/theme';
@@ -68,20 +74,29 @@ export default function DiaryEntryScreen() {
   const entry = entries.data?.find((candidate) => candidate.id === entryId);
   const archived = trip.data?.archived ?? false;
 
-  const recaption = useRecaptionDiaryEntry(id, entryId);
-  const addDevicePhotos = useAddDiaryDevicePhotos(id, entryId);
-  const addFromDump = useAddDiaryPhotosFromDump(id, entryId);
-  const removePhoto = useRemoveDiaryPhoto(id, entryId);
+  const save = useSaveDiaryEntry(id, entryId);
   const remove = useDeleteDiaryEntry(id);
   const photoAction = usePhotoAction();
 
-  const saved = entry?.caption ?? '';
-  const [draft, setDraft] = useState<string | null>(null);
+  const [staged, setStaged] = useState<StagedEntry | null>(null);
   const [dumpPickerOpen, setDumpPickerOpen] = useState(false);
 
+  const savedAt = entry?.updatedAt;
   useEffect(() => {
-    setDraft(null);
-  }, [saved]);
+    setStaged(null);
+  }, [savedAt]);
+
+  const dirty = entry !== undefined && staged !== null && hasUnsavedChanges(staged, entry);
+
+  useExitGuard(
+    dirty,
+    useCallback((proceed: () => void) => {
+      confirmWith(discardStagedEditsWording(), () => {
+        setStaged(null);
+        proceed();
+      });
+    }, []),
+  );
 
   if (entries.isPending || trip.isPending) {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
@@ -94,25 +109,32 @@ export default function DiaryEntryScreen() {
   }
 
   const dumpPhotos = flattenPhotoDumpPages(dump.data?.pages);
-  const total = entry.photos.length;
+  const editing = staged ?? stagedFrom(entry);
+  const total = stagedPhotoCount(editing);
   const room = roomLeft(total);
   const editable = !archived;
-  const shown = draft ?? saved;
-  const dirty = shown.trim() !== saved;
+  const tiles = tilesOf(
+    editing,
+    entry.photos,
+    (photoId) => dumpPhotos.find((photo) => photo.id === photoId)?.url ?? null,
+  );
 
-  const saveCaption = () => {
-    if (!dirty) return;
-    const next = shown.trim();
-    void photoAction.run(() => recaption.mutateAsync(next === '' ? null : next));
-  };
+  const stage = (next: StagedEntry) => setStaged(next);
 
   const pickFromDevice = () => {
-    void photoAction.pickManyAndRun(room, (picked) => addDevicePhotos.mutateAsync(picked));
+    void photoAction.pickManyAndRun(room, async (picked) => {
+      stage({ ...editing, devicePhotos: [...editing.devicePhotos, ...picked] });
+    });
+  };
+
+  const saveEntry = () => {
+    void photoAction.run(() => save.mutateAsync(editing));
   };
 
   const deleteEntry = () => {
     confirmDestructive(DELETE_ENTRY_SUBJECT, () => {
       void photoAction.run(async () => {
+        setStaged(null);
         await remove.mutateAsync(entryId);
         router.replace({ pathname: '/itineraries/[id]', params: { id } });
       });
@@ -136,16 +158,14 @@ export default function DiaryEntryScreen() {
           </View>
 
           <View style={styles.grid}>
-            {entry.photos.map((photo, index) => (
+            {tiles.map((tile, index) => (
               <DiaryPhotoTile
-                key={photo.id}
-                url={photo.url}
+                key={tile.key}
+                url={tile.url}
+                localPreview={tile.localPreview}
                 accessibilityLabel={`Diary photo ${index + 1}`}
-                onRemove={
-                  editable && canRemovePhoto(total)
-                    ? () => void photoAction.run(() => removePhoto.mutateAsync(photo.id))
-                    : undefined
-                }
+                source={tile.source === 'saved' ? undefined : tile.source}
+                onRemove={editable ? () => stage(withoutTile(editing, tile)) : undefined}
               />
             ))}
           </View>
@@ -173,8 +193,8 @@ export default function DiaryEntryScreen() {
           <Text style={styles.sectionLabel}>{CAPTION_LABEL}</Text>
           <TextInput
             style={styles.caption}
-            value={shown}
-            onChangeText={setDraft}
+            value={editing.caption}
+            onChangeText={(next) => stage({ ...editing, caption: next })}
             editable={editable}
             placeholder={CAPTION_PLACEHOLDER}
             placeholderTextColor={workspaceColors.placeholder}
@@ -193,16 +213,16 @@ export default function DiaryEntryScreen() {
           <>
             <Pressable
               style={[styles.saveCaption, !dirty && styles.saveDisabled]}
-              onPress={saveCaption}
-              disabled={!dirty || recaption.isPending}
+              onPress={saveEntry}
+              disabled={!dirty || save.isPending}
               accessibilityRole="button"
-              accessibilityLabel={SAVE_CAPTION_LABEL}
-              accessibilityState={{ disabled: !dirty || recaption.isPending }}
+              accessibilityLabel={SAVE_TO_DIARY_LABEL}
+              accessibilityState={{ disabled: !dirty || save.isPending }}
             >
-              {recaption.isPending ? (
+              {save.isPending ? (
                 <ActivityIndicator color={workspaceColors.onAccent} />
               ) : (
-                <Text style={styles.saveCaptionLabel}>{SAVE_CAPTION_LABEL}</Text>
+                <Text style={styles.saveCaptionLabel}>{SAVE_TO_DIARY_LABEL}</Text>
               )}
             </Pressable>
 
@@ -225,7 +245,7 @@ export default function DiaryEntryScreen() {
         room={room}
         onAdd={(photoIds) => {
           setDumpPickerOpen(false);
-          void photoAction.run(() => addFromDump.mutateAsync(photoIds));
+          stage({ ...editing, fromDump: [...editing.fromDump, ...photoIds] });
         }}
         onDismiss={() => setDumpPickerOpen(false)}
       />

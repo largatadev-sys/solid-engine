@@ -83,72 +83,36 @@ export function usePostDiaryEntry(
   });
 }
 
-
-export function useRecaptionDiaryEntry(
-  itineraryId: string,
-  entryId: string,
-): UseMutationResult<DiaryEntryResponse, Error, string | null> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (caption: string | null) =>
-      diaryRepository.recaption(itineraryId, entryId, caption),
-    onSuccess: async () => {
-      track(DIARY_ENTRY_EDITED, { itineraryId, diaryEntryId: entryId });
-      await invalidateDiary(client, itineraryId);
-    },
-  });
+export interface SaveDiaryEntryInput {
+  readonly caption: string;
+  readonly removedPhotoIds: readonly string[];
+  readonly fromDump: readonly string[];
+  readonly devicePhotos: readonly PickedPhoto[];
 }
 
 
-export function useAddDiaryDevicePhotos(
+export function useSaveDiaryEntry(
   itineraryId: string,
   entryId: string,
-): UseMutationResult<DiaryEntryResponse | undefined, Error, readonly PickedPhoto[]> {
+): UseMutationResult<void, Error, SaveDiaryEntryInput> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (photos: readonly PickedPhoto[]) => {
-      let latest: DiaryEntryResponse | undefined;
-      for (const photo of photos) {
-        latest = await diaryRepository.addDevicePhoto(itineraryId, entryId, photo);
+    mutationFn: async (staged: SaveDiaryEntryInput) => {
+      for (const photo of staged.devicePhotos) {
+        await diaryRepository.addDevicePhoto(itineraryId, entryId, photo);
       }
-      return latest;
-    },
-    onSuccess: async () => {
-      track(DIARY_ENTRY_EDITED, { itineraryId, diaryEntryId: entryId });
-      await invalidateDiary(client, itineraryId);
-    },
-  });
-}
-
-
-export function useAddDiaryPhotosFromDump(
-  itineraryId: string,
-  entryId: string,
-): UseMutationResult<DiaryEntryResponse | undefined, Error, readonly string[]> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async (photoIds: readonly string[]) => {
-      let latest: DiaryEntryResponse | undefined;
-      for (const photoId of photoIds) {
-        latest = await diaryRepository.addPhotoFromDump(itineraryId, entryId, photoId);
+      for (const photoId of staged.fromDump) {
+        await diaryRepository.addPhotoFromDump(itineraryId, entryId, photoId);
       }
-      return latest;
+      for (const photoId of staged.removedPhotoIds) {
+        await diaryRepository.removePhoto(itineraryId, entryId, photoId);
+      }
+      await diaryRepository.recaption(
+        itineraryId,
+        entryId,
+        staged.caption.trim() === '' ? null : staged.caption.trim(),
+      );
     },
-    onSuccess: async () => {
-      track(DIARY_ENTRY_EDITED, { itineraryId, diaryEntryId: entryId });
-      await invalidateDiary(client, itineraryId);
-    },
-  });
-}
-
-
-export function useRemoveDiaryPhoto(
-  itineraryId: string,
-  entryId: string,
-): UseMutationResult<void, Error, string> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (photoId: string) => diaryRepository.removePhoto(itineraryId, entryId, photoId),
     onSuccess: async () => {
       track(DIARY_ENTRY_EDITED, { itineraryId, diaryEntryId: entryId });
       await invalidateDiary(client, itineraryId);
