@@ -2,7 +2,6 @@ import type { DiaryEntryResponse, ItineraryState } from '../types/api';
 
 export const MAX_DIARY_PHOTOS = 5;
 
-export const DIARY_PRIVACY_NOTE = 'Only you can see your diary. It shows up on your profile.';
 
 
 export function capturesAreOpen(state: ItineraryState): boolean {
@@ -30,11 +29,6 @@ export function roomLeft(photoCount: number): number {
 
 export function canSubmit(photoCount: number): boolean {
   return photoCount >= 1 && photoCount <= MAX_DIARY_PHOTOS;
-}
-
-
-export function canRemovePhoto(photoCount: number): boolean {
-  return photoCount > 1;
 }
 
 

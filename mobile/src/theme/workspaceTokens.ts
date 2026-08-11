@@ -70,7 +70,6 @@ export const diaryTypography = {
     fontWeight: '700',
     letterSpacing: 0.4,
   },
-  tileLabel: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
   caption: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, fontWeight: '400' },
   note: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, fontWeight: '400' },
   cta: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, fontWeight: '700' },
@@ -82,7 +81,6 @@ export const diaryTypography = {
 
 
 export const diaryMetrics = {
-  tileSize: 104,
   tileRadius: 14,
   tileGap: 8,
   checkSize: 20,
@@ -91,7 +89,6 @@ export const diaryMetrics = {
   ctaRadius: 14,
   captionMinHeight: 80,
   captionPadding: 14,
-  removeBadge: 24,
   postedHalo: 64,
   postcardPhotoWidth: 280,
   postcardPhotoHeight: 220,

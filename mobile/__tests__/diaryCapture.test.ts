@@ -1,10 +1,9 @@
 import {
   addPhotosLabel,
-  canRemovePhoto,
   canSubmit,
   captureLabel,
   capturesAreOpen,
-  DIARY_PRIVACY_NOTE,
+
   entryForActivity,
   MAX_DIARY_PHOTOS,
   roomLeft,
@@ -12,6 +11,7 @@ import {
   successMessage,
   togglePick,
 } from '../src/diary/diaryCapture';
+import { DIARY_PRIVACY_NOTE } from '../src/diary/diaryCopy';
 import {
   inTripDayOrder,
   snapshotEyebrow,
@@ -78,11 +78,6 @@ describe('the photo floor and cap', () => {
     expect(canSubmit(MAX_DIARY_PHOTOS + 1)).toBe(false);
     expect(roomLeft(MAX_DIARY_PHOTOS)).toBe(0);
     expect(roomLeft(2)).toBe(3);
-  });
-
-  it('never lets the last photo be removed', () => {
-    expect(canRemovePhoto(1)).toBe(false);
-    expect(canRemovePhoto(2)).toBe(true);
   });
 });
 

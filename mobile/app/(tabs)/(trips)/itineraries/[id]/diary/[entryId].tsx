@@ -20,14 +20,12 @@ import {
   ScreenMessage,
 } from '../../../../../../src/components/ScreenMessage';
 import {
-  ADD_FROM_CAMERA_ROLL,
   CAPTION_LABEL,
   CAPTION_PLACEHOLDER,
   DELETE_ENTRY_LABEL,
   DELETE_ENTRY_SUBJECT,
   ENTRY_TITLE,
   PHOTOS_LABEL,
-  PICK_FROM_DUMP,
   SAVE_TO_DIARY_LABEL,
 } from '../../../../../../src/diary/diaryCopy';
 import { MAX_DIARY_PHOTOS, roomLeft } from '../../../../../../src/diary/diaryCapture';
@@ -40,8 +38,10 @@ import {
   type StagedEntry,
 } from '../../../../../../src/diary/stagedEntry';
 import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
+import { diaryEditorStyles } from '../../../../../../src/diary/diaryEditorStyles';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
-import { DiaryAddTile, DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
+import { DiaryAddRow } from '../../../../../../src/diary/DiaryAddRow';
+import { DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
 import { DumpPickerModal } from '../../../../../../src/diary/DumpPickerModal';
 import { flattenPhotoDumpPages } from '../../../../../../src/media/photoDumpGrid';
 import { usePhotoAction } from '../../../../../../src/media/usePhotoAction';
@@ -178,21 +178,11 @@ export default function DiaryEntryScreen() {
           </View>
 
           {editable ? (
-            <View style={styles.addRow}>
-              <DiaryAddTile
-                label={ADD_FROM_CAMERA_ROLL}
-                accessibilityLabel="Add a photo from your camera roll"
-                disabled={room === 0}
-                onPress={pickFromDevice}
-              />
-              <DiaryAddTile
-                label={PICK_FROM_DUMP}
-                accessibilityLabel="Add a photo from the Photo Dump"
-                emphasis="dump"
-                disabled={room === 0}
-                onPress={() => setDumpPickerOpen(true)}
-              />
-            </View>
+            <DiaryAddRow
+              full={room === 0}
+              onPickFromDevice={pickFromDevice}
+              onOpenDump={() => setDumpPickerOpen(true)}
+            />
           ) : null}
         </View>
 
@@ -219,7 +209,7 @@ export default function DiaryEntryScreen() {
         {editable ? (
           <>
             <Pressable
-              style={[styles.saveCaption, !dirty && styles.saveDisabled]}
+              style={[styles.cta, !dirty && styles.ctaDisabled]}
               onPress={saveEntry}
               disabled={!dirty || save.isPending}
               accessibilityRole="button"
@@ -229,7 +219,7 @@ export default function DiaryEntryScreen() {
               {save.isPending ? (
                 <ActivityIndicator color={workspaceColors.onAccent} />
               ) : (
-                <Text style={styles.saveCaptionLabel}>{SAVE_TO_DIARY_LABEL}</Text>
+                <Text style={styles.ctaLabel}>{SAVE_TO_DIARY_LABEL}</Text>
               )}
             </Pressable>
 
@@ -259,86 +249,8 @@ export default function DiaryEntryScreen() {
     </View>
   );
 }
-
-
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.surface,
-  },
-  loading: {
-    marginTop: spacing.xl,
-  },
-  body: {
-    paddingHorizontal: spacing.md2,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xl,
-    gap: spacing.lg,
-  },
-  eyebrow: {
-    ...diaryTypography.eyebrow,
-    color: diaryColors.eyebrow,
-  },
-  title: {
-    ...diaryTypography.activityTitle,
-    color: workspaceColors.title,
-    marginTop: spacing.xs,
-  },
-  sectionLabel: {
-    ...diaryTypography.sectionLabel,
-    color: diaryColors.sectionLabel,
-  },
-  photoBlock: {
-    gap: spacing.sm3,
-  },
-  photoHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
-  count: {
-    ...diaryTypography.count,
-    color: diaryColors.count,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: diaryMetrics.tileGap,
-  },
-  addRow: {
-    flexDirection: 'row',
-    gap: diaryMetrics.tileGap,
-  },
-  caption: {
-    marginTop: spacing.sm2,
-    backgroundColor: diaryColors.tileWell,
-    borderWidth: 1,
-    borderColor: diaryColors.fieldBorder,
-    borderRadius: radii.md,
-    minHeight: diaryMetrics.captionMinHeight,
-    padding: diaryMetrics.captionPadding,
-    textAlignVertical: 'top',
-    ...diaryTypography.caption,
-    color: workspaceColors.title,
-  },
-  failure: {
-    ...typography.caption,
-    color: colors.danger,
-  },
-  saveCaption: {
-    height: diaryMetrics.ctaHeight,
-    borderRadius: diaryMetrics.ctaRadius,
-    backgroundColor: workspaceColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveDisabled: {
-    opacity: 0.5,
-  },
-  saveCaptionLabel: {
-    ...diaryTypography.cta,
-    color: workspaceColors.onAccent,
-  },
+  ...diaryEditorStyles,
   deleteEntry: {
     height: workspaceMetrics.inputHeight,
     borderRadius: workspaceRadii.control,

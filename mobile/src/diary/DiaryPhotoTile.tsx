@@ -62,7 +62,7 @@ export function DiaryPhotoTile({
 
       {onRemove !== undefined ? (
         <Pressable
-          style={styles.remove}
+          style={styles.corner}
           onPress={onRemove}
           accessibilityRole="button"
           accessibilityLabel={`Remove ${accessibilityLabel}`}
@@ -71,7 +71,7 @@ export function DiaryPhotoTile({
           <Icon name="trash" size={REMOVE_ICON_SIZE} color={diaryColors.badgeText} />
         </Pressable>
       ) : selected ? (
-        <View style={styles.check}>
+        <View style={styles.corner}>
           <Icon name="check" size={REMOVE_ICON_SIZE} color={diaryColors.badgeText} />
         </View>
       ) : null}
@@ -142,18 +142,7 @@ const styles = StyleSheet.create({
   fallback: {
     backgroundColor: diaryColors.tileWell,
   },
-  remove: {
-    position: 'absolute',
-    top: diaryMetrics.badgeInset,
-    right: diaryMetrics.badgeInset,
-    width: diaryMetrics.checkSize,
-    height: diaryMetrics.checkSize,
-    borderRadius: diaryMetrics.checkSize,
-    backgroundColor: diaryColors.check,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  check: {
+  corner: {
     position: 'absolute',
     top: diaryMetrics.badgeInset,
     right: diaryMetrics.badgeInset,

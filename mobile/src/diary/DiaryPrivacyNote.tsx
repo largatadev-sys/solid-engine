@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
-import { DIARY_PRIVACY_NOTE } from './diaryCapture';
+import { DIARY_PRIVACY_NOTE } from './diaryCopy';
 import { diaryColors, diaryTypography, workspaceColors } from '../theme/workspaceTokens';
 import { spacing } from '../theme';
 

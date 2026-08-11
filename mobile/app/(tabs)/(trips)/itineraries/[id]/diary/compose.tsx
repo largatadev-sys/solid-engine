@@ -16,14 +16,14 @@ import {
   ScreenMessage,
 } from '../../../../../../src/components/ScreenMessage';
 import {
-  ADD_FROM_CAMERA_ROLL,
+
   CAPTION_LABEL,
   CAPTION_PLACEHOLDER,
   COMPOSE_CTA,
   COMPOSE_TITLE,
   PHOTOS_EMPTY,
   PHOTOS_LABEL,
-  PICK_FROM_DUMP,
+
 } from '../../../../../../src/diary/diaryCopy';
 import {
   canSubmit,
@@ -32,7 +32,9 @@ import {
 } from '../../../../../../src/diary/diaryCapture';
 import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
-import { DiaryAddTile, DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
+import { DiaryAddRow } from '../../../../../../src/diary/DiaryAddRow';
+import { DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
+import { diaryEditorStyles } from '../../../../../../src/diary/diaryEditorStyles';
 import { DumpPickerModal } from '../../../../../../src/diary/DumpPickerModal';
 import { dayHeading } from '../../../../../../src/itineraries/dayHeading';
 import { flattenPhotoDumpPages } from '../../../../../../src/media/photoDumpGrid';
@@ -153,24 +155,14 @@ export default function ComposeDiaryEntryScreen() {
               ))}
             </View>
           ) : (
-            <Text style={styles.dumpEmpty}>{PHOTOS_EMPTY}</Text>
+            <Text style={styles.emptyPhotos}>{PHOTOS_EMPTY}</Text>
           )}
 
-          <View style={styles.addRow}>
-            <DiaryAddTile
-              label={ADD_FROM_CAMERA_ROLL}
-              accessibilityLabel="Add a photo from your camera roll"
-              disabled={room === 0}
-              onPress={pickFromDevice}
-            />
-            <DiaryAddTile
-              label={PICK_FROM_DUMP}
-              accessibilityLabel="Add a photo from the Photo Dump"
-              emphasis="dump"
-              disabled={room === 0}
-              onPress={() => setDumpPickerOpen(true)}
-            />
-          </View>
+          <DiaryAddRow
+            full={room === 0}
+            onPickFromDevice={pickFromDevice}
+            onOpenDump={() => setDumpPickerOpen(true)}
+          />
         </View>
 
         <View>
@@ -223,91 +215,4 @@ export default function ComposeDiaryEntryScreen() {
 }
 
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.surface,
-  },
-  loading: {
-    marginTop: spacing.xl,
-  },
-  body: {
-    paddingHorizontal: spacing.md2,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xl,
-    gap: spacing.lg,
-  },
-  eyebrow: {
-    ...diaryTypography.eyebrow,
-    color: diaryColors.eyebrow,
-  },
-  title: {
-    ...diaryTypography.activityTitle,
-    color: workspaceColors.title,
-    marginTop: spacing.xs,
-  },
-  sectionLabel: {
-    ...diaryTypography.sectionLabel,
-    color: diaryColors.sectionLabel,
-  },
-  photoBlock: {
-    gap: spacing.sm3,
-  },
-  photoHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
-  count: {
-    ...diaryTypography.count,
-    color: diaryColors.count,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: diaryMetrics.tileGap,
-  },
-  filler: {
-    flex: 1,
-    aspectRatio: 1,
-  },
-  addRow: {
-    flexDirection: 'row',
-    gap: diaryMetrics.tileGap,
-  },
-  dumpEmpty: {
-    ...typography.caption,
-    color: workspaceColors.muted,
-    marginTop: spacing.sm3,
-  },
-  caption: {
-    marginTop: spacing.sm2,
-    backgroundColor: diaryColors.tileWell,
-    borderWidth: 1,
-    borderColor: diaryColors.tileDash,
-    borderRadius: radii.control,
-    minHeight: diaryMetrics.captionMinHeight,
-    padding: diaryMetrics.captionPadding,
-    textAlignVertical: 'top',
-    ...diaryTypography.caption,
-    color: workspaceColors.title,
-  },
-  failure: {
-    ...typography.caption,
-    color: colors.danger,
-  },
-  cta: {
-    height: diaryMetrics.ctaHeight,
-    borderRadius: radii.control,
-    backgroundColor: workspaceColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaDisabled: {
-    opacity: 0.5,
-  },
-  ctaLabel: {
-    ...diaryTypography.cta,
-    color: workspaceColors.onAccent,
-  },
-});
+const styles = diaryEditorStyles;
