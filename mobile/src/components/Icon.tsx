@@ -37,6 +37,7 @@ export type IconName =
   | 'calendarPlus'
   | 'grip'
   | 'clock'
+  | 'info'
   | 'chevronUp';
 
 interface IconProps {
@@ -251,6 +252,13 @@ export function Icon({ name, size, color }: IconProps) {
         <>
           <Path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" {...shared} />
           <Polyline points="22 4 12 14.01 9 11.01" {...shared} />
+        </>
+      )}
+
+      {name === 'info' && (
+        <>
+          <Circle cx="12" cy="12" r="9.75" {...shared} />
+          <Path d="M12 11.25V16.5M12 7.5v.3" {...shared} />
         </>
       )}
 

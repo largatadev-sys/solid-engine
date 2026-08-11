@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Icon } from '../components/Icon';
 import {
+  diaryTypography,
   workspaceCardShadow,
   workspaceColors,
   workspaceMetrics,
@@ -35,6 +36,7 @@ interface WorkspaceDayCardProps {
   readonly onRenameDay?: () => void;
   readonly titleSlot?: React.ReactNode;
   readonly activitySlot?: React.ReactNode;
+  readonly diaryLinkFor?: (activity: ActivityResponse) => DiaryLink | null;
 }
 
 
@@ -50,6 +52,7 @@ export function WorkspaceDayCard({
   onRenameDay,
   titleSlot,
   activitySlot,
+  diaryLinkFor,
 }: WorkspaceDayCardProps) {
   const heading = dayHeading(day);
 
@@ -149,6 +152,7 @@ export function WorkspaceDayCard({
                   affordances={affordances}
                   onEdit={onEditActivity}
                   onDelete={onDeleteActivity}
+                  diaryLink={diaryLinkFor?.(activity) ?? null}
                 />
               </Animated.View>
             ))
@@ -187,11 +191,19 @@ function Chevron({ expanded }: { expanded: boolean }) {
 }
 
 
+export interface DiaryLink {
+  readonly label: string;
+  readonly added: boolean;
+  readonly onPress: () => void;
+}
+
+
 interface ActivityRowProps {
   readonly activity: ActivityResponse;
   readonly affordances: WorkspaceAffordances;
   readonly onEdit?: (activity: ActivityResponse) => void;
   readonly onDelete?: (activity: ActivityResponse) => void;
+  readonly diaryLink?: DiaryLink | null;
   readonly grabHandlers?: Record<string, unknown>;
   readonly accessibilityActions?: ReadonlyArray<{ name: string; label: string }>;
   readonly onAccessibilityAction?: (actionName: string) => void;
@@ -203,6 +215,7 @@ export function ActivityRow({
   affordances,
   onEdit,
   onDelete,
+  diaryLink,
   grabHandlers,
   accessibilityActions,
   onAccessibilityAction,
@@ -255,6 +268,19 @@ export function ActivityRow({
             <Icon name="trash" size={16} color={workspaceColors.accent} />
           </Pressable>
         </View>
+      ) : null}
+
+      {diaryLink !== null && diaryLink !== undefined ? (
+        <Pressable
+          onPress={diaryLink.onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`${diaryLink.label}: ${activity.title}`}
+          hitSlop={8}
+        >
+          <Text style={[styles.diaryLink, diaryLink.added && styles.diaryLinkAdded]}>
+            {diaryLink.label}
+          </Text>
+        </Pressable>
       ) : null}
     </View>
   );
@@ -351,6 +377,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  diaryLink: {
+    ...diaryTypography.link,
+    color: workspaceColors.accent,
+  },
+  diaryLinkAdded: {
+    color: workspaceColors.captured,
   },
   addActivity: {
     flexDirection: 'row',

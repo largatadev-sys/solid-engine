@@ -330,6 +330,41 @@ export type Page<T> = {
 };
 
 
+export type DiaryPhotoResponse = {
+  id: string;
+  url: string;
+  thumbUrl: string;
+};
+
+
+export type DiaryEntryResponse = {
+  id: string;
+  itineraryId: string;
+  activityId: string | null;
+  activityTitle: string;
+  dayLabel: string;
+  timeOfDay: string | null;
+  caption: string | null;
+  photos: DiaryPhotoResponse[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+
+export type DiaryTripResponse = {
+  itineraryId: string;
+  title: string | null;
+  entryCount: number;
+};
+
+
+export type PostDiaryEntryRequest = {
+  activityId: string;
+  caption: string | null;
+  fromDump: string[];
+};
+
+
 export type ErrorEnvelope = {
   code: string;
   message: string;

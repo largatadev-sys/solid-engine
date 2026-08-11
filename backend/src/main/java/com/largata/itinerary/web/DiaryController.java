@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.databind.ObjectMapper;
 
 
 @RestController
@@ -33,10 +34,12 @@ class DiaryController {
 
     private final DiaryService diary;
     private final AuthorizationGuard guard;
+    private final ObjectMapper json;
 
-    DiaryController(DiaryService diary, AuthorizationGuard guard) {
+    DiaryController(DiaryService diary, AuthorizationGuard guard, ObjectMapper json) {
         this.diary = diary;
         this.guard = guard;
+        this.json = json;
     }
 
 
@@ -45,10 +48,11 @@ class DiaryController {
     DiaryEntryResponse post(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID itineraryId,
-            @RequestPart("entry") PostDiaryEntryRequest entry,
+            @RequestPart("entry") String entryJson,
             @RequestPart(name = "photos", required = false) List<MultipartFile> devicePhotos)
             throws IOException {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
+        PostDiaryEntryRequest entry = json.readValue(entryJson, PostDiaryEntryRequest.class);
         return diary.post(
                 member, entry.activityId(), entry.caption(), entry.fromDump(), bytesOf(devicePhotos));
     }

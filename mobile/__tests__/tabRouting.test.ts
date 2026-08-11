@@ -143,6 +143,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     'itineraries/[id]/published.tsx',
     'itineraries/[id]/created.tsx',
     'itineraries/[id]/activity.tsx',
+    'itineraries/[id]/diary/posted.tsx',
   ];
 
   const WORKSPACE_HEADER = ['itineraries/[id]/index.tsx', 'itineraries/[id]/edit-plan.tsx'];

@@ -489,7 +489,7 @@ class DiaryContractIT extends ObjectStoreTestBase {
     private MultiValueMap<String, HttpEntity<?>> postBody(
             UUID activityId, String caption, List<UUID> fromDump, int devicePhotos) throws IOException {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("entry", entryJson(activityId, caption, fromDump), MediaType.APPLICATION_JSON);
+        builder.part("entry", entryJson(activityId, caption, fromDump), MediaType.TEXT_PLAIN);
         for (int i = 0; i < devicePhotos; i++) {
             builder.part("photos", namedPhoto("device-" + i + ".jpg")).contentType(MediaType.IMAGE_JPEG);
         }

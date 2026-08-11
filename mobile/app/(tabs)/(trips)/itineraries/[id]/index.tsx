@@ -40,6 +40,12 @@ import { memberControls } from '../../../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../../../src/members/OwnershipOfferBanner';
 import { useMembers } from '../../../../../src/query/invitationQueries';
 import { useItinerary, useTripLifecycle } from '../../../../../src/query/itineraryQueries';
+import { useMyDiaryEntries } from '../../../../../src/query/diaryQueries';
+import {
+  captureLabel,
+  capturesAreOpen,
+  entryForActivity,
+} from '../../../../../src/diary/diaryCapture';
 import { colors, typography } from '../../../../../src/theme';
 
 
@@ -55,6 +61,8 @@ export default function TripWorkspaceScreen() {
   const { isOwner } = memberControls(roster, myId, data?.archived ?? false);
 
   const lifecycle = useTripLifecycle(id);
+  const capturing = data !== undefined && capturesAreOpen(data.state);
+  const myEntries = useMyDiaryEntries(id, capturing);
   const [active, setActive] = useState<WorkspaceTab>(workspaceTabFrom(tab));
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -144,6 +152,26 @@ export default function TripWorkspaceScreen() {
                   expanded={d.id === expandedDayId}
                   affordances={affordances}
                   onToggle={() => setOpenDayId(toggleOpenDay(expandedDayId, d.id))}
+                  diaryLinkFor={(activity) => {
+                    if (!capturing) return null;
+                    const mine = entryForActivity(myEntries.data ?? [], activity.id);
+                    if (mine === null && (data.archived ?? false)) return null;
+                    return {
+                      label: captureLabel(mine),
+                      added: mine !== null,
+                      onPress: () =>
+                        router.push({
+                          pathname:
+                            mine === null
+                              ? '/itineraries/[id]/diary/compose'
+                              : '/itineraries/[id]/diary/[entryId]',
+                          params:
+                            mine === null
+                              ? { id, activityId: activity.id, dayId: d.id }
+                              : { id, entryId: mine.id },
+                        }),
+                    };
+                  }}
                 />
               ))
             )}

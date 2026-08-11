@@ -26,6 +26,46 @@ export const workspaceColors = {
   none: 'transparent',
   pressed: '#F5F5F4',
   accentWash: 'rgba(234, 88, 12, 0.06)',
+  captured: '#15803D',
+} as const;
+
+
+export const diaryColors = {
+  eyebrow: '#FF5A3C',
+  check: '#FF5A3C',
+  sectionLabel: '#44403C',
+  tileWell: '#FAF9F5',
+  tileDash: '#EBE9E2',
+  posted: '#10B981',
+  postedBody: '#6E6A66',
+} as const;
+
+
+export const diaryTypography = {
+  eyebrow: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 15, fontWeight: '700', letterSpacing: 0.5 },
+  activityTitle: { fontFamily: fonts.extraBold, fontSize: 24, lineHeight: 29, fontWeight: '800' },
+  sectionLabel: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  tileLabel: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  caption: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, fontWeight: '400' },
+  note: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, fontWeight: '400' },
+  cta: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, fontWeight: '700' },
+  link: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 15, fontWeight: '700' },
+  postedTitle: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 39, fontWeight: '700' },
+  postedBody: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, fontWeight: '400' },
+  postcardTitle: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 22, fontWeight: '700' },
+} as const;
+
+
+export const diaryMetrics = {
+  tileSize: 104,
+  checkSize: 22,
+  ctaHeight: 54,
+  captionMinHeight: 80,
+  captionPadding: 14,
+  removeBadge: 24,
+  postedHalo: 64,
+  postcardPhotoWidth: 280,
+  postcardPhotoHeight: 220,
 } as const;
 
 
