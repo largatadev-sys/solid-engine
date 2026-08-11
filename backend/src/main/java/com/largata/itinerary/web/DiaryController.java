@@ -1,5 +1,6 @@
 package com.largata.itinerary.web;
 
+import com.largata.common.api.Page;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,10 +61,13 @@ class DiaryController {
 
 
     @GetMapping
-    List<DiaryEntryResponse> mine(
-            @CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
+    Page<DiaryEntryResponse> mine(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID itineraryId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.mine(member);
+        return diary.mine(member, cursor, limit);
     }
 
 
@@ -113,13 +118,14 @@ class DiaryController {
 
 
     @DeleteMapping("/{entryId}/photos/{photoId}")
-    DiaryEntryResponse removePhoto(
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void removePhoto(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId,
             @PathVariable UUID photoId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return diary.removePhoto(member, entryId, photoId);
+        diary.removePhoto(member, entryId, photoId);
     }
 
 

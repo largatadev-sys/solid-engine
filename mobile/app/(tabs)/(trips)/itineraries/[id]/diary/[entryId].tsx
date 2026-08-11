@@ -25,11 +25,8 @@ import {
   DUMP_LABEL,
   ENTRY_TITLE,
 } from '../../../../../../src/diary/diaryCopy';
-import {
-  canRemovePhoto,
-  DIARY_PRIVACY_NOTE,
-  roomLeft,
-} from '../../../../../../src/diary/diaryCapture';
+import { canRemovePhoto, roomLeft } from '../../../../../../src/diary/diaryCapture';
+import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { DiaryAddTile, DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
 import { flattenPhotoDumpPages } from '../../../../../../src/media/photoDumpGrid';
@@ -52,7 +49,6 @@ import {
   workspaceMetrics,
 } from '../../../../../../src/theme/workspaceTokens';
 
-const INFO_ICON_SIZE = 16;
 
 const REMOVE_ICON_SIZE = 14;
 
@@ -197,10 +193,7 @@ export default function DiaryEntryScreen() {
           />
         </View>
 
-        <View style={styles.infoNote}>
-          <Icon name="info" size={INFO_ICON_SIZE} color={diaryColors.eyebrow} />
-          <Text style={styles.infoText}>{DIARY_PRIVACY_NOTE}</Text>
-        </View>
+        <DiaryPrivacyNote />
 
         {photoAction.failure !== undefined ? (
           <Text style={styles.failure}>{photoAction.failure}</Text>
@@ -289,16 +282,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     ...diaryTypography.caption,
     color: workspaceColors.title,
-  },
-  infoNote: {
-    flexDirection: 'row',
-    gap: spacing.sm2,
-    alignItems: 'flex-start',
-  },
-  infoText: {
-    flex: 1,
-    ...diaryTypography.note,
-    color: workspaceColors.muted,
   },
   failure: {
     ...typography.caption,

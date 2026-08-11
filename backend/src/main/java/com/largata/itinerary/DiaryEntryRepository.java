@@ -13,6 +13,12 @@ interface DiaryEntryRepository extends JpaRepository<DiaryEntry, UUID> {
 
     List<DiaryEntry> findByTravelerIdAndItineraryIdOrderById(UUID travelerId, UUID itineraryId);
 
+    List<DiaryEntry> findByTravelerIdAndItineraryIdOrderById(
+            UUID travelerId, UUID itineraryId, Limit limit);
+
+    List<DiaryEntry> findByTravelerIdAndItineraryIdAndIdGreaterThanOrderById(
+            UUID travelerId, UUID itineraryId, UUID cursor, Limit limit);
+
     boolean existsByTravelerIdAndActivityId(UUID travelerId, UUID activityId);
 
     @Query(

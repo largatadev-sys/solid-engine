@@ -24,8 +24,9 @@ import {
   DUMP_EMPTY,
   DUMP_LABEL,
 } from '../../../../../../src/diary/diaryCopy';
-import { DIARY_PRIVACY_NOTE, canSubmit, roomLeft } from '../../../../../../src/diary/diaryCapture';
-import { composerEyebrow } from '../../../../../../src/diary/postcardAnatomy';
+import { canSubmit, roomLeft } from '../../../../../../src/diary/diaryCapture';
+import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
+import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { DiaryAddTile, DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
 import { dayHeading } from '../../../../../../src/itineraries/dayHeading';
 import { flattenPhotoDumpPages } from '../../../../../../src/media/photoDumpGrid';
@@ -41,7 +42,6 @@ import {
   workspaceColors,
 } from '../../../../../../src/theme/workspaceTokens';
 
-const INFO_ICON_SIZE = 16;
 
 
 export default function ComposeDiaryEntryScreen() {
@@ -108,7 +108,9 @@ export default function ComposeDiaryEntryScreen() {
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <View>
-          <Text style={styles.eyebrow}>{composerEyebrow(dayHeading(day), activity.timeOfDay)}</Text>
+          <Text style={styles.eyebrow}>
+            {snapshotEyebrow({ dayLabel: dayHeading(day), timeOfDay: activity.timeOfDay })}
+          </Text>
           <Text style={styles.title}>{activity.title}</Text>
         </View>
 
@@ -174,10 +176,7 @@ export default function ComposeDiaryEntryScreen() {
           />
         </View>
 
-        <View style={styles.infoNote}>
-          <Icon name="info" size={INFO_ICON_SIZE} color={diaryColors.eyebrow} />
-          <Text style={styles.infoText}>{DIARY_PRIVACY_NOTE}</Text>
-        </View>
+        <DiaryPrivacyNote />
 
         {photoAction.failure !== undefined ? (
           <Text style={styles.failure}>{photoAction.failure}</Text>
@@ -251,16 +250,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     ...diaryTypography.caption,
     color: workspaceColors.title,
-  },
-  infoNote: {
-    flexDirection: 'row',
-    gap: spacing.sm2,
-    alignItems: 'flex-start',
-  },
-  infoText: {
-    flex: 1,
-    ...diaryTypography.note,
-    color: workspaceColors.muted,
   },
   failure: {
     ...typography.caption,

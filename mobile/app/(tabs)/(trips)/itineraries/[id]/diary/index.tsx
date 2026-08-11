@@ -6,7 +6,7 @@ import {
   ScreenMessage,
 } from '../../../../../../src/components/ScreenMessage';
 import { DIARY_STREAM_EMPTY, MY_DIARY_TITLE } from '../../../../../../src/diary/diaryCopy';
-import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
+import { inTripDayOrder, snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { MediaThumb } from '../../../../../../src/media/MediaThumb';
 import { useMyDiaryEntries } from '../../../../../../src/query/diaryQueries';
 import { useItinerary } from '../../../../../../src/query/itineraryQueries';
@@ -35,7 +35,7 @@ export default function TripDiaryScreen() {
     return <ScreenMessage {...itineraryLoadMessage(entries.error, 'Diary unavailable')} />;
   }
 
-  const postcards = entries.data;
+  const postcards = inTripDayOrder(entries.data);
 
   return (
     <View style={styles.screen}>

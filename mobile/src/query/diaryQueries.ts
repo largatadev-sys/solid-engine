@@ -41,7 +41,7 @@ export function useMyDiaryEntries(
   const { kind } = useAuth();
   return useQuery({
     queryKey: diaryKeys.mine(itineraryId),
-    queryFn: () => diaryRepository.fetchMine(itineraryId),
+    queryFn: () => diaryRepository.fetchEveryEntry(itineraryId),
     enabled: enabled && kind === 'signedIn',
   });
 }

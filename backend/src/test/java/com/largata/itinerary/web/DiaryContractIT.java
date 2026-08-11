@@ -210,6 +210,26 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
 
     @Test
+    void theMineListSpeaksTheOnePaginationShapeLikeEveryOtherList() throws IOException {
+        Fixture trip = startedTrip();
+        post(trip.owner(), trip, trip.activityId(), "first", List.of(), 1);
+        UUID second = rig.addActivity(trip.owner(), trip.tripId(), rig.dayAt(trip.tripId(), 1), "Later");
+        post(trip.owner(), trip, second, "second", List.of(), 1);
+
+        EntryPage firstPage = pageOf(trip.owner(), trip, "?limit=1");
+        assertThat(firstPage.items()).hasSize(1);
+        assertThat(firstPage.nextCursor()).isNotNull();
+
+        EntryPage nextPage = pageOf(trip.owner(), trip, "?limit=1&cursor=" + firstPage.nextCursor());
+        assertThat(nextPage.items()).hasSize(1);
+        assertThat(nextPage.nextCursor()).isNull();
+
+        assertThat(List.of(firstPage.items().getFirst().caption(), nextPage.items().getFirst().caption()))
+                .containsExactly("first", "second");
+    }
+
+
+    @Test
     void aNonMemberIsMaskedOnEveryDiaryEndpoint() throws IOException {
         Fixture trip = startedTrip();
         Entry posted = post(trip.owner(), trip, trip.activityId(), null, List.of(), 1);
@@ -571,34 +591,31 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
 
     private Entry removePhoto(String token, Fixture trip, UUID entryId, UUID photoId) {
-        byte[] body =
-                rig.send(
-                                HttpMethod.DELETE,
-                                diaryUri(trip) + "/" + entryId + "/photos/" + photoId,
-                                token,
-                                null)
-                        .expectStatus()
-                        .isOk()
-                        .expectBody()
-                        .returnResult()
-                        .getResponseBodyContent();
-        return entryFrom(body);
+        rig.send(HttpMethod.DELETE, diaryUri(trip) + "/" + entryId + "/photos/" + photoId, token, null)
+                .expectStatus()
+                .isNoContent();
+        return only(mine(token, trip).stream().filter(e -> e.id().equals(entryId)).toList());
     }
 
 
     private List<Entry> mine(String token, Fixture trip) {
-        Entry[] body =
+        return pageOf(token, trip, "").items();
+    }
+
+
+    private EntryPage pageOf(String token, Fixture trip, String query) {
+        EntryPage body =
                 rest.get()
-                        .uri(diaryUri(trip))
+                        .uri(diaryUri(trip) + query)
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .exchange()
                         .expectStatus()
                         .isOk()
-                        .expectBody(Entry[].class)
+                        .expectBody(EntryPage.class)
                         .returnResult()
                         .getResponseBody();
         assertThat(body).isNotNull();
-        return List.of(body);
+        return body;
     }
 
 
@@ -848,6 +865,8 @@ class DiaryContractIT extends ObjectStoreTestBase {
             List<EntryPhoto> photos) {}
 
     private record EntryPhoto(UUID id, String url, String thumbUrl) {}
+
+    private record EntryPage(List<Entry> items, String nextCursor) {}
 
     private record TripSummary(UUID itineraryId, String title, long entryCount) {}
 

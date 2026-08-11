@@ -375,9 +375,9 @@ function writeFixture() {
     successScreen.replace(/\n/g, ' | ').slice(0, 160));
 
   const entries = await api(`/v1/itineraries/${trip}/diary/entries`, 'GET', author.idToken);
-  const entry = entries.body[0];
+  const entry = entries.body.items[0];
   check('the postcard landed with both sources and the caption',
-    entries.body.length === 1 && entry.photos.length === 2 &&
+    entries.body.items.length === 1 && entry.photos.length === 2 &&
     entry.caption === 'Golden hour, no filter',
     `${entry?.photos?.length} photos, caption=${JSON.stringify(entry?.caption)}`);
 

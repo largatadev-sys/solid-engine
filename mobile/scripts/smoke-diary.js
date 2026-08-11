@@ -31,6 +31,9 @@ function req(url, method, body, headers={}, raw=false) {
 }
 const api = (p, m, t, b) => req(API+p, m, b, t?{Authorization:'Bearer '+t}:{});
 
+// Every list on this API speaks one shape (P5), diary entries included — read the envelope.
+const entriesOf = async (uri, t) => (await api(uri,'GET',t)).body?.items ?? [];
+
 const media = (url, t) =>
   typeof url === 'string' && url.startsWith('/')
     ? req(API+url, 'GET', undefined, t?{Authorization:'Bearer '+t}:{}, true)
@@ -162,7 +165,7 @@ async function uploadToDump(tripId, token) {
 
   const t2Sees = await api(diary,'GET',t2);
   check('AC6: the mine-list serves each traveler only their own — t2 sees none of t1\'s',
-    t2Sees.status===200 && t2Sees.body.length===0, `${t2Sees.status}/${t2Sees.body?.length}`);
+    t2Sees.status===200 && t2Sees.body.items.length===0, `${t2Sees.status}/${t2Sees.body?.items?.length}`);
 
   const strangerList = await api(diary,'GET',t3);
   const strangerPost = await post(trip.id, t3, { activityId: activity.id, caption:null, fromDump:[] }, 1);
@@ -186,20 +189,20 @@ async function uploadToDump(tripId, token) {
     { title:'Renamed after the fact' });
   check('the plan edits below actually ran — a 409 here would make every AC5 check pass vacuously',
     lock.status===200 && renamed.status===200, `lock ${lock.status} / rename ${renamed.status}`);
-  const afterRename = (await api(diary,'GET',t1)).body[0];
+  const afterRename = (await entriesOf(diary, t1))[0];
   check('AC5: renaming the activity never rewrites a memory already posted',
     afterRename.activityTitle==='Sunset at Las Cabanas', afterRename.activityTitle);
 
   const day2 = plan.days[1];
   const moved = await api(`/v1/itineraries/${trip.id}/days/${day1.id}/activities/${activity.id}/move`,'POST',t1,
     { targetDayId: day2.id });
-  const afterMove = (await api(diary,'GET',t1)).body[0];
+  const afterMove = (await entriesOf(diary, t1))[0];
   check('AC5: moving it to another day does not move the postcard',
     moved.status===200 && afterMove.dayLabel==='Day 1', `move ${moved.status} / ${afterMove.dayLabel}`);
 
   const killed = await api(`/v1/itineraries/${trip.id}/days/${day2.id}/activities/${activity.id}`,'DELETE',t1);
   check('the activity really was deleted', killed.status===204, String(killed.status));
-  const afterDelete = (await api(diary,'GET',t1)).body[0];
+  const afterDelete = (await entriesOf(diary, t1))[0];
   check('AC5: deleting the activity clears provenance and leaves the postcard whole',
     afterDelete.activityId===null && afterDelete.activityTitle==='Sunset at Las Cabanas' &&
     afterDelete.photos.length===3,
@@ -262,7 +265,7 @@ async function uploadToDump(tripId, token) {
   const stillListed = (archivedTrips.body?.items ?? []).some(t => t.itineraryId === trip.id);
   check('AC9: an ARCHIVED trip refuses new writes while its entries stay readable',
     archivedEdit.status===409 && archivedRead.status===200 &&
-    archivedRead.body.some(e => e.caption==='Second thoughts') && stillListed,
+    archivedRead.body.items.some(e => e.caption==='Second thoughts') && stillListed,
     `${archivedEdit.status}/${archivedRead.status}/listed=${stillListed}`);
 
   console.log(`\n${pass} passed, ${fail} failed`);

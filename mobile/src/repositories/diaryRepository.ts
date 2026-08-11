@@ -11,8 +11,27 @@ import type {
 
 export const diaryRepository = {
 
-  async fetchMine(itineraryId: string): Promise<DiaryEntryResponse[]> {
-    return apiClient.get<DiaryEntryResponse[]>(`/v1/itineraries/${itineraryId}/diary/entries`);
+  async fetchMine(itineraryId: string, cursor?: string): Promise<Page<DiaryEntryResponse>> {
+    const query = cursor === undefined ? '' : `?cursor=${encodeURIComponent(cursor)}`;
+    return apiClient.get<Page<DiaryEntryResponse>>(
+      `/v1/itineraries/${itineraryId}/diary/entries${query}`,
+    );
+  },
+
+
+  async fetchEveryEntry(itineraryId: string): Promise<DiaryEntryResponse[]> {
+    const everyEntry: DiaryEntryResponse[] = [];
+    const cursorsFollowed = new Set<string>();
+    let cursor: string | undefined;
+
+    for (;;) {
+      const page = await this.fetchMine(itineraryId, cursor);
+      everyEntry.push(...page.items);
+
+      cursor = page.nextCursor ?? undefined;
+      if (cursor === undefined || cursorsFollowed.has(cursor)) return everyEntry;
+      cursorsFollowed.add(cursor);
+    }
   },
 
 

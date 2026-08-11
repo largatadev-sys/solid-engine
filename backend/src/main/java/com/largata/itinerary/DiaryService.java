@@ -192,10 +192,21 @@ public class DiaryService {
 
 
     @Transactional(readOnly = true)
-    public List<DiaryEntryResponse> mine(Membership member) {
-        return withPhotos(
-                entries.findByTravelerIdAndItineraryIdOrderById(
-                        member.travelerId(), member.itineraryId()));
+    public Page<DiaryEntryResponse> mine(Membership member, String cursor, Integer requestedLimit) {
+        int limit = clamp(requestedLimit);
+        Limit probe = Limit.of(limit + 1);
+        List<DiaryEntry> found =
+                cursor == null
+                        ? entries.findByTravelerIdAndItineraryIdOrderById(
+                                member.travelerId(), member.itineraryId(), probe)
+                        : entries.findByTravelerIdAndItineraryIdAndIdGreaterThanOrderById(
+                                member.travelerId(), member.itineraryId(), Cursor.decode(cursor), probe);
+
+        if (found.size() <= limit) {
+            return Page.exhausted(withPhotos(found));
+        }
+        List<DiaryEntry> page = found.subList(0, limit);
+        return Page.of(withPhotos(page), Cursor.encode(page.getLast().id()));
     }
 
 

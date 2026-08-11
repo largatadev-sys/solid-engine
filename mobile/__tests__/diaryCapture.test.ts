@@ -9,7 +9,11 @@ import {
   roomLeft,
   successMessage,
 } from '../src/diary/diaryCapture';
-import { snapshotEyebrow, tripEntryCountLabel } from '../src/diary/postcardAnatomy';
+import {
+  inTripDayOrder,
+  snapshotEyebrow,
+  tripEntryCountLabel,
+} from '../src/diary/postcardAnatomy';
 import type { DiaryEntryResponse } from '../src/types/api';
 
 
@@ -107,6 +111,44 @@ describe('snapshotEyebrow', () => {
   it('drops the leading zero the mock does not draw, without moving the TimePickers padded clock', () => {
     expect(snapshotEyebrow({ dayLabel: 'Day 1', timeOfDay: '09:00' })).toBe('Day 1 • 9:00 AM');
     expect(snapshotEyebrow({ dayLabel: 'Day 1', timeOfDay: '12:00' })).toBe('Day 1 • 12:00 PM');
+  });
+});
+
+
+describe('inTripDayOrder', () => {
+  it('reads the trip as it was lived, not as it was posted', () => {
+    const dayThree = entry({ id: 'a', dayLabel: 'Day 3', timeOfDay: '09:00' });
+    const dayOneMorning = entry({ id: 'b', dayLabel: 'Day 1', timeOfDay: '08:00' });
+    const dayOneEvening = entry({ id: 'c', dayLabel: 'Day 1', timeOfDay: '19:00' });
+
+    expect(inTripDayOrder([dayThree, dayOneEvening, dayOneMorning]).map((e) => e.id)).toEqual([
+      'b',
+      'c',
+      'a',
+    ]);
+  });
+
+  it('sorts Day 10 after Day 9 — the label is text, so a string compare would invert them', () => {
+    const nine = entry({ id: 'a', dayLabel: 'Day 9' });
+    const ten = entry({ id: 'b', dayLabel: 'Day 10' });
+
+    expect(inTripDayOrder([ten, nine]).map((e) => e.id)).toEqual(['a', 'b']);
+  });
+
+  it('keeps a titled day with its ordinal, and puts an unparseable label last', () => {
+    const titled = entry({ id: 'a', dayLabel: 'Day 2: Lagoon Exploration' });
+    const first = entry({ id: 'b', dayLabel: 'Day 1' });
+    const strange = entry({ id: 'c', dayLabel: 'Somewhere' });
+
+    expect(inTripDayOrder([strange, titled, first]).map((e) => e.id)).toEqual(['b', 'a', 'c']);
+  });
+
+  it('leaves the caller\'s array untouched', () => {
+    const given = [entry({ id: 'a', dayLabel: 'Day 2' }), entry({ id: 'b', dayLabel: 'Day 1' })];
+
+    inTripDayOrder(given);
+
+    expect(given.map((e) => e.id)).toEqual(['a', 'b']);
   });
 });
 
