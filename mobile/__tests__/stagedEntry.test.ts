@@ -4,6 +4,7 @@ import {
   dropSavedPhoto,
   hasUnsavedChanges,
   stagedFrom,
+  saveSteps,
   stagedPhotoCount,
   tilesOf,
   withoutTile,
@@ -141,6 +142,78 @@ describe('tilesOf', () => {
     const staged = dropSavedPhoto(stagedFrom(entry()), 'p1');
 
     expect(tilesOf(staged, entry().photos, () => null).map((tile) => tile.key)).toEqual(['p2']);
+  });
+});
+
+
+describe('saveSteps — the order the server can actually accept', () => {
+  const MAX = 5;
+
+  function ran(steps: ReturnType<typeof saveSteps>, from: number): number[] {
+    let held = from;
+    return steps.map((step) => {
+      held += step.kind === 'remove' ? -1 : 1;
+      return held;
+    });
+  }
+
+  it('swaps at the CAP by removing first — adding first would ask for a 6th', () => {
+    const staged = {
+      ...stagedFrom(entry()),
+      removedPhotoIds: ['p1'],
+      devicePhotos: [picked('file://a')],
+    };
+
+    const held = ran(saveSteps(staged, 5, MAX), 5);
+
+    expect(Math.max(...held)).toBeLessThanOrEqual(MAX);
+    expect(held.at(-1)).toBe(5);
+  });
+
+  it('swaps at the FLOOR by adding first — removing first would empty the entry', () => {
+    const staged = {
+      ...stagedFrom(entry()),
+      removedPhotoIds: ['p1'],
+      devicePhotos: [picked('file://a')],
+    };
+
+    const held = ran(saveSteps(staged, 1, MAX), 1);
+
+    expect(Math.min(...held)).toBeGreaterThanOrEqual(1);
+    expect(held.at(-1)).toBe(1);
+  });
+
+  it('never leaves the 1..5 window on a full swap of every photo', () => {
+    const staged = {
+      ...stagedFrom(entry()),
+      removedPhotoIds: ['p1', 'p2', 'p3', 'p4', 'p5'],
+      devicePhotos: [picked('a'), picked('b'), picked('c'), picked('d'), picked('e')],
+    };
+
+    const held = ran(saveSteps(staged, 5, MAX), 5);
+
+    expect(Math.min(...held)).toBeGreaterThanOrEqual(1);
+    expect(Math.max(...held)).toBeLessThanOrEqual(MAX);
+    expect(held.at(-1)).toBe(5);
+  });
+
+  it('carries every staged change exactly once, whatever the order', () => {
+    const staged = {
+      ...stagedFrom(entry()),
+      removedPhotoIds: ['p1', 'p2'],
+      fromDump: ['d1'],
+      devicePhotos: [picked('file://a')],
+    };
+
+    const steps = saveSteps(staged, 4, MAX);
+
+    expect(steps.filter((s) => s.kind === 'remove')).toHaveLength(2);
+    expect(steps.filter((s) => s.kind === 'device')).toHaveLength(1);
+    expect(steps.filter((s) => s.kind === 'dump')).toHaveLength(1);
+  });
+
+  it('does nothing when nothing is staged', () => {
+    expect(saveSteps(stagedFrom(entry()), 2, MAX)).toEqual([]);
   });
 });
 

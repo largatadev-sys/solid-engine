@@ -14,6 +14,8 @@ import {
   DIARY_ENTRY_DELETED,
   DIARY_ENTRY_EDITED,
 } from '../diary/diaryEvents';
+import { MAX_DIARY_PHOTOS } from '../diary/diaryCapture';
+import { saveSteps, type StagedEntry } from '../diary/stagedEntry';
 import { useAuth } from '../hooks/authContext';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { diaryRepository } from '../repositories/diaryRepository';
@@ -84,10 +86,8 @@ export function usePostDiaryEntry(
 }
 
 export interface SaveDiaryEntryInput {
-  readonly caption: string;
-  readonly removedPhotoIds: readonly string[];
-  readonly fromDump: readonly string[];
-  readonly devicePhotos: readonly PickedPhoto[];
+  readonly staged: StagedEntry;
+  readonly savedPhotoCount: number;
 }
 
 
@@ -97,15 +97,19 @@ export function useSaveDiaryEntry(
 ): UseMutationResult<void, Error, SaveDiaryEntryInput> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (staged: SaveDiaryEntryInput) => {
-      for (const photo of staged.devicePhotos) {
-        await diaryRepository.addDevicePhoto(itineraryId, entryId, photo);
-      }
-      for (const photoId of staged.fromDump) {
-        await diaryRepository.addPhotoFromDump(itineraryId, entryId, photoId);
-      }
-      for (const photoId of staged.removedPhotoIds) {
-        await diaryRepository.removePhoto(itineraryId, entryId, photoId);
+    mutationFn: async ({ staged, savedPhotoCount }: SaveDiaryEntryInput) => {
+      for (const step of saveSteps(staged, savedPhotoCount, MAX_DIARY_PHOTOS)) {
+        if (step.kind === 'remove') {
+          await diaryRepository.removePhoto(itineraryId, entryId, step.photoId);
+        } else if (step.kind === 'dump') {
+          await diaryRepository.addPhotoFromDump(itineraryId, entryId, step.photoId);
+        } else {
+          await diaryRepository.addDevicePhoto(
+            itineraryId,
+            entryId,
+            staged.devicePhotos[step.at]!,
+          );
+        }
       }
       await diaryRepository.recaption(
         itineraryId,

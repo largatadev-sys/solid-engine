@@ -21,6 +21,52 @@ export interface StagedTile {
 }
 
 
+export type SaveStep =
+  | { readonly kind: 'remove'; readonly photoId: string }
+  | { readonly kind: 'device'; readonly at: number }
+  | { readonly kind: 'dump'; readonly photoId: string };
+
+
+export function saveSteps(
+  staged: StagedEntry,
+  savedCount: number,
+  maxPhotos: number,
+): SaveStep[] {
+  const removals: SaveStep[] = staged.removedPhotoIds.map((photoId) => ({
+    kind: 'remove',
+    photoId,
+  }));
+  const additions: SaveStep[] = [
+    ...staged.devicePhotos.map((_, at): SaveStep => ({ kind: 'device', at })),
+    ...staged.fromDump.map((photoId): SaveStep => ({ kind: 'dump', photoId })),
+  ];
+
+  const steps: SaveStep[] = [];
+  let held = savedCount;
+
+  while (removals.length > 0 || additions.length > 0) {
+    const canAdd = additions.length > 0 && held < maxPhotos;
+    const canRemove = removals.length > 0 && held > 1;
+
+    if (canAdd) {
+      steps.push(additions.shift()!);
+      held += 1;
+    } else if (canRemove) {
+      steps.push(removals.shift()!);
+      held -= 1;
+    } else if (removals.length > 0) {
+      steps.push(removals.shift()!);
+      held -= 1;
+    } else {
+      steps.push(additions.shift()!);
+      held += 1;
+    }
+  }
+
+  return steps;
+}
+
+
 export function withoutTile(staged: StagedEntry, tile: StagedTile): StagedEntry {
   if (tile.source === 'saved') return dropSavedPhoto(staged, tile.photoId);
   if (tile.source === 'dump') return dropDumpPick(staged, tile.photoId);

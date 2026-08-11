@@ -481,6 +481,34 @@ function writeFixture() {
 
   await tapLabel('Back to Day-by-Day', 5000);
   await tapLabel('Added ✓: Sunset at Las Cabanas', 4000);
+
+  // A FULL entry that swaps a photo — remove one, add one — still holds five, so the cap must not
+  // refuse it. Adding before removing asks for a sixth and the server says no; that shipped once.
+  await plantFile(fixture, 1);
+  await tapLabel('Add a photo from your camera roll', 3500);
+  await tapLabel('Save to Diary', 5000);
+  await tapLabel('Back to Day-by-Day', 5000);
+  await tapLabel('Added ✓: Sunset at Las Cabanas', 4000);
+
+  const atCap = (await api(`/v1/itineraries/${trip}/diary/entries`, 'GET', author.idToken)).body.items[0];
+  check('the entry is full, so the next save is a genuine swap at the cap',
+    atCap?.photos?.length === 5, `photos=${atCap?.photos?.length}`);
+
+  await tapLabel('Remove Diary photo 1', 2000);
+  await plantFile(fixture, 1);
+  await tapLabel('Add a photo from your camera roll', 3500);
+  await tapLabel('Save to Diary', 6000);
+
+  const swapped = (await api(`/v1/itineraries/${trip}/diary/entries`, 'GET', author.idToken)).body.items[0];
+  const swapFailure = (await evaluate('JSON.stringify(window.__largataAlerts || [])')) ?? '[]';
+  check('swapping a photo on a FULL entry is not a sixth photo (founder, 08/11)',
+    swapped?.photos?.length === 5 &&
+    !swapped.photos.some((p) => p.id === atCap.photos[0].id) &&
+    !swapFailure.includes('TOO_MANY'),
+    `photos=${swapped?.photos?.length}, alerts=${swapFailure.slice(0, 80)}`);
+
+  await tapLabel('Back to Day-by-Day', 5000);
+  await tapLabel('Added ✓: Sunset at Las Cabanas', 4000);
   await typeCaption('Second edit');
   await tapLabel('Save to Diary', 4000);
 

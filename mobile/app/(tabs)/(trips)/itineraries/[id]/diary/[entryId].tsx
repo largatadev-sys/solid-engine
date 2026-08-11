@@ -129,7 +129,7 @@ export default function DiaryEntryScreen() {
 
   const saveEntry = () => {
     void photoAction.run(async () => {
-      await save.mutateAsync(editing);
+      await save.mutateAsync({ staged: editing, savedPhotoCount: entry.photos.length });
       setStaged(null);
       router.replace({
         pathname: '/itineraries/[id]/diary/posted',
