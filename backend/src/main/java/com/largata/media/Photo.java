@@ -94,6 +94,23 @@ public class Photo {
     }
 
 
+    public static Photo copyOf(
+            Photo source, PhotoSubject subjectKind, UUID subjectId, UUID uploadedBy, Instant createdAt) {
+        UUID id = UuidV7.generate();
+        return new Photo(
+                id,
+                subjectKind,
+                subjectId,
+                storageKeyFor(id),
+                source.contentType(),
+                source.width(),
+                source.height(),
+                source.byteSize(),
+                uploadedBy,
+                createdAt);
+    }
+
+
     static String storageKeyFor(UUID id) {
         return "photos/" + id;
     }
