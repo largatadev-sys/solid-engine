@@ -28,6 +28,7 @@ export type IconName =
   | 'link'
   | 'star'
   | 'starFilled'
+  | 'heartFilled'
   | 'partyPopper'
   | 'camera'
   | 'briefcase'
@@ -239,6 +240,14 @@ export function Icon({ name, size, color }: IconProps) {
       {name === 'starFilled' && (
         <Polygon
           points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"
+          {...shared}
+          fill={color}
+        />
+      )}
+
+      {name === 'heartFilled' && (
+        <Path
+          d="M12 21s-7.5-4.7-9.3-9A5.2 5.2 0 0 1 12 6.5 5.2 5.2 0 0 1 21.3 12c-1.8 4.3-9.3 9-9.3 9z"
           {...shared}
           fill={color}
         />

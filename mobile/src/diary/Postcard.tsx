@@ -9,6 +9,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { spacing } from '../theme';
 import {
@@ -102,7 +103,11 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
 
         {likes !== null && (
           <View style={styles.likes}>
-            <Text style={styles.heart}>♥</Text>
+            <Icon
+              name="heartFilled"
+              size={profileMetrics.heartSize}
+              color={profileColors.likeHeart}
+            />
             <Text style={styles.likesLabel}>{likesLabel(likes)}</Text>
           </View>
         )}
@@ -196,10 +201,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs2,
-  },
-  heart: {
-    ...profileTypography.heart,
-    color: profileColors.likeHeart,
   },
   likesLabel: {
     ...profileTypography.likes,
