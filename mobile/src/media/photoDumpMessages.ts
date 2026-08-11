@@ -9,6 +9,14 @@ export const PHOTO_DUMP_LOAD_FAILURE = 'Could not load this trip’s photos.';
 
 export const PHOTO_DUMP_ARCHIVED_NOTE = 'This trip is archived, so its photo pool is read-only.';
 
+export const PHOTO_DUMP_TILE_LABEL = 'Trip photo';
+
+export const PHOTO_DUMP_PREVIEW_LABEL = 'Trip photo, full size';
+
+export const PHOTO_DUMP_PREVIEW_CLOSE_LABEL = 'Close';
+
+export const PHOTO_DUMP_PREVIEW_DELETE_LABEL = 'Delete Photo';
+
 
 export function photoDumpDeleteWording(mine: boolean) {
   return {

@@ -84,4 +84,10 @@ Video · any consumer/published surface for dump photos · the Gallery derived p
 
 ## Comments
 
-*(none yet)*
+**2026-08-11, founder, on the running build — tapping a photo previews it; it does not delete it.** The tab shipped its first pass with delete as the tile's primary tap (the `ActivityPhotoStrip` idiom, where tap-to-remove is defensible because the strip is an editor control inside a form the traveler is already editing). In a *browsing* grid it is the wrong shape: the most natural gesture on a photo is "look at it closer", and that gesture was wired to destruction — guarded by a confirm, but a confirm is a mitigation for a mis-tap, not a licence to put delete on the primary tap.
+
+Tapping a tile now opens `PhotoDumpPreview` — the display variant through the authenticated media path, on the `TravelerDialog` pattern (Modal + scrim + retained-while-closing content, so the photo does not blank out during the dismiss animation). Delete moves inside the preview as a secondary action, offered only when `photoDumpTiles` says the viewer may delete that photo; Close is the primary. The confirm stays, so destruction is now two deliberate taps behind a look.
+
+The authority model is unchanged — this is presentation only, no wire change, no backend change. What did change and is worth keeping: **every tile is now openable, including ones the viewer cannot delete**, where before a non-deletable tile was a dead `Pressable`. A member can finally look at the owner's photos at full size, which the grid always implied and never allowed.
+
+Verified on both rungs: web `drive-photo-dump.js` **21/21** (two new checks — the tap opens a preview, and the pool is unchanged by opening one), emulator by hand (preview renders, Close leaves all 4 photos in the pool).

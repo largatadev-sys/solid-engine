@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { confirmWith } from '../components/confirmDestructive';
 import { MediaThumb } from '../media/MediaThumb';
+import { PhotoDumpPreview } from '../media/PhotoDumpPreview';
 import { flattenPhotoDumpPages, photoDumpTiles } from '../media/photoDumpGrid';
 import {
   PHOTO_DUMP_ADD_LABEL,
@@ -8,6 +10,7 @@ import {
   PHOTO_DUMP_EMPTY_BODY,
   PHOTO_DUMP_EMPTY_TITLE,
   PHOTO_DUMP_LOAD_FAILURE,
+  PHOTO_DUMP_TILE_LABEL,
   photoDumpDeleteWording,
 } from '../media/photoDumpMessages';
 import { usePhotoAction } from '../media/usePhotoAction';
@@ -43,6 +46,7 @@ export function WorkspacePhotoDumpTab({
   const add = useAddPhotoDumpEntry(itineraryId);
   const remove = useRemovePhotoDumpEntry(itineraryId);
   const photoAction = usePhotoAction();
+  const [openedId, setOpenedId] = useState<string | null>(null);
 
   if (pool.isPending) {
     return (
@@ -63,9 +67,11 @@ export function WorkspacePhotoDumpTab({
   const photos = flattenPhotoDumpPages(pool.data?.pages);
   const tiles = photoDumpTiles(photos, myId, isOwner, archived);
   const busy = add.isPending || remove.isPending;
+  const opened = tiles.find((tile) => tile.photo.id === openedId) ?? null;
 
   const onDelete = (photo: PhotoDumpEntryResponse) => {
     confirmWith(photoDumpDeleteWording(photo.uploadedBy === myId), () => {
+      setOpenedId(null);
       void photoAction.run(() => remove.mutateAsync(photo.id));
     });
   };
@@ -86,16 +92,19 @@ export function WorkspacePhotoDumpTab({
       )}
 
       <View style={styles.grid}>
-        {tiles.map(({ photo, deletable }) => (
+        {tiles.map(({ photo }) => (
           <Pressable
             key={photo.id}
             style={styles.tile}
-            disabled={!deletable || busy}
-            onPress={() => onDelete(photo)}
+            onPress={() => setOpenedId(photo.id)}
             accessibilityRole="button"
-            accessibilityLabel={deletable ? 'Delete this photo' : 'Trip photo'}
+            accessibilityLabel={PHOTO_DUMP_TILE_LABEL}
           >
-            <MediaThumb url={photo.url} style={styles.tileImage} accessibilityLabel="Trip photo" />
+            <MediaThumb
+              url={photo.url}
+              style={styles.tileImage}
+              accessibilityLabel={PHOTO_DUMP_TILE_LABEL}
+            />
           </Pressable>
         ))}
 
@@ -111,6 +120,14 @@ export function WorkspacePhotoDumpTab({
           </Pressable>
         )}
       </View>
+
+      <PhotoDumpPreview
+        photo={opened?.photo ?? null}
+        deletable={opened?.deletable ?? false}
+        busy={busy}
+        onDelete={() => opened !== null && onDelete(opened.photo)}
+        onDismiss={() => setOpenedId(null)}
+      />
 
       {pool.hasNextPage === true && (
         <Pressable

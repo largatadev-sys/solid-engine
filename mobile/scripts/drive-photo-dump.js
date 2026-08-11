@@ -327,10 +327,17 @@ function writeFixture() {
     mediaCalls.length > 0 && mediaCalls.every((c) => c.bearer),
     `${mediaCalls.filter((c) => c.bearer).length}/${mediaCalls.length} bearer`);
 
-  // --- delete: the member's own goes, the owner's does not -------------------------------------
-  const membersPhotoId = shared.body.items?.find((p) => p.id !== ownersPhotoId)?.id;
+  // --- tapping a photo previews it; deleting lives inside that preview -------------------------
+  const previewTap = await tapLabel('Trip photo');
+  const previewText = (await text()) || '';
+  check('tapping a photo opens a preview rather than destroying it (founder, 2026-08-11)',
+    previewTap.clicked === true && previewText.includes('Close'), previewText.slice(0, 90));
+  const stillThere = await api(`/v1/itineraries/${trip}/photo-dump`, 'GET', member.idToken);
+  check('the tap deleted nothing — the pool is untouched by opening a photo',
+    stillThere.body.items?.length === 2, `n=${stillThere.body.items?.length}`);
+
   const beforeDelete = (await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]';
-  const deleteTap = await tapLabel('Delete this photo');
+  const deleteTap = await tapLabel('Delete Photo');
   const confirms = JSON.parse((await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]');
   check('deleting asks for confirmation first, and says what it will do',
     deleteTap.clicked === true && confirms.length > JSON.parse(beforeDelete).length,
@@ -367,7 +374,8 @@ function writeFixture() {
   const beforeOwnerDelete = JSON.parse(
     (await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]',
   );
-  const ownerDeleteTap = await tapLabel('Delete this photo');
+  await tapLabel('Trip photo');
+  const ownerDeleteTap = await tapLabel('Delete Photo');
   const ownerConfirms = JSON.parse(
     (await evaluate('JSON.stringify(window.__largataConfirms || [])')) ?? '[]',
   );

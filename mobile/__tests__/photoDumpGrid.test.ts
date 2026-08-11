@@ -47,6 +47,13 @@ describe('photoDumpTiles', () => {
 
     expect(tiles.map((tile) => tile.photo.id)).toEqual(['p2', 'p1']);
   });
+
+  it('is what the preview asks to decide whether to offer Delete, so every tile stays openable', () => {
+    const tiles = photoDumpTiles([mine, theirs], 't1', false, true);
+
+    expect(tiles).toHaveLength(2);
+    expect(tiles.map((tile) => tile.photo.id)).toEqual(['p1', 'p2']);
+  });
 });
 
 
