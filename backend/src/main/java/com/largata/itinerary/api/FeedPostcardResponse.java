@@ -9,6 +9,7 @@ import java.util.UUID;
 public record FeedPostcardResponse(
         UUID id,
         TravelerCardResponse author,
+        UUID itineraryId,
         String tripTitle,
         UUID publishedItineraryId,
         String dayLabel,

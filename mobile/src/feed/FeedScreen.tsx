@@ -148,6 +148,13 @@ export function FeedScreen() {
     });
   };
 
+  const openTripDiary = (card: FeedPostcardResponse) => {
+    router.push({
+      pathname: '/feed/diary/[id]',
+      params: { id: card.itineraryId, author: card.author.id },
+    });
+  };
+
   const refuse = (what: StubControl) => {
     if (what === 'author') comingSoon('profile');
     else if (what === 'comment') comingSoon('comments');
@@ -222,6 +229,7 @@ export function FeedScreen() {
               page={pageOf(item.id)}
               onPageChange={(page) => rememberPage(item.id, page)}
               onOpenTrip={openTrip}
+              onOpenTripDiary={openTripDiary}
               onStubTap={refuse}
             />
           </View>

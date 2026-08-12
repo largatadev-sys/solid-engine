@@ -133,6 +133,7 @@ public class PostcardFeedService {
         return new FeedPostcardResponse(
                 entry.id(),
                 author,
+                entry.itineraryId(),
                 trip.title(),
                 navigableTripOf(trip),
                 entry.dayLabel(),

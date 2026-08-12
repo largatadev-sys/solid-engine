@@ -1,4 +1,4 @@
-import type { FeedPostcardResponse } from '../types/api';
+import type { FeedPostcardResponse, PublicTripDiaryResponse } from '../types/api';
 
 const MINUTE = 60_000;
 
@@ -81,4 +81,18 @@ export function tripLineNavigates(card: FeedPostcardResponse): boolean {
 
 function trimTrailingZero(value: number): string {
   return value % 1 === 0 ? String(Math.trunc(value)) : value.toFixed(1);
+}
+
+
+export function publicDiaryByline(diary: PublicTripDiaryResponse): string {
+  const named = diary.author.displayName;
+  const handle = diary.author.handle;
+  const who =
+    named !== null && named.trim() !== ''
+      ? named
+      : handle !== null && handle.trim() !== ''
+        ? handle
+        : 'A traveler';
+  const count = diary.postcards.length;
+  return `${who} · ${count === 1 ? '1 postcard' : `${count} postcards`}`;
 }

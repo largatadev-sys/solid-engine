@@ -15,6 +15,7 @@ function card(overrides: Partial<FeedPostcardResponse> = {}): FeedPostcardRespon
   return {
     id: 'c1',
     author: { id: 't1', handle: 'largata.dev+t1', displayName: 'largata.dev+t1', avatarUrl: null },
+    itineraryId: 'i1',
     tripTitle: 'Bali Temple Run',
     publishedItineraryId: null,
     dayLabel: 'Day 3',

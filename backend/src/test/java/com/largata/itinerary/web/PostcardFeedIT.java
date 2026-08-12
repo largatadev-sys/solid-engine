@@ -120,6 +120,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
                         "nextCursor",
                         "id",
                         "author",
+                        "itineraryId",
                         "handle",
                         "displayName",
                         "avatarUrl",
@@ -562,6 +563,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
     private record Card(
             UUID id,
             Author author,
+            UUID itineraryId,
             String tripTitle,
             UUID publishedItineraryId,
             String dayLabel,

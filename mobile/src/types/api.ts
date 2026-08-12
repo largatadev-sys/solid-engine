@@ -389,6 +389,7 @@ export type PostDiaryEntryRequest = {
 export type FeedPostcardResponse = {
   id: string;
   author: TravelerCardResponse;
+  itineraryId: string;
   tripTitle: string | null;
   publishedItineraryId: string | null;
   dayLabel: string;
@@ -472,4 +473,13 @@ export type OwnershipOfferRequest = {
 
 export type AcceptResponse = {
   itineraryId: string;
+};
+
+
+export type PublicTripDiaryResponse = {
+  itineraryId: string;
+  author: TravelerCardResponse;
+  tripTitle: string | null;
+  publishedItineraryId: string | null;
+  postcards: FeedPostcardResponse[];
 };
