@@ -8,6 +8,8 @@ import {
   FEED_EMPTY_BODY,
   FEED_EMPTY_TITLE,
   FEED_RETRY_LABEL,
+  FEED_UNREACHABLE_BODY,
+  FEED_UNREACHABLE_TITLE,
 } from './feedCopy';
 
 const CHECK_GLYPH = 18;
@@ -50,6 +52,20 @@ export function FeedEmptyState() {
       </View>
       <Text style={styles.terminalTitle}>{FEED_EMPTY_TITLE}</Text>
       <Text style={styles.terminalBody}>{FEED_EMPTY_BODY}</Text>
+    </View>
+  );
+}
+
+
+export function FeedLoadFailed({ onRetry }: { readonly onRetry: () => void }) {
+  return (
+    <View style={styles.terminal}>
+      <View style={styles.disc}>
+        <Icon name="info" size={CHECK_GLYPH} color={feedColors.tagInk} />
+      </View>
+      <Text style={styles.terminalTitle}>{FEED_UNREACHABLE_TITLE}</Text>
+      <Text style={styles.terminalBody}>{FEED_UNREACHABLE_BODY}</Text>
+      <FeedRetryRow onRetry={onRetry} />
     </View>
   );
 }

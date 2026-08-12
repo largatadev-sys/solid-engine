@@ -389,6 +389,9 @@ public class DiaryService {
 
 
     private Activity requireActivityOfTrip(Membership member, UUID activityId) {
+        if (activityId == null) {
+            throw new ActivityNotFoundException();
+        }
         Activity activity =
                 activities.findById(activityId).orElseThrow(ActivityNotFoundException::new);
         days.findByIdAndItineraryId(activity.dayId(), member.itineraryId())

@@ -19,7 +19,13 @@ import { feedRepository } from '../repositories/feedRepository';
 import { useFeed } from '../query/feedQueries';
 import { FeedCard, type StubControl } from './FeedCard';
 import { FeedHeader } from './FeedHeader';
-import { FeedEmptyState, FeedRetryRow, FeedSkeletonCard, FeedTerminalCard } from './FeedStates';
+import {
+  FeedEmptyState,
+  FeedLoadFailed,
+  FeedRetryRow,
+  FeedSkeletonCard,
+  FeedTerminalCard,
+} from './FeedStates';
 import { FeedToast } from './FeedToast';
 import { FEED_REFRESHED_TOAST } from './feedCopy';
 import { atTop, HEADER_SHOWING, onScroll } from './headerVisibility';
@@ -83,19 +89,25 @@ export function FeedScreen() {
     [refresh, toTop],
   );
 
+  // The interval is armed ONCE and reads the ids at fire time through a ref. Depending on the
+  // ids instead restarts the timer on every refresh, heart tap and page merge — so on a feed
+  // anyone is actually using, the poll silently never fires and the pill never appears.
+  const known = useRef(shownIds);
+  known.current = shownIds;
+
   useEffect(() => {
-    if (shownIds === '') {
-      return;
-    }
-    const known = shownIds.split(',');
     const tick = setInterval(() => {
+      if (known.current === '') {
+        return;
+      }
+      const showing = known.current.split(',');
       void feedRepository
         .fetchPage()
-        .then((page) => setFresh(freshCount(page.items.map((card) => card.id), known)))
+        .then((page) => setFresh(freshCount(page.items.map((card) => card.id), showing)))
         .catch(() => undefined);
     }, POLL_MS);
     return () => clearInterval(tick);
-  }, [shownIds]);
+  }, []);
 
   const pageOf = (cardId: string) => pages.current.get(cardId) ?? 0;
 
@@ -209,14 +221,18 @@ export function FeedScreen() {
             colors={[colors.accent]}
           />
         }
-        ListEmptyComponent={<FeedEmptyState />}
+        ListEmptyComponent={
+          feed.isError ? <FeedLoadFailed onRetry={() => void feed.refetch()} /> : <FeedEmptyState />
+        }
         ListFooterComponent={
-          <FeedFooter
-            loading={feed.isFetchingNextPage}
-            failed={feed.isError || feed.isFetchNextPageError}
-            exhausted={feed.hasNextPage !== true && cards.length > 0}
-            onRetry={() => void feed.fetchNextPage()}
-          />
+          cards.length === 0 ? null : (
+            <FeedFooter
+              loading={feed.isFetchingNextPage}
+              failed={feed.isError || feed.isFetchNextPageError}
+              exhausted={feed.hasNextPage !== true}
+              onRetry={() => void feed.fetchNextPage()}
+            />
+          )
         }
       />
 

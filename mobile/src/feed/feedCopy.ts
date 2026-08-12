@@ -15,6 +15,11 @@ export const FEED_EMPTY_BODY =
 
 export const FEED_RETRY_LABEL = "Couldn't load more — Retry";
 
+export const FEED_UNREACHABLE_TITLE = "Couldn't load the feed";
+
+export const FEED_UNREACHABLE_BODY =
+  'Check your connection and try again — this is not an empty feed.';
+
 export const FEED_REFRESHED_TOAST = "You're caught up";
 
 export const FEED_NEW_POSTS = 'New posts';

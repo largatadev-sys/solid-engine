@@ -112,6 +112,15 @@ describe('the screen wires the dynamics the way the mock describes', () => {
     expect(poll).not.toContain('toTop');
   });
 
+  it('arms the poll ONCE and reads the shown ids at fire time, never restarting the timer', () => {
+    const armed = SCREEN.slice(SCREEN.indexOf('const tick = setInterval'));
+    const deps = armed.slice(armed.indexOf('clearInterval'), armed.indexOf('const pageOf'));
+
+    expect(deps).toContain('}, []);');
+    expect(armed).toContain('known.current');
+    expect(SCREEN).not.toContain('}, [shownIds]);');
+  });
+
   it('toasts only when a refresh brought nothing new', () => {
     expect(SCREEN).toContain('if (after <= had)');
     expect(SCREEN).toContain('FEED_REFRESHED_TOAST');

@@ -20,6 +20,10 @@ const CHROME_CANDIDATES = [
 ];
 const PORT = Number(process.env.LARGATA_CDP_PORT || 9243);
 
+// One real poll cycle plus slack. The interval is the product's (~60s); making it configurable
+// would add a seam that exists only for this walk.
+const POLL_WAIT_MS = 68_000;
+
 // t1 authors, t2 reads. They share NO trip, which is the whole point of the fixture: the feed
 // must reach a traveler the guard would refuse, so a walk where both are members proves nothing.
 const AUTHOR = 't1';
@@ -47,6 +51,17 @@ const DRAG_IN_PAGE = (fraction) => `
     const dragged = Math.round(s.scrollLeft);
     s.dispatchEvent(mk("pointerup", cx - travel, 0));
     return { before, dragged, pitch: Math.round(s.clientWidth), snap };
+  })()
+`;
+
+const FEED_Y = `
+  (() => {
+    const cards = Array.from(document.querySelectorAll('[aria-label]'))
+      .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+      .filter((n) => n.offsetParent !== null);
+    let feed = cards[0];
+    while (feed && !(feed.scrollHeight > feed.clientHeight && /auto|scroll/.test(getComputedStyle(feed).overflowY))) feed = feed.parentElement;
+    return feed ? Math.round(feed.scrollTop) : null;
   })()
 `;
 
@@ -228,6 +243,9 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   const liveTrip = await startedTrip(author.idToken, `Feed walk ${stamp}`, 3);
   const first = await addActivity(author.idToken, liveTrip, 1, `Lempuyang Gate ${stamp}`);
   const second = await addActivity(author.idToken, liveTrip, 2, `Rice terraces ${stamp}`);
+  // Minted here rather than at the pill step: by then the trip is published and therefore frozen,
+  // so the activity POST is refused and the postcard the pill exists to announce never exists.
+  const pillActivity = await addActivity(author.idToken, liveTrip, 3, `Fresh stop ${stamp}`);
 
   const sharedCaption = `Shared to the feed ${stamp}`;
   const privateCaption = `Kept private ${stamp}`;
@@ -314,7 +332,10 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
       const url = msg.params.request.url;
       // A CORS preflight carries no Authorization by definition, so counting it as an anonymous
       // read turns the S3.3 tell into a false alarm. The tell is a real GET without a bearer.
-      if (url.includes('/v1/media/') && msg.params.request.method === 'GET') {
+      if (
+        (url.includes('/v1/media/') || url.includes('/v1/feed/postcards')) &&
+        msg.params.request.method === 'GET'
+      ) {
         requests.push({
           url,
           auth: msg.params.request.headers.Authorization ? 'bearer' : 'ANON',
@@ -409,10 +430,11 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   await shoot('web-feed');
 
   // --- the media tell: every photo must arrive bearer-authenticated (S3.3) -------------------
-  const anon = requests.filter((r) => r.auth === 'ANON');
+  const mediaGets = requests.filter((r) => r.url.includes('/v1/media/'));
+  const anon = mediaGets.filter((r) => r.auth === 'ANON');
   check('AC 1: every feed photo arrives bearer-authenticated — no ANON GETs',
-    requests.length > 0 && anon.length === 0,
-    `media GETs=${requests.length} anon=${anon.length}`);
+    mediaGets.length > 0 && anon.length === 0,
+    `media GETs=${mediaGets.length} anon=${anon.length}`);
 
   // --- the carousel drags on the web rung (AC 8's web half) ----------------------------------
   const dragged = await evaluate(DRAG_IN_PAGE(0.7));
@@ -621,16 +643,6 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
 
   // The feed is a Stack root, so the itinerary pushes OVER it and it is never unmounted — which
   // is what keeps the scroll offset. Prove it by leaving from a scrolled position and returning.
-  const FEED_Y = `
-    (() => {
-      const cards = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
-        .filter((n) => n.offsetParent !== null);
-      let feed = cards[0];
-      while (feed && !(feed.scrollHeight > feed.clientHeight && /auto|scroll/.test(getComputedStyle(feed).overflowY))) feed = feed.parentElement;
-      return feed ? Math.round(feed.scrollTop) : null;
-    })()
-  `;
   await evaluate(SCROLL_FEED(500));
   await sleep(700);
   const leftAt = await evaluate(FEED_Y);
@@ -641,6 +653,67 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   check('AC 18: the feed is where it was left after a detour to the itinerary',
     leftAt !== null && returnedTo !== null && leftAt > 0 && returnedTo === leftAt,
     `left=${leftAt} returned=${returnedTo}`);
+
+  // --- Home re-tap: scrolled scrolls to top, at-top refreshes (AC 11) ------------------------
+  await evaluate(SCROLL_FEED(700));
+  await sleep(700);
+  const beforeRetap = await evaluate(FEED_Y);
+  await tapLabel('Home', 2500);
+  const afterRetap = await evaluate(FEED_Y);
+
+  check('AC 11: re-tapping Home while scrolled brings the feed back to the top',
+    beforeRetap !== null && beforeRetap > 0 && afterRetap === 0,
+    `from=${beforeRetap} to=${afterRetap}`);
+
+  await tapLabel('Home', 2500);
+  const refreshToasted = ((await text()) || '').includes('caught up');
+  check('AC 11: re-tapping Home at the top refreshes instead, and says so',
+    refreshToasted, `toast=${refreshToasted}`);
+
+  // --- the new-posts pill (AC 12) ------------------------------------------------------------
+  // The poll is a real ~60s cycle rather than a harness knob, so this waits it out once. A
+  // configurable interval would be a product seam existing only for the test.
+  await evaluate(SCROLL_FEED(700));
+  await sleep(700);
+  const scrollBeforePill = await evaluate(FEED_Y);
+
+  const freshCaption = `Landed while reading ${stamp}`;
+  const freshPost = await postDiaryEntry(
+    author.idToken,
+    liveTrip,
+    { activityId: pillActivity, caption: freshCaption, fromDump: [], shareToFeed: true },
+    [fixture],
+  );
+  check('AC 12: the fresh postcard the pill is meant to announce actually exists',
+    freshPost.status === 201 && freshPost.body.sharedAt !== null,
+    `status=${freshPost.status} ${JSON.stringify(freshPost.body).slice(0, 160)}`);
+
+  console.log('        waiting out one poll cycle (~60s) for the pill…');
+  const polledBefore = requests.filter((r) => r.url.includes('/v1/feed/postcards')).length;
+  await sleep(POLL_WAIT_MS);
+  const polled = requests.filter((r) => r.url.includes('/v1/feed/postcards')).length - polledBefore;
+
+  const pillShowing = ((await text()) || '').includes('New posts');
+  check('AC 12: the poll actually ran — a pill that never appears because nothing polled is a'
+        + ' different bug entirely',
+    polled > 0, `${polled} feed read(s) during the wait`);
+  const scrollAfterPill = await evaluate(FEED_Y);
+
+  check('AC 12: the pill appears within a poll cycle when a fresh postcard lands',
+    pillShowing, `pill=${pillShowing}`);
+  check('AC 12: and the feed never moves uninvited while it waits',
+    scrollBeforePill !== null && scrollAfterPill === scrollBeforePill,
+    `before=${scrollBeforePill} after=${scrollAfterPill}`);
+
+  const tappedPill = await tapLabel('New posts', 4000);
+  const afterPill = (await text()) || '';
+  const scrollAfterTap = await evaluate(FEED_Y);
+
+  check('AC 12: tapping it lands at the top with the new postcard first',
+    tappedPill.clicked === true && scrollAfterTap === 0 &&
+      afterPill.indexOf(freshCaption) > -1 &&
+      afterPill.indexOf(freshCaption) < afterPill.indexOf(sharedCaption),
+    `clicked=${tappedPill.clicked} y=${scrollAfterTap} freshFirst=${afterPill.indexOf(freshCaption) < afterPill.indexOf(sharedCaption)}`);
 
   // --- unshare pulls it back out (AC 4's screen half) ----------------------------------------
   await api(`/v1/itineraries/${liveTrip}/diary/entries/${shared.body.id}/share`, 'DELETE', author.idToken);

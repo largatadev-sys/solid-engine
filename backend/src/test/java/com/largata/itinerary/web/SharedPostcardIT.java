@@ -205,6 +205,28 @@ class SharedPostcardIT extends ObjectStoreTestBase {
 
 
     @Test
+    void aPostWithNoActivityIsRefusedRatherThanExploding() throws IOException {
+        Fixture trip = startedTrip();
+
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part(
+                "entry",
+                "{\"activityId\":null,\"caption\":\"nowhere\",\"fromDump\":[],\"shareToFeed\":false}",
+                MediaType.TEXT_PLAIN);
+        builder.part("photos", namedPhoto("device.jpg")).contentType(MediaType.IMAGE_JPEG);
+
+        rest.post()
+                .uri(diaryUri(trip))
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(builder.build())
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+
+    @Test
     void aPostcardPostedWithTheToggleOnIsSharedTheMomentItExists() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
