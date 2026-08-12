@@ -553,6 +553,48 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
     spoken.length >= 5, `${spoken.length} alerts`);
   for (const wording of spoken) console.log(`        alert: ${wording.replace(/\n/g, ' — ')}`);
 
+  // --- the header hides going down and returns going up (AC 11) ------------------------------
+  const HEADER_Y = `
+    (() => {
+      const mark = Array.from(document.querySelectorAll('*'))
+        .filter((n) => n.children.length === 0 && n.textContent.trim() === 'Largata')
+        .filter((n) => n.offsetParent !== null)[0];
+      if (!mark) return null;
+      let box = mark;
+      while (box && box.parentElement && box.getBoundingClientRect().height < 30) box = box.parentElement;
+      return Math.round(box.getBoundingClientRect().top);
+    })()
+  `;
+  const SCROLL_FEED = (by) => `
+    (() => {
+      const cards = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null);
+      let feed = cards[0];
+      while (feed && !(feed.scrollHeight > feed.clientHeight && /auto|scroll/.test(getComputedStyle(feed).overflowY))) feed = feed.parentElement;
+      if (!feed) return null;
+      feed.scrollTop = Math.max(0, feed.scrollTop + ${by});
+      feed.dispatchEvent(new Event('scroll', { bubbles: true }));
+      return Math.round(feed.scrollTop);
+    })()
+  `;
+
+  const headerAtRest = await evaluate(HEADER_Y);
+  await evaluate(SCROLL_FEED(600));
+  await sleep(900);
+  const headerScrolledDown = await evaluate(HEADER_Y);
+  await evaluate(SCROLL_FEED(-200));
+  await sleep(900);
+  const headerBack = await evaluate(HEADER_Y);
+
+  check('AC 11: the header hides on the way down and comes back on the way up',
+    headerAtRest !== null && headerScrolledDown !== null && headerBack !== null &&
+      headerScrolledDown < headerAtRest && headerBack >= headerAtRest,
+    `rest=${headerAtRest} down=${headerScrolledDown} up=${headerBack}`);
+
+  await evaluate(SCROLL_FEED(-2000));
+  await sleep(700);
+
   // --- the trip line self-heals at publish (AC 5) --------------------------------------------
   await api(`/v1/itineraries/${liveTrip}/complete`, 'POST', author.idToken);
   const published = await api(`/v1/itineraries/${liveTrip}/publish`, 'POST', author.idToken, {
@@ -576,6 +618,29 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   const backHome = await url();
   check('AC 18: back from the itinerary returns to the feed, not to Trips',
     backHome === '/', `clicked=${back.clicked} path=${backHome}`);
+
+  // The feed is a Stack root, so the itinerary pushes OVER it and it is never unmounted — which
+  // is what keeps the scroll offset. Prove it by leaving from a scrolled position and returning.
+  const FEED_Y = `
+    (() => {
+      const cards = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null);
+      let feed = cards[0];
+      while (feed && !(feed.scrollHeight > feed.clientHeight && /auto|scroll/.test(getComputedStyle(feed).overflowY))) feed = feed.parentElement;
+      return feed ? Math.round(feed.scrollTop) : null;
+    })()
+  `;
+  await evaluate(SCROLL_FEED(500));
+  await sleep(700);
+  const leftAt = await evaluate(FEED_Y);
+  await tapLabel(`Feed walk ${stamp} · Day 1, open the published trip`, 4500);
+  await tapLabel('Go back', 4000);
+  const returnedTo = await evaluate(FEED_Y);
+
+  check('AC 18: the feed is where it was left after a detour to the itinerary',
+    leftAt !== null && returnedTo !== null && leftAt > 0 && returnedTo === leftAt,
+    `left=${leftAt} returned=${returnedTo}`);
 
   // --- unshare pulls it back out (AC 4's screen half) ----------------------------------------
   await api(`/v1/itineraries/${liveTrip}/diary/entries/${shared.body.id}/share`, 'DELETE', author.idToken);
