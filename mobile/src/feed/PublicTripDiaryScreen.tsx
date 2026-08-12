@@ -77,7 +77,6 @@ export function PublicTripDiaryScreen() {
             page={pages[card.id] ?? 0}
             onPageChange={(page) => setPages((seen) => ({ ...seen, [card.id]: page }))}
             onOpenTrip={() => undefined}
-            onOpenTripDiary={() => undefined}
             onStubTap={refuse}
           />
         ))}

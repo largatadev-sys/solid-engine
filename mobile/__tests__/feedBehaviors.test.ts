@@ -64,6 +64,24 @@ describe('B5.5 — a page failure shows the inline row, never a full-screen erro
 });
 
 
+describe('the Trip Post badge is a door out, so it is absent where it leads nowhere', () => {
+  const DIARY = readFileSync(join(MOBILE_ROOT, 'src', 'feed', 'PublicTripDiaryScreen.tsx'), 'utf8');
+
+  it('renders on a card only when a handler was given', () => {
+    expect(CARD).toContain('{onOpenTripDiary !== undefined && (');
+    expect(CARD).toContain('readonly onOpenTripDiary?:');
+  });
+
+  it('is offered by the feed, where it goes somewhere', () => {
+    expect(SCREEN).toContain('onOpenTripDiary={openTripDiary}');
+  });
+
+  it('is withheld inside the trip diary, which is where it would have led', () => {
+    expect(DIARY).not.toContain('onOpenTripDiary');
+  });
+});
+
+
 describe('B6.7 — "more" expands in place', () => {
   it('grows the card by dropping the line clamp, and navigates nowhere', () => {
     const caption = CARD.slice(CARD.indexOf('{card.caption !== null'), CARD.indexOf('<View style={styles.engagement}'));

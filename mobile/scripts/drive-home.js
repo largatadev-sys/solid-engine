@@ -476,6 +476,45 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
       moreCount.mores < moreCount.cards,
     JSON.stringify(moreCount));
 
+  // --- the Trip Post badge opens the author's public trip diary (founder, 2026-08-13) --------
+  // Tap the badge on THIS walk's own card, found by its trip title in the text — the feed also
+  // carries seeded trips, and a badge picked by "last visible" opens somebody else's diary
+  // perfectly correctly, which makes every assertion below read as a product failure.
+  // The trip line has no aria-label while the trip is unpublished, so anchor on the text node.
+  const badgeTap = await evaluate(`
+    (() => {
+      const mine = Array.from(document.querySelectorAll('*'))
+        .filter((n) => n.children.length === 0)
+        .filter((n) => (n.textContent || '').includes('Feed walk ${stamp}'))
+        .filter((n) => n.offsetParent !== null)[0];
+      if (!mine) return { clicked: false, reason: 'no card from this walk on screen' };
+      let card = mine;
+      for (let up = 0; up < 6 && card; up += 1) {
+        const badge = Array.from(card.querySelectorAll('[aria-label]'))
+          .filter((n) => /^Trip Post/.test(n.getAttribute('aria-label') || ''))[0];
+        if (badge) { badge.click(); return { clicked: true }; }
+        card = card.parentElement;
+      }
+      return { clicked: false, reason: 'no badge above this walk-s card' };
+    })()
+  `);
+  await sleep(4500);
+  const inDiary = (await text()) || '';
+  const diaryPath = await url();
+
+  check('the Trip Post badge opens the public trip diary',
+    badgeTap.clicked === true && diaryPath.includes('/feed/diary/'),
+    JSON.stringify(badgeTap) + ' path=' + diaryPath);
+  check('…which lists only the SHARED postcards of that trip, never the private sibling',
+    inDiary.includes(shortCaption) && !inDiary.includes(privateCaption),
+    `short=${inDiary.includes(shortCaption)} private=${inDiary.includes(privateCaption)} :: ${inDiary.replace(/\n/g, ' | ').slice(0, 120)}`);
+  check('…and drops the badge there, since it would only lead back to this screen',
+    !inDiary.includes('Trip Post'), inDiary.includes('Trip Post') ? 'badge still drawn' : 'absent');
+
+  const backFromDiary = await tapLabel('Go back', 4000);
+  check('…and back returns to the feed',
+    (await url()) === '/', `clicked=${backFromDiary.clicked} path=${await url()}`);
+
   // --- the media tell: every photo must arrive bearer-authenticated (S3.3) -------------------
   const mediaGets = requests.filter((r) => r.url.includes('/v1/media/'));
   const anon = mediaGets.filter((r) => r.auth === 'ANON');
