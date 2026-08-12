@@ -76,7 +76,6 @@ export const diaryTypography = {
   link: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 15, fontWeight: '700' },
   postedTitle: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 39, fontWeight: '700' },
   postedBody: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, fontWeight: '400' },
-  postcardTitle: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 22, fontWeight: '700' },
 } as const;
 
 
@@ -90,8 +89,6 @@ export const diaryMetrics = {
   captionMinHeight: 80,
   captionPadding: 14,
   postedHalo: 64,
-  postcardPhotoWidth: 280,
-  postcardPhotoHeight: 220,
 } as const;
 
 
@@ -160,8 +157,8 @@ export const diaryScreenTypography = {
 
 export const diaryScreenMetrics = {
   backButton: 36,
-  backGlyph: 20,
-  streamPhotoHeight: 500,
+  backGlyph: 20,
+  streamPhotoHeight: 500,
   entryGap: 24,
   previewCardWidth: 345,
   previewPhotoHeight: 300,

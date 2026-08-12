@@ -54,12 +54,14 @@ Per the fidelity rule these ship as **new tokens**, not as the nearest existing 
 
 | | Today | Mock |
 |---|---|---|
-| Photo | 280×220 (`diaryMetrics`) | **332×250** |
+| Photo | 280×220 (`diaryMetrics`) | **332×250** — *superseded 2026-08-12: the founder doubled the viewport and removed the peek, so the photo is now the strip's full width × 500* |
 | Strip | inset in the body padding | **edge-to-edge**, bleeds `-20` |
 | Back | `ScreenHeader`'s bare chevron | **36px circled button** |
 | Title | `ScreenHeader` heading | 24/29 700 `#1B263B`, beside the chevron |
 | Caption | `typography.body`, lh 22 | 16/22 |
 | Entry tap | opens the **editor** | opens the **preview modal** |
+
+**The photo strip is not part of the tap target** *(founder ruling, 2026-08-12, at the code review)*. The heading and the caption each open the preview; the photos between them scroll and nothing else. This came out of the swipe-lands-as-a-tap bug — the entry was one `Pressable`, so releasing a horizontal swipe over a photo fired `onPress` and the postcard flew open mid-scroll. A movement-threshold tap was offered and declined: the profile's `Postcard` already behaves this way (its `Pressable` wraps only the body), so the two diary surfaces agree, and an inert strip has no frame in which a swipe can be mistaken for a tap. The narrower reading of *"when a diary entry is tapped"* is deliberate.
 
 ## The two postcard anatomies are now both canon
 
