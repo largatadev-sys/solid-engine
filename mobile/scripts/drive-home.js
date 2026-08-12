@@ -570,10 +570,60 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   ]) {
     await tapLabel(label, 900);
   }
+  const avatarTap = await evaluate(`
+    (() => {
+      const avatars = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, traveler profile$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null);
+      const target = avatars[avatars.length - 1];
+      if (!target) return { clicked: false, seen: avatars.length };
+      target.click();
+      return { clicked: true, seen: avatars.length };
+    })()
+  `);
+  await sleep(900);
   const spoken = JSON.parse((await alerts()) || '[]');
   check('AC 10: every backendless control refuses visibly on the web',
-    spoken.length >= 5, `${spoken.length} alerts`);
+    spoken.length >= 6, `${spoken.length} alerts, avatar clicked=${avatarTap.clicked}`);
   for (const wording of spoken) console.log(`        alert: ${wording.replace(/\n/g, ' — ')}`);
+
+  // --- the long-press sheet is three actions, each refusing by its own name (AC 10) ----------
+  // A Modal that has never been opened is the S1.3 dead-click shape in new clothes, and this one
+  // lives inside slides that carry the drag handlers — whether the press survives them is exactly
+  // the "probably fine" that has cost a session before.
+  const LONG_PRESS = `
+    (async () => {
+      const photos = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null);
+      const target = photos[photos.length - 1];
+      if (!target) return null;
+      const r = target.getBoundingClientRect();
+      const x = r.x + r.width / 2, y = r.y + r.height / 2;
+      const pointer = (t, b) => target.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 9, pointerType: "mouse", clientX: x, clientY: y, button: 0, buttons: b }));
+      const mouse = (t, b) => target.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, buttons: b }));
+      pointer("pointerdown", 1);
+      mouse("mousedown", 1);
+      await new Promise((r) => setTimeout(r, 700));
+      pointer("pointerup", 0);
+      mouse("mouseup", 0);
+      return true;
+    })()
+  `;
+  await evaluate(LONG_PRESS);
+  await sleep(1200);
+  const sheetText = (await text()) || '';
+
+  check('AC 10: long-pressing a photo opens the mock-s three-action sheet',
+    ['Save to trip ideas', 'Share', 'Report'].every((label) => sheetText.includes(label)),
+    sheetText.replace(/\n/g, ' | ').slice(0, 180));
+
+  await evaluate('window.__largataAlerts = []; true');
+  const reported = await tapLabel('Report', 1200);
+  const reportSaid = JSON.parse((await alerts()) || '[]');
+  check('AC 10: and each of its actions refuses under its OWN name, not one shared refusal',
+    reported.clicked === true && reportSaid.some((said) => /report/i.test(said)),
+    `clicked=${reported.clicked} said=${reportSaid.join(' / ').replace(/\n/g, ' — ').slice(0, 140)}`);
 
   // --- the header hides going down and returns going up (AC 11) ------------------------------
   const HEADER_Y = `
