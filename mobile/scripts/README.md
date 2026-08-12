@@ -155,6 +155,41 @@ LARGATA_API_BASE_URL=https://api-dev.largata.com \
 Env: the three pool vars, plus **`PEXELS_API_KEY`** for the fetcher only (free, from
 https://www.pexels.com/api/new/ — 200 requests/hour, and a full fetch uses 82).
 
+### Growing it — the dataset is static, and that is what makes it safe to grow
+
+There is no generator. Every trip is hand-written in `fixtures/travelers.js`, so the same run always
+produces the same 25 trips. **Adding more is editing that one file** — there is no second set to
+manage, because a re-run *archives the previous copies of every fixture-titled trip and rebuilds
+them all*. Grow the file, re-run, and the dataset is bigger with no duplicates.
+
+```bash
+# 1. add trips to fixtures/travelers.js — see the shape of any existing one
+# 2. fetch only what is new (existing files are skipped, so this is cheap)
+node scripts/fetch-fixtures.js
+# 3. rebuild that traveler, or everyone
+node scripts/seed-travelers.js --tag=t4
+node scripts/seed-travelers.js
+```
+
+**The rules the content follows** *(founder, 2026-08-13)*, so a new trip fits the ones already here:
+
+- **The point is a feed that looks inhabited.** This is not coverage of the world — every country is
+  not a goal and was explicitly ruled out as unrealistic. It is enough traffic that Home, Trips and a
+  profile read like a social app in use rather than a test harness.
+- **No two trips are the same trip.** Different itineraries, different activities, different
+  captions. **The same region is fine** — two travelers in Japan, or one traveler back in Japan a
+  second time, is exactly what a real feed looks like. Identical *content* is what to avoid.
+- **One day is one place**, because the photo search is keyed on the day's location. A day that
+  wanders across a region gets photos of whichever part the search picked.
+- **Trips spread across lifecycle states.** A dataset of nothing but `completed` leaves the Trips
+  tab's Ongoing, Upcoming and Drafts sections empty, and only started trips can carry postcards.
+- **Photos are not rotated per run** *(founder, 2026-08-13)* — a place keeps the photos it was first
+  given, so the same trip looks the same every time you rebuild it. Variety comes from new trips,
+  never from reshuffling old ones.
+
+Only a **new** day location costs a Pexels search; everything already in `fixtures/photos/` is
+skipped. At 25,000 requests a month, the budget is not a constraint on how far this grows.
+
 **This dataset breaks the self-identifying-fixture rule on purpose** *(founder, 2026-08-13)*. The
 2026-07-27 ruling says a test identity must identify itself, which is why `precomplete-profile`
 deliberately sets no display name and the pool renders as `largata.dev+t1`. Here the founder asked
