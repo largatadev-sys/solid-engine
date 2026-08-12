@@ -102,21 +102,6 @@ export const diaryRepository = {
   },
 
 
-  async shareToFeed(itineraryId: string, entryId: string): Promise<DiaryEntryResponse> {
-    return apiClient.post<DiaryEntryResponse>(
-      `/v1/itineraries/${itineraryId}/diary/entries/${entryId}/share`,
-      null,
-    );
-  },
-
-
-  async unshareFromFeed(itineraryId: string, entryId: string): Promise<DiaryEntryResponse> {
-    return apiClient.deleteReturning<DiaryEntryResponse>(
-      `/v1/itineraries/${itineraryId}/diary/entries/${entryId}/share`,
-    );
-  },
-
-
   async fetchMyTrips(cursor?: string): Promise<Page<DiaryTripResponse>> {
     const query = cursor === undefined ? '' : `?cursor=${encodeURIComponent(cursor)}`;
     return apiClient.get<Page<DiaryTripResponse>>(`/v1/me/diary/trips${query}`);

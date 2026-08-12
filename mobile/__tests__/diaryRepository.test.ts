@@ -99,14 +99,14 @@ describe('post', () => {
 
     await diaryRepository.post(
       'i1',
-      { activityId: 'a1', caption: 'hello', fromDump: ['p1'], shareToFeed: false },
+      { activityId: 'a1', caption: 'hello', fromDump: ['p1'] },
       [{ uri: 'file://x.jpg', name: 'x.jpg', mimeType: 'image/jpeg' }],
     );
 
     const [path, form] = apiClient.upload.mock.calls[0] as [string, FormData];
     expect(path).toBe('/v1/itineraries/i1/diary/entries');
     expect(form.get('entry')).toBe(
-      JSON.stringify({ activityId: 'a1', caption: 'hello', fromDump: ['p1'], shareToFeed: false }),
+      JSON.stringify({ activityId: 'a1', caption: 'hello', fromDump: ['p1'] }),
     );
     expect(appendPhoto).toHaveBeenCalledTimes(1);
   });

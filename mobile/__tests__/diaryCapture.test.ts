@@ -112,8 +112,10 @@ describe('picking from the dump', () => {
 
 
 describe('the copy the founder pinned', () => {
-  it('reads exactly as approved at the grilling', () => {
-    expect(DIARY_PRIVACY_NOTE).toBe('Only you can see your diary. It shows up on your profile.');
+  it('reads exactly as re-approved when diaries became public', () => {
+    expect(DIARY_PRIVACY_NOTE).toBe(
+      'Your postcards go to the Home feed, where any Largata traveler can see them.',
+    );
   });
 
   it('names the activity on the success screen', () => {

@@ -142,26 +142,6 @@ export function useDeleteDiaryEntry(
 }
 
 
-export function useShareDiaryEntry(
-  itineraryId: string,
-): UseMutationResult<DiaryEntryResponse, Error, { entryId: string; shared: boolean }> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: ({ entryId, shared }: { entryId: string; shared: boolean }) =>
-      shared
-        ? diaryRepository.shareToFeed(itineraryId, entryId)
-        : diaryRepository.unshareFromFeed(itineraryId, entryId),
-    onSuccess: async (_entry, { entryId, shared }) => {
-      track(shared ? DIARY_ENTRY_SHARED : DIARY_ENTRY_UNSHARED, {
-        itineraryId,
-        diaryEntryId: entryId,
-      });
-      await invalidateDiary(client, itineraryId);
-      await client.invalidateQueries({ queryKey: feedKeys.all });
-    },
-  });
-}
-
 
 async function invalidateDiary(
   client: ReturnType<typeof useQueryClient>,

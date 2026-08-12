@@ -26,7 +26,6 @@ import {
   workspaceColors,
 } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
-import { SHARED_BADGE } from './diaryCopy';
 import {
   carouselCounter,
   carouselPhotoWidth,
@@ -128,12 +127,6 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
             </View>
           )}
 
-          {entry.sharedAt !== null && (
-            <View style={styles.shared}>
-              <Icon name="globe" size={profileMetrics.heartSize} color={profileColors.badgeInk} />
-              <Text style={styles.sharedLabel}>{SHARED_BADGE}</Text>
-            </View>
-          )}
         </View>
       </Pressable>
     </View>
@@ -234,14 +227,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm3,
-  },
-  shared: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs2,
-  },
-  sharedLabel: {
-    ...profileTypography.likes,
-    color: profileColors.badgeInk,
   },
 });

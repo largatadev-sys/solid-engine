@@ -1,22 +1,17 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
-import { DIARY_PRIVACY_NOTE, DIARY_SHARED_NOTE } from './diaryCopy';
+import { DIARY_PRIVACY_NOTE } from './diaryCopy';
 import { diaryColors, diaryTypography, workspaceColors } from '../theme/workspaceTokens';
 import { spacing } from '../theme';
 
 const INFO_ICON_SIZE = 16;
 
 
-type Props = {
-  readonly shared?: boolean;
-};
-
-
-export function DiaryPrivacyNote({ shared = false }: Props) {
+export function DiaryPrivacyNote() {
   return (
     <View style={styles.note}>
-      <Icon name={shared ? 'globe' : 'info'} size={INFO_ICON_SIZE} color={diaryColors.eyebrow} />
-      <Text style={styles.text}>{shared ? DIARY_SHARED_NOTE : DIARY_PRIVACY_NOTE}</Text>
+      <Icon name="globe" size={INFO_ICON_SIZE} color={diaryColors.eyebrow} />
+      <Text style={styles.text}>{DIARY_PRIVACY_NOTE}</Text>
     </View>
   );
 }

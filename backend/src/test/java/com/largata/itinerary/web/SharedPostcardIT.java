@@ -53,111 +53,80 @@ class SharedPostcardIT extends ObjectStoreTestBase {
 
 
     @Test
-    void aPostcardIsBornPrivate() throws IOException {
+    void aPostcardIsBornPublic() throws IOException {
         Fixture trip = startedTrip();
 
-        Entry posted = post(trip.owner(), trip, trip.activityId(), "just for me", 1, false);
+        Entry posted = post(trip.owner(), trip, trip.activityId(), "for everyone", 1);
 
         assertThat(posted.sharedAt())
-                .as("default private — the share is a deliberate act, never a side effect of posting")
-                .isNull();
+                .as("posting IS publishing — there is no second act and no way to withhold one")
+                .isNotNull();
     }
 
 
     @Test
-    void theShareFlipsTheDiscriminatingMediaPair() throws IOException {
+    void itsPhotosServeAStrangerFromTheMomentItExists() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        Entry shared = post(trip.owner(), trip, trip.activityId(), "the shared one", 1, false);
-        Entry stayedPrivate = post(trip.owner(), trip, secondActivity(trip), "the private one", 1, false);
 
-        assertThat(mediaStatusFor(photoOf(shared), stranger))
-                .as("before the share a stranger is masked")
-                .isEqualTo(404);
+        Entry posted = post(trip.owner(), trip, trip.activityId(), "the discriminating pair", 1);
 
-        share(trip.owner(), trip, shared.id());
-
-        assertThat(mediaStatusFor(photoOf(shared), stranger))
-                .as("after the share the same GET serves any authenticated traveler")
+        assertThat(mediaStatusFor(photoOf(posted), stranger))
+                .as("the media audience widens with the entry, not with a later share")
                 .isEqualTo(200);
-        assertThat(mediaStatusFor(photoOf(stayedPrivate), stranger))
-                .as("the widening is per entry — an unshared sibling still masks")
-                .isEqualTo(404);
     }
 
 
     @Test
-    void unshareRestoresTheMask() throws IOException {
+    void thereIsNoShareEndpointLeftToCall() throws IOException {
         Fixture trip = startedTrip();
-        String stranger = rig.travelerWithHandle(handle());
-        Entry entry = post(trip.owner(), trip, trip.activityId(), "briefly public", 1, true);
-        assertThat(mediaStatusFor(photoOf(entry), stranger)).isEqualTo(200);
+        Entry entry = post(trip.owner(), trip, trip.activityId(), "no toggle exists", 1);
 
-        Entry unshared = unshare(trip.owner(), trip, entry.id());
+        rig.send(HttpMethod.POST, shareUri(trip, entry.id()), trip.owner(), null)
+                .expectStatus()
+                .isNotFound();
+        rig.send(HttpMethod.DELETE, shareUri(trip, entry.id()), trip.owner(), null)
+                .expectStatus()
+                .isNotFound();
 
-        assertThat(unshared.sharedAt()).isNull();
-        assertThat(mediaStatusFor(photoOf(entry), stranger))
-                .as("a privacy retraction is symmetric — the stranger is masked again")
-                .isEqualTo(404);
+        assertThat(sharedAtOf(entry.id()))
+                .as("and nothing an author can reach puts a postcard back in the dark")
+                .isNotNull();
     }
 
 
     @Test
-    void sharingAnEntryThatCarriesACoTravelersDumpPhotoSucceeds() throws IOException {
+    void aPostcardCarryingACoTravelersDumpPhotoIsPublicLikeAnyOther() throws IOException {
         Fixture trip = startedTrip();
         UUID theMembersPhoto = uploadToDump(trip.member(), trip);
-        Entry built = post(trip.owner(), trip, trip.activityId(), "built from the pool", 0, false, theMembersPhoto);
 
-        Entry shared = share(trip.owner(), trip, built.id());
+        Entry built = post(trip.owner(), trip, trip.activityId(), "built from the pool", 0, theMembersPhoto);
 
-        assertThat(shared.sharedAt())
-                .as("dump contribution implies consent to co-travelers' postcards, shared included — "
+        assertThat(built.sharedAt())
+                .as("dump contribution implies consent to co-travelers' postcards, public included — "
                         + "ADR-025 decision 2; any future tightening breaks this test on purpose")
                 .isNotNull();
         String stranger = rig.travelerWithHandle(handle());
-        assertThat(mediaStatusFor(photoOf(shared), stranger))
+        assertThat(mediaStatusFor(photoOf(built), stranger))
                 .as("and the copied bytes serve the world with it")
                 .isEqualTo(200);
     }
 
 
     @Test
-    void onlyTheAuthorSharesOrUnshares() throws IOException {
+    void theArchiveFenceStillRefusesAWriteWhileTheEntryStaysReadable() throws IOException {
         Fixture trip = startedTrip();
-        String stranger = rig.travelerWithHandle(handle());
-        Entry entry = post(trip.owner(), trip, trip.activityId(), "mine alone", 1, false);
-
-        rig.send(HttpMethod.POST, shareUri(trip, entry.id()), trip.member(), null)
-                .expectStatus()
-                .isNotFound();
-        rig.send(HttpMethod.POST, shareUri(trip, entry.id()), stranger, null)
-                .expectStatus()
-                .isNotFound();
-
-        assertThat(sharedAtOf(entry.id())).as("neither attempt moved anything").isNull();
-
-        share(trip.owner(), trip, entry.id());
-        rig.send(HttpMethod.DELETE, shareUri(trip, entry.id()), trip.member(), null)
-                .expectStatus()
-                .isNotFound();
-        assertThat(sharedAtOf(entry.id())).as("nor can a co-member pull it back down").isNotNull();
-    }
-
-
-    @Test
-    void theArchiveFenceRefusesBothActsWhileTheEntryStaysAuthorReadable() throws IOException {
-        Fixture trip = startedTrip();
-        Entry entry = post(trip.owner(), trip, trip.activityId(), "before the archive", 1, false);
+        Entry entry = post(trip.owner(), trip, trip.activityId(), "before the archive", 1);
         archive(trip);
 
-        rig.send(HttpMethod.POST, shareUri(trip, entry.id()), trip.owner(), null)
-                .expectStatus()
-                .isEqualTo(409);
-        rig.send(HttpMethod.DELETE, shareUri(trip, entry.id()), trip.owner(), null)
+        rig.send(
+                        HttpMethod.PATCH,
+                        diaryUri(trip) + "/" + entry.id(),
+                        trip.owner(),
+                        "{\"caption\":\"edited after the freeze\"}")
                 .expectStatus()
                 .isEqualTo(409);
 
-        assertThat(sharedAtOf(entry.id())).isNull();
         rest.get()
                 .uri(diaryUri(trip) + "/" + entry.id())
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
@@ -168,24 +137,21 @@ class SharedPostcardIT extends ObjectStoreTestBase {
 
 
     @Test
-    void resharingKeepsTheOriginalInstantSoItDoesNotJumpTheFeed() throws IOException {
+    void itBecamePublicWhenItWasPostedSoTheFeedOrdersOnOneInstant() throws IOException {
         Fixture trip = startedTrip();
-        Entry entry = post(trip.owner(), trip, trip.activityId(), "shared twice", 1, false);
 
-        share(trip.owner(), trip, entry.id());
-        Instant first = sharedAtOf(entry.id());
-        share(trip.owner(), trip, entry.id());
+        Entry posted = post(trip.owner(), trip, trip.activityId(), "one instant", 1);
 
-        assertThat(sharedAtOf(entry.id()))
-                .as("sharing an already-shared entry is idempotent — a double tap must not re-rank it")
-                .isEqualTo(first);
+        assertThat(posted.sharedAt())
+                .as("shared-at IS posted-at now, which is what makes the feed's order the diary's order")
+                .isEqualTo(posted.createdAt());
     }
 
 
     @Test
-    void deletingASharedEntryTakesItsRowsAndItsBytes() throws IOException {
+    void deletingAPostcardTakesItsRowsAndItsBytes() throws IOException {
         Fixture trip = startedTrip();
-        Entry entry = post(trip.owner(), trip, trip.activityId(), "here then gone", 1, true);
+        Entry entry = post(trip.owner(), trip, trip.activityId(), "here then gone", 1);
         UUID photoId = photoOf(entry);
 
         rest.delete()
@@ -209,7 +175,7 @@ class SharedPostcardIT extends ObjectStoreTestBase {
         Fixture trip = startedTrip();
         UUID somewhere = activityAt(trip, 2, "Kayaking", "Big Lagoon, El Nido");
 
-        Entry posted = post(trip.owner(), trip, somewhere, "on the water", 1, true);
+        Entry posted = post(trip.owner(), trip, somewhere, "on the water", 1);
 
         assertThat(posted.place())
                 .as("the location comes from the activity, snapshotted at post time")
@@ -221,7 +187,7 @@ class SharedPostcardIT extends ObjectStoreTestBase {
     void thePlaceIsASnapshotThatAPlanEditNeverRewrites() throws IOException {
         Fixture trip = startedTrip();
         UUID somewhere = activityAt(trip, 2, "Kayaking", "Big Lagoon, El Nido");
-        Entry posted = post(trip.owner(), trip, somewhere, "as it was", 1, false);
+        Entry posted = post(trip.owner(), trip, somewhere, "as it was", 1);
 
         rig.hold(trip.owner(), trip.tripId(), "activity", somewhere);
         rig.send(
@@ -242,7 +208,7 @@ class SharedPostcardIT extends ObjectStoreTestBase {
     void anActivityWithNoPlaceLeavesThePostcardWithout() throws IOException {
         Fixture trip = startedTrip();
 
-        Entry posted = post(trip.owner(), trip, trip.activityId(), "nowhere named", 1, false);
+        Entry posted = post(trip.owner(), trip, trip.activityId(), "nowhere named", 1);
 
         assertThat(posted.place())
                 .as("place is optional on the activity, so the card must read without it")
@@ -273,57 +239,28 @@ class SharedPostcardIT extends ObjectStoreTestBase {
 
 
     @Test
-    void aPostcardPostedWithTheToggleOnIsSharedTheMomentItExists() throws IOException {
+    void postingEmitsOneEventBecauseItIsOneAct() throws IOException {
         Fixture trip = startedTrip();
-        String stranger = rig.travelerWithHandle(handle());
-
-        Entry posted = post(trip.owner(), trip, trip.activityId(), "public from birth", 1, true);
-
-        assertThat(posted.sharedAt()).isNotNull();
-        assertThat(mediaStatusFor(photoOf(posted), stranger)).isEqualTo(200);
-    }
-
-
-    @Test
-    void shareAndUnshareEachEmitTheirRegisterTwoEvent() throws IOException {
-        Fixture trip = startedTrip();
-        Entry entry = post(trip.owner(), trip, trip.activityId(), "watched by telemetry", 1, false);
 
         ListAppender<ILoggingEvent> events = listeningToAnalytics();
         try {
-            share(trip.owner(), trip, entry.id());
-            unshare(trip.owner(), trip, entry.id());
+            post(trip.owner(), trip, trip.activityId(), "watched by telemetry", 1);
         } finally {
             analyticsLogger().detachAppender(events);
         }
 
-        assertThat(eventsNamed(events, "diary_entry_shared"))
+        assertThat(eventsNamed(events, "diary_entry_created"))
                 .singleElement()
                 .satisfies(
                         line ->
                                 assertThat(line.getMDCPropertyMap())
-                                        .containsEntry("event.diaryEntryId", entry.id().toString())
+                                        .containsKey("event.diaryEntryId")
                                         .containsKey("event.itineraryId")
                                         .containsKey("event.travelerId"));
-        assertThat(eventsNamed(events, "diary_entry_unshared")).hasSize(1);
-    }
-
-
-    @Test
-    void postingWithTheToggleOnEmitsBothTheCreationAndTheShare() throws IOException {
-        Fixture trip = startedTrip();
-
-        ListAppender<ILoggingEvent> events = listeningToAnalytics();
-        try {
-            post(trip.owner(), trip, trip.activityId(), "born public", 1, true);
-        } finally {
-            analyticsLogger().detachAppender(events);
-        }
-
-        assertThat(eventsNamed(events, "diary_entry_created")).hasSize(1);
         assertThat(eventsNamed(events, "diary_entry_shared"))
-                .as("a postcard born shared is both acts, and the funnel must see both")
-                .hasSize(1);
+                .as("the share is not a separate act any more, so the funnel must not see a second one")
+                .isEmpty();
+        assertThat(eventsNamed(events, "diary_entry_unshared")).isEmpty();
     }
 
 
@@ -344,28 +281,6 @@ class SharedPostcardIT extends ObjectStoreTestBase {
 
     private static Logger analyticsLogger() {
         return (Logger) LoggerFactory.getLogger("com.largata.analytics");
-    }
-
-
-    private Entry share(String token, Fixture trip, UUID entryId) {
-        return entryFrom(
-                rig.send(HttpMethod.POST, shareUri(trip, entryId), token, null)
-                        .expectStatus()
-                        .isOk()
-                        .expectBody()
-                        .returnResult()
-                        .getResponseBodyContent());
-    }
-
-
-    private Entry unshare(String token, Fixture trip, UUID entryId) {
-        return entryFrom(
-                rig.send(HttpMethod.DELETE, shareUri(trip, entryId), token, null)
-                        .expectStatus()
-                        .isOk()
-                        .expectBody()
-                        .returnResult()
-                        .getResponseBodyContent());
     }
 
 
@@ -430,32 +345,18 @@ class SharedPostcardIT extends ObjectStoreTestBase {
     }
 
 
-    private UUID secondActivity(Fixture trip) {
-        return rig.addActivity(trip.owner(), trip.tripId(), rig.dayAt(trip.tripId(), 2), "A second stop");
-    }
 
-
-    private Entry post(
-            String token, Fixture trip, UUID activityId, String caption, int devicePhotos, boolean shareToFeed)
+    private Entry post(String token, Fixture trip, UUID activityId, String caption, int devicePhotos)
             throws IOException {
-        return post(token, trip, activityId, caption, devicePhotos, shareToFeed, null);
+        return post(token, trip, activityId, caption, devicePhotos, null);
     }
 
 
     private Entry post(
-            String token,
-            Fixture trip,
-            UUID activityId,
-            String caption,
-            int devicePhotos,
-            boolean shareToFeed,
-            UUID fromDump)
+            String token, Fixture trip, UUID activityId, String caption, int devicePhotos, UUID fromDump)
             throws IOException {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part(
-                "entry",
-                entryJson(activityId, caption, fromDump, shareToFeed),
-                MediaType.TEXT_PLAIN);
+        builder.part("entry", entryJson(activityId, caption, fromDump), MediaType.TEXT_PLAIN);
         for (int i = 0; i < devicePhotos; i++) {
             builder.part("photos", namedPhoto("device-" + i + ".jpg")).contentType(MediaType.IMAGE_JPEG);
         }
@@ -476,7 +377,7 @@ class SharedPostcardIT extends ObjectStoreTestBase {
     }
 
 
-    private static String entryJson(UUID activityId, String caption, UUID fromDump, boolean shareToFeed) {
+    private static String entryJson(UUID activityId, String caption, UUID fromDump) {
         String captionField = caption == null ? "null" : "\"" + caption + "\"";
         String dump = fromDump == null ? "" : "\"" + fromDump + "\"";
         return "{\"activityId\":\""
@@ -485,9 +386,7 @@ class SharedPostcardIT extends ObjectStoreTestBase {
                 + captionField
                 + ",\"fromDump\":["
                 + dump
-                + "],\"shareToFeed\":"
-                + shareToFeed
-                + "}";
+                + "]}";
     }
 
 
@@ -603,7 +502,12 @@ class SharedPostcardIT extends ObjectStoreTestBase {
     private record Fixture(String owner, String member, String tripId, UUID activityId) {}
 
     private record Entry(
-            UUID id, String caption, String place, List<EntryPhoto> photos, Instant sharedAt) {}
+            UUID id,
+            String caption,
+            String place,
+            List<EntryPhoto> photos,
+            Instant sharedAt,
+            Instant createdAt) {}
 
     private record EntryPhoto(UUID id, String url, String thumbUrl) {}
 }

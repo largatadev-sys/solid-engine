@@ -1,12 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  DIARY_PRIVACY_NOTE,
-  DIARY_SHARED_NOTE,
-  SHARE_ENTRY_ACTION,
-  SHARE_TO_FEED_LABEL,
-  UNSHARE_ENTRY_ACTION,
-} from '../src/diary/diaryCopy';
+import { DIARY_PRIVACY_NOTE } from '../src/diary/diaryCopy';
 import {
   forgetStubCounts,
   stubCommentCountFor,
@@ -17,66 +11,57 @@ import {
 const MOBILE_ROOT = join(__dirname, '..');
 
 const NOTE = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'DiaryPrivacyNote.tsx'), 'utf8');
-const TOGGLE = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'ShareToFeedToggle.tsx'), 'utf8');
 const COMPOSER = readFileSync(
   join(MOBILE_ROOT, 'app', '(tabs)', '(trips)', 'itineraries', '[id]', 'diary', 'compose.tsx'),
   'utf8',
 );
 const PREVIEW = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'PostcardPreview.tsx'), 'utf8');
+const POSTCARD = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'Postcard.tsx'), 'utf8');
 const REPOSITORY = readFileSync(
   join(MOBILE_ROOT, 'src', 'repositories', 'diaryRepository.ts'),
   'utf8',
 );
 
 
-describe('the composer says who will see the postcard, and changes its mind with the toggle', () => {
-  it('keeps S3.1 wording while the postcard stays private', () => {
-    expect(DIARY_PRIVACY_NOTE).toBe('Only you can see your diary. It shows up on your profile.');
+describe('the composer states the one audience a postcard has, because there is no choice to make', () => {
+  it('tells the traveler their postcards go to the feed, before they post one', () => {
+    expect(DIARY_PRIVACY_NOTE).toContain('Home feed');
+    expect(DIARY_PRIVACY_NOTE).toContain('any Largata traveler');
   });
 
-  it('says plainly that the postcard goes public once the toggle is on', () => {
-    expect(DIARY_SHARED_NOTE).toContain('Home feed');
-    expect(DIARY_SHARED_NOTE).toContain('any Largata traveler');
-    expect(DIARY_SHARED_NOTE.toLowerCase()).toContain('unshare');
+  it('no longer claims the diary is private, which stopped being true', () => {
+    expect(DIARY_PRIVACY_NOTE.toLowerCase()).not.toContain('only you');
   });
 
-  it('reads the toggle rather than a second source of truth', () => {
-    expect(NOTE).toContain('shared ? DIARY_SHARED_NOTE : DIARY_PRIVACY_NOTE');
-    expect(COMPOSER).toContain('<DiaryPrivacyNote shared={shareToFeed} />');
+  it('says one thing unconditionally — a note with a branch implies a choice', () => {
+    expect(NOTE).toContain('{DIARY_PRIVACY_NOTE}');
+    expect(NOTE).not.toContain('shared ?');
+    expect(COMPOSER).toContain('<DiaryPrivacyNote />');
   });
 
-  it('is off by default, so posting can never publish by accident', () => {
-    expect(COMPOSER).toContain('useState(false)');
-    expect(COMPOSER).toContain('shareToFeed,');
-  });
-
-  it('announces itself as a switch, so a screen reader states the privacy choice', () => {
-    expect(TOGGLE).toContain("accessibilityRole=\"switch\"");
-    expect(TOGGLE).toContain('accessibilityState={{ checked: on }}');
-    expect(SHARE_TO_FEED_LABEL).toBe('Share to feed');
+  it('offers no toggle, so posting is the whole act', () => {
+    expect(COMPOSER).not.toContain('ShareToFeedToggle');
+    expect(COMPOSER).not.toContain('shareToFeed');
+    expect(existsSync(join(MOBILE_ROOT, 'src', 'diary', 'ShareToFeedToggle.tsx'))).toBe(false);
   });
 });
 
 
-describe('retro-share from the diary', () => {
-  it('offers the opposite act for whichever state the postcard is in', () => {
-    expect(SHARE_ENTRY_ACTION).toBe('Share to feed');
-    expect(UNSHARE_ENTRY_ACTION).toBe('Remove from feed');
-    expect(PREVIEW).toContain('showing.sharedAt === null ? SHARE_ENTRY_ACTION : UNSHARE_ENTRY_ACTION');
-  });
-
-  it('reads the retained subject, never the live prop, so the dialog does not tear down in stages', () => {
-    expect(PREVIEW).toContain('onShareChange(showing,');
-    expect(PREVIEW).not.toContain('onShareChange(entry,');
-  });
-
-  it('leaves the share-sheet stub alone where no share-to-feed handler is given', () => {
+describe('nothing in the diary offers to share a postcard to the feed', () => {
+  it('the preview Share is the send-it-to-someone stub it was before S4.22', () => {
     expect(PREVIEW).toContain("comingSoon('share')");
+    expect(PREVIEW).not.toContain('onShareChange');
+    expect(PREVIEW).not.toContain('sharedAt');
   });
 
-  it('shares and unshares over the one entry resource', () => {
-    expect(REPOSITORY).toContain('/share');
-    expect(REPOSITORY).toContain('deleteReturning<DiaryEntryResponse>');
+  it('the repository has no share resource left to call', () => {
+    expect(REPOSITORY).not.toContain('/share');
+    expect(REPOSITORY).not.toContain('shareToFeed');
+    expect(REPOSITORY).not.toContain('unshareFromFeed');
+  });
+
+  it('a postcard wears no Shared badge, which would mark every one of them', () => {
+    expect(POSTCARD).not.toContain('SHARED_BADGE');
   });
 });
 

@@ -71,6 +71,7 @@ class DiaryEntry {
         this.timeOfDay = snapshot.timeOfDay();
         this.place = snapshot.place();
         this.caption = normalizeCaption(caption);
+        this.sharedAt = at;
         this.createdAt = at;
         this.updatedAt = at;
     }
@@ -93,20 +94,6 @@ class DiaryEntry {
 
     void recaption(String newCaption, Instant at) {
         this.caption = normalizeCaption(newCaption);
-        this.updatedAt = at;
-    }
-
-
-    void shareToFeed(Instant at) {
-        if (sharedAt == null) {
-            this.sharedAt = at;
-        }
-        this.updatedAt = at;
-    }
-
-
-    void unshareFromFeed(Instant at) {
-        this.sharedAt = null;
         this.updatedAt = at;
     }
 

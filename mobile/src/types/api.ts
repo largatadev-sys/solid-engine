@@ -382,7 +382,6 @@ export type PostDiaryEntryRequest = {
   activityId: string;
   caption: string | null;
   fromDump: string[];
-  shareToFeed: boolean;
 };
 
 
