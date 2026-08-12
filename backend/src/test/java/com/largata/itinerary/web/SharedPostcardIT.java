@@ -2,6 +2,9 @@ package com.largata.itinerary.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.largata.support.ObjectStoreTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
@@ -16,19 +19,18 @@ import java.util.UUID;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.util.MultiValueMap;
 import tools.jackson.databind.ObjectMapper;
 
 
@@ -211,6 +213,69 @@ class SharedPostcardIT extends ObjectStoreTestBase {
 
         assertThat(posted.sharedAt()).isNotNull();
         assertThat(mediaStatusFor(photoOf(posted), stranger)).isEqualTo(200);
+    }
+
+
+    @Test
+    void shareAndUnshareEachEmitTheirRegisterTwoEvent() throws IOException {
+        Fixture trip = startedTrip();
+        Entry entry = post(trip.owner(), trip, trip.activityId(), "watched by telemetry", 1, false);
+
+        ListAppender<ILoggingEvent> events = listeningToAnalytics();
+        try {
+            share(trip.owner(), trip, entry.id());
+            unshare(trip.owner(), trip, entry.id());
+        } finally {
+            analyticsLogger().detachAppender(events);
+        }
+
+        assertThat(eventsNamed(events, "diary_entry_shared"))
+                .singleElement()
+                .satisfies(
+                        line ->
+                                assertThat(line.getMDCPropertyMap())
+                                        .containsEntry("event.diaryEntryId", entry.id().toString())
+                                        .containsKey("event.itineraryId")
+                                        .containsKey("event.travelerId"));
+        assertThat(eventsNamed(events, "diary_entry_unshared")).hasSize(1);
+    }
+
+
+    @Test
+    void postingWithTheToggleOnEmitsBothTheCreationAndTheShare() throws IOException {
+        Fixture trip = startedTrip();
+
+        ListAppender<ILoggingEvent> events = listeningToAnalytics();
+        try {
+            post(trip.owner(), trip, trip.activityId(), "born public", 1, true);
+        } finally {
+            analyticsLogger().detachAppender(events);
+        }
+
+        assertThat(eventsNamed(events, "diary_entry_created")).hasSize(1);
+        assertThat(eventsNamed(events, "diary_entry_shared"))
+                .as("a postcard born shared is both acts, and the funnel must see both")
+                .hasSize(1);
+    }
+
+
+    private ListAppender<ILoggingEvent> listeningToAnalytics() {
+        ListAppender<ILoggingEvent> events = new ListAppender<>();
+        events.start();
+        analyticsLogger().addAppender(events);
+        return events;
+    }
+
+
+    private static List<ILoggingEvent> eventsNamed(ListAppender<ILoggingEvent> events, String name) {
+        return events.list.stream()
+                .filter(line -> line.getFormattedMessage().equals("event=" + name))
+                .toList();
+    }
+
+
+    private static Logger analyticsLogger() {
+        return (Logger) LoggerFactory.getLogger("com.largata.analytics");
     }
 
 
