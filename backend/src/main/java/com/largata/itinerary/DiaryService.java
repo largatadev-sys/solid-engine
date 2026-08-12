@@ -257,7 +257,8 @@ public class DiaryService {
                 trip == null ? null : trip.title(),
                 row.getEntryCount(),
                 trip == null ? List.of() : trip.destinations(),
-                dayCounts.getOrDefault(row.getItineraryId(), 0L).intValue());
+                dayCounts.getOrDefault(row.getItineraryId(), 0L).intValue(),
+                trip == null ? null : trip.coverImageUrl());
     }
 
 

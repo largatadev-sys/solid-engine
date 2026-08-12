@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { entryEditorRoute } from '../diary/diaryEntryExit';
+import { MediaThumb } from '../media/MediaThumb';
 import { Postcard } from '../diary/Postcard';
 import { PostcardPreview } from '../diary/PostcardPreview';
 import { inTripDayOrder, tripEntryCountLabel } from '../diary/postcardAnatomy';
@@ -77,7 +78,12 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
           accessibilityRole="button"
           accessibilityLabel={`Open the diary for ${trip.title ?? 'Untitled trip'}, ${tripEntryCountLabel(trip.entryCount)}`}
         >
-          <View style={styles.thumb} />
+          <MediaThumb
+            url={trip.coverImageUrl ?? null}
+            style={styles.thumb}
+            accessibilityLabel={`Cover photo for ${trip.title ?? 'Untitled trip'}`}
+            fallback={<View />}
+          />
           <View style={styles.sectionText}>
             <Text style={styles.sectionTitle} numberOfLines={1}>
               {trip.title ?? 'Untitled trip'}

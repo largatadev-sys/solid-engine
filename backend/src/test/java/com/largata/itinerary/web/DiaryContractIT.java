@@ -435,6 +435,10 @@ class DiaryContractIT extends ObjectStoreTestBase {
         assertThat(trips.getFirst().dayCount())
                 .as("…and its length, beside it")
                 .isEqualTo(3);
+        assertThat(trips.getFirst().coverImageUrl())
+                .as("the section's thumbnail is the trip's cover — absent until one is uploaded,"
+                        + " which is why the tab falls back to a plain well rather than a broken image")
+                .isNull();
     }
 
 
@@ -875,7 +879,12 @@ class DiaryContractIT extends ObjectStoreTestBase {
     private record EntryPage(List<Entry> items, String nextCursor) {}
 
     private record TripSummary(
-            UUID itineraryId, String title, long entryCount, List<String> destinations, int dayCount) {}
+            UUID itineraryId,
+            String title,
+            long entryCount,
+            List<String> destinations,
+            int dayCount,
+            String coverImageUrl) {}
 
     private record TripPage(List<TripSummary> items, String nextCursor) {}
 }

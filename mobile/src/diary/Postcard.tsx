@@ -11,7 +11,13 @@ import {
 } from 'react-native';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
-import { dragToScroll, PAGING, SHOW_SCROLLBAR } from './photoStripScroll';
+import {
+  dragToScroll,
+  PAGING,
+  SHOW_SCROLLBAR,
+  SNAP_CHILD_STYLE,
+  SNAP_STYLE,
+} from './photoStripScroll';
 import { spacing } from '../theme';
 import {
   profileColors,
@@ -58,6 +64,7 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
         <ScrollView
           horizontal
           {...PAGING}
+          style={SNAP_STYLE}
           showsHorizontalScrollIndicator={SHOW_SCROLLBAR}
           onScroll={settle}
           onMomentumScrollEnd={settle}
@@ -69,7 +76,7 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
               key={photo.id}
               url={photo.url}
               full
-              style={{ ...styles.photo, width: photoWidth }}
+              style={{ ...styles.photo, ...SNAP_CHILD_STYLE, width: photoWidth }}
               accessibilityLabel={`${entry.activityTitle}, photo ${index + 1}`}
             />
           ))}

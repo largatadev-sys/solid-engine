@@ -9,4 +9,5 @@ public record DiaryTripResponse(
         String title,
         long entryCount,
         List<String> destinations,
-        int dayCount) {}
+        int dayCount,
+        String coverImageUrl) {}

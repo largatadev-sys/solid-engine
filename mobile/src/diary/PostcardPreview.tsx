@@ -22,7 +22,7 @@ import {
 } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
 import { PREVIEW_CLOSE, PREVIEW_EDIT, PREVIEW_HINT, PREVIEW_SHARE } from './diaryCopy';
-import { dragToScroll, PAGING } from './photoStripScroll';
+import { dragToScroll, PAGING, SNAP_CHILD_STYLE, SNAP_STYLE } from './photoStripScroll';
 import { snapshotEyebrow } from './postcardAnatomy';
 import { pageOfOffset, previewCount } from './postcardCarousel';
 
@@ -66,6 +66,7 @@ export function PostcardPreview({ entry, tripTitle, onEdit, onDismiss }: Postcar
             <ScrollView
               horizontal
               {...PAGING}
+              style={SNAP_STYLE}
               showsHorizontalScrollIndicator={false}
               onScroll={settle}
               onMomentumScrollEnd={settle}
@@ -77,7 +78,7 @@ export function PostcardPreview({ entry, tripTitle, onEdit, onDismiss }: Postcar
                   key={photo.id}
                   url={photo.url}
                   full
-                  style={{ ...styles.photo, width: photoWidth }}
+                  style={{ ...styles.photo, ...SNAP_CHILD_STYLE, width: photoWidth }}
                   accessibilityLabel={`${showing.activityTitle}, photo ${index + 1}`}
                 />
               ))}
