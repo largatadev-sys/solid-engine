@@ -80,6 +80,16 @@ describe('the Trip Post badge lands on the diary as it already looks, not a feed
     expect(DIARY).not.toContain('feedMetrics.cardGap');
   });
 
+  it('feeds the row only what a reader may see, so it cannot reach for an author field', () => {
+    const ENTRY = readFileSync(
+      join(MOBILE_ROOT, 'src', 'diary', 'PostcardStreamEntry.tsx'),
+      'utf8',
+    );
+
+    expect(ENTRY).toContain('readonly postcard: StreamPostcard;');
+    expect(ENTRY).not.toContain('DiaryEntryResponse');
+  });
+
   it('opens the same preview on tap, with Edit withheld from a reader', () => {
     expect(DIARY).toContain('<PostcardPreview');
     expect(DIARY).not.toContain('onEdit');

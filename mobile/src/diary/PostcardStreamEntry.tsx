@@ -30,7 +30,7 @@ import {
 import { carouselCounter, pageOfOffset, showsCarouselChrome } from './postcardCarousel';
 
 
-export type StreamPostcard = {
+type StreamPostcard = {
   readonly id: string;
   readonly activityTitle: string;
   readonly caption: string | null;
