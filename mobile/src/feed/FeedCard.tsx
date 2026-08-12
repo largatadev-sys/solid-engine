@@ -257,28 +257,30 @@ export function FeedCard({
       </View>
 
       <View style={styles.body}>
-        <View style={styles.tagRow}>
-          {navigates ? (
-            <Pressable
-              style={styles.tag}
-              onPress={() => onOpenTrip(card)}
-              accessibilityRole="link"
-              accessibilityLabel={`${card.activityTitle}, open the published trip`}
-            >
-              <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tagInk} />
-              <Text style={styles.tagLabel} numberOfLines={1}>
-                {card.activityTitle}
-              </Text>
-            </Pressable>
-          ) : (
-            <View style={[styles.tag, styles.tagInert]}>
-              <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tripLineInert} />
-              <Text style={[styles.tagLabel, styles.tagLabelInert]} numberOfLines={1}>
-                {card.activityTitle}
-              </Text>
-            </View>
-          )}
-        </View>
+        {card.place !== null && (
+          <View style={styles.tagRow}>
+            {navigates ? (
+              <Pressable
+                style={styles.tag}
+                onPress={() => onOpenTrip(card)}
+                accessibilityRole="link"
+                accessibilityLabel={`${card.place}, open the published trip`}
+              >
+                <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tagInk} />
+                <Text style={styles.tagLabel} numberOfLines={1}>
+                  {card.place}
+                </Text>
+              </Pressable>
+            ) : (
+              <View style={[styles.tag, styles.tagInert]}>
+                <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tripLineInert} />
+                <Text style={[styles.tagLabel, styles.tagLabelInert]} numberOfLines={1}>
+                  {card.place}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {card.caption !== null && (
           <View>

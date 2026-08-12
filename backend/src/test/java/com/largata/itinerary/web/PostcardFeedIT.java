@@ -109,6 +109,9 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         assertThat(card.activityTitle()).isEqualTo(ACTIVITY_TITLE);
         assertThat(card.author().handle()).isNotBlank();
         assertThat(card.sharedAt()).isNotNull();
+        assertThat(card.place())
+                .as("the pin's label is the activity's place, and this fixture named none")
+                .isNull();
 
         assertThat(fieldNamesIn(wire))
                 .as("the card is exactly these fields — anything else is a leak this test must catch")
@@ -124,6 +127,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
                         "publishedItineraryId",
                         "dayLabel",
                         "activityTitle",
+                        "place",
                         "caption",
                         "sharedAt",
                         "photos",
@@ -445,6 +449,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
             UUID publishedItineraryId,
             String dayLabel,
             String activityTitle,
+            String place,
             String caption,
             Instant sharedAt,
             List<CardPhoto> photos) {}

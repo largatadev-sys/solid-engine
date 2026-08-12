@@ -43,6 +43,7 @@ function entry(id: string): DiaryEntryResponse {
     activityTitle: 'Sunset at Las Cabanas',
     dayLabel: 'Day 1',
     timeOfDay: null,
+    place: null,
     caption: null,
     photos: [],
     sharedAt: null,

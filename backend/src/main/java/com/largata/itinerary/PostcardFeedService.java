@@ -114,6 +114,7 @@ public class PostcardFeedService {
                 navigableTripOf(trip),
                 entry.dayLabel(),
                 entry.activityTitle(),
+                entry.place(),
                 entry.caption(),
                 entry.sharedAt(),
                 photosByEntry.getOrDefault(entry.id(), List.of()).stream()

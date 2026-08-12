@@ -715,9 +715,21 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
     beforeRetap !== null && beforeRetap > 0 && afterRetap === 0,
     `from=${beforeRetap} to=${afterRetap}`);
 
-  await tapLabel('Home', 2500);
+  // Nothing has been shared since the last fetch at this point in the walk, so the refresh must
+  // find nothing new and say so. Asserting the toast unconditionally would encode the bug the
+  // code review found — it used to fire before the refetch resolved, claiming "caught up" even
+  // when fresh posts had arrived.
+  // The toast lives under two seconds by design, so read it promptly — a later read finds it
+  // faded and reports a working control as broken.
+  const feedReadsBeforeRetap = requests.filter((r) => r.url.includes('/v1/feed/postcards')).length;
+  await tapLabel('Home', 700);
   const refreshToasted = ((await text()) || '').includes('caught up');
-  check('AC 11: re-tapping Home at the top refreshes instead, and says so',
+  const refetched =
+    requests.filter((r) => r.url.includes('/v1/feed/postcards')).length > feedReadsBeforeRetap;
+
+  check('AC 11: re-tapping Home at the top refreshes rather than scrolling nowhere',
+    refetched, `feed re-read=${refetched}`);
+  check('AC 12: and says "caught up" precisely because nothing new had arrived',
     refreshToasted, `toast=${refreshToasted}`);
 
   // --- the new-posts pill (AC 12) ------------------------------------------------------------

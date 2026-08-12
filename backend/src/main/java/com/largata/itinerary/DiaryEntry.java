@@ -36,6 +36,9 @@ class DiaryEntry {
     @Column(name = "time_of_day", updatable = false)
     private LocalTime timeOfDay;
 
+    @Column(updatable = false)
+    private String place;
+
     @Column private String caption;
 
     @Column(name = "shared_at")
@@ -66,6 +69,7 @@ class DiaryEntry {
         this.activityTitle = snapshot.activityTitle();
         this.dayLabel = snapshot.dayLabel();
         this.timeOfDay = snapshot.timeOfDay();
+        this.place = snapshot.place();
         this.caption = normalizeCaption(caption);
         this.createdAt = at;
         this.updatedAt = at;
@@ -161,6 +165,10 @@ class DiaryEntry {
 
     LocalTime timeOfDay() {
         return timeOfDay;
+    }
+
+    String place() {
+        return place;
     }
 
     String caption() {

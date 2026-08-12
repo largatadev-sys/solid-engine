@@ -13,6 +13,7 @@ public record DiaryEntryResponse(
         String activityTitle,
         String dayLabel,
         LocalTime timeOfDay,
+        String place,
         String caption,
         List<DiaryPhotoResponse> photos,
         Instant sharedAt,

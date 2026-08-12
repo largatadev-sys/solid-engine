@@ -344,6 +344,7 @@ export type DiaryEntryResponse = {
   activityTitle: string;
   dayLabel: string;
   timeOfDay: string | null;
+  place: string | null;
   caption: string | null;
   photos: DiaryPhotoResponse[];
   sharedAt: string | null;
@@ -392,6 +393,7 @@ export type FeedPostcardResponse = {
   publishedItineraryId: string | null;
   dayLabel: string;
   activityTitle: string;
+  place: string | null;
   caption: string | null;
   sharedAt: string;
   photos: DiaryPhotoResponse[];

@@ -25,6 +25,7 @@ function entry(overrides: Partial<DiaryEntryResponse> = {}): DiaryEntryResponse 
     activityTitle: 'Sunset at Las Cabanas',
     dayLabel: 'Day 1',
     timeOfDay: null,
+    place: null,
     caption: 'as posted',
     photos: [photo('p1'), photo('p2')],
     sharedAt: null,

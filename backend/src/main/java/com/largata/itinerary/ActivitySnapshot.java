@@ -3,7 +3,7 @@ package com.largata.itinerary;
 import java.time.LocalTime;
 
 
-record ActivitySnapshot(String activityTitle, String dayLabel, LocalTime timeOfDay) {
+record ActivitySnapshot(String activityTitle, String dayLabel, LocalTime timeOfDay, String place) {
 
     ActivitySnapshot {
         if (activityTitle == null || activityTitle.isBlank()) {
@@ -12,11 +12,13 @@ record ActivitySnapshot(String activityTitle, String dayLabel, LocalTime timeOfD
         if (dayLabel == null || dayLabel.isBlank()) {
             throw new IllegalArgumentException("A snapshot records the day it happened on");
         }
+        place = place == null || place.isBlank() ? null : place.strip();
     }
 
 
     static ActivitySnapshot of(Activity activity, Day day) {
-        return new ActivitySnapshot(activity.title(), labelOf(day), activity.timeOfDay());
+        return new ActivitySnapshot(
+                activity.title(), labelOf(day), activity.timeOfDay(), activity.place());
     }
 
 

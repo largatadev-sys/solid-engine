@@ -108,9 +108,20 @@ describe('the chrome is wired the way the mock and the kill-switch require', () 
     expect(SCREEN).toContain("else comingSoon('report');");
   });
 
-  it('makes the activity tag an affordance only where the trip line is one', () => {
+  it('makes the location tag an affordance only where the trip line is one', () => {
     expect(CARD).toContain('navigates ? (');
     expect(CARD).toContain('styles.tagInert');
+  });
+
+  it('puts the PLACE behind the pin, never the activity title (founder, 2026-08-12)', () => {
+    const tag = CARD.slice(CARD.indexOf('{card.place !== null &&'), CARD.indexOf('{card.caption !== null'));
+
+    expect(tag).toContain('{card.place}');
+    expect(tag).not.toContain('{card.activityTitle}');
+  });
+
+  it('hides the pin entirely when the activity had no place — never a bare glyph', () => {
+    expect(CARD).toContain('{card.place !== null && (');
   });
 
   it('pads every icon target past the thumb minimum', () => {

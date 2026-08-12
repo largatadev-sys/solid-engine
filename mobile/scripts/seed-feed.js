@@ -118,7 +118,7 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
     `/v1/itineraries/${trip}/days/${plan.days[0].id}/activities`,
     'POST',
     author.idToken,
-    { title: `Lempuyang Gate ${stamp}` },
+    { title: `Sunrise gate photo ${stamp}`, place: `Pura Lempuyang Gate ${stamp}` },
   );
 
   const entry = await postDiaryEntry(
@@ -133,12 +133,35 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
     [photo, photo, photo],
   );
 
+  // The second postcard names no place on purpose: the pin must vanish rather than render a bare
+  // glyph or fall back to the activity title (founder, 2026-08-12).
+  const placeless = await api(
+    `/v1/itineraries/${trip}/days/${plan.days[1].id}/activities`,
+    'POST',
+    author.idToken,
+    { title: `Nowhere in particular ${stamp}` },
+  );
+  const withoutPlace = await postDiaryEntry(
+    author.idToken,
+    trip,
+    {
+      activityId: placeless.body.id,
+      caption: `No location on this one ${stamp}`,
+      fromDump: [],
+      shareToFeed: true,
+    },
+    [photo],
+  );
+
   console.log(JSON.stringify({
     stamp,
     trip,
     entry: entry.body.id,
     photos: entry.body.photos.length,
     sharedAt: entry.body.sharedAt,
+    place: entry.body.place,
+    placelessEntry: withoutPlace.body.id,
+    placelessPlace: withoutPlace.body.place,
     strangerToken: stranger.idToken,
     strangerRefresh: stranger.refreshToken,
     strangerUid: stranger.localId,

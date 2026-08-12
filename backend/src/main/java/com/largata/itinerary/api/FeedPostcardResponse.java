@@ -13,6 +13,7 @@ public record FeedPostcardResponse(
         UUID publishedItineraryId,
         String dayLabel,
         String activityTitle,
+        String place,
         String caption,
         Instant sharedAt,
         List<DiaryPhotoResponse> photos) {}

@@ -205,6 +205,52 @@ class SharedPostcardIT extends ObjectStoreTestBase {
 
 
     @Test
+    void thePostcardRemembersWhereItHappened() throws IOException {
+        Fixture trip = startedTrip();
+        UUID somewhere = activityAt(trip, 2, "Kayaking", "Big Lagoon, El Nido");
+
+        Entry posted = post(trip.owner(), trip, somewhere, "on the water", 1, true);
+
+        assertThat(posted.place())
+                .as("the location comes from the activity, snapshotted at post time")
+                .isEqualTo("Big Lagoon, El Nido");
+    }
+
+
+    @Test
+    void thePlaceIsASnapshotThatAPlanEditNeverRewrites() throws IOException {
+        Fixture trip = startedTrip();
+        UUID somewhere = activityAt(trip, 2, "Kayaking", "Big Lagoon, El Nido");
+        Entry posted = post(trip.owner(), trip, somewhere, "as it was", 1, false);
+
+        rig.hold(trip.owner(), trip.tripId(), "activity", somewhere);
+        rig.send(
+                        HttpMethod.PATCH,
+                        TripRig.activitiesUri(trip.tripId(), rig.dayAt(trip.tripId(), 2)) + "/" + somewhere,
+                        trip.owner(),
+                        "{\"title\":\"Kayaking\",\"place\":\"Somewhere else entirely\"}")
+                .expectStatus()
+                .isOk();
+
+        assertThat(entryFrom(readEntry(trip, posted.id())).place())
+                .as("relocating the activity must not relocate a memory already posted")
+                .isEqualTo("Big Lagoon, El Nido");
+    }
+
+
+    @Test
+    void anActivityWithNoPlaceLeavesThePostcardWithout() throws IOException {
+        Fixture trip = startedTrip();
+
+        Entry posted = post(trip.owner(), trip, trip.activityId(), "nowhere named", 1, false);
+
+        assertThat(posted.place())
+                .as("place is optional on the activity, so the card must read without it")
+                .isNull();
+    }
+
+
+    @Test
     void aPostWithNoActivityIsRefusedRatherThanExploding() throws IOException {
         Fixture trip = startedTrip();
 
@@ -352,6 +398,35 @@ class SharedPostcardIT extends ObjectStoreTestBase {
                 jdbc.queryForObject(
                         "SELECT COUNT(*) FROM diary_entry WHERE id = ?", Integer.class, entryId);
         return count == null ? 0 : count;
+    }
+
+
+    private UUID activityAt(Fixture trip, int dayOrdinal, String title, String place) {
+        byte[] created =
+                rig.send(
+                                HttpMethod.POST,
+                                TripRig.activitiesUri(trip.tripId(), rig.dayAt(trip.tripId(), dayOrdinal)),
+                                trip.owner(),
+                                "{\"title\":\"" + title + "\",\"place\":\"" + place + "\"}")
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent();
+        return UUID.fromString(TripRig.fieldIn(created, "id"));
+    }
+
+
+    private byte[] readEntry(Fixture trip, UUID entryId) {
+        return rest.get()
+                .uri(diaryUri(trip) + "/" + entryId)
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .returnResult()
+                .getResponseBodyContent();
     }
 
 
@@ -527,7 +602,8 @@ class SharedPostcardIT extends ObjectStoreTestBase {
 
     private record Fixture(String owner, String member, String tripId, UUID activityId) {}
 
-    private record Entry(UUID id, String caption, List<EntryPhoto> photos, Instant sharedAt) {}
+    private record Entry(
+            UUID id, String caption, String place, List<EntryPhoto> photos, Instant sharedAt) {}
 
     private record EntryPhoto(UUID id, String url, String thumbUrl) {}
 }

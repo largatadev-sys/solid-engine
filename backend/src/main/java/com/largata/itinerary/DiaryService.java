@@ -315,6 +315,7 @@ public class DiaryService {
                 entry.activityTitle(),
                 entry.dayLabel(),
                 entry.timeOfDay(),
+                entry.place(),
                 entry.caption(),
                 entryPhotos.stream().map(DiaryPhotoResponse::of).toList(),
                 entry.sharedAt(),
