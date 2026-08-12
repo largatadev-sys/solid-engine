@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text } from 'react-native';
 import { radii, spacing } from '../theme';
-import { feedColors, feedTypography } from '../theme/workspaceTokens';
+import { feedColors, feedTypography } from '../theme/feedTokens';
 
 const SHOW_MS = 180;
 

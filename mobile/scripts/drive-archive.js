@@ -210,7 +210,7 @@ function getJson(path) {
   check('…and Remove is gone from every row', !membersFrozen.includes('Remove'));
   check('…and Make owner is gone', !membersFrozen.includes('Make owner'));
 
-  await goto('/');
+  await goto('/trips');
   const myTrips = await text();
   check('My Trips no longer lists the archived trip', !myTrips.includes('Archived trip smoke'));
   check('…and offers the way to the archived view', myTrips.includes('Archived trips'));

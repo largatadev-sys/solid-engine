@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { radii, spacing } from '../theme';
-import { feedColors, feedTypography } from '../theme/workspaceTokens';
+import { feedColors, feedTypography } from '../theme/feedTokens';
 import { FEED_NEW_POSTS } from './feedCopy';
 
 const ARROW = 12;

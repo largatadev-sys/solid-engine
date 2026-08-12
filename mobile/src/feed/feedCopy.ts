@@ -24,6 +24,14 @@ export const FEED_REFRESHED_TOAST = "You're caught up";
 
 export const FEED_NEW_POSTS = 'New posts';
 
+export const PHOTO_SHEET_SAVE = 'Save to trip ideas';
+
+export const PHOTO_SHEET_SHARE = 'Share';
+
+export const PHOTO_SHEET_REPORT = 'Report';
+
+export const PHOTO_SHEET_CANCEL = 'Close these options';
+
 export const FEED_SEARCH_LABEL = 'Search';
 
 export const FEED_NOTIFICATIONS_LABEL = 'Notifications';

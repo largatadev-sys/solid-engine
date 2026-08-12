@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { Icon } from '../components/Icon';
-import { feedColors, feedMetrics } from '../theme/workspaceTokens';
+import { feedColors, feedMetrics } from '../theme/feedTokens';
 
 const HOLD_MS = 250;
 

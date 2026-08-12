@@ -215,7 +215,7 @@ function api(path, method, token, body) {
 
   await seat(owner);
 
-  await goto('/');
+  await goto('/trips');
   const trips = await text();
   check('the Trips screen renders (not the S0.4 white screen)', (trips || '').length > 0,
     `${(trips || '').length} chars`);
@@ -262,7 +262,7 @@ function api(path, method, token, body) {
     bestTimeOfYear: 'Dec - Apr', standouts: ['Big Lagoon Kayaking'],
   })).id;
 
-  await goto('/');
+  await goto('/trips');
   const draftHref = await evaluate(`
     (() => {
       const card = Array.from(document.querySelectorAll('a'))
@@ -305,7 +305,7 @@ function api(path, method, token, body) {
     afterFinish.includes('Upcoming Trips') && !/is Live|discover and fork|Back to Feed/i.test(afterFinish),
     afterFinish.split('\n').slice(0, 6).join(' / '));
 
-  await goto('/');
+  await goto('/trips');
   const withUpcoming = await text();
   check('the trip now sits under Upcoming Trips', withUpcoming.includes('Upcoming Trips'));
 

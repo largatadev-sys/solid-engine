@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { comingSoon } from '../components/comingSoon';
 import { colors, spacing } from '../theme';
-import { feedColors, feedMetrics } from '../theme/workspaceTokens';
+import { feedColors, feedMetrics } from '../theme/feedTokens';
 import type { FeedPostcardResponse } from '../types/api';
 import { feedRepository } from '../repositories/feedRepository';
 import { useFeed } from '../query/feedQueries';
@@ -32,6 +32,7 @@ import { atTop, HEADER_SHOWING, onScroll } from './headerVisibility';
 import { freshCount, POLL_MS, showsPill } from './freshPosts';
 import { onHomeTabRetap } from './homeTabRetap';
 import { NewPostsPill } from './NewPostsPill';
+import { PhotoActionSheet, type PhotoSheetAction } from './PhotoActionSheet';
 
 const SKELETON_CARDS = 2;
 
@@ -48,6 +49,7 @@ export function FeedScreen() {
   const [fresh, setFresh] = useState(0);
   const [scrolledDown, setScrolledDown] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [, redrawPages] = useState(0);
 
   const pages = useRef(new Map<string, number>());
@@ -70,18 +72,28 @@ export function FeedScreen() {
     list.current?.scrollToOffset({ offset: 0, animated });
   }, []);
 
-  const refresh = useCallback(() => {
-    setNow(Date.now());
-    setFresh(0);
-    void feed.refetch();
-  }, [feed]);
+  const shownCount = cards.length;
+
+  const refresh = useCallback(
+    (toastWhenNothingNew: boolean) => {
+      const had = shownCount;
+      setNow(Date.now());
+      setFresh(0);
+      void feed.refetch().then((result) => {
+        const after = (result.data?.pages ?? []).flatMap((page) => page.items).length;
+        if (toastWhenNothingNew && after <= had) {
+          setToast(FEED_REFRESHED_TOAST);
+        }
+      });
+    },
+    [feed, shownCount],
+  );
 
   useEffect(
     () =>
       onHomeTabRetap(() => {
         if (atTop(offset.current)) {
-          refresh();
-          setToast(FEED_REFRESHED_TOAST);
+          refresh(true);
           return;
         }
         toTop(true);
@@ -89,9 +101,6 @@ export function FeedScreen() {
     [refresh, toTop],
   );
 
-  // The interval is armed ONCE and reads the ids at fire time through a ref. Depending on the
-  // ids instead restarts the timer on every refresh, heart tap and page merge — so on a feed
-  // anyone is actually using, the poll silently never fires and the pill never appears.
   const known = useRef(shownIds);
   known.current = shownIds;
 
@@ -141,24 +150,19 @@ export function FeedScreen() {
     else if (what === 'comment') comingSoon('comments');
     else if (what === 'share') comingSoon('share');
     else if (what === 'save') comingSoon('saved');
+    else setSheetOpen(true);
+  };
+
+  const chooseFromSheet = (action: PhotoSheetAction) => {
+    setSheetOpen(false);
+    if (action === 'save') comingSoon('saved');
+    else if (action === 'share') comingSoon('share');
     else comingSoon('report');
   };
 
   const takeTheFreshPosts = () => {
     toTop(true);
-    refresh();
-  };
-
-  const pullToRefresh = () => {
-    const had = cards.length;
-    setNow(Date.now());
-    setFresh(0);
-    void feed.refetch().then((result) => {
-      const after = (result.data?.pages ?? []).flatMap((page) => page.items).length;
-      if (after <= had) {
-        setToast(FEED_REFRESHED_TOAST);
-      }
-    });
+    refresh(false);
   };
 
   const reachedTheEnd = () => {
@@ -216,13 +220,13 @@ export function FeedScreen() {
         refreshControl={
           <RefreshControl
             refreshing={feed.isRefetching && !feed.isFetchingNextPage}
-            onRefresh={pullToRefresh}
+            onRefresh={() => refresh(true)}
             tintColor={colors.accent}
             colors={[colors.accent]}
           />
         }
         ListEmptyComponent={
-          feed.isError ? <FeedLoadFailed onRetry={() => void feed.refetch()} /> : <FeedEmptyState />
+          feed.isError ? <FeedLoadFailed onRetry={() => refresh(false)} /> : <FeedEmptyState />
         }
         ListFooterComponent={
           cards.length === 0 ? null : (
@@ -234,6 +238,12 @@ export function FeedScreen() {
             />
           )
         }
+      />
+
+      <PhotoActionSheet
+        open={sheetOpen}
+        onChoose={chooseFromSheet}
+        onDismiss={() => setSheetOpen(false)}
       />
 
       <FeedToast message={toast} onDone={() => setToast(null)} />

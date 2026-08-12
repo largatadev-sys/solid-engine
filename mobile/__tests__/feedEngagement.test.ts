@@ -97,6 +97,22 @@ describe('the chrome is wired the way the mock and the kill-switch require', () 
     expect(CARD).toContain("onLongPress={() => onStubTap('photoSheet')}");
   });
 
+  it('opens the mock-s three-action sheet, so each action refuses under its own name', () => {
+    const sheet = readFileSync(join(MOBILE_ROOT, 'src', 'feed', 'PhotoActionSheet.tsx'), 'utf8');
+
+    expect(sheet).toContain('PHOTO_SHEET_SAVE');
+    expect(sheet).toContain('PHOTO_SHEET_SHARE');
+    expect(sheet).toContain('PHOTO_SHEET_REPORT');
+    expect(SCREEN).toContain('setSheetOpen(true)');
+    expect(SCREEN).toContain("if (action === 'save') comingSoon('saved');");
+    expect(SCREEN).toContain("else comingSoon('report');");
+  });
+
+  it('makes the activity tag an affordance only where the trip line is one', () => {
+    expect(CARD).toContain('navigates ? (');
+    expect(CARD).toContain('styles.tagInert');
+  });
+
   it('pads every icon target past the thumb minimum', () => {
     expect(CARD).toContain('HIT_SLOP');
   });

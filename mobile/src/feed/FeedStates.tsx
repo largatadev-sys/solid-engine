@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { radii, spacing } from '../theme';
-import { feedColors, feedMetrics, feedTypography } from '../theme/workspaceTokens';
+import { feedColors, feedMetrics, feedTypography } from '../theme/feedTokens';
 import {
   FEED_CAUGHT_UP_BODY,
   FEED_CAUGHT_UP_TITLE,

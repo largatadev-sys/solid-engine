@@ -15,11 +15,12 @@ import { lightHaptic } from './lightHaptic';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { radii, spacing } from '../theme';
-import { feedColors, feedMetrics, feedTypography } from '../theme/workspaceTokens';
+import { feedColors, feedMetrics, feedTypography } from '../theme/feedTokens';
 import type { FeedPostcardResponse } from '../types/api';
 import {
   authorInitials,
   authorName,
+  compactCount,
   timeSince,
   tripLine,
   tripLineNavigates,
@@ -32,7 +33,6 @@ import {
   pageOfOffset,
   showsCarousel,
 } from './feedCarousel';
-import { compactCount } from './feedCardAnatomy';
 import { FEED_CAPTION_MORE, FEED_TRIP_BADGE } from './feedCopy';
 import { isDoubleTap, type TapPoint } from './doubleTap';
 import { HeartBurst } from './HeartBurst';
@@ -108,9 +108,6 @@ export function FeedCard({
   };
 
   const photoTapped = (event: GestureResponderEvent) => {
-    // react-native-web does not always carry nativeEvent.timestamp, and a NaN here makes every
-    // elapsed-time comparison false — so the double tap silently never fires while every unit
-    // test passes. Read the clock ourselves rather than trusting the synthetic event.
     const point = {
       x: event.nativeEvent.pageX ?? 0,
       y: event.nativeEvent.pageY ?? 0,
@@ -261,12 +258,26 @@ export function FeedCard({
 
       <View style={styles.body}>
         <View style={styles.tagRow}>
-          <View style={styles.tag}>
-            <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tagInk} />
-            <Text style={styles.tagLabel} numberOfLines={1}>
-              {card.activityTitle}
-            </Text>
-          </View>
+          {navigates ? (
+            <Pressable
+              style={styles.tag}
+              onPress={() => onOpenTrip(card)}
+              accessibilityRole="link"
+              accessibilityLabel={`${card.activityTitle}, open the published trip`}
+            >
+              <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tagInk} />
+              <Text style={styles.tagLabel} numberOfLines={1}>
+                {card.activityTitle}
+              </Text>
+            </Pressable>
+          ) : (
+            <View style={[styles.tag, styles.tagInert]}>
+              <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tripLineInert} />
+              <Text style={[styles.tagLabel, styles.tagLabelInert]} numberOfLines={1}>
+                {card.activityTitle}
+              </Text>
+            </View>
+          )}
         </View>
 
         {card.caption !== null && (
@@ -493,6 +504,12 @@ const styles = StyleSheet.create({
     ...feedTypography.tag,
     color: feedColors.tagInk,
     flexShrink: 1,
+  },
+  tagInert: {
+    backgroundColor: feedColors.badgeWell,
+  },
+  tagLabelInert: {
+    color: feedColors.tripLineInert,
   },
   caption: {
     ...feedTypography.caption,

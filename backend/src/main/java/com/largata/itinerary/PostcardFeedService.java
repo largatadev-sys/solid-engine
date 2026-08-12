@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,8 @@ public class PostcardFeedService {
 
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int MAX_PAGE_SIZE = 50;
+
+    private static final Logger log = LoggerFactory.getLogger(PostcardFeedService.class);
 
     private final DiaryEntryRepository entries;
     private final ItineraryRepository itineraries;
@@ -96,6 +100,11 @@ public class PostcardFeedService {
         TravelerCardResponse author = authors.get(entry.travelerId());
         Itinerary trip = trips.get(entry.itineraryId());
         if (author == null || trip == null) {
+            log.warn(
+                    "Shared postcard withheld from the feed: entryId={} authorFound={} tripFound={}",
+                    entry.id(),
+                    author != null,
+                    trip != null);
             return null;
         }
         return new FeedPostcardResponse(

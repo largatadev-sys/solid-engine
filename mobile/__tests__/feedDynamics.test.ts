@@ -121,8 +121,14 @@ describe('the screen wires the dynamics the way the mock describes', () => {
     expect(SCREEN).not.toContain('}, [shownIds]);');
   });
 
-  it('toasts only when a refresh brought nothing new', () => {
-    expect(SCREEN).toContain('if (after <= had)');
+  it('toasts only when a refresh brought nothing new, on EVERY path that refreshes', () => {
+    expect(SCREEN).toContain('if (toastWhenNothingNew && after <= had)');
     expect(SCREEN).toContain('FEED_REFRESHED_TOAST');
+    expect(SCREEN.match(/setToast\(FEED_REFRESHED_TOAST\)/g) ?? []).toHaveLength(1);
+  });
+
+  it('takes the fresh posts WITHOUT claiming there were none', () => {
+    const takes = SCREEN.slice(SCREEN.indexOf('const takeTheFreshPosts'), SCREEN.indexOf('const reachedTheEnd'));
+    expect(takes).toContain('refresh(false)');
   });
 });

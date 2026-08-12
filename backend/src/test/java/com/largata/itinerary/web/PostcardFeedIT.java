@@ -216,6 +216,12 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
 
     @Test
+    void theFeedStillRequiresATraveler() {
+        rest.get().uri(FEED_URI).exchange().expectStatus().isUnauthorized();
+    }
+
+
+    @Test
     void theFeedIsOneGlobalStreamAcrossTravelersWhoShareNothing() throws IOException {
         Fixture theirs = startedTrip();
         Fixture mine = startedTrip();
