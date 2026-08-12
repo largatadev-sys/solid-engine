@@ -7,6 +7,7 @@ import com.largata.identity.TravelerSummary;
 import com.largata.identity.api.TravelerCardResponse;
 import com.largata.itinerary.api.DiaryPhotoResponse;
 import com.largata.itinerary.api.FeedPostcardResponse;
+import com.largata.itinerary.api.PublicTripDiaryResponse;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
@@ -73,6 +74,28 @@ public class PostcardFeedService {
         }
         DiaryEntry last = rows.getLast();
         return Page.of(cards, InstantCursor.encode(last.sharedAt(), last.id()));
+    }
+
+
+    @Transactional(readOnly = true)
+    public PublicTripDiaryResponse tripDiary(UUID itineraryId, UUID authorId) {
+        List<DiaryEntry> shared = entries.findSharedOfTrip(itineraryId, authorId);
+        if (shared.isEmpty()) {
+            throw new DiaryExceptions.DiaryEntryNotFoundException();
+        }
+
+        List<FeedPostcardResponse> postcards = project(shared);
+        if (postcards.isEmpty()) {
+            throw new DiaryExceptions.DiaryEntryNotFoundException();
+        }
+
+        FeedPostcardResponse first = postcards.getFirst();
+        return new PublicTripDiaryResponse(
+                itineraryId,
+                first.author(),
+                first.tripTitle(),
+                first.publishedItineraryId(),
+                postcards);
     }
 
 

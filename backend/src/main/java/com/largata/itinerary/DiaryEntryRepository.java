@@ -62,6 +62,17 @@ interface DiaryEntryRepository extends JpaRepository<DiaryEntry, UUID> {
     List<DiaryEntry> findFeedPageAfter(
             @Param("sharedAt") Instant sharedAt, @Param("id") UUID id, Limit limit);
 
+    @Query(
+            """
+            SELECT e FROM DiaryEntry e
+            WHERE e.itineraryId = :itineraryId
+              AND e.travelerId = :travelerId
+              AND e.sharedAt IS NOT NULL
+            ORDER BY e.id
+            """)
+    List<DiaryEntry> findSharedOfTrip(
+            @Param("itineraryId") UUID itineraryId, @Param("travelerId") UUID travelerId);
+
 
     interface DiaryTripRow {
 

@@ -220,6 +220,102 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
 
     @Test
+    void theTripDiaryShowsAStrangerEverySharedPostcardOfThatTripAndNothingElse() throws IOException {
+        Fixture trip = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        String shared = tag("in the public diary");
+        String alsoShared = tag("also public");
+        String secret = tag("stayed private");
+        post(trip, trip.activityId(), shared, true);
+        post(trip, secondActivity(trip), alsoShared, true);
+        post(trip, thirdActivity(trip), secret, false);
+
+        TripDiary diary = tripDiaryFor(stranger, trip.tripId(), rig.travelerIdOf(trip.owner()));
+
+        assertThat(diary.postcards().stream().map(Card::caption).toList())
+                .as("every shared postcard of this author's trip, and only those")
+                .containsExactlyInAnyOrder(shared, alsoShared);
+        assertThat(diary.tripTitle()).isEqualTo("Trip");
+        assertThat(diary.author().handle()).isNotBlank();
+    }
+
+
+    @Test
+    void aTripWithNothingSharedIsNotFoundRatherThanEmpty() throws IOException {
+        Fixture trip = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        post(trip, trip.activityId(), tag("kept to myself"), false);
+
+        rest.get()
+                .uri(tripDiaryUri(trip.tripId(), rig.travelerIdOf(trip.owner())))
+                .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+
+    @Test
+    void unsharingTheLastPostcardClosesThePublicDiaryAgain() throws IOException {
+        Fixture trip = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        UUID only = post(trip, trip.activityId(), tag("briefly public"), true);
+        UUID author = rig.travelerIdOf(trip.owner());
+
+        assertThat(tripDiaryFor(stranger, trip.tripId(), author).postcards()).hasSize(1);
+
+        rig.send(HttpMethod.DELETE, diaryUri(trip) + "/" + only + "/share", trip.owner(), null)
+                .expectStatus()
+                .isOk();
+
+        rest.get()
+                .uri(tripDiaryUri(trip.tripId(), author))
+                .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+
+    @Test
+    void oneAuthorsPublicDiaryNeverCarriesAnothersPostcardsFromTheSameTrip() throws IOException {
+        Fixture trip = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        String owners = tag("the owner shared this");
+        post(trip, trip.activityId(), owners, true);
+
+        UUID theMember = rig.travelerIdOf(trip.member());
+        rest.get()
+                .uri(tripDiaryUri(trip.tripId(), theMember))
+                .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+
+        assertThat(
+                        tripDiaryFor(stranger, trip.tripId(), rig.travelerIdOf(trip.owner()))
+                                .postcards()
+                                .stream()
+                                .map(Card::caption)
+                                .toList())
+                .containsExactly(owners);
+    }
+
+
+    @Test
+    void theTripDiaryStillRequiresATraveler() throws IOException {
+        Fixture trip = startedTrip();
+        post(trip, trip.activityId(), tag("public"), true);
+
+        rest.get()
+                .uri(tripDiaryUri(trip.tripId(), rig.travelerIdOf(trip.owner())))
+                .exchange()
+                .expectStatus()
+                .isUnauthorized();
+    }
+
+
+    @Test
     void theFeedStillRequiresATraveler() {
         rest.get().uri(FEED_URI).exchange().expectStatus().isUnauthorized();
     }
@@ -259,6 +355,27 @@ class PostcardFeedIT extends ObjectStoreTestBase {
                         .getResponseBody();
         assertThat(body).isNotNull();
         return body;
+    }
+
+
+    private TripDiary tripDiaryFor(String token, String tripId, UUID authorId) {
+        TripDiary body =
+                rest.get()
+                        .uri(tripDiaryUri(tripId, authorId))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .exchange()
+                        .expectStatus()
+                        .isOk()
+                        .expectBody(TripDiary.class)
+                        .returnResult()
+                        .getResponseBody();
+        assertThat(body).isNotNull();
+        return body;
+    }
+
+
+    private static String tripDiaryUri(String tripId, UUID authorId) {
+        return FEED_URI + "/trips/" + tripId + "/by/" + authorId;
     }
 
 
@@ -459,4 +576,11 @@ class PostcardFeedIT extends ObjectStoreTestBase {
     private record CardPhoto(UUID id, String url, String thumbUrl) {}
 
     private record FeedPage(List<Card> items, String nextCursor) {}
+
+    private record TripDiary(
+            UUID itineraryId,
+            Author author,
+            String tripTitle,
+            UUID publishedItineraryId,
+            List<Card> postcards) {}
 }

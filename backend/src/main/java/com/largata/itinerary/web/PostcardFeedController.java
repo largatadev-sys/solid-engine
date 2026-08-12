@@ -5,7 +5,10 @@ import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.PostcardFeedService;
 import com.largata.itinerary.api.FeedPostcardResponse;
+import com.largata.itinerary.api.PublicTripDiaryResponse;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,5 +31,14 @@ class PostcardFeedController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
         return feed.page(cursor, limit);
+    }
+
+
+    @GetMapping("/trips/{itineraryId}/by/{authorId}")
+    PublicTripDiaryResponse tripDiary(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID itineraryId,
+            @PathVariable UUID authorId) {
+        return feed.tripDiary(itineraryId, authorId);
     }
 }
