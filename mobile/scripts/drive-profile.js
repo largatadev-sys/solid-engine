@@ -671,10 +671,15 @@ async function publishedTrip(token, title, destinations, days) {
     diaryStillSelected.replace(/\n/g, ' | ').slice(0, 140));
 
   // --- the trip diary screen, reached by tapping the section ROW (the founder's first frame) ---
+  // Target THIS walk's own section by title, not the first one on screen. The pool account
+  // accumulates diary trips from every story that plants them — drive-home now plants several —
+  // and they sort newest-first, so "the first section" stopped being ours the moment another
+  // walk ran before this one in smoke-all. The URL still matched; only the title did not,
+  // which is why this passed in isolation and failed in the suite.
   const toTripDiary = await evaluate(`
     (() => {
       const row = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => /^Open the diary for /.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => (n.getAttribute('aria-label') || '').startsWith('Open the diary for ${diaryTitle}'))
         .filter((n) => n.offsetParent !== null)[0];
       if (!row) return { clicked: false };
       row.click();
