@@ -289,8 +289,16 @@ async function publishedTrip(token, title, destinations, days) {
     );
   }
 
-  const profileDir = `${os.tmpdir()}/largata-profile-driver`;
-  fs.rmSync(profileDir, { recursive: true, force: true });
+  // A Chrome that has not fully exited still holds this directory on Windows, and rmSync throws
+  // EPERM through `force: true` — which kills the walk before its first assertion and reports as
+  // a failed run rather than one that never started. Fall back to a fresh directory instead.
+  let profileDir = `${os.tmpdir()}/largata-profile-driver`;
+  try {
+    fs.rmSync(profileDir, { recursive: true, force: true });
+  } catch {
+    profileDir = `${profileDir}-${process.pid}`;
+    fs.rmSync(profileDir, { recursive: true, force: true });
+  }
 
   const chrome = spawn(
     chromePath(),
@@ -638,20 +646,19 @@ async function publishedTrip(token, title, destinations, days) {
       (await url()) === urlBeforePreview,
     `${entryLabel} -> ${await url()}`);
 
-  // S4.22 made this button real on the profile's copy of the preview: the mock's Share slot is
-  // where retro-sharing to the Home feed lives, so the S4.21 coming-soon assertion is superseded
-  // rather than broken. The preview opened by any surface WITHOUT a share handler still refuses.
-  const sharedToFeed = await tapLabel('Share to feed', 3500);
-  const afterShare = (await text()) || '';
-  check('AC 2 (S4.22): the mock-s Share slot performs the real act — the postcard goes public',
-    sharedToFeed.clicked === true && afterShare.includes('Remove from feed'),
-    `clicked=${sharedToFeed.clicked} offers=${afterShare.includes('Remove from feed')}`);
+  // S4.22 briefly made this slot a share-to-feed toggle; the founder reverted it on 2026-08-13
+  // once every postcard became public, so the mock's Share is the send-it-to-someone act again —
+  // unbuilt, and therefore refusing by name rather than dead-clicking (the S1.3 Alert lesson).
+  const sharePressed = await tapLabel('Share', 3500);
+  const saidOnShare = await evaluate('window.__largataAlerts.slice(-1)[0] || null');
+  check('AC 2: the mock-s Share slot refuses honestly — it sends a postcard, and that is unbuilt',
+    sharePressed.clicked === true && /coming soon/i.test(saidOnShare ?? ''),
+    `clicked=${sharePressed.clicked} said=${JSON.stringify(saidOnShare)}`);
 
-  const pulledBack = await tapLabel('Remove from feed', 3500);
-  const afterUnshare = (await text()) || '';
-  check('AC 2 (S4.22): and it is symmetric — the same slot pulls the postcard back',
-    pulledBack.clicked === true && afterUnshare.includes('Share to feed'),
-    `clicked=${pulledBack.clicked} offers=${afterUnshare.includes('Share to feed')}`);
+  const stillThere = (await text()) || '';
+  check('AC 2: and nothing in the preview offers to publish or unpublish the postcard',
+    !stillThere.includes('Share to feed') && !stillThere.includes('Remove from feed'),
+    stillThere.replace(/\n/g, ' | ').slice(0, 160));
 
   const toEditor = await tapLabel('Edit entry', 5000);
   check('AC 2: Edit entry carries the traveler through to the editor — a doorway, not a dead end',

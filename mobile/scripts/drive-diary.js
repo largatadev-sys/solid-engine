@@ -341,22 +341,17 @@ function writeFixture() {
     composerScreen.replace(/\n/g, ' | ').slice(0, 200));
 
   check('AC 11: the info note reads exactly as the founder approved it',
-    composerScreen.includes('Only you can see your diary. It shows up on your profile.'));
+    composerScreen.includes(
+      'Your postcards go to the Home feed, where any Largata traveler can see them.'),
+    composerScreen.replace(/\n/g, ' | ').slice(0, 200));
 
-  // S4.22: the toggle is OFF by default and the pinned note must change with it, or the composer
-  // ships a promise beside the control that breaks it.
-  const toggledOn = await tapLabel('Share to feed', 1200);
-  const withToggleOn = (await text()) || '';
-  check('S4.22: turning the share toggle on rewrites the note to say the postcard goes public',
-    toggledOn.clicked === true &&
-      withToggleOn.includes('Home feed') &&
-      !withToggleOn.includes('Only you can see your diary'),
-    withToggleOn.replace(/\n/g, ' | ').slice(0, 200));
-
-  const toggledOff = await tapLabel('Share to feed', 1200);
-  check('S4.22: and turning it back off restores the author-only promise',
-    toggledOff.clicked === true &&
-      ((await text()) || '').includes('Only you can see your diary'));
+  // The note must be stated BEFORE the first postcard, not discovered after it — and there must
+  // be no control beside it implying the audience is a choice (founder, 2026-08-13).
+  check('S4.22: it no longer promises a privacy the diary does not have',
+    !composerScreen.includes('Only you can see your diary'));
+  check('S4.22: and the composer offers no share toggle, because posting is the whole act',
+    !composerScreen.includes('Share to feed'),
+    composerScreen.replace(/\n/g, ' | ').slice(0, 200));
 
   // The dump tiles live inside the picker modal now, so the bearer check moves to the modal
   // below — it is asserted once for the whole walk at the end regardless.

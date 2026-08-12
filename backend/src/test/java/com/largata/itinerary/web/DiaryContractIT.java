@@ -179,24 +179,28 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
 
     @Test
-    void anEntrysPhotoServesItsAuthorAndNobodyElse() throws IOException {
+    void anEntrysPhotoServesWhoeverMayReadTheEntry() throws IOException {
         Fixture trip = startedTrip();
         Entry posted = post(trip.owner(), trip, trip.activityId(), null, List.of(), 1);
         UUID photoId = idsOf(posted).getFirst();
 
         assertThat(bytesOf("/v1/media/" + photoId, trip.owner())).isNotEmpty();
+        assertThat(bytesOf("/v1/media/" + photoId, trip.member()))
+                .as("the media audience follows the entry's, and every entry is public now")
+                .isNotEmpty();
+    }
 
-        int coTravelersStatus =
-                rest.get()
-                        .uri("/v1/media/" + photoId)
-                        .header(HttpHeaders.AUTHORIZATION, bearer(trip.member()))
-                        .exchange()
-                        .returnResult(byte[].class)
-                        .getStatus()
-                        .value();
-        assertThat(coTravelersStatus)
-                .as("a co-traveler of the very same trip is masked — the diary is the author's alone")
-                .isEqualTo(404);
+
+    @Test
+    void aMediaReadStillNeedsATraveler() throws IOException {
+        Fixture trip = startedTrip();
+        Entry posted = post(trip.owner(), trip, trip.activityId(), null, List.of(), 1);
+
+        rest.get()
+                .uri("/v1/media/" + idsOf(posted).getFirst())
+                .exchange()
+                .expectStatus()
+                .isUnauthorized();
     }
 
 

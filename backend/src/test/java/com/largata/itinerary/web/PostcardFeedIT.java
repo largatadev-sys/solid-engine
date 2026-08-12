@@ -53,45 +53,39 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
 
     @Test
-    void aTravelerWhoSharesNoTripWithTheAuthorReadsTheSharedPostcard() throws IOException {
+    void aTravelerWhoSharesNoTripWithTheAuthorReadsThePostcard() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        String shared = tag("the shared one");
-        String secret = tag("the private one");
-        UUID posted = post(trip, trip.activityId(), shared, true);
-        post(trip, secondActivity(trip), secret, false);
+        String one = tag("the first one");
+        String other = tag("the other one");
+        post(trip, trip.activityId(), one);
+        UUID posted = post(trip, secondActivity(trip), other);
 
         List<Card> feed = feedFor(stranger);
 
         assertThat(captionsOf(feed))
-                .as("no membership anywhere in the read — the stranger receives the shared postcard")
-                .contains(shared)
-                .as("and an unshared entry never crosses")
-                .doesNotContain(secret);
+                .as("no membership anywhere in the read — the stranger receives both postcards")
+                .contains(one, other);
         assertThat(feed.getFirst().id()).isEqualTo(posted);
         assertThat(feed.getFirst().photos()).isNotEmpty();
     }
 
 
     @Test
-    void theOrderIsSharedTimeSoARetroSharedOldPostcardSurfacesAtTheTop() throws IOException {
+    void theOrderIsPostTimeSoTheNewestPostcardLeads() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
         String first = tag("posted first");
         String second = tag("posted second");
-        UUID older = post(trip, trip.activityId(), first, false);
-        post(trip, secondActivity(trip), second, true);
-
-        assertThat(captionsOf(feedFor(stranger))).contains(second).doesNotContain(first);
-
-        share(trip, older);
+        post(trip, trip.activityId(), first);
+        UUID newer = post(trip, secondActivity(trip), second);
 
         assertThat(minePositionsIn(feedFor(stranger), first, second))
-                .as("retro-sharing is the point: the older postcard, shared last, now leads")
-                .containsExactly(first, second);
+                .as("shared-at is post-at now, so the feed's order is simply the order they were written")
+                .containsExactly(second, first);
         assertThat(feedFor(stranger).getFirst().id())
-                .as("and it sits at the very top of the global stream")
-                .isEqualTo(older);
+                .as("and the newest sits at the very top of the global stream")
+                .isEqualTo(newer);
     }
 
 
@@ -99,7 +93,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
     void theProjectionCarriesTheCardAndWithholdsEverythingElse() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        post(trip, trip.activityId(), tag("what the world may see"), true);
+        post(trip, trip.activityId(), tag("what the world may see"));
 
         String wire = rawFeedFor(stranger);
         Card card = feedFor(stranger).getFirst();
@@ -151,51 +145,59 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         String one = tag("one");
         String two = tag("two");
         String three = tag("three");
-        post(trip, trip.activityId(), one, true);
-        post(trip, secondActivity(trip), two, true);
-        post(trip, thirdActivity(trip), three, true);
+        post(trip, trip.activityId(), one);
+        post(trip, secondActivity(trip), two);
+        post(trip, thirdActivity(trip), three);
 
         List<String> walked = new ArrayList<>();
+        List<UUID> idsSeen = new ArrayList<>();
         Set<String> cursorsFollowed = new HashSet<>();
         String cursor = null;
         do {
             FeedPage page = pageFor(stranger, "?limit=1" + (cursor == null ? "" : "&cursor=" + cursor));
-            page.items().forEach(card -> walked.add(card.caption()));
+            page.items()
+                    .forEach(
+                            card -> {
+                                walked.add(card.caption());
+                                idsSeen.add(card.id());
+                            });
             cursor = page.nextCursor();
             if (cursor != null && !cursorsFollowed.add(cursor)) {
                 throw new AssertionError("the feed handed back a cursor it had already issued: " + cursor);
             }
         } while (cursor != null);
 
-        assertThat(walked)
-                .as("a one-per-page walk reaches a null cursor and stops, never spinning")
-                .doesNotHaveDuplicates();
+        assertThat(idsSeen)
+                .as("a one-per-page walk reaches a null cursor and stops, never re-serving a card")
+                .doesNotHaveDuplicates()
+                .hasSize(cursorsFollowed.size() + 1);
         assertThat(walked.stream().filter(Set.of(one, two, three)::contains).toList())
-                .as("newest-shared first, each seen exactly once across the whole walk")
+                .as("newest first, each seen exactly once across the whole walk")
                 .containsExactly(three, two, one);
     }
 
 
     @Test
-    void unsharingAndDeletingBothRemoveThePostcardFromTheFeed() throws IOException {
+    void deleteIsTheOnlyDoorOutOfTheFeed() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        String pulledBack = tag("pulled back");
+        String kept = tag("kept");
         String removed = tag("removed outright");
-        UUID unshared = post(trip, trip.activityId(), pulledBack, true);
-        UUID deleted = post(trip, secondActivity(trip), removed, true);
-        assertThat(captionsOf(feedFor(stranger))).contains(pulledBack, removed);
+        UUID staying = post(trip, trip.activityId(), kept);
+        UUID deleted = post(trip, secondActivity(trip), removed);
+        assertThat(captionsOf(feedFor(stranger))).contains(kept, removed);
 
-        rig.send(HttpMethod.DELETE, diaryUri(trip) + "/" + unshared + "/share", trip.owner(), null)
+        rig.send(HttpMethod.DELETE, diaryUri(trip) + "/" + staying + "/share", trip.owner(), null)
                 .expectStatus()
-                .isOk();
+                .isNotFound();
         rig.send(HttpMethod.DELETE, diaryUri(trip) + "/" + deleted, trip.owner(), null)
                 .expectStatus()
                 .isNoContent();
 
         assertThat(captionsOf(feedFor(stranger)))
-                .as("both doors out of the feed close on the next fetch")
-                .doesNotContain(pulledBack, removed);
+                .as("delete closes the one door; there is no unshare beside it to try")
+                .contains(kept)
+                .doesNotContain(removed);
     }
 
 
@@ -203,7 +205,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
     void theTripReferenceArrivesOnlyOnceTheTripIsPublished() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        UUID entryId = post(trip, trip.activityId(), tag("mid-trip, live"), true);
+        UUID entryId = post(trip, trip.activityId(), tag("mid-trip, live"));
 
         Card whileOngoing = cardIn(feedFor(stranger), entryId);
         assertThat(whileOngoing.tripTitle()).as("the name and day label are always there").isEqualTo("Trip");
@@ -221,31 +223,30 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
 
     @Test
-    void theTripDiaryShowsAStrangerEverySharedPostcardOfThatTripAndNothingElse() throws IOException {
+    void theTripDiaryShowsAStrangerEveryPostcardOfThatTrip() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        String shared = tag("in the public diary");
-        String alsoShared = tag("also public");
-        String secret = tag("stayed private");
-        post(trip, trip.activityId(), shared, true);
-        post(trip, secondActivity(trip), alsoShared, true);
-        post(trip, thirdActivity(trip), secret, false);
+        String one = tag("in the public diary");
+        String two = tag("also there");
+        String three = tag("and this one");
+        post(trip, trip.activityId(), one);
+        post(trip, secondActivity(trip), two);
+        post(trip, thirdActivity(trip), three);
 
         TripDiary diary = tripDiaryFor(stranger, trip.tripId(), rig.travelerIdOf(trip.owner()));
 
         assertThat(diary.postcards().stream().map(Card::caption).toList())
-                .as("every shared postcard of this author's trip, and only those")
-                .containsExactlyInAnyOrder(shared, alsoShared);
+                .as("every postcard this author wrote for this trip, because they are all public")
+                .containsExactlyInAnyOrder(one, two, three);
         assertThat(diary.tripTitle()).isEqualTo("Trip");
         assertThat(diary.author().handle()).isNotBlank();
     }
 
 
     @Test
-    void aTripWithNothingSharedIsNotFoundRatherThanEmpty() throws IOException {
+    void aTripTheAuthorNeverWroteAPostcardForIsNotFoundRatherThanEmpty() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        post(trip, trip.activityId(), tag("kept to myself"), false);
 
         rest.get()
                 .uri(tripDiaryUri(trip.tripId(), rig.travelerIdOf(trip.owner())))
@@ -257,17 +258,17 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
 
     @Test
-    void unsharingTheLastPostcardClosesThePublicDiaryAgain() throws IOException {
+    void deletingTheLastPostcardClosesThePublicDiaryAgain() throws IOException {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
-        UUID only = post(trip, trip.activityId(), tag("briefly public"), true);
+        UUID only = post(trip, trip.activityId(), tag("the only one"));
         UUID author = rig.travelerIdOf(trip.owner());
 
         assertThat(tripDiaryFor(stranger, trip.tripId(), author).postcards()).hasSize(1);
 
-        rig.send(HttpMethod.DELETE, diaryUri(trip) + "/" + only + "/share", trip.owner(), null)
+        rig.send(HttpMethod.DELETE, diaryUri(trip) + "/" + only, trip.owner(), null)
                 .expectStatus()
-                .isOk();
+                .isNoContent();
 
         rest.get()
                 .uri(tripDiaryUri(trip.tripId(), author))
@@ -283,7 +284,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         Fixture trip = startedTrip();
         String stranger = rig.travelerWithHandle(handle());
         String owners = tag("the owner shared this");
-        post(trip, trip.activityId(), owners, true);
+        post(trip, trip.activityId(), owners);
 
         UUID theMember = rig.travelerIdOf(trip.member());
         rest.get()
@@ -306,7 +307,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
     @Test
     void theTripDiaryStillRequiresATraveler() throws IOException {
         Fixture trip = startedTrip();
-        post(trip, trip.activityId(), tag("public"), true);
+        post(trip, trip.activityId(), tag("public"));
 
         rest.get()
                 .uri(tripDiaryUri(trip.tripId(), rig.travelerIdOf(trip.owner())))
@@ -328,8 +329,8 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         Fixture mine = startedTrip();
         String one = tag("from one trip");
         String another = tag("from another");
-        post(theirs, theirs.activityId(), one, true);
-        post(mine, mine.activityId(), another, true);
+        post(theirs, theirs.activityId(), one);
+        post(mine, mine.activityId(), another);
         String stranger = rig.travelerWithHandle(handle());
 
         assertThat(minePositionsIn(feedFor(stranger), one, another))
@@ -423,12 +424,6 @@ class PostcardFeedIT extends ObjectStoreTestBase {
     }
 
 
-    private void share(Fixture trip, UUID entryId) {
-        rig.send(HttpMethod.POST, diaryUri(trip) + "/" + entryId + "/share", trip.owner(), null)
-                .expectStatus()
-                .isOk();
-    }
-
 
     private void publish(Fixture trip) {
         rest.post()
@@ -447,18 +442,11 @@ class PostcardFeedIT extends ObjectStoreTestBase {
     }
 
 
-    private UUID post(Fixture trip, UUID activityId, String caption, boolean shareToFeed)
-            throws IOException {
+    private UUID post(Fixture trip, UUID activityId, String caption) throws IOException {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part(
                 "entry",
-                "{\"activityId\":\""
-                        + activityId
-                        + "\",\"caption\":\""
-                        + caption
-                        + "\",\"fromDump\":[],\"shareToFeed\":"
-                        + shareToFeed
-                        + "}",
+                "{\"activityId\":\"" + activityId + "\",\"caption\":\"" + caption + "\",\"fromDump\":[]}",
                 MediaType.TEXT_PLAIN);
         builder.part("photos", namedPhoto("device.jpg")).contentType(MediaType.IMAGE_JPEG);
         byte[] body =

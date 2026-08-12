@@ -154,14 +154,17 @@ async function uploadToDump(tripId, token) {
   check('the dump photo was COPIED, never referenced',
     !entry.photos.some(p => p.id === poolPhoto.id));
 
-  // The load-bearing check: the outcomes are distinguishable, and the author's succeeding is
-  // what makes the co-traveler's 404 mean masking rather than a broken URL.
+  // Every entry is public since S4.22's reversal, so the photo serves anyone signed in — the
+  // discriminating outcome is no longer member-vs-stranger but authenticated-vs-not, and the
+  // 401 is what proves a 200 means "the audience widened" rather than "the guard is gone".
   const authorReads = await media(entry.photos[0].url, t1);
   const coTravelerReads = await media(entry.photos[0].url, t2);
   const strangerReads = await media(entry.photos[0].url, t3);
-  check('AC6: the author reads their diary photo; a CO-TRAVELER of the same trip 404s',
-    authorReads.status===200 && authorReads.bytes.length>0 && coTravelerReads.status===404,
-    `author ${authorReads.status} / co-traveler ${coTravelerReads.status} / stranger ${strangerReads.status}`);
+  const anonReads = await media(entry.photos[0].url, null);
+  check('AC6: the photo of a public postcard serves any signed-in traveler, and nobody else',
+    authorReads.status===200 && authorReads.bytes.length>0 &&
+      coTravelerReads.status===200 && strangerReads.status===200 && anonReads.status===401,
+    `author ${authorReads.status} / co-traveler ${coTravelerReads.status} / stranger ${strangerReads.status} / anon ${anonReads.status}`);
 
   const t2Sees = await api(diary,'GET',t2);
   check('AC6: the mine-list serves each traveler only their own — t2 sees none of t1\'s',
