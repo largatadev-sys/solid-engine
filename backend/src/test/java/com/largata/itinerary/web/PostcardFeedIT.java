@@ -171,7 +171,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
                 .as("a one-per-page walk reaches a null cursor and stops, never re-serving a card")
                 .doesNotHaveDuplicates()
                 .hasSize(cursorsFollowed.size() + 1);
-        assertThat(walked.stream().filter(Set.of(one, two, three)::contains).toList())
+        assertThat(onlyMine(walked, one, two, three))
                 .as("newest first, each seen exactly once across the whole walk")
                 .containsExactly(three, two, one);
     }
@@ -418,9 +418,14 @@ class PostcardFeedIT extends ObjectStoreTestBase {
     }
 
 
-    private static List<String> minePositionsIn(List<Card> feed, String... mine) {
+    private static List<String> onlyMine(List<String> captions, String... mine) {
         Set<String> wanted = Set.of(mine);
-        return captionsOf(feed).stream().filter(wanted::contains).toList();
+        return captions.stream().filter(caption -> caption != null && wanted.contains(caption)).toList();
+    }
+
+
+    private static List<String> minePositionsIn(List<Card> feed, String... mine) {
+        return onlyMine(captionsOf(feed), mine);
     }
 
 
