@@ -6,12 +6,18 @@ export const SHOW_SCROLLBAR = false;
 export const PAGING = {} as const;
 
 
+export const SNAP_STYLE = { scrollSnapType: 'x mandatory' } as const;
+
+export const SNAP_CHILD_STYLE = { scrollSnapAlign: 'start' } as const;
+
+
 const DRAG_BUTTON = 0;
+const MOUSE = 'mouse';
 
 interface DragTarget {
   scrollLeft: number;
   clientWidth?: number;
-  style?: { scrollBehavior: string };
+  style?: { scrollBehavior: string; scrollSnapType: string };
   setPointerCapture?: (pointerId: number) => void;
   releasePointerCapture?: (pointerId: number) => void;
 }
@@ -19,6 +25,7 @@ interface DragTarget {
 interface DragEvent {
   button?: number;
   pointerId?: number;
+  pointerType?: string;
   clientX?: number;
   currentTarget?: DragTarget;
   preventDefault?: () => void;
@@ -58,18 +65,23 @@ export function dragToScroll(): {
 
     if (target.style !== undefined) target.style.scrollBehavior = 'smooth';
     target.scrollLeft = Math.round(target.scrollLeft / pitch) * pitch;
+    if (target.style !== undefined) target.style.scrollSnapType = 'x mandatory';
   };
 
   return {
     onPointerDown: (event: GestureResponderEvent) => {
       const native = event as unknown as DragEvent;
+      if (native.pointerType !== undefined && native.pointerType !== MOUSE) return;
       if (native.button !== undefined && native.button !== DRAG_BUTTON) return;
       const target = scroller(native.currentTarget);
       if (target === null || native.clientX === undefined) return;
 
       from = native.clientX;
       startedAt = target.scrollLeft;
-      if (target.style !== undefined) target.style.scrollBehavior = 'auto';
+      if (target.style !== undefined) {
+        target.style.scrollBehavior = 'auto';
+        target.style.scrollSnapType = 'none';
+      }
       if (native.pointerId !== undefined) target.setPointerCapture?.(native.pointerId);
     },
 

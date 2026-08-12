@@ -110,8 +110,14 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     const tripsTab = layout.slice(layout.indexOf('name="(trips)"'));
 
     expect(tripsTab).toContain('tabPress');
-    expect(tripsTab).toContain("router.dismissTo('/')");
-    expect(tripsTab).toContain('router.canDismiss()');
+    expect(tripsTab).toContain("tabJump(router.canDismiss(), !inProfileStack(pathname))]('/')");
+  });
+
+  it('dismisses only within its own stack — dismissTo cannot reach across one (S4.13)', () => {
+    const layout = read(TABS, '_layout.tsx');
+
+    expect(layout).toContain('tabJump(');
+    expect(layout).not.toMatch(/router\.dismissTo\(/);
   });
 
   it('lets the layout own the tab labels — a screen-level title silently overrides them', () => {

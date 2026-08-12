@@ -7,3 +7,8 @@ export function dragToScroll(): Record<string, never> {
 
 
 export const PAGING = { pagingEnabled: true } as const;
+
+
+export const SNAP_STYLE = {} as const;
+
+export const SNAP_CHILD_STYLE = {} as const;

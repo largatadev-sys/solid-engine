@@ -1,0 +1,101 @@
+import { dragToScroll } from '../src/diary/photoStripScroll.web';
+
+
+function strip(width = 300, at = 0) {
+  return {
+    scrollLeft: at,
+    clientWidth: width,
+    style: { scrollBehavior: 'auto', scrollSnapType: 'x mandatory' },
+    setPointerCapture: () => undefined,
+    releasePointerCapture: () => undefined,
+  };
+}
+
+const press = (target: unknown, pointerType: string, clientX: number) =>
+  ({ target, currentTarget: target, pointerType, pointerId: 1, button: 0, clientX,
+     preventDefault: () => undefined }) as never;
+
+
+describe('the web drag claims the MOUSE only — touch belongs to the browser (founder, 08/12)', () => {
+  it('scrolls the strip for a mouse, which cannot scroll an overflow div by itself', () => {
+    const drag = dragToScroll();
+    const el = strip();
+
+    drag.onPointerDown(press(el, 'mouse', 200));
+    drag.onPointerMove(press(el, 'mouse', 120));
+
+    expect(el.scrollLeft).toBe(80);
+  });
+
+  it('leaves a TOUCH gesture entirely alone — the browser already scrolls it', () => {
+    const drag = dragToScroll();
+    const el = strip();
+
+    drag.onPointerDown(press(el, 'touch', 200));
+    drag.onPointerMove(press(el, 'touch', 120));
+
+    expect(el.scrollLeft).toBe(0);
+  });
+
+  it('leaves a PEN gesture alone too — anything the browser scrolls natively', () => {
+    const drag = dragToScroll();
+    const el = strip();
+
+    drag.onPointerDown(press(el, 'pen', 200));
+    drag.onPointerMove(press(el, 'pen', 120));
+
+    expect(el.scrollLeft).toBe(0);
+  });
+
+  it('does not settle a touch release, so it cannot fight the browser-s own snap', () => {
+    const drag = dragToScroll();
+    const el = strip(300, 140);
+
+    drag.onPointerDown(press(el, 'touch', 200));
+    drag.onPointerUp(press(el, 'touch', 120));
+
+    expect(el.scrollLeft).toBe(140);
+  });
+
+  it('suspends CSS snap for the duration of a mouse drag, so the strip follows the cursor 1:1', () => {
+    const drag = dragToScroll();
+    const el = strip();
+
+    drag.onPointerDown(press(el, 'mouse', 200));
+
+    expect(el.style.scrollSnapType).toBe('none');
+  });
+
+  it('restores snap on release, so the browser owns paging again', () => {
+    const drag = dragToScroll();
+    const el = strip();
+
+    drag.onPointerDown(press(el, 'mouse', 400));
+    drag.onPointerMove(press(el, 'mouse', 190));
+    drag.onPointerUp(press(el, 'mouse', 190));
+
+    expect(el.style.scrollSnapType).toBe('x mandatory');
+  });
+
+  it('never disturbs snap for a touch gesture — the browser is already paging it', () => {
+    const drag = dragToScroll();
+    const el = strip();
+
+    drag.onPointerDown(press(el, 'touch', 200));
+    drag.onPointerMove(press(el, 'touch', 120));
+    drag.onPointerUp(press(el, 'touch', 120));
+
+    expect(el.style.scrollSnapType).toBe('x mandatory');
+  });
+
+  it('still settles a mouse release onto a whole photo', () => {
+    const drag = dragToScroll();
+    const el = strip();
+
+    drag.onPointerDown(press(el, 'mouse', 400));
+    drag.onPointerMove(press(el, 'mouse', 190));
+    drag.onPointerUp(press(el, 'mouse', 190));
+
+    expect(el.scrollLeft).toBe(300);
+  });
+});

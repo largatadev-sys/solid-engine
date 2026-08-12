@@ -29,7 +29,13 @@ import {
 import type { DiaryEntryResponse } from '../types/api';
 import { DIARY_STREAM_EMPTY, MY_DIARY_TITLE } from './diaryCopy';
 import { entryEditorRoute, type DiaryEntryExit } from './diaryEntryExit';
-import { dragToScroll, PAGING, SHOW_SCROLLBAR } from './photoStripScroll';
+import {
+  dragToScroll,
+  PAGING,
+  SHOW_SCROLLBAR,
+  SNAP_CHILD_STYLE,
+  SNAP_STYLE,
+} from './photoStripScroll';
 import { inTripDayOrder, snapshotEyebrow } from './postcardAnatomy';
 import { carouselCounter, pageOfOffset, showsCarouselChrome } from './postcardCarousel';
 import { PostcardPreview } from './PostcardPreview';
@@ -136,6 +142,7 @@ function StreamEntry({
         <ScrollView
           horizontal
           {...PAGING}
+          style={SNAP_STYLE}
           showsHorizontalScrollIndicator={SHOW_SCROLLBAR}
           onLayout={measure}
           onScroll={settle}
@@ -148,7 +155,7 @@ function StreamEntry({
               key={photo.id}
               url={photo.url}
               full
-              style={{ ...styles.photo, width: photoWidth }}
+              style={{ ...styles.photo, ...SNAP_CHILD_STYLE, width: photoWidth }}
               accessibilityLabel={`${entry.activityTitle}, photo ${index + 1}`}
             />
           ))}

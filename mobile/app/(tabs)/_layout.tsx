@@ -1,9 +1,10 @@
-import { Tabs, router } from 'expo-router';
+import { Tabs, router, usePathname } from 'expo-router';
 import { type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { comingSoon } from '../../src/components/comingSoon';
 import { Icon, type IconName } from '../../src/components/Icon';
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
+import { inProfileStack, tabJump } from '../../src/navigation/tabJump';
 import { colors, typography } from '../../src/theme';
 
 
@@ -26,6 +27,7 @@ function bareScene(top: number) {
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
 
   return (
     <Tabs
@@ -78,7 +80,7 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            router.canDismiss() ? router.dismissTo('/') : router.navigate('/');
+            router[tabJump(router.canDismiss(), !inProfileStack(pathname))]('/');
           },
         }}
       />
@@ -88,9 +90,7 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            router.canDismiss()
-              ? router.dismissTo(PROFILE_TAB_ROUTE)
-              : router.navigate(PROFILE_TAB_ROUTE);
+            router[tabJump(router.canDismiss(), inProfileStack(pathname))](PROFILE_TAB_ROUTE);
           },
         }}
       />
