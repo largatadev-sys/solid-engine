@@ -38,6 +38,11 @@ function scroller(node: unknown): DragTarget | null {
 }
 
 
+function ours(event: DragEvent): boolean {
+  return event.pointerType === undefined || event.pointerType === MOUSE;
+}
+
+
 export function dragToScroll(): {
   onPointerDown: (event: GestureResponderEvent) => void;
   onPointerMove: (event: GestureResponderEvent) => void;
@@ -49,7 +54,7 @@ export function dragToScroll(): {
 
   const stop = (event: GestureResponderEvent) => {
     const native = event as unknown as DragEvent;
-    if (native.pointerType !== undefined && native.pointerType !== MOUSE) return;
+    if (!ours(native)) return;
     const target = scroller(native.currentTarget);
     if (target === null) {
       from = null;
@@ -72,7 +77,7 @@ export function dragToScroll(): {
   return {
     onPointerDown: (event: GestureResponderEvent) => {
       const native = event as unknown as DragEvent;
-      if (native.pointerType !== undefined && native.pointerType !== MOUSE) return;
+      if (!ours(native)) return;
       if (native.button !== undefined && native.button !== DRAG_BUTTON) return;
       const target = scroller(native.currentTarget);
       if (target === null || native.clientX === undefined) return;
@@ -88,7 +93,7 @@ export function dragToScroll(): {
 
     onPointerMove: (event: GestureResponderEvent) => {
       const native = event as unknown as DragEvent;
-      if (native.pointerType !== undefined && native.pointerType !== MOUSE) return;
+      if (!ours(native)) return;
       const target = scroller(native.currentTarget);
       if (from === null || target === null || native.clientX === undefined) return;
 

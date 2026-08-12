@@ -82,7 +82,7 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
             url={trip.coverImageUrl ?? null}
             style={styles.thumb}
             accessibilityLabel={`Cover photo for ${trip.title ?? 'Untitled trip'}`}
-            fallback={<View style={styles.thumb} />}
+            fallback={<View />}
           />
           <View style={styles.sectionText}>
             <Text style={styles.sectionTitle} numberOfLines={1}>

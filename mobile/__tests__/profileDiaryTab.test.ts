@@ -84,7 +84,7 @@ describe('the Diary tab renders the diary as the mock groups it', () => {
   it('thumbnails the section with the trip-s cover photo, falling back to the well (founder, 08/12)', () => {
     expect(TAB).toContain('<MediaThumb');
     expect(TAB).toContain('url={trip.coverImageUrl ?? null}');
-    expect(TAB).toContain('fallback={<View style={styles.thumb} />}');
+    expect(TAB).toContain('fallback={<View />}');
   });
 
   it('navigates the section row to that trip-s diary while the chevron still expands it (founder, 08/12)', () => {

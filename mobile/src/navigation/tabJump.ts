@@ -1,7 +1,10 @@
+import { PROFILE_TAB_ROUTE } from './authRoutes';
+
+
 export type TabJump = 'dismissTo' | 'navigate';
 
 
-const PROFILE_STACK = ['/profile', '/account', '/diary', '/showcase'];
+const PROFILE_STACK = [PROFILE_TAB_ROUTE, '/account', '/diary', '/showcase'];
 
 
 export function inProfileStack(pathname: string): boolean {
