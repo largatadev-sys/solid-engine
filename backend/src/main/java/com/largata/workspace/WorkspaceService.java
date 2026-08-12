@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -102,6 +103,15 @@ public class WorkspaceService {
     @Transactional(readOnly = true)
     public boolean isArchived(UUID itineraryId) {
         return stateOf(itineraryId).map(WorkspaceState::isArchived).orElse(false);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Set<UUID> archivedAmong(Collection<UUID> itineraryIds) {
+        if (itineraryIds.isEmpty()) {
+            return Set.of();
+        }
+        return Set.copyOf(workspaces.archivedAmong(itineraryIds));
     }
 
 

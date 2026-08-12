@@ -14,6 +14,7 @@ import com.largata.media.PhotoSubject;
 import com.largata.workspace.WorkspaceService;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -108,8 +109,15 @@ public class PostcardFeedService {
         Map<UUID, TravelerCardResponse> authors = authorsOf(rows);
         Map<UUID, Itinerary> trips = tripsOf(rows);
 
+        // Archiving a trip takes its postcards off the feed with it (founder, 2026-08-13). Batched
+        // rather than asked per entry, so a page of 20 costs one query and not twenty. A page may
+        // come back shorter than the requested limit as a result; the cursor still walks the whole
+        // stream, because it is taken from the last row READ rather than the last card kept.
+        Set<UUID> archived = workspaces.archivedAmong(trips.keySet());
+
         return rows.stream()
-                .map(entry -> cardOf(entry, authors, trips, photosByEntry))
+                .filter(entry -> !archived.contains(entry.itineraryId()))
+                .map(entry -> cardOf(entry, authors, trips, photosByEntry, archived))
                 .filter(card -> card != null)
                 .toList();
     }
@@ -119,7 +127,8 @@ public class PostcardFeedService {
             DiaryEntry entry,
             Map<UUID, TravelerCardResponse> authors,
             Map<UUID, Itinerary> trips,
-            Map<UUID, List<Photo>> photosByEntry) {
+            Map<UUID, List<Photo>> photosByEntry,
+            Set<UUID> archived) {
         TravelerCardResponse author = authors.get(entry.travelerId());
         Itinerary trip = trips.get(entry.itineraryId());
         if (author == null || trip == null) {
@@ -135,7 +144,7 @@ public class PostcardFeedService {
                 author,
                 entry.itineraryId(),
                 trip.title(),
-                navigableTripOf(trip),
+                navigableTripOf(trip, archived),
                 entry.dayLabel(),
                 entry.activityTitle(),
                 entry.place(),
@@ -147,11 +156,11 @@ public class PostcardFeedService {
     }
 
 
-    private UUID navigableTripOf(Itinerary trip) {
+    private UUID navigableTripOf(Itinerary trip, Set<UUID> archived) {
         if (!trip.isPublished() || !trip.visibility().isVisibleToEveryone()) {
             return null;
         }
-        return workspaces.isArchived(trip.id()) ? null : trip.id();
+        return archived.contains(trip.id()) ? null : trip.id();
     }
 
 
