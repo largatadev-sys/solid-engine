@@ -264,18 +264,18 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
     `Shared to the feed ${stamp}. Stood in line for two hours before sunrise and the` +
     ' reflection in the water was worth every minute of it, though the priests only let small' +
     ' groups climb up to the gate at a time.';
-  const privateCaption = `Kept private ${stamp}`;
+  const siblingCaption = `The second postcard ${stamp}`;
 
   const shared = await postDiaryEntry(
     author.idToken,
     liveTrip,
-    { activityId: first, caption: sharedCaption, fromDump: [], shareToFeed: true },
+    { activityId: first, caption: sharedCaption, fromDump: [] },
     [fixture, fixture, fixture],
   );
-  const kept = await postDiaryEntry(
+  const sibling = await postDiaryEntry(
     author.idToken,
     liveTrip,
-    { activityId: second, caption: privateCaption, fromDump: [], shareToFeed: false },
+    { activityId: second, caption: siblingCaption, fromDump: [] },
     [fixture],
   );
 
@@ -287,15 +287,19 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   const brief = await postDiaryEntry(
     author.idToken,
     liveTrip,
-    { activityId: briefActivity, caption: shortCaption, fromDump: [], shareToFeed: true },
+    { activityId: briefActivity, caption: shortCaption, fromDump: [] },
     [fixture],
   );
 
-  check('the composer posted a shared postcard with three photos',
+  check('the composer posted a public postcard with three photos',
     shared.status === 201 && shared.body.sharedAt !== null && shared.body.photos.length === 3,
     `status=${shared.status} sharedAt=${shared.body.sharedAt}`);
-  check('and a private sibling that stays private',
-    kept.status === 201 && kept.body.sharedAt === null, `sharedAt=${kept.body.sharedAt}`);
+  check('posting is publishing — the sibling is public too, with no second act',
+    sibling.status === 201 && sibling.body.sharedAt !== null,
+    `sharedAt=${sibling.body.sharedAt}`);
+  check('…and it became public at the instant it was written',
+    sibling.body.sharedAt === sibling.body.createdAt,
+    `shared=${sibling.body.sharedAt} created=${sibling.body.createdAt}`);
   check('and a short-caption postcard, the other half of the "more" pair',
     brief.status === 201, `status=${brief.status}`);
 
@@ -303,10 +307,10 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   const feed = (await api('/v1/feed/postcards?limit=50', 'GET', stranger.idToken)).body;
   const mine = (feed.items ?? []).filter((c) => c.caption === sharedCaption);
 
-  check('AC 1: a traveler who shares no trip with the author reads the shared postcard',
+  check('AC 1: a traveler who shares no trip with the author reads the postcard',
     mine.length === 1, `found=${mine.length}`);
-  check('AC 1: the private sibling never crosses',
-    !(feed.items ?? []).some((c) => c.caption === privateCaption));
+  check('AC 1: and its sibling too — every postcard of the trip reaches the feed',
+    (feed.items ?? []).some((c) => c.caption === siblingCaption));
   check('AC 5: the trip line carries name and day but no link while the trip is unpublished',
     mine[0] && mine[0].tripTitle === `Feed walk ${stamp}` && mine[0].dayLabel === 'Day 1' &&
       mine[0].publishedItineraryId === null,
@@ -451,8 +455,8 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
     landed === '/' && feedText.includes('Largata'), `path=${landed} chars=${feedText.length}`);
   check('AC 1: the stranger sees the shared postcard on Home',
     feedText.includes(sharedCaption.slice(0, 24)), feedText.replace(/\n/g, ' | ').slice(0, 200));
-  check('AC 1: and never the private one',
-    !feedText.includes(privateCaption), privateCaption);
+  check('AC 1: and the sibling beside it, because posting is publishing',
+    feedText.includes(siblingCaption), siblingCaption);
   check('AC 5: the card shows the trip line with its day label',
     feedText.includes(`Feed walk ${stamp}`) && feedText.includes('Day 1'),
     feedText.replace(/\n/g, ' | ').slice(0, 200));
@@ -505,9 +509,9 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   check('the Trip Post badge opens the public trip diary',
     badgeTap.clicked === true && diaryPath.includes('/feed/diary/'),
     JSON.stringify(badgeTap) + ' path=' + diaryPath);
-  check('…which lists only the SHARED postcards of that trip, never the private sibling',
-    inDiary.includes(shortCaption) && !inDiary.includes(privateCaption),
-    `short=${inDiary.includes(shortCaption)} private=${inDiary.includes(privateCaption)} :: ${inDiary.replace(/\n/g, ' | ').slice(0, 120)}`);
+  check('…which lists that trip’s postcards, all of them public',
+    inDiary.includes(shortCaption) && inDiary.includes(siblingCaption),
+    `short=${inDiary.includes(shortCaption)} sibling=${inDiary.includes(siblingCaption)} :: ${inDiary.replace(/\n/g, ' | ').slice(0, 120)}`);
   check('…and drops the badge there, since it would only lead back to this screen',
     !inDiary.includes('Trip Post'), inDiary.includes('Trip Post') ? 'badge still drawn' : 'absent');
 
@@ -861,7 +865,7 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   const freshPost = await postDiaryEntry(
     author.idToken,
     liveTrip,
-    { activityId: pillActivity, caption: freshCaption, fromDump: [], shareToFeed: true },
+    { activityId: pillActivity, caption: freshCaption, fromDump: [] },
     [fixture],
   );
   check('AC 12: the fresh postcard the pill is meant to announce actually exists',
@@ -895,17 +899,23 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
       afterPill.indexOf(freshCaption) < afterPill.indexOf(sharedCaption),
     `clicked=${tappedPill.clicked} y=${scrollAfterTap} freshFirst=${afterPill.indexOf(freshCaption) < afterPill.indexOf(sharedCaption)}`);
 
-  // --- unshare pulls it back out (AC 4's screen half) ----------------------------------------
-  await api(`/v1/itineraries/${liveTrip}/diary/entries/${shared.body.id}/share`, 'DELETE', author.idToken);
+  // --- delete is the only way out of the feed now (AC 4's screen half) -----------------------
+  // Unshare is gone with the toggle, so the retraction a traveler still has is delete. That it
+  // reaches the feed is the same fact AC 4 always guarded, arrived at by the one act left.
+  await api(`/v1/itineraries/${liveTrip}/diary/entries/${shared.body.id}`, 'DELETE', author.idToken);
   await goto('/');
-  const afterUnshare = (await text()) || '';
-  check('AC 4: unsharing removes the postcard from the feed on the next fetch',
-    !afterUnshare.includes(sharedCaption.slice(0, 24)),
-    afterUnshare.replace(/\n/g, ' | ').slice(0, 160));
+  const afterDelete = (await text()) || '';
+  check('AC 4: deleting the postcard removes it from the feed on the next fetch',
+    !afterDelete.includes(sharedCaption.slice(0, 24)),
+    afterDelete.replace(/\n/g, ' | ').slice(0, 160));
 
   const strangerSees = (await api('/v1/feed/postcards?limit=50', 'GET', stranger.idToken)).body;
   check('AC 4: and the wire agrees — no public read path serves it',
     !(strangerSees.items ?? []).some((c) => c.caption === sharedCaption));
+
+  check('AC 4: and there is no unshare endpoint left as an alternative',
+    (await api(`/v1/itineraries/${liveTrip}/diary/entries/${sibling.body.id}/share`, 'DELETE',
+      author.idToken)).status === 404);
 
   // --- Trips is still reachable from its own tab (ticket 04) ---------------------------------
   await goto('/trips');

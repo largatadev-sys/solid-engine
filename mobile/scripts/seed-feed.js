@@ -128,7 +128,6 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
       activityId: made.body.id,
       caption: `Stood in line for two hours but the reflection photo was worth every second. The queue starts before sunrise. ${stamp}`,
       fromDump: [],
-      shareToFeed: true,
     },
     [photo, photo, photo],
   );
@@ -150,7 +149,6 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
       activityId: placeless.body.id,
       caption: `Short one ${stamp}`,
       fromDump: [],
-      shareToFeed: true,
     },
     [photo],
   );
