@@ -14,8 +14,6 @@ const API_SMOKES = [
   'smoke-diary.js',
 ];
 const WEB_WALKS = [
-  'drive-create-flow.js',
-  'drive-workspace.js',
   'drive-buffered-plan.js',
   'drive-photo-dump.js',
   'drive-diary.js',
@@ -23,11 +21,7 @@ const WEB_WALKS = [
   'drive-home.js',
 ];
 
-const KNOWN_RED = {
-  'drive-create-flow.js': '12 passed, 23 failed — asserts the S4.13 copy ("Create Itinerary", "Add a Past Trip") that S4.15 renamed and scrapped. Was 11/24 until S4.22 repointed its goto("/") calls at /trips.',
-  'drive-workspace.js': '37 passed, 14 failed — same vintage. Baselined against dev at S4.22.',
-  'drive-publish.js': '24 passed, 12 failed — publish/preview chrome assertions the surface has since moved past. Baselined against dev at S4.22.',
-};
+const KNOWN_RED = {};
 
 function reachable(url) {
   return new Promise((resolve) => {
@@ -56,15 +50,6 @@ function run(script, env = {}) {
   }
 }
 
-function tripIdFrom(script) {
-  const out = execFileSync(process.execPath, [`${__dirname}/${script}`], {
-    encoding: 'utf8',
-    env: process.env,
-  });
-  const match = /^ {2}trip: ([0-9a-f-]+)$/m.exec(out);
-  return match === null ? null : match[1];
-}
-
 (async () => {
   const rungs = [
     [`backend ${API}`, await reachable(`${API}/v1/health`)],
@@ -85,13 +70,6 @@ function tripIdFrom(script) {
   }
   for (const script of WEB_WALKS) {
     if (!run(script)) failed.push(script);
-  }
-
-  const publishedTrip = tripIdFrom('smoke-publish.js');
-  if (publishedTrip === null) {
-    failed.push('drive-publish.js (no trip id to drive)');
-  } else if (!run('drive-publish.js', { TRIP_ID: publishedTrip })) {
-    failed.push('drive-publish.js');
   }
 
   console.log('\n════════ two rungs of three ════════');

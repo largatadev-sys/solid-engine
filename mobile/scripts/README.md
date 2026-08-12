@@ -53,7 +53,8 @@ Each driver owns a distinct port, so two can run at once. Override with `LARGATA
 | `drive-ownership-transfer.js` | 9225 |
 | `drive-lifecycle.js` | 9226 |
 | `drive-edit-lock.js` | 9227 |
-| `drive-publish.js` | 9228 |
+
+*(9228 was `drive-publish.js`'s and is free — see the retirement note at the end of this file.)*
 
 Chrome is located by probing the usual Windows/Linux/macOS install paths. Only `drive-edit-lock.js`
 takes an override (`LARGATA_CHROME`).
@@ -244,24 +245,6 @@ Env: the three pool vars + `LARGATA_API_BASE_URL`. Tags: **`t1` = owner (publish
 `t3` = non-member consumer** — the three-way split the story needs, since private/member/public are
 three different audiences and two accounts cannot tell them apart.
 
-## `drive-publish.js` — S4.1 publish, driven in the preview container
-
-Walks the owner from the workspace through the preview to the success screen, then **re-seats the
-browser as `t3`** and reads the published page as a stranger would. Asserts the absence rule on the
-rendered page (not just the payload), the five-tab shell, the greyed sweep (Diary Entry / Comments /
-Reviews / Follow — each must produce a message, never a dead click), and zero console/page errors.
-
-```bash
-cd mobile && set -a && . ./.env && set +a
-node scripts/smoke-publish.js                    # note the trip id it prints
-TRIP_ID=<id> node scripts/drive-publish.js
-TRIP_ID=<id> node scripts/drive-publish.js --shot out.png
-```
-
-Env: the three pool vars, **`TRIP_ID` (required)**, `LARGATA_PREVIEW_URL`, `LARGATA_CDP_PORT`
-(default 9228). Tags: `t1` = owner, `t3` = consumer. **Take the screenshot** — the S4.1 gate found
-a truncated tab label that every text assertion passed straight over.
-
 ## `deploy-currency.js` — is the rung running the build you think it is?
 
 Answers one question with a **stated failure mode**, which `/v1/health` cannot: it creates a throwaway
@@ -296,3 +279,21 @@ S4.9's subject-typed leases removed acquire-on-entry, so a driver that only navi
 Env: the three pool vars plus **`TRIP_ID` (required)**, optional
 `LARGATA_POOL_TAG` (default `t2`), optional `LARGATA_PREVIEW_URL` (default `http://localhost:8081`),
 optional `LARGATA_CHROME`.
+
+---
+
+## Retired: `drive-create-flow.js`, `drive-workspace.js`, `drive-publish.js`
+
+Deleted 2026-08-13 *(founder ruling, recorded in the epic map)*. All three had rotted against the
+surfaces they test — `drive-create-flow` still hunted the **"Create Itinerary"** control S4.15 renamed
+to *Plan a Trip* — and `smoke-all` had been ending in a `FAILED:` line on a healthy tree for four
+stories, which teaches whoever reads it that the line is noise.
+
+They were **retired rather than repaired** because the Playwright port would otherwise rewrite the
+same three files twice. **What they covered is written down first**, at
+`docs/design/web-walk-flow-inventory.md` — that inventory, not this code, is what the port works from.
+Read it before rebuilding: the surviving green was almost entirely rendering and read-only surfaces,
+while nearly every *act* (Finalize, Start Trip, Step back, Publish, Copy Link) had already gone dark,
+so rebuilding only what passed would ship less coverage than these walks had when they were healthy.
+
+The scripts remain in git history if the port wants to read them. CDP port **9228** is free again.
