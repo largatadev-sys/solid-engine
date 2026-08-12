@@ -114,3 +114,20 @@ Corrections to the earlier verbal summary, which this audit exists to replace: *
 - Close the four not-built items, or record each as a deviation with its reason.
 - Convert the highest-value source-only items into checks: 1.10 (per-card index), 2.6 (single tap), 5.9 (page-failure retry), 6.5 (expand in place). These are the ones where a silent regression would reach a traveler.
 - Leave as source-only, with the reason stated: 2.4 (a haptic no harness can observe), 4.3/3.2 (animation durations), 4.5 (`RefreshControl` is undrivable in headless Chrome — the device rung is its only honest home).
+
+---
+
+## Amended 2026-08-13 — what changed after this audit
+
+The behaviors above are now **numbered acceptance criteria B1–B6 in the spec**, one claim per line. What the amendment did to the four open items:
+
+| Item | Then | Now |
+|---|---|---|
+| **B1.3** rubber-band ends | absent — the mock's `overscroll-behavior-x` was never applied | **built.** `SNAP_STYLE` carries `overscrollBehaviorX: 'contain'`; verified in the served bundle, not just the source |
+| **B5.2** three cards from the end | `onEndReachedThreshold: 0.3` — RN's units are visible-length, so ~1 card | **built.** `prefetchThreshold(cardHeight, viewport)` derives the fraction from the measured geometry; 5 Jest cases including the pre-measurement fallback |
+| **B3.3** count tween | not built | **deviation, recorded.** The number it would animate is a random stub; the real-likes story inherits it |
+| **B3.6** hit areas | reported as 42px, two short | **was never wrong** — I had mis-added. `hitSlop` stacks on the control's padding: 54px |
+
+Four source-only behaviors gained tests, chosen because a silent regression in each reaches a traveler: **B1.10** (page memory lives on the screen and is keyed by card id, so recycling cannot lose it), **B2.6** (the single tap records and returns — no like, no burst, no navigation), **B5.5** (the retry row renders in the footer, and the full-screen state is reserved for a first load with nothing to show), **B6.7** (expanding drops the clamp and calls no router, and nothing re-clamps).
+
+Left source-only deliberately, with the reason: **B2.4** the haptic (no harness can observe a vibration), **B3.2 / B4.3** animation durations, **B4.4** `RefreshControl`'s tint (undrivable in headless Chrome — the device rung is its only honest home).

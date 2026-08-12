@@ -32,6 +32,7 @@ import { atTop, HEADER_SHOWING, onScroll } from './headerVisibility';
 import { freshCount, POLL_MS, showsPill } from './freshPosts';
 import { onHomeTabRetap } from './homeTabRetap';
 import { NewPostsPill } from './NewPostsPill';
+import { prefetchThreshold } from './prefetchDistance';
 import { PhotoActionSheet, type PhotoSheetAction } from './PhotoActionSheet';
 
 const SKELETON_CARDS = 2;
@@ -50,6 +51,8 @@ export function FeedScreen() {
   const [scrolledDown, setScrolledDown] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewport, setViewport] = useState(0);
+  const [cardHeight, setCardHeight] = useState(0);
   const [, redrawPages] = useState(0);
 
   const pages = useRef(new Map<string, number>());
@@ -205,18 +208,27 @@ export function FeedScreen() {
         contentContainerStyle={styles.list}
         onScroll={scrolled}
         scrollEventThrottle={16}
-        renderItem={({ item }) => (
-          <FeedCard
-            card={item}
-            now={now}
-            page={pageOf(item.id)}
-            onPageChange={(page) => rememberPage(item.id, page)}
-            onOpenTrip={openTrip}
-            onStubTap={refuse}
-          />
+        renderItem={({ item, index }) => (
+          <View
+            onLayout={
+              index === 0
+                ? (event) => setCardHeight(event.nativeEvent.layout.height)
+                : undefined
+            }
+          >
+            <FeedCard
+              card={item}
+              now={now}
+              page={pageOf(item.id)}
+              onPageChange={(page) => rememberPage(item.id, page)}
+              onOpenTrip={openTrip}
+              onStubTap={refuse}
+            />
+          </View>
         )}
+        onLayout={(event) => setViewport(event.nativeEvent.layout.height)}
         onEndReached={reachedTheEnd}
-        onEndReachedThreshold={feedMetrics.prefetchThreshold}
+        onEndReachedThreshold={prefetchThreshold(cardHeight, viewport)}
         refreshControl={
           <RefreshControl
             refreshing={feed.isRefetching && !feed.isFetchingNextPage}

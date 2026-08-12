@@ -123,6 +123,71 @@ The feed renders in the app's tokens (terracotta accent, token typography) — t
 14. Kill-switch off: engagement numbers vanish cleanly, layout intact (walk).
 15. Register-#2 events emit for share, unshare, and stubbed-tap refusals.
 
+### The mock's behaviors, one criterion each *(amended 2026-08-13, founder — "I think those should be ACs")*
+
+**Why these are separate.** ACs 8, 9 and 12 above each bundled several independent behaviors behind an `and`, and decision 8 compressed all six behavior cards into a paragraph. Two defects reached the founder's screen straight through that gap: the caption's inline "more" had **no criterion at all** and rendered unconditionally, and the burst was bundled with the like — so the like passing carried the burst unexamined on the web rung. One claim per line, from here. The full audit, including what verifies each today, is `behavior-coverage.md` beside this file.
+
+**B1 · Photo carousel**
+- B1.1 Horizontal paged swipe, one photo per page, on the real-touch rung.
+- B1.2 Directional lock: the first ~10px decides the axis; a horizontal drag never scrolls the feed.
+- B1.3 The ends rubber-band and the overscroll does not chain to the feed.
+- B1.4 No wrap-around at either end.
+- B1.5 Dots are always visible on a multi-photo card.
+- B1.6 Past five photos the dot window slides, edge dots shrink, and the active page is always inside it.
+- B1.7 The n/N counter appears on swipe…
+- B1.8 …and fades after ~1.5s idle.
+- B1.9 Only the current photo and its neighbours load.
+- B1.10 A card's page index survives being scrolled off-screen and back.
+
+**B2 · Double-tap to like**
+- B2.1 Double-tapping the photo likes it.
+- B2.2 The white heart burst is drawn over the photo.
+- B2.3 *(deviation)* The burst draws and fades but not on the mock's spring/hold/fade profile.
+- B2.4 A light haptic fires on trigger (native only; no harness can observe it).
+- B2.5 Idempotent: a second double-tap replays the burst and never unlikes.
+- B2.6 A single tap on the photo does nothing.
+- B2.7 A press that moves more than 10px is a swipe, not a tap.
+
+**B3 · Like / engagement row**
+- B3.1 The heart toggles optimistically, fill and count changing instantly.
+- B3.2 The heart pops 1 → 1.3 → 1 on toggle.
+- B3.3 *(deviation)* The count changes by one but does not tween — see Comments.
+- B3.4 Counts compact past 999 ("1.2k").
+- B3.5 *(deviation)* Comment, share and save refuse honestly; their backends are later stories.
+- B3.6 Every icon target is at least 44×44 including hit-slop.
+
+**B4 · Feed scrolling & header**
+- B4.1 The header hides after 24px of downward scroll…
+- B4.2 …and returns on any upward scroll, without flapping on jitter.
+- B4.3 The status-bar area stays opaque.
+- B4.4 Pull-to-refresh is tinted terracotta *(device rung only — RefreshControl is not drivable headless)*.
+- B4.5 *(deviation)* Refresh refetches rather than prepending; the observable result matches.
+- B4.6 "You're caught up" appears only when the refresh found nothing new.
+- B4.7 Re-tapping Home while scrolled scrolls smoothly to the top.
+- B4.8 Re-tapping Home at the top refreshes instead.
+- B4.9 The scroll offset is restored on return from a detour.
+
+**B5 · Pagination & fresh content**
+- B5.1 Cursor pagination walks to exhaustion without repeating a cursor.
+- B5.2 The next page is fetched about three cards from the end.
+- B5.3 Two skeleton cards render while a page loads.
+- B5.4 The terminal card ends the feed; no spinner loop.
+- B5.5 A page failure shows the inline retry row, never a full-screen error.
+- B5.6 The poll runs about every 60s while the screen is mounted.
+- B5.7 The pill appears below the header when fresh posts exist and the traveler is scrolled down.
+- B5.8 Tapping it goes to the top with the fresh postcard first.
+- B5.9 Scroll never moves without the traveler asking.
+
+**B6 · Tap targets & navigation**
+- B6.1 Avatar and name reach the traveler profile (stubbed — refuses honestly).
+- B6.2 The trip line reaches the published itinerary once the trip is published, and is inert before.
+- B6.3 *(deviation)* The trip line lands on the trip, not its day; the Trip Post badge is not a tap target.
+- B6.4 The location pin shows the activity's **place** and is hidden when there is none.
+- B6.5 *(deviation)* The pin lands on the trip, not the activity.
+- B6.6 The caption clamps at two lines and offers "more" **only when it actually overflows**.
+- B6.7 "more" expands in place — the card grows and nothing navigates.
+- B6.8 Long-pressing the photo opens the sheet: Save to trip ideas · Share · Report, each refusing by its own name.
+
 ## Testing Decisions *(the seams — highest existing ones, one new pure module; confirm at owner review)*
 
 A good test here asserts **external behavior at the wire or the screen**, never implementation: what a non-member can and cannot read is the load-bearing check, and the pair with distinguishable outcomes (shared serves / unshared masks) is the one that proves the audience rather than decorating it.
@@ -154,3 +219,13 @@ Real likes, comments, saves/bookmarks, notifications, search — each its own st
 **2026-08-12 — two bugs the gate caught that no unit test could.** The new-posts poll was armed in an effect keyed on the shown entry ids, so every refresh, heart tap and page merge restarted its 60-second timer: it worked on an idle feed and never fired once on a feed being read. And a null `activityId` reached `findById` and 500ed rather than answering not-found — reached by a walk that tried to add an activity to a frozen published trip and did not check the refusal. Both are fixed and pinned; both were only observable by running the thing.
 
 **2026-08-12 — decision 3's activity tag ships as an affordance, but lands on the trip, not the day.** The decision reads *"the trip-context line **and activity tag** are tinted, navigable affordances only when the trip is published (they land on the published itinerary **/ its day**)"*. Both halves now tint and navigate together, and both render inert on an unpublished trip. What is **not** built is the day anchor: `PublishedItineraryScreen` has no scroll-to-day mechanism at all, so "its day" would mean adding one — a new capability on a surface this story otherwise only reads. The tag therefore lands where the trip line lands. Recorded as a gap rather than left silent; whichever story next touches the published surface can close it, and the wire needs no change until then (the day reference would be additive).
+
+**2026-08-13 — the behavior cards become acceptance criteria, and three findings from doing it.** The founder's call on the running build: *"I think those should be ACs. I'm seeing some inconsistencies within the behavior."* Correct, and two defects had already reached their screen through exactly that gap — the caption's inline "more" had no criterion and rendered unconditionally, and the burst was bundled into AC 9 with the like, so the like passing carried the burst unexamined on web. The 41 behaviors are now numbered criteria above (B1–B6), one claim per line. The audit that produced them, including what verifies each today, is `behavior-coverage.md`.
+
+Three things the audit found that the story had counted as done:
+
+- **B1.3 rubber-band ends** — the mock's `overscroll-behavior-x: contain` was simply absent from the strip. Fixed; the horizontal overscroll no longer chains outward.
+- **B5.2 "fetch three cards from the end"** — shipped as `onEndReachedThreshold: 0.3`, and RN's own source states the units are *visible list length*, so 0.3 was about **one** card at this card height, not three. The threshold is now derived from the measured card and viewport, so the mock's number means what it says.
+- **B3.3 count animates ±1** — **deviation, recorded rather than built.** The count changes correctly and compacts correctly; nothing tweens between the two values. The number it would animate is `stubLikeCountFor`'s random draw, so a tween would be motion over invented data. The story that gives likes a backend inherits this line.
+
+Also corrected here, because the first verbal summary of this audit was wrong twice and that is the reason it got written down: the **hit areas are fine** (54px, not the 42px first reported — `hitSlop` stacks on the control's own padding), and **preload, haptic and single-tap are built**, merely untested, which is a smaller debt than absent. Tests now cover the four source-only behaviors where a silent regression would reach a traveler: per-card page memory, the single-tap no-op, the page-failure retry row, and expand-in-place.

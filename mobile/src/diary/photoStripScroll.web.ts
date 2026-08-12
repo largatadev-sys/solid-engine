@@ -6,7 +6,10 @@ export const SHOW_SCROLLBAR = false;
 export const PAGING = {} as const;
 
 
-export const SNAP_STYLE = { scrollSnapType: 'x mandatory' } as const;
+export const SNAP_STYLE = {
+  scrollSnapType: 'x mandatory',
+  overscrollBehaviorX: 'contain',
+} as const;
 
 export const SNAP_CHILD_STYLE = { scrollSnapAlign: 'start' } as const;
 

@@ -91,5 +91,4 @@ export const feedMetrics = {
   skeletonNarrow: 80,
   skeletonBarTall: 10,
   skeletonBarShort: 8,
-  prefetchThreshold: 0.3,
 } as const;
