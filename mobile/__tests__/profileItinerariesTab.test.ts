@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PROFILE_ITINERARIES_EMPTY, PUBLISHED_BADGE } from '../src/profile/profileCopy';
 
@@ -18,7 +18,14 @@ describe('the Itineraries tab is the showcase, not the working pile', () => {
   });
 
   it('opens the published view on tap — what an audience sees', () => {
-    expect(TAB).toContain("pathname: '/published/[id]'");
+    expect(TAB).toContain("publishedRoute('profile', card.id)");
+  });
+
+  it('opens the PROFILE stack-s copy, so back returns here rather than unwinding Trips (S4.13)', () => {
+    expect(TAB).not.toContain("pathname: '/published/[id]'");
+    expect(
+      existsSync(join(MOBILE_ROOT, 'app', '(tabs)', '(profile)', 'showcase', '[id].tsx')),
+    ).toBe(true);
   });
 
   it('draws the mock-s card anatomy: cover, title, badge, meta line, star', () => {

@@ -571,14 +571,18 @@ function writeFixture() {
   // both screens (S4.0). Read the postcard's own control instead of the whole page.
   // The per-trip stream is its own screen still, reached here directly because the profile's
   // Diary tab now renders the postcards inline rather than linking out to it (S4.21).
+  // Read the entry CONTAINER, not a tap target: S4.21 split the row so the photo strip is inert
+  // (a swipe must not land as a tap), which left the heading and the caption as separate
+  // Pressables — so the last match is the caption alone and carries no title or eyebrow.
   await goto(`/itineraries/${trip}/diary`);
   const postcard = await evaluate(`
     (() => {
       const card = Array.from(document.querySelectorAll('[aria-label]'))
         .filter((n) => (n.getAttribute('aria-label') || '')
           .startsWith('Open your entry for'))
-        .filter((n) => n.offsetParent !== null).pop();
-      return card ? card.innerText.replace(/\\n/g, ' | ') : '(no postcard)';
+        .filter((n) => n.offsetParent !== null)[0];
+      const entry = card ? card.parentElement : null;
+      return entry ? entry.innerText.replace(/\\n/g, ' | ') : '(no postcard)';
     })()
   `);
   check('AC 9: the per-trip stream renders the postcard with its snapshot header',
