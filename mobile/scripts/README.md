@@ -97,48 +97,70 @@ Env: the three pool vars, plus `LARGATA_API_BASE_URL` (**local `http` rung only*
 Tags: whatever you pass — `--owner` is the trip owner, `--members` join as ordinary members.
 Fails loudly if an account is not verified, naming `test-pool.js create` as the fix.
 
-## `fetch-fixtures.js` + `seed-australia.js` — one real trip, with photos of the actual places
+## `fetch-fixtures.js` + `seed-travelers.js` — ten travelers, real places, real photos
 
-`seed-demo.js` below builds trips with **no images at all**, and `fixtures/photo.jpg` is a solid
+`seed-demo.js` below builds four trips with **no images at all**, and `fixtures/photo.jpg` is a solid
 orange rectangle — which is why every screenshot in this repo's history shows one. This pair exists
-for the other job: a trip that looks like a trip, so a screenshot is worth reading.
+for the other job: a dataset that looks like the product in use, so a screenshot is worth reading and
+the Home feed has ten different travelers on it.
 
-**Two steps, because the photos are not ours.** `fetch-fixtures.js` pulls one landscape photo per
-activity from Unsplash, keyed by a `photoQuery` in `fixtures/australia-trip.js`, and writes
-`fixtures/australia/CREDITS.json` recording the photographer, the source URL and the licence for
-each file. The images are **gitignored** — megabytes of third-party content, and the fetch is
-reproducible. `seed-australia.js` then builds the trip and attaches them.
+**Ten accounts, one region each**, clean names and bird avatars: Maya Ocampo (Southeast Asia) ·
+Kenji Nakamura (East Asia) · Sarah Whitmore (Oceania) · Ana Duarte (Western Europe) · Dimitri Stavros
+(Mediterranean) · Lucia Fernández (South America) · Marcus Bell (North America & Iceland) · Amina
+Diallo (Africa) · Rohan Mehta (South Asia) · Ingrid Solberg (Northern Europe). **25 trips, 66 days,
+122 activities, 20 diary postcards**, spread across every lifecycle state so the Trips tab has
+content in each section.
 
 ```bash
 cd mobile && set -a && . ./.env && set +a
-node scripts/fetch-fixtures.js          # once; skips anything already downloaded
-node scripts/seed-australia.js          # local stack
+node scripts/test-pool.js create        # once — t6–t10 do not exist yet
+node scripts/fetch-fixtures.js          # once — 82 searches, ~200 photos, a few minutes
+node scripts/seed-travelers.js          # local stack
+node scripts/seed-travelers.js --tag=t2 # or just one traveler
 ```
 
-What it creates: **Sydney & the South Coast**, five days, 14 activities at real named places with
-times, AUD costs, notes and one booking; a cover photo; **t2 invited through the real invite →
-accept**; the trip walked `draft → upcoming → ongoing` (so it reads as being lived, which is what
-the Home feed wants); six photos in the Photo Dump contributed **by t2**; and four diary postcards
-with written captions — public on posting, so the feed has real content immediately.
+**Verification is NOT needed for t6–t10.** Only *accepting an invitation* gates on `email_verified`
+(`EMAIL_NOT_VERIFIED`, `InvitationService`), and each traveler seeds their own trips solo. `t2` is the
+one account that accepts invitations — it collaborates on the long trips it does not own, which is
+what gives the Photo Dump a member-contributed pile. So `create` is enough; nobody clicks a link.
 
-**It refuses rather than degrading, twice.** No `fixtures/australia/` → it stops, because seeding a
-trip with no images is the exact thing it exists to avoid. A non-`localhost` API → it stops unless
-you pass **`--yes-seed-the-deployed-rung`**, and the message says why: nothing this app exposes can
-undo a trip, its photos, or its public postcards, on an environment other people read.
+**Where each piece of content comes from, because they are not the same:**
+
+| Field | Source | True? |
+|---|---|---|
+| Trip title, days, activity titles, times, costs, notes, postcard captions | **Composed** in `fixtures/travelers.js` | Plausible, **not verified** — do not read a ferry price off it |
+| Activity `place` | Composed — real named places, coherent routes | Real place names |
+| The photo | **Pexels**, searched by the *day's* location, three per response | Genuinely of that place for famous spots; a fitting lookalike for obscure ones |
+| Activity `description` | The photo's own **`alt`** text, verbatim | Literally true of the image you are looking at |
+
+That last row is the useful trick: Pexels returns **no location field**, only `alt` — so the *place*
+comes from the search term and the *description* comes from the photo. It is the one string in the
+dataset that describes the actual pixels rather than being invented.
+
+**Attribution.** `fixtures/photos/CREDITS.json` records the photographer, their profile, the source
+page and the licence for every file. The images themselves are **gitignored** — megabytes this repo
+does not own, and the fetch is reproducible. The Pexels licence permits this use and asks for a
+visible link to Pexels plus photographer credit where possible.
+
+**It refuses rather than degrading, twice.** No `fixtures/photos/` → it stops, because seeding trips
+with blank images is the thing it exists to avoid. A non-`localhost` API → it stops unless you pass
+**`--yes-seed-the-deployed-rung`**, because nothing this app exposes can undo a trip, its photos or
+its public postcards on an environment other people read.
 
 ```bash
 LARGATA_API_BASE_URL=https://api-dev.largata.com \
-  node scripts/seed-australia.js --yes-seed-the-deployed-rung
+  node scripts/seed-travelers.js --yes-seed-the-deployed-rung
 ```
 
-Env: the three pool vars, plus **`UNSPLASH_ACCESS_KEY`** for the fetcher only (free, from
-https://unsplash.com/oauth/applications — it lives in the gitignored `mobile/.env`).
-Tags: `t1` = the author and trip owner, `t2` = the co-traveler who contributes to the dump.
+Env: the three pool vars, plus **`PEXELS_API_KEY`** for the fetcher only (free, from
+https://www.pexels.com/api/new/ — 200 requests/hour, and a full fetch uses 82).
 
-**The trip content is written, not sourced.** Days, activities, places, times, costs, notes and
-captions are composed in `fixtures/australia-trip.js` — plausible rather than verified, so do not
-read a ferry price off it. Only the *photos* come from an API, matched by search term: broad places
-(Bondi, the Three Sisters) return the real thing; a narrow one returns *a* café, not that café.
+**This dataset breaks the self-identifying-fixture rule on purpose** *(founder, 2026-08-13)*. The
+2026-07-27 ruling says a test identity must identify itself, which is why `precomplete-profile`
+deliberately sets no display name and the pool renders as `largata.dev+t1`. Here the founder asked
+for clean names so the feed reads like a product rather than a test harness — so `seed-travelers.js`
+PATCHes a real name and handle over that. The tag is still in the email address and the seeder prints
+`name (tag, @handle)` on every line, so a screenshot can still be traced back to an account.
 
 ## `seed-demo.js` — a coherent set of trips to look at
 
