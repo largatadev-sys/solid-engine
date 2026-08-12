@@ -20,6 +20,7 @@ const WEB_WALKS = [
   'drive-photo-dump.js',
   'drive-diary.js',
   'drive-profile.js',
+  'drive-home.js',
 ];
 
 function reachable(url) {

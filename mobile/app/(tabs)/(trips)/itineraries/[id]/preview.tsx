@@ -1,3 +1,4 @@
+import { TRIPS_TAB_ROUTE } from '../../../../../src/navigation/authRoutes';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -46,7 +47,7 @@ export default function ItineraryPreviewScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <ScreenHeader title="Preview" back backTo={{ pathname: '/' }} />
+        <ScreenHeader title="Preview" back backTo={{ pathname: TRIPS_TAB_ROUTE }} />
 
         <View style={styles.banner}>
           <Icon name="eye" size={BANNER_ICON_SIZE} color={colors.accent} />
@@ -66,7 +67,7 @@ export default function ItineraryPreviewScreen() {
             disabled={finishPlanning.isPending}
             accessibilityRole="button"
             onPress={() =>
-              finishPlanning.mutate('finish-planning', { onSuccess: () => router.replace('/') })
+              finishPlanning.mutate('finish-planning', { onSuccess: () => router.replace(TRIPS_TAB_ROUTE) })
             }
           >
             {finishPlanning.isPending ? (

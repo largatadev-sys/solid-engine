@@ -1,3 +1,4 @@
+import { TRIPS_TAB_ROUTE } from '../../../../../src/navigation/authRoutes';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -127,7 +128,7 @@ export default function TripWorkspaceScreen() {
         <WorkspaceHeader
           badge={badge}
           title={data.title}
-          onBack={() => router.push('/')}
+          onBack={() => router.push(TRIPS_TAB_ROUTE)}
           actionLabel={editAction.kind === 'hidden' ? undefined : 'Edit Itinerary'}
           actionIcon="pencilSquare"
           onAction={editAction.kind === 'blocked' ? () => undefined : openEditor}

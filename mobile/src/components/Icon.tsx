@@ -29,6 +29,11 @@ export type IconName =
   | 'star'
   | 'starFilled'
   | 'heartFilled'
+  | 'heart'
+  | 'heartSolid'
+  | 'comment'
+  | 'bookmark'
+  | 'bell'
   | 'close'
   | 'partyPopper'
   | 'camera'
@@ -259,6 +264,42 @@ export function Icon({ name, size, color }: IconProps) {
           {...shared}
           fill={color}
         />
+      )}
+
+      {name === 'heart' && (
+        <Path
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+          {...shared}
+        />
+      )}
+
+      {name === 'heartSolid' && (
+        <Path
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+          {...shared}
+          fill={color}
+        />
+      )}
+
+      {name === 'comment' && (
+        <Path
+          d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"
+          {...shared}
+        />
+      )}
+
+      {name === 'bookmark' && (
+        <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" {...shared} />
+      )}
+
+      {name === 'bell' && (
+        <>
+          <Path
+            d="M12 2.5a5 5 0 0 0-5 5c0 4-1.7 5.5-1.7 5.5h13.4S17 11.5 17 7.5a5 5 0 0 0-5-5z"
+            {...shared}
+          />
+          <Path d="M10.5 18.5a1.6 1.6 0 0 0 3 0" {...shared} />
+        </>
       )}
 
       {name === 'partyPopper' && (

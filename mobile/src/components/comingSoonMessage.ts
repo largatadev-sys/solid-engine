@@ -1,5 +1,4 @@
 export const COMING_SOON_SURFACES = {
-  home: 'Home feed',
   search: 'Search',
   chat: 'Trip chat',
   network: 'From your network',
@@ -15,6 +14,9 @@ export const COMING_SOON_SURFACES = {
   polls: 'Trip polls',
   profile: 'Traveler profiles',
   share: 'Sharing a postcard',
+  saved: 'Saved postcards',
+  report: 'Reporting a postcard',
+  notifications: 'Notifications',
 } as const;
 
 export type ComingSoonSurface = keyof typeof COMING_SOON_SURFACES;

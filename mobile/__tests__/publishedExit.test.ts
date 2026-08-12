@@ -5,8 +5,19 @@ const TRIP = 'trip-1';
 
 
 describe('the published view lives in both stacks, and back follows the one that opened it (S4.13)', () => {
-  it('returns to Trips when the trip stack opened it', () => {
-    expect(publishedBackRoute('trip')).toBe('/');
+  it('returns to Trips when the trip stack opened it — at its own path since S4.22 took "/"', () => {
+    expect(publishedBackRoute('trip')).toBe('/trips');
+  });
+
+  it('returns to the feed when a postcard opened it, so the reader lands back where they were', () => {
+    expect(publishedBackRoute('feed')).toBe('/');
+  });
+
+  it('routes a feed card to the home stack-s own copy, or back could not pop onto the feed', () => {
+    expect(publishedRoute('feed', TRIP)).toEqual({
+      pathname: '/feed/published/[id]',
+      params: { id: TRIP },
+    });
   });
 
   it('returns to the profile when the Itineraries tab opened it, not into the trip stack', () => {

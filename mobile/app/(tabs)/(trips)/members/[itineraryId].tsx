@@ -1,3 +1,4 @@
+import { TRIPS_TAB_ROUTE } from '../../../../src/navigation/authRoutes';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -114,7 +115,7 @@ export default function MembersScreen() {
       endMembership.mutate(
         { travelerId: myId, leaving: true },
         {
-          onSuccess: () => router.replace('/'),
+          onSuccess: () => router.replace(TRIPS_TAB_ROUTE),
           onError: (error) => setDepartureError(departureErrorMessage(error)),
         },
       );

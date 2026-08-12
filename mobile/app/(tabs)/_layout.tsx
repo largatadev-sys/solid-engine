@@ -3,8 +3,13 @@ import { type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { comingSoon } from '../../src/components/comingSoon';
 import { Icon, type IconName } from '../../src/components/Icon';
-import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
-import { inProfileStack, tabJump } from '../../src/navigation/tabJump';
+import {
+  HOME_TAB_ROUTE,
+  PROFILE_TAB_ROUTE,
+  TRIPS_TAB_ROUTE,
+} from '../../src/navigation/authRoutes';
+import { homeTabRetapped } from '../../src/feed/homeTabRetap';
+import { inHomeStack, inProfileStack, inTripsStack, tabJump } from '../../src/navigation/tabJump';
 import { colors, typography } from '../../src/theme';
 
 
@@ -47,16 +52,16 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="home"
-        options={{
-          title: 'Home',
-          tabBarIcon: tabIcon('home'),
-          tabBarAccessibilityLabel: 'Home, coming soon',
-        }}
+        name="(home)"
+        options={{ title: 'Home', tabBarIcon: tabIcon('home'), sceneStyle: bareScene(0) }}
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            comingSoon('home');
+            if (inHomeStack(pathname)) {
+              homeTabRetapped();
+              return;
+            }
+            router[tabJump(router.canDismiss(), false)](HOME_TAB_ROUTE);
           },
         }}
       />
@@ -80,7 +85,7 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            router[tabJump(router.canDismiss(), !inProfileStack(pathname))]('/');
+            router[tabJump(router.canDismiss(), inTripsStack(pathname))](TRIPS_TAB_ROUTE);
           },
         }}
       />
