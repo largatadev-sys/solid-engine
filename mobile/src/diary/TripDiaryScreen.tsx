@@ -63,7 +63,6 @@ export function TripDiaryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntryE
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Text style={styles.overline}>{MY_DIARY_TITLE}</Text>
         <View style={styles.titleRow}>
           <Pressable
             style={styles.back}
@@ -203,10 +202,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: STREAM_INSET,
     paddingTop: spacing.lg,
     gap: spacing.sm,
-  },
-  overline: {
-    ...diaryScreenTypography.overline,
-    color: diaryScreenColors.overline,
   },
   titleRow: {
     flexDirection: 'row',
