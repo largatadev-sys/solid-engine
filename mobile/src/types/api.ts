@@ -355,6 +355,23 @@ export type DiaryTripResponse = {
   itineraryId: string;
   title: string | null;
   entryCount: number;
+  destinations?: string[];
+  dayCount?: number;
+};
+
+
+export type ProfileStatsResponse = {
+  publishedCount: number;
+  tripCount: number;
+};
+
+
+export type ShowcaseItineraryResponse = {
+  id: string;
+  title: string;
+  destinations: string[];
+  durationDays: number;
+  coverImageUrl: string | null;
 };
 
 

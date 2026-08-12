@@ -28,6 +28,17 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
     List<UUID> findItineraryIdsNotIn(@Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
 
 
+    @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
+            + "AND m.workspace.state <> :state AND m.role = com.largata.common.authz.Role.OWNER")
+    List<UUID> findOwnedItineraryIdsNotIn(
+            @Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
+
+
+    @Query("SELECT COUNT(m) FROM Membership m WHERE m.travelerId = :travelerId "
+            + "AND m.workspace.state <> :state")
+    long countItinerariesNotIn(@Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
+
+
 
     @Query("SELECT m.travelerId FROM Membership m WHERE m.workspace.itineraryId = :itineraryId "
             + "AND m.role = com.largata.common.authz.Role.OWNER")

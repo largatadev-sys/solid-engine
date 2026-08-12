@@ -554,28 +554,39 @@ function writeFixture() {
 
   await goto('/profile');
   const profileScreen = (await text()) || '';
-  check('AC 9: My Diary shows on the profile, grouped by trip with a count',
-    profileScreen.includes('My Diary') && profileScreen.includes('S3.1 diary smoke') &&
-    profileScreen.includes('1 entry'),
+  // S4.21 moved this surface: the My Diary LIST became the profile's Diary TAB, so the diary is
+  // still grouped by trip with a count on the profile — it is now sections rather than rows, and
+  // the heading it used to carry went with the wordmark.
+  // The section's SUB-LINE became the trip's location at the founder's 08/11 pass, so the entry
+  // count now lives on the accessibility label rather than in the rendered text.
+  check('AC 9: the diary shows on the profile, grouped by trip',
+    profileScreen.includes('S3.1 diary smoke') &&
+      (await evaluate(`
+        (() => Array.from(document.querySelectorAll('[aria-label]'))
+          .some((n) => / entr(y|ies)$/.test(n.getAttribute('aria-label') || '')))()
+      `)) === true,
     profileScreen.replace(/\n/g, ' | ').slice(0, 200));
 
   // expo-router keeps the profile MOUNTED beneath the pushed stream, so body.innerText carries
   // both screens (S4.0). Read the postcard's own control instead of the whole page.
-  // Entered through the profile row — the real affordance (S4.18) — then reloaded, because the
-  // stream is asserted on its own and the profile stays MOUNTED beneath a pushed screen.
-  const openedStream = await tapLabel('Open your diary for S3.1 diary smoke');
+  // The per-trip stream is its own screen still, reached here directly because the profile's
+  // Diary tab now renders the postcards inline rather than linking out to it (S4.21).
+  // Read the entry CONTAINER, not a tap target: S4.21 split the row so the photo strip is inert
+  // (a swipe must not land as a tap), which left the heading and the caption as separate
+  // Pressables — so the last match is the caption alone and carries no title or eyebrow.
   await goto(`/itineraries/${trip}/diary`);
   const postcard = await evaluate(`
     (() => {
       const card = Array.from(document.querySelectorAll('[aria-label]'))
         .filter((n) => (n.getAttribute('aria-label') || '')
           .startsWith('Open your entry for'))
-        .filter((n) => n.offsetParent !== null).pop();
-      return card ? card.innerText.replace(/\\n/g, ' | ') : '(no postcard)';
+        .filter((n) => n.offsetParent !== null)[0];
+      const entry = card ? card.parentElement : null;
+      return entry ? entry.innerText.replace(/\\n/g, ' | ') : '(no postcard)';
     })()
   `);
   check('AC 9: the per-trip stream renders the postcard with its snapshot header',
-    openedStream.clicked === true && postcard.includes('Sunset at Las Cabanas') &&
+    postcard.includes('Sunset at Las Cabanas') &&
     postcard.includes('DAY 1 • 5:30 PM') && postcard.includes('Second time around'),
     postcard.slice(0, 160));
 

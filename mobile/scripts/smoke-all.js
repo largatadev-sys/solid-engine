@@ -19,6 +19,7 @@ const WEB_WALKS = [
   'drive-buffered-plan.js',
   'drive-photo-dump.js',
   'drive-diary.js',
+  'drive-profile.js',
 ];
 
 function reachable(url) {

@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -227,16 +228,36 @@ public class DiaryService {
 
         boolean more = found.size() > limit;
         List<DiaryEntryRepository.DiaryTripRow> rows = more ? found.subList(0, limit) : found;
-        List<DiaryTripResponse> page = rows.stream().map(this::tripViewOf).toList();
+        Map<UUID, Long> dayCounts = dayCountsFor(rows);
+        List<DiaryTripResponse> page = rows.stream().map(row -> tripViewOf(row, dayCounts)).toList();
 
         return more ? Page.of(page, Cursor.encode(rows.getLast().getLatestEntryId())) : Page.exhausted(page);
     }
 
 
-    private DiaryTripResponse tripViewOf(DiaryEntryRepository.DiaryTripRow row) {
-        String title =
-                itineraries.findById(row.getItineraryId()).map(Itinerary::title).orElse(null);
-        return new DiaryTripResponse(row.getItineraryId(), title, row.getEntryCount());
+    private Map<UUID, Long> dayCountsFor(List<DiaryEntryRepository.DiaryTripRow> rows) {
+        if (rows.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> itineraryIds =
+                rows.stream().map(DiaryEntryRepository.DiaryTripRow::getItineraryId).toList();
+        return days.countByItineraryIdIn(itineraryIds).stream()
+                .collect(
+                        Collectors.toMap(
+                                DayRepository.DayCountRow::getItineraryId,
+                                DayRepository.DayCountRow::getDayCount));
+    }
+
+
+    private DiaryTripResponse tripViewOf(
+            DiaryEntryRepository.DiaryTripRow row, Map<UUID, Long> dayCounts) {
+        Itinerary trip = itineraries.findById(row.getItineraryId()).orElse(null);
+        return new DiaryTripResponse(
+                row.getItineraryId(),
+                trip == null ? null : trip.title(),
+                row.getEntryCount(),
+                trip == null ? List.of() : trip.destinations(),
+                dayCounts.getOrDefault(row.getItineraryId(), 0L).intValue());
     }
 
 

@@ -11,9 +11,11 @@ import com.largata.media.PhotoSubject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +74,19 @@ public class DayService {
         if (count > 0) {
             log.info("Days seeded: itineraryId={} count={}", itineraryId, count);
         }
+    }
+
+
+    @Transactional(readOnly = true)
+    public Map<UUID, Long> dayCountsOf(Collection<UUID> itineraryIds) {
+        if (itineraryIds.isEmpty()) {
+            return Map.of();
+        }
+        return days.countByItineraryIdIn(itineraryIds).stream()
+                .collect(
+                        Collectors.toMap(
+                                DayRepository.DayCountRow::getItineraryId,
+                                DayRepository.DayCountRow::getDayCount));
     }
 
 

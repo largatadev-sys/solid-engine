@@ -26,6 +26,14 @@ export const DUMP_PICKER_CANCEL = 'Cancel';
 
 export const DUMP_PICKER_FULL = 'That is five photos — the most a diary entry holds.';
 
+export const PREVIEW_EDIT = 'Edit entry';
+
+export const PREVIEW_SHARE = 'Share';
+
+export const PREVIEW_CLOSE = 'Close this postcard';
+
+export const PREVIEW_HINT = 'Swipe photos • Tap outside to close';
+
 
 
 

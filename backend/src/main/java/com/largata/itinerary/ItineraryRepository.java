@@ -32,6 +32,24 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
             Limit limit);
 
 
+    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds AND i.published = true "
+            + "ORDER BY i.id DESC")
+    List<Itinerary> findFirstPublishedPage(
+            @Param("itineraryIds") Collection<UUID> itineraryIds, Limit limit);
+
+
+    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds AND i.published = true "
+            + "AND i.id < :cursor ORDER BY i.id DESC")
+    List<Itinerary> findPublishedPageAfter(
+            @Param("itineraryIds") Collection<UUID> itineraryIds,
+            @Param("cursor") UUID cursor,
+            Limit limit);
+
+
+    @Query("SELECT COUNT(i) FROM Itinerary i WHERE i.id IN :itineraryIds AND i.published = true")
+    long countPublishedAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
+
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE itinerary SET plan_version = plan_version + 1 WHERE id = :itineraryId",
             nativeQuery = true)

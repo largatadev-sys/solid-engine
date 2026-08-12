@@ -9,6 +9,7 @@ const MOBILE_ROOT = join(__dirname, '..');
 const APP = join(MOBILE_ROOT, 'app');
 const TABS = join(APP, '(tabs)');
 const TRIPS_GROUP = join(TABS, '(trips)');
+const PROFILE_GROUP = join(TABS, '(profile)');
 const TRIPS = join(TRIPS_GROUP, 'itineraries');
 
 const MOCK_CFAB_SIZE = 40;
@@ -36,8 +37,18 @@ function tripScreens(): [string, string][] {
 describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('has one file per tab, and the trip flow is a single group rather than four sibling tabs', () => {
     expect(readdirSync(TABS).sort()).toEqual(
-      ['_layout.tsx', '(trips)', 'home.tsx', 'profile.tsx', 'search.tsx'].sort(),
+      ['_layout.tsx', '(trips)', '(profile)', 'home.tsx', 'search.tsx'].sort(),
     );
+  });
+
+  it('groups the profile flow into one stack too, so the account page can never strand back (S4.13)', () => {
+    expect(existsSync(join(PROFILE_GROUP, 'profile.tsx'))).toBe(true);
+    expect(existsSync(join(PROFILE_GROUP, 'account.tsx'))).toBe(true);
+    expect(read(PROFILE_GROUP, '_layout.tsx')).toContain('<Stack');
+  });
+
+  it('keeps the profile group off the root route, which (trips) already owns', () => {
+    expect(existsSync(join(PROFILE_GROUP, 'index.tsx'))).toBe(false);
   });
 
   it('leaves no second Trips screen behind at the old route', () => {
@@ -80,9 +91,18 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('declares every tab in the layout', () => {
     const layout = read(TABS, '_layout.tsx');
 
-    for (const name of ['home', 'search', '(trips)', 'profile']) {
+    for (const name of ['home', 'search', '(trips)', '(profile)']) {
       expect(layout).toContain(`name="${name}"`);
     }
+  });
+
+  it('sends the Profile tab to the profile itself, never back into the account page it pushed', () => {
+    const layout = read(TABS, '_layout.tsx');
+    const profileTab = layout.slice(layout.indexOf('name="(profile)"'));
+
+    expect(profileTab).toContain('tabPress');
+    expect(profileTab).toContain('router.canDismiss()');
+    expect(profileTab).toContain('PROFILE_TAB_ROUTE');
   });
 
   it('sends the Trips tab to the Trips list, never back into the trip last opened (S4.20 addendum 4)', () => {
@@ -95,11 +115,14 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   });
 
   it('lets the layout own the tab labels — a screen-level title silently overrides them', () => {
-    for (const screen of ['profile.tsx', 'home.tsx', 'search.tsx']) {
+    for (const screen of ['home.tsx', 'search.tsx']) {
       expect(read(TABS, screen)).not.toMatch(/<Stack\.Screen/);
     }
     for (const screen of ['index.tsx', 'create.tsx']) {
       expect(read(TRIPS_GROUP, screen)).not.toMatch(/<Stack\.Screen/);
+    }
+    for (const screen of ['profile.tsx', 'account.tsx']) {
+      expect(read(PROFILE_GROUP, screen)).not.toMatch(/<Stack\.Screen/);
     }
   });
 
@@ -152,6 +175,23 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
   const TRIP_FORM = ['itineraries/new.tsx'];
 
+  const SHARED_SCREENS: [string, string, RegExp][] = [
+    ['itineraries/[id]/diary/[entryId].tsx', 'src/diary/DiaryEntryScreen.tsx', /<ScreenHeader/],
+    ['itineraries/[id]/diary/index.tsx', 'src/diary/TripDiaryScreen.tsx', /styles\.title/],
+  ];
+
+  it.each(SHARED_SCREENS)(
+    '%s is a thin route over %s — two stacks reach one screen (S4.21)',
+    (route, shared, heading) => {
+      const component = shared.split('/').at(-1)?.replace('.tsx', '') ?? '';
+      const wrapper = read(TRIPS_GROUP, ...route.split('/'));
+
+      expect(wrapper).toMatch(new RegExp(component));
+      expect(wrapper).not.toMatch(/<ScreenHeader/);
+      expect(read(MOBILE_ROOT, ...shared.split('/'))).toMatch(heading);
+    },
+  );
+
   it.each(tripScreens().filter(([name]) => REDIRECT_STUBS.includes(name)))(
     '%s draws no chrome at all — a retired route redirects, it does not render',
     (_name, source) => {
@@ -180,7 +220,8 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
         !FULL_BLEED.includes(name) &&
         !WORKSPACE_HEADER.includes(name) &&
         !REDIRECT_STUBS.includes(name) &&
-        !TRIP_FORM.includes(name),
+        !TRIP_FORM.includes(name) &&
+        !SHARED_SCREENS.some(([route]) => route === name),
     ),
   )('%s draws its own heading — with no header bar, a navigator title renders nowhere', (_name, source) => {
     expect(source).toMatch(/<ScreenHeader/);
@@ -960,6 +1001,8 @@ describe('every greyed affordance is wired to the shared helper (register #2)', 
     read(MOBILE_ROOT, 'src', 'components', 'ComingSoonScreen.tsx'),
     read(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
     read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTabRow.tsx'),
+    read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx'),
+    read(MOBILE_ROOT, 'src', 'diary', 'PostcardPreview.tsx'),
   ].join('\n');
 
   it.each(Object.keys(COMING_SOON_SURFACES))('%s has a call site', (surface) => {

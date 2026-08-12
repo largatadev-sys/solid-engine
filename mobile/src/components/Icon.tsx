@@ -27,6 +27,9 @@ export type IconName =
   | 'checkCircle'
   | 'link'
   | 'star'
+  | 'starFilled'
+  | 'heartFilled'
+  | 'close'
   | 'partyPopper'
   | 'camera'
   | 'briefcase'
@@ -232,6 +235,29 @@ export function Icon({ name, size, color }: IconProps) {
         <Polygon
           points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"
           {...shared}
+        />
+      )}
+
+      {name === 'starFilled' && (
+        <Polygon
+          points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"
+          {...shared}
+          fill={color}
+        />
+      )}
+
+      {name === 'close' && (
+        <>
+          <Line x1="6" y1="6" x2="18" y2="18" {...shared} />
+          <Line x1="18" y1="6" x2="6" y2="18" {...shared} />
+        </>
+      )}
+
+      {name === 'heartFilled' && (
+        <Path
+          d="M12 21s-7.5-4.7-9.3-9A5.2 5.2 0 0 1 12 6.5 5.2 5.2 0 0 1 21.3 12c-1.8 4.3-9.3 9-9.3 9z"
+          {...shared}
+          fill={color}
         />
       )}
 
