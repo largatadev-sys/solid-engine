@@ -5,7 +5,7 @@ import { join } from 'path';
 const MOBILE_ROOT = join(__dirname, '..');
 const read = (...p: string[]) => readFileSync(join(MOBILE_ROOT, ...p), 'utf8');
 
-const CAROUSELS = ['Postcard.tsx', 'TripDiaryScreen.tsx', 'PostcardPreview.tsx'];
+const CAROUSELS = ['Postcard.tsx', 'PostcardStreamEntry.tsx', 'PostcardPreview.tsx'];
 
 
 describe('paging is forked, because react-native-web turns it into snap that eats the drag', () => {

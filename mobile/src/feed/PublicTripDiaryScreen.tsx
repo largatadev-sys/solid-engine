@@ -1,29 +1,27 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { comingSoon } from '../components/comingSoon';
 import { Icon } from '../components/Icon';
 import { itineraryLoadMessage, ScreenMessage } from '../components/ScreenMessage';
+import { PostcardPreview } from '../diary/PostcardPreview';
+import { PostcardStreamEntry, STREAM_INSET } from '../diary/PostcardStreamEntry';
+import { snapshotEyebrow } from '../diary/postcardAnatomy';
 import { useSafeBack } from '../navigation/safeBack';
 import { usePublicTripDiary } from '../query/feedQueries';
 import { colors, spacing } from '../theme';
-import { feedColors, feedMetrics, feedTypography } from '../theme/feedTokens';
+import { feedColors, feedTypography } from '../theme/feedTokens';
 import { diaryScreenColors, diaryScreenMetrics, diaryScreenTypography } from '../theme/workspaceTokens';
-import { FeedCard, type StubControl } from './FeedCard';
+import type { DiaryEntryResponse } from '../types/api';
 import { publicDiaryByline } from './feedCardAnatomy';
-import { PhotoActionSheet, type PhotoSheetAction } from './PhotoActionSheet';
+import { asDiaryEntry } from './publicDiaryPostcard';
 
 
 export function PublicTripDiaryScreen() {
-  const insets = useSafeAreaInsets();
   const goBack = useSafeBack();
   const { id, author } = useLocalSearchParams<{ id: string; author: string }>();
 
   const diary = usePublicTripDiary(id ?? '', author ?? '');
-  const [now] = useState(() => Date.now());
-  const [pages, setPages] = useState<Record<string, number>>({});
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [previewing, setPreviewing] = useState<DiaryEntryResponse | null>(null);
 
   if (diary.isPending) {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
@@ -32,60 +30,52 @@ export function PublicTripDiaryScreen() {
     return <ScreenMessage {...itineraryLoadMessage(diary.error, 'This diary is not public')} />;
   }
 
-  const refuse = (what: StubControl) => {
-    if (what === 'author') comingSoon('profile');
-    else if (what === 'comment') comingSoon('comments');
-    else if (what === 'share') comingSoon('share');
-    else if (what === 'save') comingSoon('saved');
-    else setSheetOpen(true);
-  };
-
-  const chooseFromSheet = (action: PhotoSheetAction) => {
-    setSheetOpen(false);
-    if (action === 'save') comingSoon('saved');
-    else if (action === 'share') comingSoon('share');
-    else comingSoon('report');
-  };
+  const tripTitle = diary.data.tripTitle;
+  const postcards = diary.data.postcards.map(asDiaryEntry);
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable
-          style={styles.back}
-          onPress={goBack}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Icon name="back" size={diaryScreenMetrics.backGlyph} color={diaryScreenColors.title} />
-        </Pressable>
-        <View style={styles.headings}>
-          <Text style={styles.title} numberOfLines={2}>
-            {diary.data.tripTitle ?? ''}
-          </Text>
-          <Text style={styles.byline} numberOfLines={1}>
-            {publicDiaryByline(diary.data)}
-          </Text>
+        <View style={styles.titleRow}>
+          <Pressable
+            style={styles.back}
+            onPress={goBack}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Icon
+              name="back"
+              size={diaryScreenMetrics.backGlyph}
+              color={diaryScreenColors.title}
+            />
+          </Pressable>
+          <View style={styles.headings}>
+            <Text style={styles.title} numberOfLines={2}>
+              {tripTitle ?? ''}
+            </Text>
+            <Text style={styles.byline} numberOfLines={1}>
+              {publicDiaryByline(diary.data)}
+            </Text>
+          </View>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        {diary.data.postcards.map((card) => (
-          <FeedCard
-            key={card.id}
-            card={card}
-            now={now}
-            page={pages[card.id] ?? 0}
-            onPageChange={(page) => setPages((seen) => ({ ...seen, [card.id]: page }))}
-            onOpenTrip={() => undefined}
-            onStubTap={refuse}
+        {postcards.map((entry) => (
+          <PostcardStreamEntry
+            key={entry.id}
+            postcard={entry}
+            eyebrow={snapshotEyebrow(entry)}
+            openLabel={`Open this postcard from ${entry.activityTitle}`}
+            onOpen={() => setPreviewing(entry)}
           />
         ))}
       </ScrollView>
 
-      <PhotoActionSheet
-        open={sheetOpen}
-        onChoose={chooseFromSheet}
-        onDismiss={() => setSheetOpen(false)}
+      <PostcardPreview
+        entry={previewing}
+        tripTitle={tripTitle}
+        onDismiss={() => setPreviewing(null)}
       />
     </View>
   );
@@ -95,19 +85,20 @@ export function PublicTripDiaryScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: feedColors.cardSurface,
+    backgroundColor: diaryScreenColors.card,
   },
   loading: {
     marginTop: spacing.xl,
   },
   header: {
+    paddingHorizontal: STREAM_INSET,
+    paddingTop: spacing.lg,
+    gap: spacing.sm,
+  },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingHorizontal: feedMetrics.listInset,
-    paddingVertical: spacing.sm3,
-    borderBottomWidth: 1,
-    borderBottomColor: feedColors.headerRule,
   },
   back: {
     width: diaryScreenMetrics.backButton,
@@ -115,6 +106,7 @@ const styles = StyleSheet.create({
     borderRadius: diaryScreenMetrics.backButton / 2,
     borderWidth: 1,
     borderColor: diaryScreenColors.backBorder,
+    backgroundColor: diaryScreenColors.card,
     alignItems: 'center',
     justifyContent: 'center',
     flexGrow: 0,
@@ -133,8 +125,8 @@ const styles = StyleSheet.create({
     color: feedColors.tripLine,
   },
   body: {
-    gap: feedMetrics.cardGap,
-    padding: feedMetrics.listInset,
+    paddingTop: spacing.md,
     paddingBottom: spacing.xl,
+    gap: diaryScreenMetrics.entryGap,
   },
 });

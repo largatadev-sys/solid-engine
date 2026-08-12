@@ -1,20 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { itineraryLoadMessage, ScreenMessage } from '../components/ScreenMessage';
 import { useSafeBack } from '../navigation/safeBack';
-import { MediaThumb } from '../media/MediaThumb';
 import { useMyDiaryEntries } from '../query/diaryQueries';
 import { useItinerary } from '../query/itineraryQueries';
 import { colors, spacing } from '../theme';
@@ -22,23 +11,13 @@ import {
   diaryScreenColors,
   diaryScreenMetrics,
   diaryScreenTypography,
-  profileColors,
-  profileMetrics,
-  profileTypography,
 } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
 import { DIARY_STREAM_EMPTY, MY_DIARY_TITLE } from './diaryCopy';
 import { entryEditorRoute, type DiaryEntryExit } from './diaryEntryExit';
-import {
-  dragToScroll,
-  PAGING,
-  SHOW_SCROLLBAR,
-  SNAP_CHILD_STYLE,
-  SNAP_STYLE,
-} from './photoStripScroll';
 import { inTripDayOrder, snapshotEyebrow } from './postcardAnatomy';
-import { carouselCounter, pageOfOffset, showsCarouselChrome } from './postcardCarousel';
 import { PostcardPreview } from './PostcardPreview';
+import { PostcardStreamEntry, STREAM_INSET } from './PostcardStreamEntry';
 
 
 export function TripDiaryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntryExit } = {}) {
@@ -87,7 +66,13 @@ export function TripDiaryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntryE
           <Text style={styles.empty}>{DIARY_STREAM_EMPTY}</Text>
         ) : (
           postcards.map((entry) => (
-            <StreamEntry key={entry.id} entry={entry} onOpen={() => setPreviewing(entry)} />
+            <PostcardStreamEntry
+              key={entry.id}
+              postcard={entry}
+              eyebrow={snapshotEyebrow(entry)}
+              openLabel={`Open your entry for ${entry.activityTitle}`}
+              onOpen={() => setPreviewing(entry)}
+            />
           ))
         )}
       </ScrollView>
@@ -105,90 +90,6 @@ export function TripDiaryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntryE
   );
 }
 
-
-function StreamEntry({
-  entry,
-  onOpen,
-}: {
-  readonly entry: DiaryEntryResponse;
-  readonly onOpen: () => void;
-}) {
-  const [drag] = useState(dragToScroll);
-  const [photoWidth, setPhotoWidth] = useState(0);
-  const [page, setPage] = useState(0);
-
-  const photoCount = entry.photos.length;
-  const chrome = showsCarouselChrome(photoCount);
-
-  const measure = (event: LayoutChangeEvent) => setPhotoWidth(event.nativeEvent.layout.width);
-
-  const settle = (event: NativeSyntheticEvent<NativeScrollEvent>) =>
-    setPage(pageOfOffset(event.nativeEvent.contentOffset.x, photoWidth, photoCount));
-
-  return (
-    <View style={styles.entry}>
-      <Pressable
-        style={styles.heading}
-        onPress={onOpen}
-        accessibilityRole="button"
-        accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
-      >
-        <Text style={styles.eyebrow}>{snapshotEyebrow(entry)}</Text>
-        <Text style={styles.entryTitle}>{entry.activityTitle}</Text>
-      </Pressable>
-
-      <View style={styles.stage}>
-        <ScrollView
-          horizontal
-          {...PAGING}
-          style={SNAP_STYLE}
-          showsHorizontalScrollIndicator={SHOW_SCROLLBAR}
-          onLayout={measure}
-          onScroll={settle}
-          onMomentumScrollEnd={settle}
-          scrollEventThrottle={16}
-          {...drag}
-        >
-          {entry.photos.map((photo, index) => (
-            <MediaThumb
-              key={photo.id}
-              url={photo.url}
-              full
-              style={{ ...styles.photo, ...SNAP_CHILD_STYLE, width: photoWidth }}
-              accessibilityLabel={`${entry.activityTitle}, photo ${index + 1}`}
-            />
-          ))}
-        </ScrollView>
-
-        {chrome && (
-          <>
-            <View style={styles.counter}>
-              <Text style={styles.counterLabel}>{carouselCounter(page, photoCount)}</Text>
-            </View>
-            <View style={styles.dots}>
-              {entry.photos.map((photo, index) => (
-                <View key={photo.id} style={index === page ? styles.dotActive : styles.dot} />
-              ))}
-            </View>
-          </>
-        )}
-      </View>
-
-      {entry.caption !== null && (
-        <Pressable
-          onPress={onOpen}
-          accessibilityRole="button"
-          accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
-        >
-          <Text style={styles.caption}>{entry.caption}</Text>
-        </Pressable>
-      )}
-    </View>
-  );
-}
-
-
-const STREAM_INSET = spacing.md2;
 
 const styles = StyleSheet.create({
   screen: {
@@ -234,68 +135,5 @@ const styles = StyleSheet.create({
     ...diaryScreenTypography.caption,
     color: diaryScreenColors.overline,
     paddingHorizontal: STREAM_INSET,
-  },
-  entry: {
-    gap: spacing.sm,
-    paddingHorizontal: STREAM_INSET,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: diaryScreenColors.divider,
-  },
-  heading: {
-    gap: spacing.sm,
-  },
-  eyebrow: {
-    ...diaryScreenTypography.eyebrow,
-    color: diaryScreenColors.eyebrow,
-  },
-  entryTitle: {
-    ...diaryScreenTypography.entryTitle,
-    color: diaryScreenColors.caption,
-  },
-  stage: {
-    marginHorizontal: -STREAM_INSET,
-  },
-  photo: {
-    height: diaryScreenMetrics.streamPhotoHeight,
-    backgroundColor: diaryScreenColors.photoWell,
-  },
-  counter: {
-    position: 'absolute',
-    top: profileMetrics.pillInset,
-    right: profileMetrics.pillInset,
-    backgroundColor: profileColors.counterPill,
-    borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-  },
-  counterLabel: {
-    ...profileTypography.counter,
-    color: profileColors.onPill,
-  },
-  dots: {
-    position: 'absolute',
-    bottom: profileMetrics.pillInset,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 5,
-  },
-  dot: {
-    width: profileMetrics.dotSize,
-    height: profileMetrics.dotSize,
-    borderRadius: profileMetrics.dotSize / 2,
-    backgroundColor: profileColors.dotIdle,
-  },
-  dotActive: {
-    width: profileMetrics.dotSize,
-    height: profileMetrics.dotSize,
-    borderRadius: profileMetrics.dotSize / 2,
-    backgroundColor: profileColors.dotActive,
-  },
-  caption: {
-    ...diaryScreenTypography.caption,
-    color: diaryScreenColors.caption,
   },
 });

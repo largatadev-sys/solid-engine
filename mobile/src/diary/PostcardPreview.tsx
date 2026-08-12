@@ -37,7 +37,7 @@ import { pageOfOffset, previewCount } from './postcardCarousel';
 interface PostcardPreviewProps {
   readonly entry: DiaryEntryResponse | null;
   readonly tripTitle: string | null;
-  readonly onEdit: (entry: DiaryEntryResponse) => void;
+  readonly onEdit?: (entry: DiaryEntryResponse) => void;
   readonly onDismiss: () => void;
   readonly onShareChange?: (entry: DiaryEntryResponse, shared: boolean) => void;
   readonly sharePending?: boolean;
@@ -136,21 +136,25 @@ export function PostcardPreview({
           </View>
 
           <View style={styles.actions}>
-            <Pressable
-              style={styles.action}
-              onPress={() => onEdit(showing)}
-              accessibilityRole="button"
-              accessibilityLabel={PREVIEW_EDIT}
-            >
-              <Icon
-                name="pencil"
-                size={diaryScreenMetrics.actionGlyph}
-                color={diaryScreenColors.editInk}
-              />
-              <Text style={styles.editLabel}>{PREVIEW_EDIT}</Text>
-            </Pressable>
+            {onEdit !== undefined && (
+              <>
+                <Pressable
+                  style={styles.action}
+                  onPress={() => onEdit(showing)}
+                  accessibilityRole="button"
+                  accessibilityLabel={PREVIEW_EDIT}
+                >
+                  <Icon
+                    name="pencil"
+                    size={diaryScreenMetrics.actionGlyph}
+                    color={diaryScreenColors.editInk}
+                  />
+                  <Text style={styles.editLabel}>{PREVIEW_EDIT}</Text>
+                </Pressable>
 
-            <View style={styles.actionDivider} />
+                <View style={styles.actionDivider} />
+              </>
+            )}
 
             {onShareChange === undefined ? (
               <Pressable

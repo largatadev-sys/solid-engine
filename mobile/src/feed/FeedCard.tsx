@@ -63,7 +63,7 @@ interface FeedCardProps {
   readonly page: number;
   readonly onPageChange: (page: number) => void;
   readonly onOpenTrip: (card: FeedPostcardResponse) => void;
-  readonly onOpenTripDiary?: (card: FeedPostcardResponse) => void;
+  readonly onOpenTripDiary: (card: FeedPostcardResponse) => void;
   readonly onStubTap: (what: StubControl) => void;
 }
 
@@ -195,17 +195,15 @@ export function FeedCard({
             ))}
         </View>
 
-        {onOpenTripDiary !== undefined && (
-          <Pressable
-            style={styles.badge}
-            onPress={() => onOpenTripDiary(card)}
-            hitSlop={HIT_SLOP}
-            accessibilityRole="link"
-            accessibilityLabel={`${FEED_TRIP_BADGE}, see this trip's shared postcards`}
-          >
-            <Text style={styles.badgeLabel}>{FEED_TRIP_BADGE}</Text>
-          </Pressable>
-        )}
+        <Pressable
+          style={styles.badge}
+          onPress={() => onOpenTripDiary(card)}
+          hitSlop={HIT_SLOP}
+          accessibilityRole="link"
+          accessibilityLabel={`${FEED_TRIP_BADGE}, see this trip's shared postcards`}
+        >
+          <Text style={styles.badgeLabel}>{FEED_TRIP_BADGE}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.stage} onLayout={measure}>

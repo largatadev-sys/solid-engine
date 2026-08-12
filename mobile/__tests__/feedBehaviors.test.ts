@@ -64,20 +64,26 @@ describe('B5.5 — a page failure shows the inline row, never a full-screen erro
 });
 
 
-describe('the Trip Post badge is a door out, so it is absent where it leads nowhere', () => {
+describe('the Trip Post badge lands on the diary as it already looks, not a feed restyle', () => {
   const DIARY = readFileSync(join(MOBILE_ROOT, 'src', 'feed', 'PublicTripDiaryScreen.tsx'), 'utf8');
+  const MY_DIARY = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'TripDiaryScreen.tsx'), 'utf8');
 
-  it('renders on a card only when a handler was given', () => {
-    expect(CARD).toContain('{onOpenTripDiary !== undefined && (');
-    expect(CARD).toContain('readonly onOpenTripDiary?:');
+  it('draws the same postcard stream the author sees, from one component', () => {
+    expect(DIARY).toContain('<PostcardStreamEntry');
+    expect(MY_DIARY).toContain('<PostcardStreamEntry');
+    expect(DIARY).not.toContain('FeedCard');
   });
 
-  it('is offered by the feed, where it goes somewhere', () => {
-    expect(SCREEN).toContain('onOpenTripDiary={openTripDiary}');
+  it('wears the diary chrome, never the feed surface it was reached from', () => {
+    expect(DIARY).toContain('backgroundColor: diaryScreenColors.card');
+    expect(DIARY).not.toContain('feedColors.cardSurface');
+    expect(DIARY).not.toContain('feedMetrics.cardGap');
   });
 
-  it('is withheld inside the trip diary, which is where it would have led', () => {
-    expect(DIARY).not.toContain('onOpenTripDiary');
+  it('opens the same preview on tap, with Edit withheld from a reader', () => {
+    expect(DIARY).toContain('<PostcardPreview');
+    expect(DIARY).not.toContain('onEdit');
+    expect(MY_DIARY).toContain('onEdit={(entry) => {');
   });
 });
 

@@ -13,6 +13,10 @@ const MOBILE_ROOT = join(__dirname, '..');
 const TAB = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'ProfileDiaryTab.tsx'), 'utf8');
 const POSTCARD = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'Postcard.tsx'), 'utf8');
 const DIARY_STREAM = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'TripDiaryScreen.tsx'), 'utf8');
+const STREAM_ENTRY = readFileSync(
+  join(MOBILE_ROOT, 'src', 'diary', 'PostcardStreamEntry.tsx'),
+  'utf8',
+);
 
 beforeEach(forgetProfileView);
 
@@ -165,10 +169,10 @@ describe('the trip diary stream wears the founder-s frame-1 anatomy (08/12 mock)
   });
 
   it('gives one photo the whole viewport, paged rather than peeked (founder, 08/12)', () => {
-    expect(DIARY_STREAM).toContain('diaryScreenMetrics.streamPhotoHeight');
-    expect(DIARY_STREAM).toContain('marginHorizontal: -STREAM_INSET');
-    expect(DIARY_STREAM).toContain('{...PAGING}');
-    expect(DIARY_STREAM).toContain('width: photoWidth');
+    expect(STREAM_ENTRY).toContain('diaryScreenMetrics.streamPhotoHeight');
+    expect(STREAM_ENTRY).toContain('marginHorizontal: -STREAM_INSET');
+    expect(STREAM_ENTRY).toContain('{...PAGING}');
+    expect(STREAM_ENTRY).toContain('width: photoWidth');
   });
 
   it('opens the postcard preview on an entry tap rather than pushing the editor', () => {
@@ -177,9 +181,9 @@ describe('the trip diary stream wears the founder-s frame-1 anatomy (08/12 mock)
   });
 
   it('keeps the tap target off the photo strip, so a swipe cannot land as a tap (founder, 08/12)', () => {
-    const row = DIARY_STREAM.slice(
-      DIARY_STREAM.indexOf('function StreamEntry'),
-      DIARY_STREAM.indexOf('const STREAM_INSET'),
+    const row = STREAM_ENTRY.slice(
+      STREAM_ENTRY.indexOf('export function PostcardStreamEntry'),
+      STREAM_ENTRY.indexOf('export const STREAM_INSET'),
     );
     const opener = row.slice(row.indexOf('<Pressable'), row.indexOf('</Pressable>'));
 
@@ -188,11 +192,11 @@ describe('the trip diary stream wears the founder-s frame-1 anatomy (08/12 mock)
   });
 
   it('omits the caption entirely when the entry has none, rather than drawing an empty line', () => {
-    expect(DIARY_STREAM).toContain('entry.caption !== null &&');
+    expect(STREAM_ENTRY).toContain('postcard.caption !== null &&');
   });
 
   it('wears no likes row — the stubs live on the profile only', () => {
-    expect(DIARY_STREAM).not.toContain('stubLikeCount');
-    expect(DIARY_STREAM).not.toContain('likes');
+    expect(STREAM_ENTRY).not.toContain('stubLikeCount');
+    expect(STREAM_ENTRY).not.toContain('likes');
   });
 });
