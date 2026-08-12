@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -30,7 +31,14 @@ import {
   showsCarousel,
 } from './feedCarousel';
 import { FEED_CAPTION_MORE, FEED_TRIP_BADGE } from './feedCopy';
-import { dragToScroll, PAGING, SHOW_SCROLLBAR, SNAP_CHILD_STYLE, SNAP_STYLE } from '../diary/photoStripScroll';
+import { useFadingCounter } from './useFadingCounter';
+import {
+  dragToScroll,
+  PAGING,
+  SHOW_SCROLLBAR,
+  SNAP_CHILD_STYLE,
+  SNAP_STYLE,
+} from '../diary/photoStripScroll';
 
 const CAPTION_LINES = 2;
 
@@ -59,6 +67,7 @@ export function FeedCard({
   const [photoWidth, setPhotoWidth] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [drag] = useState(dragToScroll);
+  const counter = useFadingCounter();
 
   const photoCount = card.photos.length;
   const carousel = showsCarousel(photoCount);
@@ -68,8 +77,10 @@ export function FeedCard({
 
   const measure = (event: LayoutChangeEvent) => setPhotoWidth(event.nativeEvent.layout.width);
 
-  const settle = (event: NativeSyntheticEvent<NativeScrollEvent>) =>
+  const settle = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    counter.poke();
     onPageChange(pageOfOffset(event.nativeEvent.contentOffset.x, photoWidth, photoCount));
+  };
 
   return (
     <View style={styles.card}>
@@ -161,9 +172,12 @@ export function FeedCard({
 
         {carousel && (
           <>
-            <View style={styles.counter} pointerEvents="none">
+            <Animated.View
+              style={[styles.counter, { opacity: counter.opacity }]}
+              pointerEvents="none"
+            >
               <Text style={styles.counterLabel}>{counterLabel(page, photoCount)}</Text>
-            </View>
+            </Animated.View>
 
             <View style={styles.dots} pointerEvents="none">
               {window.map((dot) => (

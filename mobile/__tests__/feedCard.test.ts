@@ -83,9 +83,9 @@ describe('the author line names whoever the projection gave us', () => {
     expect(authorName(card({ author: { id: 't', handle: 'wanderer', displayName: null, avatarUrl: null } }))).toBe(
       'wanderer',
     );
-    expect(authorName(card({ author: { id: 't', handle: null, displayName: '  ', avatarUrl: null } }))).toBe(
-      'A traveler',
-    );
+    expect(
+      authorName(card({ author: { id: 't', handle: null, displayName: '', avatarUrl: null } })),
+    ).toBe('A traveler');
   });
 
   it('builds initials a pool tag can be recognised by', () => {

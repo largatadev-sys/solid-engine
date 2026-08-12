@@ -51,15 +51,18 @@ export function authorName(card: FeedPostcardResponse): string {
 
 export function authorInitials(card: FeedPostcardResponse): string {
   const name = authorName(card);
-  const tagged = name.split('+');
-  const words = (tagged.length > 1 ? [tagged[0], tagged[tagged.length - 1]] : [name])
-    .flatMap((part) => part.split(/[\s._-]+/))
-    .filter((word) => word !== '');
+  const tagged = name.includes('+');
+  const words = name.split(/[\s._+-]+/).filter((word) => word !== '');
   if (words.length === 0) {
     return '?';
   }
-  const chosen = tagged.length > 1 ? [words[0], words[words.length - 1]] : words.slice(0, 2);
-  return chosen.map((word) => word.charAt(0).toUpperCase()).join('');
+  const first = words[0] ?? '';
+  const last = words[words.length - 1] ?? '';
+  const chosen = tagged ? [first, last] : [first, words[1] ?? ''];
+  return chosen
+    .filter((word) => word !== '')
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('');
 }
 
 

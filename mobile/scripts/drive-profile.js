@@ -638,11 +638,20 @@ async function publishedTrip(token, title, destinations, days) {
       (await url()) === urlBeforePreview,
     `${entryLabel} -> ${await url()}`);
 
-  const sharedComingSoon = await tapLabel('Share', 3000);
-  const shareSaid = await evaluate('(window.__largataAlerts || []).join(" | ")');
-  check('AC 2: Share is drawn as the mock has it, and says coming soon rather than doing nothing',
-    sharedComingSoon.clicked === true && /coming soon/i.test(shareSaid),
-    String(shareSaid).slice(0, 140));
+  // S4.22 made this button real on the profile's copy of the preview: the mock's Share slot is
+  // where retro-sharing to the Home feed lives, so the S4.21 coming-soon assertion is superseded
+  // rather than broken. The preview opened by any surface WITHOUT a share handler still refuses.
+  const sharedToFeed = await tapLabel('Share to feed', 3500);
+  const afterShare = (await text()) || '';
+  check('AC 2 (S4.22): the mock-s Share slot performs the real act — the postcard goes public',
+    sharedToFeed.clicked === true && afterShare.includes('Remove from feed'),
+    `clicked=${sharedToFeed.clicked} offers=${afterShare.includes('Remove from feed')}`);
+
+  const pulledBack = await tapLabel('Remove from feed', 3500);
+  const afterUnshare = (await text()) || '';
+  check('AC 2 (S4.22): and it is symmetric — the same slot pulls the postcard back',
+    pulledBack.clicked === true && afterUnshare.includes('Share to feed'),
+    `clicked=${pulledBack.clicked} offers=${afterUnshare.includes('Share to feed')}`);
 
   const toEditor = await tapLabel('Edit entry', 5000);
   check('AC 2: Edit entry carries the traveler through to the editor — a doorway, not a dead end',

@@ -421,7 +421,7 @@ export type InviteByHandleRequest = {
 export type TravelerCardResponse = {
   id: string;
   handle: string | null;
-  displayName: string;
+  displayName: string | null;
   avatarUrl: string | null;
 };
 

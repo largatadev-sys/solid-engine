@@ -296,7 +296,7 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
       pending.delete(msg.id);
       return;
     }
-    if (msg.method === 'Runtime.exceptionThrown') pageErrors.push(msg.params.exceptionDetails.text);
+    if (msg.method === 'Runtime.exceptionThrown') pageErrors.push((msg.params.exceptionDetails.exception && msg.params.exceptionDetails.exception.description) || msg.params.exceptionDetails.text);
     if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'error') {
       consoleErrors.push((msg.params.args || []).map((a) => a.value ?? a.description).join(' '));
     }
@@ -431,6 +431,38 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   check('AC 8: the counter tracks the page the strip settled on',
     /\b[1-3]\/3\b/.test(afterSettle), (afterSettle.match(/\b\d\/\d\b/g) || []).join(' '));
 
+  // The lock's observable claim is that a diagonal drag moves the strip and NOT the feed under
+  // it. Asserting setPointerCapture instead would prove nothing here: a synthetic PointerEvent
+  // has no real pointer behind it, so the browser refuses the capture and the probe would report
+  // a broken lock against a product whose native path takes a different route entirely.
+  const locked = await evaluate(`
+    (() => {
+      const img = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null)[0];
+      let s = img;
+      while (s && !(s.scrollWidth > s.clientWidth && /auto|scroll/.test(getComputedStyle(s).overflowX))) s = s.parentElement;
+      if (!s) return null;
+      let feed = s.parentElement;
+      while (feed && !(feed.scrollHeight > feed.clientHeight && /auto|scroll/.test(getComputedStyle(feed).overflowY))) feed = feed.parentElement;
+      feed = feed || document.scrollingElement;
+      const beforeDown = feed.scrollTop;
+      const beforeAcross = s.scrollLeft;
+      const r = s.getBoundingClientRect();
+      const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+      const mk = (t, x, y, b) => new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 7, pointerType: "mouse", clientX: x, clientY: y, button: 0, buttons: b });
+      s.dispatchEvent(mk("pointerdown", cx, cy, 1));
+      for (const f of [0.3, 0.6, 1]) s.dispatchEvent(mk("pointermove", cx - 120 * f, cy - 140 * f, 1));
+      const across = s.scrollLeft - beforeAcross;
+      const down = feed.scrollTop - beforeDown;
+      s.dispatchEvent(mk("pointerup", cx - 120, cy - 140, 0));
+      return { across, down };
+    })()
+  `);
+  check('AC 8: a diagonal drag moves the strip and never the feed beneath it — the axis locks',
+    locked !== null && locked.across > 0 && locked.down === 0,
+    locked ? `across=${locked.across} down=${locked.down}` : 'no strip');
+
   // --- the stubbed controls refuse out loud on the web (AC 10) -------------------------------
   await evaluate('window.__largataAlerts = []; true');
   for (const label of ['Share this postcard', 'Save this postcard', 'Search', 'Notifications']) {
@@ -483,7 +515,7 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   check('ticket 04: Trips keeps its surface at its own path',
     trips.length > 0 && !trips.includes('Largata\nSIGNED IN'), `chars=${trips.length}`);
 
-  check('no page errors during the walk', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 200));
+  check('no page errors during the walk', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 400));
   check('no console errors during the walk', consoleErrors.length === 0,
     consoleErrors.join(' | ').slice(0, 200));
 
