@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Sourced trip fixtures — third-party photos, fetched on demand by scripts/fetch-fixtures.js.
+# Not committed: they are megabytes of images this repo does not own, and the fetcher is
+# reproducible. CREDITS.json travels with them locally so attribution is never guessed.
+scripts/fixtures/australia/

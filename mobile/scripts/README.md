@@ -97,6 +97,49 @@ Env: the three pool vars, plus `LARGATA_API_BASE_URL` (**local `http` rung only*
 Tags: whatever you pass — `--owner` is the trip owner, `--members` join as ordinary members.
 Fails loudly if an account is not verified, naming `test-pool.js create` as the fix.
 
+## `fetch-fixtures.js` + `seed-australia.js` — one real trip, with photos of the actual places
+
+`seed-demo.js` below builds trips with **no images at all**, and `fixtures/photo.jpg` is a solid
+orange rectangle — which is why every screenshot in this repo's history shows one. This pair exists
+for the other job: a trip that looks like a trip, so a screenshot is worth reading.
+
+**Two steps, because the photos are not ours.** `fetch-fixtures.js` pulls one landscape photo per
+activity from Unsplash, keyed by a `photoQuery` in `fixtures/australia-trip.js`, and writes
+`fixtures/australia/CREDITS.json` recording the photographer, the source URL and the licence for
+each file. The images are **gitignored** — megabytes of third-party content, and the fetch is
+reproducible. `seed-australia.js` then builds the trip and attaches them.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/fetch-fixtures.js          # once; skips anything already downloaded
+node scripts/seed-australia.js          # local stack
+```
+
+What it creates: **Sydney & the South Coast**, five days, 14 activities at real named places with
+times, AUD costs, notes and one booking; a cover photo; **t2 invited through the real invite →
+accept**; the trip walked `draft → upcoming → ongoing` (so it reads as being lived, which is what
+the Home feed wants); six photos in the Photo Dump contributed **by t2**; and four diary postcards
+with written captions — public on posting, so the feed has real content immediately.
+
+**It refuses rather than degrading, twice.** No `fixtures/australia/` → it stops, because seeding a
+trip with no images is the exact thing it exists to avoid. A non-`localhost` API → it stops unless
+you pass **`--yes-seed-the-deployed-rung`**, and the message says why: nothing this app exposes can
+undo a trip, its photos, or its public postcards, on an environment other people read.
+
+```bash
+LARGATA_API_BASE_URL=https://api-dev.largata.com \
+  node scripts/seed-australia.js --yes-seed-the-deployed-rung
+```
+
+Env: the three pool vars, plus **`UNSPLASH_ACCESS_KEY`** for the fetcher only (free, from
+https://unsplash.com/oauth/applications — it lives in the gitignored `mobile/.env`).
+Tags: `t1` = the author and trip owner, `t2` = the co-traveler who contributes to the dump.
+
+**The trip content is written, not sourced.** Days, activities, places, times, costs, notes and
+captions are composed in `fixtures/australia-trip.js` — plausible rather than verified, so do not
+read a ferry price off it. Only the *photos* come from an API, matched by search term: broad places
+(Bondi, the Three Sisters) return the real thing; a narrow one returns *a* café, not that café.
+
 ## `seed-demo.js` — a coherent set of trips to look at
 
 Seeds four trips with real content — two published (one with a collaborator), one private with a

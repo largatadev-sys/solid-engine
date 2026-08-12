@@ -185,6 +185,7 @@ async function main() {
     }
 
     if (spec.lifecycle === 'active' || spec.lifecycle === 'complete') {
+      must(await api(`/v1/itineraries/${created.id}/finish-planning`, 'POST', owner), 'finish-planning');
       must(await api(`/v1/itineraries/${created.id}/start`, 'POST', owner), 'start');
     }
     if (spec.lifecycle === 'complete') {
