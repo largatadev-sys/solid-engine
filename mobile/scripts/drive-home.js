@@ -29,13 +29,24 @@ const POLL_WAIT_MS = 68_000;
 const AUTHOR = 't1';
 const STRANGER = 't2';
 
+// Not every card has a carousel — a single-photo postcard has no strip to drag, and a probe that
+// grabs "the last photo 1" can land on one and report a working carousel as missing. Every
+// carousel probe therefore selects a card that also has a photo 2.
+const MULTI_PHOTO_CARD = `
+    const withCarousel = (nodes) => nodes.filter((n) => {
+      const label = n.getAttribute('aria-label') || '';
+      return document.querySelector('[aria-label="' + label.replace(', photo 1', ', photo 2') + '"]') !== null;
+    });
+`;
+
 // CDP Input.dispatchMouseEvent does NOT synthesize PointerEvents, so React onPointerDown never
 // fires and a drag reads as dead against a working carousel (the S4.21 lesson). Dispatch real
 // events in-page, and find the strip by walking up from the photo to the scroller.
 const DRAG_IN_PAGE = (fraction) => `
   (() => {
-    const img = Array.from(document.querySelectorAll('[aria-label]'))
-      .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+    ${MULTI_PHOTO_CARD}
+    const img = withCarousel(Array.from(document.querySelectorAll('[aria-label]'))
+      .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || '')))
       .filter((n) => n.offsetParent !== null)[0];
     let s = img;
     while (s && !(s.scrollWidth > s.clientWidth && /auto|scroll/.test(getComputedStyle(s).overflowX))) s = s.parentElement;
@@ -247,7 +258,12 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   // so the activity POST is refused and the postcard the pill exists to announce never exists.
   const pillActivity = await addActivity(author.idToken, liveTrip, 3, `Fresh stop ${stamp}`);
 
-  const sharedCaption = `Shared to the feed ${stamp}`;
+  // Long enough to overflow two lines on the phone frame, because "more" must only appear when
+  // the caption actually clamps. Other assertions match on the prefix, which is unchanged.
+  const sharedCaption =
+    `Shared to the feed ${stamp}. Stood in line for two hours before sunrise and the` +
+    ' reflection in the water was worth every minute of it, though the priests only let small' +
+    ' groups climb up to the gate at a time.';
   const privateCaption = `Kept private ${stamp}`;
 
   const shared = await postDiaryEntry(
@@ -263,11 +279,25 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
     [fixture],
   );
 
+  // A caption that fits in two lines. Without it the walk only ever sees long captions, and
+  // cannot tell a correct "more" from one that renders unconditionally — which is the bug the
+  // founder spotted on the running build.
+  const shortCaption = `Short ${stamp}`;
+  const briefActivity = await addActivity(author.idToken, liveTrip, 1, `A brief stop ${stamp}`);
+  const brief = await postDiaryEntry(
+    author.idToken,
+    liveTrip,
+    { activityId: briefActivity, caption: shortCaption, fromDump: [], shareToFeed: true },
+    [fixture],
+  );
+
   check('the composer posted a shared postcard with three photos',
     shared.status === 201 && shared.body.sharedAt !== null && shared.body.photos.length === 3,
     `status=${shared.status} sharedAt=${shared.body.sharedAt}`);
   check('and a private sibling that stays private',
     kept.status === 201 && kept.body.sharedAt === null, `sharedAt=${kept.body.sharedAt}`);
+  check('and a short-caption postcard, the other half of the "more" pair',
+    brief.status === 201, `status=${brief.status}`);
 
   // --- the wire, read as the stranger (AC 1, AC 6) -------------------------------------------
   const feed = (await api('/v1/feed/postcards?limit=50', 'GET', stranger.idToken)).body;
@@ -429,6 +459,23 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
 
   await shoot('web-feed');
 
+  // --- "more" belongs only to a caption that actually overflows -------------------------------
+  const moreCount = await evaluate(`
+    (() => {
+      const mores = Array.from(document.querySelectorAll('*'))
+        .filter((n) => n.children.length === 0 && n.textContent.trim() === 'more')
+        .filter((n) => n.offsetParent !== null);
+      const cards = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null);
+      return { mores: mores.length, cards: cards.length };
+    })()
+  `);
+  check('the caption offers "more" only where it clamps — never on one that already fits',
+    moreCount !== null && moreCount.cards >= 2 && moreCount.mores >= 1 &&
+      moreCount.mores < moreCount.cards,
+    JSON.stringify(moreCount));
+
   // --- the media tell: every photo must arrive bearer-authenticated (S3.3) -------------------
   const mediaGets = requests.filter((r) => r.url.includes('/v1/media/'));
   const anon = mediaGets.filter((r) => r.auth === 'ANON');
@@ -447,8 +494,9 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   // moved (snap was off while it ran) and the snap is back afterwards (paging still works).
   const snapAfter = await evaluate(`
     (() => {
-      const img = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+      ${MULTI_PHOTO_CARD}
+      const img = withCarousel(Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || '')))
         .filter((n) => n.offsetParent !== null)[0];
       let s = img;
       while (s && !(s.scrollWidth > s.clientWidth && /auto|scroll/.test(getComputedStyle(s).overflowX))) s = s.parentElement;
@@ -469,8 +517,9 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
   // a broken lock against a product whose native path takes a different route entirely.
   const locked = await evaluate(`
     (() => {
-      const img = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+      ${MULTI_PHOTO_CARD}
+      const img = withCarousel(Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || '')))
         .filter((n) => n.offsetParent !== null)[0];
       let s = img;
       while (s && !(s.scrollWidth > s.clientWidth && /auto|scroll/.test(getComputedStyle(s).overflowX))) s = s.parentElement;
@@ -544,8 +593,38 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
       return true;
     })()
   `;
+  // The like can succeed while the burst never draws, so measure the overlay itself rather than
+  // inferring it from the count — the founder saw a missing burst that every count check passed.
+  const BURST_ON_SCREEN = `
+    (() => {
+      const photos = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null);
+      const card = photos[photos.length - 1];
+      if (!card) return null;
+      let stage = card.parentElement;
+      while (stage && stage.querySelectorAll('svg').length === 0) stage = stage.parentElement;
+      const big = Array.from((stage || document).querySelectorAll('svg'))
+        .filter((s) => s.getBoundingClientRect().width > 60);
+      if (big.length === 0) return { drawn: false };
+      let node = big[0], opacity = 1;
+      for (let up = 0; up < 4 && node; up += 1) {
+        const o = Number(getComputedStyle(node).opacity);
+        if (!Number.isNaN(o)) opacity = Math.min(opacity, o);
+        node = node.parentElement;
+      }
+      return { drawn: true, width: Math.round(big[0].getBoundingClientRect().width), opacity: Number(opacity.toFixed(2)) };
+    })()
+  `;
+
   const beforeBurst = await evaluate(HEART_STATE);
   await evaluate(DOUBLE_TAP);
+  await sleep(300);
+  const burst = await evaluate(BURST_ON_SCREEN);
+  check('the white heart burst is drawn over the photo, not merely counted',
+    burst !== null && burst.drawn === true && burst.opacity > 0,
+    burst === null ? 'no photo found' : JSON.stringify(burst));
+
   await sleep(1200);
   const afterBurst = await evaluate(HEART_STATE);
   await evaluate(DOUBLE_TAP);

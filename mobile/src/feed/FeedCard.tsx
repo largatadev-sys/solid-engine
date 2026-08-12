@@ -33,6 +33,7 @@ import {
   pageOfOffset,
   showsCarousel,
 } from './feedCarousel';
+import { captionOverflows, UNMEASURED, type CaptionHeights } from './captionClamp';
 import { FEED_CAPTION_MORE, FEED_TRIP_BADGE } from './feedCopy';
 import { isDoubleTap, type TapPoint } from './doubleTap';
 import { HeartBurst } from './HeartBurst';
@@ -79,6 +80,7 @@ export function FeedCard({
 }: FeedCardProps) {
   const [photoWidth, setPhotoWidth] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [captionHeights, setCaptionHeights] = useState<CaptionHeights>(UNMEASURED);
   const [drag] = useState(dragToScroll);
   const counter = useFadingCounter();
 
@@ -128,6 +130,11 @@ export function FeedCard({
   const navigates = tripLineNavigates(card);
 
   const measure = (event: LayoutChangeEvent) => setPhotoWidth(event.nativeEvent.layout.width);
+
+  const measureCaption = (which: keyof CaptionHeights, height: number) =>
+    setCaptionHeights((seen) => (seen[which] === height ? seen : { ...seen, [which]: height }));
+
+  const overflows = captionOverflows(captionHeights);
 
   const settle = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     counter.poke();
@@ -284,10 +291,22 @@ export function FeedCard({
 
         {card.caption !== null && (
           <View>
-            <Text style={styles.caption} numberOfLines={expanded ? undefined : CAPTION_LINES}>
+            <Text
+              style={[styles.caption, styles.captionProbe]}
+              onLayout={(event) => measureCaption('full', event.nativeEvent.layout.height)}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
               {card.caption}
             </Text>
-            {!expanded && (
+            <Text
+              style={styles.caption}
+              numberOfLines={expanded ? undefined : CAPTION_LINES}
+              onLayout={(event) => measureCaption('clamped', event.nativeEvent.layout.height)}
+            >
+              {card.caption}
+            </Text>
+            {overflows && !expanded && (
               <Pressable
                 onPress={() => setExpanded(true)}
                 accessibilityRole="button"
@@ -516,6 +535,13 @@ const styles = StyleSheet.create({
   caption: {
     ...feedTypography.caption,
     color: feedColors.caption,
+  },
+  captionProbe: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    opacity: 0,
+    zIndex: -1,
   },
   captionMore: {
     ...feedTypography.captionMore,

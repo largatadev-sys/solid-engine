@@ -135,6 +135,8 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
 
   // The second postcard names no place on purpose: the pin must vanish rather than render a bare
   // glyph or fall back to the activity title (founder, 2026-08-12).
+  // Also the SHORT-caption case: "more" must not appear on a caption that already fits, which is
+  // only observable beside a long one on the same screen.
   const placeless = await api(
     `/v1/itineraries/${trip}/days/${plan.days[1].id}/activities`,
     'POST',
@@ -146,7 +148,7 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
     trip,
     {
       activityId: placeless.body.id,
-      caption: `No location on this one ${stamp}`,
+      caption: `Short one ${stamp}`,
       fromDump: [],
       shareToFeed: true,
     },

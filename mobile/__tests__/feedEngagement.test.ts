@@ -124,6 +124,11 @@ describe('the chrome is wired the way the mock and the kill-switch require', () 
     expect(CARD).toContain('{card.place !== null && (');
   });
 
+  it('offers "more" only once the caption is measured as overflowing', () => {
+    expect(CARD).toContain('{overflows && !expanded && (');
+    expect(CARD).not.toContain('{!expanded && (');
+  });
+
   it('pads every icon target past the thumb minimum', () => {
     expect(CARD).toContain('HIT_SLOP');
   });
