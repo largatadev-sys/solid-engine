@@ -49,6 +49,7 @@ export function dragToScroll(): {
 
   const stop = (event: GestureResponderEvent) => {
     const native = event as unknown as DragEvent;
+    if (native.pointerType !== undefined && native.pointerType !== MOUSE) return;
     const target = scroller(native.currentTarget);
     if (target === null) {
       from = null;
@@ -65,7 +66,7 @@ export function dragToScroll(): {
 
     if (target.style !== undefined) target.style.scrollBehavior = 'smooth';
     target.scrollLeft = Math.round(target.scrollLeft / pitch) * pitch;
-    if (target.style !== undefined) target.style.scrollSnapType = 'x mandatory';
+    if (target.style !== undefined) target.style.scrollSnapType = SNAP_STYLE.scrollSnapType;
   };
 
   return {
@@ -87,6 +88,7 @@ export function dragToScroll(): {
 
     onPointerMove: (event: GestureResponderEvent) => {
       const native = event as unknown as DragEvent;
+      if (native.pointerType !== undefined && native.pointerType !== MOUSE) return;
       const target = scroller(native.currentTarget);
       if (from === null || target === null || native.clientX === undefined) return;
 

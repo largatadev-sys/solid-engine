@@ -357,6 +357,7 @@ export type DiaryTripResponse = {
   entryCount: number;
   destinations?: string[];
   dayCount?: number;
+  coverImageUrl?: string | null;
 };
 
 

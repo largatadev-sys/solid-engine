@@ -1,11 +1,11 @@
-import { dragToScroll } from '../src/diary/photoStripScroll.web';
+import { dragToScroll, SNAP_STYLE } from '../src/diary/photoStripScroll.web';
 
 
 function strip(width = 300, at = 0) {
   return {
     scrollLeft: at,
     clientWidth: width,
-    style: { scrollBehavior: 'auto', scrollSnapType: 'x mandatory' },
+    style: { scrollBehavior: 'auto', scrollSnapType: SNAP_STYLE.scrollSnapType },
     setPointerCapture: () => undefined,
     releasePointerCapture: () => undefined,
   };
@@ -74,7 +74,7 @@ describe('the web drag claims the MOUSE only — touch belongs to the browser (f
     drag.onPointerMove(press(el, 'mouse', 190));
     drag.onPointerUp(press(el, 'mouse', 190));
 
-    expect(el.style.scrollSnapType).toBe('x mandatory');
+    expect(el.style.scrollSnapType).toBe(SNAP_STYLE.scrollSnapType);
   });
 
   it('never disturbs snap for a touch gesture — the browser is already paging it', () => {
@@ -85,7 +85,28 @@ describe('the web drag claims the MOUSE only — touch belongs to the browser (f
     drag.onPointerMove(press(el, 'touch', 120));
     drag.onPointerUp(press(el, 'touch', 120));
 
-    expect(el.style.scrollSnapType).toBe('x mandatory');
+    expect(el.style.scrollSnapType).toBe(SNAP_STYLE.scrollSnapType);
+  });
+
+  it('ignores a touch that arrives mid-mouse-drag, rather than steering by the wrong finger', () => {
+    const drag = dragToScroll();
+    const el = strip();
+
+    drag.onPointerDown(press(el, 'mouse', 200));
+    drag.onPointerMove(press(el, 'touch', 20));
+
+    expect(el.scrollLeft).toBe(0);
+  });
+
+  it('leaves a stray touch release alone while a mouse drag is still held', () => {
+    const drag = dragToScroll();
+    const el = strip();
+
+    drag.onPointerDown(press(el, 'mouse', 200));
+    drag.onPointerMove(press(el, 'mouse', 60));
+    drag.onPointerUp(press(el, 'touch', 60));
+
+    expect(el.style.scrollSnapType).toBe('none');
   });
 
   it('still settles a mouse release onto a whole photo', () => {

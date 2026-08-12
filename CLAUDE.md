@@ -110,8 +110,9 @@ The generalisation this repo keeps re-learning: **verify at the layer that ships
 | Port | What | Why it is fixed |
 |---|---|---|
 | 8080 | backend (docker compose) | `mobile/.env` and the container build arg point at it |
-| **8081** | **preview container** | **Pinned twice**: the backend's dev CORS allowlist (`docker-compose.yml` `LARGATA_CORS_ALLOWED_ORIGINS` = 8081/8082 only) *and* the Google OAuth client's authorized JavaScript origins (console-registered — S0.6). Move the preview and Google refuses to render the button *and* the API preflights 403. |
+| **8081** | **preview container** | **Pinned twice**: the backend's dev CORS allowlist (`docker-compose.yml` `LARGATA_CORS_ALLOWED_ORIGINS` — `localhost`/`127.0.0.1` on 8081–8083, plus `10.0.2.2` for the emulator's browser) *and* the Google OAuth client's authorized JavaScript origins (console-registered — S0.6). Move the preview and Google refuses to render the button *and* the API preflights 403. |
 | 8082 | Metro (`npx expo start --port 8082`) | The one that gives. Metro defaults to 8081 and *will* collide with the preview. |
+| 8083 | **preview built for the ANDROID EMULATOR's browser** (S4.21) | The only local rung with **real touch**, which is where the founder found the carousel erratic and headless Chrome cannot reach — its pointer is always a mouse. Needs three things to agree, and two fail silently: reach it at **`http://10.0.2.2:8083`** (on the device, `localhost` *is* the device); build it with `--build-arg EXPO_PUBLIC_API_BASE_URL="http://10.0.2.2:8080"`, because the 8081 image bakes `localhost:8080` and the device then calls itself; and keep `http://10.0.2.2:8083` in the dev CORS allowlist, or the app loads and every API call dies on preflight — which reads as a broken backend. Not 8082: that is Metro's, and the container simply exits on the collision. |
 
 ```bash
 # 1. Full stack (fresh DB every time — that is the point)
