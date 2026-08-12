@@ -13,7 +13,10 @@ import {
   DIARY_ENTRY_CREATED,
   DIARY_ENTRY_DELETED,
   DIARY_ENTRY_EDITED,
+  DIARY_ENTRY_SHARED,
+  DIARY_ENTRY_UNSHARED,
 } from '../diary/diaryEvents';
+import { feedKeys } from './feedQueries';
 import { MAX_DIARY_PHOTOS } from '../diary/diaryCapture';
 import { saveSteps, type StagedEntry } from '../diary/stagedEntry';
 import { useAuth } from '../hooks/authContext';
@@ -134,6 +137,27 @@ export function useDeleteDiaryEntry(
     onSuccess: async (_result, entryId) => {
       track(DIARY_ENTRY_DELETED, { itineraryId, diaryEntryId: entryId });
       await invalidateDiary(client, itineraryId);
+    },
+  });
+}
+
+
+export function useShareDiaryEntry(
+  itineraryId: string,
+): UseMutationResult<DiaryEntryResponse, Error, { entryId: string; shared: boolean }> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ entryId, shared }: { entryId: string; shared: boolean }) =>
+      shared
+        ? diaryRepository.shareToFeed(itineraryId, entryId)
+        : diaryRepository.unshareFromFeed(itineraryId, entryId),
+    onSuccess: async (_entry, { entryId, shared }) => {
+      track(shared ? DIARY_ENTRY_SHARED : DIARY_ENTRY_UNSHARED, {
+        itineraryId,
+        diaryEntryId: entryId,
+      });
+      await invalidateDiary(client, itineraryId);
+      await client.invalidateQueries({ queryKey: feedKeys.all });
     },
   });
 }

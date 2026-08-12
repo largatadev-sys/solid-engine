@@ -21,7 +21,14 @@ import {
   diaryScreenTypography,
 } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
-import { PREVIEW_CLOSE, PREVIEW_EDIT, PREVIEW_HINT, PREVIEW_SHARE } from './diaryCopy';
+import {
+  PREVIEW_CLOSE,
+  PREVIEW_EDIT,
+  PREVIEW_HINT,
+  PREVIEW_SHARE,
+  SHARE_ENTRY_ACTION,
+  UNSHARE_ENTRY_ACTION,
+} from './diaryCopy';
 import { dragToScroll, PAGING, SNAP_CHILD_STYLE, SNAP_STYLE } from './photoStripScroll';
 import { snapshotEyebrow } from './postcardAnatomy';
 import { pageOfOffset, previewCount } from './postcardCarousel';
@@ -32,10 +39,19 @@ interface PostcardPreviewProps {
   readonly tripTitle: string | null;
   readonly onEdit: (entry: DiaryEntryResponse) => void;
   readonly onDismiss: () => void;
+  readonly onShareChange?: (entry: DiaryEntryResponse, shared: boolean) => void;
+  readonly sharePending?: boolean;
 }
 
 
-export function PostcardPreview({ entry, tripTitle, onEdit, onDismiss }: PostcardPreviewProps) {
+export function PostcardPreview({
+  entry,
+  tripTitle,
+  onEdit,
+  onDismiss,
+  onShareChange,
+  sharePending = false,
+}: PostcardPreviewProps) {
   const [page, setPage] = useState(0);
   const [photoWidth, setPhotoWidth] = useState(0);
   const [drag] = useState(dragToScroll);
@@ -136,19 +152,41 @@ export function PostcardPreview({ entry, tripTitle, onEdit, onDismiss }: Postcar
 
             <View style={styles.actionDivider} />
 
-            <Pressable
-              style={styles.action}
-              onPress={() => comingSoon('share')}
-              accessibilityRole="button"
-              accessibilityLabel={PREVIEW_SHARE}
-            >
-              <Icon
-                name="share"
-                size={diaryScreenMetrics.actionGlyph}
-                color={diaryScreenColors.shareInk}
-              />
-              <Text style={styles.shareLabel}>{PREVIEW_SHARE}</Text>
-            </Pressable>
+            {onShareChange === undefined ? (
+              <Pressable
+                style={styles.action}
+                onPress={() => comingSoon('share')}
+                accessibilityRole="button"
+                accessibilityLabel={PREVIEW_SHARE}
+              >
+                <Icon
+                  name="share"
+                  size={diaryScreenMetrics.actionGlyph}
+                  color={diaryScreenColors.shareInk}
+                />
+                <Text style={styles.shareLabel}>{PREVIEW_SHARE}</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={styles.action}
+                onPress={() => onShareChange(showing, showing.sharedAt === null)}
+                disabled={sharePending}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showing.sharedAt === null ? SHARE_ENTRY_ACTION : UNSHARE_ENTRY_ACTION
+                }
+                accessibilityState={{ disabled: sharePending }}
+              >
+                <Icon
+                  name="globe"
+                  size={diaryScreenMetrics.actionGlyph}
+                  color={diaryScreenColors.shareInk}
+                />
+                <Text style={styles.shareLabel}>
+                  {showing.sharedAt === null ? SHARE_ENTRY_ACTION : UNSHARE_ENTRY_ACTION}
+                </Text>
+              </Pressable>
+            )}
           </View>
         </Pressable>
 

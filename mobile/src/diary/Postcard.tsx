@@ -26,6 +26,7 @@ import {
   workspaceColors,
 } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
+import { SHARED_BADGE } from './diaryCopy';
 import {
   carouselCounter,
   carouselPhotoWidth,
@@ -115,16 +116,25 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
 
         {entry.caption !== null && <Text style={styles.caption}>{entry.caption}</Text>}
 
-        {likes !== null && (
-          <View style={styles.likes}>
-            <Icon
-              name="heartFilled"
-              size={profileMetrics.heartSize}
-              color={profileColors.likeHeart}
-            />
-            <Text style={styles.likesLabel}>{likesLabel(likes)}</Text>
-          </View>
-        )}
+        <View style={styles.footer}>
+          {likes !== null && (
+            <View style={styles.likes}>
+              <Icon
+                name="heartFilled"
+                size={profileMetrics.heartSize}
+                color={profileColors.likeHeart}
+              />
+              <Text style={styles.likesLabel}>{likesLabel(likes)}</Text>
+            </View>
+          )}
+
+          {entry.sharedAt !== null && (
+            <View style={styles.shared}>
+              <Icon name="globe" size={profileMetrics.heartSize} color={profileColors.badgeInk} />
+              <Text style={styles.sharedLabel}>{SHARED_BADGE}</Text>
+            </View>
+          )}
+        </View>
       </Pressable>
     </View>
   );
@@ -219,5 +229,19 @@ const styles = StyleSheet.create({
   likesLabel: {
     ...profileTypography.likes,
     color: profileColors.likeCount,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm3,
+  },
+  shared: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs2,
+  },
+  sharedLabel: {
+    ...profileTypography.likes,
+    color: profileColors.badgeInk,
   },
 });

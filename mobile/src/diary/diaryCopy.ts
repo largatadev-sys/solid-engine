@@ -8,6 +8,19 @@ export const DUMP_LABEL = 'From the Photo Dump';
 
 export const DIARY_PRIVACY_NOTE = 'Only you can see your diary. It shows up on your profile.';
 
+export const DIARY_SHARED_NOTE =
+  'This postcard goes to the Home feed, where any Largata traveler can see it. You can unshare it any time.';
+
+export const SHARE_TO_FEED_LABEL = 'Share to feed';
+
+export const SHARE_TO_FEED_HINT = 'Let other travelers see this postcard on Home';
+
+export const SHARE_ENTRY_ACTION = 'Share to feed';
+
+export const UNSHARE_ENTRY_ACTION = 'Remove from feed';
+
+export const SHARED_BADGE = 'Shared';
+
 export const PHOTOS_LABEL = 'Photos in this memory';
 
 export const PHOTOS_EMPTY = 'No photos yet — a diary entry needs at least one.';

@@ -6,7 +6,7 @@ import { MediaThumb } from '../media/MediaThumb';
 import { Postcard } from '../diary/Postcard';
 import { PostcardPreview } from '../diary/PostcardPreview';
 import { inTripDayOrder, tripEntryCountLabel } from '../diary/postcardAnatomy';
-import { useMyDiaryEntries, useMyDiaryTrips } from '../query/diaryQueries';
+import { useMyDiaryEntries, useMyDiaryTrips, useShareDiaryEntry } from '../query/diaryQueries';
 import { colors, spacing } from '../theme';
 import {
   profileColors,
@@ -66,6 +66,7 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
 
   const postcards = entries.data === undefined ? [] : inTripDayOrder(entries.data);
   const [previewing, setPreviewing] = useState<DiaryEntryResponse | null>(null);
+  const share = useShareDiaryEntry(trip.itineraryId);
 
   return (
     <View style={styles.section}>
@@ -130,6 +131,13 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
           router.push(entryEditorRoute('profile', trip.itineraryId, entry.id));
         }}
         onDismiss={() => setPreviewing(null)}
+        onShareChange={(entry, shared) => {
+          share.mutate(
+            { entryId: entry.id, shared },
+            { onSuccess: (updated) => setPreviewing(updated) },
+          );
+        }}
+        sharePending={share.isPending}
       />
     </View>
   );

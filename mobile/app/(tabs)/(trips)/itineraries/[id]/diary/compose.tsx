@@ -31,6 +31,7 @@ import {
   roomLeft,
 } from '../../../../../../src/diary/diaryCapture';
 import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
+import { ShareToFeedToggle } from '../../../../../../src/diary/ShareToFeedToggle';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { DiaryAddRow } from '../../../../../../src/diary/DiaryAddRow';
 import { DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
@@ -69,6 +70,7 @@ export default function ComposeDiaryEntryScreen() {
   const [devicePhotos, setDevicePhotos] = useState<PickedPhoto[]>([]);
   const [fromDump, setFromDump] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
+  const [shareToFeed, setShareToFeed] = useState(false);
   const [dumpPickerOpen, setDumpPickerOpen] = useState(false);
 
   if (isPending) return <ActivityIndicator style={styles.loading} color={colors.accent} />;
@@ -102,6 +104,7 @@ export default function ComposeDiaryEntryScreen() {
           activityId: activity.id,
           caption: caption.trim() === '' ? null : caption.trim(),
           fromDump,
+          shareToFeed,
         },
         devicePhotos,
       });
@@ -178,7 +181,9 @@ export default function ComposeDiaryEntryScreen() {
           />
         </View>
 
-        <DiaryPrivacyNote />
+        <ShareToFeedToggle on={shareToFeed} onChange={setShareToFeed} />
+
+        <DiaryPrivacyNote shared={shareToFeed} />
 
         {photoAction.failure !== undefined ? (
           <Text style={styles.failure}>{photoAction.failure}</Text>

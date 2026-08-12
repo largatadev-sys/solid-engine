@@ -127,4 +127,6 @@ export const apiClient = {
   put: <T>(path: string, body: unknown): Promise<T> => request<T>(path, { method: 'PUT', body }),
 
   delete: (path: string, body?: unknown): Promise<void> => request<void>(path, { method: 'DELETE', body }),
+
+  deleteReturning: <T>(path: string): Promise<T> => request<T>(path, { method: 'DELETE' }),
 };

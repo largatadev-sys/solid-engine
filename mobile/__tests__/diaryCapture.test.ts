@@ -30,6 +30,7 @@ function entry(overrides: Partial<DiaryEntryResponse> = {}): DiaryEntryResponse 
     timeOfDay: null,
     caption: null,
     photos: [],
+    sharedAt: null,
     createdAt: '2026-08-11T10:00:00Z',
     updatedAt: '2026-08-11T10:00:00Z',
     ...overrides,

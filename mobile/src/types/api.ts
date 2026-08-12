@@ -346,6 +346,7 @@ export type DiaryEntryResponse = {
   timeOfDay: string | null;
   caption: string | null;
   photos: DiaryPhotoResponse[];
+  sharedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -380,6 +381,20 @@ export type PostDiaryEntryRequest = {
   activityId: string;
   caption: string | null;
   fromDump: string[];
+  shareToFeed: boolean;
+};
+
+
+export type FeedPostcardResponse = {
+  id: string;
+  author: TravelerCardResponse;
+  tripTitle: string | null;
+  publishedItineraryId: string | null;
+  dayLabel: string;
+  activityTitle: string;
+  caption: string | null;
+  sharedAt: string;
+  photos: DiaryPhotoResponse[];
 };
 
 
