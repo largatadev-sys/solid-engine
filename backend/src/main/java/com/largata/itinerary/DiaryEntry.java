@@ -36,7 +36,13 @@ class DiaryEntry {
     @Column(name = "time_of_day", updatable = false)
     private LocalTime timeOfDay;
 
+    @Column(updatable = false)
+    private String place;
+
     @Column private String caption;
+
+    @Column(name = "shared_at")
+    private Instant sharedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -63,7 +69,9 @@ class DiaryEntry {
         this.activityTitle = snapshot.activityTitle();
         this.dayLabel = snapshot.dayLabel();
         this.timeOfDay = snapshot.timeOfDay();
+        this.place = snapshot.place();
         this.caption = normalizeCaption(caption);
+        this.sharedAt = at;
         this.createdAt = at;
         this.updatedAt = at;
     }
@@ -90,8 +98,18 @@ class DiaryEntry {
     }
 
 
+    boolean isShared() {
+        return sharedAt != null;
+    }
+
+
     boolean isAuthoredBy(UUID candidate) {
         return travelerId.equals(candidate);
+    }
+
+
+    boolean isReadableBy(UUID candidate) {
+        return isShared() || isAuthoredBy(candidate);
     }
 
 
@@ -136,8 +154,16 @@ class DiaryEntry {
         return timeOfDay;
     }
 
+    String place() {
+        return place;
+    }
+
     String caption() {
         return caption;
+    }
+
+    Instant sharedAt() {
+        return sharedAt;
     }
 
     Instant createdAt() {

@@ -1,6 +1,10 @@
 export const WELCOME_ROUTE = '/welcome';
 export const SIGNED_IN_HOME = '/';
 
+export const HOME_TAB_ROUTE = '/';
+
+export const TRIPS_TAB_ROUTE = '/trips';
+
 export const PROFILE_TAB_ROUTE = '/profile';
 
 const PUBLIC_SEGMENTS = ['welcome', 'sign-up', 'sign-in'] as const;

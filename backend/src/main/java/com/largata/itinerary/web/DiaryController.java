@@ -56,7 +56,11 @@ class DiaryController {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
         PostDiaryEntryRequest entry = json.readValue(entryJson, PostDiaryEntryRequest.class);
         return diary.post(
-                member, entry.activityId(), entry.caption(), entry.fromDump(), bytesOf(devicePhotos));
+                member,
+                entry.activityId(),
+                entry.caption(),
+                entry.fromDump(),
+                bytesOf(devicePhotos));
     }
 
 

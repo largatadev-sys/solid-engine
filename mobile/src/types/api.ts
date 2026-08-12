@@ -344,8 +344,10 @@ export type DiaryEntryResponse = {
   activityTitle: string;
   dayLabel: string;
   timeOfDay: string | null;
+  place: string | null;
   caption: string | null;
   photos: DiaryPhotoResponse[];
+  sharedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -383,6 +385,21 @@ export type PostDiaryEntryRequest = {
 };
 
 
+export type FeedPostcardResponse = {
+  id: string;
+  author: TravelerCardResponse;
+  itineraryId: string;
+  tripTitle: string | null;
+  publishedItineraryId: string | null;
+  dayLabel: string;
+  activityTitle: string;
+  place: string | null;
+  caption: string | null;
+  sharedAt: string;
+  photos: DiaryPhotoResponse[];
+};
+
+
 export type ErrorEnvelope = {
   code: string;
   message: string;
@@ -406,7 +423,7 @@ export type InviteByHandleRequest = {
 export type TravelerCardResponse = {
   id: string;
   handle: string | null;
-  displayName: string;
+  displayName: string | null;
   avatarUrl: string | null;
 };
 
@@ -455,4 +472,13 @@ export type OwnershipOfferRequest = {
 
 export type AcceptResponse = {
   itineraryId: string;
+};
+
+
+export type PublicTripDiaryResponse = {
+  itineraryId: string;
+  author: TravelerCardResponse;
+  tripTitle: string | null;
+  publishedItineraryId: string | null;
+  postcards: FeedPostcardResponse[];
 };

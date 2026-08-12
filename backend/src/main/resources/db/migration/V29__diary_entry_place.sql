@@ -1,0 +1,25 @@
+-- V29 — the postcard remembers WHERE it happened (S4.22, founder correction).
+--
+-- THE SNAPSHOT WAS INCOMPLETE. V27 captured the activity's title, its day label and its time —
+-- everything the postcard needed to say *what* happened and *when* — and left `place` behind, the
+-- one field that says *where*. The home feed's location tag then had nothing to render and was
+-- wired to the activity title instead, so a pin captioned an act rather than a place. The activity
+-- has carried `place` since V7 (free text, ADR-013 — a described landmark, never a geotag); it
+-- simply never reached the diary.
+--
+-- SNAPSHOT, FOR THE SAME REASON THE OTHERS ARE. This copies at post time and is never rewritten,
+-- exactly like `activity_title` and `day_label`, and for V27's stated reason: a postcard records
+-- what happened, and what happened does not change when someone edits the plan afterward. Joining
+-- to `activity` at read time would let a plan edit silently relocate a memory already posted, and
+-- an activity deletion erase its location — while `activity_id` is ON DELETE SET NULL precisely so
+-- the entry outlives the activity.
+--
+-- NULLABLE, AND DELIBERATELY NOT BACKFILLED. `place` is optional on the activity, so plenty of
+-- entries will legitimately have none and the card must read well without it. The entries written
+-- before this migration are a different case and the distinction matters: their location is
+-- unknowable rather than absent. The activity's place TODAY is not evidence of what it was when the
+-- postcard was posted — that is the very substitution the snapshot exists to prevent — so
+-- backfilling from it would manufacture a memory rather than recover one. They stay NULL and their
+-- cards render without the tag, which is honest.
+
+ALTER TABLE diary_entry ADD COLUMN place TEXT;

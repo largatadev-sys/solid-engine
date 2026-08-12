@@ -285,8 +285,10 @@ public class DiaryService {
                 entry.activityTitle(),
                 entry.dayLabel(),
                 entry.timeOfDay(),
+                entry.place(),
                 entry.caption(),
                 entryPhotos.stream().map(DiaryPhotoResponse::of).toList(),
+                entry.sharedAt(),
                 entry.createdAt(),
                 entry.updatedAt());
     }
@@ -302,15 +304,17 @@ public class DiaryService {
 
     private DiaryEntry saveTheFirstPostFor(
             Membership member, UUID activityId, Activity activity, Day day, String caption) {
+        Instant at = Instant.now(clock);
+        DiaryEntry entry =
+                DiaryEntry.postedFrom(
+                        member.travelerId(),
+                        member.itineraryId(),
+                        activityId,
+                        ActivitySnapshot.of(activity, day),
+                        caption,
+                        at);
         try {
-            return entries.saveAndFlush(
-                    DiaryEntry.postedFrom(
-                            member.travelerId(),
-                            member.itineraryId(),
-                            activityId,
-                            ActivitySnapshot.of(activity, day),
-                            caption,
-                            Instant.now(clock)));
+            return entries.saveAndFlush(entry);
         } catch (DataIntegrityViolationException lostTheRace) {
             throw new ActivityAlreadyInDiaryException();
         }
@@ -348,6 +352,9 @@ public class DiaryService {
 
 
     private Activity requireActivityOfTrip(Membership member, UUID activityId) {
+        if (activityId == null) {
+            throw new ActivityNotFoundException();
+        }
         Activity activity =
                 activities.findById(activityId).orElseThrow(ActivityNotFoundException::new);
         days.findByIdAndItineraryId(activity.dayId(), member.itineraryId())

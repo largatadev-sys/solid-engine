@@ -341,7 +341,17 @@ function writeFixture() {
     composerScreen.replace(/\n/g, ' | ').slice(0, 200));
 
   check('AC 11: the info note reads exactly as the founder approved it',
-    composerScreen.includes('Only you can see your diary. It shows up on your profile.'));
+    composerScreen.includes(
+      'Your postcards go to the Home feed, where any Largata traveler can see them.'),
+    composerScreen.replace(/\n/g, ' | ').slice(0, 200));
+
+  // The note must be stated BEFORE the first postcard, not discovered after it — and there must
+  // be no control beside it implying the audience is a choice (founder, 2026-08-13).
+  check('S4.22: it no longer promises a privacy the diary does not have',
+    !composerScreen.includes('Only you can see your diary'));
+  check('S4.22: and the composer offers no share toggle, because posting is the whole act',
+    !composerScreen.includes('Share to feed'),
+    composerScreen.replace(/\n/g, ' | ').slice(0, 200));
 
   // The dump tiles live inside the picker modal now, so the bearer check moves to the modal
   // below — it is asserted once for the whole walk at the end regardless.

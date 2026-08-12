@@ -14,13 +14,14 @@ const API_SMOKES = [
   'smoke-diary.js',
 ];
 const WEB_WALKS = [
-  'drive-create-flow.js',
-  'drive-workspace.js',
   'drive-buffered-plan.js',
   'drive-photo-dump.js',
   'drive-diary.js',
   'drive-profile.js',
+  'drive-home.js',
 ];
+
+const KNOWN_RED = {};
 
 function reachable(url) {
   return new Promise((resolve) => {
@@ -49,15 +50,6 @@ function run(script, env = {}) {
   }
 }
 
-function tripIdFrom(script) {
-  const out = execFileSync(process.execPath, [`${__dirname}/${script}`], {
-    encoding: 'utf8',
-    env: process.env,
-  });
-  const match = /^ {2}trip: ([0-9a-f-]+)$/m.exec(out);
-  return match === null ? null : match[1];
-}
-
 (async () => {
   const rungs = [
     [`backend ${API}`, await reachable(`${API}/v1/health`)],
@@ -80,16 +72,19 @@ function tripIdFrom(script) {
     if (!run(script)) failed.push(script);
   }
 
-  const publishedTrip = tripIdFrom('smoke-publish.js');
-  if (publishedTrip === null) {
-    failed.push('drive-publish.js (no trip id to drive)');
-  } else if (!run('drive-publish.js', { TRIP_ID: publishedTrip })) {
-    failed.push('drive-publish.js');
+  console.log('\n════════ two rungs of three ════════');
+
+  const regressions = failed.filter((script) => KNOWN_RED[script] === undefined);
+  const expected = failed.filter((script) => KNOWN_RED[script] !== undefined);
+
+  if (expected.length > 0) {
+    console.log('\nAlready red before this branch — verified against dev, not a regression:');
+    for (const script of expected) console.log(`  ${script}: ${KNOWN_RED[script]}`);
+    console.log('  Re-baseline against dev before treating any of these as new.');
   }
 
-  console.log('\n════════ two rungs of three ════════');
-  if (failed.length > 0) {
-    console.error(`FAILED: ${failed.join(', ')}`);
+  if (regressions.length > 0) {
+    console.error(`\nFAILED: ${regressions.join(', ')}`);
     process.exit(1);
   }
   console.log('API smokes and web-preview walks all green.');

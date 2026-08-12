@@ -21,7 +21,12 @@ import {
   diaryScreenTypography,
 } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
-import { PREVIEW_CLOSE, PREVIEW_EDIT, PREVIEW_HINT, PREVIEW_SHARE } from './diaryCopy';
+import {
+  PREVIEW_CLOSE,
+  PREVIEW_EDIT,
+  PREVIEW_HINT,
+  PREVIEW_SHARE,
+} from './diaryCopy';
 import { dragToScroll, PAGING, SNAP_CHILD_STYLE, SNAP_STYLE } from './photoStripScroll';
 import { snapshotEyebrow } from './postcardAnatomy';
 import { pageOfOffset, previewCount } from './postcardCarousel';
@@ -30,7 +35,7 @@ import { pageOfOffset, previewCount } from './postcardCarousel';
 interface PostcardPreviewProps {
   readonly entry: DiaryEntryResponse | null;
   readonly tripTitle: string | null;
-  readonly onEdit: (entry: DiaryEntryResponse) => void;
+  readonly onEdit?: (entry: DiaryEntryResponse) => void;
   readonly onDismiss: () => void;
 }
 
@@ -120,21 +125,25 @@ export function PostcardPreview({ entry, tripTitle, onEdit, onDismiss }: Postcar
           </View>
 
           <View style={styles.actions}>
-            <Pressable
-              style={styles.action}
-              onPress={() => onEdit(showing)}
-              accessibilityRole="button"
-              accessibilityLabel={PREVIEW_EDIT}
-            >
-              <Icon
-                name="pencil"
-                size={diaryScreenMetrics.actionGlyph}
-                color={diaryScreenColors.editInk}
-              />
-              <Text style={styles.editLabel}>{PREVIEW_EDIT}</Text>
-            </Pressable>
+            {onEdit !== undefined && (
+              <>
+                <Pressable
+                  style={styles.action}
+                  onPress={() => onEdit(showing)}
+                  accessibilityRole="button"
+                  accessibilityLabel={PREVIEW_EDIT}
+                >
+                  <Icon
+                    name="pencil"
+                    size={diaryScreenMetrics.actionGlyph}
+                    color={diaryScreenColors.editInk}
+                  />
+                  <Text style={styles.editLabel}>{PREVIEW_EDIT}</Text>
+                </Pressable>
 
-            <View style={styles.actionDivider} />
+                <View style={styles.actionDivider} />
+              </>
+            )}
 
             <Pressable
               style={styles.action}

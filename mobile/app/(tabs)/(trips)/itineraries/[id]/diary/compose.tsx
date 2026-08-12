@@ -178,6 +178,7 @@ export default function ComposeDiaryEntryScreen() {
           />
         </View>
 
+
         <DiaryPrivacyNote />
 
         {photoAction.failure !== undefined ? (

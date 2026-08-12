@@ -289,8 +289,16 @@ async function publishedTrip(token, title, destinations, days) {
     );
   }
 
-  const profileDir = `${os.tmpdir()}/largata-profile-driver`;
-  fs.rmSync(profileDir, { recursive: true, force: true });
+  // A Chrome that has not fully exited still holds this directory on Windows, and rmSync throws
+  // EPERM through `force: true` — which kills the walk before its first assertion and reports as
+  // a failed run rather than one that never started. Fall back to a fresh directory instead.
+  let profileDir = `${os.tmpdir()}/largata-profile-driver`;
+  try {
+    fs.rmSync(profileDir, { recursive: true, force: true });
+  } catch {
+    profileDir = `${profileDir}-${process.pid}`;
+    fs.rmSync(profileDir, { recursive: true, force: true });
+  }
 
   const chrome = spawn(
     chromePath(),
@@ -638,11 +646,19 @@ async function publishedTrip(token, title, destinations, days) {
       (await url()) === urlBeforePreview,
     `${entryLabel} -> ${await url()}`);
 
-  const sharedComingSoon = await tapLabel('Share', 3000);
-  const shareSaid = await evaluate('(window.__largataAlerts || []).join(" | ")');
-  check('AC 2: Share is drawn as the mock has it, and says coming soon rather than doing nothing',
-    sharedComingSoon.clicked === true && /coming soon/i.test(shareSaid),
-    String(shareSaid).slice(0, 140));
+  // S4.22 briefly made this slot a share-to-feed toggle; the founder reverted it on 2026-08-13
+  // once every postcard became public, so the mock's Share is the send-it-to-someone act again —
+  // unbuilt, and therefore refusing by name rather than dead-clicking (the S1.3 Alert lesson).
+  const sharePressed = await tapLabel('Share', 3500);
+  const saidOnShare = await evaluate('window.__largataAlerts.slice(-1)[0] || null');
+  check('AC 2: the mock-s Share slot refuses honestly — it sends a postcard, and that is unbuilt',
+    sharePressed.clicked === true && /coming soon/i.test(saidOnShare ?? ''),
+    `clicked=${sharePressed.clicked} said=${JSON.stringify(saidOnShare)}`);
+
+  const stillThere = (await text()) || '';
+  check('AC 2: and nothing in the preview offers to publish or unpublish the postcard',
+    !stillThere.includes('Share to feed') && !stillThere.includes('Remove from feed'),
+    stillThere.replace(/\n/g, ' | ').slice(0, 160));
 
   const toEditor = await tapLabel('Edit entry', 5000);
   check('AC 2: Edit entry carries the traveler through to the editor — a doorway, not a dead end',
@@ -662,10 +678,15 @@ async function publishedTrip(token, title, destinations, days) {
     diaryStillSelected.replace(/\n/g, ' | ').slice(0, 140));
 
   // --- the trip diary screen, reached by tapping the section ROW (the founder's first frame) ---
+  // Target THIS walk's own section by title, not the first one on screen. The pool account
+  // accumulates diary trips from every story that plants them — drive-home now plants several —
+  // and they sort newest-first, so "the first section" stopped being ours the moment another
+  // walk ran before this one in smoke-all. The URL still matched; only the title did not,
+  // which is why this passed in isolation and failed in the suite.
   const toTripDiary = await evaluate(`
     (() => {
       const row = Array.from(document.querySelectorAll('[aria-label]'))
-        .filter((n) => /^Open the diary for /.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => (n.getAttribute('aria-label') || '').startsWith('Open the diary for ${diaryTitle}'))
         .filter((n) => n.offsetParent !== null)[0];
       if (!row) return { clicked: false };
       row.click();

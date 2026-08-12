@@ -27,7 +27,7 @@ class DiaryEntryPhotoAudience implements PhotoAudience {
     @Transactional(readOnly = true)
     public boolean mayRead(UUID entryId, UUID travelerId) {
         return entries.findById(entryId)
-                .map(entry -> entry.isAuthoredBy(travelerId))
+                .map(entry -> entry.isReadableBy(travelerId))
                 .orElse(false);
     }
 }

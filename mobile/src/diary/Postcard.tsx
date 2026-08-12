@@ -115,16 +115,19 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
 
         {entry.caption !== null && <Text style={styles.caption}>{entry.caption}</Text>}
 
-        {likes !== null && (
-          <View style={styles.likes}>
-            <Icon
-              name="heartFilled"
-              size={profileMetrics.heartSize}
-              color={profileColors.likeHeart}
-            />
-            <Text style={styles.likesLabel}>{likesLabel(likes)}</Text>
-          </View>
-        )}
+        <View style={styles.footer}>
+          {likes !== null && (
+            <View style={styles.likes}>
+              <Icon
+                name="heartFilled"
+                size={profileMetrics.heartSize}
+                color={profileColors.likeHeart}
+              />
+              <Text style={styles.likesLabel}>{likesLabel(likes)}</Text>
+            </View>
+          )}
+
+        </View>
       </Pressable>
     </View>
   );
@@ -219,5 +222,10 @@ const styles = StyleSheet.create({
   likesLabel: {
     ...profileTypography.likes,
     color: profileColors.likeCount,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm3,
   },
 });

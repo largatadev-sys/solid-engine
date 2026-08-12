@@ -10,7 +10,7 @@ const INFO_ICON_SIZE = 16;
 export function DiaryPrivacyNote() {
   return (
     <View style={styles.note}>
-      <Icon name="info" size={INFO_ICON_SIZE} color={diaryColors.eyebrow} />
+      <Icon name="globe" size={INFO_ICON_SIZE} color={diaryColors.eyebrow} />
       <Text style={styles.text}>{DIARY_PRIVACY_NOTE}</Text>
     </View>
   );

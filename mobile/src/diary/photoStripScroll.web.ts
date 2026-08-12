@@ -6,7 +6,10 @@ export const SHOW_SCROLLBAR = false;
 export const PAGING = {} as const;
 
 
-export const SNAP_STYLE = { scrollSnapType: 'x mandatory' } as const;
+export const SNAP_STYLE = {
+  scrollSnapType: 'x mandatory',
+  overscrollBehaviorX: 'contain',
+} as const;
 
 export const SNAP_CHILD_STYLE = { scrollSnapAlign: 'start' } as const;
 
@@ -43,6 +46,26 @@ function ours(event: DragEvent): boolean {
 }
 
 
+function capture(target: DragTarget, pointerId: number | undefined): void {
+  if (pointerId === undefined) return;
+  try {
+    target.setPointerCapture?.(pointerId);
+  } catch {
+    return;
+  }
+}
+
+
+function release(target: DragTarget, pointerId: number | undefined): void {
+  if (pointerId === undefined) return;
+  try {
+    target.releasePointerCapture?.(pointerId);
+  } catch {
+    return;
+  }
+}
+
+
 export function dragToScroll(): {
   onPointerDown: (event: GestureResponderEvent) => void;
   onPointerMove: (event: GestureResponderEvent) => void;
@@ -60,7 +83,7 @@ export function dragToScroll(): {
       from = null;
       return;
     }
-    if (native.pointerId !== undefined) target.releasePointerCapture?.(native.pointerId);
+    release(target, native.pointerId);
 
     const dragged = from !== null;
     from = null;
@@ -88,7 +111,7 @@ export function dragToScroll(): {
         target.style.scrollBehavior = 'auto';
         target.style.scrollSnapType = 'none';
       }
-      if (native.pointerId !== undefined) target.setPointerCapture?.(native.pointerId);
+      capture(target, native.pointerId);
     },
 
     onPointerMove: (event: GestureResponderEvent) => {

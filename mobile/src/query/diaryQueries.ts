@@ -14,6 +14,7 @@ import {
   DIARY_ENTRY_DELETED,
   DIARY_ENTRY_EDITED,
 } from '../diary/diaryEvents';
+import { feedKeys } from './feedQueries';
 import { MAX_DIARY_PHOTOS } from '../diary/diaryCapture';
 import { saveSteps, type StagedEntry } from '../diary/stagedEntry';
 import { useAuth } from '../hooks/authContext';
@@ -137,6 +138,7 @@ export function useDeleteDiaryEntry(
     },
   });
 }
+
 
 
 async function invalidateDiary(

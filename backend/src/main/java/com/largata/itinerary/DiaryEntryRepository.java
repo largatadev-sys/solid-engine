@@ -1,5 +1,6 @@
 package com.largata.itinerary;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,6 +43,35 @@ interface DiaryEntryRepository extends JpaRepository<DiaryEntry, UUID> {
             @Param("travelerId") UUID travelerId, @Param("cursor") UUID cursor, Limit limit);
 
     Optional<DiaryEntry> findByIdAndTravelerId(UUID id, UUID travelerId);
+
+    @Query(
+            """
+            SELECT e FROM DiaryEntry e
+            WHERE e.sharedAt IS NOT NULL
+            ORDER BY e.sharedAt DESC, e.id DESC
+            """)
+    List<DiaryEntry> findFirstFeedPage(Limit limit);
+
+    @Query(
+            """
+            SELECT e FROM DiaryEntry e
+            WHERE e.sharedAt IS NOT NULL
+              AND (e.sharedAt < :sharedAt OR (e.sharedAt = :sharedAt AND e.id < :id))
+            ORDER BY e.sharedAt DESC, e.id DESC
+            """)
+    List<DiaryEntry> findFeedPageAfter(
+            @Param("sharedAt") Instant sharedAt, @Param("id") UUID id, Limit limit);
+
+    @Query(
+            """
+            SELECT e FROM DiaryEntry e
+            WHERE e.itineraryId = :itineraryId
+              AND e.travelerId = :travelerId
+              AND e.sharedAt IS NOT NULL
+            ORDER BY e.id
+            """)
+    List<DiaryEntry> findSharedOfTrip(
+            @Param("itineraryId") UUID itineraryId, @Param("travelerId") UUID travelerId);
 
 
     interface DiaryTripRow {

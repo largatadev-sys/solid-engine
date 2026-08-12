@@ -6,7 +6,8 @@ export const CAMERA_ROLL_LABEL = 'Select photos from your camera roll';
 
 export const DUMP_LABEL = 'From the Photo Dump';
 
-export const DIARY_PRIVACY_NOTE = 'Only you can see your diary. It shows up on your profile.';
+export const DIARY_PRIVACY_NOTE =
+  'Your postcards go to the Home feed, where any Largata traveler can see them.';
 
 export const PHOTOS_LABEL = 'Photos in this memory';
 

@@ -28,8 +28,10 @@ function entry(overrides: Partial<DiaryEntryResponse> = {}): DiaryEntryResponse 
     activityTitle: 'Sunset at Las Cabanas',
     dayLabel: 'Day 1',
     timeOfDay: null,
+    place: null,
     caption: null,
     photos: [],
+    sharedAt: null,
     createdAt: '2026-08-11T10:00:00Z',
     updatedAt: '2026-08-11T10:00:00Z',
     ...overrides,
@@ -110,8 +112,10 @@ describe('picking from the dump', () => {
 
 
 describe('the copy the founder pinned', () => {
-  it('reads exactly as approved at the grilling', () => {
-    expect(DIARY_PRIVACY_NOTE).toBe('Only you can see your diary. It shows up on your profile.');
+  it('reads exactly as re-approved when diaries became public', () => {
+    expect(DIARY_PRIVACY_NOTE).toBe(
+      'Your postcards go to the Home feed, where any Largata traveler can see them.',
+    );
   });
 
   it('names the activity on the success screen', () => {
