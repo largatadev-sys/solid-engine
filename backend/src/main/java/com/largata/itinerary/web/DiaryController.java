@@ -56,7 +56,32 @@ class DiaryController {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
         PostDiaryEntryRequest entry = json.readValue(entryJson, PostDiaryEntryRequest.class);
         return diary.post(
-                member, entry.activityId(), entry.caption(), entry.fromDump(), bytesOf(devicePhotos));
+                member,
+                entry.activityId(),
+                entry.caption(),
+                entry.fromDump(),
+                bytesOf(devicePhotos),
+                entry.sharesToFeed());
+    }
+
+
+    @PostMapping("/{entryId}/share")
+    DiaryEntryResponse share(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID itineraryId,
+            @PathVariable UUID entryId) {
+        Membership member = guard.requireMember(traveler.id(), itineraryId);
+        return diary.shareToFeed(member, entryId);
+    }
+
+
+    @DeleteMapping("/{entryId}/share")
+    DiaryEntryResponse unshare(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID itineraryId,
+            @PathVariable UUID entryId) {
+        Membership member = guard.requireMember(traveler.id(), itineraryId);
+        return diary.unshareFromFeed(member, entryId);
     }
 
 

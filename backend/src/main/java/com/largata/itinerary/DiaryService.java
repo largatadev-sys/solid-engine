@@ -79,7 +79,8 @@ public class DiaryService {
             UUID activityId,
             String caption,
             List<UUID> fromDump,
-            List<byte[]> devicePhotos) {
+            List<byte[]> devicePhotos,
+            boolean shareToFeed) {
         writeFence.requireWritable(member);
         requireStarted(member);
 
@@ -99,7 +100,7 @@ public class DiaryService {
             throw new ActivityAlreadyInDiaryException();
         }
 
-        DiaryEntry entry = saveTheFirstPostFor(member, activityId, activity, day, caption);
+        DiaryEntry entry = saveTheFirstPostFor(member, activityId, activity, day, caption, shareToFeed);
 
         List<Photo> stored = new ArrayList<>();
         sources.forEach(
@@ -119,6 +120,9 @@ public class DiaryService {
                 activityId,
                 total);
         emit(member, "diary_entry_created", entry.id());
+        if (entry.isShared()) {
+            emit(member, "diary_entry_shared", entry.id());
+        }
         return viewOf(entry, stored);
     }
 
@@ -130,6 +134,32 @@ public class DiaryService {
         entry.recaption(caption, Instant.now(clock));
         DiaryEntry saved = entries.saveAndFlush(entry);
         emit(member, "diary_entry_edited", entryId);
+        return viewOf(saved);
+    }
+
+
+    @Transactional
+    public DiaryEntryResponse shareToFeed(Membership member, UUID entryId) {
+        writeFence.requireWritable(member);
+        DiaryEntry entry = requireMyEntry(member, entryId);
+        entry.shareToFeed(Instant.now(clock));
+        DiaryEntry saved = entries.saveAndFlush(entry);
+
+        log.info("Diary entry shared to the feed: entryId={}", entryId);
+        emit(member, "diary_entry_shared", entryId);
+        return viewOf(saved);
+    }
+
+
+    @Transactional
+    public DiaryEntryResponse unshareFromFeed(Membership member, UUID entryId) {
+        writeFence.requireWritable(member);
+        DiaryEntry entry = requireMyEntry(member, entryId);
+        entry.unshareFromFeed(Instant.now(clock));
+        DiaryEntry saved = entries.saveAndFlush(entry);
+
+        log.info("Diary entry unshared from the feed: entryId={}", entryId);
+        emit(member, "diary_entry_unshared", entryId);
         return viewOf(saved);
     }
 
@@ -287,6 +317,7 @@ public class DiaryService {
                 entry.timeOfDay(),
                 entry.caption(),
                 entryPhotos.stream().map(DiaryPhotoResponse::of).toList(),
+                entry.sharedAt(),
                 entry.createdAt(),
                 entry.updatedAt());
     }
@@ -301,16 +332,26 @@ public class DiaryService {
 
 
     private DiaryEntry saveTheFirstPostFor(
-            Membership member, UUID activityId, Activity activity, Day day, String caption) {
+            Membership member,
+            UUID activityId,
+            Activity activity,
+            Day day,
+            String caption,
+            boolean shareToFeed) {
+        Instant at = Instant.now(clock);
+        DiaryEntry entry =
+                DiaryEntry.postedFrom(
+                        member.travelerId(),
+                        member.itineraryId(),
+                        activityId,
+                        ActivitySnapshot.of(activity, day),
+                        caption,
+                        at);
+        if (shareToFeed) {
+            entry.shareToFeed(at);
+        }
         try {
-            return entries.saveAndFlush(
-                    DiaryEntry.postedFrom(
-                            member.travelerId(),
-                            member.itineraryId(),
-                            activityId,
-                            ActivitySnapshot.of(activity, day),
-                            caption,
-                            Instant.now(clock)));
+            return entries.saveAndFlush(entry);
         } catch (DataIntegrityViolationException lostTheRace) {
             throw new ActivityAlreadyInDiaryException();
         }

@@ -38,6 +38,9 @@ class DiaryEntry {
 
     @Column private String caption;
 
+    @Column(name = "shared_at")
+    private Instant sharedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -90,8 +93,32 @@ class DiaryEntry {
     }
 
 
+    void shareToFeed(Instant at) {
+        if (sharedAt == null) {
+            this.sharedAt = at;
+        }
+        this.updatedAt = at;
+    }
+
+
+    void unshareFromFeed(Instant at) {
+        this.sharedAt = null;
+        this.updatedAt = at;
+    }
+
+
+    boolean isShared() {
+        return sharedAt != null;
+    }
+
+
     boolean isAuthoredBy(UUID candidate) {
         return travelerId.equals(candidate);
+    }
+
+
+    boolean isReadableBy(UUID candidate) {
+        return isShared() || isAuthoredBy(candidate);
     }
 
 
@@ -138,6 +165,10 @@ class DiaryEntry {
 
     String caption() {
         return caption;
+    }
+
+    Instant sharedAt() {
+        return sharedAt;
     }
 
     Instant createdAt() {

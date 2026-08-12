@@ -15,5 +15,6 @@ public record DiaryEntryResponse(
         LocalTime timeOfDay,
         String caption,
         List<DiaryPhotoResponse> photos,
+        Instant sharedAt,
         Instant createdAt,
         Instant updatedAt) {}
