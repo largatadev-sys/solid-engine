@@ -50,6 +50,16 @@ const DRAG_IN_PAGE = (fraction) => `
   })()
 `;
 
+const HEART_STATE = `
+  (() => {
+    const hearts = Array.from(document.querySelectorAll('[aria-label]'))
+      .filter((n) => /^(Like|Unlike) this postcard$/.test(n.getAttribute('aria-label') || ''))
+      .filter((n) => n.offsetParent !== null);
+    const heart = hearts[hearts.length - 1];
+    return heart ? { label: heart.getAttribute('aria-label'), text: heart.innerText.trim() } : null;
+  })()
+`;
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const address = (tag) => BASE.replace('@', `+${tag}@`);
 
@@ -463,14 +473,84 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
     locked !== null && locked.across > 0 && locked.down === 0,
     locked ? `across=${locked.across} down=${locked.down}` : 'no strip');
 
+  // --- the heart toggles optimistically over the stubbed base (AC 9) -------------------------
+  // Read the LAST visible heart, matching tapLabel's own rule — the feed holds several cards and
+  // measuring the first while clicking the last reports a dead control against a working one.
+  const before = await evaluate(HEART_STATE);
+  const heartTap = await tapLabel(
+    before && before.label === 'Like this postcard' ? 'Like this postcard' : 'Unlike this postcard',
+    1200,
+  );
+  const afterLike = await evaluate(HEART_STATE);
+  // The count moves by one, but a compacted count ("1.3k") swallows a ±1 by design, so asserting
+  // the rendered digits changed would fail against a working heart above 999. The label flip is
+  // the state, and the second tap returning the exact original text is the count's round trip.
+  const backAgain = await tapLabel(
+    afterLike && afterLike.label === 'Unlike this postcard' ? 'Unlike this postcard' : 'Like this postcard',
+    1200,
+  );
+  const afterUnlike = await evaluate(HEART_STATE);
+
+  check('AC 9: the heart toggles instantly, and toggling back restores the count exactly',
+    heartTap.clicked === true && backAgain.clicked === true &&
+      before !== null && afterLike !== null && afterUnlike !== null &&
+      before.label !== afterLike.label && afterUnlike.label === before.label &&
+      afterUnlike.text === before.text,
+    `${before ? before.label + ' ' + before.text : 'none'} -> ${afterLike ? afterLike.label + ' ' + afterLike.text : 'none'} -> ${afterUnlike ? afterUnlike.label + ' ' + afterUnlike.text : 'none'}`);
+
+  // --- double-tap likes and is idempotent (AC 9, behavior card 2) ----------------------------
+  // Two taps in the same spot inside the double-tap window, dispatched as real events so React's
+  // Pressable sees them the way a finger produces them.
+  const DOUBLE_TAP = `
+    (() => {
+      const photo = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((n) => /, photo 1$/.test(n.getAttribute('aria-label') || ''))
+        .filter((n) => n.offsetParent !== null);
+      const target = photo[photo.length - 1];
+      if (!target) return null;
+      const r = target.getBoundingClientRect();
+      const x = r.x + r.width / 2, y = r.y + r.height / 2;
+      const fire = (t, b) => target.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 3, pointerType: "mouse", clientX: x, clientY: y, button: 0, buttons: b }));
+      const mouse = (t, b) => target.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, buttons: b }));
+      for (const _ of [0, 1]) {
+        fire("pointerdown", 1);
+        mouse("mousedown", 1);
+        fire("pointerup", 0);
+        mouse("mouseup", 0);
+        mouse("click", 0);
+      }
+      return true;
+    })()
+  `;
+  const beforeBurst = await evaluate(HEART_STATE);
+  await evaluate(DOUBLE_TAP);
+  await sleep(1200);
+  const afterBurst = await evaluate(HEART_STATE);
+  await evaluate(DOUBLE_TAP);
+  await sleep(1200);
+  const afterSecondBurst = await evaluate(HEART_STATE);
+
+  check('AC 9: double-tapping the photo likes it, and doing it again never unlikes',
+    beforeBurst !== null && afterBurst !== null && afterSecondBurst !== null &&
+      beforeBurst.label === 'Like this postcard' &&
+      afterBurst.label === 'Unlike this postcard' &&
+      afterSecondBurst.label === 'Unlike this postcard',
+    `${beforeBurst ? beforeBurst.label : '?'} -> ${afterBurst ? afterBurst.label : '?'} -> ${afterSecondBurst ? afterSecondBurst.label : '?'}`);
+
   // --- the stubbed controls refuse out loud on the web (AC 10) -------------------------------
   await evaluate('window.__largataAlerts = []; true');
-  for (const label of ['Share this postcard', 'Save this postcard', 'Search', 'Notifications']) {
+  for (const label of [
+    'Comment on this postcard',
+    'Share this postcard',
+    'Save this postcard',
+    'Search',
+    'Notifications',
+  ]) {
     await tapLabel(label, 900);
   }
   const spoken = JSON.parse((await alerts()) || '[]');
   check('AC 10: every backendless control refuses visibly on the web',
-    spoken.length >= 4, `${spoken.length} alerts: ${spoken.join(' / ').slice(0, 240)}`);
+    spoken.length >= 5, `${spoken.length} alerts`);
   for (const wording of spoken) console.log(`        alert: ${wording.replace(/\n/g, ' — ')}`);
 
   // --- the trip line self-heals at publish (AC 5) --------------------------------------------

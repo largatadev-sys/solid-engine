@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Pressable,
@@ -6,10 +6,12 @@ import {
   StyleSheet,
   Text,
   View,
+  type GestureResponderEvent,
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { lightHaptic } from './lightHaptic';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { radii, spacing } from '../theme';
@@ -30,7 +32,12 @@ import {
   pageOfOffset,
   showsCarousel,
 } from './feedCarousel';
+import { compactCount } from './feedCardAnatomy';
 import { FEED_CAPTION_MORE, FEED_TRIP_BADGE } from './feedCopy';
+import { isDoubleTap, type TapPoint } from './doubleTap';
+import { HeartBurst } from './HeartBurst';
+import { burstLiked, likeStateFrom, toggled } from './likeState';
+import { stubCommentCountFor, stubLikeCountFor } from '../profile/stubMetrics';
 import { useFadingCounter } from './useFadingCounter';
 import {
   dragToScroll,
@@ -41,6 +48,12 @@ import {
 } from '../diary/photoStripScroll';
 
 const CAPTION_LINES = 2;
+
+const POP_SCALE = 1.3;
+
+const POP_MS = 75;
+
+const LONG_PRESS_MS = 400;
 
 
 interface FeedCardProps {
@@ -68,6 +81,48 @@ export function FeedCard({
   const [expanded, setExpanded] = useState(false);
   const [drag] = useState(dragToScroll);
   const counter = useFadingCounter();
+
+  const base = stubLikeCountFor(card.id);
+  const comments = stubCommentCountFor(card.id);
+  const [like, setLike] = useState(() => (base === null ? null : likeStateFrom(base)));
+  const [burstKey, setBurstKey] = useState(0);
+  const heartPop = useRef(new Animated.Value(1)).current;
+  const lastTap = useRef<TapPoint | null>(null);
+
+  const pop = useCallback(() => {
+    heartPop.setValue(1);
+    Animated.sequence([
+      Animated.timing(heartPop, { toValue: POP_SCALE, duration: POP_MS, useNativeDriver: true }),
+      Animated.timing(heartPop, { toValue: 1, duration: POP_MS, useNativeDriver: true }),
+    ]).start();
+  }, [heartPop]);
+
+  useEffect(() => {
+    if (like !== null) pop();
+  }, [like?.liked]);
+
+  const burstLike = () => {
+    setBurstKey((key) => key + 1);
+    lightHaptic();
+    setLike((state) => (state === null ? state : burstLiked(state)));
+  };
+
+  const photoTapped = (event: GestureResponderEvent) => {
+    // react-native-web does not always carry nativeEvent.timestamp, and a NaN here makes every
+    // elapsed-time comparison false — so the double tap silently never fires while every unit
+    // test passes. Read the clock ourselves rather than trusting the synthetic event.
+    const point = {
+      x: event.nativeEvent.pageX ?? 0,
+      y: event.nativeEvent.pageY ?? 0,
+      at: Date.now(),
+    };
+    if (isDoubleTap(lastTap.current, point)) {
+      lastTap.current = null;
+      burstLike();
+      return;
+    }
+    lastTap.current = point;
+  };
 
   const photoCount = card.photos.length;
   const carousel = showsCarousel(photoCount);
@@ -151,9 +206,14 @@ export function FeedCard({
           {...drag}
         >
           {card.photos.map((photo, index) => (
-            <View
+            <Pressable
               key={photo.id}
               style={{ ...styles.slide, ...SNAP_CHILD_STYLE, width: photoWidth }}
+              onPress={photoTapped}
+              onLongPress={() => onStubTap('photoSheet')}
+              delayLongPress={LONG_PRESS_MS}
+              accessibilityRole="image"
+              accessibilityLabel={`${card.activityTitle}, photo ${index + 1}`}
             >
               {loadsPage(index, page) ? (
                 <MediaThumb
@@ -166,7 +226,7 @@ export function FeedCard({
               ) : (
                 <View style={styles.photoWell} />
               )}
-            </View>
+            </Pressable>
           ))}
         </ScrollView>
 
@@ -195,6 +255,8 @@ export function FeedCard({
             </View>
           </>
         )}
+
+        <HeartBurst burstKey={burstKey} />
       </View>
 
       <View style={styles.body}>
@@ -225,6 +287,41 @@ export function FeedCard({
         )}
 
         <View style={styles.engagement}>
+          {like !== null && (
+            <>
+              <Pressable
+                style={styles.heart}
+                onPress={() => setLike(toggled(like))}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel={like.liked ? 'Unlike this postcard' : 'Like this postcard'}
+                accessibilityState={{ selected: like.liked }}
+              >
+                <Animated.View style={{ transform: [{ scale: heartPop }] }}>
+                  <Icon
+                    name={like.liked ? 'heartSolid' : 'heart'}
+                    size={feedMetrics.heartGlyph}
+                    color={like.liked ? feedColors.liked : feedColors.glyphIdle}
+                  />
+                </Animated.View>
+                <Text style={[styles.count, like.liked && styles.countLiked]}>
+                  {compactCount(like.count)}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.action}
+                onPress={() => onStubTap('comment')}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Comment on this postcard"
+              >
+                <Icon name="comment" size={feedMetrics.actionGlyph} color={feedColors.glyphIdle} />
+                <Text style={styles.count}>{compactCount(comments ?? 0)}</Text>
+              </Pressable>
+            </>
+          )}
+
           <View style={styles.spacer} />
 
           <Pressable
@@ -411,10 +508,27 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingTop: spacing.xs,
   },
+  heart: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs2,
+    paddingVertical: spacing.xs2,
+    paddingRight: spacing.sm,
+  },
+  count: {
+    ...feedTypography.count,
+    color: feedColors.countIdle,
+  },
+  countLiked: {
+    color: feedColors.liked,
+  },
   spacer: {
     flex: 1,
   },
   action: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs2,
     paddingVertical: spacing.xs2,
     paddingHorizontal: spacing.sm,
   },
