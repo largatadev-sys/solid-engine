@@ -187,7 +187,7 @@ export function FeedCard({
                 </Text>
               </Pressable>
             ) : (
-              <Text style={[styles.tripLine, styles.tripLineInert]} numberOfLines={1}>
+              <Text style={styles.tripLine} numberOfLines={1}>
                 {line}
               </Text>
             ))}
@@ -279,9 +279,9 @@ export function FeedCard({
                 </Text>
               </Pressable>
             ) : (
-              <View style={[styles.tag, styles.tagInert]}>
-                <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tripLineInert} />
-                <Text style={[styles.tagLabel, styles.tagLabelInert]} numberOfLines={1}>
+              <View style={styles.tag}>
+                <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tagInk} />
+                <Text style={styles.tagLabel} numberOfLines={1}>
                   {card.place}
                 </Text>
               </View>
@@ -440,9 +440,6 @@ const styles = StyleSheet.create({
     ...feedTypography.tripLine,
     color: feedColors.tripLine,
   },
-  tripLineInert: {
-    color: feedColors.tripLineInert,
-  },
   badge: {
     flexShrink: 0,
     paddingHorizontal: spacing.sm,
@@ -525,12 +522,6 @@ const styles = StyleSheet.create({
     ...feedTypography.tag,
     color: feedColors.tagInk,
     flexShrink: 1,
-  },
-  tagInert: {
-    backgroundColor: feedColors.badgeWell,
-  },
-  tagLabelInert: {
-    color: feedColors.tripLineInert,
   },
   caption: {
     ...feedTypography.caption,

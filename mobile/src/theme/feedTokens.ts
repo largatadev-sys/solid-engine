@@ -10,7 +10,6 @@ export const feedColors = {
   cardBorder: '#EBE9E2',
   cardSurface: '#FFFFFF',
   tripLine: '#C2410C',
-  tripLineInert: '#78716C',
   badgeWell: '#FAF9F5',
   badgeBorder: '#EBE9E2',
   badgeInk: '#78716C',
