@@ -24,7 +24,7 @@ const WEB_WALKS = [
 ];
 
 const KNOWN_RED = {
-  'drive-create-flow.js': '11 passed, 24 failed — asserts the S4.13 copy ("Create Itinerary", "Add a Past Trip") that S4.15 renamed and scrapped. Baselined against dev at S4.22.',
+  'drive-create-flow.js': '12 passed, 23 failed — asserts the S4.13 copy ("Create Itinerary", "Add a Past Trip") that S4.15 renamed and scrapped. Was 11/24 until S4.22 repointed its goto("/") calls at /trips.',
   'drive-workspace.js': '37 passed, 14 failed — same vintage. Baselined against dev at S4.22.',
   'drive-publish.js': '24 passed, 12 failed — publish/preview chrome assertions the surface has since moved past. Baselined against dev at S4.22.',
 };
