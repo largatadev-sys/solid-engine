@@ -86,7 +86,7 @@ Source: `Home Feed Spec.dc.html` in the Claude Design project `34e84995-d099-46d
 | # | Behavior | Verified by | Verdict |
 |---|---|---|---|
 | 6.1 | Avatar / name → traveler profile | web walk taps the avatar; refuses ("Traveler profiles") | ✅ stub |
-| 6.2 | Trip line + Trip Post badge → the published itinerary, scrolled to that day | web walk + IT for the reference. **The Trip Post badge is not a tap target**, and the day anchor does not exist | ⚠️ partial, recorded in Comments |
+| 6.2 | Trip line + Trip Post badge → the published itinerary, scrolled to that day | web walk + IT for the reference. The trip line reaches the published itinerary; **the badge reaches the author's public trip diary instead** (founder, 2026-08-13 — the published surface is not ready), and the day anchor does not exist | ⚠️ partial, recorded in Comments |
 | 6.3 | Location tag → the activity within the itinerary | the pin now reads `place` and navigates where the trip line does *(founder correction, 2026-08-12; V29 snapshots it)* | ⚠️ lands on the trip, not the activity |
 | 6.4 | Caption clamps at 2 lines with inline "more" | `captionClamp.ts` + 5 Jest cases; web walk asserts "more" on the long caption and NOT the short; device screenshot | ✅ *(fixed 2026-08-13 — the founder's finding)* |
 | 6.5 | Expands in place, card grows, no navigation | `expanded` state, no router call | ⚠️ source-only — no walk expands it and re-measures |

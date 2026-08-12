@@ -181,7 +181,7 @@ The feed renders in the app's tokens (terracotta accent, token typography) — t
 **B6 · Tap targets & navigation**
 - B6.1 Avatar and name reach the traveler profile (stubbed — refuses honestly).
 - B6.2 The trip line reaches the published itinerary once the trip is published, and is inert before.
-- B6.3 *(deviation)* The trip line lands on the trip, not its day; the Trip Post badge is not a tap target.
+- B6.3 *(deviation)* The trip line lands on the trip, not its day. The Trip Post badge opens the author's **public trip diary** — every postcard they shared from that trip, and nothing they kept private — and is withheld inside that diary, where it would only lead back.
 - B6.4 The location pin shows the activity's **place** and is hidden when there is none.
 - B6.5 *(deviation)* The pin lands on the trip, not the activity.
 - B6.6 The caption clamps at two lines and offers "more" **only when it actually overflows**.
