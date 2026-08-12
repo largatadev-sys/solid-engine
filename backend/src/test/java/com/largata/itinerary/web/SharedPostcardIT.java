@@ -223,7 +223,7 @@ class SharedPostcardIT extends ObjectStoreTestBase {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part(
                 "entry",
-                "{\"activityId\":null,\"caption\":\"nowhere\",\"fromDump\":[],\"shareToFeed\":false}",
+                "{\"activityId\":null,\"caption\":\"nowhere\",\"fromDump\":[]}",
                 MediaType.TEXT_PLAIN);
         builder.part("photos", namedPhoto("device.jpg")).contentType(MediaType.IMAGE_JPEG);
 

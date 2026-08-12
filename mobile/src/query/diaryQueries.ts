@@ -13,8 +13,6 @@ import {
   DIARY_ENTRY_CREATED,
   DIARY_ENTRY_DELETED,
   DIARY_ENTRY_EDITED,
-  DIARY_ENTRY_SHARED,
-  DIARY_ENTRY_UNSHARED,
 } from '../diary/diaryEvents';
 import { feedKeys } from './feedQueries';
 import { MAX_DIARY_PHOTOS } from '../diary/diaryCapture';
