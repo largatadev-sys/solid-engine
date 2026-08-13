@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&family=DM+Sans:wght@500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EFEDE6;font-family:'Figtree',sans-serif;}
+a{color:#D96C4A;text-decoration:none;} a:hover{color:#B85235;}
+.no-sb::-webkit-scrollbar{display:none;}
+@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+@keyframes scrimIn{from{opacity:0;}to{opacity:1;}}
+</style>
+</helmet>
+<div style="padding:48px 56px; display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start;">
+  <div style="width:340px; flex:none; display:flex; flex-direction:column; gap:16px; padding-top:8px;">
+    <div style="font-size:12px; font-weight:800; letter-spacing:2px; color:#A8A29E; text-transform:uppercase;">Largata · Discover</div>
+    <div style="font-size:30px; font-weight:800; color:#1C1917; line-height:1.15; letter-spacing:-0.5px;">Improved UI + full behavior spec</div>
+    <div style="font-size:14px; line-height:1.6; color:#57534E;">Covers all three Figma frames — landing, search results, filter sheet. The phone is live:</div>
+    <div style="display:flex; flex-direction:column; gap:10px; font-size:13.5px; line-height:1.5; color:#44403C;">
+      <div style="display:flex; gap:10px;"><span style="flex:none; width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center;">1</span><span>Tap the search bar — full-screen search mode with recents + trending queries</span></div>
+      <div style="display:flex; gap:10px;"><span style="flex:none; width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center;">2</span><span>Tap a recent search ("Japan") — results screen with sticky chips + count</span></div>
+      <div style="display:flex; gap:10px;"><span style="flex:none; width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center;">3</span><span>Tap the sliders button — filter sheet with live result count on Apply</span></div>
+      <div style="display:flex; gap:10px;"><span style="flex:none; width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center;">4</span><span>Swipe both carousels on the landing screen — peek + snap, sliding dots</span></div>
+    </div>
+    <div style="margin-top:8px; padding:14px 16px; background:#FFF; border:1px solid #E7E5E4; border-radius:12px; font-size:12.5px; line-height:1.55; color:#78716C;">
+      <span style="font-weight:700; color:#1C1917;">UI changes vs. the Figma spec</span><br>
+      Search bar is a button, not an inline input (opens search mode) · chip selected state uses accent, not gray #B3B3B3 · recommended itineraries show a peek of the next card instead of full-width pages · duration dual-slider replaced with preset segments · Apply button shows the live result count · card borders softened (#8F8F8F → #EBE9E2) · Figma's two different search placeholders unified.
+    </div>
+  </div>
+
+  <div style="flex:none; width:417px; background:#1C1917; border-radius:44px; padding:12px; box-shadow:0 24px 60px rgba(28,25,23,0.28);">
+    <div style="position:relative; width:393px; height:852px; background:#FFFFFF; border-radius:34px; overflow:hidden;">
+      <div style="position:absolute; top:0; left:0; right:0; z-index:30; background:#FFF;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 28px 8px; height:26px;">
+          <div style="font-family:'DM Sans'; font-weight:600; font-size:15px; color:#1C1917;">9:41</div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <svg width="17" height="11" viewBox="0 0 17 11" fill="#1C1917"><rect x="0" y="7" width="3" height="4" rx="1"></rect><rect x="4.5" y="5" width="3" height="6" rx="1"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1"></rect><rect x="13.5" y="0" width="3" height="11" rx="1"></rect></svg>
+            <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#1C1917" stroke-opacity="0.35"></rect><rect x="2" y="2" width="18" height="8" rx="1.5" fill="#1C1917"></rect><path d="M23 4v4c1-.2 1.7-1 1.7-2S24 4.2 23 4z" fill="#1C1917" fill-opacity="0.4"></path></svg>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+        <div class="no-sb" style="position:absolute; top:48px; bottom:83px; left:0; right:0; overflow-y:auto; scrollbar-width:none;">
+          <div style="display:flex; flex-direction:column; gap:24px; padding:12px 0 32px;">
+            <div style="padding:0 20px;">
+              <div onClick="{{ openSearch }}" style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:12px; cursor:pointer;" style-hover="border-color:#D6D3D1;">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#78716C" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M13 13l5 5" stroke-linecap="round"></path></svg>
+                <span style="font-size:15px; color:#78716C;">Destinations, itineraries, people…</span>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:baseline; padding:0 20px;"><span style="font-size:19px; font-weight:800; color:#1C1917; letter-spacing:-0.3px;">Trending destinations</span></div>
+              <div class="no-sb" onMouseDown="{{ dragScroll }}" style="display:flex; gap:12px; overflow-x:auto; padding:0 20px; scrollbar-width:none; overscroll-behavior-x:contain; cursor:grab;">
+                <sc-for list="{{ destinations }}" as="d" hint-placeholder-count="3">
+                  <div style="flex:none; width:150px; height:190px; border-radius:14px; scroll-snap-align:start; background:{{ d.bg }}; display:flex; align-items:flex-end; padding:14px; box-sizing:border-box; cursor:pointer; position:relative; overflow:hidden;">
+                    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55));"></div>
+                    <div style="position:relative; display:flex; flex-direction:column; gap:2px;">
+                      <span style="font-size:17px; font-weight:800; color:#FFF;">{{ d.name }}</span>
+                      <span style="font-size:12px; color:rgba(255,255,255,0.85);">{{ d.trips }} trips</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:baseline; padding:0 20px;">
+                <span style="font-size:19px; font-weight:800; color:#1C1917; letter-spacing:-0.3px;">Recommended itineraries</span>
+                <span style="font-size:13px; font-weight:700; color:#FF5A3C; cursor:pointer;">See all</span>
+              </div>
+              <div class="no-sb" onScroll="{{ onRecScroll }}" onMouseDown="{{ dragScrollSnap }}" style="display:flex; gap:12px; overflow-x:auto; padding:0 20px; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain; cursor:grab;">
+                <sc-for list="{{ recs }}" as="r" hint-placeholder-count="2">
+                  <div style="flex:none; width:310px; border:1px solid #EBE9E2; border-radius:16px; scroll-snap-align:start; overflow:hidden; background:#FFF; cursor:pointer; box-shadow:0 4px 12px rgba(28,25,23,0.03);">
+                    <div style="height:160px; background:{{ r.bg }}; display:flex; align-items:flex-end; padding:12px; box-sizing:border-box;"><span style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.8); letter-spacing:1px; text-transform:uppercase;">Photo</span></div>
+                    <div style="display:flex; flex-direction:column; gap:6px; padding:12px 14px 14px;">
+                      <span style="font-size:16px; font-weight:800; color:#1C1917; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.title }}</span>
+                      <span style="font-size:13px; color:#78716C;">{{ r.meta }}</span>
+                      <div style="display:flex; align-items:center; gap:8px; padding-top:4px;">
+                        <div style="width:22px; height:22px; border-radius:11px; background:{{ r.avatarBg }}; flex:none;"></div>
+                        <span style="font-size:12px; color:#44403C; flex:1;">{{ r.author }}</span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="#FF5A3C"><path d="M12 2l3 6.6 7 .8-5.2 4.8L18.3 21 12 17.4 5.7 21l1.5-6.8L2 9.4l7-.8z"></path></svg>
+                        <span style="font-size:12px; font-weight:800; color:#1C1917;">{{ r.rating }}</span>
+                      </div>
+                      <div style="display:flex; align-items:baseline; gap:4px; padding-top:2px;"><span style="font-size:16px; font-weight:800; color:#1C1917;">{{ r.price }}</span><span style="font-size:12px; color:#78716C;">/ person</span></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex; justify-content:center; gap:6px;">
+                <sc-for list="{{ recDots }}" as="d" hint-placeholder-count="4">
+                  <div style="width:7px; height:7px; border-radius:4px; transition:background 0.2s; background:{{ d.color }};"></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; top:48px; bottom:0; left:0; right:0; background:#FFF; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; gap:10px; padding:12px 20px;">
+            <div style="flex:1; display:flex; align-items:center; gap:12px; padding:14px 16px; background:#FAF9F5; border:1.5px solid #FF5A3C; border-radius:12px;">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#78716C" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M13 13l5 5" stroke-linecap="round"></path></svg>
+              <span style="font-size:15px; color:#A8A29E; flex:1;">Destinations, itineraries, people…</span>
+              <div style="width:2px; height:18px; background:#FF5A3C; border-radius:1px;"></div>
+            </div>
+            <span onClick="{{ closeSearch }}" style="font-size:14px; font-weight:700; color:#FF5A3C; cursor:pointer;">Cancel</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px; padding:12px 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; padding-bottom:8px;"><span style="font-size:13px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">Recent</span><span style="font-size:12px; font-weight:700; color:#FF5A3C; cursor:pointer;">Clear</span></div>
+            <sc-for list="{{ recents }}" as="q" hint-placeholder-count="3">
+              <div onClick="{{ pickRecent }}" style="display:flex; align-items:center; gap:12px; padding:11px 0; cursor:pointer; border-bottom:1px solid #F5F4F0;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+                <span style="font-size:15px; color:#1C1917; flex:1;">{{ q }}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D6D3D1" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </div>
+            </sc-for>
+            <div style="padding:20px 0 8px;"><span style="font-size:13px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">Trending searches</span></div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <div onClick="{{ pickRecent }}" style="padding:8px 14px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:999px; font-size:13px; font-weight:600; color:#44403C; cursor:pointer;">El Nido</div>
+              <div onClick="{{ pickRecent }}" style="padding:8px 14px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:999px; font-size:13px; font-weight:600; color:#44403C; cursor:pointer;">Tokyo food crawl</div>
+              <div onClick="{{ pickRecent }}" style="padding:8px 14px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:999px; font-size:13px; font-weight:600; color:#44403C; cursor:pointer;">Siargao surf</div>
+              <div onClick="{{ pickRecent }}" style="padding:8px 14px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:999px; font-size:13px; font-weight:600; color:#44403C; cursor:pointer;">Batanes</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isResults }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; top:48px; bottom:83px; left:0; right:0; display:flex; flex-direction:column;">
+          <div style="background:#FFF; border-bottom:1px solid #F1F0EC; z-index:5;">
+            <div style="display:flex; align-items:center; gap:10px; padding:12px 20px 10px;">
+              <div onClick="{{ backToLanding }}" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:18px; cursor:pointer;" style-hover="background:#FAF9F5;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></div>
+              <div onClick="{{ openSearch }}" style="flex:1; display:flex; align-items:center; gap:12px; padding:12px 16px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:12px; cursor:pointer;">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#78716C" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M13 13l5 5" stroke-linecap="round"></path></svg>
+                <span style="font-size:15px; color:#1C1917; flex:1;">Japan</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#D6D3D1"><circle cx="12" cy="12" r="10"></circle><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" stroke="#FFF" stroke-width="2" stroke-linecap="round"></path></svg>
+              </div>
+            </div>
+            <div class="no-sb" onMouseDown="{{ dragScroll }}" style="display:flex; gap:8px; overflow-x:auto; padding:2px 20px 12px; scrollbar-width:none; align-items:center; cursor:grab;">
+              <div onClick="{{ openSheet }}" style="flex:none; display:flex; align-items:center; gap:6px; padding:8px 12px; background:{{ filterBtnBg }}; border:1px solid {{ filterBtnBorder }}; border-radius:999px; cursor:pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ filterBtnIcon }}" stroke-width="2" stroke-linecap="round"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"></path><circle cx="16" cy="8" r="2.2"></circle><circle cx="8" cy="16" r="2.2"></circle></svg>
+                <sc-if value="{{ filterCountVisible }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px; font-weight:800; color:#FFF; background:#FF5A3C; width:16px; height:16px; border-radius:8px; display:flex; align-items:center; justify-content:center;">{{ filterCount }}</span></sc-if>
+              </div>
+              <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5">
+                <div onClick="{{ c.pick }}" style="flex:none; padding:8px 14px; border-radius:999px; font-size:13px; font-weight:700; cursor:pointer; background:{{ c.bg }}; color:{{ c.color }}; border:1px solid {{ c.border }};">{{ c.label }}</div>
+              </sc-for>
+            </div>
+          </div>
+          <div class="no-sb" style="flex:1; overflow-y:auto; scrollbar-width:none;">
+            <div style="display:flex; flex-direction:column; gap:14px; padding:14px 20px 32px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px; font-weight:700; color:#1C1917;">{{ resultCount }} itineraries</span>
+                <div style="display:flex; align-items:center; gap:4px; cursor:pointer;"><span style="font-size:13px; font-weight:600; color:#78716C;">Top rated</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></div>
+              </div>
+              <sc-for list="{{ results }}" as="r" hint-placeholder-count="2">
+                <div style="border:1px solid #EBE9E2; border-radius:16px; overflow:hidden; background:#FFF; cursor:pointer; box-shadow:0 4px 12px rgba(28,25,23,0.03);">
+                  <div style="height:170px; background:{{ r.bg }}; position:relative;">
+                    <div style="position:absolute; top:10px; right:10px; width:32px; height:32px; border-radius:16px; background:rgba(255,255,255,0.9); display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="15" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg></div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:6px; padding:12px 14px 14px;">
+                    <span style="font-size:16px; font-weight:800; color:#1C1917; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.title }}</span>
+                    <span style="font-size:13px; color:#78716C;">{{ r.meta }}</span>
+                    <div style="display:flex; align-items:center; gap:8px; padding-top:4px;">
+                      <div style="width:22px; height:22px; border-radius:11px; background:{{ r.avatarBg }}; flex:none;"></div>
+                      <span style="font-size:12px; color:#44403C; flex:1;">{{ r.author }}</span>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="#FF5A3C"><path d="M12 2l3 6.6 7 .8-5.2 4.8L18.3 21 12 17.4 5.7 21l1.5-6.8L2 9.4l7-.8z"></path></svg>
+                      <span style="font-size:12px; font-weight:800; color:#1C1917;">{{ r.rating }}</span>
+                      <span style="font-size:14px; font-weight:800; color:#1C1917; margin-left:6px;">{{ r.price }}</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute; bottom:0; left:0; right:0; background:#FFF; border-top:1px solid #F1F0EC; z-index:30;">
+          <div style="display:flex; justify-content:space-around; align-items:flex-start; padding:10px 16px 0;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:3px; width:64px; padding:2px 0; cursor:pointer;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5l9 7.5v11a1 1 0 0 1-1 1h-5.5v-6.5h-5V22H4a1 1 0 0 1-1-1V10z"></path></svg>
+              <span style="font-size:11px; font-weight:600; color:#78716C;">Home</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:3px; width:64px; padding:2px 0; cursor:pointer;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF5A3C" stroke-width="2.4"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21" stroke-linecap="round"></path></svg>
+              <span style="font-size:11px; font-weight:700; color:#FF5A3C;">Discover</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:3px; width:64px; padding:2px 0; cursor:pointer;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="2" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="13" rx="2"></rect><path d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5"></path></svg>
+              <span style="font-size:11px; font-weight:600; color:#78716C;">Trips</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:3px; width:64px; padding:2px 0; cursor:pointer;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"></path></svg>
+              <span style="font-size:11px; font-weight:600; color:#78716C;">Profile</span>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:center; padding:12px 0 8px;"><div style="width:139px; height:5px; background:#1C1917; border-radius:100px;"></div></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeSheet }}" style="position:absolute; inset:0; background:rgba(28,25,23,0.45); z-index:40; animation:scrimIn 0.2s ease;"></div>
+        <div style="position:absolute; left:0; right:0; bottom:0; z-index:41; background:#FFF; border-radius:24px 24px 0 0; animation:sheetUp 0.28s cubic-bezier(0.2,0.9,0.3,1); display:flex; flex-direction:column;">
+          <div onClick="{{ closeSheet }}" style="display:flex; justify-content:center; padding:10px 0 4px; cursor:pointer;"><div style="width:40px; height:4px; background:#D6D3D1; border-radius:2px;"></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 20px 16px;">
+            <span style="font-size:21px; font-weight:800; color:#1C1917;">Filters</span>
+            <sc-if value="{{ filterDirty }}" hint-placeholder-val="{{ false }}"><span onClick="{{ resetFilters }}" style="font-size:14px; font-weight:700; color:#FF5A3C; cursor:pointer;">Reset</span></sc-if>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:22px; padding:0 20px 16px;">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <span style="font-size:14px; font-weight:800; color:#1C1917;">Destination</span>
+              <div style="display:flex; align-items:center; gap:10px; padding:13px 14px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:12px; cursor:pointer;">
+                <svg width="14" height="16" viewBox="0 0 10 12" fill="#78716C"><path d="M5 0a5 5 0 0 0-5 5c0 3.5 5 7 5 7s5-3.5 5-7a5 5 0 0 0-5-5zm0 6.8A1.8 1.8 0 1 1 5 3.2a1.8 1.8 0 0 1 0 3.6z"></path></svg>
+                <span style="font-size:14px; color:#1C1917; flex:1;">Japan</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <span style="font-size:14px; font-weight:800; color:#1C1917;">Duration</span>
+              <div style="display:flex; gap:8px;">
+                <sc-for list="{{ durations }}" as="d" hint-placeholder-count="4">
+                  <div onClick="{{ d.pick }}" style="flex:1; text-align:center; padding:10px 0; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; background:{{ d.bg }}; color:{{ d.color }}; border:1px solid {{ d.border }};">{{ d.label }}</div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <span style="font-size:14px; font-weight:800; color:#1C1917;">Trip type <span style="font-weight:400; color:#A8A29E; font-size:12px;">· pick any</span></span>
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <sc-for list="{{ tripTypes }}" as="t" hint-placeholder-count="4">
+                  <div onClick="{{ t.pick }}" style="padding:9px 16px; border-radius:999px; font-size:13px; font-weight:700; cursor:pointer; background:{{ t.bg }}; color:{{ t.color }}; border:1px solid {{ t.border }};">{{ t.label }}</div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="padding:8px 20px 12px;">
+            <div onClick="{{ applyFilters }}" style="background:#FF5A3C; border-radius:12px; padding:15px 0; text-align:center; font-size:15px; font-weight:800; color:#FFF; cursor:pointer;" style-hover="background:#E84A2E;">Show {{ previewCount }} itineraries</div>
+          </div>
+          <div style="display:flex; justify-content:center; padding:6px 0 8px;"><div style="width:139px; height:5px; background:#1C1917; border-radius:100px;"></div></div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="flex:1; display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; align-content:start; max-width:1020px;">
+    <div style="grid-column:1 / -1; display:flex; align-items:center; gap:12px; margin-bottom:-6px;"><span style="font-size:13px; font-weight:800; letter-spacing:1.5px; color:#1C1917; text-transform:uppercase;">Behavior spec</span><div style="flex:1; height:1px; background:#DDD9D0;"></div></div>
+
+    <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;"><span style="width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none;">1</span><span style="font-size:14px; font-weight:800; color:#1C1917;">Search — input spec</span></div>
+      <div style="font-size:12.5px; line-height:1.6; color:#57534E;">
+        <b>Entry:</b> the landing bar is a button; tapping pushes full-screen search mode with keyboard up and cursor focused. Back gesture / Cancel restores landing state.<br>
+        <b>Input:</b> trim whitespace; min 2 chars before querying; max 80 chars; debounce 300ms; cancel in-flight request on each keystroke (latest-wins).<br>
+        <b>Suggestions:</b> grouped — Destinations, Itineraries, People (max 3 each, "See all" per group). Empty query shows Recents (last 8, deduped, tap ✕ to remove, Clear all) + trending searches.<br>
+        <b>Submit:</b> keyboard "Search" or suggestion tap → results screen; query saved to recents on submit only, not per keystroke.
+      </div>
+    </div>
+
+    <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;"><span style="width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none;">2</span><span style="font-size:14px; font-weight:800; color:#1C1917;">Landing carousels</span></div>
+      <div style="font-size:12.5px; line-height:1.6; color:#57534E;">
+        <b>Trending:</b> free horizontal scroll with start-snap and a peek of the next card (cards 150px, no paging). Tap → destination page (itineraries filtered to it). Ranked by trips created in last 30 days; cached, refreshed on pull-to-refresh.<br>
+        <b>Recommended:</b> snap carousel, 310px cards with ~24px peek — replaces the Figma full-width pager (peek advertises swipeability; the dots alone don't). Dots update on scroll; beyond 8 items append a "See all" end card instead of more dots.<br>
+        <b>Both:</b> directional lock vs. vertical feed scroll (same rule as Home); scroll positions preserved on tab switch.
+      </div>
+    </div>
+
+    <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;"><span style="width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none;">3</span><span style="font-size:14px; font-weight:800; color:#1C1917;">Category chips</span></div>
+      <div style="font-size:12.5px; line-height:1.6; color:#57534E;">
+        <b>Model:</b> single-select, "All" = no category filter. Selected chip = accent fill (Figma's gray #B3B3B3 reads as disabled).<br>
+        <b>Behavior:</b> tap re-queries immediately (no Apply needed); selected chip auto-scrolls into view; row h-scrolls with directional lock.<br>
+        <b>Sync:</b> chips and the filter sheet write the same filter state — a category picked via chip shows selected if the sheet later adds categories, and Reset clears both.<br>
+        <b>While loading:</b> chips stay interactive; result list shows skeletons; rapid taps cancel the previous request.
+      </div>
+    </div>
+
+    <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;"><span style="width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none;">4</span><span style="font-size:14px; font-weight:800; color:#1C1917;">Filter sheet — state spec</span></div>
+      <div style="font-size:12.5px; line-height:1.6; color:#57534E;">
+        <b>State model:</b> draft copy of applied filters; edits mutate the draft only. Apply commits; dismiss (scrim tap, drag down, back) discards the draft — no silent partial application.<br>
+        <b>Filters:</b> destination (typeahead, single), duration (presets 1–3 / 4–7 / 8–14 / 15+ days — replaces the dual slider, which is imprecise at 345px for a 14-step range), trip type (multi), category (multi, mirrors chips).<br>
+        <b>Live count:</b> Apply button shows "Show N itineraries", updated via debounced count query on each draft change — prevents zero-result dead ends.<br>
+        <b>Reset:</b> visible only when filters differ from defaults; resets draft, needs Apply to commit.<br>
+        <b>Badge:</b> filter button shows the count of non-default filter groups.
+      </div>
+    </div>
+
+    <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;"><span style="width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none;">5</span><span style="font-size:14px; font-weight:800; color:#1C1917;">Results list</span></div>
+      <div style="font-size:12.5px; line-height:1.6; color:#57534E;">
+        <b>Header:</b> search bar + chip row stick to the top; count line ("67 itineraries") + sort control (Top rated / Newest / Price ↑↓) scroll with content.<br>
+        <b>Pagination:</b> cursor-based, page 20; fetch at 5 cards from end; 2 skeleton cards while loading; inline Retry row on failure.<br>
+        <b>Card tap:</b> → itinerary detail. Bookmark on the cover saves to Trip ideas (optimistic, toast + undo). Author row → profile.<br>
+        <b>Data note:</b> results and chips must reflect the query scope — searching "Japan" scopes chips + filters to that destination set, and the count updates with every chip tap.
+      </div>
+    </div>
+
+    <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;"><span style="width:22px; height:22px; border-radius:11px; background:#FF5A3C; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none;">6</span><span style="font-size:14px; font-weight:800; color:#1C1917;">Data contracts</span></div>
+      <div style="font-size:11.5px; line-height:1.65; color:#57534E; font-family:monospace; background:#FAF9F5; border-radius:8px; padding:10px 12px;">
+        ItineraryCard { id, title (≤60ch, ellipsize 1 line), coverUrl, location {city, country}, days:int, author {handle, avatarUrl}, rating:float|null, reviewCount:int, price:int|null, currency }<br><br>
+        Filters { q?, destinationId?, duration? ∈ {1-3, 4-7, 8-14, 15+}, tripTypes: [], categories: [], sort = "top_rated" }
+      </div>
+      <div style="font-size:12.5px; line-height:1.6; color:#57534E;"><b>Display rules:</b> rating hidden + "New" tag when reviewCount &lt; 3 · price null → "Free itinerary" · currency from itinerary, not viewer locale (₱ vs ¥) with converted hint later.</div>
+    </div>
+
+    <div style="grid-column:1 / -1; background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px;">
+      <div style="font-size:13px; font-weight:800; color:#1C1917; padding-bottom:8px;">Edge cases</div>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px 24px; font-size:12.5px; line-height:1.55; color:#57534E;">
+        <div><b>No results:</b> illustration + "Nothing for 'Japan' with these filters" + one-tap "Clear filters" (keeps the query) — never a blank list.</div>
+        <div><b>Search error / offline:</b> inline banner with Retry; keep last good results visible rather than wiping the list.</div>
+        <div><b>Zero-count Apply:</b> button reads "No exact matches — show closest" and relaxes the least-restrictive filter, or stays disabled; team choice, but never applies into an empty screen.</div>
+        <div><b>Slow images:</b> destination-tinted placeholder gradient; failed load keeps gradient + title (cards never collapse).</div>
+        <div><b>Long content:</b> titles ellipsize at 1 line; location + days truncate before rating; price never wraps.</div>
+        <div><b>Keyboard:</b> suggestion list scrolls under keyboard inset; tapping a result dismisses keyboard first (no ghost taps).</div>
+        <div><b>Stale recents:</b> a recent search referencing a deleted itinerary still runs as a plain query — recents store strings, not ids.</div>
+        <div><b>Rapid chip taps:</b> requests are cancellable; count and list always reflect the last selection (sequence numbers on responses).</div>
+        <div><b>Deep link:</b> results screen is addressable (query + filters in route params) so shared searches restore exact state.</div>
+      </div>
+    </div>
+
+    <div style="grid-column:1 / -1; background:#FBF0EB; border:1px solid #EFC9BA; border-radius:14px; padding:16px 18px; font-size:12.5px; line-height:1.6; color:#7C3F28;">
+      <b>Consistency flags:</b> this Figma frame introduces a fourth accent (<span style="font-family:monospace; font-size:11px;">#FF751F</span>) on top of #FF5A3C / #D96C4A / #EA580C — the token decision from the Home spec applies here too. It also labels the Trips tab "Trip Workspace" in one frame and "Trips" in another, and uses two different search placeholders; the mock above unifies all three.
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { mode: 'landing', sheetOpen: false, recIdx: 0, chip: 'All', draftDuration: null, draftTypes: [], applied: { duration: null, types: [], chip: 'All' } };
+  countFor(d) {
+    let n = 67;
+    if (d.duration) n = Math.round(n * 0.55);
+    n = Math.max(3, n - d.types.length * 11);
+    if (d.chip && d.chip !== 'All') n = Math.max(2, Math.round(n * 0.4));
+    return n;
+  }
+  makeDrag(snapWidth) {
+    return (e) => {
+      const el = e.currentTarget;
+      const startX = e.clientX, startLeft = el.scrollLeft;
+      let moved = false;
+      el.style.scrollSnapType = 'none';
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX;
+        if (Math.abs(dx) > 4) moved = true;
+        el.scrollLeft = startLeft - dx;
+        if (moved) ev.preventDefault();
+      };
+      const onUp = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        el.style.cursor = 'grab';
+        if (snapWidth) {
+          const target = Math.round(el.scrollLeft / snapWidth) * snapWidth;
+          el.scrollTo({ left: target, behavior: 'smooth' });
+        }
+        if (moved) {
+          const block = (ce) => { ce.stopPropagation(); ce.preventDefault(); el.removeEventListener('click', block, true); };
+          el.addEventListener('click', block, true);
+          setTimeout(() => el.removeEventListener('click', block, true), 100);
+        }
+      };
+      el.style.cursor = 'grabbing';
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      e.preventDefault();
+    };
+  }
+  renderVals() {
+    const { mode, sheetOpen, recIdx, chip, draftDuration, draftTypes, applied } = this.state;
+    const dirty = draftDuration !== null || draftTypes.length > 0;
+    const appliedGroups = (applied.duration ? 1 : 0) + (applied.types.length ? 1 : 0);
+    const pick = (label) => () => this.setState({ chip: label, applied: Object.assign({}, this.state.applied, { chip: label }) });
+    const chipDefs = ['All','Beach','Adventure','Culture','Budget','Luxury'];
+    return {
+      isLanding: mode === 'landing', isSearch: mode === 'search', isResults: mode === 'results',
+      showTabBar: mode !== 'search', sheetOpen,
+      dragScroll: this.makeDrag(0),
+      dragScrollSnap: this.makeDrag(322),
+      openSearch: () => this.setState({ mode: 'search' }),
+      closeSearch: () => this.setState({ mode: 'landing' }),
+      backToLanding: () => this.setState({ mode: 'landing' }),
+      pickRecent: () => this.setState({ mode: 'results' }),
+      openSheet: () => this.setState({ sheetOpen: true, draftDuration: applied.duration, draftTypes: applied.types.slice() }),
+      closeSheet: () => this.setState({ sheetOpen: false }),
+      resetFilters: () => this.setState({ draftDuration: null, draftTypes: [] }),
+      applyFilters: () => this.setState({ sheetOpen: false, applied: Object.assign({}, applied, { duration: draftDuration, types: draftTypes.slice() }) }),
+      filterDirty: dirty,
+      filterCount: appliedGroups, filterCountVisible: appliedGroups > 0,
+      filterBtnBg: appliedGroups > 0 ? '#FFF0EC' : '#FFF',
+      filterBtnBorder: appliedGroups > 0 ? '#FF5A3C' : '#D6D3D1',
+      filterBtnIcon: appliedGroups > 0 ? '#FF5A3C' : '#1C1917',
+      previewCount: this.countFor({ duration: draftDuration, types: draftTypes, chip }),
+      resultCount: this.countFor(applied),
+      recents: ['Japan', 'Palawan itineraries', '@mariatravels'],
+      chips: chipDefs.map(label => ({
+        label, pick: pick(label),
+        bg: chip === label ? '#FF5A3C' : '#FFF',
+        color: chip === label ? '#FFF' : '#44403C',
+        border: chip === label ? '#FF5A3C' : '#D6D3D1',
+      })),
+      durations: [{k:'1-3',label:'1–3 days'},{k:'4-7',label:'4–7 days'},{k:'8-14',label:'8–14'},{k:'15+',label:'15+'}].map(d => ({
+        label: d.label,
+        pick: () => this.setState({ draftDuration: this.state.draftDuration === d.k ? null : d.k }),
+        bg: draftDuration === d.k ? '#FFF0EC' : '#FAF9F5',
+        color: draftDuration === d.k ? '#FF5A3C' : '#44403C',
+        border: draftDuration === d.k ? '#FF5A3C' : '#EBE9E2',
+      })),
+      tripTypes: ['Solo','Couple','Group','Family'].map(t => {
+        const on = draftTypes.indexOf(t) >= 0;
+        return {
+          label: t,
+          pick: () => this.setState({ draftTypes: on ? draftTypes.filter(x => x !== t) : draftTypes.concat(t) }),
+          bg: on ? '#FF5A3C' : '#FAF9F5', color: on ? '#FFF' : '#44403C', border: on ? '#FF5A3C' : '#EBE9E2',
+        };
+      }),
+      destinations: [
+        { name: 'Palawan', trips: 124, bg: 'linear-gradient(160deg,#1F6F78,#57B5B0 55%,#C9EDE4)' },
+        { name: 'Tokyo', trips: 89, bg: 'linear-gradient(160deg,#22335C,#5B4B8A 55%,#C77B9B)' },
+        { name: 'Bali', trips: 210, bg: 'linear-gradient(160deg,#4E7A3A,#93B56E 55%,#E4EBCF)' },
+        { name: 'Batanes', trips: 41, bg: 'linear-gradient(160deg,#22577A,#63A0BF 55%,#CFE4EE)' },
+      ],
+      recs: [
+        { title: 'Island Hopping in El Nido', meta: 'Palawan, Philippines · 3 days', author: 'by @mariatravels', rating: '4.8', price: '₱15,000', bg: 'linear-gradient(160deg,#1F6F78,#57B5B0 55%,#C9EDE4)', avatarBg: 'linear-gradient(135deg,#E8B08A,#C97B54)' },
+        { title: 'Spiritual Journey in Bali', meta: 'Ubud, Bali · 7 days', author: 'by @wayan_bali', rating: '4.9', price: '₱22,000', bg: 'linear-gradient(160deg,#4E7A3A,#93B56E 55%,#E4EBCF)', avatarBg: 'linear-gradient(135deg,#6C8FB3,#3E5F82)' },
+        { title: 'Tokyo Urban Explorer', meta: 'Tokyo, Japan · 4 days', author: 'by @neon_dreams', rating: '4.7', price: '₱35,000', bg: 'linear-gradient(160deg,#22335C,#5B4B8A 55%,#C77B9B)', avatarBg: 'linear-gradient(135deg,#B06A85,#5B3A6E)' },
+        { title: 'Batanes Slow Days', meta: 'Batanes, Philippines · 5 days', author: 'by @northbound', rating: '4.9', price: '₱28,500', bg: 'linear-gradient(160deg,#22577A,#63A0BF 55%,#CFE4EE)', avatarBg: 'linear-gradient(135deg,#8A9B6E,#5E7047)' },
+      ],
+      recDots: [0,1,2,3].map(i => ({ color: i === recIdx ? '#FF5A3C' : '#E0DDD5' })),
+      onRecScroll: (e) => {
+        const i = Math.max(0, Math.min(3, Math.round(e.currentTarget.scrollLeft / 322)));
+        if (i !== this.state.recIdx) this.setState({ recIdx: i });
+      },
+      results: [
+        { title: 'Kimi No Wa type shit', meta: 'Nagano, Japan · 3 days', author: 'by @wayan_bali', rating: '4.9', price: '₱22,000', bg: 'linear-gradient(160deg,#4A6B8A,#8FB3CF 55%,#E8EEF2)', avatarBg: 'linear-gradient(135deg,#6C8FB3,#3E5F82)' },
+        { title: 'Tokyo Urban Explorer', meta: 'Tokyo, Japan · 4 days', author: 'by @neon_dreams', rating: '4.7', price: '₱35,000', bg: 'linear-gradient(160deg,#22335C,#5B4B8A 55%,#C77B9B)', avatarBg: 'linear-gradient(135deg,#B06A85,#5B3A6E)' },
+        { title: 'Kyoto Temples & Tea', meta: 'Kyoto, Japan · 5 days', author: 'by @matcha_miles', rating: '4.8', price: '₱31,000', bg: 'linear-gradient(160deg,#7A3B2E,#C9835E 55%,#F0DCC6)', avatarBg: 'linear-gradient(135deg,#C97B54,#8A4B2F)' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
