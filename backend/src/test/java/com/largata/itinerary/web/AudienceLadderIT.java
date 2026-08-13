@@ -124,6 +124,7 @@ class AudienceLadderIT extends PostgresTestBase {
         assertThat(tripIdsIn(activeList(member))).contains(tripId);
         view(member, tripId).expectStatus().isOk();
         members(member, tripId).expectStatus().isOk();
+        diaryList(member, tripId).expectStatus().isOk();
     }
 
 
@@ -211,17 +212,11 @@ class AudienceLadderIT extends PostgresTestBase {
     }
 
     private RestTestClient.ResponseSpec diaryList(String token, String itineraryId) {
-        return rest.get()
-                .uri("/v1/itineraries/" + itineraryId + "/diary/entries")
-                .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .exchange();
+        return list(token, "/v1/itineraries/" + itineraryId + "/diary/entries");
     }
 
     private RestTestClient.ResponseSpec diaryEntry(String token, String itineraryId, UUID entryId) {
-        return rest.get()
-                .uri("/v1/itineraries/" + itineraryId + "/diary/entries/" + entryId)
-                .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .exchange();
+        return list(token, "/v1/itineraries/" + itineraryId + "/diary/entries/" + entryId);
     }
 
     private RestTestClient.ResponseSpec publicView(String token, String itineraryId) {
