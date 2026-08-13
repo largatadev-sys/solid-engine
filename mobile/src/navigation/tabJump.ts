@@ -10,6 +10,9 @@ const PROFILE_STACK = [PROFILE_TAB_ROUTE, '/account', '/diary', '/showcase'];
 const HOME_STACK = [HOME_TAB_ROUTE, '/feed'];
 
 
+const DISCOVER_STACK = ['/discover', '/discovery-results'];
+
+
 export function inProfileStack(pathname: string): boolean {
   return PROFILE_STACK.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
@@ -20,8 +23,13 @@ export function inHomeStack(pathname: string): boolean {
 }
 
 
+export function inDiscoverStack(pathname: string): boolean {
+  return DISCOVER_STACK.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
+
+
 export function inTripsStack(pathname: string): boolean {
-  return !inHomeStack(pathname) && !inProfileStack(pathname);
+  return !inHomeStack(pathname) && !inProfileStack(pathname) && !inDiscoverStack(pathname);
 }
 
 

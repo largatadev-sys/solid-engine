@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
+import { DISCOVER_TAB_LABEL } from '../src/discovery/discoveryCopy';
 import { tripRowDestination } from '../src/itineraries/TripRow';
 import { tripFormChrome, tripFormFields } from '../src/itineraries/tripFormContract';
 
@@ -11,6 +12,7 @@ const TABS = join(APP, '(tabs)');
 const TRIPS_GROUP = join(TABS, '(trips)');
 const PROFILE_GROUP = join(TABS, '(profile)');
 const HOME_GROUP = join(TABS, '(home)');
+const DISCOVER_GROUP = join(TABS, '(discover)');
 const TRIPS = join(TRIPS_GROUP, 'itineraries');
 
 const MOCK_CFAB_SIZE = 40;
@@ -38,7 +40,7 @@ function tripScreens(): [string, string][] {
 describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('has one file per tab, and the trip flow is a single group rather than four sibling tabs', () => {
     expect(readdirSync(TABS).sort()).toEqual(
-      ['_layout.tsx', '(home)', '(trips)', '(profile)', 'search.tsx'].sort(),
+      ['_layout.tsx', '(home)', '(discover)', '(trips)', '(profile)'].sort(),
     );
   });
 
@@ -92,7 +94,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('declares every tab in the layout', () => {
     const layout = read(TABS, '_layout.tsx');
 
-    for (const name of ['(home)', 'search', '(trips)', '(profile)']) {
+    for (const name of ['(home)', '(discover)', '(trips)', '(profile)']) {
       expect(layout).toContain(`name="${name}"`);
     }
   });
@@ -122,7 +124,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   });
 
   it('lets the layout own the tab labels — a screen-level title silently overrides them', () => {
-    expect(read(TABS, 'search.tsx')).not.toMatch(/<Stack\.Screen/);
+    expect(read(DISCOVER_GROUP, 'discover.tsx')).not.toMatch(/<Stack\.Screen/);
     expect(read(HOME_GROUP, 'index.tsx')).not.toMatch(/<Stack\.Screen/);
     for (const screen of ['trips.tsx', 'create.tsx']) {
       expect(read(TRIPS_GROUP, screen)).not.toMatch(/<Stack\.Screen/);
@@ -144,16 +146,30 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('calls the second tab Discover — the feed it opens is the discovery axis (ADR-019)', () => {
     const layout = read(TABS, '_layout.tsx');
 
-    expect(layout).toContain("title: 'Discover'");
+    expect(DISCOVER_TAB_LABEL).toBe('Discover');
+    expect(layout).toContain('title: DISCOVER_TAB_LABEL');
     expect(layout).not.toMatch(/title: 'Search'/);
   });
 
-  it('greys Discover alone — Home became the feed and the landing route (S4.22)', () => {
+  it('greys no tab at all — Discover went live at S4.3 and was the last one refusing taps', () => {
     const layout = read(TABS, '_layout.tsx');
 
-    expect(layout).toContain("comingSoon('search')");
-    expect(layout).not.toContain("comingSoon('home')");
-    expect(layout.match(/comingSoon\('search'\)/g) ?? []).toHaveLength(1);
+    expect(layout).not.toContain('comingSoon');
+    expect(layout).not.toContain('coming soon');
+    expect(layout).toContain('DISCOVER_TAB_ROUTE');
+  });
+
+  it('roots Discover in its own group, so browsing never pops onto a trip screen (S4.13)', () => {
+    expect(existsSync(join(DISCOVER_GROUP, '_layout.tsx'))).toBe(true);
+    expect(existsSync(join(DISCOVER_GROUP, 'discover.tsx'))).toBe(true);
+    expect(read(DISCOVER_GROUP, '_layout.tsx')).toContain('<Stack');
+  });
+
+  it('keeps the discovery routes out of the trips catch-all, which owned every unclaimed path', () => {
+    const jump = readFileSync(join(MOBILE_ROOT, 'src', 'navigation', 'tabJump.ts'), 'utf8');
+
+    expect(jump).toContain('inDiscoverStack');
+    expect(jump).toContain('!inDiscoverStack(pathname)');
   });
 
   it('roots Home in its own group so a pushed itinerary pops back to the feed (S4.13)', () => {
