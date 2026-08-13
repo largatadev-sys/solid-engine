@@ -15,16 +15,16 @@ export const discoveryRepository = {
     filters: DiscoveryFilters,
     cursor?: string,
   ): Promise<Page<DiscoveryCardResponse>> {
-    const paged = cursor === undefined ? '' : `&cursor=${encodeURIComponent(cursor)}`;
+    const paged = cursor === undefined ? [] : [`cursor=${encodeURIComponent(cursor)}`];
     return apiClient.get<Page<DiscoveryCardResponse>>(
-      `/v1/discovery/itineraries?v=1${queryStringOf(filters)}${paged}`,
+      `/v1/discovery/itineraries${queryStringOf(filters, ...paged)}`,
     );
   },
 
 
   async fetchCount(filters: DiscoveryFilters): Promise<DiscoveryCountResponse> {
     return apiClient.get<DiscoveryCountResponse>(
-      `/v1/discovery/count?v=1${queryStringOf(filters)}`,
+      `/v1/discovery/count${queryStringOf(filters)}`,
     );
   },
 

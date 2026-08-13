@@ -9,7 +9,6 @@ import {
   searchesFor,
   type DiscoveryFilters,
 } from '../discovery/discoveryFilters';
-import { SEARCH_DEBOUNCE_MS } from '../discovery/searchGating';
 import { useAuth } from '../hooks/authContext';
 import { discoveryRepository } from '../repositories/discoveryRepository';
 import type {
@@ -88,6 +87,5 @@ export function useSearchSuggestions(
     queryKey: discoveryKeys.suggestions(query.trim()),
     queryFn: () => discoveryRepository.fetchSuggestions(query.trim()),
     enabled: kind === 'signedIn' && searchesFor(query),
-    staleTime: SEARCH_DEBOUNCE_MS,
   });
 }

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { comingSoon } from '../components/comingSoon';
 import { MediaThumb } from '../media/MediaThumb';
+import { CoverWell } from './CoverWell';
 import { pricePillLabel } from '../profile/showcaseCard';
 import { stubPricePerPersonFor, stubRatingFor } from '../profile/stubMetrics';
 import { spacing } from '../theme';
@@ -49,7 +50,7 @@ export function DiscoveryCard({
           style={styles.coverImage}
           fallbackStyle={styles.coverWell}
           accessibilityLabel={`Cover photo for ${card.title}`}
-          fallback={<View />}
+          fallback={<CoverWell subject={card.id} />}
         />
         <Pressable
           style={styles.bookmark}

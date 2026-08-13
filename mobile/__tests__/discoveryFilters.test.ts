@@ -22,7 +22,6 @@ import {
   rememberSearch,
 } from '../src/discovery/recentSearches';
 import {
-  acceptsResponse,
   queriesFor,
   SEARCH_DEBOUNCE_MS,
   submittableQuery,
@@ -65,9 +64,9 @@ describe('filters survive a round trip through the route, so a shared search res
     expect(isDurationBand(undefined)).toBe(false);
   });
 
-  it('builds a query string that appends to an existing one', () => {
+  it('builds a real query string, never a fragment needing a dummy first param', () => {
     expect(queryStringOf(NO_FILTERS)).toBe('');
-    expect(queryStringOf({ query: 'Japan', destination: null, duration: null })).toBe('&q=Japan');
+    expect(queryStringOf({ query: 'Japan', destination: null, duration: null })).toBe('?q=Japan');
   });
 });
 
@@ -161,11 +160,6 @@ describe('search gating keeps the server out of reach until the query is worth r
     expect(SEARCH_DEBOUNCE_MS).toBe(300);
   });
 
-  it('accepts only the newest response, so a slow early query cannot overwrite a fast late one', () => {
-    expect(acceptsResponse(5, 5)).toBe(true);
-    expect(acceptsResponse(4, 5)).toBe(false);
-    expect(acceptsResponse(6, 5)).toBe(true);
-  });
 });
 
 

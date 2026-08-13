@@ -8,7 +8,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useDiscoveryCount } from '../query/discoveryQueries';
+import { useDiscoveryCount, useSearchSuggestions } from '../query/discoveryQueries';
+import { Icon } from '../components/Icon';
 import { colors, spacing } from '../theme';
 import {
   discoveryColors,
@@ -37,6 +38,8 @@ import {
   FILTERS_RESET_LABEL,
   FILTERS_TITLE,
 } from './discoveryCopy';
+import { SEARCH_DEBOUNCE_MS } from './searchGating';
+import { useDebounced } from './useDebounced';
 
 export function FilterSheet({
   visible,
@@ -57,7 +60,10 @@ export function FilterSheet({
     }
   }, [visible, applied]);
 
-  const count = useDiscoveryCount(draft, visible);
+  const count = useDiscoveryCount(useDebounced(draft, SEARCH_DEBOUNCE_MS), visible);
+  const typed = useDebounced(draft.destination ?? '', SEARCH_DEBOUNCE_MS);
+  const suggestions = useSearchSuggestions(typed);
+  const typeahead = visible ? (suggestions.data?.destinations ?? []) : [];
   const previewed = count.isSuccess ? count.data.count : null;
   const blocked = previewed === 0;
 
@@ -97,15 +103,42 @@ export function FilterSheet({
           >
             <View style={styles.group}>
               <Text style={styles.groupLabel}>{FILTER_DESTINATION_LABEL}</Text>
-              <TextInput
-                style={styles.field}
-                value={draft.destination ?? ""}
-                onChangeText={(text) => setDraft(withDestination(draft, text))}
-                placeholder={FILTER_DESTINATION_PLACEHOLDER}
-                placeholderTextColor={workspaceColors.placeholder}
-                accessibilityLabel={FILTER_DESTINATION_LABEL}
-                autoCorrect={false}
-              />
+              <View style={styles.fieldRow}>
+                <TextInput
+                  style={styles.field}
+                  value={draft.destination ?? ''}
+                  onChangeText={(text) => setDraft(withDestination(draft, text))}
+                  placeholder={FILTER_DESTINATION_PLACEHOLDER}
+                  placeholderTextColor={workspaceColors.placeholder}
+                  accessibilityLabel={FILTER_DESTINATION_LABEL}
+                  autoCorrect={false}
+                />
+                {draft.destination !== null && (
+                  <Pressable
+                    onPress={() => setDraft(withDestination(draft, null))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Clear the destination ${draft.destination}`}
+                  >
+                    <Icon name="close" size={12} color={profileColors.chevron} />
+                  </Pressable>
+                )}
+              </View>
+
+              {typeahead
+                .filter((suggestion) => suggestion !== draft.destination)
+                .map((suggestion) => (
+                  <Pressable
+                    key={suggestion}
+                    style={styles.suggestion}
+                    onPress={() => setDraft(withDestination(draft, suggestion))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filter to ${suggestion}`}
+                  >
+                    <Text style={styles.suggestionLabel} numberOfLines={1}>
+                      {suggestion}
+                    </Text>
+                  </Pressable>
+                ))}
             </View>
 
             <View style={styles.group}>
@@ -215,13 +248,28 @@ const styles = StyleSheet.create({
     ...profileTypography.sectionTitle,
     color: workspaceColors.title,
   },
-  field: {
-    ...discoveryTypography.filterField,
-    color: workspaceColors.title,
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     backgroundColor: workspaceColors.pressed,
     borderWidth: 1,
     borderColor: workspaceColors.hairline,
     borderRadius: profileMetrics.statsRadius,
+    paddingRight: spacing.sm3,
+  },
+  suggestion: {
+    paddingVertical: spacing.sm2,
+    paddingHorizontal: spacing.sm3,
+  },
+  suggestionLabel: {
+    ...discoveryTypography.filterField,
+    color: profileColors.bio,
+  },
+  field: {
+    ...discoveryTypography.filterField,
+    color: workspaceColors.title,
+    flex: 1,
     paddingHorizontal: spacing.sm3,
     paddingVertical: spacing.sm3,
   },

@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -7,10 +7,11 @@ import {
   StyleSheet,
   Text,
   View,
+  type ViewToken,
 } from 'react-native';
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useDiscoveryBrowse } from '../query/discoveryQueries';
+import { useDiscoveryBrowse, useDiscoveryCount } from '../query/discoveryQueries';
 import { colors, spacing } from '../theme';
 import {
   discoveryColors,
@@ -31,6 +32,7 @@ import {
   noResultsLine,
   RESULTS_LOAD_FAILED,
   RESULTS_RETRY_LABEL,
+  SEARCH_PLACEHOLDER,
   resultCountLine,
   SEARCH_RETRY_ACTION,
   SEARCH_RETRY_BANNER,
@@ -41,8 +43,15 @@ import {
   filtersFromParams,
   type DiscoveryFilters,
 } from './discoveryFilters';
-import { DISCOVER_TAB_ROUTE, resultsRoute } from './discoveryRoutes';
-import { FETCH_AHEAD_CARDS, SKELETON_CARDS } from './resultsPaging';
+import {
+  DISCOVER_TAB_ROUTE,
+  DISCOVERY_SEARCH_ROUTE,
+  resultsRoute,
+} from './discoveryRoutes';
+import { fetchesMore, SKELETON_CARDS } from './resultsPaging';
+
+const VIEWABILITY = { itemVisiblePercentThreshold: 10 };
+
 
 export function DiscoveryResultsScreen() {
   const params = useLocalSearchParams<{
@@ -50,16 +59,40 @@ export function DiscoveryResultsScreen() {
     destination?: string;
     duration?: string;
   }>();
-  const filters = filtersFromParams(params);
+  const filters = useMemo(
+    () => filtersFromParams(params),
+    [params.q, params.destination, params.duration],
+  );
   const [filtering, setFiltering] = useState(false);
 
   const browse = useDiscoveryBrowse(filters);
+  const matched = useDiscoveryCount(filters, true);
 
   const cards: DiscoveryCardResponse[] =
     browse.data?.pages.flatMap((page) => page.items) ?? [];
   const badge = activeFilterGroups(filters);
   const settled = !browse.isPending && !browse.isFetching;
   const empty = settled && !browse.isError && cards.length === 0;
+
+  const loaded = useRef({ count: 0, more: false, busy: false, loadMore: () => {} });
+  loaded.current = {
+    count: cards.length,
+    more: browse.hasNextPage === true,
+    busy: browse.isFetchingNextPage,
+    loadMore: () => void browse.fetchNextPage(),
+  };
+
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      const deepest = viewableItems.reduce(
+        (furthest, item) => Math.max(furthest, item.index ?? 0),
+        0,
+      );
+      if (fetchesMore(deepest, loaded.current.count, loaded.current.more, loaded.current.busy)) {
+        loaded.current.loadMore();
+      }
+    },
+  ).current;
 
   function applyFilters(next: DiscoveryFilters) {
     setFiltering(false);
@@ -75,8 +108,39 @@ export function DiscoveryResultsScreen() {
         backTo={DISCOVER_TAB_ROUTE}
       />
 
+      <View style={styles.searchRow}>
+        <Pressable
+          style={styles.searchBar}
+          onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            filters.query === null
+              ? SEARCH_PLACEHOLDER
+              : `Edit the search for ${filters.query}`
+          }
+        >
+          <Icon name="search" size={16} color={profileColors.meta} />
+          <Text style={styles.searchLabel} numberOfLines={1}>
+            {filters.query ?? SEARCH_PLACEHOLDER}
+          </Text>
+        </Pressable>
+        {filters.query !== null && (
+          <Pressable
+            onPress={() =>
+              router.replace(resultsRoute({ ...filters, query: null }))
+            }
+            accessibilityRole="button"
+            accessibilityLabel={`Clear the search for ${filters.query}`}
+          >
+            <Icon name="close" size={14} color={profileColors.chevron} />
+          </Pressable>
+        )}
+      </View>
+
       <View style={styles.controls}>
-        <Text style={styles.count}>{resultCountLine(cards.length)}</Text>
+        <Text style={styles.count}>
+          {resultCountLine(matched.isSuccess ? matched.data.count : cards.length)}
+        </Text>
         <Pressable
           style={[styles.filterButton, badge > 0 && styles.filterButtonActive]}
           onPress={() => setFiltering(true)}
@@ -135,12 +199,8 @@ export function DiscoveryResultsScreen() {
           keyExtractor={(card) => card.id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          onEndReachedThreshold={FETCH_AHEAD_CARDS / Math.max(cards.length, 1)}
-          onEndReached={() => {
-            if (browse.hasNextPage && !browse.isFetchingNextPage) {
-              void browse.fetchNextPage();
-            }
-          }}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={VIEWABILITY}
           renderItem={({ item }) => (
             <DiscoveryCard
               card={item}
@@ -207,6 +267,30 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm2,
+    paddingHorizontal: spacing.md2,
+    paddingBottom: spacing.sm3,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm2,
+    paddingHorizontal: spacing.sm3,
+    paddingVertical: spacing.sm2,
+    backgroundColor: workspaceColors.pressed,
+    borderWidth: 1,
+    borderColor: workspaceColors.hairline,
+    borderRadius: profileMetrics.statsRadius,
+  },
+  searchLabel: {
+    ...discoveryTypography.searchField,
+    color: workspaceColors.title,
+    flex: 1,
   },
   controls: {
     flexDirection: 'row',

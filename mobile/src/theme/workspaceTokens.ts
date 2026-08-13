@@ -256,6 +256,16 @@ export const discoveryColors = {
 } as const;
 
 
+export const coverTints = [
+  { base: '#1F6F78', wash: '#57B5B0' },
+  { base: '#22335C', wash: '#5B4B8A' },
+  { base: '#4E7A3A', wash: '#93B56E' },
+  { base: '#22577A', wash: '#63A0BF' },
+  { base: '#7A3B2E', wash: '#C9835E' },
+  { base: '#4A6B8A', wash: '#8FB3CF' },
+] as const;
+
+
 export const discoveryTypography = {
   railTitle: { fontFamily: fonts.extraBold, fontSize: 19, lineHeight: 24, fontWeight: '800' },
   destinationName: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, fontWeight: '700' },

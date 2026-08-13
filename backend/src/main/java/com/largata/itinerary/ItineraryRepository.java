@@ -51,10 +51,14 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
     long countPublishedAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
 
 
-    String DISCOVERABLE = """
+    String ON_THE_STRANGERS_SURFACE = """
             i.published = true
               AND i.visibility = 'PUBLIC'
               AND i.id <> ALL (CAST(:archivedIds AS uuid[]))
+            """;
+
+
+    String DISCOVERABLE = ON_THE_STRANGERS_SURFACE + """
               AND (CAST(:query AS text) IS NULL
                    OR i.title ILIKE '%' || CAST(:query AS text) || '%'
                    OR EXISTS (SELECT 1 FROM unnest(i.destinations) AS d
@@ -108,9 +112,8 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
     @Query(value = """
             SELECT * FROM itinerary i
-            WHERE i.published = true
-              AND i.visibility = 'PUBLIC'
-              AND i.id <> ALL (CAST(:archivedIds AS uuid[]))
+            WHERE
+            """ + ON_THE_STRANGERS_SURFACE + """
               AND i.cover_image_url IS NOT NULL
             ORDER BY i.published_at DESC, i.id DESC
             LIMIT :probe
@@ -128,10 +131,9 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
                        lower(trim(d)) AS grouping_key
                 FROM itinerary i
                 CROSS JOIN LATERAL unnest(i.destinations) AS d
-                WHERE i.published = true
-                  AND i.visibility = 'PUBLIC'
+                WHERE
+            """ + ON_THE_STRANGERS_SURFACE + """
                   AND i.published_at >= :since
-                  AND i.id <> ALL (CAST(:archivedIds AS uuid[]))
                   AND trim(d) <> ''
             ),
             ranked AS (
@@ -170,9 +172,8 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
             SELECT DISTINCT ON (lower(trim(d))) trim(d)
             FROM itinerary i
             CROSS JOIN LATERAL unnest(i.destinations) AS d
-            WHERE i.published = true
-              AND i.visibility = 'PUBLIC'
-              AND i.id <> ALL (CAST(:archivedIds AS uuid[]))
+            WHERE
+            """ + ON_THE_STRANGERS_SURFACE + """
               AND trim(d) <> ''
               AND d ILIKE '%' || CAST(:query AS text) || '%'
             ORDER BY lower(trim(d))
@@ -186,9 +187,8 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
     @Query(value = """
             SELECT i.title FROM itinerary i
-            WHERE i.published = true
-              AND i.visibility = 'PUBLIC'
-              AND i.id <> ALL (CAST(:archivedIds AS uuid[]))
+            WHERE
+            """ + ON_THE_STRANGERS_SURFACE + """
               AND i.title ILIKE '%' || CAST(:query AS text) || '%'
             ORDER BY i.published_at DESC, i.id DESC
             LIMIT :limit

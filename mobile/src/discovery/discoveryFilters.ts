@@ -54,10 +54,16 @@ export function paramsFromFilters(filters: DiscoveryFilters): Record<string, str
 }
 
 
-export function queryStringOf(filters: DiscoveryFilters): string {
+export function queryStringOf(filters: DiscoveryFilters, ...extra: string[]): string {
   const params = new URLSearchParams(paramsFromFilters(filters));
+  for (const pair of extra) {
+    const [name, value] = pair.split('=');
+    if (name !== undefined && value !== undefined) {
+      params.set(name, decodeURIComponent(value));
+    }
+  }
   const rendered = params.toString();
-  return rendered === '' ? '' : `&${rendered}`;
+  return rendered === '' ? '' : `?${rendered}`;
 }
 
 

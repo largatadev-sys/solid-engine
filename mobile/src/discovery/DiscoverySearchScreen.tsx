@@ -29,6 +29,7 @@ import {
   RECENT_CLEAR_LABEL,
   RECENT_SECTION_LABEL,
   SEARCH_CANCEL_LABEL,
+  SEE_ALL_LABEL,
   SEARCH_PLACEHOLDER,
   SUGGESTED_DESTINATIONS_LABEL,
   SUGGESTED_ITINERARIES_LABEL,
@@ -37,14 +38,15 @@ import {
 import { resultsRoute } from './discoveryRoutes';
 import { clearedRecents, forgetSearch, rememberSearch } from './recentSearches';
 import { loadRecents, saveRecents } from './recentsStore';
-import { submittableQuery } from './searchGating';
+import { SEARCH_DEBOUNCE_MS, submittableQuery } from './searchGating';
+import { useDebounced } from './useDebounced';
 
 export function DiscoverySearchScreen() {
   const insets = useSafeAreaInsets();
   const [typed, setTyped] = useState('');
   const [recents, setRecents] = useState<string[]>([]);
 
-  const suggestions = useSearchSuggestions(typed);
+  const suggestions = useSearchSuggestions(useDebounced(typed, SEARCH_DEBOUNCE_MS));
   const trending = useTrendingDestinations();
 
   useEffect(() => {
@@ -110,9 +112,18 @@ export function DiscoverySearchScreen() {
           <>
             {suggestedDestinations.length > 0 && (
               <View style={styles.group}>
-                <Text style={styles.groupLabel}>
-                  {SUGGESTED_DESTINATIONS_LABEL}
-                </Text>
+                <View style={styles.groupHeader}>
+                  <Text style={styles.groupLabel}>
+                    {SUGGESTED_DESTINATIONS_LABEL}
+                  </Text>
+                  <Pressable
+                    onPress={() => openDestination(suggestedDestinations[0] ?? '')}
+                    accessibilityRole="button"
+                    accessibilityLabel={`See all destinations matching ${typed.trim()}`}
+                  >
+                    <Text style={styles.clear}>{SEE_ALL_LABEL}</Text>
+                  </Pressable>
+                </View>
                 {suggestedDestinations.map((destination) => (
                   <Pressable
                     key={destination}
@@ -136,9 +147,18 @@ export function DiscoverySearchScreen() {
 
             {suggestedItineraries.length > 0 && (
               <View style={styles.group}>
-                <Text style={styles.groupLabel}>
-                  {SUGGESTED_ITINERARIES_LABEL}
-                </Text>
+                <View style={styles.groupHeader}>
+                  <Text style={styles.groupLabel}>
+                    {SUGGESTED_ITINERARIES_LABEL}
+                  </Text>
+                  <Pressable
+                    onPress={() => runSearch(typed)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`See all itineraries matching ${typed.trim()}`}
+                  >
+                    <Text style={styles.clear}>{SEE_ALL_LABEL}</Text>
+                  </Pressable>
+                </View>
                 {suggestedItineraries.map((title) => (
                   <Pressable
                     key={title}

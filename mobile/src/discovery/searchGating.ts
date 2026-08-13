@@ -18,6 +18,3 @@ export function submittableQuery(raw: string): string | null {
 }
 
 
-export function acceptsResponse(sequence: number, latestSequence: number): boolean {
-  return sequence >= latestSequence;
-}

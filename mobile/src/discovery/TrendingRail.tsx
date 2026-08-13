@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { MediaThumb } from '../media/MediaThumb';
+import { CoverWell } from './CoverWell';
 import { colors, spacing } from '../theme';
 import {
   discoveryColors,
@@ -83,7 +84,7 @@ export function TrendingRail({
                 style={styles.cover}
                 fallbackStyle={styles.well}
                 accessibilityLabel={`A trip photo from ${entry.destination}`}
-                fallback={<View />}
+                fallback={<CoverWell subject={entry.destination} />}
               />
               <View style={styles.scrim} />
               <View style={styles.caption}>
