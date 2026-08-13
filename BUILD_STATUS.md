@@ -211,6 +211,14 @@ Test-harness capture (post-S0.6, owner directive): `mobile/scripts/drive-preview
 
 ---
 
+**2026-08-13**
+
+**README setup refreshed for a second workstation — the setup a fresh machine actually needs, not the one a fresh clone needs.** The founder is standing up another workstation and the README's setup predated most of the toolchain record: no JDK story (backend 25 / Android ≤ 24, the four-numbers table), no mention that the repo ships **no Maven wrapper**, no ninja, no `ANDROID_HOME` exports, no AVD spec (API 36 Play image), and — the real gaps — nothing about the **SSH host alias** the remote uses (`github-largatadev`, which a new machine cannot resolve without its `~/.ssh/config` block), the **gitignored-config transfer list** (`mobile/.env` including the test-pool pair, the optional root `.env`, the Admin SDK JSON, the release keystore), or the **debug-keystore SHA-1 trap** the epic map has carried since S0.5 — a fresh machine's first prebuild mints a new debug key and Google sign-in dies with nothing naming the cause; the backlog line's own remedy ("document it as a known clone step") is now that documented step. Also corrected: `npm install` → `npm ci`, Metro's port stated (8082 — the preview owns 8081), and the counts-not-exit-code rule attached to the test commands.
+
+*Why it wasn't a story —* docs-only, no product surface, raised by the founder mid-S4.3. It rides the S4.3 feature branch because that is the open branch; the epic-map debug-keystore line stays open (its options — commit a project debug keystore or pin one via config plugin — remain undecided; the README documents the workaround, not the fix).
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
