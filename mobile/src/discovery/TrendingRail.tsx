@@ -144,7 +144,11 @@ const styles = StyleSheet.create({
     backgroundColor: profileColors.coverWell,
   },
   scrim: {
-    ...StyleSheet.absoluteFill,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
     backgroundColor: discoveryColors.coverScrim,
   },
   caption: {
