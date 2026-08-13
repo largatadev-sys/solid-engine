@@ -79,6 +79,40 @@ class AudienceLadderIT extends PostgresTestBase {
 
 
     @Test
+    void aMembersDiaryReadsOnAnArchivedTripAreMaskedWhileTheOwnersAreServed() {
+        String owner = freshTraveler();
+        String tripId = createItinerary(owner);
+        String member = admitMemberTo(tripId);
+
+        diaryList(member, tripId).expectStatus().isOk();
+
+        act(owner, tripId, "archive");
+
+        diaryList(member, tripId)
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
+
+        diaryEntry(member, tripId, UUID.randomUUID())
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
+
+        diaryList(owner, tripId).expectStatus().isOk();
+        diaryEntry(owner, tripId, UUID.randomUUID())
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("DIARY_ENTRY_NOT_FOUND");
+    }
+
+
+    @Test
     void unarchivingRestoresTheMembersListRowAndTheirReadsUntouched() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
@@ -90,6 +124,7 @@ class AudienceLadderIT extends PostgresTestBase {
         assertThat(tripIdsIn(activeList(member))).contains(tripId);
         view(member, tripId).expectStatus().isOk();
         members(member, tripId).expectStatus().isOk();
+        diaryList(member, tripId).expectStatus().isOk();
     }
 
 
@@ -174,6 +209,14 @@ class AudienceLadderIT extends PostgresTestBase {
                 .uri("/v1/itineraries/" + itineraryId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
+    }
+
+    private RestTestClient.ResponseSpec diaryList(String token, String itineraryId) {
+        return list(token, "/v1/itineraries/" + itineraryId + "/diary/entries");
+    }
+
+    private RestTestClient.ResponseSpec diaryEntry(String token, String itineraryId, UUID entryId) {
+        return list(token, "/v1/itineraries/" + itineraryId + "/diary/entries/" + entryId);
     }
 
     private RestTestClient.ResponseSpec publicView(String token, String itineraryId) {

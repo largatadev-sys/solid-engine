@@ -23,9 +23,18 @@ class AudienceFenceCoverageTest {
             Set.of("preview", "listMine");
 
 
+    private static final Set<String> KNOWN_WORKSPACE_SCOPED_GETS =
+            Set.of(
+                    "ItineraryController.java#view",
+                    "DiaryController.java#mine",
+                    "DiaryController.java#one",
+                    "PhotoDumpController.java#list");
+
+
     private static final Pattern HANDLER =
             Pattern.compile(
-                    "@GetMapping\\(?[^)]*\\)?\\s+(?:[\\w.<>,\\[\\]\\s]+?)\\s(\\w+)\\(([^)]*)\\)\\s*\\{"
+                    "@GetMapping\\(?[^)]*\\)?\\s+(?:[\\w.<>,\\[\\]\\s]+?)\\s(\\w+)"
+                            + "\\(((?:[^()]|\\([^()]*\\))*)\\)\\s*(?:throws[\\w.,\\s]+?)?\\{"
                             + "((?:[^{}]|\\{[^{}]*\\})*)",
                     Pattern.DOTALL);
 
@@ -34,23 +43,12 @@ class AudienceFenceCoverageTest {
     void everyWorkspaceScopedGetEitherFencesTheAudienceOrIsNamedAsAnException() throws IOException {
         List<String> unfenced = new ArrayList<>();
 
-        for (Path controller : controllerSources()) {
-            String source = Files.readString(controller);
-            if (!source.contains("guard.requireMember")) {
+        for (ScannedHandler handler : scannedHandlers()) {
+            if (handler.body().contains("requireInAudience")
+                    || OWNER_ONLY_OR_DELIBERATELY_UNFENCED.contains(handler.name())) {
                 continue;
             }
-            Matcher handler = HANDLER.matcher(source);
-            while (handler.find()) {
-                String name = handler.group(1);
-                String body = handler.group(3);
-                if (!body.contains("guard.requireMember")) {
-                    continue;
-                }
-                if (body.contains("requireInAudience") || OWNER_ONLY_OR_DELIBERATELY_UNFENCED.contains(name)) {
-                    continue;
-                }
-                unfenced.add(controller.getFileName() + "#" + name);
-            }
+            unfenced.add(handler.qualifiedName());
         }
 
         assertThat(unfenced)
@@ -64,6 +62,22 @@ class AudienceFenceCoverageTest {
 
 
     @Test
+    void theScanReachesEveryWorkspaceScopedGetItIsSupposedToGuard() throws IOException {
+        List<String> scanned = scannedHandlers().stream().map(ScannedHandler::qualifiedName).toList();
+
+        assertThat(scanned)
+                .as(
+                        "an empty unfenced list proves nothing if the pattern matched nothing — the two "
+                                + "outcomes are indistinguishable. A parameter list carrying its own "
+                                + "parentheses once ended the match early, so DiaryController#mine was never "
+                                + "scanned, its missing fence never reported, and the coverage test stayed "
+                                + "green. Any reformat, throws clause or annotation shape that drops a real "
+                                + "handler out of the scan fails here instead of passing silently")
+                .containsAll(KNOWN_WORKSPACE_SCOPED_GETS);
+    }
+
+
+    @Test
     void theExceptionSetNamesOnlyHandlersThatStillExist() throws IOException {
         String allControllers = controllerSourcesJoined();
 
@@ -72,6 +86,37 @@ class AudienceFenceCoverageTest {
                     .as("a stale exception silently widens the fence's blind spot: " + exempt)
                     .contains(" " + exempt + "(");
         }
+    }
+
+
+    private record ScannedHandler(String file, String name, String body) {
+
+        String qualifiedName() {
+            return file + "#" + name;
+        }
+    }
+
+
+    private static List<ScannedHandler> scannedHandlers() throws IOException {
+        List<ScannedHandler> scanned = new ArrayList<>();
+
+        for (Path controller : controllerSources()) {
+            String source = Files.readString(controller);
+            if (!source.contains("guard.requireMember")) {
+                continue;
+            }
+            Matcher handler = HANDLER.matcher(source);
+            while (handler.find()) {
+                String body = handler.group(3);
+                if (!body.contains("guard.requireMember")) {
+                    continue;
+                }
+                scanned.add(
+                        new ScannedHandler(
+                                controller.getFileName().toString(), handler.group(1), body));
+            }
+        }
+        return scanned;
     }
 
 
