@@ -90,10 +90,10 @@ class ShortHandleSurvivesProfileSaveIT extends PostgresTestBase {
 
 
     @Test
-    void aTakenShortHandleIsStillRefusedToEveryoneElse() {
+    void nobodyElseCanClaimAShortHandleBecauseTheMinimumRefusesItBeforeTheContestIsReached() {
         String owner = freshUid();
         signIn(owner);
-        String taken = plantShortHandle(owner);
+        String held = plantShortHandle(owner);
 
         String other = freshUid();
         String otherToken = signIn(other);
@@ -102,10 +102,31 @@ class ShortHandleSurvivesProfileSaveIT extends PostgresTestBase {
                 .uri("/v1/me")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + otherToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"handle\":\"" + taken + "\"}")
+                .body("{\"handle\":\"" + held + "\"}")
                 .exchange()
                 .expectStatus()
-                .isEqualTo(org.springframework.http.HttpStatus.CONFLICT);
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("HANDLE_MALFORMED");
+    }
+
+
+    @Test
+    void aTwoCharacterHandleCannotBeClaimedFreshEvenWhenNobodyHoldsIt() {
+        String token = signIn(freshUid());
+
+        rest.patch()
+                .uri("/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"handle\":\"" + freshShortHandle() + "\"}")
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("HANDLE_MALFORMED");
     }
 
 

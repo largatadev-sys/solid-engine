@@ -292,8 +292,8 @@ async function smokeS49({ trip, owner, member, ownerId, dayId }) {
     archived.status === 200 && archived.body.archived === true, 'got ' + archived.status);
 
   const memberWrites = await api(`/v1/itineraries/${trip}/days`, 'POST', member, { title: 'While frozen' });
-  check('S1.9 a member cannot write the plan (409 TRIP_ARCHIVED)',
-    memberWrites.status === 409 && memberWrites.body.code === 'TRIP_ARCHIVED',
+  check('S4.23 a member writing an archived trip gets the MASK, not the freeze (404 ITINERARY_NOT_FOUND)',
+    memberWrites.status === 404 && memberWrites.body.code === 'ITINERARY_NOT_FOUND',
     'got ' + memberWrites.status + ' ' + JSON.stringify(memberWrites.body?.code));
   const ownerStarts = await api(`/v1/itineraries/${trip}/start`, 'POST', owner);
   check('S1.9 even the owner cannot move the lifecycle (409 TRIP_ARCHIVED)',

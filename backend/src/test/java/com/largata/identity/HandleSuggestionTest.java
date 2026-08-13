@@ -25,6 +25,12 @@ class HandleSuggestionTest {
     }
 
     @Test
+    void aTwoCharacterNameIsTooShortToSuggestNowThatTheMinimumIsThree() {
+        assertThat(suggest("CJ", "carlojose@example.com", NOTHING_TAKEN)).isEqualTo("carlojose");
+        assertThat(suggest("CJ", "cj@example.com", NOTHING_TAKEN)).isEqualTo("wanderer");
+    }
+
+    @Test
     void aNameWithNoUsableCharactersAtAllStillYieldsSomething() {
         assertThat(suggest("!!!", "!!@example.com", NOTHING_TAKEN)).isEqualTo("wanderer");
     }

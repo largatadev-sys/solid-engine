@@ -30,7 +30,8 @@ class HandleTest {
     @Test
     void theLengthBoundsAreEnforcedAtBothEnds() {
         assertThatExceptionOfType(MalformedHandleException.class).isThrownBy(() -> Handle.of("a"));
-        assertThat(Handle.of("ab").value()).isEqualTo("ab");
+        assertThatExceptionOfType(MalformedHandleException.class).isThrownBy(() -> Handle.of("ab"));
+        assertThat(Handle.of("abc").value()).isEqualTo("abc");
         assertThat(Handle.of("a".repeat(20)).value()).hasSize(20);
         assertThatExceptionOfType(MalformedHandleException.class).isThrownBy(() -> Handle.of("a".repeat(21)));
     }
@@ -58,6 +59,8 @@ class HandleTest {
         assertThat(Handle.check("anasilva")).isEqualTo(Handle.Availability.FREE);
         assertThat(Handle.check("ANASILVA")).isEqualTo(Handle.Availability.FREE);
         assertThat(Handle.check("a")).isEqualTo(Handle.Availability.MALFORMED);
+        assertThat(Handle.check("ab")).isEqualTo(Handle.Availability.MALFORMED);
+        assertThat(Handle.check("abc")).isEqualTo(Handle.Availability.FREE);
         assertThat(Handle.check("ana silva")).isEqualTo(Handle.Availability.MALFORMED);
         assertThat(Handle.check("admin")).isEqualTo(Handle.Availability.RESERVED);
     }
