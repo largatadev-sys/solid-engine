@@ -108,7 +108,13 @@ function main() {
       const postcards = trip.days.flatMap((d) => d.activities).filter((a) => a.post !== undefined).length;
       if (postcards === 0) continue;
 
+      // Interpolated into SQL unquoted, so its being a number is load-bearing rather than incidental.
+      // Everything else that reaches the statement goes through quote(); this asserts the one thing
+      // that does not, rather than relying on the fixture staying trustworthy.
       const daysAgo = daysAgoFor(trip);
+      if (!Number.isFinite(daysAgo)) {
+        throw new Error(`refusing to build SQL: daysAgo for "${trip.title}" is ${daysAgo}`);
+      }
 
       // Spreads a trip's own postcards across its span rather than stamping them all identically,
       // so a trip reads as several days of posting. Ordered by id (UUIDv7, so creation order) and

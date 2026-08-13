@@ -107,14 +107,14 @@ the Home feed has ten different travelers on it.
 **Ten accounts, one region each**, clean names and bird avatars: Maya Ocampo (Southeast Asia) ·
 Kenji Nakamura (East Asia) · Sarah Whitmore (Oceania) · Ana Duarte (Western Europe) · Dimitri Stavros
 (Mediterranean) · Lucia Fernández (South America) · Marcus Bell (North America & Iceland) · Amina
-Diallo (Africa) · Rohan Mehta (South Asia) · Ingrid Solberg (Northern Europe). **25 trips, 66 days,
-122 activities, 20 diary postcards**, spread across every lifecycle state so the Trips tab has
+Diallo (Africa) · Rohan Mehta (South Asia) · Ingrid Solberg (Northern Europe). **50 trips, 115 days,
+186 activities, 92 diary postcards**, spread across every lifecycle state so the Trips tab has
 content in each section.
 
 ```bash
 cd mobile && set -a && . ./.env && set +a
 node scripts/test-pool.js create        # once — t6–t10 do not exist yet
-node scripts/fetch-fixtures.js          # once — 82 searches, ~200 photos, a few minutes
+node scripts/fetch-fixtures.js          # once — 131 searches, ~360 photos, several minutes
 node scripts/seed-travelers.js          # local stack
 node scripts/seed-travelers.js --tag=t2 # or just one traveler
 ```
@@ -155,10 +155,39 @@ LARGATA_API_BASE_URL=https://api-dev.largata.com \
 Env: the three pool vars, plus **`PEXELS_API_KEY`** for the fetcher only (free, from
 https://www.pexels.com/api/new/ — 200 requests/hour, and a full fetch uses 82).
 
+### `backdate-seed.js` — the history, and the one place this harness writes SQL
+
+Freshly seeded postcards are all minutes old, so the feed reads as a fixture rather than an app in
+use. Run this after the seeder and the 92 postcards spread across about six months:
+
+```bash
+node scripts/backdate-seed.js              # local
+node scripts/backdate-seed.js --tag=t4     # one traveler
+```
+
+Weighted toward recent — 20% this week, 30% this month, 30% within three months, 20% out to six — so
+the top of the feed is fresh. **Deterministic**: a trip's date derives from its own title, so
+rebuilding puts it in the same week rather than reshuffling your history. **An ongoing trip always
+posts within the last two days**, because a trip the app shows as in progress cannot have posted in
+March. A trip's own postcards land on consecutive days, so it reads as several days of posting.
+
+**Why SQL, and why this is not the psql ban.** S1.5 banned planting rows with psql because doing so
+**skipped the verification gate** — the fixtures bypassed the rule the gate exists to enforce.
+Nothing is bypassed here: auth, membership, the lifecycle ladder, photo ingest and the entry itself
+all still go through the real API. Only *when it happened* is adjusted, and there is deliberately no
+endpoint for that, because a real postcard is posted now. The clock is one app-wide
+`Clock.systemUTC()` bean, so the alternative was a request-level override — test-only code in the
+production path, a worse trade than one visible, opt-in script. It is kept **out** of the seeder so
+the exception is a thing you run rather than a thing hidden inside something else.
+
+Reaching a deployed rung needs `LARGATA_DATABASE_URL` (Railway → Postgres → Variables →
+**`DATABASE_PUBLIC_URL`**; the internal `postgres.railway.internal` host only resolves inside
+Railway's network) **and** `--yes-backdate-the-deployed-rung`.
+
 ### Growing it — the dataset is static, and that is what makes it safe to grow
 
 There is no generator. Every trip is hand-written in `fixtures/travelers.js`, so the same run always
-produces the same 25 trips. **Adding more is editing that one file** — there is no second set to
+produces the same 50 trips. **Adding more is editing that one file** — there is no second set to
 manage, because a re-run *archives the previous copies of every fixture-titled trip and rebuilds
 them all*. Grow the file, re-run, and the dataset is bigger with no duplicates.
 

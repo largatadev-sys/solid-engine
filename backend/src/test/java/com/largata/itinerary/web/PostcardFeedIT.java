@@ -169,10 +169,6 @@ class PostcardFeedIT extends ObjectStoreTestBase {
             }
         } while (cursor != null);
 
-        // Counts PAGES against cursors, not cards. Since archived trips are filtered AFTER the page
-        // is read, a page can legitimately carry zero cards while still issuing a cursor — so
-        // "one card per page" stopped being true the moment that filter landed, and asserting it
-        // made this test fail on a product that was correct.
         assertThat(pagesRead)
                 .as("a one-per-page walk reaches a null cursor and stops, never spinning")
                 .isEqualTo(cursorsFollowed.size() + 1);
@@ -180,6 +176,39 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         assertThat(onlyMine(walked, one, two, three))
                 .as("newest first, each seen exactly once across the whole walk")
                 .containsExactly(three, two, one);
+    }
+
+
+    @Test
+    void theWalkReachesACardSittingBehindAWhollyArchivedPage() throws IOException {
+        Fixture buried = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        String reachable = tag("underneath");
+        post(buried, buried.activityId(), reachable);
+
+        Fixture hidden = startedTrip();
+        String gone = tag("archived over the top");
+        post(hidden, hidden.activityId(), gone);
+        archive(hidden);
+
+        List<String> walked = new ArrayList<>();
+        Set<String> cursorsFollowed = new HashSet<>();
+        String cursor = null;
+        do {
+            FeedPage page = pageFor(stranger, "?limit=1" + (cursor == null ? "" : "&cursor=" + cursor));
+            page.items().forEach(card -> walked.add(card.caption()));
+            cursor = page.nextCursor();
+            if (cursor != null && !cursorsFollowed.add(cursor)) {
+                throw new AssertionError("the feed re-issued a cursor: " + cursor);
+            }
+        } while (cursor != null);
+
+        assertThat(onlyMine(walked, reachable, gone))
+                .as("the newest page carries only an archived card, so it comes back EMPTY with a "
+                        + "cursor — and the walk must still arrive at the card underneath. This is "
+                        + "the whole reason the cursor is taken from the last row READ rather than "
+                        + "the last card KEPT; take it from the kept card and this stalls.")
+                .containsExactly(reachable);
     }
 
 
