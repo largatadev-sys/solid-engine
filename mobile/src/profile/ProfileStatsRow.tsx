@@ -14,7 +14,7 @@ import {
   STATS_UNAVAILABLE,
   TRIPS_STAT_LABEL,
 } from './profileCopy';
-import { stubFollowerCount, stubFollowingCount } from './stubMetrics';
+import { stubFollowerCountFor, stubFollowingCountFor } from './stubMetrics';
 
 
 export interface ProfileStats {
@@ -25,12 +25,18 @@ export interface ProfileStats {
 }
 
 
-export function ProfileStatsRow({ stats }: { readonly stats: ProfileStats }) {
+export function ProfileStatsRow({
+  stats,
+  subjectId,
+}: {
+  readonly stats: ProfileStats;
+  readonly subjectId: string;
+}) {
   const cells = [
     { label: PUBLISHED_STAT_LABEL, value: stats.published },
     { label: TRIPS_STAT_LABEL, value: stats.trips },
-    { label: FOLLOWERS_STAT_LABEL, value: stubFollowerCount() },
-    { label: FOLLOWING_STAT_LABEL, value: stubFollowingCount() },
+    { label: FOLLOWERS_STAT_LABEL, value: stubFollowerCountFor(subjectId) },
+    { label: FOLLOWING_STAT_LABEL, value: stubFollowingCountFor(subjectId) },
   ];
 
   return (

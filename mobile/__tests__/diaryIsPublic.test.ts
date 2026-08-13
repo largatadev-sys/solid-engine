@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DIARY_PRIVACY_NOTE } from '../src/diary/diaryCopy';
 import {
-  forgetStubCounts,
   stubCommentCountFor,
   stubLikeCountFor,
   STUB_METRICS_ON,
@@ -67,8 +66,6 @@ describe('nothing in the diary offers to share a postcard to the feed', () => {
 
 
 describe('stub counts hold still for a given postcard', () => {
-  beforeEach(forgetStubCounts);
-
   it('draws once per subject and then remembers, so an optimistic heart has a stable base', () => {
     const first = stubLikeCountFor('entry-1');
     expect(stubLikeCountFor('entry-1')).toBe(first);

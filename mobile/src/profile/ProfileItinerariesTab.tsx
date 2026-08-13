@@ -14,7 +14,7 @@ import {
 import type { ShowcaseItineraryResponse } from '../types/api';
 import { PROFILE_ITINERARIES_EMPTY, PUBLISHED_BADGE } from './profileCopy';
 import { pricePillLabel, showcaseMetaLine } from './showcaseCard';
-import { stubPricePerPerson, stubRating } from './stubMetrics';
+import { stubPricePerPersonFor, stubRatingFor } from './stubMetrics';
 
 
 export function ProfileItinerariesTab() {
@@ -64,8 +64,8 @@ function ShowcaseCard({
   readonly card: ShowcaseItineraryResponse;
   readonly onPress: () => void;
 }) {
-  const rating = stubRating();
-  const price = pricePillLabel(stubPricePerPerson());
+  const rating = stubRatingFor(card.id);
+  const price = pricePillLabel(stubPricePerPersonFor(card.id));
   const meta = showcaseMetaLine(card.destinations, card.durationDays);
 
   return (

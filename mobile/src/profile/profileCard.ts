@@ -9,6 +9,11 @@ export type ProfileCard = {
 };
 
 
+export function profileSubjectId(card: ProfileCard): string {
+  return card.vanityNumber ?? card.handle ?? card.displayName;
+}
+
+
 export function profileCardOf(me: MeResponse): ProfileCard {
   return {
     avatarUrl: me.avatarUrl,

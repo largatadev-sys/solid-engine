@@ -131,7 +131,7 @@ describe('the Diary tab renders the diary as the mock groups it', () => {
   });
 
   it('takes its likes from the stub module and nowhere else', () => {
-    expect(TAB).toContain('stubLikeCount()');
+    expect(TAB).toContain('stubLikeCountFor(entry.id)');
     expect(TAB).not.toContain('Math.random');
     expect(POSTCARD).not.toContain('Math.random');
   });

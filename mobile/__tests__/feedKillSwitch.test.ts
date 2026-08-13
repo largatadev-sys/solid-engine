@@ -1,18 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  forgetStubCounts,
-  stubCommentCountFor,
-  stubLikeCountFor,
-} from '../src/profile/stubMetrics';
+import { stubCommentCountFor, stubLikeCountFor } from '../src/profile/stubMetrics';
 
 const MOBILE_ROOT = join(__dirname, '..');
 const CARD = readFileSync(join(MOBILE_ROOT, 'src', 'feed', 'FeedCard.tsx'), 'utf8');
 
 
 describe('the kill-switch takes the numbers away without taking the layout with them', () => {
-  beforeEach(forgetStubCounts);
-
   it('yields null rather than zero, so the row can vanish instead of lying', () => {
     expect(stubLikeCountFor('c1', false)).toBeNull();
     expect(stubCommentCountFor('c1', false)).toBeNull();

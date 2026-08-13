@@ -1,28 +1,18 @@
 export const STUB_METRICS_ON = true;
 
 
-export function stubFollowerCount(on: boolean = STUB_METRICS_ON): number {
-  return on ? integerBetween(1, 100) : 0;
+export function stubFollowerCountFor(subjectId: string, on: boolean = STUB_METRICS_ON): number {
+  return on ? integerBetween(subjectId, 'followers', 1, 100) : 0;
 }
 
 
-export function stubFollowingCount(on: boolean = STUB_METRICS_ON): number {
-  return on ? integerBetween(1, 100) : 0;
+export function stubFollowingCountFor(subjectId: string, on: boolean = STUB_METRICS_ON): number {
+  return on ? integerBetween(subjectId, 'following', 1, 100) : 0;
 }
-
-
-export function stubLikeCount(on: boolean = STUB_METRICS_ON): number | null {
-  return on ? integerBetween(1, 100) : null;
-}
-
-
-const likesBySubject = new Map<string, number | null>();
-
-const commentsBySubject = new Map<string, number | null>();
 
 
 export function stubLikeCountFor(subjectId: string, on: boolean = STUB_METRICS_ON): number | null {
-  return remembered(likesBySubject, subjectId, on, () => integerBetween(1, 1400));
+  return on ? integerBetween(subjectId, 'likes', 1, 1400) : null;
 }
 
 
@@ -30,45 +20,35 @@ export function stubCommentCountFor(
   subjectId: string,
   on: boolean = STUB_METRICS_ON,
 ): number | null {
-  return remembered(commentsBySubject, subjectId, on, () => integerBetween(0, 60));
+  return on ? integerBetween(subjectId, 'comments', 0, 60) : null;
 }
 
 
-export function forgetStubCounts(): void {
-  likesBySubject.clear();
-  commentsBySubject.clear();
+export function stubRatingFor(subjectId: string, on: boolean = STUB_METRICS_ON): number | null {
+  return on ? integerBetween(subjectId, 'rating', 10, 50) / 10 : null;
 }
 
 
-function remembered(
-  memo: Map<string, number | null>,
+export function stubPricePerPersonFor(
   subjectId: string,
-  on: boolean,
-  draw: () => number,
+  on: boolean = STUB_METRICS_ON,
 ): number | null {
-  if (!on) {
-    return null;
+  return on ? integerBetween(subjectId, 'price', 100, 200) * 100 : null;
+}
+
+
+function integerBetween(subjectId: string, metric: string, lowest: number, highest: number): number {
+  const span = highest - lowest + 1;
+  return lowest + (hash(`${metric}:${subjectId}`) % span);
+}
+
+
+function hash(seed: string): number {
+  let accumulated = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    accumulated ^= seed.charCodeAt(index);
+    accumulated = Math.imul(accumulated, 16777619);
   }
-  const seen = memo.get(subjectId);
-  if (seen !== undefined) {
-    return seen;
-  }
-  const drawn = draw();
-  memo.set(subjectId, drawn);
-  return drawn;
-}
-
-
-export function stubRating(on: boolean = STUB_METRICS_ON): number | null {
-  return on ? integerBetween(10, 50) / 10 : null;
-}
-
-
-export function stubPricePerPerson(on: boolean = STUB_METRICS_ON): number | null {
-  return on ? integerBetween(100, 200) * 100 : null;
-}
-
-
-function integerBetween(lowest: number, highest: number): number {
-  return lowest + Math.floor(Math.random() * (highest - lowest + 1));
+  accumulated ^= accumulated >>> 15;
+  return accumulated >>> 0;
 }
