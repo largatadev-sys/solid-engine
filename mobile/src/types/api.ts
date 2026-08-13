@@ -389,6 +389,24 @@ export type DiscoveryCardResponse = {
 };
 
 
+export type TrendingDestinationResponse = {
+  destination: string;
+  tripCount: number;
+  coverImageUrl: string | null;
+};
+
+
+export type DiscoveryCountResponse = {
+  count: number;
+};
+
+
+export type DiscoverySuggestionsResponse = {
+  destinations: string[];
+  itineraries: string[];
+};
+
+
 export type PostDiaryEntryRequest = {
   activityId: string;
   caption: string | null;

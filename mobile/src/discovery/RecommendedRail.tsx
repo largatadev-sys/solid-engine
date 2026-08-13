@@ -13,10 +13,19 @@ import {
 import { Icon } from '../components/Icon';
 import { dotScale, dotWindow, pageOfOffset } from '../feed/feedCarousel';
 import { colors, spacing } from '../theme';
-import { profileColors, profileMetrics, profileTypography, workspaceColors } from '../theme/workspaceTokens';
+import {
+  discoveryColors,
+  discoveryMetrics,
+  discoveryTypography,
+  profileColors,
+  profileMetrics,
+  profileTypography,
+  workspaceColors,
+} from '../theme/workspaceTokens';
 import type { DiscoveryCardResponse } from '../types/api';
 import { DiscoveryCard } from './DiscoveryCard';
 import { showsSeeAllCard } from './discoveryCardCopy';
+import { railCardWidth, railPageCount, railPitch } from './railGeometry';
 import {
   RECOMMENDED_SECTION_TITLE,
   SECTION_FAILED,
@@ -24,12 +33,6 @@ import {
   SEE_ALL_CARD_LABEL,
   SEE_ALL_LABEL,
 } from './discoveryCopy';
-
-
-const CARD_PEEK = 24;
-
-const DOT_SIZE = 7;
-
 
 export function RecommendedRail({
   cards,
@@ -50,9 +53,12 @@ export function RecommendedRail({
   const [page, setPage] = useState(0);
   const scroller = useRef<ScrollView>(null);
 
-  const cardWidth = railWidth === 0 ? 0 : railWidth - spacing.md2 - CARD_PEEK;
-  const pitch = cardWidth + spacing.sm3;
-  const pageCount = cards.length + (showsSeeAllCard(cards.length) ? 1 : 0);
+  const cardWidth =
+    railWidth === 0
+      ? 0
+      : railCardWidth(railWidth, spacing.md2, discoveryMetrics.recommendedPeek);
+  const pitch = railPitch(cardWidth, spacing.sm3);
+  const pageCount = railPageCount(cards.length, showsSeeAllCard(cards.length));
   const dots = dotWindow(page, pageCount);
 
   if (!loading && !failed && cards.length === 0) {
@@ -64,13 +70,19 @@ export function RecommendedRail({
       <View style={styles.header}>
         <Text style={styles.title}>{RECOMMENDED_SECTION_TITLE}</Text>
         {cards.length > 0 && (
-          <Pressable onPress={onSeeAll} accessibilityRole="button" accessibilityLabel={SEE_ALL_CARD_LABEL}>
+          <Pressable
+            onPress={onSeeAll}
+            accessibilityRole="button"
+            accessibilityLabel={SEE_ALL_CARD_LABEL}
+          >
             <Text style={styles.seeAll}>{SEE_ALL_LABEL}</Text>
           </Pressable>
         )}
       </View>
 
-      {loading && <ActivityIndicator style={styles.state} color={colors.accent} />}
+      {loading && (
+        <ActivityIndicator style={styles.state} color={colors.accent} />
+      )}
 
       {failed && (
         <Pressable
@@ -93,9 +105,17 @@ export function RecommendedRail({
             snapToInterval={pitch > 0 ? pitch : undefined}
             snapToAlignment="start"
             contentContainerStyle={styles.strip}
-            onLayout={(event: LayoutChangeEvent) => setRailWidth(event.nativeEvent.layout.width)}
+            onLayout={(event: LayoutChangeEvent) =>
+              setRailWidth(event.nativeEvent.layout.width)
+            }
             onScroll={(event: NativeSyntheticEvent<NativeScrollEvent>) =>
-              setPage(pageOfOffset(event.nativeEvent.contentOffset.x, pitch, pageCount))
+              setPage(
+                pageOfOffset(
+                  event.nativeEvent.contentOffset.x,
+                  pitch,
+                  pageCount,
+                ),
+              )
             }
             scrollEventThrottle={16}
           >
@@ -110,7 +130,10 @@ export function RecommendedRail({
 
             {showsSeeAllCard(cards.length) && (
               <Pressable
-                style={[styles.seeAllCard, cardWidth > 0 ? { width: cardWidth } : null]}
+                style={[
+                  styles.seeAllCard,
+                  cardWidth > 0 ? { width: cardWidth } : null,
+                ]}
                 onPress={onSeeAll}
                 accessibilityRole="button"
                 accessibilityLabel={SEE_ALL_CARD_LABEL}
@@ -129,8 +152,11 @@ export function RecommendedRail({
                   style={[
                     styles.dot,
                     {
-                      transform: [{ scale: dotScale(dot, page, dots, pageCount) }],
-                      backgroundColor: dot === page ? colors.accent : profileColors.starMuted,
+                      transform: [
+                        { scale: dotScale(dot, page, dots, pageCount) },
+                      ],
+                      backgroundColor:
+                        dot === page ? colors.accent : profileColors.starMuted,
                     },
                   ]}
                 />
@@ -143,7 +169,6 @@ export function RecommendedRail({
   );
 }
 
-
 const styles = StyleSheet.create({
   section: {
     gap: spacing.sm3,
@@ -155,9 +180,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md2,
   },
   title: {
-    ...profileTypography.displayName,
-    fontSize: 19,
-    lineHeight: 24,
+    ...discoveryTypography.railTitle,
     color: workspaceColors.title,
   },
   seeAll: {
@@ -196,8 +219,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs2,
   },
   dot: {
-    width: DOT_SIZE,
-    height: DOT_SIZE,
-    borderRadius: DOT_SIZE / 2,
+    width: discoveryMetrics.railDotSize,
+    height: discoveryMetrics.railDotSize,
+    borderRadius: discoveryMetrics.railDotSize / 2,
   },
 });

@@ -248,6 +248,49 @@ export const profileMetrics = {
 } as const;
 
 
+export const discoveryColors = {
+  onCover: '#FFFFFF',
+  onCoverMuted: 'rgba(255, 255, 255, 0.85)',
+  coverScrim: 'rgba(0, 0, 0, 0.28)',
+  bookmarkWell: 'rgba(255, 255, 255, 0.9)',
+} as const;
+
+
+export const discoveryTypography = {
+  railTitle: { fontFamily: fonts.extraBold, fontSize: 19, lineHeight: 24, fontWeight: '800' },
+  destinationName: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  searchField: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 20, fontWeight: '400' },
+  sectionEyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  applyLabel: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, fontWeight: '700' },
+  filterField: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 18, fontWeight: '400' },
+} as const;
+
+
+export const discoveryMetrics = {
+  sheetMaxWidth: 420,
+  trendingCardWidth: 150,
+  trendingCardHeight: 190,
+  recommendedPeek: 24,
+  bookmarkSize: 32,
+  bookmarkGlyph: 16,
+  bylineAvatar: 22,
+  railDotSize: 7,
+  grabberWidth: 40,
+  grabberHeight: 4,
+  grabberRadius: 2,
+  badgeSize: 16,
+  pillRadius: 999,
+  searchBarPadding: 14,
+  backButton: 36,
+} as const;
+
+
 export const workspaceBadgeColors = {
   draft: { background: '#FEF3C7', foreground: '#D97706' },
   upcoming: { background: '#DCFCE7', foreground: '#15803D' },

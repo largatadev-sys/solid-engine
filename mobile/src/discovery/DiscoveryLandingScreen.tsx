@@ -2,42 +2,72 @@ import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../components/Icon';
-import { useRecommended } from '../query/discoveryQueries';
+import {
+  useRecommended,
+  useTrendingDestinations,
+} from '../query/discoveryQueries';
 import { colors, spacing } from '../theme';
-import { profileColors, profileMetrics, profileTypography, workspaceColors } from '../theme/workspaceTokens';
+import {
+  discoveryColors,
+  discoveryMetrics,
+  discoveryTypography,
+  profileColors,
+  profileMetrics,
+  profileTypography,
+  workspaceColors,
+} from '../theme/workspaceTokens';
 import type { DiscoveryCardResponse } from '../types/api';
 import { RecommendedRail } from './RecommendedRail';
+import { TrendingRail } from './TrendingRail';
 import { publishedItineraryRoute } from './discoveryCardCopy';
+import { NO_FILTERS } from './discoveryFilters';
 import {
   LANDING_EMPTY_BODY,
   LANDING_EMPTY_TITLE,
   SEARCH_PLACEHOLDER,
 } from './discoveryCopy';
-import { DISCOVERY_RESULTS_ROUTE } from './discoveryRoutes';
-
+import { DISCOVERY_SEARCH_ROUTE, resultsRoute } from './discoveryRoutes';
 
 export function DiscoveryLandingScreen() {
   const recommended = useRecommended();
+  const trending = useTrendingDestinations();
   const insets = useSafeAreaInsets();
 
   const cards = recommended.data ?? [];
-  const settled = !recommended.isPending;
-  const nothingAnywhere = settled && !recommended.isError && cards.length === 0;
+  const destinations = trending.data ?? [];
+  const bothSettled = !recommended.isPending && !trending.isPending;
+  const neitherFailed = !recommended.isError && !trending.isError;
+  const nothingAnywhere =
+    bothSettled &&
+    neitherFailed &&
+    cards.length === 0 &&
+    destinations.length === 0;
 
   function openCard(card: DiscoveryCardResponse) {
     router.push(publishedItineraryRoute(card.id));
   }
 
+  function browseAll() {
+    router.push(resultsRoute(NO_FILTERS));
+  }
+
+  function browseDestination(destination: string) {
+    router.push(resultsRoute({ query: null, destination, duration: null }));
+  }
+
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.sm3 }]}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: insets.top + spacing.sm3 },
+      ]}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.searchRow}>
         <Pressable
           style={styles.searchBar}
-          onPress={() => router.push(DISCOVERY_RESULTS_ROUTE)}
+          onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
           accessibilityRole="button"
           accessibilityLabel={SEARCH_PLACEHOLDER}
         >
@@ -52,19 +82,28 @@ export function DiscoveryLandingScreen() {
           <Text style={styles.emptyBody}>{LANDING_EMPTY_BODY}</Text>
         </View>
       ) : (
-        <RecommendedRail
-          cards={cards}
-          loading={recommended.isPending}
-          failed={recommended.isError}
-          onRetry={() => void recommended.refetch()}
-          onOpenCard={openCard}
-          onSeeAll={() => router.push(DISCOVERY_RESULTS_ROUTE)}
-        />
+        <>
+          <TrendingRail
+            destinations={destinations}
+            loading={trending.isPending}
+            failed={trending.isError}
+            onRetry={() => void trending.refetch()}
+            onOpen={browseDestination}
+          />
+
+          <RecommendedRail
+            cards={cards}
+            loading={recommended.isPending}
+            failed={recommended.isError}
+            onRetry={() => void recommended.refetch()}
+            onOpenCard={openCard}
+            onSeeAll={browseAll}
+          />
+        </>
       )}
     </ScrollView>
   );
 }
-
 
 const styles = StyleSheet.create({
   screen: {
@@ -84,15 +123,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm3,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm3 + 2,
+    paddingVertical: discoveryMetrics.searchBarPadding,
     backgroundColor: workspaceColors.pressed,
     borderWidth: 1,
     borderColor: workspaceColors.hairline,
     borderRadius: profileMetrics.statsRadius,
   },
   searchLabel: {
-    ...profileTypography.meta,
-    fontSize: 15,
+    ...discoveryTypography.searchField,
     color: profileColors.meta,
   },
   empty: {

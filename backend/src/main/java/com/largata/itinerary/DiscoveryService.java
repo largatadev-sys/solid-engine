@@ -6,8 +6,12 @@ import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.api.TravelerCardResponse;
 import com.largata.itinerary.api.DiscoveryCardResponse;
+import com.largata.itinerary.api.DiscoveryCountResponse;
+import com.largata.itinerary.api.DiscoverySuggestionsResponse;
+import com.largata.itinerary.api.TrendingDestinationResponse;
 import com.largata.workspace.WorkspaceService;
-import java.util.Collection;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +20,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +31,10 @@ public class DiscoveryService {
     private static final int MAX_PAGE_SIZE = 50;
     private static final int RECOMMENDED_CAP = 8;
     private static final int RECOMMENDED_PROBE = 200;
+    private static final int TRENDING_CAP = 12;
+    private static final int SUGGESTIONS_PER_GROUP = 3;
 
-    private static final UUID NO_ITINERARY = new UUID(0L, 0L);
+    private static final Duration TRENDING_WINDOW = Duration.ofDays(30);
 
     private static final Logger log = LoggerFactory.getLogger(DiscoveryService.class);
 
@@ -51,18 +56,21 @@ public class DiscoveryService {
 
 
     @Transactional(readOnly = true)
-    public Page<DiscoveryCardResponse> browse(String cursor, Integer requestedLimit) {
+    public Page<DiscoveryCardResponse> browse(
+            DiscoveryFilters filters, String cursor, Integer requestedLimit) {
         int limit = clamp(requestedLimit);
-        Collection<UUID> excluded = excludedItineraryIds();
-        Limit probe = Limit.of(limit + 1);
+        InstantCursor from = cursor == null ? null : InstantCursor.decode(cursor);
 
-        List<Itinerary> found;
-        if (cursor == null) {
-            found = itineraries.findFirstDiscoveryPage(excluded, probe);
-        } else {
-            InstantCursor from = InstantCursor.decode(cursor);
-            found = itineraries.findDiscoveryPageAfter(excluded, from.at(), from.id(), probe);
-        }
+        List<Itinerary> found =
+                itineraries.findDiscoveryPage(
+                        archivedArray(),
+                        filters.query(),
+                        filters.destination(),
+                        filters.minDays(),
+                        filters.maxDays(),
+                        from == null ? null : from.at(),
+                        from == null ? null : from.id(),
+                        limit + 1);
 
         boolean more = found.size() > limit;
         List<Itinerary> rows = more ? found.subList(0, limit) : found;
@@ -77,9 +85,20 @@ public class DiscoveryService {
 
 
     @Transactional(readOnly = true)
+    public DiscoveryCountResponse count(DiscoveryFilters filters) {
+        return new DiscoveryCountResponse(
+                itineraries.countDiscoverable(
+                        archivedArray(),
+                        filters.query(),
+                        filters.destination(),
+                        filters.minDays(),
+                        filters.maxDays()));
+    }
+
+
+    @Transactional(readOnly = true)
     public List<DiscoveryCardResponse> recommended() {
-        List<Itinerary> candidates =
-                itineraries.findRecommendable(excludedItineraryIds(), Limit.of(RECOMMENDED_PROBE));
+        List<Itinerary> candidates = itineraries.findRecommendable(archivedArray(), RECOMMENDED_PROBE);
 
         Set<UUID> authorsSeen = new HashSet<>();
         List<Itinerary> distinct =
@@ -92,9 +111,37 @@ public class DiscoveryService {
     }
 
 
-    private Collection<UUID> excludedItineraryIds() {
+    @Transactional(readOnly = true)
+    public List<TrendingDestinationResponse> trending() {
+        return itineraries
+                .findTrendingDestinations(
+                        Instant.now().minus(TRENDING_WINDOW), archivedArray(), TRENDING_CAP)
+                .stream()
+                .map(
+                        row ->
+                                new TrendingDestinationResponse(
+                                        row.getDestination(), row.getTripCount(), row.getCoverImageUrl()))
+                .toList();
+    }
+
+
+    @Transactional(readOnly = true)
+    public DiscoverySuggestionsResponse suggestions(DiscoveryFilters filters) {
+        if (filters.query() == null) {
+            return new DiscoverySuggestionsResponse(List.of(), List.of());
+        }
+        return new DiscoverySuggestionsResponse(
+                itineraries.suggestDestinations(
+                        archivedArray(), filters.query(), SUGGESTIONS_PER_GROUP),
+                itineraries.suggestTitles(archivedArray(), filters.query(), SUGGESTIONS_PER_GROUP));
+    }
+
+
+    private String archivedArray() {
         Set<UUID> archived = workspaces.allArchivedItineraryIds();
-        return archived.isEmpty() ? List.of(NO_ITINERARY) : archived;
+        return archived.isEmpty()
+                ? "{}"
+                : archived.stream().map(UUID::toString).collect(Collectors.joining(",", "{", "}"));
     }
 
 

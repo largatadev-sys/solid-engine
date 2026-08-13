@@ -5,21 +5,21 @@ import { MediaThumb } from '../media/MediaThumb';
 import { pricePillLabel } from '../profile/showcaseCard';
 import { stubPricePerPersonFor, stubRatingFor } from '../profile/stubMetrics';
 import { spacing } from '../theme';
-import { profileColors, profileMetrics, profileTypography, workspaceColors } from '../theme/workspaceTokens';
+import {
+  discoveryColors,
+  discoveryMetrics,
+  discoveryTypography,
+  profileColors,
+  profileMetrics,
+  profileTypography,
+  workspaceColors,
+} from '../theme/workspaceTokens';
 import type { DiscoveryCardResponse } from '../types/api';
 import {
   discoveryAuthorLabel,
   discoveryCardAccessibilityLabel,
   discoveryMetaLine,
 } from './discoveryCardCopy';
-
-
-const BOOKMARK_SIZE = 32;
-
-const BOOKMARK_GLYPH = 16;
-
-const AVATAR_SIZE = 22;
-
 
 export function DiscoveryCard({
   card,
@@ -57,7 +57,11 @@ export function DiscoveryCard({
           accessibilityRole="button"
           accessibilityLabel={`Save ${card.title} to trip ideas`}
         >
-          <Icon name="bookmark" size={BOOKMARK_GLYPH} color={workspaceColors.title} />
+          <Icon
+            name="bookmark"
+            size={discoveryMetrics.bookmarkGlyph}
+            color={workspaceColors.title}
+          />
         </Pressable>
       </View>
 
@@ -96,11 +100,15 @@ export function DiscoveryCard({
 
           <View style={styles.rating}>
             <Icon
-              name={rating === null ? 'star' : 'starFilled'}
+              name={rating === null ? "star" : 'starFilled'}
               size={profileMetrics.starSize}
-              color={rating === null ? profileColors.starMuted : profileColors.star}
+              color={
+                rating === null ? profileColors.starMuted : profileColors.star
+              }
             />
-            {rating !== null && <Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>}
+            {rating !== null && (
+              <Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
+            )}
           </View>
 
           {price !== null && (
@@ -113,7 +121,6 @@ export function DiscoveryCard({
     </Pressable>
   );
 }
-
 
 const styles = StyleSheet.create({
   card: {
@@ -140,10 +147,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: profileMetrics.pillInset,
     right: profileMetrics.pillInset,
-    width: BOOKMARK_SIZE,
-    height: BOOKMARK_SIZE,
-    borderRadius: BOOKMARK_SIZE / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: discoveryMetrics.bookmarkSize,
+    height: discoveryMetrics.bookmarkSize,
+    borderRadius: discoveryMetrics.bookmarkSize / 2,
+    backgroundColor: discoveryColors.bookmarkWell,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -168,9 +175,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
   },
   avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
+    width: discoveryMetrics.bylineAvatar,
+    height: discoveryMetrics.bylineAvatar,
+    borderRadius: discoveryMetrics.bylineAvatar / 2,
     overflow: 'hidden',
     backgroundColor: profileColors.avatarWell,
   },

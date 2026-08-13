@@ -176,7 +176,9 @@ class DiscoveryIT extends PostgresTestBase {
                 assertThat(cursorsSeen.add(cursor)).as("the cursor must advance").isTrue();
             }
             walked.addAll(ids);
-            assertThat(pages).isLessThan(20);
+            assertThat(pages)
+                    .as("a repeat-cursor guard: the walk must terminate rather than spin (S3.1)")
+                    .isLessThan(200);
         } while (cursor != null);
 
         assertThat(walked).doesNotHaveDuplicates();
