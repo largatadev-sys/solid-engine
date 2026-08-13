@@ -18,8 +18,27 @@ const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^
 const address = (tag) => { const [local, domain] = BASE.split('@'); return `${local}+${tag}@${domain}`; };
 const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split('=')[1];
 
-function request(url, method, body, headers = {}) {
-  return new Promise((resolve, reject) => {
+// Against localhost every call succeeds; against a deployed rung one in a few hundred does not, and
+// a seeding run is ~700 calls. A single transient 5xx killed a run 11 trips in — work that cannot be
+// resumed, only redone. Retries 5xx and transport errors only: a 4xx is the seeder being wrong and
+// must still fail loudly rather than being hammered.
+const RETRIES = 3;
+
+async function request(url, method, body, headers = {}) {
+  let last;
+  for (let attempt = 1; attempt <= RETRIES; attempt += 1) {
+    last = await attemptOnce(url, method, body, headers);
+    if (last.status < 500 && last.status !== 0) return last;
+    if (attempt < RETRIES) {
+      console.log(`   retry  ${method} ${new URL(url).pathname} — ${last.status}, attempt ${attempt} of ${RETRIES}`);
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
+    }
+  }
+  return last;
+}
+
+function attemptOnce(url, method, body, headers = {}) {
+  return new Promise((resolve) => {
     const lib = url.startsWith('https') ? https : http;
     const data = body === undefined ? undefined : (Buffer.isBuffer(body) ? body : JSON.stringify(body));
     const options = { method, headers: { ...headers } };
@@ -36,7 +55,7 @@ function request(url, method, body, headers = {}) {
         resolve({ status: res.statusCode, body: parsed });
       });
     });
-    req.on('error', reject);
+    req.on('error', (e) => resolve({ status: 0, body: e.message }));
     if (data !== undefined) req.write(data);
     req.end();
   });

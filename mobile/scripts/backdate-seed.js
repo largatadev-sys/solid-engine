@@ -64,7 +64,19 @@ function daysAgoFor(trip) {
 function psql(sql) {
   const url = process.env.LARGATA_DATABASE_URL;
   if (url !== undefined && url !== '') {
-    return execFileSync('psql', [url, '-tAc', sql], { encoding: 'utf8' }).trim();
+    // Not every machine has a psql binary — this one does not — so fall back to the postgres image,
+    // which every machine running this stack already has. The URL goes in as an ENV VAR rather than
+    // an argument: argv is visible in the host's process list, and a connection string is a
+    // credential.
+    if (hasLocalPsql()) {
+      return execFileSync('psql', [url, '-tAc', sql], { encoding: 'utf8' }).trim();
+    }
+    return execFileSync(
+      'docker',
+      ['run', '--rm', '-i', '-e', `PGURL=${url}`, 'postgres:18-alpine',
+        'sh', '-c', 'psql "$PGURL" -tAc "$(cat)"'],
+      { encoding: 'utf8', input: sql },
+    ).trim();
   }
   const container = execFileSync('docker', ['ps', '-qf', 'name=app-postgres'], { encoding: 'utf8' }).trim();
   if (container === '') {
@@ -78,6 +90,15 @@ function psql(sql) {
     ['exec', container, 'psql', '-U', 'largata', '-d', 'largata', '-tAc', sql],
     { encoding: 'utf8' },
   ).trim();
+}
+
+function hasLocalPsql() {
+  try {
+    execFileSync('psql', ['--version'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function quote(text) {
