@@ -14,6 +14,7 @@ import com.largata.media.PhotoSubject;
 import com.largata.workspace.WorkspaceService;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -108,7 +109,10 @@ public class PostcardFeedService {
         Map<UUID, TravelerCardResponse> authors = authorsOf(rows);
         Map<UUID, Itinerary> trips = tripsOf(rows);
 
+        Set<UUID> archived = workspaces.archivedAmong(trips.keySet());
+
         return rows.stream()
+                .filter(entry -> !archived.contains(entry.itineraryId()))
                 .map(entry -> cardOf(entry, authors, trips, photosByEntry))
                 .filter(card -> card != null)
                 .toList();
@@ -148,10 +152,7 @@ public class PostcardFeedService {
 
 
     private UUID navigableTripOf(Itinerary trip) {
-        if (!trip.isPublished() || !trip.visibility().isVisibleToEveryone()) {
-            return null;
-        }
-        return workspaces.isArchived(trip.id()) ? null : trip.id();
+        return trip.isPublished() && trip.visibility().isVisibleToEveryone() ? trip.id() : null;
     }
 
 

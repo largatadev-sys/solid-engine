@@ -6,7 +6,7 @@ const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
 const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
 const PASSWORD = process.env.LARGATA_TEST_POOL_PASSWORD;
-const MEMBERS = ['t1', 't2', 't3', 't4', 't5'];
+const MEMBERS = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10'];
 
 const UNVERIFIED_MEMBERS = ['u1'];
 
@@ -57,7 +57,14 @@ async function list() {
     const email = address(tag);
     const existing = await signIn(email);
     if (existing.status !== 200) {
-      console.log(`  ${tag}  ${email}  —  does not exist yet`);
+      // Firebase deliberately merges "no such user" and "wrong password" into one error, so a failed
+      // sign-in CANNOT distinguish them and this line must not claim it can. It used to read "does
+      // not exist yet", which sent an hour into re-creating four accounts that already existed with
+      // a different password — `create` said EMAIL_EXISTS while `list` said absent, and only the raw
+      // error code settled it. `create` is the discriminating probe: it answers EMAIL_EXISTS or
+      // succeeds.
+      const why = existing.body?.error?.message ?? `HTTP ${existing.status}`;
+      console.log(`  ${tag}  ${email}  —  cannot sign in (${why}) — absent, or a different password`);
       unverified++;
       continue;
     }
@@ -79,7 +86,8 @@ async function list() {
   console.log(
     unverified === 0
       ? '\nThe whole pool is verified — invite → accept works with any of these.\n'
-      : `\n${unverified} of ${MEMBERS.length} still need a click in the inbox.\n`,
+      : `\n${unverified} of ${MEMBERS.length} are not usable for invite → accept yet.\n`
+        + 'Only accepting an INVITATION needs verification — seeding a traveler\'s own trips does not.\n',
   );
 }
 

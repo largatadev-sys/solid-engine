@@ -152,9 +152,11 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         List<String> walked = new ArrayList<>();
         List<UUID> idsSeen = new ArrayList<>();
         Set<String> cursorsFollowed = new HashSet<>();
+        int pagesRead = 0;
         String cursor = null;
         do {
             FeedPage page = pageFor(stranger, "?limit=1" + (cursor == null ? "" : "&cursor=" + cursor));
+            pagesRead += 1;
             page.items()
                     .forEach(
                             card -> {
@@ -167,13 +169,117 @@ class PostcardFeedIT extends ObjectStoreTestBase {
             }
         } while (cursor != null);
 
-        assertThat(idsSeen)
-                .as("a one-per-page walk reaches a null cursor and stops, never re-serving a card")
-                .doesNotHaveDuplicates()
-                .hasSize(cursorsFollowed.size() + 1);
+        assertThat(pagesRead)
+                .as("a one-per-page walk reaches a null cursor and stops, never spinning")
+                .isEqualTo(cursorsFollowed.size() + 1);
+        assertThat(idsSeen).as("and no card is ever served twice across the walk").doesNotHaveDuplicates();
         assertThat(onlyMine(walked, one, two, three))
                 .as("newest first, each seen exactly once across the whole walk")
                 .containsExactly(three, two, one);
+    }
+
+
+    @Test
+    void theWalkReachesACardSittingBehindAWhollyArchivedPage() throws IOException {
+        Fixture buried = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        String reachable = tag("underneath");
+        post(buried, buried.activityId(), reachable);
+
+        Fixture hidden = startedTrip();
+        String gone = tag("archived over the top");
+        post(hidden, hidden.activityId(), gone);
+        archive(hidden);
+
+        List<String> walked = new ArrayList<>();
+        Set<String> cursorsFollowed = new HashSet<>();
+        String cursor = null;
+        do {
+            FeedPage page = pageFor(stranger, "?limit=1" + (cursor == null ? "" : "&cursor=" + cursor));
+            page.items().forEach(card -> walked.add(card.caption()));
+            cursor = page.nextCursor();
+            if (cursor != null && !cursorsFollowed.add(cursor)) {
+                throw new AssertionError("the feed re-issued a cursor: " + cursor);
+            }
+        } while (cursor != null);
+
+        assertThat(onlyMine(walked, reachable, gone))
+                .as("the newest page carries only an archived card, so it comes back EMPTY with a "
+                        + "cursor — and the walk must still arrive at the card underneath. This is "
+                        + "the whole reason the cursor is taken from the last row READ rather than "
+                        + "the last card KEPT; take it from the kept card and this stalls.")
+                .containsExactly(reachable);
+    }
+
+
+    @Test
+    void archivingATripTakesItsPostcardsOffTheFeedWithIt() throws IOException {
+        Fixture trip = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        String caption = tag("put away");
+        post(trip, trip.activityId(), caption);
+        assertThat(captionsOf(feedFor(stranger))).contains(caption);
+
+        archive(trip);
+
+        assertThat(captionsOf(feedFor(stranger)))
+                .as("archiving is the traveler's bulk retraction — the whole trip leaves the feed")
+                .doesNotContain(caption);
+    }
+
+
+    @Test
+    void unarchivingPutsThemBackBecauseArchivingIsNotDeleting() throws IOException {
+        Fixture trip = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        String caption = tag("back again");
+        post(trip, trip.activityId(), caption);
+        archive(trip);
+        assertThat(captionsOf(feedFor(stranger))).doesNotContain(caption);
+
+        unarchive(trip);
+
+        assertThat(captionsOf(feedFor(stranger)))
+                .as("reversible, which is the whole reason archive can be the bulk retraction")
+                .contains(caption);
+    }
+
+
+    @Test
+    void anArchivedTripsPublicDiaryIsNotFoundRatherThanEmpty() throws IOException {
+        Fixture trip = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        UUID author = rig.travelerIdOf(trip.owner());
+        post(trip, trip.activityId(), tag("in the diary"));
+        assertThat(tripDiaryFor(stranger, trip.tripId(), author).postcards()).hasSize(1);
+
+        archive(trip);
+
+        rest.get()
+                .uri(tripDiaryUri(trip.tripId(), author))
+                .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+
+    @Test
+    void archivingOneTripLeavesEveryOtherTripsPostcardsAlone() throws IOException {
+        Fixture archived = startedTrip();
+        Fixture kept = startedTrip();
+        String stranger = rig.travelerWithHandle(handle());
+        String goes = tag("on the archived trip");
+        String stays = tag("on the other trip");
+        post(archived, archived.activityId(), goes);
+        post(kept, kept.activityId(), stays);
+
+        archive(archived);
+
+        assertThat(captionsOf(feedFor(stranger)))
+                .as("the exclusion is per trip — one archive must not empty the feed")
+                .contains(stays)
+                .doesNotContain(goes);
     }
 
 
@@ -428,6 +534,26 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         return onlyMine(captionsOf(feed), mine);
     }
 
+
+
+    private void archive(Fixture trip) {
+        rest.post()
+                .uri("/v1/itineraries/" + trip.tripId() + "/archive")
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
+
+    private void unarchive(Fixture trip) {
+        rest.post()
+                .uri("/v1/itineraries/" + trip.tripId() + "/unarchive")
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
 
 
     private void publish(Fixture trip) {

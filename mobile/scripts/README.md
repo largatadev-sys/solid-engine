@@ -97,6 +97,135 @@ Env: the three pool vars, plus `LARGATA_API_BASE_URL` (**local `http` rung only*
 Tags: whatever you pass — `--owner` is the trip owner, `--members` join as ordinary members.
 Fails loudly if an account is not verified, naming `test-pool.js create` as the fix.
 
+## `fetch-fixtures.js` + `seed-travelers.js` — ten travelers, real places, real photos
+
+`seed-demo.js` below builds four trips with **no images at all**, and `fixtures/photo.jpg` is a solid
+orange rectangle — which is why every screenshot in this repo's history shows one. This pair exists
+for the other job: a dataset that looks like the product in use, so a screenshot is worth reading and
+the Home feed has ten different travelers on it.
+
+**Ten accounts, one region each**, clean names and bird avatars: Maya Ocampo (Southeast Asia) ·
+Kenji Nakamura (East Asia) · Sarah Whitmore (Oceania) · Ana Duarte (Western Europe) · Dimitri Stavros
+(Mediterranean) · Lucia Fernández (South America) · Marcus Bell (North America & Iceland) · Amina
+Diallo (Africa) · Rohan Mehta (South Asia) · Ingrid Solberg (Northern Europe). **50 trips, 115 days,
+186 activities, 92 diary postcards**, spread across every lifecycle state so the Trips tab has
+content in each section.
+
+```bash
+cd mobile && set -a && . ./.env && set +a
+node scripts/test-pool.js create        # once — t6–t10 do not exist yet
+node scripts/fetch-fixtures.js          # once — 131 searches, ~360 photos, several minutes
+node scripts/seed-travelers.js          # local stack
+node scripts/seed-travelers.js --tag=t2 # or just one traveler
+```
+
+**Verification is NOT needed for t6–t10.** Only *accepting an invitation* gates on `email_verified`
+(`EMAIL_NOT_VERIFIED`, `InvitationService`), and each traveler seeds their own trips solo. `t2` is the
+one account that accepts invitations — it collaborates on the long trips it does not own, which is
+what gives the Photo Dump a member-contributed pile. So `create` is enough; nobody clicks a link.
+
+**Where each piece of content comes from, because they are not the same:**
+
+| Field | Source | True? |
+|---|---|---|
+| Trip title, days, activity titles, times, costs, notes, postcard captions | **Composed** in `fixtures/travelers.js` | Plausible, **not verified** — do not read a ferry price off it |
+| Activity `place` | Composed — real named places, coherent routes | Real place names |
+| The photo | **Pexels**, searched by the *day's* location, three per response | Genuinely of that place for famous spots; a fitting lookalike for obscure ones |
+| Activity `description` | The photo's own **`alt`** text, verbatim | Literally true of the image you are looking at |
+
+That last row is the useful trick: Pexels returns **no location field**, only `alt` — so the *place*
+comes from the search term and the *description* comes from the photo. It is the one string in the
+dataset that describes the actual pixels rather than being invented.
+
+**Attribution.** `fixtures/photos/CREDITS.json` records the photographer, their profile, the source
+page and the licence for every file. The images themselves are **gitignored** — megabytes this repo
+does not own, and the fetch is reproducible. The Pexels licence permits this use and asks for a
+visible link to Pexels plus photographer credit where possible.
+
+**It refuses rather than degrading, twice.** No `fixtures/photos/` → it stops, because seeding trips
+with blank images is the thing it exists to avoid. A non-`localhost` API → it stops unless you pass
+**`--yes-seed-the-deployed-rung`**, because nothing this app exposes can undo a trip, its photos or
+its public postcards on an environment other people read.
+
+```bash
+LARGATA_API_BASE_URL=https://api-dev.largata.com \
+  node scripts/seed-travelers.js --yes-seed-the-deployed-rung
+```
+
+Env: the three pool vars, plus **`PEXELS_API_KEY`** for the fetcher only (free, from
+https://www.pexels.com/api/new/ — 200 requests/hour, and a full fetch uses 82).
+
+### `backdate-seed.js` — the history, and the one place this harness writes SQL
+
+Freshly seeded postcards are all minutes old, so the feed reads as a fixture rather than an app in
+use. Run this after the seeder and the 92 postcards spread across about six months:
+
+```bash
+node scripts/backdate-seed.js              # local
+node scripts/backdate-seed.js --tag=t4     # one traveler
+```
+
+Weighted toward recent — 20% this week, 30% this month, 30% within three months, 20% out to six — so
+the top of the feed is fresh. **Deterministic**: a trip's date derives from its own title, so
+rebuilding puts it in the same week rather than reshuffling your history. **An ongoing trip always
+posts within the last two days**, because a trip the app shows as in progress cannot have posted in
+March. A trip's own postcards land on consecutive days, so it reads as several days of posting.
+
+**Why SQL, and why this is not the psql ban.** S1.5 banned planting rows with psql because doing so
+**skipped the verification gate** — the fixtures bypassed the rule the gate exists to enforce.
+Nothing is bypassed here: auth, membership, the lifecycle ladder, photo ingest and the entry itself
+all still go through the real API. Only *when it happened* is adjusted, and there is deliberately no
+endpoint for that, because a real postcard is posted now. The clock is one app-wide
+`Clock.systemUTC()` bean, so the alternative was a request-level override — test-only code in the
+production path, a worse trade than one visible, opt-in script. It is kept **out** of the seeder so
+the exception is a thing you run rather than a thing hidden inside something else.
+
+Reaching a deployed rung needs `LARGATA_DATABASE_URL` (Railway → Postgres → Variables →
+**`DATABASE_PUBLIC_URL`**; the internal `postgres.railway.internal` host only resolves inside
+Railway's network) **and** `--yes-backdate-the-deployed-rung`.
+
+### Growing it — the dataset is static, and that is what makes it safe to grow
+
+There is no generator. Every trip is hand-written in `fixtures/travelers.js`, so the same run always
+produces the same 50 trips. **Adding more is editing that one file** — there is no second set to
+manage, because a re-run *archives the previous copies of every fixture-titled trip and rebuilds
+them all*. Grow the file, re-run, and the dataset is bigger with no duplicates.
+
+```bash
+# 1. add trips to fixtures/travelers.js — see the shape of any existing one
+# 2. fetch only what is new (existing files are skipped, so this is cheap)
+node scripts/fetch-fixtures.js
+# 3. rebuild that traveler, or everyone
+node scripts/seed-travelers.js --tag=t4
+node scripts/seed-travelers.js
+```
+
+**The rules the content follows** *(founder, 2026-08-13)*, so a new trip fits the ones already here:
+
+- **The point is a feed that looks inhabited.** This is not coverage of the world — every country is
+  not a goal and was explicitly ruled out as unrealistic. It is enough traffic that Home, Trips and a
+  profile read like a social app in use rather than a test harness.
+- **No two trips are the same trip.** Different itineraries, different activities, different
+  captions. **The same region is fine** — two travelers in Japan, or one traveler back in Japan a
+  second time, is exactly what a real feed looks like. Identical *content* is what to avoid.
+- **One day is one place**, because the photo search is keyed on the day's location. A day that
+  wanders across a region gets photos of whichever part the search picked.
+- **Trips spread across lifecycle states.** A dataset of nothing but `completed` leaves the Trips
+  tab's Ongoing, Upcoming and Drafts sections empty, and only started trips can carry postcards.
+- **Photos are not rotated per run** *(founder, 2026-08-13)* — a place keeps the photos it was first
+  given, so the same trip looks the same every time you rebuild it. Variety comes from new trips,
+  never from reshuffling old ones.
+
+Only a **new** day location costs a Pexels search; everything already in `fixtures/photos/` is
+skipped. At 25,000 requests a month, the budget is not a constraint on how far this grows.
+
+**This dataset breaks the self-identifying-fixture rule on purpose** *(founder, 2026-08-13)*. The
+2026-07-27 ruling says a test identity must identify itself, which is why `precomplete-profile`
+deliberately sets no display name and the pool renders as `largata.dev+t1`. Here the founder asked
+for clean names so the feed reads like a product rather than a test harness — so `seed-travelers.js`
+PATCHes a real name and handle over that. The tag is still in the email address and the seeder prints
+`name (tag, @handle)` on every line, so a screenshot can still be traced back to an account.
+
 ## `seed-demo.js` — a coherent set of trips to look at
 
 Seeds four trips with real content — two published (one with a collaborator), one private with a

@@ -181,6 +181,17 @@ export function FeedScreen() {
     }
   };
 
+  // A page whose every card was withheld comes back EMPTY WITH A CURSOR — the server filters
+  // archived trips after reading the page, so ten consecutive postcards from archived trips yield
+  // no cards and more to come. FlatList does not fire onEndReached on an empty list, so without
+  // this the feed stalls forever on "no postcards yet" while the stream still has pages. Pull
+  // through until something renders or the cursor runs out.
+  useEffect(() => {
+    if (cards.length === 0 && feed.hasNextPage === true && !feed.isFetchingNextPage && !feed.isPending) {
+      void feed.fetchNextPage();
+    }
+  }, [cards.length, feed.hasNextPage, feed.isFetchingNextPage, feed.isPending, feed]);
+
   const chrome = (
     <Animated.View style={[styles.header, { transform: [{ translateY: slide }] }]}>
       <FeedHeader
@@ -246,7 +257,11 @@ export function FeedScreen() {
           />
         }
         ListEmptyComponent={
-          feed.isError ? <FeedLoadFailed onRetry={() => refresh(false)} /> : <FeedEmptyState />
+          feed.isError ? (
+            <FeedLoadFailed onRetry={() => refresh(false)} />
+          ) : feed.hasNextPage === true ? null : (
+            <FeedEmptyState />
+          )
         }
         ListFooterComponent={
           cards.length === 0 ? null : (

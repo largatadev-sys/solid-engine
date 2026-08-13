@@ -59,7 +59,24 @@ describe('B5.5 — a page failure shows the inline row, never a full-screen erro
 
   it('reserves the full-screen state for a first load that failed with nothing to show', () => {
     expect(SCREEN).toContain('cards.length === 0 ? null : (');
-    expect(SCREEN).toContain('feed.isError ? <FeedLoadFailed');
+    expect(SCREEN).toContain('feed.isError ? (');
+    expect(SCREEN).toContain('<FeedLoadFailed onRetry={() => refresh(false)} />');
+  });
+});
+
+
+describe('an empty page with a cursor is not an empty feed', () => {
+  it('withholds the empty state while the stream still has pages', () => {
+    expect(SCREEN).toContain('feed.hasNextPage === true ? null : (');
+    expect(SCREEN).toContain('<FeedEmptyState />');
+  });
+
+  it('pulls the next page itself, because FlatList fires no onEndReached on an empty list', () => {
+    const puller = SCREEN.slice(SCREEN.indexOf('cards.length === 0 && feed.hasNextPage'), SCREEN.length);
+
+    expect(puller).toContain('void feed.fetchNextPage();');
+    expect(puller.slice(0, 200)).toContain('!feed.isFetchingNextPage');
+    expect(puller.slice(0, 200)).toContain('!feed.isPending');
   });
 });
 
