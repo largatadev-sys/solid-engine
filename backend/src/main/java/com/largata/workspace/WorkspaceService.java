@@ -116,6 +116,12 @@ public class WorkspaceService {
 
 
     @Transactional(readOnly = true)
+    public Set<UUID> allArchivedItineraryIds() {
+        return Set.copyOf(workspaces.allArchivedItineraryIds());
+    }
+
+
+    @Transactional(readOnly = true)
     public boolean isMember(UUID itineraryId, UUID travelerId) {
         return memberships.findRole(travelerId, itineraryId).isPresent();
     }

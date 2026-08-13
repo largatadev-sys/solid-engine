@@ -18,3 +18,9 @@
 - [ ] Full backend IT suite green, counts read from the summary, never the exit code.
 
 ## Comments
+
+**Sabotage demonstrated (AC 11), 2026-08-14.** With `mvn -o test-compile failsafe:integration-test` — `test-compile` included, so the edited `.sql` actually reached `target/classes` (the S4.13 trap). Sabotage: dropped the `COALESCE` from V31's backfill so every published row took `now()` instead of its completion stamp. Result **2 failures of 6**, both naming the right diagnosis: `aPublishedTripInheritsTheStampFromItsCompletion` and `aPublishedButPrivateTripIsStillStamped`. Restored, re-run green: **6/6**, and `DiscoveryIT` **12/12** alongside it (18 total, 0 failures, 0 errors — counts read from the summary; note the same run printed `BUILD SUCCESS` while red, which is exactly why the exit code is never the signal).
+
+**Archived exclusion, ADR-002 (owner-decided at build time).** Spec decision 1 wants the filter in the WHERE clause; ADR-002 forbids the itinerary module reading workspace tables. Resolved by passing the archived-id set over the service interface (`WorkspaceService.allArchivedItineraryIds()` → `NOT IN :archivedIds`). Scaling cost accepted and minted as an epic-map line with a measured trigger. JPQL wart: `NOT IN ()` is invalid, so an empty archive set passes a sentinel UUID (`excludedItineraryIds()`).
+
+**Not in this ticket, deliberately:** `q`, `destination` and `duration` params, the count endpoint, trending and suggestions — tickets 04–06 own those, per the ticket's own scope line.
