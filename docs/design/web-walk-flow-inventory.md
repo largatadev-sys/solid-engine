@@ -132,6 +132,47 @@
 
 ---
 
+## 4 · `drive-discovery.js` — the Discover surface (S4.3, added 2026-08-14)
+
+**Not a retiring walk.** This one is new, healthy, and **34/34 green** on the day it was written, against the local full stack. It is inventoried here for the opposite reason to the three above: so the Playwright port carries it forward rather than rediscovering what Discovery owes. Its coverage is the story's ACs, and the split between API-level and screen-level assertions is deliberate — the exclusion proofs are cheaper and sharper against `/v1` than against pixels.
+
+| Flow | What must be true |
+|---|---|
+| Strangers' surface | A published + public trip reaches a traveler who shares **no trip** with its author |
+| Exclusion: private | A published-but-**private** trip is absent — for everyone, owner included |
+| Exclusion: archived | An **archived** trip is absent however it was published (ADR-017's posture) |
+| Count agrees with list | The sheet's promise: `/count` and `/itineraries` return the same total under identical filters |
+| Destination filter | Narrows to that destination's trips, case- and padding-insensitively |
+| Trending ranks | Ranked by trips **published** in the window — never creations |
+| Trending never leaks | A private or archived destination appears in no row, not even as a count |
+| Suggestions group | Destinations and Itineraries as separate groups, each capped at 3 |
+| Discover tab is live | Opens a real screen; the coming-soon refusal is gone |
+| Both rails render | Trending destinations **and** Recommended itineraries, with real data |
+| Trending card | Names its destination and its trip count |
+| See all | Lands on browse results carrying a count line |
+| Destination tap | Opens results **filtered** to it, with the filter in the route |
+| Filter badge | Counts active filter **groups**, not values |
+| Search mode | The bar opens full-screen search; Cancel restores |
+| Live suggestions | Typing surfaces both groups (**real key events** — see the note below) |
+| Suggestion submit | Lands on results carrying `q=`, showing the matching trips |
+| Recents persist | The submitted query is remembered on the device and renders on return |
+| Filter sheet | Opens; offers the four duration bands; Apply previews the count before committing |
+| Reset | Appears only once the draft differs from what is applied |
+| Apply commits | The route carries the filters, so a shared search restores exact state |
+| Honest stubs | Bookmark and author tap each print a refusal — **no dead clicks on either** |
+| Card tap | Opens the existing published itinerary view |
+| Auth | Every discovery read is bearer-authenticated — no anonymous GETs (S3.3's tell) |
+| Console/page errors | None |
+
+**Four harness lessons this walk paid for — do not port the defects, and do not re-learn them.**
+
+- **A programmatic value setter is invisible to react-native-web's `TextInput`.** Setting `.value` and dispatching `input` leaves the field *showing* the text while `onChangeText` never fires, so a working search reads as completely dead. Focus the field and send **real key events** (`Input.dispatchKeyEvent`). Playwright's `fill()`/`type()` does the right thing natively — this trap is CDP-specific and should simply vanish in the port.
+- **`innerText` reports what is PAINTED, not what the source says.** Section labels are uppercased by `textTransform`, so a case-sensitive match on "Trending searches" fails against a screen rendering `TRENDING SEARCHES`. Match case-insensitively, or assert on the source constant.
+- **A card and its bookmark both carry the trip title**, and a last-visible-match selector takes the bookmark — so a title-only selector taps Save and reports a card that never opened. Anchor on the label's **start**, not a substring.
+- **Suggestion groups cap at 3, on a database that accumulates every earlier walk's fixtures.** Asserting *this run's* stamp appears in a capped, alphabetically-ordered group demands more than the contract promises; assert the shape, the cap, and that every row genuinely matches. Same family as the S4.22 seeding trap — the local DB is not empty and pretending otherwise produces flaky red.
+
+---
+
 ## Notes for whoever runs the port
 
 - **Rebuild the dark flows first, not the green ones.** The green is what still works and would be noticed if it broke; the dark is what nothing watches. Porting green-first reproduces today's blind spot in a new framework.

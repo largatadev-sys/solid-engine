@@ -20,6 +20,7 @@ const WEB_WALKS = [
   'drive-diary.js',
   'drive-profile.js',
   'drive-home.js',
+  'drive-discovery.js',
 ];
 
 const KNOWN_RED = {};
