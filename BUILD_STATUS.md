@@ -227,6 +227,14 @@ Test-harness capture (post-S0.6, owner directive): `mobile/scripts/drive-preview
 
 ---
 
+**2026-08-13**
+
+**Five corrections to the workstation setup, all found by actually running it — the second machine was stood up the day after the README described how.** The refresh committed hours earlier was written from the toolchain record; this is what the record got wrong once a real fresh Windows box ran it. **(1) The Android JDK does not resolve itself.** The README said the prebuild plugin *"probes installed JDKs and picks a working one"*; it probes four **hardcoded** paths, and in 2026 all four miss — Android Studio now bundles **JBR 25**, which the plugin rejects for exceeding its own `HIGHEST_SUPPORTED_MAJOR = 24`, and Temurin installs to **versioned** directories (`jdk-21.0.12.8-hotspot`), so the `jdk-21`/`jdk-17` fallbacks never match. The plugin then takes its no-op branch and writes nothing, which is **indistinguishable from the plugin not existing** — the same inscrutable `configureCMakeDebug` failure it was built to prevent. `LARGATA_ANDROID_JAVA_HOME` is now the documented norm, with `org.gradle.java.home` in the generated `gradle.properties` as the one cheap check that it took. CLAUDE.md's *"Studio bundles a JBR (Java 21)"* corrected in place. **(2) Maven is not in winget** — no package id serves it; the binary zip from `archive.apache.org` is the route, and Maven needs `JAVA_HOME` on the **25**, distinct from the Android JDK. **(3) Chrome was never listed**, yet `drive-preview.js` probes Chrome paths only and hard-fails without it — so the web rung's only honest witness was missing from a machine the README called ready. **(4) Git identity is unset on a fresh Windows box**: the first commit dies *after* the hook runs, with everything staged, reading as a repo fault. **(5) The first push is interactive** — GCM is the system helper but holds no credential, and a non-interactive shell fails with *"terminal prompts disabled"*, which looks like a permissions problem. Also recorded: `LARGATA_KEYSTORE_PATH` must **not** be set persistently (`withReleaseSigning.js` throws when the path is set without the password, breaking every ordinary prebuild), and **the AVD is optional when a real device is available** — sideloading the release APK is the *better* rung by CLAUDE.md's own release-build rule, which matters because this machine is too slow to emulate comfortably.
+
+*Why it wasn't a story —* Docs-only, no product surface, no code: the same family as the README refresh earlier the same day, and its direct successor — that one recorded what the toolchain notes said, this one records what a fresh machine actually did. Kept on its own branch rather than folded into the day's fence fix, because a setup document and an authorization fix have nothing to say to each other and should be revertible apart.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
