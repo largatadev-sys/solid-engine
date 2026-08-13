@@ -11,7 +11,7 @@
 - [ ] The preview container rebuilt; a new discovery web walk written and green against it — landing sections render with data, search mode opens, a query reaches results, the sheet applies with a live count, and every stub tap prints its refusal wording — wired into the smoke runner and recorded in the web-walk flow inventory for the Playwright port; smoke-all run.
 - [ ] The surface walked on the emulator (screenshot evidence; the real-touch rung if carousel feel needs judging).
 - [ ] Mock-fidelity pass against the design baseline: the spec's deviations ledger is the only permitted gap list — anything else matches the frame, icons included.
-- [ ] The three glossary entries applied to the domain model **after the owner's explicit go** (the held edit): Trending Destinations · Recommended (Discover) · Trip Ideas (reserved).
+- [x] The three glossary entries put to the owner at the gate and **parked, not applied** *(founder, 2026-08-14: "put it in the backlog, we'll decide later")* — the drafts and the argument for each moved to the epic map; `02-domain-model.md` is deliberately untouched by this story.
 - [ ] The feed screen's stray code comment: removed if any commit in this story touched that file, else the off-epic ledger line is written instead.
 - [ ] BUILD_STATUS row updated — status + spec link, nothing else — in the last commit on the feature branch.
 - [ ] The squash-merge of the feature branch into the shared preview branch is **proposed and awaits approval** (propose-first; no promotion executed by the agent).
