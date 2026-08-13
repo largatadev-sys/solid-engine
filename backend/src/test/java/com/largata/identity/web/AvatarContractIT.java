@@ -170,14 +170,12 @@ class AvatarContractIT extends ObjectStoreTestBase {
     @Test
     void theColumnHoldsOurUrlAndNeverAProviderHostname() throws IOException {
         String token = tokenFor("avatar-column");
-        String avatarUrl = uploadAvatar(token, photo(400, 400));
+        String stored = uploadAvatar(token, photo(400, 400));
 
         assertThat(jdbc.queryForObject(
-                        "SELECT avatar_url FROM traveler WHERE avatar_url = ?", String.class, avatarUrl))
-                .startsWith("/v1/media/");
-        assertThat(jdbc.queryForObject(
-                        "SELECT count(*) FROM traveler WHERE avatar_url LIKE 'http%'", Integer.class))
-                .isZero();
+                        "SELECT avatar_url FROM traveler WHERE avatar_url = ?", String.class, stored))
+                .startsWith("/v1/media/")
+                .doesNotStartWith("http");
     }
 
 
