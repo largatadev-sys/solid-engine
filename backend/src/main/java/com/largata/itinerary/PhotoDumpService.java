@@ -1,7 +1,6 @@
 package com.largata.itinerary;
 
 import com.largata.common.api.Page;
-import com.largata.common.authz.AudienceFence;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.itinerary.PhotoDumpExceptions.NotThePhotosUploaderException;
@@ -22,12 +21,10 @@ public class PhotoDumpService {
 
     private final PhotoService photos;
     private final WriteFence writeFence;
-    private final AudienceFence audienceFence;
 
-    PhotoDumpService(PhotoService photos, WriteFence writeFence, AudienceFence audienceFence) {
+    PhotoDumpService(PhotoService photos, WriteFence writeFence) {
         this.photos = photos;
         this.writeFence = writeFence;
-        this.audienceFence = audienceFence;
     }
 
 
@@ -41,7 +38,6 @@ public class PhotoDumpService {
 
     @Transactional(readOnly = true)
     public Page<Photo> list(Membership member, String cursor, Integer requestedLimit) {
-        audienceFence.requireInAudience(member);
         return photos.pageOf(
                 PhotoSubject.ITINERARY_PHOTO_DUMP, member.itineraryId(), cursor, clamp(requestedLimit));
     }

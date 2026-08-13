@@ -1,6 +1,7 @@
 package com.largata.itinerary.web;
 
 import com.largata.common.api.Page;
+import com.largata.common.authz.AudienceFence;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
@@ -28,10 +29,12 @@ class PhotoDumpController {
 
     private final PhotoDumpService dump;
     private final AuthorizationGuard guard;
+    private final AudienceFence audience;
 
-    PhotoDumpController(PhotoDumpService dump, AuthorizationGuard guard) {
+    PhotoDumpController(PhotoDumpService dump, AuthorizationGuard guard, AudienceFence audience) {
         this.dump = dump;
         this.guard = guard;
+        this.audience = audience;
     }
 
 
@@ -54,6 +57,7 @@ class PhotoDumpController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
+        audience.requireInAudience(member);
         return dump.list(member, cursor, limit).map(PhotoDumpEntryResponse::of);
     }
 

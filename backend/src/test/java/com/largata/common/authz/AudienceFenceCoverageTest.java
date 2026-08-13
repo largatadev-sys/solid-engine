@@ -25,7 +25,8 @@ class AudienceFenceCoverageTest {
 
     private static final Pattern HANDLER =
             Pattern.compile(
-                    "@GetMapping\\(?[^)]*\\)?\\s+(?:[\\w.<>,\\[\\]\\s]+?)\\s(\\w+)\\(([^)]*)\\)\\s*\\{"
+                    "@GetMapping\\(?[^)]*\\)?\\s+(?:[\\w.<>,\\[\\]\\s]+?)\\s(\\w+)"
+                            + "\\(((?:[^()]|\\([^()]*\\))*)\\)\\s*\\{"
                             + "((?:[^{}]|\\{[^{}]*\\})*)",
                     Pattern.DOTALL);
 
@@ -60,6 +61,33 @@ class AudienceFenceCoverageTest {
                                 + "exception set with a reason — S4.1 shipped this fence at two of its three "
                                 + "doors, and only a review caught the third")
                 .isEmpty();
+    }
+
+
+    @Test
+    void theScanSeesAHandlerWhoseParametersCarryTheirOwnParentheses() {
+        String source =
+                """
+                @GetMapping
+                Page<DiaryEntryResponse> mine(
+                        @CurrentTraveler Traveler traveler,
+                        @PathVariable UUID itineraryId,
+                        @RequestParam(required = false) String cursor) {
+                    Membership member = guard.requireMember(traveler.id(), itineraryId);
+                    return diary.mine(member, cursor);
+                }
+                """;
+
+        Matcher handler = HANDLER.matcher(source);
+
+        assertThat(handler.find())
+                .as(
+                        "a parameter list carrying its own parentheses once ended the match early, so the "
+                                + "handler was never scanned and its missing fence never reported — an "
+                                + "unfenced door the coverage test could not see")
+                .isTrue();
+        assertThat(handler.group(1)).isEqualTo("mine");
+        assertThat(handler.group(3)).contains("guard.requireMember");
     }
 
 

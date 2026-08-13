@@ -1,6 +1,7 @@
 package com.largata.itinerary.web;
 
 import com.largata.common.api.Page;
+import com.largata.common.authz.AudienceFence;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
@@ -36,11 +37,14 @@ class DiaryController {
 
     private final DiaryService diary;
     private final AuthorizationGuard guard;
+    private final AudienceFence audience;
     private final ObjectMapper json;
 
-    DiaryController(DiaryService diary, AuthorizationGuard guard, ObjectMapper json) {
+    DiaryController(
+            DiaryService diary, AuthorizationGuard guard, AudienceFence audience, ObjectMapper json) {
         this.diary = diary;
         this.guard = guard;
+        this.audience = audience;
         this.json = json;
     }
 
@@ -71,6 +75,7 @@ class DiaryController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
+        audience.requireInAudience(member);
         return diary.mine(member, cursor, limit);
     }
 
@@ -81,6 +86,7 @@ class DiaryController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
+        audience.requireInAudience(member);
         return diary.mineById(member, entryId);
     }
 

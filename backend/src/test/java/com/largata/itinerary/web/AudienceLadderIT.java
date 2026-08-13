@@ -79,6 +79,40 @@ class AudienceLadderIT extends PostgresTestBase {
 
 
     @Test
+    void aMembersDiaryReadsOnAnArchivedTripAreMaskedWhileTheOwnersAreServed() {
+        String owner = freshTraveler();
+        String tripId = createItinerary(owner);
+        String member = admitMemberTo(tripId);
+
+        diaryList(member, tripId).expectStatus().isOk();
+
+        act(owner, tripId, "archive");
+
+        diaryList(member, tripId)
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
+
+        diaryEntry(member, tripId, UUID.randomUUID())
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
+
+        diaryList(owner, tripId).expectStatus().isOk();
+        diaryEntry(owner, tripId, UUID.randomUUID())
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("DIARY_ENTRY_NOT_FOUND");
+    }
+
+
+    @Test
     void unarchivingRestoresTheMembersListRowAndTheirReadsUntouched() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
@@ -172,6 +206,20 @@ class AudienceLadderIT extends PostgresTestBase {
     private RestTestClient.ResponseSpec invitations(String token, String itineraryId) {
         return rest.get()
                 .uri("/v1/itineraries/" + itineraryId + "/invitations")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange();
+    }
+
+    private RestTestClient.ResponseSpec diaryList(String token, String itineraryId) {
+        return rest.get()
+                .uri("/v1/itineraries/" + itineraryId + "/diary/entries")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange();
+    }
+
+    private RestTestClient.ResponseSpec diaryEntry(String token, String itineraryId, UUID entryId) {
+        return rest.get()
+                .uri("/v1/itineraries/" + itineraryId + "/diary/entries/" + entryId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
