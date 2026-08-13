@@ -75,8 +75,7 @@ class DiaryController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        audience.requireInAudience(member);
-        return diary.mine(member, cursor, limit);
+        return diary.mine(audience.requireInAudience(member), cursor, limit);
     }
 
 
@@ -86,8 +85,7 @@ class DiaryController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID entryId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        audience.requireInAudience(member);
-        return diary.mineById(member, entryId);
+        return diary.mineById(audience.requireInAudience(member), entryId);
     }
 
 

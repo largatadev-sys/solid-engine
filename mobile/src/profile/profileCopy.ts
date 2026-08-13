@@ -30,3 +30,11 @@ export const PROFILE_LOAD_FAILED = 'Could not load your profile';
 export const STATS_UNAVAILABLE = 'Counts unavailable — tap to retry';
 
 export const STATS_RETRY_LABEL = 'Retry loading your counts';
+
+export const PROFILE_DIARY_FAILED = 'Could not load your diary — tap to retry';
+
+export const PROFILE_DIARY_RETRY_LABEL = 'Retry loading your diary';
+
+export const PROFILE_DIARY_SECTION_FAILED = 'Could not load these entries — tap to retry';
+
+export const PROFILE_DIARY_SECTION_RETRY_LABEL = 'Retry loading entries for this trip';

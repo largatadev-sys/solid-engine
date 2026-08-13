@@ -280,10 +280,10 @@ public class ItineraryService {
 
 
     private Itinerary authorizeAndLoad(Membership owner) {
+        fence.requireWritable(owner);
         if (!owner.isOwner()) {
             throw new NotTripOwnerException();
         }
-        fence.requireWritable(owner);
         return itineraries
                 .findById(owner.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(

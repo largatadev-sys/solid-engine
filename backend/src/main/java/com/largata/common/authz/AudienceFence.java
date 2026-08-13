@@ -13,9 +13,10 @@ public class AudienceFence {
     }
 
 
-    public void requireInAudience(Membership member) {
+    public InAudience requireInAudience(Membership member) {
         if (!member.isOwner() && writability.isFrozen(member.itineraryId())) {
             throw new ItineraryNotFoundException();
         }
+        return new InAudience(member);
     }
 }

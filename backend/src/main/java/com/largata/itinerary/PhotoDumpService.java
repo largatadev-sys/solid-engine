@@ -1,6 +1,7 @@
 package com.largata.itinerary;
 
 import com.largata.common.api.Page;
+import com.largata.common.authz.InAudience;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.itinerary.PhotoDumpExceptions.NotThePhotosUploaderException;
@@ -37,19 +38,22 @@ public class PhotoDumpService {
 
 
     @Transactional(readOnly = true)
-    public Page<Photo> list(Membership member, String cursor, Integer requestedLimit) {
+    public Page<Photo> list(InAudience audience, String cursor, Integer requestedLimit) {
         return photos.pageOf(
-                PhotoSubject.ITINERARY_PHOTO_DUMP, member.itineraryId(), cursor, clamp(requestedLimit));
+                PhotoSubject.ITINERARY_PHOTO_DUMP,
+                audience.member().itineraryId(),
+                cursor,
+                clamp(requestedLimit));
     }
 
 
     @Transactional
     public void remove(Membership member, UUID photoId) {
+        writeFence.requireWritable(member);
         Photo photo = photoOfThisPool(member, photoId);
         if (!member.isOwner() && !photo.uploadedBy().equals(member.travelerId())) {
             throw new NotThePhotosUploaderException();
         }
-        writeFence.requireWritable(member);
         photos.delete(photo.id());
     }
 

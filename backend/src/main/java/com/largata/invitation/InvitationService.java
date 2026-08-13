@@ -129,10 +129,10 @@ public class InvitationService {
 
 
     private UUID authorizeIssuance(Membership owner) {
+        fence.requireWritable(owner);
         if (!owner.isOwner()) {
             throw new NotWorkspaceOwnerException();
         }
-        fence.requireWritable(owner);
         return workspaces
                 .workspaceIdOf(owner.itineraryId())
                 .orElseThrow(() -> new IllegalStateException("Owner has no workspace - invariant breach"));
@@ -168,10 +168,10 @@ public class InvitationService {
         UUID itineraryId =
                 workspaces.itineraryIdsByWorkspace(List.of(invitation.workspaceId())).get(invitation.workspaceId());
         Membership caller = guard.requireMember(travelerId, itineraryId);
+        fence.requireWritable(caller);
         if (!caller.isOwner()) {
             throw new NotWorkspaceOwnerException();
         }
-        fence.requireWritable(caller);
         if (invitation.status() != InvitationStatus.PENDING) {
             throw new InvitationNotPendingException();
         }

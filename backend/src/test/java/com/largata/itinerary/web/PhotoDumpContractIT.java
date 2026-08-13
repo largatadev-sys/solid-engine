@@ -235,7 +235,7 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
 
 
     @Test
-    void authorityIsAnsweredBeforeTheArchiveFence() throws IOException {
+    void theMaskIsAnsweredBeforeTheAuthorityRefusalOnAnArchivedTrip() throws IOException {
         Fixture trip = tripWithAMember();
         DumpPhoto ownersPhoto = upload(trip.owner(), trip);
         archive(trip);
@@ -245,7 +245,10 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.member()))
                 .exchange()
                 .expectStatus()
-                .isForbidden();
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ITINERARY_NOT_FOUND");
     }
 
 

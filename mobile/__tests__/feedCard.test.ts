@@ -2,11 +2,12 @@ import {
   authorInitials,
   authorName,
   compactCount,
+  publicDiaryByline,
   timeSince,
   tripLine,
   tripLineNavigates,
 } from '../src/feed/feedCardAnatomy';
-import type { FeedPostcardResponse } from '../src/types/api';
+import type { FeedPostcardResponse, PublicTripDiaryResponse } from '../src/types/api';
 
 const NOW = Date.parse('2026-08-12T12:00:00Z');
 
@@ -76,25 +77,45 @@ describe('timeSince — the card says how long ago, never when', () => {
 });
 
 
-describe('the author line names whoever the projection gave us', () => {
-  it('prefers the display name', () => {
-    expect(authorName(card())).toBe('largata.dev+t1');
+describe('a stranger sees a handle, never a name (S4.23 — a privacy posture, not an aesthetic)', () => {
+  it('shows the handle, prefixed the way every other handle in the app is', () => {
+    expect(
+      authorName(card({ author: { id: 't', handle: 'wanderer', displayName: null, avatarUrl: null } })),
+    ).toBe('@wanderer');
   });
 
-  it('falls back to the handle, then to a neutral noun — never to an empty line', () => {
-    expect(authorName(card({ author: { id: 't', handle: 'wanderer', displayName: null, avatarUrl: null } }))).toBe(
-      'wanderer',
-    );
+  it('shows the handle even when a display name is sitting right there on the wire', () => {
     expect(
-      authorName(card({ author: { id: 't', handle: null, displayName: '', avatarUrl: null } })),
+      authorName(
+        card({ author: { id: 't', handle: 'wanderer', displayName: 'Maria Santos', avatarUrl: null } }),
+      ),
+    ).toBe('@wanderer');
+  });
+
+  it('falls back to a neutral noun rather than the name — the fallback must not defeat the posture', () => {
+    expect(
+      authorName(card({ author: { id: 't', handle: null, displayName: 'Maria Santos', avatarUrl: null } })),
+    ).toBe('A traveler');
+    expect(
+      authorName(card({ author: { id: 't', handle: '   ', displayName: 'Maria Santos', avatarUrl: null } })),
     ).toBe('A traveler');
   });
 
-  it('builds initials a pool tag can be recognised by', () => {
-    expect(authorInitials(card())).toBe('LT');
+  it('renders the seeded demo handle as the feed walk expects to read it', () => {
     expect(
-      authorInitials(card({ author: { id: 't', handle: null, displayName: 'Maria Santos', avatarUrl: null } })),
-    ).toBe('MS');
+      authorName(card({ author: { id: 't', handle: 'mayaocampo', displayName: 'Maya Ocampo', avatarUrl: null } })),
+    ).toBe('@mayaocampo');
+  });
+
+  it('derives initials from the shown identity, so the hidden name cannot leak through them', () => {
+    expect(
+      authorInitials(card({ author: { id: 't', handle: 'largata.dev+t1', displayName: null, avatarUrl: null } })),
+    ).toBe('LT');
+    expect(
+      authorInitials(
+        card({ author: { id: 't', handle: null, displayName: 'Maria Santos', avatarUrl: null } }),
+      ),
+    ).toBe('AT');
   });
 });
 
@@ -115,5 +136,35 @@ describe('the trip line is an affordance only when there is somewhere to go', ()
   it('renders nothing rather than a stray separator when the trip has no name', () => {
     expect(tripLine(card({ tripTitle: null }))).toBeNull();
     expect(tripLine(card({ tripTitle: '   ' }))).toBeNull();
+  });
+});
+
+
+describe('the public diary header behind the card holds the same posture (S4.23)', () => {
+  function diary(
+    author: PublicTripDiaryResponse['author'],
+    postcardCount = 1,
+  ): PublicTripDiaryResponse {
+    return {
+      itineraryId: 'i1',
+      tripTitle: 'Bali Temple Run',
+      publishedItineraryId: null,
+      author,
+      postcards: Array.from({ length: postcardCount }, (_unused, index) => card({ id: `p${index}` })),
+    };
+  }
+
+  it('bylines the handle, not the name the wire also carries', () => {
+    expect(
+      publicDiaryByline(
+        diary({ id: 't', handle: 'mayaocampo', displayName: 'Maya Ocampo', avatarUrl: null }),
+      ),
+    ).toBe('@mayaocampo · 1 postcard');
+  });
+
+  it('falls back to the neutral noun rather than the name', () => {
+    expect(
+      publicDiaryByline(diary({ id: 't', handle: null, displayName: 'Maya Ocampo', avatarUrl: null }, 3)),
+    ).toBe('A traveler · 3 postcards');
   });
 });

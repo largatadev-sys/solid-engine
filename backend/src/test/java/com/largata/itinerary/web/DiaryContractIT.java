@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -480,6 +481,88 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
         assertThat(myTrips(trip.owner(), "")).hasSize(1);
         assertThat(captionsOf(mine(trip.owner(), trip))).containsExactly("kept after archiving");
+    }
+
+
+    @Test
+    void theDiaryListPromisesOnlyTheTripsWhoseDiaryTheCallerCanOpen() throws IOException {
+        Fixture archived = startedTrip();
+        post(archived.member(), archived, archived.activityId(), "the member's memory", List.of(), 1);
+        post(archived.owner(), archived, archived.activityId(), "the owner's memory", List.of(), 1);
+        archive(archived);
+
+        assertThat(tripIdsIn(myTrips(archived.member(), "")))
+                .as("a member's archived trip is masked at the per-trip door, so it cannot be listed here")
+                .doesNotContain(archived.tripId());
+        assertThat(tripIdsIn(myTrips(archived.owner(), "")))
+                .as("the owner legitimately still sees their own archived trip")
+                .contains(archived.tripId());
+
+        Fixture departed = startedTrip();
+        post(departed.member(), departed, departed.activityId(), "before leaving", List.of(), 1);
+        UUID departingId = rig.travelerIdOf(departed.member());
+        rig.send(
+                        HttpMethod.DELETE,
+                        "/v1/itineraries/" + departed.tripId() + "/members/" + departingId,
+                        departed.member(),
+                        null)
+                .expectStatus()
+                .isNoContent();
+
+        assertThat(tripIdsIn(myTrips(departed.member(), "")))
+                .as("a trip they have left is the same dead card by a different door")
+                .doesNotContain(departed.tripId());
+    }
+
+
+    @Test
+    void theLiveRowsAndTheCursorEnvelopeSurviveTheFencesExtraPredicates() throws IOException {
+        String owner = rig.travelerWithHandle(handle());
+        Fixture live = startedTrip(owner);
+        post(owner, live, live.activityId(), "a live trip", List.of(), 1);
+        Fixture second = startedTrip(owner);
+        post(owner, second, second.activityId(), "another live trip", List.of(), 1);
+        Fixture archived = startedTrip(owner);
+        post(owner, archived, archived.activityId(), "an archived trip", List.of(), 1);
+        archive(archived);
+
+        TripPage first = myTripsPage(owner, "?limit=2");
+        assertThat(first.items()).hasSize(2);
+        assertThat(first.nextCursor()).as("a full page hands back a cursor").isNotNull();
+
+        TripPage next = myTripsPage(owner, "?limit=2&cursor=" + first.nextCursor());
+        assertThat(tripIdsIn(concat(first.items(), next.items())))
+                .as("paging over mixed live and archived data reaches every openable trip exactly once")
+                .containsExactlyInAnyOrder(live.tripId(), second.tripId(), archived.tripId());
+        assertThat(next.nextCursor()).as("the last page is exhausted").isNull();
+    }
+
+
+      @Test
+    void aTravelerWithNothingInSightStillHasTheirCursorValidatedRatherThanIgnored() {
+        String stranger = rig.travelerWithHandle(handle());
+
+        rest.get()
+                .uri("/v1/me/diary/trips?cursor=not-a-cursor")
+                .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("MALFORMED_CURSOR");
+
+        assertThat(myTrips(stranger, "")).as("and an honest empty page without one").isEmpty();
+    }
+
+
+    private static List<TripSummary> concat(List<TripSummary> first, List<TripSummary> second) {
+        return Stream.concat(first.stream(), second.stream()).toList();
+    }
+
+
+    private static List<String> tripIdsIn(List<TripSummary> trips) {
+        return trips.stream().map(trip -> trip.itineraryId().toString()).toList();
     }
 
 

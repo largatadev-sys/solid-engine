@@ -150,6 +150,12 @@ public class WorkspaceService {
 
 
     @Transactional(readOnly = true)
+    public List<UUID> itineraryIdsInSightOf(UUID travelerId) {
+        return memberships.findItineraryIdsInSightOf(travelerId, WorkspaceState.ARCHIVED);
+    }
+
+
+    @Transactional(readOnly = true)
     public List<UUID> ownedItineraryIdsFor(UUID travelerId) {
         return memberships.findOwnedItineraryIdsNotIn(travelerId, WorkspaceState.ARCHIVED);
     }

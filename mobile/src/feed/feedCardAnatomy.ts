@@ -39,18 +39,21 @@ export function timeSince(sharedAt: string, now: number): string {
 }
 
 
+const ANONYMOUS_AUTHOR = 'A traveler';
+
+
+function shownIdentity(handle: string | null): string {
+  return handle !== null && handle.trim() !== '' ? `@${handle.trim()}` : ANONYMOUS_AUTHOR;
+}
+
+
 export function authorName(card: FeedPostcardResponse): string {
-  const named = card.author.displayName;
-  if (named !== null && named.trim() !== '') {
-    return named;
-  }
-  const handle = card.author.handle;
-  return handle !== null && handle.trim() !== '' ? handle : 'A traveler';
+  return shownIdentity(card.author.handle);
 }
 
 
 export function authorInitials(card: FeedPostcardResponse): string {
-  const name = authorName(card);
+  const name = authorName(card).replace(/^@/, '');
   const tagged = name.includes('+');
   const words = name.split(/[\s._+-]+/).filter((word) => word !== '');
   if (words.length === 0) {
@@ -85,14 +88,6 @@ function trimTrailingZero(value: number): string {
 
 
 export function publicDiaryByline(diary: PublicTripDiaryResponse): string {
-  const named = diary.author.displayName;
-  const handle = diary.author.handle;
-  const who =
-    named !== null && named.trim() !== ''
-      ? named
-      : handle !== null && handle.trim() !== ''
-        ? handle
-        : 'A traveler';
   const count = diary.postcards.length;
-  return `${who} · ${count === 1 ? '1 postcard' : `${count} postcards`}`;
+  return `${shownIdentity(diary.author.handle)} · ${count === 1 ? '1 postcard' : `${count} postcards`}`;
 }
