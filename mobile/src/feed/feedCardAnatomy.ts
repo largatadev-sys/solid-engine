@@ -39,7 +39,7 @@ export function timeSince(sharedAt: string, now: number): string {
 }
 
 
-export const ANONYMOUS_AUTHOR = 'A traveler';
+const ANONYMOUS_AUTHOR = 'A traveler';
 
 
 function shownIdentity(handle: string | null): string {

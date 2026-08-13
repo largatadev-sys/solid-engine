@@ -12,6 +12,7 @@ const API_SMOKES = [
   'smoke-media.js',
   'smoke-photo-dump.js',
   'smoke-diary.js',
+  'smoke-archive-posture.js',
 ];
 const WEB_WALKS = [
   'drive-buffered-plan.js',

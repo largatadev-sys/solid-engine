@@ -4,9 +4,9 @@
 
 **Blocked by:** None — a repository-and-query change, disjoint from 01/02's seams.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] New IT beside the existing diary contract family, three arms: a non-owner member's archived trip is absent; the owner's archived trip is present; a departed member's trip is absent (spec AC 5).
-- [ ] The existing owner pin (*an archived trip's entries still appear in my diary*) passes unmodified.
-- [ ] Live-trip rows, ordering and the cursor envelope are unchanged — a paged walk over mixed live/archived/departed data pages cleanly with the standard shape (spec AC 5).
-- [ ] Sabotage before trusting: drop the archive predicate and confirm the member arm fails; drop the membership join and confirm the departed arm fails.
+- [x] New IT beside the existing diary contract family, three arms: a non-owner member's archived trip is absent; the owner's archived trip is present; a departed member's trip is absent (spec AC 5).
+- [x] The existing owner pin (*an archived trip's entries still appear in my diary*) passes unmodified.
+- [x] Live-trip rows, ordering and the cursor envelope are unchanged — a paged walk over mixed live/archived/departed data pages cleanly with the standard shape (spec AC 5).
+- [x] Sabotage before trusting: drop the archive predicate and confirm the member arm fails; drop the membership join and confirm the departed arm fails.

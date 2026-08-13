@@ -225,6 +225,7 @@ public class DiaryService {
 
     @Transactional(readOnly = true)
     public Page<DiaryTripResponse> myTrips(UUID travelerId, String cursor, Integer requestedLimit) {
+        UUID after = cursor == null ? null : Cursor.decode(cursor);
         List<UUID> openable = workspaces.itineraryIdsInSightOf(travelerId);
         if (openable.isEmpty()) {
             return Page.exhausted(List.of());
@@ -232,10 +233,9 @@ public class DiaryService {
         int limit = clamp(requestedLimit);
         Limit probe = Limit.of(limit + 1);
         List<DiaryEntryRepository.DiaryTripRow> found =
-                cursor == null
+                after == null
                         ? entries.findTripsWithEntries(travelerId, openable, probe)
-                        : entries.findTripsWithEntriesBefore(
-                                travelerId, openable, Cursor.decode(cursor), probe);
+                        : entries.findTripsWithEntriesBefore(travelerId, openable, after, probe);
 
         boolean more = found.size() > limit;
         List<DiaryEntryRepository.DiaryTripRow> rows = more ? found.subList(0, limit) : found;

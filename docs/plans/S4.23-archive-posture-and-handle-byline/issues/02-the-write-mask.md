@@ -4,10 +4,10 @@
 
 **Blocked by:** 01 — The audience proof (same service seams; series avoids re-signing freshly-changed methods).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Every fenced write family answers a non-owner member on an archived trip with the not-found mask — day/activity writes, plan save, editing-session acquire, diary post/recaption/photo-remove/delete, dump add/remove, invite issuance and revoke, member removal, ownership offer and revoke (spec AC 1).
-- [ ] The mask answers before permission on an archived trip (both ordering pins' member arms flip); live-trip 403s unchanged (spec AC 2).
-- [ ] The owner's 409 `TRIP_ARCHIVED` holds across the seventeen-endpoint pin, unmodified (spec AC 3).
-- [ ] Self-leave still 204 while the trip stays masked from the leaver; voided-acceptance answers unchanged (spec AC 4).
-- [ ] Sabotage before trusting: re-inline the old member 409 and confirm the renamed pin fails naming the mask, not an incidental assertion.
+- [x] Every fenced write family answers a non-owner member on an archived trip with the not-found mask — day/activity writes, plan save, editing-session acquire, diary post/recaption/photo-remove/delete, dump add/remove, invite issuance and revoke, member removal, ownership offer and revoke (spec AC 1).
+- [x] The mask answers before permission on an archived trip (both ordering pins' member arms flip); live-trip 403s unchanged (spec AC 2).
+- [x] The owner's 409 `TRIP_ARCHIVED` holds across the seventeen-endpoint pin, unmodified (spec AC 3).
+- [x] Self-leave still 204 while the trip stays masked from the leaver; voided-acceptance answers unchanged (spec AC 4).
+- [x] Sabotage before trusting: re-inline the old member 409 and confirm the renamed pin fails naming the mask, not an incidental assertion.

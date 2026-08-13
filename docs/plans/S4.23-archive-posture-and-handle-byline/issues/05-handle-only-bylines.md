@@ -4,10 +4,10 @@
 
 **Blocked by:** None — client-side, independent of the backend tickets.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The anatomy modules derive the shown identity handle-first with the anonymous fallback; the display name is unreachable from the stranger surfaces' derivations (spec AC 7).
-- [ ] Feed card byline and public diary header render `@handle`; handle-less renders "A traveler" (spec AC 7).
-- [ ] Initials and accessibility labels derive from the shown identity (spec AC 7).
-- [ ] Jest on the anatomy modules covers: handled author, handle-less author, and the tagged-fixture shape the pool renders.
-- [ ] The feed walk's byline assertions update to expect handles against the seeded demo data.
+- [x] The anatomy modules derive the shown identity handle-first with the anonymous fallback; the display name is unreachable from the stranger surfaces' derivations (spec AC 7).
+- [x] Feed card byline and public diary header render `@handle`; handle-less renders "A traveler" (spec AC 7).
+- [x] Initials and accessibility labels derive from the shown identity (spec AC 7).
+- [x] Jest on the anatomy modules covers: handled author, handle-less author, and the tagged-fixture shape the pool renders.
+- [x] The feed walk's byline assertions update to expect handles against the seeded demo data.

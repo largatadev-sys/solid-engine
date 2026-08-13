@@ -4,9 +4,9 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The proof is unconstructible outside the fence's package — a caller that skips the fence does not compile (spec AC 8's structural half).
-- [ ] The three reads require the proof; their controllers thread it through from the fence call.
-- [ ] Behavior on live and archived trips is unchanged: the dump and diary contract ITs, the audience-ladder ITs, and the fence coverage scan all pass **without modification** (spec AC 8).
-- [ ] No new runtime check anywhere — one fence per request stands (the owner's recorded choice the proof exists to honor).
+- [x] The proof is unconstructible outside the fence's package — a caller that skips the fence does not compile (spec AC 8's structural half).
+- [x] The three reads require the proof; their controllers thread it through from the fence call.
+- [x] Behavior on live and archived trips is unchanged: the dump and diary contract ITs, the audience-ladder ITs, and the fence coverage scan all pass **without modification** (spec AC 8).
+- [x] No new runtime check anywhere — one fence per request stands (the owner's recorded choice the proof exists to honor).

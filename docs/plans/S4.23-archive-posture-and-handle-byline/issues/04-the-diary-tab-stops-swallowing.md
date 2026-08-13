@@ -4,9 +4,9 @@
 
 **Blocked by:** None — client-side, independent of the backend tickets.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A trips-fetch error renders the error state with retry, never the empty state; retry refetches and recovers (spec AC 6).
-- [ ] An expansion error renders an inline section error with retry, never an empty section (spec AC 6).
-- [ ] Jest at the state seam per the trip-diary-screen precedent; the existing section-mapping tests stay green.
-- [ ] The empty state still renders only for a genuinely empty, successfully-loaded diary.
+- [x] A trips-fetch error renders the error state with retry, never the empty state; retry refetches and recovers (spec AC 6).
+- [x] An expansion error renders an inline section error with retry, never an empty section (spec AC 6).
+- [x] Jest at the state seam per the trip-diary-screen precedent; the existing section-mapping tests stay green.
+- [x] The empty state still renders only for a genuinely empty, successfully-loaded diary.

@@ -538,6 +538,24 @@ class DiaryContractIT extends ObjectStoreTestBase {
     }
 
 
+      @Test
+    void aTravelerWithNothingInSightStillHasTheirCursorValidatedRatherThanIgnored() {
+        String stranger = rig.travelerWithHandle(handle());
+
+        rest.get()
+                .uri("/v1/me/diary/trips?cursor=not-a-cursor")
+                .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("MALFORMED_CURSOR");
+
+        assertThat(myTrips(stranger, "")).as("and an honest empty page without one").isEmpty();
+    }
+
+
     private static List<TripSummary> concat(List<TripSummary> first, List<TripSummary> second) {
         return Stream.concat(first.stream(), second.stream()).toList();
     }

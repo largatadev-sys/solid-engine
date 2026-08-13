@@ -526,6 +526,13 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
     `short=${inDiary.includes(shortCaption)} sibling=${inDiary.includes(siblingCaption)} :: ${inDiary.replace(/\n/g, ' | ').slice(0, 120)}`);
   check('…and drops the badge there, since it would only lead back to this screen',
     !inDiary.includes('Trip Post'), inDiary.includes('Trip Post') ? 'badge still drawn' : 'absent');
+  check('S4.23 AC 7: the public diary header bylines the @handle too — the second stranger surface',
+    authorHandle !== null && inDiary.includes(`@${authorHandle}`),
+    `handle=${authorHandle} :: ${inDiary.replace(/\n/g, ' | ').slice(0, 80)}`);
+  check('S4.23 AC 7: …and the display name does not appear behind the badge either',
+    authorDisplayName === null || authorDisplayName === authorHandle ||
+      !inDiary.includes(authorDisplayName),
+    `name=${authorDisplayName}`);
 
   const backFromDiary = await tapLabel('Go back', 4000);
   check('…and back returns to the feed',

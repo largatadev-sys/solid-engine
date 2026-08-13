@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   },
   failed: {
     ...profileTypography.sectionMeta,
-    color: profileColors.meta,
+    color: colors.danger,
   },
   section: {
     borderWidth: 1,

@@ -4,9 +4,9 @@
 
 **Blocked by:** 01 · 02 · 03 · 04 · 05.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Backend and mobile suites green with counts read from the summaries; typecheck clean; `smoke-all` run and read.
-- [ ] The two-traveler archive walk closes spec ACs 1–5 through the UI on web preview, with the member-arm wire probes on the API rung.
-- [ ] Byline ACs closed on web walk + emulator screenshot (spec ACs 7, 9).
-- [ ] The record is whole: canon amendments landed, BUILD_STATUS row updated in the final branch commit, promotion proposed not executed.
+- [x] Backend and mobile suites green with counts read from the summaries; typecheck clean; `smoke-all` run and read.
+- [x] The two-traveler archive walk closes spec ACs 1–5 through the UI on web preview, with the member-arm wire probes on the API rung.
+- [x] Byline ACs closed on web walk + emulator screenshot (spec ACs 7, 9).
+- [x] The record is whole: canon amendments landed, BUILD_STATUS row updated in the final branch commit, promotion proposed not executed.

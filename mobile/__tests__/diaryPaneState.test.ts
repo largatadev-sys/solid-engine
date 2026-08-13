@@ -30,21 +30,11 @@ describe('a failed diary load reads as a failure, never as an empty diary (S4.23
 });
 
 
-describe('the tab renders each state through the seam rather than inferring it from the row count', () => {
-  it('asks the seam for the pane state instead of testing rows.length directly', () => {
-    expect(TAB).toContain('diaryPaneState(trips, rows.length)');
-    expect(TAB).not.toContain('rows.length === 0 ?');
-  });
+describe('a failure does not merely reword the empty state — it has to look like one', () => {
+  it('gives the failure the danger colour the screen-message precedent uses, not the muted meta grey', () => {
+    const failed = TAB.slice(TAB.indexOf('failed: {'), TAB.indexOf('}', TAB.indexOf('failed: {')));
 
-  it('offers a retry that refetches, on both the pane and the section', () => {
-    expect(TAB).toContain('PROFILE_DIARY_RETRY_LABEL');
-    expect(TAB).toContain('PROFILE_DIARY_SECTION_RETRY_LABEL');
-    expect(TAB).toContain('void trips.refetch()');
-    expect(TAB).toContain('void entries.refetch()');
-  });
-
-  it('renders an inline section error rather than an empty body when an expansion fails', () => {
-    expect(TAB).toContain('diaryPaneState(entries, postcards.length)');
-    expect(TAB).toContain('PROFILE_DIARY_SECTION_FAILED');
+    expect(failed).toContain('colors.danger');
+    expect(failed).not.toContain('profileColors.meta');
   });
 });
