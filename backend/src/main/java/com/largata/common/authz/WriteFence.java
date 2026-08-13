@@ -16,9 +16,13 @@ public class WriteFence {
 
 
     public void requireWritable(Membership member) {
-        if (writability.isFrozen(member.itineraryId())) {
+        if (!writability.isFrozen(member.itineraryId())) {
+            return;
+        }
+        if (member.isOwner()) {
             throw new TripArchivedException();
         }
+        throw new ItineraryNotFoundException();
     }
 
 

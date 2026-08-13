@@ -461,6 +461,18 @@ async function addActivity(token, itineraryId, dayOrdinal, title) {
     feedText.includes(`Feed walk ${stamp}`) && feedText.includes('Day 1'),
     feedText.replace(/\n/g, ' | ').slice(0, 200));
 
+  // --- S4.23: a stranger reads a handle, never a name ------------------------------------------
+  const authorCard = mine[0] ? mine[0].author : null;
+  const authorHandle = authorCard ? authorCard.handle : null;
+  const authorDisplayName = authorCard ? authorCard.displayName : null;
+  check('S4.23 AC 7: the byline is the author-s @handle',
+    authorHandle !== null && feedText.includes(`@${authorHandle}`),
+    `handle=${authorHandle} name=${authorDisplayName}`);
+  check('S4.23 AC 7: and the display name the wire also carries appears nowhere on the feed',
+    authorDisplayName === null || authorDisplayName === authorHandle ||
+      !feedText.includes(authorDisplayName),
+    `name=${authorDisplayName} present=${authorDisplayName !== null && feedText.includes(authorDisplayName)}`);
+
   await shoot('web-feed');
 
   // --- "more" belongs only to a caption that actually overflows -------------------------------

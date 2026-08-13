@@ -1,6 +1,7 @@
 package com.largata.itinerary;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,22 +26,30 @@ interface DiaryEntryRepository extends JpaRepository<DiaryEntry, UUID> {
             SELECT e.itineraryId AS itineraryId, COUNT(e) AS entryCount, MAX(e.id) AS latestEntryId
             FROM DiaryEntry e
             WHERE e.travelerId = :travelerId
+              AND e.itineraryId IN :openable
             GROUP BY e.itineraryId
             ORDER BY MAX(e.id) DESC
             """)
-    List<DiaryTripRow> findTripsWithEntries(@Param("travelerId") UUID travelerId, Limit limit);
+    List<DiaryTripRow> findTripsWithEntries(
+            @Param("travelerId") UUID travelerId,
+            @Param("openable") Collection<UUID> openableItineraryIds,
+            Limit limit);
 
     @Query(
             """
             SELECT e.itineraryId AS itineraryId, COUNT(e) AS entryCount, MAX(e.id) AS latestEntryId
             FROM DiaryEntry e
             WHERE e.travelerId = :travelerId
+              AND e.itineraryId IN :openable
             GROUP BY e.itineraryId
             HAVING MAX(e.id) < :cursor
             ORDER BY MAX(e.id) DESC
             """)
     List<DiaryTripRow> findTripsWithEntriesBefore(
-            @Param("travelerId") UUID travelerId, @Param("cursor") UUID cursor, Limit limit);
+            @Param("travelerId") UUID travelerId,
+            @Param("openable") Collection<UUID> openableItineraryIds,
+            @Param("cursor") UUID cursor,
+            Limit limit);
 
     Optional<DiaryEntry> findByIdAndTravelerId(UUID id, UUID travelerId);
 

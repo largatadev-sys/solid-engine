@@ -57,8 +57,8 @@ class PhotoDumpController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        audience.requireInAudience(member);
-        return dump.list(member, cursor, limit).map(PhotoDumpEntryResponse::of);
+        return dump.list(audience.requireInAudience(member), cursor, limit)
+                .map(PhotoDumpEntryResponse::of);
     }
 
 

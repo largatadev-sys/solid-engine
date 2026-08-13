@@ -4,6 +4,7 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
+import com.largata.common.authz.InAudience;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
@@ -19,6 +20,7 @@ import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
+import com.largata.workspace.WorkspaceService;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ public class DiaryService {
     private final ItineraryRepository itineraries;
     private final PhotoService photos;
     private final WriteFence writeFence;
+    private final WorkspaceService workspaces;
     private final Analytics analytics;
     private final Clock clock;
 
@@ -60,6 +63,7 @@ public class DiaryService {
             ItineraryRepository itineraries,
             PhotoService photos,
             WriteFence writeFence,
+            WorkspaceService workspaces,
             Analytics analytics,
             Clock clock) {
         this.entries = entries;
@@ -68,6 +72,7 @@ public class DiaryService {
         this.itineraries = itineraries;
         this.photos = photos;
         this.writeFence = writeFence;
+        this.workspaces = workspaces;
         this.analytics = analytics;
         this.clock = clock;
     }
@@ -193,7 +198,8 @@ public class DiaryService {
 
 
     @Transactional(readOnly = true)
-    public Page<DiaryEntryResponse> mine(Membership member, String cursor, Integer requestedLimit) {
+    public Page<DiaryEntryResponse> mine(InAudience audience, String cursor, Integer requestedLimit) {
+        Membership member = audience.member();
         int limit = clamp(requestedLimit);
         Limit probe = Limit.of(limit + 1);
         List<DiaryEntry> found =
@@ -212,19 +218,24 @@ public class DiaryService {
 
 
     @Transactional(readOnly = true)
-    public DiaryEntryResponse mineById(Membership member, UUID entryId) {
-        return viewOf(requireMyEntry(member, entryId));
+    public DiaryEntryResponse mineById(InAudience audience, UUID entryId) {
+        return viewOf(requireMyEntry(audience.member(), entryId));
     }
 
 
     @Transactional(readOnly = true)
     public Page<DiaryTripResponse> myTrips(UUID travelerId, String cursor, Integer requestedLimit) {
+        List<UUID> openable = workspaces.itineraryIdsInSightOf(travelerId);
+        if (openable.isEmpty()) {
+            return Page.exhausted(List.of());
+        }
         int limit = clamp(requestedLimit);
         Limit probe = Limit.of(limit + 1);
         List<DiaryEntryRepository.DiaryTripRow> found =
                 cursor == null
-                        ? entries.findTripsWithEntries(travelerId, probe)
-                        : entries.findTripsWithEntriesBefore(travelerId, Cursor.decode(cursor), probe);
+                        ? entries.findTripsWithEntries(travelerId, openable, probe)
+                        : entries.findTripsWithEntriesBefore(
+                                travelerId, openable, Cursor.decode(cursor), probe);
 
         boolean more = found.size() > limit;
         List<DiaryEntryRepository.DiaryTripRow> rows = more ? found.subList(0, limit) : found;

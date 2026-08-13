@@ -107,15 +107,61 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
 
     @Test
-    void anArchivedTripTellsAMemberItIsFrozen_notThatTheyLackThePermission() {
+    void anArchivedTripTellsAMemberItDoesNotExist_notThatItIsFrozen() {
         Trip trip = liveTripWithTwoMembers();
         UUID dayId = firstDayOf(trip.id);
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        refused(post(trip.member, "/v1/itineraries/" + trip.id + "/days", """
+        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/days", """
                 {"title":"While frozen"}
                 """));
-        refused(delete(trip.member, "/v1/itineraries/" + trip.id + "/days/" + dayId));
+        masked(delete(trip.member, "/v1/itineraries/" + trip.id + "/days/" + dayId));
+    }
+
+
+    @Test
+    void everyFencedWriteFamilyAnswersAMemberWithTheMask() {
+        Trip trip = liveTripWithTwoMembers();
+        UUID dayId = firstDayOf(trip.id);
+        UUID activityId = createActivity(trip.owner, trip.id, dayId);
+
+        archive(trip.owner, trip.id).expectStatus().isOk();
+
+        masked(patch(trip.member, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH));
+        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities", """
+                {"title":"A new activity"}
+                """));
+        masked(patch(
+                trip.member,
+                "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId,
+                """
+                {"title":"Renamed activity"}
+                """));
+        masked(delete(
+                trip.member, "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId));
+        masked(put(
+                trip.member,
+                "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/order",
+                "{\"expectedActivityIds\":[\"" + activityId + "\"],\"activityIds\":[\"" + activityId + "\"]}"));
+        masked(post(
+                trip.member,
+                "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId + "/move",
+                "{\"targetDayId\":\"" + dayId + "\"}"));
+
+        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/edit-lock", null));
+        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/edit-lock/renew", null));
+
+        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/invitations", """
+                {"email":"someone@example.com"}
+                """));
+        masked(post(trip.member, "/v1/invitations/" + trip.pendingInvitationId + "/revoke", null));
+        masked(post(
+                trip.member,
+                "/v1/itineraries/" + trip.id + "/ownership-offer",
+                "{\"travelerId\":\"" + trip.memberId + "\"}"));
+        masked(delete(trip.member, "/v1/itineraries/" + trip.id + "/ownership-offer"));
+
+        masked(delete(trip.member, "/v1/itineraries/" + trip.id + "/members/" + trip.ownerId));
     }
 
     @Test
@@ -192,20 +238,25 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
 
     @Test
-    void authorityIsAnsweredBeforeTheFence() {
+    void theMaskIsAnsweredBeforeThePermissionRefusalItWouldOtherwiseNameTheTripThrough() {
         Trip trip = liveTripWithTwoMembers();
         String stranger = freshTraveler();
-        archive(trip.owner, trip.id).expectStatus().isOk();
-
-        patch(stranger, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH)
-                .expectStatus()
-                .isNotFound();
 
         post(trip.member, "/v1/itineraries/" + trip.id + "/invitations", """
                 {"email":"someone@example.com"}
                 """)
                 .expectStatus()
                 .isForbidden();
+
+        archive(trip.owner, trip.id).expectStatus().isOk();
+
+        patch(stranger, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH)
+                .expectStatus()
+                .isNotFound();
+
+        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/invitations", """
+                {"email":"someone@example.com"}
+                """));
     }
 
 
@@ -225,9 +276,14 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         response.expectStatus().isEqualTo(409).expectBody().jsonPath("$.code").isEqualTo("TRIP_ARCHIVED");
     }
 
+    private void masked(RestTestClient.ResponseSpec response) {
+        response.expectStatus().isNotFound().expectBody().jsonPath("$.code").isEqualTo("ITINERARY_NOT_FOUND");
+    }
+
     private record Trip(
             String id,
             String owner,
+            UUID ownerId,
             String member,
             UUID memberId,
             String pendingInvitationId,
@@ -247,7 +303,13 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                         .returnResult()
                         .getResponseBodyContent();
         return new Trip(
-                tripId, owner, member, travelerIdOf(member), fieldIn(invitation, "id"), invitedEmail);
+                tripId,
+                owner,
+                travelerIdOf(owner),
+                member,
+                travelerIdOf(member),
+                fieldIn(invitation, "id"),
+                invitedEmail);
     }
 
     private RestTestClient.ResponseSpec archive(String token, String itineraryId) {

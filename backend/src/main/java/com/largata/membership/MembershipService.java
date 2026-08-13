@@ -67,14 +67,14 @@ public class MembershipService {
         UUID itineraryId = caller.itineraryId();
         boolean leaving = caller.travelerId().equals(targetTravelerId);
 
-        if (!leaving && !caller.isOwner()) {
-            throw NotTripOwnerException.toRemoveAMember();
+        if (!leaving) {
+            fence.requireWritable(caller);
+            if (!caller.isOwner()) {
+                throw NotTripOwnerException.toRemoveAMember();
+            }
         }
         if (leaving && caller.isOwner()) {
             throw new OwnerCannotLeaveException();
-        }
-        if (!leaving) {
-            fence.requireWritable(caller);
         }
 
         Optional<Role> targetRole = workspaces.roleOf(itineraryId, targetTravelerId);
@@ -187,10 +187,10 @@ public class MembershipService {
     @Transactional
     public void offerOwnership(Membership owner, UUID targetTravelerId) {
         UUID itineraryId = owner.itineraryId();
+        fence.requireWritable(owner);
         if (!owner.isOwner()) {
             throw NotTripOwnerException.toOfferOwnership();
         }
-        fence.requireWritable(owner);
         if (owner.travelerId().equals(targetTravelerId)) {
             throw new CannotOfferToSelfException();
         }
@@ -218,10 +218,10 @@ public class MembershipService {
     @Transactional
     public void revokeOwnershipOffer(Membership owner) {
         UUID itineraryId = owner.itineraryId();
+        fence.requireWritable(owner);
         if (!owner.isOwner()) {
             throw NotTripOwnerException.toRevokeAnOffer();
         }
-        fence.requireWritable(owner);
         Optional<OwnershipOffer> pending =
                 offers.findByWorkspaceIdAndStatus(workspaceIdOf(itineraryId), OwnershipOfferStatus.PENDING);
         if (pending.isEmpty()) {

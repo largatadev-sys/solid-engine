@@ -14,7 +14,14 @@ import {
   profileTypography,
   workspaceColors,
 } from '../theme/workspaceTokens';
-import { PROFILE_DIARY_EMPTY } from './profileCopy';
+import { diaryPaneState } from './diaryPaneState';
+import {
+  PROFILE_DIARY_EMPTY,
+  PROFILE_DIARY_FAILED,
+  PROFILE_DIARY_RETRY_LABEL,
+  PROFILE_DIARY_SECTION_FAILED,
+  PROFILE_DIARY_SECTION_RETRY_LABEL,
+} from './profileCopy';
 import { isExpanded, toggleExpanded } from './profileViewState';
 import { showcaseMetaLine } from './showcaseCard';
 import { stubLikeCount } from './stubMetrics';
@@ -24,20 +31,28 @@ import type { DiaryEntryResponse, DiaryTripResponse } from '../types/api';
 export function ProfileDiaryTab() {
   const trips = useMyDiaryTrips();
   const rows = (trips.data?.pages ?? []).flatMap((page) => page.items);
+  const state = diaryPaneState(trips, rows.length);
 
-  if (trips.isPending) {
+  if (state === 'loading') {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
   }
 
   return (
     <View style={styles.pane}>
-      {rows.length === 0 ? (
-        <Text style={styles.empty}>{PROFILE_DIARY_EMPTY}</Text>
-      ) : (
+      {state === 'failed' && (
+        <Pressable
+          onPress={() => void trips.refetch()}
+          accessibilityRole="button"
+          accessibilityLabel={PROFILE_DIARY_RETRY_LABEL}
+        >
+          <Text style={styles.failed}>{PROFILE_DIARY_FAILED}</Text>
+        </Pressable>
+      )}
+      {state === 'empty' && <Text style={styles.empty}>{PROFILE_DIARY_EMPTY}</Text>}
+      {state === 'rows' &&
         rows.map((trip, index) => (
           <TripSection key={trip.itineraryId} trip={trip} first={index === 0} />
-        ))
-      )}
+        ))}
 
       {trips.hasNextPage === true && (
         <Pressable
@@ -65,6 +80,7 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
   };
 
   const postcards = entries.data === undefined ? [] : inTripDayOrder(entries.data);
+  const sectionState = diaryPaneState(entries, postcards.length);
   const [previewing, setPreviewing] = useState<DiaryEntryResponse | null>(null);
 
   return (
@@ -107,9 +123,17 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
 
       {open && (
         <View style={styles.sectionBody}>
-          {entries.isPending ? (
-            <ActivityIndicator color={colors.accent} />
-          ) : (
+          {sectionState === 'loading' && <ActivityIndicator color={colors.accent} />}
+          {sectionState === 'failed' && (
+            <Pressable
+              onPress={() => void entries.refetch()}
+              accessibilityRole="button"
+              accessibilityLabel={PROFILE_DIARY_SECTION_RETRY_LABEL}
+            >
+              <Text style={styles.failed}>{PROFILE_DIARY_SECTION_FAILED}</Text>
+            </Pressable>
+          )}
+          {sectionState === 'rows' &&
             postcards.map((entry) => (
               <Postcard
                 key={entry.id}
@@ -117,8 +141,7 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
                 likes={stubLikeCount()}
                 onPress={() => setPreviewing(entry)}
               />
-            ))
-          )}
+            ))}
         </View>
       )}
 
@@ -158,6 +181,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   empty: {
+    ...profileTypography.sectionMeta,
+    color: profileColors.meta,
+  },
+  failed: {
     ...profileTypography.sectionMeta,
     color: profileColors.meta,
   },
