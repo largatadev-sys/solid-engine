@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 public record Handle(String value) {
 
-    public static final int MIN_LENGTH = 2;
+    public static final int MIN_LENGTH = 3;
     public static final int MAX_LENGTH = 20;
 
     private static final Pattern SHAPE = Pattern.compile("[a-z0-9_]{" + MIN_LENGTH + "," + MAX_LENGTH + "}");

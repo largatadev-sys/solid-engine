@@ -65,6 +65,17 @@ describe('the live availability feedback', () => {
     expect(handleFeedbackFor('a', false, undefined).tone).toBe('neutral');
   });
 
+  it('a two-character handle is below the minimum, so it never reaches the backend', () => {
+    const feedback = handleFeedbackFor('cj', false, undefined);
+
+    expect(feedback.submittable).toBe(false);
+    expect(feedback.text).toBe('At least 3 characters.');
+  });
+
+  it('three characters is the shortest handle anyone can claim', () => {
+    expect(handleFeedbackFor('abc', false, verdict('abc', 'FREE')).submittable).toBe(true);
+  });
+
   it('is never submittable while a check is in flight', () => {
     expect(handleFeedbackFor('anasilva', true, undefined).submittable).toBe(false);
   });
