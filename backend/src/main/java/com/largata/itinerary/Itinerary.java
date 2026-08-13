@@ -88,6 +88,9 @@ public class Itinerary {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    @Column(name = "published_at")
+    private Instant publishedAt;
+
     protected Itinerary() {
     }
 
@@ -235,12 +238,13 @@ public class Itinerary {
     }
 
 
-    void publishTo(Visibility audience) {
+    void publishTo(Visibility audience, Instant at) {
         if (!state.admitsPublishing()) {
             throw new NotCompleteException(state);
         }
         this.visibility = audience;
         this.published = true;
+        this.publishedAt = at;
     }
 
 
@@ -339,6 +343,10 @@ public class Itinerary {
         return startedAt;
     }
 
+
+    public Instant publishedAt() {
+        return publishedAt;
+    }
 
     public Instant completedAt() {
         return completedAt;

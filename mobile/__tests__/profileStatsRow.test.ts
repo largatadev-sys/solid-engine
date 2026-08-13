@@ -42,8 +42,8 @@ describe('the stats row: two counts that are true, two that are dressing', () =>
   });
 
   it('takes the two unbacked ones only from the stub module (register: one seam to delete)', () => {
-    expect(ROW).toContain('stubFollowerCount');
-    expect(ROW).toContain('stubFollowingCount');
+    expect(ROW).toContain('stubFollowerCountFor(subjectId)');
+    expect(ROW).toContain('stubFollowingCountFor(subjectId)');
   });
 
   it('holds a count that has not arrived yet rather than rendering a wrong zero', () => {

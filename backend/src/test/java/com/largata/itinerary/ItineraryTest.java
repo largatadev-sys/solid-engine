@@ -343,7 +343,7 @@ class ItineraryTest {
     void publishingSetsTheAudienceAndUnpublishingLeavesTheLifecycleWhereItWas() {
         Itinerary itinerary = completed();
 
-        itinerary.publishTo(Visibility.PUBLIC);
+        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
         assertThat(itinerary.isPublished()).isTrue();
         assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLIC);
 
@@ -360,31 +360,31 @@ class ItineraryTest {
     @Test
     void onlyACompletedTripCanBePublished() {
         Itinerary neverStarted = draft("Draft", List.of("Cebu"));
-        assertThatThrownBy(() -> neverStarted.publishTo(Visibility.PUBLIC))
+        assertThatThrownBy(() -> neverStarted.publishTo(Visibility.PUBLIC, Instant.now()))
                 .as("a plan nobody has travelled is not a record of anything")
                 .isInstanceOf(NotCompleteException.class);
 
         Itinerary planned = draft("Draft", List.of("Cebu"));
         planned.finishPlanning();
-        assertThatThrownBy(() -> planned.publishTo(Visibility.PUBLIC))
+        assertThatThrownBy(() -> planned.publishTo(Visibility.PUBLIC, Instant.now()))
                 .as("planning finished is not the trip happening — the gate is about travel, not readiness")
                 .isInstanceOf(NotCompleteException.class);
 
         Itinerary travelling = draft("Draft", List.of("Cebu"));
         travelling.finishPlanning();
         travelling.start(Instant.now());
-        assertThatThrownBy(() -> travelling.publishTo(Visibility.PUBLIC))
+        assertThatThrownBy(() -> travelling.publishTo(Visibility.PUBLIC, Instant.now()))
                 .isInstanceOf(NotCompleteException.class);
 
         Itinerary travelled = completed();
-        travelled.publishTo(Visibility.PUBLIC);
+        travelled.publishTo(Visibility.PUBLIC, Instant.now());
         assertThat(travelled.isPublished()).isTrue();
     }
 
     @Test
     void theAudienceMovesWhilePublishedWithoutLeavingTheFeed() {
         Itinerary itinerary = completed();
-        itinerary.publishTo(Visibility.PUBLIC);
+        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
 
         itinerary.showTo(Visibility.PRIVATE);
 
@@ -407,7 +407,7 @@ class ItineraryTest {
     @Test
     void aPublishedTripPinsItsLifecycle_soUnpublishIsTheOnlyWayToMoveIt() {
         Itinerary itinerary = completed();
-        itinerary.publishTo(Visibility.PUBLIC);
+        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
 
         assertThatThrownBy(itinerary::reopen)
                 .as("published means nothing about this trip changes — the lifecycle included")
@@ -452,8 +452,8 @@ class ItineraryTest {
         itinerary.unpublish();
         assertThat(itinerary.isPublished()).isFalse();
 
-        itinerary.publishTo(Visibility.PUBLIC);
-        itinerary.publishTo(Visibility.PUBLIC);
+        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
+        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
         assertThat(itinerary.isPublished()).isTrue();
     }
 

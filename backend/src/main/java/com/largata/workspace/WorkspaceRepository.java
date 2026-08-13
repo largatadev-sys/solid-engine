@@ -24,4 +24,12 @@ interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
               AND w.state = com.largata.workspace.WorkspaceState.ARCHIVED
             """)
     List<UUID> archivedAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
+
+
+    @Query(
+            """
+            SELECT w.itineraryId FROM Workspace w
+            WHERE w.state = com.largata.workspace.WorkspaceState.ARCHIVED
+            """)
+    List<UUID> allArchivedItineraryIds();
 }

@@ -11,7 +11,7 @@ import {
   workspaceRadii,
 } from '../theme/workspaceTokens';
 import { ACCOUNT_LABEL, EDIT_PROFILE_LABEL } from './profileCopy';
-import type { ProfileCard } from './profileCard';
+import { profileSubjectId, type ProfileCard } from './profileCard';
 import { profileMetaLine } from './profileMetaLine';
 import { ProfileStatsRow, type ProfileStats } from './ProfileStatsRow';
 
@@ -60,7 +60,7 @@ export function ProfileHeader({ card, stats, onEditProfile, onOpenAccount }: Pro
         </Pressable>
       </View>
 
-      <ProfileStatsRow stats={stats} />
+      <ProfileStatsRow stats={stats} subjectId={profileSubjectId(card)} />
 
       <Pressable
         style={styles.editPill}

@@ -44,8 +44,8 @@ describe('the Itineraries tab is the showcase, not the working pile', () => {
   });
 
   it('takes the star and the price from the stub module and nowhere else', () => {
-    expect(TAB).toContain('stubRating()');
-    expect(TAB).toContain('stubPricePerPerson()');
+    expect(TAB).toContain('stubRatingFor(card.id)');
+    expect(TAB).toContain('stubPricePerPersonFor(card.id)');
     expect(TAB).not.toContain('Math.random');
   });
 

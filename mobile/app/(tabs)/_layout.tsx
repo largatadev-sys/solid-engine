@@ -1,15 +1,22 @@
 import { Tabs, router, usePathname } from 'expo-router';
 import { type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { comingSoon } from '../../src/components/comingSoon';
 import { Icon, type IconName } from '../../src/components/Icon';
+import { DISCOVER_TAB_LABEL } from '../../src/discovery/discoveryCopy';
+import { DISCOVER_TAB_ROUTE } from '../../src/discovery/discoveryRoutes';
 import {
   HOME_TAB_ROUTE,
   PROFILE_TAB_ROUTE,
   TRIPS_TAB_ROUTE,
 } from '../../src/navigation/authRoutes';
 import { homeTabRetapped } from '../../src/feed/homeTabRetap';
-import { inHomeStack, inProfileStack, inTripsStack, tabJump } from '../../src/navigation/tabJump';
+import {
+  inDiscoverStack,
+  inHomeStack,
+  inProfileStack,
+  inTripsStack,
+  tabJump,
+} from '../../src/navigation/tabJump';
 import { colors, typography } from '../../src/theme';
 
 
@@ -66,16 +73,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="search"
+        name="(discover)"
         options={{
-          title: 'Discover',
+          title: DISCOVER_TAB_LABEL,
           tabBarIcon: tabIcon('search'),
-          tabBarAccessibilityLabel: 'Discover, coming soon',
         }}
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            comingSoon('search');
+            router[tabJump(router.canDismiss(), inDiscoverStack(pathname))](DISCOVER_TAB_ROUTE);
           },
         }}
       />

@@ -239,7 +239,7 @@ public class ItineraryService {
     public Itinerary publish(Membership owner, Visibility audience) {
         Itinerary itinerary = authorizeAndLoad(owner);
         editLease.requireSessionFreeForLifecycle(owner);
-        itinerary.publishTo(audience);
+        itinerary.publishTo(audience, Instant.now());
         return recordStatus(itinerary, owner, "itinerary_published");
     }
 

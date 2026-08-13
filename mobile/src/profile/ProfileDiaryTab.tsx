@@ -24,7 +24,7 @@ import {
 } from './profileCopy';
 import { isExpanded, toggleExpanded } from './profileViewState';
 import { showcaseMetaLine } from './showcaseCard';
-import { stubLikeCount } from './stubMetrics';
+import { stubLikeCountFor } from './stubMetrics';
 import type { DiaryEntryResponse, DiaryTripResponse } from '../types/api';
 
 
@@ -138,7 +138,7 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
               <Postcard
                 key={entry.id}
                 entry={entry}
-                likes={stubLikeCount()}
+                likes={stubLikeCountFor(entry.id)}
                 onPress={() => setPreviewing(entry)}
               />
             ))}

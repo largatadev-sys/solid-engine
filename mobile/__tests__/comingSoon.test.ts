@@ -18,11 +18,11 @@ beforeEach(() => {
 
 describe('comingSoonMessage — the wording both forks share', () => {
   it('names the affordance in the title and marks it coming soon', () => {
-    expect(comingSoonMessage('search').title).toBe('Search — coming soon');
+    expect(comingSoonMessage('chat').title).toBe('Trip chat — coming soon');
   });
 
   it('explains that the part is still being built', () => {
-    expect(comingSoonMessage('search').body).toMatch(/still being built/);
+    expect(comingSoonMessage('chat').body).toMatch(/still being built/);
   });
 
   it('names whatever affordance it is given', () => {
@@ -61,11 +61,11 @@ describe('comingSoonMessage — the wording both forks share', () => {
 
 describe('comingSoon (native fork)', () => {
   it('shows an alert carrying the shared title and body', () => {
-    comingSoon('search');
+    comingSoon('chat');
 
     expect(Alert.alert).toHaveBeenCalledTimes(1);
     const [title, body] = (Alert.alert as jest.Mock).mock.calls[0];
-    expect(title).toBe('Search — coming soon');
+    expect(title).toBe('Trip chat — coming soon');
     expect(body).toMatch(/still being built/);
   });
 

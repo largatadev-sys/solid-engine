@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EFEDE6;font-family:'Figtree',sans-serif;}
+a{color:#D96C4A;text-decoration:none;} a:hover{color:#B85235;}
+</style>
+</helmet>
+<div style="padding:48px 56px; display:flex; flex-direction:column; gap:32px; max-width:1560px;">
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    <div style="font-size:12px; font-weight:800; letter-spacing:2px; color:#A8A29E; text-transform:uppercase;">Largata · Action one-pagers</div>
+    <div style="font-size:30px; font-weight:800; color:#1C1917; letter-spacing:-0.5px;">Home Feed + Discover — what the user experiences</div>
+    <div style="font-size:14px; color:#57534E; max-width:720px; line-height:1.6;">One card per user action: what they input, what success looks and feels like, every way it can fail and what they can do about it, and the loading feedback in between.</div>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:13px; font-weight:800; letter-spacing:1.5px; color:#1C1917; text-transform:uppercase;">Home Feed</span><div style="flex:1; height:1px; background:#DDD9D0;"></div></div>
+  <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:20px;">
+    <sc-for list="{{ homeActions }}" as="a" hint-placeholder-count="4">
+      <dc-import name="ActionCard" action="{{ a }}" hint-size="100%,520px"></dc-import>
+    </sc-for>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:13px; font-weight:800; letter-spacing:1.5px; color:#1C1917; text-transform:uppercase;">Discover</span><div style="flex:1; height:1px; background:#DDD9D0;"></div></div>
+  <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:20px;">
+    <sc-for list="{{ discoverActions }}" as="a" hint-placeholder-count="4">
+      <dc-import name="ActionCard" action="{{ a }}" hint-size="100%,520px"></dc-import>
+    </sc-for>
+  </div>
+
+  <div style="background:#FBF0EB; border:1px solid #EFC9BA; border-radius:14px; padding:16px 18px; font-size:12.5px; line-height:1.6; color:#7C3F28; max-width:1000px;">
+    <b>Everywhere:</b> session expired → sent to login, brought back to the same screen after · toasts sit above the tab bar, auto-dismiss in 3s, and never stack more than one · nothing the user typed or selected is ever lost to an error.
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      homeActions: [
+        {
+          name: 'Like a post', screen: 'Home Feed — post card',
+          inputs: [
+            { control: 'Heart button', collects: 'One tap — toggles like on / off' },
+            { control: 'Double-tap photo', collects: 'Likes only (never unlikes); replays the heart burst if already liked' },
+          ],
+          happens: 'Heart fills and count goes up instantly — before the network responds. Double-tap also plays the white heart burst with a light haptic.',
+          confirmation: 'The filled heart is the confirmation. No toast.',
+          navigation: 'Stays in place; feed does not move.',
+          errors: [
+            { when: 'Connection drops or request fails', sees: 'Heart and count quietly return to their previous state. No error message — a failed like is not worth interrupting for.', can: 'Tap again whenever.' },
+            { when: 'Post was deleted meanwhile', sees: 'Toast: "This post is no longer available." Card fades on the next refresh.', can: 'Dismiss; nothing to fix.' },
+          ],
+          loadVisual: 'None — the response is instant by design (optimistic).',
+          loadDuration: 'Feels like 0ms; real request runs in background.',
+          loadTimeout: 'Background retry once, then silent rollback.',
+        },
+        {
+          name: 'Save a post', screen: 'Home Feed — post card / long-press sheet',
+          inputs: [
+            { control: 'Bookmark button', collects: 'One tap — saves to "Trip ideas"; tap again to unsave' },
+          ],
+          happens: 'Bookmark fills instantly; post appears in Trip ideas.',
+          confirmation: 'Toast: "Saved to Trip ideas" with an Undo button (5 seconds).',
+          navigation: 'Stays in the feed. Trip ideas is reachable from Trips.',
+          errors: [
+            { when: 'Save fails (offline, server down)', sees: 'If offline: nothing — the save is remembered and synced when back online. If the server rejects it: bookmark empties + toast "Couldn’t save."', can: 'Retry from the toast, or tap again later.' },
+            { when: 'Post was deleted meanwhile', sees: 'Bookmark empties + toast "This post is no longer available."', can: 'Dismiss.' },
+          ],
+          loadVisual: 'None — optimistic, same as like.',
+          loadDuration: 'Feels instant.',
+          loadTimeout: 'Queued offline and replayed; icon always shows the user’s last choice.',
+        },
+        {
+          name: 'Share a post', screen: 'Home Feed — post card / long-press sheet',
+          inputs: [
+            { control: 'Share button', collects: 'One tap — no options to choose before the share sheet' },
+          ],
+          happens: 'A link to the post is created and the phone’s native share sheet opens with it.',
+          confirmation: 'The share sheet itself (the OS confirms sending).',
+          navigation: 'Stays; share sheet slides over the feed.',
+          errors: [
+            { when: 'Link can’t be created (no connection)', sees: 'Toast: "Couldn’t create link — Retry."', can: 'Retry from the toast, or dismiss.' },
+            { when: 'Post is from a private account', sees: 'Small dialog: "Only followers can view this post. Share anyway?"', can: 'Share anyway, or cancel.' },
+          ],
+          loadVisual: 'Share icon becomes a small spinner in place; button disabled so a double-tap can’t fire twice.',
+          loadDuration: 'Under 1 second.',
+          loadTimeout: 'After 2s: spinner stops + the retry toast above.',
+        },
+        {
+          name: 'Refresh & load more posts', screen: 'Home Feed — whole list',
+          inputs: [
+            { control: 'Pull down', collects: 'Refresh gesture at the top of the feed' },
+            { control: 'Scroll near end', collects: 'Automatic — no explicit input' },
+            { control: '"New posts" pill', collects: 'One tap — jump to top and load the fresh posts' },
+          ],
+          happens: 'Refresh adds new posts at the top; scrolling appends the next batch at the bottom; end of feed shows "You’re all caught up."',
+          confirmation: 'New content appearing is the confirmation. If a refresh finds nothing: brief "You’re caught up" note.',
+          navigation: 'Stays; scroll position never jumps uninvited.',
+          errors: [
+            { when: 'Loading more fails', sees: 'Inline row where the next posts would be: "Couldn’t load more — Retry." Existing posts stay.', can: 'Tap Retry, or keep reading what’s loaded.' },
+            { when: 'Refresh fails', sees: 'Refresh spinner stops + toast "Couldn’t refresh." The feed keeps showing what it had.', can: 'Pull down again.' },
+          ],
+          loadVisual: 'Refresh: the standard pull spinner. Load more: two ghost post cards at the bottom.',
+          loadDuration: '1–2 seconds typical.',
+          loadTimeout: 'After 8s: treated as a failure (states above).',
+        },
+      ],
+      discoverActions: [
+        {
+          name: 'Search', screen: 'Discover — search mode → results',
+          inputs: [
+            { control: 'Text field', collects: 'Free text: destination, itinerary, or person (2–80 characters)' },
+            { control: 'Recent / trending row', collects: 'One tap runs that search immediately' },
+            { control: 'Category chips', collects: 'One tap narrows results (All / Beach / Adventure / Culture / Budget / Luxury)' },
+          ],
+          happens: 'Results screen lists matching itineraries with a count ("67 itineraries"). The query is remembered in Recents.',
+          confirmation: 'The count line is the confirmation that the search ran.',
+          navigation: 'Search mode → results screen. Back returns to Discover landing.',
+          errors: [
+            { when: 'No matches', sees: 'Friendly empty state: "Nothing for ‘Japan’ with these filters" + a Clear filters button. Never a blank screen.', can: 'Clear filters (keeps the search word), edit the search, or go back.' },
+            { when: 'Connection drops mid-search', sees: 'The previous results stay on screen with a thin banner: "Can’t reach Largata — Retry."', can: 'Retry from the banner; browse the stale results meanwhile.' },
+          ],
+          loadVisual: 'Three ghost result cards; chips stay tappable.',
+          loadDuration: 'Under 1 second after the user pauses typing (300ms pause triggers the search).',
+          loadTimeout: 'After 8s: auto-retries once, then shows the banner above.',
+        },
+        {
+          name: 'Filter results', screen: 'Discover — filter sheet',
+          inputs: [
+            { control: 'Destination field', collects: 'A place, with type-ahead suggestions' },
+            { control: 'Duration presets', collects: 'One of: 1–3 / 4–7 / 8–14 / 15+ days' },
+            { control: 'Trip type chips', collects: 'Any combination: Solo, Couple, Group, Family' },
+            { control: 'Apply button', collects: 'Commits the choices — label previews the outcome: "Show 23 itineraries"' },
+          ],
+          happens: 'Sheet closes, results reload to match, filter button gains a count badge.',
+          confirmation: 'The Apply label told them the count before they committed — no surprise afterwards.',
+          navigation: 'Stays on results. Swiping the sheet down or tapping outside discards unapplied changes.',
+          errors: [
+            { when: 'Choices would return zero results', sees: 'Apply button reads "No exact matches" before they ever commit.', can: 'Loosen a filter and watch the count recover; Reset appears once anything is changed.' },
+            { when: 'Count preview can’t load', sees: 'Button just says "Show results" — no error inside the sheet.', can: 'Apply anyway; the results screen handles any failure.' },
+          ],
+          loadVisual: 'A subtle "…" in the Apply label while the count updates.',
+          loadDuration: 'Count updates ~a quarter-second after each change.',
+          loadTimeout: 'Falls back to "Show results" silently.',
+        },
+        {
+          name: 'Bookmark an itinerary', screen: 'Discover — result & recommended cards',
+          inputs: [
+            { control: 'Bookmark chip on the card photo', collects: 'One tap — saves to Trip ideas; tap again to remove' },
+          ],
+          happens: 'Icon fills instantly; itinerary appears in Trip ideas.',
+          confirmation: 'Toast: "Saved to Trip ideas" with Undo (5 seconds).',
+          navigation: 'Stays in the list.',
+          errors: [
+            { when: 'Save fails', sees: 'Icon empties + toast "Couldn’t save — Retry." If offline, no error: it syncs when back online.', can: 'Retry from the toast.' },
+            { when: 'Itinerary was unpublished meanwhile', sees: 'Icon empties + toast "This itinerary is no longer available"; the card dims.', can: 'Dismiss.' },
+          ],
+          loadVisual: 'None — optimistic.',
+          loadDuration: 'Feels instant.',
+          loadTimeout: 'Queued offline and replayed.',
+        },
+        {
+          name: 'Open Discover', screen: 'Discover — landing',
+          inputs: [
+            { control: 'Tab tap / pull down', collects: 'No input — loads Trending destinations + Recommended itineraries' },
+          ],
+          happens: 'Both carousels fill. If the user was here recently, yesterday’s content appears instantly and quietly updates.',
+          confirmation: 'Content itself; no messages on success.',
+          navigation: 'Stays. Carousel positions are kept when switching tabs.',
+          errors: [
+            { when: 'Offline with nothing cached', sees: 'Full-screen state: "Can’t reach Largata" with Retry. The search bar still opens (Recents work offline).', can: 'Retry, or use Recents.' },
+            { when: 'Offline with cached content', sees: 'The cached carousels + a thin banner: "Showing saved content."', can: 'Browse normally; banner clears on reconnect.' },
+            { when: 'Only one section fails', sees: 'The healthy section renders; the failed one shows a small inline Retry.', can: 'Retry just that section.' },
+          ],
+          loadVisual: 'Ghost cards in each carousel on first-ever load; nothing on repeat visits (cached shows first).',
+          loadDuration: 'Instant when cached; 1–2 seconds cold.',
+          loadTimeout: 'After 8s: the offline states above.',
+        },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

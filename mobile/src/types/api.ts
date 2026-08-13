@@ -378,6 +378,35 @@ export type ShowcaseItineraryResponse = {
 };
 
 
+export type DiscoveryCardResponse = {
+  id: string;
+  title: string;
+  destinations: string[];
+  durationDays: number;
+  coverImageUrl: string | null;
+  author: TravelerCardResponse;
+  publishedAt: string;
+};
+
+
+export type TrendingDestinationResponse = {
+  destination: string;
+  tripCount: number;
+  coverImageUrl: string | null;
+};
+
+
+export type DiscoveryCountResponse = {
+  count: number;
+};
+
+
+export type DiscoverySuggestionsResponse = {
+  destinations: string[];
+  itineraries: string[];
+};
+
+
 export type PostDiaryEntryRequest = {
   activityId: string;
   caption: string | null;

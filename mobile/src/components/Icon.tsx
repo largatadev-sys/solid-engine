@@ -35,6 +35,7 @@ export type IconName =
   | 'bookmark'
   | 'bell'
   | 'close'
+  | 'sliders'
   | 'partyPopper'
   | 'camera'
   | 'briefcase'
@@ -255,6 +256,14 @@ export function Icon({ name, size, color }: IconProps) {
         <>
           <Line x1="6" y1="6" x2="18" y2="18" {...shared} />
           <Line x1="18" y1="6" x2="6" y2="18" {...shared} />
+        </>
+      )}
+
+      {name === 'sliders' && (
+        <>
+          <Path d="M4 8h10M18 8h2M4 16h2M10 16h10" {...shared} />
+          <Circle cx="16" cy="8" r="2.2" {...shared} />
+          <Circle cx="8" cy="16" r="2.2" {...shared} />
         </>
       )}
 
