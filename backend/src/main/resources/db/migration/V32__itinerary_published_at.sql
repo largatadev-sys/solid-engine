@@ -1,4 +1,9 @@
--- V31 — an itinerary records when it became visible (S4.3, spec decision 3).
+-- V32 — an itinerary records when it became visible (S4.3, spec decision 3).
+--
+-- Numbered 32, not 31, because dev's founder-vanity grant took V31 while this branch was in
+-- flight. Worth stating rather than silently renumbering: two files claiming one version is a
+-- collision git does NOT report — `merge-tree` returns clean, both files land side by side, and
+-- Flyway then refuses to start on the duplicate. A merge that compiles and cannot boot.
 --
 -- WHY A NEW COLUMN RATHER THAN REUSING ONE WE HAVE. Discovery orders the browse feed, the
 -- Recommended rail and the trending window by "what is newly visible to strangers", and no existing

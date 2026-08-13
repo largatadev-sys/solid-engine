@@ -48,7 +48,7 @@ class ItineraryPublishedAtBackfillIT {
         dataSource = source;
         jdbc = new JdbcTemplate(dataSource);
 
-        flywayTo("30").migrate();
+        flywayTo("31").migrate();
 
         seedLegacy(PUBLISHED_AND_COMPLETED, "Osaka in spring", true, COMPLETED_AT, "PUBLIC");
         seedLegacy(PUBLISHED_WITHOUT_COMPLETION, "Hokkaido", true, null, "PUBLIC");
@@ -60,7 +60,7 @@ class ItineraryPublishedAtBackfillIT {
                 .isFalse();
 
         migratedAround = Instant.now().truncatedTo(ChronoUnit.MICROS);
-        flywayTo("31").migrate();
+        flywayTo("32").migrate();
     }
 
 
