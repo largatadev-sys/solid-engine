@@ -3,7 +3,7 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const { precompleteProfile } = require('./precomplete-profile');
-const { TRAVELERS, POSTCARDS, DUMP_QUERIES } = require('./fixtures/travelers');
+const { TRAVELERS, DUMP_QUERIES } = require('./fixtures/travelers');
 
 const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
@@ -239,7 +239,7 @@ async function seedTraveler(traveler, credits, collaborator) {
           await api(`/v1/itineraries/${created.id}/edit-lock`, 'DELETE', token, lease);
           attached += 1;
         }
-        activities.push({ id: activity.id, title: spec.title, file });
+        activities.push({ id: activity.id, title: spec.title, file, post: spec.post });
       }
     }
 
@@ -280,13 +280,20 @@ async function seedTraveler(traveler, credits, collaborator) {
       }
     }
 
+    // Postcards live ON the activity that carries them, so there is no title to match and no way
+    // for a caption to reference an activity that does not exist — the shape the earlier lookup
+    // array allowed, which failed silently as a skipped postcard.
     let posted = 0;
-    for (const card of POSTCARDS.filter((p) => p.trip === trip.title)) {
-      const activity = activities.find((a) => a.title === card.activity);
-      if (activity === undefined || activity.file === undefined) continue;
+    for (const activity of activities.filter((a) => a.post !== undefined)) {
+      if (activity.file === undefined) continue;
       must(
-        await postDiaryEntry(token, created.id, { activityId: activity.id, caption: card.caption, fromDump: [] }, [activity.file]),
-        `postcard "${card.activity}"`,
+        await postDiaryEntry(
+          token,
+          created.id,
+          { activityId: activity.id, caption: activity.post, fromDump: [] },
+          [activity.file],
+        ),
+        `postcard "${activity.title}"`,
       );
       posted += 1;
     }
