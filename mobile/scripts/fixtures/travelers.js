@@ -1376,4 +1376,26 @@ const DUMP_QUERIES = [
 ];
 
 
+// The hundred Discovery trips attach here rather than being written inline, so this file stays the
+// hand-authored fifty — the ones carrying the lifecycle spread and the two private trips that prove
+// the visibility fence. Everything appended below is completed and public by construction.
+const { SPECS, buildTrip } = require('./discoveryTrips');
+
+for (const spec of SPECS) {
+  const traveler = TRAVELERS.find((one) => one.tag === spec.owner);
+  if (traveler === undefined) {
+    throw new Error(`discovery trip "${spec.title}" names unknown traveler ${spec.owner}`);
+  }
+  traveler.trips.push(buildTrip(spec));
+}
+
+// The seeder archives previous runs by title and the backdater matches rows by title, so two trips
+// sharing one would silently make both scripts operate on the wrong rows.
+const titles = TRAVELERS.flatMap((one) => one.trips.map((trip) => trip.title));
+if (new Set(titles).size !== titles.length) {
+  const seen = new Set();
+  const clash = titles.find((title) => seen.size === seen.add(title).size);
+  throw new Error(`two trips share the title "${clash}" — the seeder and backdater both match on it`);
+}
+
 module.exports = { TRAVELERS, DUMP_QUERIES };
