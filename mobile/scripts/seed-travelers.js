@@ -1,68 +1,32 @@
 const fs = require('fs');
-const http = require('http');
-const https = require('https');
 const path = require('path');
 const { precompleteProfile } = require('./precomplete-profile');
 const { TRAVELERS, DUMP_QUERIES } = require('./fixtures/travelers');
+const { CACHE_DIR, slug, photosFor: photosInPool, photoForSlot } = require('./photoPool');
+const { API, request, api, address, poolToken, allMyTrips, requirePoolEnv } = require('./poolApi');
 
-const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
-const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
-const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
-const PASSWORD = process.env.LARGATA_TEST_POOL_PASSWORD;
 
-const PHOTOS = path.join(__dirname, 'fixtures', 'photos');
+const PHOTOS = CACHE_DIR;
 const CREDITS = path.join(PHOTOS, 'CREDITS.json');
 const DEPLOYED_OPT_IN = '--yes-seed-the-deployed-rung';
 
-const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const address = (tag) => { const [local, domain] = BASE.split('@'); return `${local}+${tag}@${domain}`; };
 const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split('=')[1];
 
-// Against localhost every call succeeds; against a deployed rung one in a few hundred does not, and
-// a seeding run is ~700 calls. A single transient 5xx killed a run 11 trips in — work that cannot be
-// resumed, only redone. Retries 5xx and transport errors only: a 4xx is the seeder being wrong and
-// must still fail loudly rather than being hammered.
-const RETRIES = 3;
+const COMPLETE_ONLY = process.argv.includes('--complete-only');
 
-async function request(url, method, body, headers = {}) {
-  let last;
-  for (let attempt = 1; attempt <= RETRIES; attempt += 1) {
-    last = await attemptOnce(url, method, body, headers);
-    if (last.status < 500 && last.status !== 0) return last;
-    if (attempt < RETRIES) {
-      console.log(`   retry  ${method} ${new URL(url).pathname} — ${last.status}, attempt ${attempt} of ${RETRIES}`);
-      await new Promise((r) => setTimeout(r, 1000 * attempt));
-    }
-  }
-  return last;
+const ALL_PUBLIC = process.argv.includes('--all-public');
+
+const PARALLEL_ARG = process.argv.find((a) => a === '--parallel' || a.startsWith('--parallel='));
+const PARALLEL = PARALLEL_ARG !== undefined;
+const WIDTH = PARALLEL_ARG?.includes('=') ? Math.max(1, Number(PARALLEL_ARG.split('=')[1]) || 1) : Infinity;
+
+const lifecycleOf = (trip) => (ALL_PUBLIC ? 'completed' : trip.lifecycle);
+const audienceOf = (trip) => (ALL_PUBLIC ? 'public' : trip.publish);
+
+function isFullyPhotographed(trip) {
+  return trip.days.every((day) => photosFor(day.at).length >= Math.max(day.activities.length, 1));
 }
 
-function attemptOnce(url, method, body, headers = {}) {
-  return new Promise((resolve) => {
-    const lib = url.startsWith('https') ? https : http;
-    const data = body === undefined ? undefined : (Buffer.isBuffer(body) ? body : JSON.stringify(body));
-    const options = { method, headers: { ...headers } };
-    if (data !== undefined) {
-      if (!Buffer.isBuffer(body)) options.headers['Content-Type'] = 'application/json';
-      options.headers['Content-Length'] = Buffer.byteLength(data);
-    }
-    const req = lib.request(new URL(url), options, (res) => {
-      let b = '';
-      res.on('data', (c) => (b += c));
-      res.on('end', () => {
-        let parsed;
-        try { parsed = b ? JSON.parse(b) : undefined; } catch { parsed = b; }
-        resolve({ status: res.statusCode, body: parsed });
-      });
-    });
-    req.on('error', (e) => resolve({ status: 0, body: e.message }));
-    if (data !== undefined) req.write(data);
-    req.end();
-  });
-}
-
-const api = (p, method = 'GET', token, body) =>
-  request(API + p, method, body, token ? { Authorization: 'Bearer ' + token } : {});
 
 function uploadPhoto(route, token, file) {
   const boundary = `----largata${Date.now()}${process.hrtime()[1]}`;
@@ -104,20 +68,6 @@ function postDiaryEntry(token, itineraryId, entry, files) {
   });
 }
 
-async function poolToken(tag) {
-  const res = await request(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${KEY}`,
-    'POST',
-    { email: address(tag), password: PASSWORD, returnSecureToken: true },
-  );
-  if (res.body?.idToken === undefined) {
-    throw new Error(
-      `sign-in failed for ${tag}: ${JSON.stringify(res.body).slice(0, 160)}\n`
-        + `If the account does not exist yet: node scripts/test-pool.js create`,
-    );
-  }
-  return res.body.idToken;
-}
 
 function must(res, what) {
   if (res.status >= 300) {
@@ -126,35 +76,27 @@ function must(res, what) {
   return res.body;
 }
 
-function photosFor(query) {
-  const found = [];
-  for (let n = 1; n <= 3; n += 1) {
-    const file = path.join(PHOTOS, `${slug(query)}-${n}.jpg`);
-    if (fs.existsSync(file)) found.push(file);
+const photosFor = (query) => photosInPool(PHOTOS, query);
+
+function postcardFrames(activity, wanted) {
+  const frames = [activity.file];
+  for (const file of activity.pool) {
+    if (frames.length >= wanted) break;
+    if (!frames.includes(file)) frames.push(file);
   }
-  return found;
+  return frames;
 }
 
-// The photo's own alt-text, which describes the IMAGE rather than the place. Used as the activity's
-// description because it is the one string here that is literally true of what you are looking at —
-// everything else in the fixture is composed. Pexels returns no location field, so the place comes
-// from the day's search term and the description comes from the photo.
 function altFor(file, credits) {
   const alt = credits[path.basename(file)]?.alt;
   if (alt === undefined || alt.trim() === '') return null;
   return alt.trim();
 }
 
-// There is no trip-delete endpoint, so a re-run cannot remove what a previous one made — and a run
-// that dies partway (a missing lease, a dropped connection) leaves a half-built trip behind that
-// looks exactly like a real one in the Trips list. Archiving every fixture-titled trip first makes
-// the seeder safe to run repeatedly: the debris drops out of the list rather than accumulating.
 async function archivePreviousRuns(traveler, token) {
   const titles = new Set(traveler.trips.map((t) => t.title));
-  const mine = await api('/v1/itineraries', 'GET', token);
-  const stale = (mine.body?.items ?? mine.body ?? []).filter(
-    (trip) => titles.has(trip.title) && trip.archived !== true,
-  );
+  const mine = await allMyTrips(token);
+  const stale = mine.filter((trip) => titles.has(trip.title) && trip.archived !== true);
   for (const trip of stale) {
     await api(`/v1/itineraries/${trip.id}/archive`, 'POST', token);
   }
@@ -162,13 +104,10 @@ async function archivePreviousRuns(traveler, token) {
 }
 
 
-async function seedTraveler(traveler, credits, collaborator) {
+async function seedTraveler(traveler, credits, collaborator, say = console.log) {
   const token = await poolToken(traveler.tag);
   await precompleteProfile(api, token, traveler.tag);
 
-  // Overrides precomplete-profile's deliberate no-display-name (founder ruling 2026-07-27, that a
-  // test identity must identify itself) because the founder asked for clean names in this dataset
-  // on 2026-08-13. The tag is still recoverable from the email and the seeder prints it per line.
   must(
     await api('/v1/me', 'PATCH', token, {
       displayName: traveler.name,
@@ -182,14 +121,18 @@ async function seedTraveler(traveler, credits, collaborator) {
   const bird = photosFor(traveler.bird)[0];
   if (bird !== undefined) must(await uploadPhoto('/v1/me/avatar', token, bird), `${traveler.tag} avatar`);
 
-  console.log(`\n${traveler.name}  (${traveler.tag}, @${traveler.handle})  ${traveler.region}`);
-  console.log(`  avatar   ${bird === undefined ? 'MISSING' : path.basename(bird)}`);
+  say(`\n${traveler.name}  (${traveler.tag}, @${traveler.handle})  ${traveler.region}`);
+  say(`  avatar   ${bird === undefined ? 'MISSING' : path.basename(bird)}`);
 
   const archived = await archivePreviousRuns(traveler, token);
-  if (archived > 0) console.log(`  cleaned  ${archived} trip(s) from a previous run, archived`);
+  if (archived > 0) say(`  cleaned  ${archived} trip(s) from a previous run, archived`);
+
+  const chosenTrips = COMPLETE_ONLY ? traveler.trips.filter(isFullyPhotographed) : traveler.trips;
+  const skipped = traveler.trips.length - chosenTrips.length;
+  if (skipped > 0) say(`  skipped  ${skipped} trip(s) — photos not fetched yet`);
 
   const seeded = [];
-  for (const trip of traveler.trips) {
+  for (const trip of chosenTrips) {
     const created = must(
       await api('/v1/itineraries', 'POST', token, {
         title: trip.title,
@@ -228,7 +171,7 @@ async function seedTraveler(traveler, credits, collaborator) {
       }
       const pool = photosFor(day.at);
       for (const [slot, spec] of day.activities.entries()) {
-        const file = pool[slot % Math.max(pool.length, 1)];
+        const file = photoForSlot(PHOTOS, day.at, slot);
         const description = file === undefined ? null : altFor(file, credits);
         const activity = must(
           await api(`/v1/itineraries/${created.id}/days/${dayId}/activities`, 'POST', token, {
@@ -242,9 +185,6 @@ async function seedTraveler(traveler, credits, collaborator) {
           `activity "${spec.title}"`,
         );
         if (file !== undefined) {
-          // An activity photo is plan data, so it is fenced by the ACTIVITY lease the same way a
-          // header edit is fenced by the header lease (ADR-021). Without this the upload is a 409
-          // EDIT_LOCKED that reads as another member editing, when in fact nobody holds anything.
           const lease = { subjectType: 'activity', subjectId: activity.id };
           must(await api(`/v1/itineraries/${created.id}/edit-lock`, 'POST', token, lease), 'activity lease');
           must(
@@ -258,7 +198,7 @@ async function seedTraveler(traveler, credits, collaborator) {
           await api(`/v1/itineraries/${created.id}/edit-lock`, 'DELETE', token, lease);
           attached += 1;
         }
-        activities.push({ id: activity.id, title: spec.title, file, post: spec.post });
+        activities.push({ id: activity.id, title: spec.title, file, pool, post: spec.post });
       }
     }
 
@@ -281,13 +221,13 @@ async function seedTraveler(traveler, credits, collaborator) {
       }
     }
 
-    if (trip.lifecycle !== 'draft') {
+    if (lifecycleOf(trip) !== 'draft') {
       must(await api(`/v1/itineraries/${created.id}/finish-planning`, 'POST', token), 'finish-planning');
     }
-    if (trip.lifecycle === 'ongoing' || trip.lifecycle === 'completed') {
+    if (lifecycleOf(trip) === 'ongoing' || lifecycleOf(trip) === 'completed') {
       must(await api(`/v1/itineraries/${created.id}/start`, 'POST', token), 'start');
     }
-    if (trip.lifecycle === 'completed') {
+    if (lifecycleOf(trip) === 'completed') {
       must(await api(`/v1/itineraries/${created.id}/complete`, 'POST', token), 'complete');
     }
 
@@ -299,32 +239,33 @@ async function seedTraveler(traveler, credits, collaborator) {
       }
     }
 
-    // Postcards live ON the activity that carries them, so there is no title to match and no way
-    // for a caption to reference an activity that does not exist — the shape the earlier lookup
-    // array allowed, which failed silently as a skipped postcard.
     let posted = 0;
+    let frameCount = 0;
     for (const activity of activities.filter((a) => a.post !== undefined)) {
       if (activity.file === undefined) continue;
+      const post = typeof activity.post === 'string' ? { caption: activity.post, photos: 1 } : activity.post;
+      const frames = postcardFrames(activity, post.photos ?? 1);
       must(
         await postDiaryEntry(
           token,
           created.id,
-          { activityId: activity.id, caption: activity.post, fromDump: [] },
-          [activity.file],
+          { activityId: activity.id, caption: post.caption, fromDump: [] },
+          frames,
         ),
         `postcard "${activity.title}"`,
       );
       posted += 1;
+      frameCount += frames.length;
     }
 
-    if (trip.publish !== null) {
-      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', token, { audience: trip.publish }), 'publish');
+    if (audienceOf(trip) !== null) {
+      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', token, { audience: audienceOf(trip) }), 'publish');
     }
 
-    console.log(
-      `  ${trip.lifecycle.padEnd(9)} ${(trip.publish ?? '—').padEnd(7)} `
+    say(
+      `  ${lifecycleOf(trip).padEnd(9)} ${(audienceOf(trip) ?? '—').padEnd(7)} `
         + `${String(trip.days.length).padStart(2)}d ${String(activities.length).padStart(2)}a `
-        + `${String(attached).padStart(2)}ph ${posted > 0 ? `${posted} postcard(s) ` : '           '}`
+        + `${String(attached).padStart(2)}ph ${posted > 0 ? `${posted} postcard(s)/${frameCount}f ` : '              '}`
         + `${withMember ? 'with ' + collaborator.tag + ' ' : ''}${trip.title}`,
     );
     seeded.push(created.id);
@@ -333,16 +274,7 @@ async function seedTraveler(traveler, credits, collaborator) {
 }
 
 async function main() {
-  for (const [name, value] of Object.entries({
-    EXPO_PUBLIC_FIREBASE_API_KEY: KEY,
-    LARGATA_TEST_POOL_EMAIL_BASE: BASE,
-    LARGATA_TEST_POOL_PASSWORD: PASSWORD,
-  })) {
-    if (value === undefined || value === '') {
-      console.error(`${name} is not set — run: cd mobile && set -a && . ./.env && set +a`);
-      process.exit(2);
-    }
-  }
+  requirePoolEnv();
 
   const deployed = !API.startsWith('http://localhost');
   if (deployed && !process.argv.includes(DEPLOYED_OPT_IN)) {
@@ -367,24 +299,51 @@ async function main() {
   console.log(`seeding ${API}${deployed ? '  (DEPLOYED RUNG)' : ''}`);
   console.log(`${chosen.length} traveler(s), ${chosen.reduce((n, t) => n + t.trips.length, 0)} trips`);
 
-  // t2 collaborates on whichever long trips it does not own. Only verified accounts can accept an
-  // invitation (EMAIL_NOT_VERIFIED gates it), and t1-t5 are the verified half of the pool.
   const collaborator = { tag: 't2', token: await poolToken('t2') };
   await precompleteProfile(api, collaborator.token, 't2');
 
   let trips = 0;
   const skipped = [];
-  for (const traveler of chosen) {
-    // Skips rather than dying, because an unusable account is a pool problem and not a reason to
-    // abandon the nine that work. Firebase cannot tell "absent" from "wrong password" (see
-    // test-pool.js list), so the reason is reported verbatim and the run continues.
-    try {
-      const seeded = await seedTraveler(traveler, credits, traveler.tag === 't2' ? null : collaborator);
-      trips += seeded.length;
-    } catch (e) {
-      if (!e.message.startsWith('sign-in failed')) throw e;
-      skipped.push(traveler);
-      console.log(`\n${traveler.name}  (${traveler.tag})  SKIPPED — cannot sign in`);
+  if (PARALLEL) {
+    const queue = [...chosen];
+    const outcomes = [];
+    const worker = async () => {
+      for (let traveler = queue.shift(); traveler !== undefined; traveler = queue.shift()) {
+        const lines = [];
+        try {
+          const seeded = await seedTraveler(
+            traveler, credits, traveler.tag === 't2' ? null : collaborator, (text) => lines.push(text),
+          );
+          outcomes.push({ traveler, seeded, lines });
+        } catch (e) {
+          if (!e.message.startsWith('sign-in failed')) {
+            console.log(lines.join('\n'));
+            throw e;
+          }
+          outcomes.push({ traveler, seeded: null, lines });
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(WIDTH, chosen.length) }, worker));
+    for (const outcome of outcomes) {
+      console.log(outcome.lines.join('\n'));
+      if (outcome.seeded === null) {
+        skipped.push(outcome.traveler);
+        console.log(`\n${outcome.traveler.name}  (${outcome.traveler.tag})  SKIPPED — cannot sign in`);
+      } else {
+        trips += outcome.seeded.length;
+      }
+    }
+  } else {
+    for (const traveler of chosen) {
+      try {
+        const seeded = await seedTraveler(traveler, credits, traveler.tag === 't2' ? null : collaborator);
+        trips += seeded.length;
+      } catch (e) {
+        if (!e.message.startsWith('sign-in failed')) throw e;
+        skipped.push(traveler);
+        console.log(`\n${traveler.name}  (${traveler.tag})  SKIPPED — cannot sign in`);
+      }
     }
   }
 

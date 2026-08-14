@@ -1363,9 +1363,6 @@ const TRAVELERS = [
 ];
 
 
-// The dump is member-contributed by design, so these are searched once and spread across whichever
-// trips get a co-traveler. Deliberately generic — a dump is a pile of a trip's photos, not a
-// curated set.
 const DUMP_QUERIES = [
   'travel backpack road',
   'street food market asia',
@@ -1375,5 +1372,22 @@ const DUMP_QUERIES = [
   'passport map planning',
 ];
 
+
+const { SPECS, buildTrip } = require('./discoveryTrips');
+
+for (const spec of SPECS) {
+  const traveler = TRAVELERS.find((one) => one.tag === spec.owner);
+  if (traveler === undefined) {
+    throw new Error(`discovery trip "${spec.title}" names unknown traveler ${spec.owner}`);
+  }
+  traveler.trips.push(buildTrip(spec));
+}
+
+const titles = TRAVELERS.flatMap((one) => one.trips.map((trip) => trip.title));
+if (new Set(titles).size !== titles.length) {
+  const seen = new Set();
+  const clash = titles.find((title) => seen.size === seen.add(title).size);
+  throw new Error(`two trips share the title "${clash}" — the seeder and backdater both match on it`);
+}
 
 module.exports = { TRAVELERS, DUMP_QUERIES };
