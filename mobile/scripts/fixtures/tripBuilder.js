@@ -12,6 +12,11 @@
 // rebuilt dataset is the same dataset — a screenshot, a walk assertion and a bug report all stay
 // reproducible. Math.random() would make each reseed a different app.
 
+const path = require('path');
+const { landmarkAt } = require('./landmark');
+
+const PHOTOS = path.join(__dirname, 'photos');
+
 const seededRandom = (text) => {
   let hash = 2166136261;
   for (let i = 0; i < text.length; i += 1) {
@@ -98,6 +103,51 @@ const KINDS = {
 // produced 826 notes from 11 distinct strings — each one appearing about seventy-five times, which
 // is far louder than the generic day titles it sat beside. Captions never had the problem because
 // they always substituted the place. A handful stay generic so not every line name-drops.
+// Used only when the activity's own photo names a landmark the place string does not already carry.
+// About a fifth of activities get one; the rest fall back to KINDS above.
+const LANDMARK_TITLES = {
+  city: {
+    early: ['{l} before it wakes up', 'First light at {l}'],
+    day: ['Walking to {l}', '{l} on foot', 'An hour at {l}'],
+    evening: ['{l} after dark', 'Last stop at {l}'],
+  },
+  town: {
+    early: ['Early at {l}', '{l} before anyone else'],
+    day: ['Around {l}', 'An hour at {l}', 'Wandering out to {l}'],
+    evening: ['{l} at dusk', 'Dinner near {l}'],
+  },
+  coast: {
+    early: ['Sunrise at {l}', 'First boat to {l}'],
+    day: ['Down to {l}', 'Swimming at {l}', 'The boat out to {l}'],
+    evening: ['Sunset at {l}', 'Last swim at {l}'],
+  },
+  mountain: {
+    early: ['Cold start for {l}', 'First light on {l}'],
+    day: ['Up to {l}', 'Climbing {l}', 'The trail up {l}'],
+    evening: ['{l} at last light', 'Watching the cloud come over {l}'],
+  },
+  nature: {
+    early: ['{l} before the boats', 'Dawn at {l}'],
+    day: ['Out to {l}', 'Paddling at {l}', 'Walking {l}'],
+    evening: ['Golden hour at {l}'],
+  },
+  desert: {
+    early: ['Sunrise over {l}', 'Cold morning at {l}'],
+    day: ['Out to {l}', 'Driving as far as {l}'],
+    evening: ['Sunset over {l}', 'Stars over {l}'],
+  },
+  heritage: {
+    early: ['Gates open at {l}', 'First in at {l}'],
+    day: ['Walking up to {l}', 'An hour at {l}', '{l} before the buses'],
+    evening: ['Last light on {l}'],
+  },
+  road: {
+    early: ['Early start for {l}'],
+    day: ['Driving to {l}', 'The road to {l}'],
+    evening: ['Into {l} after dark'],
+  },
+};
+
 const NOTES = [
   'Cheaper two streets back from the main square in {p}.',
   'Get there before the first bus reaches {p}.',
@@ -185,10 +235,16 @@ function buildDay(trip, raw, dayIndex, totalDays, currency) {
     .slice(0, count)
     .sort((one, other) => one.index - other.index);
 
-  const activities = chosen.map(({ slot, index }) => {
+  const activities = chosen.map(({ slot, index }, position) => {
     const seed = `${key}/${index}`;
+    // position, not index — the seeder assigns photos by an activity's place in the day's list, so
+    // the title is derived from the same photo the traveler will actually see under it.
+    const landmark = landmarkAt(PHOTOS, place, position);
+    const title = landmark === null
+      ? pick(vocab[slot.phase], seededRandom(`${seed}/title`)).replace('{p}', short)
+      : pick(LANDMARK_TITLES[kind][slot.phase], seededRandom(`${seed}/landmark`)).replace('{l}', landmark);
     const activity = {
-      title: pick(vocab[slot.phase], seededRandom(`${seed}/title`)).replace('{p}', short),
+      title,
       timeOfDay: timeAt(slot, seededRandom(`${seed}/time`)),
       place,
       notes: seededRandom(`${seed}/notes`) < 0.78

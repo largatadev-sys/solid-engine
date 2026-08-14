@@ -21,4 +21,13 @@ function photosFor(dir, query) {
   return found;
 }
 
-module.exports = { PER_PLACE, slug, photoPath, photosFor };
+// The one definition of which photo an activity gets. It has to be shared: the builder derives an
+// activity's title from its photo's caption while the seeder uploads that photo, and if the two
+// computed the slot independently they would drift into titles describing a picture the traveler
+// never sees — silently, since nothing downstream compares them.
+function photoForSlot(dir, query, slot) {
+  const pool = photosFor(dir, query);
+  return pool.length === 0 ? undefined : pool[slot % pool.length];
+}
+
+module.exports = { PER_PLACE, slug, photoPath, photosFor, photoForSlot };

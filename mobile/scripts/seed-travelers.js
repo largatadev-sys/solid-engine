@@ -4,7 +4,7 @@ const https = require('https');
 const path = require('path');
 const { precompleteProfile } = require('./precomplete-profile');
 const { TRAVELERS, DUMP_QUERIES } = require('./fixtures/travelers');
-const { slug, photosFor: photosInPool } = require('./photoPool');
+const { slug, photosFor: photosInPool, photoForSlot } = require('./photoPool');
 
 const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
@@ -233,7 +233,7 @@ async function seedTraveler(traveler, credits, collaborator) {
       }
       const pool = photosFor(day.at);
       for (const [slot, spec] of day.activities.entries()) {
-        const file = pool[slot % Math.max(pool.length, 1)];
+        const file = photoForSlot(PHOTOS, day.at, slot);
         const description = file === undefined ? null : altFor(file, credits);
         const activity = must(
           await api(`/v1/itineraries/${created.id}/days/${dayId}/activities`, 'POST', token, {
