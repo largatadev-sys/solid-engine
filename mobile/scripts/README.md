@@ -42,6 +42,18 @@ log line. Each script's tag→role mapping is stated in its section below.
 Every script that talks to the API picks `http` or `https` from `LARGATA_API_BASE_URL`, so all of them
 reach a deployed rung. The `drive-*` scripts additionally need a preview container, which is local.
 
+**Three demand an explicit opt-in flag before they will touch a non-`localhost` rung**, because
+nothing this app exposes can undo what they do there:
+
+| Script | Flag | What it writes |
+|---|---|---|
+| `seed-travelers.js` | `--yes-seed-the-deployed-rung` | Trips, photos and **public postcards** |
+| `backdate-seed.js` | `--yes-backdate-the-deployed-rung` | Timestamps, **direct SQL** |
+| `archive-strays.js` | `--yes-archive-strays-on-the-deployed-rung` | Archives every non-fixture trip the pool owns |
+
+`backdate-seed.js` decides it is remote by `LARGATA_DATABASE_URL` being set rather than by the API
+URL — so for a **local** run that variable must be **unset**, or it refuses.
+
 ## Chrome DevTools ports
 
 Each driver owns a distinct port, so two can run at once. Override with `LARGATA_CDP_PORT`.
@@ -107,17 +119,40 @@ the Home feed has ten different travelers on it.
 **Ten accounts, one region each**, clean names and bird avatars: Maya Ocampo (Southeast Asia) ·
 Kenji Nakamura (East Asia) · Sarah Whitmore (Oceania) · Ana Duarte (Western Europe) · Dimitri Stavros
 (Mediterranean) · Lucia Fernández (South America) · Marcus Bell (North America & Iceland) · Amina
-Diallo (Africa) · Rohan Mehta (South Asia) · Ingrid Solberg (Northern Europe). **50 trips, 115 days,
-186 activities, 92 diary postcards**, spread across every lifecycle state so the Trips tab has
+Diallo (Africa) · Rohan Mehta (South Asia) · Ingrid Solberg (Northern Europe). **150 trips, 785 days,
+1,260 activities, 419 diary postcards**, spread across every lifecycle state so the Trips tab has
 content in each section.
+
+Each traveler owns **15 trips: 5 written out by hand in `fixtures/travelers.js`, and 10 generated**
+from `fixtures/discoveryTrips.js` by `fixtures/tripBuilder.js`. The generated hundred exist to
+populate Discovery, which shipped into 25 public trips and left two of its four duration filter
+bands empty. Durations run **2,3,3,3,5,6,7,10,12,16** per traveler so all four bands fill
+(40/30/20/10), and activities per day move *inversely* to trip length — three to five on a
+three-day trip, one to two on a seven-day one — so a trip holds about twelve activities whatever
+its length.
 
 ```bash
 cd mobile && set -a && . ./.env && set +a
 node scripts/test-pool.js create        # once — t6–t10 do not exist yet
-node scripts/fetch-fixtures.js          # once — 131 searches, ~360 photos, several minutes
-node scripts/seed-travelers.js          # local stack
-node scripts/seed-travelers.js --tag=t2 # or just one traveler
+node scripts/fetch-fixtures.js          # 584 searches, ~3,400 photos — SEE THE RATE LIMIT BELOW
+node scripts/seed-travelers.js          # local stack, ~50 min sequential
+node scripts/seed-travelers.js --parallel        # same run, 4m03s
+node scripts/seed-travelers.js --tag=t2          # or just one traveler
 ```
+
+**The flags, and when each earns its keep:**
+
+| Flag | What it does | Use it when |
+|---|---|---|
+| `--complete-only` | Seeds only trips whose every day holds at least as many photos as it has activities | The cache is part-fetched. Without it you get coverless Discovery cards, and a coverless trip is **dropped from the Recommended rail outright** (`findRecommendable` requires `cover_image_url`) — which reads as a broken feature, not an unfinished download |
+| `--all-public` | Forces every trip to `completed` + `public` | A shared preview that should read like a product. **Not on the rung you test against**: publishing requires `completed` (ADR-017/019), so it flattens draft/upcoming/ongoing *and* the two private trips that are the only proof Discovery's visibility fence fires |
+| `--parallel` | One worker per traveler | Local. 150 trips in **4m03s** instead of ~50 min, every count exact |
+| `--parallel=N` | Worker pool capped at N | A rung whose capacity under concurrent photo ingest is unmeasured. Deployed dev ran width 4 in 13m55s with two recovered retries |
+| `--tag=t2` | One traveler only | Spot-checking a single account |
+
+**`--all-public` must be passed to `backdate-seed.js` too, or the two disagree about the world** —
+`daysAgoFor` pins an ongoing trip's postcards to the last two days, and nothing is ongoing once the
+flag has completed everything.
 
 **Verification is NOT needed for t6–t10.** Only *accepting an invitation* gates on `email_verified`
 (`EMAIL_NOT_VERIFIED`, `InvitationService`), and each traveler seeds their own trips solo. `t2` is the
@@ -132,14 +167,28 @@ what gives the Photo Dump a member-contributed pile. So `create` is enough; nobo
 | Activity `place` | Composed — real named places, coherent routes | Real place names |
 | The photo | **Pexels**, searched by the *day's* location, three per response | Genuinely of that place for famous spots; a fitting lookalike for obscure ones |
 | Activity `description` | The photo's own **`alt`** text, verbatim | Literally true of the image you are looking at |
+| Activity `title`, ~1 in 5 | The **landmark** named in that same photo's `alt` — "Gates open at Yasaka Pagoda" | Real named place, from a human caption |
+| Activity `place` (generated trips) | A sub-location inside the day's place — "the ticket gate, Petra" | Composed, kind-appropriate |
 
-That last row is the useful trick: Pexels returns **no location field**, only `alt` — so the *place*
+Those rows are the useful trick: Pexels returns **no location field**, only `alt` — so the *place*
 comes from the search term and the *description* comes from the photo. It is the one string in the
 dataset that describes the actual pixels rather than being invented.
 
-**Attribution.** `fixtures/photos/CREDITS.json` records the photographer, their profile, the source
-page and the licence for every file. The images themselves are **gitignored** — megabytes this repo
-does not own, and the fetch is reproducible. The Pexels licence permits this use and asks for a
+**Titles take the caption only when it names something.** A loose extractor accepted 42% of 1,669
+captions but half were unusable — *"Captivating aerial view of Sapporo"*, *"of a red Hanoi sign"*.
+`fixtures/landmark.js` is deliberately strict (~18%): every significant word must be capitalised,
+which admits Mount Batur and Wineglass Bay while rejecting "cityscape of Seoul" on its lowercase
+words. **A broken title reads as a bug where a generic one only reads as unremarkable**, and the
+kind-template fallback is already fine. `photoForSlot` in `photoPool.js` is the single definition of
+which photo an activity gets, so title, description and image cannot disagree.
+
+**Attribution, and where the cache lives.** `~/.largata/photo-cache/CREDITS.json` records the
+photographer, their profile, the source page and the licence for every file. **The cache is outside
+the repo entirely** — `LARGATA_PHOTO_CACHE` overrides the location — because ~330MB of third-party
+artifacts had no business in the project tree; gitignoring them was never the point. One consequence
+worth knowing: photo-derived titles and descriptions vary with the cache, so **the dataset is not
+reproducible from git alone**. Structure, places, costs and times are (every choice is keyed on the
+trip title, so a rebuild is the same build). The Pexels licence permits this use and asks for a
 visible link to Pexels plus photographer credit where possible.
 
 **It refuses rather than degrading, twice.** No `fixtures/photos/` → it stops, because seeding trips
@@ -147,13 +196,44 @@ with blank images is the thing it exists to avoid. A non-`localhost` API → it 
 **`--yes-seed-the-deployed-rung`**, because nothing this app exposes can undo a trip, its photos or
 its public postcards on an environment other people read.
 
+**Seeding a deployed rung — the whole sequence, in order.** Run 2026-08-14 against dev: 14 stray
+trips archived, 150 trips seeded in 13m55s at width 4 with 2 recovered retries, 419 postcards
+backdated.
+
 ```bash
+cd mobile && set -a && . ./.env && set +a
+curl -s https://api-dev.largata.com/v1/health          # cold containers answer nothing on the first probe
+
+# 1. clear the walk debris, or it sits inside Discovery beside the curated data
 LARGATA_API_BASE_URL=https://api-dev.largata.com \
-  node scripts/seed-travelers.js --yes-seed-the-deployed-rung
+  node scripts/archive-strays.js --yes-archive-strays-on-the-deployed-rung
+
+# 2. seed
+LARGATA_API_BASE_URL=https://api-dev.largata.com \
+  node scripts/seed-travelers.js --all-public --parallel=4 --yes-seed-the-deployed-rung
+
+# 3. backdate — LARGATA_DATABASE_URL must be SET for this one (it is unset for local runs)
+node scripts/backdate-seed.js --all-public --yes-backdate-the-deployed-rung
 ```
 
-Env: the three pool vars, plus **`PEXELS_API_KEY`** for the fetcher only (free, from
-https://www.pexels.com/api/new/ — 200 requests/hour, and a full fetch uses 82).
+**There is no wipe on a deployed rung and no delete endpoint** — archive is the only retraction the
+product ships. That is survivable rather than frightening: the seeder's sweep archives every
+fixture-titled trip on the next run and `archive-strays.js` reaches everything else the pool owns,
+so a wedged run costs archived junk plus a re-run. What neither reaches is **orphans** — trips owned
+by deleted-and-recreated Firebase accounts have no owner who can sign in, and five of them sit
+permanently in dev's Discovery (epic-map backlog).
+
+**Env:** the three pool vars, plus **`PEXELS_API_KEY`** for the fetcher only (free, from
+https://www.pexels.com/api/new/). `LARGATA_DATABASE_URL` is needed **only** by `backdate-seed.js`
+against a deployed rung — leave it unset for local runs, or the script refuses, thinking it is
+remote.
+
+**The Pexels rate limit is real and the headers do not show it.** The response carries only a
+monthly counter (25,000), but the API also enforces **200 requests/hour** and answers `429` — which
+the fetcher turns into a clean stop, keeping every finished file. A full 584-search fetch therefore
+takes **three or four sittings roughly an hour apart**; each re-run resumes where it stopped.
+Downloads are unmetered (they hit the image CDN, not the API), so **photo count never costs quota —
+only the number of distinct places does**.
 
 ### `backdate-seed.js` — the history, and the one place this harness writes SQL
 
