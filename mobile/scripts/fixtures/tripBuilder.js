@@ -47,50 +47,50 @@ const KINDS = {
     day: ['Walking the old quarter of {p}', 'Market morning in {p}', 'Museum hour in {p}',
       'Long lunch in {p}', 'Second-hand bookshops of {p}', 'Tram to the far side of {p}'],
     evening: ['Dinner in {p}', 'Night market in {p}', 'Rooftop drinks over {p}', 'Live music in {p}'],
-    titles: ['A day on foot', 'The city end of the trip', 'Markets and museums'],
+    titles: ['{p} on foot', 'Around {p}', 'A day in {p}', '{p}, no plan'],
   },
   town: {
     early: ['Bakery run in {p}', 'Quiet hour in {p}', 'Morning bells over {p}'],
     day: ['Walking {p} end to end', 'The square in {p}', 'Cycling out of {p}', 'Long lunch in {p}'],
     evening: ['Dinner in {p}', 'Sunset from the edge of {p}', 'One more drink in {p}'],
-    titles: ['Slow day', 'Nothing scheduled', 'Around the square'],
+    titles: ['Around {p}', '{p}, slowly', 'A day in {p}', 'Nothing scheduled in {p}'],
   },
   coast: {
     early: ['Sunrise swim at {p}', 'First boat out from {p}', 'Empty sand at {p}'],
     day: ['Snorkelling off {p}', 'Boat around {p}', 'Swimming and not much else at {p}',
       'Beach walk at {p}', 'Paddling out at {p}'],
     evening: ['Sunset at {p}', 'Grilled fish at {p}', 'Last swim at {p}'],
-    titles: ['In the water', 'Boat day', 'Sand and nothing else'],
+    titles: ['On the water at {p}', '{p} and the sea', 'A day at {p}', 'Boat day out of {p}'],
   },
   mountain: {
     early: ['Cold start above {p}', 'First light on {p}', 'Early ascent from {p}'],
     day: ['Hiking above {p}', 'Ridge walk at {p}', 'Viewpoint climb at {p}', 'Slow descent into {p}'],
     evening: ['Sunset from the ridge at {p}', 'Hut dinner near {p}', 'Stars above {p}'],
-    titles: ['Up early', 'The long climb', 'Ridge day'],
+    titles: ['Up above {p}', '{p}, the long climb', 'High over {p}', 'Ridge day at {p}'],
   },
   nature: {
     early: ['Still water at {p} before the boats', 'Dawn paddle at {p}'],
     day: ['Kayaking {p}', 'Swimming at {p}', 'Walking the trail around {p}', 'Wildlife hour at {p}'],
     evening: ['Golden hour at {p}', 'Camp dinner near {p}'],
-    titles: ['On the water', 'Trails all day', 'Quiet green day'],
+    titles: ['Out at {p}', '{p} all day', 'Into {p}', 'Trails around {p}'],
   },
   desert: {
     early: ['Sunrise over the dunes at {p}', 'Cold morning at {p}'],
     day: ['Driving the track past {p}', 'Dune walk at {p}', 'Shade and water at {p}'],
     evening: ['Sunset on the dunes at {p}', 'Stars over {p}', 'Fire and dinner at {p}'],
-    titles: ['Into the dunes', 'Heat and distance', 'Under the stars'],
+    titles: ['Into the dunes at {p}', '{p} and the heat', 'Out past {p}', 'Stars over {p}'],
   },
   heritage: {
     early: ['Gates open at {p}', 'First in at {p}'],
     day: ['Walking {p} slowly', 'Guided hour at {p}', 'The far end of {p}'],
     evening: ['Last light on {p}', 'Dinner below {p}'],
-    titles: ['Ruins day', 'Old stones', 'Before the buses'],
+    titles: ['{p} before the buses', 'A day at {p}', 'Old stones at {p}', '{p}, slowly'],
   },
   road: {
     early: ['Early start out of {p}', 'Loading up in {p}'],
     day: ['Driving to {p}', 'Roadside lunch before {p}', 'Fuel and coffee at {p}', 'Long road into {p}'],
     evening: ['Arriving in {p} after dark', 'First dinner in {p}'],
-    titles: ['Transit day', 'All road', 'Moving on'],
+    titles: ['The road to {p}', 'Driving to {p}', 'Moving on to {p}', 'All road into {p}'],
   },
 };
 
@@ -168,9 +168,9 @@ function buildDay(trip, raw, dayIndex, totalDays, currency) {
       title: pick(vocab[slot.phase], seededRandom(`${seed}/title`)).replace('{p}', short),
       timeOfDay: timeAt(slot, seededRandom(`${seed}/time`)),
       place,
-      notes: seededRandom(`${seed}/notes`) < 0.45 ? pick(NOTES, seededRandom(`${seed}/note`)) : null,
+      notes: seededRandom(`${seed}/notes`) < 0.78 ? pick(NOTES, seededRandom(`${seed}/note`)) : null,
     };
-    if (seededRandom(`${seed}/cost`) < 0.55) {
+    if (seededRandom(`${seed}/cost`) < 0.85) {
       activity.costAmount = String(5 * (2 + Math.floor(seededRandom(`${seed}/amount`) * 24)));
       activity.costCurrency = currency;
     }
@@ -185,7 +185,9 @@ function buildDay(trip, raw, dayIndex, totalDays, currency) {
 
   return {
     at: place,
-    title: count === 0 ? `A day off in ${short}` : pick(vocab.titles, seededRandom(`${key}/title`)),
+    title: count === 0
+      ? `A day off in ${short}`
+      : pick(vocab.titles, seededRandom(`${key}/title`)).replace('{p}', short),
     activities,
   };
 }
