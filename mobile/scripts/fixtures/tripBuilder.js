@@ -191,21 +191,29 @@ const LANDMARK_TITLES = {
 // named a real landmark, which beats any of these.
 const SUBPLACES = {
   city: ['Old Town, {p}', '{p} Station', 'the market district, {p}', 'the riverfront, {p}',
-    'the museum quarter, {p}', 'the back streets of {p}'],
+    'the museum quarter, {p}', 'the back streets of {p}', 'the cathedral square, {p}',
+    'the food hall, {p}', 'the north end of {p}', 'the university quarter, {p}'],
   town: ['the main square, {p}', 'the old street, {p}', 'the top of the village, {p}',
-    'the church steps, {p}', 'the bridge at {p}', 'the lane behind {p}'],
+    'the church steps, {p}', 'the bridge at {p}', 'the lane behind {p}',
+    'the mill road, {p}', 'the lookout above {p}', 'the old wall, {p}', 'the orchard edge of {p}'],
   coast: ['{p} beach', 'the north shore, {p}', 'the boat landing, {p}', 'the point, {p}',
-    'the reef off {p}', 'the far cove, {p}'],
+    'the reef off {p}', 'the far cove, {p}', 'the south beach, {p}', 'the jetty, {p}',
+    'the tide pools, {p}', 'the dunes behind {p}'],
   mountain: ['the trailhead, {p}', 'the ridge above {p}', 'the pass, {p}', 'the saddle, {p}',
-    'the hut below {p}', 'the summit track, {p}'],
+    'the hut below {p}', 'the summit track, {p}', 'the col above {p}', 'the scree field, {p}',
+    'the alpine meadow, {p}', 'the lower falls, {p}'],
   nature: ['the boat landing, {p}', 'the north shore, {p}', 'the visitor centre, {p}',
-    'the far bank, {p}', 'the boardwalk, {p}', 'the upper falls, {p}'],
+    'the far bank, {p}', 'the boardwalk, {p}', 'the upper falls, {p}', 'the reed beds, {p}',
+    'the island in {p}', 'the southern trail, {p}', 'the overlook, {p}'],
   desert: ['the dune camp, {p}', 'the crossing at {p}', 'the well, {p}', 'the escarpment, {p}',
-    'the salt flat, {p}'],
+    'the salt flat, {p}', 'the ridge camp, {p}', 'the dry riverbed, {p}', 'the far waterhole, {p}',
+    'the black dunes, {p}'],
   heritage: ['the main gate, {p}', 'the upper terrace, {p}', 'the museum at {p}',
-    'the outer wall, {p}', 'the ticket gate, {p}'],
+    'the outer wall, {p}', 'the ticket gate, {p}', 'the lower court, {p}', 'the eastern gate, {p}',
+    'the carved terrace, {p}', 'the processional way, {p}'],
   road: ['the roadhouse before {p}', 'the junction, {p}', 'the lookout above {p}',
-    'the fuel stop, {p}', 'the last pass before {p}'],
+    'the fuel stop, {p}', 'the last pass before {p}', 'the halfway market, {p}',
+    'the river crossing, {p}', 'the old toll house, {p}', 'the ridge road above {p}'],
 };
 
 // What one activity typically costs, in each currency's own units. Costs used to be drawn from a
@@ -328,7 +336,7 @@ function parsePlace(raw) {
   return { place: place.trim(), kind };
 }
 
-function buildDay(trip, raw, dayIndex, totalDays, currency) {
+function buildDay(trip, raw, dayIndex, totalDays, currency, used) {
   const { place, kind } = parsePlace(raw);
   const key = `${trip}/${dayIndex}`;
   const count = activityCount(totalDays, seededRandom(`${key}/count`));
@@ -343,10 +351,11 @@ function buildDay(trip, raw, dayIndex, totalDays, currency) {
     .slice(0, count)
     .sort((one, other) => one.index - other.index);
 
-  const usedTitles = new Set();
-  const usedNotes = new Set();
-  const usedCaptions = new Set();
-  const usedPlaces = new Set();
+  // TRIP-scoped, passed in by buildTrip — a trip page is one screen, so a hub revisited on day 7
+  // repeating day 1's "the old street, Hanoi" reads as copy-paste even though each day was clean in
+  // isolation (founder ruling: every activity in a trip is unique). Day titles are the exception,
+  // handled in buildTrip, because their pool is per-place and small.
+  const { usedTitles, usedNotes, usedCaptions, usedPlaces } = used;
 
   const activities = chosen.map(({ slot, index }, position) => {
     const seed = `${key}/${index}`;
@@ -390,13 +399,16 @@ function buildDay(trip, raw, dayIndex, totalDays, currency) {
     return activity;
   });
 
-  return {
-    at: place,
-    title: count === 0
-      ? `A day off in ${short}`
-      : pick(vocab.titles, seededRandom(`${key}/title`)).replace('{p}', short),
-    activities,
-  };
+  const restTitles = ['A day off in {p}', 'Another slow one in {p}', 'Still in {p}, resting'];
+  const dayTitle = pickDistinct(
+    count === 0 ? restTitles : vocab.titles,
+    seededRandom(`${key}/title`),
+    (t) => t.replace('{p}', short),
+    used.usedDayTitles,
+  );
+  used.usedDayTitles.add(dayTitle);
+
+  return { at: place, title: dayTitle, activities };
 }
 
 // The country or region a trip's day places sit in, taken as the commonest trailing segment of
@@ -435,7 +447,16 @@ function buildTrip(spec) {
     bestTimeOfYear,
     lifecycle,
     publish,
-    days: days.map((raw, index) => buildDay(title, raw, index, days.length, currency)),
+    days: (() => {
+      const used = {
+        usedTitles: new Set(),
+        usedNotes: new Set(),
+        usedCaptions: new Set(),
+        usedPlaces: new Set(),
+        usedDayTitles: new Set(),
+      };
+      return days.map((raw, index) => buildDay(title, raw, index, days.length, currency, used));
+    })(),
   };
 }
 
