@@ -1,5 +1,7 @@
 const { execFileSync } = require('child_process');
+const path = require('path');
 const { TRAVELERS } = require('./fixtures/travelers');
+const { photosFor } = require('./photoPool');
 
 // THE ONE PLACE THIS HARNESS TOUCHES THE DATABASE DIRECTLY, AND WHY THAT IS NOT THE RULE IT LOOKS
 // LIKE. S1.5 banned planting rows with psql because doing so SKIPPED THE VERIFICATION GATE — the
@@ -29,6 +31,15 @@ const BANDS = [
 ];
 
 const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split('=')[1];
+
+// Mirrors seed-travelers' flag so the two agree on which trips exist. Without it every unseeded
+// trip still costs two psql round trips that match nothing.
+const COMPLETE_ONLY = process.argv.includes('--complete-only');
+const PHOTOS = path.join(__dirname, 'fixtures', 'photos');
+
+function isFullyPhotographed(trip) {
+  return trip.days.every((day) => photosFor(PHOTOS, day.at).length >= Math.max(day.activities.length, 1));
+}
 
 // Deterministic, so re-running produces the same history rather than reshuffling it. A trip's date
 // is derived from its own title — the same trip lands in the same week every time it is rebuilt.
@@ -133,7 +144,7 @@ function main() {
   let moved = 0;
   let published = 0;
   for (const traveler of chosen) {
-    for (const trip of traveler.trips) {
+    for (const trip of (COMPLETE_ONLY ? traveler.trips.filter(isFullyPhotographed) : traveler.trips)) {
       const postcards = trip.days.flatMap((d) => d.activities).filter((a) => a.post !== undefined).length;
       const publishable = trip.publish !== null && trip.publish !== undefined;
       if (postcards === 0 && !publishable) continue;

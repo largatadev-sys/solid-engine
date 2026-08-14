@@ -18,6 +18,16 @@ const DEPLOYED_OPT_IN = '--yes-seed-the-deployed-rung';
 const address = (tag) => { const [local, domain] = BASE.split('@'); return `${local}+${tag}@${domain}`; };
 const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split('=')[1];
 
+// Seeds only trips whose every day holds at least as many photos as it has activities, so nothing
+// renders with a gap. A partly-fetched cache otherwise produces coverless Discovery cards, which
+// read as a broken feature rather than as an unfinished download — and a coverless trip is dropped
+// from the Recommended rail outright, since findRecommendable requires cover_image_url.
+const COMPLETE_ONLY = process.argv.includes('--complete-only');
+
+function isFullyPhotographed(trip) {
+  return trip.days.every((day) => photosFor(day.at).length >= Math.max(day.activities.length, 1));
+}
+
 // Against localhost every call succeeds; against a deployed rung one in a few hundred does not, and
 // a seeding run is ~700 calls. A single transient 5xx killed a run 11 trips in — work that cannot be
 // resumed, only redone. Retries 5xx and transport errors only: a 4xx is the seeder being wrong and
@@ -193,8 +203,14 @@ async function seedTraveler(traveler, credits, collaborator) {
   const archived = await archivePreviousRuns(traveler, token);
   if (archived > 0) console.log(`  cleaned  ${archived} trip(s) from a previous run, archived`);
 
+  // The archive sweep above still runs over every fixture title, not just the chosen ones, so a
+  // later full run cleans up whatever a partial run left behind.
+  const chosenTrips = COMPLETE_ONLY ? traveler.trips.filter(isFullyPhotographed) : traveler.trips;
+  const skipped = traveler.trips.length - chosenTrips.length;
+  if (skipped > 0) console.log(`  skipped  ${skipped} trip(s) — photos not fetched yet`);
+
   const seeded = [];
-  for (const trip of traveler.trips) {
+  for (const trip of chosenTrips) {
     const created = must(
       await api('/v1/itineraries', 'POST', token, {
         title: trip.title,
