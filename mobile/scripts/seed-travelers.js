@@ -35,9 +35,14 @@ const COMPLETE_ONLY = process.argv.includes('--complete-only');
 // trips whose postcards backdate to the last two days stop keeping the top of Home fresh.
 const ALL_PUBLIC = process.argv.includes('--all-public');
 
-// One worker per traveler instead of one long queue. Local-only until proven: a deployed rung
-// multiplies transient 5xx under load, and the retry logic has never run ten-wide.
-const PARALLEL = process.argv.includes('--parallel');
+// One worker per traveler instead of one long queue. --parallel runs everything at once (proven
+// local: 4m03s, every count exact); --parallel=N caps the width, for a first run against a rung
+// whose capacity under concurrent ingest is unmeasured. A wedged run is recoverable everywhere —
+// the sweep archives fixture-titled wreckage on the next attempt and archive-strays reaches the
+// rest — so width is a throughput/mess trade, not a safety gate.
+const PARALLEL_ARG = process.argv.find((a) => a === '--parallel' || a.startsWith('--parallel='));
+const PARALLEL = PARALLEL_ARG !== undefined;
+const WIDTH = PARALLEL_ARG?.includes('=') ? Math.max(1, Number(PARALLEL_ARG.split('=')[1]) || 1) : Infinity;
 
 const lifecycleOf = (trip) => (ALL_PUBLIC ? 'completed' : trip.lifecycle);
 const audienceOf = (trip) => (ALL_PUBLIC ? 'public' : trip.publish);
@@ -446,21 +451,26 @@ async function main() {
     // its own lines and prints them as a block on completion, because ten interleaved trip logs are
     // unreadable and useless as evidence. Retry lines still interleave live — deliberately, since a
     // retry storm is exactly what this mode exists to surface.
-    const outcomes = await Promise.all(chosen.map(async (traveler) => {
-      const lines = [];
-      try {
-        const seeded = await seedTraveler(
-          traveler, credits, traveler.tag === 't2' ? null : collaborator, (text) => lines.push(text),
-        );
-        return { traveler, seeded, lines };
-      } catch (e) {
-        if (!e.message.startsWith('sign-in failed')) {
-          console.log(lines.join('\n'));
-          throw e;
+    const queue = [...chosen];
+    const outcomes = [];
+    const worker = async () => {
+      for (let traveler = queue.shift(); traveler !== undefined; traveler = queue.shift()) {
+        const lines = [];
+        try {
+          const seeded = await seedTraveler(
+            traveler, credits, traveler.tag === 't2' ? null : collaborator, (text) => lines.push(text),
+          );
+          outcomes.push({ traveler, seeded, lines });
+        } catch (e) {
+          if (!e.message.startsWith('sign-in failed')) {
+            console.log(lines.join('\n'));
+            throw e;
+          }
+          outcomes.push({ traveler, seeded: null, lines });
         }
-        return { traveler, seeded: null, lines };
       }
-    }));
+    };
+    await Promise.all(Array.from({ length: Math.min(WIDTH, chosen.length) }, worker));
     for (const outcome of outcomes) {
       console.log(outcome.lines.join('\n'));
       if (outcome.seeded === null) {
