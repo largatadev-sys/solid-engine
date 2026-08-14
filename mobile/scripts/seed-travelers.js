@@ -182,12 +182,33 @@ function altFor(file, credits) {
 // that dies partway (a missing lease, a dropped connection) leaves a half-built trip behind that
 // looks exactly like a real one in the Trips list. Archiving every fixture-titled trip first makes
 // the seeder safe to run repeatedly: the debris drops out of the list rather than accumulating.
+// GET /v1/itineraries pages at 20 by default, and the sweep never followed the cursor — so a
+// traveler holding more than one page kept their stale trips invisible to it while it printed a
+// clean "cleaned N" having seen a fraction of the list. On the local rung that is untidy; on the
+// deployed rung, where archive is the only cleanup that exists, it is how duplicates become
+// permanent. Compare the cursor with ?? — nextCursor is null on the wire and undefined in the
+// types (S3.1), so a !== undefined check asks for a page literally called "null" forever. The
+// repeat-cursor guard keeps a server bug from spinning the loop.
+async function allMyTrips(token) {
+  const rows = [];
+  let cursor;
+  let previous = null;
+  for (;;) {
+    const page = await api(
+      `/v1/itineraries?limit=100${cursor === undefined ? '' : `&cursor=${encodeURIComponent(cursor)}`}`,
+      'GET', token,
+    );
+    rows.push(...(page.body?.items ?? []));
+    cursor = page.body?.nextCursor ?? undefined;
+    if (cursor === undefined || cursor === previous) return rows;
+    previous = cursor;
+  }
+}
+
 async function archivePreviousRuns(traveler, token) {
   const titles = new Set(traveler.trips.map((t) => t.title));
-  const mine = await api('/v1/itineraries', 'GET', token);
-  const stale = (mine.body?.items ?? mine.body ?? []).filter(
-    (trip) => titles.has(trip.title) && trip.archived !== true,
-  );
+  const mine = await allMyTrips(token);
+  const stale = mine.filter((trip) => titles.has(trip.title) && trip.archived !== true);
   for (const trip of stale) {
     await api(`/v1/itineraries/${trip.id}/archive`, 'POST', token);
   }
