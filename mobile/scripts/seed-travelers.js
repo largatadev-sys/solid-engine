@@ -1,21 +1,15 @@
 const fs = require('fs');
-const http = require('http');
-const https = require('https');
 const path = require('path');
 const { precompleteProfile } = require('./precomplete-profile');
 const { TRAVELERS, DUMP_QUERIES } = require('./fixtures/travelers');
 const { CACHE_DIR, slug, photosFor: photosInPool, photoForSlot } = require('./photoPool');
+const { API, request, api, address, poolToken, allMyTrips, requirePoolEnv } = require('./poolApi');
 
-const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
-const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
-const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
-const PASSWORD = process.env.LARGATA_TEST_POOL_PASSWORD;
 
 const PHOTOS = CACHE_DIR;
 const CREDITS = path.join(PHOTOS, 'CREDITS.json');
 const DEPLOYED_OPT_IN = '--yes-seed-the-deployed-rung';
 
-const address = (tag) => { const [local, domain] = BASE.split('@'); return `${local}+${tag}@${domain}`; };
 const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split('=')[1];
 
 // Seeds only trips whose every day holds at least as many photos as it has activities, so nothing
@@ -51,51 +45,8 @@ function isFullyPhotographed(trip) {
   return trip.days.every((day) => photosFor(day.at).length >= Math.max(day.activities.length, 1));
 }
 
-// Against localhost every call succeeds; against a deployed rung one in a few hundred does not, and
-// a seeding run is ~700 calls. A single transient 5xx killed a run 11 trips in — work that cannot be
-// resumed, only redone. Retries 5xx and transport errors only: a 4xx is the seeder being wrong and
-// must still fail loudly rather than being hammered.
-const RETRIES = 3;
 
-async function request(url, method, body, headers = {}) {
-  let last;
-  for (let attempt = 1; attempt <= RETRIES; attempt += 1) {
-    last = await attemptOnce(url, method, body, headers);
-    if (last.status < 500 && last.status !== 0) return last;
-    if (attempt < RETRIES) {
-      console.log(`   retry  ${method} ${new URL(url).pathname} — ${last.status}, attempt ${attempt} of ${RETRIES}`);
-      await new Promise((r) => setTimeout(r, 1000 * attempt));
-    }
-  }
-  return last;
-}
 
-function attemptOnce(url, method, body, headers = {}) {
-  return new Promise((resolve) => {
-    const lib = url.startsWith('https') ? https : http;
-    const data = body === undefined ? undefined : (Buffer.isBuffer(body) ? body : JSON.stringify(body));
-    const options = { method, headers: { ...headers } };
-    if (data !== undefined) {
-      if (!Buffer.isBuffer(body)) options.headers['Content-Type'] = 'application/json';
-      options.headers['Content-Length'] = Buffer.byteLength(data);
-    }
-    const req = lib.request(new URL(url), options, (res) => {
-      let b = '';
-      res.on('data', (c) => (b += c));
-      res.on('end', () => {
-        let parsed;
-        try { parsed = b ? JSON.parse(b) : undefined; } catch { parsed = b; }
-        resolve({ status: res.statusCode, body: parsed });
-      });
-    });
-    req.on('error', (e) => resolve({ status: 0, body: e.message }));
-    if (data !== undefined) req.write(data);
-    req.end();
-  });
-}
-
-const api = (p, method = 'GET', token, body) =>
-  request(API + p, method, body, token ? { Authorization: 'Bearer ' + token } : {});
 
 function uploadPhoto(route, token, file) {
   const boundary = `----largata${Date.now()}${process.hrtime()[1]}`;
@@ -137,20 +88,6 @@ function postDiaryEntry(token, itineraryId, entry, files) {
   });
 }
 
-async function poolToken(tag) {
-  const res = await request(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${KEY}`,
-    'POST',
-    { email: address(tag), password: PASSWORD, returnSecureToken: true },
-  );
-  if (res.body?.idToken === undefined) {
-    throw new Error(
-      `sign-in failed for ${tag}: ${JSON.stringify(res.body).slice(0, 160)}\n`
-        + `If the account does not exist yet: node scripts/test-pool.js create`,
-    );
-  }
-  return res.body.idToken;
-}
 
 function must(res, what) {
   if (res.status >= 300) {
@@ -187,29 +124,6 @@ function altFor(file, credits) {
 // that dies partway (a missing lease, a dropped connection) leaves a half-built trip behind that
 // looks exactly like a real one in the Trips list. Archiving every fixture-titled trip first makes
 // the seeder safe to run repeatedly: the debris drops out of the list rather than accumulating.
-// GET /v1/itineraries pages at 20 by default, and the sweep never followed the cursor — so a
-// traveler holding more than one page kept their stale trips invisible to it while it printed a
-// clean "cleaned N" having seen a fraction of the list. On the local rung that is untidy; on the
-// deployed rung, where archive is the only cleanup that exists, it is how duplicates become
-// permanent. Compare the cursor with ?? — nextCursor is null on the wire and undefined in the
-// types (S3.1), so a !== undefined check asks for a page literally called "null" forever. The
-// repeat-cursor guard keeps a server bug from spinning the loop.
-async function allMyTrips(token) {
-  const rows = [];
-  let cursor;
-  let previous = null;
-  for (;;) {
-    const page = await api(
-      `/v1/itineraries?limit=100${cursor === undefined ? '' : `&cursor=${encodeURIComponent(cursor)}`}`,
-      'GET', token,
-    );
-    rows.push(...(page.body?.items ?? []));
-    cursor = page.body?.nextCursor ?? undefined;
-    if (cursor === undefined || cursor === previous) return rows;
-    previous = cursor;
-  }
-}
-
 async function archivePreviousRuns(traveler, token) {
   const titles = new Set(traveler.trips.map((t) => t.title));
   const mine = await allMyTrips(token);
@@ -402,16 +316,7 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
 }
 
 async function main() {
-  for (const [name, value] of Object.entries({
-    EXPO_PUBLIC_FIREBASE_API_KEY: KEY,
-    LARGATA_TEST_POOL_EMAIL_BASE: BASE,
-    LARGATA_TEST_POOL_PASSWORD: PASSWORD,
-  })) {
-    if (value === undefined || value === '') {
-      console.error(`${name} is not set — run: cd mobile && set -a && . ./.env && set +a`);
-      process.exit(2);
-    }
-  }
+  requirePoolEnv();
 
   const deployed = !API.startsWith('http://localhost');
   if (deployed && !process.argv.includes(DEPLOYED_OPT_IN)) {

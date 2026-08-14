@@ -1,6 +1,5 @@
-const http = require('http');
-const https = require('https');
 const { TRAVELERS } = require('./fixtures/travelers');
+const { API, api, poolToken, allMyTrips, requirePoolEnv } = require('./poolApi');
 
 // Archives every trip a pool account can see that is NOT in the current fixture — the walk debris
 // ("Kyoto temples 881845", "Feed walk 057804") that drive scripts leave behind. Locally the DB wipe
@@ -15,78 +14,12 @@ const { TRAVELERS } = require('./fixtures/travelers');
 // story. Titles are matched against the GLOBAL fixture set, so one traveler's membership on
 // another's fixture trip is never treated as a stray.
 
-const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
-const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
-const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
-const PASSWORD = process.env.LARGATA_TEST_POOL_PASSWORD;
 
 const DEPLOYED_OPT_IN = '--yes-archive-strays-on-the-deployed-rung';
 
-const address = (tag) => { const [local, domain] = BASE.split('@'); return `${local}+${tag}@${domain}`; };
-
-function request(url, method, body, headers = {}) {
-  return new Promise((resolve) => {
-    const lib = url.startsWith('https') ? https : http;
-    const data = body === undefined ? undefined : JSON.stringify(body);
-    const options = { method, headers: { ...headers } };
-    if (data !== undefined) {
-      options.headers['Content-Type'] = 'application/json';
-      options.headers['Content-Length'] = Buffer.byteLength(data);
-    }
-    const req = lib.request(new URL(url), options, (res) => {
-      let b = '';
-      res.on('data', (c) => (b += c));
-      res.on('end', () => {
-        let parsed;
-        try { parsed = b ? JSON.parse(b) : undefined; } catch { parsed = b; }
-        resolve({ status: res.statusCode, body: parsed });
-      });
-    });
-    req.on('error', (e) => resolve({ status: 0, body: e.message }));
-    if (data !== undefined) req.write(data);
-    req.end();
-  });
-}
-
-const api = (p, method = 'GET', token, body) =>
-  request(API + p, method, body, token ? { Authorization: 'Bearer ' + token } : {});
-
-async function poolToken(tag) {
-  const res = await request(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${KEY}`,
-    'POST',
-    { email: address(tag), password: PASSWORD, returnSecureToken: true },
-  );
-  return res.body?.idToken;
-}
-
-async function allMyTrips(token) {
-  const rows = [];
-  let cursor;
-  let previous = null;
-  for (;;) {
-    const page = await api(
-      `/v1/itineraries?limit=100${cursor === undefined ? '' : `&cursor=${encodeURIComponent(cursor)}`}`,
-      'GET', token,
-    );
-    rows.push(...(page.body?.items ?? []));
-    cursor = page.body?.nextCursor ?? undefined;
-    if (cursor === undefined || cursor === previous) return rows;
-    previous = cursor;
-  }
-}
 
 async function main() {
-  for (const [name, value] of Object.entries({
-    EXPO_PUBLIC_FIREBASE_API_KEY: KEY,
-    LARGATA_TEST_POOL_EMAIL_BASE: BASE,
-    LARGATA_TEST_POOL_PASSWORD: PASSWORD,
-  })) {
-    if (value === undefined || value === '') {
-      console.error(`${name} is not set — run: cd mobile && set -a && . ./.env && set +a`);
-      process.exit(2);
-    }
-  }
+  requirePoolEnv();
 
   const deployed = !API.startsWith('http://localhost');
   if (deployed && !process.argv.includes(DEPLOYED_OPT_IN)) {
@@ -103,8 +36,13 @@ async function main() {
   let archived = 0;
   let refused = 0;
   for (const traveler of TRAVELERS) {
-    const token = await poolToken(traveler.tag);
-    if (token === undefined) {
+    // poolApi's poolToken throws where this script's own copy returned undefined. An unusable
+    // account is a pool problem, not a reason to abandon the nine that work, so the skip stays —
+    // it just has to catch now.
+    let token;
+    try {
+      token = await poolToken(traveler.tag);
+    } catch {
       console.log(`  ${traveler.tag}  SKIPPED — cannot sign in`);
       continue;
     }
