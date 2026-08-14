@@ -94,12 +94,35 @@ const KINDS = {
   },
 };
 
+// Most of these carry {p}, and that is the whole point. An eleven-string pool with no place in it
+// produced 826 notes from 11 distinct strings — each one appearing about seventy-five times, which
+// is far louder than the generic day titles it sat beside. Captions never had the problem because
+// they always substituted the place. A handful stay generic so not every line name-drops.
 const NOTES = [
-  'Get there early — it fills up by nine.', 'Cash only.', 'Book the day before, not on the day.',
-  'Worth the detour, barely.', 'Skip the guided version and just walk it.',
-  'Bring water, there is nowhere to buy any.', 'Closed Mondays, learned that the hard way.',
-  'Cheaper two streets back from the square.', 'Shoes off at the entrance.',
-  'The queue moves faster than it looks.', 'Ask for the back terrace.',
+  'Cheaper two streets back from the main square in {p}.',
+  'Get there before the first bus reaches {p}.',
+  'The ticket office in {p} is cash only.',
+  'Nothing opens in {p} before eight.',
+  'Ask about the back route out of {p} — quieter, barely longer.',
+  'Book the {p} leg the day before, not on the day.',
+  'Half the guides in {p} quote double at first. Walk away once.',
+  'Shoes off at the entrance here in {p}.',
+  'The last bus out of {p} leaves earlier than posted.',
+  'Skip the guided version of {p} and just walk it.',
+  'Bring water — nothing sells any past {p}.',
+  '{p} closes Mondays. Learned that the hard way.',
+  'Worth a second night in {p} if you can move things around.',
+  'The queue at {p} moves faster than it looks.',
+  'Everything in {p} shuts for two hours after lunch.',
+  'Cash only anywhere outside {p}.',
+  'Wear something you can swim in around {p}.',
+  'The far side of {p} is worth the extra hour.',
+  'Do not bother with the organised tour from {p}.',
+  'Early is the whole trick at {p}.',
+  'Parking in {p} is hopeless after nine.',
+  'Ask for the back terrace in {p}.',
+  'Cash only.', 'Book the day before.', 'Worth the detour, barely.',
+  'Bring water.', 'Closed Mondays.', 'Sunscreen, obviously.',
 ];
 
 const CAPTIONS = [
@@ -168,7 +191,9 @@ function buildDay(trip, raw, dayIndex, totalDays, currency) {
       title: pick(vocab[slot.phase], seededRandom(`${seed}/title`)).replace('{p}', short),
       timeOfDay: timeAt(slot, seededRandom(`${seed}/time`)),
       place,
-      notes: seededRandom(`${seed}/notes`) < 0.78 ? pick(NOTES, seededRandom(`${seed}/note`)) : null,
+      notes: seededRandom(`${seed}/notes`) < 0.78
+        ? pick(NOTES, seededRandom(`${seed}/note`)).replace('{p}', short)
+        : null,
     };
     if (seededRandom(`${seed}/cost`) < 0.85) {
       activity.costAmount = String(5 * (2 + Math.floor(seededRandom(`${seed}/amount`) * 24)));
