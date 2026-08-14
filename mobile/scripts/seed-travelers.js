@@ -3,12 +3,14 @@ const path = require('path');
 const { precompleteProfile } = require('./precomplete-profile');
 const { TRAVELERS, DUMP_QUERIES } = require('./fixtures/travelers');
 const { CACHE_DIR, slug, photosFor: photosInPool, photoForSlot } = require('./photoPool');
-const { API, request, api, address, poolToken, allMyTrips, requirePoolEnv } = require('./poolApi');
+const { API, request, api, poolToken, allMyTrips, requirePoolEnv } = require('./poolApi');
 
 
 const PHOTOS = CACHE_DIR;
 const CREDITS = path.join(PHOTOS, 'CREDITS.json');
 const DEPLOYED_OPT_IN = '--yes-seed-the-deployed-rung';
+
+const COLLABORATOR_TAG = 't2';
 
 const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split('=')[1];
 
@@ -106,7 +108,7 @@ async function archivePreviousRuns(traveler, token) {
 
 async function seedTraveler(traveler, credits, collaborator, say = console.log) {
   const token = await poolToken(traveler.tag);
-  await precompleteProfile(api, token, traveler.tag);
+  await precompleteProfile(api, token, traveler.tag, traveler.handle);
 
   must(
     await api('/v1/me', 'PATCH', token, {
@@ -212,7 +214,11 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
 
     let withMember = false;
     if (collaborator !== null && trip.days.length >= 4) {
-      must(await api(`/v1/itineraries/${created.id}/invitations`, 'POST', token, { email: address(collaborator.tag) }), 'invite');
+      must(
+        await api(`/v1/itineraries/${created.id}/invitations/by-handle`, 'POST', token,
+          { handle: collaborator.handle }),
+        'invite',
+      );
       const inbox = must(await api('/v1/invitations', 'GET', collaborator.token), 'inbox');
       const invite = (inbox.items ?? []).find((i) => i.itineraryId === created.id);
       if (invite !== undefined) {
@@ -299,8 +305,16 @@ async function main() {
   console.log(`seeding ${API}${deployed ? '  (DEPLOYED RUNG)' : ''}`);
   console.log(`${chosen.length} traveler(s), ${chosen.reduce((n, t) => n + t.trips.length, 0)} trips`);
 
-  const collaborator = { tag: 't2', token: await poolToken('t2') };
-  await precompleteProfile(api, collaborator.token, 't2');
+  const collaboratorSpec = TRAVELERS.find((t) => t.tag === COLLABORATOR_TAG);
+  if (collaboratorSpec === undefined) {
+    throw new Error(`no traveler tagged "${COLLABORATOR_TAG}" — the collaborator every trip is invited from`);
+  }
+  const collaborator = {
+    tag: COLLABORATOR_TAG,
+    token: await poolToken(COLLABORATOR_TAG),
+    handle: collaboratorSpec.handle,
+  };
+  await precompleteProfile(api, collaborator.token, COLLABORATOR_TAG, collaborator.handle);
 
   let trips = 0;
   const skipped = [];
@@ -312,7 +326,7 @@ async function main() {
         const lines = [];
         try {
           const seeded = await seedTraveler(
-            traveler, credits, traveler.tag === 't2' ? null : collaborator, (text) => lines.push(text),
+            traveler, credits, traveler.tag === COLLABORATOR_TAG ? null : collaborator, (text) => lines.push(text),
           );
           outcomes.push({ traveler, seeded, lines });
         } catch (e) {
@@ -337,7 +351,7 @@ async function main() {
   } else {
     for (const traveler of chosen) {
       try {
-        const seeded = await seedTraveler(traveler, credits, traveler.tag === 't2' ? null : collaborator);
+        const seeded = await seedTraveler(traveler, credits, traveler.tag === COLLABORATOR_TAG ? null : collaborator);
         trips += seeded.length;
       } catch (e) {
         if (!e.message.startsWith('sign-in failed')) throw e;

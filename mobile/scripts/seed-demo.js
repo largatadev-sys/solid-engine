@@ -141,7 +141,7 @@ async function main() {
   const owner = await poolToken('t1');
   const member = await poolToken('t2');
   await precompleteProfile(api, owner, 't1');
-  await precompleteProfile(api, member, 't2');
+  const memberProfile = await precompleteProfile(api, member, 't2');
   await precompleteProfile(api, await poolToken('t3'), 't3');
 
   console.log(`seeding ${API} — t1 = owner, t2 = collaborator, t3 = a stranger who joins nothing\n`);
@@ -177,8 +177,8 @@ async function main() {
     }
 
     if (spec.withMember) {
-      must(await api(`/v1/itineraries/${created.id}/invitations`, 'POST', owner, { email: address('t2') }),
-        'invite t2');
+      must(await api(`/v1/itineraries/${created.id}/invitations/by-handle`, 'POST', owner,
+        { handle: memberProfile.handle }), 'invite t2');
       const inbox = must(await api('/v1/invitations', 'GET', member), 'inbox');
       const invite = (inbox.items ?? []).find((i) => i.itineraryId === created.id);
       must(await api(`/v1/invitations/${invite.id}/accept`, 'POST', member, {}), 'accept');
