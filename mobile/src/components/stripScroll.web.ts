@@ -1,4 +1,5 @@
 import type { GestureResponderEvent } from 'react-native';
+import { draggedFar, settledOffset, viewportPitch } from './stripSettle';
 
 export const SHOW_SCROLLBAR = false;
 
@@ -23,6 +24,16 @@ interface DragTarget {
   style?: { scrollBehavior: string; scrollSnapType: string };
   setPointerCapture?: (pointerId: number) => void;
   releasePointerCapture?: (pointerId: number) => void;
+  addEventListener?: (
+    type: string,
+    listener: (event: { stopPropagation: () => void; preventDefault: () => void }) => void,
+    options?: { capture?: boolean; once?: boolean },
+  ) => void;
+  removeEventListener?: (
+    type: string,
+    listener: (event: { stopPropagation: () => void; preventDefault: () => void }) => void,
+    options?: { capture?: boolean },
+  ) => void;
 }
 
 interface DragEvent {
@@ -66,7 +77,18 @@ function release(target: DragTarget, pointerId: number | undefined): void {
 }
 
 
-export function dragToScroll(): {
+function swallowNextClick(target: DragTarget): void {
+  if (target.addEventListener === undefined) return;
+  const eat = (event: { stopPropagation: () => void; preventDefault: () => void }) => {
+    event.stopPropagation();
+    event.preventDefault();
+  };
+  target.addEventListener('click', eat, { capture: true, once: true });
+  setTimeout(() => target.removeEventListener?.('click', eat, { capture: true }), 0);
+}
+
+
+export function dragToScroll(pitchOf: (viewport: number) => number = viewportPitch): {
   onPointerDown: (event: GestureResponderEvent) => void;
   onPointerMove: (event: GestureResponderEvent) => void;
   onPointerUp: (event: GestureResponderEvent) => void;
@@ -74,6 +96,8 @@ export function dragToScroll(): {
 } {
   let from: number | null = null;
   let startedAt = 0;
+  let restoreSnap = '';
+  let restoreBehavior = '';
 
   const stop = (event: GestureResponderEvent) => {
     const native = event as unknown as DragEvent;
@@ -89,12 +113,17 @@ export function dragToScroll(): {
     from = null;
     if (!dragged) return;
 
-    const pitch = target.clientWidth ?? 0;
-    if (pitch <= 0) return;
+    const moved = draggedFar(startedAt, target.scrollLeft);
+    if (moved) swallowNextClick(target);
 
-    if (target.style !== undefined) target.style.scrollBehavior = 'smooth';
-    target.scrollLeft = Math.round(target.scrollLeft / pitch) * pitch;
-    if (target.style !== undefined) target.style.scrollSnapType = SNAP_STYLE.scrollSnapType;
+    const pitch = pitchOf(target.clientWidth ?? 0);
+    const settled = settledOffset(target.scrollLeft, pitch);
+
+    if (target.style !== undefined) {
+      target.style.scrollBehavior = settled === target.scrollLeft ? restoreBehavior : 'smooth';
+    }
+    if (settled !== target.scrollLeft) target.scrollLeft = settled;
+    if (target.style !== undefined) target.style.scrollSnapType = restoreSnap;
   };
 
   return {
@@ -108,6 +137,8 @@ export function dragToScroll(): {
       from = native.clientX;
       startedAt = target.scrollLeft;
       if (target.style !== undefined) {
+        restoreSnap = target.style.scrollSnapType;
+        restoreBehavior = target.style.scrollBehavior;
         target.style.scrollBehavior = 'auto';
         target.style.scrollSnapType = 'none';
       }

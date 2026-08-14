@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
+import { dragToScroll } from '../components/stripScroll';
+import { freeScroll } from '../components/stripSettle';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import {
   workspaceColors,
@@ -43,12 +46,15 @@ interface WorkspaceTabRowProps {
 
 
 export function WorkspaceTabRow({ active, onSelect }: WorkspaceTabRowProps) {
+  const [drag] = useState(() => dragToScroll(freeScroll));
+
   return (
     <View style={styles.row}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scroller}
+        {...drag}
       >
         {WORKSPACE_TABS.map((tab) => {
           const greyed = tab.comingSoonSurface !== undefined;

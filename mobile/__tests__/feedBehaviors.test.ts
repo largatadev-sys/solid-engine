@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { isDoubleTap } from '../src/feed/doubleTap';
-import { SNAP_STYLE } from '../src/diary/photoStripScroll.web';
+import { SNAP_STYLE } from '../src/components/stripScroll.web';
 
 const MOBILE_ROOT = join(__dirname, '..');
 const CARD = readFileSync(join(MOBILE_ROOT, 'src', 'feed', 'FeedCard.tsx'), 'utf8');

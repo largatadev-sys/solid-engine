@@ -375,6 +375,55 @@ async function publishedTrip(token, title, destination, days) {
   check('AC 4.2: a trending card names its destination and its trip count',
     new RegExp(`Kyoto ${stamp}`).test(landing || '') && /\d+ trips?/.test(landing || ''));
 
+  // The rails hide their scrollbar and a mouse has no horizontal gesture, so without a drag handler
+  // they are unreachable on desktop — the S1.3 dead-click shape with a new cause. CDP's
+  // Input.dispatchMouseEvent does NOT synthesize PointerEvents, so the sequence is dispatched
+  // in-page; a probe that skips this reports a dead drag against a working rail (S4.21).
+  // Addressed by POSITION, not by this run's own fixture title: the Recommended rail ranks over
+  // every published trip in the database, so a freshly-seeded one need not appear in it — keying
+  // on it reports a dead rail against a working one.
+  const dragRail = async (index) =>
+    evaluate(`
+      (() => {
+        const strips = Array.from(document.querySelectorAll('div'))
+          .filter((n) => n.offsetParent !== null)
+          .filter((n) => n.scrollWidth > n.clientWidth + 4)
+          .filter((n) => /auto|scroll/.test(getComputedStyle(n).overflowX));
+        const s = strips[${index}];
+        if (!s) return { rails: strips.length };
+        const r = s.getBoundingClientRect();
+        const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+        const travel = Math.round(s.clientWidth * 0.7);
+        const before = Math.round(s.scrollLeft);
+        const mk = (t, x, b) => new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', clientX: x, clientY: cy, button: 0, buttons: b });
+        s.dispatchEvent(mk('pointerdown', cx, 1));
+        for (const f of [0.25, 0.5, 0.75, 1]) s.dispatchEvent(mk('pointermove', cx - travel * f, 1));
+        const dragged = Math.round(s.scrollLeft);
+        s.dispatchEvent(mk('pointerup', cx - travel, 0));
+        return { rails: strips.length, before, dragged, snap: getComputedStyle(s).scrollSnapType };
+      })()
+    `);
+
+  const trendingDrag = await dragRail(0);
+  check('the landing carries exactly the two rails this walk drags',
+    trendingDrag.rails === 2, JSON.stringify(trendingDrag));
+  check('a mouse drag scrolls the trending rail — desktop has no other way to reach it',
+    trendingDrag.dragged > trendingDrag.before, JSON.stringify(trendingDrag));
+
+  const recommendedDrag = await dragRail(1);
+  check('a mouse drag scrolls the recommended rail too',
+    recommendedDrag.dragged > recommendedDrag.before, JSON.stringify(recommendedDrag));
+
+  // A free-scrolling rail must not be handed mandatory snap on release: it has no paging concept,
+  // and imposing one would make the rail jump to a card boundary the traveler never asked for.
+  check('the rails are never left paging — a free strip stays free after a drag',
+    trendingDrag.snap === 'none', JSON.stringify(trendingDrag));
+
+  const afterDragUrl = await url();
+  check('a drag that ends over a card does NOT open it — the strip scrolled, nothing was tapped',
+    /\/discover/.test(afterDragUrl || ''), `url=${afterDragUrl}`);
+
+  await goto('/discover');
   await clickLabel('See all itineraries');
   await sleep(3500);
   const results = await text();

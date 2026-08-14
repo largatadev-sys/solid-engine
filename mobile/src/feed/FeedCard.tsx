@@ -46,7 +46,7 @@ import {
   SHOW_SCROLLBAR,
   SNAP_CHILD_STYLE,
   SNAP_STYLE,
-} from '../diary/photoStripScroll';
+} from '../components/stripScroll';
 
 const CAPTION_LINES = 2;
 

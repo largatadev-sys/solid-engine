@@ -27,7 +27,7 @@ import {
   PREVIEW_HINT,
   PREVIEW_SHARE,
 } from './diaryCopy';
-import { dragToScroll, PAGING, SNAP_CHILD_STYLE, SNAP_STYLE } from './photoStripScroll';
+import { dragToScroll, PAGING, SNAP_CHILD_STYLE, SNAP_STYLE } from '../components/stripScroll';
 import { snapshotEyebrow } from './postcardAnatomy';
 import { pageOfOffset, previewCount } from './postcardCarousel';
 

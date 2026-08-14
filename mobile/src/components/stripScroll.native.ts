@@ -1,7 +1,7 @@
 export const SHOW_SCROLLBAR = false;
 
 
-export function dragToScroll(): Record<string, never> {
+export function dragToScroll(_pitchOf?: (viewport: number) => number): Record<string, never> {
   return {};
 }
 

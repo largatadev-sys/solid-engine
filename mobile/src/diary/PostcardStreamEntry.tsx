@@ -26,7 +26,7 @@ import {
   SHOW_SCROLLBAR,
   SNAP_CHILD_STYLE,
   SNAP_STYLE,
-} from './photoStripScroll';
+} from '../components/stripScroll';
 import { carouselCounter, pageOfOffset, showsCarouselChrome } from './postcardCarousel';
 
 

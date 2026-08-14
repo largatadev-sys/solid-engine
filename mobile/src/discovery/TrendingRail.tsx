@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -6,6 +7,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { dragToScroll } from '../components/stripScroll';
+import { freeScroll } from '../components/stripSettle';
 import { MediaThumb } from '../media/MediaThumb';
 import { CoverWell } from './CoverWell';
 import { colors, spacing } from '../theme';
@@ -39,6 +42,8 @@ export function TrendingRail({
   readonly onRetry: () => void;
   readonly onOpen: (destination: string) => void;
 }) {
+  const [drag] = useState(() => dragToScroll(freeScroll));
+
   if (!loading && !failed && destinations.length === 0) {
     return null;
   }
@@ -69,6 +74,7 @@ export function TrendingRail({
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.strip}
+          {...drag}
         >
           {destinations.map((entry) => (
             <Pressable

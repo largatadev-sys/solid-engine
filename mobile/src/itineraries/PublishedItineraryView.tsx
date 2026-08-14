@@ -3,6 +3,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
+import { dragToScroll } from '../components/stripScroll';
+import { freeScroll } from '../components/stripSettle';
 import { galleryOf, galleryOverflow, GALLERY_VISIBLE_TILES } from '../media/galleryOf';
 import { MediaThumb } from '../media/MediaThumb';
 import { colors, radii, spacing, typography } from '../theme';
@@ -42,6 +44,7 @@ export function PublishedItineraryView({
   audience: 'preview' | 'consumer';
 }) {
   const [tab, setTab] = useState<PublishedTab>('Overview');
+  const [drag] = useState(() => dragToScroll(freeScroll));
 
   return (
     <View style={styles.page}>
@@ -52,6 +55,7 @@ export function PublishedItineraryView({
         showsHorizontalScrollIndicator={false}
         style={styles.tabBar}
         contentContainerStyle={styles.tabBarRow}
+        {...drag}
       >
         {PUBLISHED_TABS.map((label) => (
           <Pressable

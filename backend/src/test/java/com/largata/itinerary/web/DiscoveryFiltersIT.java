@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -184,6 +186,25 @@ class DiscoveryFiltersIT extends PostgresTestBase {
 
 
     @Test
+    void theCountAgreesWithTheListEvenWhenTheMatchesOutrunOnePage() {
+        String owner = traveler();
+        String destination = "Pagination " + UUID.randomUUID().toString().substring(0, 8);
+        for (int made = 0; made < 21; made += 1) {
+            publishedTrip(owner, "Paged trip " + made, destination, 5);
+        }
+        String filter = "?destination=" + destination.replace(" ", "%20");
+        long counted = countFor(owner, filter);
+
+        assertThat(counted)
+                .as("the fixture must outrun one page, or this test proves nothing about paging")
+                .isGreaterThan(firstPageSize(owner, filter));
+        assertThat((long) browseIds(owner, filter).size())
+                .as("the sheet promises every match, not merely the first page of them")
+                .isEqualTo(counted);
+    }
+
+
+    @Test
     void theCountExcludesExactlyWhatTheListExcludes() {
         String owner = traveler();
         String archived = publishedTrip(owner, "Archived trip", "Nowhere", 3);
@@ -307,13 +328,35 @@ class DiscoveryFiltersIT extends PostgresTestBase {
 
 
     private List<String> browseIds(String token, String query) {
-        String body = get(token, "/v1/discovery/itineraries" + (query.isEmpty() ? "?v=1" : query));
-        JsonNode parsed = JSON.readTree(body);
+        String base = "/v1/discovery/itineraries" + (query.isEmpty() ? "?v=1" : query);
         List<String> ids = new ArrayList<>();
-        for (JsonNode card : parsed.get("items")) {
-            ids.add(card.get("id").asString());
-        }
+        Set<String> cursorsSeen = new HashSet<>();
+        String cursor = null;
+
+        do {
+            String uri =
+                    cursor == null
+                            ? base
+                            : base + "&cursor=" + URLEncoder.encode(cursor, StandardCharsets.UTF_8);
+            JsonNode parsed = JSON.readTree(get(token, uri));
+            for (JsonNode card : parsed.get("items")) {
+                ids.add(card.get("id").asString());
+            }
+            JsonNode next = parsed.get("nextCursor");
+            cursor = next == null || next.isNull() ? null : next.asString();
+            if (cursor != null && !cursorsSeen.add(cursor)) {
+                throw new IllegalStateException(
+                        "the server handed back cursor " + cursor + " twice; paging would not end");
+            }
+        } while (cursor != null);
+
         return ids;
+    }
+
+
+    private long firstPageSize(String token, String query) {
+        String body = get(token, "/v1/discovery/itineraries" + (query.isEmpty() ? "?v=1" : query));
+        return JSON.readTree(body).get("items").size();
     }
 
 

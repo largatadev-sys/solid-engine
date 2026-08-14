@@ -17,26 +17,26 @@ describe('paging is forked, because react-native-web turns it into snap that eat
   });
 
   it('pages on native, where pagingEnabled is a real gesture and not CSS', () => {
-    expect(read('src', 'diary', 'photoStripScroll.native.ts')).toContain('pagingEnabled: true');
+    expect(read('src', 'components', 'stripScroll.native.ts')).toContain('pagingEnabled: true');
   });
 
   it('declines it on web, where mandatory snap re-snaps every scrollLeft the drag writes', () => {
-    const web = read('src', 'diary', 'photoStripScroll.web.ts');
+    const web = read('src', 'components', 'stripScroll.web.ts');
 
     expect(web).toContain('export const PAGING = {} as const;');
     expect(web).not.toContain('pagingEnabled');
   });
 
   it('drags instantly and settles smoothly, rather than animating the drag itself', () => {
-    const web = read('src', 'diary', 'photoStripScroll.web.ts');
+    const web = read('src', 'components', 'stripScroll.web.ts');
 
     expect(web).toContain("target.style.scrollBehavior = 'auto'");
-    expect(web).toContain("target.style.scrollBehavior = 'smooth'");
+    expect(web).toContain("'smooth'");
   });
 
   it('hides the scrollbar on both platforms — the dots carry navigation now', () => {
-    for (const fork of ['photoStripScroll.web.ts', 'photoStripScroll.native.ts']) {
-      expect(read('src', 'diary', fork)).toContain('SHOW_SCROLLBAR = false');
+    for (const fork of ['stripScroll.web.ts', 'stripScroll.native.ts']) {
+      expect(read('src', 'components', fork)).toContain('SHOW_SCROLLBAR = false');
     }
   });
 });

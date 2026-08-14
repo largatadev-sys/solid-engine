@@ -11,6 +11,7 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { Icon } from '../components/Icon';
+import { dragToScroll } from '../components/stripScroll';
 import { dotScale, dotWindow, pageOfOffset } from '../feed/feedCarousel';
 import { colors, spacing } from '../theme';
 import {
@@ -52,12 +53,15 @@ export function RecommendedRail({
   const [railWidth, setRailWidth] = useState(0);
   const [page, setPage] = useState(0);
   const scroller = useRef<ScrollView>(null);
+  const settlePitch = useRef(0);
+  const [drag] = useState(() => dragToScroll(() => settlePitch.current));
 
   const cardWidth =
     railWidth === 0
       ? 0
       : railCardWidth(railWidth, spacing.md2, discoveryMetrics.recommendedPeek);
   const pitch = railPitch(cardWidth, spacing.sm3);
+  settlePitch.current = pitch;
   const pageCount = railPageCount(cards.length, showsSeeAllCard(cards.length));
   const dots = dotWindow(page, pageCount);
 
@@ -118,6 +122,7 @@ export function RecommendedRail({
               )
             }
             scrollEventThrottle={16}
+            {...drag}
           >
             {cards.map((card) => (
               <DiscoveryCard
