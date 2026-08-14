@@ -445,7 +445,7 @@ function getJson(path) {
   await stubDialogs();
   const readyViewer = await text();
   check('S4.24 — a Ready trip still offers Edit Itinerary on its viewer',
-    readyViewer.includes('Edit Itinerary') && readyViewer.includes('Ready'),
+    readyViewer.includes('Edit Itinerary') && /\bREADY\b/i.test(readyViewer),
     readyViewer.slice(0, 80).replace(/\n/g, ' | '));
 
   resetLog();
@@ -457,7 +457,8 @@ function getJson(path) {
     reopened.length === 0 && readyEditor.includes('Save Changes'),
     `${reopened.length} reopen calls, editor=${readyEditor.includes('Save Changes')}`);
   check('S4.24 — the editor chip reads Trip Workspace on a Ready trip, not the lifecycle',
-    readyEditor.includes('Trip Workspace'), readyEditor.slice(0, 80).replace(/\n/g, ' | '));
+    /trip workspace/i.test(readyEditor) && !/\bREADY\b/i.test(readyEditor.slice(0, 40)),
+    readyEditor.slice(0, 80).replace(/\n/g, ' | '));
   check('S4.24 — the state is still Ready the moment the editor opens',
     (await serverPlan()).state === 'upcoming', `state=${(await serverPlan()).state}`);
 

@@ -189,6 +189,38 @@ const stateOf = async (token, trip) => (await api(`/v1/itineraries/${trip}`, 'GE
     `sent state=draft, still ${await stateOf(t1.token, trip)}`);
   await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', t1.token);
 
+  const inPlace = (await api('/v1/itineraries', 'POST', t1.token,
+    { title: 'S4.24 edit in place', destinations: ['Palawan'], durationDays: 1 })).body;
+  const inPlaceDay = inPlace.days[0].id;
+  const editInPlaceAt = async (label, expected) => {
+    const held = await api(`/v1/itineraries/${inPlace.id}/edit-lock`, 'POST', t1.token,
+      { subjectType: 'session' });
+    check(`S4.24 — the Editing Session opens on a ${label} trip`, held.status === 200,
+      `${held.status} ${held.body?.code ?? ''}`);
+    const base = (await api(`/v1/itineraries/${inPlace.id}`, 'GET', t1.token)).body.planVersion;
+    const saved = await api(`/v1/itineraries/${inPlace.id}/plan`, 'PUT', t1.token, {
+      basePlanVersion: base,
+      days: [{ id: inPlaceDay, title: `Edited while ${label}`, activities: [] }],
+    });
+    check(`S4.24 — …the plan saves, and ${label} is still ${label} afterwards`,
+      saved.status === 200 && (await stateOf(t1.token, inPlace.id)) === expected,
+      `${saved.status}, state=${await stateOf(t1.token, inPlace.id)}`);
+  };
+
+  await editInPlaceAt('draft', 'draft');
+  await api(`/v1/itineraries/${inPlace.id}/finish-planning`, 'POST', t1.token);
+  await editInPlaceAt('Ready', 'upcoming');
+  await api(`/v1/itineraries/${inPlace.id}/start`, 'POST', t1.token);
+  await editInPlaceAt('Active', 'ongoing');
+
+  const captureStillOpen = await api(`/v1/itineraries/${inPlace.id}`, 'GET', t1.token);
+  check('S4.24 — the diary blackout is gone: an Active trip edited in place is STILL ongoing, '
+    + 'which is the exact state the capture gate reads (TRIP_NOT_STARTED otherwise)',
+    captureStillOpen.body?.state === 'ongoing', `state=${captureStillOpen.body?.state}`);
+
+  await api(`/v1/itineraries/${inPlace.id}/complete`, 'POST', t1.token);
+  await editInPlaceAt('unpublished Completed', 'completed');
+
   const mine = (await api('/v1/itineraries', 'GET', t1.token)).body.items;
   const row = mine.find((i) => i.id === trip);
   check('the trip appears in My Trips carrying its state — what the row badge renders',
