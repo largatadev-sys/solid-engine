@@ -28,6 +28,19 @@ const seededRandom = (text) => {
 
 const pick = (pool, roll) => pool[Math.floor(roll * pool.length) % pool.length];
 
+// Three of the five time bands share the phase "day", so a short trip puts most of its activities
+// into one pool and independent seeds collide — "Walking Bruges end to end" came out three times on
+// the same day. Walking the pool from the seeded start until an unused rendering turns up keeps the
+// draw deterministic while making a repeat within a day take a genuinely exhausted pool.
+function pickDistinct(pool, roll, render, used) {
+  const start = Math.floor(roll * pool.length) % pool.length;
+  for (let i = 0; i < pool.length; i += 1) {
+    const candidate = render(pool[(start + i) % pool.length]);
+    if (!used.has(candidate)) return candidate;
+  }
+  return render(pool[start]);
+}
+
 const shortPlace = (place) => place.split(',')[0].trim();
 
 function activityCount(totalDays, roll) {
@@ -235,31 +248,41 @@ function buildDay(trip, raw, dayIndex, totalDays, currency) {
     .slice(0, count)
     .sort((one, other) => one.index - other.index);
 
+  const usedTitles = new Set();
+  const usedNotes = new Set();
+  const usedCaptions = new Set();
+
   const activities = chosen.map(({ slot, index }, position) => {
     const seed = `${key}/${index}`;
     // position, not index — the seeder assigns photos by an activity's place in the day's list, so
     // the title is derived from the same photo the traveler will actually see under it.
     const landmark = landmarkAt(PHOTOS, place, position);
     const title = landmark === null
-      ? pick(vocab[slot.phase], seededRandom(`${seed}/title`)).replace('{p}', short)
-      : pick(LANDMARK_TITLES[kind][slot.phase], seededRandom(`${seed}/landmark`)).replace('{l}', landmark);
+      ? pickDistinct(vocab[slot.phase], seededRandom(`${seed}/title`), (t) => t.replace('{p}', short), usedTitles)
+      : pickDistinct(LANDMARK_TITLES[kind][slot.phase], seededRandom(`${seed}/landmark`), (t) => t.replace('{l}', landmark), usedTitles);
+    usedTitles.add(title);
+
+    const notes = seededRandom(`${seed}/notes`) < 0.78
+      ? pickDistinct(NOTES, seededRandom(`${seed}/note`), (t) => t.replace('{p}', short), usedNotes)
+      : null;
+    if (notes !== null) usedNotes.add(notes);
+
     const activity = {
       title,
       timeOfDay: timeAt(slot, seededRandom(`${seed}/time`)),
       place,
-      notes: seededRandom(`${seed}/notes`) < 0.78
-        ? pick(NOTES, seededRandom(`${seed}/note`)).replace('{p}', short)
-        : null,
+      notes,
     };
     if (seededRandom(`${seed}/cost`) < 0.85) {
       activity.costAmount = String(5 * (2 + Math.floor(seededRandom(`${seed}/amount`) * 24)));
       activity.costCurrency = currency;
     }
     if (seededRandom(`${seed}/post`) < 0.3) {
-      activity.post = {
-        caption: pick(CAPTIONS, seededRandom(`${seed}/caption`)).replace('{p}', short),
-        photos: 1 + Math.floor(seededRandom(`${seed}/frames`) * 4),
-      };
+      const caption = pickDistinct(
+        CAPTIONS, seededRandom(`${seed}/caption`), (c) => c.replace('{p}', short), usedCaptions,
+      );
+      usedCaptions.add(caption);
+      activity.post = { caption, photos: 1 + Math.floor(seededRandom(`${seed}/frames`) * 4) };
     }
     return activity;
   });
