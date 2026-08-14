@@ -80,21 +80,45 @@ function daysAgoFor(trip) {
   return band.minDays + spread * (band.maxDays - band.minDays);
 }
 
+// A remote rung drops one connection in a few hundred, and this script opens a fresh one per
+// statement — so a run over 150 trips dies partway with certainty given enough trips. Same
+// philosophy as the seeder's HTTP retry: transient failures get three attempts, and a statement
+// that still fails after that is a real problem that must stop the run.
+const PSQL_RETRIES = 3;
+
 function psql(sql) {
+  let last;
+  for (let attempt = 1; attempt <= PSQL_RETRIES; attempt += 1) {
+    try {
+      return psqlOnce(sql);
+    } catch (e) {
+      last = e;
+      if (attempt < PSQL_RETRIES) {
+        console.log(`   retry  psql — connection failed, attempt ${attempt} of ${PSQL_RETRIES}`);
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1500 * attempt);
+      }
+    }
+  }
+  throw last;
+}
+
+function psqlOnce(sql) {
   const url = process.env.LARGATA_DATABASE_URL;
   if (url !== undefined && url !== '') {
     // Not every machine has a psql binary — this one does not — so fall back to the postgres image,
-    // which every machine running this stack already has. The URL goes in as an ENV VAR rather than
-    // an argument: argv is visible in the host's process list, and a connection string is a
-    // credential.
+    // which every machine running this stack already has. The URL reaches docker as `-e PGURL`
+    // WITHOUT a value, inherited from this process's environment: `-e PGURL=<url>` put the whole
+    // connection string — password included — into docker's argv, the host's process list, and
+    // every execFileSync error message, which is exactly what the comment above it promised the
+    // env var would prevent. Found when a connection failure printed the credential.
     if (hasLocalPsql()) {
       return execFileSync('psql', [url, '-tAc', sql], { encoding: 'utf8' }).trim();
     }
     return execFileSync(
       'docker',
-      ['run', '--rm', '-i', '-e', `PGURL=${url}`, 'postgres:18-alpine',
+      ['run', '--rm', '-i', '-e', 'PGURL', 'postgres:18-alpine',
         'sh', '-c', 'psql "$PGURL" -tAc "$(cat)"'],
-      { encoding: 'utf8', input: sql },
+      { encoding: 'utf8', input: sql, env: { ...process.env, PGURL: url } },
     ).trim();
   }
   const container = execFileSync('docker', ['ps', '-qf', 'name=app-postgres'], { encoding: 'utf8' }).trim();
