@@ -24,8 +24,8 @@ function handleForTag(tag) {
 
 // `api` is the caller's own request helper: (path, method, token, body) -> { status, body }.
 // Idempotent: re-claiming your own handle is allowed, and completion keeps its first timestamp.
-async function precompleteProfile(api, token, tag) {
-  const handle = handleForTag(tag);
+async function precompleteProfile(api, token, tag, claimHandle) {
+  const handle = claimHandle ?? handleForTag(tag);
 
   const patched = await api('/v1/me', 'PATCH', token, { handle, ...FIXTURE_ANSWERS });
   if (patched.status !== 200) {

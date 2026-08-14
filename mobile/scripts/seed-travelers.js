@@ -108,7 +108,7 @@ async function archivePreviousRuns(traveler, token) {
 
 async function seedTraveler(traveler, credits, collaborator, say = console.log) {
   const token = await poolToken(traveler.tag);
-  await precompleteProfile(api, token, traveler.tag);
+  await precompleteProfile(api, token, traveler.tag, traveler.handle);
 
   must(
     await api('/v1/me', 'PATCH', token, {
@@ -306,38 +306,27 @@ async function main() {
   console.log(`${chosen.length} traveler(s), ${chosen.reduce((n, t) => n + t.trips.length, 0)} trips`);
 
   const collaboratorSpec = TRAVELERS.find((t) => t.tag === COLLABORATOR_TAG);
+  if (collaboratorSpec === undefined) {
+    throw new Error(`no traveler tagged "${COLLABORATOR_TAG}" — the collaborator every trip is invited from`);
+  }
   const collaborator = {
     tag: COLLABORATOR_TAG,
     token: await poolToken(COLLABORATOR_TAG),
     handle: collaboratorSpec.handle,
   };
-  await precompleteProfile(api, collaborator.token, COLLABORATOR_TAG);
-  must(await api('/v1/me', 'PATCH', collaborator.token, { handle: collaborator.handle }), 'collaborator handle');
+  await precompleteProfile(api, collaborator.token, COLLABORATOR_TAG, collaborator.handle);
 
   let trips = 0;
   const skipped = [];
-
-  const collaboratorChosen = chosen.find((t) => t.tag === COLLABORATOR_TAG);
-  const rest = chosen.filter((t) => t.tag !== COLLABORATOR_TAG);
-  if (collaboratorChosen !== undefined) {
-    try {
-      trips += (await seedTraveler(collaboratorChosen, credits, null)).length;
-    } catch (e) {
-      if (!e.message.startsWith('sign-in failed')) throw e;
-      skipped.push(collaboratorChosen);
-      console.log(`\n${collaboratorChosen.name}  (${collaboratorChosen.tag})  SKIPPED — cannot sign in`);
-    }
-  }
-
   if (PARALLEL) {
-    const queue = [...rest];
+    const queue = [...chosen];
     const outcomes = [];
     const worker = async () => {
       for (let traveler = queue.shift(); traveler !== undefined; traveler = queue.shift()) {
         const lines = [];
         try {
           const seeded = await seedTraveler(
-            traveler, credits, collaborator, (text) => lines.push(text),
+            traveler, credits, traveler.tag === COLLABORATOR_TAG ? null : collaborator, (text) => lines.push(text),
           );
           outcomes.push({ traveler, seeded, lines });
         } catch (e) {
@@ -349,7 +338,7 @@ async function main() {
         }
       }
     };
-    await Promise.all(Array.from({ length: Math.min(WIDTH, rest.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(WIDTH, chosen.length) }, worker));
     for (const outcome of outcomes) {
       console.log(outcome.lines.join('\n'));
       if (outcome.seeded === null) {
@@ -360,9 +349,9 @@ async function main() {
       }
     }
   } else {
-    for (const traveler of rest) {
+    for (const traveler of chosen) {
       try {
-        const seeded = await seedTraveler(traveler, credits, collaborator);
+        const seeded = await seedTraveler(traveler, credits, traveler.tag === COLLABORATOR_TAG ? null : collaborator);
         trips += seeded.length;
       } catch (e) {
         if (!e.message.startsWith('sign-in failed')) throw e;
