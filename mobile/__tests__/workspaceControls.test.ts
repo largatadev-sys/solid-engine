@@ -157,6 +157,13 @@ describe('stepBackWording', () => {
     expect(stepBackWording(trip({ state: 'draft' }))).toBeNull();
   });
 
+  it('cannot render a Step back that has nothing to say — the button follows the wording', () => {
+    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
+    states.forEach((state) =>
+      expect(showsStepBack(trip({ state }), true)).toBe(stepBackWording(trip({ state })) !== null),
+    );
+  });
+
   it('never says Ongoing in the copy a traveler reads', () => {
     const states: ItineraryState[] = ['upcoming', 'ongoing', 'completed'];
     states.forEach((state) =>

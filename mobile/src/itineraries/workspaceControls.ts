@@ -75,7 +75,7 @@ export function showsStepBack(
   isOwner: boolean,
 ): boolean {
   if (!isOwner || itinerary.archived || itinerary.published) return false;
-  return itinerary.state !== 'draft';
+  return stepBackWording(itinerary) !== null;
 }
 
 

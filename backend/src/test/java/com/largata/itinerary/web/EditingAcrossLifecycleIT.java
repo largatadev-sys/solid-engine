@@ -73,65 +73,44 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
 
     @Test
     void publishingIsWhatFreezesThePlan_notAnyLifecycleRung() {
-        String owner = rig.travelerWithHandle("owner" + suffix());
-        String tripId = rig.createTrip(owner, 1);
-        UUID dayOne = rig.dayAt(tripId, 1);
-        walk(owner, tripId, "finish-planning", "start", "complete");
-        long base = rig.planVersionOf(owner, tripId);
-        rig.hold(owner, tripId, "session", null);
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/publish", owner, null)
-                .expectStatus()
-                .isOk();
-
-        byte[] sessionRefusal =
-                rig.acquire(owner, tripId, "session", null)
-                        .expectStatus()
-                        .isEqualTo(409)
-                        .expectBody()
-                        .returnResult()
-                        .getResponseBodyContent();
-        assertThat(TripRig.fieldIn(sessionRefusal, "code")).isEqualTo("ITINERARY_PUBLISHED");
-
-        byte[] saveRefusal =
-                savePlan(owner, tripId, planWithOneDayTitled(base, dayOne, "Into a published trip"))
-                        .expectStatus()
-                        .isEqualTo(409)
-                        .expectBody()
-                        .returnResult()
-                        .getResponseBodyContent();
-        assertThat(TripRig.fieldIn(saveRefusal, "code")).isEqualTo("ITINERARY_PUBLISHED");
+        bothSessionAndSaveRefuseWith(
+                "publish", "ITINERARY_PUBLISHED", "finish-planning", "start", "complete");
     }
 
 
     @Test
     void archivingFreezesEveryRungToo_includingTheOnesEditingInPlaceOpened() {
+        bothSessionAndSaveRefuseWith("archive", "TRIP_ARCHIVED", "finish-planning", "start");
+    }
+
+
+    private void bothSessionAndSaveRefuseWith(String fenceAct, String code, String... ladder) {
         String owner = rig.travelerWithHandle("owner" + suffix());
         String tripId = rig.createTrip(owner, 1);
         UUID dayOne = rig.dayAt(tripId, 1);
-        walk(owner, tripId, "finish-planning", "start");
+        walk(owner, tripId, ladder);
         long base = rig.planVersionOf(owner, tripId);
         rig.hold(owner, tripId, "session", null);
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/archive", owner, null)
-                .expectStatus()
-                .isOk();
+        walk(owner, tripId, fenceAct);
 
-        byte[] sessionRefusal =
-                rig.acquire(owner, tripId, "session", null)
-                        .expectStatus()
-                        .isEqualTo(409)
-                        .expectBody()
-                        .returnResult()
-                        .getResponseBodyContent();
-        assertThat(TripRig.fieldIn(sessionRefusal, "code")).isEqualTo("TRIP_ARCHIVED");
+        assertThat(refusalCode(rig.acquire(owner, tripId, "session", null)))
+                .as("the session is refused once %s has frozen the trip", fenceAct)
+                .isEqualTo(code);
+        assertThat(
+                        refusalCode(
+                                savePlan(
+                                        owner,
+                                        tripId,
+                                        planWithOneDayTitled(base, dayOne, "Into a frozen trip"))))
+                .as("and so is the save, from a session taken before the freeze")
+                .isEqualTo(code);
+    }
 
-        byte[] saveRefusal =
-                savePlan(owner, tripId, planWithOneDayTitled(base, dayOne, "Into an archived trip"))
-                        .expectStatus()
-                        .isEqualTo(409)
-                        .expectBody()
-                        .returnResult()
-                        .getResponseBodyContent();
-        assertThat(TripRig.fieldIn(saveRefusal, "code")).isEqualTo("TRIP_ARCHIVED");
+
+    private static String refusalCode(RestTestClient.ResponseSpec response) {
+        return TripRig.fieldIn(
+                response.expectStatus().isEqualTo(409).expectBody().returnResult().getResponseBodyContent(),
+                "code");
     }
 
 

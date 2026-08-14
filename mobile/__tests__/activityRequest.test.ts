@@ -102,4 +102,35 @@ describe('buildActivityRequest on edit — the culled fields survive', () => {
     expect(request.costAmount).toBeUndefined();
     expect(request.costCurrency).toBeUndefined();
   });
+
+  it('clears both fields rather than orphaning the currency the traveler never typed', () => {
+    const request = buildActivityRequest({ ...FORM, costAmount: '   ' }, existing());
+    expect(request.costAmount).toBeUndefined();
+    expect(request.costCurrency).toBeUndefined();
+  });
+});
+
+
+describe('the prefilled currency is a hint, not data (S4.24)', () => {
+  it('carries neither cost field when the amount is left empty', () => {
+    const request = buildActivityRequest({ ...FORM, costAmount: '', costCurrency: 'PHP' }, undefined);
+
+    expect(request.costAmount).toBeUndefined();
+    expect(request.costCurrency).toBeUndefined();
+    expect(request.title).toBe('Renamed activity');
+  });
+
+  it('carries both once an amount is typed against the prefill', () => {
+    const request = buildActivityRequest({ ...FORM, costAmount: '500', costCurrency: 'PHP' }, undefined);
+
+    expect(request.costAmount).toBe('500');
+    expect(request.costCurrency).toBe('PHP');
+  });
+
+  it('keeps an explicit zero, because Free is a stated price and absent is not', () => {
+    const request = buildActivityRequest({ ...FORM, costAmount: '0', costCurrency: 'PHP' }, undefined);
+
+    expect(request.costAmount).toBe('0');
+    expect(request.costCurrency).toBe('PHP');
+  });
 });
