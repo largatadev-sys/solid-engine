@@ -35,6 +35,10 @@ const COMPLETE_ONLY = process.argv.includes('--complete-only');
 // trips whose postcards backdate to the last two days stop keeping the top of Home fresh.
 const ALL_PUBLIC = process.argv.includes('--all-public');
 
+// One worker per traveler instead of one long queue. Local-only until proven: a deployed rung
+// multiplies transient 5xx under load, and the retry logic has never run ten-wide.
+const PARALLEL = process.argv.includes('--parallel');
+
 const lifecycleOf = (trip) => (ALL_PUBLIC ? 'completed' : trip.lifecycle);
 const audienceOf = (trip) => (ALL_PUBLIC ? 'public' : trip.publish);
 
@@ -191,7 +195,7 @@ async function archivePreviousRuns(traveler, token) {
 }
 
 
-async function seedTraveler(traveler, credits, collaborator) {
+async function seedTraveler(traveler, credits, collaborator, say = console.log) {
   const token = await poolToken(traveler.tag);
   await precompleteProfile(api, token, traveler.tag);
 
@@ -211,17 +215,17 @@ async function seedTraveler(traveler, credits, collaborator) {
   const bird = photosFor(traveler.bird)[0];
   if (bird !== undefined) must(await uploadPhoto('/v1/me/avatar', token, bird), `${traveler.tag} avatar`);
 
-  console.log(`\n${traveler.name}  (${traveler.tag}, @${traveler.handle})  ${traveler.region}`);
-  console.log(`  avatar   ${bird === undefined ? 'MISSING' : path.basename(bird)}`);
+  say(`\n${traveler.name}  (${traveler.tag}, @${traveler.handle})  ${traveler.region}`);
+  say(`  avatar   ${bird === undefined ? 'MISSING' : path.basename(bird)}`);
 
   const archived = await archivePreviousRuns(traveler, token);
-  if (archived > 0) console.log(`  cleaned  ${archived} trip(s) from a previous run, archived`);
+  if (archived > 0) say(`  cleaned  ${archived} trip(s) from a previous run, archived`);
 
   // The archive sweep above still runs over every fixture title, not just the chosen ones, so a
   // later full run cleans up whatever a partial run left behind.
   const chosenTrips = COMPLETE_ONLY ? traveler.trips.filter(isFullyPhotographed) : traveler.trips;
   const skipped = traveler.trips.length - chosenTrips.length;
-  if (skipped > 0) console.log(`  skipped  ${skipped} trip(s) — photos not fetched yet`);
+  if (skipped > 0) say(`  skipped  ${skipped} trip(s) — photos not fetched yet`);
 
   const seeded = [];
   for (const trip of chosenTrips) {
@@ -360,7 +364,7 @@ async function seedTraveler(traveler, credits, collaborator) {
       must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', token, { audience: audienceOf(trip) }), 'publish');
     }
 
-    console.log(
+    say(
       `  ${lifecycleOf(trip).padEnd(9)} ${(audienceOf(trip) ?? '—').padEnd(7)} `
         + `${String(trip.days.length).padStart(2)}d ${String(activities.length).padStart(2)}a `
         + `${String(attached).padStart(2)}ph ${posted > 0 ? `${posted} postcard(s)/${frameCount}f ` : '              '}`
@@ -413,17 +417,51 @@ async function main() {
 
   let trips = 0;
   const skipped = [];
-  for (const traveler of chosen) {
-    // Skips rather than dying, because an unusable account is a pool problem and not a reason to
-    // abandon the nine that work. Firebase cannot tell "absent" from "wrong password" (see
-    // test-pool.js list), so the reason is reported verbatim and the run continues.
-    try {
-      const seeded = await seedTraveler(traveler, credits, traveler.tag === 't2' ? null : collaborator);
-      trips += seeded.length;
-    } catch (e) {
-      if (!e.message.startsWith('sign-in failed')) throw e;
-      skipped.push(traveler);
-      console.log(`\n${traveler.name}  (${traveler.tag})  SKIPPED — cannot sign in`);
+  if (PARALLEL) {
+    // One worker per traveler, all at once. Safe because the only cross-traveler thread is t2's
+    // collaborator role, and every act in it — the invitation, the accept, the dump upload — touches
+    // that one trip's rows; the shared t2 token is a stateless bearer, and the invitation inbox is
+    // Page.exhausted, so concurrent pending invites cannot hide from each other. Each worker buffers
+    // its own lines and prints them as a block on completion, because ten interleaved trip logs are
+    // unreadable and useless as evidence. Retry lines still interleave live — deliberately, since a
+    // retry storm is exactly what this mode exists to surface.
+    const outcomes = await Promise.all(chosen.map(async (traveler) => {
+      const lines = [];
+      try {
+        const seeded = await seedTraveler(
+          traveler, credits, traveler.tag === 't2' ? null : collaborator, (text) => lines.push(text),
+        );
+        return { traveler, seeded, lines };
+      } catch (e) {
+        if (!e.message.startsWith('sign-in failed')) {
+          console.log(lines.join('\n'));
+          throw e;
+        }
+        return { traveler, seeded: null, lines };
+      }
+    }));
+    for (const outcome of outcomes) {
+      console.log(outcome.lines.join('\n'));
+      if (outcome.seeded === null) {
+        skipped.push(outcome.traveler);
+        console.log(`\n${outcome.traveler.name}  (${outcome.traveler.tag})  SKIPPED — cannot sign in`);
+      } else {
+        trips += outcome.seeded.length;
+      }
+    }
+  } else {
+    for (const traveler of chosen) {
+      // Skips rather than dying, because an unusable account is a pool problem and not a reason to
+      // abandon the nine that work. Firebase cannot tell "absent" from "wrong password" (see
+      // test-pool.js list), so the reason is reported verbatim and the run continues.
+      try {
+        const seeded = await seedTraveler(traveler, credits, traveler.tag === 't2' ? null : collaborator);
+        trips += seeded.length;
+      } catch (e) {
+        if (!e.message.startsWith('sign-in failed')) throw e;
+        skipped.push(traveler);
+        console.log(`\n${traveler.name}  (${traveler.tag})  SKIPPED — cannot sign in`);
+      }
     }
   }
 
