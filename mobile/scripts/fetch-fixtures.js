@@ -86,9 +86,6 @@ async function main() {
   let remaining;
 
   for (const job of jobs) {
-    // Counts the whole pool, not just the first file. Testing `-1.jpg` meant a place cached at the
-    // old PER_PLACE reported `have` forever, so raising the constant topped up nothing and said so
-    // in a success line.
     if (photosFor(OUT, job.query).length >= job.take) {
       console.log(`  have  ${slug(job.query)}`);
       continue;
@@ -113,10 +110,6 @@ async function main() {
       if (fs.existsSync(file)) continue;
       const name = path.basename(file);
 
-      // One withdrawn image used to abort the whole run: the CDN answered 422 on a single photo and
-      // main().catch() exited, throwing away the remaining places for the sake of one file. A photo
-      // that will not download is a photo we do without — the pool degrades by one and everything
-      // else proceeds. The partial file is removed so the skip-check does not count it as fetched.
       let size;
       try {
         size = await download(photo.src.large, file);

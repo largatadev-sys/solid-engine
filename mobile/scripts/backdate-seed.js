@@ -3,26 +3,12 @@ const path = require('path');
 const { TRAVELERS } = require('./fixtures/travelers');
 const { CACHE_DIR, photosFor } = require('./photoPool');
 
-// THE ONE PLACE THIS HARNESS TOUCHES THE DATABASE DIRECTLY, AND WHY THAT IS NOT THE RULE IT LOOKS
-// LIKE. S1.5 banned planting rows with psql because doing so SKIPPED THE VERIFICATION GATE — the
-// fixtures were bypassing the very rule the gate exists to enforce. Nothing is bypassed here. Every
-// gated act still goes through the real API: auth, membership, the lifecycle ladder, photo ingest,
-// the entry itself. Only *when it happened* is adjusted afterwards, and there is deliberately no API
-// for that, because a real postcard is posted now. The clock is one app-wide Clock.systemUTC() bean,
-// so the alternative would be a request-level override — test-only code in the production path,
-// which is a worse trade than one visible, opt-in script.
-//
-// Kept OUT of seed-travelers.js on purpose: the seeder stays HTTP-only, so the exception is a thing
-// you run rather than a thing hidden inside something else.
 
 const DEPLOYED_OPT_IN = '--yes-backdate-the-deployed-rung';
 
 const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
 const address = (tag) => { const [local, domain] = BASE.split('@'); return `${local}+${tag}@${domain}`; };
 
-// Weighted toward recent, so the top of the feed is fresh and the tail goes back about six months.
-// A feed where everything is equally old reads as a dump; one where everything is minutes old reads
-// as a fixture. Neither looks like an app in use.
 const BANDS = [
   { label: 'this week', share: 0.20, minDays: 0, maxDays: 7 },
   { label: 'this month', share: 0.30, minDays: 7, maxDays: 30 },
@@ -32,13 +18,8 @@ const BANDS = [
 
 const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split('=')[1];
 
-// Mirrors seed-travelers' flag so the two agree on which trips exist. Without it every unseeded
-// trip still costs two psql round trips that match nothing.
 const COMPLETE_ONLY = process.argv.includes('--complete-only');
 
-// Must match whatever seed-travelers was given, or the two disagree about the world: daysAgoFor
-// pins an ongoing trip's postcards to the last two days because it is being lived now, and nothing
-// is ongoing once --all-public has completed everything.
 const ALL_PUBLIC = process.argv.includes('--all-public');
 
 const lifecycleOf = (trip) => (ALL_PUBLIC ? 'completed' : trip.lifecycle);
@@ -49,8 +30,6 @@ function isFullyPhotographed(trip) {
   return trip.days.every((day) => photosFor(PHOTOS, day.at).length >= Math.max(day.activities.length, 1));
 }
 
-// Deterministic, so re-running produces the same history rather than reshuffling it. A trip's date
-// is derived from its own title — the same trip lands in the same week every time it is rebuilt.
 function seededRandom(text) {
   let hash = 2166136261;
   for (let i = 0; i < text.length; i += 1) {
@@ -69,9 +48,6 @@ function bandFor(roll) {
   return BANDS[BANDS.length - 1];
 }
 
-// An ongoing trip is being lived NOW, so its postcards belong to the last couple of days whatever
-// the band says. Posting "three months ago" from a trip the app shows as in progress is the kind of
-// incoherence the whole dataset exists to avoid.
 function daysAgoFor(trip) {
   const roll = seededRandom(trip.title);
   if (lifecycleOf(trip) === 'ongoing') return 0.2 + roll * 1.8;
@@ -80,10 +56,6 @@ function daysAgoFor(trip) {
   return band.minDays + spread * (band.maxDays - band.minDays);
 }
 
-// A remote rung drops one connection in a few hundred, and this script opens a fresh one per
-// statement — so a run over 150 trips dies partway with certainty given enough trips. Same
-// philosophy as the seeder's HTTP retry: transient failures get three attempts, and a statement
-// that still fails after that is a real problem that must stop the run.
 const PSQL_RETRIES = 3;
 
 function psql(sql) {
@@ -105,12 +77,6 @@ function psql(sql) {
 function psqlOnce(sql) {
   const url = process.env.LARGATA_DATABASE_URL;
   if (url !== undefined && url !== '') {
-    // Not every machine has a psql binary — this one does not — so fall back to the postgres image,
-    // which every machine running this stack already has. The URL reaches docker as `-e PGURL`
-    // WITHOUT a value, inherited from this process's environment: `-e PGURL=<url>` put the whole
-    // connection string — password included — into docker's argv, the host's process list, and
-    // every execFileSync error message, which is exactly what the comment above it promised the
-    // env var would prevent. Found when a connection failure printed the credential.
     if (hasLocalPsql()) {
       return execFileSync('psql', [url, '-tAc', sql], { encoding: 'utf8' }).trim();
     }
@@ -148,9 +114,6 @@ function quote(text) {
   return `'${text.replace(/'/g, "''")}'`;
 }
 
-// psql prints its "UPDATE n" command tag as an output line even under -tAc, so counting raw lines
-// reports one extra per statement — which read as 124 postcards moved when 92 exist. Count only the
-// RETURNING rows.
 function countRows(sql) {
   return psql(sql).split('\n').filter((line) => line.trim() === '1').length;
 }
@@ -181,26 +144,16 @@ function main() {
       const publishable = audienceOf(trip) !== null && audienceOf(trip) !== undefined;
       if (postcards === 0 && !publishable) continue;
 
-      // Interpolated into SQL unquoted, so its being a number is load-bearing rather than incidental.
-      // Everything else that reaches the statement goes through quote(); this asserts the one thing
-      // that does not, rather than relying on the fixture staying trustworthy.
       const daysAgo = daysAgoFor(trip);
       if (!Number.isFinite(daysAgo)) {
         throw new Error(`refusing to build SQL: daysAgo for "${trip.title}" is ${daysAgo}`);
       }
 
-      // Discovery orders by published_at, and nothing until now ever moved it — so a dataset whose
-      // feed spanned six months presented a Discover tab where every trip went public inside the
-      // seeding hour. The band is the trip's own, so the two surfaces tell one story; the offset is
-      // the plausible gap between finishing a trip and publishing it, and keeps ORDER BY off ties.
       const publishOffset = Number((seededRandom(trip.title + '/publish') * 2).toFixed(3));
       if (!Number.isFinite(publishOffset)) {
         throw new Error(`refusing to build SQL: publishOffset for "${trip.title}" is ${publishOffset}`);
       }
 
-      // Spreads a trip's own postcards across its span rather than stamping them all identically,
-      // so a trip reads as several days of posting. Ordered by id (UUIDv7, so creation order) and
-      // walked backwards from the trip's date.
       const sql = `
         WITH ordered AS (
           SELECT de.id, row_number() OVER (ORDER BY de.id) - 1 AS n

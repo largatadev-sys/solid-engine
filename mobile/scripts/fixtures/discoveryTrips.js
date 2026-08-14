@@ -1,22 +1,5 @@
 const { buildTrip } = require('./tripBuilder');
 
-// A hundred published trips whose only job is to give Discovery something to be. They attach to the
-// existing ten travelers, six in that traveler's home region and four in an adjacent one, so the
-// regional-specialist identity that makes the fixture legible survives while the coverage widens
-// into Central Asia, the Pacific, Eastern Europe, the Middle East, Central America, the Caribbean,
-// West Africa and the Arctic fringe.
-//
-// DURATIONS RUN 2,3,3,3,5,6,7,10,12,16 PER TRAVELER, which is not decoration: the filter sheet
-// offers 1-3 / 4-7 / 8-14 / 15+, and a dataset capped at seven days leaves half of it returning "no
-// results" forever. This ladder fills every band — 40 / 30 / 20 / 10 across the hundred.
-//
-// DESTINATIONS REPEAT ON PURPOSE. Trending groups by destination string and caps at 12, so a
-// hundred trips naming a hundred places yields a ranking of ties. Hubs recur across a traveler's
-// trips the way they do in real travel — you keep coming back through the same airport.
-//
-// ALL COMPLETED AND PUBLIC, because populating Discovery is the whole point. The original fifty
-// carry the lifecycle spread and the two private trips that prove the visibility fence; nothing here
-// needs to duplicate that.
 
 const t = (owner, title, destinations, currency, bestTimeOfYear, days) => ({
   owner,
@@ -31,7 +14,6 @@ const t = (owner, title, destinations, currency, bestTimeOfYear, days) => ({
 
 
 const SPECS = [
-  // ─── t1 · Maya Ocampo · Southeast Asia, expanding into Indochina and Borneo ───────────────────
   t('t1', 'Kota Kinabalu, a long weekend', ['Kota Kinabalu'], 'MYR', 'Mar – Sep', [
     'Kota Kinabalu|city', 'Tanjung Aru, Kota Kinabalu|coast',
   ]),
@@ -78,7 +60,6 @@ const SPECS = [
     'Yangon, Myanmar|city',
   ]),
 
-  // ─── t2 · Kenji Nakamura · East Asia, expanding into Central Asia ─────────────────────────────
   t('t2', 'Kanazawa, two days', ['Kanazawa'], 'JPY', 'Apr – Jun', [
     'Kanazawa, Japan|city', 'Kenrokuen, Kanazawa|nature',
   ]),
@@ -124,7 +105,6 @@ const SPECS = [
     'Sendai, Japan|city', 'Tokyo, Japan|city',
   ]),
 
-  // ─── t3 · Sarah Whitmore · Oceania, expanding into the Pacific Islands ────────────────────────────
   t('t3', 'Byron Bay, a weekend', ['Byron Bay'], 'AUD', 'Sep – Nov', [
     'Byron Bay, NSW|coast', 'Cape Byron, NSW|coast',
   ]),
@@ -173,7 +153,6 @@ const SPECS = [
     'Moeraki, New Zealand|coast', 'Oamaru, New Zealand|town', 'Christchurch, New Zealand|city',
   ]),
 
-  // ─── t4 · Ana Duarte · Western Europe, expanding into Eastern Europe ──────────────────────
   t('t4', 'Bruges in two days', ['Bruges'], 'EUR', 'Apr – Jun', [
     'Bruges, Belgium|heritage', 'Bruges, Belgium|town',
   ]),
@@ -220,7 +199,6 @@ const SPECS = [
     'Vienna, Austria|city',
   ]),
 
-  // ─── t5 · Dimitri Stavros · Mediterranean, expanding into the Middle East ──────────────────────
   t('t5', 'Hydra, no cars', ['Hydra'], 'EUR', 'May – Oct', [
     'Hydra, Greece|coast', 'Hydra, Greece|town',
   ]),
@@ -267,7 +245,6 @@ const SPECS = [
     'Palermo, Sicily|city',
   ]),
 
-  // ─── t6 · Lucia Fernández · South America, expanding into Central America ───────────────────────
   t('t6', 'Colonia, across the river', ['Colonia'], 'UYU', 'Oct – Mar', [
     'Colonia del Sacramento, Uruguay|heritage', 'Colonia del Sacramento, Uruguay|town',
   ]),
@@ -314,7 +291,6 @@ const SPECS = [
     'Bariloche, Argentina|nature', 'Bariloche, Argentina|mountain', 'Buenos Aires, Argentina|city',
   ]),
 
-  // ─── t7 · Marcus Bell · North America & Iceland, expanding into Mexico and the Caribbean ───
   t('t7', 'Portland and the Gorge', ['Portland'], 'USD', 'Jun – Sep', [
     'Portland, Oregon|city', 'Columbia River Gorge, Oregon|nature',
   ]),
@@ -361,7 +337,6 @@ const SPECS = [
     'Mount Shasta, California|mountain', 'Portland, Oregon|city',
   ]),
 
-  // ─── t8 · Amina Diallo · Africa, expanding into West Africa and the Horn ──────────────────────
   t('t8', 'Gorée and Dakar', ['Dakar'], 'XOF', 'Nov – May', [
     'Gorée Island, Senegal|heritage', 'Dakar, Senegal|city',
   ]),
@@ -409,7 +384,6 @@ const SPECS = [
     'Zanzibar, Tanzania|coast', 'Dar es Salaam, Tanzania|city',
   ]),
 
-  // ─── t9 · Rohan Mehta · South Asia, expanding into the Himalaya and Indian Ocean ──────────────
   t('t9', 'Mumbai and Elephanta', ['Mumbai'], 'INR', 'Nov – Feb', [
     'Mumbai, India|city', 'Elephanta Caves, Mumbai|heritage',
   ]),
@@ -456,7 +430,6 @@ const SPECS = [
     'Kathmandu, Nepal|city',
   ]),
 
-  // ─── t10 · Ingrid Solberg · Northern Europe, expanding into the Arctic fringe ─────────────────
   t('t10', 'Bergen and Fløyen', ['Bergen'], 'NOK', 'May – Sep', [
     'Bergen, Norway|city', 'Fløyen, Bergen|mountain',
   ]),

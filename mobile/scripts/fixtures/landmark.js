@@ -2,19 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const { photoForSlot } = require('../photoPool');
 
-// Pulls a named landmark out of a Pexels caption so an activity can be titled after something that
-// actually exists — "Up to Mount Batur" rather than "Hiking above Amed".
-//
-// PRECISION OVER RECALL, DELIBERATELY. A measured pass over 1,669 captions with a loose filter
-// accepted 42%, but half of those were unusable: "Captivating aerial view of Sapporo", "of a red
-// Hanoi sign", "traditional Philippine boats moored". A bad title reads as a bug; a generic one
-// only reads as unremarkable, and the generic fallback is already good enough. So the filter is
-// strict and everything it rejects keeps the kind template.
-//
-// The test that does the work: every significant word must be capitalised. That admits Mount Batur,
-// Yasaka Pagoda, Hoan Kiem Lake and Uluwatu Cliffs while rejecting "sunset view over Moalboal" and
-// "cityscape of Seoul" on their lowercase words alone. It costs real names like "Isle of Skye" —
-// accepted, because the fallback is fine and a wrong title is not.
 
 const CREDITS = 'CREDITS.json';
 
@@ -31,8 +18,6 @@ const LENS = /^(?:aerial\s+|drone\s+|overhead\s+|panoramic\s+)?(?:view|shot|phot
 
 const TAIL = /\s+(?:with|in|on|under|along|near|surrounded|featuring|during|framed|against|amid|amidst|beneath|beside|at)\b.*$/i;
 
-// Words that mean the phrase describes the photograph rather than the place. Any of them anywhere
-// disqualifies the whole subject.
 const CAMERA = new Set([
   'view', 'views', 'shot', 'photo', 'image', 'scene', 'panorama', 'landscape', 'cityscape',
   'skyline', 'nightlife', 'capture', 'glimpse', 'backdrop', 'silhouette', 'sunset', 'sunrise',
@@ -40,7 +25,6 @@ const CAMERA = new Set([
   'signage', 'sign', 'signs', 'street', 'streets', 'district', 'area', 'region', 'landmark',
 ]);
 
-// Capitalised words that still are not part of a name.
 const NOT_A_NAME = new Set([
   'Explore', 'Discover', 'Visit', 'Enjoy', 'Experience', 'Capture', 'Aerial', 'Stunning',
   'Beautiful', 'Scenic', 'Panoramic', 'Serene', 'Peaceful', 'Breathtaking', 'Gorgeous', 'Vibrant',
@@ -92,9 +76,6 @@ function creditsIn(dir) {
   return cache;
 }
 
-// Returns the landmark the activity's own photo names, or null. Null is the normal case and the
-// caller falls back to its template — a machine with no photo cache simply gets every fallback,
-// which is the state this fixture shipped in.
 function landmarkAt(dir, place, slot) {
   const file = photoForSlot(dir, place, slot);
   if (file === undefined) return null;
@@ -103,12 +84,6 @@ function landmarkAt(dir, place, slot) {
   const landmark = namedLandmark(entry.alt);
   if (landmark === null) return null;
 
-  // A caption for "Lisbon, Portugal" often names only Lisbon, and "Walking to Lisbon" on a day
-  // already set in Lisbon says less than the template it would replace. Only keep a landmark that
-  // adds something the place string does not already carry.
-  // Equality, not containment. Containment threw away "Kyoto Tower" on a day in Kyoto and
-  // "Jeju Island" on a day in Jeju City — the exact landmarks worth naming. Only the caption that
-  // says nothing beyond the place itself is redundant.
   const here = place.split(',')[0].trim().toLowerCase();
   if (landmark.toLowerCase() === here) return null;
   return landmark;

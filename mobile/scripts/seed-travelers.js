@@ -12,28 +12,10 @@ const DEPLOYED_OPT_IN = '--yes-seed-the-deployed-rung';
 
 const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split('=')[1];
 
-// Seeds only trips whose every day holds at least as many photos as it has activities, so nothing
-// renders with a gap. A partly-fetched cache otherwise produces coverless Discovery cards, which
-// read as a broken feature rather than as an unfinished download — and a coverless trip is dropped
-// from the Recommended rail outright, since findRecommendable requires cover_image_url.
 const COMPLETE_ONLY = process.argv.includes('--complete-only');
 
-// Forces every trip to completed + public. A shared preview wants a dataset that reads like a
-// product, and a draft is invisible to everyone but its owner anyway, so on that rung the lifecycle
-// spread is clutter in one account's Trips tab rather than something anybody browses.
-//
-// It is NOT the default, and should not be used on the rung you test against: publishing requires
-// the completed state (ADR-017, reinstated by ADR-019), so forcing it flattens draft, upcoming and
-// ongoing out of existence — every lifecycle banner in the Trips tab then has no data to render,
-// the two private trips that prove Discovery's visibility fence become public, and the ongoing
-// trips whose postcards backdate to the last two days stop keeping the top of Home fresh.
 const ALL_PUBLIC = process.argv.includes('--all-public');
 
-// One worker per traveler instead of one long queue. --parallel runs everything at once (proven
-// local: 4m03s, every count exact); --parallel=N caps the width, for a first run against a rung
-// whose capacity under concurrent ingest is unmeasured. A wedged run is recoverable everywhere —
-// the sweep archives fixture-titled wreckage on the next attempt and archive-strays reaches the
-// rest — so width is a throughput/mess trade, not a safety gate.
 const PARALLEL_ARG = process.argv.find((a) => a === '--parallel' || a.startsWith('--parallel='));
 const PARALLEL = PARALLEL_ARG !== undefined;
 const WIDTH = PARALLEL_ARG?.includes('=') ? Math.max(1, Number(PARALLEL_ARG.split('=')[1]) || 1) : Infinity;
@@ -44,8 +26,6 @@ const audienceOf = (trip) => (ALL_PUBLIC ? 'public' : trip.publish);
 function isFullyPhotographed(trip) {
   return trip.days.every((day) => photosFor(day.at).length >= Math.max(day.activities.length, 1));
 }
-
-
 
 
 function uploadPhoto(route, token, file) {
@@ -98,9 +78,6 @@ function must(res, what) {
 
 const photosFor = (query) => photosInPool(PHOTOS, query);
 
-// A postcard leads with the photo of the activity it is about, then fills from the rest of that
-// day's pool. Every entry the demo dataset had ever posted carried exactly one photo, so S4.21's
-// photo strip — the dots, the counter, the drag-snap — rendered on nothing but walk fixtures.
 function postcardFrames(activity, wanted) {
   const frames = [activity.file];
   for (const file of activity.pool) {
@@ -110,20 +87,12 @@ function postcardFrames(activity, wanted) {
   return frames;
 }
 
-// The photo's own alt-text, which describes the IMAGE rather than the place. Used as the activity's
-// description because it is the one string here that is literally true of what you are looking at —
-// everything else in the fixture is composed. Pexels returns no location field, so the place comes
-// from the day's search term and the description comes from the photo.
 function altFor(file, credits) {
   const alt = credits[path.basename(file)]?.alt;
   if (alt === undefined || alt.trim() === '') return null;
   return alt.trim();
 }
 
-// There is no trip-delete endpoint, so a re-run cannot remove what a previous one made — and a run
-// that dies partway (a missing lease, a dropped connection) leaves a half-built trip behind that
-// looks exactly like a real one in the Trips list. Archiving every fixture-titled trip first makes
-// the seeder safe to run repeatedly: the debris drops out of the list rather than accumulating.
 async function archivePreviousRuns(traveler, token) {
   const titles = new Set(traveler.trips.map((t) => t.title));
   const mine = await allMyTrips(token);
@@ -139,9 +108,6 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
   const token = await poolToken(traveler.tag);
   await precompleteProfile(api, token, traveler.tag);
 
-  // Overrides precomplete-profile's deliberate no-display-name (founder ruling 2026-07-27, that a
-  // test identity must identify itself) because the founder asked for clean names in this dataset
-  // on 2026-08-13. The tag is still recoverable from the email and the seeder prints it per line.
   must(
     await api('/v1/me', 'PATCH', token, {
       displayName: traveler.name,
@@ -161,8 +127,6 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
   const archived = await archivePreviousRuns(traveler, token);
   if (archived > 0) say(`  cleaned  ${archived} trip(s) from a previous run, archived`);
 
-  // The archive sweep above still runs over every fixture title, not just the chosen ones, so a
-  // later full run cleans up whatever a partial run left behind.
   const chosenTrips = COMPLETE_ONLY ? traveler.trips.filter(isFullyPhotographed) : traveler.trips;
   const skipped = traveler.trips.length - chosenTrips.length;
   if (skipped > 0) say(`  skipped  ${skipped} trip(s) — photos not fetched yet`);
@@ -221,9 +185,6 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
           `activity "${spec.title}"`,
         );
         if (file !== undefined) {
-          // An activity photo is plan data, so it is fenced by the ACTIVITY lease the same way a
-          // header edit is fenced by the header lease (ADR-021). Without this the upload is a 409
-          // EDIT_LOCKED that reads as another member editing, when in fact nobody holds anything.
           const lease = { subjectType: 'activity', subjectId: activity.id };
           must(await api(`/v1/itineraries/${created.id}/edit-lock`, 'POST', token, lease), 'activity lease');
           must(
@@ -278,9 +239,6 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
       }
     }
 
-    // Postcards live ON the activity that carries them, so there is no title to match and no way
-    // for a caption to reference an activity that does not exist — the shape the earlier lookup
-    // array allowed, which failed silently as a skipped postcard.
     let posted = 0;
     let frameCount = 0;
     for (const activity of activities.filter((a) => a.post !== undefined)) {
@@ -341,21 +299,12 @@ async function main() {
   console.log(`seeding ${API}${deployed ? '  (DEPLOYED RUNG)' : ''}`);
   console.log(`${chosen.length} traveler(s), ${chosen.reduce((n, t) => n + t.trips.length, 0)} trips`);
 
-  // t2 collaborates on whichever long trips it does not own. Only verified accounts can accept an
-  // invitation (EMAIL_NOT_VERIFIED gates it), and t1-t5 are the verified half of the pool.
   const collaborator = { tag: 't2', token: await poolToken('t2') };
   await precompleteProfile(api, collaborator.token, 't2');
 
   let trips = 0;
   const skipped = [];
   if (PARALLEL) {
-    // One worker per traveler, all at once. Safe because the only cross-traveler thread is t2's
-    // collaborator role, and every act in it — the invitation, the accept, the dump upload — touches
-    // that one trip's rows; the shared t2 token is a stateless bearer, and the invitation inbox is
-    // Page.exhausted, so concurrent pending invites cannot hide from each other. Each worker buffers
-    // its own lines and prints them as a block on completion, because ten interleaved trip logs are
-    // unreadable and useless as evidence. Retry lines still interleave live — deliberately, since a
-    // retry storm is exactly what this mode exists to surface.
     const queue = [...chosen];
     const outcomes = [];
     const worker = async () => {
@@ -387,9 +336,6 @@ async function main() {
     }
   } else {
     for (const traveler of chosen) {
-      // Skips rather than dying, because an unusable account is a pool problem and not a reason to
-      // abandon the nine that work. Firebase cannot tell "absent" from "wrong password" (see
-      // test-pool.js list), so the reason is reported verbatim and the run continues.
       try {
         const seeded = await seedTraveler(traveler, credits, traveler.tag === 't2' ? null : collaborator);
         trips += seeded.length;

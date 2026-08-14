@@ -1,17 +1,9 @@
 const http = require('http');
 const https = require('https');
 
-// The HTTP layer every pool-account script shares. It was copied byte-for-byte between
-// seed-travelers and archive-strays, which put the S3.1 nextCursor trap in two places at once —
-// the exact drift photoPool.js was extracted to stop, repeated in the same change that extracted
-// it. One definition, so a fix reaches both.
 
 const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 
-// Against localhost every call succeeds; against a deployed rung one in a few hundred does not, and
-// a seeding run is thousands of calls. A single transient 5xx killed a run 11 trips in — work that
-// cannot be resumed, only redone. Retries 5xx and transport errors only: a 4xx is the caller being
-// wrong and must still fail loudly rather than being hammered.
 const RETRIES = 3;
 
 const address = (tag) => {
@@ -75,11 +67,6 @@ async function poolToken(tag) {
   return res.body.idToken;
 }
 
-// GET /v1/itineraries pages at 20 by default. A caller that reads it bare sees one page and cannot
-// tell a complete list from a truncated one — which is how an archive sweep reports "cleaned N"
-// having seen a fraction of what it should. Compare the cursor with ?? — nextCursor is null on the
-// wire and undefined in the types (S3.1) — and guard against a repeated cursor so a server bug
-// degrades instead of spinning.
 async function allMyTrips(token) {
   const rows = [];
   let cursor;

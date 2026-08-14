@@ -1363,9 +1363,6 @@ const TRAVELERS = [
 ];
 
 
-// The dump is member-contributed by design, so these are searched once and spread across whichever
-// trips get a co-traveler. Deliberately generic — a dump is a pile of a trip's photos, not a
-// curated set.
 const DUMP_QUERIES = [
   'travel backpack road',
   'street food market asia',
@@ -1376,9 +1373,6 @@ const DUMP_QUERIES = [
 ];
 
 
-// The hundred Discovery trips attach here rather than being written inline, so this file stays the
-// hand-authored fifty — the ones carrying the lifecycle spread and the two private trips that prove
-// the visibility fence. Everything appended below is completed and public by construction.
 const { SPECS, buildTrip } = require('./discoveryTrips');
 
 for (const spec of SPECS) {
@@ -1389,8 +1383,6 @@ for (const spec of SPECS) {
   traveler.trips.push(buildTrip(spec));
 }
 
-// The seeder archives previous runs by title and the backdater matches rows by title, so two trips
-// sharing one would silently make both scripts operate on the wrong rows.
 const titles = TRAVELERS.flatMap((one) => one.trips.map((trip) => trip.title));
 if (new Set(titles).size !== titles.length) {
   const seen = new Set();

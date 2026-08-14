@@ -2,18 +2,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-// The Pexels cache lives OUTSIDE the repo — ~210MB of fetched artifacts is not code, and
-// gitignoring it still left it sitting inside the project tree (founder, 2026-08-14). One resolver
-// so the fetcher, the seeder, the backdater and the trip builder cannot disagree about where it is;
-// LARGATA_PHOTO_CACHE overrides for a machine that wants it elsewhere. The app's own copies are
-// unaffected: the seeder uploads through the real media pipeline into MinIO/the bucket either way —
-// this folder is only the source material.
 const CACHE_DIR = process.env.LARGATA_PHOTO_CACHE
   || path.join(os.homedir(), '.largata', 'photo-cache');
 
-// One definition, imported by the fetcher and the seeder. It lived as a literal 3 in both, unsynced:
-// raising it in fetch-fixtures.js alone downloads photos that photosFor() never looks for, and the
-// fetch log still reports success. Two call sites, one number, no way to notice the drift.
 const PER_PLACE = 6;
 
 const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -31,10 +22,6 @@ function photosFor(dir, query) {
   return found;
 }
 
-// The one definition of which photo an activity gets. It has to be shared: the builder derives an
-// activity's title from its photo's caption while the seeder uploads that photo, and if the two
-// computed the slot independently they would drift into titles describing a picture the traveler
-// never sees — silently, since nothing downstream compares them.
 function photoForSlot(dir, query, slot) {
   const pool = photosFor(dir, query);
   return pool.length === 0 ? undefined : pool[slot % pool.length];

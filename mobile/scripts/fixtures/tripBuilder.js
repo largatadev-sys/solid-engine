@@ -1,16 +1,3 @@
-// Expands a compact trip spec — a title, its destinations and an ordered list of day places — into
-// the full shape seed-travelers.js consumes. The places are authored because the destination
-// distribution is a design input: Discovery's trending rail groups by destination and caps at 12, so
-// a hundred trips naming a hundred different places produces a ranking of ties.
-//
-// EVERY PLACE CARRIES A KIND, and that is the difference between mock data and nonsense. A
-// place-agnostic template pool cheerfully produced "Museum hour in Magpupungko" for a rock pool and
-// "Night market in Cloud 9" for a surf break. The kind selects the vocabulary, so a lagoon gets
-// paddled and a city gets walked.
-//
-// DETERMINISTIC BY CONSTRUCTION. Every choice is keyed on the trip title plus a coordinate, so a
-// rebuilt dataset is the same dataset — a screenshot, a walk assertion and a bug report all stay
-// reproducible. Math.random() would make each reseed a different app.
 
 const path = require('path');
 const { landmarkAt } = require('./landmark');
@@ -28,10 +15,6 @@ const seededRandom = (text) => {
 
 const pick = (pool, roll) => pool[Math.floor(roll * pool.length) % pool.length];
 
-// Three of the five time bands share the phase "day", so a short trip puts most of its activities
-// into one pool and independent seeds collide — "Walking Bruges end to end" came out three times on
-// the same day. Walking the pool from the seeded start until an unused rendering turns up keeps the
-// draw deterministic while making a repeat within a day take a genuinely exhausted pool.
 function pickDistinct(pool, roll, render, used) {
   const start = Math.floor(roll * pool.length) % pool.length;
   for (let i = 0; i < pool.length; i += 1) {
@@ -43,9 +26,6 @@ function pickDistinct(pool, roll, render, used) {
 
 const shortPlace = (place) => place.split(',')[0].trim();
 
-// KINDS carries one pool per time band so a midday title cannot land at 08:45. LANDMARK_TITLES
-// stays coarser on purpose — only about a fifth of activities get one, so splitting it five ways
-// would buy variety nobody sees while multiplying strings to keep in step.
 const broadPhase = (phase) => (phase === 'early' || phase === 'evening' ? phase : 'day');
 
 function activityCount(totalDays, roll) {
@@ -56,9 +36,6 @@ function activityCount(totalDays, roll) {
   return roll < 0.3 ? 0 : 1;
 }
 
-// One phase per band rather than three bands sharing "day". Collapsing them let "Long lunch in
-// Wadi Musa" land at 08:45, and funnelled most of a short trip's activities into a single pool
-// where independent seeds collided constantly.
 const SLOTS = [
   { from: 5.5, to: 7.5, phase: 'early' },
   { from: 8.5, to: 11, phase: 'morning' },
@@ -135,12 +112,6 @@ const KINDS = {
   },
 };
 
-// Most of these carry {p}, and that is the whole point. An eleven-string pool with no place in it
-// produced 826 notes from 11 distinct strings — each one appearing about seventy-five times, which
-// is far louder than the generic day titles it sat beside. Captions never had the problem because
-// they always substituted the place. A handful stay generic so not every line name-drops.
-// Used only when the activity's own photo names a landmark the place string does not already carry.
-// About a fifth of activities get one; the rest fall back to KINDS above.
 const LANDMARK_TITLES = {
   city: {
     early: ['{l} before it wakes up', 'First light at {l}'],
@@ -184,11 +155,6 @@ const LANDMARK_TITLES = {
   },
 };
 
-// An activity happens somewhere inside the day's area, not at the area itself. The hand-authored
-// fifty do this by hand — a day set in "Oslob, Cebu" holds activities at "Tan-awan, Oslob" and
-// "Sumilon Island" — and copying day.at onto every activity instead made a day read as three things
-// occurring in one spot. Picked distinctly per day, and skipped entirely where the photo already
-// named a real landmark, which beats any of these.
 const SUBPLACES = {
   city: ['Old Town, {p}', '{p} Station', 'the market district, {p}', 'the riverfront, {p}',
     'the museum quarter, {p}', 'the back streets of {p}', 'the cathedral square, {p}',
@@ -216,14 +182,6 @@ const SUBPLACES = {
     'the river crossing, {p}', 'the old toll house, {p}', 'the ridge road above {p}'],
 };
 
-// What one activity typically costs, in each currency's own units. Costs used to be drawn from a
-// flat 10-125 whatever the currency, which offered a boat trip in Indonesia for 85 rupiah — half a
-// US cent — dinner in Osaka for 60 yen, and a guesthouse in Laos for 125 kip. Calibrated against
-// what the hand-authored fifty charge, which are real figures somebody chose: PHP 250, IDR 50000,
-// JPY 1200, KRW 3000, EUR 14, INR 600, TZS 15000.
-//
-// An unknown currency throws rather than defaulting, because a silent default is exactly how the
-// flat range survived unnoticed — every amount looked like a number, so nothing looked wrong.
 const TYPICAL_COST = {
   USD: 25, EUR: 20, GBP: 18, CHF: 25, CAD: 30, AUD: 30, NZD: 30, FJD: 50, VUV: 2000,
   PHP: 300, IDR: 60000, VND: 200000, MYR: 60, LAK: 150000, MMK: 30000,
@@ -236,24 +194,16 @@ const TYPICAL_COST = {
   ISK: 3000, NOK: 250, SEK: 250, DKK: 150, PLN: 80, HUF: 7000,
 };
 
-// Rounds to something a price tag would actually show. 47,318 rupiah is arithmetic; 45,000 is a
-// number a guesthouse charges.
 function costFor(currency, roll) {
   const typical = TYPICAL_COST[currency];
   if (typical === undefined) {
     throw new Error(`no typical cost recorded for currency "${currency}" — add it to TYPICAL_COST`);
   }
-  // Skewed low on purpose: most things you do on a trip are cheap and a few are not, so a flat
-  // draw puts the median at nearly twice what the hand-authored fifty actually charge.
   const raw = typical * (0.15 + (roll ** 1.7) * 3.0);
   const step = raw >= 50000 ? 5000 : raw >= 5000 ? 500 : raw >= 500 ? 50 : raw >= 50 ? 5 : 1;
   return String(Math.max(step, Math.round(raw / step) * step));
 }
 
-// Notes that are only true of certain terrain. These lived in the universal pool and produced
-// "Wear something you can swim in around Petra" for a desert ruin and "Parking in Petra is hopeless"
-// for a site you walk into. Drawn alongside the universal ones, so a coast day can still be told
-// the ticket office is cash only.
 const KIND_NOTES = {
   city: ['Cheaper two streets back from the main square in {p}.', 'The metro beats a taxi in {p}.'],
   town: ['Ask about the back route out of {p} — quieter, barely longer.', 'Ask for the back terrace in {p}.'],
@@ -343,24 +293,15 @@ function buildDay(trip, raw, dayIndex, totalDays, currency, used) {
   const short = shortPlace(place);
   const vocab = KINDS[kind];
 
-  // Slots are walked in index order after selection, so a day's times ascend. Activities sort by
-  // sortOrder — creation order, not time — so an unsorted day would render 14:00 above 08:00 with
-  // nothing failing anywhere.
   const chosen = SLOTS.map((slot, index) => ({ slot, index, roll: seededRandom(`${key}/slot/${index}`) }))
     .sort((one, other) => other.roll - one.roll)
     .slice(0, count)
     .sort((one, other) => one.index - other.index);
 
-  // TRIP-scoped, passed in by buildTrip — a trip page is one screen, so a hub revisited on day 7
-  // repeating day 1's "the old street, Hanoi" reads as copy-paste even though each day was clean in
-  // isolation (founder ruling: every activity in a trip is unique). Day titles are the exception,
-  // handled in buildTrip, because their pool is per-place and small.
   const { usedTitles, usedNotes, usedCaptions, usedPlaces } = used;
 
   const activities = chosen.map(({ slot, index }, position) => {
     const seed = `${key}/${index}`;
-    // position, not index — the seeder assigns photos by an activity's place in the day's list, so
-    // the title is derived from the same photo the traveler will actually see under it.
     const landmark = landmarkAt(PHOTOS, place, position);
     const title = landmark === null
       ? pickDistinct(vocab[slot.phase], seededRandom(`${seed}/title`), (t) => t.replace('{p}', short), usedTitles)
@@ -411,11 +352,6 @@ function buildDay(trip, raw, dayIndex, totalDays, currency, used) {
   return { at: place, title: dayTitle, activities };
 }
 
-// The country or region a trip's day places sit in, taken as the commonest trailing segment of
-// "Somewhere, Country". Appended to destinations because trending groups by destination string and
-// caps at 12: a hundred trips naming only their specific stops produced a top-twelve where the
-// leader appeared three times and everything else tied, which is a ranking of nothing. A trip
-// carrying both "Kanazawa" and "Japan" lets the hub accumulate the way it does in real travel.
 function regionOf(days) {
   const tally = {};
   for (const raw of days) {
