@@ -53,7 +53,7 @@ export function audienceBlurb(audience: PublishAudience): string {
 const LIFECYCLE_LABELS: Record<ItineraryState, string> = {
   draft: 'Draft — still being planned',
   upcoming: 'Upcoming — planning is finished',
-  ongoing: 'Ongoing — the trip is under way',
+  ongoing: 'Active — the trip is under way',
   completed: 'Complete — the trip is done',
 };
 

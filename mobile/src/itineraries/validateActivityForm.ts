@@ -20,7 +20,6 @@ export function validateActivityForm(form: {
     return 'An estimated cost must be a number like 500 or 500.00.';
   }
   if (amount !== '' && currency === '') return 'An estimated cost needs a currency (e.g. PHP).';
-  if (currency !== '' && amount === '') return 'Enter an amount, or clear the currency.';
 
   const bookingAmount = (form.bookingPriceAmount ?? '').trim();
   if (bookingAmount !== '' && !/^\d+(\.\d{1,2})?$/.test(bookingAmount)) {

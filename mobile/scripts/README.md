@@ -291,7 +291,7 @@ node scripts/seed-travelers.js
 - **One day is one place**, because the photo search is keyed on the day's location. A day that
   wanders across a region gets photos of whichever part the search picked.
 - **Trips spread across lifecycle states.** A dataset of nothing but `completed` leaves the Trips
-  tab's Ongoing, Upcoming and Drafts sections empty, and only started trips can carry postcards.
+  tab's Active, Upcoming and Drafts sections empty, and only started trips can carry postcards.
 - **Photos are not rotated per run** *(founder, 2026-08-13)* — a place keeps the photos it was first
   given, so the same trip looks the same every time you rebuild it. Variety comes from new trips,
   never from reshuffling old ones.

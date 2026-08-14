@@ -70,6 +70,48 @@ class EstimatedCostTest {
 
 
     @Test
+    void oneUnpricedActivityMakesTheTotalPartial_soItNeverPosesAsComplete() {
+        EstimatedCost cost =
+                EstimatedCost.derivedFrom(List.of(day(activity("500", "PHP"), activity(null, null))))
+                        .orElseThrow();
+
+        assertThat(cost.amount()).isEqualByComparingTo("500");
+        assertThat(cost.partial()).isTrue();
+    }
+
+
+    @Test
+    void aPlanWhereEveryActivityStatesAPriceIsNotPartial() {
+        EstimatedCost cost =
+                EstimatedCost.derivedFrom(List.of(day(activity("500", "PHP"), activity("300", "PHP"))))
+                        .orElseThrow();
+
+        assertThat(cost.partial()).isFalse();
+    }
+
+
+    @Test
+    void anExplicitZeroCountsAsStated_freeAndNotStatedAreDifferentFacts() {
+        EstimatedCost cost =
+                EstimatedCost.derivedFrom(List.of(day(activity("500", "PHP"), activity("0", "PHP"))))
+                        .orElseThrow();
+
+        assertThat(cost.amount()).isEqualByComparingTo("500");
+        assertThat(cost.partial()).isFalse();
+    }
+
+
+    @Test
+    void anUnpricedActivityOnAnotherDayStillMakesTheWholeTotalPartial() {
+        EstimatedCost cost =
+                EstimatedCost.derivedFrom(List.of(day(activity("500", "PHP")), day(activity(null, null))))
+                        .orElseThrow();
+
+        assertThat(cost.partial()).isTrue();
+    }
+
+
+    @Test
     void theCurrencyCodeIsComparedWithoutCasingOrPadding() {
         EstimatedCost cost = EstimatedCost.derivedFrom(List.of(day(activity("500", "php"), activity("40", " PHP ")))).orElseThrow();
 

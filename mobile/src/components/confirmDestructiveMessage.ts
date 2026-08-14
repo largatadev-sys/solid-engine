@@ -87,7 +87,7 @@ export function unpublishTripWording(): ConfirmWording {
   return {
     title: 'Unpublish this trip?',
     body:
-      'It goes back to being a draft, which is how you edit it again. The page disappears and anything travelers left on it is hidden, not deleted — publish again and it all comes back. Copies other travelers already made keep existing.',
+      'The public page comes down and editing thaws — the trip keeps the state it is in. Anything travelers left on the page is hidden, not deleted: publish again and it all comes back. Copies other travelers already made keep existing.',
     confirmLabel: 'Unpublish',
   };
 }

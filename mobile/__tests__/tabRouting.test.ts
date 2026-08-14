@@ -1010,12 +1010,20 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).toContain('publishNeedsCompleteBody');
   });
 
-  it('puts Edit Itinerary in the viewer header, pointing at the Draft Workspace (S4.17 decision 4)', () => {
+  it('puts Edit Itinerary in the viewer header, pointing at the Itinerary Workspace (S4.24)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
     expect(workspace).toContain("actionLabel={editAction.kind === 'hidden' ? undefined : 'Edit Itinerary'}");
     expect(workspace).toContain("pathname: '/itineraries/[id]/edit-plan'");
-    expect(workspace).toContain('editItineraryAction(data, canEditPlan(data), myId, isOwner)');
+    expect(workspace).toContain('editItineraryAction(data, canEditPlan(data), myId)');
+  });
+
+  it('never reopens on the way into the editor — editing costs no state (S4.24, ADR-026)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(workspace).not.toContain('reopen-then-edit');
+    expect(workspace.match(/'reopen'/g) ?? []).toHaveLength(1);
+    expect(workspace).toContain('stepBackWording(data)');
   });
 
   it('puts publish on the viewer rail and unpublish quietly in the Details tab (S4.1 decision 11)', () => {

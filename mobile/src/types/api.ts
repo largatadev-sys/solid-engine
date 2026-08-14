@@ -195,6 +195,8 @@ export type EstimatedCostResponse = {
   amount: string;
 
   currency: string | null;
+
+  partial?: boolean;
 };
 
 

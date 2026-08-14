@@ -1,3 +1,4 @@
+import type { ConfirmWording } from '../components/confirmDestructiveMessage';
 import { workspaceBadgeColors } from '../theme/workspaceTokens';
 import type { ItineraryResponse, ItineraryState, LeaseHolderResponse } from '../types/api';
 import { holderLabel } from './leaseIndicator';
@@ -13,7 +14,6 @@ export type LadderCta = { act: LadderAct; label: string; blockedBy?: string };
 
 export type EditItineraryAction =
   | { kind: 'edit' }
-  | { kind: 'reopen-then-edit' }
   | { kind: 'blocked'; holder: string }
   | { kind: 'hidden' };
 
@@ -29,7 +29,7 @@ export type WorkspaceAffordances = {
 const BADGES: Record<ItineraryState, StateBadge> = {
   draft: { label: 'Draft', ...workspaceBadgeColors.draft },
   upcoming: { label: 'Ready', ...workspaceBadgeColors.upcoming },
-  ongoing: { label: 'Ongoing', ...workspaceBadgeColors.ongoing },
+  ongoing: { label: 'Active', ...workspaceBadgeColors.ongoing },
   completed: { label: 'Completed', ...workspaceBadgeColors.completed },
 };
 
@@ -47,9 +47,7 @@ export function stateBadge(
   surface: WorkspaceSurface = 'viewer',
 ): StateBadge {
   const badge = BADGES[itinerary.state];
-  return surface === 'editor' && itinerary.state === 'draft'
-    ? { ...badge, label: 'Trip Workspace' }
-    : badge;
+  return surface === 'editor' ? { ...badge, label: 'Trip Workspace' } : badge;
 }
 
 
@@ -77,7 +75,32 @@ export function showsStepBack(
   isOwner: boolean,
 ): boolean {
   if (!isOwner || itinerary.archived || itinerary.published) return false;
-  return itinerary.state === 'ongoing' || itinerary.state === 'completed';
+  return itinerary.state !== 'draft';
+}
+
+
+const STEP_BACK_WORDING: Record<ItineraryState, ConfirmWording | null> = {
+  draft: null,
+  upcoming: {
+    title: 'Reopen planning?',
+    body: 'The trip goes back to Draft. Editing the plan never needs this — you can do that from Edit Itinerary at any time.',
+    confirmLabel: 'Reopen planning',
+  },
+  ongoing: {
+    title: 'Undo starting the trip?',
+    body: 'The trip goes back to Ready, and nobody can add postcards until you start it again.',
+    confirmLabel: 'Step back',
+  },
+  completed: {
+    title: 'Undo completing the trip?',
+    body: 'The trip goes back to Active. You can complete it again at any time.',
+    confirmLabel: 'Step back',
+  },
+};
+
+
+export function stepBackWording(itinerary: Pick<ItineraryResponse, 'state'>): ConfirmWording | null {
+  return STEP_BACK_WORDING[itinerary.state];
 }
 
 
@@ -87,17 +110,15 @@ export function editItineraryAction(
   },
   canEditPlan: boolean,
   viewerTravelerId?: string,
-  isOwner = true,
 ): EditItineraryAction {
   if (!canEditPlan || itinerary.archived || itinerary.published) return { kind: 'hidden' };
-  if (itinerary.state !== 'draft' && !isOwner) return { kind: 'hidden' };
 
   const session = itinerary.editingSession;
   if (session && session.travelerId !== viewerTravelerId) {
     return { kind: 'blocked', holder: holderLabel(session) };
   }
 
-  return itinerary.state === 'draft' ? { kind: 'edit' } : { kind: 'reopen-then-edit' };
+  return { kind: 'edit' };
 }
 
 

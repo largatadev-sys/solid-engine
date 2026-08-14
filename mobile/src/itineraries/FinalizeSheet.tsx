@@ -12,7 +12,7 @@ import {
 export const FINALIZE_SHEET_TITLE = 'Ready to go?';
 
 export const FINALIZE_SHEET_BODY =
-  'Once finalized, the itinerary will be locked for your group to follow. You can always switch back to editing later.';
+  'This marks the itinerary travel-ready for your group to follow, and lets you start the trip. You can keep editing the plan whenever you need to.';
 
 export const FINALIZE_CONFIRM_LABEL = 'Finalize';
 

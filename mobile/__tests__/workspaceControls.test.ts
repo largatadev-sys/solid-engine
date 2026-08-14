@@ -39,7 +39,7 @@ describe('stateBadge', () => {
   const cases: Array<[ItineraryState, string, string, string]> = [
     ['draft', 'Draft', '#FEF3C7', '#D97706'],
     ['upcoming', 'Ready', '#DCFCE7', '#15803D'],
-    ['ongoing', 'Ongoing', '#E0F2FE', '#0369A1'],
+    ['ongoing', 'Active', '#E0F2FE', '#0369A1'],
     ['completed', 'Completed', '#F3F4F6', '#6B7280'],
   ];
 
@@ -47,8 +47,14 @@ describe('stateBadge', () => {
     expect(stateBadge(trip({ state }))).toEqual({ label, background, foreground });
   });
 
-  it('says Trip Workspace on the editor — the chip is where you are, not where the trip is (S4.19)', () => {
-    expect(stateBadge(trip({ state: 'draft' }), 'editor').label).toBe('Trip Workspace');
+  it('says Trip Workspace on the editor in every state — the chip is where you are, not where the trip is (S4.24)', () => {
+    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
+    states.forEach((state) => expect(stateBadge(trip({ state }), 'editor').label).toBe('Trip Workspace'));
+  });
+
+  it('never says Ongoing anywhere a traveler reads a state', () => {
+    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
+    states.forEach((state) => expect(stateBadge(trip({ state })).label).not.toBe('Ongoing'));
   });
 
   it.each(cases)('leaves the viewer chip on %s speaking lifecycle only', (state, label) => {
@@ -111,18 +117,19 @@ describe('ladderCta', () => {
 
 
 describe('showsStepBack', () => {
-  it('walks down from ongoing and completed only', () => {
+  it('walks down from every rung above draft — Ready included, since Edit no longer reopens (S4.24)', () => {
+    expect(showsStepBack(trip({ state: 'upcoming' }), true)).toBe(true);
     expect(showsStepBack(trip({ state: 'ongoing' }), true)).toBe(true);
     expect(showsStepBack(trip({ state: 'completed' }), true)).toBe(true);
   });
 
-  it('does not offer Step back on draft, and Ready steps back via Edit Itinerary', () => {
+  it('has nothing to step back to from draft', () => {
     expect(showsStepBack(trip({ state: 'draft' }), true)).toBe(false);
-    expect(showsStepBack(trip({ state: 'upcoming' }), true)).toBe(false);
   });
 
   it('is owner-only and never on an archived trip', () => {
     expect(showsStepBack(trip({ state: 'ongoing' }), false)).toBe(false);
+    expect(showsStepBack(trip({ state: 'upcoming' }), false)).toBe(false);
     expect(showsStepBack(trip({ state: 'ongoing', archived: true }), true)).toBe(false);
   });
 });
@@ -133,13 +140,11 @@ describe('editItineraryAction', () => {
     expect(editItineraryAction(trip({ state: 'draft' }), true)).toEqual({ kind: 'edit' });
   });
 
-  it('reopens a Ready trip and enters the editor in one tap', () => {
-    expect(editItineraryAction(trip({ state: 'upcoming' }), true)).toEqual({ kind: 'reopen-then-edit' });
-  });
-
-  it('reopens one rung at a time from ongoing and completed too', () => {
-    expect(editItineraryAction(trip({ state: 'ongoing' }), true)).toEqual({ kind: 'reopen-then-edit' });
-    expect(editItineraryAction(trip({ state: 'completed' }), true)).toEqual({ kind: 'reopen-then-edit' });
+  it('opens the editor in place from every unpublished state — editing costs no state (S4.24)', () => {
+    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
+    states.forEach((state) =>
+      expect(editItineraryAction(trip({ state }), true)).toEqual({ kind: 'edit' }),
+    );
   });
 
   it('is blocked while another traveler holds the Editing Session, and names them', () => {
@@ -155,20 +160,28 @@ describe('editItineraryAction', () => {
     expect(editItineraryAction(mine, true, 't1')).toEqual({ kind: 'edit' });
   });
 
-  it('lets a MEMBER edit a draft plan — activity editing is member-wide (decision 9)', () => {
-    expect(editItineraryAction(trip({ state: 'draft' }), true, undefined, false)).toEqual({ kind: 'edit' });
+  it('lets a MEMBER edit at every unpublished rung — mid-trip changes are usually theirs (S4.24)', () => {
+    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
+    states.forEach((state) =>
+      expect(editItineraryAction(trip({ state }), true, 't2')).toEqual({ kind: 'edit' }),
+    );
   });
 
-  it('hides Edit Itinerary from a member on Ready and beyond, because reopen is owner-only', () => {
-    for (const state of ['upcoming', 'ongoing', 'completed'] as const) {
-      expect(editItineraryAction(trip({ state }), true, undefined, false)).toEqual({ kind: 'hidden' });
-    }
+  it('hides Edit Itinerary from anyone without edit permission, whatever the state', () => {
+    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
+    states.forEach((state) =>
+      expect(editItineraryAction(trip({ state }), false)).toEqual({ kind: 'hidden' }),
+    );
   });
 
-  it('still reopens for the owner on Ready and beyond', () => {
-    expect(editItineraryAction(trip({ state: 'upcoming' }), true, undefined, true)).toEqual({
-      kind: 'reopen-then-edit',
-    });
+  it('blocks every state while another traveler holds the session, and names them', () => {
+    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
+    states.forEach((state) =>
+      expect(editItineraryAction(trip({ state, editingSession: holder('t2') }), true, 't1')).toEqual({
+        kind: 'blocked',
+        holder: '@largata.dev+t2',
+      }),
+    );
   });
 
   it('is hidden on archived and published trips', () => {

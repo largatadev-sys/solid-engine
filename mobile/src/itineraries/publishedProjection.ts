@@ -16,7 +16,8 @@ export function durationLabel(durationDays: number): string | undefined {
 
 export function estimatedTotalLabel(cost: EstimatedCostResponse | null): string | undefined {
   if (cost === null) return undefined;
-  return formatActivityCost(cost.amount, cost.currency);
+  const sum = formatActivityCost(cost.amount, cost.currency);
+  return cost.partial === true ? `From ${sum}` : sum;
 }
 
 
