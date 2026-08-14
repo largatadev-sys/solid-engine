@@ -94,9 +94,10 @@ accident, delete the account in the Firebase console and re-create it.
 
 ## `seed-trip.js` — seed a trip through the real invite → inbox → accept flow
 
-Creates an itinerary, invites each member by email, reads the invitation out of their inbox and
-accepts it over HTTP — no planted `membership` rows. Prints the trip id, the roster, the web-preview
-URL and the `largata://` deep link as JSON.
+Creates an itinerary, invites each member **by handle**, reads the invitation out of their in-app
+inbox and accepts it over HTTP — no planted `membership` rows, and **no mail sent**: the by-handle
+endpoint dispatches none. Prints the trip id, the roster, the web-preview URL and the `largata://`
+deep link as JSON.
 
 ```bash
 cd mobile && set -a && . ./.env && set +a
@@ -155,9 +156,12 @@ node scripts/seed-travelers.js --tag=t2          # or just one traveler
 flag has completed everything.
 
 **Verification is NOT needed for t6–t10.** Only *accepting an invitation* gates on `email_verified`
-(`EMAIL_NOT_VERIFIED`, `InvitationService`), and each traveler seeds their own trips solo. `t2` is the
-one account that accepts invitations — it collaborates on the long trips it does not own, which is
-what gives the Photo Dump a member-contributed pile. So `create` is enough; nobody clicks a link.
+(`EMAIL_NOT_VERIFIED`, `InvitationService`) — and only for **email-addressed** invitations. The
+seeders invite **by handle**, which `liveInvitationFor` authorises by traveler id instead, so they
+never reach that gate at all; the `smoke-*` / `drive-*` walks still use the email path and still do.
+Each traveler seeds their own trips solo. `t2` is the one account that accepts invitations — it
+collaborates on the long trips it does not own, which is what gives the Photo Dump a
+member-contributed pile. So `create` is enough; nobody clicks a link.
 
 **Where each piece of content comes from, because they are not the same:**
 

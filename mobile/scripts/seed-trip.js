@@ -78,13 +78,13 @@ function arg(name, fallback) {
     await api('/v1/me', 'GET', member.token);
     const memberProfile = await precompleteProfile(api, member.token, tag);
 
-    const invite = await api(`/v1/itineraries/${trip.body.id}/invitations`, 'POST', owner.token,
-      { email: member.email });
+    const invite = await api(`/v1/itineraries/${trip.body.id}/invitations/by-handle`, 'POST', owner.token,
+      { handle: memberProfile.handle });
     if (invite.status !== 201) throw new Error(`invite failed for ${tag}: ${JSON.stringify(invite.body)}`);
 
     const inbox = await api('/v1/invitations', 'GET', member.token);
     const card = inbox.body?.items?.find((i) => i.id === invite.body.id);
-    if (!card) throw new Error(`${tag}'s inbox does not show the invitation — is the account verified?`);
+    if (!card) throw new Error(`${tag}'s inbox does not show the invitation by handle`);
 
     const accept = await api(`/v1/invitations/${invite.body.id}/accept`, 'POST', member.token, {});
     if (accept.status !== 200) throw new Error(`accept failed for ${tag}: ${accept.status} ${JSON.stringify(accept.body)}`);
