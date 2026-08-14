@@ -112,7 +112,20 @@ async function main() {
       const file = photoPath(OUT, job.query, index + 1);
       if (fs.existsSync(file)) continue;
       const name = path.basename(file);
-      const size = await download(photo.src.large, file);
+
+      // One withdrawn image used to abort the whole run: the CDN answered 422 on a single photo and
+      // main().catch() exited, throwing away the remaining places for the sake of one file. A photo
+      // that will not download is a photo we do without — the pool degrades by one and everything
+      // else proceeds. The partial file is removed so the skip-check does not count it as fetched.
+      let size;
+      try {
+        size = await download(photo.src.large, file);
+      } catch (e) {
+        if (fs.existsSync(file)) fs.unlinkSync(file);
+        console.log(` skip  ${name} — ${e.message.split(' ')[0]} from the CDN`);
+        continue;
+      }
+
       bytes += size;
       saved += 1;
       added += 1;

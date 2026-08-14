@@ -124,7 +124,7 @@ const SPECS = [
     'Sendai, Japan|city', 'Tokyo, Japan|city',
   ]),
 
-  // ─── t3 · Ruby Ellis · Oceania, expanding into the Pacific Islands ────────────────────────────
+  // ─── t3 · Sarah Whitmore · Oceania, expanding into the Pacific Islands ────────────────────────────
   t('t3', 'Byron Bay, a weekend', ['Byron Bay'], 'AUD', 'Sep – Nov', [
     'Byron Bay, NSW|coast', 'Cape Byron, NSW|coast',
   ]),
@@ -173,7 +173,7 @@ const SPECS = [
     'Moeraki, New Zealand|coast', 'Oamaru, New Zealand|town', 'Christchurch, New Zealand|city',
   ]),
 
-  // ─── t4 · Tomás Ferreira · Western Europe, expanding into Eastern Europe ──────────────────────
+  // ─── t4 · Ana Duarte · Western Europe, expanding into Eastern Europe ──────────────────────
   t('t4', 'Bruges in two days', ['Bruges'], 'EUR', 'Apr – Jun', [
     'Bruges, Belgium|heritage', 'Bruges, Belgium|town',
   ]),
@@ -220,7 +220,7 @@ const SPECS = [
     'Vienna, Austria|city',
   ]),
 
-  // ─── t5 · Eleni Papadaki · Mediterranean, expanding into the Middle East ──────────────────────
+  // ─── t5 · Dimitri Stavros · Mediterranean, expanding into the Middle East ──────────────────────
   t('t5', 'Hydra, no cars', ['Hydra'], 'EUR', 'May – Oct', [
     'Hydra, Greece|coast', 'Hydra, Greece|town',
   ]),
@@ -267,7 +267,7 @@ const SPECS = [
     'Palermo, Sicily|city',
   ]),
 
-  // ─── t6 · Diego Morales · South America, expanding into Central America ───────────────────────
+  // ─── t6 · Lucia Fernández · South America, expanding into Central America ───────────────────────
   t('t6', 'Colonia, across the river', ['Colonia'], 'UYU', 'Oct – Mar', [
     'Colonia del Sacramento, Uruguay|heritage', 'Colonia del Sacramento, Uruguay|town',
   ]),
@@ -314,7 +314,7 @@ const SPECS = [
     'Bariloche, Argentina|nature', 'Bariloche, Argentina|mountain', 'Buenos Aires, Argentina|city',
   ]),
 
-  // ─── t7 · Nora Whitfield · North America & Iceland, expanding into Mexico and the Caribbean ───
+  // ─── t7 · Marcus Bell · North America & Iceland, expanding into Mexico and the Caribbean ───
   t('t7', 'Portland and the Gorge', ['Portland'], 'USD', 'Jun – Sep', [
     'Portland, Oregon|city', 'Columbia River Gorge, Oregon|nature',
   ]),
@@ -361,7 +361,7 @@ const SPECS = [
     'Mount Shasta, California|mountain', 'Portland, Oregon|city',
   ]),
 
-  // ─── t8 · Amara Diallo · Africa, expanding into West Africa and the Horn ──────────────────────
+  // ─── t8 · Amina Diallo · Africa, expanding into West Africa and the Horn ──────────────────────
   t('t8', 'Gorée and Dakar', ['Dakar'], 'XOF', 'Nov – May', [
     'Gorée Island, Senegal|heritage', 'Dakar, Senegal|city',
   ]),

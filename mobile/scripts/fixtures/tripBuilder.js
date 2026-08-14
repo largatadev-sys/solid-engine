@@ -161,6 +161,30 @@ const LANDMARK_TITLES = {
   },
 };
 
+// An activity happens somewhere inside the day's area, not at the area itself. The hand-authored
+// fifty do this by hand — a day set in "Oslob, Cebu" holds activities at "Tan-awan, Oslob" and
+// "Sumilon Island" — and copying day.at onto every activity instead made a day read as three things
+// occurring in one spot. Picked distinctly per day, and skipped entirely where the photo already
+// named a real landmark, which beats any of these.
+const SUBPLACES = {
+  city: ['Old Town, {p}', '{p} Station', 'the market district, {p}', 'the riverfront, {p}',
+    'the museum quarter, {p}', 'the back streets of {p}'],
+  town: ['the main square, {p}', 'the old street, {p}', '{p} harbour', 'the top of the village, {p}',
+    'the church steps, {p}'],
+  coast: ['{p} beach', 'the north shore, {p}', 'the boat landing, {p}', 'the point, {p}',
+    'the reef off {p}', 'the far cove, {p}'],
+  mountain: ['the trailhead, {p}', 'the ridge above {p}', 'the pass, {p}', 'the saddle, {p}',
+    'the hut below {p}', 'the summit track, {p}'],
+  nature: ['the boat landing, {p}', 'the north shore, {p}', 'the visitor centre, {p}',
+    'the far bank, {p}', 'the boardwalk, {p}', 'the upper falls, {p}'],
+  desert: ['the dune camp, {p}', 'the crossing at {p}', 'the well, {p}', 'the escarpment, {p}',
+    'the salt flat, {p}'],
+  heritage: ['the main gate, {p}', 'the upper terrace, {p}', 'the museum at {p}',
+    'the outer wall, {p}', 'the cloister, {p}'],
+  road: ['the roadhouse before {p}', 'the junction, {p}', 'the lookout above {p}',
+    'the fuel stop, {p}', 'the last pass before {p}'],
+};
+
 const NOTES = [
   'Cheaper two streets back from the main square in {p}.',
   'Get there before the first bus reaches {p}.',
@@ -251,6 +275,7 @@ function buildDay(trip, raw, dayIndex, totalDays, currency) {
   const usedTitles = new Set();
   const usedNotes = new Set();
   const usedCaptions = new Set();
+  const usedPlaces = new Set();
 
   const activities = chosen.map(({ slot, index }, position) => {
     const seed = `${key}/${index}`;
@@ -267,10 +292,17 @@ function buildDay(trip, raw, dayIndex, totalDays, currency) {
       : null;
     if (notes !== null) usedNotes.add(notes);
 
+    const where = landmark !== null && !usedPlaces.has(landmark)
+      ? landmark
+      : pickDistinct(
+        SUBPLACES[kind], seededRandom(`${seed}/where`), (s) => s.replace('{p}', short), usedPlaces,
+      );
+    usedPlaces.add(where);
+
     const activity = {
       title,
       timeOfDay: timeAt(slot, seededRandom(`${seed}/time`)),
-      place,
+      place: where,
       notes,
     };
     if (seededRandom(`${seed}/cost`) < 0.85) {
