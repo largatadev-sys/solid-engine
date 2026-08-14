@@ -35,6 +35,14 @@ const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split
 // Mirrors seed-travelers' flag so the two agree on which trips exist. Without it every unseeded
 // trip still costs two psql round trips that match nothing.
 const COMPLETE_ONLY = process.argv.includes('--complete-only');
+
+// Must match whatever seed-travelers was given, or the two disagree about the world: daysAgoFor
+// pins an ongoing trip's postcards to the last two days because it is being lived now, and nothing
+// is ongoing once --all-public has completed everything.
+const ALL_PUBLIC = process.argv.includes('--all-public');
+
+const lifecycleOf = (trip) => (ALL_PUBLIC ? 'completed' : trip.lifecycle);
+const audienceOf = (trip) => (ALL_PUBLIC ? 'public' : trip.publish);
 const PHOTOS = path.join(__dirname, 'fixtures', 'photos');
 
 function isFullyPhotographed(trip) {
@@ -66,7 +74,7 @@ function bandFor(roll) {
 // incoherence the whole dataset exists to avoid.
 function daysAgoFor(trip) {
   const roll = seededRandom(trip.title);
-  if (trip.lifecycle === 'ongoing') return 0.2 + roll * 1.8;
+  if (lifecycleOf(trip) === 'ongoing') return 0.2 + roll * 1.8;
   const band = bandFor(roll);
   const spread = seededRandom(trip.title + '/spread');
   return band.minDays + spread * (band.maxDays - band.minDays);
@@ -146,7 +154,7 @@ function main() {
   for (const traveler of chosen) {
     for (const trip of (COMPLETE_ONLY ? traveler.trips.filter(isFullyPhotographed) : traveler.trips)) {
       const postcards = trip.days.flatMap((d) => d.activities).filter((a) => a.post !== undefined).length;
-      const publishable = trip.publish !== null && trip.publish !== undefined;
+      const publishable = audienceOf(trip) !== null && audienceOf(trip) !== undefined;
       if (postcards === 0 && !publishable) continue;
 
       // Interpolated into SQL unquoted, so its being a number is load-bearing rather than incidental.

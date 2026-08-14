@@ -24,6 +24,20 @@ const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split
 // from the Recommended rail outright, since findRecommendable requires cover_image_url.
 const COMPLETE_ONLY = process.argv.includes('--complete-only');
 
+// Forces every trip to completed + public. A shared preview wants a dataset that reads like a
+// product, and a draft is invisible to everyone but its owner anyway, so on that rung the lifecycle
+// spread is clutter in one account's Trips tab rather than something anybody browses.
+//
+// It is NOT the default, and should not be used on the rung you test against: publishing requires
+// the completed state (ADR-017, reinstated by ADR-019), so forcing it flattens draft, upcoming and
+// ongoing out of existence — every lifecycle banner in the Trips tab then has no data to render,
+// the two private trips that prove Discovery's visibility fence become public, and the ongoing
+// trips whose postcards backdate to the last two days stop keeping the top of Home fresh.
+const ALL_PUBLIC = process.argv.includes('--all-public');
+
+const lifecycleOf = (trip) => (ALL_PUBLIC ? 'completed' : trip.lifecycle);
+const audienceOf = (trip) => (ALL_PUBLIC ? 'public' : trip.publish);
+
 function isFullyPhotographed(trip) {
   return trip.days.every((day) => photosFor(day.at).length >= Math.max(day.activities.length, 1));
 }
@@ -302,13 +316,13 @@ async function seedTraveler(traveler, credits, collaborator) {
       }
     }
 
-    if (trip.lifecycle !== 'draft') {
+    if (lifecycleOf(trip) !== 'draft') {
       must(await api(`/v1/itineraries/${created.id}/finish-planning`, 'POST', token), 'finish-planning');
     }
-    if (trip.lifecycle === 'ongoing' || trip.lifecycle === 'completed') {
+    if (lifecycleOf(trip) === 'ongoing' || lifecycleOf(trip) === 'completed') {
       must(await api(`/v1/itineraries/${created.id}/start`, 'POST', token), 'start');
     }
-    if (trip.lifecycle === 'completed') {
+    if (lifecycleOf(trip) === 'completed') {
       must(await api(`/v1/itineraries/${created.id}/complete`, 'POST', token), 'complete');
     }
 
@@ -342,12 +356,12 @@ async function seedTraveler(traveler, credits, collaborator) {
       frameCount += frames.length;
     }
 
-    if (trip.publish !== null) {
-      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', token, { audience: trip.publish }), 'publish');
+    if (audienceOf(trip) !== null) {
+      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', token, { audience: audienceOf(trip) }), 'publish');
     }
 
     console.log(
-      `  ${trip.lifecycle.padEnd(9)} ${(trip.publish ?? '—').padEnd(7)} `
+      `  ${lifecycleOf(trip).padEnd(9)} ${(audienceOf(trip) ?? '—').padEnd(7)} `
         + `${String(trip.days.length).padStart(2)}d ${String(activities.length).padStart(2)}a `
         + `${String(attached).padStart(2)}ph ${posted > 0 ? `${posted} postcard(s)/${frameCount}f ` : '              '}`
         + `${withMember ? 'with ' + collaborator.tag + ' ' : ''}${trip.title}`,
