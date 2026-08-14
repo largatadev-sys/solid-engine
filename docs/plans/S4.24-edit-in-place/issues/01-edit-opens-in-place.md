@@ -4,13 +4,13 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Edit Itinerary shows and opens the editor directly — no reopen call, no state change — on Draft, Ready, Active and unpublished Completed trips, for owner and members alike
-- [ ] The hidden/blocked cases are unchanged: published, archived, no edit permission, session held by another (which still reads "being edited by …")
-- [ ] The `reopen-then-edit` action kind is gone from the control model; the viewer's edit handler never calls reopen
-- [ ] Step back appears on Ready — owner-only, quiet, reopen-planning confirm wording — and still on Active/Completed
-- [ ] The editor chip reads "Trip Workspace" in every state; the editor offers only Save Changes for non-draft trips
-- [ ] Backend IT pins the domain rule: Editing Session acquire + bulk plan save succeed at `upcoming`, `ongoing` and unpublished `completed`; refused when published or archived
-- [ ] The buffered-plan walk enters the editor from a *Ready* trip through the real Edit Itinerary affordance, saves, and asserts the state never moved
-- [ ] The `workspaceControls` test file covers the new decision table (states × owner/member × session held/free)
+- [x] Edit Itinerary shows and opens the editor directly — no reopen call, no state change — on Draft, Ready, Active and unpublished Completed trips, for owner and members alike
+- [x] The hidden/blocked cases are unchanged: published, archived, no edit permission, session held by another (which still reads "being edited by …")
+- [x] The `reopen-then-edit` action kind is gone from the control model; the viewer's edit handler never calls reopen
+- [x] Step back appears on Ready — owner-only, quiet, reopen-planning confirm wording — and still on Active/Completed
+- [x] The editor chip reads "Trip Workspace" in every state; the editor offers only Save Changes for non-draft trips
+- [x] Backend IT pins the domain rule: Editing Session acquire + bulk plan save succeed at `upcoming`, `ongoing` and unpublished `completed`; refused when published or archived
+- [x] The buffered-plan walk enters the editor from a *Ready* trip through the real Edit Itinerary affordance, saves, and asserts the state never moved
+- [x] The `workspaceControls` test file covers the new decision table (states × owner/member × session held/free)

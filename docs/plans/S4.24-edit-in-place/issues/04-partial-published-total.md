@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The published response carries an additive boolean beside the estimated cost: true iff at least one activity has no stated cost; an explicit 0 counts as stated
-- [ ] With no activity priced, the estimated cost is absent entirely — no total, no marker
-- [ ] The mixed-currency collapse is unchanged: stated prices spanning currencies produce no total, partial or not
-- [ ] The mobile Est. Cost stat renders "From ‹sum›" when the boolean is set, the plain sum otherwise, and nothing when the total is absent
-- [ ] Backend IT on the published view covers the four rules; mobile projection tests cover the label
-- [ ] /v1 additivity holds: no existing field renamed, retyped, removed or re-semanticized
+- [x] The published response carries an additive boolean beside the estimated cost: true iff at least one activity has no stated cost; an explicit 0 counts as stated
+- [x] With no activity priced, the estimated cost is absent entirely — no total, no marker
+- [x] The mixed-currency collapse is unchanged: stated prices spanning currencies produce no total, partial or not
+- [x] The mobile Est. Cost stat renders "From ‹sum›" when the boolean is set, the plain sum otherwise, and nothing when the total is absent
+- [x] Backend IT on the published view covers the four rules; mobile projection tests cover the label
+- [x] /v1 additivity holds: no existing field renamed, retyped, removed or re-semanticized

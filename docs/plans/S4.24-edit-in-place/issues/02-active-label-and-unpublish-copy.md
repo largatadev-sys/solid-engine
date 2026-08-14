@@ -4,9 +4,9 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `ongoing` renders "Active" on the viewer badge and every state-rendering list row; "Ongoing" appears nowhere a traveler looks
-- [ ] Label only: no wire value, TS union member or stored enum spelling changes
-- [ ] The unpublish confirm copy states the page comes down and editing thaws; no "returns to a draft" claim survives anywhere (the published-plan notice included)
-- [ ] Copy/label tests updated, including any walk expectation that asserts "Ongoing"
+- [x] `ongoing` renders "Active" on the viewer badge and every state-rendering list row; "Ongoing" appears nowhere a traveler looks
+- [x] Label only: no wire value, TS union member or stored enum spelling changes
+- [x] The unpublish confirm copy states the page comes down and editing thaws; no "returns to a draft" claim survives anywhere (the published-plan notice included)
+- [x] Copy/label tests updated, including any walk expectation that asserts "Ongoing"

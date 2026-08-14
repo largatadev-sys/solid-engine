@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] An activity with an empty amount and a prefilled currency validates and saves; the request carries neither `costAmount` nor `costCurrency`
-- [ ] A typed amount without a currency still refuses with the existing message; amount + currency saves both fields
-- [ ] An explicit 0 still saves and renders "Free" (pinned, since it now carries the free-vs-not-stated distinction)
-- [ ] Editing an existing activity that has a price, and blanking the amount, clears both fields rather than orphaning the currency
-- [ ] The form-validation and request-builder tests cover the hint semantics
+- [x] An activity with an empty amount and a prefilled currency validates and saves; the request carries neither `costAmount` nor `costCurrency`
+- [x] A typed amount without a currency still refuses with the existing message; amount + currency saves both fields
+- [x] An explicit 0 still saves and renders "Free" (pinned, since it now carries the free-vs-not-stated distinction)
+- [x] Editing an existing activity that has a price, and blanking the amount, clears both fields rather than orphaning the currency
+- [x] The form-validation and request-builder tests cover the hint semantics

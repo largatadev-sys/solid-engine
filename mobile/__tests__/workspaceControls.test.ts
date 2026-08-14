@@ -3,6 +3,7 @@ import {
   ladderCta,
   showsStepBack,
   stateBadge,
+  stepBackWording,
   workspaceAffordances,
 } from '../src/itineraries/workspaceControls';
 import type { ItineraryResponse, ItineraryState, LeaseHolderResponse } from '../src/types/api';
@@ -131,6 +132,36 @@ describe('showsStepBack', () => {
     expect(showsStepBack(trip({ state: 'ongoing' }), false)).toBe(false);
     expect(showsStepBack(trip({ state: 'upcoming' }), false)).toBe(false);
     expect(showsStepBack(trip({ state: 'ongoing', archived: true }), true)).toBe(false);
+  });
+});
+
+
+describe('stepBackWording', () => {
+  it('names the Ready rung for what it undoes — reopening planning, not editing (S4.24)', () => {
+    const wording = stepBackWording(trip({ state: 'upcoming' }));
+
+    expect(wording?.title).toBe('Reopen planning?');
+    expect(wording?.body).toMatch(/Edit Itinerary/);
+  });
+
+  it('warns that stepping back from Active closes the diary, because it does', () => {
+    expect(stepBackWording(trip({ state: 'ongoing' }))?.body).toMatch(/postcards/);
+  });
+
+  it('offers wording for every rung Step back renders on, and none for draft', () => {
+    const states: ItineraryState[] = ['upcoming', 'ongoing', 'completed'];
+    states.forEach((state) => {
+      expect(showsStepBack(trip({ state }), true)).toBe(true);
+      expect(stepBackWording(trip({ state }))).not.toBeNull();
+    });
+    expect(stepBackWording(trip({ state: 'draft' }))).toBeNull();
+  });
+
+  it('never says Ongoing in the copy a traveler reads', () => {
+    const states: ItineraryState[] = ['upcoming', 'ongoing', 'completed'];
+    states.forEach((state) =>
+      expect(JSON.stringify(stepBackWording(trip({ state })))).not.toMatch(/Ongoing/),
+    );
   });
 });
 
