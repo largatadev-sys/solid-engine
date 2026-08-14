@@ -2,17 +2,11 @@ const fs = require('fs');
 const https = require('https');
 const path = require('path');
 const { TRAVELERS, DUMP_QUERIES } = require('./fixtures/travelers');
+const { PER_PLACE, slug, photoPath, photosFor } = require('./photoPool');
 
 const KEY = process.env.PEXELS_API_KEY;
 const OUT = path.join(__dirname, 'fixtures', 'photos');
 const CREDITS = path.join(OUT, 'CREDITS.json');
-
-// Three per place, because a day needs up to three activities and photos from one response are all
-// genuinely of that place. It also keeps the whole run inside Pexels' 200-requests-per-hour ceiling:
-// one search per place rather than one per photo is the difference between ~80 calls and ~280.
-const PER_PLACE = 3;
-
-const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 function getJson(url) {
   return new Promise((resolve, reject) => {
@@ -92,8 +86,10 @@ async function main() {
   let remaining;
 
   for (const job of jobs) {
-    const first = `${slug(job.query)}-1.jpg`;
-    if (fs.existsSync(path.join(OUT, first))) {
+    // Counts the whole pool, not just the first file. Testing `-1.jpg` meant a place cached at the
+    // old PER_PLACE reported `have` forever, so raising the constant topped up nothing and said so
+    // in a success line.
+    if (photosFor(OUT, job.query).length >= job.take) {
       console.log(`  have  ${slug(job.query)}`);
       continue;
     }
@@ -111,11 +107,15 @@ async function main() {
       continue;
     }
 
+    let added = 0;
     for (const [index, photo] of photos.entries()) {
-      const name = `${slug(job.query)}-${index + 1}.jpg`;
-      const size = await download(photo.src.large, path.join(OUT, name));
+      const file = photoPath(OUT, job.query, index + 1);
+      if (fs.existsSync(file)) continue;
+      const name = path.basename(file);
+      const size = await download(photo.src.large, file);
       bytes += size;
       saved += 1;
+      added += 1;
       credits[name] = {
         query: job.query,
         kind: job.kind,
@@ -128,7 +128,7 @@ async function main() {
         license: 'Pexels License — https://www.pexels.com/license/',
       };
     }
-    console.log(`   got  ${slug(job.query).padEnd(38)} ${photos.length} photo(s)  © ${photos[0].photographer}`);
+    console.log(`   got  ${slug(job.query).padEnd(38)} ${added} new  (${photos.length} returned)  © ${photos[0].photographer}`);
     fs.writeFileSync(CREDITS, JSON.stringify(credits, null, 2) + '\n');
   }
 

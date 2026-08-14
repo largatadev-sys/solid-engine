@@ -4,6 +4,7 @@ const https = require('https');
 const path = require('path');
 const { precompleteProfile } = require('./precomplete-profile');
 const { TRAVELERS, DUMP_QUERIES } = require('./fixtures/travelers');
+const { slug, photosFor: photosInPool } = require('./photoPool');
 
 const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
@@ -14,7 +15,6 @@ const PHOTOS = path.join(__dirname, 'fixtures', 'photos');
 const CREDITS = path.join(PHOTOS, 'CREDITS.json');
 const DEPLOYED_OPT_IN = '--yes-seed-the-deployed-rung';
 
-const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const address = (tag) => { const [local, domain] = BASE.split('@'); return `${local}+${tag}@${domain}`; };
 const only = (arg) => process.argv.find((a) => a.startsWith(`--${arg}=`))?.split('=')[1];
 
@@ -126,13 +126,18 @@ function must(res, what) {
   return res.body;
 }
 
-function photosFor(query) {
-  const found = [];
-  for (let n = 1; n <= 3; n += 1) {
-    const file = path.join(PHOTOS, `${slug(query)}-${n}.jpg`);
-    if (fs.existsSync(file)) found.push(file);
+const photosFor = (query) => photosInPool(PHOTOS, query);
+
+// A postcard leads with the photo of the activity it is about, then fills from the rest of that
+// day's pool. Every entry the demo dataset had ever posted carried exactly one photo, so S4.21's
+// photo strip — the dots, the counter, the drag-snap — rendered on nothing but walk fixtures.
+function postcardFrames(activity, wanted) {
+  const frames = [activity.file];
+  for (const file of activity.pool) {
+    if (frames.length >= wanted) break;
+    if (!frames.includes(file)) frames.push(file);
   }
-  return found;
+  return frames;
 }
 
 // The photo's own alt-text, which describes the IMAGE rather than the place. Used as the activity's
@@ -258,7 +263,7 @@ async function seedTraveler(traveler, credits, collaborator) {
           await api(`/v1/itineraries/${created.id}/edit-lock`, 'DELETE', token, lease);
           attached += 1;
         }
-        activities.push({ id: activity.id, title: spec.title, file, post: spec.post });
+        activities.push({ id: activity.id, title: spec.title, file, pool, post: spec.post });
       }
     }
 
@@ -303,18 +308,22 @@ async function seedTraveler(traveler, credits, collaborator) {
     // for a caption to reference an activity that does not exist — the shape the earlier lookup
     // array allowed, which failed silently as a skipped postcard.
     let posted = 0;
+    let frameCount = 0;
     for (const activity of activities.filter((a) => a.post !== undefined)) {
       if (activity.file === undefined) continue;
+      const post = typeof activity.post === 'string' ? { caption: activity.post, photos: 1 } : activity.post;
+      const frames = postcardFrames(activity, post.photos ?? 1);
       must(
         await postDiaryEntry(
           token,
           created.id,
-          { activityId: activity.id, caption: activity.post, fromDump: [] },
-          [activity.file],
+          { activityId: activity.id, caption: post.caption, fromDump: [] },
+          frames,
         ),
         `postcard "${activity.title}"`,
       );
       posted += 1;
+      frameCount += frames.length;
     }
 
     if (trip.publish !== null) {
@@ -324,7 +333,7 @@ async function seedTraveler(traveler, credits, collaborator) {
     console.log(
       `  ${trip.lifecycle.padEnd(9)} ${(trip.publish ?? '—').padEnd(7)} `
         + `${String(trip.days.length).padStart(2)}d ${String(activities.length).padStart(2)}a `
-        + `${String(attached).padStart(2)}ph ${posted > 0 ? `${posted} postcard(s) ` : '           '}`
+        + `${String(attached).padStart(2)}ph ${posted > 0 ? `${posted} postcard(s)/${frameCount}f ` : '              '}`
         + `${withMember ? 'with ' + collaborator.tag + ' ' : ''}${trip.title}`,
     );
     seeded.push(created.id);
