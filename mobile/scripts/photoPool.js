@@ -1,5 +1,15 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+
+// The Pexels cache lives OUTSIDE the repo — ~210MB of fetched artifacts is not code, and
+// gitignoring it still left it sitting inside the project tree (founder, 2026-08-14). One resolver
+// so the fetcher, the seeder, the backdater and the trip builder cannot disagree about where it is;
+// LARGATA_PHOTO_CACHE overrides for a machine that wants it elsewhere. The app's own copies are
+// unaffected: the seeder uploads through the real media pipeline into MinIO/the bucket either way —
+// this folder is only the source material.
+const CACHE_DIR = process.env.LARGATA_PHOTO_CACHE
+  || path.join(os.homedir(), '.largata', 'photo-cache');
 
 // One definition, imported by the fetcher and the seeder. It lived as a literal 3 in both, unsynced:
 // raising it in fetch-fixtures.js alone downloads photos that photosFor() never looks for, and the
@@ -30,4 +40,4 @@ function photoForSlot(dir, query, slot) {
   return pool.length === 0 ? undefined : pool[slot % pool.length];
 }
 
-module.exports = { PER_PLACE, slug, photoPath, photosFor, photoForSlot };
+module.exports = { PER_PLACE, CACHE_DIR, slug, photoPath, photosFor, photoForSlot };

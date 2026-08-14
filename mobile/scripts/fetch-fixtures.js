@@ -2,10 +2,10 @@ const fs = require('fs');
 const https = require('https');
 const path = require('path');
 const { TRAVELERS, DUMP_QUERIES } = require('./fixtures/travelers');
-const { PER_PLACE, slug, photoPath, photosFor } = require('./photoPool');
+const { PER_PLACE, CACHE_DIR, slug, photoPath, photosFor } = require('./photoPool');
 
 const KEY = process.env.PEXELS_API_KEY;
-const OUT = path.join(__dirname, 'fixtures', 'photos');
+const OUT = CACHE_DIR;
 const CREDITS = path.join(OUT, 'CREDITS.json');
 
 function getJson(url) {
@@ -147,7 +147,7 @@ async function main() {
 
   console.log(`\n${searched} searches, ${saved} photos, ${Math.round(bytes / 1024 / 1024)}MB`);
   if (remaining !== undefined) console.log(`${remaining} Pexels requests left this hour.`);
-  console.log('Attribution per file: scripts/fixtures/photos/CREDITS.json');
+  console.log(`Attribution per file: ${CREDITS}`);
 }
 
 main().catch((e) => {

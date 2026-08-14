@@ -15,7 +15,7 @@
 const path = require('path');
 const { landmarkAt } = require('./landmark');
 
-const PHOTOS = path.join(__dirname, 'photos');
+const PHOTOS = require('../photoPool').CACHE_DIR;
 
 const seededRandom = (text) => {
   let hash = 2166136261;

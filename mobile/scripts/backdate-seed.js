@@ -1,7 +1,7 @@
 const { execFileSync } = require('child_process');
 const path = require('path');
 const { TRAVELERS } = require('./fixtures/travelers');
-const { photosFor } = require('./photoPool');
+const { CACHE_DIR, photosFor } = require('./photoPool');
 
 // THE ONE PLACE THIS HARNESS TOUCHES THE DATABASE DIRECTLY, AND WHY THAT IS NOT THE RULE IT LOOKS
 // LIKE. S1.5 banned planting rows with psql because doing so SKIPPED THE VERIFICATION GATE — the
@@ -43,7 +43,7 @@ const ALL_PUBLIC = process.argv.includes('--all-public');
 
 const lifecycleOf = (trip) => (ALL_PUBLIC ? 'completed' : trip.lifecycle);
 const audienceOf = (trip) => (ALL_PUBLIC ? 'public' : trip.publish);
-const PHOTOS = path.join(__dirname, 'fixtures', 'photos');
+const PHOTOS = CACHE_DIR;
 
 function isFullyPhotographed(trip) {
   return trip.days.every((day) => photosFor(PHOTOS, day.at).length >= Math.max(day.activities.length, 1));

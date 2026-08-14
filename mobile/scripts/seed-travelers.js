@@ -4,14 +4,14 @@ const https = require('https');
 const path = require('path');
 const { precompleteProfile } = require('./precomplete-profile');
 const { TRAVELERS, DUMP_QUERIES } = require('./fixtures/travelers');
-const { slug, photosFor: photosInPool, photoForSlot } = require('./photoPool');
+const { CACHE_DIR, slug, photosFor: photosInPool, photoForSlot } = require('./photoPool');
 
 const API = process.env.LARGATA_API_BASE_URL || 'http://localhost:8080';
 const KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
 const BASE = process.env.LARGATA_TEST_POOL_EMAIL_BASE;
 const PASSWORD = process.env.LARGATA_TEST_POOL_PASSWORD;
 
-const PHOTOS = path.join(__dirname, 'fixtures', 'photos');
+const PHOTOS = CACHE_DIR;
 const CREDITS = path.join(PHOTOS, 'CREDITS.json');
 const DEPLOYED_OPT_IN = '--yes-seed-the-deployed-rung';
 
