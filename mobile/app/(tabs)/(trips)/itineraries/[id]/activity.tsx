@@ -6,6 +6,7 @@ import { Icon, type IconName } from '../../../../../src/components/Icon';
 import { TimePicker } from '../../../../../src/components/TimePicker';
 import { useMe } from '../../../../../src/hooks/useMe';
 import { buildActivityRequest } from '../../../../../src/itineraries/buildActivityRequest';
+import { currencySign } from '../../../../../src/itineraries/currencySign';
 import { validateActivityForm } from '../../../../../src/itineraries/validateActivityForm';
 import {
   workspaceColors,
@@ -40,7 +41,7 @@ export default function ActivityFormScreen() {
   const [timeOfDay, setTimeOfDay] = useState(existing?.timeOfDay ?? '');
   const [place, setPlace] = useState(existing?.place ?? '');
   const [costAmount, setCostAmount] = useState(existing?.costAmount ?? '');
-  const [costCurrency, setCostCurrency] = useState(existing?.costCurrency ?? homeCurrency);
+  const costCurrency = existing?.costCurrency ?? homeCurrency;
   const [externalUrl, setExternalUrl] = useState(existing?.externalUrl ?? '');
   const [problem, setProblem] = useState<string | undefined>(undefined);
 
@@ -96,30 +97,15 @@ export default function ActivityFormScreen() {
           />
         </Field>
 
-        <Field label="Estimated Price">
-          <View style={styles.priceRow}>
-            <View style={styles.currencySlot}>
-              <TextInput
-                style={styles.currencyInput}
-                value={costCurrency}
-                onChangeText={setCostCurrency}
-                placeholder="PHP"
-                placeholderTextColor={workspaceColors.placeholder}
-                autoCapitalize="characters"
-                maxLength={8}
-                accessibilityLabel="Currency"
-              />
-            </View>
-            <View style={styles.amountSlot}>
-              <Input
-                value={costAmount}
-                onChangeText={setCostAmount}
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-                accessibilityLabel="Estimated price"
-              />
-            </View>
-          </View>
+        <Field label="Estimated Price" optional>
+          <Input
+            adornment={costCurrency.trim() === '' ? undefined : currencySign(costCurrency)}
+            value={costAmount}
+            onChangeText={setCostAmount}
+            placeholder="Leave empty if you don't know yet"
+            keyboardType="decimal-pad"
+            accessibilityLabel="Estimated price"
+          />
         </Field>
 
         <Field label="Booking Link" optional>
@@ -184,10 +170,12 @@ function Field({
 
 function Input({
   icon,
+  adornment,
   accessibilityLabel,
   ...props
 }: {
   icon?: IconName;
+  adornment?: string;
   accessibilityLabel: string;
 } & React.ComponentProps<typeof TextInput>) {
   const [focused, setFocused] = useState(false);
@@ -195,6 +183,7 @@ function Input({
   return (
     <View style={[styles.input, focused && styles.inputFocused]}>
       {icon !== undefined ? <Icon name={icon} size={18} color={workspaceColors.accent} /> : null}
+      {adornment !== undefined ? <Text style={styles.adornment}>{adornment}</Text> : null}
       <TextInput
         style={styles.inputText}
         accessibilityLabel={accessibilityLabel}
@@ -270,24 +259,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 0,
   },
-  priceRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  currencySlot: {
-    width: workspaceMetrics.currencyFieldWidth,
-  },
-  currencyInput: {
+  adornment: {
     ...workspaceTypography.fieldInput,
-    color: workspaceColors.title,
-    height: workspaceMetrics.inputHeight,
-    borderWidth: 1,
-    borderColor: workspaceColors.inputBorder,
-    borderRadius: workspaceRadii.control,
-    paddingHorizontal: 14,
-  },
-  amountSlot: {
-    flex: 1,
+    color: workspaceColors.muted,
   },
   problem: {
     ...typography.caption,

@@ -242,3 +242,85 @@ describe('a drag that moved must not land as a press on whatever it finished ove
     expect(listeners).toEqual([]);
   });
 });
+
+
+describe('pointer capture retargets the click to the STRIP, so it may not be taken on a press', () => {
+  function capturingStrip(at = 0) {
+    const captured: number[] = [];
+    return {
+      captured,
+      el: {
+        scrollLeft: at,
+        clientWidth: 300,
+        style: { scrollBehavior: '', scrollSnapType: '' },
+        setPointerCapture: (pointerId: number) => captured.push(pointerId),
+        releasePointerCapture: () => undefined,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      },
+    };
+  }
+
+  it('never captures on a press alone — a captured pointer sends the click to the strip, and the tab under it never fires', () => {
+    const { captured, el } = capturingStrip();
+    const drag = dragToScroll(freeScroll);
+
+    drag.onPointerDown(press(el, 'mouse', 200));
+    drag.onPointerUp(press(el, 'mouse', 200));
+
+    expect(captured).toEqual([]);
+  });
+
+  it('does not capture a tremor either, so a shaky tap still selects its tab', () => {
+    const { captured, el } = capturingStrip();
+    const drag = dragToScroll(freeScroll);
+
+    drag.onPointerDown(press(el, 'mouse', 200));
+    drag.onPointerMove(press(el, 'mouse', 198));
+
+    expect(captured).toEqual([]);
+  });
+
+  it('captures once the pointer has really travelled, so the drag survives leaving the strip', () => {
+    const { captured, el } = capturingStrip();
+    const drag = dragToScroll(freeScroll);
+
+    drag.onPointerDown(press(el, 'mouse', 200));
+    drag.onPointerMove(press(el, 'mouse', 120));
+
+    expect(captured).toEqual([1]);
+  });
+
+  it('captures exactly once across a long drag', () => {
+    const { captured, el } = capturingStrip();
+    const drag = dragToScroll(freeScroll);
+
+    drag.onPointerDown(press(el, 'mouse', 400));
+    drag.onPointerMove(press(el, 'mouse', 300));
+    drag.onPointerMove(press(el, 'mouse', 200));
+    drag.onPointerMove(press(el, 'mouse', 100));
+
+    expect(captured).toEqual([1]);
+  });
+
+  it('swallows the click after a drag that ran out of scroll, which the scroll offset cannot see', () => {
+    const seen: string[] = [];
+    const el = {
+      scrollLeft: 0,
+      clientWidth: 300,
+      style: { scrollBehavior: '', scrollSnapType: '' },
+      setPointerCapture: () => undefined,
+      releasePointerCapture: () => undefined,
+      addEventListener: (type: string) => seen.push(type),
+      removeEventListener: () => undefined,
+    };
+    const drag = dragToScroll(freeScroll);
+
+    drag.onPointerDown(press(el, 'mouse', 400));
+    drag.onPointerMove(press(el, 'mouse', 200));
+    el.scrollLeft = 0;
+    drag.onPointerUp(press(el, 'mouse', 200));
+
+    expect(seen).toContain('click');
+  });
+});
