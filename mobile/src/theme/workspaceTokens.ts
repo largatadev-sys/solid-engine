@@ -368,5 +368,4 @@ export const workspaceMetrics = {
   finalizeDiscSize: 56,
   avatarRendered: 96,
   avatarRow: 40,
-  currencyFieldWidth: 92,
 } as const;
