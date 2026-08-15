@@ -96,6 +96,7 @@ export function dragToScroll(pitchOf: (viewport: number) => number = viewportPit
 } {
   let from: number | null = null;
   let startedAt = 0;
+  let travelled = false;
   let restoreSnap = '';
   let restoreBehavior = '';
 
@@ -110,10 +111,11 @@ export function dragToScroll(pitchOf: (viewport: number) => number = viewportPit
     release(target, native.pointerId);
 
     const dragged = from !== null;
+    const moved = travelled;
     from = null;
+    travelled = false;
     if (!dragged) return;
 
-    const moved = draggedFar(startedAt, target.scrollLeft);
     if (moved) swallowNextClick(target);
 
     const pitch = pitchOf(target.clientWidth ?? 0);
@@ -136,13 +138,13 @@ export function dragToScroll(pitchOf: (viewport: number) => number = viewportPit
 
       from = native.clientX;
       startedAt = target.scrollLeft;
+      travelled = false;
       if (target.style !== undefined) {
         restoreSnap = target.style.scrollSnapType;
         restoreBehavior = target.style.scrollBehavior;
         target.style.scrollBehavior = 'auto';
         target.style.scrollSnapType = 'none';
       }
-      capture(target, native.pointerId);
     },
 
     onPointerMove: (event: GestureResponderEvent) => {
@@ -150,6 +152,11 @@ export function dragToScroll(pitchOf: (viewport: number) => number = viewportPit
       if (!ours(native)) return;
       const target = scroller(native.currentTarget);
       if (from === null || target === null || native.clientX === undefined) return;
+
+      if (!travelled && draggedFar(from, native.clientX)) {
+        travelled = true;
+        capture(target, native.pointerId);
+      }
 
       native.preventDefault?.();
       target.scrollLeft = startedAt - (native.clientX - from);
