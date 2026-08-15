@@ -191,10 +191,12 @@ function PublishedHeader({
           <Text style={styles.statValue}>0</Text>
           <Text style={styles.statLabel}>Forked</Text>
         </Pressable>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{total ?? '—'}</Text>
-          <Text style={styles.statLabel}>Est. Cost</Text>
-        </View>
+        {total !== undefined && (
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{total}</Text>
+            <Text style={styles.statLabel}>Est. Cost</Text>
+          </View>
+        )}
       </View>
     </View>
   );

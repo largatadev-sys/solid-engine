@@ -25,7 +25,7 @@ describe('the Trips sections (ADR-020)', () => {
   it('renders the lifecycle in the order a traveler cares about, not enum order', () => {
     expect(TRIP_SECTIONS).toEqual(['ongoing', 'upcoming', 'draft', 'completed']);
     expect(TRIP_SECTIONS.map(sectionLabel)).toEqual([
-      'Ongoing Trips',
+      'Active Trips',
       'Upcoming Trips',
       'Drafts',
       'Completed Trips',

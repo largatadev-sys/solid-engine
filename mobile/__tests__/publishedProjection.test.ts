@@ -42,6 +42,18 @@ describe('estimatedTotalLabel', () => {
   it('renders nothing at all when the plan has no single-currency total', () => {
     expect(estimatedTotalLabel(null)).toBeUndefined();
   });
+
+  it('says "From" when an activity is unpriced, so a partial total never poses as complete (S4.24)', () => {
+    expect(estimatedTotalLabel({ amount: '2000.50', currency: 'PHP', partial: true })).toBe('From ₱2,000.50');
+  });
+
+  it('states the plain sum when every activity carries a price', () => {
+    expect(estimatedTotalLabel({ amount: '800.00', currency: 'PHP', partial: false })).toBe('₱800');
+  });
+
+  it('reads a total from a server that predates the partial flag as complete', () => {
+    expect(estimatedTotalLabel({ amount: '800.00', currency: 'PHP' })).toBe('₱800');
+  });
 });
 
 describe('bylineHandle', () => {

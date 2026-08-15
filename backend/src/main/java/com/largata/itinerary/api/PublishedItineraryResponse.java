@@ -40,10 +40,14 @@ public record PublishedItineraryResponse(
 
 
     public record EstimatedCostResponse(
-            @JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal amount, String currency) {
+            @JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal amount,
+            String currency,
+            boolean partial) {
 
         static EstimatedCostResponse of(EstimatedCost cost) {
-            return cost == null ? null : new EstimatedCostResponse(cost.amount(), cost.currency());
+            return cost == null
+                    ? null
+                    : new EstimatedCostResponse(cost.amount(), cost.currency(), cost.partial());
         }
     }
 }

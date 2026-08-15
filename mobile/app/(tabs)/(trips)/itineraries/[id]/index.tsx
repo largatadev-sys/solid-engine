@@ -3,6 +3,7 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/components/ScreenMessage';
+import { confirmWith } from '../../../../../src/components/confirmDestructive';
 import { notify } from '../../../../../src/components/notify';
 import { useMe } from '../../../../../src/hooks/useMe';
 import { canEditPlan } from '../../../../../src/itineraries/archiveControls';
@@ -29,6 +30,7 @@ import {
   ladderCta,
   showsStepBack,
   stateBadge,
+  stepBackWording,
   workspaceAffordances,
 } from '../../../../../src/itineraries/workspaceControls';
 import {
@@ -90,19 +92,18 @@ export default function TripWorkspaceScreen() {
 
   const badge = stateBadge(data);
   const ladder = ladderCta(data, isOwner, myId);
-  const editAction = editItineraryAction(data, canEditPlan(data), myId, isOwner);
+  const editAction = editItineraryAction(data, canEditPlan(data), myId);
   const affordances = workspaceAffordances('viewer', isOwner);
 
   const openEditor = () => {
-    if (editAction.kind === 'edit') {
-      router.push({ pathname: '/itineraries/[id]/edit-plan', params: { id } });
-      return;
-    }
-    if (editAction.kind === 'reopen-then-edit') {
-      lifecycle.mutate('reopen', {
-        onSuccess: () => router.push({ pathname: '/itineraries/[id]/edit-plan', params: { id } }),
-      });
-    }
+    if (editAction.kind !== 'edit') return;
+    router.push({ pathname: '/itineraries/[id]/edit-plan', params: { id } });
+  };
+
+  const stepBack = () => {
+    const wording = stepBackWording(data);
+    if (wording === null) return;
+    confirmWith(wording, () => lifecycle.mutate('reopen'));
   };
 
   const runLadder = () => {
@@ -216,7 +217,7 @@ export default function TripWorkspaceScreen() {
           {showsStepBack(data, isOwner) ? (
             <Pressable
               style={styles.stepBack}
-              onPress={() => lifecycle.mutate('reopen')}
+              onPress={stepBack}
               disabled={lifecycle.isPending}
               accessibilityRole="button"
               accessibilityLabel="Step back"

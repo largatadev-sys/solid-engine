@@ -154,6 +154,30 @@ async function uploadToDump(tripId, token) {
   check('the dump photo was COPIED, never referenced',
     !entry.photos.some(p => p.id === poolPhoto.id));
 
+  const held = await api(`/v1/itineraries/${trip.id}/edit-lock`,'POST',t1,{ subjectType:'session' });
+  const basePlan = (await api(`/v1/itineraries/${trip.id}`,'GET',t1)).body;
+  const midTripSave = await api(`/v1/itineraries/${trip.id}/plan`,'PUT',t1,{
+    basePlanVersion: basePlan.planVersion,
+    days: basePlan.days.map((d) => ({
+      id: d.id,
+      title: d.id === day1.id ? 'Plans changed on the road' : d.title,
+      activities: d.activities.map((a) => ({ id: a.id, fields: { title: a.title } })),
+    })),
+  });
+  await api(`/v1/itineraries/${trip.id}/edit-lock`,'DELETE',t1,{ subjectType:'session' });
+  check('S4.24: the plan is corrected MID-TRIP and the trip never leaves ongoing',
+    held.status===200 && midTripSave.status===200 &&
+      (await api(`/v1/itineraries/${trip.id}`,'GET',t1)).body?.state==='ongoing',
+    `lock ${held.status} / save ${midTripSave.status}`);
+
+  const afterEditActivity = (await api(`/v1/itineraries/${trip.id}/days/${day1.id}/activities`,'POST',t1,
+    { title:'Late dinner, decided on the road' })).body;
+  const afterEdit = await post(trip.id, t1,
+    { activityId: afterEditActivity.id, caption: 'Posted right after the plan changed', fromDump: [] }, 1);
+  check('S4.24: a postcard posts IMMEDIATELY after a mid-trip plan edit — the blackout is gone',
+    afterEdit.status===201, `${afterEdit.status}/${afterEdit.body?.code ?? ''}`);
+  await api(`${diary}/${afterEdit.body?.id}`,'DELETE',t1);
+
   // Every entry is public since S4.22's reversal, so the photo serves anyone signed in — the
   // discriminating outcome is no longer member-vs-stranger but authenticated-vs-not, and the
   // 401 is what proves a 200 means "the audience widened" rather than "the guard is gone".

@@ -21,6 +21,10 @@ describe('what an activity form accepts', () => {
   it('accepts a zero amount with a currency — "Free" is a real, stated cost', () => {
     expect(validateActivityForm({ ...valid, costAmount: '0', costCurrency: 'PHP' })).toBeUndefined();
   });
+
+  it('accepts a prefilled currency with no amount — the prefill is a hint, not data (S4.24)', () => {
+    expect(validateActivityForm({ ...valid, costCurrency: 'PHP' })).toBeUndefined();
+  });
 });
 
 describe('what an activity form rejects', () => {
@@ -42,10 +46,6 @@ describe('what an activity form rejects', () => {
 
   it('rejects an amount with no currency — the two are one fact', () => {
     expect(validateActivityForm({ ...valid, costAmount: '500' })).toMatch(/currency/);
-  });
-
-  it('rejects a currency with no amount', () => {
-    expect(validateActivityForm({ ...valid, costCurrency: 'PHP' })).toMatch(/amount/);
   });
 
   it('asks the booking price for nothing but a number — no currency to pair (founder, 2026-08-04)', () => {

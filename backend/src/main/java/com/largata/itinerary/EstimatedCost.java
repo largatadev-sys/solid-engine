@@ -9,15 +9,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 
-public record EstimatedCost(BigDecimal amount, String currency) {
+public record EstimatedCost(BigDecimal amount, String currency, boolean partial) {
 
 
     public static Optional<EstimatedCost> derivedFrom(List<DayView> plan) {
-        List<ActivityView> priced =
-                plan.stream()
-                        .flatMap(day -> day.activities().stream())
-                        .filter(activity -> activity.costAmount() != null)
-                        .toList();
+        List<ActivityView> all = plan.stream().flatMap(day -> day.activities().stream()).toList();
+        List<ActivityView> priced = all.stream().filter(activity -> activity.costAmount() != null).toList();
 
         List<ActivityView> counted =
                 priced.stream().filter(activity -> activity.costAmount().signum() != 0).toList();
@@ -33,7 +30,8 @@ public record EstimatedCost(BigDecimal amount, String currency) {
 
         BigDecimal total =
                 priced.stream().map(ActivityView::costAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        return Optional.of(new EstimatedCost(total, currencies.iterator().next()));
+        return Optional.of(
+                new EstimatedCost(total, currencies.iterator().next(), priced.size() != all.size()));
     }
 
 

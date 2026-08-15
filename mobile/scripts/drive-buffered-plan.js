@@ -437,6 +437,42 @@ function getJson(path) {
     planWrites().length === 1 && orderSaved.join() !== orderBefore.join(),
     `${orderBefore.join(' , ')}  ->  ${orderSaved.join(' , ')}`);
 
+  const finished = await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', owner.idToken);
+  check('S4.24 — the trip reaches Ready before the in-place edit',
+    finished.body?.state === 'upcoming', `state=${finished.body?.state}`);
+
+  await goto(`/itineraries/${trip}`);
+  await stubDialogs();
+  const readyViewer = await text();
+  check('S4.24 — a Ready trip still offers Edit Itinerary on its viewer',
+    readyViewer.includes('Edit Itinerary') && /\bREADY\b/i.test(readyViewer),
+    readyViewer.slice(0, 80).replace(/\n/g, ' | '));
+
+  resetLog();
+  await tapLabel('Edit Itinerary', 4500);
+  await stubDialogs();
+  const readyEditor = await text();
+  const reopened = apiCalls.filter((c) => c.url.includes('/reopen'));
+  check('S4.24 — Edit Itinerary opens the editor with NO reopen call (ADR-026)',
+    reopened.length === 0 && readyEditor.includes('Save Changes'),
+    `${reopened.length} reopen calls, editor=${readyEditor.includes('Save Changes')}`);
+  check('S4.24 — the editor chip reads Trip Workspace on a Ready trip, not the lifecycle',
+    /trip workspace/i.test(readyEditor) && !/\bREADY\b/i.test(readyEditor.slice(0, 40)),
+    readyEditor.slice(0, 80).replace(/\n/g, ' | '));
+  check('S4.24 — the state is still Ready the moment the editor opens',
+    (await serverPlan()).state === 'upcoming', `state=${(await serverPlan()).state}`);
+
+  const daysBeforeInPlace = (await serverPlan()).days.length;
+  await tapLabel('Add a Day');
+  resetLog();
+  await tapLabel('Save Changes', 5000);
+  const afterInPlaceSave = await serverPlan();
+  check('S4.24 — the save lands from a Ready trip (AC: editing costs no state)',
+    planWrites().length === 1 && afterInPlaceSave.days.length === daysBeforeInPlace + 1,
+    `${planWrites().length} writes, ${daysBeforeInPlace} -> ${afterInPlaceSave.days.length} days`);
+  check('S4.24 — …and the trip is STILL Ready afterwards — no demotion, no re-climb',
+    afterInPlaceSave.state === 'upcoming', `state=${afterInPlaceSave.state}`);
+
   const history = await api(`/v1/itineraries/${trip}`, 'GET', owner.idToken);
   check('the trip survives the whole walk readable', history.status === 200, 'got ' + history.status);
 

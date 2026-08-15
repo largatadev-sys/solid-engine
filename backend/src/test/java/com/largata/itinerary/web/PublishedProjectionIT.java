@@ -437,6 +437,105 @@ class PublishedProjectionIT extends PostgresTestBase {
 
 
     @Test
+    void aFullyPricedPlanTotalsWithoutTheFromMarker() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        publish(owner, tripId);
+
+        publicView(freshTraveler(), tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.estimatedCost.amount")
+                .isEqualTo("800.00")
+                .jsonPath("$.estimatedCost.partial")
+                .isEqualTo(false);
+    }
+
+
+    @Test
+    void oneUnpricedActivityMarksTheTotalPartial_soAForkerNeverReadsItAsComplete() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        addActivity(owner, tripId, secondDayOf(tripId), """
+                {"title":"Somewhere for dinner"}
+                """);
+        publish(owner, tripId);
+
+        publicView(freshTraveler(), tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.estimatedCost.amount")
+                .isEqualTo("800.00")
+                .jsonPath("$.estimatedCost.partial")
+                .isEqualTo(true);
+    }
+
+
+    @Test
+    void anExplicitZeroIsAStatedPrice_freeIsNotTheSameFactAsNotStated() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        addActivity(owner, tripId, secondDayOf(tripId), """
+                {"title":"Sunset walk","costAmount":"0","costCurrency":"PHP"}
+                """);
+        publish(owner, tripId);
+
+        publicView(freshTraveler(), tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.estimatedCost.amount")
+                .isEqualTo("800.00")
+                .jsonPath("$.estimatedCost.partial")
+                .isEqualTo(false);
+    }
+
+
+    @Test
+    void aPlanWithNothingPricedHasNoTotalAtAll_neverAFromZero() {
+        String owner = freshTraveler();
+        String tripId =
+                createItinerary(owner, """
+                        {"title":"Someday, Japan","destinations":["Japan"],"durationDays":1}
+                        """);
+        addActivity(owner, tripId, firstDayOf(tripId), """
+                {"title":"Wander Shimokitazawa"}
+                """);
+        publish(owner, tripId);
+
+        publicView(freshTraveler(), tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.estimatedCost")
+                .doesNotExist();
+    }
+
+
+    @Test
+    void mixedCurrenciesStillCollapseToNoTotal_partialOrNot() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        addActivity(owner, tripId, secondDayOf(tripId), """
+                {"title":"Ferry","costAmount":"40","costCurrency":"USD"}
+                """);
+        addActivity(owner, tripId, secondDayOf(tripId), """
+                {"title":"Somewhere for dinner"}
+                """);
+        publish(owner, tripId);
+
+        publicView(freshTraveler(), tripId)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.estimatedCost")
+                .doesNotExist();
+    }
+
+
+    @Test
     void anEmptyItineraryProjectsCleanlyWithNoDaysNoDurationAndNoTotal() {
         String owner = freshTraveler();
         String tripId =
