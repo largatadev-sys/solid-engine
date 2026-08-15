@@ -15,6 +15,7 @@ const API_SMOKES = [
   'smoke-archive-posture.js',
 ];
 const WEB_WALKS = [
+  'drive-real-mouse.js',
   'drive-buffered-plan.js',
   'drive-photo-dump.js',
   'drive-diary.js',
