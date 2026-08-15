@@ -26,7 +26,7 @@
 
 **The diary blackout, closed at the layer that actually held it.** The old demotion fired `reopen` on the way into the editor, taking `ongoing → upcoming` — and `DiaryService` gates capture on `ONGOING || COMPLETED`, so a mid-trip plan correction blacked out every co-traveler's diary until Start Trip was tapped again. `smoke-diary` now corrects the plan **mid-trip** and posts a postcard **immediately after** (201). That is a stronger closure than a screenshot: it exercises the exact gate, with the exact state, over the real multipart path.
 
-**The two named deviations, seen on a live screen.** `drive-diary`'s output shows the viewer of an ongoing trip rendering `ACTIVE | Edit Itinerary | …` — the Active label and Edit Itinerary live on a non-draft viewer, both as ruled in ADR-026. Step back on Ready is covered by `showsStepBack`'s tests and its wording tests.
+**The two named deviations, seen on a live screen.** `drive-diary`'s output shows the viewer of an ongoing trip rendering `ACTIVE | Edit Itinerary | …` — the Active label and Edit Itinerary live on a non-draft viewer, both as ruled in ADR-027. Step back on Ready is covered by `showsStepBack`'s tests and its wording tests.
 
 ## The three walks `smoke-all` reports as FAILED — measured against `dev`, not assumed
 

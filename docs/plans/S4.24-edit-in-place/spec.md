@@ -4,7 +4,7 @@
 
 **Immutable point-in-time intent** (issue-tracker rule): if intent changes during implementation, append to `## Comments`; never rewrite this body.
 
-> **Context anchor.** **ADR-026** (this story's decision record — supersedes ADR-022 decision 2) · ADR-022/023 (the surfaces, the Editing Session, the staged buffer — all stand) · ADR-019/020 (ladder, gate and freeze — untouched) · the mock-fidelity rule (two **named founder-ruled deviations** from the S4.17 frames, listed under Further Notes) · the glossary as updated 2026-08-15 (Itinerary Workspace · Ready · Active · absent-price semantics).
+> **Context anchor.** **ADR-027** (this story's decision record — supersedes ADR-022 decision 2) · ADR-022/023 (the surfaces, the Editing Session, the staged buffer — all stand) · ADR-019/020 (ladder, gate and freeze — untouched) · the mock-fidelity rule (two **named founder-ruled deviations** from the S4.17 frames, listed under Further Notes) · the glossary as updated 2026-08-15 (Itinerary Workspace · Ready · Active · absent-price semantics).
 
 ## Problem Statement
 
@@ -41,7 +41,7 @@ Edit Itinerary opens the editor — now the **Itinerary Workspace** — in place
 
 ## Implementation Decisions
 
-All founder-ruled at the 2026-08-15 grilling; the durable record is **ADR-026**.
+All founder-ruled at the 2026-08-15 grilling; the durable record is **ADR-027**.
 
 1. **The demotion removal is client-only.** The backend already permits session acquire and plan save in every unpublished state — the write fence checks `published`/archived, never lifecycle. No endpoint changes, no schema changes, no migration. `reopen` keeps its endpoint (ADR-008) and its one remaining UI home, Step back.
 2. **`editItineraryAction` returns `edit` in every unpublished, unarchived state, for members too.** The `reopen-then-edit` action kind retires; the non-draft owner-only branch retires with it (its excuse was reopen's owner-ness). The blocked/hidden cases (session held by another, archived, published, no edit permission) are unchanged.
@@ -78,9 +78,9 @@ A good test here asserts what a traveler or a client can observe — an action's
 ## Further Notes
 
 - **Candidate-capability note** (standing rule): none new — the story cheapens an existing capability (plan editing) and loosens a form; nothing footprint-growing, nothing gateable.
-- **Named mock deviations** (mock-fidelity rule, founder-ruled at the grilling): Step back rendered on a Ready trip, and Edit Itinerary live on non-draft viewers — the S4.17 frames draw neither, and ADR-026 records both.
+- **Named mock deviations** (mock-fidelity rule, founder-ruled at the grilling): Step back rendered on a Ready trip, and Edit Itinerary live on non-draft viewers — the S4.17 frames draw neither, and ADR-027 records both.
 - **Why the price rider shrank:** the backlog line billed it as "a validation loosening, additive within /v1"; inspection found price optional at every layer since V7, with the mandatory *feel* produced by the prefill/pairing collision. The fix is form semantics plus canon, not wire.
-- The grilling's full decision trail (three rounds + addendum, eleven questions + eight follow-ups) is summarized in ADR-026; the glossary and epic-map updates landed with it on 2026-08-15.
+- The grilling's full decision trail (three rounds + addendum, eleven questions + eight follow-ups) is summarized in ADR-027; the glossary and epic-map updates landed with it on 2026-08-15.
 
 ## Comments
 
