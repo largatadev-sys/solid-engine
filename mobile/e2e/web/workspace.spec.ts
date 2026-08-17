@@ -201,6 +201,34 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     await expect(page.getByText('Discard Changes')).toBeVisible();
   });
 
+  test('the currency is a read-only sign beside the amount, never a text box', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(OWNER);
+    await page.goto(`/itineraries/${trip.id}/edit-plan`);
+    await labelled(page, `Edit ${ACTIVITIES[0]!.title}`).click();
+    await expect(page.getByText('Edit Activity')).toBeVisible();
+
+    await expect(page.locator('[aria-label="Currency"]')).toHaveCount(0);
+
+    const price = labelled(page, 'Estimated price');
+    await expect(price).toBeVisible();
+    const sign = await price.evaluate((node) => (node.closest('div')?.textContent ?? '').trim());
+    expect(sign.length, 'the amount must carry a currency sign beside it').toBeGreaterThan(0);
+  });
+
+  test('a real mouse click reaches the tab under it, both ways', async ({ page, signIn }) => {
+    await signIn(OWNER);
+    await page.goto(`/itineraries/${trip.id}`);
+
+    await labelled(page, 'Travelers').click();
+    await expect(page.getByText(/largata|pool_/i).first()).toBeVisible();
+
+    await labelled(page, 'Day-by-Day').click();
+    await expect(page.getByText('Day 1')).toBeVisible();
+  });
+
   test('a plan op stages until Save Changes, and the save survives a reload', async ({
     page,
     signIn,
