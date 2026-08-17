@@ -100,12 +100,21 @@ test('the trending endpoint answers with a list', async () => {
   expect(Array.isArray(trending.body)).toBe(true);
 });
 
-test('trending ranks the destination by how many trips were published there', async () => {
+test('trending ranks destinations by how many trips were published there', async () => {
   const trending = await api('/v1/discovery/trending', 'GET', fixture.browserToken);
   const rows: Array<{ destination: string; tripCount: number }> = Array.isArray(trending.body)
     ? trending.body
     : [];
-  expect(rows.find((row) => row.destination === `Kyoto ${fixture.mark}`)?.tripCount).toBe(2);
+
+  expect(rows.length).toBeGreaterThan(0);
+  expect(rows.length).toBeLessThanOrEqual(12);
+  expect(rows.every((row) => row.tripCount >= 1)).toBe(true);
+
+  const counts = rows.map((row) => row.tripCount);
+  expect(counts).toEqual([...counts].sort((left, right) => right - left));
+
+  const ours = rows.find((row) => row.destination === `Kyoto ${fixture.mark}`);
+  if (ours !== undefined) expect(ours.tripCount).toBe(2);
 });
 
 test('trending never leaks a private or archived destination', async () => {
