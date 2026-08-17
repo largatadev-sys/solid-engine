@@ -35,7 +35,7 @@ async function publishedTrip(
   });
   if (created.status !== 201) throw new SeedFailure(`the trip "${title}"`, created.body);
   const id = created.body.id;
-  await seedCover({ id, title, ownerTag: PUBLISHER, ownerToken: token });
+  await seedCover({ id, title, ownerTag: PUBLISHER, ownerToken: token, days: created.body.days ?? [] });
   for (const rung of ['finish-planning', 'start', 'complete']) {
     const moved = await api(`/v1/itineraries/${id}/${rung}`, 'POST', token);
     if (moved.status !== 200) throw new SeedFailure(`the climb through ${rung}`, moved.body);

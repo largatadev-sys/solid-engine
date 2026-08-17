@@ -12,12 +12,12 @@ export const IDENTITY_MAP = {
   'api/create-flow': { tags: ['t1'], exclusive: false },
   'api/publish': { tags: ['t1', 't2', 't3'], exclusive: false },
   'api/media': { tags: ['t1', 't2'], exclusive: false },
-  'api/diary': { tags: ['t1', 't2'], exclusive: false },
-  'api/photo-dump': { tags: ['t1', 't2'], exclusive: false },
+  'api/diary': { tags: ['t1', 't2', 't10'], exclusive: false },
+  'api/photo-dump': { tags: ['t1', 't2', 't10'], exclusive: false },
   'api/buffered-plan': { tags: ['t1', 't2'], exclusive: false },
-  'api/ownership-transfer': { tags: ['t8', 't9'], exclusive: true },
+  'api/ownership-transfer': { tags: ['t8', 't9', 't10'], exclusive: true },
   'api/archive-posture': { tags: ['t1', 't2'], exclusive: false },
-  'api/api-surface': { tags: ['t1', 't2'], exclusive: false },
+  'api/api-surface': { tags: ['t1', 't2', 't10'], exclusive: false },
 
   'web/discovery': { tags: ['t1', 't2'], exclusive: false },
   'web/create-flow': { tags: ['t4'], exclusive: false },
@@ -35,7 +35,9 @@ export const IDENTITY_MAP = {
 
 export type SpecKey = keyof typeof IDENTITY_MAP;
 
-export const SPARE_TAG: PoolTag = 't10';
+export const STRANGER_TAG: PoolTag = 't10';
+
+export const SPARE_TAG: PoolTag = STRANGER_TAG;
 
 export function identitiesFor(spec: SpecKey): SpecIdentities {
   return IDENTITY_MAP[spec];

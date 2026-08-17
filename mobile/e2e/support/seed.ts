@@ -10,6 +10,7 @@ export interface SeededTrip {
   title: string;
   ownerTag: PoolTag;
   ownerToken: string;
+  days: Array<{ id: string }>;
 }
 
 export class SeedFailure extends Error {
@@ -29,6 +30,9 @@ export async function seedTrip(options: {
   title: string;
   destinations?: string[];
   members?: PoolTag[];
+  durationDays?: number;
+  bestTimeOfYear?: string;
+  standouts?: string[];
 }): Promise<SeededTrip> {
   const ownerToken = await tokenFor(options.ownerTag);
   await profileFor(options.ownerTag);
@@ -36,6 +40,9 @@ export async function seedTrip(options: {
   const created = await api('/v1/itineraries', 'POST', ownerToken, {
     title: options.title,
     destinations: options.destinations ?? ['Palawan'],
+    ...(options.durationDays === undefined ? {} : { durationDays: options.durationDays }),
+    ...(options.bestTimeOfYear === undefined ? {} : { bestTimeOfYear: options.bestTimeOfYear }),
+    ...(options.standouts === undefined ? {} : { standouts: options.standouts }),
   });
   if (created.status !== 201) throw new SeedFailure('a trip', created.body);
 
@@ -44,6 +51,7 @@ export async function seedTrip(options: {
     title: options.title,
     ownerTag: options.ownerTag,
     ownerToken,
+    days: created.body.days ?? [],
   };
 
   for (const tag of options.members ?? []) {
@@ -87,6 +95,33 @@ export async function seedActivity(
   );
   if (created.status !== 201) throw new SeedFailure('an activity', created.body);
   return created.body.id;
+}
+
+export async function seedPlan(
+  trip: SeededTrip,
+  activities: Array<Record<string, unknown>>,
+): Promise<string[]> {
+  const dayId = trip.days[0]?.id;
+  if (dayId === undefined) throw new SeedFailure('a plan', 'the trip was created with no days');
+
+  const lease = { subjectType: 'day', subjectId: dayId };
+  const held = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', trip.ownerToken, lease);
+  if (held.status !== 200) throw new SeedFailure('the day lease a plan needs', held.body);
+
+  const ids: string[] = [];
+  for (const fields of activities) {
+    const created = await api(
+      `/v1/itineraries/${trip.id}/days/${dayId}/activities`,
+      'POST',
+      trip.ownerToken,
+      fields,
+    );
+    if (created.status !== 201) throw new SeedFailure('an activity', created.body);
+    ids.push(created.body.id);
+  }
+
+  await api(`/v1/itineraries/${trip.id}/edit-lock`, 'DELETE', trip.ownerToken, lease);
+  return ids;
 }
 
 export async function uploadPhoto(
