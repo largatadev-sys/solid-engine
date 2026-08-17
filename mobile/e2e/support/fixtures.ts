@@ -1,6 +1,6 @@
 import { test as base, expect, type Page } from '@playwright/test';
 import { profileFor, tokenFor } from './pool';
-import type { PoolTag } from './identities';
+import { assertVerified, type PoolTag } from './identities';
 
 const SESSION_KEY = 'largata.web.session';
 
@@ -49,6 +49,7 @@ export const test = base.extend<LargataFixtures>({
 
   signIn: async ({ page, baseURL }, use) => {
     const inject = async (tag: PoolTag) => {
+      assertVerified(tag, 'this spec');
       const idToken = await tokenFor(tag);
       await profileFor(tag);
       await page.goto('/');
