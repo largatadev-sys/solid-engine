@@ -33,6 +33,7 @@
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/jest": "29.5.14",
     "@types/node": "26.1.1",
     "@types/react": "~19.2.2",
@@ -47,7 +48,9 @@
     "web": "expo start --web",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "smoke": "node scripts/smoke-all.js"
+    "smoke": "node scripts/smoke-all.js",
+    "smoke:api": "playwright test --project=api",
+    "smoke:web": "playwright test --project=web"
   },
   "private": true
 }
