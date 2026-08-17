@@ -1,3 +1,4 @@
+import type { Locator } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
@@ -58,6 +59,9 @@ async function seedCompletedTrip(title: string): Promise<SeededTrip> {
 }
 
 const itineraryOf = async (id: string) => (await api(`/v1/itineraries/${id}`, 'GET', token)).body;
+
+const accentBorderOf = async (chip: Locator): Promise<string> =>
+  chip.evaluate((node) => getComputedStyle(node as HTMLElement).borderColor);
 
 test.beforeAll(async () => {
   token = await tokenFor(OWNER);
@@ -161,17 +165,26 @@ test.describe('the publish act — dark since the walk was retired', () => {
 
     await expect(chosen).toBeVisible();
     await expect(other).toBeVisible();
-    await expect(chosen).toHaveAttribute('aria-selected', 'true');
-    await expect(other).toHaveAttribute('aria-selected', 'false');
     await expect(page.getByText(audienceBlurb('public'), { exact: true })).toBeVisible();
+    await expect(page.getByText(audienceBlurb('private'), { exact: true })).toHaveCount(0);
+
+    expect(await accentBorderOf(chosen)).not.toBe(await accentBorderOf(other));
   });
 
-  test('choosing Private swaps the blurb, so the question is a live control', async ({ page }) => {
+  test('choosing Private swaps the blurb and the selection, so the question is a live control', async ({
+    page,
+  }) => {
     await page.goto(`/itineraries/${trip.id}/preview`);
-    await labelled(page, `Publish ${audienceLabel('private').toLowerCase()}`).click();
+    const publicChip = labelled(page, `Publish ${audienceLabel('public').toLowerCase()}`);
+    const privateChip = labelled(page, `Publish ${audienceLabel('private').toLowerCase()}`);
+    const wasSelected = await accentBorderOf(publicChip);
+
+    await privateChip.click();
 
     await expect(page.getByText(audienceBlurb('private'), { exact: true })).toBeVisible();
     await expect(page.getByText(audienceBlurb('public'), { exact: true })).toHaveCount(0);
+    expect(await accentBorderOf(privateChip)).toBe(wasSelected);
+    expect(await accentBorderOf(publicChip)).not.toBe(wasSelected);
   });
 
   test('Publish lands the success screen and publishes the trip on the server', async ({ page }) => {

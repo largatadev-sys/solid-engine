@@ -26,7 +26,7 @@ export const IDENTITY_MAP = {
   'web/publish': { tags: ['t1', 't3'], exclusive: false },
   'web/diary': { tags: ['t6'], exclusive: false },
   'web/photo-dump': { tags: ['t6'], exclusive: false },
-  'web/home': { tags: ['t1'], exclusive: false },
+  'web/home': { tags: ['t1', 't2'], exclusive: false },
   'web/profile': { tags: ['t7'], exclusive: true },
   'web/tab-bar': { tags: ['t4'], exclusive: false },
   'web/ownership-transfer': { tags: ['t8', 't9'], exclusive: true },
