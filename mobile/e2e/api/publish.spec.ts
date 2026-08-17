@@ -80,7 +80,9 @@ test('a never-started trip is created (lifecycle draft)', () => {
 });
 
 test('a member joins through the real invite then accept', async () => {
-  await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, { email: address(MEMBER) });
+  await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner, {
+    handle: (await profileFor(MEMBER)).handle,
+  });
   const inbox = await api('/v1/invitations', 'GET', member);
   const invite = (inbox.body?.items ?? []).find((row: { itineraryId: string }) => row.itineraryId === trip);
   const accepted = await api(`/v1/invitations/${invite?.id}/accept`, 'POST', member, {});

@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures';
-import { api, address, tokenFor } from '../support/pool';
+import { api, address, tokenFor, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
@@ -148,8 +148,8 @@ test('completed is a working afterlife, not a freeze — a member still edits th
 });
 
 test('membership ops are not frozen either — the owner can still invite', async () => {
-  const invited = await api(`/v1/itineraries/${trip.id}/invitations`, 'POST', owner, {
-    email: address('t3'),
+  const invited = await api(`/v1/itineraries/${trip.id}/invitations/by-handle`, 'POST', owner, {
+    handle: (await profileFor('t3')).handle,
   });
   expect(invited.status).toBe(201);
 });

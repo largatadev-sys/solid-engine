@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '../support/fixtures';
-import { api, address, request, tokenFor, API } from '../support/pool';
+import { api, address, request, tokenFor, API, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { FIXTURE_PHOTO, SeedFailure, stamp } from '../support/seed';
@@ -71,8 +71,8 @@ test.beforeAll(async () => {
 });
 
 test('the member is invited', async () => {
-  const invited = await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, {
-    email: address(MEMBER),
+  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner, {
+    handle: (await profileFor(MEMBER)).handle,
   });
   expect(invited.status).toBe(201);
 

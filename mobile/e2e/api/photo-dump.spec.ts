@@ -43,8 +43,8 @@ test.beforeAll(async () => {
 });
 
 test('a member joins the trip through the real invite then accept', async () => {
-  const invited = await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, {
-    email: address(MEMBER),
+  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner, {
+    handle: (await profileFor(MEMBER)).handle,
   });
   const inbox = await api('/v1/invitations', 'GET', member);
   const card = (inbox.body?.items ?? []).find((row: { id: string }) => row.id === invited.body?.id);

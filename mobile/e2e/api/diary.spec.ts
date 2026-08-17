@@ -56,8 +56,8 @@ test.beforeAll(async () => {
 });
 
 test('a co-traveler joins the trip through the real invite then accept', async () => {
-  const invited = await api(`/v1/itineraries/${trip}/invitations`, 'POST', author, {
-    email: address(CO_TRAVELER),
+  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', author, {
+    handle: (await profileFor(CO_TRAVELER)).handle,
   });
   const accepted = await api(`/v1/invitations/${invited.body?.id}/accept`, 'POST', coTraveler, {});
   expect(invited.status).toBe(201);

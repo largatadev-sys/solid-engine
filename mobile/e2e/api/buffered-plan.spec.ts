@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures';
-import { api, address, tokenFor } from '../support/pool';
+import { api, address, tokenFor, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { SeedFailure, stamp } from '../support/seed';
@@ -70,8 +70,8 @@ test.beforeAll(async () => {
   if (created.status !== 201) throw new SeedFailure('the buffered-plan trip', created.body);
   trip = created.body.id;
 
-  const invited = await api(`/v1/itineraries/${trip}/invitations`, 'POST', holder, {
-    email: address(INTERVENER),
+  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', holder, {
+    handle: (await profileFor(INTERVENER)).handle,
   });
   if (invited.status !== 201) throw new SeedFailure(`an invitation for ${INTERVENER}`, invited.body);
   await api(`/v1/invitations/${invited.body.id}/accept`, 'POST', intervener);
