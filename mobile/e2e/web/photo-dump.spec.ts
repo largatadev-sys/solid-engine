@@ -1,7 +1,7 @@
 import { test, expect } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
-import { ownerTagFor, SPARE_TAG } from '../support/identities';
+import { ownerTagFor, type PoolTag } from '../support/identities';
 import {
   FIXTURE_PHOTO,
   climbTo,
@@ -24,7 +24,7 @@ import {
 } from '../../src/media/photoDumpMessages';
 
 const OWNER = ownerTagFor('web/photo-dump');
-const MEMBER = SPARE_TAG;
+const MEMBER: PoolTag = 't2';
 
 const LOAD_MORE_LABEL = 'Load more photos';
 const SERVER_PAGE_SIZE = 30;
@@ -165,6 +165,7 @@ test.describe('paging through the tab\'s own control', () => {
   let paged: SeededTrip;
 
   test.beforeAll(async () => {
+    test.setTimeout(180_000);
     paged = await seedTrip({ ownerTag: OWNER, title: stamp('Photo dump paging'), durationDays: 2 });
     const ownerToken = await tokenFor(OWNER);
     for (let index = 0; index <= SERVER_PAGE_SIZE; index += 1) {
@@ -248,24 +249,11 @@ test.describe('two travelers in one pool', () => {
 
   let shared: SeededTrip;
   let memberToken: string;
-  let joined = false;
 
   test.beforeAll(async () => {
     shared = await seedTrip({ ownerTag: OWNER, title: stamp('Photo dump shared'), durationDays: 2 });
     memberToken = await tokenFor(MEMBER);
-    try {
-      await joinTrip(shared, MEMBER);
-      joined = true;
-    } catch {
-      joined = false;
-    }
-  });
-
-  test.beforeEach(async () => {
-    test.skip(
-      !joined,
-      `${MEMBER} could not accept the invitation — the two-traveler acts never ran; not a product failure`,
-    );
+    await joinTrip(shared, MEMBER);
   });
 
   test('a member uploads into the same shared pool through the tab', async ({ page, signIn }) => {

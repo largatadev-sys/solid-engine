@@ -92,6 +92,31 @@ async function activity(token: string, itineraryId: string, day: number, title: 
 
 const feedCards = (page: Page) => page.locator('[aria-label$=", photo 1"]').locator('visible=true');
 
+async function clickWithinOwnCard(page: Page, tripTitle: string, labelPrefix: string): Promise<boolean> {
+  return page.evaluate(
+    ([title, prefix]) => {
+      const line = Array.from(document.querySelectorAll('*'))
+        .filter((node) => node.children.length === 0)
+        .filter((node) => (node.textContent ?? '').includes(title))
+        .filter((node) => (node as HTMLElement).offsetParent !== null)[0];
+      if (line === undefined) return false;
+      let card: HTMLElement | null = line as HTMLElement;
+      for (let up = 0; up < 8 && card !== null; up += 1) {
+        const found = Array.from(card.querySelectorAll('[aria-label]'))
+          .filter((node) => (node.getAttribute('aria-label') ?? '').startsWith(prefix))
+          .filter((node) => (node as HTMLElement).offsetParent !== null)[0] as HTMLElement | undefined;
+        if (found !== undefined) {
+          found.click();
+          return true;
+        }
+        card = card.parentElement;
+      }
+      return false;
+    },
+    [tripTitle, labelPrefix] as const,
+  );
+}
+
 async function feedScrollTop(page: Page): Promise<number | null> {
   return page.evaluate(() => {
     const card = Array.from(document.querySelectorAll('[aria-label$=", photo 1"]')).find(
@@ -244,6 +269,20 @@ async function heartState(page: Page) {
       ? null
       : { label: heart.getAttribute('aria-label'), text: heart.innerText.trim() };
   });
+}
+
+async function tapHeart(page: Page): Promise<boolean> {
+  const tapped = await page.evaluate(() => {
+    const hearts = Array.from(document.querySelectorAll('[aria-label]'))
+      .filter((node) => /^(Like|Unlike) this postcard$/.test(node.getAttribute('aria-label') ?? ''))
+      .filter((node) => (node as HTMLElement).offsetParent !== null);
+    const heart = hearts[hearts.length - 1] as HTMLElement | undefined;
+    if (heart === undefined) return false;
+    heart.click();
+    return true;
+  });
+  await page.waitForTimeout(1400);
+  return tapped;
 }
 
 async function doubleTapPhoto(page: Page): Promise<boolean> {
@@ -503,35 +542,16 @@ test.describe('the feed as another traveler cold-starts onto it', () => {
 });
 
 test.describe('the Trip Post badge', () => {
-  test('the badge opens the public trip diary, listing that trip postcards', async ({ page }) => {
+  const openOwnBadge = async (page: Page) => {
     await page.goto(HOME_TAB_ROUTE);
     await expect(page.getByText(`${trip.title} · Day 1`).first()).toBeVisible();
-
-    const opened = await page.evaluate(
-      ([title, badge]) => {
-        const line = Array.from(document.querySelectorAll('*'))
-          .filter((node) => node.children.length === 0)
-          .filter((node) => (node.textContent ?? '').includes(title as string))
-          .filter((node) => (node as HTMLElement).offsetParent !== null)[0];
-        if (line === undefined) return false;
-        let card: HTMLElement | null = line as HTMLElement;
-        for (let up = 0; up < 6 && card !== null; up += 1) {
-          const found = Array.from(card.querySelectorAll('[aria-label]')).filter((node) =>
-            (node.getAttribute('aria-label') ?? '').startsWith(badge as string),
-          )[0] as HTMLElement | undefined;
-          if (found !== undefined) {
-            found.click();
-            return true;
-          }
-          card = card.parentElement;
-        }
-        return false;
-      },
-      [trip.title, FEED_TRIP_BADGE] as const,
-    );
-    expect(opened).toBe(true);
-
+    expect(await clickWithinOwnCard(page, trip.title, FEED_TRIP_BADGE)).toBe(true);
     await expect(page).toHaveURL(/\/feed\/diary\//);
+  };
+
+  test('the badge opens the public trip diary, listing that trip postcards', async ({ page }) => {
+    await openOwnBadge(page);
+
     await expect(page.getByText(shortCaption).first()).toBeVisible();
     await expect(page.getByText(siblingCaption).first()).toBeVisible();
   });
@@ -539,20 +559,21 @@ test.describe('the Trip Post badge', () => {
   test('…and drops the badge there, since it would only lead back to this screen', async ({
     page,
   }) => {
-    await page.goto(HOME_TAB_ROUTE);
-    await expect(page.getByText(`${trip.title} · Day 1`).first()).toBeVisible();
-    await labelStarting(page, FEED_TRIP_BADGE).click();
-    await expect(page).toHaveURL(/\/feed\/diary\//);
+    await openOwnBadge(page);
 
-    await expect(page.getByText(FEED_TRIP_BADGE, { exact: true })).toHaveCount(0);
+    await expect(page.getByText(trip.title).first()).toBeVisible();
+    const badgesOnScreen = await page.evaluate((badge) => {
+      const screen = Array.from(document.querySelectorAll('[aria-label]'))
+        .filter((node) => (node.getAttribute('aria-label') ?? '').startsWith(badge))
+        .filter((node) => (node as HTMLElement).offsetParent !== null);
+      return screen.length;
+    }, FEED_TRIP_BADGE);
+    expect(badgesOnScreen).toBe(0);
   });
 
   test('the public diary bylines the @handle too — the second reader surface', async ({ page }) => {
     const author = (await api('/v1/me', 'GET', authorToken)).body;
-    await page.goto(HOME_TAB_ROUTE);
-    await expect(page.getByText(`${trip.title} · Day 1`).first()).toBeVisible();
-    await labelStarting(page, FEED_TRIP_BADGE).click();
-    await expect(page).toHaveURL(/\/feed\/diary\//);
+    await openOwnBadge(page);
 
     await expect(page.getByText(`@${author.handle}`).last()).toBeVisible();
     const shown = await page.evaluate(() => document.body.innerText);
@@ -562,10 +583,7 @@ test.describe('the Trip Post badge', () => {
   });
 
   test('back from the public diary returns to the feed', async ({ page }) => {
-    await page.goto(HOME_TAB_ROUTE);
-    await expect(page.getByText(`${trip.title} · Day 1`).first()).toBeVisible();
-    await labelStarting(page, FEED_TRIP_BADGE).click();
-    await expect(page).toHaveURL(/\/feed\/diary\//);
+    await openOwnBadge(page);
 
     await labelled(page, 'Go back').click();
     await expect(page).toHaveURL(new RegExp(`${HOME_TAB_ROUTE}$`));
@@ -622,13 +640,11 @@ test.describe('the heart', () => {
     const before = await heartState(page);
     expect(before).not.toBeNull();
 
-    await labelled(page, before!.label!).click();
-    await page.waitForTimeout(1200);
+    expect(await tapHeart(page)).toBe(true);
     const afterLike = await heartState(page);
     expect(afterLike!.label).not.toBe(before!.label);
 
-    await labelled(page, afterLike!.label!).click();
-    await page.waitForTimeout(1200);
+    expect(await tapHeart(page)).toBe(true);
     const afterUnlike = await heartState(page);
     expect(afterUnlike!.label).toBe(before!.label);
     expect(afterUnlike!.text).toBe(before!.text);
@@ -651,11 +667,7 @@ test.describe('the heart', () => {
     await page.goto(HOME_TAB_ROUTE);
     await expect(feedCards(page).first()).toBeVisible();
 
-    const before = await heartState(page);
-    if (before!.label === 'Unlike this postcard') {
-      await labelled(page, 'Unlike this postcard').click();
-      await page.waitForTimeout(1200);
-    }
+    if ((await heartState(page))!.label === 'Unlike this postcard') await tapHeart(page);
     expect((await heartState(page))!.label).toBe('Like this postcard');
 
     await doubleTapPhoto(page);
@@ -676,20 +688,24 @@ test.describe('the controls with no backend behind them yet', () => {
     await page.goto(HOME_TAB_ROUTE);
     await expect(feedCards(page).first()).toBeVisible();
 
+    for (const label of [FEED_SEARCH_LABEL, FEED_NOTIFICATIONS_LABEL]) {
+      await page.locator(`[aria-label="${label}"]`).locator('visible=true').first().click();
+      await page.waitForTimeout(600);
+    }
+
     for (const label of [
       'Comment on this postcard',
       'Share this postcard',
       'Save this postcard',
-      FEED_SEARCH_LABEL,
-      FEED_NOTIFICATIONS_LABEL,
     ]) {
-      await labelled(page, label).click();
+      await page.locator(`[aria-label="${label}"]`).locator('visible=true').first().click();
       await page.waitForTimeout(600);
     }
-    await labelStarting(page, '@').click();
+
+    await page.locator('[aria-label$=", traveler profile"]').locator('visible=true').first().click();
     await page.waitForTimeout(600);
 
-    expect(signal.dialogs.length).toBeGreaterThanOrEqual(5);
+    expect(signal.dialogs.length).toBeGreaterThanOrEqual(6);
   });
 
   test('long-pressing a photo opens the three-action sheet the mock draws', async ({ page }) => {
@@ -817,11 +833,21 @@ test.describe('the trip line self-heals at publish', () => {
     await page.goto(HOME_TAB_ROUTE);
     await expect(feedCards(page).first()).toBeVisible();
 
+    expect(
+      await clickWithinOwnCard(page, trip.title, `${trip.title} · Day 1, open the published trip`),
+    ).toBe(true);
+    await expect(page).toHaveURL(/\/feed\/published\//);
+    await labelled(page, 'Go back').click();
+    await expect(page).toHaveURL(new RegExp(`${HOME_TAB_ROUTE}$`));
+    await expect(feedCards(page).first()).toBeVisible();
+
     await scrollFeed(page, 500);
     const leftAt = await feedScrollTop(page);
     expect(leftAt).toBeGreaterThan(0);
 
-    await labelled(page, `${trip.title} · Day 1, open the published trip`).click();
+    expect(
+      await clickWithinOwnCard(page, trip.title, `${trip.title} · Day 1, open the published trip`),
+    ).toBe(true);
     await expect(page).toHaveURL(/\/feed\/published\//);
     await labelled(page, 'Go back').click();
     await expect(page).toHaveURL(new RegExp(`${HOME_TAB_ROUTE}$`));
@@ -877,14 +903,23 @@ test.describe('the new-posts pill, waited out over one real poll cycle', () => {
     await expect(feedCards(page).first()).toBeVisible();
     await scrollFeed(page, 700);
 
+    const newest = `Read it on the pill ${mark}`;
+    const fresh = await postcard(
+      authorToken,
+      trip.id,
+      { activityId: pillActivityId, caption: newest, fromDump: [] },
+      1,
+    );
+    expect(fresh.status).toBe(201);
+
     await expect(page.getByText(FEED_NEW_POSTS).last()).toBeVisible({ timeout: POLL_WAIT_MS });
-    await labelled(page, FEED_NEW_POSTS).click();
+    await page.locator(`[aria-label="${FEED_NEW_POSTS}"]`).locator('visible=true').last().click();
 
     await expect.poll(async () => feedScrollTop(page), { timeout: 15_000 }).toBe(0);
 
     const shown = await page.evaluate(() => document.body.innerText);
-    expect(shown.indexOf(`Landed while reading ${mark}`)).toBeGreaterThan(-1);
-    expect(shown.indexOf(`Landed while reading ${mark}`)).toBeLessThan(shown.indexOf(longCaption));
+    expect(shown.indexOf(newest)).toBeGreaterThan(-1);
+    expect(shown.indexOf(newest)).toBeLessThan(shown.indexOf(siblingCaption));
   });
 });
 
