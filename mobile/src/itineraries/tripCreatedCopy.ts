@@ -10,8 +10,8 @@ export function tripCreatedBody(title: string): string {
 }
 
 
-export function tripCreatedMeta(trip: { destinations: string[]; days: number }): string {
-  const where = trip.destinations.join(' · ');
+export function tripCreatedMeta(trip: { destination: string; days: number }): string {
+  const where = trip.destination.trim();
   const howLong = trip.days === 0 ? '' : `${trip.days} ${trip.days === 1 ? 'Day' : 'Days'}`;
 
   return [where, howLong].filter((part) => part !== '').join(' • ');

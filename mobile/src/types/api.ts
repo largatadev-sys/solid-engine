@@ -76,7 +76,8 @@ export type PublishAudience = Visibility;
 export type ItineraryResponse = {
   id: string;
   title: string;
-  destinations: string[];
+  destination: string;
+  currency: string | null;
 
   description: string | null;
 
@@ -232,7 +233,7 @@ export type PublishedDayResponse = {
 export type PublishedItineraryResponse = {
   id: string;
   title: string;
-  destinations: string[];
+  destination: string;
   description: string | null;
 
   standouts: string[];
@@ -250,7 +251,7 @@ export type PublishedItineraryResponse = {
 
 export type CreateItineraryRequest = {
   title: string;
-  destinations: string[];
+  destination: string;
   description?: string;
   startDate?: string;
   endDate?: string;
@@ -262,14 +263,15 @@ export type CreateItineraryRequest = {
 
 export type UpdateItineraryRequest = {
   title: string;
-  destinations: string[];
-  description?: string;
+  destination: string;
+  currency?: string;
+  description?: string | null;
 
-  standouts?: string[];
+  standouts?: string[] | null;
 
-  bestTimeOfYear?: string;
-  startDate?: string;
-  endDate?: string;
+  bestTimeOfYear?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
 };
 
 
@@ -359,7 +361,7 @@ export type DiaryTripResponse = {
   itineraryId: string;
   title: string | null;
   entryCount: number;
-  destinations?: string[];
+  destination?: string | null;
   dayCount?: number;
   coverImageUrl?: string | null;
 };
@@ -374,7 +376,7 @@ export type ProfileStatsResponse = {
 export type ShowcaseItineraryResponse = {
   id: string;
   title: string;
-  destinations: string[];
+  destination: string;
   durationDays: number;
   coverImageUrl: string | null;
 };
@@ -383,7 +385,7 @@ export type ShowcaseItineraryResponse = {
 export type DiscoveryCardResponse = {
   id: string;
   title: string;
-  destinations: string[];
+  destination: string;
   durationDays: number;
   coverImageUrl: string | null;
   author: TravelerCardResponse;

@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '../components/Icon';
 import { workspaceColors, workspaceRadii, workspaceTypography } from '../theme/workspaceTokens';
 import type { StateBadge } from './workspaceControls';
+import { TRIP_SETTINGS_LABEL } from './tripSettingsItems';
 
 
 interface WorkspaceHeaderProps {
@@ -16,6 +17,7 @@ interface WorkspaceHeaderProps {
   readonly actionDisabled?: boolean;
   readonly actionHint?: string | null;
   readonly onEditTitle?: () => void;
+  readonly onSettings?: () => void;
 }
 
 
@@ -30,6 +32,7 @@ export function WorkspaceHeader({
   actionDisabled = false,
   actionHint,
   onEditTitle,
+  onSettings,
 }: WorkspaceHeaderProps) {
   const insets = useSafeAreaInsets();
 
@@ -58,6 +61,18 @@ export function WorkspaceHeader({
             {actionIcon !== undefined ? <Icon name={actionIcon} size={14} color={workspaceColors.accent} /> : null}
           </Pressable>
         ) : null}
+
+        {onSettings !== undefined ? (
+          <Pressable
+            style={styles.settings}
+            onPress={onSettings}
+            accessibilityRole="button"
+            accessibilityLabel={TRIP_SETTINGS_LABEL}
+            hitSlop={SETTINGS_HIT_SLOP}
+          >
+            <Icon name="settings" size={20} color={workspaceColors.muted} />
+          </Pressable>
+        ) : null}
       </View>
 
       <View style={styles.titleRow}>
@@ -82,6 +97,8 @@ export function WorkspaceHeader({
 
 
 const HEADER_TOP_PADDING = 12;
+
+const SETTINGS_HIT_SLOP = 12;
 
 const styles = StyleSheet.create({
   header: {
@@ -111,6 +128,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  settings: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionDisabled: {
     opacity: 0.5,

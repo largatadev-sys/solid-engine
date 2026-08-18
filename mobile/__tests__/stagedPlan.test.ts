@@ -216,7 +216,8 @@ function serverPlan(): ItineraryResponse {
   return {
     id: 'trip-1',
     title: 'Palawan',
-    destinations: ['Palawan'],
+    destination: 'Palawan',
+    currency: 'PHP',
     description: null,
     standouts: [],
     bestTimeOfYear: null,

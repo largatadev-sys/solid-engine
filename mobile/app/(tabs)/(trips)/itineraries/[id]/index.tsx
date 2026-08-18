@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { itineraryLoadMessage, ScreenMessage } from '../../../../../src/components/ScreenMessage';
 import { confirmWith } from '../../../../../src/components/confirmDestructive';
+import { unpublishTripWording } from '../../../../../src/components/confirmDestructiveMessage';
 import { notify } from '../../../../../src/components/notify';
 import { useMe } from '../../../../../src/hooks/useMe';
 import { canEditPlan } from '../../../../../src/itineraries/archiveControls';
@@ -16,8 +17,10 @@ import {
 import { FinalizeSheet } from '../../../../../src/itineraries/FinalizeSheet';
 import { TripArchiveBanner } from '../../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
-import { WorkspaceDetailsTab } from '../../../../../src/itineraries/WorkspaceDetailsTab';
 import { WorkspaceHeader } from '../../../../../src/itineraries/WorkspaceHeader';
+import { WorkspaceSettingsMenu } from '../../../../../src/itineraries/WorkspaceSettingsMenu';
+import { showsSettingsCog, workspaceMenuItems, type WorkspaceMenuItem } from '../../../../../src/itineraries/tripSettingsItems';
+import { workspaceFactsLine } from '../../../../../src/itineraries/workspaceFactsLine';
 import {
   WorkspaceTabRow,
   workspaceTabFrom,
@@ -42,7 +45,7 @@ import {
 import { memberControls } from '../../../../../src/members/memberControls';
 import { OwnershipOfferBanner } from '../../../../../src/members/OwnershipOfferBanner';
 import { useMembers } from '../../../../../src/query/invitationQueries';
-import { useItinerary, useTripLifecycle } from '../../../../../src/query/itineraryQueries';
+import { useItinerary, useTripLifecycle, useUnpublishTrip } from '../../../../../src/query/itineraryQueries';
 import { useMyDiaryEntries } from '../../../../../src/query/diaryQueries';
 import {
   captureLabel,
@@ -69,6 +72,8 @@ export default function TripWorkspaceScreen() {
   const [active, setActive] = useState<WorkspaceTab>(workspaceTabFrom(tab));
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const unpublish = useUnpublishTrip(id);
 
   if (isPending) {
     return (
@@ -98,6 +103,19 @@ export default function TripWorkspaceScreen() {
   const openEditor = () => {
     if (editAction.kind !== 'edit') return;
     router.push({ pathname: '/itineraries/[id]/edit-plan', params: { id } });
+  };
+
+  const chooseSetting = (item: WorkspaceMenuItem) => {
+    setSettingsOpen(false);
+    if (item === 'edit-details') {
+      router.push({ pathname: '/itineraries/[id]/edit', params: { id } });
+      return;
+    }
+    if (item === 'view-published') {
+      router.push({ pathname: '/published/[id]', params: { id } });
+      return;
+    }
+    confirmWith(unpublishTripWording(), () => unpublish.mutate());
   };
 
   const stepBack = () => {
@@ -135,6 +153,15 @@ export default function TripWorkspaceScreen() {
           onAction={editAction.kind === 'blocked' ? () => undefined : openEditor}
           actionDisabled={editAction.kind === 'blocked' || lifecycle.isPending}
           actionHint={editAction.kind === 'blocked' ? `being edited by ${editAction.holder}` : null}
+          provenance={workspaceFactsLine(data)}
+          onSettings={showsSettingsCog(data, isOwner) ? () => setSettingsOpen(true) : undefined}
+        />
+
+        <WorkspaceSettingsMenu
+          visible={settingsOpen}
+          items={workspaceMenuItems(data, isOwner)}
+          onDismiss={() => setSettingsOpen(false)}
+          onSelect={chooseSetting}
         />
 
         <TripArchiveBanner itinerary={data} />
@@ -191,7 +218,6 @@ export default function TripWorkspaceScreen() {
           />
         ) : null}
 
-        {active === 'details' ? <WorkspaceDetailsTab itinerary={data} isOwner={isOwner} /> : null}
       </ScrollView>
 
       {ladder !== null || showsStepBack(data, isOwner) ? (

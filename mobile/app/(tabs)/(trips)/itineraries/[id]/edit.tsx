@@ -3,13 +3,17 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { ApiError } from '../../../../../src/api/ApiError';
 import { archivedPlanNotice, publishedPlanNotice } from '../../../../../src/components/editLockedMessage';
+import { confirmWith } from '../../../../../src/components/confirmDestructive';
+import { changeTripCurrencyWording } from '../../../../../src/components/confirmDestructiveMessage';
 import { usePhotoAction } from '../../../../../src/media/usePhotoAction';
 import { ScreenHeader } from '../../../../../src/components/ScreenHeader';
 import { useEditLock } from '../../../../../src/hooks/useEditLock';
 import { isEditable, isPublished } from '../../../../../src/itineraries/publishControls';
 import { TripForm } from '../../../../../src/itineraries/TripForm';
 import {
+  currencyChangeNeedsConfirming,
   EMPTY_TRIP_FORM,
+  pricedActivityCount,
   tripFormValuesFrom,
   updateRequestFrom,
   validateTripForm,
@@ -53,17 +57,29 @@ export default function EditItineraryScreen() {
 
   const coverAction = usePhotoAction();
 
-  function submit() {
-    const problem = validateTripForm('edit', values);
-    setValidationError(problem);
-    if (problem !== undefined) return;
-
+  function save() {
     update.mutate(updateRequestFrom(values), {
       onSuccess: () => {
         editLock.release();
         router.back();
       },
     });
+  }
+
+  function submit() {
+    const problem = validateTripForm('edit', values);
+    setValidationError(problem);
+    if (problem !== undefined) return;
+
+    const relabelling =
+      data !== undefined &&
+      currencyChangeNeedsConfirming(tripFormValuesFrom(data), values, pricedActivityCount(data));
+
+    if (relabelling) {
+      confirmWith(changeTripCurrencyWording(), save);
+      return;
+    }
+    save();
   }
 
   const serverMessage = update.error instanceof ApiError ? update.error.message : undefined;

@@ -2,6 +2,8 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
   createRequestFrom,
+  currencyChangeNeedsConfirming,
+  pricedActivityCount,
   DURATION_CHOICES,
   EMPTY_TRIP_FORM,
   tripFormChrome,
@@ -19,7 +21,8 @@ const MODES: TripFormMode[] = ['create', 'edit'];
 
 const blank: TripFormValues = {
   title: '',
-  destinations: [''],
+  destination: '',
+  currency: 'PHP',
   description: '',
   standouts: [''],
   bestTimeOfYear: '',
@@ -29,7 +32,7 @@ const blank: TripFormValues = {
 };
 
 
-const filled: TripFormValues = { ...blank, title: 'Hokkaido in winter', destinations: ['Sapporo'] };
+const filled: TripFormValues = { ...blank, title: 'Hokkaido in winter', destination: 'Sapporo' };
 
 
 describe('what both modes share — the fields that stopped drifting (S4.19 decision 3)', () => {
@@ -55,15 +58,27 @@ describe('what both modes share — the fields that stopped drifting (S4.19 deci
     expect(form).not.toMatch(/destinationsAreMulti/);
   });
 
-  it('narrows a legacy multi-destination row to its first — a trip has ONE destination (founder, 2026-08-09)', () => {
+  it('carries the trip-s one destination straight through — the list left the wire at S4.25', () => {
     const values = tripFormValuesFrom({
       title: 'Vietnam',
-      destinations: ['Hanoi', 'Sapa', 'Ha Long'],
+      destination: 'Hanoi',
+      currency: 'VND',
       standouts: [],
     } as never);
 
-    expect(values.destinations).toEqual(['Hanoi']);
-    expect(updateRequestFrom(values).destinations).toEqual(['Hanoi']);
+    expect(values.destination).toBe('Hanoi');
+    expect(updateRequestFrom(values).destination).toBe('Hanoi');
+  });
+
+  it('falls back to the PHP default when a legacy row carries no currency (S4.25 decision 1)', () => {
+    const values = tripFormValuesFrom({
+      title: 'Legacy',
+      destination: 'Cebu',
+      currency: null,
+      standouts: [],
+    } as never);
+
+    expect(values.currency).toBe('PHP');
   });
 });
 
@@ -89,8 +104,8 @@ describe('what each mode owns alone', () => {
   it('dresses the duration dropdown in the form-s own input skin, not the shared picker-s', () => {
     const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
 
-    expect(form).not.toMatch(/OptionPicker/);
     expect(form).toMatch(/dropdown: \{\s*\.\.\.inputSurface/);
+    expect(form).toMatch(/<DurationField/);
   });
 
   it('sizes the dropdown and the text inputs from ONE height, so the row cannot fall out of line', () => {
@@ -102,25 +117,55 @@ describe('what each mode owns alone', () => {
     expect(form).toMatch(/\[styles\.field, styles\.rowNarrow\]/);
   });
 
-  it('edits no dates in either mode — the pickers retired, the wire fields did not (S4.19 addendum 3)', () => {
+  it('edits dates on edit alone — the pickers came back at S4.25, reversing S4.19 addendum 3', () => {
     const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
 
-    expect(form).not.toMatch(/DatePicker/);
-    expect(form).not.toMatch(/Start date|End date/);
-    expect(tripFormFields('edit')).not.toHaveProperty('showsDates');
+    expect(form).toMatch(/ClearableDateField/);
+    expect(form).toMatch(/Start date/);
+    expect(form).toMatch(/End date/);
+    expect(tripFormFields('edit').showsDates).toBe(true);
+    expect(tripFormFields('create').showsDates).toBe(false);
   });
 
-  it('keeps dates on the wire so existing values survive a save (S4.19 addendum 3)', () => {
+  it('picks the currency on edit alone — create stays one short form (S4.25 artboard 4)', () => {
+    expect(tripFormFields('edit').showsCurrency).toBe(true);
+    expect(tripFormFields('create').showsCurrency).toBe(false);
+  });
+
+  it('sends a set date and carries the currency (S4.25 ticket 02)', () => {
     const request = updateRequestFrom({
       ...blank,
       title: 'Kept',
-      destinations: ['Hanoi'],
+      destination: 'Hanoi',
+      currency: 'VND',
       startDate: '2027-03-01',
       endDate: '2027-03-09',
     });
 
     expect(request.startDate).toBe('2027-03-01');
     expect(request.endDate).toBe('2027-03-09');
+    expect(request.currency).toBe('VND');
+  });
+
+  it('sends an EXPLICIT NULL for a cleared field, never an omission — absent means keep (S4.25 decision 4b)', () => {
+    const request = updateRequestFrom({
+      ...blank,
+      title: 'Postponed',
+      destination: 'Hanoi',
+      startDate: '',
+      endDate: '',
+      description: '',
+      bestTimeOfYear: '',
+    });
+
+    expect(request.startDate).toBeNull();
+    expect(request.endDate).toBeNull();
+    expect(request.description).toBeNull();
+    expect(request.bestTimeOfYear).toBeNull();
+
+    expect(Object.keys(request)).toEqual(
+      expect.arrayContaining(['startDate', 'endDate', 'description', 'bestTimeOfYear']),
+    );
   });
 
   it('reorders standouts on edit only — create keeps the S4.15 add-and-remove row', () => {
@@ -146,8 +191,8 @@ describe('validation converges — one validator, two modes', () => {
     expect(validateTripForm(mode, { ...filled, title: '   ' })).toBe('A title is required.');
   });
 
-  it.each(MODES)('requires at least one destination in %s mode', (mode) => {
-    expect(validateTripForm(mode, { ...filled, destinations: ['  ', ''] })).toMatch(/destination/);
+  it.each(MODES)('requires a destination in %s mode', (mode) => {
+    expect(validateTripForm(mode, { ...filled, destination: '  ' })).toMatch(/destination/);
   });
 
   it.each(MODES)('rejects a title past the server-s limit in %s mode', (mode) => {
@@ -192,5 +237,41 @@ describe('validation converges — one validator, two modes', () => {
   it('rejects a blank form in both modes on the title first', () => {
     expect(validateTripForm('create', blank)).toBe('A title is required.');
     expect(validateTripForm('edit', blank)).toBe('A title is required.');
+  });
+});
+
+
+describe('the currency-change confirm (S4.25 artboard 3)', () => {
+  const priced = { ...EMPTY_TRIP_FORM, title: 'Trip', destination: 'Boracay', currency: 'PHP' };
+
+  it('asks before relabelling money that exists', () => {
+    expect(currencyChangeNeedsConfirming(priced, { ...priced, currency: 'USD' }, 3)).toBe(true);
+  });
+
+  it('stays silent when the currency did not change, however many prices there are', () => {
+    expect(currencyChangeNeedsConfirming(priced, { ...priced }, 3)).toBe(false);
+  });
+
+  it('stays silent when there is no money to relabel', () => {
+    expect(currencyChangeNeedsConfirming(priced, { ...priced, currency: 'USD' }, 0)).toBe(false);
+  });
+});
+
+
+describe('counting the money a currency change would relabel', () => {
+  it('counts only priced activities, across every day', () => {
+    const trip = {
+      days: [
+        { activities: [{ costAmount: '1500.00' }, { costAmount: null }] },
+        { activities: [{ costAmount: '600.00' }] },
+      ],
+    };
+
+    expect(pricedActivityCount(trip)).toBe(2);
+  });
+
+  it('counts nothing on a plan with no prices at all', () => {
+    expect(pricedActivityCount({ days: [{ activities: [{ costAmount: null }] }] })).toBe(0);
+    expect(pricedActivityCount({ days: [] })).toBe(0);
   });
 });

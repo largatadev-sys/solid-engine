@@ -26,7 +26,6 @@ import { dayName, dayPrefix } from '../../../../../src/itineraries/dayTitle';
 import { DraggableActivityList } from '../../../../../src/itineraries/DraggableActivityList';
 import { applyDrop, applyMove } from '../../../../../src/itineraries/reorderActivityIds';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
-import { WorkspaceDetailsTab } from '../../../../../src/itineraries/WorkspaceDetailsTab';
 import { WorkspaceHeader } from '../../../../../src/itineraries/WorkspaceHeader';
 import { WorkspaceTabRow, type WorkspaceTab } from '../../../../../src/itineraries/WorkspaceTabRow';
 import { WorkspaceTravelersTab } from '../../../../../src/itineraries/WorkspaceTravelersTab';
@@ -309,7 +308,6 @@ export default function DraftWorkspaceScreen() {
 
         {active === 'travelers' ? <WorkspaceTravelersTab itineraryId={id} /> : null}
 
-        {active === 'details' ? <WorkspaceDetailsTab itinerary={data} isOwner={isOwner} /> : null}
       </ScrollView>
 
       <View style={styles.rail}>

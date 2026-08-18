@@ -14,8 +14,12 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { CoverPicker } from '../media/CoverPicker';
 import { colors, controls, radii, spacing, typography } from '../theme';
 import { addRow, moveRow, removeRow, setRow } from './rowEditor';
+import { ClearableDateField } from './ClearableDateField';
+import { OptionPicker } from '../components/OptionPicker';
+import { currencyPickerLabel, SUPPORTED_CURRENCIES } from './currencies';
 import {
   DURATION_CHOICES,
+  STANDOUTS_HINT,
   tripFormChrome,
   tripFormFields,
   type TripFormMode,
@@ -96,8 +100,8 @@ export function TripForm({
           <View style={styles.rowGrow}>
             <Field
               label="Destination"
-              value={values.destinations[0] ?? ''}
-              onChangeText={(text) => set('destinations', [text])}
+              value={values.destination}
+              onChangeText={(text) => set('destination', text)}
               placeholder="Where to?"
             />
           </View>
@@ -109,6 +113,37 @@ export function TripForm({
             </View>
           ) : null}
         </View>
+
+        {fields.showsDates ? (
+          <View style={styles.fieldRow}>
+            <View style={styles.rowGrow}>
+              <ClearableDateField
+                label="Start date"
+                value={values.startDate}
+                onChange={(next) => set('startDate', next)}
+              />
+            </View>
+            <View style={styles.rowGrow}>
+              <ClearableDateField
+                label="End date"
+                value={values.endDate}
+                onChange={(next) => set('endDate', next)}
+              />
+            </View>
+          </View>
+        ) : null}
+
+        {fields.showsCurrency ? (
+          <OptionPicker
+            label="Currency"
+            value={values.currency}
+            options={SUPPORTED_CURRENCIES.map((currency) => ({
+              value: currency.code,
+              label: currencyPickerLabel(currency.code),
+            }))}
+            onSelect={(next) => set('currency', next)}
+          />
+        ) : null}
 
         <Field
           label="Best Time of Year"
@@ -126,7 +161,10 @@ export function TripForm({
         />
 
         <View style={styles.field}>
-          <Text style={styles.label}>Standouts</Text>
+          <View style={styles.labelBlock}>
+            <Text style={styles.label}>Standouts</Text>
+            <Text style={styles.hint}>{STANDOUTS_HINT}</Text>
+          </View>
           {values.standouts.map((standout, index) => (
             <View key={index} style={styles.rowEntry}>
               <TextInput
@@ -321,6 +359,8 @@ const styles = StyleSheet.create({
   rowNarrow: { width: DURATION_WIDTH },
   field: { gap: spacing.xs2 },
   label: { ...typography.fieldLabel, color: colors.textSecondary },
+  labelBlock: { gap: 2 },
+  hint: { ...typography.caption, color: colors.textSecondary },
   input: { ...inputSurface, ...typography.input, height: CONTROL_HEIGHT, color: colors.textPrimary },
   dropdown: {
     ...inputSurface,

@@ -127,7 +127,7 @@ function PublishedHeader({
   projection: PublishedItineraryResponse;
   audience: 'preview' | 'consumer';
 }) {
-  const pill = destinationPillLabel(projection.destinations);
+  const pill = destinationPillLabel(projection.destination);
   const duration = durationLabel(projection.durationDays);
   const total = estimatedTotalLabel(projection.estimatedCost);
   const handle = bylineHandle(projection.creator.handle);

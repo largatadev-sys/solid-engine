@@ -45,7 +45,7 @@ export default function TripCreatedScreen() {
                 {data.title}
               </Text>
               <Text style={styles.summaryMeta} numberOfLines={1}>
-                {tripCreatedMeta({ destinations: data.destinations, days: data.days.length })}
+                {tripCreatedMeta({ destination: data.destination, days: data.days.length })}
               </Text>
             </View>
           </View>
