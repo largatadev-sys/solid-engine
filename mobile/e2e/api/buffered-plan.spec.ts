@@ -64,7 +64,7 @@ test.beforeAll(async () => {
 
   const created = await api('/v1/itineraries', 'POST', holder, {
     title: stamp('buffered editing'),
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     durationDays: 2,
   });
   if (created.status !== 201) throw new SeedFailure('the buffered-plan trip', created.body);

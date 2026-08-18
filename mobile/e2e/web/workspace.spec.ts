@@ -43,13 +43,14 @@ test.describe('the draft workspace as a viewer', () => {
     await expect(labelled(page, 'Edit Itinerary')).toBeVisible();
   });
 
-  test('the six-tab row renders in mock order, and Notes was never drawn', async ({ page }) => {
+  test('the five-tab row renders in mock order — Details was deleted at S4.25', async ({ page }) => {
     await page.goto(`/itineraries/${trip.id}`);
 
-    for (const tab of ['Day-by-Day', 'Polls', 'Travelers', 'Photo Dump', 'Chat', 'Details']) {
+    for (const tab of ['Day-by-Day', 'Polls', 'Travelers', 'Photo Dump', 'Chat']) {
       await expect(labelled(page, tab)).toBeVisible();
     }
     await expect(page.getByText('Notes', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Details', { exact: true })).toHaveCount(0);
   });
 
   test('the day list renders as stubs with the activities readable', async ({ page }) => {
@@ -95,11 +96,27 @@ test.describe('the draft workspace as a viewer', () => {
     await expect(page.getByText(/largata|pool_/i).first()).toBeVisible();
   });
 
-  test('the Details tab carries the plan fields and no lifecycle control', async ({ page }) => {
+  test('the facts line answers where and when from the header (S4.25 artboard 1)', async ({ page }) => {
+    await page.goto(`/itineraries/${trip.id}`);
+
+    await expect(page.getByText('Palawan · Dates to be decided')).toBeVisible();
+  });
+
+  test('a stale ?tab=details link degrades to Day-by-Day rather than blanking', async ({ page }) => {
     await page.goto(`/itineraries/${trip.id}?tab=details`);
 
-    await expect(page.getByText(/DESTINATIONS/i)).toBeVisible();
-    await expect(page.getByText(/Palawan/)).toBeVisible();
+    await expect(page.getByText('Day 1')).toBeVisible();
+    await expect(page.getByText('Kayak the lagoon')).toBeVisible();
+  });
+
+  test('the owner reaches the details editor through the cog (S4.25 artboard 1b)', async ({ page }) => {
+    await page.goto(`/itineraries/${trip.id}`);
+
+    await labelled(page, 'Trip settings').click();
+    await labelled(page, 'Edit details').click();
+
+    await expect(page.getByText('Edit Trip')).toBeVisible();
+    await expect(labelled(page, 'Currency')).toBeVisible();
   });
 
   test('every /v1 call from the workspace carries a bearer token', async ({ page, signal }) => {

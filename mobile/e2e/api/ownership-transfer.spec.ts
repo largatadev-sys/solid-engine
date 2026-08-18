@@ -54,7 +54,7 @@ test.beforeAll(async () => {
   trip = await seedTrip({
     ownerTag: FOUNDER,
     title: stamp('ownership transfer'),
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     members: [OFFEREE],
   });
   await joinTrip(trip, BYSTANDER);
@@ -193,7 +193,7 @@ test('the trip is down to its one owner', async () => {
 test('the pool converges: the founder tag owns a fresh trip again, so repeated runs never drift', async () => {
   const fresh = await api('/v1/itineraries', 'POST', founder, {
     title: stamp('ownership transfer convergence'),
-    destinations: ['Palawan'],
+    destination: 'Palawan',
   });
   expect(fresh.status).toBe(201);
 

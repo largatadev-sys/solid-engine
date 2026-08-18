@@ -29,7 +29,7 @@ async function publishedTrip(
 ): Promise<string> {
   const created = await api('/v1/itineraries', 'POST', token, {
     title,
-    destinations: [destination],
+    destination,
     durationDays,
   });
   if (created.status !== 201) throw new SeedFailure(`the trip "${title}"`, created.body);

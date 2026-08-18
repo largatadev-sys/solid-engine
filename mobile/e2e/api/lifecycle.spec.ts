@@ -24,7 +24,7 @@ test.beforeAll(async () => {
   trip = await seedTrip({
     ownerTag: OWNER,
     title: stamp('lifecycle'),
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     members: [MEMBER],
   });
 });
@@ -60,7 +60,7 @@ test('an unauthenticated visitor is refused', async () => {
 test('a non-member is masked with 404, never 403', async () => {
   const theirs = await api('/v1/itineraries', 'POST', member, {
     title: stamp('not the owner'),
-    destinations: ['Cebu'],
+    destination: 'Cebu',
   });
   const masked = await api(`/v1/itineraries/${theirs.body.id}/start`, 'POST', owner);
   expect(masked.status).toBe(404);
@@ -134,15 +134,29 @@ test('the trip walks the whole ladder again after the undo', async () => {
   expect(await stateOf(owner, trip.id)).toBe('completed');
 });
 
-test('completed is a working afterlife, not a freeze — a member still edits the plan', async () => {
-  const lock = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', member);
+test('completed is a working afterlife, not a freeze — the owner still edits the details', async () => {
+  const lock = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', owner);
   expect(lock.status).toBe(200);
 
-  const edited = await api(`/v1/itineraries/${trip.id}`, 'PATCH', member, {
+  const edited = await api(`/v1/itineraries/${trip.id}`, 'PATCH', owner, {
     title: 'edited after completion',
-    destinations: ['Palawan'],
+    destination: 'Palawan',
   });
   expect(edited.status).toBe(200);
+
+  await api(`/v1/itineraries/${trip.id}/edit-lock`, 'DELETE', owner);
+});
+
+test('…while a member is refused the DETAILS, with the owner-act code (S4.25 decision 4c)', async () => {
+  await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', member);
+
+  const refused = await api(`/v1/itineraries/${trip.id}`, 'PATCH', member, {
+    title: 'edited by a collaborator',
+    destination: 'Palawan',
+  });
+
+  expect(refused.status).toBe(403);
+  expect(refused.body.code).toBe('NOT_PERMITTED');
 
   await api(`/v1/itineraries/${trip.id}/edit-lock`, 'DELETE', member);
 });
@@ -159,7 +173,7 @@ test('PATCH cannot move lifecycle state — the two doors stay separate', async 
   await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', owner);
   await api(`/v1/itineraries/${trip.id}`, 'PATCH', owner, {
     title: 'state must not move through this door',
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     state: 'draft',
   });
   await api(`/v1/itineraries/${trip.id}/edit-lock`, 'DELETE', owner);
@@ -179,7 +193,7 @@ test.describe('S4.24 — the editor opens in every unpublished state, and the st
   test.beforeAll(async () => {
     const created = await api('/v1/itineraries', 'POST', owner, {
       title: stamp('edit in place'),
-      destinations: ['Palawan'],
+      destination: 'Palawan',
       durationDays: 1,
     });
     inPlace = created.body.id;

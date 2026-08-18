@@ -34,7 +34,7 @@ test.beforeAll(async () => {
 
   const created = await api('/v1/itineraries', 'POST', owner, {
     title: stamp('Photo Dump Trip'),
-    destinations: ['Siargao'],
+    destination: 'Siargao',
     durationDays: 2,
   });
   if (created.status !== 201) throw new SeedFailure('the photo-dump trip', created.body);

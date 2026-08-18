@@ -41,6 +41,22 @@ _Status: **proposed — pending founder ratification.** Conventions, not per-end
 - `details`: **optional, omitted unless a code needs it** — a small map of code-specific data the client must act on rather than merely display. Added S4.18 (ADR-023) for `STALE_PLAN`, which carries `currentPlanVersion` so a refused save can offer an explicit re-based overwrite without a force flag. Additive under ADR-008: absent on every previously shipped refusal, so no response shape moved. **The bar is deliberately high** — a field here is a wire contract, so it exists only where the client's *next act* depends on the value; anything the traveler merely reads belongs in `message`. Never PII, never internals (P2/P3).
 - **Never**: raw stack traces, SQL, Spring default error pages, internal exception class names (P2).
 
+## Partial updates: merge-patch — absent means keep, explicit null means clear *(ADR-028, S4.25)*
+
+**The standing convention for every field a traveler can empty.** A `PATCH` body distinguishes three states, and the distinction is the contract:
+
+| The client sends | The server does |
+|---|---|
+| the key is **absent** | **keeps** the stored value |
+| the key is present with **`null`** | **clears** the stored value |
+| the key is present with a value | **replaces** the stored value |
+
+**Why it is worth a convention rather than a per-endpoint choice.** Full-replace has no way to say "leave this alone", so a second writer of the same resource — a different screen, an older client, a background job — silently erases whatever it did not know to resend. Absent-means-keep is what makes a second writer *safe by construction*. Adopted at S4.25 for the itinerary update endpoint, replacing full-replace-with-exceptions, and binding on every clearable field added after it.
+
+**Not every field is clearable, and the ones that aren't must refuse rather than accept.** A required field (`title`, `destination`) answers an explicit null with a **400 `VALIDATION_FAILED`**, never by clearing and never by silently keeping — a silent keep would make the two outcomes indistinguishable, which is the one thing this convention exists to prevent. A **replace-only** field (the trip's `currency`) takes absent-means-keep but refuses null the same way: it always has a value, so "no currency" is not a state the traveler can reach.
+
+**Implementation note, because the obvious approach does not work.** Jackson 3 maps **both** an absent key and an explicit `null` onto `Optional.empty`, so an `Optional<T>` field cannot express this contract — it collapses exactly the two states that must stay apart, and does so silently, in a green build. `Patchable<T>` (`com.largata.itinerary.api`) carries the distinction: its deserializer returns a cleared wrapper for `null` and overrides `getAbsentValue` to return Java `null` for an absent key, so `Patchable.isAbsent(...)` is the seam and the merge happens in the request object before the domain sees it.
+
 ## The one pagination shape
 
 **Cursor-based:** `{ "items": [...], "nextCursor": "…" }` — `nextCursor` absent/null when exhausted.

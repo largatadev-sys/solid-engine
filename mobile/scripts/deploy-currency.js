@@ -69,7 +69,7 @@ async function poolToken(tag) {
   const token = await poolToken(TAG);
   const created = await api('/v1/itineraries', 'POST', token, {
     title: 'deploy currency probe',
-    destinations: ['Probe'],
+    destination: 'Probe',
   });
   if (created.status !== 201) {
     console.log(`UNKNOWN: could not create a probe trip (${created.status})`);
@@ -85,7 +85,7 @@ async function poolToken(tag) {
 
   const refused = await api(`/v1/itineraries/${id}`, 'PATCH', token, {
     title: 'nope',
-    destinations: ['Probe'],
+    destination: 'Probe',
   });
   const message = refused.body?.message ?? '';
 

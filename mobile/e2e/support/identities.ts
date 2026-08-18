@@ -33,6 +33,7 @@ export const IDENTITY_MAP = {
   'web/tab-bar': { tags: ['t4'], sharesWith: 'shared' },
   'web/ownership-transfer': { tags: ['t1', 't2'], sharesWith: 'wants-exclusive' },
   'web/archive': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'web/trip-details': { tags: ['t1', 't2'], sharesWith: 'shared' },
 } as const satisfies Record<string, SpecIdentities>;
 
 export type SpecKey = keyof typeof IDENTITY_MAP;

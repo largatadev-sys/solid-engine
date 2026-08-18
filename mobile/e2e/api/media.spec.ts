@@ -142,7 +142,7 @@ test.describe('the cover, and the audience ladder that governs it', () => {
   test.beforeAll(async () => {
     const created = await api('/v1/itineraries', 'POST', owner, {
       title: stamp('Cover Trip'),
-      destinations: ['Palawan'],
+      destination: 'Palawan',
       durationDays: 2,
     });
     if (created.status !== 201) throw new SeedFailure('the cover trip', created.body);
@@ -205,7 +205,7 @@ test.describe('the create-flow cover, which takes a different path', () => {
   test.beforeAll(async () => {
     const created = await api('/v1/itineraries', 'POST', owner, {
       title: stamp('Created With Cover'),
-      destinations: ['Palawan'],
+      destination: 'Palawan',
       durationDays: 2,
     });
     if (created.status !== 201) throw new SeedFailure('the create-flow cover trip', created.body);
@@ -241,7 +241,7 @@ test.describe('activity photos and the derived gallery', () => {
   test.beforeAll(async () => {
     const created = await api('/v1/itineraries', 'POST', owner, {
       title: stamp('Photo Trip'),
-      destinations: ['Palawan'],
+      destination: 'Palawan',
       durationDays: 2,
     });
     if (created.status !== 201) throw new SeedFailure('the activity-photo trip', created.body);

@@ -15,7 +15,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'Cebu, south to north',
-        destinations: ['Cebu'],
+        destination: 'Cebu',
         description:
           'Five days chasing the parts of Cebu that are not the city. Rented a motorbike on day two '
           + 'and regretted nothing except the sunburn.',
@@ -64,7 +64,7 @@ const TRAVELERS = [
       },
       {
         title: 'Bali on a motorbike',
-        destinations: ['Bali'],
+        destination: 'Bali',
         description: 'Ubud inland first, then south to the coast. Nine days, one helmet, no plan past day three.',
         standouts: ['Sidemen valley over Ubud, every time'],
         bestTimeOfYear: 'Apr – Oct',
@@ -98,7 +98,7 @@ const TRAVELERS = [
       },
       {
         title: 'Palawan: El Nido to Coron',
-        destinations: ['Palawan'],
+        destination: 'Palawan',
         description: 'The expedition boat between the two, four days at sea sleeping on beaches.',
         standouts: ['Sleeping on an island with no electricity', 'Kayangan Lake before the day boats arrive'],
         bestTimeOfYear: 'Nov – May',
@@ -129,7 +129,7 @@ const TRAVELERS = [
       },
       {
         title: 'Northern Vietnam, slowly',
-        destinations: ['Hanoi', 'Ha Giang'],
+        destination: 'Hanoi',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Sep – Nov',
@@ -146,7 +146,7 @@ const TRAVELERS = [
       },
       {
         title: 'Thailand: islands and the north',
-        destinations: ['Chiang Mai', 'Krabi'],
+        destination: 'Chiang Mai',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Nov – Feb',
@@ -175,7 +175,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'Japan in the shoulder season',
-        destinations: ['Tokyo', 'Hakone', 'Kyoto', 'Osaka'],
+        destination: 'Tokyo',
         description:
           'Two weeks in late October, which everyone told me was the right call. They were right. '
           + 'Trains for everything except Hakone.',
@@ -218,7 +218,7 @@ const TRAVELERS = [
       },
       {
         title: 'Seoul, five days',
-        destinations: ['Seoul'],
+        destination: 'Seoul',
         description: 'A long weekend that became five days because of a typhoon. No complaints.',
         standouts: ['Bukhansan on a clear morning'],
         bestTimeOfYear: 'Sep – Nov',
@@ -248,7 +248,7 @@ const TRAVELERS = [
       },
       {
         title: 'Hokkaido in deep winter',
-        destinations: ['Sapporo', 'Otaru', 'Furano'],
+        destination: 'Sapporo',
         description: 'February. Minus fifteen most days and the best snow I have stood in.',
         standouts: ['Otaru canal at night, under snow'],
         bestTimeOfYear: 'Jan – Feb',
@@ -275,7 +275,7 @@ const TRAVELERS = [
       },
       {
         title: 'Taipei, eating',
-        destinations: ['Taipei'],
+        destination: 'Taipei',
         description: null,
         standouts: [],
         bestTimeOfYear: null,
@@ -290,7 +290,7 @@ const TRAVELERS = [
       },
       {
         title: 'Hong Kong, three days',
-        destinations: ['Hong Kong'],
+        destination: 'Hong Kong',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Oct – Dec',
@@ -315,7 +315,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'The Great Ocean Road',
-        destinations: ['Victoria'],
+        destination: 'Victoria',
         description: 'Four days from Torquay to Port Fairy. Everyone does it in one and misses the entire point.',
         standouts: ['Twelve Apostles at sunrise with nobody there', 'Otways rainforest in the rain, deliberately'],
         bestTimeOfYear: 'Nov – Mar',
@@ -353,7 +353,7 @@ const TRAVELERS = [
       },
       {
         title: 'South Island, two weeks',
-        destinations: ['Queenstown', 'Fiordland', 'Wanaka'],
+        destination: 'Queenstown',
         description: 'Campervan. Rained six days out of fourteen and it was still the best trip I have done.',
         standouts: ['Milford Sound in heavy rain — every cliff becomes a waterfall'],
         bestTimeOfYear: 'Dec – Feb',
@@ -385,7 +385,7 @@ const TRAVELERS = [
       },
       {
         title: 'Tasmania, east coast',
-        destinations: ['Hobart', 'Freycinet'],
+        destination: 'Hobart',
         description: 'Eight days. Colder than the mainland in every sense and I liked it more.',
         standouts: ['Wineglass Bay from the saddle, not the lookout'],
         bestTimeOfYear: 'Dec – Mar',
@@ -416,7 +416,7 @@ const TRAVELERS = [
       },
       {
         title: 'Whitsundays, sailing',
-        destinations: ['Queensland'],
+        destination: 'Queensland',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Jun – Oct',
@@ -440,7 +440,7 @@ const TRAVELERS = [
       },
       {
         title: 'Western Australia, the long way',
-        destinations: ['Perth', 'Margaret River'],
+        destination: 'Perth',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Sep – Nov',
@@ -465,7 +465,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'Portugal end to end',
-        destinations: ['Lisbon', 'Sintra', 'Porto', 'Douro'],
+        destination: 'Lisbon',
         description: 'Ten days, all of it by train except Sintra, which is also by train but feels illegal.',
         standouts: ['Douro valley in September, during harvest'],
         bestTimeOfYear: 'Apr – Jun · Sep – Oct',
@@ -505,7 +505,7 @@ const TRAVELERS = [
       },
       {
         title: 'The Basque coast',
-        destinations: ['San Sebastián', 'Bilbao'],
+        destination: 'San Sebastián',
         description: 'Six days of eating standing up. Train from Lisbon took two days and was half the fun.',
         standouts: ['Pintxos crawl in the old town, no reservations anywhere'],
         bestTimeOfYear: 'May – Sep',
@@ -530,7 +530,7 @@ const TRAVELERS = [
       },
       {
         title: 'Ireland, the west',
-        destinations: ['Galway', 'Connemara'],
+        destination: 'Galway',
         description: 'Ferry and trains. Wet, obviously.',
         standouts: [],
         bestTimeOfYear: 'May – Sep',
@@ -554,7 +554,7 @@ const TRAVELERS = [
       },
       {
         title: 'Swiss trains in winter',
-        destinations: ['Interlaken', 'Zermatt'],
+        destination: 'Interlaken',
         description: null,
         standouts: ['Glacier Express, second class, window seat'],
         bestTimeOfYear: 'Dec – Mar',
@@ -572,7 +572,7 @@ const TRAVELERS = [
       },
       {
         title: 'Amsterdam, long weekend',
-        destinations: ['Amsterdam'],
+        destination: 'Amsterdam',
         description: null,
         standouts: [],
         bestTimeOfYear: null,
@@ -597,7 +597,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'Cyclades by ferry',
-        destinations: ['Naxos', 'Milos', 'Santorini'],
+        destination: 'Naxos',
         description: 'Three islands in twelve days. Slow ferries on purpose — the fast ones have no deck.',
         standouts: ['Sarakiniko at first light, before anyone', 'Naxos for the food, not the beaches'],
         bestTimeOfYear: 'May – Jun · Sep',
@@ -629,7 +629,7 @@ const TRAVELERS = [
       },
       {
         title: 'Croatia, Dubrovnik north',
-        destinations: ['Dubrovnik', 'Hvar', 'Split'],
+        destination: 'Dubrovnik',
         description: null,
         standouts: [],
         bestTimeOfYear: 'May – Oct',
@@ -659,7 +659,7 @@ const TRAVELERS = [
       },
       {
         title: 'Sicily, a slow circle',
-        destinations: ['Palermo', 'Catania', 'Taormina'],
+        destination: 'Palermo',
         description: 'Two weeks by train and bus. Etna was smoking the whole time.',
         standouts: ['Street food in Palermo, standing at the stall'],
         bestTimeOfYear: 'Apr – Jun · Sep – Oct',
@@ -689,7 +689,7 @@ const TRAVELERS = [
       },
       {
         title: 'The Turquoise Coast',
-        destinations: ['Fethiye', 'Kaş'],
+        destination: 'Fethiye',
         description: null,
         standouts: [],
         bestTimeOfYear: 'May – Oct',
@@ -706,7 +706,7 @@ const TRAVELERS = [
       },
       {
         title: 'Malta, four days',
-        destinations: ['Valletta'],
+        destination: 'Valletta',
         description: null,
         standouts: [],
         bestTimeOfYear: null,
@@ -731,7 +731,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'Patagonia, both sides',
-        destinations: ['El Chaltén', 'Torres del Paine'],
+        destination: 'El Chaltén',
         description: 'Three weeks, two countries, one border crossing that took six hours. Wind every single day.',
         standouts: ['Fitz Roy clear at sunrise — one morning in nine', 'The W trek, self-catered'],
         bestTimeOfYear: 'Nov – Mar',
@@ -762,7 +762,7 @@ const TRAVELERS = [
       },
       {
         title: 'Peru: Cusco and the valley',
-        destinations: ['Cusco', 'Sacred Valley'],
+        destination: 'Cusco',
         description: null,
         standouts: ['Two days acclimatising in Cusco. Not optional.'],
         bestTimeOfYear: 'May – Sep',
@@ -793,7 +793,7 @@ const TRAVELERS = [
       },
       {
         title: 'Colombia: coffee country',
-        destinations: ['Medellín', 'Salento'],
+        destination: 'Medellín',
         description: 'Ten days. Everyone warned me and everyone was wrong.',
         standouts: ['Cocora valley in the early cloud'],
         bestTimeOfYear: 'Dec – Mar',
@@ -817,7 +817,7 @@ const TRAVELERS = [
       },
       {
         title: 'Atacama, five nights',
-        destinations: ['San Pedro de Atacama'],
+        destination: 'San Pedro de Atacama',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Mar – May · Sep – Nov',
@@ -832,7 +832,7 @@ const TRAVELERS = [
       },
       {
         title: 'Rio, carnival week',
-        destinations: ['Rio de Janeiro'],
+        destination: 'Rio de Janeiro',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Feb',
@@ -857,7 +857,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'Iceland ring road',
-        destinations: ['Reykjavík', 'Vík', 'Jökulsárlón'],
+        destination: 'Reykjavík',
         description: 'Ten days clockwise in a van in September. Aurora on four nights.',
         standouts: ['Jökulsárlón and Diamond Beach on the same morning', 'Hot springs nobody signposts'],
         bestTimeOfYear: 'Jun – Sep',
@@ -892,7 +892,7 @@ const TRAVELERS = [
       },
       {
         title: 'Utah, five parks',
-        destinations: ['Moab', 'Bryce', 'Zion'],
+        destination: 'Moab',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Apr – May · Sep – Oct',
@@ -923,7 +923,7 @@ const TRAVELERS = [
       },
       {
         title: 'Pacific Northwest loop',
-        destinations: ['Olympic', 'Mount Rainier'],
+        destination: 'Olympic',
         description: 'Van again. Rainforest, then a volcano, then the coast.',
         standouts: ['Hoh rainforest in fog'],
         bestTimeOfYear: 'Jul – Sep',
@@ -947,7 +947,7 @@ const TRAVELERS = [
       },
       {
         title: 'Banff and the Icefields',
-        destinations: ['Banff', 'Jasper'],
+        destination: 'Banff',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Jun – Sep',
@@ -964,7 +964,7 @@ const TRAVELERS = [
       },
       {
         title: 'Baja, surfing south',
-        destinations: ['Baja California'],
+        destination: 'Baja California',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Oct – Apr',
@@ -989,7 +989,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'Morocco: Atlas to Sahara',
-        destinations: ['Marrakech', 'Merzouga', 'Chefchaouen'],
+        destination: 'Marrakech',
         description: 'Twelve days. Marrakech, over the Atlas, two nights in the dunes, then north to the blue city.',
         standouts: ['Erg Chebbi dunes at sunrise', 'Fes tanneries — hold the mint sprig they give you'],
         bestTimeOfYear: 'Mar – May · Sep – Nov',
@@ -1024,7 +1024,7 @@ const TRAVELERS = [
       },
       {
         title: 'Namibia self-drive',
-        destinations: ['Sossusvlei', 'Etosha'],
+        destination: 'Sossusvlei',
         description: 'Two weeks, one 4x4, roof tent. Gravel roads the whole way.',
         standouts: ['Deadvlei at first light'],
         bestTimeOfYear: 'May – Oct',
@@ -1054,7 +1054,7 @@ const TRAVELERS = [
       },
       {
         title: 'Tanzania: crater and coast',
-        destinations: ['Ngorongoro', 'Zanzibar'],
+        destination: 'Ngorongoro',
         description: null,
         standouts: ['The crater floor before the gate crowd descends'],
         bestTimeOfYear: 'Jun – Oct',
@@ -1078,7 +1078,7 @@ const TRAVELERS = [
       },
       {
         title: 'Cape Town and the Cape',
-        destinations: ['Cape Town'],
+        destination: 'Cape Town',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Nov – Mar',
@@ -1092,7 +1092,7 @@ const TRAVELERS = [
       },
       {
         title: 'Egypt, the Nile',
-        destinations: ['Luxor', 'Aswan'],
+        destination: 'Luxor',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Oct – Apr',
@@ -1117,7 +1117,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'Everest Base Camp',
-        destinations: ['Kathmandu', 'Khumbu'],
+        destination: 'Kathmandu',
         description: 'Sixteen days including acclimatisation. Lukla flight both ways, which is its own event.',
         standouts: ['Kala Patthar at sunrise, 5,600m', 'Namche for two nights, not one'],
         bestTimeOfYear: 'Mar – May · Oct – Nov',
@@ -1152,7 +1152,7 @@ const TRAVELERS = [
       },
       {
         title: 'Sri Lanka by train',
-        destinations: ['Kandy', 'Ella', 'Galle'],
+        destination: 'Kandy',
         description: null,
         standouts: ['Kandy to Ella, second class, door open'],
         bestTimeOfYear: 'Dec – Mar',
@@ -1182,7 +1182,7 @@ const TRAVELERS = [
       },
       {
         title: 'Kerala backwaters',
-        destinations: ['Kochi', 'Alleppey'],
+        destination: 'Kochi',
         description: 'A week at walking pace. Houseboat for two nights, which is one night too many.',
         standouts: [],
         bestTimeOfYear: 'Nov – Feb',
@@ -1206,7 +1206,7 @@ const TRAVELERS = [
       },
       {
         title: 'Rajasthan forts',
-        destinations: ['Jaipur', 'Jodhpur', 'Udaipur'],
+        destination: 'Jaipur',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Nov – Feb',
@@ -1226,7 +1226,7 @@ const TRAVELERS = [
       },
       {
         title: 'Bhutan, ten days',
-        destinations: ['Paro', 'Thimphu'],
+        destination: 'Paro',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Mar – May · Sep – Nov',
@@ -1251,7 +1251,7 @@ const TRAVELERS = [
     trips: [
       {
         title: 'Lofoten in winter',
-        destinations: ['Lofoten'],
+        destination: 'Lofoten',
         description: 'Eight days of four-hour daylight and aurora most nights. Rented a cabin in Reine.',
         standouts: ['Reinebringen when the steps are clear of ice', 'Fishing village lights at 3pm dusk'],
         bestTimeOfYear: 'Feb – Mar · Jun – Aug',
@@ -1282,7 +1282,7 @@ const TRAVELERS = [
       },
       {
         title: 'Scottish Highlands',
-        destinations: ['Skye', 'Glencoe'],
+        destination: 'Skye',
         description: null,
         standouts: ['Quiraing in cloud, which is most days'],
         bestTimeOfYear: 'May – Sep',
@@ -1307,7 +1307,7 @@ const TRAVELERS = [
       },
       {
         title: 'Finnish Lapland',
-        destinations: ['Rovaniemi', 'Inari'],
+        destination: 'Rovaniemi',
         description: 'Deep January. Minus thirty one night, which I would not repeat.',
         standouts: ['Sleeping in a glass igloo, aurora directly overhead'],
         bestTimeOfYear: 'Dec – Mar',
@@ -1331,7 +1331,7 @@ const TRAVELERS = [
       },
       {
         title: 'Faroe Islands',
-        destinations: ['Tórshavn'],
+        destination: 'Tórshavn',
         description: null,
         standouts: [],
         bestTimeOfYear: 'May – Aug',
@@ -1346,7 +1346,7 @@ const TRAVELERS = [
       },
       {
         title: 'Svalbard, midnight sun',
-        destinations: ['Longyearbyen'],
+        destination: 'Longyearbyen',
         description: null,
         standouts: [],
         bestTimeOfYear: 'Jun – Aug',

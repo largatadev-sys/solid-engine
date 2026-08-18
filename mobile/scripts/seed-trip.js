@@ -69,7 +69,7 @@ function arg(name, fallback) {
   const ownerProfile = await precompleteProfile(api, owner.token, ownerTag);
 
   const trip = await api('/v1/itineraries', 'POST', owner.token,
-    { title: arg('title', 'Seeded trip'), destinations: ['Palawan'] });
+    { title: arg('title', 'Seeded trip'), destination: 'Palawan' });
   if (trip.status !== 201) throw new Error(`create failed: ${trip.status} ${JSON.stringify(trip.body)}`);
 
   const joined = [];

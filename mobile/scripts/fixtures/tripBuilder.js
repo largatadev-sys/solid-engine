@@ -352,30 +352,14 @@ function buildDay(trip, raw, dayIndex, totalDays, currency, used) {
   return { at: place, title: dayTitle, activities };
 }
 
-function regionOf(days) {
-  const tally = {};
-  for (const raw of days) {
-    const parts = parsePlace(raw).place.split(',');
-    if (parts.length < 2) continue;
-    const region = parts[parts.length - 1].trim();
-    tally[region] = (tally[region] ?? 0) + 1;
-  }
-  const ranked = Object.entries(tally).sort((one, other) => other[1] - one[1] || one[0].localeCompare(other[0]));
-  return ranked.length === 0 ? null : ranked[0][0];
-}
-
 function buildTrip(spec) {
-  const { title, destinations, days, currency, lifecycle, publish, bestTimeOfYear } = spec;
+  const { title, destination, days, currency, lifecycle, publish, bestTimeOfYear } = spec;
   const first = shortPlace(parsePlace(days[0]).place);
   const last = shortPlace(parsePlace(days[days.length - 1]).place);
-  const region = regionOf(days);
-  const withRegion = region !== null && !destinations.includes(region)
-    ? [...destinations, region]
-    : destinations;
   return {
     title,
-    destinations: withRegion,
-    description: pick(DESCRIPTIONS, seededRandom(`${title}/desc`)).replace('{d}', destinations[0]),
+    destination,
+    description: pick(DESCRIPTIONS, seededRandom(`${title}/desc`)).replace('{d}', destination),
     standouts: [
       pick(STANDOUTS, seededRandom(`${title}/s1`)).replace('{a}', first).replace('{b}', last),
       pick(STANDOUTS, seededRandom(`${title}/s2`)).replace('{a}', last).replace('{b}', first),
