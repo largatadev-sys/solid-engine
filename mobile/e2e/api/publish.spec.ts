@@ -13,7 +13,7 @@ requireStack(OWNER);
 test.describe.configure({ mode: 'serial' });
 
 const PROJECTION_FIELDS = [
-  'id', 'title', 'destinations', 'description', 'standouts', 'bestTimeOfYear',
+  'id', 'title', 'destination', 'description', 'standouts', 'bestTimeOfYear',
   'coverImageUrl', 'durationDays', 'creator', 'estimatedCost', 'days',
 ].sort();
 
@@ -44,7 +44,7 @@ test.beforeAll(async () => {
 
   created = await api('/v1/itineraries', 'POST', owner, {
     title: 'Island Hopping in El Nido',
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     description: "Discover the breathtaking beauty of El Nido's lagoons.",
     startDate: '2027-03-04',
     endDate: '2027-03-08',
@@ -93,7 +93,7 @@ test('standouts and best time save under the header lease', async () => {
   await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner, { subjectType: 'header' });
   const dressed = await api(`/v1/itineraries/${trip}`, 'PATCH', owner, {
     title: 'Island Hopping in El Nido',
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     description: "Discover the breathtaking beauty of El Nido's lagoons.",
     standouts: ['Big Lagoon Kayaking', 'Local Seafood Dinners'],
     bestTimeOfYear: 'Dec – Apr',
@@ -242,7 +242,7 @@ test('the one-step undo works once unpublished', async () => {
   expect(reopened.body.state).toBe('ongoing');
 });
 
-test.describe('a mixed-currency plan, republished', () => {
+test.describe('a plan whose activities were saved in different currencies, republished', () => {
   let mixed: { status: number; body: any };
 
   test.beforeAll(async () => {
@@ -251,8 +251,18 @@ test.describe('a mixed-currency plan, republished', () => {
     mixed = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   });
 
-  test('a mixed-currency plan shows prices and no total', () => {
-    expect(mixed.body.estimatedCost ?? null).toBeNull();
+  test('totals in the TRIP-s currency — a mix can no longer be built (S4.25/ADR-028)', () => {
+    expect(mixed.body.estimatedCost).not.toBeNull();
+    expect(mixed.body.estimatedCost.currency).toBe('PHP');
+  });
+
+  test('every activity carries that same currency, whatever the client sent', () => {
+    const currencies = mixed.body.days
+      .flatMap((day: { activities: Array<{ costAmount: string | null; costCurrency: string | null }> }) =>
+        day.activities.filter((a) => a.costAmount !== null).map((a) => a.costCurrency));
+
+    expect(currencies.length).toBeGreaterThan(0);
+    expect(new Set(currencies).size).toBe(1);
   });
 
   test('and "/Person" appears nowhere on the wire', () => {
@@ -372,7 +382,7 @@ test('unarchive restores the public page and the member’s sight', async () => 
 test('an empty itinerary publishes and projects cleanly', async () => {
   const empty = await api('/v1/itineraries', 'POST', owner, {
     title: stamp('Someday, Japan'),
-    destinations: ['Japan'],
+    destination: 'Japan',
   });
   await api(`/v1/itineraries/${empty.body.id}/finish-planning`, 'POST', owner);
   await api(`/v1/itineraries/${empty.body.id}/start`, 'POST', owner);
@@ -390,18 +400,18 @@ test('an empty itinerary publishes and projects cleanly', async () => {
 test('a client that cannot send the new fields does not erase them', async () => {
   const stillADraft = await api('/v1/itineraries', 'POST', owner, {
     title: stamp('Someday, Japan'),
-    destinations: ['Japan'],
+    destination: 'Japan',
   });
   await api(`/v1/itineraries/${stillADraft.body.id}/edit-lock`, 'POST', owner, { subjectType: 'header' });
   await api(`/v1/itineraries/${stillADraft.body.id}`, 'PATCH', owner, {
     title: 'Someday, Japan',
-    destinations: ['Japan'],
+    destination: 'Japan',
     standouts: ['Cherry blossoms'],
     bestTimeOfYear: 'Mar – Apr',
   });
   const olderClient = await api(`/v1/itineraries/${stillADraft.body.id}`, 'PATCH', owner, {
     title: 'Renamed by a client that predates the fields',
-    destinations: ['Japan'],
+    destination: 'Japan',
   });
 
   expect(olderClient.body.standouts).toHaveLength(1);

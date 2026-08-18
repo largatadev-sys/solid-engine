@@ -107,7 +107,7 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
-                                {"title":"Trip","destinations":["Palawan"],"durationDays":1}
+                                {"title":"Trip","destination":"Palawan","durationDays":1}
                                 """)
                         .exchange()
                         .expectStatus()
@@ -186,7 +186,7 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
-                                {"title":"Trip","destinations":["Palawan"]}
+                                {"title":"Trip","destination":"Palawan"}
                                 """)
                         .exchange()
                         .expectStatus()

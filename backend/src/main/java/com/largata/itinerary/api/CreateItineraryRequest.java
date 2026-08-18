@@ -4,7 +4,6 @@ import com.largata.itinerary.Itinerary;
 import com.largata.itinerary.ItineraryFields;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
@@ -16,8 +15,9 @@ public record CreateItineraryRequest(
         @NotBlank(message = "A title is required.")
                 @Size(max = Itinerary.MAX_TITLE_LENGTH, message = "A title may be at most 120 characters.")
                 String title,
-        @NotEmpty(message = "At least one destination is required.")
-                List<@NotBlank(message = "A destination cannot be blank.") String> destinations,
+        @NotBlank(message = "A destination is required.")
+                @Size(max = Itinerary.MAX_DESTINATION_LENGTH, message = "A destination may be at most 120 characters.")
+                String destination,
         @Size(max = Itinerary.MAX_DESCRIPTION_LENGTH, message = "A description may be at most 4000 characters.")
                 String description,
         LocalDate startDate,
@@ -31,10 +31,23 @@ public record CreateItineraryRequest(
         implements HasDateRange {
 
 
+    @Override
+    public LocalDate rangeStart() {
+        return startDate;
+    }
+
+
+    @Override
+    public LocalDate rangeEnd() {
+        return endDate;
+    }
+
+
     public ItineraryFields toFields() {
         return new ItineraryFields(
                 title,
-                destinations,
+                destination,
+                ItineraryFields.DEFAULT_CURRENCY,
                 description,
                 standouts == null ? List.of() : standouts,
                 bestTimeOfYear == null ? "" : bestTimeOfYear,

@@ -12,7 +12,7 @@ import {
 } from '../theme/workspaceTokens';
 
 
-export type WorkspaceTab = 'day-by-day' | 'polls' | 'travelers' | 'photo-dump' | 'chat' | 'details';
+export type WorkspaceTab = 'day-by-day' | 'polls' | 'travelers' | 'photo-dump' | 'chat';
 
 type TabDefinition = {
   readonly key: WorkspaceTab;
@@ -27,7 +27,6 @@ export const WORKSPACE_TABS: readonly TabDefinition[] = [
   { key: 'travelers', label: 'Travelers' },
   { key: 'photo-dump', label: 'Photo Dump' },
   { key: 'chat', label: 'Chat', comingSoonSurface: 'chat' },
-  { key: 'details', label: 'Details' },
 ];
 
 

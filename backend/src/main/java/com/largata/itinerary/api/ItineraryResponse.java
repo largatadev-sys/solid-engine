@@ -14,7 +14,8 @@ import java.util.UUID;
 public record ItineraryResponse(
         UUID id,
         String title,
-        List<String> destinations,
+        String destination,
+        String currency,
         String description,
         List<String> standouts,
         String bestTimeOfYear,
@@ -43,7 +44,8 @@ public record ItineraryResponse(
         return new ItineraryResponse(
                 itinerary.id(),
                 itinerary.title(),
-                itinerary.destinations(),
+                itinerary.destination(),
+                itinerary.currency(),
                 itinerary.description(),
                 itinerary.standouts(),
                 itinerary.bestTimeOfYear(),
@@ -74,7 +76,8 @@ public record ItineraryResponse(
         return new ItineraryResponse(
                 itinerary.id(),
                 itinerary.title(),
-                itinerary.destinations(),
+                itinerary.destination(),
+                itinerary.currency(),
                 itinerary.description(),
                 itinerary.standouts(),
                 itinerary.bestTimeOfYear(),

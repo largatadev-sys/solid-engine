@@ -236,7 +236,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"Renamed by an ex-member","destinations":["Palawan"]}
+                        {"title":"Renamed by an ex-member","destination":"Palawan"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -333,7 +333,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
-                                {"title":"Trip","destinations":["Palawan"]}
+                                {"title":"Trip","destination":"Palawan"}
                                 """)
                         .exchange()
                         .expectStatus()

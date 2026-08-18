@@ -4,7 +4,6 @@ import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,24 +33,23 @@ class ItineraryFieldEditIT extends PostgresTestBase {
     }
 
     @Test
-    void aMemberWhoIsNotTheOwnerEditsEveryFieldAndIsRecordedAsTheEditor() {
+    void theOwnerEditsEveryFieldAndIsRecordedAsTheEditor() {
         String ownerToken = freshTraveler();
         String tripId =
                 createItinerary(
                         ownerToken, """
-                        {"title":"Draft trip","destinations":["Cebu"]}
+                        {"title":"Draft trip","destination":"Cebu"}
                         """);
-        String memberToken = admitMemberTo(tripId);
-        UUID memberId = travelerIdOf(memberToken);
-        lock(memberToken, tripId);
+        UUID ownerId = travelerIdOf(ownerToken);
+        lock(ownerToken, tripId);
 
         rest.patch()
                 .uri("/v1/itineraries/" + tripId)
-                .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
+                .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(
                         """
-                        {"title":"El Nido 2027","destinations":["Palawan","El Nido"],
+                        {"title":"El Nido 2027","destination":"Palawan",
                          "description":"Island hopping.","startDate":"2027-01-10","endDate":"2027-01-20"}
                         """)
                 .exchange()
@@ -60,8 +58,8 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .expectBody()
                 .jsonPath("$.title")
                 .isEqualTo("El Nido 2027")
-                .jsonPath("$.destinations")
-                .isEqualTo(List.of("Palawan", "El Nido"))
+                .jsonPath("$.destination")
+                .isEqualTo("Palawan")
                 .jsonPath("$.description")
                 .isEqualTo("Island hopping.")
                 .jsonPath("$.startDate")
@@ -69,30 +67,34 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .jsonPath("$.endDate")
                 .isEqualTo("2027-01-20")
                 .jsonPath("$.lastEditedBy")
-                .isEqualTo(memberId.toString())
+                .isEqualTo(ownerId.toString())
                 .jsonPath("$.lastEditedAt")
                 .exists();
     }
 
     @Test
-    void anOmittedDescriptionClearsIt() {
+    void anOmittedDescriptionKeepsItWhileAnExplicitNullClearsIt() {
         String token = freshTraveler();
         String tripId =
                 createItinerary(
                         token,
                         """
-                        {"title":"Trip","destinations":["Cebu"],"description":"Old blurb."}
+                        {"title":"Trip","destination":"Cebu","description":"Old blurb."}
                         """);
         lock(token, tripId);
 
-        rest.patch()
-                .uri("/v1/itineraries/" + tripId)
-                .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("""
-                        {"title":"Trip","destinations":["Cebu"]}
-                        """)
-                .exchange()
+        patch(token, tripId, """
+                {"title":"Trip","destination":"Cebu"}
+                """)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.description")
+                .isEqualTo("Old blurb.");
+
+        patch(token, tripId, """
+                {"title":"Trip","destination":"Cebu","description":null}
+                """)
                 .expectStatus()
                 .isOk()
                 .expectBody()
@@ -107,7 +109,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 createItinerary(
                         token,
                         """
-                        {"title":"Trip","destinations":["Cebu"],"durationDays":3}
+                        {"title":"Trip","destination":"Cebu","durationDays":3}
                         """);
         lock(token, tripId);
 
@@ -116,7 +118,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"Renamed","destinations":["Cebu"]}
+                        {"title":"Renamed","destination":"Cebu"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -130,7 +132,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
     void aBackwardsDateRangeIsRejected() {
         String token = freshTraveler();
         String tripId = createItinerary(token, """
-                {"title":"Trip","destinations":["Cebu"]}
+                {"title":"Trip","destination":"Cebu"}
                 """);
 
         rest.patch()
@@ -139,7 +141,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(
                         """
-                        {"title":"Trip","destinations":["Cebu"],"startDate":"2027-06-10","endDate":"2027-06-03"}
+                        {"title":"Trip","destination":"Cebu","startDate":"2027-06-10","endDate":"2027-06-03"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -153,7 +155,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
     void aBlankTitleOnEditIsRejected() {
         String token = freshTraveler();
         String tripId = createItinerary(token, """
-                {"title":"Trip","destinations":["Cebu"]}
+                {"title":"Trip","destination":"Cebu"}
                 """);
 
         rest.patch()
@@ -161,7 +163,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"   ","destinations":["Cebu"]}
+                        {"title":"   ","destination":"Cebu"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -169,10 +171,10 @@ class ItineraryFieldEditIT extends PostgresTestBase {
     }
 
     @Test
-    void anEmptyDestinationsListOnEditIsRejected() {
+    void aBlankDestinationOnEditIsRejected() {
         String token = freshTraveler();
         String tripId = createItinerary(token, """
-                {"title":"Trip","destinations":["Cebu"]}
+                {"title":"Trip","destination":"Cebu"}
                 """);
 
         rest.patch()
@@ -180,7 +182,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"Trip","destinations":[]}
+                        {"title":"Trip","destination":""}
                         """)
                 .exchange()
                 .expectStatus()
@@ -191,7 +193,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
     void aNonMemberEditingIsMasked() {
         String ownerToken = freshTraveler();
         String tripId = createItinerary(ownerToken, """
-                {"title":"Private","destinations":["Kyoto"]}
+                {"title":"Private","destination":"Kyoto"}
                 """);
         String stranger = freshTraveler();
 
@@ -200,7 +202,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"Hijacked","destinations":["Kyoto"]}
+                        {"title":"Hijacked","destination":"Kyoto"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -216,7 +218,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 .uri("/v1/itineraries/" + UUID.randomUUID())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"x","destinations":["y"]}
+                        {"title":"x","destination":"y"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -224,6 +226,15 @@ class ItineraryFieldEditIT extends PostgresTestBase {
     }
 
 
+
+    private RestTestClient.ResponseSpec patch(String token, String itineraryId, String body) {
+        return rest.patch()
+                .uri("/v1/itineraries/" + itineraryId)
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .exchange();
+    }
 
     private void lock(String token, String itineraryId) {
         rest.post()

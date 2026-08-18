@@ -304,7 +304,7 @@ class AudienceLadderIT extends PostgresTestBase {
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body("""
-                                                {"title":"Island Hopping","destinations":["Palawan"]}
+                                                {"title":"Island Hopping","destination":"Palawan"}
                                                 """)
                                         .exchange()
                                         .expectStatus()

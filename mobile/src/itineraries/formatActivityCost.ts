@@ -1,4 +1,4 @@
-import { currencySign, isKnownCurrency } from './currencySign';
+import { currencySign, isKnownCurrency } from './currencies';
 
 
 export function formatActivityCost(amount: string | null, currency: string | null): string | undefined {
@@ -25,13 +25,13 @@ function grouped(value: number): string {
 }
 
 
-export function activityMetaLine(timeOfDay: string | null, amount: string | null, currency: string | null): string {
+export function activityMetaLine(timeOfDay: string | null, place: string | null): string {
   const parts: string[] = [];
   const clock = formatTimeOfDay(timeOfDay);
   if (clock !== undefined) parts.push(clock);
-  const cost = formatActivityCost(amount, currency);
-  if (cost !== undefined) parts.push(cost);
-  return parts.join(' · ');
+  const where = (place ?? '').trim();
+  if (where !== '') parts.push(where);
+  return parts.join(' • ');
 }
 
 

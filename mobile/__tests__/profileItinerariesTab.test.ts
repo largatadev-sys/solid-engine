@@ -30,7 +30,7 @@ describe('the Itineraries tab is the showcase, not the working pile', () => {
 
   it('draws the mock-s card anatomy: cover, title, badge, meta line, star', () => {
     expect(TAB).toContain('PUBLISHED_BADGE');
-    expect(TAB).toContain('showcaseMetaLine(card.destinations, card.durationDays)');
+    expect(TAB).toContain('showcaseMetaLine(card.destination, card.durationDays)');
     expect(TAB).toContain('pricePillLabel');
   });
 

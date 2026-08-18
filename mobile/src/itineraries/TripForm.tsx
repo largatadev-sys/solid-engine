@@ -14,8 +14,11 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { CoverPicker } from '../media/CoverPicker';
 import { colors, controls, radii, spacing, typography } from '../theme';
 import { addRow, moveRow, removeRow, setRow } from './rowEditor';
+import { ClearableDateField } from './ClearableDateField';
+import { currencyPickerLabel, SUPPORTED_CURRENCIES } from './currencies';
 import {
   DURATION_CHOICES,
+  STANDOUTS_HINT,
   tripFormChrome,
   tripFormFields,
   type TripFormMode,
@@ -96,8 +99,8 @@ export function TripForm({
           <View style={styles.rowGrow}>
             <Field
               label="Destination"
-              value={values.destinations[0] ?? ''}
-              onChangeText={(text) => set('destinations', [text])}
+              value={values.destination}
+              onChangeText={(text) => set('destination', text)}
               placeholder="Where to?"
             />
           </View>
@@ -109,6 +112,29 @@ export function TripForm({
             </View>
           ) : null}
         </View>
+
+        {fields.showsDates ? (
+          <View style={styles.fieldRow}>
+            <View style={styles.rowGrow}>
+              <ClearableDateField
+                label="Start date"
+                value={values.startDate}
+                onChange={(next) => set('startDate', next)}
+              />
+            </View>
+            <View style={styles.rowGrow}>
+              <ClearableDateField
+                label="End date"
+                value={values.endDate}
+                onChange={(next) => set('endDate', next)}
+              />
+            </View>
+          </View>
+        ) : null}
+
+        {fields.showsCurrency ? (
+          <CurrencyField value={values.currency} onSelect={(next) => set('currency', next)} />
+        ) : null}
 
         <Field
           label="Best Time of Year"
@@ -126,7 +152,10 @@ export function TripForm({
         />
 
         <View style={styles.field}>
-          <Text style={styles.label}>Standouts</Text>
+          <View style={styles.labelBlock}>
+            <Text style={styles.label}>Standouts</Text>
+            <Text style={styles.hint}>{STANDOUTS_HINT}</Text>
+          </View>
           {values.standouts.map((standout, index) => (
             <View key={index} style={styles.rowEntry}>
               <TextInput
@@ -195,6 +224,59 @@ export function TripForm({
           )}
         </Pressable>
       </View>
+    </View>
+  );
+}
+
+
+function CurrencyField({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>Currency</Text>
+
+      <Pressable
+        style={styles.dropdown}
+        onPress={() => setOpen(!open)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`Currency: ${currencyPickerLabel(value)}`}
+      >
+        <Text style={styles.dropdownValue} numberOfLines={1}>
+          {currencyPickerLabel(value)}
+        </Text>
+        <Icon name="chevronDown" size={16} color={colors.textSecondary} />
+      </Pressable>
+
+      {open ? (
+        <View style={styles.inlineMenu}>
+          <ScrollView nestedScrollEnabled style={styles.inlineMenuScroll}>
+            {SUPPORTED_CURRENCIES.map((currency) => (
+              <Pressable
+                key={currency.code}
+                style={styles.optionRow}
+                accessibilityRole="button"
+                accessibilityLabel={currencyPickerLabel(currency.code)}
+                onPress={() => {
+                  onSelect(currency.code);
+                  setOpen(false);
+                }}
+              >
+                <Text style={[styles.optionText, currency.code === value && styles.optionSelected]}>
+                  {currencyPickerLabel(currency.code)}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -294,6 +376,7 @@ const DURATION_WIDTH = 120;
 const CONTROL_HEIGHT = controls.tripFormControlHeight;
 
 const SHEET_MAX_HEIGHT = 420;
+const INLINE_MENU_MAX_HEIGHT = 240;
 
 const SHEET_MAX_WIDTH = 320;
 
@@ -321,6 +404,8 @@ const styles = StyleSheet.create({
   rowNarrow: { width: DURATION_WIDTH },
   field: { gap: spacing.xs2 },
   label: { ...typography.fieldLabel, color: colors.textSecondary },
+  labelBlock: { gap: 2 },
+  hint: { ...typography.caption, color: colors.textSecondary },
   input: { ...inputSurface, ...typography.input, height: CONTROL_HEIGHT, color: colors.textPrimary },
   dropdown: {
     ...inputSurface,
@@ -347,6 +432,14 @@ const styles = StyleSheet.create({
     borderColor: colors.inputBorder,
     backgroundColor: colors.surface,
   },
+  inlineMenu: {
+    ...inputSurface,
+    marginTop: spacing.xs,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    overflow: 'hidden',
+  },
+  inlineMenuScroll: { maxHeight: INLINE_MENU_MAX_HEIGHT },
   optionRow: { paddingVertical: spacing.sm3, paddingHorizontal: spacing.md },
   optionText: { ...typography.input, color: colors.textPrimary },
   optionSelected: { color: colors.accent },

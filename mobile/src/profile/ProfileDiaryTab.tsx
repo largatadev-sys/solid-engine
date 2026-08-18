@@ -105,7 +105,7 @@ function TripSection({ trip, first }: { readonly trip: DiaryTripResponse; readon
               {trip.title ?? 'Untitled trip'}
             </Text>
             <Text style={styles.sectionMeta} numberOfLines={1}>
-              {showcaseMetaLine(trip.destinations ?? [], trip.dayCount ?? 0) ??
+              {showcaseMetaLine(trip.destination, trip.dayCount ?? 0) ??
                 tripEntryCountLabel(trip.entryCount)}
             </Text>
           </View>

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
+import { COG_IS_LIVE } from '../src/itineraries/tripSettingsItems';
 import { DISCOVER_TAB_LABEL } from '../src/discovery/discoveryCopy';
 import { tripRowDestination } from '../src/itineraries/TripRow';
 import { tripFormChrome, tripFormFields } from '../src/itineraries/tripFormContract';
@@ -583,21 +584,29 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 });
 
 
-describe('the create form asks for a duration, never dates (S4.9 decision 13; re-housed on the shared form at S4.19)', () => {
+describe('the create form asks for a duration, never dates (S4.9 decision 13; dates returned to EDIT at S4.25)', () => {
   const create = read(TRIPS, 'new.tsx');
   const form = read(MOBILE_ROOT, 'src', 'itineraries', 'TripForm.tsx');
 
-  it('has no date picker in EITHER mode — the pickers retired at S4.19 addendum 3', () => {
+  it('keeps create free of dates while edit draws them (S4.25 artboards 2 and 4)', () => {
     expect(create).not.toMatch(/DatePicker/);
     expect(create).not.toMatch(/startDate|endDate/);
-    expect(form).not.toMatch(/DatePicker/);
+    expect(form).toMatch(/ClearableDateField/);
+    expect(form).toMatch(/fields\.showsDates/);
   });
 
-  it('still sends the dates it was handed, so an edit cannot wipe them (checklist line 22)', () => {
+  it('gives each date a drawn clear on BOTH platforms — the web input has none (S4.25 ticket 04)', () => {
+    const field = read(MOBILE_ROOT, 'src', 'itineraries', 'ClearableDateField.tsx');
+
+    expect(field).toMatch(/clearDateLabel/);
+    expect(field).toMatch(/onChange\(''\)/);
+  });
+
+  it('sends every clearable field explicitly, so a blank date is a null and not an omission', () => {
     const contract = read(MOBILE_ROOT, 'src', 'itineraries', 'tripFormContract.ts');
 
-    expect(contract).toMatch(/startDate: form\.startDate/);
-    expect(contract).toMatch(/endDate: form\.endDate/);
+    expect(contract).toMatch(/startDate: blankToNull\(form\.startDate\)/);
+    expect(contract).toMatch(/endDate: blankToNull\(form\.endDate\)/);
   });
 
   it('takes a free-text destination and never says "Search"', () => {
@@ -912,12 +921,10 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
 
   it('opens a Travelers row in place, navigating nowhere at all (S4.20 addendum)', () => {
     const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
-    const details = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDetailsTab.tsx');
 
     expect(travelers).toContain('<TravelerDialog');
     expect(travelers).not.toContain('router.push');
     expect(travelers).not.toContain("pathname: '/members/[itineraryId]'");
-    expect(details).not.toContain("pathname: '/members/[itineraryId]'");
   });
 
   it('centres the traveler dialog rather than docking it (S4.20 addendum 2)', () => {
@@ -1026,13 +1033,43 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).toContain('stepBackWording(data)');
   });
 
-  it('puts publish on the viewer rail and unpublish quietly in the Details tab (S4.1 decision 11)', () => {
+  it('puts publish on the viewer rail and unpublish behind the cog (S4.1 decision 11, re-housed at S4.25)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
-    const details = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDetailsTab.tsx');
+    const menu = read(MOBILE_ROOT, 'src', 'itineraries', 'tripSettingsItems.ts');
 
     expect(workspace).toContain('runLadder');
-    expect(workspace).not.toContain('Unpublish');
-    expect(details).toContain('Unpublish');
+    expect(workspace).toContain('unpublishTripWording()');
+    expect(menu).toContain('unpublish');
+  });
+
+  it('deletes the Details tab outright — no component, no tab key, no reference (S4.25 ticket 03)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+    const tabRow = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTabRow.tsx');
+
+    expect(existsSync(join(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDetailsTab.tsx'))).toBe(false);
+    expect(tabRow).not.toMatch(/'details'/);
+    expect(tabRow).not.toMatch(/label: 'Details'/);
+    expect(workspace).not.toMatch(/WorkspaceDetailsTab/);
+  });
+
+  it('anchors the cog menu to the MEASURED cog, never to a hardcoded offset (founder, 2026-08-18)', () => {
+    const menu = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceSettingsMenu.tsx');
+    const header = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceHeader.tsx');
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(menu).toMatch(/top: anchorY \+ MENU_GAP/);
+    expect(menu).not.toMatch(/MENU_TOP/);
+    expect(header).toMatch(/onSettingsLayout\?\.\(/);
+    expect(header).toMatch(/insets\.top \+ HEADER_TOP_PADDING/);
+    expect(workspace).toMatch(/onSettingsLayout=\{setCogY\}/);
+  });
+
+  it('draws neither the facts line nor the cog — both parked (founder, 2026-08-18)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(workspace).not.toMatch(/provenance=/);
+    expect(workspace).toMatch(/onSettings=\{showsSettingsCog\(data, isOwner\) \?/);
+    expect(COG_IS_LIVE).toBe(false);
   });
 });
 

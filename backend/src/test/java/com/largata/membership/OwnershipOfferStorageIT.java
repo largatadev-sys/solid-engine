@@ -90,7 +90,7 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
 
 
     private UUID newTrip(UUID ownerId) {
-        Itinerary itinerary = itineraries.create(ownerId, "Kanazawa", List.of("Kanazawa"), null, null);
+        Itinerary itinerary = itineraries.create(ownerId, "Kanazawa", "Kanazawa", null, null);
         return itinerary.id();
     }
 

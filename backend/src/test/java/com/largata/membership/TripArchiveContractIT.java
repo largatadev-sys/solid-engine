@@ -344,7 +344,7 @@ class TripArchiveContractIT extends PostgresTestBase {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
-                        {"title":"Archivable trip","destinations":["Cebu"]}
+                        {"title":"Archivable trip","destination":"Cebu"}
                         """)
                         .exchange()
                         .expectStatus()

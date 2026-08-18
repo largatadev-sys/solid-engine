@@ -148,13 +148,13 @@ class EditLeaseExpiryIT extends PostgresTestBase {
 
     private Membership ownerOfAFreshTrip() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ownerId, "Trip", List.of("Palawan"), null, null);
+        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
         return new Membership(ownerId, trip.id(), Role.OWNER);
     }
 
     private Membership ownerOfAPlannedTrip() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ownerId, "Trip", List.of("Palawan"), null, null, null, 1);
+        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null, null, 1);
         return new Membership(ownerId, trip.id(), Role.OWNER);
     }
 

@@ -47,7 +47,7 @@ async function seedCompletedTrip(title: string): Promise<SeededTrip> {
   const trip = await seedTrip({
     ownerTag: OWNER,
     title,
-    destinations: [DESTINATION],
+    destination: DESTINATION,
     durationDays: DURATION_DAYS,
     bestTimeOfYear: BEST_TIME,
     standouts: [STANDOUT],

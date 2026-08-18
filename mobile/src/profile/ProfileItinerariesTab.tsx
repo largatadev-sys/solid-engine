@@ -66,7 +66,7 @@ function ShowcaseCard({
 }) {
   const rating = stubRatingFor(card.id);
   const price = pricePillLabel(stubPricePerPersonFor(card.id));
-  const meta = showcaseMetaLine(card.destinations, card.durationDays);
+  const meta = showcaseMetaLine(card.destination, card.durationDays);
 
   return (
     <Pressable

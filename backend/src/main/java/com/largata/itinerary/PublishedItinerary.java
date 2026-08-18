@@ -8,7 +8,7 @@ import java.util.UUID;
 public record PublishedItinerary(
         UUID id,
         String title,
-        List<String> destinations,
+        String destination,
         String description,
         List<String> standouts,
         String bestTimeOfYear,
@@ -23,7 +23,7 @@ public record PublishedItinerary(
         return new PublishedItinerary(
                 itinerary.id(),
                 itinerary.title(),
-                itinerary.destinations(),
+                itinerary.destination(),
                 itinerary.description(),
                 itinerary.standouts(),
                 itinerary.bestTimeOfYear(),

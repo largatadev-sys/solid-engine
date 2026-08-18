@@ -106,7 +106,7 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
 
   const created = await api('/v1/itineraries', 'POST', author.idToken, {
     title: `Device walk ${stamp}`,
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     durationDays: 3,
   });
   const trip = created.body.id;

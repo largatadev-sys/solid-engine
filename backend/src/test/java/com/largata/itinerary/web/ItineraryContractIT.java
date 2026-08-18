@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,7 @@ class ItineraryContractIT extends PostgresTestBase {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(
                         """
-                        {"title":"Hokkaido in winter","destinations":["Sapporo","Otaru"],
+                        {"title":"Hokkaido in winter","destination":"Sapporo",
                          "startDate":"2027-01-10","endDate":"2027-01-20"}
                         """)
                 .exchange()
@@ -48,8 +47,10 @@ class ItineraryContractIT extends PostgresTestBase {
                 .exists()
                 .jsonPath("$.title")
                 .isEqualTo("Hokkaido in winter")
-                .jsonPath("$.destinations")
-                .isEqualTo(List.of("Sapporo", "Otaru"))
+                .jsonPath("$.destination")
+                .isEqualTo("Sapporo")
+                .jsonPath("$.currency")
+                .isEqualTo("PHP")
                 .jsonPath("$.startDate")
                 .isEqualTo("2027-01-10")
                 .jsonPath("$.endDate")
@@ -68,7 +69,7 @@ class ItineraryContractIT extends PostgresTestBase {
     void theCreatorCanFetchTheirOwnItinerary() {
         String token = freshTraveler();
         String id = createItinerary(token, """
-                {"title":"Lisbon","destinations":["Lisbon"]}
+                {"title":"Lisbon","destination":"Lisbon"}
                 """);
 
         rest.get()
@@ -88,7 +89,7 @@ class ItineraryContractIT extends PostgresTestBase {
     @Test
     void anotherTravelerCannotSeeMyItineraryAndCannotTellItExists() {
         String mine = createItinerary(freshTraveler(), """
-                {"title":"Private trip","destinations":["Kyoto"]}
+                {"title":"Private trip","destination":"Kyoto"}
                 """);
         String stranger = freshTraveler();
 
@@ -107,7 +108,7 @@ class ItineraryContractIT extends PostgresTestBase {
                 .uri("/v1/itineraries")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"x","destinations":["y"]}
+                        {"title":"x","destination":"y"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -121,7 +122,7 @@ class ItineraryContractIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"Japan, someday","destinations":["Japan"]}
+                        {"title":"Japan, someday","destination":"Japan"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -140,7 +141,7 @@ class ItineraryContractIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"Open-ended","destinations":["Patagonia"],"startDate":"2027-06-03"}
+                        {"title":"Open-ended","destination":"Patagonia","startDate":"2027-06-03"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -159,7 +160,7 @@ class ItineraryContractIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"Back by then","destinations":["Home"],"endDate":"2027-06-03"}
+                        {"title":"Back by then","destination":"Home","endDate":"2027-06-03"}
                         """)
                 .exchange()
                 .expectStatus()
@@ -169,28 +170,35 @@ class ItineraryContractIT extends PostgresTestBase {
     @Test
     void aBlankTitleIsRejectedAsAValidationFailure() {
         expectBadRequest("""
-                {"title":"   ","destinations":["Lisbon"]}
+                {"title":"   ","destination":"Lisbon"}
                 """);
     }
 
     @Test
     void aMissingTitleIsRejected() {
         expectBadRequest("""
-                {"destinations":["Lisbon"]}
+                {"destination":"Lisbon"}
                 """);
     }
 
     @Test
-    void anEmptyDestinationsListIsRejected() {
+    void anAbsentDestinationIsRejected() {
         expectBadRequest("""
-                {"title":"Nowhere","destinations":[]}
+                {"title":"Nowhere"}
+                """);
+    }
+
+    @Test
+    void aRequestCarryingOnlyTheLegacyListIsRefused_becauseTheScalarIsMissing() {
+        expectBadRequest("""
+                {"title":"Nowhere","destinations":["Sapporo","Otaru"]}
                 """);
     }
 
     @Test
     void aBlankDestinationEntryIsRejected() {
         expectBadRequest("""
-                {"title":"Somewhere","destinations":["  "]}
+                {"title":"Somewhere","destination":"  "}
                 """);
     }
 
@@ -198,7 +206,7 @@ class ItineraryContractIT extends PostgresTestBase {
     void aTitleOverTheLimitIsRejected() {
         expectBadRequest(
                 """
-                {"title":"%s","destinations":["Lisbon"]}
+                {"title":"%s","destination":"Lisbon"}
                 """
                         .formatted("x".repeat(121)));
     }
@@ -207,7 +215,7 @@ class ItineraryContractIT extends PostgresTestBase {
     void anEndDateBeforeTheStartDateIsRejected() {
         expectBadRequest(
                 """
-                {"title":"Backwards","destinations":["Lisbon"],"startDate":"2027-06-10","endDate":"2027-06-03"}
+                {"title":"Backwards","destination":"Lisbon","startDate":"2027-06-10","endDate":"2027-06-03"}
                 """);
     }
 

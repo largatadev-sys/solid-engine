@@ -22,28 +22,26 @@ describe('the Trip Created overview says what is true of a born-draft trip (S4.1
 
 describe('the summary meta line (S4.15 decision 2)', () => {
   it('reads destination then day count, joined by a bullet', () => {
-    expect(tripCreatedMeta({ destinations: ['Palawan'], days: 5 })).toBe('Palawan • 5 Days');
+    expect(tripCreatedMeta({ destination: 'Palawan', days: 5 })).toBe('Palawan • 5 Days');
   });
 
   it('says Day for a one-day trip, because "1 Days" reads as a bug', () => {
-    expect(tripCreatedMeta({ destinations: ['Palawan'], days: 1 })).toBe('Palawan • 1 Day');
+    expect(tripCreatedMeta({ destination: 'Palawan', days: 1 })).toBe('Palawan • 1 Day');
   });
 
   it('falls back to the destination alone when Duration was skipped', () => {
-    expect(tripCreatedMeta({ destinations: ['Palawan'], days: 0 })).toBe('Palawan');
+    expect(tripCreatedMeta({ destination: 'Palawan', days: 0 })).toBe('Palawan');
   });
 
   it('shows the day count alone when a trip somehow carries no destination', () => {
-    expect(tripCreatedMeta({ destinations: [], days: 3 })).toBe('3 Days');
+    expect(tripCreatedMeta({ destination: '', days: 3 })).toBe('3 Days');
   });
 
   it('renders nothing rather than a stray bullet when it knows neither', () => {
-    expect(tripCreatedMeta({ destinations: [], days: 0 })).toBe('');
+    expect(tripCreatedMeta({ destination: '', days: 0 })).toBe('');
   });
 
-  it('joins multiple destinations the way the trip card does', () => {
-    expect(tripCreatedMeta({ destinations: ['Palawan', 'Cebu'], days: 2 })).toBe(
-      'Palawan · Cebu • 2 Days',
-    );
+  it('names the trip-s one destination — the list left the wire at S4.25', () => {
+    expect(tripCreatedMeta({ destination: 'Palawan', days: 2 })).toBe('Palawan • 2 Days');
   });
 });

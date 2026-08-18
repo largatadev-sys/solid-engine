@@ -30,6 +30,7 @@ public class ActivityService {
 
     private final DayRepository days;
     private final ActivityRepository activities;
+    private final ItineraryRepository itineraries;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
@@ -40,6 +41,7 @@ public class ActivityService {
     ActivityService(
             DayRepository days,
             ActivityRepository activities,
+            ItineraryRepository itineraries,
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,
@@ -48,6 +50,7 @@ public class ActivityService {
             PhotoService photos) {
         this.days = days;
         this.activities = activities;
+        this.itineraries = itineraries;
         this.editLease = editLease;
         this.history = history;
         this.planVersion = planVersion;
@@ -69,7 +72,13 @@ public class ActivityService {
         int sortOrder = maxOrder == null ? 0 : maxOrder + 1;
 
         Activity activity =
-                activities.save(Activity.create(dayId, sortOrder, fields, member.travelerId(), Instant.now()));
+                activities.save(
+                        Activity.create(
+                                dayId,
+                                sortOrder,
+                                pricedInTripCurrency(member.itineraryId(), fields),
+                                member.travelerId(),
+                                Instant.now()));
         history.record(member, HistoryAct.ACTIVITY_ADDED, LeaseSubject.activity(activity.id()));
         planVersion.bump(member.itineraryId());
         log.info("Activity created: dayId={} activityId={}", dayId, activity.id());
@@ -83,7 +92,7 @@ public class ActivityService {
         requireDay(member.itineraryId(), dayId);
         Activity activity = requireActivity(dayId, activityId);
         editLease.requireHeldBy(member, LeaseSubject.activity(activityId));
-        activity.edit(fields, member.travelerId(), Instant.now());
+        activity.edit(pricedInTripCurrency(member.itineraryId(), fields), member.travelerId(), Instant.now());
         activities.save(activity);
         history.record(member, HistoryAct.ACTIVITY_EDITED, LeaseSubject.activity(activityId));
         planVersion.bump(member.itineraryId());
@@ -177,6 +186,11 @@ public class ActivityService {
         log.info("Activity moved: activityId={} fromDay={} toDay={}", activityId, dayId, targetDayId);
         emit(member, "activity_moved", activityId);
         return ActivityView.of(activity);
+    }
+
+
+    private ActivityFields pricedInTripCurrency(UUID itineraryId, ActivityFields fields) {
+        return fields.pricedIn(itineraries.findCurrency(itineraryId));
     }
 
 

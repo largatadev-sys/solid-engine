@@ -138,7 +138,7 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
     const created = must(
       await api('/v1/itineraries', 'POST', token, {
         title: trip.title,
-        destinations: trip.destinations,
+        destination: trip.destination,
         ...(trip.description === null ? {} : { description: trip.description }),
         durationDays: trip.days.length,
       }),
@@ -150,7 +150,7 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
       must(
         await api(`/v1/itineraries/${created.id}`, 'PATCH', token, {
           title: trip.title,
-          destinations: trip.destinations,
+          destination: trip.destination,
           ...(trip.description === null ? {} : { description: trip.description }),
           standouts: trip.standouts,
           bestTimeOfYear: trip.bestTimeOfYear ?? '',

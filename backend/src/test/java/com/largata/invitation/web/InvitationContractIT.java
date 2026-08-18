@@ -471,7 +471,7 @@ class InvitationContractIT extends PostgresTestBase {
                         .uri("/v1/itineraries")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"title\":\"" + title + "\",\"destinations\":[\"Lisbon\"]}")
+                        .body("{\"title\":\"" + title + "\",\"destination\":\"Lisbon\"}")
                         .exchange()
                         .expectStatus()
                         .isCreated()

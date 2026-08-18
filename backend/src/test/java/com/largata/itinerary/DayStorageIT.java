@@ -26,7 +26,7 @@ class DayStorageIT extends PostgresTestBase {
 
     @Test
     void creatingWithADurationMintsThatManyContiguousDays() {
-        Itinerary trip = itineraries.create(UUID.randomUUID(), "El Nido", List.of("Palawan"), null, null, null, 5);
+        Itinerary trip = itineraries.create(UUID.randomUUID(), "El Nido", "Palawan", null, null, null, 5);
 
         assertThat(ordinalsOf(trip.id()))
                 .as("durationDays: 5 mints ordinals 1..5, contiguous")
@@ -35,14 +35,14 @@ class DayStorageIT extends PostgresTestBase {
 
     @Test
     void creatingWithoutADurationIsAValidZeroDayPlan() {
-        Itinerary trip = itineraries.create(UUID.randomUUID(), "Japan, someday", List.of("Japan"), null, null, null, 0);
+        Itinerary trip = itineraries.create(UUID.randomUUID(), "Japan, someday", "Japan", null, null, null, 0);
 
         assertThat(ordinalsOf(trip.id())).as("no duration → no days, and that is legitimate").isEmpty();
     }
 
     @Test
     void appendingTakesTheNextOrdinal() {
-        Membership member = ownerOf(itineraries.create(UUID.randomUUID(), "Cebu", List.of("Cebu"), null, null, null, 2));
+        Membership member = ownerOf(itineraries.create(UUID.randomUUID(), "Cebu", "Cebu", null, null, null, 2));
 
         days.appendDay(member, "Arrival");
 
@@ -52,7 +52,7 @@ class DayStorageIT extends PostgresTestBase {
 
     @Test
     void deletingADayRenumbersTheRestToStayContiguous() {
-        Itinerary trip = itineraries.create(UUID.randomUUID(), "Palawan", List.of("Palawan"), null, null, null, 5);
+        Itinerary trip = itineraries.create(UUID.randomUUID(), "Palawan", "Palawan", null, null, null, 5);
         Membership member = ownerOf(trip);
         UUID thirdDay = dayIdAtOrdinal(trip.id(), 3);
         editLease.acquire(member, LeaseSubject.day(thirdDay));
@@ -69,7 +69,7 @@ class DayStorageIT extends PostgresTestBase {
 
     @Test
     void twoDaysCannotShareAnOrdinal() {
-        Itinerary trip = itineraries.create(UUID.randomUUID(), "Bohol", List.of("Bohol"), null, null, null, 1);
+        Itinerary trip = itineraries.create(UUID.randomUUID(), "Bohol", "Bohol", null, null, null, 1);
 
         assertThatThrownBy(
                         () ->

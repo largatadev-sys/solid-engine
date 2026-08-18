@@ -115,7 +115,7 @@ test('checklist #1: an authenticated unknown route is 404 + envelope', async () 
 test('S0.3 create an itinerary', async () => {
   const created = await api('/v1/itineraries', 'POST', owner, {
     title: 'Smoke trip',
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     startDate: '2027-03-01',
     endDate: '2027-03-04',
   });
@@ -151,7 +151,7 @@ test('S4.9 acquire the HEADER lease, and the lease names its subject back', asyn
 test('S1.3 edit itinerary fields', async () => {
   const edited = await api(`/v1/itineraries/${trip}`, 'PATCH', owner, {
     title: 'Smoke trip (edited)',
-    destinations: ['Palawan', 'Coron'],
+    destination: 'Palawan',
   });
   expect(edited.status).toBe(200);
   expect(edited.body.title).toBe('Smoke trip (edited)');
@@ -186,7 +186,7 @@ test('S1.3 last-edited attribution is written', async () => {
 test('S0.3 guard: a non-member write is 404-masked', async () => {
   const strangerWrite = await api(`/v1/itineraries/${trip}`, 'PATCH', member, {
     title: 'hijack',
-    destinations: ['X'],
+    destination: 'X',
   });
   expect(strangerWrite.status).toBe(404);
 });

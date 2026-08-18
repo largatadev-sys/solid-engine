@@ -29,7 +29,7 @@ class WorkspaceFormationRollbackIT extends PostgresTestBase {
         UUID owner = UUID.randomUUID();
         doThrow(new IllegalStateException("the workspace write failed")).when(workspaces).save(any());
 
-        assertThatThrownBy(() -> itineraries.create(owner, "Nara", List.of("Nara"), null, null))
+        assertThatThrownBy(() -> itineraries.create(owner, "Nara", "Nara", null, null))
                 .isInstanceOf(IllegalStateException.class);
 
         assertThat(itineraryCountFor(owner))

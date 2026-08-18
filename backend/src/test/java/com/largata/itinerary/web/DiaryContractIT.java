@@ -434,9 +434,9 @@ class DiaryContractIT extends ObjectStoreTestBase {
         assertThat(trips.getFirst().itineraryId()).isEqualTo(UUID.fromString(first.tripId()));
         assertThat(trips.getFirst().entryCount()).isEqualTo(2);
         assertThat(trips.getFirst().title()).isNotBlank();
-        assertThat(trips.getFirst().destinations())
+        assertThat(trips.getFirst().destination())
                 .as("the profile's section sub-line draws the trip's location")
-                .containsExactly("Palawan");
+                .isEqualTo("Palawan");
         assertThat(trips.getFirst().dayCount())
                 .as("…and its length, beside it")
                 .isEqualTo(3);
@@ -969,7 +969,7 @@ class DiaryContractIT extends ObjectStoreTestBase {
             UUID itineraryId,
             String title,
             long entryCount,
-            List<String> destinations,
+            String destination,
             int dayCount,
             String coverImageUrl) {}
 

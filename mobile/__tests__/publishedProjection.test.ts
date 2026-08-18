@@ -7,15 +7,12 @@ import {
 
 describe('destinationPillLabel', () => {
   it('shouts the destination the way the mock draws it', () => {
-    expect(destinationPillLabel(['Palawan'])).toBe('PALAWAN');
+    expect(destinationPillLabel('Palawan')).toBe('PALAWAN');
   });
 
-  it('joins a multi-destination trip rather than dropping the rest', () => {
-    expect(destinationPillLabel(['Palawan', 'Cebu'])).toBe('PALAWAN · CEBU');
-  });
-
-  it('has nothing to render for a trip with no destinations', () => {
-    expect(destinationPillLabel([])).toBeUndefined();
+  it('has nothing to render for a trip that names nowhere', () => {
+    expect(destinationPillLabel('')).toBeUndefined();
+    expect(destinationPillLabel(null)).toBeUndefined();
   });
 });
 

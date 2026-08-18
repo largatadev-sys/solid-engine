@@ -47,7 +47,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
         create(
                 freshTraveler(),
                 """
-                {"title":"Hokkaido in winter","destinations":["Sapporo","Otaru"],"startDate":"2027-01-10"}
+                {"title":"Hokkaido in winter","destination":"Sapporo","startDate":"2027-01-10"}
                 """);
 
         assertThat(eventsNamed("itinerary_created"))
@@ -56,7 +56,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
                         line -> {
                             assertThat(line.getMDCPropertyMap())
                                     .containsEntry("event.hasDates", "true")
-                                    .containsEntry("event.destinationCount", "2")
+                                    .containsEntry("event.currency", "PHP")
                                     .containsKey("event.travelerId")
                                     .containsKey("event.itineraryId");
                         });
@@ -65,7 +65,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
     @Test
     void anUndatedItinerarySaysSo() {
         create(freshTraveler(), """
-                {"title":"Japan, someday","destinations":["Japan"]}
+                {"title":"Japan, someday","destination":"Japan"}
                 """);
 
         assertThat(eventsNamed("itinerary_created"))
@@ -78,7 +78,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
         create(
                 freshTraveler(),
                 """
-                {"title":"Honeymoon in Bali","destinations":["Ubud","Seminyak"]}
+                {"title":"Honeymoon in Bali","destination":"Ubud"}
                 """);
 
         assertThat(eventsNamed("itinerary_created"))
@@ -98,7 +98,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"","destinations":[]}
+                        {"title":"","destination":""}
                         """)
                 .exchange()
                 .expectStatus()
@@ -116,7 +116,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
         serviceLogger.addAppender(appLog);
         try {
             create(freshTraveler(), """
-                    {"title":"Honeymoon in Bali","destinations":["Ubud"]}
+                    {"title":"Honeymoon in Bali","destination":"Ubud"}
                     """);
 
             assertThat(appLog.list)
@@ -132,7 +132,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
     void eachLifecycleTransitionEmitsExactlyOneEventNamingTheTripAndTheOwner() {
         String owner = freshTraveler();
         String tripId = createAndReturnId(owner, """
-                {"title":"Osaka 2027","destinations":["Osaka"]}
+                {"title":"Osaka 2027","destination":"Osaka"}
                 """);
 
         transition(owner, tripId, "finish-planning");
@@ -162,7 +162,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
     void aRefusedTransitionEmitsNothing() {
         String owner = freshTraveler();
         String tripId = createAndReturnId(owner, """
-                {"title":"Osaka 2027","destinations":["Osaka"]}
+                {"title":"Osaka 2027","destination":"Osaka"}
                 """);
 
         rest.post()

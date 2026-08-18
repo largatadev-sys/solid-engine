@@ -32,7 +32,7 @@ class InvitationAcceptTransactionIT extends PostgresTestBase {
     @Test
     void aFailedMembershipWriteRollsBackTheInvitationStatus() {
         UUID owner = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(owner, "Lisbon", List.of("Lisbon"), null, null);
+        Itinerary itinerary = itineraries.create(owner, "Lisbon", "Lisbon", null, null);
         UUID workspaceId =
                 jdbc.queryForObject("SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());
 

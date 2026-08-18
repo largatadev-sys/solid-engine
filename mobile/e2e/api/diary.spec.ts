@@ -47,7 +47,7 @@ test.beforeAll(async () => {
 
   const created = await api('/v1/itineraries', 'POST', author, {
     title: TITLE,
-    destinations: ['El Nido'],
+    destination: 'El Nido',
     durationDays: 2,
   });
   if (created.status !== 201) throw new SeedFailure('the diary trip', created.body);

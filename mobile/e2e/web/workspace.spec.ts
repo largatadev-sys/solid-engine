@@ -43,13 +43,14 @@ test.describe('the draft workspace as a viewer', () => {
     await expect(labelled(page, 'Edit Itinerary')).toBeVisible();
   });
 
-  test('the six-tab row renders in mock order, and Notes was never drawn', async ({ page }) => {
+  test('the five-tab row renders in mock order — Details was deleted at S4.25', async ({ page }) => {
     await page.goto(`/itineraries/${trip.id}`);
 
-    for (const tab of ['Day-by-Day', 'Polls', 'Travelers', 'Photo Dump', 'Chat', 'Details']) {
+    for (const tab of ['Day-by-Day', 'Polls', 'Travelers', 'Photo Dump', 'Chat']) {
       await expect(labelled(page, tab)).toBeVisible();
     }
     await expect(page.getByText('Notes', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Details', { exact: true })).toHaveCount(0);
   });
 
   test('the day list renders as stubs with the activities readable', async ({ page }) => {
@@ -95,11 +96,28 @@ test.describe('the draft workspace as a viewer', () => {
     await expect(page.getByText(/largata|pool_/i).first()).toBeVisible();
   });
 
-  test('the Details tab carries the plan fields and no lifecycle control', async ({ page }) => {
+  test('the header carries neither a facts line nor a cog — both parked (founder, 2026-08-18)', async ({
+    page,
+  }) => {
+    await page.goto(`/itineraries/${trip.id}`);
+    await expect(page.getByText('Day 1')).toBeVisible();
+
+    await expect(page.getByText(/Palawan ·/)).toHaveCount(0);
+    await expect(labelled(page, 'Trip settings')).toHaveCount(0);
+  });
+
+  test('a stale ?tab=details link degrades to Day-by-Day rather than blanking', async ({ page }) => {
     await page.goto(`/itineraries/${trip.id}?tab=details`);
 
-    await expect(page.getByText(/DESTINATIONS/i)).toBeVisible();
-    await expect(page.getByText(/Palawan/)).toBeVisible();
+    await expect(page.getByText('Day 1')).toBeVisible();
+    await expect(page.getByText('Kayak the lagoon')).toBeVisible();
+  });
+
+  test('the details editor still opens by its own route while the cog is parked', async ({ page }) => {
+    await page.goto(`/itineraries/${trip.id}/edit`);
+
+    await expect(page.getByText('Edit Trip')).toBeVisible();
+    await expect(page.locator('[aria-label^="Currency:"]')).toHaveCount(1);
   });
 
   test('every /v1 call from the workspace carries a bearer token', async ({ page, signal }) => {
@@ -218,7 +236,7 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     expect(sign.length, 'the amount must carry a currency sign beside it').toBeGreaterThan(0);
   });
 
-  test('a real mouse drag scrolls the six-tab row, which overflows the phone frame', async ({
+  test('the five-tab row fits the phone frame, so no tab hides off-screen (S4.25)', async ({
     page,
     signIn,
   }) => {
@@ -226,11 +244,12 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     await page.goto(`/itineraries/${trip.id}`);
     await expect(labelled(page, 'Day-by-Day')).toBeVisible();
 
-    const dragged = await dragStripBy(page, 'Day-by-Day', 200);
-    expect(dragged, 'the tab row must overflow, or a drag has nowhere to go').not.toBeNull();
-    expect(dragged!.after, 'a real mouse drag must scroll the tab row').toBeGreaterThan(
-      dragged!.before,
-    );
+    for (const tab of ['Day-by-Day', 'Polls', 'Travelers', 'Photo Dump', 'Chat']) {
+      const box = await labelled(page, tab).boundingBox();
+      expect(box, `${tab} must be laid out`).not.toBeNull();
+      expect(box!.x, `${tab} must start inside the frame`).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width, `${tab} must end inside the frame`).toBeLessThanOrEqual(393);
+    }
   });
 
   test('a real mouse click reaches the tab under it, both ways', async ({ page, signIn }) => {

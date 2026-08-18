@@ -51,7 +51,7 @@ const must = (res, what) => {
 const TRIPS = [
   {
     title: 'Island Hopping in El Nido',
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     description: "Four islands, one lagoon you will not stop talking about, and the best grilled fish of your life.",
     bestTimeOfYear: 'Dec – Apr',
     standouts: ['Big Lagoon Kayaking', 'Secret Beach at low tide', 'Local Seafood Dinners'],
@@ -80,7 +80,7 @@ const TRIPS = [
   },
   {
     title: 'Hokkaido in Winter',
-    destinations: ['Sapporo', 'Otaru'],
+    destination: 'Sapporo',
     description: 'Powder, ramen, and the quietest train ride in Japan.',
     bestTimeOfYear: 'Jan – Feb',
     standouts: ['Otaru canal at night', 'Sapporo Snow Festival'],
@@ -101,7 +101,7 @@ const TRIPS = [
   },
   {
     title: 'Lisbon, slowly',
-    destinations: ['Lisbon'],
+    destination: 'Lisbon',
     description: 'No itinerary. Pastéis, trams, and a lot of walking uphill.',
     bestTimeOfYear: 'Sep – Oct',
     standouts: ['Tram 28 end to end'],
@@ -116,7 +116,7 @@ const TRIPS = [
   },
   {
     title: 'Someday, Patagonia',
-    destinations: ['Patagonia'],
+    destination: 'Patagonia',
     description: null,
     bestTimeOfYear: null,
     standouts: [],
@@ -149,7 +149,7 @@ async function main() {
   for (const spec of TRIPS) {
     const created = must(await api('/v1/itineraries', 'POST', owner, {
       title: spec.title,
-      destinations: spec.destinations,
+      destination: spec.destination,
       ...(spec.description === null ? {} : { description: spec.description }),
       durationDays: spec.durationDays,
     }), `create ${spec.title}`);
@@ -168,7 +168,7 @@ async function main() {
         'header lease');
       must(await api(`/v1/itineraries/${created.id}`, 'PATCH', owner, {
         title: spec.title,
-        destinations: spec.destinations,
+        destination: spec.destination,
         ...(spec.description === null ? {} : { description: spec.description }),
         standouts: spec.standouts,
         bestTimeOfYear: spec.bestTimeOfYear ?? '',

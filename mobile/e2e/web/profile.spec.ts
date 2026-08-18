@@ -70,7 +70,7 @@ async function everyItem(readToken: string, path: string): Promise<any[]> {
 }
 
 async function publishedTrip(ownerTag: typeof TRAVELER, title: string, destination: string, days: number) {
-  const trip = await seedTrip({ ownerTag, title, destinations: [destination], durationDays: days });
+  const trip = await seedTrip({ ownerTag, title, destination, durationDays: days });
   await climbTo(trip, 'completed');
   const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {
     visibility: 'public',
@@ -243,7 +243,7 @@ test.beforeAll(async () => {
   const draft = await seedTrip({
     ownerTag: TRAVELER,
     title: draftTitle,
-    destinations: ['Cebu'],
+    destination: 'Cebu',
     durationDays: 2,
   });
   draftId = draft.id;
@@ -251,7 +251,7 @@ test.beforeAll(async () => {
   const hosted = await seedTrip({
     ownerTag: HOST,
     title: hostedTitle,
-    destinations: ['Tokyo, Japan'],
+    destination: 'Tokyo, Japan',
     durationDays: 4,
   });
   await climbTo(hosted, 'completed');
@@ -267,7 +267,7 @@ test.beforeAll(async () => {
   const diaryTrip = await seedTrip({
     ownerTag: TRAVELER,
     title: diaryTitle,
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     durationDays: 2,
   });
 

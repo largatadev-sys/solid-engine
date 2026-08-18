@@ -18,7 +18,7 @@ test.beforeAll(async () => {
   token = await tokenFor(OWNER);
   created = await api('/v1/itineraries', 'POST', token, {
     title: 'Island Hopping in El Nido',
-    destinations: ['Palawan'],
+    destination: 'Palawan',
     durationDays: 5,
     bestTimeOfYear: 'Dec - Apr',
     standouts: ['Big Lagoon Kayaking', 'Local Seafood Dinners'],

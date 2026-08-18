@@ -29,9 +29,10 @@ public class Itinerary {
     private String title;
 
 
-    @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(nullable = false)
-    private List<String> destinations;
+    private String destination;
+
+    @Column private String currency;
 
     @Column(name = "start_date")
     private LocalDate startDate;
@@ -107,11 +108,14 @@ public class Itinerary {
 
     private void apply(ItineraryFields fields) {
         this.title = fields.title();
-        this.destinations = fields.destinations();
+        this.destination = fields.destination();
         this.description = fields.description();
         this.startDate = fields.startDate();
         this.endDate = fields.endDate();
 
+        if (fields.currency() != null) {
+            this.currency = fields.currency();
+        }
         if (fields.standouts() != null) {
             this.standouts = fields.standouts();
         }
@@ -122,6 +126,9 @@ public class Itinerary {
 
 
     public static final int MAX_TITLE_LENGTH = 120;
+
+
+    public static final int MAX_DESTINATION_LENGTH = 120;
 
 
     public static final int MAX_DESCRIPTION_LENGTH = 4000;
@@ -145,11 +152,11 @@ public class Itinerary {
     static Itinerary draft(
             UUID ownerId,
             String title,
-            List<String> destinations,
+            String destination,
             LocalDate startDate,
             LocalDate endDate,
             Instant createdAt) {
-        return draft(ownerId, title, destinations, null, startDate, endDate, createdAt);
+        return draft(ownerId, title, destination, null, startDate, endDate, createdAt);
     }
 
 
@@ -161,7 +168,7 @@ public class Itinerary {
     static Itinerary draft(
             UUID ownerId,
             String title,
-            List<String> destinations,
+            String destination,
             String description,
             LocalDate startDate,
             LocalDate endDate,
@@ -169,7 +176,7 @@ public class Itinerary {
         return new Itinerary(
                 UuidV7.generate(),
                 ownerId,
-                ItineraryFields.withoutPublishMetadata(title, destinations, description, startDate, endDate),
+                ItineraryFields.withoutPublishMetadata(title, destination, description, startDate, endDate),
                 createdAt);
     }
 
@@ -270,8 +277,13 @@ public class Itinerary {
     }
 
 
-    public List<String> destinations() {
-        return List.copyOf(destinations);
+    public String destination() {
+        return destination;
+    }
+
+
+    public String currency() {
+        return currency;
     }
 
     public String description() {

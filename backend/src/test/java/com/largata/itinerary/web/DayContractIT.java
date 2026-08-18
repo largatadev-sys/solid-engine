@@ -41,7 +41,7 @@ class DayContractIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"El Nido","destinations":["Palawan"],"durationDays":3}
+                        {"title":"El Nido","destination":"Palawan","durationDays":3}
                         """)
                 .exchange()
                 .expectStatus()
@@ -63,7 +63,7 @@ class DayContractIT extends PostgresTestBase {
                 createItinerary(
                         token,
                         """
-                        {"title":"El Nido","destinations":["Palawan"],"durationDays":5}
+                        {"title":"El Nido","destination":"Palawan","durationDays":5}
                         """);
 
         rest.get()
@@ -92,7 +92,7 @@ class DayContractIT extends PostgresTestBase {
                 createItinerary(
                         token,
                         """
-                        {"title":"El Nido","destinations":["Palawan"],"description":"Island hopping."}
+                        {"title":"El Nido","destination":"Palawan","description":"Island hopping."}
                         """);
 
         rest.get()
@@ -110,7 +110,7 @@ class DayContractIT extends PostgresTestBase {
     void creatingWithoutADurationIsAValidZeroDayPlan() {
         String token = freshTraveler();
         String id = createItinerary(token, """
-                {"title":"Japan, someday","destinations":["Japan"]}
+                {"title":"Japan, someday","destination":"Japan"}
                 """);
 
         rest.get()
@@ -128,7 +128,7 @@ class DayContractIT extends PostgresTestBase {
     void theOwnerBuildsTheDaySkeletonAndAMemberOnlyTitlesIt() {
         String ownerToken = freshTraveler();
         String tripId = createItinerary(ownerToken, """
-                {"title":"Cebu","destinations":["Cebu"]}
+                {"title":"Cebu","destination":"Cebu"}
                 """);
         String memberToken = admitMemberTo(tripId);
 
@@ -183,7 +183,7 @@ class DayContractIT extends PostgresTestBase {
                 createItinerary(
                         token,
                         """
-                        {"title":"Palawan","destinations":["Palawan"],"durationDays":5}
+                        {"title":"Palawan","destination":"Palawan","durationDays":5}
                         """);
         UUID thirdDay = dayIdAtOrdinal(tripId, 3);
         lock(token, tripId, thirdDay);
@@ -210,7 +210,7 @@ class DayContractIT extends PostgresTestBase {
     void aNonMemberIsMaskedOnEveryDayEndpoint() {
         String ownerToken = freshTraveler();
         String tripId = createItinerary(ownerToken, """
-                {"title":"Private","destinations":["Kyoto"],"durationDays":1}
+                {"title":"Private","destination":"Kyoto","durationDays":1}
                 """);
         UUID dayId = dayIdAtOrdinal(tripId, 1);
         String stranger = freshTraveler();
@@ -254,10 +254,10 @@ class DayContractIT extends PostgresTestBase {
     void aDayOfAnotherPlanIsNotFound() {
         String token = freshTraveler();
         String tripA = createItinerary(token, """
-                {"title":"A","destinations":["A"],"durationDays":1}
+                {"title":"A","destination":"A","durationDays":1}
                 """);
         String tripB = createItinerary(token, """
-                {"title":"B","destinations":["B"],"durationDays":1}
+                {"title":"B","destination":"B","durationDays":1}
                 """);
         UUID dayOfB = dayIdAtOrdinal(tripB, 1);
         lock(token, tripA, dayIdAtOrdinal(tripA, 1));

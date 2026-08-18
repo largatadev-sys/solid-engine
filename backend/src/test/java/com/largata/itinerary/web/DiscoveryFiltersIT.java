@@ -257,8 +257,8 @@ class DiscoveryFiltersIT extends PostgresTestBase {
         String owner = traveler();
         String unpublished = rig.createTrip(owner, 3);
         jdbc.update(
-                "UPDATE itinerary SET destinations = ? WHERE id = ?::uuid",
-                new String[] {"Reykjavik"},
+                "UPDATE itinerary SET destination = ? WHERE id = ?::uuid",
+                "Reykjavik",
                 unpublished);
 
         assertThat(trendingFor(owner).stream().map(row -> row.get("destination").asString()))
@@ -316,8 +316,8 @@ class DiscoveryFiltersIT extends PostgresTestBase {
 
         String privateTrip = rig.createTrip(owner, 3);
         jdbc.update(
-                "UPDATE itinerary SET destinations = ? WHERE id = ?::uuid",
-                new String[] {"Secretville"},
+                "UPDATE itinerary SET destination = ? WHERE id = ?::uuid",
+                "Secretville",
                 privateTrip);
 
         JsonNode suggestions = suggestionsFor(owner, "secretville");
@@ -417,9 +417,9 @@ class DiscoveryFiltersIT extends PostgresTestBase {
     private String publishedTrip(String owner, String title, String destination, int days) {
         String trip = rig.createTrip(owner, days);
         jdbc.update(
-                "UPDATE itinerary SET title = ?, destinations = ? WHERE id = ?::uuid",
+                "UPDATE itinerary SET title = ?, destination = ? WHERE id = ?::uuid",
                 title,
-                new String[] {destination},
+                destination,
                 trip);
         travel(owner, trip);
         act(owner, trip, "publish");

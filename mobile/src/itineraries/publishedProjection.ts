@@ -2,9 +2,10 @@ import type { EstimatedCostResponse } from '../types/api';
 import { formatActivityCost } from './formatActivityCost';
 
 
-export function destinationPillLabel(destinations: string[]): string | undefined {
-  if (destinations.length === 0) return undefined;
-  return destinations.map((destination) => destination.toUpperCase()).join(' · ');
+export function destinationPillLabel(destination: string | null | undefined): string | undefined {
+  const named = (destination ?? '').trim();
+  if (named === '') return undefined;
+  return named.toUpperCase();
 }
 
 

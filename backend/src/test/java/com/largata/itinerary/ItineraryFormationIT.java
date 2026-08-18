@@ -30,7 +30,7 @@ class ItineraryFormationIT extends PostgresTestBase {
     void creatingAnItineraryFormsItsWorkspaceWithTheCreatorAsOwner() {
         UUID owner = UUID.randomUUID();
 
-        Itinerary itinerary = itineraries.create(owner, "Osaka", List.of("Osaka"), null, null);
+        Itinerary itinerary = itineraries.create(owner, "Osaka", "Osaka", null, null);
 
         assertThat(workspaceIdFor(itinerary.id())).as("a workspace formed around the itinerary").isNotNull();
         assertThat(roleOf(itinerary.id(), owner)).isEqualTo("OWNER");
@@ -41,7 +41,7 @@ class ItineraryFormationIT extends PostgresTestBase {
     void theWorkspaceAndTheOwnerMembershipInheritTheItinerarysInstant() {
         UUID owner = UUID.randomUUID();
 
-        Itinerary itinerary = itineraries.create(owner, "Kyoto", List.of("Kyoto"), null, null);
+        Itinerary itinerary = itineraries.create(owner, "Kyoto", "Kyoto", null, null);
 
         Instant itineraryCreatedAt = instantOf("SELECT created_at FROM itinerary WHERE id = ?", itinerary.id());
         Instant workspaceCreatedAt =
@@ -60,7 +60,7 @@ class ItineraryFormationIT extends PostgresTestBase {
     @Test
     void aSecondWorkspaceForTheSameItineraryIsImpossible() {
         UUID owner = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(owner, "Tokyo", List.of("Tokyo"), null, null);
+        Itinerary itinerary = itineraries.create(owner, "Tokyo", "Tokyo", null, null);
 
         assertThatThrownBy(
                         () ->

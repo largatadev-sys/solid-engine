@@ -12,7 +12,7 @@ function card(over: Partial<DiscoveryCardResponse> = {}): DiscoveryCardResponse 
   return {
     id: 'trip-1',
     title: 'Island Hopping in El Nido',
-    destinations: ['Palawan, Philippines'],
+    destination: 'Palawan, Philippines',
     durationDays: 3,
     coverImageUrl: 'media/cover.jpg',
     author: { id: 'a1', handle: 'mariatravels', displayName: 'Maria', avatarUrl: null },
@@ -35,12 +35,12 @@ describe('the discovery card reads the way the mock draws it', () => {
     expect(discoveryMetaLine(card({ durationDays: 0 }))).toBe('Palawan, Philippines');
   });
 
-  it('joins several destinations rather than showing only the first', () => {
-    expect(discoveryMetaLine(card({ destinations: ['Tokyo', 'Kyoto'] }))).toBe('Tokyo · Kyoto · 3 days');
+  it('carries the trip-s one destination (S4.25 — the list left the wire)', () => {
+    expect(discoveryMetaLine(card({ destination: 'Tokyo' }))).toBe('Tokyo · 3 days');
   });
 
   it('returns null when there is nothing to say, so no empty line renders', () => {
-    expect(discoveryMetaLine(card({ destinations: [], durationDays: 0 }))).toBeNull();
+    expect(discoveryMetaLine(card({ destination: '', durationDays: 0 }))).toBeNull();
   });
 });
 

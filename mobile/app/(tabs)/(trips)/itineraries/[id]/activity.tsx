@@ -6,7 +6,7 @@ import { Icon, type IconName } from '../../../../../src/components/Icon';
 import { TimePicker } from '../../../../../src/components/TimePicker';
 import { useMe } from '../../../../../src/hooks/useMe';
 import { buildActivityRequest } from '../../../../../src/itineraries/buildActivityRequest';
-import { currencySign } from '../../../../../src/itineraries/currencySign';
+import { currencySign } from '../../../../../src/itineraries/currencies';
 import { validateActivityForm } from '../../../../../src/itineraries/validateActivityForm';
 import {
   workspaceColors,

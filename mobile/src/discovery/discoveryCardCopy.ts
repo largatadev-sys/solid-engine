@@ -6,7 +6,7 @@ const ANONYMOUS_AUTHOR = 'A traveler';
 
 
 export function discoveryMetaLine(card: DiscoveryCardResponse): string | null {
-  return showcaseMetaLine(card.destinations, card.durationDays);
+  return showcaseMetaLine(card.destination, card.durationDays);
 }
 
 

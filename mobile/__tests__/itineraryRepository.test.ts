@@ -124,7 +124,7 @@ describe('reading one and creating', () => {
 
   it('posts the create request as the API contract spells it', async () => {
     apiClient.post.mockResolvedValue({ id: 'abc' });
-    const request = { title: 'Lisbon', destinations: ['Lisbon'] };
+    const request = { title: 'Lisbon', destination: 'Lisbon' };
 
     await itineraryRepository.create(request);
 
@@ -133,7 +133,7 @@ describe('reading one and creating', () => {
 
   it('edits the fields by PATCHing the itinerary (S1.3, ticket 04)', async () => {
     apiClient.patch.mockResolvedValue({ id: 'abc' });
-    const request = { title: 'Renamed', destinations: ['Palawan'], startDate: '2027-01-10' };
+    const request = { title: 'Renamed', destination: 'Palawan', startDate: '2027-01-10' };
 
     await itineraryRepository.update('abc', request);
 

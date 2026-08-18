@@ -125,7 +125,7 @@ class EditingSessionIT extends PostgresTestBase {
                         HttpMethod.PATCH,
                         "/v1/itineraries/" + tripId,
                         owner,
-                        "{\"title\":\"Header inside the session\",\"destinations\":[\"Cebu\"]}")
+                        "{\"title\":\"Header inside the session\",\"destination\":\"Cebu\"}")
                 .expectStatus()
                 .isOk();
         rig.send(HttpMethod.DELETE, TripRig.activitiesUri(tripId, dayOne) + "/" + activityId, owner, null)

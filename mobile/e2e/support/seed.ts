@@ -28,7 +28,7 @@ export function stamp(prefix: string): string {
 export async function seedTrip(options: {
   ownerTag: PoolTag;
   title: string;
-  destinations?: string[];
+  destination?: string;
   members?: PoolTag[];
   durationDays?: number;
   bestTimeOfYear?: string;
@@ -39,7 +39,7 @@ export async function seedTrip(options: {
 
   const created = await api('/v1/itineraries', 'POST', ownerToken, {
     title: options.title,
-    destinations: options.destinations ?? ['Palawan'],
+    destination: options.destination ?? 'Palawan',
     ...(options.durationDays === undefined ? {} : { durationDays: options.durationDays }),
     ...(options.bestTimeOfYear === undefined ? {} : { bestTimeOfYear: options.bestTimeOfYear }),
     ...(options.standouts === undefined ? {} : { standouts: options.standouts }),

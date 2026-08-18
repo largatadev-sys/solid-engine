@@ -6,16 +6,24 @@ import java.util.List;
 
 public record ItineraryFields(
         String title,
-        List<String> destinations,
+        String destination,
+        String currency,
         String description,
         List<String> standouts,
         String bestTimeOfYear,
         LocalDate startDate,
         LocalDate endDate) {
 
+    public static final String DEFAULT_CURRENCY = "PHP";
+
+
+    public static final int MAX_CURRENCY_LENGTH = 8;
+
+
     public ItineraryFields {
         title = requireTitle(title);
-        destinations = requireDestinations(destinations);
+        destination = requireDestination(destination);
+        currency = currency == null ? null : requireCurrency(currency);
         description = boundedOrNull(description, Itinerary.MAX_DESCRIPTION_LENGTH, "description");
         standouts = standouts == null ? null : cleanStandouts(standouts);
         bestTimeOfYear = bestTimeOfYear == null ? null : bounded(bestTimeOfYear, Itinerary.MAX_BEST_TIME_LENGTH);
@@ -27,8 +35,9 @@ public record ItineraryFields(
 
 
     static ItineraryFields withoutPublishMetadata(
-            String title, List<String> destinations, String description, LocalDate startDate, LocalDate endDate) {
-        return new ItineraryFields(title, destinations, description, List.of(), "", startDate, endDate);
+            String title, String destination, String description, LocalDate startDate, LocalDate endDate) {
+        return new ItineraryFields(
+                title, destination, DEFAULT_CURRENCY, description, List.of(), "", startDate, endDate);
     }
 
 
@@ -45,14 +54,29 @@ public record ItineraryFields(
     }
 
 
-    private static List<String> requireDestinations(List<String> destinations) {
-        if (destinations == null || destinations.isEmpty()) {
-            throw new IllegalArgumentException("An itinerary needs at least one destination");
+    private static String requireDestination(String destination) {
+        if (destination == null || destination.isBlank()) {
+            throw new IllegalArgumentException("An itinerary needs a destination");
         }
-        if (destinations.stream().anyMatch(d -> d == null || d.isBlank())) {
-            throw new IllegalArgumentException("An itinerary's destinations cannot be blank");
+        String stripped = destination.strip();
+        if (stripped.length() > Itinerary.MAX_DESTINATION_LENGTH) {
+            throw new IllegalArgumentException(
+                    "An itinerary's destination is at most " + Itinerary.MAX_DESTINATION_LENGTH + " characters");
         }
-        return destinations.stream().map(String::strip).toList();
+        return stripped;
+    }
+
+
+    private static String requireCurrency(String currency) {
+        if (currency.isBlank()) {
+            throw new IllegalArgumentException("An itinerary's currency cannot be blank");
+        }
+        String normalized = currency.strip().toUpperCase(java.util.Locale.ROOT);
+        if (normalized.length() > MAX_CURRENCY_LENGTH) {
+            throw new IllegalArgumentException(
+                    "An itinerary's currency is at most " + MAX_CURRENCY_LENGTH + " characters");
+        }
+        return normalized;
     }
 
 

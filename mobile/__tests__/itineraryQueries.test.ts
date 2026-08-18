@@ -42,7 +42,8 @@ const { itineraryRepository } = jest.requireMock('../src/repositories/itineraryR
 const trip = (id: string, title: string): ItineraryResponse => ({
   id,
   title,
-  destinations: ['Sapporo'],
+  destination: 'Sapporo',
+  currency: 'PHP',
   description: null,
   standouts: [],
   bestTimeOfYear: null,

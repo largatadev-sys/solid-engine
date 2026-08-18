@@ -51,7 +51,7 @@ class PublishMetadataIT extends PostgresTestBase {
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(
                                                 """
-                                                {"title":"Island Hopping in El Nido","destinations":["Palawan"],
+                                                {"title":"Island Hopping in El Nido","destination":"Palawan",
                                                  "durationDays":5,"bestTimeOfYear":"Dec - Apr",
                                                  "standouts":["Big Lagoon Kayaking","Local Seafood Dinners"]}
                                                 """)
@@ -120,7 +120,7 @@ class PublishMetadataIT extends PostgresTestBase {
                         owner,
                         tripId,
                         """
-                        {"title":"Island Hopping in El Nido","destinations":["Palawan"],
+                        {"title":"Island Hopping in El Nido","destination":"Palawan",
                          "standouts":["Big Lagoon Kayaking","Local Seafood Dinners"],
                          "bestTimeOfYear":"Dec – Apr"}
                         """)
@@ -152,12 +152,12 @@ class PublishMetadataIT extends PostgresTestBase {
         acquireHeaderLease(owner, tripId);
 
         editHeader(owner, tripId, """
-                {"title":"Trip","destinations":["Palawan"],"standouts":["One","Two","Three"]}
+                {"title":"Trip","destination":"Palawan","standouts":["One","Two","Three"]}
                 """)
                 .expectStatus()
                 .isOk();
         editHeader(owner, tripId, """
-                {"title":"Trip","destinations":["Palawan"],"standouts":["Three","One"]}
+                {"title":"Trip","destination":"Palawan","standouts":["Three","One"]}
                 """)
                 .expectStatus()
                 .isOk();
@@ -180,7 +180,7 @@ class PublishMetadataIT extends PostgresTestBase {
         acquireHeaderLease(member, tripId);
 
         editHeader(owner, tripId, """
-                {"title":"Trip","destinations":["Palawan"],"standouts":["Mine"]}
+                {"title":"Trip","destination":"Palawan","standouts":["Mine"]}
                 """)
                 .expectStatus()
                 .isEqualTo(409)
@@ -199,7 +199,7 @@ class PublishMetadataIT extends PostgresTestBase {
         acquireHeaderLease(owner, tripId);
 
         editHeader(owner, tripId, """
-                {"title":"Trip","destinations":["Palawan"],"standouts":["  Kayaking  ","","   "]}
+                {"title":"Trip","destination":"Palawan","standouts":["  Kayaking  ","","   "]}
                 """)
                 .expectStatus()
                 .isOk();
@@ -218,7 +218,7 @@ class PublishMetadataIT extends PostgresTestBase {
                         owner,
                         tripId,
                         """
-                        {"title":"Trip","destinations":["Palawan"],"coverImageUrl":"https://example.test/x.jpg"}
+                        {"title":"Trip","destination":"Palawan","coverImageUrl":"https://example.test/x.jpg"}
                         """)
                 .expectStatus()
                 .isOk()
@@ -332,7 +332,7 @@ class PublishMetadataIT extends PostgresTestBase {
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body("""
-                                                {"title":"Trip","destinations":["Palawan"]}
+                                                {"title":"Trip","destination":"Palawan"}
                                                 """)
                                         .exchange()
                                         .expectStatus()

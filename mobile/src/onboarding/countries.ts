@@ -181,48 +181,6 @@ export const CURRENCIES: readonly string[] = [
 ].sort();
 
 
-const CURRENCY_SYMBOLS: Readonly<Record<string, string>> = {
-  PHP: '₱',
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  JPY: '¥',
-  CNY: '¥',
-  KRW: '₩',
-  INR: '₹',
-  THB: '฿',
-  VND: '₫',
-  IDR: 'Rp',
-  MYR: 'RM',
-  SGD: 'S$',
-  AUD: 'A$',
-  NZD: 'NZ$',
-  CAD: 'C$',
-  HKD: 'HK$',
-  TWD: 'NT$',
-  BRL: 'R$',
-  MXN: 'Mex$',
-  ZAR: 'R',
-  TRY: '₺',
-  RUB: '₽',
-  ILS: '₪',
-  NGN: '₦',
-  UAH: '₴',
-  KHR: '៛',
-  LAK: '₭',
-  MNT: '₮',
-  BDT: '৳',
-  LKR: 'Rs',
-  NPR: 'Rs',
-  PKR: 'Rs',
-  CHF: 'CHF',
-};
-
-
-export function currencyLabel(code: string): string {
-  const symbol = CURRENCY_SYMBOLS[code];
-  return symbol === undefined ? code : `${code} (${symbol})`;
-}
 
 
 export function countryByCode(code: string | null | undefined): Country | undefined {

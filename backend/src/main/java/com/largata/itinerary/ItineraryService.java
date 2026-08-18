@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ public class ItineraryService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final ItineraryRepository itineraries;
+    private final ActivityRepository activities;
     private final WorkspaceService workspaces;
     private final DayService days;
     private final EditLeaseService editLease;
@@ -53,6 +55,7 @@ public class ItineraryService {
 
     ItineraryService(
             ItineraryRepository itineraries,
+            ActivityRepository activities,
             WorkspaceService workspaces,
             DayService days,
             EditLeaseService editLease,
@@ -61,6 +64,7 @@ public class ItineraryService {
             WriteFence fence,
             Analytics analytics) {
         this.itineraries = itineraries;
+        this.activities = activities;
         this.workspaces = workspaces;
         this.days = days;
         this.editLease = editLease;
@@ -74,15 +78,15 @@ public class ItineraryService {
 
     @Transactional
     public Itinerary create(
-            UUID ownerId, String title, List<String> destinations, LocalDate startDate, LocalDate endDate) {
-        return create(ownerId, title, destinations, null, startDate, endDate, 0);
+            UUID ownerId, String title, String destination, LocalDate startDate, LocalDate endDate) {
+        return create(ownerId, title, destination, null, startDate, endDate, 0);
     }
 
     @Transactional
     public Itinerary create(
             UUID ownerId,
             String title,
-            List<String> destinations,
+            String destination,
             String description,
             LocalDate startDate,
             LocalDate endDate,
@@ -90,7 +94,7 @@ public class ItineraryService {
         return createWithPlan(
                         ownerId,
                         ItineraryFields.withoutPublishMetadata(
-                                title, destinations, description, startDate, endDate),
+                                title, destination, description, startDate, endDate),
                         durationDays)
                 .itinerary();
     }
@@ -173,15 +177,25 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary editFields(Membership member, ItineraryFields fields) {
+    public Itinerary editFields(Membership member, UnaryOperator<ItineraryFields> merge) {
         editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
-        Itinerary itinerary =
-                itineraries
-                        .findById(member.itineraryId())
-                        .orElseThrow(() -> new IllegalStateException(
-                                "The guard authorized a membership for an itinerary that does not exist"));
+        Itinerary itinerary = loadForDetailsEdit(member);
+
+        ItineraryFields fields = merge.apply(fieldsOf(itinerary));
+
+        String currencyBefore = itinerary.currency();
         itinerary.editFields(fields, member.travelerId(), Instant.now());
         itineraries.save(itinerary);
+
+        if (!Objects.equals(currencyBefore, itinerary.currency())) {
+            int relabelled = activities.relabelPricedActivities(itinerary.id(), itinerary.currency());
+            log.info(
+                    "Trip currency changed: id={} from={} to={} relabelledActivities={}",
+                    itinerary.id(),
+                    currencyBefore,
+                    itinerary.currency(),
+                    relabelled);
+        }
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(itinerary.id()));
         log.info("Itinerary edited: id={} editor={}", itinerary.id(), member.travelerId());
         AfterCommit.run(
@@ -191,9 +205,34 @@ public class ItineraryService {
                                         .with("itineraryId", itinerary.id())
                                         .with("travelerId", member.travelerId())
                                         .with("hasDates", itinerary.startDate() != null || itinerary.endDate() != null)
-                                        .with("destinationCount", itinerary.destinations().size())
+                                        .with("currency", itinerary.currency())
                                         .build()));
         return itinerary;
+    }
+
+
+    private Itinerary loadForDetailsEdit(Membership member) {
+        fence.requireEditable(member);
+        if (!member.isOwner()) {
+            throw new NotTripOwnerException("Only the trip owner can edit the trip's details.");
+        }
+        return itineraries
+                .findById(member.itineraryId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "The guard authorized a membership for an itinerary that does not exist"));
+    }
+
+
+    private static ItineraryFields fieldsOf(Itinerary itinerary) {
+        return new ItineraryFields(
+                itinerary.title(),
+                itinerary.destination(),
+                itinerary.currency(),
+                itinerary.description(),
+                itinerary.standouts(),
+                itinerary.bestTimeOfYear() == null ? "" : itinerary.bestTimeOfYear(),
+                itinerary.startDate(),
+                itinerary.endDate());
     }
 
 
@@ -400,7 +439,7 @@ public class ItineraryService {
                         .with("travelerId", itinerary.ownerId())
                         .with("itineraryId", itinerary.id())
                         .with("hasDates", itinerary.startDate() != null || itinerary.endDate() != null)
-                        .with("destinationCount", itinerary.destinations().size())
+                        .with("currency", itinerary.currency())
                         .build();
         AfterCommit.run(() -> analytics.emit(event));
     }

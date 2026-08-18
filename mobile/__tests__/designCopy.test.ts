@@ -94,9 +94,16 @@ describe('the places the spec overrode the design stay overridden', () => {
 
 describe('the currency reads as the export prints it', () => {
   it('carries the peso sign the paste mangled, not the mojibake', () => {
+    const currencies = screen('src', 'itineraries', 'currencies.ts');
+
+    expect(currencies).toContain("sign: '₱'");
+    expect(currencies).not.toContain('â±');
+  });
+
+  it('keeps ONE currency vocabulary — the two overlapping maps collapsed at S4.25 decision 10', () => {
     const countries = screen('src', 'onboarding', 'countries.ts');
 
-    expect(countries).toContain("PHP: '₱'");
-    expect(countries).not.toContain('â±');
+    expect(countries).not.toMatch(/CURRENCY_SYMBOLS/);
+    expect(countries).not.toMatch(/currencyLabel/);
   });
 });

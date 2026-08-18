@@ -23,7 +23,7 @@ export default function PublishSuccessScreen() {
 
   const url = publishedItineraryLink(id);
   const title = data?.title ?? 'Your itinerary';
-  const pill = data === undefined ? undefined : destinationPillLabel(data.destinations);
+  const pill = data === undefined ? undefined : destinationPillLabel(data.destination);
   const duration = data === undefined ? undefined : durationLabel(data.durationDays);
 
   return (

@@ -6,14 +6,14 @@ import java.util.UUID;
 
 
 public record ShowcaseItineraryResponse(
-        UUID id, String title, List<String> destinations, int durationDays, String coverImageUrl) {
+        UUID id, String title, String destination, int durationDays, String coverImageUrl) {
 
 
     public static ShowcaseItineraryResponse of(Itinerary itinerary, int durationDays) {
         return new ShowcaseItineraryResponse(
                 itinerary.id(),
                 itinerary.title(),
-                itinerary.destinations(),
+                itinerary.destination(),
                 durationDays,
                 itinerary.coverImageUrl());
     }

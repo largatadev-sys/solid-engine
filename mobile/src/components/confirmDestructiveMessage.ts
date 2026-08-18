@@ -111,3 +111,11 @@ export function unarchiveTripWording(published: boolean): ConfirmWording {
     confirmLabel: 'Unarchive',
   };
 }
+
+export function changeTripCurrencyWording(): ConfirmWording {
+  return {
+    title: 'Change trip currency?',
+    body: 'Prices keep their numbers: ₱1,500 becomes $1,500. Review your amounts after saving.',
+    confirmLabel: 'Change currency',
+  };
+}

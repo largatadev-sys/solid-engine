@@ -14,6 +14,10 @@ import org.springframework.data.repository.query.Param;
 interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
 
+    @Query("SELECT i.currency FROM Itinerary i WHERE i.id = :itineraryId")
+    String findCurrency(@Param("itineraryId") UUID itineraryId);
+
+
     @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds "
             + "AND (:state IS NULL OR i.state = :state) "
             + "ORDER BY i.id DESC")
@@ -61,11 +65,9 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
     String DISCOVERABLE = ON_THE_STRANGERS_SURFACE + """
               AND (CAST(:query AS text) IS NULL
                    OR i.title ILIKE '%' || CAST(:query AS text) || '%'
-                   OR EXISTS (SELECT 1 FROM unnest(i.destinations) AS d
-                              WHERE d ILIKE '%' || CAST(:query AS text) || '%'))
+                   OR i.destination ILIKE '%' || CAST(:query AS text) || '%')
               AND (CAST(:destination AS text) IS NULL
-                   OR EXISTS (SELECT 1 FROM unnest(i.destinations) AS d
-                              WHERE lower(trim(d)) = lower(trim(CAST(:destination AS text)))))
+                   OR lower(trim(i.destination)) = lower(trim(CAST(:destination AS text))))
               AND (CAST(:minDays AS int) IS NULL OR i.duration_days >= CAST(:minDays AS int))
               AND (CAST(:maxDays AS int) IS NULL OR i.duration_days <= CAST(:maxDays AS int))
             """;
@@ -127,14 +129,13 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
                 SELECT i.id,
                        i.published_at,
                        i.cover_image_url,
-                       trim(d) AS spelling,
-                       lower(trim(d)) AS grouping_key
+                       trim(i.destination) AS spelling,
+                       lower(trim(i.destination)) AS grouping_key
                 FROM itinerary i
-                CROSS JOIN LATERAL unnest(i.destinations) AS d
                 WHERE
             """ + ON_THE_STRANGERS_SURFACE + """
                   AND i.published_at >= :since
-                  AND trim(d) <> ''
+                  AND trim(i.destination) <> ''
             ),
             ranked AS (
                 SELECT grouping_key,
@@ -169,14 +170,13 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
 
     @Query(value = """
-            SELECT DISTINCT ON (lower(trim(d))) trim(d)
+            SELECT DISTINCT ON (lower(trim(i.destination))) trim(i.destination)
             FROM itinerary i
-            CROSS JOIN LATERAL unnest(i.destinations) AS d
             WHERE
             """ + ON_THE_STRANGERS_SURFACE + """
-              AND trim(d) <> ''
-              AND d ILIKE '%' || CAST(:query AS text) || '%'
-            ORDER BY lower(trim(d))
+              AND trim(i.destination) <> ''
+              AND i.destination ILIKE '%' || CAST(:query AS text) || '%'
+            ORDER BY lower(trim(i.destination))
             LIMIT :limit
             """, nativeQuery = true)
     List<String> suggestDestinations(
