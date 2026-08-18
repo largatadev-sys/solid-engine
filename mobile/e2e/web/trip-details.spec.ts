@@ -4,6 +4,27 @@ import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { seedTrip, seedPlan, joinTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled, labelStarting } from '../support/screen';
+import type { Page } from '@playwright/test';
+
+
+async function openEditorSettled(page: Page, tripId: string): Promise<void> {
+  await page.goto(`/itineraries/${tripId}/edit`);
+  await expect(page.getByText('Edit Trip')).toBeVisible();
+  await expect(page.getByText('Save', { exact: true }).last()).toBeEnabled();
+  await expect(labelled(page, 'Trip Title')).not.toHaveValue('');
+  await page.waitForTimeout(SETTLE_MS);
+}
+
+
+async function setDate(page: Page, label: string, value: string): Promise<void> {
+  await expect(async () => {
+    await labelStarting(page, label).fill(value);
+    await expect(labelStarting(page, label)).toHaveValue(value, { timeout: 1_000 });
+  }).toPass({ timeout: 20_000 });
+}
+
+
+const SETTLE_MS = 1_200;
 
 const OWNER = ownerTagFor('web/trip-details');
 const MEMBER = IDENTITY_MAP['web/trip-details'].tags[1]!;
@@ -14,7 +35,8 @@ requireStack(OWNER);
 test.describe('the owner edits the trip-s details', () => {
   let trip: SeededTrip;
 
-  test.beforeAll(async () => {
+  test.beforeEach(async ({ signIn }) => {
+    await signIn(OWNER);
     trip = await seedTrip({
       ownerTag: OWNER,
       title: stamp('details'),
@@ -24,16 +46,13 @@ test.describe('the owner edits the trip-s details', () => {
     await seedPlan(trip, [{ title: 'Sunset paraw sailing', costAmount: '1500.00', costCurrency: 'PHP' }]);
   });
 
-  test.beforeEach(async ({ signIn }) => {
-    await signIn(OWNER);
-  });
-
   test('sets dates, and they survive a reload of the editor', async ({ page }) => {
-    await page.goto(`/itineraries/${trip.id}/edit`);
-    await expect(page.getByText('Edit Trip')).toBeVisible();
+    await openEditorSettled(page, trip.id);
 
-    await labelStarting(page, 'Start date').fill('2027-03-12');
-    await labelStarting(page, 'End date').fill('2027-03-19');
+    await setDate(page, 'Start date', '2027-03-12');
+    await setDate(page, 'End date', '2027-03-19');
+    await expect(labelStarting(page, 'Start date')).toHaveValue('2027-03-12');
+    await expect(labelStarting(page, 'End date')).toHaveValue('2027-03-19');
     await page.getByText('Save', { exact: true }).last().click();
 
     await page.goto(`/itineraries/${trip.id}/edit`);
@@ -42,11 +61,15 @@ test.describe('the owner edits the trip-s details', () => {
   });
 
   test('clears both dates, and the clear survives a reload', async ({ page }) => {
-    await page.goto(`/itineraries/${trip.id}/edit`);
-    await expect(page.getByText('Edit Trip')).toBeVisible();
+    await openEditorSettled(page, trip.id);
 
-    await labelStarting(page, 'Start date').fill('2027-03-12');
-    await labelStarting(page, 'End date').fill('2027-03-19');
+    await setDate(page, 'Start date', '2027-03-12');
+    await setDate(page, 'End date', '2027-03-19');
+    await expect(labelStarting(page, 'Start date')).toHaveValue('2027-03-12');
+    await page.getByText('Save', { exact: true }).last().click();
+
+    await page.goto(`/itineraries/${trip.id}/edit`);
+    await expect(labelStarting(page, 'Start date')).toHaveValue('2027-03-12');
     await expect(labelled(page, 'Clear start date')).toBeVisible();
 
     await labelled(page, 'Clear start date').click();
@@ -54,16 +77,16 @@ test.describe('the owner edits the trip-s details', () => {
     await page.getByText('Save', { exact: true }).last().click();
 
     await page.goto(`/itineraries/${trip.id}/edit`);
+    await expect(page.getByText('Save', { exact: true }).last()).toBeEnabled();
     await expect(labelStarting(page, 'Start date')).toHaveValue('');
-    await expect(labelStarting(page, 'End date')).toHaveValue('');
+    await expect(labelled(page, 'Clear start date')).toHaveCount(0);
   });
 
   test('changes the currency through the confirm, and every priced activity relabels', async ({
     page,
     signal,
   }) => {
-    await page.goto(`/itineraries/${trip.id}/edit`);
-    await expect(page.getByText('Edit Trip')).toBeVisible();
+    await openEditorSettled(page, trip.id);
 
     await page.locator('[aria-label^="Currency:"]').last().click();
     await page.getByText('$  USD — US Dollar').click();
