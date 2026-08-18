@@ -5,7 +5,7 @@ import { API, api, request, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { FIXTURE_PHOTO, SeedFailure, climbTo, seedTrip, stamp } from '../support/seed';
-import { labelStarting, labelled } from '../support/screen';
+import { labelled } from '../support/screen';
 import {
   FEED_CAPTION_MORE,
   FEED_NEW_POSTS,
@@ -46,6 +46,7 @@ let siblingCaption: string;
 let longEntry: PostedEntry;
 let siblingEntry: PostedEntry;
 let pillActivityId: string;
+let secondPillActivityId: string;
 
 async function postcard(
   token: string,
@@ -414,6 +415,7 @@ test.beforeAll(async () => {
   const second = await activity(authorToken, trip.id, 2, `Rice terraces ${mark}`);
   const brief = await activity(authorToken, trip.id, 1, `A brief stop ${mark}`);
   pillActivityId = await activity(authorToken, trip.id, 3, `Fresh stop ${mark}`);
+  secondPillActivityId = await activity(authorToken, trip.id, 3, `Pill stop ${mark}`);
 
   longCaption =
     `Shared to the feed ${mark}. Stood in line for two hours before sunrise and the`
@@ -552,8 +554,8 @@ test.describe('the Trip Post badge', () => {
   test('the badge opens the public trip diary, listing that trip postcards', async ({ page }) => {
     await openOwnBadge(page);
 
-    await expect(page.getByText(shortCaption).first()).toBeVisible();
-    await expect(page.getByText(siblingCaption).first()).toBeVisible();
+    await expect(page.getByText(shortCaption).locator('visible=true').last()).toBeVisible();
+    await expect(page.getByText(siblingCaption).locator('visible=true').last()).toBeVisible();
   });
 
   test('…and drops the badge there, since it would only lead back to this screen', async ({
@@ -561,7 +563,7 @@ test.describe('the Trip Post badge', () => {
   }) => {
     await openOwnBadge(page);
 
-    await expect(page.getByText(trip.title).first()).toBeVisible();
+    await expect(page.getByText(trip.title).locator('visible=true').last()).toBeVisible();
     const badgesOnScreen = await page.evaluate((badge) => {
       const screen = Array.from(document.querySelectorAll('[aria-label]'))
         .filter((node) => (node.getAttribute('aria-label') ?? '').startsWith(badge))
@@ -907,7 +909,7 @@ test.describe('the new-posts pill, waited out over one real poll cycle', () => {
     const fresh = await postcard(
       authorToken,
       trip.id,
-      { activityId: pillActivityId, caption: newest, fromDump: [] },
+      { activityId: secondPillActivityId, caption: newest, fromDump: [] },
       1,
     );
     expect(fresh.status).toBe(201);
@@ -919,7 +921,12 @@ test.describe('the new-posts pill, waited out over one real poll cycle', () => {
 
     const shown = await page.evaluate(() => document.body.innerText);
     expect(shown.indexOf(newest)).toBeGreaterThan(-1);
-    expect(shown.indexOf(newest)).toBeLessThan(shown.indexOf(siblingCaption));
+
+    const older = [siblingCaption, shortCaption, longCaption]
+      .map((caption) => shown.indexOf(caption))
+      .filter((at) => at > -1);
+    expect(older.length).toBeGreaterThan(0);
+    for (const at of older) expect(shown.indexOf(newest)).toBeLessThan(at);
   });
 });
 

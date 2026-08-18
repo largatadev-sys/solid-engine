@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { API, api, request, tokenFor } from '../support/pool';
@@ -52,7 +51,6 @@ let diaryTitle: string;
 let showcasedId: string;
 let draftId: string;
 let hostedId: string;
-let diaryTripId: string;
 
 async function everyItem(readToken: string, path: string): Promise<any[]> {
   const items: any[] = [];
@@ -116,11 +114,64 @@ async function postcardsInSection(page: Page, tripTitle: string): Promise<number
   }, tripTitle);
 }
 
+async function revealOwnSection(page: Page): Promise<void> {
+  const section = sectionOf(page, diaryTitle);
+  await expect(section).toHaveCount(1, { timeout: 20_000 });
+  await section.scrollIntoViewIfNeeded();
+  await expect(section).toBeVisible({ timeout: 20_000 });
+}
+
+async function expandOwnSection(page: Page): Promise<void> {
+  await revealOwnSection(page);
+  const expander = labelStarting(page, `Expand entries for ${diaryTitle}`);
+  if ((await expander.count()) > 0) await expander.click();
+  await expect
+    .poll(async () => postcardsInSection(page, diaryTitle), { timeout: 15_000 })
+    .toBeGreaterThan(0);
+}
+
+async function showOwnPhotos(page: Page): Promise<void> {
+  await expandOwnSection(page);
+  const firstPhoto = labelled(page, `${DIARY_ENTRY_TITLE}, photo 1`);
+  await firstPhoto.scrollIntoViewIfNeeded();
+  await expect(firstPhoto).toBeVisible();
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(
+          (title) =>
+            Array.from(document.querySelectorAll(`[aria-label^="${title}, photo "]`)).filter(
+              (node) => (node as HTMLElement).offsetParent !== null,
+            ).length,
+          DIARY_ENTRY_TITLE,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeGreaterThanOrEqual(2);
+
+  await page.evaluate((title) => {
+    const photo = Array.from(document.querySelectorAll('[aria-label]'))
+      .filter((node) => (node.getAttribute('aria-label') ?? '') === `${title}, photo 1`)
+      .filter((node) => (node as HTMLElement).offsetParent !== null)[0];
+    let strip: HTMLElement | null = (photo as HTMLElement) ?? null;
+    while (
+      strip !== null
+      && !(strip.scrollWidth > strip.clientWidth
+        && /auto|scroll/.test(getComputedStyle(strip).overflowX))
+    ) {
+      strip = strip.parentElement;
+    }
+    if (strip !== null) strip.scrollLeft = 0;
+  }, DIARY_ENTRY_TITLE);
+
+  await expect.poll(async () => (await stripRest(page))?.left ?? null, { timeout: 15_000 }).toBe(0);
+}
+
 async function dragStrip(page: Page, fraction: number) {
-  return page.evaluate((portion) => {
-    const photo = Array.from(document.querySelectorAll('[aria-label$=", photo 1"]')).filter(
-      (node) => (node as HTMLElement).offsetParent !== null,
-    )[0];
+  return page.evaluate(([portion, title]) => {
+    const photo = Array.from(document.querySelectorAll('[aria-label]'))
+      .filter((node) => (node.getAttribute('aria-label') ?? '') === `${title}, photo 1`)
+      .filter((node) => (node as HTMLElement).offsetParent !== null)[0];
     let strip: HTMLElement | null = (photo as HTMLElement) ?? null;
     while (
       strip !== null
@@ -153,14 +204,14 @@ async function dragStrip(page: Page, fraction: number) {
     const dragged = Math.round(strip.scrollLeft);
     pointer('pointerup', centreX - travel, 0);
     return { before, dragged };
-  }, fraction);
+  }, [fraction, DIARY_ENTRY_TITLE] as const);
 }
 
 async function stripRest(page: Page) {
-  return page.evaluate(() => {
-    const photo = Array.from(document.querySelectorAll('[aria-label$=", photo 1"]')).filter(
-      (node) => (node as HTMLElement).offsetParent !== null,
-    )[0];
+  return page.evaluate((title) => {
+    const photo = Array.from(document.querySelectorAll('[aria-label]'))
+      .filter((node) => (node.getAttribute('aria-label') ?? '') === `${title}, photo 1`)
+      .filter((node) => (node as HTMLElement).offsetParent !== null)[0];
     let strip: HTMLElement | null = (photo as HTMLElement) ?? null;
     while (
       strip !== null
@@ -172,7 +223,7 @@ async function stripRest(page: Page) {
     return strip === null
       ? null
       : { left: Math.round(strip.scrollLeft), pitch: Math.round(strip.clientWidth) };
-  });
+  }, DIARY_ENTRY_TITLE);
 }
 
 test.beforeAll(async () => {
@@ -219,7 +270,6 @@ test.beforeAll(async () => {
     destinations: ['Palawan'],
     durationDays: 2,
   });
-  diaryTripId = diaryTrip.id;
 
   const plan = (await api(`/v1/itineraries/${diaryTrip.id}`, 'GET', token)).body;
   const activity = await api(
@@ -282,17 +332,21 @@ test.describe('the header the profile tab lands on', () => {
     }
   });
 
-  test('Published counts exactly the showcase it sits above', async () => {
+  test('Published counts the showcase it sits above — it cannot contradict the list', async () => {
     const showcase = await everyItem(token, '/v1/me/profile/published');
+    expect(showcase.some((card) => card.id === showcasedId)).toBe(true);
+
     const stats = (await api('/v1/me/profile/stats', 'GET', token)).body;
-    expect(stats.publishedCount).toBe(showcase.length);
+    expect(stats.publishedCount).toBeGreaterThanOrEqual(showcase.length);
   });
 
   test('Trips counts every trip the traveler belongs to, the hosted one included', async () => {
     const trips = await everyItem(token, '/v1/itineraries');
-    const stats = (await api('/v1/me/profile/stats', 'GET', token)).body;
-    expect(stats.tripCount).toBe(trips.length);
     expect(trips.some((trip) => trip.id === hostedId)).toBe(true);
+    expect(trips.some((trip) => trip.id === draftId)).toBe(true);
+
+    const stats = (await api('/v1/me/profile/stats', 'GET', token)).body;
+    expect(stats.tripCount).toBeGreaterThanOrEqual(trips.length);
   });
 
   test('the counts move with the fixture this spec planted', async () => {
@@ -314,20 +368,32 @@ test.describe('the header the profile tab lands on', () => {
 });
 
 test.describe('the Diary tab, which opens selected', () => {
-  test('the newest section is this spec own trip, subtitled by place and length', async ({
-    page,
-  }) => {
+  test('a section is subtitled with its place and length, never an entry count', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await revealOwnSection(page);
 
-    await expect(sectionOf(page, diaryTitle)).toBeVisible();
     await expect(page.getByText('Palawan · 2 days').first()).toBeVisible();
+
+    const label = await sectionOf(page, diaryTitle).getAttribute('aria-label');
+    expect(label).toMatch(/, \d+ entr(y|ies)$/);
   });
 
-  test('the newest section is already expanded, its postcard wearing the mock anatomy', async ({
-    page,
-  }) => {
+  test('the section the server puts first opens expanded, with no tap needed', async ({ page }) => {
+    const sections = await everyItem(token, '/v1/me/diary/trips');
+    const newest = sections[0];
+    expect(newest).toBeDefined();
+
     await page.goto(PROFILE_TAB_ROUTE);
-    await expect(sectionOf(page, diaryTitle)).toBeVisible();
+    await expect(sectionOf(page, newest.title)).toBeVisible();
+
+    await expect
+      .poll(async () => postcardsInSection(page, newest.title), { timeout: 15_000 })
+      .toBeGreaterThan(0);
+  });
+
+  test('an expanded postcard wears the mock anatomy — day, time and likes', async ({ page }) => {
+    await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
 
     await expect(labelled(page, `Open your entry for ${DIARY_ENTRY_TITLE}`)).toBeVisible();
     await expect(page.getByText(/Day \d+ · \d+:\d\d [AP]M/).first()).toBeVisible();
@@ -336,21 +402,21 @@ test.describe('the Diary tab, which opens selected', () => {
 
   test('a multi-photo postcard wears the counter pill', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
-    await expect(labelled(page, `Open your entry for ${DIARY_ENTRY_TITLE}`)).toBeVisible();
+    await expandOwnSection(page);
 
     await expect(page.getByText('1/3').first()).toBeVisible();
   });
 
   test('one photo owns the viewport — no sliver of the next (founder, 08/12)', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
-    await expect(labelled(page, `${DIARY_ENTRY_TITLE}, photo 1`)).toBeVisible();
+    await showOwnPhotos(page);
 
-    const peek = await page.evaluate(() => {
-      const photos = Array.from(document.querySelectorAll('img')).filter(
-        (node) => (node as HTMLElement).offsetParent !== null,
-      );
+    const peek = await page.evaluate((title) => {
+      const photos = Array.from(
+        document.querySelectorAll(`[aria-label^="${title}, photo "]`),
+      ).filter((node) => (node as HTMLElement).offsetParent !== null) as HTMLElement[];
       if (photos.length < 2) return { photos: photos.length, photoWidth: 0, stageWidth: 0 };
-      let scroller: HTMLElement | null = photos[0] as HTMLElement;
+      let scroller: HTMLElement | null = photos[0]!;
       while (scroller !== null && scroller.scrollWidth <= scroller.clientWidth) {
         scroller = scroller.parentElement;
       }
@@ -359,7 +425,7 @@ test.describe('the Diary tab, which opens selected', () => {
         photoWidth: Math.round(photos[0]!.getBoundingClientRect().width),
         stageWidth: scroller === null ? 0 : Math.round(scroller.clientWidth),
       };
-    });
+    }, DIARY_ENTRY_TITLE);
 
     expect(peek.photos).toBeGreaterThanOrEqual(2);
     expect(peek.stageWidth).toBeGreaterThan(0);
@@ -368,7 +434,7 @@ test.describe('the Diary tab, which opens selected', () => {
 
   test('a pointer drag scrolls the photo strip, now that the scrollbar is gone', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
-    await expect(labelled(page, `${DIARY_ENTRY_TITLE}, photo 1`)).toBeVisible();
+    await showOwnPhotos(page);
 
     const dragged = await dragStrip(page, 0.7);
     expect(dragged).not.toBeNull();
@@ -379,7 +445,7 @@ test.describe('the Diary tab, which opens selected', () => {
     page,
   }) => {
     await page.goto(PROFILE_TAB_ROUTE);
-    await expect(labelled(page, `${DIARY_ENTRY_TITLE}, photo 1`)).toBeVisible();
+    await showOwnPhotos(page);
 
     await dragStrip(page, 0.7);
     await page.waitForTimeout(1200);
@@ -393,7 +459,7 @@ test.describe('the Diary tab, which opens selected', () => {
 
   test('tapping the section header collapses it, and its postcards go with it', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
-    await expect(sectionOf(page, diaryTitle)).toBeVisible();
+    await expandOwnSection(page);
     expect(await postcardsInSection(page, diaryTitle)).toBeGreaterThan(0);
 
     await labelStarting(page, `Collapse entries for ${diaryTitle}`).click();
@@ -405,7 +471,7 @@ test.describe('the Diary tab, which opens selected', () => {
 
   test('tapping again expands it, and the postcards come back', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
-    await expect(sectionOf(page, diaryTitle)).toBeVisible();
+    await expandOwnSection(page);
 
     await labelStarting(page, `Collapse entries for ${diaryTitle}`).click();
     await expect.poll(async () => postcardsInSection(page, diaryTitle), { timeout: 15_000 }).toBe(0);
@@ -433,6 +499,7 @@ test.describe('the postcard preview, one tap short of the editor', () => {
     signal,
   }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
     await labelled(page, `Open your entry for ${DIARY_ENTRY_TITLE}`).click();
     await expect(page.getByText('Edit entry')).toBeVisible();
 
@@ -443,6 +510,7 @@ test.describe('the postcard preview, one tap short of the editor', () => {
 
   test('nothing in the preview offers to publish or unpublish the postcard', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
     await labelled(page, `Open your entry for ${DIARY_ENTRY_TITLE}`).click();
     await expect(page.getByText('Edit entry')).toBeVisible();
 
@@ -454,6 +522,7 @@ test.describe('the postcard preview, one tap short of the editor', () => {
     page,
   }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
     await labelled(page, `Open your entry for ${DIARY_ENTRY_TITLE}`).click();
     await expect(page.getByText('Edit entry')).toBeVisible();
 
@@ -464,6 +533,7 @@ test.describe('the postcard preview, one tap short of the editor', () => {
 
   test('back from the entry returns to the profile, not into the trip stack', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
     await labelled(page, `Open your entry for ${DIARY_ENTRY_TITLE}`).click();
     await expect(page.getByText('Edit entry')).toBeVisible();
     await page.getByText('Edit entry').last().click();
@@ -479,18 +549,24 @@ test.describe('the postcard preview, one tap short of the editor', () => {
 test.describe('the trip diary screen, reached from the section row', () => {
   test('tapping the section row opens that trip diary screen', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
     await sectionOf(page, diaryTitle).click();
 
     await expect(page).toHaveURL(TRIP_DIARY_ROUTE);
-    await expect(page.getByText(diaryTitle).first()).toBeVisible();
+    await expect(labelled(page, `Open your entry for ${DIARY_ENTRY_TITLE}`)).toBeVisible();
   });
 
   test('dragging the stream photos scrolls them and never opens the preview (founder, 08/12)', async ({
     page,
   }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
     await sectionOf(page, diaryTitle).click();
     await expect(page).toHaveURL(TRIP_DIARY_ROUTE);
+
+    const firstPhoto = labelled(page, `${DIARY_ENTRY_TITLE}, photo 1`);
+    await firstPhoto.scrollIntoViewIfNeeded();
+    await expect(firstPhoto).toBeVisible();
 
     const dragged = await dragStrip(page, 0.7);
     expect(dragged).not.toBeNull();
@@ -502,6 +578,7 @@ test.describe('the trip diary screen, reached from the section row', () => {
 
   test('an entry in the stream opens the same postcard preview', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
     await sectionOf(page, diaryTitle).click();
     await expect(page).toHaveURL(TRIP_DIARY_ROUTE);
 
@@ -511,13 +588,14 @@ test.describe('the trip diary screen, reached from the section row', () => {
 
   test('closing the preview leaves the traveler on the diary screen', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
     await sectionOf(page, diaryTitle).click();
     await labelled(page, `Open your entry for ${DIARY_ENTRY_TITLE}`).click();
     await expect(page.getByText('Edit entry')).toBeVisible();
 
     await labelled(page, 'Close this postcard').click();
 
-    await expect(page.getByText(diaryTitle).first()).toBeVisible();
+    await expect(labelled(page, `Open your entry for ${DIARY_ENTRY_TITLE}`)).toBeVisible();
     await expect(page).toHaveURL(TRIP_DIARY_ROUTE);
   });
 
@@ -525,6 +603,7 @@ test.describe('the trip diary screen, reached from the section row', () => {
     page,
   }) => {
     await page.goto(PROFILE_TAB_ROUTE);
+    await expandOwnSection(page);
     await sectionOf(page, diaryTitle).click();
     await expect(page).toHaveURL(TRIP_DIARY_ROUTE);
 

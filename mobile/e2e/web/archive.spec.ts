@@ -247,10 +247,12 @@ test.describe('unarchive restores the trip, which is what lets this spec repeat'
     await expect
       .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
       .toMatch(/gets it back and can edit again/i);
+
+    await expect.poll(async () => archived(trip.id), { timeout: 30_000 }).toBe(false);
   });
 
   test('…and the server agrees the trip is live again', async () => {
-    await expect.poll(async () => archived(trip.id), { timeout: 15_000 }).toBe(false);
+    expect(await archived(trip.id)).toBe(false);
   });
 
   test('the quiet archived notice is gone and the plan is editable again', async ({

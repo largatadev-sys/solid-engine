@@ -106,12 +106,14 @@ test.describe('the offer, made from the roster the holder owns', () => {
     await expect
       .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
       .toContain(offerOwnershipWording('x').body);
+
+    await expect.poll(async () => offeredTo(trip.id, holderToken), { timeout: 30_000 }).toBe(
+      offereeId,
+    );
   });
 
   test('confirming records the offer against the offeree on the server', async () => {
-    await expect.poll(async () => offeredTo(trip.id, holderToken), { timeout: 15_000 }).toBe(
-      offereeId,
-    );
+    expect(await offeredTo(trip.id, holderToken)).toBe(offereeId);
   });
 
   test('…and the offer alone moves nothing — the holder is still the owner', async () => {
@@ -161,12 +163,14 @@ test.describe('the offer, as the receiving traveler meets it', () => {
     await expect
       .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
       .toContain(acceptOwnershipWording(trip.title).body);
+
+    await expect.poll(async () => ownerOf(trip.id, offereeToken), { timeout: 30_000 }).toBe(
+      offereeId,
+    );
   });
 
   test('confirming swaps the roles — driven entirely through the browser', async () => {
-    await expect.poll(async () => ownerOf(trip.id, offereeToken), { timeout: 15_000 }).toBe(
-      offereeId,
-    );
+    expect(await ownerOf(trip.id, offereeToken)).toBe(offereeId);
   });
 
   test('…and the former owner stays on the trip, now as a member', async () => {

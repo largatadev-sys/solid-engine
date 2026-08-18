@@ -48,7 +48,7 @@
     "web": "expo start --web",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "smoke": "node scripts/smoke-all.js",
+    "smoke": "playwright test",
     "smoke:api": "playwright test --project=api",
     "smoke:web": "playwright test --project=web"
   },

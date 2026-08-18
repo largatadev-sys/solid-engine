@@ -42,13 +42,17 @@ export const api = pool.api;
 export const request = pool.request;
 export const address = pool.address;
 
-const tokens = new Map<PoolTag, Promise<string>>();
+const TOKEN_LIFETIME_MS = 30 * 60 * 1000;
+
+const tokens = new Map<PoolTag, { minted: Promise<string>; at: number }>();
 
 export function tokenFor(tag: PoolTag): Promise<string> {
   const existing = tokens.get(tag);
-  if (existing !== undefined) return existing;
+  if (existing !== undefined && Date.now() - existing.at < TOKEN_LIFETIME_MS) {
+    return existing.minted;
+  }
   const minted = pool.poolToken(tag);
-  tokens.set(tag, minted);
+  tokens.set(tag, { minted, at: Date.now() });
   return minted;
 }
 

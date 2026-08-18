@@ -75,7 +75,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | **Epic 7 — Subscriptions** *(post-validation, pre-beta; stories elaborated at the gate — reg. #14 decides the split first)* | | | | |
 | S1.8 | Entitlement seam: `can(traveler, capability)` *(parked out of E1 2026-07-28 at its grilling — ships at reg. #14's decision moment, before this epic, born wired to the first gated capabilities; ADR-009 amended; every spec from S1.9 on carries a one-line candidate-capability note)* | ⬜ | — |
 | **Harness** *(no epic — verification tooling, pulled from the epic-map port line)* | | | | |
-| H1 | Playwright port: the whole verification harness becomes one Playwright suite *(grilled 2026-08-14, fired by the S4.3 gate's wall-clock; ADR-026 — API smokes fold in by founder reversal, CDP/`ws` deletes, dark flows rebuilt from the walk inventory; gate keeps three rungs)* | ⬜ | [spec](docs/plans/H1-playwright-port/spec.md) |
+| H1 | Playwright port: the whole verification harness becomes one Playwright suite *(grilled 2026-08-14, fired by the S4.3 gate's wall-clock; ADR-026 — API smokes fold in by founder reversal, CDP/`ws` deletes, dark flows rebuilt from the walk inventory; gate keeps three rungs)* | ✅ | [spec](docs/plans/H1-playwright-port/spec.md) |
 
 *(Stories past Epic 0 are slice-level titles — elaborated agent-ready just-in-time when pulled, per the playbook. Splits/merges expected; update the table when they happen.)*
 
