@@ -144,14 +144,14 @@ test.describe('the frozen posture the archive act produces', () => {
 
   test('the members screen still shows the roster on an archived trip', async ({ page }) => {
     await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText('MEMBERS')).toBeVisible();
+    await expect(page.getByText('Members').first()).toBeVisible();
     await expect(page.getByText('owner').first()).toBeVisible();
     await expect(page.getByText('member').first()).toBeVisible();
   });
 
   test('…but the roster offers no act that would change the frozen trip', async ({ page }) => {
     await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText('MEMBERS')).toBeVisible();
+    await expect(page.getByText('Members').first()).toBeVisible();
 
     await expect(page.getByText('Remove', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Make owner', { exact: true })).toHaveCount(0);

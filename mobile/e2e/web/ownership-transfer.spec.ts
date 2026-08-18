@@ -88,7 +88,7 @@ test.describe('the offer, made from the roster the holder owns', () => {
     await signIn(HOLDER);
     await page.goto(`/members/${trip.id}`);
 
-    await expect(page.getByText('MEMBERS')).toBeVisible();
+    await expect(page.getByText('Members').first()).toBeVisible();
     await expect(page.getByText(MAKE_OWNER, { exact: true }).last()).toBeVisible();
   });
 
@@ -253,7 +253,7 @@ test.describe('the transfer flips back, so repeated runs leave the pool where th
   test('no page or console errors across the transfer', async ({ page, signIn, signal }) => {
     await signIn(HOLDER);
     await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText('MEMBERS')).toBeVisible();
+    await expect(page.getByText('Members').first()).toBeVisible();
 
     expect(signal.pageErrors).toEqual([]);
     expect(signal.consoleErrors).toEqual([]);
