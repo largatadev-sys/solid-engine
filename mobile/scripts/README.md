@@ -23,7 +23,7 @@ Common env vars, supplied by that file unless stated:
 | `LARGATA_TEST_POOL_PASSWORD` | the shared password for every pool account |
 | `LARGATA_API_BASE_URL` | which rung to talk to. Default `http://localhost:8080`; `https://api-dev.largata.com` for deployed dev |
 | `LARGATA_PREVIEW_URL` | the web preview container. Default `http://localhost:8081` |
-| `LARGATA_CDP_PORT` | override a driver's Chrome DevTools port (each already owns a distinct one) |
+| `LARGATA_LANE` | `metro` points the web specs at Metro (8082) instead of the preview container |
 
 Never put a value from `.env` on a command line — it lands in shell history and in the transcript of
 whoever is watching.
@@ -54,22 +54,11 @@ nothing this app exposes can undo what they do there:
 `backdate-seed.js` decides it is remote by `LARGATA_DATABASE_URL` being set rather than by the API
 URL — so for a **local** run that variable must be **unset**, or it refuses.
 
-## Chrome DevTools ports
+## Browsers
 
-Each driver owns a distinct port, so two can run at once. Override with `LARGATA_CDP_PORT`.
-
-| Script | Port |
-|---|---|
-| `drive-preview.js` | 9223 |
-| `drive-archive.js` | 9224 |
-| `drive-ownership-transfer.js` | 9225 |
-| `drive-lifecycle.js` | 9226 |
-| `drive-edit-lock.js` | 9227 |
-
-*(9228 was `drive-publish.js`'s and is free — see the retirement note at the end of this file.)*
-
-Chrome is located by probing the usual Windows/Linux/macOS install paths. Only `drive-edit-lock.js`
-takes an override (`LARGATA_CHROME`).
+Playwright manages its own Chromium — install it once per machine with `npx playwright install chromium`.
+There are no DevTools ports to allocate any more: the runner owns the browser, and specs run in
+isolated contexts rather than competing for one debugging port and one profile directory.
 
 ---
 
@@ -328,185 +317,81 @@ Env: the three pool vars. Tags: `t1` = owner of everything, `t2` = the collabora
 `t3` = a stranger who joins nothing (so the masking cases stay testable). **Refuses to run against
 anything but `localhost`** — it is fixture data, and there is no undo on a deployed rung.
 
-## `smoke-api.js` — the API rung's smoke suite
+## The Playwright suite — where the assertions live now (H1)
 
-Walks everything shipped so far against a running backend: health, the 401/404 envelope, the plan
-(S0.3/S1.3/S1.4), invitations and the `email_verified` gate (S1.2), departure and re-entry (S1.5),
-and the archive loop (S1.9). Exits non-zero on the first failing rung of checks.
-
-```bash
-cd mobile && set -a && . ./.env && set +a && node scripts/smoke-api.js
-```
-
-Env: the three pool vars, plus `LARGATA_API_BASE_URL` (**local `http` rung only**).
-Tags: `t1` = owner · `t2` = member (invited, removed, re-invited) · `t3` = an invited address only ·
-`u1` = the unverified caller both halves of the gate are proven with.
-
-## `smoke-lifecycle.js` — S1.7 draft → active → completed, against a running rung
-
-Drives the whole lifecycle arc with real verified accounts and real tokens. Every step is a
-discriminating check and throws on the first failure.
+The `smoke-*.js` and `drive-*.js` families are **gone**. Everything they asserted lives in
+`mobile/e2e/` as one `@playwright/test` suite with two projects, run by one command with one
+authoritative exit code. ADR-026 records the decision; `docs/plans/H1-playwright-port/` is the story.
 
 ```bash
 cd mobile && set -a && . ./.env && set +a
-node scripts/smoke-lifecycle.js                                              # local stack
-LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-lifecycle.js
+npm run smoke              # both projects, parallel workers, one exit code
+npm run smoke:api          # the API rung alone — seconds, no browser opens
+npm run smoke:web          # the web rung alone
+npm run smoke:web -- e2e/web/workspace.spec.ts    # one surface, while iterating
 ```
 
-Env: the three pool vars, plus `LARGATA_API_BASE_URL` (http **or** https).
-Tags: `t1` = trip owner · `t2` = an ordinary member who may never touch the lifecycle ·
-`t3` = an invited address only.
+**One-time per machine:** `npx playwright install chromium`. Nothing else; the browser is the only
+thing not carried by `npm ci`.
 
-## `smoke-ownership-transfer.js` — S1.6 offer → accept → the owner's exit, against a running rung
+| Project | Where | What it is |
+|---|---|---|
+| `api` | `e2e/api/` | request-context specs against `/v1` — no browser at any point |
+| `web` | `e2e/web/` | a 393×852 phone viewport with `hasTouch`, driving the preview container |
 
-Drives the ownership-transfer arc end to end. Prints, at the finish, the SQL for the one fact no
-endpoint exposes (the `ownership_transfer` row) for an operator to confirm in the database — name the
-database in that query: deployed dev is `postgres.railway.internal:5432/railway`.
+**Two lanes, one set of specs.** `baseURL` defaults to the preview container on **8081** — the true
+build path, which is what a gate run must prove. `LARGATA_LANE=metro` points the same specs at Metro
+on **8082** for the iterate loop, with no spec change.
+
+### The rules a new spec follows
+
+- **`requireStack(<tag>)` at the top.** It is what makes an unreachable backend report **skipped**
+  rather than failed — so *"the spec never ran"* stays distinguishable from *"the spec failed"*, the
+  trap that made `drive-publish` report a phantom failure for weeks.
+- **Seed your own fixture** through the API (`e2e/support/seed.ts`). No spec depends on data another
+  spec left, and none asserts global uniqueness on a database that accumulates every earlier run —
+  assert shape, caps and membership instead.
+- **Take your identity from the map** (`e2e/support/identities.ts`). Tags are roles; the map is the
+  one place that says which spec touches which account, and specs mutating traveler-level state hold
+  theirs exclusively. **Only `t1`–`t5` are verified** — `assertVerified()` throws on the rest,
+  because signing in as an unverified account lands on the verify screen and issues a real OTP.
+- **Import copy from `src/`** rather than retyping it, so a rename breaks the typecheck instead of
+  failing at runtime three weeks later.
+- **Assert the server after an act**, not just the screen. A screen that lies about a mutation is the
+  failure mode the harness exists to catch.
+
+### The traps the old harness paid for, and where they went
+
+| Trap | Now |
+|---|---|
+| Eleven drivers sharing one Chrome profile | per-spec browser contexts; structurally impossible |
+| `Input.dispatchMouseEvent` synthesizing no PointerEvents | `page.mouse` / `page.touchscreen` are real input |
+| Hand-guessed `sleep()` | auto-waiting locators and `expect.poll` |
+| A walk counted as failed while running zero assertions | `requireStack` skips loudly |
+| An unhandled `window.confirm` hanging the run | the `signal` fixture accepts and **records the wording** |
+| A screen mounted beneath the current one answering a query | `labelled()` / `labelStarting()` take the last **visible** match |
+| Real mail spent per run | invitations go by handle, and the local stack has no Resend key |
+
+## `drive-preview.js` — the diagnostic CLI *(a tool, not a test)*
+
+Survives the port with its command line unchanged, re-engined on the Playwright library. It answers
+*"what is this page actually doing"* for one URL — it is not part of the suite and has no reporter.
 
 ```bash
 cd mobile && set -a && . ./.env && set +a
-node scripts/smoke-ownership-transfer.js                                     # local stack
-LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-ownership-transfer.js
+node scripts/drive-preview.js http://localhost:8081/ --shot /tmp/out.png
+node scripts/drive-preview.js http://localhost:8081/ --click "Sign In" --expect "Welcome"
+node scripts/drive-preview.js http://localhost:8081/ --fill-otp "Verification code"
 ```
 
-Env: the three pool vars, plus `LARGATA_API_BASE_URL` (http **or** https).
-Tags: `t1` = original owner · `t2` = offeree / new owner · `t3` = a bystander who must see the
-governance state but never be able to act on it.
+Flags: `--shot`, `--shot-steps`, `--width`, `--fresh`, `--click`, `--fill`, `--fill-env`,
+`--fill-otp`, `--upload label=path`, `--blur`, `--expect`, `--expect-alert`.
 
-## `drive-preview.js` — cold-load report on the web preview
+The evidence bundle is unchanged: full page text (empty = the S0.4 white screen), Google iframe and
+One Tap presence, every `/v1` request flagged **bearer** or **ANON**, console errors, page errors,
+and every alert and confirm the page raised **with its wording**. A missing `--expect` exits 1.
+`--fresh` wipes only this tool's own profile — the suite's specs share nothing with it.
 
-Loads the preview in real headless Chrome as a signed-out visitor and reports what it finds: the page
-text (empty means the white screen), whether Google's sign-in iframe rendered, whether a One Tap
-overlay appeared, GIS network responses, and every console and page error. It **reports only** — it
-asserts nothing and always exits 0, so never gate on its exit code.
-
-```bash
-cd mobile
-node scripts/drive-preview.js                        # default http://localhost:8081/
-node scripts/drive-preview.js http://localhost:8081/ --shot out.png
-```
-
-Env: none — it takes the URL as a positional argument and signs in to nothing.
-Reading the output: **`Google-rendered iframes: 1` is the trustworthy signal** that the OAuth origin
-is registered. A `400` on `/gsi/button` in the GIS network section is normal and means nothing.
-
-## `drive-lifecycle.js` — S1.7 lifecycle, driven in the preview container
-
-Seeds two trips of its own over the API (one with future dates, one whose dates are both in the past),
-then drives the lifecycle controls in the browser with `window.confirm` intercepted — cancel and
-confirm both, since `Alert.alert` is a no-op on react-native-web and a dialog that ignores "no" is
-worse than none. Exits non-zero if any check fails.
-
-```bash
-cd mobile && set -a && . ./.env && set +a
-node scripts/drive-lifecycle.js
-```
-
-Env: the three pool vars, `LARGATA_PREVIEW_URL` (default `http://localhost:8081`),
-`LARGATA_API_BASE_URL` (default `http://localhost:8080`). Needs both the preview container and the
-backend up. Tags: `t1` = trip owner · `t2` = ordinary member.
-
-## `drive-ownership-transfer.js` — S1.6 offer/accept, driven in the preview container
-
-Seeds its own trip over the API, then drives the two-account offer → accept flow in the browser with
-`window.confirm` intercepted, cancel and confirm both. Exits non-zero if any check fails; prints the
-trip id it leaves behind.
-
-```bash
-cd mobile && set -a && . ./.env && set +a
-node scripts/drive-ownership-transfer.js
-```
-
-Env: the three pool vars, `LARGATA_PREVIEW_URL` (default `http://localhost:8081`),
-`LARGATA_API_BASE_URL` (default `http://localhost:8080`). Needs both the preview container and the
-backend up. Tags: `t1` = owner who makes the offer · `t2` = the offeree who accepts it.
-
-## `drive-archive.js` — S1.9 archive/unarchive, driven in the preview container
-
-Drives archive and unarchive on an **existing** trip: the confirm dialog (cancel and accept both), the
-frozen trip screen, the frozen members screen, the My Trips / archived-trips split, and the thaw.
-Optionally writes a screenshot. Exits non-zero if any check fails.
-
-```bash
-cd mobile && set -a && . ./.env && set +a
-node scripts/seed-trip.js --owner t1 --members t2     # note the trip id it prints
-TRIP_ID=<id> node scripts/drive-archive.js
-TRIP_ID=<id> node scripts/drive-archive.js --shot out.png
-```
-
-Env: the three pool vars, **`TRIP_ID` (required)**, and `LARGATA_PREVIEW_URL`
-(default `http://localhost:8081`). Tags: `t1` = the trip owner; the whole drive runs as the owner,
-because the owner is the only viewer with archive controls to lose.
-
-## `smoke-publish.js` — S4.1 publish, the whole ladder against a running rung
-
-Builds its own fixture (a dated, two-day, priced trip with tips and standouts) and walks the story
-end to end on the API: preview → publish → the consumer read → unpublish → republish → archive →
-unarchive. It **pins the projection's field set exactly** and greps the serialized payload for every
-field the absence rule forbids, so a leak fails here as well as in the ITs — the wire is the thing
-travelers see, and it is worth asserting twice. Also checks the derived total's single-currency rule
-in both directions and the ADR-008 additivity of the two new header fields. Exits non-zero on any
-failure, and prints the trip id for the drivers below.
-
-```bash
-cd mobile && set -a && . ./.env && set +a
-node scripts/smoke-publish.js
-LARGATA_API_BASE_URL=https://api-dev.largata.com node scripts/smoke-publish.js
-```
-
-Env: the three pool vars + `LARGATA_API_BASE_URL`. Tags: **`t1` = owner (publishes), `t2` = member,
-`t3` = non-member consumer** — the three-way split the story needs, since private/member/public are
-three different audiences and two accounts cannot tell them apart.
-
-## `deploy-currency.js` — is the rung running the build you think it is?
-
-Answers one question with a **stated failure mode**, which `/v1/health` cannot: it creates a throwaway
-trip, archives it, attempts a write, and reads the `TRIP_ARCHIVED` refusal *message* — a string that
-changed at the E1 gate. Exit **0 = CURRENT**, **1 = STALE**, **2 = UNKNOWN** (never act on a 2).
-
-```bash
-cd mobile && set -a && . ./.env && set +a
-node scripts/deploy-currency.js                                    # deployed dev by default
-LARGATA_API_BASE_URL=http://localhost:8080 node scripts/deploy-currency.js
-```
-
-Env: the three pool vars, plus `LARGATA_API_BASE_URL` (default `https://api-dev.largata.com`) and
-optional `LARGATA_POOL_TAG` (default `t1`). Leaves one archived probe trip behind per run.
-
-**Why it exists, and what maintaining it means.** `{"status":"ok"}` is identical on every build ever
-deployed, so it cannot distinguish one from another — the indistinguishable-probe shape this repo has
-been burned by three times. This probe was **verified in both directions before being trusted**:
-CURRENT against the local stack carrying the fix, STALE against deployed dev carrying the old build.
-**Its discriminator is a message string, so it decays**: once preprod and prod also carry this build,
-the old spelling is gone everywhere and the probe silently starts answering CURRENT for everyone. When
-the next release needs a currency check, **re-point it at a string that changed in that release** and
-re-prove both directions, exactly as this one was.
-
-## `drive-edit-lock.js` — header-lease prober *(S1.4; rewritten at S4.9 for subject-typed leases)*
-
-Signs a pool account in via Identity Toolkit, plants the session in `localStorage`, drives headless
-Chrome to a trip's `/edit` route, types a title change, clicks Save, and intercepts `window.alert`
-over CDP to prove the lock modal actually fires on web. **Saving is what acquires the header lease** —
-S4.9's subject-typed leases removed acquire-on-entry, so a driver that only navigates proves nothing.
-
-Env: the three pool vars plus **`TRIP_ID` (required)**, optional
-`LARGATA_POOL_TAG` (default `t2`), optional `LARGATA_PREVIEW_URL` (default `http://localhost:8081`),
-optional `LARGATA_CHROME`.
-
----
-
-## Retired: `drive-create-flow.js`, `drive-workspace.js`, `drive-publish.js`
-
-Deleted 2026-08-13 *(founder ruling, recorded in the epic map)*. All three had rotted against the
-surfaces they test — `drive-create-flow` still hunted the **"Create Itinerary"** control S4.15 renamed
-to *Plan a Trip* — and `smoke-all` had been ending in a `FAILED:` line on a healthy tree for four
-stories, which teaches whoever reads it that the line is noise.
-
-They were **retired rather than repaired** because the Playwright port would otherwise rewrite the
-same three files twice. **What they covered is written down first**, at
-`docs/design/web-walk-flow-inventory.md` — that inventory, not this code, is what the port works from.
-Read it before rebuilding: the surviving green was almost entirely rendering and read-only surfaces,
-while nearly every *act* (Finalize, Start Trip, Step back, Publish, Copy Link) had already gone dark,
-so rebuilding only what passed would ship less coverage than these walks had when they were healthy.
-
-The scripts remain in git history if the port wants to read them. CDP port **9228** is free again.
+**No new CDP script may be written.** That is the standing ban ADR-026 carries: the eleven drivers
+were never a decision, only inertia, and the port exists so the next author inherits a runner rather
+than a WebSocket.

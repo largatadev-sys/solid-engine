@@ -12,6 +12,8 @@
 
 ## 1 · `drive-create-flow.js` — Trips landing, lifecycle sections, draft preview
 
+**REBUILT AT H1 → `mobile/e2e/web/create-flow.spec.ts`** *(2026-08-18)*. The dark acts listed below — Finish Itinerary, Start trip, Step back — are covered again and asserted against the SERVER, not the screen. Two of this section's items were stale and were corrected rather than copied: the create CTA is **Plan a Trip** (renamed at S4.15) and **Add a Past Trip** was scrapped, so the spec asserts its absence.
+
 **Reaches today (12).**
 
 | Flow | What must be true |
@@ -45,6 +47,8 @@
 ---
 
 ## 2 · `drive-workspace.js` — the Draft Workspace, editing session, activity form, drag-reorder
+
+**REBUILT AT H1 → `mobile/e2e/web/workspace.spec.ts` and `mobile/e2e/web/drag-reorder.spec.ts`** *(2026-08-18)*. The drag half became its own spec because it is the one thing the CDP harness could never test: `Input.dispatchMouseEvent` synthesizes no PointerEvents, so a working drag read as dead. It now runs under real pointer AND real touch input. **One dark act came back red:** Finalize does not release the Editing Session — see the epic-map line; the spec carries a `test.fixme` that will go green when it is fixed.
 
 **The richest of the three, and the most worth porting carefully. Reaches today (37).**
 
@@ -101,6 +105,8 @@
 
 ## 3 · `drive-publish.js` — the preview, the publish act, the public projection
 
+**REBUILT AT H1 → `mobile/e2e/web/publish.spec.ts`** *(2026-08-18)*. All 12 dark items are covered, including Copy Link proving itself a live control and unpublish leaving the trip COMPLETE. **One finding:** unpublish has no reachable UI control — a published trip redirects away from the only screen carrying the button — so the spec drives that act through the API and the gap is an epic-map line.
+
 **Reaches today (24).**
 
 **Preview is WYSIWYG**
@@ -133,6 +139,8 @@
 ---
 
 ## 4 · `drive-discovery.js` — the Discover surface (S4.3, added 2026-08-14)
+
+**PORTED AT H1 → `mobile/e2e/api/discovery.spec.ts` (9 assertions) and `mobile/e2e/web/discovery.spec.ts` (21)** *(2026-08-18)*. This was the pilot: the only walk with a green measured baseline, ported first so a red spec could be attributed to the harness or the product with confidence. The API/screen split this section already recommended became the two projects.
 
 **Not a retiring walk.** This one is new, healthy, and **34/34 green** on the day it was written, against the local full stack. It is inventoried here for the opposite reason to the three above: so the Playwright port carries it forward rather than rediscovering what Discovery owes. Its coverage is the story's ACs, and the split between API-level and screen-level assertions is deliberate — the exclusion proofs are cheaper and sharper against `/v1` than against pixels.
 
