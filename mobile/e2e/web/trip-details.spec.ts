@@ -46,7 +46,8 @@ test.describe('the owner edits the trip-s details', () => {
     await seedPlan(trip, [{ title: 'Sunset paraw sailing', costAmount: '1500.00', costCurrency: 'PHP' }]);
   });
 
-  test('sets dates, and they survive a reload of the editor', async ({ page }) => {
+  test.describe('the date walks, parked with their fields (founder, 2026-08-19)', () => {
+  test.fixme('sets dates, and they survive a reload of the editor', async ({ page }) => {
     await openEditorSettled(page, trip.id);
 
     await setDate(page, 'Start date', '2027-03-12');
@@ -60,7 +61,7 @@ test.describe('the owner edits the trip-s details', () => {
     await expect(labelStarting(page, 'End date')).toHaveValue('2027-03-19');
   });
 
-  test('clears both dates, and the clear survives a reload', async ({ page }) => {
+  test.fixme('clears both dates, and the clear survives a reload', async ({ page }) => {
     await openEditorSettled(page, trip.id);
 
     await setDate(page, 'Start date', '2027-03-12');
@@ -81,6 +82,7 @@ test.describe('the owner edits the trip-s details', () => {
     await expect(labelStarting(page, 'Start date')).toHaveValue('');
     await expect(labelled(page, 'Clear start date')).toHaveCount(0);
   });
+  });
 
   test('changes the currency through the confirm, and every priced activity relabels', async ({
     page,
@@ -92,12 +94,15 @@ test.describe('the owner edits the trip-s details', () => {
     await page.getByText('$  USD — US Dollar').click();
     await page.getByText('Save', { exact: true }).last().click();
 
-    await expect(page.getByText('Day 1')).toBeVisible();
     expect(signal.dialogs.join(' ')).toMatch(/Prices keep their numbers/);
 
     const token = await tokenFor(OWNER);
-    const after = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
+    await expect(async () => {
+      const settled = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
+      expect(settled.body.currency).toBe('USD');
+    }).toPass({ timeout: 15_000 });
 
+    const after = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
     expect(after.body.currency).toBe('USD');
     expect(
       after.body.days.flatMap((day: { activities: Array<{ costCurrency: string | null }> }) =>

@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
   createRequestFrom,
+  DATE_FIELDS_ARE_LIVE,
   currencyChangeNeedsConfirming,
   pricedActivityCount,
   DURATION_CHOICES,
@@ -117,14 +118,17 @@ describe('what each mode owns alone', () => {
     expect(form).toMatch(/\[styles\.field, styles\.rowNarrow\]/);
   });
 
-  it('edits dates on edit alone — the pickers came back at S4.25, reversing S4.19 addendum 3', () => {
+  it('draws no date field in either mode while they are parked (founder, 2026-08-19)', () => {
+    expect(DATE_FIELDS_ARE_LIVE).toBe(false);
+    expect(tripFormFields('edit').showsDates).toBe(false);
+    expect(tripFormFields('create').showsDates).toBe(false);
+  });
+
+  it('keeps the date field built behind the flag, so unparking is one line', () => {
     const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
 
     expect(form).toMatch(/ClearableDateField/);
-    expect(form).toMatch(/Start date/);
-    expect(form).toMatch(/End date/);
-    expect(tripFormFields('edit').showsDates).toBe(true);
-    expect(tripFormFields('create').showsDates).toBe(false);
+    expect(form).toMatch(/fields\.showsDates/);
   });
 
   it('picks the currency on edit alone — create stays one short form (S4.25 artboard 4)', () => {
@@ -142,7 +146,7 @@ describe('what each mode owns alone', () => {
     expect(form).not.toMatch(/OptionPicker/);
   });
 
-  it('sends a set date and carries the currency (S4.25 ticket 02)', () => {
+  it('carries the currency, and OMITS the parked dates rather than nulling them', () => {
     const request = updateRequestFrom({
       ...blank,
       title: 'Kept',
@@ -152,29 +156,45 @@ describe('what each mode owns alone', () => {
       endDate: '2027-03-09',
     });
 
-    expect(request.startDate).toBe('2027-03-01');
-    expect(request.endDate).toBe('2027-03-09');
     expect(request.currency).toBe('VND');
+    expect(Object.keys(request)).not.toContain('startDate');
+    expect(Object.keys(request)).not.toContain('endDate');
   });
 
-  it('sends an EXPLICIT NULL for a cleared field, never an omission — absent means keep (S4.25 decision 4b)', () => {
+  it('CANNOT wipe a trip-s dates while the fields are hidden — absent means keep (S4.25 decision 4b)', () => {
+    const hydratedFromAServerRowWithDates = updateRequestFrom({
+      ...blank,
+      title: 'Someone edits the description only',
+      destination: 'Hanoi',
+      startDate: '2027-03-01',
+      endDate: '2027-03-09',
+    });
+
+    const hydratedFromARowWithout = updateRequestFrom({
+      ...blank,
+      title: 'Someone edits the description only',
+      destination: 'Hanoi',
+      startDate: '',
+      endDate: '',
+    });
+
+    expect(Object.keys(hydratedFromAServerRowWithDates)).not.toContain('startDate');
+    expect(Object.keys(hydratedFromARowWithout)).not.toContain('startDate');
+  });
+
+  it('still sends an EXPLICIT NULL for the clearable fields that ARE drawn', () => {
     const request = updateRequestFrom({
       ...blank,
       title: 'Postponed',
       destination: 'Hanoi',
-      startDate: '',
-      endDate: '',
       description: '',
       bestTimeOfYear: '',
     });
 
-    expect(request.startDate).toBeNull();
-    expect(request.endDate).toBeNull();
     expect(request.description).toBeNull();
     expect(request.bestTimeOfYear).toBeNull();
-
     expect(Object.keys(request)).toEqual(
-      expect.arrayContaining(['startDate', 'endDate', 'description', 'bestTimeOfYear']),
+      expect.arrayContaining(['description', 'bestTimeOfYear']),
     );
   });
 
@@ -228,12 +248,11 @@ describe('validation converges — one validator, two modes', () => {
     expect(validateTripForm('edit', { ...filled, duration: 'five' })).toBeUndefined();
   });
 
-  it('still guards dates it carries from the server, though no field can enter one (S4.19 addendum 3)', () => {
-    expect(validateTripForm('edit', { ...filled, startDate: 'next June' })).toMatch(/2027-01-10/);
-    expect(validateTripForm('edit', { ...filled, startDate: '2027-02-31' })).toMatch(/2027-01-10/);
+  it('refuses nothing over dates it merely carries, since no field can enter one while parked', () => {
+    expect(validateTripForm('edit', { ...filled, startDate: 'next June' })).toBeUndefined();
     expect(
       validateTripForm('edit', { ...filled, startDate: '2027-06-10', endDate: '2027-06-03' }),
-    ).toBe('A trip cannot end before it starts.');
+    ).toBeUndefined();
   });
 
   it('accepts the date shapes a server row can hold — open-ended, and same-day', () => {

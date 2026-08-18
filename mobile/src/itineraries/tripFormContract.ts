@@ -37,6 +37,9 @@ export const STANDOUTS_HINT = 'Shown on your published page.';
 export type TripFormChrome = { headline: string; submitLabel: string };
 
 
+export const DATE_FIELDS_ARE_LIVE = false;
+
+
 const FIELDS: Record<TripFormMode, TripFormFields> = {
   create: {
     showsCover: true,
@@ -49,7 +52,7 @@ const FIELDS: Record<TripFormMode, TripFormFields> = {
     showsCover: true,
     standoutsReorder: true,
     showsDuration: false,
-    showsDates: true,
+    showsDates: DATE_FIELDS_ARE_LIVE,
     showsCurrency: true,
   },
 };
@@ -127,8 +130,9 @@ export function updateRequestFrom(form: TripFormValues): UpdateItineraryRequest 
     description: blankToNull(form.description),
     standouts: cleanRows(form.standouts),
     bestTimeOfYear: blankToNull(form.bestTimeOfYear),
-    startDate: blankToNull(form.startDate),
-    endDate: blankToNull(form.endDate),
+    ...(DATE_FIELDS_ARE_LIVE
+      ? { startDate: blankToNull(form.startDate), endDate: blankToNull(form.endDate) }
+      : {}),
   };
 }
 
