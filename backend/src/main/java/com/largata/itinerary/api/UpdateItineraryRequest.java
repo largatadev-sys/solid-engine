@@ -43,10 +43,18 @@ public record UpdateItineraryRequest(
                 destination,
                 requirePresent(currency, current.currency(), "A currency cannot be cleared."),
                 Patchable.applyTo(description, current.description()),
-                Patchable.applyTo(standouts, current.standouts()),
+                standoutsOnto(current.standouts()),
                 bestTimeOfYearOnto(current.bestTimeOfYear()),
                 Patchable.applyTo(startDate, current.startDate()),
                 Patchable.applyTo(endDate, current.endDate()));
+    }
+
+
+    private List<String> standoutsOnto(List<String> current) {
+        if (Patchable.isAbsent(standouts)) {
+            return current;
+        }
+        return standouts.clears() ? List.of() : standouts.value();
     }
 
 
