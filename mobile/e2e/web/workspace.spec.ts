@@ -3,7 +3,7 @@ import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { seedTrip, seedPlan, stamp, type SeededTrip } from '../support/seed';
-import { labelled } from '../support/screen';
+import { labelled, dragStripBy } from '../support/screen';
 import { stateBadge } from '../../src/itineraries/workspaceControls';
 
 const OWNER = ownerTagFor('web/workspace');
@@ -216,6 +216,21 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     await expect(price).toBeVisible();
     const sign = await price.evaluate((node) => (node.closest('div')?.textContent ?? '').trim());
     expect(sign.length, 'the amount must carry a currency sign beside it').toBeGreaterThan(0);
+  });
+
+  test('a real mouse drag scrolls the six-tab row, which overflows the phone frame', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(OWNER);
+    await page.goto(`/itineraries/${trip.id}`);
+    await expect(labelled(page, 'Day-by-Day')).toBeVisible();
+
+    const dragged = await dragStripBy(page, 'Day-by-Day', 200);
+    expect(dragged, 'the tab row must overflow, or a drag has nowhere to go').not.toBeNull();
+    expect(dragged!.after, 'a real mouse drag must scroll the tab row').toBeGreaterThan(
+      dragged!.before,
+    );
   });
 
   test('a real mouse click reaches the tab under it, both ways', async ({ page, signIn }) => {

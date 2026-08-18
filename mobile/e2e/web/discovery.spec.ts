@@ -3,7 +3,7 @@ import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { SeedFailure, seedCover, stamp } from '../support/seed';
-import { labelled, labelStarting, probeStrip } from '../support/screen';
+import { labelled, labelStarting, dragStripBy } from '../support/screen';
 import {
   RECOMMENDED_SECTION_TITLE,
   SEARCH_PLACEHOLDER,
@@ -86,14 +86,10 @@ test('a mouse drag scrolls the trending rail, and leaves it free rather than pag
 
   await expect(labelStarting(page, 'Browse itineraries in ')).toBeVisible();
 
-  await expect
-    .poll(async () => (await probeStrip(page, 'Browse itineraries in'))?.snapType ?? null, {
-      message: 'the trending rail must be a horizontally scrollable strip',
-    })
-    .toBe('none');
-
-  const scrolled = await probeStrip(page, 'Browse itineraries in');
-  expect(scrolled!.after).toBeGreaterThan(scrolled!.before);
+  const dragged = await dragStripBy(page, 'Browse itineraries in', 260);
+  expect(dragged, 'the trending rail must be a horizontally scrollable strip').not.toBeNull();
+  expect(dragged!.after, 'a real mouse drag must scroll the rail').toBeGreaterThan(dragged!.before);
+  expect(dragged!.snapType, 'a free strip must not be left paging').toBe('none');
 });
 
 test('See all lands on the browse results with a count line', async ({ page }) => {
