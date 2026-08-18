@@ -920,12 +920,12 @@ test.describe('the new-posts pill, waited out over one real poll cycle', () => {
     await expect.poll(async () => feedScrollTop(page), { timeout: 15_000 }).toBe(0);
 
     const shown = await page.evaluate(() => document.body.innerText);
-    expect(shown.indexOf(newest)).toBeGreaterThan(-1);
+    expect(shown.indexOf(newest), 'the new postcard must be on screen after the pill').toBeGreaterThan(-1);
+    expect(await feedCards(page).count(), 'the feed must render cards to sort').toBeGreaterThan(0);
 
     const older = [siblingCaption, shortCaption, longCaption]
       .map((caption) => shown.indexOf(caption))
       .filter((at) => at > -1);
-    expect(older.length).toBeGreaterThan(0);
     for (const at of older) expect(shown.indexOf(newest)).toBeLessThan(at);
   });
 });
