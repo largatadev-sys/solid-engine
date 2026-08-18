@@ -10,6 +10,7 @@ import {
 interface WorkspaceSettingsMenuProps {
   readonly visible: boolean;
   readonly items: readonly WorkspaceMenuItem[];
+  readonly anchorY: number;
   readonly onSelect: (item: WorkspaceMenuItem) => void;
   readonly onDismiss: () => void;
 }
@@ -17,6 +18,7 @@ interface WorkspaceSettingsMenuProps {
 export function WorkspaceSettingsMenu({
   visible,
   items,
+  anchorY,
   onSelect,
   onDismiss,
 }: WorkspaceSettingsMenuProps) {
@@ -36,7 +38,7 @@ export function WorkspaceSettingsMenu({
             accessibilityLabel="Close trip settings"
           />
 
-          <View style={styles.menu}>
+          <View style={[styles.menu, { top: anchorY + MENU_GAP }]}>
             {items.map((item, index) => (
               <View key={item}>
                 {index > 0 ? <View style={styles.divider} /> : null}
@@ -58,7 +60,7 @@ export function WorkspaceSettingsMenu({
 }
 
 const MENU_WIDTH = 200;
-const MENU_TOP = 206;
+const MENU_GAP = 28;
 
 const styles = StyleSheet.create({
   screen: {
@@ -80,7 +82,6 @@ const styles = StyleSheet.create({
   },
   menu: {
     position: 'absolute',
-    top: MENU_TOP,
     right: spacing.md,
     width: MENU_WIDTH,
     borderRadius: radii.lg,

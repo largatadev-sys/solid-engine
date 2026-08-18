@@ -1051,6 +1051,18 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).not.toMatch(/WorkspaceDetailsTab/);
   });
 
+  it('anchors the cog menu to the MEASURED cog, never to a hardcoded offset (founder, 2026-08-18)', () => {
+    const menu = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceSettingsMenu.tsx');
+    const header = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceHeader.tsx');
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(menu).toMatch(/top: anchorY \+ MENU_GAP/);
+    expect(menu).not.toMatch(/MENU_TOP/);
+    expect(header).toMatch(/onSettingsLayout\?\.\(/);
+    expect(header).toMatch(/insets\.top \+ HEADER_TOP_PADDING/);
+    expect(workspace).toMatch(/onSettingsLayout=\{setCogY\}/);
+  });
+
   it('shows the facts line under the title through the header-s provenance slot (S4.25 artboard 1)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 

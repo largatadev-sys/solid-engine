@@ -18,6 +18,7 @@ interface WorkspaceHeaderProps {
   readonly actionHint?: string | null;
   readonly onEditTitle?: () => void;
   readonly onSettings?: () => void;
+  readonly onSettingsLayout?: (screenY: number) => void;
 }
 
 
@@ -33,6 +34,7 @@ export function WorkspaceHeader({
   actionHint,
   onEditTitle,
   onSettings,
+  onSettingsLayout,
 }: WorkspaceHeaderProps) {
   const insets = useSafeAreaInsets();
 
@@ -66,6 +68,7 @@ export function WorkspaceHeader({
           <Pressable
             style={styles.settings}
             onPress={onSettings}
+            onLayout={(event) => onSettingsLayout?.(event.nativeEvent.layout.y + insets.top + HEADER_TOP_PADDING)}
             accessibilityRole="button"
             accessibilityLabel={TRIP_SETTINGS_LABEL}
             hitSlop={SETTINGS_HIT_SLOP}

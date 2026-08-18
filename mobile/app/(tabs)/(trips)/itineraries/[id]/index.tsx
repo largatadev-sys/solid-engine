@@ -73,6 +73,7 @@ export default function TripWorkspaceScreen() {
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [cogY, setCogY] = useState(0);
   const unpublish = useUnpublishTrip(id);
 
   if (isPending) {
@@ -155,11 +156,13 @@ export default function TripWorkspaceScreen() {
           actionHint={editAction.kind === 'blocked' ? `being edited by ${editAction.holder}` : null}
           provenance={workspaceFactsLine(data)}
           onSettings={showsSettingsCog(data, isOwner) ? () => setSettingsOpen(true) : undefined}
+          onSettingsLayout={setCogY}
         />
 
         <WorkspaceSettingsMenu
           visible={settingsOpen}
           items={workspaceMenuItems(data, isOwner)}
+          anchorY={cogY}
           onDismiss={() => setSettingsOpen(false)}
           onSelect={chooseSetting}
         />
