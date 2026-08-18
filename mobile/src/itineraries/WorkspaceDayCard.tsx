@@ -19,7 +19,7 @@ import {
 import type { ActivityResponse, DayResponse } from '../types/api';
 import { dayHeading } from './dayHeading';
 import { dayPrefix } from './dayTitle';
-import { formatTimeOfDay } from './formatActivityCost';
+import { activityMetaLine } from './formatActivityCost';
 import { webStyle } from './webStyle';
 import type { WorkspaceAffordances } from './workspaceControls';
 
@@ -220,7 +220,12 @@ export function ActivityRow({
   accessibilityActions,
   onAccessibilityAction,
 }: ActivityRowProps) {
-  const time = formatTimeOfDay(activity.timeOfDay);
+  const meta = activityMetaLine(
+    activity.timeOfDay,
+    activity.costAmount,
+    activity.costCurrency,
+    activity.place,
+  );
 
   return (
     <View
@@ -246,7 +251,7 @@ export function ActivityRow({
 
       <View style={styles.activityText}>
         <Text style={styles.activityName}>{activity.title}</Text>
-        {time !== undefined ? <Text style={styles.activityTime}>{time}</Text> : null}
+        {meta !== '' ? <Text style={styles.activityTime}>{meta}</Text> : null}
       </View>
 
       {affordances.showsActivityEditing ? (

@@ -73,9 +73,9 @@ describe('formatTimeOfDay — the mock reads 12-hour with AM/PM, the server stor
   });
 });
 
-describe('activityMetaLine — joining time and cost', () => {
-  it('joins a 12-hour time and a cost with a dot', () => {
-    expect(activityMetaLine('14:00', '500', 'PHP')).toBe('02:00 PM · ₱500');
+describe('activityMetaLine — joining time, place and cost', () => {
+  it('joins a 12-hour time and a cost with a bullet', () => {
+    expect(activityMetaLine('14:00', '500', 'PHP')).toBe('02:00 PM • ₱500');
   });
 
   it('shows only the time when the cost is unstated', () => {
@@ -88,5 +88,33 @@ describe('activityMetaLine — joining time and cost', () => {
 
   it('is empty when neither is present', () => {
     expect(activityMetaLine(null, null, null)).toBe('');
+  });
+
+  it('reads when • where • how much, in that order (founder, 2026-08-18)', () => {
+    expect(activityMetaLine('17:30', '1500', 'PHP', 'Lio Beach')).toBe(
+      '05:30 PM • Lio Beach • ₱1,500',
+    );
+  });
+
+  it('carries the place between a time and a missing cost', () => {
+    expect(activityMetaLine('09:00', null, null, 'Big Lagoon')).toBe('09:00 AM • Big Lagoon');
+  });
+
+  it('carries the place alone when it is all the activity states', () => {
+    expect(activityMetaLine(null, null, null, 'Puka Beach')).toBe('Puka Beach');
+  });
+
+  it('treats a blank or absent place as no place, never as an empty segment', () => {
+    expect(activityMetaLine('09:00', null, null, '   ')).toBe('09:00 AM');
+    expect(activityMetaLine('09:00', null, null, null)).toBe('09:00 AM');
+    expect(activityMetaLine('09:00', null, null)).toBe('09:00 AM');
+  });
+
+  it('separates every segment with U+2022 BULLET (founder, 2026-08-18)', () => {
+    const line = activityMetaLine('17:30', '1500', 'PHP', 'Lio Beach');
+
+    expect(line).toContain('•');
+    expect(line).not.toContain('·');
+    expect(line.split(' • ')).toHaveLength(3);
   });
 });

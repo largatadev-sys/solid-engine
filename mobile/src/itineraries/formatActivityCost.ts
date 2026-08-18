@@ -25,13 +25,20 @@ function grouped(value: number): string {
 }
 
 
-export function activityMetaLine(timeOfDay: string | null, amount: string | null, currency: string | null): string {
+export function activityMetaLine(
+  timeOfDay: string | null,
+  amount: string | null,
+  currency: string | null,
+  place?: string | null,
+): string {
   const parts: string[] = [];
   const clock = formatTimeOfDay(timeOfDay);
   if (clock !== undefined) parts.push(clock);
+  const where = (place ?? '').trim();
+  if (where !== '') parts.push(where);
   const cost = formatActivityCost(amount, currency);
   if (cost !== undefined) parts.push(cost);
-  return parts.join(' · ');
+  return parts.join(' • ');
 }
 
 
