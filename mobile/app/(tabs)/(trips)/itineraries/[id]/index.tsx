@@ -20,7 +20,6 @@ import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCar
 import { WorkspaceHeader } from '../../../../../src/itineraries/WorkspaceHeader';
 import { WorkspaceSettingsMenu } from '../../../../../src/itineraries/WorkspaceSettingsMenu';
 import { showsSettingsCog, workspaceMenuItems, type WorkspaceMenuItem } from '../../../../../src/itineraries/tripSettingsItems';
-import { workspaceFactsLine } from '../../../../../src/itineraries/workspaceFactsLine';
 import {
   WorkspaceTabRow,
   workspaceTabFrom,
@@ -154,7 +153,6 @@ export default function TripWorkspaceScreen() {
           onAction={editAction.kind === 'blocked' ? () => undefined : openEditor}
           actionDisabled={editAction.kind === 'blocked' || lifecycle.isPending}
           actionHint={editAction.kind === 'blocked' ? `being edited by ${editAction.holder}` : null}
-          provenance={workspaceFactsLine(data)}
           onSettings={showsSettingsCog(data, isOwner) ? () => setSettingsOpen(true) : undefined}
           onSettingsLayout={setCogY}
         />

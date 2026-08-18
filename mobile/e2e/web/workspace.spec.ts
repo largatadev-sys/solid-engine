@@ -96,10 +96,14 @@ test.describe('the draft workspace as a viewer', () => {
     await expect(page.getByText(/largata|pool_/i).first()).toBeVisible();
   });
 
-  test('the facts line answers where and when from the header (S4.25 artboard 1)', async ({ page }) => {
+  test('the header carries neither a facts line nor a cog — both parked (founder, 2026-08-18)', async ({
+    page,
+  }) => {
     await page.goto(`/itineraries/${trip.id}`);
+    await expect(page.getByText('Day 1')).toBeVisible();
 
-    await expect(page.getByText('Palawan · Dates to be decided')).toBeVisible();
+    await expect(page.getByText(/Palawan ·/)).toHaveCount(0);
+    await expect(labelled(page, 'Trip settings')).toHaveCount(0);
   });
 
   test('a stale ?tab=details link degrades to Day-by-Day rather than blanking', async ({ page }) => {
@@ -109,14 +113,11 @@ test.describe('the draft workspace as a viewer', () => {
     await expect(page.getByText('Kayak the lagoon')).toBeVisible();
   });
 
-  test('the owner reaches the details editor through the cog (S4.25 artboard 1b)', async ({ page }) => {
-    await page.goto(`/itineraries/${trip.id}`);
-
-    await labelled(page, 'Trip settings').click();
-    await labelled(page, 'Edit details').click();
+  test('the details editor still opens by its own route while the cog is parked', async ({ page }) => {
+    await page.goto(`/itineraries/${trip.id}/edit`);
 
     await expect(page.getByText('Edit Trip')).toBeVisible();
-    await expect(labelled(page, 'Currency')).toBeVisible();
+    await expect(page.locator('[aria-label^="Currency:"]')).toHaveCount(1);
   });
 
   test('every /v1 call from the workspace carries a bearer token', async ({ page, signal }) => {

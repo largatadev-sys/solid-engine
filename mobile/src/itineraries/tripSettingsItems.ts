@@ -29,6 +29,9 @@ export function workspaceMenuItems(itinerary: MenuSubject, isOwner: boolean): Wo
 }
 
 
+export const COG_IS_LIVE = false;
+
+
 export function showsSettingsCog(itinerary: MenuSubject, isOwner: boolean): boolean {
-  return workspaceMenuItems(itinerary, isOwner).length > 0;
+  return COG_IS_LIVE && workspaceMenuItems(itinerary, isOwner).length > 0;
 }

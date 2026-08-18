@@ -1,4 +1,5 @@
 import {
+  COG_IS_LIVE,
   showsSettingsCog,
   workspaceMenuItems,
 } from '../src/itineraries/tripSettingsItems';
@@ -44,18 +45,20 @@ describe('the cog menu — role × editable × published (S4.25 artboard 1b)', (
 });
 
 
-describe('the cog itself', () => {
-  it('renders whenever the menu has an item', () => {
-    expect(showsSettingsCog(draft, OWNER)).toBe(true);
-    expect(showsSettingsCog(published, OWNER)).toBe(true);
-    expect(showsSettingsCog(published, COLLABORATOR)).toBe(true);
-  });
+describe('the cog itself — PARKED (founder, 2026-08-18: the pencil will do for now)', () => {
+  it('renders nowhere at all while COG_IS_LIVE is false', () => {
+    expect(COG_IS_LIVE).toBe(false);
 
-  it('is absent for a collaborator on an unpublished trip — an empty menu draws no affordance', () => {
+    expect(showsSettingsCog(draft, OWNER)).toBe(false);
+    expect(showsSettingsCog(published, OWNER)).toBe(false);
+    expect(showsSettingsCog(published, COLLABORATOR)).toBe(false);
     expect(showsSettingsCog(draft, COLLABORATOR)).toBe(false);
+    expect(showsSettingsCog(archived, OWNER)).toBe(false);
   });
 
-  it('is absent when an archived trip leaves the owner nothing to do', () => {
-    expect(showsSettingsCog(archived, OWNER)).toBe(false);
+  it('keeps the visibility rule intact behind the flag, so unparking is one line', () => {
+    expect(workspaceMenuItems(draft, OWNER)).toEqual(['edit-details']);
+    expect(workspaceMenuItems(draft, COLLABORATOR)).toEqual([]);
+    expect(workspaceMenuItems(archived, OWNER)).toEqual([]);
   });
 });

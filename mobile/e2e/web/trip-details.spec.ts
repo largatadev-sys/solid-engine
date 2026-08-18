@@ -3,7 +3,7 @@ import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { seedTrip, seedPlan, joinTrip, stamp, type SeededTrip } from '../support/seed';
-import { labelled } from '../support/screen';
+import { labelled, labelStarting } from '../support/screen';
 
 const OWNER = ownerTagFor('web/trip-details');
 const MEMBER = IDENTITY_MAP['web/trip-details'].tags[1]!;
@@ -28,49 +28,48 @@ test.describe('the owner edits the trip-s details', () => {
     await signIn(OWNER);
   });
 
-  test('sets dates, and the facts line says so across a reload', async ({ page }) => {
-    await page.goto(`/itineraries/${trip.id}`);
-    await labelled(page, 'Trip settings').click();
-    await labelled(page, 'Edit details').click();
+  test('sets dates, and they survive a reload of the editor', async ({ page }) => {
+    await page.goto(`/itineraries/${trip.id}/edit`);
+    await expect(page.getByText('Edit Trip')).toBeVisible();
 
-    await labelled(page, 'Start date').fill('2027-03-12');
-    await labelled(page, 'End date').fill('2027-03-19');
+    await labelStarting(page, 'Start date').fill('2027-03-12');
+    await labelStarting(page, 'End date').fill('2027-03-19');
     await page.getByText('Save', { exact: true }).last().click();
 
-    await expect(page.getByText('Boracay · 12–19 Mar 2027')).toBeVisible();
-
-    await page.reload();
-    await expect(page.getByText('Boracay · 12–19 Mar 2027')).toBeVisible();
+    await page.goto(`/itineraries/${trip.id}/edit`);
+    await expect(labelStarting(page, 'Start date')).toHaveValue('2027-03-12');
+    await expect(labelStarting(page, 'End date')).toHaveValue('2027-03-19');
   });
 
-  test('clears both dates, and "Dates to be decided" survives a reload', async ({ page }) => {
-    await page.goto(`/itineraries/${trip.id}`);
-    await labelled(page, 'Trip settings').click();
-    await labelled(page, 'Edit details').click();
+  test('clears both dates, and the clear survives a reload', async ({ page }) => {
+    await page.goto(`/itineraries/${trip.id}/edit`);
+    await expect(page.getByText('Edit Trip')).toBeVisible();
+
+    await labelStarting(page, 'Start date').fill('2027-03-12');
+    await labelStarting(page, 'End date').fill('2027-03-19');
+    await expect(labelled(page, 'Clear start date')).toBeVisible();
 
     await labelled(page, 'Clear start date').click();
     await labelled(page, 'Clear end date').click();
     await page.getByText('Save', { exact: true }).last().click();
 
-    await expect(page.getByText('Boracay · Dates to be decided')).toBeVisible();
-
-    await page.reload();
-    await expect(page.getByText('Boracay · Dates to be decided')).toBeVisible();
+    await page.goto(`/itineraries/${trip.id}/edit`);
+    await expect(labelStarting(page, 'Start date')).toHaveValue('');
+    await expect(labelStarting(page, 'End date')).toHaveValue('');
   });
 
   test('changes the currency through the confirm, and every priced activity relabels', async ({
     page,
     signal,
   }) => {
-    await page.goto(`/itineraries/${trip.id}`);
-    await labelled(page, 'Trip settings').click();
-    await labelled(page, 'Edit details').click();
+    await page.goto(`/itineraries/${trip.id}/edit`);
+    await expect(page.getByText('Edit Trip')).toBeVisible();
 
-    await labelled(page, 'Currency').click();
+    await page.locator('[aria-label^="Currency:"]').last().click();
     await page.getByText('$  USD — US Dollar').click();
     await page.getByText('Save', { exact: true }).last().click();
 
-    await expect(page.getByText('Boracay · Dates to be decided')).toBeVisible();
+    await expect(page.getByText('Day 1')).toBeVisible();
     expect(signal.dialogs.join(' ')).toMatch(/Prices keep their numbers/);
 
     const token = await tokenFor(OWNER);
@@ -103,10 +102,10 @@ test.describe('a collaborator plans but does not rename', () => {
     await signIn(MEMBER);
   });
 
-  test('reads the facts line like everybody else', async ({ page }) => {
+  test('opens the workspace and reads the plan like everybody else', async ({ page }) => {
     await page.goto(`/itineraries/${trip.id}`);
 
-    await expect(page.getByText('Boracay · Dates to be decided')).toBeVisible();
+    await expect(page.getByText('Day 1')).toBeVisible();
   });
 
   test('is offered no cog at all on an unpublished trip (S4.25 artboard 1b)', async ({ page }) => {

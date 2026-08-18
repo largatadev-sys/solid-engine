@@ -1063,11 +1063,11 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).toMatch(/onSettingsLayout=\{setCogY\}/);
   });
 
-  it('shows the facts line under the title through the header-s provenance slot (S4.25 artboard 1)', () => {
+  it('draws neither the facts line nor the cog — both parked (founder, 2026-08-18)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(workspace).toContain('provenance={workspaceFactsLine(data)}');
-    expect(workspace).toContain('showsSettingsCog(data, isOwner)');
+    expect(workspace).not.toMatch(/provenance=/);
+    expect(workspace).not.toMatch(/workspaceFactsLine/);
   });
 });
 

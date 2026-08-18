@@ -15,7 +15,6 @@ import { CoverPicker } from '../media/CoverPicker';
 import { colors, controls, radii, spacing, typography } from '../theme';
 import { addRow, moveRow, removeRow, setRow } from './rowEditor';
 import { ClearableDateField } from './ClearableDateField';
-import { OptionPicker } from '../components/OptionPicker';
 import { currencyPickerLabel, SUPPORTED_CURRENCIES } from './currencies';
 import {
   DURATION_CHOICES,
@@ -134,15 +133,7 @@ export function TripForm({
         ) : null}
 
         {fields.showsCurrency ? (
-          <OptionPicker
-            label="Currency"
-            value={values.currency}
-            options={SUPPORTED_CURRENCIES.map((currency) => ({
-              value: currency.code,
-              label: currencyPickerLabel(currency.code),
-            }))}
-            onSelect={(next) => set('currency', next)}
-          />
+          <CurrencyField value={values.currency} onSelect={(next) => set('currency', next)} />
         ) : null}
 
         <Field
@@ -233,6 +224,59 @@ export function TripForm({
           )}
         </Pressable>
       </View>
+    </View>
+  );
+}
+
+
+function CurrencyField({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>Currency</Text>
+
+      <Pressable
+        style={styles.dropdown}
+        onPress={() => setOpen(!open)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`Currency: ${currencyPickerLabel(value)}`}
+      >
+        <Text style={styles.dropdownValue} numberOfLines={1}>
+          {currencyPickerLabel(value)}
+        </Text>
+        <Icon name="chevronDown" size={16} color={colors.textSecondary} />
+      </Pressable>
+
+      {open ? (
+        <View style={styles.inlineMenu}>
+          <ScrollView nestedScrollEnabled style={styles.inlineMenuScroll}>
+            {SUPPORTED_CURRENCIES.map((currency) => (
+              <Pressable
+                key={currency.code}
+                style={styles.optionRow}
+                accessibilityRole="button"
+                accessibilityLabel={currencyPickerLabel(currency.code)}
+                onPress={() => {
+                  onSelect(currency.code);
+                  setOpen(false);
+                }}
+              >
+                <Text style={[styles.optionText, currency.code === value && styles.optionSelected]}>
+                  {currencyPickerLabel(currency.code)}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -332,6 +376,7 @@ const DURATION_WIDTH = 120;
 const CONTROL_HEIGHT = controls.tripFormControlHeight;
 
 const SHEET_MAX_HEIGHT = 420;
+const INLINE_MENU_MAX_HEIGHT = 240;
 
 const SHEET_MAX_WIDTH = 320;
 
@@ -387,6 +432,14 @@ const styles = StyleSheet.create({
     borderColor: colors.inputBorder,
     backgroundColor: colors.surface,
   },
+  inlineMenu: {
+    ...inputSurface,
+    marginTop: spacing.xs,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    overflow: 'hidden',
+  },
+  inlineMenuScroll: { maxHeight: INLINE_MENU_MAX_HEIGHT },
   optionRow: { paddingVertical: spacing.sm3, paddingHorizontal: spacing.md },
   optionText: { ...typography.input, color: colors.textPrimary },
   optionSelected: { color: colors.accent },

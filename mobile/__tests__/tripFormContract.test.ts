@@ -132,6 +132,16 @@ describe('what each mode owns alone', () => {
     expect(tripFormFields('create').showsCurrency).toBe(false);
   });
 
+  it('drops the currency list open UNDER the field, never in a centred modal (founder, 2026-08-18)', () => {
+    const form = readFileSync(join(__dirname, '..', 'src', 'itineraries', 'TripForm.tsx'), 'utf8');
+    const currencyField = form.slice(form.indexOf('function CurrencyField'), form.indexOf('function DurationField'));
+
+    expect(currencyField).toMatch(/styles\.inlineMenu/);
+    expect(currencyField).not.toMatch(/<Modal/);
+    expect(currencyField).not.toMatch(/styles\.backdrop|styles\.sheet/);
+    expect(form).not.toMatch(/OptionPicker/);
+  });
+
   it('sends a set date and carries the currency (S4.25 ticket 02)', () => {
     const request = updateRequestFrom({
       ...blank,
