@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
+import { COG_IS_LIVE } from '../src/itineraries/tripSettingsItems';
 import { DISCOVER_TAB_LABEL } from '../src/discovery/discoveryCopy';
 import { tripRowDestination } from '../src/itineraries/TripRow';
 import { tripFormChrome, tripFormFields } from '../src/itineraries/tripFormContract';
@@ -1067,7 +1068,8 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
     expect(workspace).not.toMatch(/provenance=/);
-    expect(workspace).not.toMatch(/workspaceFactsLine/);
+    expect(workspace).toMatch(/onSettings=\{showsSettingsCog\(data, isOwner\) \?/);
+    expect(COG_IS_LIVE).toBe(false);
   });
 });
 

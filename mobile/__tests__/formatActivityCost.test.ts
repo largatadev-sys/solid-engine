@@ -73,48 +73,36 @@ describe('formatTimeOfDay — the mock reads 12-hour with AM/PM, the server stor
   });
 });
 
-describe('activityMetaLine — joining time, place and cost', () => {
-  it('joins a 12-hour time and a cost with a bullet', () => {
-    expect(activityMetaLine('14:00', '500', 'PHP')).toBe('02:00 PM • ₱500');
+describe('activityMetaLine — when • where, and no money (founder, 2026-08-18)', () => {
+  it('reads time then place, bulleted', () => {
+    expect(activityMetaLine('17:30', 'Lio Beach')).toBe('05:30 PM • Lio Beach');
   });
 
-  it('shows only the time when the cost is unstated', () => {
-    expect(activityMetaLine('14:00', null, null)).toBe('02:00 PM');
+  it('shows the time alone when the activity names no place', () => {
+    expect(activityMetaLine('14:00', null)).toBe('02:00 PM');
   });
 
-  it('shows only the cost when there is no time', () => {
-    expect(activityMetaLine(null, '0', 'PHP')).toBe('Free');
+  it('shows the place alone when the activity names no time', () => {
+    expect(activityMetaLine(null, 'Puka Beach')).toBe('Puka Beach');
   });
 
-  it('is empty when neither is present', () => {
-    expect(activityMetaLine(null, null, null)).toBe('');
+  it('is empty when it knows neither', () => {
+    expect(activityMetaLine(null, null)).toBe('');
   });
 
-  it('reads when • where • how much, in that order (founder, 2026-08-18)', () => {
-    expect(activityMetaLine('17:30', '1500', 'PHP', 'Lio Beach')).toBe(
-      '05:30 PM • Lio Beach • ₱1,500',
-    );
+  it('treats a blank place as no place, never as an empty segment', () => {
+    expect(activityMetaLine('09:00', '   ')).toBe('09:00 AM');
   });
 
-  it('carries the place between a time and a missing cost', () => {
-    expect(activityMetaLine('09:00', null, null, 'Big Lagoon')).toBe('09:00 AM • Big Lagoon');
+  it('carries no cost, whatever the activity is priced at', () => {
+    expect(activityMetaLine('17:30', 'Lio Beach')).not.toMatch(/₱|\$|1,500/);
   });
 
-  it('carries the place alone when it is all the activity states', () => {
-    expect(activityMetaLine(null, null, null, 'Puka Beach')).toBe('Puka Beach');
-  });
-
-  it('treats a blank or absent place as no place, never as an empty segment', () => {
-    expect(activityMetaLine('09:00', null, null, '   ')).toBe('09:00 AM');
-    expect(activityMetaLine('09:00', null, null, null)).toBe('09:00 AM');
-    expect(activityMetaLine('09:00', null, null)).toBe('09:00 AM');
-  });
-
-  it('separates every segment with U+2022 BULLET (founder, 2026-08-18)', () => {
-    const line = activityMetaLine('17:30', '1500', 'PHP', 'Lio Beach');
+  it('separates with U+2022 BULLET, not the U+00B7 the rest of the app joins with', () => {
+    const line = activityMetaLine('17:30', 'Lio Beach');
 
     expect(line).toContain('•');
     expect(line).not.toContain('·');
-    expect(line.split(' • ')).toHaveLength(3);
+    expect(line.split(' • ')).toHaveLength(2);
   });
 });

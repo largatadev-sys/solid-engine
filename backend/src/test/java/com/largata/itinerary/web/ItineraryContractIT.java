@@ -189,7 +189,7 @@ class ItineraryContractIT extends PostgresTestBase {
     }
 
     @Test
-    void theLegacyDestinationsListIsRefusedRatherThanSilentlyAccepted() {
+    void aRequestCarryingOnlyTheLegacyListIsRefused_becauseTheScalarIsMissing() {
         expectBadRequest("""
                 {"title":"Nowhere","destinations":["Sapporo","Otaru"]}
                 """);

@@ -220,7 +220,7 @@ export function ActivityRow({
   accessibilityActions,
   onAccessibilityAction,
 }: ActivityRowProps) {
-  const meta = activityMetaLine(activity.timeOfDay, null, null, activity.place);
+  const meta = activityMetaLine(activity.timeOfDay, activity.place);
 
   return (
     <View

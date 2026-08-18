@@ -34,3 +34,7 @@ notice them:
    inherited from the retired `formatDates` helper rather than invented, so the vocabulary matches
    what the Details tab used to show. Recorded here rather than passed off as a choice the frames
    made, per the fidelity rule's "say so" clause.
+
+3. **Three of the four artboards are now PARKED, not shipped** *(founder, 2026-08-19, on a live feedback pass after the story landed)*. Artboard **1**'s facts line and cog, artboard **1b**'s whole overflow menu, and artboard **2**'s date fields are built and correct but switched off behind `COG_IS_LIVE` and `DATE_FIELDS_ARE_LIVE`. Artboard **3** (the currency confirm) and artboard **2**'s currency picker ship — though the picker is an **inline dropdown** rather than the modal sheet the frame's annotation implies, on the same ruling. Artboard **4** (create mode) ships as drawn.
+
+   Recorded here rather than left to a reader comparing frame to build: the frames are not wrong and the code is not missing — the surfaces are turned off. Each is one boolean from returning. ADR-028 carries the same amendment in canon.
