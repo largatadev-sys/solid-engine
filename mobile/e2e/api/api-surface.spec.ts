@@ -1,14 +1,14 @@
 import { test, expect } from '../support/fixtures';
 import { api, address, request, tokenFor, API } from '../support/pool';
 import { requireStack } from '../support/gate';
-import { ownerTagFor, IDENTITY_MAP, SPARE_TAG } from '../support/identities';
+import { ownerTagFor, IDENTITY_MAP, STRANGER_TAG } from '../support/identities';
 import { SeedFailure } from '../support/seed';
 
 const UNVERIFIED = 'u1';
 
 const OWNER = ownerTagFor('api/api-surface');
 const MEMBER = IDENTITY_MAP['api/api-surface'].tags[1]!;
-const STRANGER = SPARE_TAG;
+const STRANGER = STRANGER_TAG;
 
 requireStack(OWNER);
 

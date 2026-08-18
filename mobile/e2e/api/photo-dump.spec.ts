@@ -1,13 +1,13 @@
 import { test, expect } from '../support/fixtures';
 import { api, address, tokenFor, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
-import { ownerTagFor, IDENTITY_MAP, SPARE_TAG } from '../support/identities';
+import { ownerTagFor, IDENTITY_MAP, STRANGER_TAG } from '../support/identities';
 import { SeedFailure, stamp } from '../support/seed';
 import { fetchBytes, jpegWithExif, solidJpeg, uploadBytes, wideJpeg } from '../support/bytes';
 
 const OWNER = ownerTagFor('api/photo-dump');
 const MEMBER = IDENTITY_MAP['api/photo-dump'].tags[1]!;
-const STRANGER = SPARE_TAG;
+const STRANGER = STRANGER_TAG;
 
 requireStack(OWNER);
 

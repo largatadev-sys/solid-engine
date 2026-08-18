@@ -1,13 +1,13 @@
 import { test, expect } from '../support/fixtures';
 import { api, address, tokenFor, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
-import { ownerTagFor, IDENTITY_MAP, SPARE_TAG } from '../support/identities';
+import { ownerTagFor, IDENTITY_MAP, STRANGER_TAG } from '../support/identities';
 import { SeedFailure, stamp } from '../support/seed';
 import { fetchBytes, postDiaryEntry, solidJpeg, uploadBytes } from '../support/bytes';
 
 const AUTHOR = ownerTagFor('api/diary');
 const CO_TRAVELER = IDENTITY_MAP['api/diary'].tags[1]!;
-const STRANGER = SPARE_TAG;
+const STRANGER = STRANGER_TAG;
 
 requireStack(AUTHOR);
 

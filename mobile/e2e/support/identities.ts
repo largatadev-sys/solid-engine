@@ -1,36 +1,38 @@
 export type PoolTag =
   | 't1' | 't2' | 't3' | 't4' | 't5' | 't6' | 't7' | 't8' | 't9' | 't10';
 
+export type SharingPosture = 'shared' | 'wants-exclusive';
+
 export interface SpecIdentities {
   readonly tags: readonly PoolTag[];
-  readonly exclusive: boolean;
+  readonly sharesWith: SharingPosture;
 }
 
 export const IDENTITY_MAP = {
-  'api/discovery': { tags: ['t1', 't2'], exclusive: false },
-  'api/lifecycle': { tags: ['t1', 't2'], exclusive: false },
-  'api/create-flow': { tags: ['t1'], exclusive: false },
-  'api/publish': { tags: ['t1', 't2', 't3'], exclusive: false },
-  'api/media': { tags: ['t1', 't2'], exclusive: false },
-  'api/diary': { tags: ['t1', 't2', 't3'], exclusive: false },
-  'api/photo-dump': { tags: ['t1', 't2', 't3'], exclusive: false },
-  'api/buffered-plan': { tags: ['t1', 't2'], exclusive: false },
-  'api/ownership-transfer': { tags: ['t4', 't5'], exclusive: true },
-  'api/archive-posture': { tags: ['t1', 't2'], exclusive: false },
-  'api/api-surface': { tags: ['t1', 't2', 't3'], exclusive: false },
+  'api/discovery': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'api/lifecycle': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'api/create-flow': { tags: ['t1'], sharesWith: 'shared' },
+  'api/publish': { tags: ['t1', 't2', 't3'], sharesWith: 'shared' },
+  'api/media': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'api/diary': { tags: ['t1', 't2', 't3'], sharesWith: 'shared' },
+  'api/photo-dump': { tags: ['t1', 't2', 't3'], sharesWith: 'shared' },
+  'api/buffered-plan': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'api/ownership-transfer': { tags: ['t4', 't5'], sharesWith: 'wants-exclusive' },
+  'api/archive-posture': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'api/api-surface': { tags: ['t1', 't2', 't3'], sharesWith: 'shared' },
 
-  'web/discovery': { tags: ['t1', 't2'], exclusive: false },
-  'web/create-flow': { tags: ['t4'], exclusive: false },
-  'web/workspace': { tags: ['t1', 't2'], exclusive: false },
-  'web/drag-reorder': { tags: ['t2'], exclusive: false },
-  'web/publish': { tags: ['t3', 't1'], exclusive: false },
-  'web/diary': { tags: ['t3'], exclusive: false },
-  'web/photo-dump': { tags: ['t3'], exclusive: false },
-  'web/home': { tags: ['t1', 't2'], exclusive: false },
-  'web/profile': { tags: ['t5'], exclusive: true },
-  'web/tab-bar': { tags: ['t4'], exclusive: false },
-  'web/ownership-transfer': { tags: ['t1', 't2'], exclusive: true },
-  'web/archive': { tags: ['t1', 't2'], exclusive: false },
+  'web/discovery': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'web/create-flow': { tags: ['t4'], sharesWith: 'shared' },
+  'web/workspace': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'web/drag-reorder': { tags: ['t2'], sharesWith: 'shared' },
+  'web/publish': { tags: ['t3', 't1'], sharesWith: 'shared' },
+  'web/diary': { tags: ['t3'], sharesWith: 'shared' },
+  'web/photo-dump': { tags: ['t3'], sharesWith: 'shared' },
+  'web/home': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'web/profile': { tags: ['t5'], sharesWith: 'wants-exclusive' },
+  'web/tab-bar': { tags: ['t4'], sharesWith: 'shared' },
+  'web/ownership-transfer': { tags: ['t1', 't2'], sharesWith: 'wants-exclusive' },
+  'web/archive': { tags: ['t1', 't2'], sharesWith: 'shared' },
 } as const satisfies Record<string, SpecIdentities>;
 
 export type SpecKey = keyof typeof IDENTITY_MAP;
@@ -39,7 +41,6 @@ export const VERIFIED_TAGS: readonly PoolTag[] = ['t1', 't2', 't3', 't4', 't5'];
 
 export const STRANGER_TAG: PoolTag = 't3';
 
-export const SPARE_TAG: PoolTag = STRANGER_TAG;
 
 export function assertVerified(tag: PoolTag, spec: string): void {
   if (!VERIFIED_TAGS.includes(tag)) {

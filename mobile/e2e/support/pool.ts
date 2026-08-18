@@ -78,12 +78,9 @@ export async function backendReachable(): Promise<boolean> {
 
 export async function authenticatedReadiness(tag: PoolTag): Promise<boolean> {
   for (let attempt = 1; attempt <= 5; attempt += 1) {
-    try {
-      const probe = await api('/v1/me', 'GET', await tokenFor(tag));
-      if (probe.status === 200) return true;
-    } catch {
-      // A cold backend rejects the first token while its verifier warms; retry rather than skip.
-    }
+    const answered = await api('/v1/me', 'GET', await tokenFor(tag)).catch(() => undefined);
+    if (answered?.status === 200) return true;
+
     tokens.delete(tag);
     await new Promise((resume) => setTimeout(resume, 1000 * attempt));
   }

@@ -206,15 +206,21 @@ test('a touch drag exercises the same reorder path', async ({ browser }) => {
       );
     });
 
-    await page.touchscreen.tap(box!.x + box!.width / 2, box!.y + box!.height / 2);
-    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-    await page.mouse.down();
+    const session = await context.newCDPSession(page);
+    const x = box!.x + box!.width / 2;
+    const y = box!.y + box!.height / 2;
+
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y }],
+    });
     for (const step of [0.3, 0.6, 1]) {
-      await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2 + pitch * step, {
-        steps: 3,
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x, y: y + pitch * step }],
       });
     }
-    await page.mouse.up();
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 
     await expect
       .poll(

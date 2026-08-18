@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 import { authenticatedReadiness, backendReachable, missingPoolEnv } from './pool';
-import type { PoolTag } from './identities';
+import { IDENTITY_MAP, assertVerified, type PoolTag, type SpecKey } from './identities';
 
 export function requireStack(tag: PoolTag): void {
   test.beforeAll(async () => {
@@ -21,4 +21,19 @@ export function requireStack(tag: PoolTag): void {
       );
     }
   });
+}
+
+export function sharersOf(spec: SpecKey): SpecKey[] {
+  const claim = IDENTITY_MAP[spec];
+  return (Object.keys(IDENTITY_MAP) as SpecKey[])
+    .filter((other) => other !== spec)
+    .filter((other) =>
+      IDENTITY_MAP[other].tags.some((tag) => (claim.tags as readonly PoolTag[]).includes(tag)));
+}
+
+export function unmetExclusivity(): Array<{ spec: SpecKey; sharedWith: SpecKey[] }> {
+  return (Object.keys(IDENTITY_MAP) as SpecKey[])
+    .filter((spec) => IDENTITY_MAP[spec].sharesWith === 'wants-exclusive')
+    .map((spec) => ({ spec, sharedWith: sharersOf(spec) }))
+    .filter((row) => row.sharedWith.length > 0);
 }

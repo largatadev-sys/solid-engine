@@ -1,12 +1,12 @@
 import { test, expect } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
-import { ownerTagFor, IDENTITY_MAP, SPARE_TAG } from '../support/identities';
+import { ownerTagFor, IDENTITY_MAP, STRANGER_TAG } from '../support/identities';
 import { seedTrip, stamp, joinTrip, type SeededTrip } from '../support/seed';
 
 const FOUNDER = ownerTagFor('api/ownership-transfer');
 const OFFEREE = IDENTITY_MAP['api/ownership-transfer'].tags[1]!;
-const BYSTANDER = SPARE_TAG;
+const BYSTANDER = STRANGER_TAG;
 
 requireStack(FOUNDER);
 
