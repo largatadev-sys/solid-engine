@@ -58,7 +58,10 @@ test.describe('the owner edits the trip-s details', () => {
     await expect(page.getByText('Boracay · Dates to be decided')).toBeVisible();
   });
 
-  test('changes the currency through the confirm, and the prices relabel', async ({ page, signal }) => {
+  test('changes the currency through the confirm, and every priced activity relabels', async ({
+    page,
+    signal,
+  }) => {
     await page.goto(`/itineraries/${trip.id}`);
     await labelled(page, 'Trip settings').click();
     await labelled(page, 'Edit details').click();
@@ -67,9 +70,18 @@ test.describe('the owner edits the trip-s details', () => {
     await page.getByText('$  USD — US Dollar').click();
     await page.getByText('Save', { exact: true }).last().click();
 
+    await expect(page.getByText('Boracay · Dates to be decided')).toBeVisible();
     expect(signal.dialogs.join(' ')).toMatch(/Prices keep their numbers/);
 
-    await expect(page.getByText(/\$1,500|\$1500/)).toBeVisible();
+    const token = await tokenFor(OWNER);
+    const after = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
+
+    expect(after.body.currency).toBe('USD');
+    expect(
+      after.body.days.flatMap((day: { activities: Array<{ costCurrency: string | null }> }) =>
+        day.activities.map((activity) => activity.costCurrency),
+      ),
+    ).toEqual(['USD']);
   });
 });
 

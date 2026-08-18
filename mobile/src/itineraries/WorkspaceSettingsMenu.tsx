@@ -28,12 +28,14 @@ export function WorkspaceSettingsMenu({
       onRequestClose={onDismiss}
     >
       <View style={styles.screen}>
-        <Pressable
-          style={styles.scrim}
-          onPress={onDismiss}
-          accessibilityRole="button"
-          accessibilityLabel="Close trip settings"
-        >
+        <View style={styles.frame}>
+          <Pressable
+            style={styles.scrim}
+            onPress={onDismiss}
+            accessibilityRole="button"
+            accessibilityLabel="Close trip settings"
+          />
+
           <View style={styles.menu}>
             {items.map((item, index) => (
               <View key={item}>
@@ -44,14 +46,12 @@ export function WorkspaceSettingsMenu({
                   accessibilityLabel={WORKSPACE_MENU_LABELS[item]}
                   onPress={() => onSelect(item)}
                 >
-                  <Text style={styles.rowLabel}>
-                    {WORKSPACE_MENU_LABELS[item]}
-                  </Text>
+                  <Text style={styles.rowLabel}>{WORKSPACE_MENU_LABELS[item]}</Text>
                 </Pressable>
               </View>
             ))}
           </View>
-        </Pressable>
+        </View>
       </View>
     </Modal>
   );
@@ -65,10 +65,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  scrim: {
+  frame: {
     flex: 1,
     width: '100%',
     maxWidth: MOBILE_FRAME_WIDTH,
+  },
+  scrim: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: workspaceColors.scrim,
   },
   menu: {

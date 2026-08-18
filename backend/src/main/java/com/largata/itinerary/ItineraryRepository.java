@@ -14,6 +14,10 @@ import org.springframework.data.repository.query.Param;
 interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
 
+    @Query("SELECT i.currency FROM Itinerary i WHERE i.id = :itineraryId")
+    String findCurrency(@Param("itineraryId") UUID itineraryId);
+
+
     @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds "
             + "AND (:state IS NULL OR i.state = :state) "
             + "ORDER BY i.id DESC")

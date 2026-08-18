@@ -1,4 +1,4 @@
-import { currencySign, isKnownCurrency } from './currencySign';
+import { currencySign, isKnownCurrency } from './currencies';
 
 
 export function formatActivityCost(amount: string | null, currency: string | null): string | undefined {

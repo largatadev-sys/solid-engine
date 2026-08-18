@@ -62,13 +62,19 @@ SET currency = COALESCE(
 -- destination filter would then miss it.
 --
 -- COALESCE guards the empty array: V3's NOT NULL permits '{}', and destinations[1] of an empty array
--- is NULL, which would violate the NOT NULL this migration is about to set. No such row is known to
--- exist; the guard is here so that if one does, the migration fills it rather than aborting a
--- deployment on a row nobody can see.
+-- is NULL, which would violate the NOT NULL this migration is about to set. `ItineraryFields` has
+-- rejected an empty list since V3, so no such row is reachable through the application — the guard is
+-- here so that if one exists anyway, the migration completes rather than aborting a deployment on a
+-- row nobody can see.
+--
+-- The fallback is the TITLE, not an invented place name. Keep-first is the approved backfill and
+-- nothing authorises minting a destination out of nothing; a title is at least something the traveler
+-- actually wrote, and every itinerary has one (V3 NOT NULL). A row that lands here is visible as odd
+-- rather than quietly plausible, which is the point.
 ALTER TABLE itinerary ADD COLUMN destination TEXT;
 
 UPDATE itinerary
-SET destination = COALESCE(NULLIF(trim(destinations[1]), ''), 'Somewhere');
+SET destination = COALESCE(NULLIF(trim(destinations[1]), ''), title);
 
 ALTER TABLE itinerary ALTER COLUMN destination SET NOT NULL;
 

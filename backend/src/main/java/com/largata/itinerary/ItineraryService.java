@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,16 +176,12 @@ public class ItineraryService {
     }
 
 
-    @Transactional(readOnly = true)
-    public ItineraryFields currentFields(Membership member) {
-        return fieldsOf(loadForDetailsEdit(member));
-    }
-
-
     @Transactional
-    public Itinerary editFields(Membership member, ItineraryFields fields) {
+    public Itinerary editFields(Membership member, UnaryOperator<ItineraryFields> merge) {
         editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
         Itinerary itinerary = loadForDetailsEdit(member);
+
+        ItineraryFields fields = merge.apply(fieldsOf(itinerary));
 
         String currencyBefore = itinerary.currency();
         itinerary.editFields(fields, member.travelerId(), Instant.now());

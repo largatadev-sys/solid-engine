@@ -42,7 +42,6 @@ const CLEAR_SIZE = 22;
 const styles = StyleSheet.create({
   field: {
     position: 'relative',
-    justifyContent: 'flex-end',
   },
   clear: {
     position: 'absolute',

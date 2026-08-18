@@ -104,6 +104,6 @@ describe('the currency reads as the export prints it', () => {
     const countries = screen('src', 'onboarding', 'countries.ts');
 
     expect(countries).not.toMatch(/CURRENCY_SYMBOLS/);
-    expect(countries).toMatch(/export \{ currencyLabel \} from '\.\.\/itineraries\/currencies'/);
+    expect(countries).not.toMatch(/currencyLabel/);
   });
 });

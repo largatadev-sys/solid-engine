@@ -235,7 +235,7 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     expect(sign.length, 'the amount must carry a currency sign beside it').toBeGreaterThan(0);
   });
 
-  test('a real mouse drag scrolls the six-tab row, which overflows the phone frame', async ({
+  test('the five-tab row fits the phone frame, so no tab hides off-screen (S4.25)', async ({
     page,
     signIn,
   }) => {
@@ -243,11 +243,12 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     await page.goto(`/itineraries/${trip.id}`);
     await expect(labelled(page, 'Day-by-Day')).toBeVisible();
 
-    const dragged = await dragStripBy(page, 'Day-by-Day', 200);
-    expect(dragged, 'the tab row must overflow, or a drag has nowhere to go').not.toBeNull();
-    expect(dragged!.after, 'a real mouse drag must scroll the tab row').toBeGreaterThan(
-      dragged!.before,
-    );
+    for (const tab of ['Day-by-Day', 'Polls', 'Travelers', 'Photo Dump', 'Chat']) {
+      const box = await labelled(page, tab).boundingBox();
+      expect(box, `${tab} must be laid out`).not.toBeNull();
+      expect(box!.x, `${tab} must start inside the frame`).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width, `${tab} must end inside the frame`).toBeLessThanOrEqual(393);
+    }
   });
 
   test('a real mouse click reaches the tab under it, both ways', async ({ page, signIn }) => {

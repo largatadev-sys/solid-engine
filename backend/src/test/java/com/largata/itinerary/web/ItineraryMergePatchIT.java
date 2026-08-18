@@ -291,6 +291,58 @@ class ItineraryMergePatchIT extends PostgresTestBase {
 
 
     @Test
+    void aFailedRelabelTakesTheTripsOwnCurrencyDownWithIt() {
+        String owner = freshTraveler();
+        String tripId = createDressedTrip(owner);
+        UUID dayId =
+                jdbc.queryForObject(
+                        "SELECT id FROM day WHERE itinerary_id = ? AND ordinal = 1",
+                        UUID.class,
+                        UUID.fromString(tripId));
+        addActivity(owner, tripId, dayId, "Paraw sailing", "1500.00", "PHP");
+        addActivity(owner, tripId, dayId, "Island hopping", "2500.00", "PHP");
+
+        jdbc.execute(
+                "CREATE OR REPLACE FUNCTION largata_test_block_relabel() RETURNS trigger AS $$ "
+                        + "BEGIN RAISE EXCEPTION 'relabel blocked mid-flight'; END; $$ LANGUAGE plpgsql");
+        jdbc.execute(
+                "CREATE TRIGGER largata_test_relabel_guard BEFORE UPDATE OF cost_currency ON activity "
+                        + "FOR EACH ROW EXECUTE FUNCTION largata_test_block_relabel()");
+        try {
+            lock(owner, tripId);
+            patch(
+                            owner,
+                            tripId,
+                            """
+                            {"title":"Boracay Barkada Trip","destination":"Boracay","currency":"USD"}
+                            """)
+                    .expectStatus()
+                    .is5xxServerError();
+        } finally {
+            jdbc.execute("DROP TRIGGER IF EXISTS largata_test_relabel_guard ON activity");
+            jdbc.execute("DROP FUNCTION IF EXISTS largata_test_block_relabel()");
+        }
+
+        assertThat(
+                        jdbc.queryForList(
+                                "SELECT a.cost_currency FROM activity a JOIN day d ON d.id = a.day_id "
+                                        + "WHERE d.itinerary_id = ? AND a.cost_amount IS NOT NULL",
+                                String.class,
+                                UUID.fromString(tripId)))
+                .as("zero rows relabelled when the relabel dies part way")
+                .containsExactly("PHP", "PHP");
+
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT currency FROM itinerary WHERE id = ?",
+                                String.class,
+                                UUID.fromString(tripId)))
+                .as("…and the trip's own currency rolled back with them — all or none")
+                .isEqualTo("PHP");
+    }
+
+
+    @Test
     void aRefusedDetailsEditRelabelsNothing() {
         String owner = freshTraveler();
         String tripId = createDressedTrip(owner);
@@ -316,6 +368,62 @@ class ItineraryMergePatchIT extends PostgresTestBase {
                                 UUID.fromString(tripId)))
                 .as("a rejected save relabels nothing — all or none")
                 .containsExactly("PHP");
+    }
+
+
+    @Test
+    void savingAnActivityStampsTheTripsCurrencyIntoIt() {
+        String owner = freshTraveler();
+        String tripId = createDressedTrip(owner);
+        UUID dayId =
+                jdbc.queryForObject(
+                        "SELECT id FROM day WHERE itinerary_id = ? AND ordinal = 1",
+                        UUID.class,
+                        UUID.fromString(tripId));
+
+        lock(owner, tripId);
+        patch(
+                        owner,
+                        tripId,
+                        """
+                        {"title":"Boracay Barkada Trip","destination":"Boracay","currency":"THB"}
+                        """)
+                .expectStatus()
+                .isOk();
+
+        addActivity(owner, tripId, dayId, "Boat noodles", "120.00", "PHP");
+
+        assertThat(
+                        jdbc.queryForList(
+                                "SELECT a.cost_currency FROM activity a JOIN day d ON d.id = a.day_id "
+                                        + "WHERE d.itinerary_id = ? AND a.cost_amount IS NOT NULL",
+                                String.class,
+                                UUID.fromString(tripId)))
+                .as("a client that sends its own currency is overruled by the trip's")
+                .containsExactly("THB");
+    }
+
+
+    @Test
+    void anUnpricedActivityGainsNoCurrencyFromTheTrip() {
+        String owner = freshTraveler();
+        String tripId = createDressedTrip(owner);
+        UUID dayId =
+                jdbc.queryForObject(
+                        "SELECT id FROM day WHERE itinerary_id = ? AND ordinal = 1",
+                        UUID.class,
+                        UUID.fromString(tripId));
+
+        addActivity(owner, tripId, dayId, "Beach walk", null, null);
+
+        assertThat(
+                        jdbc.queryForList(
+                                "SELECT count(*) FROM activity a JOIN day d ON d.id = a.day_id "
+                                        + "WHERE d.itinerary_id = ? AND a.cost_currency IS NOT NULL",
+                                Long.class,
+                                UUID.fromString(tripId)))
+                .as("the pairing invariant holds — no currency without an amount")
+                .containsExactly(0L);
     }
 
 

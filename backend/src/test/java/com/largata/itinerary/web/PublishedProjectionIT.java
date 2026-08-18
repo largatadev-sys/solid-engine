@@ -405,7 +405,7 @@ class PublishedProjectionIT extends PostgresTestBase {
 
 
     @Test
-    void oneCurrencyAcrossThePlanRendersATotalAndAMixedPlanRendersPricesButNone() {
+    void everyPricedActivityCountsTowardOneTotalInTheTripsCurrency() {
         String owner = freshTraveler();
         String tripId = datedTripWithAPlan(owner);
         publish(owner, tripId);
@@ -429,10 +429,14 @@ class PublishedProjectionIT extends PostgresTestBase {
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("$.estimatedCost")
-                .doesNotExist()
+                .jsonPath("$.estimatedCost.amount")
+                .isEqualTo("840.00")
+                .jsonPath("$.estimatedCost.currency")
+                .isEqualTo("PHP")
                 .jsonPath("$.days[1].activities[0].costAmount")
-                .isEqualTo("40.00");
+                .isEqualTo("40.00")
+                .jsonPath("$.days[1].activities[0].costCurrency")
+                .isEqualTo("PHP");
     }
 
 
@@ -515,7 +519,7 @@ class PublishedProjectionIT extends PostgresTestBase {
 
 
     @Test
-    void mixedCurrenciesStillCollapseToNoTotal_partialOrNot() {
+    void aClientsOwnCurrencyCannotSplitTheTotal_theTripsCurrencyWins() {
         String owner = freshTraveler();
         String tripId = datedTripWithAPlan(owner);
         addActivity(owner, tripId, secondDayOf(tripId), """
@@ -530,8 +534,10 @@ class PublishedProjectionIT extends PostgresTestBase {
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("$.estimatedCost")
-                .doesNotExist();
+                .jsonPath("$.estimatedCost.currency")
+                .isEqualTo("PHP")
+                .jsonPath("$.estimatedCost.partial")
+                .isEqualTo(true);
     }
 
 

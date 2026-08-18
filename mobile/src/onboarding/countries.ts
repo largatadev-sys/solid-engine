@@ -181,7 +181,6 @@ export const CURRENCIES: readonly string[] = [
 ].sort();
 
 
-export { currencyLabel } from '../itineraries/currencies';
 
 
 export function countryByCode(code: string | null | undefined): Country | undefined {

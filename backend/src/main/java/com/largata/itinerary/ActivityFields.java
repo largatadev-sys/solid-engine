@@ -19,6 +19,26 @@ public record ActivityFields(
         BigDecimal bookingPriceAmount,
         String bookingPriceCurrency) {
 
+    public ActivityFields pricedIn(String tripCurrency) {
+        if (costAmount == null || tripCurrency == null) {
+            return this;
+        }
+        return new ActivityFields(
+                title,
+                timeOfDay,
+                costAmount,
+                tripCurrency,
+                place,
+                description,
+                notes,
+                externalUrl,
+                bookingPurpose,
+                bookingProvider,
+                bookingPriceAmount,
+                bookingPriceCurrency);
+    }
+
+
     static final int MAX_TITLE_LENGTH = 200;
     static final int MAX_SHORT_TEXT_LENGTH = 500;
     static final int MAX_LONG_TEXT_LENGTH = 4000;
