@@ -242,7 +242,7 @@ test('the one-step undo works once unpublished', async () => {
   expect(reopened.body.state).toBe('ongoing');
 });
 
-test.describe('a mixed-currency plan, republished', () => {
+test.describe('a plan whose activities were saved in different currencies, republished', () => {
   let mixed: { status: number; body: any };
 
   test.beforeAll(async () => {
@@ -251,8 +251,18 @@ test.describe('a mixed-currency plan, republished', () => {
     mixed = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   });
 
-  test('a mixed-currency plan shows prices and no total', () => {
-    expect(mixed.body.estimatedCost ?? null).toBeNull();
+  test('totals in the TRIP-s currency — a mix can no longer be built (S4.25/ADR-028)', () => {
+    expect(mixed.body.estimatedCost).not.toBeNull();
+    expect(mixed.body.estimatedCost.currency).toBe('PHP');
+  });
+
+  test('every activity carries that same currency, whatever the client sent', () => {
+    const currencies = mixed.body.days
+      .flatMap((day: { activities: Array<{ costAmount: string | null; costCurrency: string | null }> }) =>
+        day.activities.filter((a) => a.costAmount !== null).map((a) => a.costCurrency));
+
+    expect(currencies.length).toBeGreaterThan(0);
+    expect(new Set(currencies).size).toBe(1);
   });
 
   test('and "/Person" appears nowhere on the wire', () => {
