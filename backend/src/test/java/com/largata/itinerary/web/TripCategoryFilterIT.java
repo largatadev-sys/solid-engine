@@ -233,7 +233,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
                                         .uri("/v1/itineraries")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .body("{\"title\":\"" + title + "\",\"destinations\":[\"Palawan\"]}")
+                                        .body("{\"title\":\"" + title + "\",\"destination\":\"Palawan\"}")
                                         .exchange()
                                         .expectStatus()
                                         .isCreated()

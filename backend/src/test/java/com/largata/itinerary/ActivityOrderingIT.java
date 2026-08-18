@@ -164,7 +164,7 @@ class ActivityOrderingIT extends PostgresTestBase {
 
     private Membership tripWithOneDay() {
         UUID owner = UUID.randomUUID();
-        Itinerary trip = itineraries.create(owner, "Palawan", List.of("Palawan"), null, null, null, 1);
+        Itinerary trip = itineraries.create(owner, "Palawan", "Palawan", null, null, null, 1);
         return new Membership(owner, trip.id(), Role.OWNER);
     }
 

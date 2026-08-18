@@ -155,7 +155,7 @@ class SubjectLeaseEnforcementIT extends PostgresTestBase {
                         HttpMethod.PATCH,
                         "/v1/itineraries/" + tripId,
                         owner,
-                        "{\"title\":\"Renamed\",\"destinations\":[\"Cebu\"]}")
+                        "{\"title\":\"Renamed\",\"destination\":\"Cebu\"}")
                 .expectStatus()
                 .isEqualTo(409)
                 .expectBody()
@@ -168,7 +168,7 @@ class SubjectLeaseEnforcementIT extends PostgresTestBase {
                         HttpMethod.PATCH,
                         "/v1/itineraries/" + tripId,
                         owner,
-                        "{\"title\":\"Renamed\",\"destinations\":[\"Cebu\"]}")
+                        "{\"title\":\"Renamed\",\"destination\":\"Cebu\"}")
                 .expectStatus()
                 .isOk();
     }

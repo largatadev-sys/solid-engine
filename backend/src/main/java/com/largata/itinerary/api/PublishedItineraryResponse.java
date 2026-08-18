@@ -12,7 +12,7 @@ import java.util.UUID;
 public record PublishedItineraryResponse(
         UUID id,
         String title,
-        List<String> destinations,
+        String destination,
         String description,
         List<String> standouts,
         String bestTimeOfYear,
@@ -27,7 +27,7 @@ public record PublishedItineraryResponse(
         return new PublishedItineraryResponse(
                 projection.id(),
                 projection.title(),
-                projection.destinations(),
+                projection.destination(),
                 projection.description(),
                 projection.standouts(),
                 projection.bestTimeOfYear(),

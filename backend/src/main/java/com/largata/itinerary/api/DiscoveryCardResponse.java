@@ -10,7 +10,7 @@ import java.util.UUID;
 public record DiscoveryCardResponse(
         UUID id,
         String title,
-        List<String> destinations,
+        String destination,
         int durationDays,
         String coverImageUrl,
         TravelerCardResponse author,
@@ -22,7 +22,7 @@ public record DiscoveryCardResponse(
         return new DiscoveryCardResponse(
                 itinerary.id(),
                 itinerary.title(),
-                itinerary.destinations(),
+                itinerary.destination(),
                 durationDays,
                 itinerary.coverImageUrl(),
                 author,

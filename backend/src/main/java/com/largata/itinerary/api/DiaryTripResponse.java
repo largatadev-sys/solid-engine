@@ -8,6 +8,6 @@ public record DiaryTripResponse(
         UUID itineraryId,
         String title,
         long entryCount,
-        List<String> destinations,
+        String destination,
         int dayCount,
         String coverImageUrl) {}

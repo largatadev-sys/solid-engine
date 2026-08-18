@@ -30,7 +30,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
     @Test
     void theCreatorResolvesToOwnerFromTheirMembershipRow() {
         UUID ana = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ana, "Osaka", List.of("Osaka"), null, null);
+        Itinerary trip = itineraries.create(ana, "Osaka", "Osaka", null, null);
 
         Membership membership = guard.requireMember(ana, trip.id());
 
@@ -47,7 +47,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
     void aSeededMemberRowResolvesToMember() {
         UUID ana = UUID.randomUUID();
         UUID ben = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ana, "Kyoto", List.of("Kyoto"), null, null);
+        Itinerary trip = itineraries.create(ana, "Kyoto", "Kyoto", null, null);
         joinAsMember(trip.id(), ben);
 
         Membership membership = guard.requireMember(ben, trip.id());
@@ -61,7 +61,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
     @Test
     void aStrangerHasNoStanding() {
         UUID ana = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ana, "Nara", List.of("Nara"), null, null);
+        Itinerary trip = itineraries.create(ana, "Nara", "Nara", null, null);
 
         assertThatThrownBy(() -> guard.requireMember(UUID.randomUUID(), trip.id()))
                 .isInstanceOf(ItineraryNotFoundException.class);
@@ -72,7 +72,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
     void aNonexistentItineraryRejectsIdenticallyToSomeoneElses() {
         UUID ana = UUID.randomUUID();
         UUID ben = UUID.randomUUID();
-        Itinerary anasTrip = itineraries.create(ana, "Sapporo", List.of("Sapporo"), null, null);
+        Itinerary anasTrip = itineraries.create(ana, "Sapporo", "Sapporo", null, null);
 
         Throwable someoneElses =
                 org.assertj.core.api.Assertions.catchThrowable(() -> guard.requireMember(ben, anasTrip.id()));
@@ -92,11 +92,11 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
         UUID ana = UUID.randomUUID();
         UUID orphanedTrip = UUID.randomUUID();
         jdbc.update(
-                "INSERT INTO itinerary (id, owner_id, title, destinations, standouts, state, published, visibility,"
+                "INSERT INTO itinerary (id, owner_id, title, destination, standouts, state, published, visibility,"
                         + " created_at) VALUES (?, ?, 'Pre-E1 leftover', ?, '{}', 'DRAFT', false, 'PUBLIC', ?)",
                 orphanedTrip,
                 ana,
-                new String[] {"nowhere"},
+                "nowhere",
                 Timestamp.from(Instant.now()));
 
         assertThatThrownBy(() -> guard.requireMember(ana, orphanedTrip))

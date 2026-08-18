@@ -50,7 +50,7 @@ class PlanHistoryCaptureIT extends PostgresTestBase {
                         HttpMethod.PATCH,
                         "/v1/itineraries/" + tripId,
                         owner,
-                        "{\"title\":\"Renamed\",\"destinations\":[\"Cebu\"]}")
+                        "{\"title\":\"Renamed\",\"destination\":\"Cebu\"}")
                 .expectStatus()
                 .isOk();
 

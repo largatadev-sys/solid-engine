@@ -115,7 +115,7 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
 
     private Membership ownerAtRung(int rungs) {
         UUID ownerId = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ownerId, "Trip", List.of("Palawan"), null, null, null, 1);
+        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null, null, 1);
         Membership owner = new Membership(ownerId, trip.id(), Role.OWNER);
 
         if (rungs >= 1) itineraries.finishPlanning(owner);

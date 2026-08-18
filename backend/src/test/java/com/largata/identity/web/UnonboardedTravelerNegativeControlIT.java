@@ -104,7 +104,7 @@ class UnonboardedTravelerNegativeControlIT extends PostgresTestBase {
                         .uri("/v1/itineraries")
                         .header(HttpHeaders.AUTHORIZATION, bearer())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"title\":\"Unonboarded trip\",\"destinations\":[\"Lisbon\"]}")
+                        .body("{\"title\":\"Unonboarded trip\",\"destination\":\"Lisbon\"}")
                         .exchange()
                         .expectStatus()
                         .isCreated()

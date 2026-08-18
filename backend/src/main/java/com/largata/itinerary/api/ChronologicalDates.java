@@ -25,10 +25,10 @@ public @interface ChronologicalDates {
 
         @Override
         public boolean isValid(HasDateRange request, ConstraintValidatorContext context) {
-            if (request == null || request.startDate() == null || request.endDate() == null) {
+            if (request == null || request.rangeStart() == null || request.rangeEnd() == null) {
                 return true;
             }
-            return !request.startDate().isAfter(request.endDate());
+            return !request.rangeStart().isAfter(request.rangeEnd());
         }
     }
 }

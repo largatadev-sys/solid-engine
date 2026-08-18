@@ -185,7 +185,7 @@ class ItineraryListIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"%s","destinations":["Somewhere"]}
+                        {"title":"%s","destination":"Somewhere"}
                         """.formatted(title))
                 .exchange()
                 .expectStatus()

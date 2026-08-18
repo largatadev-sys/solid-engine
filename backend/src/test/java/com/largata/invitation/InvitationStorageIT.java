@@ -129,7 +129,7 @@ class InvitationStorageIT extends PostgresTestBase {
     }
 
     private UUID aWorkspace() {
-        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Lisbon", List.of("Lisbon"), null, null);
+        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Lisbon", "Lisbon", null, null);
         return jdbc.queryForObject("SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());
     }
 }

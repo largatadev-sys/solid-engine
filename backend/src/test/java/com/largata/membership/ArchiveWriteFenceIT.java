@@ -28,7 +28,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
     private static final String VALID_ITINERARY_PATCH =
             """
-            {"title":"Renamed while frozen","destinations":["Cebu"]}
+            {"title":"Renamed while frozen","destination":"Cebu"}
             """;
 
     private RestTestClient rest;
@@ -266,8 +266,14 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         archive(trip.owner, trip.id).expectStatus().isOk();
         unarchive(trip.owner, trip.id).expectStatus().isOk();
 
-        acquireLease(trip.member, trip.id).expectStatus().isOk();
-        patch(trip.member, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH).expectStatus().isOk();
+        post(trip.member, "/v1/itineraries/" + trip.id + "/days/" + firstDayOf(trip.id) + "/activities", """
+                {"title":"A new activity"}
+                """)
+                .expectStatus()
+                .isCreated();
+
+        acquireLease(trip.owner, trip.id).expectStatus().isOk();
+        patch(trip.owner, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH).expectStatus().isOk();
     }
 
 
@@ -426,7 +432,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
-                        {"title":"Fenceable trip","destinations":["Cebu"],"durationDays":2}
+                        {"title":"Fenceable trip","destination":"Cebu","durationDays":2}
                         """)
                         .exchange()
                         .expectStatus()

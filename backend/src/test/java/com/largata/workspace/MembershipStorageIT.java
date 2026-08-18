@@ -28,7 +28,7 @@ class MembershipStorageIT extends PostgresTestBase {
 
     @Test
     void theRoleColumnHoldsTheEnumsName() {
-        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Sapporo", List.of("Sapporo"), null, null);
+        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Sapporo", "Sapporo", null, null);
 
         String stored =
                 jdbc.queryForObject(
@@ -46,7 +46,7 @@ class MembershipStorageIT extends PostgresTestBase {
 
     @Test
     void aWorkspaceCannotHaveTwoOwners() {
-        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Hakone", List.of("Hakone"), null, null);
+        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Hakone", "Hakone", null, null);
         UUID workspaceId =
                 jdbc.queryForObject(
                         "SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());
@@ -67,7 +67,7 @@ class MembershipStorageIT extends PostgresTestBase {
     @Test
     void theOwnersMembershipCannotBeDestroyed() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(ownerId, "Nikko", List.of("Nikko"), null, null);
+        Itinerary itinerary = itineraries.create(ownerId, "Nikko", "Nikko", null, null);
 
         assertThatThrownBy(() -> transactions.executeWithoutResult(tx -> workspaces.removeMember(itinerary.id(), ownerId)))
                 .as("the last owner's row is not deletable — ownership transfers, it is never deleted")
@@ -88,7 +88,7 @@ class MembershipStorageIT extends PostgresTestBase {
     void aMembersMembershipIsDestroyedByTheSameCall() {
         UUID ownerId = UUID.randomUUID();
         UUID memberId = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(ownerId, "Kamakura", List.of("Kamakura"), null, null);
+        Itinerary itinerary = itineraries.create(ownerId, "Kamakura", "Kamakura", null, null);
         UUID workspaceId =
                 jdbc.queryForObject("SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());
         jdbc.update(
@@ -109,7 +109,7 @@ class MembershipStorageIT extends PostgresTestBase {
 
     @Test
     void aWorkspaceCanHaveManyMembers() {
-        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Otaru", List.of("Otaru"), null, null);
+        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Otaru", "Otaru", null, null);
         UUID workspaceId =
                 jdbc.queryForObject(
                         "SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());

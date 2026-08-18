@@ -284,7 +284,7 @@ class ArchivedTripListIT extends PostgresTestBase {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
-                        {"title":"Listable trip","destinations":["Cebu"]}
+                        {"title":"Listable trip","destination":"Cebu"}
                         """)
                         .exchange()
                         .expectStatus()

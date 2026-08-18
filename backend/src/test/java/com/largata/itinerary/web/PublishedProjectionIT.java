@@ -43,7 +43,7 @@ class PublishedProjectionIT extends PostgresTestBase {
             List.of(
                     "id",
                     "title",
-                    "destinations",
+                    "destination",
                     "description",
                     "standouts",
                     "bestTimeOfYear",
@@ -498,7 +498,7 @@ class PublishedProjectionIT extends PostgresTestBase {
         String owner = freshTraveler();
         String tripId =
                 createItinerary(owner, """
-                        {"title":"Someday, Japan","destinations":["Japan"],"durationDays":1}
+                        {"title":"Someday, Japan","destination":"Japan","durationDays":1}
                         """);
         addActivity(owner, tripId, firstDayOf(tripId), """
                 {"title":"Wander Shimokitazawa"}
@@ -540,7 +540,7 @@ class PublishedProjectionIT extends PostgresTestBase {
         String owner = freshTraveler();
         String tripId =
                 createItinerary(owner, """
-                        {"title":"Someday, Japan","destinations":["Japan"]}
+                        {"title":"Someday, Japan","destination":"Japan"}
                         """);
         publish(owner, tripId);
 
@@ -643,7 +643,7 @@ class PublishedProjectionIT extends PostgresTestBase {
                 createItinerary(
                         token,
                         """
-                        {"title":"Island Hopping in El Nido","destinations":["Palawan"],
+                        {"title":"Island Hopping in El Nido","destination":"Palawan",
                          "description":"Discover the breathtaking beauty of El Nido's lagoons.",
                          "startDate":"2027-03-04","endDate":"2027-03-08","durationDays":2}
                         """);

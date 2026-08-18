@@ -235,27 +235,25 @@ class ItineraryLifecycleIT extends PostgresTestBase {
     void transitionsDoNotTouchTheLastEditedPair() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
-        String member = admitMemberTo(tripId);
-        UUID memberId = travelerIdOf(member);
 
         rest.post()
                 .uri("/v1/itineraries/" + tripId + "/edit-lock")
-                .header(HttpHeaders.AUTHORIZATION, bearer(member))
+                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
                 .isOk();
         rest.patch()
                 .uri("/v1/itineraries/" + tripId)
-                .header(HttpHeaders.AUTHORIZATION, bearer(member))
+                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"Edited by the member","destinations":["Cebu"]}
+                        {"title":"Edited by the owner","destination":"Cebu"}
                         """)
                 .exchange()
                 .expectStatus()
                 .isOk();
         Map<String, Object> afterEdit = attributionOf(tripId);
-        assertThat(afterEdit.get("last_edited_by")).isEqualTo(memberId);
+        assertThat(afterEdit.get("last_edited_by")).isEqualTo(travelerIdOf(owner));
 
         finishPlanning(owner, tripId).expectStatus().isOk();
         assertThat(attributionOf(tripId)).isEqualTo(afterEdit);
@@ -265,7 +263,7 @@ class ItineraryLifecycleIT extends PostgresTestBase {
 
         complete(owner, tripId).expectStatus().isOk();
         assertThat(attributionOf(tripId))
-                .as("no transition may overwrite the member's attribution with the owner's")
+                .as("no transition may overwrite the recorded editor attribution")
                 .isEqualTo(afterEdit);
     }
 
@@ -393,10 +391,10 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String body =
                 durationDays == 0
                         ? """
-                        {"title":"Draft trip","destinations":["Cebu"]}
+                        {"title":"Draft trip","destination":"Cebu"}
                         """
                         : """
-                        {"title":"Draft trip","destinations":["Cebu"],"durationDays":%d}
+                        {"title":"Draft trip","destination":"Cebu","durationDays":%d}
                         """
                                 .formatted(durationDays);
         byte[] created =

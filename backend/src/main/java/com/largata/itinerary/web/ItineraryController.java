@@ -107,7 +107,7 @@ class ItineraryController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateItineraryRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        itineraries.editFields(membership, request.toFields());
+        itineraries.editFields(membership, request.mergeOnto(itineraries.currentFields(membership)));
         var plan = itineraries.viewPlan(membership);
         return ItineraryResponse.of(plan);
     }

@@ -42,7 +42,7 @@ public final class TripRig {
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(
-                                "{\"title\":\"Trip\",\"destinations\":[\"Palawan\"],\"durationDays\":"
+                                "{\"title\":\"Trip\",\"destination\":\"Palawan\",\"durationDays\":"
                                         + durationDays
                                         + "}")
                         .exchange()

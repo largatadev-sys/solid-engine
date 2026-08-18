@@ -70,7 +70,7 @@ class WorkspaceStateStorageIT extends PostgresTestBase {
     }
 
     private Itinerary createTrip() {
-        return itineraries.create(UUID.randomUUID(), "Osaka in spring", java.util.List.of("Osaka"), null, null);
+        return itineraries.create(UUID.randomUUID(), "Osaka in spring", "Osaka", null, null);
     }
 
 

@@ -145,7 +145,7 @@ class PlanVersionBumpIT extends PostgresTestBase {
                                         HttpMethod.PATCH,
                                         "/v1/itineraries/" + tripId,
                                         owner,
-                                        "{\"title\":\"Renamed\",\"destinations\":[\"Cebu\"]}")
+                                        "{\"title\":\"Renamed\",\"destination\":\"Cebu\"}")
                                 .expectStatus()
                                 .isOk()))
                 .as("a trip-field edit changes the itinerary, never the plan document a buffered save would replace")

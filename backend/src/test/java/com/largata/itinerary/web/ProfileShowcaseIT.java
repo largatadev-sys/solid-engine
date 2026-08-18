@@ -147,7 +147,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
                 .isEqualTo(trip)
                 .jsonPath("$.items[0].title")
                 .isEqualTo("Trip")
-                .jsonPath("$.items[0].destinations[0]")
+                .jsonPath("$.items[0].destination")
                 .isEqualTo("Palawan")
                 .jsonPath("$.items[0].durationDays")
                 .isEqualTo(3)
@@ -266,7 +266,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
-                                {"title":"Trip","destinations":["Palawan"],"durationDays":3}
+                                {"title":"Trip","destination":"Palawan","durationDays":3}
                                 """)
                         .exchange()
                         .expectStatus()

@@ -471,7 +471,7 @@ class ItineraryPublicationIT extends PostgresTestBase {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
-                                {"title":"Island Hopping in El Nido","destinations":["Palawan"]}
+                                {"title":"Island Hopping in El Nido","destination":"Palawan"}
                                 """)
                         .exchange()
                         .expectStatus()

@@ -174,7 +174,7 @@ class RosterProfileFieldsIT extends PostgresTestBase {
                         .uri("/v1/itineraries")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"title\":\"A trip\",\"destinations\":[\"Lisbon\"]}")
+                        .body("{\"title\":\"A trip\",\"destination\":\"Lisbon\"}")
                         .exchange()
                         .expectStatus()
                         .isCreated()

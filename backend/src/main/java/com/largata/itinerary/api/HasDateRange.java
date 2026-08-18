@@ -5,7 +5,7 @@ import java.time.LocalDate;
 
 interface HasDateRange {
 
-    LocalDate startDate();
+    LocalDate rangeStart();
 
-    LocalDate endDate();
+    LocalDate rangeEnd();
 }

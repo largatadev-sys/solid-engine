@@ -78,7 +78,8 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
                 .as("PATCH edits plan fields only — lifecycle has its own owner-only endpoints")
                 .containsExactlyInAnyOrder(
                         "title",
-                        "destinations",
+                        "destination",
+                        "currency",
                         "description",
                         "standouts",
                         "bestTimeOfYear",
@@ -110,7 +111,7 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
 
     private Membership tripOwnedByFreshTraveler() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(ownerId, "Draft trip", List.of("Cebu"), null, null);
+        Itinerary itinerary = itineraries.create(ownerId, "Draft trip", "Cebu", null, null);
         return new Membership(ownerId, itinerary.id(), Role.OWNER);
     }
 }
