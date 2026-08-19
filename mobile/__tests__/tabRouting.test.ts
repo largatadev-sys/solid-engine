@@ -207,6 +207,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   const FULL_BLEED = [
     'itineraries/[id]/published.tsx',
     'itineraries/[id]/created.tsx',
+    'itineraries/[id]/forked.tsx',
     'itineraries/[id]/activity.tsx',
     'itineraries/[id]/diary/posted.tsx',
   ];
@@ -1067,9 +1068,17 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
   it('draws neither the facts line nor the cog — both parked (founder, 2026-08-18)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(workspace).not.toMatch(/provenance=/);
+    expect(workspace).not.toMatch(/factsLine|destinationFacts/);
+    expect(workspace).not.toMatch(/provenance=\{tripFacts/);
     expect(workspace).toMatch(/onSettings=\{showsSettingsCog\(data, isOwner\) \?/);
     expect(COG_IS_LIVE).toBe(false);
+  });
+
+  it('fills the subtitle slot S4.17 reserved with fork attribution, and nothing else (S4.7)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(workspace).toMatch(/provenance=\{attributionLabel\(data\.forkedFrom\)\}/);
+    expect(workspace).toMatch(/onProvenancePress=/);
   });
 });
 

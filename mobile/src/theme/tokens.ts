@@ -89,6 +89,10 @@ export const typography = {
   actionMedium: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 18, fontWeight: '600' },
   overviewBody: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, fontWeight: '400' },
 
+  sheetTitle: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28, fontWeight: '700' },
+  highlightRow: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  attribution: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 20, fontWeight: '400' },
+
   cardDate: { fontFamily: fonts.semiBold, fontSize: 11, lineHeight: 14, fontWeight: '600' },
   cardTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, fontWeight: '700' },
   cardSubtitle: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' },

@@ -13,7 +13,9 @@ import type {
   PublishedItineraryResponse,
   TravelerCardResponse,
 } from '../types/api';
+import { AttributionPill } from './AttributionPill';
 import { dayHeading } from './dayHeading';
+import { FORKED_STAT_LABEL } from './forkCopy';
 import { initialsFor } from '../onboarding/initials';
 import {
   bylineHandle,
@@ -38,10 +40,13 @@ const GREYED_TABS: Partial<Record<PublishedTab, ComingSoonSurface>> = {
 export function PublishedItineraryView({
   projection,
   audience,
+  onOpenSource,
 }: {
   projection: PublishedItineraryResponse;
 
   audience: 'preview' | 'consumer';
+
+  onOpenSource?: (sourceItineraryId: string) => void;
 }) {
   const [tab, setTab] = useState<PublishedTab>('Overview');
   const [drag] = useState(() => dragToScroll(freeScroll));
@@ -49,6 +54,8 @@ export function PublishedItineraryView({
   return (
     <View style={styles.page}>
       <PublishedHeader projection={projection} audience={audience} />
+
+      <AttributionPill forkedFrom={projection.forkedFrom} onOpenSource={onOpenSource} />
 
       <ScrollView
         horizontal
@@ -181,16 +188,10 @@ function PublishedHeader({
           <Text style={styles.statValue}>0</Text>
           <Text style={styles.statLabel}>Reviews</Text>
         </Pressable>
-        <Pressable
-          style={styles.stat}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: true }}
-          accessibilityLabel="Forks, coming soon"
-          onPress={() => comingSoon('fork')}
-        >
-          <Text style={styles.statValue}>0</Text>
-          <Text style={styles.statLabel}>Forked</Text>
-        </Pressable>
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{projection.forkCount}</Text>
+          <Text style={styles.statLabel}>{FORKED_STAT_LABEL}</Text>
+        </View>
         {total !== undefined && (
           <View style={styles.stat}>
             <Text style={styles.statValue}>{total}</Text>

@@ -166,6 +166,18 @@ export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryRespons
   });
 }
 
+export function useForkItinerary(sourceId: string): UseMutationResult<ItineraryResponse, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => itineraryRepository.forkItinerary(sourceId),
+    onSuccess: async (forked) => {
+      await onItineraryCreated(client, forked);
+      await client.invalidateQueries({ queryKey: itineraryKeys.published(sourceId) });
+    },
+  });
+}
+
+
 export function usePublishedItinerary(id: string): UseQueryResult<PublishedItineraryResponse> {
   const { kind } = useAuth();
   return useQuery({

@@ -54,6 +54,11 @@ class Day {
     }
 
 
+    static Day copiedInto(UUID itineraryId, Day source, Instant createdAt) {
+        return new Day(UuidV7.generate(), itineraryId, source.ordinal, source.title, createdAt);
+    }
+
+
     void rename(String newTitle) {
         this.title = normalizeTitle(newTitle);
     }

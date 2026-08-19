@@ -1,11 +1,9 @@
 package com.largata.itinerary;
 
-import com.largata.common.authz.ItineraryNotFoundException;
 import com.largata.common.authz.Membership;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.workspace.WorkspaceService;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -19,37 +17,28 @@ public class PublishedItineraryService {
     private final DayService days;
     private final WorkspaceService workspaces;
     private final TravelerService travelers;
+    private final PublishedVisibility visibility;
+    private final ForkService forks;
 
     PublishedItineraryService(
             ItineraryRepository itineraries,
             DayService days,
             WorkspaceService workspaces,
-            TravelerService travelers) {
+            TravelerService travelers,
+            PublishedVisibility visibility,
+            ForkService forks) {
         this.itineraries = itineraries;
         this.days = days;
         this.workspaces = workspaces;
         this.travelers = travelers;
+        this.visibility = visibility;
+        this.forks = forks;
     }
 
 
     @Transactional(readOnly = true)
-    public PublishedItinerary view(UUID itineraryId, Optional<Membership> caller) {
-        Itinerary itinerary = itineraries.findById(itineraryId).orElseThrow(ItineraryNotFoundException::new);
-        if (workspaces.isArchived(itineraryId) || !admits(itinerary, caller)) {
-            throw new ItineraryNotFoundException();
-        }
-        return project(itinerary);
-    }
-
-
-    private static boolean admits(Itinerary itinerary, Optional<Membership> caller) {
-        if (!itinerary.isPublished()) {
-            return false;
-        }
-        return switch (itinerary.visibility()) {
-            case PUBLIC -> true;
-            case PRIVATE -> caller.isPresent();
-        };
+    public PublishedItinerary view(UUID itineraryId, Optional<Membership> caller, UUID readerId) {
+        return project(visibility.require(itineraryId, caller), readerId);
     }
 
 
@@ -62,12 +51,18 @@ public class PublishedItineraryService {
                 itineraries
                         .findById(owner.itineraryId())
                         .orElseThrow(() -> new IllegalStateException(
-                                "The guard authorized a membership for an itinerary that does not exist")));
+                                "The guard authorized a membership for an itinerary that does not exist")),
+                owner.travelerId());
     }
 
 
-    private PublishedItinerary project(Itinerary itinerary) {
-        return PublishedItinerary.of(itinerary, days.plan(itinerary.id()), bylineOf(itinerary.id()));
+    private PublishedItinerary project(Itinerary itinerary, UUID readerId) {
+        return PublishedItinerary.of(
+                itinerary,
+                days.plan(itinerary.id()),
+                bylineOf(itinerary.id()),
+                forks.forkCountOf(itinerary.id()),
+                forks.provenanceOf(itinerary.id(), readerId).orElse(null));
     }
 
 
@@ -77,10 +72,9 @@ public class PublishedItineraryService {
                         .ownerOf(itineraryId)
                         .orElseThrow(() -> new IllegalStateException(
                                 "No owner for itinerary " + itineraryId + " — INV-4"));
-        List<TravelerSummary> found = travelers.summariesByIds(List.of(ownerId));
-        if (found.isEmpty()) {
-            throw new IllegalStateException("The owner of itinerary " + itineraryId + " has no traveler record");
-        }
-        return found.getFirst();
+        return travelers
+                .summaryById(ownerId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "The owner of itinerary " + itineraryId + " has no traveler record"));
     }
 }

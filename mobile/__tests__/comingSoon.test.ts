@@ -37,7 +37,6 @@ describe('comingSoonMessage — the wording both forks share', () => {
         'comments',
         'diary',
         'follow',
-        'fork',
         'network',
         'notifications',
         'polls',
@@ -56,6 +55,10 @@ describe('comingSoonMessage — the wording both forks share', () => {
 
   it('no longer greys Home — S4.22 made it the feed and the landing route', () => {
     expect(Object.keys(COMING_SOON_SURFACES)).not.toContain('home');
+  });
+
+  it('no longer greys forking — S4.7 built it, so the refusal retires with the stub', () => {
+    expect(Object.keys(COMING_SOON_SURFACES)).not.toContain('fork');
   });
 });
 

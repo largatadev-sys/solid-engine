@@ -51,7 +51,9 @@ class PublishedProjectionIT extends PostgresTestBase {
                     "durationDays",
                     "creator",
                     "estimatedCost",
-                    "days");
+                    "days",
+                    "forkCount",
+                    "forkedFrom");
 
 
     private static final List<String> DAY_FIELDS = List.of("id", "ordinal", "title", "activities");

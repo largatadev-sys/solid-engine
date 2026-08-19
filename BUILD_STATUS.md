@@ -59,7 +59,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | S4.4 | Stars | ⬜ | — |
 | S4.5 | Reviews *(resolves reg. #4)* | ⬜ | — |
 | S4.6 | Public comments *(resolves reg. #5)* | ⬜ | — |
-| S4.7 | Fork (plan-only copy + Fork Relationship, INV-6) | ⬜ | — |
+| S4.7 | Fork (plan-only copy + Fork Relationship, INV-6) | 🔄 | [spec](docs/plans/S4.7-fork/spec.md) |
 | S4.8 | Visitor read-only surface (INV-3) | ⬜ | — |
 | S4.9 | Trip surfaces retrofit *(grilled 2026-07-31 against the 07/31 trip-creation/workspace mock set — ADR-014 amended to subject-typed leases, built here; activity-history capture; workspace/day/invite/create restructure; invite-by-handle exact-match; tab bar with Home/Search greyed; pulled next, before S4.1)* | ✅ | [spec](docs/plans/S4.9-trip-surfaces-retrofit/spec.md) |
 | S4.10 | In-trip chat + activity-history surface *(entered launch scope 2026-07-31 — chat reverses the 2026-07-24 no-planning-conversation ruling on the record; pulled after S4.3; UX flow + grilling due before elaboration, may split there)* | ⬜ | — |
