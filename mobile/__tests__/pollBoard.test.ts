@@ -1,4 +1,5 @@
 import {
+  createFormMessage,
   createFormValidity,
   deadlineMetaFor,
   defaultDeadline,
@@ -178,7 +179,7 @@ describe('optionStateFor — exactly one option ever reads orange', () => {
     expect(optionStateFor(poll(), 'o2', 'o1')).toBe('idle');
   });
 
-  it('marks the recorded option with the cream YOUR VOTE grammar at rest', () => {
+  it('marks the recorded option with the cream grammar at rest — v2 cut the tag', () => {
     expect(optionStateFor(voted, 'o1', null)).toBe('recorded');
     expect(optionStateFor(voted, 'o2', null)).toBe('idle');
   });
@@ -188,6 +189,10 @@ describe('optionStateFor — exactly one option ever reads orange', () => {
     expect(optionStateFor(voted, 'o2', 'o2')).toBe('selected');
   });
 
+  it('stays RECORDED when the traveler taps the option they already voted for', () => {
+    expect(optionStateFor(voted, 'o1', 'o1')).toBe('recorded');
+    expect(markerFor(voted, 'o1', 'o1')).toBe('check');
+  });
   it('drops every radio grammar on a closed poll, keeping only the winner mark', () => {
     const closed = poll({ status: 'closed', myVoteOptionId: 'o1', winningOptionIds: ['o1'] });
     expect(optionStateFor(closed, 'o1', null)).toBe('idle');
@@ -332,6 +337,34 @@ describe('createFormValidity — the Create a Poll screen', () => {
   });
 });
 
+
+describe('createFormMessage — AC 8 wants a VISIBLE refusal, not a silently disabled button', () => {
+  it('says nothing while the form is still empty — a blank form is not a refusal', () => {
+    expect(createFormMessage('', ['', ''])).toBeNull();
+  });
+
+  it('names the two-option floor once the traveler has started typing', () => {
+    expect(createFormMessage('Dinner?', ['Ramen', ''])).toBe(
+      'A poll needs between 2 and 10 options.',
+    );
+  });
+
+  it('names the question cap rather than truncating in silence', () => {
+    expect(createFormMessage('x'.repeat(121), ['A', 'B'])).toBe(
+      'A poll question is at most 120 characters.',
+    );
+  });
+
+  it('names the option cap', () => {
+    expect(createFormMessage('Q', ['x'.repeat(81), 'B'])).toBe(
+      'A poll option is at most 80 characters.',
+    );
+  });
+
+  it('says nothing at all once the form is valid', () => {
+    expect(createFormMessage('Q', ['A', 'B'])).toBeNull();
+  });
+});
 
 describe('defaultDeadline — the +24h the creator can move but never omit', () => {
   it('lands exactly one day after the instant it was asked for', () => {

@@ -64,9 +64,10 @@ export function optionStateFor(
   selectedOptionId: string | null,
 ): OptionState {
   if (isClosed(poll)) return 'idle';
-  if (optionId === selectedOptionId) return 'selected';
-  if (optionId !== poll.myVoteOptionId) return 'idle';
-  return selectedOptionId === null ? 'recorded' : 'demoted';
+  if (optionId === poll.myVoteOptionId) {
+    return selectedOptionId === null || selectedOptionId === optionId ? 'recorded' : 'demoted';
+  }
+  return optionId === selectedOptionId ? 'selected' : 'idle';
 }
 
 
@@ -143,6 +144,26 @@ export function createFormValidity(
   };
 }
 
+
+export function createFormMessage(question: string, options: readonly string[]): string | null {
+  const trimmedQuestion = question.trim();
+  const filled = options.map((option) => option.trim()).filter((option) => option.length > 0);
+  const untouched = trimmedQuestion.length === 0 && filled.length === 0;
+  if (untouched || createFormValidity(question, options).valid) {
+    return null;
+  }
+
+  if (trimmedQuestion.length > MAX_QUESTION_LENGTH) {
+    return `A poll question is at most ${MAX_QUESTION_LENGTH} characters.`;
+  }
+  if (filled.some((option) => option.length > MAX_OPTION_LENGTH)) {
+    return `A poll option is at most ${MAX_OPTION_LENGTH} characters.`;
+  }
+  if (filled.length < MIN_OPTIONS || filled.length > MAX_OPTIONS) {
+    return `A poll needs between ${MIN_OPTIONS} and ${MAX_OPTIONS} options.`;
+  }
+  return 'A poll needs a question.';
+}
 
 export function defaultDeadline(now: number): string {
   return new Date(now + A_DAY_IN_MS).toISOString();

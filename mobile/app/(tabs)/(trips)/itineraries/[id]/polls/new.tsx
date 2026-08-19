@@ -8,6 +8,7 @@ import { TimePicker } from '../../../../../../src/components/TimePicker';
 import {
   MAX_OPTION_LENGTH,
   MAX_QUESTION_LENGTH,
+  createFormMessage,
   createFormValidity,
   defaultDeadline,
 } from '../../../../../../src/polls/pollBoard';
@@ -56,6 +57,7 @@ export default function CreatePollScreen() {
   const [failure, setFailure] = useState<string | null>(null);
 
   const form = createFormValidity(question, options);
+  const capMessage = createFormMessage(question, options);
   const closesAt = instantOfParts(deadline);
   const deadlineOk = isInTheFuture(closesAt, Date.now());
   const submittable = form.valid && deadlineOk && !create.isPending;
@@ -161,6 +163,7 @@ export default function CreatePollScreen() {
         {!deadlineOk && <Text style={styles.failure}>{DEADLINE_IN_THE_PAST}</Text>}
       </View>
 
+      {capMessage !== null && <Text style={styles.failure}>{capMessage}</Text>}
       {failure !== null && <Text style={styles.failure}>{failure}</Text>}
 
       <Pressable

@@ -189,7 +189,7 @@ test.describe('the board, from empty to a closed winner', () => {
     expect((await activeOf(trip.id, secondToken))[0]?.myVoteOptionId).toBe(second.id);
   });
 
-  test('changing a vote MOVES it — the CTA names the target, and no count is added', async ({
+  test('changing a vote MOVES it — the same Submit Vote button, and no count is added', async ({
     page,
     signIn,
   }) => {

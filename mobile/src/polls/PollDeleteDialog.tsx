@@ -21,42 +21,54 @@ import type { PollResponse } from '../types/api';
 const OVERSHOOT = Easing.bezier(0.34, 1.56, 0.64, 1);
 
 
-interface PollDeleteDialogProps {
-  readonly poll: PollResponse | null;
+export interface PollDeletion {
+  readonly poll: PollResponse;
   readonly busy: boolean;
+}
+
+
+interface PollDeleteDialogProps {
+  readonly deletion: PollDeletion | null;
   readonly onConfirm: () => void;
   readonly onDismiss: () => void;
 }
 
 
-export function PollDeleteDialog({ poll, busy, onConfirm, onDismiss }: PollDeleteDialogProps) {
-  const last = useRef<PollResponse | null>(null);
+export function PollDeleteDialog({ deletion, onConfirm, onDismiss }: PollDeleteDialogProps) {
+  const last = useRef<PollDeletion | null>(null);
   const entrance = useRef(new Animated.Value(0)).current;
-  const open = poll !== null;
+  const open = deletion !== null;
 
-  if (poll !== null) {
-    last.current = poll;
+  if (deletion !== null) {
+    last.current = deletion;
   }
-  const shown = stillShowing(poll, last.current);
+  const shown = stillShowing(deletion, last.current);
+
+  useEffect(() => {
+    if (open) {
+      Animated.timing(entrance, {
+        toValue: 1,
+        duration: pollMotion.dialogPopMs,
+        easing: OVERSHOOT,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [entrance, open]);
 
   useEffect(() => {
     if (!open) {
-      entrance.setValue(0);
-      return;
+      const settled = setTimeout(() => entrance.setValue(0), pollMotion.scrimMs);
+      return () => clearTimeout(settled);
     }
-    Animated.timing(entrance, {
-      toValue: 1,
-      duration: pollMotion.dialogPopMs,
-      easing: OVERSHOOT,
-      useNativeDriver: true,
-    }).start();
+    return undefined;
   }, [entrance, open]);
 
   if (shown === null) {
     return null;
   }
 
-  const wording = pollDeleteWording(shown.question, shown.votedCount);
+  const wording = pollDeleteWording(shown.poll.question, shown.poll.votedCount);
+  const busy = shown.busy;
   const scale = entrance.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
 
   return (

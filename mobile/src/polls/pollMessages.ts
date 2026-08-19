@@ -63,7 +63,6 @@ export function pollDeleteWording(question: string, voteCount: number) {
     body: `"${question}" and its ${voteCount} ${
       voteCount === 1 ? 'vote' : 'votes'
     } will be gone for everyone. This can't be undone.`,
-    confirmLabel: 'Delete Poll',
   };
 }
 

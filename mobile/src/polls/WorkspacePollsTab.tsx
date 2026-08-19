@@ -105,8 +105,7 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
   return (
     <View style={styles.body}>
       <PollDeleteDialog
-        poll={doomed}
-        busy={remove.isPending}
+        deletion={doomed === null ? null : { poll: doomed, busy: remove.isPending }}
         onConfirm={confirmDelete}
         onDismiss={() => setDoomed(null)}
       />

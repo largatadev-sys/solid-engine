@@ -74,14 +74,14 @@ function Marker({ marker }: { marker: OptionMarker }) {
   }
   if (marker === 'star') {
     return (
-      <PopIn style={styles.marker}>
+      <PopIn key="star" style={styles.marker}>
         <Icon name="starFilled" size={16} color={workspaceColors.accent} />
       </PopIn>
     );
   }
   if (marker === 'check') {
     return (
-      <PopIn style={styles.marker}>
+      <PopIn key="check" style={styles.marker}>
         <Icon name="checkCircleFilled" size={18} color={workspaceColors.accent} />
       </PopIn>
     );
@@ -95,7 +95,7 @@ function Marker({ marker }: { marker: OptionMarker }) {
   }
   if (marker === 'selected') {
     return (
-      <PopIn style={styles.marker}>
+      <PopIn key="ring" style={styles.marker}>
         <View style={styles.radioRinged} />
       </PopIn>
     );

@@ -78,6 +78,7 @@ export function PollCard({
     }).start();
   }, [fill, progress.fraction]);
 
+  const voteShape = poll.options.map((option) => option.voteCount).join(',');
   const grown = useRef(false);
   useEffect(() => {
     if (!grown.current) {
@@ -85,7 +86,7 @@ export function PollCard({
       return;
     }
     animateRowGrowth();
-  }, [poll.options]);
+  }, [voteShape]);
 
   const pick = (optionId: string) => {
     setSelected((current) => (current === optionId ? null : optionId));

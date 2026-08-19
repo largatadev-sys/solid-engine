@@ -6,6 +6,8 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { track } from '../analytics/track';
 import { useAuth } from '../hooks/authContext';
 import { POLL_CLOSED, POLL_CREATED, POLL_DELETED, POLL_VOTED } from '../polls/pollEvents';
@@ -28,11 +30,20 @@ export interface VoteIntent {
 
 export function usePollBoard(itineraryId: string): UseQueryResult<PollBoardResponse, Error> {
   const { kind } = useAuth();
-  return useQuery({
+  const board = useQuery({
     queryKey: pollKeys.board(itineraryId),
     queryFn: () => pollRepository.board(itineraryId),
     enabled: kind === 'signedIn',
   });
+
+  const { refetch } = board;
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+    }, [refetch]),
+  );
+
+  return board;
 }
 
 
