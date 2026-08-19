@@ -394,6 +394,33 @@ class PollContractIT extends PostgresTestBase {
     }
 
 
+    @Test
+    void aPollOutlivesTheMemberWhoAskedIt_andTheOwnerCanStillCloseAndDeleteIt() {
+        Fixture trip = tripWithAMember();
+        String pollId = askAs(trip.member(), trip, "Asked by someone who leaves", List.of("A", "B"));
+        List<String> options = optionIdsOf(pollAs(trip.owner(), trip, pollId));
+        voteAs(trip.owner(), trip, pollId, options.getFirst());
+
+        rig.send(
+                        HttpMethod.DELETE,
+                        "/v1/itineraries/" + trip.tripId() + "/members/" + rig.travelerIdOf(trip.member()),
+                        trip.owner(),
+                        null)
+                .expectStatus()
+                .isNoContent();
+
+        JsonNode survivor = onlyActive(boardAs(trip.owner(), trip));
+        assertThat(survivor.get("id").asString())
+                .as("the poll is the group's question once asked — only the VOTE dies with the membership")
+                .isEqualTo(pollId);
+        assertThat(voteCountsOf(survivor)).containsExactly(1, 0);
+
+        closeAs(trip.owner(), trip, pollId);
+        rig.send(HttpMethod.DELETE, pollsUri(trip) + "/" + pollId, trip.owner(), null)
+                .expectStatus()
+                .isNoContent();
+    }
+
     private Fixture tripWithAMember() {
         String owner = rig.travelerWithHandle(handle());
         String tripId = rig.createTrip(owner, 3);
