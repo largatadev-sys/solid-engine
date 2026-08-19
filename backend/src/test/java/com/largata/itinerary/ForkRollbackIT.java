@@ -35,7 +35,7 @@ class ForkRollbackIT extends PostgresTestBase {
 
         doThrow(new IllegalStateException("the provenance write failed")).when(relationships).save(any());
 
-        assertThatThrownBy(() -> forks.fork(sourceId, forker, sightOf(forker, sourceId)))
+        assertThatThrownBy(() -> forks.fork(sourceId, forker, forkerIsAMemberOfTheSource(forker, sourceId)))
                 .isInstanceOf(IllegalStateException.class);
 
         assertThat(itinerariesOwnedBy(forker)).as("no half-existing copy survives").isZero();
@@ -55,7 +55,7 @@ class ForkRollbackIT extends PostgresTestBase {
 
         doThrow(new IllegalStateException("the provenance write failed")).when(relationships).save(any());
 
-        assertThatThrownBy(() -> forks.fork(sourceId, forker, sightOf(forker, sourceId)))
+        assertThatThrownBy(() -> forks.fork(sourceId, forker, forkerIsAMemberOfTheSource(forker, sourceId)))
                 .isInstanceOf(IllegalStateException.class);
 
         assertThat(allDays()).as("the copied days rolled back with everything else").isEqualTo(daysBefore);
@@ -63,13 +63,15 @@ class ForkRollbackIT extends PostgresTestBase {
     }
 
 
-    private Optional<Membership> sightOf(UUID travelerId, UUID sourceId) {
-        return Optional.of(new Membership(travelerId, sourceId, Role.MEMBER));
+
+
+    private Optional<Membership> forkerIsAMemberOfTheSource(UUID forkerId, UUID sourceId) {
+        return Optional.of(new Membership(forkerId, sourceId, Role.MEMBER));
     }
 
 
     private UUID publishedSource(UUID author) {
-        Itinerary source = itineraries.create(author, "Rollback fixture", "Palawan", null, null);
+        Itinerary source = itineraries.create(author, "Rollback fixture", "Palawan", null, null, null, 1);
         jdbc.update(
                 "UPDATE itinerary SET published = true, state = 'COMPLETED', visibility = 'PRIVATE', "
                         + "published_at = now() "

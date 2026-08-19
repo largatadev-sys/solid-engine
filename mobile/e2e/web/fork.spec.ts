@@ -222,6 +222,23 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
     expect(signal.dialogs.join(' ')).not.toMatch(/coming soon/i);
   });
 
+  test('forking from the Home feed lands the same way — it is the landing route, so it is the common path', async ({
+    page,
+  }) => {
+    await page.goto(`/feed/published/${source.id}`);
+    await expect(labelled(page, FORK_CTA_LABEL)).toBeVisible();
+
+    await labelled(page, FORK_CTA_LABEL).click();
+    await labelled(page, FORK_CONFIRM_LABEL).click();
+
+    await expect(visible(page.getByText(FORK_SUCCESS_TITLE, { exact: true }))).toBeVisible();
+    await labelled(page, OPEN_FORKED_WORKSPACE_LABEL).click();
+
+    await expect(visible(page.getByText(CREDIT, { exact: true })))
+      .toBeVisible();
+  });
+
+
   test('no console or page errors across the whole fork loop', async ({ page, signal }) => {
     await page.goto(`/published/${source.id}`);
     await labelled(page, FORK_CTA_LABEL).click();

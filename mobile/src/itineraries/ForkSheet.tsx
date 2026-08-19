@@ -2,6 +2,7 @@ import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'rea
 import { Icon } from '../components/Icon';
 import { MOBILE_FRAME_WIDTH } from '../components/mobileFrameContract';
 import { colors, radii, spacing, typography } from '../theme';
+import { workspaceRadii } from '../theme/workspaceTokens';
 import {
   FORK_CANCEL_LABEL,
   FORK_CONFIRM_LABEL,
@@ -101,8 +102,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MOBILE_FRAME_WIDTH,
     backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
+    borderTopLeftRadius: workspaceRadii.sheet,
+    borderTopRightRadius: workspaceRadii.sheet,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm3,
     paddingBottom: spacing.lg,

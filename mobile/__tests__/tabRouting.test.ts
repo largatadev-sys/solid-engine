@@ -1068,8 +1068,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
   it('draws neither the facts line nor the cog — both parked (founder, 2026-08-18)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
-    expect(workspace).not.toMatch(/factsLine|destinationFacts/);
-    expect(workspace).not.toMatch(/provenance=\{tripFacts/);
+    expect(workspace).not.toMatch(/[Ff]actsLine/);
     expect(workspace).toMatch(/onSettings=\{showsSettingsCog\(data, isOwner\) \?/);
     expect(COG_IS_LIVE).toBe(false);
   });

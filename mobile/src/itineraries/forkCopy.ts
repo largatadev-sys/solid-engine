@@ -63,3 +63,8 @@ function authorMention(handle: string | null): string {
   const named = (handle ?? '').trim();
   return named === '' ? ANONYMOUS_AUTHOR : `@${named}`;
 }
+
+
+export const FORK_FAILED_TITLE = 'Could not fork this trip';
+
+export const FORK_FAILED_BODY = 'Nothing was created. Check your connection and try again.';

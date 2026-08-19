@@ -6,7 +6,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { itineraryLoadMessage, ScreenMessage } from '../components/ScreenMessage';
 import { notify } from '../components/notify';
 import { ForkSheet } from './ForkSheet';
-import { FORK_CTA_LABEL } from './forkCopy';
+import { FORK_CTA_LABEL, FORK_FAILED_BODY, FORK_FAILED_TITLE } from './forkCopy';
 import { PublishedItineraryView } from './PublishedItineraryView';
 import { publishedBackRoute, publishedRoute, type PublishedExit } from './publishedExit';
 import { useForkItinerary, usePublishedItinerary } from '../query/itineraryQueries';
@@ -83,9 +83,7 @@ export function PublishedItineraryScreen({ exit = 'trip' }: { readonly exit?: Pu
 }
 
 
-export const FORK_FAILED_TITLE = 'Could not fork this trip';
 
-export const FORK_FAILED_BODY = 'Nothing was created. Check your connection and try again.';
 
 const CTA_HEIGHT = 53;
 
@@ -95,6 +93,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   container: { padding: spacing.md, gap: spacing.md, backgroundColor: colors.background, flexGrow: 1 },
   dock: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
