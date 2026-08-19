@@ -6,11 +6,11 @@ import {
   deadlineMetaFor,
   isClosed,
   kebabMenuFor,
+  markerFor,
   optionStateFor,
   progressFor,
   submitLabelFor,
   voteGrammarFor,
-  winnerIdsOf,
 } from './pollBoard';
 import {
   POLL_ACTIONS_LABEL,
@@ -62,7 +62,6 @@ export function PollCard({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const closed = isClosed(poll);
-  const winners = winnerIdsOf(poll);
   const submit = canVote ? submitLabelFor(poll, selected) : null;
   const menu = kebabMenuFor(poll, isOwner, archived);
   const changing = voteGrammarFor(poll, selected) === 'changing';
@@ -150,7 +149,7 @@ export function PollCard({
               key={option.id}
               option={option}
               state={optionStateFor(poll, option.id, selected)}
-              starred={winners.includes(option.id)}
+              marker={markerFor(poll, option.id, selected)}
               onPress={canVote && !closed && !busy ? () => pick(option.id) : undefined}
             />
           ))}

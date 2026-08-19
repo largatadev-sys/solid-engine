@@ -109,13 +109,16 @@ class Poll {
 
 
     private static List<String> normalizeOptions(List<String> labels) {
+        List<String> sent = labels == null ? List.of() : labels;
+        if (sent.size() > MAX_OPTIONS) {
+            throw new PollExceptions.OptionCountOutOfRangeException(MIN_OPTIONS, MAX_OPTIONS);
+        }
         List<String> stripped =
-                (labels == null ? List.<String>of() : labels)
-                        .stream()
-                                .map(label -> label == null ? "" : label.strip())
-                                .filter(label -> !label.isEmpty())
-                                .toList();
-        if (stripped.size() < MIN_OPTIONS || stripped.size() > MAX_OPTIONS) {
+                sent.stream()
+                        .map(label -> label == null ? "" : label.strip())
+                        .filter(label -> !label.isEmpty())
+                        .toList();
+        if (stripped.size() < MIN_OPTIONS) {
             throw new PollExceptions.OptionCountOutOfRangeException(MIN_OPTIONS, MAX_OPTIONS);
         }
         stripped.forEach(PollOption::requireLabelWithinCap);

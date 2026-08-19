@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Icon } from '../components/Icon';
 import { confirmWith } from '../components/confirmDestructive';
 import { PollCard } from './PollCard';
-import { pollActions } from './pollBoard';
+import { boardIsWritable } from './pollBoard';
 import {
   POLLS_ACTIVE_SECTION,
   POLLS_ARCHIVED_NOTE,
@@ -43,7 +43,12 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
   const close = useClosePoll(itineraryId);
   const remove = useDeletePoll(itineraryId);
   const [failure, setFailure] = useState<string | null>(null);
-  const [now] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), COUNTDOWN_TICK_MS);
+    return () => clearInterval(tick);
+  }, []);
 
   if (board.isPending) {
     return (
@@ -63,20 +68,20 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
 
   const active = board.data?.active ?? [];
   const completed = board.data?.completed ?? [];
-  const { canCreate, canVote } = pollActions(isOwner, archived);
+  const writable = boardIsWritable(archived);
   const busy = vote.isPending || close.isPending || remove.isPending;
 
   const openCreate = () =>
     router.push({ pathname: '/itineraries/[id]/polls/new', params: { id: itineraryId } });
 
-  const run = (act: Promise<unknown>) => {
+  const reportingFailure = (act: Promise<unknown>) => {
     setFailure(null);
     act.catch((error: Error) => setFailure(pollErrorMessage(error)));
   };
 
   const confirmDelete = (poll: PollResponse) => {
     confirmWith(pollDeleteWording(poll.question, poll.votedCount), () => {
-      run(remove.mutateAsync(poll.id));
+      reportingFailure(remove.mutateAsync(poll.id));
     });
   };
 
@@ -87,11 +92,11 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
         poll={poll}
         isOwner={isOwner}
         archived={archived}
-        canVote={canVote}
+        canVote={writable}
         busy={busy}
         now={now}
-        onVote={(optionId) => run(vote.mutateAsync({ pollId: poll.id, optionId }))}
-        onClose={() => run(close.mutateAsync(poll.id))}
+        onVote={(optionId) => reportingFailure(vote.mutateAsync({ pollId: poll.id, optionId }))}
+        onClose={() => reportingFailure(close.mutateAsync(poll.id))}
         onDelete={() => confirmDelete(poll)}
       />
     ));
@@ -108,7 +113,7 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
           </View>
           <Text style={styles.emptyTitle}>{POLLS_EMPTY_TITLE}</Text>
           <Text style={styles.emptyBody}>{POLLS_EMPTY_BODY}</Text>
-          {canCreate && (
+          {writable && (
             <Pressable
               style={styles.primaryCta}
               onPress={openCreate}
@@ -124,7 +129,7 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
         <>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>{POLLS_ACTIVE_SECTION}</Text>
-            {canCreate && (
+            {writable && (
               <Pressable
                 style={styles.textCta}
                 onPress={openCreate}
@@ -159,6 +164,9 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
     </View>
   );
 }
+
+
+const COUNTDOWN_TICK_MS = 30_000;
 
 
 const styles = StyleSheet.create({

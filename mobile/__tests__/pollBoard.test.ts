@@ -3,8 +3,9 @@ import {
   deadlineMetaFor,
   defaultDeadline,
   kebabMenuFor,
+  markerFor,
   optionStateFor,
-  pollActions,
+  boardIsWritable,
   progressFor,
   submitLabelFor,
   voteGrammarFor,
@@ -194,6 +195,34 @@ describe('optionStateFor — exactly one option ever reads orange', () => {
 });
 
 
+describe('markerFor — a closed card drops radios entirely, keeping only the winner star', () => {
+  const closed = poll({ status: 'closed', myVoteOptionId: 'o1', winningOptionIds: ['o1'] });
+
+  it('stars the winner and draws NOTHING beside the losers', () => {
+    expect(markerFor(closed, 'o1', null)).toBe('star');
+    expect(markerFor(closed, 'o2', null))
+      .toBe('none');
+  });
+
+  it('draws nothing at all on a tie loser, and a star on every leader', () => {
+    const tied = poll({ status: 'closed', winningOptionIds: ['o1', 'o2'] });
+    expect(markerFor(tied, 'o1', null)).toBe('star');
+    expect(markerFor(tied, 'o2', null)).toBe('star');
+  });
+
+  it('draws nothing anywhere on a zero-vote close', () => {
+    const empty = poll({ status: 'closed', winningOptionIds: [] });
+    expect(markerFor(empty, 'o1', null)).toBe('none');
+  });
+
+  it('keeps every radio grammar while the poll is open', () => {
+    expect(markerFor(poll(), 'o1', null)).toBe('radio');
+    expect(markerFor(poll(), 'o1', 'o1')).toBe('selected');
+    expect(markerFor(poll({ myVoteOptionId: 'o1' }), 'o1', null)).toBe('check');
+    expect(markerFor(poll({ myVoteOptionId: 'o1' }), 'o1', 'o2')).toBe('demotedCheck');
+  });
+});
+
 describe('submitLabelFor — the CTA names what it is about to do', () => {
   it('offers Submit Vote, disabled, until something is selected', () => {
     expect(submitLabelFor(poll(), null)).toEqual({ label: 'Submit Vote', enabled: false });
@@ -247,14 +276,13 @@ describe('kebabMenuFor — creator or trip owner, and nobody else', () => {
 });
 
 
-describe('pollActions — what the board itself offers', () => {
-  it('offers creation to every member of a live trip, not just the owner', () => {
-    expect(pollActions(false, false).canCreate).toBe(true);
-    expect(pollActions(true, false).canCreate).toBe(true);
+describe('boardIsWritable — the board is live until the trip is archived', () => {
+  it('lets every member create and vote on a live trip, not just the owner', () => {
+    expect(boardIsWritable(false)).toBe(true);
   });
 
   it('offers no creation and no voting on an archived trip', () => {
-    expect(pollActions(true, true)).toEqual({ canCreate: false, canVote: false });
+    expect(boardIsWritable(true)).toBe(false);
   });
 });
 

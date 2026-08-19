@@ -1,8 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { MediaThumb } from '../media/MediaThumb';
 import { initialsFor } from '../onboarding/initials';
-import { pollColors, pollMetrics, pollTypography } from '../theme/workspaceTokens';
-import { workspaceColors, workspaceRadii } from '../theme/workspaceTokens';
+import {
+  pollColors,
+  pollMetrics,
+  pollTypography,
+  workspaceColors,
+  workspaceRadii,
+} from '../theme/workspaceTokens';
 import type { PollVoterResponse } from '../types/api';
 
 

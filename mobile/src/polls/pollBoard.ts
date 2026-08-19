@@ -16,6 +16,8 @@ export type VoteGrammar = 'none' | 'selected' | 'recorded' | 'changing';
 
 export type OptionState = 'idle' | 'selected' | 'recorded' | 'demoted';
 
+export type OptionMarker = 'none' | 'star' | 'radio' | 'selected' | 'check' | 'demotedCheck';
+
 export type PollMenuAction = 'close' | 'delete';
 
 
@@ -66,6 +68,26 @@ export function optionStateFor(
 }
 
 
+export function markerFor(
+  poll: PollResponse,
+  optionId: string,
+  selectedOptionId: string | null,
+): OptionMarker {
+  if (isClosed(poll)) {
+    return winnerIdsOf(poll).includes(optionId) ? 'star' : 'none';
+  }
+  switch (optionStateFor(poll, optionId, selectedOptionId)) {
+    case 'selected':
+      return 'selected';
+    case 'recorded':
+      return 'check';
+    case 'demoted':
+      return 'demotedCheck';
+    default:
+      return 'radio';
+  }
+}
+
 export function submitLabelFor(
   poll: PollResponse,
   selectedOptionId: string | null,
@@ -90,11 +112,8 @@ export function kebabMenuFor(
 }
 
 
-export function pollActions(
-  _isOwner: boolean,
-  archived: boolean,
-): { canCreate: boolean; canVote: boolean } {
-  return { canCreate: !archived, canVote: !archived };
+export function boardIsWritable(archived: boolean): boolean {
+  return !archived;
 }
 
 

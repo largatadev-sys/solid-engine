@@ -282,6 +282,23 @@ class PollContractIT extends PostgresTestBase {
 
 
     @Test
+    void aBlankOptionCannotSmuggleAnEleventhPastTheCap() {
+        Fixture trip = tripWithAMember();
+        List<String> elevenWithABlank = new ArrayList<>(eleven());
+        elevenWithABlank.set(3, "   ");
+
+        refusal(trip, createBody("Q", elevenWithABlank, inADay()), "POLL_OPTION_COUNT");
+    }
+
+
+    @Test
+    void aBlankOptionCannotSmuggleAPollPastTheFloorEither() {
+        Fixture trip = tripWithAMember();
+
+        refusal(trip, createBody("Q", List.of("Only real one", "   "), inADay()), "POLL_OPTION_COUNT");
+    }
+
+    @Test
     void theTwentySixthOpenPollIsRefusedWhileAClosedOneFreesTheSlot() {
         Fixture trip = tripWithAMember();
         String first = null;

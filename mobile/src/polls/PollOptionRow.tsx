@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { POLL_YOUR_VOTE_TAG } from './pollMessages';
 import { PollVoterCluster } from './PollVoterCluster';
-import type { OptionState } from './pollBoard';
+import type { OptionMarker, OptionState } from './pollBoard';
 import {
   pollColors,
   pollMetrics,
@@ -16,22 +16,22 @@ import type { PollOptionResponse } from '../types/api';
 interface PollOptionRowProps {
   readonly option: PollOptionResponse;
   readonly state: OptionState;
-  readonly starred: boolean;
+  readonly marker: OptionMarker;
   readonly onPress: (() => void) | undefined;
 }
 
 
-export function PollOptionRow({ option, state, starred, onPress }: PollOptionRowProps) {
+export function PollOptionRow({ option, state, marker, onPress }: PollOptionRowProps) {
   return (
     <Pressable
-      style={[styles.row, rowStyles[state], starred && styles.winner]}
+      style={[styles.row, rowStyles[state], marker === 'star' && styles.winner]}
       onPress={onPress}
       disabled={onPress === undefined}
-      accessibilityRole="radio"
+      accessibilityRole={marker === 'none' || marker === 'star' ? 'text' : 'radio'}
       accessibilityState={{ checked: state === 'recorded' || state === 'demoted' }}
       accessibilityLabel={`${option.label}, ${option.voteCount} votes`}
     >
-      <Marker state={state} starred={starred} />
+      <Marker marker={marker} />
 
       <View style={styles.labelBlock}>
         <Text style={styles.label} numberOfLines={2}>
@@ -55,29 +55,32 @@ export function PollOptionRow({ option, state, starred, onPress }: PollOptionRow
 }
 
 
-function Marker({ state, starred }: { state: OptionState; starred: boolean }) {
-  if (starred) {
+function Marker({ marker }: { marker: OptionMarker }) {
+  if (marker === 'none') {
+    return null;
+  }
+  if (marker === 'star') {
     return (
       <View style={styles.marker}>
         <Icon name="starFilled" size={16} color={workspaceColors.accent} />
       </View>
     );
   }
-  if (state === 'recorded') {
+  if (marker === 'check') {
     return (
       <View style={styles.marker}>
         <Icon name="checkCircleFilled" size={18} color={workspaceColors.accent} />
       </View>
     );
   }
-  if (state === 'demoted') {
+  if (marker === 'demotedCheck') {
     return (
       <View style={styles.marker}>
         <Icon name="checkCircle" size={16} color={pollColors.demoted} />
       </View>
     );
   }
-  if (state === 'selected') {
+  if (marker === 'selected') {
     return (
       <View style={styles.marker}>
         <View style={styles.radioRinged}>
@@ -92,7 +95,6 @@ function Marker({ state, starred }: { state: OptionState; starred: boolean }) {
     </View>
   );
 }
-
 
 const RADIO = 18;
 
