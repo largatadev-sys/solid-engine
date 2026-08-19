@@ -79,7 +79,7 @@ _Transcribed from the founder discussion (largata.docx, 09/07/2026, as revised a
 - *(Recorded behavior, not an invariant: members can settle, reassign, waive, or absorb balances; removal from a workspace is never blocked by balance — but every such action is a ledger entry per INV-8.)*
 
 **Collaboration**
-- **INV-10.** One vote per member per decision; only Workspace members vote.
+- **INV-10.** One vote per member per poll; only Workspace members vote. *(Decision renamed Poll, 2026-08-20 — S2.1.)*
 
 *(The founder equity/investor rules from the original discussion doc are corporate governance, not system rules — relocated to the shareholders' agreement.)*
 
