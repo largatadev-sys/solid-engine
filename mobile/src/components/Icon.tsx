@@ -1,4 +1,5 @@
 import Svg, { Circle, Line, Path, Polygon, Polyline, Rect } from 'react-native-svg';
+import { workspaceColors } from '../theme/workspaceTokens';
 
 export type IconName =
   | 'back'
@@ -52,7 +53,10 @@ export type IconName =
   | 'clock'
   | 'info'
   | 'copy'
-  | 'chevronUp';
+  | 'chevronUp'
+  | 'barChart'
+  | 'kebab'
+  | 'checkCircleFilled';
 
 interface IconProps {
   readonly name: IconName;

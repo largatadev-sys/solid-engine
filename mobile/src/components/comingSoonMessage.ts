@@ -10,7 +10,6 @@ export const COMING_SOON_SURFACES = {
   booking: 'Booking options',
   tripSearch: 'Searching your trips',
   tripFilter: 'Filtering your trips',
-  polls: 'Trip polls',
   profile: 'Traveler profiles',
   share: 'Sharing a postcard',
   saved: 'Saved postcards',

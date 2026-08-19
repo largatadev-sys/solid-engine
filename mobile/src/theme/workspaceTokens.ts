@@ -309,6 +309,50 @@ export const workspaceBadgeColors = {
 } as const;
 
 
+export const pollTypography = {
+  sectionLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  question: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, fontWeight: '700' },
+  emptyTitle: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  meta: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  optionLabel: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  count: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 15, fontWeight: '400' },
+  tag: { fontFamily: fonts.bold, fontSize: 9, lineHeight: 12, fontWeight: '700', letterSpacing: 0.4 },
+  progressLabel: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  hint: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  menuItem: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  initials: { fontFamily: fonts.bold, fontSize: 8, lineHeight: 10, fontWeight: '700' },
+} as const;
+
+
+export const pollMetrics = {
+  cardRadius: 16,
+  optionRadius: 12,
+  avatarSize: 16,
+  avatarOverlap: -6,
+  progressHeight: 6,
+  submitHeight: 53,
+  badgeRadius: 999,
+  emptyGlyphWell: 64,
+} as const;
+
+
+export const pollColors = {
+  selectedFill: '#FFEDD5',
+  recordedFill: '#FFF7ED',
+  winnerPaper: '#FAF9F6',
+  danger: '#B91C1C',
+  demoted: '#78716C',
+  ink: '#44403C',
+} as const;
+
+
 export const workspaceTypography = {
   screenTitle: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28, fontWeight: '700' },
   badgeLabel: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 0.5 },
