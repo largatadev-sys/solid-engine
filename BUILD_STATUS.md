@@ -28,9 +28,8 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | S1.6 | Ownership transfer via offer/accept (INV-4) + membership-scoped My Trips *(grilled 2026-07-28: claim flow → S5.5 with its deletion trigger; consent over imposition — the reversal is the record)* | ✅ | [spec](docs/plans/S1.6-ownership-transfer/spec.md) |
 | S1.7 | Itinerary lifecycle: draft → active → completed *(grilled 2026-07-28: reg #10 resolved — owner-explicit, dates nudge; `completed` gates nothing; forward-only + write-once stamps; workspace `state` defers to the archive story)* | ✅ | [spec](docs/plans/S1.7-itinerary-lifecycle/spec.md) |
 | S1.9 | Itinerary archive *(grilled 2026-07-28, re-titled from "itinerary delete" — founder ruled archive-only, permanent deletion parked with a trigger; register #12 closes: the workspace `state` column ships; unarchive ships; fence = acts on the trip freeze, self-leave survives; evicts nobody)* | ✅ | [spec](docs/plans/S1.9-itinerary-archive/spec.md) |
-| **Epic 2 — Decisions** *(deferred behind E4, 2026-07-29 — trigger: the founders' E2 UX-flow discussion)* | | | | |
-| S2.1 | Decision + votes (one per member, INV-10) | ⬜ | — |
-| S2.2 | Close decision with outcome | ⬜ | — |
+| **Epic 2 — Polls** *(deferred behind E4, 2026-07-29 — trigger fired 2026-08-20: the E2 UX-flow discussion ran as S2.1's grilling; epic renamed with the entity)* | | | | |
+| S2.1 | Polls: the trip voting board *(grilled 2026-08-20 — attachment ruled free-standing; Decision renamed Poll; **S2.2 absorbed**: lazy deadline close makes "close with outcome" one endpoint; design baseline = the Claude Design polls canvas; the offer/accept-extraction trigger dismissed on the record)* | ✅ | [spec](docs/plans/S2.1-polls-board/spec.md) |
 | **Epic 3 — The record** *(resequenced behind E4, 2026-07-29; S3.3 resliced into the E4 pull; resliced again 2026-08-11 at the diary grilling — ADR-024)* | | | | |
 | S3.1 | Diary: activity-derived posts *(re-scoped 2026-08-11, ADR-024 — the postcard model; grilled with S3.4, pulled ahead of S4.3; absorbs what survived of S3.2)* | ✅ | [spec](docs/plans/S3.1-diary-posts/spec.md) |
 | S3.2 | Diary entries: text + geotag *(dissolved 2026-08-11 — ADR-024's postcard model has no free-standing entries; text+geotag park on the epic map, the rest lives in S3.1)* | 🚫 | — |

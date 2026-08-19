@@ -77,16 +77,16 @@ test.describe('the draft workspace as a viewer', () => {
     await expect(page.getByText(/Step back/i)).toHaveCount(0);
   });
 
-  test('Polls, Chat and Photo Dump grey with a message rather than dead-clicking', async ({
+  test('Chat greys with a message rather than dead-clicking — Polls stopped greying at S2.1', async ({
     page,
     signal,
   }) => {
     await page.goto(`/itineraries/${trip.id}`);
 
-    for (const tab of ['Polls', 'Chat']) {
-      await labelled(page, `${tab}, coming soon`).click();
-    }
-    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(1);
+    await labelled(page, 'Chat, coming soon').click();
+    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
+
+    await expect(labelled(page, 'Polls, coming soon')).toHaveCount(0);
   });
 
   test('the Travelers tab lists the roster', async ({ page }) => {

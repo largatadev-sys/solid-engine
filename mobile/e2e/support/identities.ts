@@ -20,6 +20,7 @@ export const IDENTITY_MAP = {
   'api/ownership-transfer': { tags: ['t4', 't5'], sharesWith: 'wants-exclusive' },
   'api/archive-posture': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'api/api-surface': { tags: ['t1', 't2', 't3'], sharesWith: 'shared' },
+  'api/polls': { tags: ['t1', 't2'], sharesWith: 'shared' },
 
   'web/discovery': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'web/create-flow': { tags: ['t4'], sharesWith: 'shared' },
@@ -35,6 +36,7 @@ export const IDENTITY_MAP = {
   'web/archive': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'web/trip-details': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'web/fork': { tags: ['t3', 't4'], sharesWith: 'shared' },
+  'web/polls': { tags: ['t1', 't2'], sharesWith: 'shared' },
 } as const satisfies Record<string, SpecIdentities>;
 
 export type SpecKey = keyof typeof IDENTITY_MAP;

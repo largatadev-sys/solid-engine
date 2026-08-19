@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin:0; background:#F5F5F4; font-family:'Geist',sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#EA580C; text-decoration:none; } a:hover { color:#C2410C; text-decoration:underline; }
+  </style>
+</helmet>
+
+<div style="padding:48px 56px 72px; display:flex; flex-direction:column; gap:36px;">
+
+  <div style="max-width:920px; display:flex; flex-direction:column; gap:14px;">
+    <div style="font-size:12px; font-weight:700; letter-spacing:2px; color:#78716C; text-transform:uppercase;">Largata · Trip Workspace</div>
+    <div style="font-family:'Outfit',sans-serif; font-size:30px; font-weight:700; color:#1C1917; line-height:1.15;">Polls tab — board states and Create a Poll</div>
+    <div style="font-size:13.5px; line-height:1.6; color:#44403C;">Seeded from the poll.txt export: #EA580C primary, stone greys, Outfit 700 card titles, Geist elsewhere, 12px-radius cards, amber badges. Frames show minimal chrome for context (tab row corrected to Day-by-Day · Polls · Travelers · Photo Dump · Chat); the export's bottom nav, Draft badge, and Finalize/Save CTAs are shipped chrome, out of scope.</div>
+    <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">Normative rules</div>
+      <div style="font-size:12.5px; line-height:1.7; color:#44403C;">
+        Single-choice only, no multiple-votes toggle · one vote per member, changeable while open · votes always attributed and visible, even before you vote · every poll has a required deadline (default +24h) · creator or trip owner can close early or delete (confirm on delete) · pull-based — no push; board refreshes on focus / pull-to-refresh · <b>no "Added to Itinerary" label</b> — polls never touch the plan (the export's green label is stale, do not build it) · winner = highest vote count; ties star every leader; a zero-vote close stars nothing.
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:44px; align-items:flex-start; flex-wrap:wrap;">
+
+    <!-- 1 · EMPTY BOARD -->
+    <div style="flex:none; width:417px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">1 · Empty board</div>
+      <div style="background:#1C1917; border-radius:36px; padding:12px;">
+        <div style="width:393px; background:#FFFFFF; border-radius:26px; overflow:hidden; display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px 4px;">
+            <span style="font-size:14px; font-weight:600; color:#1C1917;">9:41</span>
+            <svg width="46" height="12" viewBox="0 0 46 12"><rect x="0" y="7" width="3" height="4" rx="1" fill="#1C1917"></rect><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#1C1917"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#1C1917"></rect><rect x="21.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#1C1917" stroke-opacity="0.35"></rect><rect x="23" y="2" width="18" height="8" rx="1.5" fill="#1C1917"></rect></svg>
+          </div>
+          <div style="padding:12px 16px 8px; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-family:'Outfit',sans-serif; font-size:22px; line-height:28px; font-weight:700; color:#1C1917;">Island Hopping in El Nido</div>
+            <div style="font-size:13px; line-height:17px; color:#78716C;">Original by @josetravels</div>
+          </div>
+          <div style="display:flex; gap:12px; padding:0 16px; border-bottom:1px solid #E7E5E4; overflow:hidden;">
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:500; color:#78716C; white-space:nowrap;">Day-by-Day</span><span style="width:78px; height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:700; color:#EA580C; white-space:nowrap;">Polls</span><span style="width:35px; height:3px; background:#EA580C; border-radius:100px 100px 0 0;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:500; color:#78716C; white-space:nowrap;">Travelers</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:500; color:#78716C; white-space:nowrap;">Photo Dump</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:500; color:#78716C; white-space:nowrap;">Chat</span><span style="height:3px;"></span></div>
+          </div>
+          <div style="padding:64px 32px 72px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+            <div style="width:64px; height:64px; border-radius:100px; background:#FAF9F6; display:flex; align-items:center; justify-content:center;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M12 20V4M20 20v-7"></path></svg>
+            </div>
+            <div style="font-family:'Outfit',sans-serif; font-size:17px; font-weight:700; color:#1C1917;">No polls yet</div>
+            <div style="font-size:13px; line-height:20px; color:#78716C; text-align:center; max-width:260px; margin-top:-8px;">Can't decide on an activity? Put it to a vote. Anyone in the trip can start a poll.</div>
+            <div style="height:44px; padding:0 20px; background:#EA580C; border-radius:12px; display:flex; align-items:center; gap:8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+              <span style="font-size:14px; font-weight:700; color:#FFFFFF;">Create a Poll</span>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:center; padding:10px 0 8px;"><span style="width:134px; height:5px; background:#1C1917; border-radius:100px;"></span></div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">
+        Any member sees this identical state — creation isn't owner-gated. The empty-state CTA is the only filled-orange button on the board; once polls exist, "Create a Poll" moves to the text button in the board header (frame <a href="#board">2</a>). Board is pull-based: refreshes on focus and pull-to-refresh, no notification affordances anywhere.
+      </div>
+    </div>
+
+    <!-- 2 · BOARD, OPEN POLL NOT VOTED -->
+    <div id="board" style="flex:none; width:417px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">2 · Open poll — not voted, option selected</div>
+      <div style="background:#1C1917; border-radius:36px; padding:12px;">
+        <div style="width:393px; background:#FFFFFF; border-radius:26px; overflow:hidden; display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px 4px;">
+            <span style="font-size:14px; font-weight:600; color:#1C1917;">9:41</span>
+            <svg width="46" height="12" viewBox="0 0 46 12"><rect x="0" y="7" width="3" height="4" rx="1" fill="#1C1917"></rect><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#1C1917"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#1C1917"></rect><rect x="21.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#1C1917" stroke-opacity="0.35"></rect><rect x="23" y="2" width="18" height="8" rx="1.5" fill="#1C1917"></rect></svg>
+          </div>
+          <div style="display:flex; gap:12px; padding:8px 16px 0; border-bottom:1px solid #E7E5E4; overflow:hidden;">
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; font-weight:500; color:#78716C; white-space:nowrap;">Day-by-Day</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; font-weight:700; color:#EA580C; white-space:nowrap;">Polls</span><span style="width:35px; height:3px; background:#EA580C; border-radius:100px 100px 0 0;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; font-weight:500; color:#78716C; white-space:nowrap;">Travelers</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; font-weight:500; color:#78716C; white-space:nowrap;">Photo Dump</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; font-weight:500; color:#78716C; white-space:nowrap;">Chat</span><span style="height:3px;"></span></div>
+          </div>
+          <div style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; line-height:16px; font-weight:700; letter-spacing:0.02em; text-transform:uppercase; color:#78716C;">Active polls</span>
+              <div style="display:flex; align-items:center; gap:6px; padding:8px 0;">
+                <span style="font-size:13px; line-height:17px; font-weight:700; color:#EA580C;">Create a Poll</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+              </div>
+            </div>
+            <div style="border:1px solid #E7E5E4; box-shadow:0 2px 8px rgba(0,0,0,0.05); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <span style="font-family:'Outfit',sans-serif; font-size:16px; line-height:20px; font-weight:700; color:#1C1917;">Day 2 Afternoon Activity</span>
+                  <span style="font-size:12px; line-height:16px; color:#78716C;">Poll closes in 3 hours · Oct 24, 6:00 PM</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="background:#FEF3C7; border-radius:6px; padding:4px 8px; font-size:10px; line-height:13px; font-weight:700; text-transform:uppercase; color:#D97706;">Voting Open</span>
+                  <div style="width:28px; height:28px; margin:-4px -6px -4px 0; display:flex; align-items:center; justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#78716C"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></div>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="box-sizing:border-box; background:#FFEDD5; border:1.5px solid #EA580C; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; border:5px solid #EA580C; background:#FFFFFF;"></span>
+                    <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Island Hopping Tour A</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <div style="display:flex;">
+                      <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#FDE68A; border:1.5px solid #FFFFFF; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#92400E;">MA</span>
+                      <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#E7E5E4; border:1.5px solid #FFFFFF; margin-left:-6px; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#44403C;">JR</span>
+                      <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#FED7AA; border:1.5px solid #FFFFFF; margin-left:-6px; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#9A3412;">KC</span>
+                    </div>
+                    <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">3 votes</span>
+                  </div>
+                </div>
+                <div style="box-sizing:border-box; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; border:2px solid #78716C;"></span>
+                    <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Snorkeling at Shimizu</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <div style="display:flex;">
+                      <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#D6D3D1; border:1.5px solid #FFFFFF; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#44403C;">TS</span>
+                      <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#FEF3C7; border:1.5px solid #FFFFFF; margin-left:-6px; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#92400E;">LB</span>
+                    </div>
+                    <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">2 votes</span>
+                  </div>
+                </div>
+                <div style="box-sizing:border-box; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; border:2px solid #78716C;"></span>
+                    <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Beach Rest Day</span>
+                  </div>
+                  <span style="font-size:12px; line-height:16px; font-weight:700; color:#78716C;">0 votes</span>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:12px; line-height:16px; color:#44403C;">Voting Progress</span>
+                  <span style="font-size:12px; line-height:16px; font-weight:700; color:#1C1917;">5 of 6 voted</span>
+                </div>
+                <div style="height:6px; background:#F5F5F4; border-radius:100px; overflow:hidden;"><span style="display:block; width:83%; height:6px; background:#EA580C;"></span></div>
+              </div>
+              <div style="box-sizing:border-box; height:53px; border:1px solid #EA580C; border-radius:12px; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:21px; font-weight:700; color:#EA580C;">Submit Vote</span></div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:center; padding:10px 0 8px;"><span style="width:134px; height:5px; background:#1C1917; border-radius:100px;"></span></div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">
+        Votes are visible <b>before</b> you vote — attribution (initial avatars + count) sits beside every option from the moment the poll opens; there is no reveal-after-voting mechanic. Selection ≠ vote: the amber-filled option is only a local selection until <b>Submit Vote</b>; with nothing selected the button is disabled (45% opacity). Progress counts members, M = current member count, so M can shift if travelers join. The kebab appears only for the poll's creator and the trip owner (frame <a href="#actions">5</a>); everyone else sees the badge alone. Multiple polls stack newest-first under ACTIVE POLLS; COMPLETED POLLS follows (frame <a href="#closed">4</a>).
+      </div>
+    </div>
+
+    <!-- 3 · VOTED / CHANGE VOTE -->
+    <div style="flex:none; width:417px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">3 · Voted — recorded vote vs. new selection</div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#78716C; text-transform:uppercase;">State A — your vote is recorded</div>
+        <div style="border:1px solid #E7E5E4; box-shadow:0 2px 8px rgba(0,0,0,0.05); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span style="font-family:'Outfit',sans-serif; font-size:16px; line-height:20px; font-weight:700; color:#1C1917;">Day 2 Afternoon Activity</span>
+              <span style="font-size:12px; line-height:16px; color:#78716C;">Poll closes in 3 hours · Oct 24, 6:00 PM</span>
+            </div>
+            <span style="background:#FEF3C7; border-radius:6px; padding:4px 8px; font-size:10px; line-height:13px; font-weight:700; text-transform:uppercase; color:#D97706;">Voting Open</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="box-sizing:border-box; background:#FFF7ED; border:1.5px solid #EA580C; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#EA580C"></circle><path d="M8 12.5l2.5 2.5L16 9.5" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Island Hopping Tour A</span>
+                <span style="background:#EA580C; border-radius:6px; padding:2px 6px; font-size:9px; line-height:12px; font-weight:700; text-transform:uppercase; color:#FFFFFF;">Your vote</span>
+              </div>
+              <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">4 votes</span>
+            </div>
+            <div style="box-sizing:border-box; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; border:2px solid #78716C;"></span>
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Snorkeling at Shimizu</span>
+              </div>
+              <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">2 votes</span>
+            </div>
+          </div>
+          <div style="font-size:12px; line-height:16px; color:#78716C; text-align:center;">Tap another option to change your vote</div>
+        </div>
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#78716C; text-transform:uppercase; margin-top:8px;">State B — changing: new selection + recorded vote</div>
+        <div style="border:1px solid #E7E5E4; box-shadow:0 2px 8px rgba(0,0,0,0.05); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="box-sizing:border-box; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#78716C" stroke-width="2"></circle><path d="M8 12.5l2.5 2.5L16 9.5" fill="none" stroke="#78716C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Island Hopping Tour A</span>
+                <span style="background:#F5F5F4; border-radius:6px; padding:2px 6px; font-size:9px; line-height:12px; font-weight:700; text-transform:uppercase; color:#78716C;">Your vote</span>
+              </div>
+              <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">4 votes</span>
+            </div>
+            <div style="box-sizing:border-box; background:#FFEDD5; border:1.5px solid #EA580C; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; border:5px solid #EA580C; background:#FFFFFF;"></span>
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Snorkeling at Shimizu</span>
+              </div>
+              <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">2 votes</span>
+            </div>
+          </div>
+          <div style="box-sizing:border-box; height:53px; background:#EA580C; border-radius:12px; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:21px; font-weight:700; color:#FFFFFF;">Change Vote to "Snorkeling"</span></div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">
+        Two distinct visual grammars: <b>recorded vote</b> = filled orange check + "YOUR VOTE" tag on cream (#FFF7ED), no Submit button — the card is at rest with a quiet "tap to change" hint replacing it. <b>Selection</b> = radio + amber fill (#FFEDD5), same as first-time voting. While changing, the recorded option demotes to a grey check + grey tag so exactly one option ever reads orange; the button returns filled and names the target ("Change Vote to …"). Cancel-by-tapping the recorded option restores state A. Your count doesn't move until the change is submitted.
+      </div>
+    </div>
+
+    <!-- 4 · CLOSED -->
+    <div id="closed" style="flex:none; width:417px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">4 · Completed polls — winner, tie, zero votes</div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+        <span style="font-size:12px; line-height:16px; font-weight:700; letter-spacing:0.02em; text-transform:uppercase; color:#78716C;">Completed polls</span>
+        <div style="border:1px solid #E7E5E4; box-shadow:0 2px 8px rgba(0,0,0,0.05); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span style="font-family:'Outfit',sans-serif; font-size:16px; line-height:20px; font-weight:700; color:#1C1917;">Day 1 Dinner Spot</span>
+              <span style="font-size:12px; line-height:16px; color:#78716C;">Poll closed · Oct 24, 6:00 PM</span>
+            </div>
+            <span style="background:#F5F5F4; border-radius:6px; padding:4px 8px; font-size:10px; line-height:13px; font-weight:700; text-transform:uppercase; color:#78716C;">Closed</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="box-sizing:border-box; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#EA580C"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 16.9 5.9 20.4l1.5-6.8L2.2 9l6.9-.7L12 2z"></path></svg>
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Seafood Dinners at El Nido</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="display:flex;">
+                  <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#FDE68A; border:1.5px solid #FFFFFF; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#92400E;">MA</span>
+                  <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#E7E5E4; border:1.5px solid #FFFFFF; margin-left:-6px; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#44403C;">JR</span>
+                  <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#FED7AA; border:1.5px solid #FFFFFF; margin-left:-6px; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#9A3412;">KC</span>
+                  <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#D6D3D1; border:1.5px solid #FFFFFF; margin-left:-6px; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#44403C;">TS</span>
+                  <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#FEF3C7; border:1.5px solid #FFFFFF; margin-left:-6px; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#92400E;">LB</span>
+                </div>
+                <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">5 votes</span>
+              </div>
+            </div>
+            <div style="box-sizing:border-box; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Street Food Tour</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="box-sizing:border-box; width:16px; height:16px; border-radius:100px; background:#FDE68A; border:1.5px solid #FFFFFF; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#92400E;">RD</span>
+                <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">1 vote</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="border:1px solid #E7E5E4; box-shadow:0 2px 8px rgba(0,0,0,0.05); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span style="font-family:'Outfit',sans-serif; font-size:16px; line-height:20px; font-weight:700; color:#1C1917;">Day 3 Morning Activity</span>
+              <span style="font-size:12px; line-height:16px; color:#78716C;">Poll closed · Oct 25, 9:00 AM · Tie</span>
+            </div>
+            <span style="background:#F5F5F4; border-radius:6px; padding:4px 8px; font-size:10px; line-height:13px; font-weight:700; text-transform:uppercase; color:#78716C;">Closed</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="box-sizing:border-box; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#EA580C"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 16.9 5.9 20.4l1.5-6.8L2.2 9l6.9-.7L12 2z"></path></svg>
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Underground River Tour</span>
+              </div>
+              <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">3 votes</span>
+            </div>
+            <div style="box-sizing:border-box; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#EA580C"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 16.9 5.9 20.4l1.5-6.8L2.2 9l6.9-.7L12 2z"></path></svg>
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Beach Yoga</span>
+              </div>
+              <span style="font-size:12px; line-height:16px; font-weight:700; color:#44403C;">3 votes</span>
+            </div>
+          </div>
+        </div>
+        <div style="border:1px solid #E7E5E4; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span style="font-family:'Outfit',sans-serif; font-size:16px; line-height:20px; font-weight:700; color:#1C1917;">Karaoke Night?</span>
+              <span style="font-size:12px; line-height:16px; color:#78716C;">Poll closed · Oct 25, 8:00 PM · No votes</span>
+            </div>
+            <span style="background:#F5F5F4; border-radius:6px; padding:4px 8px; font-size:10px; line-height:13px; font-weight:700; text-transform:uppercase; color:#78716C;">Closed</span>
+          </div>
+          <span style="font-size:12px; line-height:16px; color:#78716C;">Nobody voted before this poll closed.</span>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">
+        Winner = highest count, marked by the orange star on quiet paper (#FAF9F6) — no green, and <b>no "Added to Itinerary" label anywhere</b>: polls end at a decision, the plan is edited separately. A tie stars every leader and appends "· Tie" to the meta line; a zero-vote close stars nothing and collapses the options. Closed cards drop radios and progress; a "Poll closed" past-deadline read requires no server action — the deadline alone flips the state. Attribution stays on closed results.
+      </div>
+    </div>
+
+    <!-- 5 · CREATOR ACTIONS -->
+    <div id="actions" style="flex:none; width:417px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">5 · Creator / owner actions</div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#78716C; text-transform:uppercase;">Kebab menu — open</div>
+        <div style="position:relative; border:1px solid #E7E5E4; border-radius:16px; padding:16px; height:120px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span style="font-family:'Outfit',sans-serif; font-size:16px; line-height:20px; font-weight:700; color:#1C1917;">Day 2 Afternoon Activity</span>
+              <span style="font-size:12px; line-height:16px; color:#78716C;">Poll closes in 3 hours · Oct 24, 6:00 PM</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="background:#FEF3C7; border-radius:6px; padding:4px 8px; font-size:10px; line-height:13px; font-weight:700; text-transform:uppercase; color:#D97706;">Voting Open</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#1C1917"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+            </div>
+          </div>
+          <div style="position:absolute; top:44px; right:12px; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); overflow:hidden; width:190px;">
+            <div style="display:flex; align-items:center; gap:10px; padding:13px 14px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#44403C" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+              <span style="font-size:14px; font-weight:600; color:#1C1917;">Close Poll Now</span>
+            </div>
+            <div style="height:1px; background:#F5F5F4;"></div>
+            <div style="display:flex; align-items:center; gap:10px; padding:13px 14px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"></path></svg>
+              <span style="font-size:14px; font-weight:600; color:#B91C1C;">Delete Poll</span>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#78716C; text-transform:uppercase; margin-top:8px;">Delete — confirm dialog</div>
+        <div style="background:#FAF9F6; border-radius:16px; padding:28px 20px; display:flex; justify-content:center;">
+          <div style="background:#FFFFFF; border-radius:16px; box-shadow:0 12px 32px rgba(0,0,0,0.18); padding:24px 20px; width:300px; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <span style="font-family:'Outfit',sans-serif; font-size:17px; font-weight:700; color:#1C1917;">Delete this poll?</span>
+              <span style="font-size:13px; line-height:19px; color:#44403C;">"Day 2 Afternoon Activity" and its 5 votes will be gone for everyone. This can't be undone.</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="height:46px; background:#B91C1C; border-radius:12px; display:flex; align-items:center; justify-content:center;"><span style="font-size:15px; font-weight:700; color:#FFFFFF;">Delete Poll</span></div>
+              <div style="box-sizing:border-box; height:46px; border:1px solid #E7E5E4; border-radius:12px; display:flex; align-items:center; justify-content:center;"><span style="font-size:15px; font-weight:600; color:#1C1917;">Keep Poll</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">
+        The kebab renders only for the poll's <b>creator</b> and the <b>trip owner</b>; the darker glyph replaces the passive grey one in frame <a href="#board">2</a>. "Close Poll Now" acts immediately, no confirm — closing is recoverable in spirit (results survive) and the deadline was going to do it anyway. Delete is destructive and cross-member, so it confirms, names the poll, and states the vote count. On a closed poll the menu shows Delete only.
+      </div>
+    </div>
+
+    <!-- 6 · CREATE FORM -->
+    <div style="flex:none; width:417px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">6 · Create a Poll</div>
+      <div style="background:#1C1917; border-radius:36px; padding:12px;">
+        <div style="width:393px; background:#FFFFFF; border-radius:26px; overflow:hidden; display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px 4px;">
+            <span style="font-size:14px; font-weight:600; color:#1C1917;">9:41</span>
+            <svg width="46" height="12" viewBox="0 0 46 12"><rect x="0" y="7" width="3" height="4" rx="1" fill="#1C1917"></rect><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#1C1917"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#1C1917"></rect><rect x="21.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#1C1917" stroke-opacity="0.35"></rect><rect x="23" y="2" width="18" height="8" rx="1.5" fill="#1C1917"></rect></svg>
+          </div>
+          <div style="display:flex; align-items:center; gap:4px; padding:8px 24px 12px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:-6px;"><path d="M15 18l-6-6 6-6"></path></svg>
+            <span style="font-family:'Outfit',sans-serif; font-size:18px; line-height:22px; font-weight:700; color:#1C1917;">Create a Poll</span>
+          </div>
+          <div style="padding:8px 24px 0; display:flex; flex-direction:column; gap:20px;">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <span style="font-size:14px; line-height:18px; font-weight:600; color:#44403C;">Poll Question</span>
+              <div style="box-sizing:border-box; border:1px solid #E7E5E4; border-radius:12px; padding:12px 16px;"><span style="font-size:15px; line-height:20px; color:#1C1917;">Day 2 Afternoon Activity</span></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#44403C;">Options</span>
+                <span style="font-size:12px; line-height:16px; color:#78716C;">2–10 · single choice</span>
+              </div>
+              <div style="box-sizing:border-box; border:1px solid #E7E5E4; border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px; line-height:18px; color:#1C1917;">Island Hopping Tour A</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"></path></svg>
+              </div>
+              <div style="box-sizing:border-box; border:1px solid #E7E5E4; border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px; line-height:18px; color:#1C1917;">Snorkeling at Shimizu</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"></path></svg>
+              </div>
+              <div style="box-sizing:border-box; border:1px solid #E7E5E4; border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px; line-height:18px; color:#1C1917;">Beach Rest Day</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"></path></svg>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; padding:8px 0; min-height:28px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#EA580C;">Add Option</span>
+              </div>
+            </div>
+            <div style="box-sizing:border-box; border:1px solid #E7E5E4; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px; line-height:18px; font-weight:600; color:#1C1917;">Poll closes</span>
+                <div style="display:flex; align-items:center; gap:6px; background:#FAF9F6; border-radius:8px; padding:6px 10px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44403C" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg>
+                  <span style="font-size:13px; line-height:17px; font-weight:600; color:#44403C;">Oct 24, 6:00 PM</span>
+                </div>
+              </div>
+              <span style="font-size:12px; line-height:16px; color:#78716C;">Required · defaults to 24 hours from now</span>
+            </div>
+          </div>
+          <div style="padding:24px 24px 0; display:flex; flex-direction:column; gap:10px;">
+            <div style="height:53px; background:#1C1917; border-radius:4px; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:21px; font-weight:700; color:#FFFFFF;">Create Poll</span></div>
+            <div style="box-sizing:border-box; height:53px; border:1px solid #1C1917; border-radius:4px; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:21px; font-weight:700; color:#1C1917;">Cancel</span></div>
+          </div>
+          <div style="display:flex; justify-content:center; padding:16px 0 8px;"><span style="width:134px; height:5px; background:#1C1917; border-radius:100px;"></span></div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">
+        Straight from the export minus the "allow multiple votes" toggle — single-choice is fixed, so the settings card holds only the deadline. Deadline is <b>required</b>, pre-filled at +24h; the trigger opens the platform date-time picker. Trash icons remove an option; they hide when only 2 remain; Add Option hides at 10. Create Poll disables until the question and 2 non-empty options exist. Buttons keep the shipped 4px-radius CTA style; everything inside cards stays 12px.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

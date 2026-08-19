@@ -28,6 +28,7 @@ import {
 } from '../../../../../src/itineraries/WorkspaceTabRow';
 import { WorkspacePhotoDumpTab } from '../../../../../src/itineraries/WorkspacePhotoDumpTab';
 import { WorkspaceTravelersTab } from '../../../../../src/itineraries/WorkspaceTravelersTab';
+import { WorkspacePollsTab } from '../../../../../src/polls/WorkspacePollsTab';
 import {
   editItineraryAction,
   ladderCta,
@@ -219,6 +220,14 @@ export default function TripWorkspaceScreen() {
               ))
             )}
           </View>
+        ) : null}
+
+        {active === 'polls' ? (
+          <WorkspacePollsTab
+            itineraryId={id}
+            isOwner={isOwner}
+            archived={data.archived ?? false}
+          />
         ) : null}
 
         {active === 'travelers' ? <WorkspaceTravelersTab itineraryId={id} /> : null}

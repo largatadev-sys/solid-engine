@@ -530,3 +530,58 @@ export type PublicTripDiaryResponse = {
   publishedItineraryId: string | null;
   postcards: FeedPostcardResponse[];
 };
+
+
+export type PollVoterResponse = {
+  travelerId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  handle: string | null;
+};
+
+
+export type PollOptionResponse = {
+  id: string;
+  label: string;
+  voteCount: number;
+  voters: PollVoterResponse[];
+};
+
+
+export type PollStatus = 'open' | 'closed';
+
+
+export type PollResponse = {
+  id: string;
+  question: string;
+  createdBy: string;
+  mine: boolean;
+  status: PollStatus;
+  closesAt: string;
+  closedAt: string | null;
+  createdAt: string;
+  options: PollOptionResponse[];
+  winningOptionIds: string[];
+  myVoteOptionId: string | null;
+  votedCount: number;
+  memberCount: number;
+};
+
+
+export type PollBoardResponse = {
+  active: PollResponse[];
+  completed: PollResponse[];
+  memberCount: number;
+};
+
+
+export type CreatePollRequest = {
+  question: string;
+  options: string[];
+  closesAt: string;
+};
+
+
+export type CastVoteRequest = {
+  optionId: string;
+};
