@@ -78,7 +78,7 @@ export function PollCard({
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.question}>{poll.question}</Text>
-          <Text style={styles.meta} numberOfLines={1}>
+          <Text style={styles.meta} numberOfLines={2}>
             {deadlineMetaFor(poll, now)}
           </Text>
         </View>

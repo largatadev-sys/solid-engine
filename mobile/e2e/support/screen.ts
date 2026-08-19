@@ -4,6 +4,11 @@ export function labelled(page: Page, label: string): Locator {
   return page.locator(`[aria-label*="${label.replace(/"/g, '\\"')}" i]`).locator('visible=true').last();
 }
 
+export function exactlyLabelled(page: Page, label: string): Locator {
+  return page.locator(`[aria-label="${label.replace(/"/g, '\\"')}" i]`).locator('visible=true').last();
+}
+
+
 export function labelStarting(page: Page, prefix: string): Locator {
   return page.locator(`[aria-label^="${prefix.replace(/"/g, '\\"')}" i]`).locator('visible=true').last();
 }

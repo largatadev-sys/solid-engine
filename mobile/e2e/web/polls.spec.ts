@@ -3,7 +3,7 @@ import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, type PoolTag } from '../support/identities';
 import { joinTrip, seedTrip, stamp, type SeededTrip } from '../support/seed';
-import { labelled } from '../support/screen';
+import { exactlyLabelled, labelled } from '../support/screen';
 import {
   POLLS_ACTIVE_SECTION,
   POLLS_ARCHIVED_NOTE,
@@ -104,10 +104,10 @@ test.describe('the board, from empty to a closed winner', () => {
 
     await expect(labelled(page, POLL_QUESTION_LABEL)).toBeVisible();
     await labelled(page, POLL_QUESTION_LABEL).fill('Day 2 Afternoon Activity');
-    await labelled(page, `${POLL_OPTION_PLACEHOLDER} 1`).fill('Island Hopping Tour A');
-    await labelled(page, `${POLL_OPTION_PLACEHOLDER} 2`).fill('Snorkeling at Shimizu');
+    await exactlyLabelled(page, `${POLL_OPTION_PLACEHOLDER} 1`).fill('Island Hopping Tour A');
+    await exactlyLabelled(page, `${POLL_OPTION_PLACEHOLDER} 2`).fill('Snorkeling at Shimizu');
     await labelled(page, POLL_ADD_OPTION_LABEL).click();
-    await labelled(page, `${POLL_OPTION_PLACEHOLDER} 3`).fill('Beach Rest Day');
+    await exactlyLabelled(page, `${POLL_OPTION_PLACEHOLDER} 3`).fill('Beach Rest Day');
     await labelled(page, POLL_CREATE_SUBMIT_LABEL).click();
 
     await expect.poll(async () => (await activeOf(trip.id)).length, { timeout: 20_000 }).toBe(1);
@@ -127,7 +127,7 @@ test.describe('the board, from empty to a closed winner', () => {
 
     await expect(page.getByText(POLLS_ACTIVE_SECTION)).toBeVisible();
     await expect(page.getByText(poll.question)).toBeVisible();
-    await expect(page.getByText(POLL_OPEN_BADGE)).toBeVisible();
+    await expect(page.getByText(POLL_OPEN_BADGE, { exact: true })).toBeVisible();
     await expect(page.getByText(POLL_PROGRESS_LABEL)).toBeVisible();
     await expect(page.getByText('0 of 2 voted')).toBeVisible();
   });
@@ -237,7 +237,7 @@ test.describe('the board, from empty to a closed winner', () => {
     await page.goto(pollsRoute(trip.id));
 
     await expect(page.getByText(POLLS_COMPLETED_SECTION)).toBeVisible();
-    await expect(page.getByText(POLL_CLOSED_BADGE)).toBeVisible();
+    await expect(page.getByText(POLL_CLOSED_BADGE, { exact: true })).toBeVisible();
     await expect(page.getByText(POLL_PROGRESS_LABEL)).toHaveCount(0);
 
     const closed = (await boardOf(trip.id)).completed[0] as PollResponse;

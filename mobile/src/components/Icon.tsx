@@ -465,6 +465,30 @@ export function Icon({ name, size, color }: IconProps) {
         </>
       )}
 
+      {name === 'barChart' && <Path d="M4 20V10M12 20V4M20 20v-7" {...shared} />}
+
+      {name === 'kebab' && (
+        <>
+          <Circle cx="12" cy="5" r="1.8" fill={color} />
+          <Circle cx="12" cy="12" r="1.8" fill={color} />
+          <Circle cx="12" cy="19" r="1.8" fill={color} />
+        </>
+      )}
+
+      {name === 'checkCircleFilled' && (
+        <>
+          <Circle cx="12" cy="12" r="10" fill={color} />
+          <Path
+            d="M8 12.5l2.5 2.5L16 9.5"
+            fill="none"
+            stroke={workspaceColors.onAccent}
+            strokeWidth={2.2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+
     </Svg>
   );
 }
