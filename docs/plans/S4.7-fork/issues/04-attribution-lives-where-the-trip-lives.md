@@ -4,13 +4,13 @@
 
 **Blocked by:** 02 — Provenance and the count reach the wire *(runs in parallel with 03)*.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The workspace subtitle on a forked trip renders "Original by @handle" from `forkedFrom`; non-forked trips render nothing there (the slot stays empty, as since S4.17)
-- [ ] A handle-less source author renders "Original by a traveler" — the display name never appears on any fork surface (S4.23 posture)
-- [ ] While `sourceVisible`, the attribution (subtitle and success pill) is tappable and opens the source's published page; when false it renders as plain text with no link affordance — never a dead click, never a tap into a 404
-- [ ] The published projection of a forked itinerary shows the attribution line on its public page with the same link/plain behavior
-- [ ] The source's published page renders `forkCount` in the Forked stat as a plain, non-tappable stat — visually identical to Est. Cost; the coming-soon tap retires
-- [ ] Pure-module Jest covers the subtitle/label decisions; `tsc --noEmit` clean; affected Jest files green
+- [x] The workspace subtitle on a forked trip renders "Original by @handle" from `forkedFrom`; non-forked trips render nothing there (the slot stays empty, as since S4.17)
+- [x] A handle-less source author renders "Original by a traveler" — the display name never appears on any fork surface (S4.23 posture)
+- [x] While `sourceVisible`, the attribution (subtitle and success pill) is tappable and opens the source's published page; when false it renders as plain text with no link affordance — never a dead click, never a tap into a 404
+- [x] The published projection of a forked itinerary shows the attribution line on its public page with the same link/plain behavior
+- [x] The source's published page renders `forkCount` in the Forked stat as a plain, non-tappable stat — visually identical to Est. Cost; the coming-soon tap retires
+- [x] Pure-module Jest covers the subtitle/label decisions; `tsc --noEmit` clean; affected Jest files green
 
 ## Comments
