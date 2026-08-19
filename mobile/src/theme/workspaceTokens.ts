@@ -350,6 +350,7 @@ export const pollColors = {
   danger: '#B91C1C',
   demoted: '#78716C',
   ink: '#44403C',
+  footerHairline: '#F5F5F4',
 } as const;
 
 

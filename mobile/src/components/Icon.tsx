@@ -2,7 +2,7 @@ import Svg, { Circle, Line, Path, Polygon, Polyline, Rect } from 'react-native-s
 import { workspaceColors } from '../theme/workspaceTokens';
 
 export type IconName =
-  | 'back'
+| 'back'
   | 'mailCheck'
   | 'person'
   | 'compass'
@@ -55,7 +55,6 @@ export type IconName =
   | 'copy'
   | 'chevronUp'
   | 'barChart'
-  | 'kebab'
   | 'checkCircleFilled';
 
 interface IconProps {
@@ -466,14 +465,6 @@ export function Icon({ name, size, color }: IconProps) {
       )}
 
       {name === 'barChart' && <Path d="M4 20V10M12 20V4M20 20v-7" {...shared} />}
-
-      {name === 'kebab' && (
-        <>
-          <Circle cx="12" cy="5" r="1.8" fill={color} />
-          <Circle cx="12" cy="12" r="1.8" fill={color} />
-          <Circle cx="12" cy="19" r="1.8" fill={color} />
-        </>
-      )}
 
       {name === 'checkCircleFilled' && (
         <>

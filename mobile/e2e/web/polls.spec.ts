@@ -12,7 +12,6 @@ import {
   POLLS_EMPTY_BODY,
   POLLS_EMPTY_TITLE,
   POLL_ADD_OPTION_LABEL,
-  POLL_ACTIONS_LABEL,
   POLL_CHANGE_HINT,
   POLL_CLOSED_BADGE,
   POLL_CLOSE_NOW_LABEL,
@@ -197,8 +196,9 @@ test.describe('the board, from empty to a closed winner', () => {
     const third = poll.options[2] as PollResponse['options'][number];
 
     await labelled(page, `${third.label}, 0 votes`).click();
-    await expect(labelled(page, `Change Vote to "${third.label}"`)).toBeVisible();
-    await labelled(page, `Change Vote to "${third.label}"`).click();
+    await expect(labelled(page, 'Submit Vote'))
+      .toBeVisible();
+    await labelled(page, 'Submit Vote').click();
 
     await expect
       .poll(async () => (await activeOf(trip.id, secondToken))[0]?.myVoteOptionId, {
@@ -210,20 +210,20 @@ test.describe('the board, from empty to a closed winner', () => {
     expect(after.options.map((option) => option.voteCount)).toEqual([1, 0, 1]);
   });
 
-  test('a plain member gets no kebab on a poll they did not start', async ({ page, signIn }) => {
+  test('a plain member gets no footer actions on a poll they did not start', async ({ page, signIn }) => {
     await signIn(SECOND);
     await page.goto(pollsRoute(trip.id));
     await expect(page.getByText(poll.question)).toBeVisible();
 
-    await expect(labelled(page, POLL_ACTIONS_LABEL)).toHaveCount(0);
+    await expect(labelled(page, POLL_CLOSE_NOW_LABEL)).toHaveCount(0);
+    await expect(labelled(page, POLL_DELETE_LABEL)).toHaveCount(0);
   });
 
-  test('the creator closes early through the kebab, with no confirm dialog', async ({
+  test('the creator closes early through the inline footer action, with no confirm dialog', async ({
     page,
     signal,
   }) => {
     await page.goto(pollsRoute(trip.id));
-    await labelled(page, POLL_ACTIONS_LABEL).click();
     await labelled(page, POLL_CLOSE_NOW_LABEL).click();
 
     await expect.poll(async () => (await boardOf(trip.id)).completed.length, { timeout: 20_000 })
@@ -258,10 +258,8 @@ test.describe('the board, from empty to a closed winner', () => {
     expect(refused.body?.code).toBe('POLL_CLOSED');
   });
 
-  test('the closed poll offers Delete only — closing is not on the menu twice', async ({ page }) => {
+  test('the closed poll offers Delete only — Close Poll Now goes with the open state', async ({ page }) => {
     await page.goto(pollsRoute(trip.id));
-    await labelled(page, POLL_ACTIONS_LABEL).click();
-
     await expect(labelled(page, POLL_DELETE_LABEL)).toBeVisible();
     await expect(labelled(page, POLL_CLOSE_NOW_LABEL)).toHaveCount(0);
   });
@@ -286,7 +284,6 @@ test.describe('deleting a poll', () => {
 
   test('delete confirms first, naming the poll and its vote count', async ({ page, signal }) => {
     await page.goto(pollsRoute(trip.id));
-    await labelled(page, POLL_ACTIONS_LABEL).click();
     await labelled(page, POLL_DELETE_LABEL).click();
 
     await expect.poll(() => signal.dialogs.join(' '), { timeout: 15_000 }).toContain(
@@ -390,7 +387,8 @@ test('an archived trip renders the board read-only for the owner', async ({ page
   await expect(page.getByText(POLLS_ARCHIVED_NOTE)).toBeVisible();
   await expect(page.getByText('Before the archive')).toBeVisible();
   await expect(labelled(page, POLLS_CREATE_CTA)).toHaveCount(0);
-  await expect(labelled(page, POLL_ACTIONS_LABEL)).toHaveCount(0);
+  await expect(labelled(page, POLL_CLOSE_NOW_LABEL)).toHaveCount(0);
+  await expect(labelled(page, POLL_DELETE_LABEL)).toHaveCount(0);
   await expect(labelled(page, 'Submit Vote')).toHaveCount(0);
 });
 

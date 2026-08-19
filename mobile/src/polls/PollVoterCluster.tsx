@@ -40,10 +40,7 @@ export function PollVoterCluster({ voters, voteCount }: PollVoterClusterProps) {
           />
         </View>
       ))}
-      <Text
-        style={[styles.count, voteCount === 0 && styles.countEmpty]}
-        numberOfLines={1}
-      >
+      <Text style={[styles.count, voteCount === 0 && styles.countEmpty]} numberOfLines={1}>
         {voteCount === 1 ? '1 vote' : `${voteCount} votes`}
       </Text>
     </View>
@@ -55,7 +52,6 @@ const styles = StyleSheet.create({
   cluster: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 0,
   },
   avatarSlot: {
     borderWidth: 1.5,

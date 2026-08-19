@@ -4,16 +4,14 @@ import { Icon } from '../components/Icon';
 import { PollOptionRow } from './PollOptionRow';
 import {
   deadlineMetaFor,
+  footerActionsFor,
   isClosed,
-  kebabMenuFor,
   markerFor,
   optionStateFor,
   progressFor,
-  submitLabelFor,
-  voteGrammarFor,
+  submitButtonFor,
 } from './pollBoard';
 import {
-  POLL_ACTIONS_LABEL,
   POLL_CHANGE_HINT,
   POLL_CLOSED_BADGE,
   POLL_CLOSE_NOW_LABEL,
@@ -59,17 +57,22 @@ export function PollCard({
   onDelete,
 }: PollCardProps) {
   const [selected, setSelected] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const closed = isClosed(poll);
-  const submit = canVote ? submitLabelFor(poll, selected) : null;
-  const menu = kebabMenuFor(poll, isOwner, archived);
-  const changing = voteGrammarFor(poll, selected) === 'changing';
+  const submit = canVote ? submitButtonFor(poll, selected, busy) : null;
+  const footer = footerActionsFor(poll, isOwner, archived);
   const progress = progressFor(poll);
   const nobodyVoted = closed && poll.votedCount === 0;
+  const showHint = canVote && !closed && submit === null;
 
   const pick = (optionId: string) => {
     setSelected((current) => (current === optionId ? null : optionId));
+  };
+
+  const submitVote = () => {
+    if (selected === null) return;
+    onVote(selected);
+    setSelected(null);
   };
 
   return (
@@ -82,63 +85,12 @@ export function PollCard({
           </Text>
         </View>
 
-        <View style={styles.headerActions}>
-          <View style={[styles.badge, closed ? styles.badgeClosed : styles.badgeOpen]}>
-            <Text style={closed ? styles.badgeClosedText : styles.badgeOpenText}>
-              {closed ? POLL_CLOSED_BADGE : POLL_OPEN_BADGE}
-            </Text>
-          </View>
-
-          {menu.length > 0 && (
-            <Pressable
-              onPress={() => setMenuOpen((open) => !open)}
-              accessibilityRole="button"
-              accessibilityLabel={POLL_ACTIONS_LABEL}
-              hitSlop={8}
-              style={styles.kebab}
-            >
-              <Icon
-                name="kebab"
-                size={16}
-                color={menuOpen ? workspaceColors.title : workspaceColors.muted}
-              />
-            </Pressable>
-          )}
+        <View style={[styles.badge, closed ? styles.badgeClosed : styles.badgeOpen]}>
+          <Text style={closed ? styles.badgeClosedText : styles.badgeOpenText}>
+            {closed ? POLL_CLOSED_BADGE : POLL_OPEN_BADGE}
+          </Text>
         </View>
       </View>
-
-      {menuOpen && (
-        <View style={styles.menu}>
-          {menu.includes('close') && (
-            <Pressable
-              style={styles.menuItem}
-              disabled={busy}
-              onPress={() => {
-                setMenuOpen(false);
-                onClose();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={POLL_CLOSE_NOW_LABEL}
-            >
-              <Icon name="clock" size={15} color={pollColors.ink} />
-              <Text style={styles.menuItemText}>{POLL_CLOSE_NOW_LABEL}</Text>
-            </Pressable>
-          )}
-          <Pressable
-            style={styles.menuItem}
-            disabled={busy}
-            onPress={() => {
-              setMenuOpen(false);
-              onDelete();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={POLL_DELETE_LABEL}
-          >
-            <Icon name="trash" size={15} color={pollColors.danger} />
-            <Text style={[styles.menuItemText, styles.menuItemDanger]}>{POLL_DELETE_LABEL}</Text>
-          </Pressable>
-        </View>
-      )}
 
       {nobodyVoted ? (
         <Text style={styles.emptyBody}>{POLL_NO_VOTES_BODY}</Text>
@@ -170,31 +122,56 @@ export function PollCard({
 
       {submit !== null && (
         <Pressable
-          style={[
-            styles.submit,
-            changing ? styles.submitFilled : styles.submitOutline,
-            (!submit.enabled || busy) && styles.submitDisabled,
-          ]}
-          disabled={!submit.enabled || busy}
-          onPress={() => selected !== null && onVote(selected)}
+          style={[styles.submit, !submit.enabled && styles.submitDisabled]}
+          disabled={!submit.enabled}
+          onPress={submitVote}
           accessibilityRole="button"
           accessibilityLabel={submit.label}
         >
-          <Text
-            style={changing ? styles.submitFilledText : styles.submitOutlineText}
-            numberOfLines={1}
-          >
+          <Text style={styles.submitLabel} numberOfLines={1}>
             {submit.label}
           </Text>
         </Pressable>
       )}
 
-      {canVote && !closed && submit === null && (
-        <Text style={styles.hint}>{POLL_CHANGE_HINT}</Text>
+      {showHint && <Text style={styles.hint}>{POLL_CHANGE_HINT}</Text>}
+
+      {footer.length > 0 && (
+        <View style={styles.footer}>
+          {footer.includes('close') && (
+            <Pressable
+              style={styles.footerAction}
+              disabled={busy}
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel={POLL_CLOSE_NOW_LABEL}
+            >
+              <Icon name="clock" size={13} color={pollColors.ink} />
+              <Text style={styles.footerActionLabel} numberOfLines={1}>
+                {POLL_CLOSE_NOW_LABEL}
+              </Text>
+            </Pressable>
+          )}
+          <Pressable
+            style={styles.footerAction}
+            disabled={busy}
+            onPress={onDelete}
+            accessibilityRole="button"
+            accessibilityLabel={POLL_DELETE_LABEL}
+          >
+            <Icon name="trash" size={13} color={pollColors.danger} />
+            <Text style={[styles.footerActionLabel, styles.footerActionDanger]} numberOfLines={1}>
+              {POLL_DELETE_LABEL}
+            </Text>
+          </Pressable>
+        </View>
       )}
     </View>
   );
 }
+
+
+const FOOTER_HIT_AREA = 44;
 
 
 const styles = StyleSheet.create({
@@ -216,12 +193,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexShrink: 0,
-  },
   question: {
     ...pollTypography.question,
     color: workspaceColors.title,
@@ -234,6 +205,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: pollMetrics.badgeRadius,
+    flexShrink: 0,
   },
   badgeOpen: {
     backgroundColor: workspaceBadgeColors.draft.background,
@@ -250,32 +222,6 @@ const styles = StyleSheet.create({
     ...pollTypography.tag,
     color: workspaceBadgeColors.completed.foreground,
     textTransform: 'uppercase',
-  },
-  kebab: {
-    padding: 2,
-  },
-  menu: {
-    alignSelf: 'flex-end',
-    minWidth: 180,
-    borderRadius: pollMetrics.optionRadius,
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    backgroundColor: workspaceColors.surface,
-    ...workspaceCardShadow,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  },
-  menuItemText: {
-    ...pollTypography.menuItem,
-    color: pollColors.ink,
-  },
-  menuItemDanger: {
-    color: pollColors.danger,
   },
   options: {
     gap: 8,
@@ -315,24 +261,15 @@ const styles = StyleSheet.create({
   submit: {
     height: pollMetrics.submitHeight,
     borderRadius: workspaceRadii.control,
+    borderWidth: 1,
+    borderColor: workspaceColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
-  submitOutline: {
-    borderWidth: 1,
-    borderColor: workspaceColors.accent,
-  },
-  submitOutlineText: {
+  submitLabel: {
     ...pollTypography.optionLabel,
     color: workspaceColors.accent,
-  },
-  submitFilled: {
-    backgroundColor: workspaceColors.accent,
-  },
-  submitFilledText: {
-    ...pollTypography.optionLabel,
-    color: workspaceColors.onAccent,
   },
   submitDisabled: {
     opacity: 0.45,
@@ -340,5 +277,28 @@ const styles = StyleSheet.create({
   hint: {
     ...pollTypography.hint,
     color: workspaceColors.muted,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 20,
+    borderTopWidth: 1,
+    borderTopColor: pollColors.footerHairline,
+    paddingTop: 10,
+  },
+  footerAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: FOOTER_HIT_AREA,
+    flexShrink: 0,
+  },
+  footerActionLabel: {
+    ...pollTypography.progressLabel,
+    color: pollColors.ink,
+  },
+  footerActionDanger: {
+    color: pollColors.danger,
   },
 });

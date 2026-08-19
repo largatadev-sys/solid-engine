@@ -43,3 +43,47 @@ Separate screen, back chevron + title. Fields: **Poll Question** (single input) 
 ## Deliberately not drawn (behavior from the spec, no frame owed)
 
 The archived-trip frozen board (S4.23 posture — existing patterns) · cap-refusal error states (form messages per existing form idiom) · the confirm on none of close/vote (only delete confirms) · loading/refresh chrome (standard board pull-to-refresh).
+
+---
+
+## v2 — the s2.2 pull *(founder, 2026-08-20, after the first implementation was walked)*
+
+**Source of truth for the surface is now `Polls Spec v2.dc.html`** ("Polls Spec v2", frame 0 of which is a
+*working* PollCard running the state machine). The v1 frames above remain the record of what was built
+first and why; where the two disagree, **v2 wins**. Its own handoff says so outright: *"implement what is
+written here, not what any existing branch's poll code does — branches may be behind this spec."*
+
+Four changes, all presentation — **no wire change, no backend change**:
+
+1. **The kebab and its menu are gone.** Creator/owner controls become **two inline text actions in the
+   card footer**, right-aligned above a `#F5F5F4` hairline (padding-top 10, gap 20): **Close Poll Now**
+   (12/600 `#44403C`, 13px clock glyph) and **Delete Poll** (12/600 `#B91C1C`, 13px trash glyph), 44px hit
+   areas. No dropdown, no popout, no bottom sheet. Render iff `(poll.mine || isOwner) && !archived`;
+   a closed poll shows Delete only. Close still acts immediately with no confirm; Delete still confirms.
+
+2. **The vote button is always "Submit Vote"** — one component, one label, one outline style. Never
+   relabeled to name a target, never filled. **Enabled** iff `selected !== null && selected !== myVoteOptionId
+   && !busy`; otherwise 45% opacity and disabled. **Hidden** iff closed, or `!canVote`, or the vote is
+   recorded with nothing new selected (the hint line shows instead). First vote and change-vote are the
+   same button and the same `onVote(selected)` call, which clears `selected`.
+
+3. **The YOUR VOTE tag is removed.** The recorded state is carried entirely by the cream `#FFF7ED` fill,
+   the filled orange check, and the member's own avatar in the cluster. The demoted state loses its grey
+   tag for the same reason — a grey outline check on a plain white row is the whole signal.
+
+4. **The selected radio is a thick accent ring with a hollow centre** — an 18px circle with a `6px solid
+   #EA580C` band and a white centre. **No inner dot.**
+
+Two further v2 statements that were not in v1's frames:
+
+- **The voter cluster moves to its own line UNDER the option label** (gap 6), so a row grows taller as
+  votes land rather than competing with the label for width. Rows are **top-aligned** (`align-items:
+  flex-start`). This is also the structural answer to the S3.1 truncation trap on this surface.
+- **A motion contract**, which v1 had none of: row select/deselect 150ms ease-out on background +
+  border-color · check/star/avatar entrance 200ms `cubic-bezier(0.34, 1.56, 0.64, 1)` scale 0.5→1 with
+  fade · progress width 300ms ease-in-out · button↔hint swap 200ms ease-out fade + 6px rise · confirm
+  scrim 150ms fade / dialog 200ms pop · row height growth layout-animated ~200ms. **Nothing else animates.**
+
+Unchanged from v1 and re-stated by v2: no "Added to Itinerary" anywhere · single choice · attribution
+always visible including before you vote · required deadline defaulting +24h with a 30s countdown tick ·
+lazy close · winner starred, ties star every leader, zero votes stars nothing · archived board read-only.

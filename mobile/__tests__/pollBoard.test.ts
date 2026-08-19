@@ -2,12 +2,12 @@ import {
   createFormValidity,
   deadlineMetaFor,
   defaultDeadline,
-  kebabMenuFor,
+  footerActionsFor,
   markerFor,
   optionStateFor,
   boardIsWritable,
   progressFor,
-  submitLabelFor,
+  submitButtonFor,
   voteGrammarFor,
   winnerIdsOf,
 } from '../src/polls/pollBoard';
@@ -223,58 +223,64 @@ describe('markerFor — a closed card drops radios entirely, keeping only the wi
   });
 });
 
-describe('submitLabelFor — the CTA names what it is about to do', () => {
-  it('offers Submit Vote, disabled, until something is selected', () => {
-    expect(submitLabelFor(poll(), null)).toEqual({ label: 'Submit Vote', enabled: false });
-    expect(submitLabelFor(poll(), 'o1')).toEqual({ label: 'Submit Vote', enabled: true });
+describe('submitButtonFor — one button, one label, never relabeled (v2 contract)', () => {
+  it('reads "Submit Vote" and nothing else, in every state that shows it', () => {
+    expect(submitButtonFor(poll(), null, false)?.label).toBe('Submit Vote');
+    expect(submitButtonFor(poll(), 'o1', false)?.label).toBe('Submit Vote');
+    expect(submitButtonFor(poll({ myVoteOptionId: 'o1' }), 'o2', false)?.label).toBe('Submit Vote');
   });
 
-  it('names the target option when a recorded vote is being changed', () => {
-    expect(submitLabelFor(poll({ myVoteOptionId: 'o1' }), 'o2')).toEqual({
-      label: 'Change Vote to "Snorkeling at Shimizu"',
+  it('is disabled with nothing selected, and enabled once a NEW option is', () => {
+    expect(submitButtonFor(poll(), null, false)).toEqual({ label: 'Submit Vote', enabled: false });
+    expect(submitButtonFor(poll(), 'o1', false)).toEqual({ label: 'Submit Vote', enabled: true });
+  });
+
+  it('is enabled while changing, because the target differs from the recorded vote', () => {
+    expect(submitButtonFor(poll({ myVoteOptionId: 'o1' }), 'o2', false)).toEqual({
+      label: 'Submit Vote',
       enabled: true,
     });
   });
 
-  it('offers nothing at all once the vote is recorded and unchanged', () => {
-    expect(submitLabelFor(poll({ myVoteOptionId: 'o1' }), null)).toBeNull();
-    expect(submitLabelFor(poll({ myVoteOptionId: 'o1' }), 'o1')).toBeNull();
+  it('HIDES once the vote is recorded and nothing new is selected — the hint shows instead', () => {
+    expect(submitButtonFor(poll({ myVoteOptionId: 'o1' }), null, false)).toBeNull();
   });
 
-  it('offers nothing on a closed poll', () => {
-    expect(submitLabelFor(poll({ status: 'closed' }), 'o1')).toBeNull();
+  it('hides when the selection is the vote already recorded — re-submitting is not an act', () => {
+    expect(submitButtonFor(poll({ myVoteOptionId: 'o1' }), 'o1', false)).toBeNull();
+  });
+
+  it('hides on a closed poll however the traveler voted', () => {
+    expect(submitButtonFor(poll({ status: 'closed' }), 'o1', false)).toBeNull();
+  });
+
+  it('disables rather than hides while a vote is in flight', () => {
+    expect(submitButtonFor(poll(), 'o1', true)).toEqual({ label: 'Submit Vote', enabled: false });
   });
 });
 
 
-describe('kebabMenuFor — creator or trip owner, and nobody else', () => {
+describe('footerActionsFor — two inline actions, no menu of any kind (v2 contract)', () => {
   it('gives the creator both actions while the poll is open', () => {
-    expect(kebabMenuFor(poll({ createdBy: 't1', mine: true }), false, false)).toEqual([
-      'close',
-      'delete',
-    ]);
+    expect(footerActionsFor(poll({ mine: true }), false, false)).toEqual(['close', 'delete']);
   });
 
   it('gives the trip owner the same, on a poll they did not start', () => {
-    expect(kebabMenuFor(poll({ createdBy: 't2', mine: false }), true, false)).toEqual([
-      'close',
-      'delete',
-    ]);
+    expect(footerActionsFor(poll({ mine: false }), true, false)).toEqual(['close', 'delete']);
   });
 
-  it('gives a plain member no kebab at all — they see the badge alone', () => {
-    expect(kebabMenuFor(poll({ createdBy: 't2', mine: false }), false, false)).toEqual([]);
+  it('gives a plain member nothing — no footer at all', () => {
+    expect(footerActionsFor(poll({ mine: false }), false, false)).toEqual([]);
   });
 
   it('offers Delete only once the poll has closed', () => {
-    expect(kebabMenuFor(poll({ status: 'closed', mine: true }), false, false)).toEqual(['delete']);
+    expect(footerActionsFor(poll({ status: 'closed', mine: true }), false, false)).toEqual(['delete']);
   });
 
   it('offers nothing on an archived trip, the owner included', () => {
-    expect(kebabMenuFor(poll({ mine: true }), true, true)).toEqual([]);
+    expect(footerActionsFor(poll({ mine: true }), true, true)).toEqual([]);
   });
 });
-
 
 describe('boardIsWritable — the board is live until the trip is archived', () => {
   it('lets every member create and vote on a live trip, not just the owner', () => {

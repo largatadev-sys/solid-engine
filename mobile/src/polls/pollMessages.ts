@@ -22,13 +22,9 @@ export const POLL_CHANGE_HINT = 'Tap another option to change your vote.';
 
 export const POLL_NO_VOTES_BODY = 'Nobody voted before this poll closed.';
 
-export const POLL_YOUR_VOTE_TAG = 'Your vote';
-
 export const POLLS_LOAD_FAILURE = 'Could not load this trip’s polls.';
 
 export const POLLS_ARCHIVED_NOTE = 'This trip is archived, so its polls are read-only.';
-
-export const POLL_ACTIONS_LABEL = 'Poll actions';
 
 export const POLL_CLOSE_NOW_LABEL = 'Close Poll Now';
 

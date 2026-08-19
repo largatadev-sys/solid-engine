@@ -1,6 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
-import { POLL_YOUR_VOTE_TAG } from './pollMessages';
 import { PollVoterCluster } from './PollVoterCluster';
 import type { OptionMarker, OptionState } from './pollBoard';
 import {
@@ -34,22 +33,9 @@ export function PollOptionRow({ option, state, marker, onPress }: PollOptionRowP
       <Marker marker={marker} />
 
       <View style={styles.labelBlock}>
-        <Text style={styles.label} numberOfLines={2}>
-          {option.label}
-        </Text>
-        {state === 'recorded' && (
-          <View style={styles.tagAccent}>
-            <Text style={styles.tagAccentText}>{POLL_YOUR_VOTE_TAG}</Text>
-          </View>
-        )}
-        {state === 'demoted' && (
-          <View style={styles.tagMuted}>
-            <Text style={styles.tagMutedText}>{POLL_YOUR_VOTE_TAG}</Text>
-          </View>
-        )}
+        <Text style={styles.label}>{option.label}</Text>
+        <PollVoterCluster voters={option.voters} voteCount={option.voteCount} />
       </View>
-
-      <PollVoterCluster voters={option.voters} voteCount={option.voteCount} />
     </Pressable>
   );
 }
@@ -83,9 +69,7 @@ function Marker({ marker }: { marker: OptionMarker }) {
   if (marker === 'selected') {
     return (
       <View style={styles.marker}>
-        <View style={styles.radioRinged}>
-          <View style={styles.radioDot} />
-        </View>
+        <View style={styles.radioRinged} />
       </View>
     );
   }
@@ -96,16 +80,18 @@ function Marker({ marker }: { marker: OptionMarker }) {
   );
 }
 
+
 const RADIO = 18;
+
+const RING_BAND = 6;
 
 
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    padding: 12,
     borderRadius: pollMetrics.optionRadius,
     borderWidth: 1,
     borderColor: workspaceColors.hairline,
@@ -132,49 +118,17 @@ const styles = StyleSheet.create({
     width: RADIO,
     height: RADIO,
     borderRadius: workspaceRadii.pill,
-    borderWidth: 2.5,
+    borderWidth: RING_BAND,
     borderColor: workspaceColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioDot: {
-    width: 6,
-    height: 6,
-    borderRadius: workspaceRadii.pill,
-    backgroundColor: workspaceColors.accent,
+    backgroundColor: workspaceColors.surface,
   },
   labelBlock: {
     flex: 1,
-    gap: 4,
+    gap: 6,
   },
   label: {
     ...pollTypography.optionLabel,
     color: workspaceColors.title,
-  },
-  tagAccent: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: workspaceRadii.pill,
-    backgroundColor: workspaceColors.accent,
-  },
-  tagAccentText: {
-    ...pollTypography.tag,
-    color: workspaceColors.onAccent,
-    textTransform: 'uppercase',
-  },
-  tagMuted: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: workspaceRadii.pill,
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-  },
-  tagMutedText: {
-    ...pollTypography.tag,
-    color: pollColors.demoted,
-    textTransform: 'uppercase',
   },
 });
 

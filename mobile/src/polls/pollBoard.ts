@@ -18,7 +18,9 @@ export type OptionState = 'idle' | 'selected' | 'recorded' | 'demoted';
 
 export type OptionMarker = 'none' | 'star' | 'radio' | 'selected' | 'check' | 'demotedCheck';
 
-export type PollMenuAction = 'close' | 'delete';
+export type PollFooterAction = 'close' | 'delete';
+
+export const SUBMIT_VOTE_LABEL = 'Submit Vote';
 
 
 export function isClosed(poll: PollResponse): boolean {
@@ -88,29 +90,26 @@ export function markerFor(
   }
 }
 
-export function submitLabelFor(
+export function submitButtonFor(
   poll: PollResponse,
   selectedOptionId: string | null,
+  busy: boolean,
 ): { label: string; enabled: boolean } | null {
-  const grammar = voteGrammarFor(poll, selectedOptionId);
-  if (grammar === 'recorded' || isClosed(poll)) return null;
-  if (grammar === 'changing') {
-    const target = poll.options.find((option) => option.id === selectedOptionId);
-    return { label: `Change Vote to "${target?.label ?? ''}"`, enabled: true };
-  }
-  return { label: 'Submit Vote', enabled: grammar === 'selected' };
+  if (isClosed(poll)) return null;
+  if (selectedOptionId !== null && selectedOptionId === poll.myVoteOptionId) return null;
+  if (selectedOptionId === null && poll.myVoteOptionId !== null) return null;
+  return { label: SUBMIT_VOTE_LABEL, enabled: selectedOptionId !== null && !busy };
 }
 
 
-export function kebabMenuFor(
+export function footerActionsFor(
   poll: PollResponse,
   isOwner: boolean,
   archived: boolean,
-): PollMenuAction[] {
+): PollFooterAction[] {
   if (archived || !(poll.mine || isOwner)) return [];
   return isClosed(poll) ? ['delete'] : ['close', 'delete'];
 }
-
 
 export function boardIsWritable(archived: boolean): boolean {
   return !archived;
