@@ -113,6 +113,8 @@ export type ItineraryResponse = {
   createdAt: string;
 
   planVersion?: number;
+
+  forkedFrom?: ForkedFromResponse | null;
 };
 
 
@@ -230,6 +232,15 @@ export type PublishedDayResponse = {
 };
 
 
+export type ForkedFromResponse = {
+  sourceItineraryId: string;
+
+  ownerHandle: string | null;
+
+  sourceVisible: boolean;
+};
+
+
 export type PublishedItineraryResponse = {
   id: string;
   title: string;
@@ -246,6 +257,10 @@ export type PublishedItineraryResponse = {
 
   estimatedCost: EstimatedCostResponse | null;
   days: PublishedDayResponse[];
+
+  forkCount: number;
+
+  forkedFrom: ForkedFromResponse | null;
 };
 
 

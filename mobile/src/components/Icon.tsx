@@ -21,6 +21,10 @@ export type IconName =
   | 'settings'
   | 'filePlus'
   | 'gitBranch'
+  | 'fork'
+  | 'shieldCheck'
+  | 'workspace'
+  | 'travelGroup'
   | 'globe'
   | 'pencil'
   | 'eye'
@@ -109,6 +113,38 @@ export function Icon({ name, size, color }: IconProps) {
           <Path d="M14 2v6h6" {...shared} />
           <Path d="M12 18v-6" {...shared} />
           <Path d="M9 15h6" {...shared} />
+        </>
+      )}
+
+      {name === 'fork' && (
+        <>
+          <Circle cx="6" cy="4.5" r="2" {...shared} />
+          <Circle cx="18" cy="4.5" r="2" {...shared} />
+          <Circle cx="12" cy="19.5" r="2" {...shared} />
+          <Path d="M6 6.5v2a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-2" {...shared} />
+          <Path d="M12 12.5v5" {...shared} />
+        </>
+      )}
+
+      {name === 'shieldCheck' && (
+        <>
+          <Path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5l8-3z" {...shared} />
+          <Path d="M8.5 12l2.5 2.5 4.5-4.5" {...shared} />
+        </>
+      )}
+
+      {name === 'workspace' && (
+        <>
+          <Rect x="2" y="7" width="20" height="13" rx="2" {...shared} />
+          <Path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" {...shared} />
+        </>
+      )}
+
+      {name === 'travelGroup' && (
+        <>
+          <Circle cx="9" cy="8" r="3.5" {...shared} />
+          <Path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" {...shared} />
+          <Path d="M16 5a3.5 3.5 0 0 1 0 6.6M21.5 20c0-2.9-1.9-5.4-4.5-6.2" {...shared} />
         </>
       )}
 

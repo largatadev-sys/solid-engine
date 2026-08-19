@@ -10,6 +10,7 @@ interface WorkspaceHeaderProps {
   readonly badge: StateBadge;
   readonly title: string;
   readonly provenance?: string | null;
+  readonly onProvenancePress?: () => void;
   readonly onBack: () => void;
   readonly actionLabel?: string;
   readonly actionIcon?: IconName;
@@ -26,6 +27,7 @@ export function WorkspaceHeader({
   badge,
   title,
   provenance,
+  onProvenancePress,
   onBack,
   actionLabel,
   actionIcon,
@@ -88,7 +90,13 @@ export function WorkspaceHeader({
       </View>
 
       {provenance !== null && provenance !== undefined ? (
-        <Text style={styles.provenance}>{provenance}</Text>
+        onProvenancePress !== undefined ? (
+          <Pressable onPress={onProvenancePress} accessibilityRole="link" accessibilityLabel={provenance}>
+            <Text style={styles.provenanceLink}>{provenance}</Text>
+          </Pressable>
+        ) : (
+          <Text style={styles.provenance}>{provenance}</Text>
+        )
       ) : null}
 
       {actionHint !== null && actionHint !== undefined ? (
@@ -156,6 +164,10 @@ const styles = StyleSheet.create({
   provenance: {
     ...workspaceTypography.provenance,
     color: workspaceColors.muted,
+  },
+  provenanceLink: {
+    ...workspaceTypography.provenance,
+    color: workspaceColors.accent,
   },
   actionHint: {
     ...workspaceTypography.note,

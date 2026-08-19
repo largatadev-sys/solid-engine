@@ -16,6 +16,7 @@ import com.largata.itinerary.api.PublishRequest;
 import com.largata.itinerary.api.PublishedItineraryResponse;
 import com.largata.itinerary.api.UpdateItineraryRequest;
 import com.largata.membership.MembershipService;
+import com.largata.itinerary.ForkService;
 import com.largata.itinerary.ItineraryCoverService;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -41,6 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 class ItineraryController {
 
     private final ItineraryService itineraries;
+    private final ForkService forks;
     private final ItineraryCoverService covers;
     private final PublishedItineraryService published;
     private final MembershipService memberships;
@@ -49,12 +51,14 @@ class ItineraryController {
 
     ItineraryController(
             ItineraryService itineraries,
+            ForkService forks,
             ItineraryCoverService covers,
             PublishedItineraryService published,
             MembershipService memberships,
             AuthorizationGuard guard,
             AudienceFence audience) {
         this.itineraries = itineraries;
+        this.forks = forks;
         this.covers = covers;
         this.published = published;
         this.memberships = memberships;
@@ -92,12 +96,21 @@ class ItineraryController {
     }
 
 
+    @PostMapping("/{id}/fork")
+    @ResponseStatus(HttpStatus.CREATED)
+    ItineraryResponse fork(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        var forked = forks.fork(id, traveler.id(), guard.membershipOf(traveler.id(), id));
+        UUID forkedId = forked.itinerary().id();
+        return ItineraryResponse.of(forked, forks.provenanceOf(forkedId, traveler.id()).orElse(null));
+    }
+
+
     @GetMapping("/{id}")
     ItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         audience.requireInAudience(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan);
+        return ItineraryResponse.of(plan, forks.provenanceOf(id, traveler.id()).orElse(null));
     }
 
 

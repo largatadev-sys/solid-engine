@@ -1,6 +1,7 @@
 package com.largata.itinerary.api;
 
 import com.largata.identity.TravelerSummary;
+import com.largata.itinerary.ForkService;
 import com.largata.itinerary.Itinerary;
 import com.largata.itinerary.ItineraryPlan;
 import com.largata.itinerary.LeaseSubject;
@@ -36,7 +37,8 @@ public record ItineraryResponse(
         LeaseHolderResponse lease,
         boolean beingEdited,
         LeaseHolderResponse editingSession,
-        long planVersion) {
+        long planVersion,
+        ForkedFromResponse forkedFrom) {
 
 
     public static ItineraryResponse summaryOf(
@@ -66,11 +68,17 @@ public record ItineraryResponse(
                 null,
                 beingEdited,
                 null,
-                itinerary.planVersion());
+                itinerary.planVersion(),
+                null);
     }
 
 
     public static ItineraryResponse of(ItineraryPlan plan) {
+        return of(plan, null);
+    }
+
+
+    public static ItineraryResponse of(ItineraryPlan plan, ForkService.ForkProvenance provenance) {
         Itinerary itinerary = plan.itinerary();
         TravelerSummary editor = plan.editor(itinerary.lastEditedBy());
         return new ItineraryResponse(
@@ -98,6 +106,7 @@ public record ItineraryResponse(
                 LeaseHolderResponse.of(plan.holderOf(LeaseSubject.header(itinerary.id()))),
                 plan.hasLiveLease(),
                 LeaseHolderResponse.of(plan.holderOf(LeaseSubject.session(itinerary.id()))),
-                itinerary.planVersion());
+                itinerary.planVersion(),
+                ForkedFromResponse.of(provenance));
     }
 }

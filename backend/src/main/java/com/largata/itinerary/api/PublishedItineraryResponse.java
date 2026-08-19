@@ -20,7 +20,9 @@ public record PublishedItineraryResponse(
         int durationDays,
         TravelerCardResponse creator,
         EstimatedCostResponse estimatedCost,
-        List<PublishedDayResponse> days) {
+        List<PublishedDayResponse> days,
+        long forkCount,
+        ForkedFromResponse forkedFrom) {
 
 
     public static PublishedItineraryResponse of(PublishedItinerary projection) {
@@ -35,7 +37,9 @@ public record PublishedItineraryResponse(
                 projection.durationDays(),
                 TravelerCardResponse.of(projection.creator()),
                 EstimatedCostResponse.of(projection.estimatedCost()),
-                projection.days().stream().map(PublishedDayResponse::of).toList());
+                projection.days().stream().map(PublishedDayResponse::of).toList(),
+                projection.forkCount(),
+                ForkedFromResponse.of(projection.forkedFrom()));
     }
 
 

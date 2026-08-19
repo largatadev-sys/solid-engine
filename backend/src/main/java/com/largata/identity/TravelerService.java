@@ -73,6 +73,11 @@ public class TravelerService {
     }
 
 
+    public Optional<TravelerSummary> summaryById(UUID id) {
+        return travelers.findById(id).map(TravelerService::summaryOf);
+    }
+
+
     private static TravelerSummary summaryOf(Traveler t) {
         return new TravelerSummary(
                 t.id(), t.displayName(), t.handle(), t.avatarUrl(), t.bio(), t.vanityNumber());

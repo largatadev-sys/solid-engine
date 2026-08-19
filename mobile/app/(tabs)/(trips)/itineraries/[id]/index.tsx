@@ -15,6 +15,7 @@ import {
   publishNeedsCompleteBody,
 } from '../../../../../src/itineraries/publishControls';
 import { FinalizeSheet } from '../../../../../src/itineraries/FinalizeSheet';
+import { attributionLabel, attributionLinks } from '../../../../../src/itineraries/forkCopy';
 import { TripArchiveBanner } from '../../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
 import { WorkspaceHeader } from '../../../../../src/itineraries/WorkspaceHeader';
@@ -124,6 +125,8 @@ export default function TripWorkspaceScreen() {
     confirmWith(wording, () => lifecycle.mutate('reopen'));
   };
 
+  const visibleSource = attributionLinks(data.forkedFrom) ? data.forkedFrom : null;
+
   const runLadder = () => {
     if (ladder === null) return;
     if (ladder.act === 'finish-planning') {
@@ -147,6 +150,16 @@ export default function TripWorkspaceScreen() {
         <WorkspaceHeader
           badge={badge}
           title={data.title}
+          provenance={attributionLabel(data.forkedFrom)}
+          onProvenancePress={
+            visibleSource === null || visibleSource === undefined
+              ? undefined
+              : () =>
+                  router.push({
+                    pathname: '/published/[id]',
+                    params: { id: visibleSource.sourceItineraryId },
+                  })
+          }
           onBack={() => router.push(TRIPS_TAB_ROUTE)}
           actionLabel={editAction.kind === 'hidden' ? undefined : 'Edit Itinerary'}
           actionIcon="pencilSquare"

@@ -16,10 +16,17 @@ public record PublishedItinerary(
         int durationDays,
         TravelerSummary creator,
         EstimatedCost estimatedCost,
-        List<DayView> days) {
+        List<DayView> days,
+        long forkCount,
+        ForkService.ForkProvenance forkedFrom) {
 
 
-    static PublishedItinerary of(Itinerary itinerary, List<DayView> plan, TravelerSummary creator) {
+    static PublishedItinerary of(
+            Itinerary itinerary,
+            List<DayView> plan,
+            TravelerSummary creator,
+            long forkCount,
+            ForkService.ForkProvenance forkedFrom) {
         return new PublishedItinerary(
                 itinerary.id(),
                 itinerary.title(),
@@ -31,6 +38,8 @@ public record PublishedItinerary(
                 plan.size(),
                 creator,
                 EstimatedCost.derivedFrom(plan).orElse(null),
-                plan);
+                plan,
+                forkCount,
+                forkedFrom);
     }
 }

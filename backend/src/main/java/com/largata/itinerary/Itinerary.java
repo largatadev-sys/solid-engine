@@ -181,6 +181,27 @@ public class Itinerary {
     }
 
 
+    static Itinerary forkedFrom(Itinerary source, UUID forkerId, Instant at) {
+        Itinerary copy =
+                new Itinerary(
+                        UuidV7.generate(),
+                        forkerId,
+                        new ItineraryFields(
+                                source.title,
+                                source.destination,
+                                source.currency,
+                                source.description,
+                                source.standouts(),
+                                source.bestTimeOfYear == null ? "" : source.bestTimeOfYear,
+                                null,
+                                null),
+                        at);
+        copy.lastEditedBy = forkerId;
+        copy.lastEditedAt = at;
+        return copy;
+    }
+
+
     void editFields(ItineraryFields fields, UUID editor, Instant at) {
         apply(fields);
         this.lastEditedBy = editor;

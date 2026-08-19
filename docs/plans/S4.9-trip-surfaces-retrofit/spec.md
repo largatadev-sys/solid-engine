@@ -209,3 +209,11 @@ Still open, unchanged by this: `trip-editor-days` remains parked at the founder'
 The mock's `.cfab` is **40×40**, which is what the build shipped — so this is not a fidelity gap being closed but a **deliberate override of the baseline**, recorded because the standing rule (`CLAUDE.md`, Hard rules) says deviations get stated rather than left to look like drift.
 
 *"let's enlarge the + icon on both web and mobile so the ux signal should be tap this to create trip, like that button will be the showcase."* Now 60×60 with a 30px glyph, lifted 18px above the bar with a background-coloured ring and a shadow, and the bar grown to 64 + inset so nothing clips. The test asserts it is **greater than the mock's 40**, naming `MOCK_CFAB_SIZE` — so the next person to read it sees the override is intentional rather than "wrong, per the frames".
+
+### 2026-08-19 — note *(a)*'s Tentative-Dates field is SUPERSEDED (recorded at S4.7's build)
+
+This spec's fork-frame note *(a)* — *"the Tentative-Dates/Duration pair (fork derives day count from the source; dates are its only open field)"* — no longer describes what fork does, and the body above is deliberately unedited (immutable point-in-time intent) so the change lives here.
+
+**Two rulings landed on top of it, from different directions.** S4.25/ADR-028 made a trip's dates **workspace-private** — they never cross the published wall at all, so there is nothing on the source page for a fork to reason about. And S4.7's grilling ruled the fork act **zero-input**: the confirm sheet collects nothing, one tap is enough, and every detail stays editable afterward in the workspace. Between them, the "only open field" has no field and no form to sit on.
+
+What survives from the note is the half that was never in question: **duration still comes from the source**, because days are ordinal and the copy takes every one of them in order (ADR-013). The other two notes resolve unchanged — *(b)* the rating still waits on S4.5's order (Reviews ships greyed at 0), and *(c)* the INV-6 attribution copy shipped as **"Original by @handle"** / **"Original by a traveler"** (S4.23 decision 5). The epic-map chooser line closes as discharged in the same pass.

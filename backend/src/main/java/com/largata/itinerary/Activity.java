@@ -95,6 +95,28 @@ class Activity {
     }
 
 
+    static Activity copiedInto(UUID dayId, Activity source, UUID forkerId, Instant at) {
+        return new Activity(UuidV7.generate(), dayId, source.sortOrder, source.fields(), forkerId, at);
+    }
+
+
+    ActivityFields fields() {
+        return new ActivityFields(
+                title,
+                timeOfDay,
+                costAmount,
+                costCurrency,
+                place,
+                description,
+                notes,
+                externalUrl,
+                bookingPurpose,
+                bookingProvider,
+                bookingPriceAmount,
+                bookingPriceCurrency);
+    }
+
+
     void edit(ActivityFields fields, UUID editor, Instant at) {
         apply(fields, editor, at);
     }

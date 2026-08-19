@@ -67,6 +67,11 @@ export const itineraryRepository = {
   },
 
 
+  async forkItinerary(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/fork`, undefined);
+  },
+
+
   async fetchPublished(id: string): Promise<PublishedItineraryResponse> {
     return apiClient.get<PublishedItineraryResponse>(`/v1/published-itineraries/${id}`);
   },

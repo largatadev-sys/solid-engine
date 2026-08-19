@@ -31,6 +31,21 @@ class AudienceFenceCoverageTest {
                     "PhotoDumpController.java#list");
 
 
+    private static final Set<String> KNOWN_OPTIONAL_MEMBERSHIP_HANDLERS =
+            Set.of(
+                    "PublishedItineraryController.java#view",
+                    "ItineraryController.java#fork");
+
+
+    private static final Pattern ANY_HANDLER =
+            Pattern.compile(
+                    "@(?:Get|Post)Mapping\\(?[^)]*\\)?\\s+(?:@ResponseStatus\\([^)]*\\)\\s+)?"
+                            + "(?:[\\w.<>,\\[\\]\\s]+?)\\s(\\w+)"
+                            + "\\(((?:[^()]|\\([^()]*\\))*)\\)\\s*(?:throws[\\w.,\\s]+?)?\\{"
+                            + "((?:[^{}]|\\{[^{}]*\\})*)",
+                    Pattern.DOTALL);
+
+
     private static final Pattern HANDLER =
             Pattern.compile(
                     "@GetMapping\\(?[^)]*\\)?\\s+(?:[\\w.<>,\\[\\]\\s]+?)\\s(\\w+)"
@@ -78,6 +93,40 @@ class AudienceFenceCoverageTest {
 
 
     @Test
+    void everyHandlerThatServesNonMembersIsNamedHereAndHandsTheOptionalOnward() throws IOException {
+        List<ScannedHandler> serving = optionalMembershipHandlers();
+
+        assertThat(serving.stream().map(ScannedHandler::qualifiedName).toList())
+                .as(
+                        "guard.membershipOf resolves an OPTIONAL membership, which is how a door opens to "
+                                + "travelers who are not members — the published view and S4.7's fork. Such a "
+                                + "handler is fenced by the published audience (PublishedVisibility), never by "
+                                + "AudienceFence, so the scan above cannot see it. A NEW one fails here until "
+                                + "somebody names it and states which fence it passes; that is the whole guard, "
+                                + "because an unfenced fork-shaped POST would hand a stranger someone's plan")
+                .containsExactlyInAnyOrderElementsOf(KNOWN_OPTIONAL_MEMBERSHIP_HANDLERS);
+
+        for (ScannedHandler handler : serving) {
+            assertThat(handler.body())
+                    .as(
+                            "the resolved Optional must reach the service that fences on it, never be "
+                                    + "dropped: " + handler.qualifiedName())
+                    .containsPattern("\\w+\\([^;]*guard\\.membershipOf\\(");
+        }
+    }
+
+
+    @Test
+    void theOptionalMembershipScanReachesTheHandlersItIsSupposedToGuard() throws IOException {
+        assertThat(optionalMembershipHandlers()).as(
+                        "the same anti-vacuity guard the GET scan carries: an empty list and a broken "
+                                + "regex are indistinguishable, and this pattern has to match a POST "
+                                + "carrying @ResponseStatus between the mapping and the return type")
+                .isNotEmpty();
+    }
+
+
+    @Test
     void theExceptionSetNamesOnlyHandlersThatStillExist() throws IOException {
         String allControllers = controllerSourcesJoined();
 
@@ -114,6 +163,28 @@ class AudienceFenceCoverageTest {
                 scanned.add(
                         new ScannedHandler(
                                 controller.getFileName().toString(), handler.group(1), body));
+            }
+        }
+        return scanned;
+    }
+
+
+    private static List<ScannedHandler> optionalMembershipHandlers() throws IOException {
+        List<ScannedHandler> scanned = new ArrayList<>();
+
+        for (Path controller : controllerSources()) {
+            String source = Files.readString(controller);
+            if (!source.contains("guard.membershipOf")) {
+                continue;
+            }
+            Matcher handler = ANY_HANDLER.matcher(source);
+            while (handler.find()) {
+                String body = handler.group(3);
+                if (!body.contains("guard.membershipOf")) {
+                    continue;
+                }
+                scanned.add(
+                        new ScannedHandler(controller.getFileName().toString(), handler.group(1), body));
             }
         }
         return scanned;

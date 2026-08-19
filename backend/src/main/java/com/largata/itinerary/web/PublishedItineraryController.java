@@ -27,6 +27,7 @@ class PublishedItineraryController {
 
     @GetMapping("/{id}")
     PublishedItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        return PublishedItineraryResponse.of(published.view(id, guard.membershipOf(traveler.id(), id)));
+        return PublishedItineraryResponse.of(
+                published.view(id, guard.membershipOf(traveler.id(), id), traveler.id()));
     }
 }
