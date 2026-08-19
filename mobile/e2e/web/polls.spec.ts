@@ -291,17 +291,27 @@ test.describe('deleting a poll', () => {
     await page.goto(pollsRoute(trip.id));
     await labelled(page, POLL_DELETE_LABEL).click();
 
-    await expect(page.getByText('Delete this poll?')).toBeVisible();
-    const body = await page.evaluate(() => document.body.innerText);
-    expect(body).toContain('Karaoke Night?');
-    expect(body).toMatch(/1 vote/);
-    expect(body).toMatch(/gone for everyone/i);
-    expect(signal.dialogs)
-      .toEqual([]);
+    const title = page.getByText('Delete this poll?');
+    await expect(title).toBeVisible();
+
+    const wording = await title.evaluate((node) => {
+      let card: HTMLElement | null = node.parentElement;
+      while (card !== null && !card.innerText.includes('Keep Poll')) card = card.parentElement;
+      return card?.innerText ?? '';
+    });
+
+    expect(wording, 'the dialog names the poll it will destroy').toContain('Karaoke Night?');
+    expect(wording, 'and states the votes going with it').toMatch(/1 vote/);
+    expect(wording).toMatch(/gone for everyone/i);
+    expect(signal.dialogs, 'no platform dialog — v2 draws this one in-app').toEqual([]);
   });
 
 
   test('Keep Poll dismisses without deleting — the poll survives the dialog', async ({ page }) => {
+    await page.goto(pollsRoute(trip.id));
+    await labelled(page, POLL_DELETE_LABEL).click();
+    await expect(page.getByText('Delete this poll?')).toBeVisible();
+
     await labelled(page, POLL_DELETE_KEEP_LABEL).click();
 
     await expect(page.getByText('Delete this poll?')).toHaveCount(0);
