@@ -109,4 +109,4 @@ Any plan connection (parked: "poll outcome feeds the plan") · poll editing or d
 
 ## Comments
 
-*(none yet)*
+**2026-08-20, owner review — passed.** All five tickets approved as written ("all tickets are good"); statuses flipped `needs-triage` → `ready-for-agent`. Implementation deliberately not started — the owner triggers the build.

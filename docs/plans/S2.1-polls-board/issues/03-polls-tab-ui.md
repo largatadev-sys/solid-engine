@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 (the data layer and pure module it renders from).
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `WorkspaceTabRow`: `polls` drops `comingSoonSurface` — the tab routes to the board on **both** surfaces (viewer and editor share the row, S4.17).
 - [ ] Frame 1 — empty state: glyph circle, "No polls yet", the copy verbatim, filled-orange Create a Poll CTA (the only filled-orange button the board ever shows).

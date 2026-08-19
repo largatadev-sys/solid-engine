@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02, 03, 04.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Full backend ITs: `mvn -o test-compile failsafe:integration-test` — **read the `Tests run:` counts, never the exit code**; count must grow from the S4.19-era 545+ baseline by this story's new ITs.
 - [ ] Full mobile suite: Jest counts read from the summary; `tsc --noEmit` clean.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (the wire shape it types).
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `types/api.ts` additions: `PollResponse` (options with voter roster entries, counts, viewer's vote, computed `status: 'open' | 'closed'`, winner ids, denominator, closes-at, closed-at), request shapes for create/vote.
 - [ ] Repository: `polls(itineraryId)` · `createPoll` · `vote` · `closePoll` · `deletePoll` — one-line path templates, the existing idiom.

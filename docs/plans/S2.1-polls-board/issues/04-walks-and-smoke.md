@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 (the surfaces it drives).
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `e2e/web/polls.spec.ts` in the H1 suite (`npm run smoke:web -- e2e/web/polls.spec.ts` while iterating; the whole suite before the promotion proposal). Pool identities per the standing rule — **state the cast in the write-up** (t1 = creator/owner, t2 = second voter).
 - [ ] The walk, entering through the affordance (the S4.18 lesson — never deep-route past the door): t1 opens the trip workspace → Polls tab → empty state → creates a poll (2 options, default deadline) → votes. t2 signs in, sees the poll and t1's attributed vote **before voting**, votes the other option, then **changes** their vote (the two-grammar states asserted). t1 closes early via the kebab → CLOSED badge + winner starred. Delete path: create a second poll, delete it through the confirm — the dialog wording is printed by the fixture (H1 auto-accepts and reports).

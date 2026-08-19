@@ -4,7 +4,7 @@
 
 **Blocked by:** — *(first ticket; owner review gates the story)*
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Migration (additive): `poll` (UUIDv7 id, workspace id, created-by membership id, question, closes-at, closed-at nullable, closed-by nullable, created-at) + option storage + `poll_vote` with **unique (poll id, membership id)** — INV-10 as schema — and **ON DELETE CASCADE from membership**, so S1.5's hard delete removes a departed member's votes with no service code.
 - [ ] `Poll` closed-ness is derived, never stored as state: `closed_at != null OR clock.now() >= closes_at` — all reads through the injected clock (`MutableClock` steerable, the S1.1 rule).
