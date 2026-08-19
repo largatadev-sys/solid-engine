@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { MediaThumb } from '../media/MediaThumb';
 import { initialsFor } from '../onboarding/initials';
+import { PopIn } from './PopIn';
 import {
   pollColors,
   pollMetrics,
@@ -26,9 +27,9 @@ export function PollVoterCluster({ voters, voteCount }: PollVoterClusterProps) {
   return (
     <View style={styles.cluster}>
       {shown.map((voter, index) => (
-        <View
+        <PopIn
           key={voter.travelerId}
-          style={[styles.avatarSlot, index > 0 && styles.overlapped]}
+          style={StyleSheet.flatten([styles.avatarSlot, index > 0 && styles.overlapped])}
         >
           <MediaThumb
             url={voter.avatarUrl}
@@ -38,7 +39,7 @@ export function PollVoterCluster({ voters, voteCount }: PollVoterClusterProps) {
               <Text style={styles.initials}>{initialsFor(voter.displayName, null)}</Text>
             }
           />
-        </View>
+        </PopIn>
       ))}
       <Text style={[styles.count, voteCount === 0 && styles.countEmpty]} numberOfLines={1}>
         {voteCount === 1 ? '1 vote' : `${voteCount} votes`}

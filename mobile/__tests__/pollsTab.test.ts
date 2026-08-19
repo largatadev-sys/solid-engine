@@ -66,6 +66,37 @@ describe('the Polls tab goes live on the shipped row — S2.1', () => {
     expect(create).not.toContain('Alert.alert');
   });
 
+  it('confirms delete in an in-app dialog, not a platform one — v2 draws the frame', () => {
+    const tab = readFileSync(join(MOBILE_ROOT, 'src/polls/WorkspacePollsTab.tsx'), 'utf8');
+
+    expect(tab).toContain('PollDeleteDialog');
+    expect(tab)
+      .not.toContain('confirmWith');
+  });
+
+  it('retains the whole poll while the dialog fades, never a field of it (the S3.4 tear)', () => {
+    const dialog = readFileSync(join(MOBILE_ROOT, 'src/polls/PollDeleteDialog.tsx'), 'utf8');
+
+    expect(dialog).toContain('stillShowing');
+  });
+
+  it('draws no kebab and no menu — v2 cut the whole interaction mode', () => {
+    const sources = ['src/polls/PollCard.tsx', 'src/polls/pollBoard.ts'].map((file) =>
+      readFileSync(join(MOBILE_ROOT, file), 'utf8'),
+    );
+
+    for (const source of sources) {
+      expect(source).not.toMatch(/kebab/i);
+    }
+  });
+
+  it('never relabels the vote button — one label, from the pure module', () => {
+    const card = readFileSync(join(MOBILE_ROOT, 'src/polls/PollCard.tsx'), 'utf8');
+
+    expect(card).not.toContain('Change Vote');
+    expect(card).toContain('submitButtonFor');
+  });
+
   it('never draws the export’s stale "Added to Itinerary" label anywhere in the surface', () => {
     const surfaces = [
       'src/polls/PollCard.tsx',

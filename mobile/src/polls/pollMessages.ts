@@ -30,6 +30,10 @@ export const POLL_CLOSE_NOW_LABEL = 'Close Poll Now';
 
 export const POLL_DELETE_LABEL = 'Delete Poll';
 
+export const POLL_DELETE_KEEP_LABEL = 'Keep Poll';
+
+export const POLL_DELETE_CONFIRM_LABEL = 'Delete Poll, confirm';
+
 export const POLL_QUESTION_LABEL = 'Poll Question';
 
 export const POLL_QUESTION_PLACEHOLDER = 'What are you deciding?';

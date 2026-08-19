@@ -326,7 +326,8 @@ export const pollTypography = {
   tag: { fontFamily: fonts.bold, fontSize: 9, lineHeight: 12, fontWeight: '700', letterSpacing: 0.4 },
   progressLabel: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 15, fontWeight: '600' },
   hint: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, fontWeight: '400' },
-  menuItem: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  dialogTitle: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  dialogBody: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 19, fontWeight: '400' },
   initials: { fontFamily: fonts.bold, fontSize: 8, lineHeight: 10, fontWeight: '700' },
 } as const;
 
@@ -342,6 +343,18 @@ export const pollMetrics = {
   emptyGlyphWell: 64,
 } as const;
 
+
+export const pollMotion = {
+  rowSelectMs: 150,
+  markerPopMs: 200,
+  progressMs: 300,
+  swapMs: 200,
+  scrimMs: 150,
+  dialogPopMs: 200,
+  rowGrowthMs: 200,
+  swapRisePx: 6,
+  markerFromScale: 0.5,
+} as const;
 
 export const pollColors = {
   selectedFill: '#FFEDD5',

@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
+import { FadeUp } from './FadeUp';
+import { animateRowGrowth } from './rowGrowth';
 import { PollOptionRow } from './PollOptionRow';
 import {
   deadlineMetaFor,
@@ -23,6 +25,7 @@ import {
 import {
   pollColors,
   pollMetrics,
+  pollMotion,
   pollTypography,
   workspaceBadgeColors,
   workspaceCardShadow,
@@ -57,6 +60,7 @@ export function PollCard({
   onDelete,
 }: PollCardProps) {
   const [selected, setSelected] = useState<string | null>(null);
+  const fill = useRef(new Animated.Value(progressFor(poll).fraction)).current;
 
   const closed = isClosed(poll);
   const submit = canVote ? submitButtonFor(poll, selected, busy) : null;
@@ -64,6 +68,24 @@ export function PollCard({
   const progress = progressFor(poll);
   const nobodyVoted = closed && poll.votedCount === 0;
   const showHint = canVote && !closed && submit === null;
+
+  useEffect(() => {
+    Animated.timing(fill, {
+      toValue: progress.fraction,
+      duration: pollMotion.progressMs,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+  }, [fill, progress.fraction]);
+
+  const grown = useRef(false);
+  useEffect(() => {
+    if (!grown.current) {
+      grown.current = true;
+      return;
+    }
+    animateRowGrowth();
+  }, [poll.options]);
 
   const pick = (optionId: string) => {
     setSelected((current) => (current === optionId ? null : optionId));
@@ -115,13 +137,19 @@ export function PollCard({
             <Text style={styles.progressCount}>{progress.label}</Text>
           </View>
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress.fraction * 100}%` }]} />
+            <Animated.View
+              style={[
+                styles.progressFill,
+                { width: fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) },
+              ]}
+            />
           </View>
         </View>
       )}
 
       {submit !== null && (
-        <Pressable
+        <FadeUp key="submit">
+          <Pressable
           style={[styles.submit, !submit.enabled && styles.submitDisabled]}
           disabled={!submit.enabled}
           onPress={submitVote}
@@ -131,10 +159,15 @@ export function PollCard({
           <Text style={styles.submitLabel} numberOfLines={1}>
             {submit.label}
           </Text>
-        </Pressable>
+          </Pressable>
+        </FadeUp>
       )}
 
-      {showHint && <Text style={styles.hint}>{POLL_CHANGE_HINT}</Text>}
+      {showHint && (
+        <FadeUp key="hint">
+          <Text style={styles.hint}>{POLL_CHANGE_HINT}</Text>
+        </FadeUp>
+      )}
 
       {footer.length > 0 && (
         <View style={styles.footer}>

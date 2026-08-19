@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Icon } from '../components/Icon';
-import { confirmWith } from '../components/confirmDestructive';
 import { PollCard } from './PollCard';
+import { PollDeleteDialog } from './PollDeleteDialog';
 import { boardIsWritable } from './pollBoard';
 import {
   POLLS_ACTIVE_SECTION,
@@ -13,7 +13,6 @@ import {
   POLLS_EMPTY_BODY,
   POLLS_EMPTY_TITLE,
   POLLS_LOAD_FAILURE,
-  pollDeleteWording,
   pollErrorMessage,
 } from './pollMessages';
 import { useCastVote, useClosePoll, useDeletePoll, usePollBoard } from '../query/pollQueries';
@@ -43,6 +42,7 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
   const close = useClosePoll(itineraryId);
   const remove = useDeletePoll(itineraryId);
   const [failure, setFailure] = useState<string | null>(null);
+  const [doomed, setDoomed] = useState<PollResponse | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -79,10 +79,11 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
     act.catch((error: Error) => setFailure(pollErrorMessage(error)));
   };
 
-  const confirmDelete = (poll: PollResponse) => {
-    confirmWith(pollDeleteWording(poll.question, poll.votedCount), () => {
-      reportingFailure(remove.mutateAsync(poll.id));
-    });
+  const confirmDelete = () => {
+    if (doomed === null) return;
+    const poll = doomed;
+    setDoomed(null);
+    reportingFailure(remove.mutateAsync(poll.id));
   };
 
   const cardsOf = (polls: PollResponse[]) =>
@@ -97,12 +98,19 @@ export function WorkspacePollsTab({ itineraryId, isOwner, archived }: WorkspaceP
         now={now}
         onVote={(optionId) => reportingFailure(vote.mutateAsync({ pollId: poll.id, optionId }))}
         onClose={() => reportingFailure(close.mutateAsync(poll.id))}
-        onDelete={() => confirmDelete(poll)}
+        onDelete={() => setDoomed(poll)}
       />
     ));
 
   return (
     <View style={styles.body}>
+      <PollDeleteDialog
+        poll={doomed}
+        busy={remove.isPending}
+        onConfirm={confirmDelete}
+        onDismiss={() => setDoomed(null)}
+      />
+
       {archived && <Text style={styles.notice}>{POLLS_ARCHIVED_NOTE}</Text>}
       {failure !== null && <Text style={styles.failure}>{failure}</Text>}
 

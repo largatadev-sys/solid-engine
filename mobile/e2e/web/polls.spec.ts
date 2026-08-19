@@ -16,6 +16,8 @@ import {
   POLL_CLOSED_BADGE,
   POLL_CLOSE_NOW_LABEL,
   POLL_CREATE_SUBMIT_LABEL,
+  POLL_DELETE_CONFIRM_LABEL,
+  POLL_DELETE_KEEP_LABEL,
   POLL_DELETE_LABEL,
   POLL_OPEN_BADGE,
   POLL_OPTION_PLACEHOLDER,
@@ -282,18 +284,36 @@ test.describe('deleting a poll', () => {
     });
   });
 
-  test('delete confirms first, naming the poll and its vote count', async ({ page, signal }) => {
+  test('delete confirms in an IN-APP dialog naming the poll and its vote count', async ({
+    page,
+    signal,
+  }) => {
     await page.goto(pollsRoute(trip.id));
     await labelled(page, POLL_DELETE_LABEL).click();
 
-    await expect.poll(() => signal.dialogs.join(' '), { timeout: 15_000 }).toContain(
-      'Karaoke Night?',
-    );
-    expect(signal.dialogs.join(' ')).toMatch(/1 vote\b/);
-    expect(signal.dialogs.join(' ')).toMatch(/gone for everyone/i);
+    await expect(page.getByText('Delete this poll?')).toBeVisible();
+    const body = await page.evaluate(() => document.body.innerText);
+    expect(body).toContain('Karaoke Night?');
+    expect(body).toMatch(/1 vote/);
+    expect(body).toMatch(/gone for everyone/i);
+    expect(signal.dialogs)
+      .toEqual([]);
   });
 
-  test('the poll and its votes are gone for everyone once confirmed', async () => {
+
+  test('Keep Poll dismisses without deleting — the poll survives the dialog', async ({ page }) => {
+    await labelled(page, POLL_DELETE_KEEP_LABEL).click();
+
+    await expect(page.getByText('Delete this poll?')).toHaveCount(0);
+    expect((await activeOf(trip.id)).map((one) => one.id)).toContain(doomed.id);
+  });
+
+  test('the poll and its votes are gone for everyone once confirmed', async ({ page }) => {
+    await page.goto(pollsRoute(trip.id));
+    await labelled(page, POLL_DELETE_LABEL).click();
+    await expect(page.getByText('Delete this poll?')).toBeVisible();
+    await labelled(page, POLL_DELETE_CONFIRM_LABEL).click();
+
     await expect
       .poll(async () => (await activeOf(trip.id, secondToken)).map((one) => one.id), {
         timeout: 20_000,

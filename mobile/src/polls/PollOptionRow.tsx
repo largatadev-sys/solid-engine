@@ -1,10 +1,13 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { PollVoterCluster } from './PollVoterCluster';
+import { PopIn } from './PopIn';
 import type { OptionMarker, OptionState } from './pollBoard';
 import {
   pollColors,
   pollMetrics,
+  pollMotion,
   pollTypography,
   workspaceColors,
   workspaceRadii,
@@ -21,9 +24,33 @@ interface PollOptionRowProps {
 
 
 export function PollOptionRow({ option, state, marker, onPress }: PollOptionRowProps) {
+  const emphasis = useRef(new Animated.Value(state === 'idle' || state === 'demoted' ? 0 : 1)).current;
+  const lit = state === 'selected' || state === 'recorded';
+
+  useEffect(() => {
+    Animated.timing(emphasis, {
+      toValue: lit ? 1 : 0,
+      duration: pollMotion.rowSelectMs,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+  }, [emphasis, lit]);
+
+  const backgroundColor = emphasis.interpolate({
+    inputRange: [0, 1],
+    outputRange: [
+      marker === 'star' ? pollColors.winnerPaper : workspaceColors.surface,
+      state === 'recorded' ? pollColors.recordedFill : pollColors.selectedFill,
+    ],
+  });
+  const borderColor = emphasis.interpolate({
+    inputRange: [0, 1],
+    outputRange: [workspaceColors.hairline, workspaceColors.accent],
+  });
+
   return (
-    <Pressable
-      style={[styles.row, rowStyles[state], marker === 'star' && styles.winner]}
+    <AnimatedPressable
+      style={[styles.row, lit && styles.rowLit, { backgroundColor, borderColor }]}
       onPress={onPress}
       disabled={onPress === undefined}
       accessibilityRole={marker === 'none' || marker === 'star' ? 'text' : 'radio'}
@@ -36,7 +63,7 @@ export function PollOptionRow({ option, state, marker, onPress }: PollOptionRowP
         <Text style={styles.label}>{option.label}</Text>
         <PollVoterCluster voters={option.voters} voteCount={option.voteCount} />
       </View>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -47,16 +74,16 @@ function Marker({ marker }: { marker: OptionMarker }) {
   }
   if (marker === 'star') {
     return (
-      <View style={styles.marker}>
+      <PopIn style={styles.marker}>
         <Icon name="starFilled" size={16} color={workspaceColors.accent} />
-      </View>
+      </PopIn>
     );
   }
   if (marker === 'check') {
     return (
-      <View style={styles.marker}>
+      <PopIn style={styles.marker}>
         <Icon name="checkCircleFilled" size={18} color={workspaceColors.accent} />
-      </View>
+      </PopIn>
     );
   }
   if (marker === 'demotedCheck') {
@@ -68,9 +95,9 @@ function Marker({ marker }: { marker: OptionMarker }) {
   }
   if (marker === 'selected') {
     return (
-      <View style={styles.marker}>
+      <PopIn style={styles.marker}>
         <View style={styles.radioRinged} />
-      </View>
+      </PopIn>
     );
   }
   return (
@@ -79,6 +106,9 @@ function Marker({ marker }: { marker: OptionMarker }) {
     </View>
   );
 }
+
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 
 const RADIO = 18;
@@ -94,11 +124,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: pollMetrics.optionRadius,
     borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    backgroundColor: workspaceColors.surface,
   },
-  winner: {
-    backgroundColor: pollColors.winnerPaper,
+  rowLit: {
+    borderWidth: 1.5,
   },
   marker: {
     width: RADIO,
@@ -130,20 +158,4 @@ const styles = StyleSheet.create({
     ...pollTypography.optionLabel,
     color: workspaceColors.title,
   },
-});
-
-
-const rowStyles = StyleSheet.create({
-  idle: {},
-  selected: {
-    backgroundColor: pollColors.selectedFill,
-    borderColor: workspaceColors.accent,
-    borderWidth: 1.5,
-  },
-  recorded: {
-    backgroundColor: pollColors.recordedFill,
-    borderColor: workspaceColors.accent,
-    borderWidth: 1.5,
-  },
-  demoted: {},
 });
