@@ -62,7 +62,8 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | S4.7 | Fork (plan-only copy + Fork Relationship, INV-6) | ✅ | [spec](docs/plans/S4.7-fork/spec.md) |
 | S4.8 | Visitor read-only surface (INV-3) | ⬜ | — |
 | S4.9 | Trip surfaces retrofit *(grilled 2026-07-31 against the 07/31 trip-creation/workspace mock set — ADR-014 amended to subject-typed leases, built here; activity-history capture; workspace/day/invite/create restructure; invite-by-handle exact-match; tab bar with Home/Search greyed; pulled next, before S4.1)* | ✅ | [spec](docs/plans/S4.9-trip-surfaces-retrofit/spec.md) |
-| S4.10 | In-trip chat + activity-history surface *(entered launch scope 2026-07-31 — chat reverses the 2026-07-24 no-planning-conversation ruling on the record; pulled after S4.3; UX flow + grilling due before elaboration, may split there)* | ⬜ | — |
+| S4.10 | In-trip chat *(entered launch scope 2026-07-31, reversing the 2026-07-24 no-planning-conversation ruling; **grilled 2026-08-20, three rounds — the split fired**: WS-1 builds the transport first (ADR-030), the history surface splits to S4.27; text-only, traveler-attributed, publish closes chat; photos-in-chat raised and withdrawn on the record; design baseline = the founder's Claude Design chat canvas)* | ⬜ | [spec](docs/plans/S4.10-in-trip-chat/spec.md) |
+| S4.27 | Activity-history surface *(split from S4.10 at its 2026-08-20 grilling — the reader of the S4.9-captured table; no socket, no mock dependency; **unscheduled**, founder pulls it)* | ⬜ | — |
 | **Epic 5 — Ledger** *(Full-rigor zone)* | | | | |
 | S5.1 | Expense + splits (INV-7, transactional) | ⬜ | — |
 | S5.2 | Balances view | ⬜ | — |
@@ -77,6 +78,8 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | S1.8 | Entitlement seam: `can(traveler, capability)` *(parked out of E1 2026-07-28 at its grilling — ships at reg. #14's decision moment, before this epic, born wired to the first gated capabilities; ADR-009 amended; every spec from S1.9 on carries a one-line candidate-capability note)* | ⬜ | — |
 | **Harness** *(no epic — verification tooling, pulled from the epic-map port line)* | | | | |
 | H1 | Playwright port: the whole verification harness becomes one Playwright suite *(grilled 2026-08-14, fired by the S4.3 gate's wall-clock; ADR-026 — API smokes fold in by founder reversal, CDP/`ws` deletes, dark flows rebuilt from the walk inventory; gate keeps three rungs)* | ✅ | [spec](docs/plans/H1-playwright-port/spec.md) |
+| **Infrastructure** *(no epic — product transport; pulled 2026-08-20 at the S4.10 grilling, builds before its first consumer)* | | | | |
+| WS-1 | WebSocket infrastructure *(ADR-030 — ticket handshake, guard-checked subscriptions + membership eviction, AFTER_COMMIT fan-out, additive envelope, REST catch-up; Railway-`wss://` spike is the blocking first ticket; dev-only echo topic is the proving consumer)* | ⬜ | [spec](docs/plans/WS-1-websocket-infrastructure/spec.md) |
 
 *(Stories past Epic 0 are slice-level titles — elaborated agent-ready just-in-time when pulled, per the playbook. Splits/merges expected; update the table when they happen.)*
 

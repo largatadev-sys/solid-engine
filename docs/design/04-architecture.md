@@ -22,7 +22,7 @@ _Status: **proposed — pending founder ratification.** The bones below are fixe
 └─────────────────────────────┘        │  · identity   (Traveler, anonymization)  │
                                        │  · itinerary  (Itinerary, Items, Forks)  │
         ┌──────────────┐               │  · workspace  (Membership, Invites,      │
-        │ Firebase Auth │◀── sign-in ──│      Polls/Votes)                        │
+        │ Firebase Auth │◀── sign-in ──│      Polls/Votes, Chat)                  │
         └──────────────┘   (mobile)    │      └─ ledger (bounded submodule:       │
                                        │          Expenses, Splits, Transfers)    │
         ┌──────────────┐               │  · diary      (Diary, Grants, Entries)   │
