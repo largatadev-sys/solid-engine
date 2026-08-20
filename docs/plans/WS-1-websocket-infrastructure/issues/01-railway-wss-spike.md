@@ -28,3 +28,18 @@ The founder approved an early promotion to `dev` to obtain the deployed proof (t
 The reasoning accepted: WS-1 ships **no traveler-visible surface** and **no consumer subscribes to any topic yet** (`grep useTopicSubscription` outside `src/ws/` returns nothing), so a Playwright run exercises zero lines of the transport. The mobile diff outside the new module is **three lines in `app/_layout.tsx`** — a `useSocketLifecycle` call inside `AuthGate`. Both of its web failure modes were checked and cleared: `AppState` has a real `react-native-web` fork (so not the `Alert.alert` no-op trap), and `disconnect()` on a signed-out app touches a null socket and returns.
 
 **The residual risk, stated so it is not discovered later:** nothing that ran renders `_layout.tsx` in a browser — Jest asserts it as text, `tsc` type-checks it, neither mounts it. `AuthGate` is the component every screen renders through, so a regression there would be broad and would surface **on the dev preview** rather than in CI. That is the accepted trade: the preview is the test rung for this hop.
+
+**2026-08-21, the promotion landed on GitHub; the deploy did not land on Railway — the platform is down (founder).**
+
+`dev` is at `58ec567` on the remote (`git ls-remote` confirms it), so the promotion itself succeeded and nothing needs re-doing. **Railway is not deploying** — a platform-side outage, reported by the founder. The spike therefore stays open on infrastructure, not on anything in this repo. **Resume by re-running the probe below; when it answers 201, run the spike client.** Nothing else needs to change.
+
+**A bad probe was written first, and the lesson is the one this repo keeps paying for.** The initial deploy detector compared `GET /ws` against a nonsense path, reasoning that the new `permitAll` matcher would make them diverge. It cannot: `ConnectionTicketIT.anAbsentTicketIsRefused` proves `/ws` **without a ticket answers 401** because `HandshakeGate` refuses it — so old build and new build both return 401, and **the check's two outcomes were identical**. It ran for 20 minutes and could not have detected the deploy in either direction. Fourth occurrence of the indistinguishable-outcomes trap in this codebase, and the first one authored while quoting the rule against it.
+
+**The probe that actually discriminates is an *authenticated* `POST /v1/ws-ticket`** — unauthenticated probes are worthless here because the security chain rejects before routing, so every path (real or invented) answers an identical `UNAUTHENTICATED` 401. Signed in as pool `t1`:
+
+- **old build → `404 NOT_FOUND`**, byte-identical to `/v1/no-such-route` (the control)
+- **new build → `201 CREATED`** with `{ticket, expiresInSeconds}` (`ConnectionTicketController`, `@ResponseStatus(CREATED)`)
+
+Two outcomes, genuinely different, both predicted in advance. That is the resume signal.
+
+**Ready and waiting, needing no further work:** a dependency-free spike client (Node 24's *global* `WebSocket` — spec decision 7's "no new `ws` dependency" holds). It signs in as `t1`, mints a real ticket, connects `wss://`, subscribes to `debug:echo`, holds 95s across three heartbeat cycles, and **echoes again at the end** — because `readyState === OPEN` is precisely the connected-and-dead lie, so only a round-trip proves the pipe. It reports the four things this ticket asks for: exact URL, hold duration, idle-timeout behaviour, and whether `?ticket=` survived the proxy.
