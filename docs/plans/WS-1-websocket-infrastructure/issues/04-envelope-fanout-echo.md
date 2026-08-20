@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 — fan-out targets subscriptions.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] The envelope: `{topic, type, eventId (UUIDv7), at (UTC instant), payload}` — one serializer, owned by the WS module. Additive-evolution rule recorded in ADR-030; nothing here versions or breaks.
 - [ ] The bridge: `@TransactionalEventListener(phase = AFTER_COMMIT)` on domain events that name a topic — a broadcast can never precede its commit; a rollback broadcasts nothing. Events carry IDs (ADR-002); if a payload needs entity data, the bridge reads it through the owning module's service interface.

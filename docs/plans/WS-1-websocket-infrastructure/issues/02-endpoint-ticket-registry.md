@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — the spike's evidence (query-param integrity decides ticket-vs-first-frame).
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `POST /v1/ws-ticket` — authenticated through the existing chain; returns `{ticket, expiresInSeconds: 30}`; opaque value, single-use, in-memory store with TTL sweep. Never logged (P3 — log the traveler id, not the ticket).
 - [ ] `GET /ws?ticket=…` upgrade: redeem-and-burn; refuse the upgrade on reuse/expiry/absence/garbage. The session binds the resolved traveler id for its lifetime.

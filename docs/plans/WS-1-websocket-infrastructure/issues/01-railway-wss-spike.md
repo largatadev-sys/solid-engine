@@ -4,7 +4,7 @@
 
 **Blocked by:** — *(first ticket; owner review gates the story)*
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] A minimal `/ws-spike` echo handler behind the dev profile — no auth, no registry, echoes any text frame; server ping every 30s.
 - [ ] Local proof first: browser → `ws://localhost:8080/ws-spike`, echo round-trip, connection held ≥ 90s.

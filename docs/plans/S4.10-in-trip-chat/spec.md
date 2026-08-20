@@ -105,3 +105,5 @@ Backend: HTTP-seam ITs on `PostgresTestBase` + `RestTestClient` — the guard-ma
 Photos in chat (dismissed on the record — decision 8) · edit/delete/threading/mentions (decision 1; deletion's park carries the trigger) · unread state, receipts, typing, reactions, presence, push (decision 7's block, parked) · the activity-history surface (**S4.27**, split here, unscheduled) · any published/consumer surface for chat (decision 6) · entitlement code (`chat.message.send` is a note, not a gate — ADR-009) · a chat door on the published view (decision 3 closed it: publish turns chat off) · broker/scale-out (WS-1's named seam).
 
 ## Comments
+
+**2026-08-20, owner review — passed.** All five tickets approved as written ("tickets are all good"); statuses flipped `needs-triage` → `ready-for-agent`. Implementation deliberately not started — the owner triggers the build, and WS-1 goes first. Still owed by the founder: the original `Chat Spec.dc.html` + `support.js` dropped into `design/` (or the live canvas link recorded there) — the transferred copies were encoding-mangled, per the spec's archival note.

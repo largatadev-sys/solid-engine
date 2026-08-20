@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — the session registry subscriptions attach to.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Topic parser: `itinerary:{id}:{channel}` → itinerary id; unknown shapes answer the error frame. Topic names are parsed, never trusted.
 - [ ] Subscribe resolves the Membership through the guard (Artifact 03) exactly as a service method would; a non-member's subscribe answers the **masked** refusal (the not-found posture every workspace read has); a member's answers `{action: "subscribed", topic}`.

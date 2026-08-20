@@ -88,3 +88,5 @@ Backend: ITs on `PostgresTestBase` with a real Java WebSocket client — the tic
 Any traveler-visible surface (S4.10) · a broker / horizontal scaling (seam named, ADR for its day) · presence, typing, live editing (ADR-014/022's invalidating condition does **not** fire because a transport shipped) · push notifications (a different decision, unmade) · catch-up-by-eventId server endpoints (consumers refetch their own REST reads; finer grain when a consumer needs it) · any change to existing REST endpoints.
 
 ## Comments
+
+**2026-08-20, owner review — passed.** All six tickets approved as written ("tickets are all good"); statuses flipped `needs-triage` → `ready-for-agent`. Implementation deliberately not started — the owner triggers the build. Open at ticket 01: the spike's deployment mechanic (scratch Railway service off the feature branch vs an early minimal proposed promotion to `dev`) — the founder's call when the build starts.

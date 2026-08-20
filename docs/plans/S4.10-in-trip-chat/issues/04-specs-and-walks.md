@@ -4,7 +4,7 @@
 
 **Blocked by:** 03.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Playwright (web project, preview container against the local stack): two contexts, pool `t1`/`t2` (verified accounts; roles stated in the write-up). t1 sends → assert t2 received **at the socket** (captured frame log) *and* the bubble rendered per C1; reload persists. Optimistic send: field clears on release, no duplicate when t1's own broadcast lands.
 - [ ] Failed-send spec: intercept the POST to fail once → dim + "Couldn't send" + Retry/Discard per C5; Retry lands the message; a second interception's Discard removes it.

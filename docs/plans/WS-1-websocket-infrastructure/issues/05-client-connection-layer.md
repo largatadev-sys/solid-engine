@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — the ticket flow and frame protocol it speaks. *(Buildable against the spec's protocol in parallel; the Playwright proof waits on 04.)*
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `src/ws/` connection manager: one socket per app session; ticket fetch through the typed apiClient; URL derived at runtime from the already-inlined `EXPO_PUBLIC_API_BASE_URL` (`http→ws`, `https→wss`) — no new `EXPO_PUBLIC_*` variable, no computed env access (the S0.4 inlining trap stays closed).
 - [ ] Reconnect: exponential backoff with jitter, 1s doubling to a 30s cap; resubscribe-all on recovery; a reconnect signal consumers can hook (the catch-up convention — each consumer refetches its own REST read).

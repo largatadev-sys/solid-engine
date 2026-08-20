@@ -4,7 +4,7 @@
 
 **Blocked by:** 04.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Full mobile suite · full backend ITs (`mvn -o test-compile failsafe:integration-test` — counts read from the `Tests run:` summary, never the exit code) · `npm run smoke` whole (both projects, one exit code).
 - [ ] BUILD_STATUS: the S4.10 row flips (status + spec link, nothing else) in the last commit on this branch.

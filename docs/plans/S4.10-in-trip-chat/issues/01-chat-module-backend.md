@@ -4,7 +4,7 @@
 
 **Blocked by:** — *(first ticket; owner review gates the story; WS-1 tickets 03/04 must be merged for the event bridge's target to exist)*
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Migration (additive): `chat_message` — id UUIDv7 PK, itinerary id, **author traveler id** (decision 2 — never the membership; no cascade from membership delete), body (≤ 2,000, non-blank — DB check + bean validation), at TIMESTAMPTZ; index `(itinerary_id, id DESC)` — the `activity_history` read shape.
 - [ ] `POST /v1/itineraries/{id}/chat/messages` — fences in spec order: guard (masked not-found, non-member) → WriteFence (archived: owner 409 / non-owner masked) → published check (**`CHAT_CLOSED`**, named, owner and member alike; no event fires) → validation 4xx. Returns 201 with the message DTO.

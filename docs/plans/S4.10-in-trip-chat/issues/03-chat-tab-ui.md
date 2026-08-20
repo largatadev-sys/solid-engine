@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — the data layer it renders.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `src/chat/`: thread list (inverted, bottom-anchored), `MessageBubble`, `Composer`, failed-send row, empty state, read-only notice — the tab-content component takes the `WorkspaceTravelersTab` contract (`itineraryId` prop); mounted where the other workspace tabs mount; `comingSoonSurface: 'chat'` removed from `WorkspaceTabRow`.
 - [ ] C1 thread + grouping: 5-min sender groups (avatar + handle once, 2px intra / 14px inter, 6px sender-corner on the last bubble); on new content while scrolled up, **keep position** + the "↓ New messages" pill — the only new-message affordance; token names, never raw hex.

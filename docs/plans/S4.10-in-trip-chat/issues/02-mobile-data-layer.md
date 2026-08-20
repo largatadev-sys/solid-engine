@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — the wire it types against; WS-1 ticket 05 — the `useTopicSubscription` hook.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Repository (typed apiClient, ADR-001 — no raw fetch): `sendMessage`, `listMessages(cursor)`; DTO types matching ticket 01 exactly.
 - [ ] Infinite query keyed per trip: `nextCursor` handed straight to react-query (`?? undefined` — the S3.1 lesson lives in one place); newest page first, older pages on scroll-back.

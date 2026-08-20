@@ -4,7 +4,7 @@
 
 **Blocked by:** 04, 05.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Playwright (web project): two browser contexts (pool `t1`/`t2`, verified accounts), both on `debug:echo` through the preview container against the local stack — t1 sends, the spec asserts t2 received **at the socket** (an in-page captured frame log), never at a render. State which tag played which role in the write-up.
 - [ ] Reconnect spec: kill the connection server-side mid-spec; assert backoff → reconnect → resubscribe → a fresh echo arrives. The failure mode is a hang, not a red assertion — bound every wait.
