@@ -28,6 +28,8 @@ Three fixed equal-width in-page tabs **Upcoming | Ongoing | Completed**, ladder 
 - **(a) Recommended: additive `dayCount` on the listing response** — one integer, trivially ADR-008-compatible (no waiver), one line in `summaryOf` + the count query. Amends the spec's "tabs need zero wire changes" note, which was true of the ruled behavior and stops being true of this canvas line.
 - **(b) Drop "· N days" from the sub-line** — destination only; a named deviation from the baseline.
 
+**RULED (a), founder, 2026-08-20 at the ticket quiz** — the additive `dayCount` ships on the listing response (ticket 01) and the card line renders as the canvas draws it. The conflict closes.
+
 ## README corrections *(the handoff text errs where the canon knows better — the canvas frames are unaffected)*
 
 - The README's title says "Lifecycle S3"; the story is **S4.26**. Traceability lives here, not in the export.
