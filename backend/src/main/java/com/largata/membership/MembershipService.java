@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,7 @@ public class MembershipService {
     private final OwnershipOfferRepository offers;
     private final OwnershipTransferRepository transfers;
     private final Analytics analytics;
+    private final ApplicationEventPublisher events;
 
     MembershipService(
             WorkspaceService workspaces,
@@ -50,7 +52,8 @@ public class MembershipService {
             WriteFence fence,
             OwnershipOfferRepository offers,
             OwnershipTransferRepository transfers,
-            Analytics analytics) {
+            Analytics analytics,
+            ApplicationEventPublisher events) {
         this.workspaces = workspaces;
         this.itineraries = itineraries;
         this.leases = leases;
@@ -59,6 +62,7 @@ public class MembershipService {
         this.offers = offers;
         this.transfers = transfers;
         this.analytics = analytics;
+        this.events = events;
     }
 
 
@@ -89,6 +93,7 @@ public class MembershipService {
             return;
         }
         leases.releaseHeldBy(itineraryId, targetTravelerId);
+        events.publishEvent(new MembershipEnded(itineraryId, targetTravelerId));
         voidPendingOfferTo(itineraryId, targetTravelerId, caller.travelerId());
 
         log.info(

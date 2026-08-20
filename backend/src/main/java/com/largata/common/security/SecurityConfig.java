@@ -2,6 +2,7 @@ package com.largata.common.security;
 
 import com.largata.common.logging.LogContextFilter;
 import com.largata.common.logging.UserContextFilter;
+import com.largata.ws.WebSocketPaths;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,6 +32,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         auth ->
                                 auth
+                                        .requestMatchers(WebSocketPaths.UPGRADE)
+                                        .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/v1/health")
                                         .permitAll()
                                         .anyRequest()
