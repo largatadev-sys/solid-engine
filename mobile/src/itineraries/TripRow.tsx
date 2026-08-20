@@ -1,12 +1,14 @@
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { coverPreviewFor } from '../media/coverInFlight';
 import { MediaThumb } from '../media/MediaThumb';
+import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import { colors, radii, spacing, typography } from '../theme';
+import { tripTabColors } from '../theme/workspaceTokens';
 import type { ItineraryResponse } from '../types/api';
-import { publicationBadge, tripCardDate } from './tripCardAnatomy';
-import { draftSubtitle, editingAdvisory } from './tripSections';
+import { publicationBadge } from './tripCardAnatomy';
+import { editingAdvisory, tripCardSubline } from './tripTabs';
 
 
 export function tripRowDestination(
@@ -21,27 +23,31 @@ export function tripRowDestination(
 
 export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
   const advisory = editingAdvisory(itinerary);
-  const subtitle = draftSubtitle(itinerary);
-  const date = tripCardDate(itinerary);
+  const subline = tripCardSubline(itinerary);
   const badge = publicationBadge(itinerary);
+  const { opacity, onPressIn, onPressOut } = usePressFeedback();
 
   return (
     <Link href={tripRowDestination(itinerary)} asChild>
-      <Pressable style={styles.card} accessibilityRole="button" accessibilityLabel={itinerary.title}>
+      <AnimatedPressable
+        style={StyleSheet.flatten([styles.card, { opacity }])}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        accessibilityRole="button"
+        accessibilityLabel={itinerary.title}>
         <CoverThumb
           coverImageUrl={itinerary.coverImageUrl}
           localPreview={coverPreviewFor(itinerary.id)}
         />
 
         <View style={styles.info}>
-          <View style={styles.titleWrap}>
-            {date !== null && <Text style={styles.date}>{date}</Text>}
-            <Text style={styles.title} numberOfLines={1}>
-              {itinerary.title}
-            </Text>
-          </View>
+          <Text style={styles.title} numberOfLines={1}>
+            {itinerary.title}
+          </Text>
 
-          {subtitle !== null && <Text style={styles.subtitle}>{subtitle}</Text>}
+          <Text style={styles.subline} numberOfLines={1}>
+            {subline}
+          </Text>
 
           {advisory !== null && (
             <View style={styles.status}>
@@ -51,19 +57,12 @@ export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
           )}
         </View>
 
-        <View style={styles.badges}>
-          {itinerary.archived && (
-            <View style={styles.archivedBadge}>
-              <Text style={styles.archivedBadgeText}>Archived</Text>
-            </View>
-          )}
-          {badge !== null && (
-            <View style={styles.publicationBadge}>
-              <Text style={styles.publicationBadgeText}>{badge}</Text>
-            </View>
-          )}
-        </View>
-      </Pressable>
+        {badge !== null && (
+          <View style={styles.publicationBadge}>
+            <Text style={styles.publicationBadgeText}>{badge}</Text>
+          </View>
+        )}
+      </AnimatedPressable>
     </Link>
   );
 }
@@ -112,30 +111,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
   },
   thumbEmpty: { alignItems: 'center', justifyContent: 'center' },
-  info: { flex: 1, gap: spacing.xs2 },
-  titleWrap: { gap: spacing.hair },
-  date: { ...typography.cardDate, color: colors.textSecondary },
+  info: { flex: 1, gap: spacing.hair },
   title: { ...typography.cardTitle, color: colors.textPrimary },
-  subtitle: { ...typography.cardSubtitle, color: colors.textSecondary },
+  subline: { ...typography.cardSubtitle, color: colors.textSecondary },
   status: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs2 },
   statusDot: {
     width: STATUS_DOT_SIZE,
     height: STATUS_DOT_SIZE,
     borderRadius: radii.pill,
-    backgroundColor: colors.accent,
+    backgroundColor: tripTabColors.advisoryDot,
   },
-  statusText: { ...typography.cardStatus, color: colors.textSecondary },
-  badges: { alignItems: 'flex-end', gap: spacing.xs },
-  archivedBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.hair,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.accentMuted,
-    backgroundColor: colors.background,
-  },
-  archivedBadgeText: { ...typography.cardStatus, color: colors.accent },
+  statusText: { ...typography.cardStatus, color: tripTabColors.advisoryText },
   publicationBadge: {
+    flexShrink: 0,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.hair,
     borderRadius: radii.pill,

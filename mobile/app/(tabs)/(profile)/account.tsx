@@ -6,6 +6,7 @@ import { ONBOARDING_ROUTES } from '../../../src/onboarding/onboardingGate';
 import { ACCOUNT_BACK_LABEL } from '../../../src/profile/profileCopy';
 import { ProfileCardView } from '../../../src/profile/ProfileCardView';
 import { profileCardOf } from '../../../src/profile/profileCard';
+import { forgetPickedTab } from '../../../src/itineraries/tripTabStore';
 import { authRepository } from '../../../src/repositories/authRepository';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 
@@ -68,7 +69,10 @@ export default function AccountScreen() {
 
       <Pressable
         style={[styles.button, styles.secondaryButton]}
-        onPress={() => void authRepository.signOut()}
+        onPress={() => {
+          forgetPickedTab();
+          void authRepository.signOut();
+        }}
         accessibilityRole="button"
       >
         <Text style={styles.secondaryButtonText}>Sign out</Text>

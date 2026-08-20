@@ -29,11 +29,11 @@ test.beforeAll(async () => {
   });
 });
 
-test('every trip is born a draft', async () => {
-  expect(await stateOf(owner, trip.id)).toBe('draft');
+test('every trip is born upcoming — S4.26 retired the draft rung', async () => {
+  expect(await stateOf(owner, trip.id)).toBe('upcoming');
 });
 
-test('a member completing a draft gets 403, not 409 — authority is checked before state', async () => {
+test('a member completing an upcoming trip gets 403, not 409 — authority is checked before state', async () => {
   const refused = await api(`/v1/itineraries/${trip.id}/complete`, 'POST', member);
   expect(refused.status).toBe(403);
   expect(refused.body?.code).toBe('NOT_PERMITTED');
@@ -43,10 +43,10 @@ test('a member cannot start the trip, and nothing moves', async () => {
   const refused = await api(`/v1/itineraries/${trip.id}/start`, 'POST', member);
   expect(refused.status).toBe(403);
   expect(refused.body?.code).toBe('NOT_PERMITTED');
-  expect(await stateOf(owner, trip.id)).toBe('draft');
+  expect(await stateOf(owner, trip.id)).toBe('upcoming');
 });
 
-test('even the owner cannot complete a draft — there is no skip edge', async () => {
+test('even the owner cannot complete an upcoming trip — there is no skip edge', async () => {
   const refused = await api(`/v1/itineraries/${trip.id}/complete`, 'POST', owner);
   expect(refused.status).toBe(409);
   expect(refused.body?.code).toBe('ILLEGAL_STATE_TRANSITION');
@@ -66,21 +66,11 @@ test('a non-member is masked with 404, never 403', async () => {
   expect(masked.status).toBe(404);
 });
 
-test('a draft cannot set off — planning must finish first', async () => {
-  const refused = await api(`/v1/itineraries/${trip.id}/start`, 'POST', owner);
-  expect(refused.status).toBe(409);
-  expect(refused.body?.code).toBe('ILLEGAL_STATE_TRANSITION');
-});
-
-test('the owner finishes planning, and the response says upcoming', async () => {
-  const planned = await api(`/v1/itineraries/${trip.id}/finish-planning`, 'POST', owner);
-  expect(planned.status).toBe(200);
-  expect(planned.body?.state).toBe('upcoming');
-});
-
-test('finishing planning twice is refused', async () => {
-  const again = await api(`/v1/itineraries/${trip.id}/finish-planning`, 'POST', owner);
-  expect(again.status).toBe(409);
+test('finish-planning stays mapped and refuses forever — the dormant endpoint, ADR-008 waiver #3', async () => {
+  const retired = await api(`/v1/itineraries/${trip.id}/finish-planning`, 'POST', owner);
+  expect(retired.status).toBe(409);
+  expect(retired.body?.code).toBe('ILLEGAL_STATE_TRANSITION');
+  expect(await stateOf(owner, trip.id)).toBe('upcoming');
 });
 
 test('the owner starts the trip, and the response carries the whole resource', async () => {
@@ -118,17 +108,16 @@ test('the machine is forward-only — no re-complete, no way back by starting', 
   expect(backwards.status).toBe(409);
 });
 
-test('the one-step undo walks the ladder down a rung at a time, and stops at draft', async () => {
+test('reopen walks the ladder down a rung at a time and floors at upcoming — no UI drives it', async () => {
   expect((await api(`/v1/itineraries/${trip.id}/reopen`, 'POST', owner)).body?.state).toBe('ongoing');
   expect((await api(`/v1/itineraries/${trip.id}/reopen`, 'POST', owner)).body?.state).toBe('upcoming');
-  expect((await api(`/v1/itineraries/${trip.id}/reopen`, 'POST', owner)).body?.state).toBe('draft');
 
   const nothingBelow = await api(`/v1/itineraries/${trip.id}/reopen`, 'POST', owner);
   expect(nothingBelow.status).toBe(409);
+  expect(nothingBelow.body?.code).toBe('ILLEGAL_STATE_TRANSITION');
 });
 
 test('the trip walks the whole ladder again after the undo', async () => {
-  await api(`/v1/itineraries/${trip.id}/finish-planning`, 'POST', owner);
   await api(`/v1/itineraries/${trip.id}/start`, 'POST', owner);
   await api(`/v1/itineraries/${trip.id}/complete`, 'POST', owner);
   expect(await stateOf(owner, trip.id)).toBe('completed');
@@ -174,7 +163,7 @@ test('PATCH cannot move lifecycle state — the two doors stay separate', async 
   await api(`/v1/itineraries/${trip.id}`, 'PATCH', owner, {
     title: 'state must not move through this door',
     destination: 'Palawan',
-    state: 'draft',
+    state: 'upcoming',
   });
   await api(`/v1/itineraries/${trip.id}/edit-lock`, 'DELETE', owner);
 
@@ -217,16 +206,11 @@ test.describe('S4.24 — the editor opens in every unpublished state, and the st
     expect(await stateOf(owner, inPlace), `${expected} must survive the save`).toBe(expected);
   };
 
-  test('a draft edits in place', async () => {
-    await editsInPlaceAt('draft');
-  });
-
-  test('a Ready trip edits in place', async () => {
-    await api(`/v1/itineraries/${inPlace}/finish-planning`, 'POST', owner);
+  test('an upcoming trip edits in place', async () => {
     await editsInPlaceAt('upcoming');
   });
 
-  test('an Active trip edits in place, and the diary blackout is gone', async () => {
+  test('an ongoing trip edits in place, and the diary blackout is gone', async () => {
     await api(`/v1/itineraries/${inPlace}/start`, 'POST', owner);
     await editsInPlaceAt('ongoing');
 
@@ -237,7 +221,7 @@ test.describe('S4.24 — the editor opens in every unpublished state, and the st
     ).toBe('ongoing');
   });
 
-  test('an unpublished Completed trip edits in place', async () => {
+  test('an unpublished completed trip edits in place', async () => {
     await api(`/v1/itineraries/${inPlace}/complete`, 'POST', owner);
     await editsInPlaceAt('completed');
   });

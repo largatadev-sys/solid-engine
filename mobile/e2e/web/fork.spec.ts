@@ -19,7 +19,7 @@ import {
   forkSuccessBody,
   forkSuccessMeta,
 } from '../../src/itineraries/forkCopy';
-import { sectionLabel } from '../../src/itineraries/tripSections';
+import { tabLabel } from '../../src/itineraries/tripTabs';
 
 const AUTHOR = ownerTagFor('web/fork');
 const FORKER = IDENTITY_MAP['web/fork'].tags[1]!;
@@ -155,7 +155,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
     await expect.poll(async () => (await projectionOf(source.id)).forkCount, { timeout: 15_000 }).toBe(1);
   });
 
-  test('the copy the server made is a photo-less, date-less draft the forker owns', async () => {
+  test('the copy the server made is a photo-less, date-less upcoming trip the forker owns', async () => {
     const mine = (await api('/v1/itineraries', 'GET', forkerToken)).body.items as Array<{
       id: string;
       title: string;
@@ -165,7 +165,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
     forkId = copy!.id;
 
     const fork = await itineraryOf(forkId);
-    expect(fork.state).toBe('draft');
+    expect(fork.state).toBe('upcoming');
     expect(fork.published).toBe(false);
     expect(fork.startDate).toBeNull();
     expect(fork.endDate).toBeNull();
@@ -203,10 +203,10 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
     await expect(labelled(page, FORK_CTA_LABEL)).toHaveCount(0);
   });
 
-  test('the draft sits in Trips\' Draft section without needing the success screen', async ({ page }) => {
+  test('the fork sits on the Upcoming tab without needing the success screen', async ({ page }) => {
     await page.goto('/trips');
 
-    await expect(visible(page.getByText(sectionLabel('draft'), { exact: true }))).toBeVisible();
+    await expect(visible(page.getByRole('tab', { name: tabLabel('upcoming') }))).toBeVisible();
     await expect(visible(page.getByText(source.title))).toBeVisible();
   });
 

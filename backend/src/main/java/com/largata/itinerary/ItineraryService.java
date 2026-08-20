@@ -102,7 +102,7 @@ public class ItineraryService {
 
     @Transactional
     public ItineraryPlan createWithPlan(UUID ownerId, ItineraryFields fields, int durationDays) {
-        Itinerary itinerary = itineraries.save(Itinerary.draft(ownerId, fields, Instant.now()));
+        Itinerary itinerary = itineraries.save(Itinerary.newTrip(ownerId, fields, Instant.now()));
         workspaces.formAround(itinerary.id(), itinerary.ownerId(), itinerary.createdAt());
         days.seedDays(itinerary.id(), durationDays, itinerary.createdAt());
         log.info("Itinerary created: id={} ownerId={}", itinerary.id(), itinerary.ownerId());
@@ -236,12 +236,10 @@ public class ItineraryService {
     }
 
 
-    @Transactional
-    public Itinerary finishPlanning(Membership owner) {
-        Itinerary itinerary = authorizeAndLoad(owner);
-        editLease.requireSessionFreeForLifecycle(owner);
-        itinerary.finishPlanning();
-        return record(itinerary, owner, "itinerary_planning_finished");
+    @Transactional(readOnly = true)
+    public void refuseFinishPlanning(Membership owner) {
+        authorizeAndLoad(owner);
+        throw IllegalStateTransitionException.planningIsNoLongerAState();
     }
 
 
@@ -355,16 +353,25 @@ public class ItineraryService {
 
 
     @Transactional(readOnly = true)
+    public Map<UUID, Long> dayCountsAmong(Collection<UUID> itineraryIds) {
+        return days.dayCountsOf(itineraryIds);
+    }
+
+
+    @Transactional(readOnly = true)
     public Page<Itinerary> listMine(
             UUID travelerId, String cursor, Integer requestedLimit, boolean archived, TripCategory category) {
         int limit = clamp(requestedLimit);
         UUID decodedCursor = cursor == null ? null : Cursor.decode(cursor);
 
+        if (category != null && category.matchesNoState()) {
+            return Page.exhausted(List.of());
+        }
         List<UUID> itineraryIds = workspaces.itineraryIdsFor(travelerId, archived);
         if (itineraryIds.isEmpty()) {
             return Page.exhausted(List.of());
         }
-        ItineraryState state = category == null ? null : category.state();
+        ItineraryState state = category == null ? null : category.state().orElse(null);
         Limit probe = Limit.of(limit + 1);
         List<Itinerary> found =
                 decodedCursor == null

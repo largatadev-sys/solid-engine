@@ -4,7 +4,8 @@ import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { seedTrip, seedPlan, stamp, type SeededTrip } from '../support/seed';
 import { labelled, dragStripBy } from '../support/screen';
-import { stateBadge } from '../../src/itineraries/workspaceControls';
+import { forwardConfirmWording, stateBadge } from '../../src/itineraries/workspaceControls';
+const DEAD_LABELS = ['Draft', 'Ready', 'Active'];
 
 const OWNER = ownerTagFor('web/workspace');
 const MEMBER = IDENTITY_MAP['web/workspace'].tags[1]!;
@@ -22,7 +23,7 @@ const stateOf = async (token: string, id: string): Promise<string> =>
 const sessionHeld = async (token: string, id: string): Promise<boolean> =>
   (await api(`/v1/itineraries/${id}`, 'GET', token)).body.beingEdited === true;
 
-test.describe('the draft workspace as a viewer', () => {
+test.describe('the trip workspace as a viewer', () => {
   let trip: SeededTrip;
 
   test.beforeAll(async () => {
@@ -34,12 +35,12 @@ test.describe('the draft workspace as a viewer', () => {
     await signIn(OWNER);
   });
 
-  test('a draft opens the workspace carrying the DRAFT badge and offers Edit Itinerary', async ({
+  test('an upcoming trip opens the workspace carrying the Upcoming badge and offers Edit Itinerary', async ({
     page,
   }) => {
     await page.goto(`/itineraries/${trip.id}`);
 
-    await expect(page.getByText(stateBadge({ state: 'draft' }).label, { exact: true })).toBeVisible();
+    await expect(page.getByText(stateBadge({ state: 'upcoming' }).label, { exact: true })).toBeVisible();
     await expect(labelled(page, 'Edit Itinerary')).toBeVisible();
   });
 
@@ -69,12 +70,15 @@ test.describe('the draft workspace as a viewer', () => {
     await expect(page.getByText('Add a Day')).toHaveCount(0);
   });
 
-  test('a draft shows no ladder CTA and no Step back — Edit Itinerary is the act', async ({ page }) => {
+  test('an upcoming trip offers Start Trip and no Step back — the ladder is forward-only', async ({
+    page,
+  }) => {
     await page.goto(`/itineraries/${trip.id}`);
     await expect(labelled(page, 'Edit Itinerary')).toBeVisible();
+    await expect(labelled(page, 'Start Trip')).toBeVisible();
 
-    await expect(page.getByText(/Start trip/i)).toHaveCount(0);
     await expect(page.getByText(/Step back/i)).toHaveCount(0);
+    await expect(page.getByText(/Finalize/i)).toHaveCount(0);
   });
 
   test('Chat greys with a message rather than dead-clicking — Polls stopped greying at S2.1', async ({
@@ -291,44 +295,10 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     await expect(page.getByText('Day 3')).toBeVisible();
   });
 
-  test('Finalize opens the confirmation sheet, and Keep Editing leaves the plan a draft', async ({
+  test('an upcoming trip is read-only on the viewer — no editing affordance renders', async ({
     page,
     signIn,
   }) => {
-    await signIn(OWNER);
-    await page.goto(`/itineraries/${trip.id}`);
-    await labelled(page, 'Finalize Itinerary').click();
-
-    await expect(page.getByRole('button', { name: 'Keep Editing' })).toBeVisible();
-    await page.getByRole('button', { name: 'Keep Editing' }).click();
-
-    expect(await stateOf(owner, trip.id)).toBe('draft');
-  });
-
-  test('Finalize fires finish-planning, shows Ready, and releases the session on the way out', async ({
-    page,
-    signIn,
-  }) => {
-    await signIn(OWNER);
-    await page.goto(`/itineraries/${trip.id}`);
-    await labelled(page, 'Finalize Itinerary').click();
-    await page.getByRole('button', { name: 'Finalize', exact: true }).click();
-
-    await expect.poll(async () => stateOf(owner, trip.id), { timeout: 20_000 }).toBe('upcoming');
-    await expect(page.getByText(stateBadge({ state: 'upcoming' }).label, { exact: true })).toBeVisible();
-  });
-
-  test.fixme(
-    'Finalize releases the Editing Session on the way out',
-    async () => {
-      const stillHeld = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', member, {
-        subjectType: 'session',
-      });
-      expect(stillHeld.status).not.toBe(409);
-    },
-  );
-
-  test('a Ready trip is read-only — no editing affordance renders', async ({ page, signIn }) => {
     await signIn(OWNER);
     await page.goto(`/itineraries/${trip.id}`);
     await expect(page.getByText(stateBadge({ state: 'upcoming' }).label, { exact: true })).toBeVisible();
@@ -337,19 +307,74 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     await expect(page.getByText('Save Changes')).toHaveCount(0);
   });
 
-  test('Start Trip walks the ladder to ongoing, and Step back moves exactly one rung', async ({
+  test('Start Trip opens its drawer, and Not yet leaves the trip upcoming', async ({
     page,
     signIn,
-    signal,
+  }) => {
+    const start = forwardConfirmWording('start')!;
+    await signIn(OWNER);
+    await page.goto(`/itineraries/${trip.id}`);
+    await labelled(page, 'Start Trip').click();
+
+    await expect(page.getByText(start.title, { exact: true })).toBeVisible();
+    await expect(page.getByText(start.body, { exact: true })).toBeVisible();
+    await labelled(page, start.cancelLabel).click();
+
+    expect(await stateOf(owner, trip.id)).toBe('upcoming');
+  });
+
+  test('confirming the Start drawer walks the trip to ongoing and the badge follows', async ({
+    page,
+    signIn,
+  }) => {
+    const start = forwardConfirmWording('start')!;
+    await signIn(OWNER);
+    await page.goto(`/itineraries/${trip.id}`);
+    await labelled(page, 'Start Trip').click();
+    await page.getByRole('button', { name: start.confirmLabel, exact: true }).last().click();
+
+    await expect.poll(async () => stateOf(owner, trip.id), { timeout: 20_000 }).toBe('ongoing');
+    await expect(page.getByText(stateBadge({ state: 'ongoing' }).label, { exact: true })).toBeVisible();
+  });
+
+  test('Complete Trip opens its own drawer, and Still travelling leaves the trip ongoing', async ({
+    page,
+    signIn,
+  }) => {
+    const complete = forwardConfirmWording('complete')!;
+    await signIn(OWNER);
+    await page.goto(`/itineraries/${trip.id}`);
+    await labelled(page, 'Complete Trip').click();
+
+    await expect(page.getByText(complete.title, { exact: true })).toBeVisible();
+    await labelled(page, complete.cancelLabel).click();
+
+    expect(await stateOf(owner, trip.id)).toBe('ongoing');
+  });
+
+  test('confirming the Complete drawer walks the trip to completed', async ({ page, signIn }) => {
+    const complete = forwardConfirmWording('complete')!;
+    await signIn(OWNER);
+    await page.goto(`/itineraries/${trip.id}`);
+    await labelled(page, 'Complete Trip').click();
+    await page.getByRole('button', { name: complete.confirmLabel, exact: true }).last().click();
+
+    await expect.poll(async () => stateOf(owner, trip.id), { timeout: 20_000 }).toBe('completed');
+    await expect(page.getByText(stateBadge({ state: 'completed' }).label, { exact: true })).toBeVisible();
+  });
+
+  test('no dead label and no Step back renders on the walked workspace, in any state', async ({
+    page,
+    signIn,
   }) => {
     await signIn(OWNER);
-    await page.goto(`/itineraries/${trip.id}?tab=details`);
-    await page.getByText(/Start trip/i).first().click();
-    await expect.poll(async () => stateOf(owner, trip.id), { timeout: 20_000 }).toBe('ongoing');
+    await page.goto(`/itineraries/${trip.id}`);
+    await expect(page.getByText(stateBadge({ state: 'completed' }).label, { exact: true })).toBeVisible();
 
-    await page.goto(`/itineraries/${trip.id}?tab=details`);
-    await page.getByText(/Step back/i).first().click();
-    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
-    await expect.poll(async () => stateOf(owner, trip.id), { timeout: 20_000 }).toBe('upcoming');
+    for (const dead of DEAD_LABELS) {
+      await expect(page.getByText(new RegExp(`\\b${dead}\\b`))).toHaveCount(0);
+    }
+    await expect(page.getByText(/Step back/i)).toHaveCount(0);
+    await expect(page.getByText(/Finalize/i)).toHaveCount(0);
   });
 });

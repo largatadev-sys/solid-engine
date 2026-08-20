@@ -5,8 +5,6 @@ import {
   canPublish,
   isEditable,
   isPublished,
-  lifecycleLabel,
-  nextLifecycleAct,
   otherAudience,
   publishControl,
   publishNeedsCompleteBody,
@@ -48,40 +46,19 @@ describe('the freeze hangs on discovery, not on the audience', () => {
 describe('the publish gate', () => {
   it('admits a completed trip and nothing else', () => {
     expect(canPublish({ state: 'completed' })).toBe(true);
-    expect(canPublish({ state: 'draft' })).toBe(false);
     expect(canPublish({ state: 'upcoming' })).toBe(false);
     expect(canPublish({ state: 'ongoing' })).toBe(false);
   });
 
   it('explains the precondition in words that name the way through', () => {
-    expect(publishNeedsCompleteBody('draft')).toMatch(/mark it complete/i);
     expect(publishNeedsCompleteBody('upcoming')).toMatch(/mark it complete/i);
     expect(publishNeedsCompleteBody('ongoing')).toMatch(/mark it complete/i);
   });
 
   it('describes the trip’s actual state rather than one generic sentence', () => {
-    const bodies = (['draft', 'upcoming', 'ongoing'] as const).map(publishNeedsCompleteBody);
+    const bodies = (['upcoming', 'ongoing'] as const).map(publishNeedsCompleteBody);
 
-    expect(new Set(bodies).size).toBe(3);
-  });
-});
-
-describe('the lifecycle', () => {
-  it('steps forward one act at a time and stops at complete', () => {
-    expect(nextLifecycleAct('draft')).toEqual({ act: 'finish-planning', label: 'Finish Itinerary' });
-    expect(nextLifecycleAct('upcoming')).toEqual({ act: 'start', label: 'Start trip' });
-    expect(nextLifecycleAct('ongoing')).toEqual({ act: 'complete', label: 'Mark complete' });
-    expect(nextLifecycleAct('completed')).toBeNull();
-  });
-
-  it('never calls the creation flow’s terminal act "Complete" — one word, one fact', () => {
-    expect(nextLifecycleAct('draft')?.label).not.toMatch(/complete/i);
-  });
-
-  it('names all four states distinctly', () => {
-    const labels = (['draft', 'upcoming', 'ongoing', 'completed'] as const).map(lifecycleLabel);
-
-    expect(new Set(labels).size).toBe(4);
+    expect(new Set(bodies).size).toBe(2);
   });
 });
 

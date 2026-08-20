@@ -361,7 +361,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
                 .uri("/v1/itineraries/" + trip.tripId() + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange();
-        for (String step : List.of("finish-planning", "start", "complete", "publish")) {
+        for (String step : List.of("start", "complete", "publish")) {
             rest.post()
                     .uri("/v1/itineraries/" + trip.tripId() + "/" + step)
                     .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))

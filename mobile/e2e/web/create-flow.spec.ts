@@ -4,6 +4,8 @@ import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled } from '../support/screen';
+import { forwardConfirmWording } from '../../src/itineraries/workspaceControls';
+import { tabLabel } from '../../src/itineraries/tripTabs';
 
 const TRAVELER = ownerTagFor('web/create-flow');
 
@@ -47,29 +49,17 @@ test('the tab bar is four tabs including Discover, with no centre +', async ({ p
   await expect(page.getByText('+', { exact: true })).toHaveCount(0);
 });
 
-test('the terminal lifecycle rung is never labelled Complete on the landing', async ({ page }) => {
-  const trip = await seedTrip({ ownerTag: TRAVELER, title: stamp('ladder') });
-  await api(`/v1/itineraries/${trip.id}/finish-planning`, 'POST', token);
-  await api(`/v1/itineraries/${trip.id}/start`, 'POST', token);
-  await api(`/v1/itineraries/${trip.id}/complete`, 'POST', token);
+test('a created trip lands on the Upcoming tab, born upcoming — S4.26', async ({ page }) => {
+  const born = await seedTrip({ ownerTag: TRAVELER, title: stamp('born upcoming') });
+
+  expect(await stateOf(born.id)).toBe('upcoming');
 
   await page.goto('/trips');
-  await expect(page.getByText(trip.title)).toBeVisible();
-  await expect(page.getByText('Complete Trips', { exact: true })).toHaveCount(0);
+  await page.getByRole('tab', { name: tabLabel('upcoming') }).click();
+  await expect(page.getByText(born.title)).toBeVisible();
 });
 
-test('the landing groups the lifecycle as sections, not chips', async ({ page }) => {
-  const draft = await seedTrip({ ownerTag: TRAVELER, title: stamp('draft section') });
-  const upcoming = await seedTrip({ ownerTag: TRAVELER, title: stamp('upcoming section') });
-  await api(`/v1/itineraries/${upcoming.id}/finish-planning`, 'POST', token);
-
-  await page.goto('/trips');
-  await expect(page.getByText(draft.title)).toBeVisible();
-  await expect(page.getByText(upcoming.title)).toBeVisible();
-  await expect(page.getByText(/Upcoming Trips/i)).toBeVisible();
-});
-
-test.describe('the dark acts — the ladder nothing has watched since the walks rotted', () => {
+test.describe('the forward ladder, through both confirmation drawers', () => {
   test.describe.configure({ mode: 'serial' });
 
   let trip: SeededTrip;
@@ -78,45 +68,68 @@ test.describe('the dark acts — the ladder nothing has watched since the walks 
     trip = await seedTrip({ ownerTag: TRAVELER, title: stamp('the ladder') });
   });
 
-  test('a draft preview offers Finish Itinerary and no publish controls', async ({ page }) => {
-    await page.goto(`/itineraries/${trip.id}/preview`);
-
-    await expect(page.getByText('Finish Itinerary')).toBeVisible();
-    await expect(page.getByText('Complete', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('Publish', { exact: true })).toHaveCount(0);
-  });
-
-  test('Finish Itinerary moves the trip to upcoming on the server, with no celebration screen', async ({
+  test('an upcoming trip offers Start Trip and no publish button the gate would refuse', async ({
     page,
   }) => {
-    await page.goto(`/itineraries/${trip.id}/preview`);
-    await page.getByText('Finish Itinerary').click();
+    await page.goto(`/itineraries/${trip.id}`);
 
-    await expect.poll(async () => stateOf(trip.id), { timeout: 15_000 }).toBe('upcoming');
-    await expect(page.getByText(/Your Itinerary is Live/i)).toHaveCount(0);
-  });
-
-  test('an upcoming trip offers Start trip, and no publish button the gate would refuse', async ({
-    page,
-  }) => {
-    await page.goto(`/itineraries/${trip.id}?tab=details`);
-
-    await expect(page.getByText(/Start trip/i)).toBeVisible();
+    await expect(labelled(page, 'Start Trip')).toBeVisible();
     await expect(page.getByText(/^Publish$/)).toHaveCount(0);
+    await expect(page.getByText(/Finalize/i)).toHaveCount(0);
   });
 
-  test('Step back is a one-step undo: upcoming reopens planning as a draft', async ({
-    page,
-    signal,
-  }) => {
-    await page.goto(`/itineraries/${trip.id}?tab=details`);
-    await expect(page.getByText(/Step back/i)).toBeVisible();
-    await page.getByText(/Step back/i).first().click();
+  test('cancelling the Start drawer leaves the trip exactly where it was', async ({ page }) => {
+    const start = forwardConfirmWording('start')!;
+    await page.goto(`/itineraries/${trip.id}`);
+    await labelled(page, 'Start Trip').click();
 
-    await expect.poll(() => signal.dialogs.join(' '), { timeout: 15_000 }).toMatch(/Reopen planning/i);
-    await expect.poll(async () => stateOf(trip.id), { timeout: 15_000 }).toBe('draft');
+    await expect(page.getByText(start.title, { exact: true })).toBeVisible();
+    await labelled(page, start.cancelLabel).click();
+
+    expect(await stateOf(trip.id)).toBe('upcoming');
+  });
+
+  test('confirming the Start drawer walks the trip to ongoing', async ({ page }) => {
+    const start = forwardConfirmWording('start')!;
+    await page.goto(`/itineraries/${trip.id}`);
+    await labelled(page, 'Start Trip').click();
+    await page.getByRole('button', { name: start.confirmLabel, exact: true }).last().click();
+
+    await expect.poll(async () => stateOf(trip.id), { timeout: 15_000 }).toBe('ongoing');
+  });
+
+  test('cancelling the Complete drawer leaves the trip ongoing', async ({ page }) => {
+    const complete = forwardConfirmWording('complete')!;
+    await page.goto(`/itineraries/${trip.id}`);
+    await labelled(page, 'Complete Trip').click();
+
+    await expect(page.getByText(complete.title, { exact: true })).toBeVisible();
+    await labelled(page, complete.cancelLabel).click();
+
+    expect(await stateOf(trip.id)).toBe('ongoing');
+  });
+
+  test('confirming the Complete drawer walks the trip to completed, where publish opens', async ({
+    page,
+  }) => {
+    const complete = forwardConfirmWording('complete')!;
+    await page.goto(`/itineraries/${trip.id}`);
+    await labelled(page, 'Complete Trip').click();
+    await page.getByRole('button', { name: complete.confirmLabel, exact: true }).last().click();
+
+    await expect.poll(async () => stateOf(trip.id), { timeout: 15_000 }).toBe('completed');
+    await page.goto(`/itineraries/${trip.id}`);
+    await expect(labelled(page, 'Publish Itinerary')).toBeVisible();
+  });
+
+  test('no Step back affordance renders at any rung of the walk', async ({ page }) => {
+    await page.goto(`/itineraries/${trip.id}`);
+    await expect(labelled(page, 'Publish Itinerary')).toBeVisible();
+
+    await expect(page.getByText(/Step back/i)).toHaveCount(0);
   });
 });
+
 
 test('no console or page errors across the create flow', async ({ page, signal }) => {
   await page.goto('/trips');

@@ -54,26 +54,19 @@ class TripArchiveContractIT extends PostgresTestBase {
     void archiveIsLegalFromEveryLifecycleRungAlike() {
         String owner = freshTraveler();
 
-        String draft = createItinerary(owner);
-
         String upcoming = createItinerary(owner);
-        finishPlanning(owner, upcoming).expectStatus().isOk();
 
         String ongoing = createItinerary(owner);
-        finishPlanning(owner, ongoing).expectStatus().isOk();
         start(owner, ongoing).expectStatus().isOk();
 
         String completed = createItinerary(owner);
-        finishPlanning(owner, completed).expectStatus().isOk();
         start(owner, completed).expectStatus().isOk();
         complete(owner, completed).expectStatus().isOk();
 
-        archive(owner, draft).expectStatus().isOk();
         archive(owner, upcoming).expectStatus().isOk();
         archive(owner, ongoing).expectStatus().isOk();
         archive(owner, completed).expectStatus().isOk();
 
-        assertThat(workspaceStateOf(draft)).isEqualTo("ARCHIVED");
         assertThat(workspaceStateOf(upcoming)).isEqualTo("ARCHIVED");
         assertThat(workspaceStateOf(ongoing)).isEqualTo("ARCHIVED");
         assertThat(workspaceStateOf(completed)).isEqualTo("ARCHIVED");
@@ -85,17 +78,16 @@ class TripArchiveContractIT extends PostgresTestBase {
         String owner = freshTraveler();
 
         String completed = createItinerary(owner);
-        finishPlanning(owner, completed).expectStatus().isOk();
         start(owner, completed).expectStatus().isOk();
         complete(owner, completed).expectStatus().isOk();
         archive(owner, completed).expectStatus().isOk();
         unarchive(owner, completed).expectStatus().isOk();
         assertThat(workspaceStateOf(completed)).isEqualTo("COMPLETED");
 
-        String draft = createItinerary(owner);
-        archive(owner, draft).expectStatus().isOk();
-        unarchive(owner, draft).expectStatus().isOk();
-        assertThat(workspaceStateOf(draft)).isEqualTo("ACTIVE");
+        String neverTravelled = createItinerary(owner);
+        archive(owner, neverTravelled).expectStatus().isOk();
+        unarchive(owner, neverTravelled).expectStatus().isOk();
+        assertThat(workspaceStateOf(neverTravelled)).isEqualTo("ACTIVE");
     }
 
 
@@ -231,10 +223,6 @@ class TripArchiveContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec unarchive(String token, String itineraryId) {
         return post(token, "/v1/itineraries/" + itineraryId + "/unarchive");
-    }
-
-    private RestTestClient.ResponseSpec finishPlanning(String token, String itineraryId) {
-        return post(token, "/v1/itineraries/" + itineraryId + "/finish-planning");
     }
 
     private RestTestClient.ResponseSpec start(String token, String itineraryId) {

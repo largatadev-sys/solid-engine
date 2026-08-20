@@ -612,7 +612,6 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         String member = rig.joinAsMember(owner, tripId, handle());
         UUID activityId = rig.addActivity(owner, tripId, rig.dayAt(tripId, 1), ACTIVITY_TITLE);
         Fixture trip = new Fixture(owner, member, tripId, activityId);
-        advance(trip, "finish-planning");
         advance(trip, "start");
         return trip;
     }

@@ -86,7 +86,6 @@ test('the roster genuinely holds two travelers — the probes below run as a MEM
 });
 
 test('both travelers hold a postcard on the trip', async () => {
-  await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', owner);
   await api(`/v1/itineraries/${trip}/start`, 'POST', owner);
 
   const plan = await api(`/v1/itineraries/${trip}`, 'GET', owner);

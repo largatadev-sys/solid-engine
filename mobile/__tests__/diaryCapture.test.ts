@@ -46,7 +46,6 @@ describe('capturesAreOpen', () => {
   });
 
   it('stays shut before the trip happens — a diary of a trip that has not happened is fiction', () => {
-    expect(capturesAreOpen('draft')).toBe(false);
     expect(capturesAreOpen('upcoming')).toBe(false);
   });
 });

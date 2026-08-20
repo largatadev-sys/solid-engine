@@ -237,12 +237,6 @@ class CoverContractIT extends ObjectStoreTestBase {
 
     private void publish(String owner, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/finish-planning")
-                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
-                .exchange()
-                .expectStatus()
-                .isOk();
-        rest.post()
                 .uri("/v1/itineraries/" + trip + "/start")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()

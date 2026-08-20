@@ -130,7 +130,7 @@ test.describe('the frozen posture the archive act produces', () => {
         .filter((text) => text.length > 0),
     );
     expect(clickable).not.toContain('Edit Itinerary');
-    expect(clickable).not.toContain('Finalize Itinerary');
+    expect(clickable).not.toContain('Start Trip');
   });
 
   test('the plan is still readable — archiving freezes it rather than hiding it', async ({

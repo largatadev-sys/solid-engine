@@ -52,7 +52,7 @@ class ForkContractIT extends PostgresTestBase {
         JsonNode fork = forkOf(forker, sourceId);
 
         assertThat(fork.get("id").asString()).isNotEqualTo(sourceId);
-        assertThat(fork.get("state").asString()).isEqualTo("draft");
+        assertThat(fork.get("state").asString()).isEqualTo("upcoming");
         assertThat(fork.get("published").asBoolean()).isFalse();
         assertThat(fork.get("visibility").asString())
                 .as("the newborn default, never the source's audience")
@@ -522,7 +522,6 @@ class ForkContractIT extends PostgresTestBase {
 
     private void publish(String token, String itineraryId) {
         if (travelled.add(itineraryId)) {
-            act(token, itineraryId, "finish-planning");
             act(token, itineraryId, "start");
             act(token, itineraryId, "complete");
         }

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { margin:0; background:#F5F5F4; font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#EA580C; text-decoration:none; } a:hover { color:#C2410C; text-decoration:underline; }
+    @keyframes tsFadeRise { 0% { opacity:0; transform:translateY(8px); } 100% { opacity:1; transform:translateY(0); } }
+  </style>
+</helmet>
+
+<div style="padding:48px 56px 72px; display:flex; flex-direction:column; gap:36px; max-width:1420px;">
+
+  <div style="display:flex; flex-direction:column; gap:12px; max-width:980px;">
+    <div style="font-size:12px; font-weight:700; letter-spacing:2px; color:#78716C; text-transform:uppercase;">Largata · Trips landing rework · Lifecycle S3</div>
+    <div style="font-family:'Outfit',sans-serif; font-size:30px; font-weight:700; color:#1C1917; line-height:1.15;">Trips — component + motion contract</div>
+    <div style="font-size:13.5px; line-height:1.6; color:#44403C;">Replaces the shipped section-list screen (<span style="font-family:ui-monospace,monospace; font-size:11.5px; background:#EFEEEC; padding:1px 5px; border-radius:4px;">app/(tabs)/(trips)/trips.tsx</span> + <span style="font-family:ui-monospace,monospace; font-size:11.5px;">tripSections.ts</span>, flagged <b>stale</b> in the <a href="Screen Audit.dc.html">audit</a>) with a three-tab landing that matches the new lifecycle. The four stacked sections — including <i>Drafts</i> — become tabs <b>Upcoming | Ongoing | Completed</b>; the lifecycle ladder (<span style="font-family:ui-monospace,monospace; font-size:11.5px;">workspaceControls.ts</span>) keeps its CTA labels but loses <i>Draft / Ready / Active</i> badges and the whole Step-back branch. Built on current app tokens (<span style="font-family:ui-monospace,monospace; font-size:11.5px;">src/theme/tokens.ts</span>): terracotta #D96C4A, navy #1B263B, cream #FAF9F6.</div>
+  </div>
+
+  <!-- ────── FRAMES 1–3 · THE THREE TABS ────── -->
+  <div style="display:flex; gap:36px; flex-wrap:wrap; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:10px;" data-screen-label="1 · Ongoing tab">
+      <div style="font-size:12px; font-weight:700; color:#1C1917;">1 · Ongoing tab — landing when a trip is underway</div>
+      <div style="width:390px; min-height:560px; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:28px; overflow:hidden; box-shadow:0 2px 12px rgba(28,25,23,.06); display:flex; flex-direction:column;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:22px 24px 12px;">
+          <span style="font-size:28px; font-weight:700; letter-spacing:-0.3px; color:#1B263B;">Trips</span>
+          <div style="display:flex; align-items:center; gap:16px;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="#1B263B" stroke-width="1.8"></circle><path d="M13.5 13.5L18 18" stroke="#1B263B" stroke-width="1.8" stroke-linecap="round"></path></svg>
+          </div>
+        </div>
+        <div style="display:flex; border-bottom:1px solid #E2E4E8; padding:0 24px; position:relative;">
+          <div style="flex:1; text-align:center; padding:10px 0 12px; font-size:14px; font-weight:400; color:#5C6470;">Upcoming</div>
+          <div style="flex:1; text-align:center; padding:10px 0 12px; font-size:14px; font-weight:700; color:#1B263B; position:relative;"><span>Ongoing</span><div style="position:absolute; bottom:-1px; left:0; right:0; height:3px; background:#D96C4A; border-radius:100px 100px 0 0;"></div></div>
+          <div style="flex:1; text-align:center; padding:10px 0 12px; font-size:14px; font-weight:400; color:#5C6470;">Completed</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; padding:16px;">
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; background:#FFFFFF; border:1px solid #E2E4E8; border-radius:16px;">
+            <div style="width:76px; height:76px; border-radius:12px; flex:none; background:repeating-linear-gradient(135deg,rgba(217,108,74,.14) 0 6px,transparent 6px 12px),#F2E4DC;"></div>
+            <div style="display:flex; flex-direction:column; gap:3px; flex:1;">
+              <span style="font-size:15px; font-weight:700; line-height:20px; color:#1B263B;">Island Hopping in El Nido</span>
+              <span style="font-size:12px; line-height:16px; color:#5C6470;">El Nido, Palawan · 5 days</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; line-height:1.6; color:#78716C; max-width:390px;"><b style="color:#9A3412;">No lifecycle badge on cards</b> — the active tab already names the state. Card shows exactly: cover, title, destination line, plus optional publication badge and editing advisory (frames <a href="#f2">2</a>/<a href="#f3">3</a>). Create is the pinned <b style="color:#9A3412;">Plan a Trip</b> bar on the <b>Upcoming tab only</b> (frame <a href="#f2">2</a>) — creation lives where planning lives; Ongoing/Completed never sell it. No header + icon; search kept from shipped chrome.</div>
+    </div>
+
+    <div id="f2" style="display:flex; flex-direction:column; gap:10px;" data-screen-label="2 · Upcoming tab">
+      <div style="font-size:12px; font-weight:700; color:#1C1917;">2 · Upcoming tab — several trips, one being edited</div>
+      <div style="width:390px; min-height:560px; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:28px; overflow:hidden; box-shadow:0 2px 12px rgba(28,25,23,.06); display:flex; flex-direction:column;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:22px 24px 12px;">
+          <span style="font-size:28px; font-weight:700; letter-spacing:-0.3px; color:#1B263B;">Trips</span>
+          <div style="display:flex; align-items:center; gap:16px;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="#1B263B" stroke-width="1.8"></circle><path d="M13.5 13.5L18 18" stroke="#1B263B" stroke-width="1.8" stroke-linecap="round"></path></svg>
+          </div>
+        </div>
+        <div style="display:flex; border-bottom:1px solid #E2E4E8; padding:0 24px; position:relative;">
+          <div style="flex:1; text-align:center; padding:10px 0 12px; font-size:14px; font-weight:700; color:#1B263B; position:relative;"><span>Upcoming</span><div style="position:absolute; bottom:-1px; left:0; right:0; height:3px; background:#D96C4A; border-radius:100px 100px 0 0;"></div></div>
+          <div style="flex:1; text-align:center; padding:10px 0 12px; font-size:14px; font-weight:400; color:#5C6470;">Ongoing</div>
+          <div style="flex:1; text-align:center; padding:10px 0 12px; font-size:14px; font-weight:400; color:#5C6470;">Completed</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; padding:16px;">
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; background:#FFFFFF; border:1px solid #E2E4E8; border-radius:16px;">
+            <div style="width:76px; height:76px; border-radius:12px; flex:none; background:repeating-linear-gradient(135deg,rgba(217,108,74,.10) 0 6px,transparent 6px 12px),#F6E7E0;"></div>
+            <div style="display:flex; flex-direction:column; gap:3px; flex:1;">
+              <span style="font-size:15px; font-weight:700; line-height:20px; color:#1B263B;">Kyoto in Cherry Blossom</span>
+              <span style="font-size:12px; line-height:16px; color:#5C6470;">Kyoto, Japan · 6 days</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="width:8px; height:8px; border-radius:100px; background:#D97706;"></div>
+                <span style="font-size:11px; font-weight:600; color:#B45309;">Currently being edited</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; background:#FFFFFF; border:1px solid #E2E4E8; border-radius:16px;">
+            <div style="width:76px; height:76px; border-radius:12px; flex:none; background:repeating-linear-gradient(135deg,rgba(92,100,112,.10) 0 6px,transparent 6px 12px),#EAECEF;"></div>
+            <div style="display:flex; flex-direction:column; gap:3px; flex:1;">
+              <span style="font-size:15px; font-weight:700; line-height:20px; color:#1B263B;">Sardinia Coast Drive</span>
+              <span style="font-size:12px; line-height:16px; color:#5C6470;">Cagliari → Olbia · 8 days</span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; background:#FFFFFF; border:1px solid #E2E4E8; border-radius:16px;">
+            <div style="width:76px; height:76px; border-radius:12px; flex:none; background:repeating-linear-gradient(135deg,rgba(47,107,71,.10) 0 6px,transparent 6px 12px),#E7EDE8;"></div>
+            <div style="display:flex; flex-direction:column; gap:3px; flex:1;">
+              <span style="font-size:15px; font-weight:700; line-height:20px; color:#1B263B;">Highlands Long Weekend</span>
+              <span style="font-size:12px; line-height:16px; color:#5C6470;">Inverness, Scotland · 3 days</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:auto; padding:12px 16px 18px;">
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px; height:51px; border-radius:4px; background:#D96C4A;">
+            <span style="font-size:15px; font-weight:600; color:#FFFFFF;">Plan a Trip</span>
+            <svg width="16" height="16" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#FFFFFF" stroke-width="2"></circle><path d="M11 7v8M7 11h8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"></path></svg>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; line-height:1.6; color:#78716C; max-width:390px;">The amber advisory replaces the shipped terracotta-dot version — <b style="color:#9A3412;">amber = transient condition</b>, keeping terracotta for identity/actions. A card in Upcoming may be mid-planning; there is no separate Drafts bucket anymore.</div>
+    </div>
+
+    <div id="f3" style="display:flex; flex-direction:column; gap:10px;" data-screen-label="3 · Completed tab">
+      <div style="font-size:12px; font-weight:700; color:#1C1917;">3 · Completed tab — publication badge lives here</div>
+      <div style="width:390px; min-height:560px; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:28px; overflow:hidden; box-shadow:0 2px 12px rgba(28,25,23,.06); display:flex; flex-direction:column;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:22px 24px 12px;">
+          <span style="font-size:28px; font-weight:700; letter-spacing:-0.3px; color:#1B263B;">Trips</span>
+          <div style="display:flex; align-items:center; gap:16px;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="#1B263B" stroke-width="1.8"></circle><path d="M13.5 13.5L18 18" stroke="#1B263B" stroke-width="1.8" stroke-linecap="round"></path></svg>
+          </div>
+        </div>
+        <div style="display:flex; border-bottom:1px solid #E2E4E8; padding:0 24px; position:relative;">
+          <div style="flex:1; text-align:center; padding:10px 0 12px; font-size:14px; font-weight:400; color:#5C6470;">Upcoming</div>
+          <div style="flex:1; text-align:center; padding:10px 0 12px; font-size:14px; font-weight:400; color:#5C6470;">Ongoing</div>
+          <div style="flex:1; text-align:center; padding:10px 0 12px; font-size:14px; font-weight:700; color:#1B263B; position:relative;"><span>Completed</span><div style="position:absolute; bottom:-1px; left:0; right:0; height:3px; background:#D96C4A; border-radius:100px 100px 0 0;"></div></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; padding:16px; flex:1;">
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; background:#FFFFFF; border:1px solid #E2E4E8; border-radius:16px;">
+            <div style="width:76px; height:76px; border-radius:12px; flex:none; background:repeating-linear-gradient(135deg,rgba(217,108,74,.12) 0 6px,transparent 6px 12px),#F4E3D7;"></div>
+            <div style="display:flex; flex-direction:column; gap:3px; flex:1;">
+              <span style="font-size:15px; font-weight:700; line-height:20px; color:#1B263B;">Lisbon &amp; the Algarve</span>
+              <span style="font-size:12px; line-height:16px; color:#5C6470;">Portugal · 7 days</span>
+            </div>
+            <span style="background:rgba(217,108,74,.08); color:#D96C4A; font-size:11px; font-weight:600; padding:3px 9px; border-radius:100px; flex:none;">Published</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; background:#FFFFFF; border:1px solid #E2E4E8; border-radius:16px;">
+            <div style="width:76px; height:76px; border-radius:12px; flex:none; background:repeating-linear-gradient(135deg,rgba(27,38,59,.08) 0 6px,transparent 6px 12px),#E8E9ED;"></div>
+            <div style="display:flex; flex-direction:column; gap:3px; flex:1;">
+              <span style="font-size:15px; font-weight:700; line-height:20px; color:#1B263B;">Marrakech Medina Week</span>
+              <span style="font-size:12px; line-height:16px; color:#5C6470;">Marrakech, Morocco · 5 days</span>
+            </div>
+          </div>
+          <sc-if value="{{ archivedOn }}" hint-placeholder-val="{{ true }}">
+            <div style="text-align:center; padding:14px 0 4px;"><span style="font-size:12px; font-weight:600; color:#5C6470; border-bottom:1px solid #E2E4E8; padding-bottom:1px;">Archived trips</span></div>
+          </sc-if>
+        </div>
+      </div>
+      <div style="font-size:11.5px; line-height:1.6; color:#78716C; max-width:390px;"><b style="color:#9A3412;">Archived trips footer link: drawn</b> — quiet text link, Completed tab only (archives come off the end of the lifecycle, <span style="font-family:ui-monospace,monospace; font-size:10.5px;">archiveControls.ts</span>). Never a tab. Tweakable off if we decide against it.</div>
+    </div>
+  </div>
+
+  <!-- ────── FRAME 4 · EMPTY STATES ────── -->
+  <div style="display:flex; flex-direction:column; gap:10px;" data-screen-label="4 · Empty states">
+    <div style="font-size:12px; font-weight:700; color:#1C1917;">4 · Empty states — one line each; CTA only on Upcoming</div>
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+      <div style="width:300px; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:22px; overflow:hidden; display:flex; flex-direction:column;">
+        <div style="display:flex; border-bottom:1px solid #E2E4E8; padding:0 16px;">
+          <div style="flex:1; text-align:center; padding:9px 0 11px; font-size:12.5px; font-weight:700; color:#1B263B; position:relative;"><span>Upcoming</span><div style="position:absolute; bottom:-1px; left:0; right:0; height:3px; background:#D96C4A; border-radius:100px 100px 0 0;"></div></div>
+          <div style="flex:1; text-align:center; padding:9px 0 11px; font-size:12.5px; color:#5C6470;">Ongoing</div>
+          <div style="flex:1; text-align:center; padding:9px 0 11px; font-size:12.5px; color:#5C6470;">Completed</div>
+        </div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:44px 24px;">
+          <span style="font-size:13px; line-height:1.5; color:#5C6470; text-align:center;">No trips on the horizon yet.</span>
+        </div>
+        <div style="padding:12px 16px 16px;">
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px; height:51px; border-radius:4px; background:#D96C4A;">
+            <span style="font-size:15px; font-weight:600; color:#FFFFFF;">Plan a Trip</span>
+            <svg width="16" height="16" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#FFFFFF" stroke-width="2"></circle><path d="M11 7v8M7 11h8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"></path></svg>
+          </div>
+        </div>
+      </div>
+      <div style="width:300px; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:22px; overflow:hidden; display:flex; flex-direction:column;">
+        <div style="display:flex; border-bottom:1px solid #E2E4E8; padding:0 16px;">
+          <div style="flex:1; text-align:center; padding:9px 0 11px; font-size:12.5px; color:#5C6470;">Upcoming</div>
+          <div style="flex:1; text-align:center; padding:9px 0 11px; font-size:12.5px; font-weight:700; color:#1B263B; position:relative;"><span>Ongoing</span><div style="position:absolute; bottom:-1px; left:0; right:0; height:3px; background:#D96C4A; border-radius:100px 100px 0 0;"></div></div>
+          <div style="flex:1; text-align:center; padding:9px 0 11px; font-size:12.5px; color:#5C6470;">Completed</div>
+        </div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:44px 24px;">
+          <span style="font-size:13px; line-height:1.5; color:#5C6470; text-align:center;">No trip underway right now.</span>
+        </div>
+      </div>
+      <div style="width:300px; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:22px; overflow:hidden; display:flex; flex-direction:column;">
+        <div style="display:flex; border-bottom:1px solid #E2E4E8; padding:0 16px;">
+          <div style="flex:1; text-align:center; padding:9px 0 11px; font-size:12.5px; color:#5C6470;">Upcoming</div>
+          <div style="flex:1; text-align:center; padding:9px 0 11px; font-size:12.5px; color:#5C6470;">Ongoing</div>
+          <div style="flex:1; text-align:center; padding:9px 0 11px; font-size:12.5px; font-weight:700; color:#1B263B; position:relative;"><span>Completed</span><div style="position:absolute; bottom:-1px; left:0; right:0; height:3px; background:#D96C4A; border-radius:100px 100px 0 0;"></div></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:44px 24px;">
+          <span style="font-size:13px; line-height:1.5; color:#5C6470; text-align:center;">Trips you've travelled will collect here.</span>
+          <sc-if value="{{ archivedOn }}" hint-placeholder-val="{{ true }}">
+            <span style="font-size:12px; font-weight:600; color:#5C6470; border-bottom:1px solid #E2E4E8; padding-bottom:1px;">Archived trips</span>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:11.5px; line-height:1.6; color:#78716C; max-width:940px;"><b style="color:#9A3412;">Adaptive landing:</b> opening Trips lands on <b>Ongoing</b> when it holds ≥1 trip, else <b>Upcoming</b> — never Completed. <b style="color:#9A3412;">Copy changed:</b> the shipped empty state ("Every trip starts as a draft…") references the dead <i>Draft</i> label; each tab now gets one state-specific line. Only Upcoming's empty carries the create CTA (ruled) — Ongoing/Completed empties never sell creation.</div>
+  </div>
+
+  <!-- ────── FRAMES 5–6 · DRAWERS + LIFECYCLE ────── -->
+  <div style="display:flex; gap:36px; flex-wrap:wrap; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:10px;" data-screen-label="5 · Start Trip drawer">
+      <div style="font-size:12px; font-weight:700; color:#1C1917;">5 · Start Trip drawer — over the trip screen</div>
+      <div style="width:390px; height:620px; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:28px; overflow:hidden; box-shadow:0 2px 12px rgba(28,25,23,.06); position:relative;">
+        <div style="height:150px; background:repeating-linear-gradient(135deg,rgba(217,108,74,.10) 0 6px,transparent 6px 12px),#F6E7E0;"></div>
+        <div style="padding:18px 20px; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <span style="font-size:22px; font-weight:700; letter-spacing:-0.2px; color:#1B263B;">Kyoto in Cherry Blossom</span>
+            <span style="flex:none; background:#FBF0EB; border:1px solid #EFC9BA; color:#B14E2E; font-size:11px; font-weight:600; padding:3px 10px; border-radius:100px;">Upcoming</span>
+          </div>
+          <span style="font-size:12px; color:#5C6470;">Kyoto, Japan · Apr 2 – 8 · 4 travelers</span>
+          <div style="height:10px; border-radius:5px; background:#F2F1ED; width:82%;"></div>
+          <div style="height:10px; border-radius:5px; background:#F2F1ED; width:64%;"></div>
+          <div style="height:10px; border-radius:5px; background:#F2F1ED; width:71%;"></div>
+        </div>
+        <div style="position:absolute; inset:0; background:rgba(27,38,59,.55);"></div>
+        <div style="position:absolute; left:0; right:0; bottom:0; background:#FFFFFF; border-radius:20px 20px 0 0; padding:12px 20px 26px; display:flex; flex-direction:column; gap:8px;">
+          <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8; align-self:center;"></div>
+          <span style="font-size:22px; font-weight:700; letter-spacing:-0.2px; color:#1B263B; margin-top:6px;">Start this trip?</span>
+          <span style="font-size:13.5px; line-height:1.55; color:#5C6470;">Postcards open for every member once the trip starts.</span>
+          <div style="display:flex; align-items:center; justify-content:center; height:51px; border-radius:4px; background:#D96C4A; margin-top:10px;">
+            <span style="font-size:16px; font-weight:700; color:#FFFFFF;">Start Trip</span>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center; padding:12px 0 0;">
+            <span style="font-size:15px; font-weight:600; color:#5C6470;">Not yet</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; line-height:1.6; color:#78716C; max-width:390px;">Badge reads <b>Upcoming</b> — the <i>Ready</i> label is dead. Cancel reads <b style="color:#9A3412;">"Not yet"</b> (changed from "Cancel"): the drawer is not destructive, and the copy says the action waits for you. <b>No Step-back anywhere</b> — <span style="font-family:ui-monospace,monospace; font-size:10.5px;">stepBackWording</span>/<span style="font-family:ui-monospace,monospace; font-size:10.5px;">showsStepBack</span> are removed, not restyled.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:10px;" data-screen-label="6 · Complete Trip drawer">
+      <div style="font-size:12px; font-weight:700; color:#1C1917;">6 · Complete Trip drawer — same anatomy</div>
+      <div style="width:390px; height:620px; background:#FAF9F6; border:1px solid #E7E5E4; border-radius:28px; overflow:hidden; box-shadow:0 2px 12px rgba(28,25,23,.06); position:relative;">
+        <div style="height:150px; background:repeating-linear-gradient(135deg,rgba(217,108,74,.14) 0 6px,transparent 6px 12px),#F2E4DC;"></div>
+        <div style="padding:18px 20px; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <span style="font-size:22px; font-weight:700; letter-spacing:-0.2px; color:#1B263B;">Island Hopping in El Nido</span>
+            <span style="flex:none; background:#FBF0EB; border:1px solid #EFC9BA; color:#B14E2E; font-size:11px; font-weight:600; padding:3px 10px; border-radius:100px;">Ongoing</span>
+          </div>
+          <span style="font-size:12px; color:#5C6470;">El Nido, Palawan · Day 4 of 5</span>
+          <div style="height:10px; border-radius:5px; background:#F2F1ED; width:76%;"></div>
+          <div style="height:10px; border-radius:5px; background:#F2F1ED; width:58%;"></div>
+          <div style="height:10px; border-radius:5px; background:#F2F1ED; width:69%;"></div>
+        </div>
+        <div style="position:absolute; inset:0; background:rgba(27,38,59,.55);"></div>
+        <div style="position:absolute; left:0; right:0; bottom:0; background:#FFFFFF; border-radius:20px 20px 0 0; padding:12px 20px 26px; display:flex; flex-direction:column; gap:8px;">
+          <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8; align-self:center;"></div>
+          <span style="font-size:22px; font-weight:700; letter-spacing:-0.2px; color:#1B263B; margin-top:6px;">Complete this trip?</span>
+          <span style="font-size:13.5px; line-height:1.55; color:#5C6470;">Marks the trip as travelled — a completed trip can be published.</span>
+          <div style="display:flex; align-items:center; justify-content:center; height:51px; border-radius:4px; background:#D96C4A; margin-top:10px;">
+            <span style="font-size:16px; font-weight:700; color:#FFFFFF;">Complete Trip</span>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center; padding:12px 0 0;">
+            <span style="font-size:15px; font-weight:600; color:#5C6470;">Still travelling</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; line-height:1.6; color:#78716C; max-width:390px;">Cancel reads <b style="color:#9A3412;">"Still travelling"</b> (changed) — states what dismissing means. Primary labels stay exactly as the ladder in <span style="font-family:ui-monospace,monospace; font-size:10.5px;">workspaceControls.ts</span>: <b>Start Trip</b>, <b>Complete Trip</b>.</div>
+    </div>
+
+    <div style="width:340px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:12px; font-weight:700; color:#1C1917;">Lifecycle after this rework</div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; font-weight:700;">
+          <span style="background:#FBF0EB; color:#B14E2E; border-radius:999px; padding:4px 12px;">Upcoming</span>
+          <span style="color:#A8A29E;">— Start Trip →</span>
+          <span style="background:#FBF0EB; color:#B14E2E; border-radius:999px; padding:4px 12px;">Ongoing</span>
+          <span style="color:#A8A29E;">— Complete Trip →</span>
+          <span style="background:#FBF0EB; color:#B14E2E; border-radius:999px; padding:4px 12px;">Completed</span>
+        </div>
+        <div style="font-size:12.5px; line-height:1.7; color:#44403C;">One-way ladder, one tab per rung. Planning happens inside <b>Upcoming</b> (the old <i>Draft</i> state folds in; <i>Finalize Itinerary</i> is no longer a rung). <b>Publish</b> remains an act on a Completed trip, shown as the card's Published badge — not a state. <b>Dead labels:</b> Draft, Ready, Active — must not render anywhere. <b>No undo:</b> Step-back confirms and wording are deleted.</div>
+      </div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:6px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">Code touched</div>
+        <div style="font-size:12.5px; line-height:1.8; color:#44403C;"><span style="font-family:ui-monospace,monospace; font-size:11px;">trips.tsx</span> — SectionList → tabbed lists, adaptive landing, per-tab empties.<br><span style="font-family:ui-monospace,monospace; font-size:11px;">tripSections.ts</span> — 4 section labels → 3 tab buckets (draft merges into upcoming).<br><span style="font-family:ui-monospace,monospace; font-size:11px;">TripRow.tsx</span> — drop date overline + draft subtitle; advisory goes amber.<br><span style="font-family:ui-monospace,monospace; font-size:11px;">workspaceControls.ts</span> — BADGES relabel (Upcoming/Ongoing/Completed), LADDER loses finish-planning, step-back removed.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────── CONTRACTS + DEMO ────── -->
+  <div style="display:flex; gap:44px; align-items:flex-start; flex-wrap:wrap;">
+
+    <div style="flex:1; min-width:520px; max-width:640px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">Component contract — normative</div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C1 · Tab row</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Exactly three tabs, ladder order <b>Upcoming | Ongoing | Completed</b> — fixed, all always visible even when empty. Equal-width, in-page (not the navigator). Active: 700 weight #1B263B + 3px #D96C4A underline; rest: 400 weight #5C6470. No counts, no icons, no swipe-between-tabs gesture.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C2 · Adaptive landing</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">On entering the Trips tab: land on <b>Ongoing</b> if it holds ≥1 trip, else <b>Upcoming</b>. Never Completed. Within a session the user's last-selected tab wins over the adaptive rule.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C3 · Trip card</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Exactly five slots: 76px cover thumb (r12) · title (1 line, ellipsized) · destination line · optional <b>Published</b> pill (right-aligned) · optional amber <b>Currently being edited</b> advisory. <b>Never:</b> lifecycle badge, date overline, draft subtitle, or the words Draft / Ready / Active. Whole card is the pressable → Trip Workspace (published + not archived → published view, as <span style="font-family:ui-monospace,monospace; font-size:11px;">tripRowDestination</span> today).</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C4 · Empty states + create</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">One line per tab (frame 4 copy is normative). Create = the <b>Plan a Trip</b> bar (51px, accent, r4), pinned to the bottom of the <b>Upcoming tab only</b> — populated and empty alike. Ongoing and Completed carry no create entry anywhere; the shipped always-on CTA bar (all sections) is narrowed, not removed.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C5 · Confirmation drawers</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">One shared component, two wordings, opened only by the ladder CTA <b>inside the trip screen</b> — never from a list card. Anatomy top-to-bottom: 36×4 handle · title (22/700) · one-line body (13.5/#5C6470) · primary CTA (51px, #D96C4A, r4) · quiet text cancel. Scrim rgba(27,38,59,.55) (<span style="font-family:ui-monospace,monospace; font-size:11px;">colors.scrim</span>); tap-scrim and swipe-down dismiss = cancel. No destructive styling — these are forward moves. No undo affordance after confirm; the drawer's question <i>is</i> the safety.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C6 · Archived</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Quiet underlined text link <b>Archived trips</b> as the Completed list footer (and on Completed's empty). Archived trips never appear in the three tabs.</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px; font-weight:700; color:#1C1917; margin-top:8px;">Motion contract — normative</div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">M1 · Tab switch</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Same contract as Profile M1: underline slides <b>200ms ease-out</b> (translateX only, native driver); label color <b>150ms</b>; incoming list fades in + rises 8px <b>150ms ease-out</b>. Each tab keeps its own scroll offset. Empty states enter with the same fade-rise — no illustration animation.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">M2 · Drawer enter / exit — sets the app-wide sheet pattern</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;"><b>Enter:</b> scrim opacity 0→1 <b>200ms ease-out</b>; drawer translateY 100%→0 <b>300ms ease-out</b> (progress-class duration from the shared vocabulary — the travel is long; transform only, native driver). <b>Exit:</b> drawer down <b>200ms ease-in</b>, scrim out 150ms, overlapped. Native: <span style="font-family:ui-monospace,monospace; font-size:11px;">Animated.timing</span>, never a JS-spring imitation of the keyboard. <b>Web:</b> CSS transitions, same values. Discovery's filter sheet, Fork's sheet, and the dump picker inherit these numbers — write once here.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">M3 · Confirm handoff</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">On Start/Complete: CTA disables at 0.85 opacity while the request is in flight (no spinner inside the button); on success the drawer runs its M2 exit and the workspace state badge <b>crossfades 150ms</b> to the new label. The trip list re-buckets on next visit with <b>no animation</b> — no card flying between tabs, no auto tab-switch.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">M4 · Press feedback</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Cards, tabs, CTAs, header icons, archived link: opacity 1→0.85, <b>100ms</b> in / 150ms release — the shared app value. Pull-to-refresh: platform spinner, no custom motion.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="font-size:12.5px; line-height:1.7; color:#44403C;"><b>Nothing else animates.</b> Card → trip screen navigation uses the navigator's platform push, not a custom transition (the demo's 300ms slide is a stand-in). Badges, advisories, thumbs, empty copy are static. All motion is transform/opacity. <b>Reduce Motion:</b> M1 content rise and M2 drawer travel jump-cut (scrim still fades 150ms so the modal change reads); M4 stays.</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:6px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">Shared vocabulary (app-wide, from Polls)</div>
+        <div style="font-size:12.5px; line-height:1.8; color:#44403C;">color/opacity state change <b>150ms ease-out</b> · marker/icon entrance pop <b>200ms cubic-bezier(0.34,1.56,0.64,1)</b> · layout growth <b>200ms ease-in-ease-out</b> · progress/continuous travel <b>300ms</b> · press feedback <b>100ms</b>. M2's 300ms enter is the progress-class duration applied to sheet travel — no new numbers introduced.</div>
+      </div>
+    </div>
+
+    <!-- LIVE DEMO -->
+    <div style="flex:none; width:417px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">Live demo — whole flow: list → trip screen → drawer</div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:16px; position:relative; overflow:hidden; min-height:520px; display:flex; flex-direction:column;">
+        <div style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+          <span style="font-size:20px; font-weight:700; letter-spacing:-0.2px; color:#1B263B;">Trips</span>
+          <div style="display:flex; border-bottom:1px solid #E2E4E8; position:relative;">
+            <div onClick="{{ tab0 }}" style-active="opacity:0.85;" style="flex:1; text-align:center; padding:10px 0 11px; cursor:pointer; font-size:14px; transition:color 150ms ease-out, opacity 100ms; font-weight:{{ w0 }}; color:{{ c0 }};">Upcoming</div>
+            <div onClick="{{ tab1 }}" style-active="opacity:0.85;" style="flex:1; text-align:center; padding:10px 0 11px; cursor:pointer; font-size:14px; transition:color 150ms ease-out, opacity 100ms; font-weight:{{ w1 }}; color:{{ c1 }};">Ongoing</div>
+            <div onClick="{{ tab2 }}" style-active="opacity:0.85;" style="flex:1; text-align:center; padding:10px 0 11px; cursor:pointer; font-size:14px; transition:color 150ms ease-out, opacity 100ms; font-weight:{{ w2 }}; color:{{ c2 }};">Completed</div>
+            <div style="position:absolute; bottom:-1px; left:0; width:33.333%; height:3px; background:#D96C4A; border-radius:100px 100px 0 0; transition:transform 200ms ease-out; transform:{{ indX }};"></div>
+          </div>
+          <div key="{{ tabKey }}" style="display:flex; flex-direction:column; gap:10px; animation:tsFadeRise 150ms ease-out;">
+            <sc-if value="{{ showCard }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ openTrip }}" style-active="opacity:0.85;" style="display:flex; align-items:center; gap:12px; padding:12px; background:#FAF9F6; border:1px solid #E2E4E8; border-radius:16px; cursor:pointer; transition:opacity 100ms;">
+                <div style="width:56px; height:56px; border-radius:10px; flex:none; background:repeating-linear-gradient(135deg,rgba(217,108,74,.12) 0 6px,transparent 6px 12px),#F4E3D7;"></div>
+                <div style="display:flex; flex-direction:column; gap:2px; flex:1;">
+                  <span style="font-size:14px; font-weight:700; color:#1B263B;">{{ cardTitle }}</span>
+                  <span style="font-size:12px; color:#5C6470;">{{ cardSub }}</span>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ showEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center; padding:28px 0 10px; font-size:13px; color:#5C6470;">{{ emptyLine }}</div>
+            </sc-if>
+          </div>
+        </div>
+        <sc-if value="{{ showPlan }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:auto; padding:12px 16px 16px;">
+            <div style-active="opacity:0.85;" style="display:flex; align-items:center; justify-content:center; gap:8px; height:46px; border-radius:4px; background:#D96C4A; cursor:pointer; transition:opacity 100ms;">
+              <span style="font-size:15px; font-weight:600; color:#FFFFFF;">Plan a Trip</span>
+              <svg width="16" height="16" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#FFFFFF" stroke-width="2"></circle><path d="M11 7v8M7 11h8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"></path></svg>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ tripShown }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; inset:0; background:#FAF9F6; display:flex; flex-direction:column; transition:transform {{ pushDur }}; transform:{{ tripX }};">
+            <div onClick="{{ closeTrip }}" style-active="opacity:0.85;" style="display:flex; align-items:center; gap:6px; padding:14px 16px 10px; cursor:pointer; width:fit-content; transition:opacity 100ms;">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="#1B263B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="font-size:13px; font-weight:600; color:#1B263B;">Trips</span>
+            </div>
+            <div style="height:96px; background:repeating-linear-gradient(135deg,rgba(217,108,74,.12) 0 6px,transparent 6px 12px),#F4E3D7;"></div>
+            <div style="padding:14px 16px 18px; display:flex; flex-direction:column; gap:8px; flex:1;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <span style="font-size:18px; font-weight:700; letter-spacing:-0.2px; color:#1B263B;">{{ tripTitle }}</span>
+                <span style="flex:none; background:#FBF0EB; border:1px solid #EFC9BA; color:#B14E2E; font-size:11px; font-weight:600; padding:3px 10px; border-radius:100px;">{{ tripBadge }}</span>
+              </div>
+              <span style="font-size:12px; color:#5C6470;">{{ tripMeta }}</span>
+              <div style="height:10px; border-radius:5px; background:#F2F1ED; width:78%;"></div>
+              <div style="height:10px; border-radius:5px; background:#F2F1ED; width:60%;"></div>
+              <div style="flex:1;"></div>
+              <div onClick="{{ openDrawer }}" style-active="opacity:0.85;" style="display:flex; align-items:center; justify-content:center; height:46px; border-radius:4px; background:#D96C4A; cursor:pointer; transition:opacity 100ms;">
+                <span style="font-size:15px; font-weight:700; color:#FFFFFF;">{{ ctaLabel }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ drawerShown }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ closeDrawer }}" style="position:absolute; inset:0; background:rgba(27,38,59,.55); cursor:pointer; transition:opacity {{ scrimDur }}; opacity:{{ scrimOp }};"></div>
+          <div style="position:absolute; left:0; right:0; bottom:0; background:#FFFFFF; border-radius:20px 20px 0 0; box-shadow:0 -4px 24px rgba(27,38,59,.18); padding:12px 20px 22px; display:flex; flex-direction:column; gap:8px; transition:transform {{ drawerDur }}; transform:{{ drawerY }};">
+            <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8; align-self:center;"></div>
+            <span style="font-size:20px; font-weight:700; color:#1B263B; margin-top:4px;">{{ drawerTitle }}</span>
+            <span style="font-size:13px; line-height:1.55; color:#5C6470;">{{ drawerBody }}</span>
+            <div onClick="{{ closeDrawer }}" style-active="opacity:0.85;" style="display:flex; align-items:center; justify-content:center; height:46px; border-radius:4px; background:#D96C4A; cursor:pointer; margin-top:8px; transition:opacity 100ms;">
+              <span style="font-size:15px; font-weight:700; color:#FFFFFF;">{{ ctaLabel }}</span>
+            </div>
+            <div onClick="{{ closeDrawer }}" style="display:flex; align-items:center; justify-content:center; padding:10px 0 0; cursor:pointer;">
+              <span style="font-size:14px; font-weight:600; color:#5C6470;">{{ cancelLabel }}</span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+      <div style="font-size:11.5px; line-height:1.6; color:#78716C;">The list never carries ladder CTAs — tap a card to push its trip screen (300ms slide, a stand-in for the navigator's platform push), where <b>Start Trip</b> / <b>Complete Trip</b> live and open their drawer = M2 (scrim 200ms, drawer 300ms up / 200ms down). Tab switch = M1; presses dim to 0.85 = M4. Upcoming's card demos Start, Ongoing's demos Complete. Tweak <b>Reduce motion</b> to preview jump-cuts.</div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;archivedLink&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Decisions&quot;},
+  &quot;reduceMotion&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Demo&quot;}
+}">
+class Component extends DCLogic {
+  state = { tab: 1, tripShown: false, tripIn: false, drawerShown: false, drawerOpen: false };
+  renderVals() {
+    const reduce = this.props.reduceMotion ?? false;
+    const t = this.state.tab;
+    const TABS = [
+      { title: 'Kyoto in Cherry Blossom', sub: 'Kyoto, Japan · 6 days', empty: null,
+        badge: 'Upcoming', meta: 'Kyoto, Japan · Apr 2 – 8 · 4 travelers', cta: 'Start Trip',
+        dTitle: 'Start this trip?', dBody: 'Postcards open for every member once the trip starts.', cancel: 'Not yet' },
+      { title: 'Island Hopping in El Nido', sub: 'El Nido, Palawan · 5 days', empty: null,
+        badge: 'Ongoing', meta: 'El Nido, Palawan · Day 4 of 5', cta: 'Complete Trip',
+        dTitle: 'Complete this trip?', dBody: 'Marks the trip as travelled — a completed trip can be published.', cancel: 'Still travelling' },
+      { title: null, sub: null, empty: "Trips you've travelled will collect here." },
+    ];
+    const d = TABS[t];
+    const setTab = (i) => () => this.setState({ tab: i });
+    const openTrip = () => {
+      this.setState({ tripShown: true, tripIn: false });
+      requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ tripIn: true })));
+    };
+    const closeTrip = () => {
+      this.setState({ tripIn: false, drawerOpen: false });
+      clearTimeout(this._p);
+      this._p = setTimeout(() => this.setState({ tripShown: false, drawerShown: false }), reduce ? 60 : 310);
+    };
+    const openDrawer = () => {
+      this.setState({ drawerShown: true, drawerOpen: false });
+      requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ drawerOpen: true })));
+    };
+    const closeDrawer = (e) => {
+      e.stopPropagation();
+      this.setState({ drawerOpen: false });
+      clearTimeout(this._t);
+      this._t = setTimeout(() => this.setState({ drawerShown: false }), reduce ? 160 : 210);
+    };
+    const open = this.state.drawerOpen;
+    const tripIn = this.state.tripIn;
+    return {
+      archivedOn: this.props.archivedLink ?? true,
+      tab0: setTab(0), tab1: setTab(1), tab2: setTab(2),
+      w0: t === 0 ? 700 : 400, w1: t === 1 ? 700 : 400, w2: t === 2 ? 700 : 400,
+      c0: t === 0 ? '#1B263B' : '#5C6470', c1: t === 1 ? '#1B263B' : '#5C6470', c2: t === 2 ? '#1B263B' : '#5C6470',
+      indX: 'translateX(' + t * 100 + '%)',
+      tabKey: 'tab-' + t,
+      showCard: d.title !== null,
+      showEmpty: d.empty !== null,
+      showPlan: t === 0,
+      cardTitle: d.title || '',
+      cardSub: d.sub || '',
+      emptyLine: d.empty || '',
+      tripShown: this.state.tripShown,
+      openTrip, closeTrip,
+      tripX: tripIn ? 'translateX(0)' : 'translateX(100%)',
+      pushDur: reduce ? '1ms linear' : (tripIn ? '300ms ease-out' : '250ms ease-in'),
+      tripTitle: d.title || '', tripBadge: d.badge || '', tripMeta: d.meta || '',
+      ctaLabel: d.cta || '', drawerTitle: d.dTitle || '', drawerBody: d.dBody || '', cancelLabel: d.cancel || '',
+      drawerShown: this.state.drawerShown,
+      openDrawer, closeDrawer,
+      scrimOp: open ? 1 : 0,
+      scrimDur: reduce ? '150ms ease-out' : (open ? '200ms ease-out' : '150ms ease-in'),
+      drawerY: open ? 'translateY(0)' : 'translateY(100%)',
+      drawerDur: reduce ? '1ms linear' : (open ? '300ms ease-out' : '200ms ease-in'),
+    };
+  }
+}
+</script>
+</body>
+</html>

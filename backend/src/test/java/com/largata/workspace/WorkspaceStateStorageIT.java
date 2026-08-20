@@ -37,7 +37,6 @@ class WorkspaceStateStorageIT extends PostgresTestBase {
         Itinerary trip = createTrip();
         UUID owner = trip.ownerId();
 
-        itineraries.finishPlanning(ownerOf(trip, owner));
         itineraries.start(ownerOf(trip, owner));
         itineraries.complete(ownerOf(trip, owner));
 

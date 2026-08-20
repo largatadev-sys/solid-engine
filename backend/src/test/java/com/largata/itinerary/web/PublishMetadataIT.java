@@ -75,7 +75,7 @@ class PublishMetadataIT extends PostgresTestBase {
                 .jsonPath("$.days.length()")
                 .isEqualTo(5)
                 .jsonPath("$.state")
-                .isEqualTo("draft");
+                .isEqualTo("upcoming");
     }
 
 
@@ -263,7 +263,6 @@ class PublishMetadataIT extends PostgresTestBase {
     }
 
     private void publish(String token, String itineraryId) {
-        act(token, itineraryId, "finish-planning");
         act(token, itineraryId, "start");
         act(token, itineraryId, "complete");
         act(token, itineraryId, "publish");

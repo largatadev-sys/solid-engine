@@ -1,4 +1,3 @@
-import type { ConfirmWording } from '../components/confirmDestructiveMessage';
 import { workspaceBadgeColors } from '../theme/workspaceTokens';
 import type { ItineraryResponse, ItineraryState, LeaseHolderResponse } from '../types/api';
 import { holderLabel } from './leaseIndicator';
@@ -6,11 +5,18 @@ import { holderLabel } from './leaseIndicator';
 
 export type WorkspaceSurface = 'viewer' | 'editor';
 
-export type StateBadge = { label: string; background: string; foreground: string };
+export type StateBadge = { label: string; background: string; foreground: string; border: string };
 
-export type LadderAct = 'finish-planning' | 'start' | 'complete' | 'publish';
+export type LadderAct = 'start' | 'complete' | 'publish';
 
 export type LadderCta = { act: LadderAct; label: string; blockedBy?: string };
+
+export type ForwardConfirmWording = {
+  title: string;
+  body: string;
+  confirmLabel: string;
+  cancelLabel: string;
+};
 
 export type EditItineraryAction =
   | { kind: 'edit' }
@@ -26,19 +32,34 @@ export type WorkspaceAffordances = {
 };
 
 
-const BADGES: Record<ItineraryState, StateBadge> = {
-  draft: { label: 'Draft', ...workspaceBadgeColors.draft },
-  upcoming: { label: 'Ready', ...workspaceBadgeColors.upcoming },
-  ongoing: { label: 'Active', ...workspaceBadgeColors.ongoing },
-  completed: { label: 'Completed', ...workspaceBadgeColors.completed },
+const BADGE_LABELS: Record<ItineraryState, string> = {
+  upcoming: 'Upcoming',
+  ongoing: 'Ongoing',
+  completed: 'Completed',
 };
 
 
-const LADDER: Record<ItineraryState, LadderCta | null> = {
-  draft: { act: 'finish-planning', label: 'Finalize Itinerary' },
+const LADDER: Record<ItineraryState, LadderCta> = {
   upcoming: { act: 'start', label: 'Start Trip' },
   ongoing: { act: 'complete', label: 'Complete Trip' },
   completed: { act: 'publish', label: 'Publish Itinerary' },
+};
+
+
+const FORWARD_CONFIRM: Record<LadderAct, ForwardConfirmWording | null> = {
+  start: {
+    title: 'Start this trip?',
+    body: 'Postcards open for every member once the trip starts.',
+    confirmLabel: 'Start Trip',
+    cancelLabel: 'Not yet',
+  },
+  complete: {
+    title: 'Complete this trip?',
+    body: 'Marks the trip as travelled — a completed trip can be published.',
+    confirmLabel: 'Complete Trip',
+    cancelLabel: 'Still travelling',
+  },
+  publish: null,
 };
 
 
@@ -46,8 +67,10 @@ export function stateBadge(
   itinerary: Pick<ItineraryResponse, 'state'>,
   surface: WorkspaceSurface = 'viewer',
 ): StateBadge {
-  const badge = BADGES[itinerary.state];
-  return surface === 'editor' ? { ...badge, label: 'Trip Workspace' } : badge;
+  return {
+    label: surface === 'editor' ? 'Trip Workspace' : BADGE_LABELS[itinerary.state],
+    ...workspaceBadgeColors.lifecycle,
+  };
 }
 
 
@@ -61,7 +84,6 @@ export function ladderCta(
   if (!isOwner || itinerary.archived || itinerary.published) return null;
 
   const rung = LADDER[itinerary.state];
-  if (rung === null) return null;
 
   const session = itinerary.editingSession;
   return session && session.travelerId !== viewerTravelerId
@@ -70,37 +92,8 @@ export function ladderCta(
 }
 
 
-export function showsStepBack(
-  itinerary: Pick<ItineraryResponse, 'state' | 'archived' | 'published'>,
-  isOwner: boolean,
-): boolean {
-  if (!isOwner || itinerary.archived || itinerary.published) return false;
-  return stepBackWording(itinerary) !== null;
-}
-
-
-const STEP_BACK_WORDING: Record<ItineraryState, ConfirmWording | null> = {
-  draft: null,
-  upcoming: {
-    title: 'Reopen planning?',
-    body: 'The trip goes back to Draft. Editing the plan never needs this — you can do that from Edit Itinerary at any time.',
-    confirmLabel: 'Reopen planning',
-  },
-  ongoing: {
-    title: 'Undo starting the trip?',
-    body: 'The trip goes back to Ready, and nobody can add postcards until you start it again.',
-    confirmLabel: 'Step back',
-  },
-  completed: {
-    title: 'Undo completing the trip?',
-    body: 'The trip goes back to Active. You can complete it again at any time.',
-    confirmLabel: 'Step back',
-  },
-};
-
-
-export function stepBackWording(itinerary: Pick<ItineraryResponse, 'state'>): ConfirmWording | null {
-  return STEP_BACK_WORDING[itinerary.state];
+export function forwardConfirmWording(act: LadderAct): ForwardConfirmWording | null {
+  return FORWARD_CONFIRM[act];
 }
 
 

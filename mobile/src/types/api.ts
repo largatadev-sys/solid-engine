@@ -61,7 +61,7 @@ export type VerificationResultResponse = {
 };
 
 
-export type ItineraryState = 'draft' | 'upcoming' | 'ongoing' | 'completed';
+export type ItineraryState = 'upcoming' | 'ongoing' | 'completed';
 
 
 export type Visibility = 'public' | 'private';
@@ -110,6 +110,9 @@ export type ItineraryResponse = {
   editingSession?: LeaseHolderResponse | null;
 
   days: DayResponse[];
+
+  dayCount?: number;
+
   createdAt: string;
 
   planVersion?: number;

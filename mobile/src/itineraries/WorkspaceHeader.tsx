@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '../components/Icon';
 import { workspaceColors, workspaceRadii, workspaceTypography } from '../theme/workspaceTokens';
+import { LifecycleBadge } from './LifecycleBadge';
 import type { StateBadge } from './workspaceControls';
 import { TRIP_SETTINGS_LABEL } from './tripSettingsItems';
 
@@ -47,9 +48,7 @@ export function WorkspaceHeader({
           <Icon name="back" size={24} color={workspaceColors.title} />
         </Pressable>
 
-        <View style={[styles.badge, { backgroundColor: badge.background, borderColor: badge.foreground }]}>
-          <Text style={[styles.badgeLabel, { color: badge.foreground }]}>{badge.label}</Text>
-        </View>
+        <LifecycleBadge badge={badge} />
 
         <View style={styles.spacer} />
 
@@ -124,16 +123,6 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
-  },
-  badge: {
-    borderWidth: 1,
-    borderRadius: workspaceRadii.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  badgeLabel: {
-    ...workspaceTypography.badgeLabel,
-    textTransform: 'uppercase',
   },
   action: {
     flexDirection: 'row',

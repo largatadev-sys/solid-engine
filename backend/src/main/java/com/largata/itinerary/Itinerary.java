@@ -98,7 +98,7 @@ public class Itinerary {
     private Itinerary(UUID id, UUID ownerId, ItineraryFields fields, Instant createdAt) {
         this.id = id;
         this.ownerId = ownerId;
-        this.state = ItineraryState.DRAFT;
+        this.state = ItineraryState.UPCOMING;
         this.visibility = Visibility.PUBLIC;
         this.published = false;
         this.createdAt = createdAt;
@@ -149,23 +149,23 @@ public class Itinerary {
     public static final int MAX_BEST_TIME_LENGTH = 60;
 
 
-    static Itinerary draft(
+    static Itinerary newTrip(
             UUID ownerId,
             String title,
             String destination,
             LocalDate startDate,
             LocalDate endDate,
             Instant createdAt) {
-        return draft(ownerId, title, destination, null, startDate, endDate, createdAt);
+        return newTrip(ownerId, title, destination, null, startDate, endDate, createdAt);
     }
 
 
-    static Itinerary draft(UUID ownerId, ItineraryFields fields, Instant createdAt) {
+    static Itinerary newTrip(UUID ownerId, ItineraryFields fields, Instant createdAt) {
         return new Itinerary(UuidV7.generate(), ownerId, fields, createdAt);
     }
 
 
-    static Itinerary draft(
+    static Itinerary newTrip(
             UUID ownerId,
             String title,
             String destination,
@@ -217,12 +217,6 @@ public class Itinerary {
     }
 
 
-    void finishPlanning() {
-        requireState(ItineraryState.DRAFT, ItineraryState.UPCOMING);
-        this.state = ItineraryState.UPCOMING;
-    }
-
-
     void start(Instant at) {
         requireState(ItineraryState.UPCOMING, ItineraryState.ONGOING);
         this.state = ItineraryState.ONGOING;
@@ -238,13 +232,12 @@ public class Itinerary {
 
 
     void reopen() {
-        ItineraryState target = state.previous().orElseThrow(
-                () -> new IllegalStateTransitionException(state, state));
+        ItineraryState target =
+                state.previous().orElseThrow(() -> IllegalStateTransitionException.atTheFloor(state));
         requireUnpublished(target);
         switch (target) {
             case ONGOING -> this.completedAt = null;
             case UPCOMING -> this.startedAt = null;
-            case DRAFT -> { }
             case COMPLETED -> throw new IllegalStateTransitionException(state, target);
         }
         this.state = target;

@@ -1,12 +1,16 @@
 import {
   editItineraryAction,
+  forwardConfirmWording,
   ladderCta,
-  showsStepBack,
   stateBadge,
-  stepBackWording,
   workspaceAffordances,
 } from '../src/itineraries/workspaceControls';
 import type { ItineraryResponse, ItineraryState, LeaseHolderResponse } from '../src/types/api';
+
+
+const EVERY_STATE: ItineraryState[] = ['upcoming', 'ongoing', 'completed'];
+
+const DEAD_LABELS = ['Draft', 'Ready', 'Active'];
 
 
 function holder(tag: string): LeaseHolderResponse {
@@ -24,9 +28,9 @@ function trip(over: Partial<ItineraryResponse> = {}): ItineraryResponse {
   return {
     id: 'trip-1',
     title: 'Island Hopping in El Nido',
-    destinations: ['El Nido'],
+    destination: 'El Nido, Palawan',
     days: [],
-    state: 'draft',
+    state: 'upcoming',
     published: false,
     visibility: 'private',
     archived: false,
@@ -37,42 +41,45 @@ function trip(over: Partial<ItineraryResponse> = {}): ItineraryResponse {
 
 
 describe('stateBadge', () => {
-  const cases: Array<[ItineraryState, string, string, string]> = [
-    ['draft', 'Draft', '#FEF3C7', '#D97706'],
-    ['upcoming', 'Ready', '#DCFCE7', '#15803D'],
-    ['ongoing', 'Active', '#E0F2FE', '#0369A1'],
-    ['completed', 'Completed', '#F3F4F6', '#6B7280'],
+  const cases: Array<[ItineraryState, string]> = [
+    ['upcoming', 'Upcoming'],
+    ['ongoing', 'Ongoing'],
+    ['completed', 'Completed'],
   ];
 
-  it.each(cases)('renders %s as the %s badge', (state, label, background, foreground) => {
-    expect(stateBadge(trip({ state }))).toEqual({ label, background, foreground });
+  it.each(cases)('renders %s under its own name — S4.26', (state, label) => {
+    expect(stateBadge(trip({ state })).label).toBe(label);
+  });
+
+  it('paints every state in the one terracotta pill the canvas draws (C5)', () => {
+    EVERY_STATE.forEach((state) => {
+      expect(stateBadge(trip({ state }))).toMatchObject({
+        background: '#FBF0EB',
+        foreground: '#B14E2E',
+        border: '#EFC9BA',
+      });
+    });
   });
 
   it('says Trip Workspace on the editor in every state — the chip is where you are, not where the trip is (S4.24)', () => {
-    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
-    states.forEach((state) => expect(stateBadge(trip({ state }), 'editor').label).toBe('Trip Workspace'));
+    EVERY_STATE.forEach((state) =>
+      expect(stateBadge(trip({ state }), 'editor').label).toBe('Trip Workspace'),
+    );
   });
 
-  it('never says Ongoing anywhere a traveler reads a state', () => {
-    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
-    states.forEach((state) => expect(stateBadge(trip({ state })).label).not.toBe('Ongoing'));
-  });
-
-  it.each(cases)('leaves the viewer chip on %s speaking lifecycle only', (state, label) => {
-    expect(stateBadge(trip({ state }), 'viewer').label).toBe(label);
+  it('renders no dead label in any state, on either surface', () => {
+    EVERY_STATE.forEach((state) => {
+      DEAD_LABELS.forEach((dead) => {
+        expect(stateBadge(trip({ state })).label).not.toBe(dead);
+        expect(stateBadge(trip({ state }), 'editor').label).not.toBe(dead);
+      });
+    });
   });
 });
 
 
 describe('ladderCta', () => {
-  it('offers Finalize Itinerary on a draft — every lifecycle step is one tap from the workspace (S4.19)', () => {
-    expect(ladderCta(trip({ state: 'draft' }), true)).toEqual({
-      act: 'finish-planning',
-      label: 'Finalize Itinerary',
-    });
-  });
-
-  it('offers Start Trip on Ready', () => {
+  it('offers Start Trip on an upcoming trip — the ladder now starts here', () => {
     expect(ladderCta(trip({ state: 'upcoming' }), true)).toEqual({ act: 'start', label: 'Start Trip' });
   });
 
@@ -81,12 +88,20 @@ describe('ladderCta', () => {
   });
 
   it('offers Publish Itinerary once completed', () => {
-    expect(ladderCta(trip({ state: 'completed' }), true)).toEqual({ act: 'publish', label: 'Publish Itinerary' });
+    expect(ladderCta(trip({ state: 'completed' }), true)).toEqual({
+      act: 'publish',
+      label: 'Publish Itinerary',
+    });
+  });
+
+  it('offers no rung that would finish planning — the act retired with its state', () => {
+    EVERY_STATE.forEach((state) =>
+      expect(ladderCta(trip({ state }), true)?.act).not.toBe('finish-planning'),
+    );
   });
 
   it('hides every ladder CTA from a member', () => {
-    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
-    states.forEach((state) => expect(ladderCta(trip({ state }), false)).toBeNull());
+    EVERY_STATE.forEach((state) => expect(ladderCta(trip({ state }), false)).toBeNull());
   });
 
   it('hides the ladder on an archived trip', () => {
@@ -94,9 +109,7 @@ describe('ladderCta', () => {
   });
 
   it('blocks every rung while another traveler holds the editing session, and names them (S4.19)', () => {
-    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
-
-    states.forEach((state) => {
+    EVERY_STATE.forEach((state) => {
       const held = trip({ state, editingSession: holder('t2') });
       expect(ladderCta(held, true, 't1')).toEqual({
         act: expect.any(String),
@@ -106,81 +119,71 @@ describe('ladderCta', () => {
     });
   });
 
-  it('does not block the rung on the session holder-s own lease', () => {
-    const mine = trip({ state: 'draft', editingSession: holder('t1') });
+  it('does not block the rung on the session holders own lease', () => {
+    const mine = trip({ state: 'upcoming', editingSession: holder('t1') });
 
-    expect(ladderCta(mine, true, 't1')).toEqual({
-      act: 'finish-planning',
-      label: 'Finalize Itinerary',
-    });
+    expect(ladderCta(mine, true, 't1')).toEqual({ act: 'start', label: 'Start Trip' });
   });
 });
 
 
-describe('showsStepBack', () => {
-  it('walks down from every rung above draft — Ready included, since Edit no longer reopens (S4.24)', () => {
-    expect(showsStepBack(trip({ state: 'upcoming' }), true)).toBe(true);
-    expect(showsStepBack(trip({ state: 'ongoing' }), true)).toBe(true);
-    expect(showsStepBack(trip({ state: 'completed' }), true)).toBe(true);
-  });
-
-  it('has nothing to step back to from draft', () => {
-    expect(showsStepBack(trip({ state: 'draft' }), true)).toBe(false);
-  });
-
-  it('is owner-only and never on an archived trip', () => {
-    expect(showsStepBack(trip({ state: 'ongoing' }), false)).toBe(false);
-    expect(showsStepBack(trip({ state: 'upcoming' }), false)).toBe(false);
-    expect(showsStepBack(trip({ state: 'ongoing', archived: true }), true)).toBe(false);
-  });
-});
-
-
-describe('stepBackWording', () => {
-  it('names the Ready rung for what it undoes — reopening planning, not editing (S4.24)', () => {
-    const wording = stepBackWording(trip({ state: 'upcoming' }));
-
-    expect(wording?.title).toBe('Reopen planning?');
-    expect(wording?.body).toMatch(/Edit Itinerary/);
-  });
-
-  it('warns that stepping back from Active closes the diary, because it does', () => {
-    expect(stepBackWording(trip({ state: 'ongoing' }))?.body).toMatch(/postcards/);
-  });
-
-  it('offers wording for every rung Step back renders on, and none for draft', () => {
-    const states: ItineraryState[] = ['upcoming', 'ongoing', 'completed'];
-    states.forEach((state) => {
-      expect(showsStepBack(trip({ state }), true)).toBe(true);
-      expect(stepBackWording(trip({ state }))).not.toBeNull();
+describe('forwardConfirmWording', () => {
+  it('confirms Start Trip in the exact words the canvas draws (C5)', () => {
+    expect(forwardConfirmWording('start')).toEqual({
+      title: 'Start this trip?',
+      body: 'Postcards open for every member once the trip starts.',
+      confirmLabel: 'Start Trip',
+      cancelLabel: 'Not yet',
     });
-    expect(stepBackWording(trip({ state: 'draft' }))).toBeNull();
   });
 
-  it('cannot render a Step back that has nothing to say — the button follows the wording', () => {
-    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
-    states.forEach((state) =>
-      expect(showsStepBack(trip({ state }), true)).toBe(stepBackWording(trip({ state })) !== null),
-    );
+  it('confirms Complete Trip in the exact words the canvas draws (C5)', () => {
+    expect(forwardConfirmWording('complete')).toEqual({
+      title: 'Complete this trip?',
+      body: 'Marks the trip as travelled — a completed trip can be published.',
+      confirmLabel: 'Complete Trip',
+      cancelLabel: 'Still travelling',
+    });
   });
 
-  it('never says Ongoing in the copy a traveler reads', () => {
-    const states: ItineraryState[] = ['upcoming', 'ongoing', 'completed'];
-    states.forEach((state) =>
-      expect(JSON.stringify(stepBackWording(trip({ state })))).not.toMatch(/Ongoing/),
+  it('gives publish no drawer — it keeps its own preview flow', () => {
+    expect(forwardConfirmWording('publish')).toBeNull();
+  });
+
+  it('states what staying means rather than saying Cancel — the drawer is not destructive', () => {
+    expect(forwardConfirmWording('start')?.cancelLabel).not.toBe('Cancel');
+    expect(forwardConfirmWording('complete')?.cancelLabel).not.toBe('Cancel');
+  });
+
+  it('names no dead label in any wording a traveler reads', () => {
+    const copy = JSON.stringify([forwardConfirmWording('start'), forwardConfirmWording('complete')]);
+    DEAD_LABELS.forEach((dead) => expect(copy).not.toMatch(new RegExp(`\\b${dead}\\b`)));
+  });
+
+  it('confirms every forward transition the ladder can run — no rung acts unconfirmed', () => {
+    const transitions = EVERY_STATE.map((state) => ladderCta(trip({ state }), true)).filter(
+      (rung) => rung !== null && rung.act !== 'publish',
     );
+
+    expect(transitions).toHaveLength(2);
+    transitions.forEach((rung) => expect(forwardConfirmWording(rung!.act)).not.toBeNull());
+  });
+
+  it('labels the drawers primary exactly as the rung that opened it', () => {
+    EVERY_STATE.forEach((state) => {
+      const rung = ladderCta(trip({ state }), true);
+      const wording = rung === null ? null : forwardConfirmWording(rung.act);
+      if (wording !== null) {
+        expect(wording.confirmLabel).toBe(rung!.label);
+      }
+    });
   });
 });
 
 
 describe('editItineraryAction', () => {
-  it('enters the editor directly from draft', () => {
-    expect(editItineraryAction(trip({ state: 'draft' }), true)).toEqual({ kind: 'edit' });
-  });
-
   it('opens the editor in place from every unpublished state — editing costs no state (S4.24)', () => {
-    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
-    states.forEach((state) =>
+    EVERY_STATE.forEach((state) =>
       expect(editItineraryAction(trip({ state }), true)).toEqual({ kind: 'edit' }),
     );
   });
@@ -193,28 +196,25 @@ describe('editItineraryAction', () => {
     });
   });
 
-  it('is not blocked by the viewer\'s own session', () => {
+  it('is not blocked by the viewers own session', () => {
     const mine = trip({ editingSession: holder('t1') });
     expect(editItineraryAction(mine, true, 't1')).toEqual({ kind: 'edit' });
   });
 
   it('lets a MEMBER edit at every unpublished rung — mid-trip changes are usually theirs (S4.24)', () => {
-    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
-    states.forEach((state) =>
+    EVERY_STATE.forEach((state) =>
       expect(editItineraryAction(trip({ state }), true, 't2')).toEqual({ kind: 'edit' }),
     );
   });
 
   it('hides Edit Itinerary from anyone without edit permission, whatever the state', () => {
-    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
-    states.forEach((state) =>
+    EVERY_STATE.forEach((state) =>
       expect(editItineraryAction(trip({ state }), false)).toEqual({ kind: 'hidden' }),
     );
   });
 
   it('blocks every state while another traveler holds the session, and names them', () => {
-    const states: ItineraryState[] = ['draft', 'upcoming', 'ongoing', 'completed'];
-    states.forEach((state) =>
+    EVERY_STATE.forEach((state) =>
       expect(editItineraryAction(trip({ state, editingSession: holder('t2') }), true, 't1')).toEqual({
         kind: 'blocked',
         holder: '@largata.dev+t2',
@@ -224,7 +224,9 @@ describe('editItineraryAction', () => {
 
   it('is hidden on archived and published trips', () => {
     expect(editItineraryAction(trip({ archived: true }), true)).toEqual({ kind: 'hidden' });
-    expect(editItineraryAction(trip({ published: true, state: 'completed' }), true)).toEqual({ kind: 'hidden' });
+    expect(editItineraryAction(trip({ published: true, state: 'completed' }), true)).toEqual({
+      kind: 'hidden',
+    });
   });
 });
 

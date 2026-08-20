@@ -110,7 +110,6 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
     durationDays: 3,
   });
   const trip = created.body.id;
-  await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', author.idToken);
   await api(`/v1/itineraries/${trip}/start`, 'POST', author.idToken);
 
   const plan = (await api(`/v1/itineraries/${trip}`, 'GET', author.idToken)).body;

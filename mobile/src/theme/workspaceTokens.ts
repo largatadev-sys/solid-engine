@@ -27,6 +27,11 @@ export const workspaceColors = {
   pressed: '#F5F5F4',
   accentWash: 'rgba(234, 88, 12, 0.06)',
   captured: '#15803D',
+  sheetScrim: 'rgba(27, 38, 59, 0.55)',
+  drawerHandle: '#E2E4E8',
+  drawerTitle: '#1B263B',
+  drawerBody: '#5C6470',
+  drawerAccent: '#D96C4A',
 } as const;
 
 
@@ -302,10 +307,7 @@ export const discoveryMetrics = {
 
 
 export const workspaceBadgeColors = {
-  draft: { background: '#FEF3C7', foreground: '#D97706' },
-  upcoming: { background: '#DCFCE7', foreground: '#15803D' },
-  ongoing: { background: '#E0F2FE', foreground: '#0369A1' },
-  completed: { background: '#F3F4F6', foreground: '#6B7280' },
+  lifecycle: { background: '#FBF0EB', foreground: '#B14E2E', border: '#EFC9BA' },
 } as const;
 
 
@@ -364,6 +366,10 @@ export const pollColors = {
   demoted: '#78716C',
   ink: '#44403C',
   footerHairline: '#F5F5F4',
+  openBadgeFill: '#FEF3C7',
+  openBadgeInk: '#D97706',
+  closedBadgeFill: '#F3F4F6',
+  closedBadgeInk: '#6B7280',
 } as const;
 
 
@@ -384,6 +390,10 @@ export const workspaceTypography = {
   sheetTitle: { fontFamily: fonts.extraBold, fontSize: 22, lineHeight: 28, fontWeight: '800' },
   sheetBody: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, fontWeight: '400' },
   sheetDismiss: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 20, fontWeight: '600' },
+  drawerTitle: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: -0.2 },
+  drawerBody: { fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 21, fontWeight: '400' },
+  drawerCta: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, fontWeight: '700' },
+  drawerCancel: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 19, fontWeight: '600' },
   fieldLabel: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 20, fontWeight: '600' },
   fieldOptional: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 18, fontWeight: '400' },
   fieldInput: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 19, fontWeight: '400' },
@@ -408,6 +418,7 @@ export const workspaceRadii = {
   control: 4,
   card: 12,
   sheet: 24,
+  drawer: 20,
   pill: 999,
 } as const;
 
@@ -419,6 +430,7 @@ export const workspaceMetrics = {
   primaryCtaHeight: 53,
   secondaryCtaHeight: 50,
   sheetCtaHeight: 52,
+  drawerCtaHeight: 51,
   inputHeight: 48,
   grabberWidth: 36,
   grabberHeight: 5,
@@ -426,4 +438,51 @@ export const workspaceMetrics = {
   finalizeDiscSize: 56,
   avatarRendered: 96,
   avatarRow: 40,
+} as const;
+
+
+export const tripTabColors = {
+  labelIdle: '#5C6470',
+  labelActive: '#1B263B',
+  underline: '#D96C4A',
+  hairline: '#E2E4E8',
+  advisoryDot: '#D97706',
+  advisoryText: '#B45309',
+  archivedLink: '#5C6470',
+} as const;
+
+
+export const tripTabTypography = {
+  label: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 18, fontWeight: '400' },
+  labelActive: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  empty: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 20, fontWeight: '400' },
+  archivedLink: { fontFamily: fonts.semiBold, fontSize: 12, lineHeight: 16, fontWeight: '600' },
+} as const;
+
+
+export const tripTabMetrics = {
+  rowHeight: 44,
+  underlineHeight: 3,
+  planCtaHeight: 51,
+} as const;
+
+
+export const sheetMotion = {
+  scrimInMs: 200,
+  travelInMs: 300,
+  travelOutMs: 200,
+  scrimOutMs: 150,
+  inFlightOpacity: 0.85,
+} as const;
+
+
+export const tripTabMotion = {
+  underlineMs: 200,
+  labelColorMs: 150,
+  listRiseMs: 150,
+  listRisePx: 8,
+  badgeCrossfadeMs: 150,
+  pressInMs: 100,
+  pressOutMs: 150,
+  pressedOpacity: 0.85,
 } as const;

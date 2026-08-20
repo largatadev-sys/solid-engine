@@ -133,7 +133,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: 'Sep – Nov',
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Hanoi, Vietnam', 'Hanoi', [
@@ -294,7 +294,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: 'Oct – Dec',
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Hong Kong', 'Island side', [
@@ -444,7 +444,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: 'Sep – Nov',
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Margaret River, Western Australia', 'South west', [
@@ -576,7 +576,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: null,
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Amsterdam, Netherlands', 'Canals', [
@@ -710,7 +710,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: null,
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Valletta, Malta', 'Valletta', [
@@ -836,7 +836,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: 'Feb',
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Rio de Janeiro, Brazil', 'Rio', [
@@ -968,7 +968,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: 'Oct – Apr',
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Baja California, Mexico', 'Down the peninsula', [
@@ -1096,7 +1096,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: 'Oct – Apr',
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Luxor, Egypt', 'West bank', [
@@ -1230,7 +1230,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: 'Mar – May · Sep – Nov',
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Tigers Nest, Bhutan', 'Paro Taktsang', [
@@ -1350,7 +1350,7 @@ const TRAVELERS = [
         description: null,
         standouts: [],
         bestTimeOfYear: 'Jun – Aug',
-        lifecycle: 'draft',
+        lifecycle: 'upcoming',
         publish: null,
         days: [
           day('Svalbard, Norway', 'Longyearbyen', [

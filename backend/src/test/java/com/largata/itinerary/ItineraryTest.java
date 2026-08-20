@@ -16,10 +16,16 @@ class ItineraryTest {
     private final UUID owner = UuidV7.generate();
 
     @Test
-    void anItineraryIsBornADraft() {
-        Itinerary itinerary = draft("Hokkaido", "Sapporo");
+    void anItineraryIsBornUpcomingAndStampsNothing() {
+        Itinerary itinerary = newTrip("Hokkaido", "Sapporo");
 
-        assertThat(itinerary.state()).isEqualTo(ItineraryState.DRAFT);
+        assertThat(itinerary.state())
+                .as("S4.26 — a trip is upcoming from the moment it is created; there is no rung before it")
+                .isEqualTo(ItineraryState.UPCOMING);
+        assertThat(itinerary.startedAt())
+                .as("being planned is not travel started — only the acts that happen to the trip stamp")
+                .isNull();
+        assertThat(itinerary.completedAt()).isNull();
         assertThat(itinerary.isPublished()).as("nothing is born in the feed").isFalse();
         assertThat(itinerary.visibility())
                 .as("public is the default audience — it decides who reads it once it is published")
@@ -30,24 +36,23 @@ class ItineraryTest {
 
 
     @Test
-    void finishingPlanningMovesADraftToUpcomingAndStampsNothing() {
-        Itinerary itinerary = draft("Hokkaido", "Sapporo");
+    void aForkIsBornUpcomingToo() {
+        Itinerary source = completed();
 
-        itinerary.finishPlanning();
+        Itinerary fork = Itinerary.forkedFrom(source, UuidV7.generate(), Instant.now());
 
-        assertThat(itinerary.state()).isEqualTo(ItineraryState.UPCOMING);
-        assertThat(itinerary.startedAt())
-                .as("planning finished is not travel started — only the acts that happen to the trip stamp")
-                .isNull();
-        assertThat(itinerary.completedAt()).isNull();
+        assertThat(fork.state())
+                .as("a fork copies the plan, never the travel — it starts where every new trip starts")
+                .isEqualTo(ItineraryState.UPCOMING);
+        assertThat(fork.startedAt()).isNull();
+        assertThat(fork.completedAt()).isNull();
     }
 
     @Test
     void startingAnUpcomingTripMakesItOngoingAndStampsTheMoment() {
-        Itinerary itinerary = draft("Hokkaido", "Sapporo");
+        Itinerary itinerary = newTrip("Hokkaido", "Sapporo");
         Instant at = Instant.parse("2027-01-10T09:00:00Z");
 
-        itinerary.finishPlanning();
         itinerary.start(at);
 
         assertThat(itinerary.state()).isEqualTo(ItineraryState.ONGOING);
@@ -56,21 +61,20 @@ class ItineraryTest {
     }
 
     @Test
-    void aDraftCannotJumpStraightToTravelling() {
-        Itinerary itinerary = draft("Hokkaido", "Sapporo");
+    void anUpcomingTripCannotJumpStraightToTravelled() {
+        Itinerary itinerary = newTrip("Hokkaido", "Sapporo");
 
-        assertThatThrownBy(() -> itinerary.start(Instant.now()))
-                .as("draft → ongoing skips the planning-finished rung; jumps are refused")
+        assertThatThrownBy(() -> itinerary.complete(Instant.now()))
+                .as("upcoming → completed skips the travelling rung; jumps are refused")
                 .isInstanceOf(IllegalStateTransitionException.class);
     }
 
     @Test
     void completingAnOngoingTripStampsTheSecondMomentAndLeavesTheFirst() {
-        Itinerary itinerary = draft("Hokkaido", "Sapporo");
+        Itinerary itinerary = newTrip("Hokkaido", "Sapporo");
         Instant started = Instant.parse("2027-01-10T09:00:00Z");
         Instant completed = Instant.parse("2027-01-20T18:00:00Z");
 
-        itinerary.finishPlanning();
         itinerary.start(started);
         itinerary.complete(completed);
 
@@ -82,7 +86,7 @@ class ItineraryTest {
     @Test
     void theStampsRecordTheActNotTheTravelSoTheyMayFallOutsideThePlansDates() {
         Itinerary itinerary =
-                Itinerary.draft(
+                Itinerary.newTrip(
                         owner,
                         "Hokkaido",
                         "Sapporo",
@@ -90,7 +94,6 @@ class ItineraryTest {
                         LocalDate.of(2027, 1, 20),
                         Instant.parse("2026-12-01T00:00:00Z"));
 
-        itinerary.finishPlanning();
         itinerary.start(Instant.parse("2027-01-12T09:00:00Z"));
         itinerary.complete(Instant.parse("2027-01-27T09:00:00Z"));
 
@@ -100,21 +103,21 @@ class ItineraryTest {
 
     @Test
     void everyIllegalEdgeIsRefusedAndChangesNothing() {
-        Itinerary draftTrip = draft("Hokkaido", "Sapporo");
-        assertThatThrownBy(() -> draftTrip.complete(Instant.now()))
+        Itinerary upcomingTrip = newTrip("Hokkaido", "Sapporo");
+        assertThatThrownBy(() -> upcomingTrip.complete(Instant.now()))
                 .isInstanceOf(IllegalStateTransitionException.class);
-        assertThat(draftTrip.state()).isEqualTo(ItineraryState.DRAFT);
-        assertThat(draftTrip.completedAt()).isNull();
+        assertThat(upcomingTrip.state()).isEqualTo(ItineraryState.UPCOMING);
+        assertThat(upcomingTrip.completedAt()).isNull();
 
-        Itinerary ongoingTrip = draft("Hokkaido", "Sapporo");
-        ongoingTrip.finishPlanning();
+        Itinerary ongoingTrip = newTrip("Hokkaido", "Sapporo");
+
         ongoingTrip.start(Instant.parse("2027-01-10T09:00:00Z"));
         assertThatThrownBy(() -> ongoingTrip.start(Instant.now()))
                 .isInstanceOf(IllegalStateTransitionException.class);
         assertThat(ongoingTrip.startedAt()).isEqualTo(Instant.parse("2027-01-10T09:00:00Z"));
 
-        Itinerary completedTrip = draft("Hokkaido", "Sapporo");
-        completedTrip.finishPlanning();
+        Itinerary completedTrip = newTrip("Hokkaido", "Sapporo");
+
         completedTrip.start(Instant.parse("2027-01-10T09:00:00Z"));
         completedTrip.complete(Instant.parse("2027-01-20T18:00:00Z"));
         assertThatThrownBy(() -> completedTrip.start(Instant.now()))
@@ -126,18 +129,17 @@ class ItineraryTest {
 
     @Test
     void theRefusalNamesBothEndsOfTheEdgeItRefused() {
-        Itinerary itinerary = draft("Hokkaido", "Sapporo");
+        Itinerary itinerary = newTrip("Hokkaido", "Sapporo");
 
         assertThatThrownBy(() -> itinerary.complete(Instant.now()))
-                .hasMessageContaining("draft")
+                .hasMessageContaining("upcoming")
                 .hasMessageContaining("completed");
     }
 
     @Test
     void aTransitionDoesNotClaimAuthorshipOfAPlanEdit() {
-        Itinerary itinerary = draft("Hokkaido", "Sapporo");
+        Itinerary itinerary = newTrip("Hokkaido", "Sapporo");
 
-        itinerary.finishPlanning();
         itinerary.start(Instant.now());
 
         assertThat(itinerary.lastEditedBy()).isNull();
@@ -146,7 +148,7 @@ class ItineraryTest {
 
     @Test
     void titleAndDestinationAreStripped() {
-        Itinerary itinerary = draft("  Hokkaido  ", "  Sapporo  ");
+        Itinerary itinerary = newTrip("  Hokkaido  ", "  Sapporo  ");
 
         assertThat(itinerary.title()).isEqualTo("Hokkaido");
         assertThat(itinerary.destination()).isEqualTo("Sapporo");
@@ -154,41 +156,41 @@ class ItineraryTest {
 
     @Test
     void aTitleIsRequired() {
-        assertThatThrownBy(() -> draft("   ", "Sapporo")).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> draft(null, "Sapporo")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> newTrip("   ", "Sapporo")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> newTrip(null, "Sapporo")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void aTitleHasALimitTheTypeEnforcesItself() {
-        assertThatThrownBy(() -> draft("x".repeat(Itinerary.MAX_TITLE_LENGTH + 1), "Sapporo"))
+        assertThatThrownBy(() -> newTrip("x".repeat(Itinerary.MAX_TITLE_LENGTH + 1), "Sapporo"))
                 .isInstanceOf(IllegalArgumentException.class);
 
-        assertThat(draft("x".repeat(Itinerary.MAX_TITLE_LENGTH), "Sapporo").title())
+        assertThat(newTrip("x".repeat(Itinerary.MAX_TITLE_LENGTH), "Sapporo").title())
                 .hasSize(Itinerary.MAX_TITLE_LENGTH);
     }
 
     @Test
     void aDestinationIsRequired() {
-        assertThatThrownBy(() -> draft("Nowhere", null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> newTrip("Nowhere", null)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void aBlankDestinationIsRejectedRatherThanQuietlyDropped() {
-        assertThatThrownBy(() -> draft("Somewhere", "  ")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> newTrip("Somewhere", "  ")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void aDestinationHasALimitTheTypeEnforcesItself() {
-        assertThatThrownBy(() -> draft("Somewhere", "x".repeat(Itinerary.MAX_DESTINATION_LENGTH + 1)))
+        assertThatThrownBy(() -> newTrip("Somewhere", "x".repeat(Itinerary.MAX_DESTINATION_LENGTH + 1)))
                 .isInstanceOf(IllegalArgumentException.class);
 
-        assertThat(draft("Somewhere", "x".repeat(Itinerary.MAX_DESTINATION_LENGTH)).destination())
+        assertThat(newTrip("Somewhere", "x".repeat(Itinerary.MAX_DESTINATION_LENGTH)).destination())
                 .hasSize(Itinerary.MAX_DESTINATION_LENGTH);
     }
 
     @Test
     void everyCombinationOfDatesIsAPlan() {
-        assertThat(draft("Someday", "Japan").startDate()).isNull();
+        assertThat(newTrip("Someday", "Japan").startDate()).isNull();
         assertThat(dated(LocalDate.of(2027, 6, 3), null).startDate()).isEqualTo(LocalDate.of(2027, 6, 3));
         assertThat(dated(null, LocalDate.of(2027, 6, 3)).endDate()).isEqualTo(LocalDate.of(2027, 6, 3));
         assertThat(dated(LocalDate.of(2027, 6, 3), LocalDate.of(2027, 6, 3))).isNotNull();
@@ -203,7 +205,7 @@ class ItineraryTest {
 
     @Test
     void editingFieldsReplacesThemAndStampsTheEditor() {
-        Itinerary itinerary = draft("Draft", "Cebu");
+        Itinerary itinerary = newTrip("Planned", "Cebu");
         UUID editor = UuidV7.generate();
         Instant editedAt = Instant.now();
 
@@ -232,7 +234,7 @@ class ItineraryTest {
 
     @Test
     void aDraftIsBornWithNoPublishMetadataAtAll() {
-        Itinerary itinerary = draft("Draft", "Cebu");
+        Itinerary itinerary = newTrip("Planned", "Cebu");
 
         assertThat(itinerary.standouts()).isEmpty();
         assertThat(itinerary.bestTimeOfYear()).isNull();
@@ -241,12 +243,12 @@ class ItineraryTest {
 
     @Test
     void editingLeavesOwnershipAndStateUntouched() {
-        Itinerary itinerary = draft("Draft", "Cebu");
+        Itinerary itinerary = newTrip("Planned", "Cebu");
 
         itinerary.editFields(renamedTo("Renamed"), UuidV7.generate(), Instant.now());
 
         assertThat(itinerary.ownerId()).isEqualTo(owner);
-        assertThat(itinerary.state()).isEqualTo(ItineraryState.DRAFT);
+        assertThat(itinerary.state()).isEqualTo(ItineraryState.UPCOMING);
         assertThat(itinerary.isPublished()).isFalse();
     }
 
@@ -262,7 +264,7 @@ class ItineraryTest {
 
     @Test
     void anEditThatOmitsThePublishMetadataLeavesItAloneRatherThanErasingIt() {
-        Itinerary itinerary = draft("Draft", "Cebu");
+        Itinerary itinerary = newTrip("Planned", "Cebu");
         itinerary.editFields(
                 new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null),
                 UuidV7.generate(),
@@ -282,7 +284,7 @@ class ItineraryTest {
 
     @Test
     void anEmptyValueClearsThePublishMetadataBecauseAbsenceAlreadyMeansSomethingElse() {
-        Itinerary itinerary = draft("Draft", "Cebu");
+        Itinerary itinerary = newTrip("Planned", "Cebu");
         itinerary.editFields(
                 new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null),
                 UuidV7.generate(),
@@ -299,7 +301,7 @@ class ItineraryTest {
 
     @Test
     void theShippedFieldsKeepTheirReplaceSemanticsBecauseChangingThoseWouldBeTheAdditivityBreak() {
-        Itinerary itinerary = draft("Draft", "Cebu");
+        Itinerary itinerary = newTrip("Planned", "Cebu");
         itinerary.editFields(
                 new ItineraryFields("Trip", "Cebu", "PHP", "A description.", null, null, null, null),
                 UuidV7.generate(),
@@ -359,19 +361,12 @@ class ItineraryTest {
 
     @Test
     void onlyACompletedTripCanBePublished() {
-        Itinerary neverStarted = draft("Draft", "Cebu");
+        Itinerary neverStarted = newTrip("Planned", "Cebu");
         assertThatThrownBy(() -> neverStarted.publishTo(Visibility.PUBLIC, Instant.now()))
                 .as("a plan nobody has travelled is not a record of anything")
                 .isInstanceOf(NotCompleteException.class);
 
-        Itinerary planned = draft("Draft", "Cebu");
-        planned.finishPlanning();
-        assertThatThrownBy(() -> planned.publishTo(Visibility.PUBLIC, Instant.now()))
-                .as("planning finished is not the trip happening — the gate is about travel, not readiness")
-                .isInstanceOf(NotCompleteException.class);
-
-        Itinerary travelling = draft("Draft", "Cebu");
-        travelling.finishPlanning();
+        Itinerary travelling = newTrip("Planned", "Cebu");
         travelling.start(Instant.now());
         assertThatThrownBy(() -> travelling.publishTo(Visibility.PUBLIC, Instant.now()))
                 .isInstanceOf(NotCompleteException.class);
@@ -396,7 +391,7 @@ class ItineraryTest {
 
     @Test
     void theAudienceIsSettableBeforePublishing_becauseItIsNotAPublicationFact() {
-        Itinerary itinerary = draft("Draft", "Cebu");
+        Itinerary itinerary = newTrip("Planned", "Cebu");
 
         itinerary.showTo(Visibility.PRIVATE);
 
@@ -431,18 +426,15 @@ class ItineraryTest {
         itinerary.reopen();
         assertThat(itinerary.state()).isEqualTo(ItineraryState.UPCOMING);
         assertThat(itinerary.startedAt()).as("it never set off after all").isNull();
-
-        itinerary.reopen();
-        assertThat(itinerary.state())
-                .as("the last rung down is reopening planning itself")
-                .isEqualTo(ItineraryState.DRAFT);
     }
 
     @Test
-    void aDraftHasNothingToStepBackTo() {
-        Itinerary itinerary = draft("Draft", "Cebu");
+    void anUpcomingTripHasNothingToStepBackTo_becauseItIsWhereEveryTripStarts() {
+        Itinerary itinerary = newTrip("Planned", "Cebu");
 
-        assertThatThrownBy(itinerary::reopen).isInstanceOf(IllegalStateTransitionException.class);
+        assertThatThrownBy(itinerary::reopen)
+                .isInstanceOf(IllegalStateTransitionException.class)
+                .hasMessageContaining("nothing before it");
     }
 
     @Test
@@ -462,7 +454,6 @@ class ItineraryTest {
         assertThat(Visibility.PUBLIC.wireName()).isEqualTo("public");
         assertThat(Visibility.PRIVATE.wireName()).isEqualTo("private");
 
-        assertThat(ItineraryState.DRAFT.wireName()).isEqualTo("draft");
         assertThat(ItineraryState.UPCOMING.wireName()).isEqualTo("upcoming");
         assertThat(ItineraryState.ONGOING.wireName()).isEqualTo("ongoing");
         assertThat(ItineraryState.COMPLETED.wireName()).isEqualTo("completed");
@@ -470,7 +461,6 @@ class ItineraryTest {
 
     @Test
     void onlyCompletedAdmitsPublishing() {
-        assertThat(ItineraryState.DRAFT.admitsPublishing()).isFalse();
         assertThat(ItineraryState.UPCOMING.admitsPublishing()).isFalse();
         assertThat(ItineraryState.ONGOING.admitsPublishing()).isFalse();
         assertThat(ItineraryState.COMPLETED.admitsPublishing()).isTrue();
@@ -493,19 +483,19 @@ class ItineraryTest {
                 .isInstanceOf(UnknownAudienceException.class);
     }
 
-    private Itinerary draft(String title, String destination) {
-        return Itinerary.draft(owner, title, destination, null, null, Instant.now());
+    private Itinerary newTrip(String title, String destination) {
+        return Itinerary.newTrip(owner, title, destination, null, null, Instant.now());
     }
 
     private Itinerary completed() {
-        Itinerary itinerary = draft("Draft", "Cebu");
-        itinerary.finishPlanning();
+        Itinerary itinerary = newTrip("Planned", "Cebu");
+
         itinerary.start(Instant.now());
         itinerary.complete(Instant.now());
         return itinerary;
     }
 
     private Itinerary dated(LocalDate start, LocalDate end) {
-        return Itinerary.draft(owner, "Trip", "Sapporo", start, end, Instant.now());
+        return Itinerary.newTrip(owner, "Trip", "Sapporo", start, end, Instant.now());
     }
 }

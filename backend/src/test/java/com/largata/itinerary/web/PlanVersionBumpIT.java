@@ -152,7 +152,7 @@ class PlanVersionBumpIT extends PostgresTestBase {
                 .isZero();
 
         assertThat(bumpedBy(owner, tripId, () ->
-                        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/finish-planning", owner, null)
+                        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/start", owner, null)
                                 .expectStatus()
                                 .isOk()))
                 .as("a lifecycle transition moves the trip, not the plan")

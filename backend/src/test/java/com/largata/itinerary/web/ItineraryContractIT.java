@@ -29,7 +29,7 @@ class ItineraryContractIT extends PostgresTestBase {
     }
 
     @Test
-    void creatingAnItineraryReturnsItAsADraftPrivateResource() {
+    void creatingAnItineraryReturnsItAsAnUpcomingPrivateResource() {
         rest.post()
                 .uri("/v1/itineraries")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
@@ -56,7 +56,7 @@ class ItineraryContractIT extends PostgresTestBase {
                 .jsonPath("$.endDate")
                 .isEqualTo("2027-01-20")
                 .jsonPath("$.state")
-                .isEqualTo("draft")
+                .isEqualTo("upcoming")
                 .jsonPath("$.published")
                 .isEqualTo(false)
                 .jsonPath("$.visibility")

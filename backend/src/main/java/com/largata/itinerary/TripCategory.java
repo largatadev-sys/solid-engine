@@ -5,7 +5,7 @@ import java.util.Optional;
 
 
 public enum TripCategory {
-    DRAFT(ItineraryState.DRAFT),
+    DRAFT(null),
     UPCOMING(ItineraryState.UPCOMING),
     ONGOING(ItineraryState.ONGOING),
     COMPLETE(ItineraryState.COMPLETED);
@@ -29,8 +29,13 @@ public enum TripCategory {
     }
 
 
-    ItineraryState state() {
-        return state;
+    Optional<ItineraryState> state() {
+        return Optional.ofNullable(state);
+    }
+
+
+    boolean matchesNoState() {
+        return state == null;
     }
 
 

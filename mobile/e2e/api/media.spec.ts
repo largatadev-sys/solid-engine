@@ -174,7 +174,7 @@ test.describe('the cover, and the audience ladder that governs it', () => {
   });
 
   test('publishing opens the cover to every traveler', async () => {
-    for (const step of ['finish-planning', 'start', 'complete', 'publish']) {
+    for (const step of ['start', 'complete', 'publish']) {
       await api(`/v1/itineraries/${trip}/${step}`, 'POST', owner);
     }
     const strangerOnPublished = await fetchBytes(coverUrl, stranger);
@@ -291,7 +291,7 @@ test.describe('activity photos and the derived gallery', () => {
 
   test('activity photos cross to the published projection — the gallery source', async () => {
     await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner);
-    for (const step of ['finish-planning', 'start', 'complete', 'publish']) {
+    for (const step of ['start', 'complete', 'publish']) {
       await api(`/v1/itineraries/${trip}/${step}`, 'POST', owner);
     }
     const publicView = await api(`/v1/published-itineraries/${trip}`, 'GET', stranger);

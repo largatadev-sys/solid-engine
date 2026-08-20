@@ -103,6 +103,7 @@ test('the tab bar draws no centre + — the create act lives on the Trips surfac
   page,
 }) => {
   await page.goto(TRIPS_TAB_ROUTE);
-  await expect(page.locator('[role="tab"]')).toHaveCount(4);
+  const navTabs = page.getByRole('tablist').filter({ hasText: 'Home' }).getByRole('tab');
+  await expect(navTabs).toHaveCount(4);
   await expect(page.getByText('+', { exact: true })).toHaveCount(0);
 });
