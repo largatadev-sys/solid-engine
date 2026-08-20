@@ -6,7 +6,7 @@
 
 **Owner gate (stop rule):** the V36 remap rewrites data beyond additive tables — **the migration file is proposed to the owner before it runs anywhere**, per the spec's decision 5.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Create and fork both answer `state: upcoming`; no code path — create, fork, remap — can produce `draft` (IT)
 - [ ] `finish-planning` answers the named 409 in every state, owner included; the route stays mapped (IT)

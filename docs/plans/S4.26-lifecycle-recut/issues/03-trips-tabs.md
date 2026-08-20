@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — the server speaks three states. *(Not 02 — the card carries no lifecycle chrome; 02 and 03 can run in parallel behind 01.)*
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Three tabs render fixed and always visible, ladder order, equal width, active styling per C1 — no counts, no icons, no swipe-between-tabs
 - [ ] Adaptive landing proven both ways (Jest on the pure module + both seedings on a rung); a manual tab switch is session-sticky over the adaptive rule

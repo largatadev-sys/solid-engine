@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — the Playwright re-anchor + new specs.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Full backend IT suite green with counts read from the `Tests run:` summary; full mobile Jest green; `npm run smoke` green — all three stated with numbers in the write-up
 - [ ] Emulator walk: both landing seedings, Start and Complete through their drawers, the archived link — screenshots taken, pool identities stated (t1 = owner, …)

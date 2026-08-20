@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — own-name badges + drawers · 03 — the Trips tabs.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] The 12 affected specs carry no draft/Finalize/Step-back/Active references and pass
 - [ ] The ladder spec walks the full forward ladder through both drawers, asserting the cancel path leaves state untouched and the confirm path transitions

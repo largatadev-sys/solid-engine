@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — the server speaks three states.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Start Trip and Complete Trip open the drawer; every cancel path (text, tap-scrim, swipe-down) leaves the state untouched; confirm transitions and the badge crossfades 150ms to the new label (M3)
 - [ ] The primary CTA dims to 0.85 opacity while the request is in flight — no spinner inside the button
