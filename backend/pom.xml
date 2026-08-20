@@ -56,6 +56,16 @@
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
     <!--
+      WS-1 (ADR-030). Boot 4 keeps WebSocket support in its own starter; spring-boot-starter-web
+      alone carries no WebSocketHandler, no handshake plumbing and no WebSocketConfigurer, so a
+      @Configuration implementing it is silently never applied. Same family as the Flyway-starter
+      trap below: the app boots green and the feature simply does not exist.
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-websocket</artifactId>
+    </dependency>
+    <!--
       Bean Validation (S0.3). Without this starter @Valid is inert — no validator on the classpath
       means the annotation is silently ignored and a blank title reaches the domain, where it throws
       IllegalArgumentException and surfaces as a 500. The failure looks like "validation doesn't

@@ -17,6 +17,7 @@ import { createQueryClient } from '../src/query/queryClient';
 import { destinationFor, isSettling, type GateInput } from '../src/onboarding/onboardingGate';
 import { colors, typography } from '../src/theme';
 import { interFontMap } from '../src/theme/interFonts';
+import { useSocketLifecycle } from '../src/ws/useSocketLifecycle';
 
 
 
@@ -53,6 +54,8 @@ function AuthGate() {
   const { state } = useMe();
   const segments = useSegments();
   const router = useRouter();
+
+  useSocketLifecycle(auth.kind === 'signedIn');
 
   const gate: GateInput = {
     auth: auth.kind,
