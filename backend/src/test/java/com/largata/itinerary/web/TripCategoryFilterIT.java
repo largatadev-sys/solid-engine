@@ -35,14 +35,50 @@ class TripCategoryFilterIT extends PostgresTestBase {
 
 
     @Test
-    void theFourCategoriesAreMutuallyExclusive_aTripIsInExactlyOne() {
+    void theThreeCategoriesAreMutuallyExclusive_aTripIsInExactlyOne() {
         String owner = freshTraveler();
-        String fresh = createItinerary(owner, "A fresh draft");
+        String fresh = createItinerary(owner, "A fresh plan");
 
-        assertThat(idsIn(owner, "draft")).contains(fresh);
-        assertThat(idsIn(owner, "upcoming")).doesNotContain(fresh);
+        assertThat(idsIn(owner, "upcoming")).contains(fresh);
         assertThat(idsIn(owner, "ongoing")).doesNotContain(fresh);
         assertThat(idsIn(owner, "complete")).doesNotContain(fresh);
+    }
+
+
+    @Test
+    void theRetiredCategoryAnswersTwoHundredAndEmptyRatherThanRefusing() {
+        String owner = freshTraveler();
+        String fresh = createItinerary(owner, "A fresh plan");
+        String travelling = createItinerary(owner, "Under way");
+        act(owner, travelling, "start");
+
+        list(owner, "draft").expectStatus().isOk();
+
+        assertThat(idsIn(owner, "draft"))
+                .as("ADR-008 waiver #3 — an old client's draft tab shows nothing, never an error screen")
+                .isEmpty();
+        assertThat(idsIn(owner, null))
+                .as("the accepted-and-empty branch filters this listing only, never the unfiltered one")
+                .contains(fresh, travelling);
+    }
+
+
+    @Test
+    void everyListingRowCarriesItsDayCount_whichTheDetailReadHasNeverNeededToSend() {
+        String owner = freshTraveler();
+        String fiveDays = createItineraryWithDays(owner, "Island Hopping", 5);
+        String dayless = createItinerary(owner, "Not planned out yet");
+
+        assertThat(dayCountOf(owner, fiveDays))
+                .as("the Trips card's sub-line renders this — the days array itself is detail-read only")
+                .isEqualTo(5);
+        assertThat(dayCountOf(owner, dayless))
+                .as("a trip with no days counts zero rather than going missing from the listing")
+                .isZero();
+
+        assertThat(daysArrayLengthOf(owner, fiveDays))
+                .as("the listing stays a summary — the count is additive, the array is not")
+                .isZero();
     }
 
 
@@ -51,10 +87,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
         String owner = freshTraveler();
         String trip = createItinerary(owner, "Island Hopping");
 
-        act(owner, trip, "finish-planning");
-
         assertThat(idsIn(owner, "upcoming")).contains(trip);
-        assertThat(idsIn(owner, "draft")).doesNotContain(trip);
 
         act(owner, trip, "start");
 
@@ -77,7 +110,6 @@ class TripCategoryFilterIT extends PostgresTestBase {
     void publishingDoesNotMoveATripBetweenCategories() {
         String owner = freshTraveler();
         String trip = createItinerary(owner, "Under way");
-        act(owner, trip, "finish-planning");
         act(owner, trip, "start");
         act(owner, trip, "complete");
         act(owner, trip, "publish");
@@ -85,7 +117,6 @@ class TripCategoryFilterIT extends PostgresTestBase {
         assertThat(idsIn(owner, "complete"))
                 .as("discovery is its own axis — publishing says nothing about where the trip is in its life")
                 .contains(trip);
-        assertThat(idsIn(owner, "draft")).doesNotContain(trip);
     }
 
 
@@ -94,7 +125,6 @@ class TripCategoryFilterIT extends PostgresTestBase {
         String owner = freshTraveler();
         String one = createItinerary(owner, "One");
         String two = createItinerary(owner, "Two");
-        act(owner, two, "finish-planning");
         act(owner, two, "start");
 
         assertThat(idsIn(owner, null)).contains(one, two);
@@ -151,9 +181,8 @@ class TripCategoryFilterIT extends PostgresTestBase {
         String owner = freshTraveler();
         List<String> travelled = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            createItinerary(owner, "Draft " + i);
+            createItinerary(owner, "Planned " + i);
             String trip = createItinerary(owner, "Travelled " + i);
-            act(owner, trip, "finish-planning");
             act(owner, trip, "start");
             act(owner, trip, "complete");
             travelled.add(trip);
@@ -227,13 +256,22 @@ class TripCategoryFilterIT extends PostgresTestBase {
     }
 
     private String createItinerary(String token, String title) {
+        return createItineraryWithDays(token, title, 0);
+    }
+
+    private String createItineraryWithDays(String token, String title, int durationDays) {
+        String body =
+                durationDays == 0
+                        ? "{\"title\":\"" + title + "\",\"destination\":\"Palawan\"}"
+                        : "{\"title\":\"" + title + "\",\"destination\":\"Palawan\",\"durationDays\":"
+                                + durationDays + "}";
         return JSON.readTree(
                         new String(
                                 rest.post()
                                         .uri("/v1/itineraries")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .body("{\"title\":\"" + title + "\",\"destination\":\"Palawan\"}")
+                                        .body(body)
                                         .exchange()
                                         .expectStatus()
                                         .isCreated()
@@ -242,6 +280,23 @@ class TripCategoryFilterIT extends PostgresTestBase {
                                         .getResponseBodyContent()))
                 .get("id")
                 .asString();
+    }
+
+    private int dayCountOf(String token, String itineraryId) {
+        return rowFor(token, itineraryId).get("dayCount").asInt();
+    }
+
+    private int daysArrayLengthOf(String token, String itineraryId) {
+        return rowFor(token, itineraryId).get("days").size();
+    }
+
+    private tools.jackson.databind.JsonNode rowFor(String token, String itineraryId) {
+        for (var item : JSON.readTree(bodyOf(list(token, null))).get("items")) {
+            if (itineraryId.equals(item.get("id").asString())) {
+                return item;
+            }
+        }
+        throw new AssertionError("The listing did not carry " + itineraryId);
     }
 
     private static String freshTraveler() {

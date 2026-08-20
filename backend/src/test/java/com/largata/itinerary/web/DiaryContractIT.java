@@ -108,7 +108,6 @@ class DiaryContractIT extends ObjectStoreTestBase {
     @Test
     void anUpcomingTripRefusesToo() throws IOException {
         Fixture upcoming = draftTrip();
-        advance(upcoming, "finish-planning");
 
         byte[] refusal = postExpecting(upcoming.owner(), upcoming, upcoming.activityId(), 400, List.of(), 1);
 
@@ -761,7 +760,6 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
     private Fixture startedTrip(String existingOwner) throws IOException {
         Fixture draft = draftTrip(existingOwner);
-        advance(draft, "finish-planning");
         advance(draft, "start");
         return draft;
     }

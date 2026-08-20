@@ -27,7 +27,6 @@ import {
   pollMetrics,
   pollMotion,
   pollTypography,
-  workspaceBadgeColors,
   workspaceCardShadow,
   workspaceColors,
   workspaceRadii,
@@ -242,19 +241,19 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   badgeOpen: {
-    backgroundColor: workspaceBadgeColors.draft.background,
+    backgroundColor: pollColors.openBadgeFill,
   },
   badgeOpenText: {
     ...pollTypography.tag,
-    color: workspaceBadgeColors.draft.foreground,
+    color: pollColors.openBadgeInk,
     textTransform: 'uppercase',
   },
   badgeClosed: {
-    backgroundColor: workspaceBadgeColors.completed.background,
+    backgroundColor: pollColors.closedBadgeFill,
   },
   badgeClosedText: {
     ...pollTypography.tag,
-    color: workspaceBadgeColors.completed.foreground,
+    color: pollColors.closedBadgeInk,
     textTransform: 'uppercase',
   },
   options: {

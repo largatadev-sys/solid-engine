@@ -170,7 +170,6 @@ class AudienceLadderIT extends PostgresTestBase {
         String consumer = freshTraveler();
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
-        act(owner, tripId, "finish-planning");
         act(owner, tripId, "start");
         act(owner, tripId, "complete");
         act(owner, tripId, "publish");

@@ -14,7 +14,10 @@ import {
   PUBLISH_NEEDS_COMPLETE_TITLE,
   publishNeedsCompleteBody,
 } from '../../../../../src/itineraries/publishControls';
-import { FinalizeSheet } from '../../../../../src/itineraries/FinalizeSheet';
+import {
+  TransitionDrawer,
+  type TransitionConfirmation,
+} from '../../../../../src/itineraries/TransitionDrawer';
 import { attributionLabel, attributionLinks } from '../../../../../src/itineraries/forkCopy';
 import { TripArchiveBanner } from '../../../../../src/itineraries/TripArchiveBanner';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
@@ -31,10 +34,9 @@ import { WorkspaceTravelersTab } from '../../../../../src/itineraries/WorkspaceT
 import { WorkspacePollsTab } from '../../../../../src/polls/WorkspacePollsTab';
 import {
   editItineraryAction,
+  forwardConfirmWording,
   ladderCta,
-  showsStepBack,
   stateBadge,
-  stepBackWording,
   workspaceAffordances,
 } from '../../../../../src/itineraries/workspaceControls';
 import {
@@ -72,7 +74,7 @@ export default function TripWorkspaceScreen() {
   const myEntries = useMyDiaryEntries(id, capturing);
   const [active, setActive] = useState<WorkspaceTab>(workspaceTabFrom(tab));
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [confirming, setConfirming] = useState<TransitionConfirmation | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [cogY, setCogY] = useState(0);
   const unpublish = useUnpublishTrip(id);
@@ -120,20 +122,10 @@ export default function TripWorkspaceScreen() {
     confirmWith(unpublishTripWording(), () => unpublish.mutate());
   };
 
-  const stepBack = () => {
-    const wording = stepBackWording(data);
-    if (wording === null) return;
-    confirmWith(wording, () => lifecycle.mutate('reopen'));
-  };
-
   const visibleSource = attributionLinks(data.forkedFrom) ? data.forkedFrom : null;
 
   const runLadder = () => {
     if (ladder === null) return;
-    if (ladder.act === 'finish-planning') {
-      setSheetOpen(true);
-      return;
-    }
     if (ladder.act === 'publish') {
       if (canPublish(data)) {
         router.push({ pathname: '/itineraries/[id]/preview', params: { id } });
@@ -142,7 +134,17 @@ export default function TripWorkspaceScreen() {
       }
       return;
     }
-    lifecycle.mutate(ladder.act);
+    const wording = forwardConfirmWording(ladder.act);
+    if (wording !== null) setConfirming({ wording, busy: false });
+  };
+
+  const confirmTransition = () => {
+    if (ladder === null || confirming === null || ladder.act === 'publish') return;
+    setConfirming({ ...confirming, busy: true });
+    lifecycle.mutate(ladder.act, {
+      onSuccess: () => setConfirming(null),
+      onError: () => setConfirming({ ...confirming, busy: false }),
+    });
   };
 
   return (
@@ -243,47 +245,28 @@ export default function TripWorkspaceScreen() {
 
       </ScrollView>
 
-      {ladder !== null || showsStepBack(data, isOwner) ? (
+      {ladder !== null ? (
         <View style={styles.rail}>
-          {ladder !== null ? (
-            <>
-              {ladder.blockedBy !== undefined ? (
-                <Text style={styles.blockedNote}>{`Being edited by ${ladder.blockedBy}`}</Text>
-              ) : null}
-              <Pressable
-                style={[styles.primaryCta, ladder.blockedBy !== undefined && styles.ctaBlocked]}
-                onPress={runLadder}
-                disabled={lifecycle.isPending || ladder.blockedBy !== undefined}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: ladder.blockedBy !== undefined }}
-                accessibilityLabel={ladder.label}
-              >
-                <Text style={styles.primaryCtaLabel}>{ladder.label}</Text>
-              </Pressable>
-            </>
+          {ladder.blockedBy !== undefined ? (
+            <Text style={styles.blockedNote}>{`Being edited by ${ladder.blockedBy}`}</Text>
           ) : null}
-
-          {showsStepBack(data, isOwner) ? (
-            <Pressable
-              style={styles.stepBack}
-              onPress={stepBack}
-              disabled={lifecycle.isPending}
-              accessibilityRole="button"
-              accessibilityLabel="Step back"
-            >
-              <Text style={styles.stepBackLabel}>Step back</Text>
-            </Pressable>
-          ) : null}
+          <Pressable
+            style={[styles.primaryCta, ladder.blockedBy !== undefined && styles.ctaBlocked]}
+            onPress={runLadder}
+            disabled={lifecycle.isPending || ladder.blockedBy !== undefined}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: ladder.blockedBy !== undefined }}
+            accessibilityLabel={ladder.label}
+          >
+            <Text style={styles.primaryCtaLabel}>{ladder.label}</Text>
+          </Pressable>
         </View>
       ) : null}
 
-      <FinalizeSheet
-        visible={sheetOpen}
-        busy={lifecycle.isPending}
-        onConfirm={() =>
-          lifecycle.mutate('finish-planning', { onSuccess: () => setSheetOpen(false) })
-        }
-        onDismiss={() => setSheetOpen(false)}
+      <TransitionDrawer
+        confirmation={confirming}
+        onConfirm={confirmTransition}
+        onDismiss={() => setConfirming(null)}
       />
     </View>
   );
@@ -336,14 +319,5 @@ const styles = StyleSheet.create({
     ...workspaceTypography.activityTime,
     color: workspaceColors.muted,
     textAlign: 'center',
-  },
-  stepBack: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  stepBackLabel: {
-    ...workspaceTypography.note,
-    color: workspaceColors.muted,
-    textDecorationLine: 'underline',
   },
 });

@@ -50,50 +50,10 @@ export function audienceBlurb(audience: PublishAudience): string {
 }
 
 
-const LIFECYCLE_LABELS: Record<ItineraryState, string> = {
-  draft: 'Draft — still being planned',
-  upcoming: 'Upcoming — planning is finished',
-  ongoing: 'Active — the trip is under way',
-  completed: 'Complete — the trip is done',
-};
-
-
-export function lifecycleLabel(state: ItineraryState): string {
-  return LIFECYCLE_LABELS[state];
-}
-
-
-const LIFECYCLE_BLURBS: Record<ItineraryState, string> = {
-  draft: 'Build the plan here. Finish planning when it is ready.',
-  upcoming: 'The plan is set. Start the trip when you set off — you can still edit it until then.',
-  ongoing: 'Mark it complete when you get back — a completed trip is the one you can publish.',
-  completed: 'This trip is ready to publish whenever you want to share it.',
-};
-
-
-export function lifecycleBlurb(state: ItineraryState): string {
-  return LIFECYCLE_BLURBS[state];
-}
-
-
-export type LifecycleAct = 'finish-planning' | 'start' | 'complete';
-
-export type LifecycleStep = { act: LifecycleAct; label: string };
-
-
-export function nextLifecycleAct(state: ItineraryState): LifecycleStep | null {
-  if (state === 'draft') return { act: 'finish-planning', label: 'Finish Itinerary' };
-  if (state === 'upcoming') return { act: 'start', label: 'Start trip' };
-  if (state === 'ongoing') return { act: 'complete', label: 'Mark complete' };
-  return null;
-}
-
-
 export const PUBLISH_NEEDS_COMPLETE_TITLE = 'This trip is not finished yet';
 
 
 const NOT_COMPLETE_WHERE: Record<Exclude<ItineraryState, 'completed'>, string> = {
-  draft: 'still a draft',
   upcoming: 'planned but not travelled yet',
   ongoing: 'under way',
 };

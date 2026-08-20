@@ -28,10 +28,9 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
     void theStateColumnHoldsTheEnumNameNotTheWireForm() {
         Membership owner = tripOwnedByFreshTraveler();
 
-        assertThat(storedState(owner.itineraryId())).isEqualTo("DRAFT");
-
-        itineraries.finishPlanning(owner);
-        assertThat(storedState(owner.itineraryId())).isEqualTo("UPCOMING");
+        assertThat(storedState(owner.itineraryId()))
+                .as("S4.26 — a trip is born upcoming, so the storage spelling is pinned from creation")
+                .isEqualTo("UPCOMING");
         assertThat(ItineraryState.UPCOMING.wireName()).isEqualTo("upcoming");
 
         itineraries.start(owner);
@@ -97,10 +96,10 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
 
         assertThatThrownBy(() -> itineraries.complete(owner))
                 .isInstanceOf(IllegalStateTransitionException.class)
-                .hasMessageContaining("draft")
+                .hasMessageContaining("upcoming")
                 .hasMessageContaining("completed");
 
-        assertThat(storedState(owner.itineraryId())).isEqualTo("DRAFT");
+        assertThat(storedState(owner.itineraryId())).isEqualTo("UPCOMING");
     }
 
 
@@ -111,7 +110,7 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
 
     private Membership tripOwnedByFreshTraveler() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(ownerId, "Draft trip", "Cebu", null, null);
+        Itinerary itinerary = itineraries.create(ownerId, "Planned trip", "Cebu", null, null);
         return new Membership(ownerId, itinerary.id(), Role.OWNER);
     }
 }

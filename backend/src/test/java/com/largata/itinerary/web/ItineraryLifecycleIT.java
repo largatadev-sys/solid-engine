@@ -41,14 +41,9 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
-        assertThat(stateOf(tripId)).isEqualTo("DRAFT");
-        assertThat(stampsOf(tripId)).containsEntry("started_at", null).containsEntry("completed_at", null);
-
-        finishPlanning(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.state").isEqualTo("upcoming");
-
-        assertThat(stateOf(tripId)).isEqualTo("UPCOMING");
+        assertThat(stateOf(tripId)).as("a trip is born upcoming — S4.26").isEqualTo("UPCOMING");
         assertThat(stampsOf(tripId))
-                .as("finishing planning is not a travel act — it stamps nothing")
+                .as("creation is not a travel act — it stamps nothing")
                 .containsEntry("started_at", null)
                 .containsEntry("completed_at", null);
 
@@ -74,7 +69,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String owner = freshTraveler();
         String tripId = createItineraryWithDays(owner, 3);
 
-        finishPlanning(owner, tripId).expectStatus().isOk();
         start(owner, tripId)
                 .expectStatus()
                 .isOk()
@@ -84,7 +78,7 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .jsonPath("$.days.length()")
                 .isEqualTo(3)
                 .jsonPath("$.title")
-                .isEqualTo("Draft trip");
+                .isEqualTo("Planned trip");
     }
 
 
@@ -93,15 +87,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
         String member = admitMemberTo(tripId);
-
-        finishPlanning(member, tripId)
-                .expectStatus()
-                .isForbidden()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("NOT_PERMITTED");
-
-        finishPlanning(owner, tripId).expectStatus().isOk();
 
         start(member, tripId)
                 .expectStatus()
@@ -142,13 +127,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
-        start(owner, tripId)
-                .expectStatus()
-                .isEqualTo(409)
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("ILLEGAL_STATE_TRANSITION");
-
         walkToOngoing(owner, tripId);
 
         start(owner, tripId)
@@ -180,32 +158,26 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .jsonPath("$.code")
                 .isEqualTo("ILLEGAL_STATE_TRANSITION");
 
-        assertThat(stateOf(tripId)).isEqualTo("DRAFT");
-        assertThat(stampsOf(tripId)).containsEntry("started_at", null).containsEntry("completed_at", null);
-
-        finishPlanning(owner, tripId).expectStatus().isOk();
-
-        complete(owner, tripId).expectStatus().isEqualTo(409);
-
         assertThat(stateOf(tripId))
                 .as("upcoming → completed skips the trip itself, so nothing moved")
                 .isEqualTo("UPCOMING");
+        assertThat(stampsOf(tripId)).containsEntry("started_at", null).containsEntry("completed_at", null);
     }
 
     @Test
     void repeatingAnActThatHasAlreadyHappenedIsRefused() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
-        finishPlanning(owner, tripId).expectStatus().isOk();
 
-        finishPlanning(owner, tripId)
+        start(owner, tripId).expectStatus().isOk();
+
+        start(owner, tripId)
                 .expectStatus()
                 .isEqualTo(409)
                 .expectBody()
                 .jsonPath("$.code")
                 .isEqualTo("ILLEGAL_STATE_TRANSITION");
 
-        start(owner, tripId).expectStatus().isOk();
         complete(owner, tripId).expectStatus().isOk();
 
         complete(owner, tripId)
@@ -255,7 +227,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         Map<String, Object> afterEdit = attributionOf(tripId);
         assertThat(afterEdit.get("last_edited_by")).isEqualTo(travelerIdOf(owner));
 
-        finishPlanning(owner, tripId).expectStatus().isOk();
         assertThat(attributionOf(tripId)).isEqualTo(afterEdit);
 
         start(owner, tripId).expectStatus().isOk();
@@ -293,8 +264,49 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         finishPlanning(stranger, tripId).expectStatus().isNotFound();
         start(stranger, tripId).expectStatus().isNotFound();
         complete(stranger, tripId).expectStatus().isNotFound();
-        assertThat(stateOf(tripId)).isEqualTo("DRAFT");
+        assertThat(stateOf(tripId)).isEqualTo("UPCOMING");
     }
+
+    @Test
+    void finishPlanningStaysMappedAndRefusesForeverInEveryState() {
+        String owner = freshTraveler();
+        String tripId = createItinerary(owner);
+
+        refusedAsRetired(finishPlanning(owner, tripId));
+        assertThat(stateOf(tripId)).as("the dormant endpoint moves nothing").isEqualTo("UPCOMING");
+
+        start(owner, tripId).expectStatus().isOk();
+        refusedAsRetired(finishPlanning(owner, tripId));
+
+        complete(owner, tripId).expectStatus().isOk();
+        refusedAsRetired(finishPlanning(owner, tripId));
+        assertThat(stateOf(tripId)).isEqualTo("COMPLETED");
+    }
+
+
+    @Test
+    void reopenWalksBackDownTheLadderAndRefusesAtUpcoming_theFloor() {
+        String owner = freshTraveler();
+        String tripId = createItinerary(owner);
+        walkToCompleted(owner, tripId);
+
+        reopen(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.state").isEqualTo("ongoing");
+        assertThat(stampsOf(tripId).get("completed_at")).isNull();
+
+        reopen(owner, tripId).expectStatus().isOk().expectBody().jsonPath("$.state").isEqualTo("upcoming");
+        assertThat(stampsOf(tripId).get("started_at")).isNull();
+
+        reopen(owner, tripId)
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ILLEGAL_STATE_TRANSITION");
+        assertThat(stateOf(tripId))
+                .as("upcoming is the floor — draft is gone, so there is no rung below it")
+                .isEqualTo("UPCOMING");
+    }
+
 
     @Test
     void aVisitorIsRejectedBeforeAnythingElse() {
@@ -306,7 +318,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
 
 
     private void walkToOngoing(String token, String itineraryId) {
-        finishPlanning(token, itineraryId).expectStatus().isOk();
         start(token, itineraryId).expectStatus().isOk();
     }
 
@@ -334,6 +345,26 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                 .uri("/v1/itineraries/" + itineraryId + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
+    }
+
+    private RestTestClient.ResponseSpec reopen(String token, String itineraryId) {
+        return rest.post()
+                .uri("/v1/itineraries/" + itineraryId + "/reopen")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange();
+    }
+
+    private static void refusedAsRetired(RestTestClient.ResponseSpec response) {
+        response.expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ILLEGAL_STATE_TRANSITION")
+                .jsonPath("$.message")
+                .value((String message) ->
+                        assertThat(message)
+                                .as("the refusal names the retirement, not a state it could not reach")
+                                .contains("upcoming from the moment it is created"));
     }
 
 
@@ -391,10 +422,10 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String body =
                 durationDays == 0
                         ? """
-                        {"title":"Draft trip","destination":"Cebu"}
+                        {"title":"Planned trip","destination":"Cebu"}
                         """
                         : """
-                        {"title":"Draft trip","destination":"Cebu","durationDays":%d}
+                        {"title":"Planned trip","destination":"Cebu","durationDays":%d}
                         """
                                 .formatted(durationDays);
         byte[] created =

@@ -316,7 +316,6 @@ class DiscoveryIT extends PostgresTestBase {
 
     private void travel(String token, String itineraryId) {
         if (travelled.add(itineraryId)) {
-            act(token, itineraryId, "finish-planning");
             act(token, itineraryId, "start");
             act(token, itineraryId, "complete");
         }

@@ -252,7 +252,6 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
     private String publishedTrip(String token) {
         String tripId = createTrip(token);
-        act(token, tripId, "finish-planning").expectStatus().isOk();
         act(token, tripId, "start").expectStatus().isOk();
         act(token, tripId, "complete").expectStatus().isOk();
         act(token, tripId, "publish").expectStatus().isOk();

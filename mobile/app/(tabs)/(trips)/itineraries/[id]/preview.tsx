@@ -12,7 +12,6 @@ import {
   useItinerary,
   useItineraryPreview,
   usePublishTrip,
-  useTripLifecycle,
 } from '../../../../../src/query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../../../../../src/theme';
 
@@ -23,10 +22,8 @@ export default function ItineraryPreviewScreen() {
   const { data, isPending, isError, error } = useItineraryPreview(id);
   const trip = useItinerary(id);
   const publish = usePublishTrip(id);
-  const finishPlanning = useTripLifecycle(id);
   const [audience, setAudience] = useState<PublishAudience>('public');
   const state = trip.data?.state;
-  const stillPlanning = state === 'draft';
   const readyToPublish = state === 'completed' && trip.data?.published === false;
 
   const continueEditing = () =>
@@ -59,32 +56,7 @@ export default function ItineraryPreviewScreen() {
         <PublishedItineraryView projection={data} audience="preview" />
       </ScrollView>
 
-      {stillPlanning ? (
-        <View style={styles.footer}>
-          {finishPlanning.isError && <Text style={styles.error}>{finishPlanning.error.message}</Text>}
-          <Pressable
-            style={[styles.primary, finishPlanning.isPending && styles.busy]}
-            disabled={finishPlanning.isPending}
-            accessibilityRole="button"
-            onPress={() =>
-              finishPlanning.mutate('finish-planning', { onSuccess: () => router.replace(TRIPS_TAB_ROUTE) })
-            }
-          >
-            {finishPlanning.isPending ? (
-              <ActivityIndicator color={colors.textOnAccent} />
-            ) : (
-              <Text style={styles.primaryText}>Finish Itinerary</Text>
-            )}
-          </Pressable>
-          <Pressable
-            style={styles.secondary}
-            accessibilityRole="button"
-            onPress={continueEditing}
-          >
-            <Text style={styles.secondaryText}>Continue Editing</Text>
-          </Pressable>
-        </View>
-      ) : readyToPublish ? (
+      {readyToPublish ? (
       <View style={styles.footer}>
         <View style={styles.audienceRow}>
           {AUDIENCES.map((option) => (

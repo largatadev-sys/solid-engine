@@ -46,7 +46,6 @@ describe('comingSoonMessage — the wording both forks share', () => {
         'saved',
         'search',
         'share',
-        'tripFilter',
         'tripSearch',
       ].sort(),
     );

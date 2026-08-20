@@ -135,10 +135,6 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
                 {"title":"Osaka 2027","destination":"Osaka"}
                 """);
 
-        transition(owner, tripId, "finish-planning");
-
-        assertThat(eventsNamed("itinerary_planning_finished")).singleElement();
-
         transition(owner, tripId, "start");
 
         assertThat(eventsNamed("itinerary_started"))

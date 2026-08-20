@@ -250,9 +250,6 @@ class PlanSaveIT extends PostgresTestBase {
     }
 
     private void publish(String token, String tripId) {
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/finish-planning", token, null)
-                .expectStatus()
-                .isOk();
         rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/start", token, null).expectStatus().isOk();
         rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/complete", token, null).expectStatus().isOk();
         rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/publish", token, "{\"visibility\":\"public\"}")

@@ -20,6 +20,8 @@ import com.largata.itinerary.ForkService;
 import com.largata.itinerary.ItineraryCoverService;
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -127,11 +129,8 @@ class ItineraryController {
 
 
     @PostMapping("/{id}/finish-planning")
-    ItineraryResponse finishPlanning(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        Membership membership = guard.requireMember(traveler.id(), id);
-        itineraries.finishPlanning(membership);
-        var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan);
+    void finishPlanningIsRetired(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+        itineraries.refuseFinishPlanning(guard.requireMember(traveler.id(), id));
     }
 
 
@@ -209,11 +208,15 @@ class ItineraryController {
         Page<Itinerary> page =
                 itineraries.listMine(
                         traveler.id(), cursor, limit, archived, TripCategory.parse(category).orElse(null));
-        Set<UUID> beingEdited =
-                itineraries.beingEditedAmong(page.items().stream().map(Itinerary::id).toList());
+        List<UUID> ids = page.items().stream().map(Itinerary::id).toList();
+        Set<UUID> beingEdited = itineraries.beingEditedAmong(ids);
+        Map<UUID, Long> dayCounts = itineraries.dayCountsAmong(ids);
         return page.map(itinerary ->
                 ItineraryResponse.summaryOf(
-                        itinerary, itineraries.stateOf(itinerary.id()), beingEdited.contains(itinerary.id())));
+                        itinerary,
+                        itineraries.stateOf(itinerary.id()),
+                        beingEdited.contains(itinerary.id()),
+                        dayCounts.getOrDefault(itinerary.id(), 0L).intValue()));
     }
 
 

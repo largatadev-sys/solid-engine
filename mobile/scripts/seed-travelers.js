@@ -227,9 +227,6 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
       }
     }
 
-    if (lifecycleOf(trip) !== 'draft') {
-      must(await api(`/v1/itineraries/${created.id}/finish-planning`, 'POST', token), 'finish-planning');
-    }
     if (lifecycleOf(trip) === 'ongoing' || lifecycleOf(trip) === 'completed') {
       must(await api(`/v1/itineraries/${created.id}/start`, 'POST', token), 'start');
     }

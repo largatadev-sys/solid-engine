@@ -38,11 +38,12 @@ public record ItineraryResponse(
         boolean beingEdited,
         LeaseHolderResponse editingSession,
         long planVersion,
-        ForkedFromResponse forkedFrom) {
+        ForkedFromResponse forkedFrom,
+        int dayCount) {
 
 
     public static ItineraryResponse summaryOf(
-            Itinerary itinerary, WorkspaceState workspaceState, boolean beingEdited) {
+            Itinerary itinerary, WorkspaceState workspaceState, boolean beingEdited, int dayCount) {
         return new ItineraryResponse(
                 itinerary.id(),
                 itinerary.title(),
@@ -69,7 +70,8 @@ public record ItineraryResponse(
                 beingEdited,
                 null,
                 itinerary.planVersion(),
-                null);
+                null,
+                dayCount);
     }
 
 
@@ -107,6 +109,7 @@ public record ItineraryResponse(
                 plan.hasLiveLease(),
                 LeaseHolderResponse.of(plan.holderOf(LeaseSubject.session(itinerary.id()))),
                 itinerary.planVersion(),
-                ForkedFromResponse.of(provenance));
+                ForkedFromResponse.of(provenance),
+                plan.days().size());
     }
 }

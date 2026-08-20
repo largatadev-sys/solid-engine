@@ -161,12 +161,13 @@ export async function climbTo(
   trip: SeededTrip,
   state: 'upcoming' | 'ongoing' | 'completed',
 ): Promise<void> {
+  if (state === 'upcoming') return;
+
   const ladder: Record<string, string> = {
-    upcoming: '/finish-planning',
     ongoing: '/start',
     completed: '/complete',
   };
-  const rungs: Array<'upcoming' | 'ongoing' | 'completed'> = ['upcoming', 'ongoing', 'completed'];
+  const rungs: Array<'ongoing' | 'completed'> = ['ongoing', 'completed'];
   for (const rung of rungs) {
     const moved = await api(`/v1/itineraries/${trip.id}${ladder[rung]}`, 'POST', trip.ownerToken, {});
     if (moved.status !== 200) throw new SeedFailure(`the climb to ${rung}`, moved.body);

@@ -75,7 +75,7 @@ test.beforeAll(async () => {
 
 test('a never-started trip is created (lifecycle draft)', () => {
   expect(created.status).toBe(201);
-  expect(created.body.state).toBe('draft');
+  expect(created.body.state).toBe('upcoming');
   expect(created.body.published).toBe(false);
   expect(created.body.visibility).toBe('public');
 });
@@ -134,7 +134,6 @@ test('publishing a draft is refused, naming the precondition', async () => {
 });
 
 test('publishing an upcoming trip is refused — planning finished is not the trip happening', async () => {
-  await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', owner);
   const plannedTooEarly = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
   expect(plannedTooEarly.status).toBe(409);
   expect(plannedTooEarly.body.code).toBe('ITINERARY_NOT_COMPLETE');
@@ -385,7 +384,6 @@ test('an empty itinerary publishes and projects cleanly', async () => {
     title: stamp('Someday, Japan'),
     destination: 'Japan',
   });
-  await api(`/v1/itineraries/${empty.body.id}/finish-planning`, 'POST', owner);
   await api(`/v1/itineraries/${empty.body.id}/start`, 'POST', owner);
   await api(`/v1/itineraries/${empty.body.id}/complete`, 'POST', owner);
   const emptyPublish = await api(`/v1/itineraries/${empty.body.id}/publish`, 'POST', owner);

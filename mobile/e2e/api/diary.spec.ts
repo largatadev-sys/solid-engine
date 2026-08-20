@@ -82,7 +82,6 @@ test('a draft trip refuses the whole act with the named code', async () => {
 });
 
 test('an upcoming trip refuses too — a diary of a trip that has not happened is fiction', async () => {
-  await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', author);
   const upcomingPost = await postDiary(author, { activityId, caption: null, fromDump: [] }, 1);
   expect(upcomingPost.status).toBe(400);
   expect(upcomingPost.body?.code).toBe('TRIP_NOT_STARTED');

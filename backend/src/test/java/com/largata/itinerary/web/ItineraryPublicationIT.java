@@ -79,7 +79,6 @@ class ItineraryPublicationIT extends PostgresTestBase {
                 .isEqualTo("ITINERARY_NOT_COMPLETE");
         assertThat(publishedFlagOf(tripId)).isFalse();
 
-        post(owner, tripId, "finish-planning").expectStatus().isOk();
         publish(owner, tripId)
                 .expectStatus()
                 .isEqualTo(409)
@@ -184,10 +183,9 @@ class ItineraryPublicationIT extends PostgresTestBase {
         assertThat(stateOf(tripId)).isEqualTo("ONGOING");
 
         post(owner, tripId, "reopen").expectStatus().isOk();
-        assertThat(stateOf(tripId)).isEqualTo("UPCOMING");
-
-        post(owner, tripId, "reopen").expectStatus().isOk();
-        assertThat(stateOf(tripId)).as("the last rung down reopens planning itself").isEqualTo("DRAFT");
+        assertThat(stateOf(tripId))
+                .as("upcoming is the floor — S4.26 retired the rung below it")
+                .isEqualTo("UPCOMING");
 
         post(owner, tripId, "reopen")
                 .expectStatus()
@@ -205,7 +203,6 @@ class ItineraryPublicationIT extends PostgresTestBase {
 
         addDay(owner, tripId).expectStatus().isCreated();
 
-        post(owner, tripId, "finish-planning").expectStatus().isOk();
         post(owner, tripId, "start").expectStatus().isOk();
         post(owner, tripId, "complete").expectStatus().isOk();
         publish(owner, tripId).expectStatus().isOk();
@@ -430,7 +427,6 @@ class ItineraryPublicationIT extends PostgresTestBase {
 
     private String completedTrip(String token) {
         String itineraryId = createItinerary(token);
-        post(token, itineraryId, "finish-planning").expectStatus().isOk();
         post(token, itineraryId, "start").expectStatus().isOk();
         post(token, itineraryId, "complete").expectStatus().isOk();
         return itineraryId;

@@ -71,7 +71,6 @@ test('a booking price with no currency is refused', async () => {
 });
 
 test('the upcoming section filter finds a finished trip', async () => {
-  await api(`/v1/itineraries/${trip}/finish-planning`, 'POST', token);
   const listed = await api('/v1/itineraries?category=upcoming', 'GET', token);
   expect(listed.body.items.map((row: { id: string }) => row.id)).toContain(trip);
 });

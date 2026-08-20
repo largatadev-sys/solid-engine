@@ -45,14 +45,13 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
 
     static Stream<Arguments> everyLifecycleAct() {
         return Stream.of(
-                Arguments.of("finish-planning", (LifecycleAct) ItineraryService::finishPlanning, 0),
-                Arguments.of("start", (LifecycleAct) ItineraryService::start, 1),
-                Arguments.of("complete", (LifecycleAct) ItineraryService::complete, 2),
+                Arguments.of("start", (LifecycleAct) ItineraryService::start, 0),
+                Arguments.of("complete", (LifecycleAct) ItineraryService::complete, 1),
                 Arguments.of("reopen", (LifecycleAct) ItineraryService::reopen, 1),
                 Arguments.of(
                         "publish",
                         (LifecycleAct) (service, owner) -> service.publish(owner, Visibility.PRIVATE),
-                        3));
+                        2));
     }
 
 
@@ -96,16 +95,16 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
 
 
     @Test
-    void anUnheldTripFinalizesExactlyAsBefore() {
+    void anUnheldTripStartsExactlyAsBefore() {
         Membership owner = ownerAtRung(0);
 
-        assertThatCode(() -> itineraries.finishPlanning(owner)).doesNotThrowAnyException();
+        assertThatCode(() -> itineraries.start(owner)).doesNotThrowAnyException();
     }
 
 
     @Test
     void theSessionGuardDoesNotSwallowThePublishedRefusal() {
-        Membership owner = ownerAtRung(3);
+        Membership owner = ownerAtRung(2);
         itineraries.publish(owner, Visibility.PRIVATE);
 
         assertThatExceptionOfType(IllegalStateTransitionException.class)
@@ -118,9 +117,8 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
         Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null, null, 1);
         Membership owner = new Membership(ownerId, trip.id(), Role.OWNER);
 
-        if (rungs >= 1) itineraries.finishPlanning(owner);
-        if (rungs >= 2) itineraries.start(owner);
-        if (rungs >= 3) itineraries.complete(owner);
+        if (rungs >= 1) itineraries.start(owner);
+        if (rungs >= 2) itineraries.complete(owner);
         return owner;
     }
 

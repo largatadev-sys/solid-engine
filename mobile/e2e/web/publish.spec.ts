@@ -8,7 +8,7 @@ import { labelled } from '../support/screen';
 import { audienceBlurb, audienceLabel } from '../../src/itineraries/publishControls';
 import { comingSoonMessage } from '../../src/components/comingSoonMessage';
 import { copyLinkFeedback } from '../../src/itineraries/shareLinkContract';
-import { sectionLabel } from '../../src/itineraries/tripSections';
+import { tabLabel } from '../../src/itineraries/tripTabs';
 import { publicationBadge } from '../../src/itineraries/tripCardAnatomy';
 
 const OWNER = ownerTagFor('web/publish');
@@ -221,9 +221,9 @@ test.describe('the publish act — dark since the walk was retired', () => {
     page,
   }) => {
     await page.goto('/trips');
+    await page.getByRole('tab', { name: tabLabel('completed') }).click();
     await expect(labelled(page, trip.title)).toBeVisible();
 
-    await expect(page.getByText(sectionLabel('completed'), { exact: true })).toBeVisible();
     const badge = publicationBadge({ published: true, visibility: 'public' })!;
     await expect(labelled(page, trip.title).getByText(badge, { exact: true })).toBeVisible();
   });

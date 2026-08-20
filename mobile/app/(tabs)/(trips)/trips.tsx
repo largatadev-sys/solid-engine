@@ -1,44 +1,63 @@
 import { Link } from 'expo-router';
-import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { comingSoon } from '../../../src/components/comingSoon';
 import { Icon } from '../../../src/components/Icon';
 import { InvitationInbox } from '../../../src/components/InvitationInbox';
+import { AnimatedPressable, usePressFeedback } from '../../../src/components/usePressFeedback';
+import { useReducedMotion } from '../../../src/components/useReducedMotion';
 import { TripRow } from '../../../src/itineraries/TripRow';
-import { groupIntoSections } from '../../../src/itineraries/tripSections';
+import { TripTabRow } from '../../../src/itineraries/TripTabRow';
+import { pickTab, usePickedTab } from '../../../src/itineraries/tripTabStore';
+import {
+  landingTab,
+  showsArchivedLink,
+  showsCreateBar,
+  tabEmptyCopy,
+  tripsInTab,
+  type TripTab,
+} from '../../../src/itineraries/tripTabs';
 import { useMyItineraries } from '../../../src/query/itineraryQueries';
+import type { ItineraryResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
+import { tripTabColors, tripTabMetrics, tripTabMotion, tripTabTypography } from '../../../src/theme/workspaceTokens';
 
 
 export default function MyTripsScreen() {
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMyItineraries();
 
+  const picked = usePickedTab();
+  const offsets = useRef<Partial<Record<TripTab, number>>>({});
+
   const itineraries = data?.pages.flatMap((page) => page.items) ?? [];
-  const sections = groupIntoSections(itineraries);
+  const active = landingTab(itineraries, picked);
+  const rows = tripsInTab(itineraries, active);
+
+  const listFor = (tab: TripTab) => (list: FlatList<ItineraryResponse> | null) => {
+    const offset = offsets.current[tab];
+    if (list !== null && offset !== undefined && offset > 0) {
+      list.scrollToOffset({ offset, animated: false });
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Trips</Text>
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => comingSoon('tripSearch')}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-            accessibilityLabel="Search trips, coming soon"
-            hitSlop={8}>
-            <Icon name="search" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
-          </Pressable>
-          <Pressable
-            onPress={() => comingSoon('tripFilter')}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-            accessibilityLabel="Filter trips, coming soon"
-            hitSlop={8}>
-            <Icon name="filter" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
-          </Pressable>
-        </View>
+        <SearchIcon />
       </View>
+
+      <TripTabRow selected={active} onSelect={pickTab} />
 
       {isPending && <ActivityIndicator size="large" color={colors.accent} style={styles.centered} />}
 
@@ -53,56 +72,149 @@ export default function MyTripsScreen() {
       )}
 
       {!isPending && !isError && (
-        <SectionList
-          sections={sections}
-          keyExtractor={(itinerary) => itinerary.id}
-          contentContainerStyle={sections.length === 0 ? styles.emptyContainer : styles.listContainer}
-          renderItem={({ item }) => <TripRow itinerary={item} />}
-          renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{section.label}</Text>}
-          stickySectionHeadersEnabled={false}
-          onRefresh={() => void refetch()}
-          refreshing={isRefetching}
-          onEndReached={() => {
-            if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-          }}
-          onEndReachedThreshold={0.5}
-          ListHeaderComponent={<InvitationInbox />}
-          ListEmptyComponent={<EmptyState />}
-          ListFooterComponent={
-            isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={styles.footer} /> : null
-          }
-        />
+        <FadeRise key={active} style={styles.listWrap}>
+          <FlatList
+            ref={listFor(active)}
+            data={rows}
+            keyExtractor={(itinerary) => itinerary.id}
+            contentContainerStyle={rows.length === 0 ? styles.emptyContainer : styles.listContainer}
+            renderItem={({ item }) => <TripRow itinerary={item} />}
+            onScroll={(event) => {
+              offsets.current[active] = event.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={SCROLL_THROTTLE_MS}
+            onRefresh={() => void refetch()}
+            refreshing={isRefetching}
+            onEndReached={() => {
+              if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+            }}
+            onEndReachedThreshold={0.5}
+            ListHeaderComponent={<InvitationInbox />}
+            ListEmptyComponent={<TabEmptyState tab={active} />}
+            ListFooterComponent={
+              <View>
+                {isFetchingNextPage ? (
+                  <ActivityIndicator color={colors.accent} style={styles.footer} />
+                ) : null}
+                {rows.length > 0 && showsArchivedLink(active) ? <ArchivedLink /> : null}
+              </View>
+            }
+          />
+        </FadeRise>
       )}
 
-      <View style={styles.ctas}>
-        <Link href="/itineraries/new" asChild>
-          <Pressable style={styles.primaryCta} accessibilityRole="button">
-            <Text style={styles.primaryCtaText}>Plan a Trip</Text>
-            <Icon name="plusCircle" size={CTA_ICON_SIZE} color={colors.textOnAccent} />
-          </Pressable>
-        </Link>
-      </View>
+      {showsCreateBar(active) && (
+        <View style={styles.ctas}>
+          <PlanATripBar />
+        </View>
+      )}
     </View>
   );
 }
 
 
-function EmptyState() {
+function TabEmptyState({ tab }: { tab: TripTab }) {
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyTitle}>No trips yet</Text>
-      <Text style={styles.caption}>
-        Every trip starts as a draft. Build the plan, finish planning, then travel it.
-      </Text>
+      <Text style={styles.emptyCopy}>{tabEmptyCopy(tab)}</Text>
+      {showsArchivedLink(tab) && <ArchivedLink />}
     </View>
   );
 }
+
+
+function SearchIcon() {
+  const { opacity, onPressIn, onPressOut } = usePressFeedback();
+
+  return (
+    <AnimatedPressable
+      style={{ opacity }}
+      onPress={() => comingSoon('tripSearch')}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: true }}
+      accessibilityLabel="Search trips, coming soon"
+      hitSlop={8}>
+      <Icon name="search" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
+    </AnimatedPressable>
+  );
+}
+
+
+function PlanATripBar() {
+  const { opacity, onPressIn, onPressOut } = usePressFeedback();
+
+  return (
+    <Link href="/itineraries/new" asChild>
+      <AnimatedPressable
+        style={StyleSheet.flatten([styles.primaryCta, { opacity }])}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        accessibilityRole="button"
+        accessibilityLabel={CREATE_LABEL}>
+        <Text style={styles.primaryCtaText}>{CREATE_LABEL}</Text>
+        <Icon name="plusCircle" size={CTA_ICON_SIZE} color={colors.textOnAccent} />
+      </AnimatedPressable>
+    </Link>
+  );
+}
+
+
+function ArchivedLink() {
+  const { opacity, onPressIn, onPressOut } = usePressFeedback();
+
+  return (
+    <View style={styles.archivedRow}>
+      <Link href="/itineraries/archived" asChild>
+        <AnimatedPressable
+          style={{ opacity }}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          accessibilityRole="link"
+          accessibilityLabel={ARCHIVED_LINK_LABEL}>
+          <Text style={styles.archivedLink}>{ARCHIVED_LINK_LABEL}</Text>
+        </AnimatedPressable>
+      </Link>
+    </View>
+  );
+}
+
+
+function FadeRise({ children, style }: { children: React.ReactNode; style?: object }) {
+  const entrance = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: reducedMotion ? 0 : tripTabMotion.listRiseMs,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [entrance, reducedMotion]);
+
+  const translateY = entrance.interpolate({
+    inputRange: [0, 1],
+    outputRange: [tripTabMotion.listRisePx, 0],
+  });
+
+  return (
+    <Animated.View style={[style, { opacity: entrance, transform: [{ translateY }] }]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+const CREATE_LABEL = 'Plan a Trip';
+
+const ARCHIVED_LINK_LABEL = 'Archived trips';
+
+const SCROLL_THROTTLE_MS = 100;
 
 const HEADER_ICON_SIZE = 20;
 
-const CTA_ICON_SIZE = 18;
-
-const CTA_HEIGHT = 52;
+const CTA_ICON_SIZE = 16;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -115,30 +227,30 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   headerTitle: { ...typography.title, color: colors.textPrimary },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm3 },
-  sectionTitle: {
-    ...typography.sectionLabel,
-    color: colors.textSecondary,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm3,
-  },
+  listWrap: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
   listContainer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
   emptyContainer: { flexGrow: 1 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
-  emptyTitle: { ...typography.heading, color: colors.textPrimary },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm3, padding: spacing.lg },
+  emptyCopy: { ...tripTabTypography.empty, color: colors.textSecondary, textAlign: 'center' },
   errorTitle: { ...typography.heading, color: colors.danger },
   caption: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   footer: { paddingVertical: spacing.md },
+  archivedRow: { alignItems: 'center', paddingTop: spacing.md, paddingBottom: spacing.xs },
+  archivedLink: {
+    ...tripTabTypography.archivedLink,
+    color: tripTabColors.archivedLink,
+    textDecorationLine: 'underline',
+  },
   ctas: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
     backgroundColor: colors.background,
   },
   primaryCta: {
     flexDirection: 'row',
-    height: CTA_HEIGHT,
+    height: tripTabMetrics.planCtaHeight,
     borderRadius: radii.control,
     backgroundColor: colors.accent,
     alignItems: 'center',

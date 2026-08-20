@@ -578,7 +578,7 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
 
 
     private void publish(Fixture trip) {
-        for (String step : List.of("finish-planning", "start", "complete", "publish")) {
+        for (String step : List.of("start", "complete", "publish")) {
             rest.post()
                     .uri("/v1/itineraries/" + trip.tripId() + "/" + step)
                     .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))

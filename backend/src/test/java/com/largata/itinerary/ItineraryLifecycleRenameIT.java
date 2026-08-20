@@ -89,14 +89,13 @@ class ItineraryLifecycleRenameIT {
 
 
     @Test
-    void everyRowReadsAValueTheEnumCanStillParse() {
+    void everyRowReadsAValueThisMigrationLeavesLegal() {
         List<String> states = jdbc.queryForList("SELECT state FROM itinerary", String.class);
 
         assertThat(states).isNotEmpty().doesNotContainNull();
         assertThat(states)
-                .allSatisfy(state -> assertThat(ItineraryState.parse(state.toLowerCase(java.util.Locale.ROOT)))
-                        .as("a value the enum cannot parse fails at READ time, far from the migration")
-                        .isPresent());
+                .as("the ladder V21 leaves behind — DRAFT is legal here and dies later, at V36")
+                .isSubsetOf("DRAFT", "UPCOMING", "ONGOING", "COMPLETED");
         assertThat(states)
                 .as("@Enumerated(STRING) writes the NAME — a lower-case spelling here is the V3 trap")
                 .allSatisfy(state -> assertThat(state).isUpperCase());

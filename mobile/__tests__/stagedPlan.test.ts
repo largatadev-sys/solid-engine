@@ -224,7 +224,7 @@ function serverPlan(): ItineraryResponse {
     coverImageUrl: null,
     startDate: null,
     endDate: null,
-    state: 'draft',
+    state: 'upcoming',
     published: false,
     visibility: 'public',
     archived: false,

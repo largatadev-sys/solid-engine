@@ -35,20 +35,20 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
 
 
     @Test
-    void aReadyTripEditsInPlace_finishingPlanningSealsNothing() {
-        editsLandAndTheStateHoldsAt("upcoming", "finish-planning");
+    void anUpcomingTripEditsInPlace_planningIsNotAStateToLeave() {
+        editsLandAndTheStateHoldsAt("upcoming");
     }
 
 
     @Test
     void aTripBeingLivedEditsInPlace_theMidTripCorrectionCostsNoState() {
-        editsLandAndTheStateHoldsAt("ongoing", "finish-planning", "start");
+        editsLandAndTheStateHoldsAt("ongoing", "start");
     }
 
 
     @Test
     void anUnpublishedCompletedTripEditsInPlace_completionMeansItHappenedNotItIsLocked() {
-        editsLandAndTheStateHoldsAt("completed", "finish-planning", "start", "complete");
+        editsLandAndTheStateHoldsAt("completed", "start", "complete");
     }
 
 
@@ -57,7 +57,7 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
         String owner = rig.travelerWithHandle("owner" + suffix());
         String tripId = rig.createTrip(owner, 1);
         String member = rig.joinAsMember(owner, tripId, "member" + suffix());
-        walk(owner, tripId, "finish-planning", "start");
+        walk(owner, tripId, "start");
 
         UUID dayOne = rig.dayAt(tripId, 1);
         long base = rig.planVersionOf(member, tripId);
@@ -74,13 +74,13 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
     @Test
     void publishingIsWhatFreezesThePlan_notAnyLifecycleRung() {
         bothSessionAndSaveRefuseWith(
-                "publish", "ITINERARY_PUBLISHED", "finish-planning", "start", "complete");
+                "publish", "ITINERARY_PUBLISHED", "start", "complete");
     }
 
 
     @Test
     void archivingFreezesEveryRungToo_includingTheOnesEditingInPlaceOpened() {
-        bothSessionAndSaveRefuseWith("archive", "TRIP_ARCHIVED", "finish-planning", "start");
+        bothSessionAndSaveRefuseWith("archive", "TRIP_ARCHIVED", "start");
     }
 
 

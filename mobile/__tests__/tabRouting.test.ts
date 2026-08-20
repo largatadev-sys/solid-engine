@@ -314,17 +314,21 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(trips).not.toMatch(/addPastTrip/);
   });
 
-  it('closes the archived-trips door while the archive itself stays reachable (S4.15 decision 6)', () => {
-    expect(read(TRIPS_GROUP, 'trips.tsx')).not.toMatch(/Archived trips|itineraries\/archived/);
+  it('opens the archived-trips door from the Completed tab alone (S4.26, canvas C6)', () => {
+    const trips = read(TRIPS_GROUP, 'trips.tsx');
+
+    expect(trips).toMatch(/Archived trips/);
+    expect(trips).toMatch(/itineraries\/archived/);
+    expect(trips).toContain('showsArchivedLink(');
     expect(existsSync(join(TRIPS, 'archived.tsx'))).toBe(true);
   });
 
-  it('greys the header search and filter rather than navigating nowhere (S4.15 decision 6)', () => {
+  it('keeps search greyed and drops the filter icon the canvas does not draw (S4.26)', () => {
     const trips = read(TRIPS_GROUP, 'trips.tsx');
 
     expect(trips).toContain("comingSoon('tripSearch')");
-    expect(trips).toContain("comingSoon('tripFilter')");
-    expect(trips).toContain('name="filter"');
+    expect(trips).not.toContain("comingSoon('tripFilter')");
+    expect(trips).not.toContain('name="filter"');
   });
 
   it('TELLS THE CACHE the cover landed — the upload bypasses the mutation hook, so nothing else will', () => {
@@ -439,12 +443,12 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(viewer).toContain('canPublish(data)');
   });
 
-  it('ends the creation walk on Finish Itinerary, on the preview, and only while draft', () => {
+  it('ends the creation walk with no terminal declaration at all — S4.26 retired the act', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 
-    expect(preview).toContain('Finish Itinerary');
-    expect(preview).toContain("finishPlanning.mutate('finish-planning'");
-    expect(preview).toContain("state === 'draft'");
+    expect(preview).not.toMatch(/Finish Itinerary/);
+    expect(preview).not.toMatch(/finish-planning/);
+    expect(preview).not.toMatch(/'draft'/);
     expect(preview).not.toMatch(/Complete Itinerary/);
   });
 
@@ -699,7 +703,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
   });
 
   it('opens EVERY own unpublished trip in the Trip Workspace, whatever its state (S4.17 decision 1)', () => {
-    for (const state of ['draft', 'upcoming', 'ongoing', 'completed'] as const) {
+    for (const state of ['upcoming', 'ongoing', 'completed'] as const) {
       expect(
         tripRowDestination({ id: 'trip-1', archived: false, published: false, state }).pathname,
       ).toBe('/itineraries/[id]');
@@ -719,7 +723,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
         .pathname,
     ).toBe('/itineraries/[id]');
     expect(
-      tripRowDestination({ id: 'trip-1', archived: true, published: false, state: 'draft' }).pathname,
+      tripRowDestination({ id: 'trip-1', archived: true, published: false, state: 'upcoming' }).pathname,
     ).toBe('/itineraries/[id]');
   });
 
@@ -1026,12 +1030,21 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).toContain('editItineraryAction(data, canEditPlan(data), myId)');
   });
 
-  it('never reopens on the way into the editor — editing costs no state (S4.24, ADR-026)', () => {
+  it('never reopens from any surface — Step back retired and no CTA replaced it (S4.26 decision 10)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
     expect(workspace).not.toContain('reopen-then-edit');
-    expect(workspace.match(/'reopen'/g) ?? []).toHaveLength(1);
-    expect(workspace).toContain('stepBackWording(data)');
+    expect(workspace).not.toMatch(/'reopen'/);
+    expect(workspace).not.toMatch(/stepBackWording|showsStepBack|Step back/);
+  });
+
+
+  it('confirms both forward transitions in the shared drawer (S4.26 decision 11, canvas C5)', () => {
+    const workspace = read(TRIPS, '[id]', 'index.tsx');
+
+    expect(workspace).toContain('forwardConfirmWording(');
+    expect(workspace).toContain('<TransitionDrawer');
+    expect(existsSync(join(MOBILE_ROOT, 'src', 'itineraries', 'FinalizeSheet.tsx'))).toBe(false);
   });
 
   it('puts publish on the viewer rail and unpublish behind the cog (S4.1 decision 11, re-housed at S4.25)', () => {
