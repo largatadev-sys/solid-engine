@@ -160,6 +160,93 @@ jobs:
         if: always()
         run: docker compose down --remove-orphans
 
+  # The merge gate's expensive rung (H2 ticket 06, ADR-031). PRs to `dev` only — not every push,
+  # which would multiply minutes for no extra signal, and not nightly, because an unattended red at
+  # 3am that nobody triages is the lying-suite problem restated.
+  #
+  # It brings up its OWN stack, so its specs seed into a database nobody else can see. That is what
+  # makes the shared t1-t5 pool safe here: the accounts are shared, the DATA is not. Pointing this
+  # at a deployed rung would invert that and must not be done.
+  playwright:
+    name: playwright — api + web
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Bring up the stack
+        run: docker compose up --build -d
+
+      # The preview container is the TRUE build path — npm ci and the export happen INSIDE the
+      # image, served by the real Caddy config. `expo export` plus a static server hid a real
+      # Cache-Control bug at S0.5; anything cheaper here proves a different artifact.
+      - name: Build the preview container
+        working-directory: mobile
+        run: |
+          docker build -f Dockerfile.web-preview \
+            --build-arg EXPO_PUBLIC_API_BASE_URL="http://localhost:8080" \
+            --build-arg EXPO_PUBLIC_FIREBASE_API_KEY="${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}" \
+            --build-arg EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN="${{ secrets.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}" \
+            --build-arg EXPO_PUBLIC_FIREBASE_PROJECT_ID="${{ secrets.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}" \
+            --build-arg EXPO_PUBLIC_FIREBASE_APP_ID="${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}" \
+            --build-arg EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID="${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}" \
+            -t largata-preview:ci .
+          docker run -d --name largata-preview --network host -e PORT=8081 largata-preview:ci
+
+      - name: Wait for backend and preview
+        run: |
+          for i in $(seq 1 90); do
+            b=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/v1/health || true)
+            p=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/ || true)
+            if [ "$b" = "200" ] && [ "$p" = "200" ]; then echo "both up after ${i}s"; exit 0; fi
+            sleep 2
+          done
+          echo "backend=$b preview=$p"
+          docker compose ps && docker compose logs --tail 40
+          docker logs largata-preview --tail 40 || true
+          exit 1
+
+      - name: Install Playwright
+        working-directory: mobile
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # workers=2 is H2's recorded guess, not a measurement: H1 found 2 to be this project's
+      # ceiling at 4 cores with starvation above it, and these specs are I/O-bound. Record the real
+      # number from the first runs and correct it rather than leaving the guess standing.
+      - name: Run both projects
+        working-directory: mobile
+        env:
+          LARGATA_TEST_POOL_EMAIL_BASE: ${{ secrets.LARGATA_TEST_POOL_EMAIL_BASE }}
+          LARGATA_TEST_POOL_PASSWORD: ${{ secrets.LARGATA_TEST_POOL_PASSWORD }}
+          EXPO_PUBLIC_FIREBASE_API_KEY: ${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
+          LARGATA_API_BASE_URL: http://localhost:8080
+          LARGATA_PREVIEW_URL: http://localhost:8081
+          LARGATA_WORKERS: '2'
+          LARGATA_RETRIES: '1'
+        run: npm run smoke
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: mobile/e2e/.artifacts
+          retention-days: 7
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker rm -f largata-preview || true
+          docker compose down --remove-orphans
+
   # The ONE required status check on `dev`. It always runs, so it always reports — which is the
   # whole point: a required check that can fail to exist blocks every PR forever.
   #
@@ -168,7 +255,7 @@ jobs:
   # single-tree PR.
   ci:
     name: ci
-    needs: [changes, backend, mobile, stack]
+    needs: [changes, backend, mobile, stack, playwright]
     if: always()
     runs-on: ubuntu-latest
     steps:
