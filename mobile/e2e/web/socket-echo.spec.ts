@@ -1,16 +1,20 @@
+import type { Page } from '@playwright/test';
+
 import { test, expect } from '../support/fixtures';
-import { tokenFor } from '../support/pool';
+import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
-import type { PoolTag } from '../support/identities';
+import { ownerTagFor, type PoolTag } from '../support/identities';
 import { apiURL } from '../../playwright.config';
 
-const SENDER: PoolTag = 't1';
+const SENDER = ownerTagFor('web/socket-echo');
 const LISTENER: PoolTag = 't2';
 
 const ECHO_TOPIC = 'debug:echo';
 const ARRIVAL_TIMEOUT_MS = 15_000;
+const OPEN_TIMEOUT_MS = 10_000;
 
 requireStack(SENDER);
+requireStack(LISTENER);
 
 type CapturedFrame = { at: number; raw: string };
 
@@ -22,49 +26,53 @@ declare global {
   }
 }
 
-async function openSocket(page: import('@playwright/test').Page, tag: PoolTag): Promise<void> {
-  const idToken = await tokenFor(tag);
+async function ticketFor(tag: PoolTag): Promise<string> {
+  const minted = await api('/v1/ws-ticket', 'POST', await tokenFor(tag));
+  return (minted.body as { ticket: string }).ticket;
+}
+
+async function openSocket(page: Page, tag: PoolTag): Promise<void> {
+  const ticket = await ticketFor(tag);
 
   await page.evaluate(
-    async ([token, topic, api]) => {
-      const minted = await fetch(`${api}/v1/ws-ticket`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!minted.ok) throw new Error(`ticket mint failed: ${minted.status}`);
-      const { ticket } = (await minted.json()) as { ticket: string };
-
-      const url = `${api.replace(/^http/, 'ws')}/ws?ticket=${encodeURIComponent(ticket)}`;
-      const socket = new WebSocket(url);
+    async ([issued, topic, base, openTimeout]) => {
+      const socket = new WebSocket(
+        `${base.replace(/^http/, 'ws')}/ws?ticket=${encodeURIComponent(issued)}`,
+      );
       window.__wsFrames = [];
 
       window.__wsReady = new Promise<string>((resolve, reject) => {
-        const failed = setTimeout(() => reject(new Error('socket never opened')), 10_000);
+        const never = setTimeout(() => reject(new Error('socket never opened')), openTimeout);
         socket.addEventListener('message', (event) => {
           const raw = String(event.data);
           window.__wsFrames?.push({ at: Date.now(), raw });
-          const frame = JSON.parse(raw) as { action?: string; topic?: string; code?: string };
+          let frame: { action?: string; topic?: string; code?: string };
+          try {
+            frame = JSON.parse(raw) as typeof frame;
+          } catch {
+            return;
+          }
           if (frame.action === 'subscribed' && frame.topic === topic) {
-            clearTimeout(failed);
+            clearTimeout(never);
             resolve('subscribed');
           }
           if (frame.action === 'error') {
-            clearTimeout(failed);
+            clearTimeout(never);
             reject(new Error(`server refused: ${frame.code}`));
           }
         });
         socket.addEventListener('error', () => {
-          clearTimeout(failed);
+          clearTimeout(never);
           reject(new Error('socket errored before it opened'));
         });
-        socket.addEventListener('open', () => {
-          socket.send(JSON.stringify({ action: 'subscribe', topic }));
-        });
+        socket.addEventListener('open', () =>
+          socket.send(JSON.stringify({ action: 'subscribe', topic })),
+        );
       });
 
       window.__wsSend = (frame: unknown) => socket.send(JSON.stringify(frame));
     },
-    [idToken, ECHO_TOPIC, apiURL] as const,
+    [ticket, ECHO_TOPIC, apiURL, OPEN_TIMEOUT_MS] as const,
   );
 
   await expect
@@ -72,44 +80,60 @@ async function openSocket(page: import('@playwright/test').Page, tag: PoolTag): 
     .toBe('subscribed');
 }
 
-async function echoesSeenBy(page: import('@playwright/test').Page): Promise<string[]> {
+async function framesOn(page: Page): Promise<Array<{ type?: string; payload?: unknown; code?: string }>> {
   return page.evaluate(() =>
-    (window.__wsFrames ?? [])
-      .map((captured) => JSON.parse(captured.raw) as { type?: string; payload?: unknown })
-      .filter((frame) => frame.type === 'debug.echo')
-      .map((frame) => String(frame.payload)),
+    (window.__wsFrames ?? []).flatMap((captured) => {
+      try {
+        return [JSON.parse(captured.raw) as Record<string, unknown>];
+      } catch {
+        return [];
+      }
+    }),
   );
 }
+
+async function echoesOn(page: Page): Promise<string[]> {
+  return (await framesOn(page))
+    .filter((frame) => frame.type === 'debug.echo')
+    .map((frame) => String(frame.payload));
+}
+
+async function errorCodesOn(page: Page): Promise<string[]> {
+  return (await framesOn(page))
+    .filter((frame) => frame.code !== undefined)
+    .map((frame) => String(frame.code));
+}
+
+const send = (page: Page, frame: Record<string, unknown>): Promise<void> =>
+  page.evaluate((body) => window.__wsSend?.(body), frame);
 
 test.describe('the socket delivers between two browsers', () => {
   test('what t1 sends arrives on t2 socket, asserted at the frame and never at a render', async ({
     page,
-    context,
+    browser,
     baseURL,
   }) => {
-    const listenerPage = await context.browser()!.newContext().then((fresh) => fresh.newPage());
+    const listenerContext = await browser.newContext();
+    try {
+      const listenerPage = await listenerContext.newPage();
+      await page.goto(baseURL ?? '/');
+      await listenerPage.goto(baseURL ?? '/');
 
-    await page.goto(baseURL ?? '/');
-    await listenerPage.goto(baseURL ?? '/');
+      await openSocket(page, SENDER);
+      await openSocket(listenerPage, LISTENER);
 
-    await openSocket(page, SENDER);
-    await openSocket(listenerPage, LISTENER);
+      const payload = `echo-${Date.now()}`;
+      await send(page, { action: 'echo', payload });
 
-    const payload = `echo-${Date.now()}`;
-    await page.evaluate((body) => window.__wsSend?.({ action: 'echo', payload: body }), payload);
-
-    await expect
-      .poll(() => echoesSeenBy(listenerPage), {
-        timeout: ARRIVAL_TIMEOUT_MS,
-        message:
-          't1 sent an echo and t2 socket must receive it. A connected-and-dead socket looks ' +
-          'exactly like a connected one, so this asserts the captured frame rather than any ' +
-          'rendered element, and the wait is bounded so the failure is an absent frame rather ' +
-          'than a hang.',
-      })
-      .toContain(payload);
-
-    await listenerPage.context().close();
+      await expect
+        .poll(() => echoesOn(listenerPage), {
+          timeout: ARRIVAL_TIMEOUT_MS,
+          message: `${SENDER} sent an echo; ${LISTENER} socket must receive it. Absent frame, not a hang.`,
+        })
+        .toContain(payload);
+    } finally {
+      await listenerContext.close();
+    }
   });
 
   test('the sender receives its own broadcast, so delivery is not merely one-directional', async ({
@@ -120,30 +144,34 @@ test.describe('the socket delivers between two browsers', () => {
     await openSocket(page, SENDER);
 
     const payload = `self-${Date.now()}`;
-    await page.evaluate((body) => window.__wsSend?.({ action: 'echo', payload: body }), payload);
+    await send(page, { action: 'echo', payload });
 
-    await expect.poll(() => echoesSeenBy(page), { timeout: ARRIVAL_TIMEOUT_MS }).toContain(payload);
+    await expect.poll(() => echoesOn(page), { timeout: ARRIVAL_TIMEOUT_MS }).toContain(payload);
   });
 
-  test('an unknown event type is ignored rather than breaking the connection', async ({
+  test('an unknown action answers an error frame and leaves the connection usable', async ({
     page,
     baseURL,
   }) => {
     await page.goto(baseURL ?? '/');
     await openSocket(page, SENDER);
 
-    await page.evaluate(() => window.__wsSend?.({ action: 'teleport' }));
-
-    const payload = `after-unknown-${Date.now()}`;
-    await page.evaluate((body) => window.__wsSend?.({ action: 'echo', payload: body }), payload);
+    await send(page, { action: 'teleport' });
 
     await expect
-      .poll(() => echoesSeenBy(page), {
+      .poll(() => errorCodesOn(page), {
         timeout: ARRIVAL_TIMEOUT_MS,
-        message:
-          'ADR-030 says clients ignore what they do not know and the server answers an error ' +
-          'frame without closing. If the connection died on the unknown action this echo never ' +
-          'arrives.',
+        message: 'the server answers an error frame rather than ignoring the unknown action',
+      })
+      .toContain('UNKNOWN_ACTION');
+
+    const payload = `after-unknown-${Date.now()}`;
+    await send(page, { action: 'echo', payload });
+
+    await expect
+      .poll(() => echoesOn(page), {
+        timeout: ARRIVAL_TIMEOUT_MS,
+        message: 'the connection survives an unknown action; if it closed, this echo never arrives',
       })
       .toContain(payload);
   });
