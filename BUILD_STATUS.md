@@ -371,6 +371,14 @@ CLAUDE.md's Testcontainers cleanup command gained a `label=org.testcontainers=tr
 
 ---
 
+**2026-08-21**
+
+The mobile web viewport locks to the app frame, because **iOS Safari was zooming the page in on every input focus and never zooming back out** *(founder report, on a real iPhone: "whenever I press the message, the view zooms in… the mobile view for web doesn't stay a mobile view")*. Two causes, one of them ours: Safari force-zooms on focus for any input whose font-size is under 16px, and `typography.input` and `chatTypography.body` both sit at **14**; the served viewport then carried no `maximum-scale`, so nothing brought the zoom back. **Founder ruling: lock the viewport rather than push every input to 16px, and pinch-zoom is not needed** — recorded because that is an accessibility trade (WCAG 1.4.4 wants 200% zoom), not a free win. Confirmed on the founder's device afterwards: pinch still works (Safari has ignored `user-scalable=no` since iOS 10) while the focus zoom is gone, which is the better of the two outcomes.
+
+*Why it wasn't a story —* an app-wide defect fix with no new surface; it predates chat and affects all 13 files using `TextInput`. **The fix is not where the documentation points, and that is the part worth keeping.** `app/+html.tsx` is the documented way to own the HTML shell and it is **silently ignored when `web.output` is `"single"`** — which this repo requires (CLAUDE.md: without it the export emits no root `index.html`). That file was written, disproved and deleted: a local `expo export --clear` still emitted Expo's default tag, and a fresh container build did too — and neither was a stale cache, since `.expo` is dockerignored. The lock now runs at startup through the established platform-fork pattern (`viewportLock.web.ts` rewrites the meta, `.native.ts` is an empty function), so **one place covers every build path** — preview container, Railway, dev server — rather than a `sed` step in one Dockerfile that the others would miss. Native builds are unaffected because there is no browser viewport, which is why the native fork is empty rather than absent. Proven by reading the DOM after load in a real browser, not the served HTML: the served HTML still carries Expo's default. **If Safari ever regresses, the definitive fix is 16px on the two input tokens** — `typography.input` and `chatTypography.body` — which is a design deviation and was deliberately not taken.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
