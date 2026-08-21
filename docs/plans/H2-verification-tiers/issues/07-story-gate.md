@@ -6,7 +6,7 @@
 
 **Status:** needs-triage
 
-- [ ] **ADR-031** written to `docs/design/adr-log.md` — where ADR-018+ actually live, *not* `04-architecture.md`, which stops at ADR-017 despite CLAUDE.md's index pointing there. Records which rung answers for what, and names the failure mode: **CI goes unread**, which is why readability blocks the story rather than trailing it
+- [x] **ADR-031** minted with the spec (H1's precedent — the ADR lands with the spec, not at the gate), in `docs/design/adr-log.md` where ADR-018+ actually live, *not* `04-architecture.md`, which stops at ADR-017 despite CLAUDE.md's index pointing there. Confirm at the gate that its Consequences and Invalidating condition still match what shipped
 - [ ] **`preprod` and `main` protected — required checks, no required PR** — and **only after** the `dev → preprod` promotion has landed. That promotion is 112 commits on the `git read-tree --reset -u dev` mechanic and has not run since Epic 1; a PR merge there has no true fast-forward and would mint a different SHA, destroying `git rev-parse main preprod` (decision 9)
 - [ ] **Wall-clock measured and recorded**, both ends, on a quiet machine with no second agent: Tier 1 on a real story-sized change, and the CI PR path end to end. Against the spec's ~30-minute baseline. **This number is what the story is judged on**
 - [ ] Epic map, amending existing lines rather than duplicating them:
