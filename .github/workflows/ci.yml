@@ -13,8 +13,75 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Which trees changed. Everything below gates on this (H2, ADR-031) so a mobile-only commit does
+  # not pay for the backend suite.
+  #
+  # This lives as a JOB with `if:` gates rather than as workflow-level `paths:` filters across
+  # separate files, for two reasons that are easy to get wrong:
+  #   1. `needs:` is workflow-scoped, so an aggregator cannot depend on jobs in other files.
+  #   2. A workflow skipped by `paths:` never creates its check run, and a required check that was
+  #      never created sits Pending forever and blocks the PR. A job skipped by `if:` DOES create
+  #      one, reports "skipped", and counts as passing.
+  #
+  # It fails OPEN: if the diff base cannot be determined, everything runs. A detection bug must
+  # cost minutes, never coverage.
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      stack: ${{ steps.filter.outputs.stack }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          base=""
+          if [ "$EVENT" = "pull_request" ]; then
+            base="$BASE_SHA"
+          elif [ -n "${BEFORE_SHA:-}" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            base="$BEFORE_SHA"
+          fi
+
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "no usable diff base (event=$EVENT) — running everything"
+            printf 'backend=true\nmobile=true\nstack=true\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed=$(git diff --name-only "$base" "$HEAD_SHA")
+          echo "changed files:"
+          echo "$changed" | sed 's/^/  /'
+
+          match() { echo "$changed" | grep -Eq "$1" && echo true || echo false; }
+
+          backend=$(match '^backend/')
+          mobile=$(match '^mobile/')
+          # The stack job proves the COMPOSED artifact, so it owns compose, both Dockerfiles, the
+          # infra tree and the backend image it builds.
+          stack=$(match '^(docker-compose\.yml|infra/|backend/|.*Dockerfile)')
+          # A change to CI itself re-proves everything, or the change is unverified.
+          if echo "$changed" | grep -Eq '^\.github/workflows/'; then
+            backend=true; mobile=true; stack=true
+          fi
+
+          printf 'backend=%s\nmobile=%s\nstack=%s\n' "$backend" "$mobile" "$stack" >> "$GITHUB_OUTPUT"
+          printf 'selected: backend=%s mobile=%s stack=%s\n' "$backend" "$mobile" "$stack"
+
   backend:
     name: backend — mvn verify
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -26,12 +93,16 @@ jobs:
           cache: maven
 
       # Testcontainers uses the runner's Docker daemon; ubuntu-latest ships one preinstalled.
+      # `verify` carries failsafe:verify, which is what makes the exit code trustworthy here and
+      # NOT trustworthy for a bare `failsafe:integration-test` locally (CLAUDE.md's gotcha).
       - name: Verify (unit + integration on real Postgres)
         working-directory: backend
         run: mvn -B verify
 
   mobile:
     name: mobile — typecheck + jest
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -58,6 +129,8 @@ jobs:
 
   stack:
     name: stack — compose up + health smoke
+    needs: changes
+    if: needs.changes.outputs.stack == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -86,3 +159,27 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down --remove-orphans
+
+  # The ONE required status check on `dev`. It always runs, so it always reports — which is the
+  # whole point: a required check that can fail to exist blocks every PR forever.
+  #
+  # `skipped` counts as pass; only `failure` and `cancelled` are red. Do not rewrite this as
+  # `success()` — that treats a legitimately skipped job as a failure and blocks every
+  # single-tree PR.
+  ci:
+    name: ci
+    needs: [changes, backend, mobile, stack]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+          if echo "$RESULTS" | grep -Eq '"result": *"(failure|cancelled)"'; then
+            echo "::error::at least one job failed or was cancelled"
+            exit 1
+          fi
+          echo "all jobs succeeded or were skipped"
