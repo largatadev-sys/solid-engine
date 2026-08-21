@@ -1,5 +1,6 @@
 package com.largata.chat;
 
+import com.largata.chat.api.ChatLimits;
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,7 +14,7 @@ import java.util.UUID;
 @Table(name = "chat_message")
 class ChatMessage {
 
-    static final int MAX_BODY_LENGTH = 2_000;
+    static final int MAX_BODY_LENGTH = ChatLimits.MAX_BODY_LENGTH;
 
     @Id private UUID id;
 

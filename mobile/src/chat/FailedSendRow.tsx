@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text } from 'react-native';
 import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
-import { useReducedMotion } from '../components/useReducedMotion';
 import { chatColors, chatCopy, chatMetrics, chatMotion, chatTypography } from '../theme/workspaceTokens';
 
 
@@ -12,8 +11,7 @@ interface FailedSendRowProps {
 
 
 export function FailedSendRow({ onRetry, onDiscard }: FailedSendRowProps) {
-  const reducedMotion = useReducedMotion();
-  const entrance = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
+  const entrance = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(entrance, {

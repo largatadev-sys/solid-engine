@@ -83,6 +83,7 @@ function SendButton({
   readonly onPress: () => void;
   readonly press: ReturnType<typeof usePressFeedback>;
 }) {
+  const [held, setHeld] = useState(false);
   const fill = useRef(new Animated.Value(ready ? 1 : 0)).current;
 
   useEffect(() => {
@@ -96,14 +97,28 @@ function SendButton({
 
   const backgroundColor = fill.interpolate({
     inputRange: [0, 1],
-    outputRange: [chatColors.sendIdle, chatColors.sendReady],
+    outputRange: [chatColors.sendIdle, held ? chatColors.sendPressed : chatColors.sendReady],
   });
 
   return (
     <AnimatedPressable
       onPress={ready ? onPress : undefined}
-      onPressIn={ready ? press.onPressIn : undefined}
-      onPressOut={ready ? press.onPressOut : undefined}
+      onPressIn={
+        ready
+          ? () => {
+              setHeld(true);
+              press.onPressIn();
+            }
+          : undefined
+      }
+      onPressOut={
+        ready
+          ? () => {
+              setHeld(false);
+              press.onPressOut();
+            }
+          : undefined
+      }
       disabled={!ready}
       accessibilityRole="button"
       accessibilityLabel="Send"
@@ -141,8 +156,7 @@ function SendGlyph({ ready }: { readonly ready: boolean }) {
 
 
 function CounterLine({ label, atCap }: { readonly label: string; readonly atCap: boolean }) {
-  const reducedMotion = useReducedMotion();
-  const entrance = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
+  const entrance = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(entrance, {

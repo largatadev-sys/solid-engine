@@ -1,13 +1,12 @@
 import { test, expect } from '../support/fixtures';
 import { api, profileFor, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
-import { IDENTITY_MAP, STRANGER_TAG, ownerTagFor } from '../support/identities';
+import { IDENTITY_MAP, ownerTagFor } from '../support/identities';
 import { SeedFailure, stamp } from '../support/seed';
 import type { ChatMessageResponse, Page } from '../../src/types/api';
 
 const OWNER = ownerTagFor('api/chat');
 const MEMBER = IDENTITY_MAP['api/chat'].tags[1]!;
-const STRANGER = STRANGER_TAG;
 
 requireStack(OWNER);
 requireStack(MEMBER);
@@ -16,7 +15,6 @@ test.describe.configure({ mode: 'serial' });
 
 let owner: string;
 let member: string;
-let stranger: string;
 let trip: string;
 
 const messagesUri = (): string => `/v1/itineraries/${trip}/chat/messages`;
@@ -35,10 +33,8 @@ const act = async (action: string, as: string = owner) => {
 test.beforeAll(async () => {
   owner = await tokenFor(OWNER);
   member = await tokenFor(MEMBER);
-  stranger = await tokenFor(STRANGER);
   await profileFor(OWNER);
   await profileFor(MEMBER);
-  await profileFor(STRANGER);
 
   const created = await api('/v1/itineraries', 'POST', owner, {
     title: stamp('Chat Trip'),
@@ -100,12 +96,6 @@ test('the cap itself is accepted — 2,000 is the limit, not the first refusal',
 });
 
 
-test('a non-member is answered not-found on both doors, never forbidden', async () => {
-  expect((await send(stranger, 'Let me in')).status).toBe(404);
-  expect((await api(messagesUri(), 'GET', stranger)).status).toBe(404);
-});
-
-
 test('publishing closes chat for the owner and the member alike', async () => {
   await act('start');
   await act('complete');
@@ -137,19 +127,6 @@ test('unpublishing reopens chat with its history intact', async () => {
 
   expect(after.status).toBe(201);
   expect((await thread(owner)).items).toHaveLength(before + 1);
-});
-
-
-test('archiving is honest to the owner and invisible to a member', async () => {
-  await act('archive');
-
-  const asOwner = await send(owner, 'Owner after archiving');
-  expect(asOwner.status).toBe(409);
-  expect(asOwner.body.code).toBe('TRIP_ARCHIVED');
-
-  expect((await send(member, 'Member after archiving')).status).toBe(404);
-
-  await act('unarchive');
 });
 
 

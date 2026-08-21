@@ -2,10 +2,10 @@ import {
   asThreadMessages,
   beginSend,
   bodyOf,
-  discard,
   markFailed,
   markRetrying,
   settle,
+  withoutAlreadyConfirmed,
   type PendingSends,
 } from '../src/chat/pendingSends';
 import {
@@ -56,10 +56,10 @@ describe('the send state machine (C5)', () => {
   });
 
 
-  it('discards a failed send and leaves its neighbours alone', () => {
+  it('removes a settled send and leaves its neighbours alone', () => {
     const two = beginSend(beginSend([], 'local-1', 'First', AT), 'local-2', 'Second', AT);
 
-    expect(discard(markFailed(two, 'local-1'), 'local-1').map((send) => send.localId)).toEqual([
+    expect(settle(markFailed(two, 'local-1'), 'local-1').map((entry) => entry.localId)).toEqual([
       'local-2',
     ]);
   });
@@ -84,18 +84,66 @@ describe('the send state machine (C5)', () => {
   it('renders pending sends as the viewer own bubbles, carrying their state', () => {
     const pending = markFailed(beginSend([], 'local-1', 'Ordering coffees', AT), 'local-1');
 
-    expect(asThreadMessages(pending, 'maya', 'mayasantos', 'Maya Santos')).toEqual([
+    expect(asThreadMessages(pending, 'maya')).toEqual([
       {
         id: 'local-1',
         authorId: 'maya',
-        handle: 'mayasantos',
-        displayName: 'Maya Santos',
+        handle: null,
+        displayName: null,
         body: 'Ordering coffees',
         at: AT,
         mine: true,
         state: 'failed',
       },
     ]);
+  });
+});
+
+
+describe('the optimistic entry yields to its own broadcast (AC 2)', () => {
+
+  function confirmed(body: string, mine: boolean) {
+    return {
+      id: 'server-1',
+      authorId: 'maya',
+      handle: 'mayasantos',
+      displayName: 'Maya Santos',
+      body,
+      at: AT,
+      mine,
+      state: 'confirmed' as const,
+    };
+  }
+
+
+  it('drops the pending twin the instant the broadcast beats the POST response', () => {
+    const pending = beginSend([], 'local-1', 'Ordering coffees', AT);
+
+    expect(withoutAlreadyConfirmed(pending, [confirmed('Ordering coffees', true)])).toEqual([]);
+  });
+
+
+  it('keeps the pending entry while nothing confirmed matches it', () => {
+    const pending = beginSend([], 'local-1', 'Ordering coffees', AT);
+
+    expect(withoutAlreadyConfirmed(pending, [confirmed('Something else', true)])).toHaveLength(1);
+  });
+
+
+  it('never lets somebody else identical message swallow my pending bubble', () => {
+    const pending = beginSend([], 'local-1', 'Ordering coffees', AT);
+
+    expect(
+      withoutAlreadyConfirmed(pending, [confirmed('Ordering coffees', false)]),
+    ).toHaveLength(1);
+  });
+
+
+  it('holds a FAILED send even when an identical message is confirmed', () => {
+    const failed = markFailed(beginSend([], 'local-1', 'Ordering coffees', AT), 'local-1');
+
+    expect(withoutAlreadyConfirmed(failed, [confirmed('Ordering coffees', true)]))
+      .toHaveLength(1);
   });
 });
 

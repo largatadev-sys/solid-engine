@@ -30,10 +30,10 @@ import {
   asThreadMessages,
   beginSend,
   bodyOf,
-  discard,
   markFailed,
   markRetrying,
   settle,
+  withoutAlreadyConfirmed,
   type PendingSends,
 } from './pendingSends';
 
@@ -72,7 +72,10 @@ export function WorkspaceChatTab({ itineraryId, myId, archived }: WorkspaceChatT
   }, [thread.data, viewerId]);
 
   const messages = useMemo(
-    () => [...confirmed, ...asThreadMessages(pending, viewerId, null, null)],
+    () => [
+      ...confirmed,
+      ...asThreadMessages(withoutAlreadyConfirmed(pending, confirmed), viewerId),
+    ],
     [confirmed, pending, viewerId],
   );
 
@@ -137,7 +140,7 @@ export function WorkspaceChatTab({ itineraryId, myId, archived }: WorkspaceChatT
   );
 
   const onDiscard = useCallback(
-    (localId: string) => setPending((current) => discard(current, localId)),
+    (localId: string) => setPending((current) => settle(current, localId)),
     [],
   );
 

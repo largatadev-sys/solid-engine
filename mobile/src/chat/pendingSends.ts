@@ -41,27 +41,31 @@ export function settle(pending: PendingSends, localId: string): PendingSends {
 }
 
 
-export function discard(pending: PendingSends, localId: string): PendingSends {
-  return settle(pending, localId);
+export function bodyOf(pending: PendingSends, localId: string): string | null {
+  return pending.find((send) => send.localId === localId)?.body ?? null;
 }
 
 
-export function bodyOf(pending: PendingSends, localId: string): string | null {
-  return pending.find((send) => send.localId === localId)?.body ?? null;
+export function withoutAlreadyConfirmed(
+  pending: PendingSends,
+  confirmed: readonly ThreadMessage[],
+): PendingSends {
+  const mineAlready = new Set(
+    confirmed.filter((message) => message.mine).map((message) => message.body),
+  );
+  return pending.filter((send) => send.state === 'failed' || !mineAlready.has(send.body));
 }
 
 
 export function asThreadMessages(
   pending: PendingSends,
   viewerId: string | null,
-  handle: string | null,
-  displayName: string | null,
 ): ThreadMessage[] {
   return pending.map((send) => ({
     id: send.localId,
     authorId: viewerId ?? '',
-    handle,
-    displayName,
+    handle: null,
+    displayName: null,
     body: send.body,
     at: send.at,
     mine: true,
