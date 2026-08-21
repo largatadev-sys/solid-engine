@@ -1,6 +1,6 @@
 # Handoff: Chat Tab (Workspace) — Largata
 
-> **Archival note (agent, 2026-08-20).** This is the founder's handoff for the Claude Design chat canvas, transcribed clean — the copy that reached the session had its encoding mangled in transfer, so the original `Chat Spec.dc.html` + `support.js` are **not** archived from that copy. **Founder: drop the original two files beside this README, or record the live canvas link here** (the S2.1 precedent). The contracts below are normative either way (spec: Design baseline & deviations).
+> **Archival note (agent, 2026-08-21 — closed).** The founder supplied the canvas at the S4.10 implementation, and `Chat Spec.dc.html` + `support.js` now sit beside this README. The copy that arrived still carried the transfer's mojibake in its prose (`â` for every em dash, `Â·` for every middle dot, `Messageâ¦` for the placeholder); those runs were repaired to the characters they encode, and **no geometry, token, timing or copy string was altered** — the numbers and the exact copy match the transcription below, which was made from the clean text. Open the spec in a browser with `support.js` beside it; frame 0 is the working demo. The contracts below remain normative (spec: Design baseline & deviations).
 
 ## Overview
 

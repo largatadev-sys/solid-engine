@@ -29,7 +29,8 @@ class AudienceFenceCoverageTest {
                     "DiaryController.java#mine",
                     "DiaryController.java#one",
                     "PhotoDumpController.java#list",
-                    "PollController.java#board");
+                    "PollController.java#board",
+                    "ChatController.java#thread");
 
 
     private static final Set<String> KNOWN_OPTIONAL_MEMBERSHIP_HANDLERS =
