@@ -1,6 +1,7 @@
 package com.largata.identity.web;
 
 import com.largata.support.PostgresTestBase;
+import com.largata.support.ShortHandles;
 import com.largata.support.TestJwtSupport;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -120,7 +121,7 @@ class ShortHandleSurvivesProfileSaveIT extends PostgresTestBase {
                 .uri("/v1/me")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"handle\":\"" + freshShortHandle() + "\"}")
+                .body("{\"handle\":\"" + ShortHandles.mintUnclaimed(jdbc) + "\"}")
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
@@ -161,22 +162,10 @@ class ShortHandleSurvivesProfileSaveIT extends PostgresTestBase {
 
 
     private String plantShortHandle(String uid) {
-        String handle = freshShortHandle();
+        String handle = ShortHandles.mintUnclaimed(jdbc);
         jdbc.update("UPDATE traveler SET handle = ? WHERE firebase_uid = ?", handle, uid);
         return handle;
     }
-
-
-    private static String freshShortHandle() {
-        String alphabet = "abcdefghijklmnopqrstuvwxyz";
-        int taken = SHORT_HANDLES_TAKEN.getAndIncrement();
-        return "" + alphabet.charAt(taken / alphabet.length() % alphabet.length())
-                + alphabet.charAt(taken % alphabet.length());
-    }
-
-
-    private static final java.util.concurrent.atomic.AtomicInteger SHORT_HANDLES_TAKEN =
-            new java.util.concurrent.atomic.AtomicInteger();
 
 
     private String freshUid() {
