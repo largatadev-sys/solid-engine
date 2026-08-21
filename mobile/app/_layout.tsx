@@ -18,8 +18,11 @@ import { destinationFor, isSettling, type GateInput } from '../src/onboarding/on
 import { colors, typography } from '../src/theme';
 import { interFontMap } from '../src/theme/interFonts';
 import { useSocketLifecycle } from '../src/ws/useSocketLifecycle';
+import { lockViewportToTheAppFrame } from '../src/components/viewportLock';
 
 
+
+lockViewportToTheAppFrame();
 
 installFirebaseTokenSource();
 
