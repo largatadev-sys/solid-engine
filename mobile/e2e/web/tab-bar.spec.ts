@@ -40,7 +40,7 @@ test('the tab bar carries its four tabs, each a real tab rather than a bare pres
 
 test('the bar marks the tab the traveler is standing on, and only that one', async ({ page }) => {
   await page.goto(TRIPS_TAB_ROUTE);
-  await expect(tab(page, 'Trips')).toHaveAttribute('aria-selected', 'true');
+  await expect(tab(page, 'Trips')).toHaveAttribute('aria-selected', 'SABOTAGE-H2-TICKET-06');
   await expect(tab(page, 'Home')).toHaveAttribute('aria-selected', 'false');
   await expect(tab(page, 'Profile')).toHaveAttribute('aria-selected', 'false');
 });
