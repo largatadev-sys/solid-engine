@@ -42,7 +42,7 @@ export function MessageBubble({ message, startsGroup, endsGroup }: MessageBubble
 
   return (
     <View style={styles.otherRow}>
-      {startsGroup ? <Avatar message={message} /> : <View style={styles.avatarSpacer} />}
+      {endsGroup ? <Avatar message={message} /> : <View style={styles.avatarSpacer} />}
       <View style={styles.otherColumn}>
         {startsGroup ? <Text style={styles.handle}>{authorLabel(message)}</Text> : null}
         {bubble}

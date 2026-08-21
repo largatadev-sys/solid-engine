@@ -199,6 +199,16 @@ describe('the motion contract is wired to the shared vocabulary (M1-M5)', () => 
   });
 
 
+  it('hangs the avatar off the LAST bubble of a group and the handle off the first', () => {
+    const bubble = chatSource('MessageBubble.tsx');
+
+    expect(bubble).toMatch(/\{endsGroup \? <Avatar/);
+    expect(bubble).toMatch(/\{startsGroup \? <Text style=\{styles\.handle\}/);
+    expect(bubble).not.toMatch(/\{startsGroup \? <Avatar/);
+    expect(bubble).toMatch(/otherRow:[\s\S]{0,140}alignItems: 'flex-end'/);
+  });
+
+
   it('leaves the bubble to the platform copy sheet and gives it no press feedback', () => {
     const bubble = chatSource('MessageBubble.tsx');
 
