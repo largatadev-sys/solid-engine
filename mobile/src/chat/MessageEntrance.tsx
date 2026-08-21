@@ -13,21 +13,27 @@ interface MessageEntranceProps {
 
 export function MessageEntrance({ children, animate, style }: MessageEntranceProps) {
   const reducedMotion = useReducedMotion();
-  const settled = !animate || reducedMotion;
-  const entrance = useRef(new Animated.Value(settled ? 1 : 0)).current;
+  const arrivedFresh = useRef(animate);
+  const entrance = useRef(new Animated.Value(arrivedFresh.current ? 0 : 1)).current;
+  const jumpCut = useRef(reducedMotion);
+  jumpCut.current = reducedMotion;
 
   useEffect(() => {
-    if (settled) {
+    if (!arrivedFresh.current || jumpCut.current) {
       entrance.setValue(1);
       return;
     }
-    Animated.timing(entrance, {
+
+    const rising = Animated.timing(entrance, {
       toValue: 1,
       duration: chatMotion.entranceMs,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
-    }).start();
-  }, [entrance, settled]);
+    });
+    rising.start();
+
+    return () => rising.stop();
+  }, [entrance]);
 
   const translateY = entrance.interpolate({
     inputRange: [0, 1],

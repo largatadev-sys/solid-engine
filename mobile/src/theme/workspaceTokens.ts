@@ -574,7 +574,7 @@ export const chatTypography = {
 
 
 export const chatMotion = {
-  entranceMs: 150,
+  entranceMs: 250,
   entranceRisePx: 8,
   stateChangeMs: 150,
   layoutMs: 200,

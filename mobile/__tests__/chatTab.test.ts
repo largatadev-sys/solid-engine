@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { WORKSPACE_TABS, workspaceTabFrom } from '../src/itineraries/WorkspaceTabRow';
-import { chatCopy } from '../src/theme/workspaceTokens';
+import { chatCopy, chatMotion } from '../src/theme/workspaceTokens';
 
 
 const MOBILE_ROOT = join(__dirname, '..');
@@ -221,5 +221,22 @@ describe('the motion contract is wired to the shared vocabulary (M1-M5)', () => 
 
   it('never animates a bubble entrance for history paged in on scroll-back', () => {
     expect(chatSource('WorkspaceChatTab.tsx')).toContain('animate={fresh}');
+  });
+
+
+  it('decides the entrance once at mount, so a re-render cannot cut it short', () => {
+    const entrance = chatSource('MessageEntrance.tsx');
+
+    expect(entrance).toMatch(/const arrivedFresh = useRef\(animate\)/);
+    expect(entrance).toMatch(/\}, \[entrance\]\);/);
+    expect(entrance).not.toMatch(/\[entrance, settled\]/);
+    expect(entrance).toContain('rising.stop()');
+  });
+
+
+  it('rises over the founder-ruled 250ms, not the canvas 150', () => {
+    expect(chatMotion.entranceMs).toBe(250);
+    expect(chatMotion.entranceRisePx).toBe(8);
+    expect(chatMotion.stateChangeMs).toBe(150);
   });
 });
