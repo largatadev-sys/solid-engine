@@ -77,6 +77,9 @@ class ChatContractIT extends PostgresTestBase {
         assertThat(message.path("author").path("travelerId").asString())
                 .isEqualTo(rig.travelerIdOf(trip.member()).toString());
         assertThat(message.path("author").path("handle").asString()).isEqualTo(trip.memberHandle());
+        assertThat(message.path("author").has("avatarUrl"))
+                .as("the thread renders a real profile photo, so the author must carry one")
+                .isTrue();
         assertThat(message.path("body").asString()).isEqualTo("The driver is Rico.");
         assertThat(message.path("at").isNull()).isFalse();
     }

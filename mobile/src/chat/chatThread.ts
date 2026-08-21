@@ -21,6 +21,7 @@ export type ThreadMessage = {
   readonly authorId: string;
   readonly handle: string | null;
   readonly displayName: string | null;
+  readonly avatarUrl: string | null;
   readonly body: string;
   readonly at: string;
   readonly mine: boolean;
@@ -152,6 +153,7 @@ export function toThreadMessage(
     authorId: response.author?.travelerId ?? '',
     handle: response.author?.handle ?? null,
     displayName: response.author?.displayName ?? null,
+    avatarUrl: response.author?.avatarUrl ?? null,
     body: response.body,
     at: response.at,
     mine: viewerId !== null && response.author?.travelerId === viewerId,

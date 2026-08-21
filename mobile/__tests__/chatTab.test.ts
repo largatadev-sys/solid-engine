@@ -190,6 +190,15 @@ describe('the motion contract is wired to the shared vocabulary (M1-M5)', () => 
   });
 
 
+  it('renders a real profile photo on the chat head, falling back to tinted initials', () => {
+    const bubble = chatSource('MessageBubble.tsx');
+
+    expect(bubble).toContain('MediaThumb');
+    expect(bubble).toMatch(/url=\{message\.avatarUrl\}/);
+    expect(bubble).toMatch(/fallback=\{<Text[\s\S]{0,120}avatarLabel\(message\)/);
+  });
+
+
   it('leaves the bubble to the platform copy sheet and gives it no press feedback', () => {
     const bubble = chatSource('MessageBubble.tsx');
 

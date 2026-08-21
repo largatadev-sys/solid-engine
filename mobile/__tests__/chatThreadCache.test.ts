@@ -6,7 +6,7 @@ import type { ChatMessageResponse, Page } from '../src/types/api';
 function wire(id: string, body = 'Hello'): ChatMessageResponse {
   return {
     id,
-    author: { travelerId: 'maya', handle: 'mayasantos', displayName: 'Maya Santos' },
+    author: { travelerId: 'maya', handle: 'mayasantos', displayName: 'Maya Santos', avatarUrl: null },
     body,
     at: '2026-03-03T09:00:00.000Z',
   };

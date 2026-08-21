@@ -20,6 +20,7 @@ function message(overrides: Partial<ThreadMessage> & { id: string; at: string })
     authorId: 'maya',
     handle: 'mayasantos',
     displayName: 'Maya Santos',
+    avatarUrl: null,
     body: 'Booked the van.',
     mine: false,
     state: 'confirmed',
@@ -264,7 +265,7 @@ describe('merging the socket into the thread', () => {
   function wire(id: string, isoAt: string): ChatMessageResponse {
     return {
       id,
-      author: { travelerId: 'maya', handle: 'mayasantos', displayName: 'Maya Santos' },
+      author: { travelerId: 'maya', handle: 'mayasantos', displayName: 'Maya Santos', avatarUrl: null },
       body: 'Hello',
       at: isoAt,
     };

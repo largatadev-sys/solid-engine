@@ -1,4 +1,5 @@
 import { Animated, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { MediaThumb } from '../media/MediaThumb';
 import { useFailureDim } from './useFailureDim';
 import {
   chatAvatarTints,
@@ -55,9 +56,13 @@ function Avatar({ message }: { readonly message: ThreadMessage }) {
   const tint = chatAvatarTints[tintIndexFor(message.authorId, chatAvatarTints.length)];
 
   return (
-    <View style={[styles.avatar, { backgroundColor: tint?.well }]}>
-      <Text style={[styles.initials, { color: tint?.ink }]}>{avatarLabel(message)}</Text>
-    </View>
+    <MediaThumb
+      url={message.avatarUrl}
+      style={styles.avatar}
+      accessibilityLabel={`${authorLabel(message)}'s profile photo`}
+      fallbackStyle={{ backgroundColor: tint?.well }}
+      fallback={<Text style={[styles.initials, { color: tint?.ink }]}>{avatarLabel(message)}</Text>}
+    />
   );
 }
 
@@ -74,7 +79,7 @@ const styles = StyleSheet.create({
   otherRow: {
     flexDirection: 'row',
     gap: chatMetrics.avatarGap,
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
   },
   otherColumn: {
     flex: 1,

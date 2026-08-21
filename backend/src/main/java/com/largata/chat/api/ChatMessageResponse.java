@@ -14,12 +14,14 @@ public record ChatMessageResponse(UUID id, ChatAuthorResponse author, String bod
     }
 
 
-    public record ChatAuthorResponse(UUID travelerId, String handle, String displayName) {
+    public record ChatAuthorResponse(
+            UUID travelerId, String handle, String displayName, String avatarUrl) {
 
         static ChatAuthorResponse of(TravelerSummary author) {
             return author == null
                     ? null
-                    : new ChatAuthorResponse(author.id(), author.handle(), author.displayName());
+                    : new ChatAuthorResponse(
+                            author.id(), author.handle(), author.displayName(), author.avatarUrl());
         }
     }
 }

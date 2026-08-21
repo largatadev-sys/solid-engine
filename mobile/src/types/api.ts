@@ -594,6 +594,7 @@ export type ChatAuthorResponse = {
   travelerId: string;
   handle: string | null;
   displayName: string | null;
+  avatarUrl: string | null;
 };
 
 

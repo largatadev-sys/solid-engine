@@ -75,6 +75,7 @@ export function asThreadMessages(
     authorId: viewerId ?? '',
     handle: null,
     displayName: null,
+    avatarUrl: null,
     body: send.body,
     at: send.at,
     mine: true,
