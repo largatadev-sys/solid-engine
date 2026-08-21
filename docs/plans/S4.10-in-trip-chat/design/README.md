@@ -48,6 +48,8 @@ Text 14/19 ink both sides, max-width 256, padding 9×13, radius 18.
 Centered timestamp 11/600 #A59E99 only on gaps ≥ 20 min. Date separator = hairline · label · hairline between calendar days ("Today" / "Yesterday" / "Tuesday, March 3"). Never per-bubble timestamps.
 
 ### C4 · Composer
+> **Superseded on one number (founder ruling, 2026-08-21): the field caps at THREE lines, not four.** The rest of C4 stands as written. Reason and the resting-height defect that surfaced it are in the spec's Comments; the cap lives in `chatMetrics.fieldMaxLines`.
+
 
 Docked bottom, hairline top. Field #FAFAF9 + 1px #E7E5E4, radius 20, padding 10×16, text 14/19, placeholder "Message…" #A59E99. Send = 36px circle, arrow-up: disabled (empty/whitespace) #F5F5F4 fill + #A59E99 glyph; enabled #EA580C + white, pressed #E8613A. Grows to 4 lines (~97px) then scrolls internally — no persistent scrollbar (web: `scrollbar-width: none`). Counter appears at 1,900 chars ("1,968 / 2,000", 11/600 #A59E99), turns #C2410C at the 2,000 hard cap. Enter = newline. Draft persists per trip across tab switches. Send clears the field immediately (optimistic append). Rides the platform keyboard animation — never custom timing.
 

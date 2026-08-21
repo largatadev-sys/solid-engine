@@ -90,6 +90,8 @@ const styles = StyleSheet.create({
   },
   scroller: {
     alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    flexGrow: 1,
     gap: 12,
     paddingHorizontal: 16,
   },

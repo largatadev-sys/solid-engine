@@ -543,7 +543,7 @@ export const chatMetrics = {
   fieldRadius: 20,
   fieldMinHeight: 40,
   fieldLineHeight: 19,
-  fieldMaxLines: 4,
+  fieldMaxLines: 3,
   fieldPaddingVertical: 10,
   fieldPaddingHorizontal: 16,
   sendButtonSize: 36,

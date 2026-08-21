@@ -163,6 +163,24 @@ describe('the motion contract is wired to the shared vocabulary (M1-M5)', () => 
   });
 
 
+  it('measures the field height from exactly one driver on each platform', () => {
+    expect(chatSource('composerGrowth.web.ts')).toContain('MEASURES_FROM_A_MIRROR = true');
+    expect(chatSource('composerGrowth.native.ts')).toContain('MEASURES_FROM_A_MIRROR = false');
+
+    const composer = chatSource('Composer.tsx');
+    expect(composer).toMatch(/if \(!MEASURES_FROM_A_MIRROR\) return;/);
+    expect(composer).toMatch(/MEASURES_FROM_A_MIRROR\s*\n?\s*\? undefined/);
+  });
+
+
+  it('never measures the live field on web, which would kill the height transition', () => {
+    const web = chatSource('composerGrowth.web.ts');
+
+    expect(web).toContain('mirror');
+    expect(web).not.toMatch(/node\.style\.height\s*=/);
+  });
+
+
   it('never animates a bubble entrance for history paged in on scroll-back', () => {
     expect(chatSource('WorkspaceChatTab.tsx')).toContain('animate={fresh}');
   });

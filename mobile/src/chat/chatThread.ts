@@ -103,6 +103,18 @@ export function canSend(draft: string): boolean {
 }
 
 
+export function linesFilled(
+  contentHeight: number,
+  lineHeight: number,
+  verticalPadding: number,
+  maxLines: number,
+): number {
+  const text = contentHeight - verticalPadding * 2;
+  if (!Number.isFinite(text) || text <= 0) return 1;
+  return Math.min(Math.max(1, Math.round(text / lineHeight)), maxLines);
+}
+
+
 export function clampToCap(draft: string): string {
   return [...draft].slice(0, MAX_MESSAGE_LENGTH).join('');
 }

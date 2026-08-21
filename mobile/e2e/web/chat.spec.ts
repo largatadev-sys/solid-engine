@@ -209,6 +209,45 @@ test('sending from the composer clears the field immediately and shows one bubbl
 });
 
 
+test('the composer grows as it fills and collapses back to one line once sent', async ({
+  page,
+  signIn,
+}) => {
+  await signIn(OWNER);
+  await page.goto(chatRoute(trip));
+
+  const field = labelled(page, 'Message').last();
+  await expect(field).toBeVisible({ timeout: ARRIVAL_TIMEOUT_MS });
+
+  const heightOf = async (): Promise<number> => (await field.boundingBox())?.height ?? 0;
+
+  const resting = await heightOf();
+  expect(resting).toBeGreaterThan(0);
+
+  await field.fill(
+    'Rico says the van fits eight plus bags. If we leave at 7 sharp we hit Nacpan by noon, '
+      + 'lunch there, then the viewpoint before check-in.',
+  );
+  await expect
+    .poll(heightOf, {
+      timeout: ARRIVAL_TIMEOUT_MS,
+      message: 'a multi-line draft must grow the field, or C4 growth is dead',
+    })
+    .toBeGreaterThan(resting);
+
+  await labelled(page, 'Send').last().click();
+
+  await expect
+    .poll(heightOf, {
+      timeout: ARRIVAL_TIMEOUT_MS,
+      message:
+        'sending clears the draft, so the field must collapse back to its resting one-line '
+        + 'height — it once stayed tall because two measurement drivers fought each other',
+    })
+    .toBe(resting);
+});
+
+
 test('a failed send holds its place with Retry and Discard, and Retry lands it', async ({
   page,
   signIn,

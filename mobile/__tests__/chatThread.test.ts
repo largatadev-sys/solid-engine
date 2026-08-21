@@ -5,6 +5,7 @@ import {
   canSend,
   clampToCap,
   counterState,
+  linesFilled,
   mergeById,
   threadRows,
   tintIndexFor,
@@ -182,6 +183,39 @@ describe('the composer counter (C4)', () => {
   it('hard-stops input at the cap rather than refusing the keystroke later', () => {
     expect(clampToCap('x'.repeat(2_050))).toHaveLength(MAX_MESSAGE_LENGTH);
     expect(clampToCap('short')).toBe('short');
+  });
+});
+
+
+describe('composer growth (C4, M3) — the measurement includes padding', () => {
+
+  const LINE = 19;
+  const PAD = 10;
+  const MAX = 3;
+  const forHeight = (height: number) => linesFilled(height, LINE, PAD, MAX);
+
+  it('reads an EMPTY field as one line, not two', () => {
+    expect(forHeight(LINE + PAD * 2)).toBe(1);
+  });
+
+
+  it('grows a line at a time as the text wraps', () => {
+    expect(forHeight(LINE * 2 + PAD * 2)).toBe(2);
+    expect(forHeight(LINE * 3 + PAD * 2)).toBe(3);
+  });
+
+
+  it('caps at three lines however long the message runs', () => {
+    expect(forHeight(LINE * 4 + PAD * 2)).toBe(MAX);
+    expect(forHeight(LINE * 40 + PAD * 2)).toBe(MAX);
+  });
+
+
+  it('never collapses below one line, whatever it is handed', () => {
+    expect(forHeight(0)).toBe(1);
+    expect(forHeight(PAD * 2)).toBe(1);
+    expect(forHeight(-50)).toBe(1);
+    expect(forHeight(Number.NaN)).toBe(1);
   });
 });
 

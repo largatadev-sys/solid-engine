@@ -10,8 +10,13 @@ import {
   chatMotion,
   chatTypography,
 } from '../theme/workspaceTokens';
-import { canSend, clampToCap, counterState } from './chatThread';
-import { animateComposerGrowth, composerFieldTransition } from './composerGrowth';
+import { canSend, clampToCap, counterState, linesFilled } from './chatThread';
+import {
+  MEASURES_FROM_A_MIRROR,
+  animateComposerGrowth,
+  composerFieldTransition,
+  naturalContentHeight,
+} from './composerGrowth';
 
 
 interface ComposerProps {
@@ -26,29 +31,45 @@ export function Composer({ draft, onDraftChange, onSend, autoFocus }: ComposerPr
   const press = usePressFeedback();
   const reducedMotion = useReducedMotion();
   const [lines, setLines] = useState(1);
+  const field = useRef<TextInput | null>(null);
   const ready = canSend(draft);
   const counter = counterState([...draft].length);
 
   const height = lines * chatMetrics.fieldLineHeight + chatMetrics.fieldPaddingVertical * 2;
 
+  const resize = (reported: number) => {
+    const next =
+      draft === ''
+        ? 1
+        : linesFilled(
+            naturalContentHeight(field.current, reported),
+            chatMetrics.fieldLineHeight,
+            chatMetrics.fieldPaddingVertical,
+            chatMetrics.fieldMaxLines,
+          );
+    setLines((current) => {
+      if (next !== current && !reducedMotion) animateComposerGrowth();
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!MEASURES_FROM_A_MIRROR) return;
+    resize(height);
+  }, [draft]);
+
   return (
     <View style={styles.dock}>
       <View style={styles.row}>
         <TextInput
+          ref={field}
           value={draft}
           onChangeText={(next) => onDraftChange(clampToCap(next))}
-          onContentSizeChange={(event) => {
-            const measured = Math.max(
-              1,
-              Math.round(
-                event.nativeEvent.contentSize.height / chatMetrics.fieldLineHeight,
-              ),
-            );
-            const next = Math.min(measured, chatMetrics.fieldMaxLines);
-            if (next === lines) return;
-            if (!reducedMotion) animateComposerGrowth();
-            setLines(next);
-          }}
+          onContentSizeChange={
+            MEASURES_FROM_A_MIRROR
+              ? undefined
+              : (event) => resize(event.nativeEvent.contentSize.height)
+          }
           placeholder={chatCopy.placeholder}
           placeholderTextColor={chatColors.placeholder}
           multiline

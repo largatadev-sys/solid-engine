@@ -13,4 +13,12 @@ export function animateComposerGrowth(): void {
 }
 
 
+export function naturalContentHeight(_field: unknown, reported: number): number {
+  return reported;
+}
+
+
 export const composerFieldTransition = {};
+
+
+export const MEASURES_FROM_A_MIRROR = false;
