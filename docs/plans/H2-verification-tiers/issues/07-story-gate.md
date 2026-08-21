@@ -17,7 +17,14 @@
   | **Merge gate** | ~30 min local, manual | **~9.5 min in CI**, blocking, unattended |
   | **On the founder's machine** | backend ITs 13m56s · Jest 51s · tsc 47s · smoke 9m30s · preview rebuild 4–6 min | **nothing automated** |
 
-  **The honest framing: the 30 minutes did not get faster, it moved.** Every suite still runs, in full, on every push — the machine running them changed, and CI does it ~5× faster than this box. What the founder actually gets back is the *foreground*: the loop is 21 seconds, and the remaining local work is the device walk and their own eye, which no runner does.
+  **The honest framing: the 30 minutes did not get faster, it moved — and it also shrank.** Two distinct savings, worth separating because conflating them produced a wrong sentence here on 2026-08-22 (*"every suite still runs, in full, on every push"* — **false**, corrected on founder challenge):
+
+  1. **It moved.** The suites that do run, run on GitHub's runners, ~5× faster than this box, while the founder does something else.
+  2. **Fewer of them run.** Path gating means a push only pays for the trees it touched. Measured over six consecutive pushes: **two ran everything** (both touched `.github/workflows/`, which forces all three by design), **two ran nothing**, two ran mobile alone. `playwright` skipped on **all six** — it is PR-only.
+
+  **What did NOT change is coverage:** no test was deleted, sampled or sharded, and any suite that is triggered runs whole. That is what the wrong sentence was reaching for and stated as if it applied to triggering.
+
+  **The one case where everything does run is the PR**, because `changes` diffs against `dev` rather than the previous commit — so a branch that touched several trees pays for all of them at the gate. That is deliberate: the per-push run asks *"did this commit break what it touched?"*, the PR run asks *"does this whole branch hold up merged?"* What the founder actually gets back is the *foreground*: the loop is 21 seconds, and the remaining local work is the device walk and their own eye, which no runner does.
 
   **One caveat that keeps the number honest:** Tier 1's 21s is for a mobile-only change. A backend change adds a scoped `-Dit.test=` run — measured at **3m20s for two IT classes**, most of it fixed startup — which is why the scope map is documented as a debugging convenience rather than a routine step.
 - [x] Epic map, amended rather than duplicated — the P8 trigger re-worded, the concurrency line's discharged half recorded, and four new lines under a dated `### H2 verification tiers 2026-08-22` block:
