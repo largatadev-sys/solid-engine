@@ -17,4 +17,4 @@
 - [x] `stack` keeps firing on backend changes as well as compose ones — 90 seconds per push buys the bisect you would otherwise do by hand (decision 8)
 - [x] `concurrency: cancel-in-progress` and the maven/npm caches survive the split; confirm from a run, not from the YAML
 - [ ] Billed minutes before and after recorded on this ticket — the split's whole justification is cost, and ~6 min/push is the baseline
-- [ ] **Swap s required status check to the single  aggregator** — but only AFTER this workflow is on  (see the sequencing warning above). Attempted on 2026-08-22 and reverted the same minute; the contexts are back to the three job names, which is correct while  carries the old workflow
+- [ ] **Swap `dev`'s required status check to the single `ci` aggregator** — but only AFTER this workflow is on `dev` (see the sequencing warning above). Attempted 2026-08-22 and reverted within the minute; the contexts are back to the three job names, which is correct while `dev` still carries the old workflow
