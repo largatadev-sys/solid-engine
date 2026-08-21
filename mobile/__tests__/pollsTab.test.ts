@@ -38,10 +38,10 @@ describe('the Polls tab goes live on the shipped row — S2.1', () => {
     expect(workspaceTabFrom('polls')).toBe('polls');
   });
 
-  it('stays greyed for the surfaces S2.1 did not build', () => {
+  it('no longer greys Chat, which S4.10 built', () => {
     const chat = WORKSPACE_TABS.find((tab) => tab.key === 'chat');
 
-    expect(chat?.comingSoonSurface).toBe('chat');
+    expect(chat?.comingSoonSurface).toBeUndefined();
   });
 
   it('renders the board on the workspace host, on both surfaces the row serves', () => {

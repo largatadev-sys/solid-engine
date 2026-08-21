@@ -32,6 +32,7 @@ import {
 import { WorkspacePhotoDumpTab } from '../../../../../src/itineraries/WorkspacePhotoDumpTab';
 import { WorkspaceTravelersTab } from '../../../../../src/itineraries/WorkspaceTravelersTab';
 import { WorkspacePollsTab } from '../../../../../src/polls/WorkspacePollsTab';
+import { WorkspaceChatTab } from '../../../../../src/chat/WorkspaceChatTab';
 import {
   editItineraryAction,
   forwardConfirmWording,
@@ -233,6 +234,10 @@ export default function TripWorkspaceScreen() {
         ) : null}
 
         {active === 'travelers' ? <WorkspaceTravelersTab itineraryId={id} /> : null}
+
+        {active === 'chat' ? (
+          <WorkspaceChatTab itineraryId={id} myId={myId} archived={data.archived ?? false} />
+        ) : null}
 
         {active === 'photo-dump' ? (
           <WorkspacePhotoDumpTab

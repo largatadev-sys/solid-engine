@@ -104,11 +104,14 @@ describe('workspaceTabFrom', () => {
   });
 
   it('refuses to open a tab that is still greyed', () => {
-    const greyed = WORKSPACE_TABS.filter((tab) => tab.comingSoonSurface !== undefined);
-
-    expect(greyed.length).toBeGreaterThan(0);
-    for (const tab of greyed) {
+    for (const tab of WORKSPACE_TABS.filter((entry) => entry.comingSoonSurface !== undefined)) {
       expect(workspaceTabFrom(tab.key)).toBe('day-by-day');
+    }
+  });
+
+  it('opens every tab on the row, because S4.10 greyed out the last of them', () => {
+    for (const tab of WORKSPACE_TABS) {
+      expect(workspaceTabFrom(tab.key)).toBe(tab.key);
     }
   });
 

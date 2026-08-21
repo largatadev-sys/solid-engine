@@ -26,7 +26,7 @@ export const WORKSPACE_TABS: readonly TabDefinition[] = [
   { key: 'polls', label: 'Polls' },
   { key: 'travelers', label: 'Travelers' },
   { key: 'photo-dump', label: 'Photo Dump' },
-  { key: 'chat', label: 'Chat', comingSoonSurface: 'chat' },
+  { key: 'chat', label: 'Chat' },
 ];
 
 
