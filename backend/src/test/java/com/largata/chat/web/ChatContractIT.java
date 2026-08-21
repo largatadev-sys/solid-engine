@@ -173,12 +173,33 @@ class ChatContractIT extends PostgresTestBase {
     void aBlankOrOversizedMessageIsRefusedByName() {
         Fixture trip = tripWithAMember();
 
-        rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("   "))
+        assertThat(refusalOf(rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("   "))))
+                .isEqualTo("CHAT_MESSAGE_BODY_MISSING");
+        assertThat(
+                        refusalOf(
+                                rig.send(
+                                        HttpMethod.POST,
+                                        messagesUri(trip),
+                                        trip.owner(),
+                                        body("x".repeat(2_001)))))
+                .isEqualTo("CHAT_MESSAGE_BODY_TOO_LONG");
+    }
+
+
+    @Test
+    void everyFenceAnswersBeforeValidationDoes() {
+        Fixture trip = tripWithAMember();
+        String stranger = rig.travelerWithHandle("stranger" + shortTag());
+
+        rig.send(HttpMethod.POST, messagesUri(trip), stranger, body("   "))
                 .expectStatus()
-                .isBadRequest();
-        rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("x".repeat(2_001)))
-                .expectStatus()
-                .isBadRequest();
+                .isNotFound();
+
+        archive(trip);
+
+        assertThat(refusalOf(rig.send(HttpMethod.POST, messagesUri(trip), trip.owner(), body("   "))))
+                .as("the fences run in spec order, so an unwritable trip refuses before the body is judged")
+                .isEqualTo("TRIP_ARCHIVED");
     }
 
 

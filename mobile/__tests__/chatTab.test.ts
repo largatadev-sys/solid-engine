@@ -181,6 +181,25 @@ describe('the motion contract is wired to the shared vocabulary (M1-M5)', () => 
   });
 
 
+  it('leaves no message text behind in the measuring mirror', () => {
+    const web = chatSource('composerGrowth.web.ts');
+    const afterMeasuring = web.slice(web.indexOf('mirror.offsetHeight'));
+
+    expect(afterMeasuring).toMatch(/mirror\.textContent = '';/);
+    expect(web).toContain("setAttribute('aria-hidden', 'true')");
+  });
+
+
+  it('leaves the bubble to the platform copy sheet and gives it no press feedback', () => {
+    const bubble = chatSource('MessageBubble.tsx');
+
+    expect(bubble).toMatch(/<Text selectable/);
+    expect(bubble).not.toMatch(/onLongPress/);
+    expect(bubble).not.toMatch(/Clipboard|copyMessage/);
+    expect(bubble).not.toMatch(/usePressFeedback|Pressable/);
+  });
+
+
   it('never animates a bubble entrance for history paged in on scroll-back', () => {
     expect(chatSource('WorkspaceChatTab.tsx')).toContain('animate={fresh}');
   });

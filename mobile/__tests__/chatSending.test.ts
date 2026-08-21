@@ -145,6 +145,24 @@ describe('the optimistic entry yields to its own broadcast (AC 2)', () => {
     expect(withoutAlreadyConfirmed(failed, [confirmed('Ordering coffees', true)]))
       .toHaveLength(1);
   });
+
+
+  it('retires ONE twin per confirmed message, so a repeated send does not vanish', () => {
+    const twice = beginSend(beginSend([], 'local-1', 'ok', AT), 'local-2', 'ok', AT);
+
+    expect(
+      withoutAlreadyConfirmed(twice, [confirmed('ok', true)]).map((send) => send.localId),
+    ).toEqual(['local-2']);
+  });
+
+
+  it('retires both twins once both are confirmed', () => {
+    const twice = beginSend(beginSend([], 'local-1', 'ok', AT), 'local-2', 'ok', AT);
+
+    expect(
+      withoutAlreadyConfirmed(twice, [confirmed('ok', true), confirmed('ok', true)]),
+    ).toEqual([]);
+  });
 });
 
 

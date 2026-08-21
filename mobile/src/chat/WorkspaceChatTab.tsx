@@ -90,14 +90,15 @@ export function WorkspaceChatTab({ itineraryId, myId, archived }: WorkspaceChatT
   }, [archived, itineraryId]);
 
   const newest = messages[messages.length - 1]?.id;
+  const lastSeen = useRef(newest);
 
   useEffect(() => {
-    if (newest === undefined) return;
     if (atBottom) {
+      lastSeen.current = newest;
       setUnseen(false);
       return;
     }
-    setUnseen(true);
+    if (newest !== undefined && newest !== lastSeen.current) setUnseen(true);
   }, [atBottom, newest]);
 
   const onDraftChange = useCallback(
@@ -161,9 +162,10 @@ export function WorkspaceChatTab({ itineraryId, myId, archived }: WorkspaceChatT
 
   const jumpToNewest = useCallback(() => {
     scroller.current?.scrollToEnd({ animated: true });
+    lastSeen.current = newest;
     setUnseen(false);
     setAtBottom(true);
-  }, []);
+  }, [newest]);
 
   if (thread.isPending) {
     return (

@@ -7,8 +7,6 @@ import {
   chatTypography,
 } from '../theme/workspaceTokens';
 import { authorLabel, avatarLabel, tintIndexFor, type ThreadMessage } from './chatThread';
-import { copyMessage } from './copyMessage';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 
 
 interface MessageBubbleProps {
@@ -19,25 +17,22 @@ interface MessageBubbleProps {
 
 
 export function MessageBubble({ message, startsGroup, endsGroup }: MessageBubbleProps) {
-  const press = usePressFeedback();
   const failure = useFailureDim(message.state === 'failed');
 
   const bubble = (
-    <AnimatedPressable
-      onLongPress={() => void copyMessage(message.body)}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-      accessibilityRole="text"
+    <Animated.View
       accessibilityLabel={`${authorLabel(message)}: ${message.body}`}
       style={StyleSheet.flatten([
         styles.bubble,
         message.mine ? styles.bubbleMine : styles.bubbleOther,
         cornersFor(message.mine, endsGroup),
-        { opacity: Animated.multiply(press.opacity, failure) },
+        { opacity: failure },
       ])}
     >
-      <Text style={styles.body}>{message.body}</Text>
-    </AnimatedPressable>
+      <Text selectable style={styles.body}>
+        {message.body}
+      </Text>
+    </Animated.View>
   );
 
   if (message.mine) {

@@ -56,7 +56,9 @@ export function naturalContentHeight(field: unknown, reported: number): number {
   mirror.textContent =
     node.value === '' ? ' ' : node.value + KEEPS_A_TRAILING_BLANK_LINE_MEASURABLE;
 
-  return mirror.offsetHeight;
+  const natural = mirror.offsetHeight;
+  mirror.textContent = '';
+  return natural;
 }
 
 

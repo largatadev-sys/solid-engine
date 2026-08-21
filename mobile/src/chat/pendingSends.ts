@@ -50,10 +50,19 @@ export function withoutAlreadyConfirmed(
   pending: PendingSends,
   confirmed: readonly ThreadMessage[],
 ): PendingSends {
-  const mineAlready = new Set(
-    confirmed.filter((message) => message.mine).map((message) => message.body),
-  );
-  return pending.filter((send) => send.state === 'failed' || !mineAlready.has(send.body));
+  const unclaimed = new Map<string, number>();
+  for (const message of confirmed) {
+    if (!message.mine) continue;
+    unclaimed.set(message.body, (unclaimed.get(message.body) ?? 0) + 1);
+  }
+
+  return pending.filter((send) => {
+    if (send.state === 'failed') return true;
+    const remaining = unclaimed.get(send.body) ?? 0;
+    if (remaining === 0) return true;
+    unclaimed.set(send.body, remaining - 1);
+    return false;
+  });
 }
 
 

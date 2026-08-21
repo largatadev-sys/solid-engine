@@ -8,7 +8,6 @@ import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
-import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +40,7 @@ class ChatController {
     ChatMessageResponse send(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID itineraryId,
-            @Valid @RequestBody SendMessageRequest request) {
+            @RequestBody SendMessageRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
         return ChatMessageResponse.of(chat.send(member, request.body()));
     }
