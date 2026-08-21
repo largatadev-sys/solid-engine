@@ -79,7 +79,7 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 | **Harness** *(no epic — verification tooling, pulled from the epic-map port line)* | | | | |
 | H1 | Playwright port: the whole verification harness becomes one Playwright suite *(grilled 2026-08-14, fired by the S4.3 gate's wall-clock; ADR-026 — API smokes fold in by founder reversal, CDP/`ws` deletes, dark flows rebuilt from the walk inventory; gate keeps three rungs)* | ✅ | [spec](docs/plans/H1-playwright-port/spec.md) |
 | **Infrastructure** *(no epic — product transport; pulled 2026-08-20 at the S4.10 grilling, builds before its first consumer)* | | | | |
-| WS-1 | WebSocket infrastructure *(ADR-030 — ticket handshake, guard-checked subscriptions + membership eviction, AFTER_COMMIT fan-out, additive envelope, REST catch-up; Railway-`wss://` spike is the blocking first ticket; dev-only echo topic is the proving consumer)* | ⬜ | [spec](docs/plans/WS-1-websocket-infrastructure/spec.md) |
+| WS-1 | WebSocket infrastructure *(ADR-030 — ticket handshake, guard-checked subscriptions + membership eviction, AFTER_COMMIT fan-out, additive envelope, REST catch-up; Railway-`wss://` spike is the blocking first ticket; dev-only echo topic is the proving consumer; **AC 10 — the device walk — and the reconnect spec defer to S4.10**, which has the first real subscriber; AC 1 partial — the proxy is proven from Node, the browser-through-the-edge combination is not)* | ✅ | [spec](docs/plans/WS-1-websocket-infrastructure/spec.md) |
 
 *(Stories past Epic 0 are slice-level titles — elaborated agent-ready just-in-time when pulled, per the playbook. Splits/merges expected; update the table when they happen.)*
 

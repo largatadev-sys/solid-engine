@@ -90,3 +90,9 @@ Any traveler-visible surface (S4.10) · a broker / horizontal scaling (seam name
 ## Comments
 
 **2026-08-20, owner review — passed.** All six tickets approved as written ("tickets are all good"); statuses flipped `needs-triage` → `ready-for-agent`. Implementation deliberately not started — the owner triggers the build. Open at ticket 01: the spike's deployment mechanic (scratch Railway service off the feature branch vs an early minimal proposed promotion to `dev`) — the founder's call when the build starts.
+
+**2026-08-21, implementation close — what shipped, and the two ACs that did NOT.** Tickets 02–05 built and reviewed; ticket 01's proxy question answered against deployed dev; ticket 06 run at the **reduced scope the founder ruled** (the two-context echo spec + the full-stack gate).
+
+- **AC 10 is UNMET and deferred to S4.10** — *"Device walk: background the app, foreground it — the connection re-establishes and resubscribes."* Deferred because ticket 05's connection is **lazy by contract**: with no subscription held, `reconnectIfDead()` correctly re-establishes nothing, so the walk would test the harness rather than the product. The reconnect spec defers with it, for the same reason. **S4.10's chat tab is the first real consumer of both**, and S4.10's spec now carries the inherited obligation.
+- **AC 1 is PARTIALLY met.** The deployed proof ran from **Node**, not a browser; ticket 06's browser proof ran against **localhost**, not the edge. The proxy's behaviour is proven (upgrade, query-param integrity, no idle-timeout across three heartbeat cycles); the literal *browser → edge* combination is not. Ticket 01's Comments carry the composition note.
+- **Everything else in AC 2–9 is closed**, with the ticket-expiry, guard, eviction, AFTER_COMMIT and hygiene families IT-proven (backend 861 ITs green) and the delivery proof sabotage-verified at the browser rung.
