@@ -216,21 +216,22 @@ export function WorkspaceChatTab({ itineraryId, myId, archived }: WorkspaceChatT
         </ScrollView>
       )}
 
-      {unseen ? (
-        <View style={styles.pillDock}>
-          <NewMessagesPill onPress={jumpToNewest} />
-        </View>
-      ) : null}
-
       {archived ? (
         <ArchivedNotice />
       ) : (
-        <Composer
-          draft={draft}
-          onDraftChange={onDraftChange}
-          onSend={onSend}
-          autoFocus={messages.length === 0}
-        />
+        <View>
+          {unseen ? (
+            <View style={styles.pillDock}>
+              <NewMessagesPill onPress={jumpToNewest} />
+            </View>
+          ) : null}
+          <Composer
+            draft={draft}
+            onDraftChange={onDraftChange}
+            onSend={onSend}
+            autoFocus={messages.length === 0}
+          />
+        </View>
       )}
     </KeyboardAvoidingView>
   );
@@ -326,7 +327,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 96,
+    bottom: '100%',
     alignItems: 'center',
+    paddingBottom: 8,
   },
 });

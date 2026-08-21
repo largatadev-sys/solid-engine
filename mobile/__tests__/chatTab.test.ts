@@ -48,9 +48,18 @@ describe('the Chat tab goes live — S4.10', () => {
 
   it('hands the tab the archived flag, so the notice bar is not a guess', () => {
     const screen = readFileSync(WORKSPACE_SCREEN, 'utf8');
-    const mount = screen.slice(screen.indexOf("active === 'chat'"));
+    const mount = screen.slice(screen.indexOf('<WorkspaceChatTab'));
 
-    expect(mount.slice(0, 260)).toContain('archived');
+    expect(mount).not.toBe('');
+    expect(mount.slice(0, 200)).toContain('archived');
+  });
+
+
+  it('gives the thread a bounded height so the composer docks rather than scrolling away', () => {
+    const screen = readFileSync(WORKSPACE_SCREEN, 'utf8');
+
+    expect(screen).toMatch(/scrollEnabled=\{active !== 'chat'\}/);
+    expect(screen).toMatch(/dockedContainer:[\s\S]{0,80}height: '100%'/);
   });
 });
 
