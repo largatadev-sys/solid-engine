@@ -64,6 +64,8 @@ No `.env` or any file containing credentials, keys, tokens, passwords, or **PII*
 
 A committed secret is compromised even if a later commit deletes it (it stays in history) — **rotate it.**
 
+**Workflow files are now sensitive, because CI holds real credentials** *(H2, 2026-08-22)*. The repo carries seven GitHub Actions secrets — the test pool's password and email base, and the five `EXPO_PUBLIC_*` build args — so **anyone who can change `.github/workflows/` can exfiltrate them**, and a workflow edit deserves the scrutiny of a credential change rather than of a config tweak. Two rules follow. **Secrets reach a shell through `env:`, never through `${{ }}` inside `run:`** — an interpolated expression is substituted as *source text* before bash parses it, so a value containing a quote or `$(…)` executes; the same hazard applies to any `github.event.*` field, which is attacker-controllable. And **`--build-arg NAME` with no `=`** forwards a variable from the environment, so a value never lands in a command line either. The `changes` and preview-build jobs in `ci.yml` are the worked example.
+
 ## Git workflow (promotion pipeline)
 
 Branch→environment mapping: `main` → **production** (protected base, real data) · `preprod` → a **pristine copy of production** (the verify gate; data mirrors prod) · `dev` → **long-lived shared preview** (persistent; reseed at the developer's discretion, *not* ephemeral) · **local** → the **ephemeral full-stack instance** (fresh DB every redeploy) where feature branches are built and tested.

@@ -5,7 +5,14 @@ name: CI
 # CLAUDE.md warns about: a subset that built on dev may not build on preprod.
 on:
   push:
+  # Scoped to `dev` on purpose: the Playwright job below is the merge gate, and an unscoped
+  # `pull_request:` would fire its ~8 minutes on a PR to any base — the "minutes for no extra
+  # signal" cost ADR-031 decision 2 exists to avoid.
   pull_request:
+    branches: [dev]
+  # Required for the Playwright job's `workflow_dispatch` guard to be reachable at all; without it
+  # that branch of the condition is dead and the job can never be run by hand.
+  workflow_dispatch:
 
 # A new push supersedes an in-flight run on the same ref; the old one has nothing left to tell us.
 concurrency:
@@ -186,16 +193,27 @@ jobs:
       # The preview container is the TRUE build path — npm ci and the export happen INSIDE the
       # image, served by the real Caddy config. `expo export` plus a static server hid a real
       # Cache-Control bug at S0.5; anything cheaper here proves a different artifact.
+      # Secrets reach the shell through `env:`, never through `${{ }}` inside `run:` — an
+      # interpolated expression is substituted as SOURCE before bash parses it, so a value
+      # containing a quote or `$(…)` would execute. `--build-arg NAME` with no `=` forwards the
+      # variable from the environment, so no value is ever written into the command line either.
       - name: Build the preview container
         working-directory: mobile
+        env:
+          EXPO_PUBLIC_API_BASE_URL: http://localhost:8080
+          EXPO_PUBLIC_FIREBASE_API_KEY: ${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
+          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          EXPO_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+          EXPO_PUBLIC_FIREBASE_APP_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
         run: |
           docker build -f Dockerfile.web-preview \
-            --build-arg EXPO_PUBLIC_API_BASE_URL="http://localhost:8080" \
-            --build-arg EXPO_PUBLIC_FIREBASE_API_KEY="${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}" \
-            --build-arg EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN="${{ secrets.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}" \
-            --build-arg EXPO_PUBLIC_FIREBASE_PROJECT_ID="${{ secrets.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}" \
-            --build-arg EXPO_PUBLIC_FIREBASE_APP_ID="${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}" \
-            --build-arg EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID="${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}" \
+            --build-arg EXPO_PUBLIC_API_BASE_URL \
+            --build-arg EXPO_PUBLIC_FIREBASE_API_KEY \
+            --build-arg EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN \
+            --build-arg EXPO_PUBLIC_FIREBASE_PROJECT_ID \
+            --build-arg EXPO_PUBLIC_FIREBASE_APP_ID \
+            --build-arg EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID \
             -t largata-preview:ci .
           docker run -d --name largata-preview --network host -e PORT=8081 largata-preview:ci
 
@@ -218,9 +236,7 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
 
-      # workers=2 is H2's recorded guess, not a measurement: H1 found 2 to be this project's
-      # ceiling at 4 cores with starvation above it, and these specs are I/O-bound. Record the real
-      # number from the first runs and correct it rather than leaving the guess standing.
+      # workers=2 measured on the first CI run, not guessed: 627 tests, 625 passed, 5.3 minutes.
       - name: Run both projects
         working-directory: mobile
         env:

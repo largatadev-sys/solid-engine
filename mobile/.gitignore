@@ -48,7 +48,3 @@ scripts/fixtures/photos/
 # Playwright artifacts (H1)
 e2e/.artifacts/
 playwright-report/
-
-# TypeScript incremental build cache (H2 ticket 04) — a build artifact must be unstageable,
-# not merely un-staged.
-*.tsbuildinfo

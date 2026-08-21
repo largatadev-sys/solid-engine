@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [x] Secrets set via `gh secret set` from the gitignored `mobile/.env`, never printed: `LARGATA_TEST_POOL_PASSWORD`, `LARGATA_TEST_POOL_EMAIL_BASE`, and the five `EXPO_PUBLIC_*` build args. **Consequence to carry into CLAUDE.md: a workflow file can now read them, so workflow edits become sensitive**
+- [x] Secrets set via `gh secret set` from the gitignored `mobile/.env`, never printed: `LARGATA_TEST_POOL_PASSWORD`, `LARGATA_TEST_POOL_EMAIL_BASE`, and the five `EXPO_PUBLIC_*` build args. **Consequence carried into CLAUDE.md's never-commit-secrets section after the review found it missing: a workflow file can read them, so workflow edits are sensitive — with the `env:`-not-`${{ }}` rule and the bare `--build-arg NAME` idiom recorded as the worked example**
 - [x] Trigger is `pull_request` targeting `dev` **plus `workflow_dispatch`** — not every push (minutes for no extra signal) and not nightly (an unattended 3am red nobody triages is the lying-suite problem restated)
 - [x] The job composes its own stack and **builds `Dockerfile.web-preview` in-job** — the true build path, never a dev server. `expo export` + a static server hid a real `Cache-Control` bug at S0.5 (decision 3)
 - [x] **`LARGATA_WORKERS=2` measured, and the guess held.** First CI run, 2026-08-22: `Running 627 tests using 2 workers` → **625 passed, 2 skipped, 5.3 minutes**; the whole job including the compose stack and the preview container build was **8m13s**. Green on the first attempt.
