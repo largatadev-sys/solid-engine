@@ -81,16 +81,14 @@ test.describe('the trip workspace as a viewer', () => {
     await expect(page.getByText(/Finalize/i)).toHaveCount(0);
   });
 
-  test('Chat greys with a message rather than dead-clicking — Polls stopped greying at S2.1', async ({
-    page,
-    signal,
-  }) => {
+  test('no tab greys any more — Polls went live at S2.1 and Chat at S4.10', async ({ page }) => {
     await page.goto(`/itineraries/${trip.id}`);
 
-    await labelled(page, 'Chat, coming soon').click();
-    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
-
+    await expect(labelled(page, 'Chat, coming soon')).toHaveCount(0);
     await expect(labelled(page, 'Polls, coming soon')).toHaveCount(0);
+
+    await labelled(page, 'Chat').last().click();
+    await expect(page.getByPlaceholder('Message…')).toBeVisible({ timeout: 15_000 });
   });
 
   test('the Travelers tab lists the roster', async ({ page }) => {

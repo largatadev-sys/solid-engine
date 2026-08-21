@@ -60,7 +60,7 @@ export function useTravelerByHandle(handle: string): UseQueryResult<TravelerCard
   return useQuery({
     queryKey: meKeys.handleLookup(handle),
     queryFn: () => travelerRepository.findByHandle(handle),
-    enabled: kind === 'signedIn' && handle.length >= HANDLE_MIN_LENGTH,
+    enabled: kind === 'signedIn' && handle.length > 0,
     staleTime: HANDLE_FRESHNESS_MS,
     retry: false,
   });

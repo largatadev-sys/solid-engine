@@ -486,3 +486,110 @@ export const tripTabMotion = {
   pressOutMs: 150,
   pressedOpacity: 0.85,
 } as const;
+
+
+export const chatColors = {
+  bubbleOther: '#FAFAF9',
+  bubbleOtherBorder: '#E7E5E4',
+  bubbleMine: '#FFF7ED',
+  bubbleMineBorder: '#FED7AA',
+  bubbleInk: '#1C1917',
+  handle: '#78716C',
+  stamp: '#A59E99',
+  hairline: '#E7E5E4',
+  field: '#FAFAF9',
+  fieldBorder: '#E7E5E4',
+  placeholder: '#A59E99',
+  sendIdle: '#F5F5F4',
+  sendIdleGlyph: '#A59E99',
+  sendReady: '#EA580C',
+  sendReadyGlyph: '#FFFFFF',
+  sendPressed: '#E8613A',
+  counter: '#A59E99',
+  counterAtCap: '#C2410C',
+  failure: '#B91C1C',
+  retry: '#EA580C',
+  discard: '#78716C',
+  emptyWell: '#FAF9F6',
+  emptyGlyph: '#78716C',
+  emptyBody: '#78716C',
+  noticeWell: '#FAFAF9',
+  noticeInk: '#78716C',
+  pillSurface: '#FFFFFF',
+  pillInk: '#EA580C',
+} as const;
+
+
+export const chatAvatarTints = [
+  { well: '#FDE4CF', ink: '#C2410C' },
+  { well: '#DBEAFE', ink: '#1D4ED8' },
+  { well: '#DCFCE7', ink: '#15803D' },
+  { well: '#FEF3C7', ink: '#B45309' },
+  { well: '#EDE9FE', ink: '#6D28D9' },
+  { well: '#FCE7F3', ink: '#BE185D' },
+] as const;
+
+
+export const chatMetrics = {
+  avatarSize: 28,
+  bubbleMaxWidth: 256,
+  bubbleRadius: 18,
+  bubbleSenderCorner: 6,
+  bubblePaddingVertical: 9,
+  bubblePaddingHorizontal: 13,
+  intraGroupGap: 2,
+  interGroupGap: 14,
+  avatarGap: 8,
+  fieldRadius: 20,
+  fieldMinHeight: 40,
+  fieldLineHeight: 19,
+  fieldMaxLines: 3,
+  fieldPaddingVertical: 10,
+  fieldPaddingHorizontal: 16,
+  sendButtonSize: 36,
+  sendGlyphSize: 16,
+  emptyWellSize: 64,
+  emptyGlyphSize: 28,
+  hitSlop: 12,
+  threadPaddingHorizontal: 14,
+  threadPaddingTop: 16,
+  threadPaddingBottom: 10,
+  composerPaddingVertical: 10,
+  composerPaddingHorizontal: 14,
+  failedOpacity: 0.55,
+} as const;
+
+
+export const chatTypography = {
+  body: { fontSize: 14, lineHeight: 19, fontWeight: '400' },
+  handle: { fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  stamp: { fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  initials: { fontSize: 10, lineHeight: 12, fontWeight: '700' },
+  counter: { fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  failure: { fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  action: { fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  emptyBody: { fontSize: 13, lineHeight: 19, fontWeight: '400' },
+  notice: { fontSize: 13, lineHeight: 18, fontWeight: '400' },
+} as const;
+
+
+export const chatMotion = {
+  entranceMs: 150,
+  entranceRisePx: 8,
+  stateChangeMs: 150,
+  layoutMs: 200,
+  pressInMs: 100,
+  pressOutMs: 150,
+  pressedOpacity: 0.85,
+} as const;
+
+
+export const chatCopy = {
+  placeholder: 'Message…',
+  empty: 'Say hello — the plan starts here.',
+  archived: 'This trip is archived — chat is closed.',
+  failed: "Couldn't send",
+  retry: 'Retry',
+  discard: 'Discard',
+  newMessages: '↓ New messages',
+} as const;

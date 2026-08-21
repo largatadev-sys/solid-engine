@@ -13,7 +13,7 @@ import {
   usePendingInvitations,
   useRevokeInvitation,
 } from '../../../../../src/query/invitationQueries';
-import { HANDLE_MIN_LENGTH, useTravelerByHandle } from '../../../../../src/query/travelerQueries';
+import { useTravelerByHandle } from '../../../../../src/query/travelerQueries';
 import { colors, radii, spacing, typography } from '../../../../../src/theme';
 import type { InvitationResponse } from '../../../../../src/types/api';
 
@@ -61,8 +61,8 @@ export default function InviteTravelersScreen() {
             autoCorrect={false}
           />
           <Pressable
-            style={[styles.searchButton, handleDraft.trim().length < HANDLE_MIN_LENGTH && styles.busy]}
-            disabled={handleDraft.trim().length < HANDLE_MIN_LENGTH}
+            style={[styles.searchButton, handleDraft.trim().length === 0 && styles.busy]}
+            disabled={handleDraft.trim().length === 0}
             onPress={() => setSearched(handleDraft.trim().toLowerCase())}
             accessibilityRole="button"
             accessibilityLabel="Look up this username"

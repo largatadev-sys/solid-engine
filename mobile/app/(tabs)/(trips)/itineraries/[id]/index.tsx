@@ -32,6 +32,7 @@ import {
 import { WorkspacePhotoDumpTab } from '../../../../../src/itineraries/WorkspacePhotoDumpTab';
 import { WorkspaceTravelersTab } from '../../../../../src/itineraries/WorkspaceTravelersTab';
 import { WorkspacePollsTab } from '../../../../../src/polls/WorkspacePollsTab';
+import { WorkspaceChatTab } from '../../../../../src/chat/WorkspaceChatTab';
 import {
   editItineraryAction,
   forwardConfirmWording,
@@ -149,7 +150,11 @@ export default function TripWorkspaceScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        style={styles.scroller}
+        contentContainerStyle={active === 'chat' ? styles.dockedContainer : styles.container}
+        scrollEnabled={active !== 'chat'}
+      >
         <WorkspaceHeader
           badge={badge}
           title={data.title}
@@ -234,6 +239,12 @@ export default function TripWorkspaceScreen() {
 
         {active === 'travelers' ? <WorkspaceTravelersTab itineraryId={id} /> : null}
 
+        {active === 'chat' ? (
+          <View style={styles.chatBody}>
+            <WorkspaceChatTab itineraryId={id} myId={myId} archived={data.archived ?? false} />
+          </View>
+        ) : null}
+
         {active === 'photo-dump' ? (
           <WorkspacePhotoDumpTab
             itineraryId={id}
@@ -284,8 +295,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.surface,
   },
+  scroller: {
+    flex: 1,
+  },
   container: {
     paddingBottom: 24,
+  },
+  dockedContainer: {
+    flexGrow: 1,
+    height: '100%',
+  },
+  chatBody: {
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
   },
   tabBody: {
     padding: 16,

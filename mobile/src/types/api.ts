@@ -588,3 +588,23 @@ export type CreatePollRequest = {
 export type CastVoteRequest = {
   optionId: string;
 };
+
+
+export type ChatAuthorResponse = {
+  travelerId: string;
+  handle: string | null;
+  displayName: string | null;
+};
+
+
+export type ChatMessageResponse = {
+  id: string;
+  author: ChatAuthorResponse | null;
+  body: string;
+  at: string;
+};
+
+
+export type SendChatMessageRequest = {
+  body: string;
+};

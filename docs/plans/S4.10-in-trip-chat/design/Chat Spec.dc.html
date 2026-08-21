@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { margin:0; background:#F5F5F4; font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#EA580C; text-decoration:none; } a:hover { color:#C2410C; text-decoration:underline; }
+    @keyframes chFadeRise { 0% { opacity:0; transform:translateY(8px); } 100% { opacity:1; transform:translateY(0); } }
+    textarea { font-family:'Inter',sans-serif; }
+  </style>
+</helmet>
+
+<div style="padding:48px 56px 72px; display:flex; flex-direction:column; gap:36px; max-width:1900px;">
+
+  <div style="max-width:1000px; display:flex; flex-direction:column; gap:14px;">
+    <div style="font-size:12px; font-weight:700; letter-spacing:2px; color:#78716C; text-transform:uppercase;">Largata · Trip Workspace · Chat s1</div>
+    <div style="font-family:'Outfit',sans-serif; font-size:30px; font-weight:700; color:#1C1917; line-height:1.15;">Chat tab — group planning thread, pull-exact spec with live demo</div>
+    <div style="font-size:13.5px; line-height:1.6; color:#44403C;">The in-trip group chat for planning, one thread per trip, text only. New feature — nothing shipped yet; flagged <b>unspecced</b> in the <a href="Screen Audit.dc.html">audit</a>. Built on the workspace tokens (<span style="font-family:ui-monospace,monospace; font-size:11.5px; background:#EFEEEC; padding:1px 5px; border-radius:4px;">src/theme/workspaceTokens.ts</span>): accent #EA580C, ink #1C1917, muted #78716C, hairline #E7E5E4, wells #FAFAF9 / #FFF7ED. Frame <a href="#demo">0</a> (bottom right) is a <b>working</b> thread + composer — type, send, and (with the <i>Fail next send</i> tweak) walk the failed-send recovery. It runs the exact motion contract below.</div>
+    <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:14px 18px; max-width:920px; display:flex; flex-direction:column; gap:6px;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#C2410C; text-transform:uppercase;">Calls made beyond the brief (UX)</div>
+      <div style="font-size:12.5px; line-height:1.7; color:#44403C;">
+        <b>1.</b> My bubbles are the <b>warm tinted well</b> (#FFF7ED, 1px #FED7AA), not solid accent — planning messages run long, ink-on-well reads better than white-on-orange at paragraph length, and accent stays reserved for the one action on screen (Send).
+        <b>2.</b> Avatar + handle render <b>once per sender group</b>, top-aligned; grouped bubbles sit 2px apart, groups 14px.
+        <b>3.</b> The character counter is <b>invisible until 1,900</b>; it never nags mid-message.
+        <b>4.</b> A failed message <b>holds its place</b> in the thread at 55% opacity — no modal, no toast, no reflow.
+        <b>5.</b> Composer grows to 4 lines then scrolls internally; the thread never loses more than 4 lines to input.
+      </div>
+    </div>
+  </div>
+
+  <!-- —————— FRAMES 1–5 —————— -->
+  <div style="display:flex; gap:36px; flex-wrap:wrap; align-items:flex-start;">
+
+    <!-- 1 · THREAD POPULATED -->
+    <div style="flex:none; width:414px; display:flex; flex-direction:column; gap:14px;" data-screen-label="1 · Thread populated">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">1 · Thread, populated — 4 members planning</div>
+      <div style="background:#1C1917; border-radius:36px; padding:12px;">
+        <div style="width:390px; height:820px; background:#FFFFFF; border-radius:26px; overflow:hidden; display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px 4px;">
+            <span style="font-size:14px; font-weight:600; color:#1C1917;">9:41</span>
+            <svg width="46" height="12" viewBox="0 0 46 12"><rect x="0" y="7" width="3" height="4" rx="1" fill="#1C1917"></rect><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#1C1917"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#1C1917"></rect><rect x="21.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#1C1917" stroke-opacity="0.35"></rect><rect x="23" y="2" width="18" height="8" rx="1.5" fill="#1C1917"></rect></svg>
+          </div>
+          <div style="padding:12px 16px 8px; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:22px; line-height:28px; font-weight:700; color:#1C1917;">Island Hopping in El Nido</div>
+            <div style="font-size:13px; line-height:17px; color:#78716C;">Original by @josetravels</div>
+          </div>
+          <div style="display:flex; gap:12px; padding:0 16px; border-bottom:1px solid #E7E5E4; overflow:hidden; justify-content:flex-end;">
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Day-by-Day</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Polls</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Travelers</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Photo Dump</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:700; color:#EA580C; white-space:nowrap;">Chat</span><span style="width:32px; height:3px; background:#EA580C; border-radius:100px 100px 0 0;"></span></div>
+          </div>
+          <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding:16px 14px 10px; gap:14px;">
+            <div style="display:flex; align-items:center; gap:12px; padding:2px 24px;"><span style="flex:1; height:1px; background:#E7E5E4;"></span><span style="font-size:11px; line-height:14px; font-weight:600; color:#A59E99; white-space:nowrap;">Tuesday, March 3</span><span style="flex:1; height:1px; background:#E7E5E4;"></span></div>
+            <div style="display:flex; gap:8px;">
+              <div style="width:28px; height:28px; border-radius:999px; background:#FDE4CF; flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#C2410C;">MS</div>
+              <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start;">
+                <span style="font-size:11px; line-height:14px; font-weight:600; color:#78716C; padding-left:2px;">@mayasantos</span>
+                <div style="max-width:256px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:18px 18px 18px 18px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">Booked the van from Puerto Princesa — pickup is 7am from the hostel.</div>
+                <div style="max-width:256px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:18px 18px 18px 6px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">Driver's name is Rico. I'll forward his number tonight.</div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end;">
+              <div style="max-width:256px; background:#FFF7ED; border:1px solid #FED7AA; border-radius:18px 18px 6px 18px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">Perfect. I'll sort breakfast so we can eat on the road.</div>
+            </div>
+            <div style="text-align:center; font-size:11px; line-height:14px; font-weight:600; color:#A59E99;">4:12 PM</div>
+            <div style="display:flex; gap:8px;">
+              <div style="width:28px; height:28px; border-radius:999px; background:#DBEAFE; flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#1D4ED8;">JR</div>
+              <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start;">
+                <span style="font-size:11px; line-height:14px; font-weight:600; color:#78716C; padding-left:2px;">@josetravels</span>
+                <div style="max-width:256px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:18px 18px 18px 6px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">Tour A or Tour C for day 2? C has the hidden lagoons but leaves an hour earlier.</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; padding:2px 24px;"><span style="flex:1; height:1px; background:#E7E5E4;"></span><span style="font-size:11px; line-height:14px; font-weight:600; color:#A59E99; white-space:nowrap;">Today</span><span style="flex:1; height:1px; background:#E7E5E4;"></span></div>
+            <div style="display:flex; gap:8px;">
+              <div style="width:28px; height:28px; border-radius:999px; background:#DCFCE7; flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#15803D;">PN</div>
+              <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start;">
+                <span style="font-size:11px; line-height:14px; font-weight:600; color:#78716C; padding-left:2px;">@priyanair</span>
+                <div style="max-width:256px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:18px 18px 18px 6px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">C. The lagoons are the whole point of El Nido.</div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end;">
+              <div style="max-width:256px; background:#FFF7ED; border:1px solid #FED7AA; border-radius:18px 18px 6px 18px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">C it is — putting it to a poll so it's official.</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #E7E5E4; padding:10px 14px 6px; display:flex; align-items:flex-end; gap:10px;">
+            <div style="flex:1; min-height:40px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:20px; padding:10px 16px; font-size:14px; line-height:19px; color:#A59E99;">Message…</div>
+            <div style="width:36px; height:36px; border-radius:999px; background:#F5F5F4; flex:none; display:flex; align-items:center; justify-content:center; margin-bottom:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A59E99" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></div>
+          </div>
+          <div style="display:flex; justify-content:center; padding:8px 0 8px;"><span style="width:134px; height:5px; background:#1C1917; border-radius:100px;"></span></div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">Others: 28px initials avatar (per-member tint) + handle 11/600 muted, once per group; bubbles #FAFAF9 on 1px #E7E5E4, radius 18 (6 on the sender corner of the last bubble in a group). Mine: #FFF7ED on 1px #FED7AA, right-aligned, no avatar or handle. Bubble text 14/19 ink, max-width 256, padding 9×13. Intra-group gap 2, inter-group 14. Timestamp 11/600 #A59E99 centered — only on gaps ≥ 20 min. Date separator = hairline · label · hairline. Newest at bottom; list is bottom-anchored.</div>
+    </div>
+
+    <!-- 2 · EMPTY -->
+    <div style="flex:none; width:414px; display:flex; flex-direction:column; gap:14px;" data-screen-label="2 · Empty state">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">2 · Empty — no messages yet</div>
+      <div style="background:#1C1917; border-radius:36px; padding:12px;">
+        <div style="width:390px; height:820px; background:#FFFFFF; border-radius:26px; overflow:hidden; display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px 4px;">
+            <span style="font-size:14px; font-weight:600; color:#1C1917;">9:41</span>
+            <svg width="46" height="12" viewBox="0 0 46 12"><rect x="0" y="7" width="3" height="4" rx="1" fill="#1C1917"></rect><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#1C1917"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#1C1917"></rect><rect x="21.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#1C1917" stroke-opacity="0.35"></rect><rect x="23" y="2" width="18" height="8" rx="1.5" fill="#1C1917"></rect></svg>
+          </div>
+          <div style="padding:12px 16px 8px; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:22px; line-height:28px; font-weight:700; color:#1C1917;">Island Hopping in El Nido</div>
+            <div style="font-size:13px; line-height:17px; color:#78716C;">Original by @josetravels</div>
+          </div>
+          <div style="display:flex; gap:12px; padding:0 16px; border-bottom:1px solid #E7E5E4; overflow:hidden; justify-content:flex-end;">
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Day-by-Day</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Polls</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Travelers</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Photo Dump</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:700; color:#EA580C; white-space:nowrap;">Chat</span><span style="width:32px; height:3px; background:#EA580C; border-radius:100px 100px 0 0;"></span></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:0 32px;">
+            <div style="width:64px; height:64px; border-radius:999px; background:#FAF9F6; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.35 8.5 8.5 0 0 1-3.4-.7L3 20l1.35-4.05A8.38 8.38 0 0 1 3.5 11.5a8.5 8.5 0 1 1 17.5 0z"></path></svg>
+            </div>
+            <div style="font-size:13px; line-height:19px; color:#78716C; text-align:center; max-width:280px;">Say hello — the plan starts here.</div>
+          </div>
+          <div style="border-top:1px solid #E7E5E4; padding:10px 14px 6px; display:flex; align-items:flex-end; gap:10px;">
+            <div style="flex:1; min-height:40px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:20px; padding:10px 16px; font-size:14px; line-height:19px; color:#A59E99;">Message…</div>
+            <div style="width:36px; height:36px; border-radius:999px; background:#F5F5F4; flex:none; display:flex; align-items:center; justify-content:center; margin-bottom:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A59E99" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></div>
+          </div>
+          <div style="display:flex; justify-content:center; padding:8px 0 8px;"><span style="width:134px; height:5px; background:#1C1917; border-radius:100px;"></span></div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">Same 64px glyph well as the Polls empty state (#FAF9F6, muted outline glyph — a chat bubble). One line, 13/19 muted, centered: <b>"Say hello — the plan starts here."</b> (candidate copy, founder edits). No title, no CTA — the composer below IS the call to action, focused on tab entry when the thread is empty. No illustration.</div>
+    </div>
+
+    <!-- 3 · COMPOSER STATES -->
+    <div style="flex:none; width:414px; display:flex; flex-direction:column; gap:14px;" data-screen-label="3 · Composer states">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">3 · Composer — resting · grown · near cap</div>
+      <div style="background:#1C1917; border-radius:36px; padding:12px;">
+        <div style="width:390px; background:#FFFFFF; border-radius:26px; overflow:hidden; display:flex; flex-direction:column; gap:0;">
+          <div style="padding:20px 16px 6px; font-size:11px; font-weight:700; letter-spacing:1.2px; color:#78716C; text-transform:uppercase;">A · Resting</div>
+          <div style="border-top:1px solid #E7E5E4; padding:10px 14px; display:flex; align-items:flex-end; gap:10px;">
+            <div style="flex:1; min-height:40px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:20px; padding:10px 16px; font-size:14px; line-height:19px; color:#A59E99;">Message…</div>
+            <div style="width:36px; height:36px; border-radius:999px; background:#F5F5F4; flex:none; display:flex; align-items:center; justify-content:center; margin-bottom:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A59E99" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></div>
+          </div>
+          <div style="padding:20px 16px 6px; font-size:11px; font-weight:700; letter-spacing:1.2px; color:#78716C; text-transform:uppercase;">B · Grown — 4-line max, then inner scroll</div>
+          <div style="border-top:1px solid #E7E5E4; padding:10px 14px; display:flex; align-items:flex-end; gap:10px;">
+            <div style="flex:1; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:20px; padding:10px 16px; font-size:14px; line-height:19px; color:#1C1917;">Rico says the van fits 8 plus bags.
+If we leave at 7 sharp we hit Nacpan by noon,
+lunch there, then the viewpoint before
+check-in. Anyone object to skipping the mall?</div>
+            <div style="width:36px; height:36px; border-radius:999px; background:#EA580C; flex:none; display:flex; align-items:center; justify-content:center; margin-bottom:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></div>
+          </div>
+          <div style="padding:20px 16px 6px; font-size:11px; font-weight:700; letter-spacing:1.2px; color:#78716C; text-transform:uppercase;">C · Near the 2,000-char cap — counter appears at 1,900</div>
+          <div style="border-top:1px solid #E7E5E4; padding:10px 14px 14px; display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; align-items:flex-end; gap:10px;">
+              <div style="flex:1; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:20px; padding:10px 16px; font-size:14px; line-height:19px; color:#1C1917;">…and that's the whole day 3 plan. If the
+tide tables hold we do the sandbar first,
+kayaks after, and I'll pin the meetup spot
+on the map so nobody's hunting for us aga</div>
+              <div style="width:36px; height:36px; border-radius:999px; background:#EA580C; flex:none; display:flex; align-items:center; justify-content:center; margin-bottom:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></div>
+            </div>
+            <div style="text-align:right; padding-right:56px; font-size:11px; line-height:14px; font-weight:600; color:#A59E99;">1,968 / 2,000</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">Field: #FAFAF9 on 1px #E7E5E4, radius 20, padding 10×16, text 14/19 ink, placeholder "Message…" #A59E99. Send: 36px circle, arrow-up glyph; <b>disabled</b> (empty/whitespace draft) = #F5F5F4 fill + #A59E99 glyph; <b>enabled</b> = #EA580C fill + white glyph, pressed #E8613A. Grows with content to 4 lines (~97px), then the field scrolls internally. Counter 11/600 #A59E99, right-aligned under the field, hidden below 1,900 chars; at 2,000 it turns #C2410C and input stops accepting characters. Enter = newline; Send sends. Docked above the keyboard using the platform keyboard animation — no custom timing.</div>
+    </div>
+
+    <!-- 4 · FAILED SEND -->
+    <div style="flex:none; width:414px; display:flex; flex-direction:column; gap:14px;" data-screen-label="4 · Failed send">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">4 · Failed send — inline recovery, no modal</div>
+      <div style="background:#1C1917; border-radius:36px; padding:12px;">
+        <div style="width:390px; height:820px; background:#FFFFFF; border-radius:26px; overflow:hidden; display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px 4px;">
+            <span style="font-size:14px; font-weight:600; color:#1C1917;">9:41</span>
+            <svg width="46" height="12" viewBox="0 0 46 12"><rect x="0" y="7" width="3" height="4" rx="1" fill="#1C1917"></rect><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#1C1917"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#1C1917"></rect><rect x="21.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#1C1917" stroke-opacity="0.35"></rect><rect x="23" y="2" width="18" height="8" rx="1.5" fill="#1C1917"></rect></svg>
+          </div>
+          <div style="padding:12px 16px 8px; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:22px; line-height:28px; font-weight:700; color:#1C1917;">Island Hopping in El Nido</div>
+            <div style="font-size:13px; line-height:17px; color:#78716C;">Original by @josetravels</div>
+          </div>
+          <div style="display:flex; gap:12px; padding:0 16px; border-bottom:1px solid #E7E5E4; overflow:hidden; justify-content:flex-end;">
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Day-by-Day</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Polls</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Travelers</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Photo Dump</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:700; color:#EA580C; white-space:nowrap;">Chat</span><span style="width:32px; height:3px; background:#EA580C; border-radius:100px 100px 0 0;"></span></div>
+          </div>
+          <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding:16px 14px 10px; gap:14px;">
+            <div style="display:flex; gap:8px;">
+              <div style="width:28px; height:28px; border-radius:999px; background:#FDE4CF; flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#C2410C;">MS</div>
+              <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start;">
+                <span style="font-size:11px; line-height:14px; font-weight:600; color:#78716C; padding-left:2px;">@mayasantos</span>
+                <div style="max-width:256px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:18px 18px 18px 6px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">Ferry office says weather hold until 10am — keep phones on.</div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end;">
+              <div style="max-width:256px; background:#FFF7ED; border:1px solid #FED7AA; border-radius:18px 18px 6px 18px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">Got it, we'll wait at the pier café.</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+              <div style="max-width:256px; background:#FFF7ED; border:1px solid #FED7AA; border-radius:18px 18px 6px 18px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917; opacity:0.55;">Ordering coffees — anyone want food from here?</div>
+              <div style="display:flex; align-items:center; gap:10px; padding-right:2px;">
+                <span style="font-size:11px; line-height:14px; font-weight:600; color:#B91C1C;">Couldn't send</span>
+                <span style="font-size:12px; line-height:15px; font-weight:600; color:#EA580C;">Retry</span>
+                <span style="font-size:12px; line-height:15px; font-weight:600; color:#78716C;">Discard</span>
+              </div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #E7E5E4; padding:10px 14px 6px; display:flex; align-items:flex-end; gap:10px;">
+            <div style="flex:1; min-height:40px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:20px; padding:10px 16px; font-size:14px; line-height:19px; color:#A59E99;">Message…</div>
+            <div style="width:36px; height:36px; border-radius:999px; background:#F5F5F4; flex:none; display:flex; align-items:center; justify-content:center; margin-bottom:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A59E99" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></div>
+          </div>
+          <div style="display:flex; justify-content:center; padding:8px 0 8px;"><span style="width:134px; height:5px; background:#1C1917; border-radius:100px;"></span></div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">The failed bubble stays exactly where it landed, dimmed to <b>opacity 0.55</b>. Under it, right-aligned: "Couldn't send" 11/600 #B91C1C, then <b>Retry</b> (12/600 accent) · <b>Discard</b> (12/600 muted) — quiet text, 44px hit areas, no modal, no toast. Retry restores full opacity and re-attempts in place; Discard removes the bubble (layout 200ms). Composer stays usable throughout — a failed message never blocks new ones.</div>
+    </div>
+
+    <!-- 5 · READ-ONLY -->
+    <div style="flex:none; width:414px; display:flex; flex-direction:column; gap:14px;" data-screen-label="5 · Read-only archived">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">5 · Read-only — archived trip</div>
+      <div style="background:#1C1917; border-radius:36px; padding:12px;">
+        <div style="width:390px; height:820px; background:#FFFFFF; border-radius:26px; overflow:hidden; display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px 4px;">
+            <span style="font-size:14px; font-weight:600; color:#1C1917;">9:41</span>
+            <svg width="46" height="12" viewBox="0 0 46 12"><rect x="0" y="7" width="3" height="4" rx="1" fill="#1C1917"></rect><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#1C1917"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#1C1917"></rect><rect x="21.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#1C1917" stroke-opacity="0.35"></rect><rect x="23" y="2" width="18" height="8" rx="1.5" fill="#1C1917"></rect></svg>
+          </div>
+          <div style="padding:12px 16px 8px; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:22px; line-height:28px; font-weight:700; color:#1C1917;">Island Hopping in El Nido</div>
+            <div style="font-size:13px; line-height:17px; color:#78716C;">Original by @josetravels</div>
+          </div>
+          <div style="display:flex; gap:12px; padding:0 16px; border-bottom:1px solid #E7E5E4; overflow:hidden; justify-content:flex-end;">
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Day-by-Day</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Polls</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Travelers</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Photo Dump</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:700; color:#EA580C; white-space:nowrap;">Chat</span><span style="width:32px; height:3px; background:#EA580C; border-radius:100px 100px 0 0;"></span></div>
+          </div>
+          <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding:16px 14px 10px; gap:14px;">
+            <div style="display:flex; align-items:center; gap:12px; padding:2px 24px;"><span style="flex:1; height:1px; background:#E7E5E4;"></span><span style="font-size:11px; line-height:14px; font-weight:600; color:#A59E99; white-space:nowrap;">Friday, March 7</span><span style="flex:1; height:1px; background:#E7E5E4;"></span></div>
+            <div style="display:flex; gap:8px;">
+              <div style="width:28px; height:28px; border-radius:999px; background:#DBEAFE; flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#1D4ED8;">JR</div>
+              <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start;">
+                <span style="font-size:11px; line-height:14px; font-weight:600; color:#78716C; padding-left:2px;">@josetravels</span>
+                <div style="max-width:256px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:18px 18px 18px 6px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">Safe flights everyone. Best trip yet.</div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end;">
+              <div style="max-width:256px; background:#FFF7ED; border:1px solid #FED7AA; border-radius:18px 18px 6px 18px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917;">Already planning the next one. Same crew.</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #E7E5E4; background:#FAFAF9; padding:16px 14px; text-align:center; font-size:13px; line-height:18px; color:#78716C;">This trip is archived — chat is closed.</div>
+          <div style="display:flex; justify-content:center; padding:8px 0 8px;"><span style="width:134px; height:5px; background:#1C1917; border-radius:100px;"></span></div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; line-height:1.65; color:#44403C;">Thread renders exactly as normal — full contrast, scrollable. The composer row is replaced (not disabled) by a notice bar: #FAFAF9, hairline top, text 13/18 muted centered, exact copy <b>"This trip is archived — chat is closed."</b> No input, no send button, no failed-send affordances (undelivered drafts are discarded on archive).</div>
+    </div>
+  </div>
+
+  <!-- —————— CONTRACTS + LIVE DEMO —————— -->
+  <div style="display:flex; gap:44px; align-items:flex-start; flex-wrap:wrap;">
+
+    <div style="flex:1; min-width:520px; max-width:640px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">Component contract — normative</div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C1 · Thread + grouping</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">One thread per trip, all members, text only, newest at bottom, list bottom-anchored (inverted FlatList). Consecutive messages from one sender within <b>5 min</b> form a group: avatar + handle once, bubbles 2px apart, last bubble gets the 6px sender-side corner. Inter-group gap 14. On new content while scrolled up: keep position (no jump), quiet "↓ New messages" pill, accent text on white, hairline border — the <b>only</b> new-message affordance in the feature.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C2 · MessageBubble</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Text 14/19 #1C1917 both sides, max-width 256, padding 9×13, radius 18. <b>Others:</b> #FAFAF9 + 1px #E7E5E4, 28px initials avatar (stable per-member tint from the profile palette), handle 11/600 muted (e.g. @mayasantos). <b>Mine:</b> #FFF7ED + 1px #FED7AA, right-aligned, never an avatar or handle. Long-press: copy text (platform sheet) — nothing else.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C3 · Time + date</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Centered timestamp 11/600 #A59E99 only when the gap to the previous message is <b>≥ 20 min</b>. Date separator (hairline · label · hairline, same type) between calendar days; "Today" / "Yesterday", else "Tuesday, March 3". Never a per-bubble timestamp.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C4 · Composer</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Docked bottom, hairline top. Field #FAFAF9/#E7E5E4 radius 20, placeholder "Message…" #A59E99. Send = 36px circle, disabled until non-whitespace text (#F5F5F4/#A59E99 → #EA580C/white, pressed #E8613A). Grows to 4 lines then scrolls internally — no persistent scrollbar: the platform's transient scroll indicator only (web: <span style="font-family:ui-monospace,monospace; font-size:11.5px;">scrollbar-width: none</span>). Counter appears at 1,900 chars ("1,968 / 2,000", 11/600 #A59E99), #C2410C at cap; input hard-stops at 2,000. Draft persists per trip across tab switches. Send clears the field <b>immediately</b> (optimistic append).</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C5 · Failed send</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Optimistic bubble dims to 0.55 on failure; beneath it "Couldn't send" 11/600 #B91C1C + <b>Retry</b> (accent) · <b>Discard</b> (muted), 12/600 text actions with 44px hit areas. Retry restores opacity and re-attempts in place; Discard removes the bubble. Never a modal, toast, or auto-retry.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">C6 · Empty + read-only</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Empty: 64px #FAF9F6 glyph well + one muted line "Say hello — the plan starts here."; composer present and auto-focused. Archived trip: thread normal, composer replaced by the notice bar "This trip is archived — chat is closed." (#FAFAF9, 13/18 muted, centered). No input anywhere on archived trips.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="font-size:12.5px; line-height:1.7; color:#44403C;"><b>Ruled out — must not render anywhere:</b> read receipts, delivered/seen ticks, presence dots, typing indicator, unread badges or tab counts, reactions, reply-threading, mentions, and any attachment/camera/photo affordance. Chat is text-only by design.</div>
+      </div>
+
+      <div style="font-size:13px; font-weight:700; color:#1C1917; margin-top:8px;">Motion contract — normative, native-first</div>
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">M1 · Message entrance (sent + received)</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">New bubble fades in + rises 8px, <b>150ms ease-out</b> — opacity + translateY only, <span style="font-family:ui-monospace,monospace; font-size:11.5px;">Animated.timing</span> with <span style="font-family:ui-monospace,monospace; font-size:11.5px;">useNativeDriver: true</span>. No spring, no scale — chat entrances are frequent; keep them quiet. Same value for incoming messages. History loaded on scroll-back renders with <b>no animation</b>.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">M2 · Send button state</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Disabled → enabled crossfades fill + glyph color <b>150ms ease-out</b> (the shared state-change value). No pop, no scale on send.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">M3 · Composer growth</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Field height animates <b>200ms ease-in-ease-out</b> per line added/removed up to the 4-line max (<span style="font-family:ui-monospace,monospace; font-size:11.5px;">LayoutAnimation.easeInEaseOut</span>; the thread above rides the same layout pass). Web (react-native-web): explicit CSS height transition, same 200ms — LayoutAnimation is a no-op there (same fallback as Profile M2). Keyboard: platform keyboard animation, never custom timing.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">M4 · Failed send + recovery</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">On failure: bubble opacity 1→0.55 <b>150ms</b>; error row fades in <b>150ms</b> (no rise — it's an annotation, not a message). Retry: opacity back to 1 over 150ms, error row fades out. Discard: bubble + row fade out 150ms, then the list closes the gap with the <b>200ms layout</b> value. Counter at 1,900: fades in 150ms, no movement.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">M5 · Press feedback</div>
+          <div style="font-size:12.5px; line-height:1.7; color:#44403C;">Send, Retry, Discard, "New messages" pill: opacity 1→0.85, <b>100ms in / 150ms release</b> — the shared app value.</div>
+        </div>
+        <div style="height:1px; background:#F5F5F4;"></div>
+        <div style="font-size:12.5px; line-height:1.7; color:#44403C;"><b>Nothing else animates.</b> No scroll-driven effects, no avatar pops, no bubble springs. All motion is transform/opacity, native driver. <b>Reduce Motion:</b> M1 entrance and M3 growth jump-cut; the 150ms opacity fades (M2, M4) stay.</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:6px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#B91C1C; text-transform:uppercase;">Shared vocabulary (app-wide, from Polls)</div>
+        <div style="font-size:12.5px; line-height:1.8; color:#44403C;">color/opacity state change <b>150ms ease-out</b> · marker/icon entrance pop <b>200ms cubic-bezier(0.34,1.56,0.64,1)</b> (unused here — deliberately) · layout growth/collapse <b>200ms ease-in-ease-out</b> · progress/travel <b>300ms</b> · press <b>100ms in / 150ms out</b>. Chat uses only the 150ms, 200ms-layout, and press values.</div>
+      </div>
+    </div>
+
+    <!-- 0 · LIVE DEMO -->
+    <div id="demo" style="flex:none; width:414px; display:flex; flex-direction:column; gap:14px;" data-screen-label="0 · Live demo">
+      <div style="font-size:13px; font-weight:700; color:#1C1917;">0 · Live demo — type and send; toggle "Fail next send" in Tweaks to walk M4</div>
+      <div style="background:#1C1917; border-radius:36px; padding:12px;">
+        <div style="width:390px; height:720px; background:#FFFFFF; border-radius:26px; overflow:hidden; display:flex; flex-direction:column;">
+          <div style="padding:16px 16px 8px; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:22px; line-height:28px; font-weight:700; color:#1C1917;">Island Hopping in El Nido</div>
+            <div style="font-size:13px; line-height:17px; color:#78716C;">Original by @josetravels</div>
+          </div>
+          <div style="display:flex; gap:12px; padding:0 16px; border-bottom:1px solid #E7E5E4; overflow:hidden; justify-content:flex-end;">
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Day-by-Day</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Polls</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Travelers</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:600; color:#78716C; white-space:nowrap;">Photo Dump</span><span style="height:3px;"></span></div>
+            <div style="flex:none; padding:12px 8px 0; display:flex; flex-direction:column; align-items:center; gap:10px;"><span style="font-size:14px; line-height:18px; font-weight:700; color:#EA580C; white-space:nowrap;">Chat</span><span style="width:32px; height:3px; background:#EA580C; border-radius:100px 100px 0 0;"></span></div>
+          </div>
+          <div style="flex:1; overflow-y:auto; scrollbar-width:none; display:flex; flex-direction:column; justify-content:flex-end; padding:16px 14px 10px; gap:14px;">
+            <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="3">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <sc-if value="{{ m.other }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex; gap:8px;">
+                    <div style="width:28px; height:28px; border-radius:999px; background:{{ m.avBg }}; flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:{{ m.avInk }};">{{ m.initials }}</div>
+                    <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start;">
+                      <span style="font-size:11px; line-height:14px; font-weight:600; color:#78716C; padding-left:2px;">{{ m.name }}</span>
+                      <div style="max-width:256px; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:18px 18px 18px 6px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917; animation:{{ m.anim }};">{{ m.text }}</div>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ m.mine }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                    <div style="max-width:256px; background:#FFF7ED; border:1px solid #FED7AA; border-radius:18px 18px 6px 18px; padding:9px 13px; font-size:14px; line-height:19px; color:#1C1917; opacity:{{ m.op }}; transition:opacity 150ms ease-out; animation:{{ m.anim }};">{{ m.text }}</div>
+                    <sc-if value="{{ m.failed }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex; align-items:center; gap:10px; padding-right:2px; animation:{{ m.anim }};">
+                        <span style="font-size:11px; line-height:14px; font-weight:600; color:#B91C1C;">Couldn't send</span>
+                        <span onClick="{{ m.retry }}" style="font-size:12px; line-height:15px; font-weight:600; color:#EA580C; cursor:pointer; padding:4px;" style-active="opacity:0.85;">Retry</span>
+                        <span onClick="{{ m.discard }}" style="font-size:12px; line-height:15px; font-weight:600; color:#78716C; cursor:pointer; padding:4px;" style-active="opacity:0.85;">Discard</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="border-top:1px solid #E7E5E4; padding:10px 14px 14px; display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; align-items:flex-end; gap:10px;">
+              <textarea value="{{ draft }}" onChange="{{ onDraft }}" placeholder="Message…" style="flex:1; height: {{ fieldH }}; box-sizing:content-box; background:#FAFAF9; border:1px solid #E7E5E4; border-radius:20px; padding:10px 16px; font-size:14px; line-height:19px; color:#1C1917; resize:none; outline:none; overflow-y:auto; scrollbar-width:none; transition:height 200ms ease-in-out;"></textarea>
+              <div onClick="{{ send }}" style="width:36px; height:36px; border-radius:999px; background:{{ sendBg }}; flex:none; display:flex; align-items:center; justify-content:center; margin-bottom:2px; cursor:pointer; transition:background 150ms ease-out;" style-active="opacity:0.85;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{ sendInk }}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:stroke 150ms ease-out;"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+              </div>
+            </div>
+            <sc-if value="{{ showCounter }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:right; padding-right:56px; font-size:11px; line-height:14px; font-weight:600; color:{{ counterInk }}; animation:chFadeRise 150ms ease-out;">{{ counterText }}</div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; line-height:1.6; color:#78716C;">Runs the contract: M1 entrance on every bubble, M2 send-button crossfade, M3 field growth (4-line max), M4 fail → Retry/Discard (enable <i>Fail next send</i> in Tweaks), counter past 1,900 chars. A member replies shortly after your first successful send.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;failNextSend&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Demo&quot;},
+  &quot;reduceMotion&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Demo&quot;}
+}">
+class Component extends DCLogic {
+  state = {
+    msgs: [
+      { id: 1, who: 'maya', text: 'Booked the van from Puerto Princesa — pickup is 7am from the hostel.' },
+      { id: 2, who: 'me', text: "Perfect. I'll sort breakfast so we can eat on the road." },
+      { id: 3, who: 'jose', text: 'Tour A or Tour C for day 2? C has the hidden lagoons but leaves an hour earlier.' },
+    ],
+    draft: '', nextId: 4, replied: false,
+  };
+  componentWillUnmount() { clearTimeout(this._r); }
+  renderVals() {
+    const reduce = this.props.reduceMotion ?? false;
+    const failNext = this.props.failNextSend ?? false;
+    const MEMBERS = {
+      maya: { name: '@mayasantos', initials: 'MS', avBg: '#FDE4CF', avInk: '#C2410C' },
+      jose: { name: '@josetravels', initials: 'JR', avBg: '#DBEAFE', avInk: '#1D4ED8' },
+      priya: { name: '@priyanair', initials: 'PN', avBg: '#DCFCE7', avInk: '#15803D' },
+    };
+    const entrance = reduce ? 'none' : 'chFadeRise 150ms ease-out';
+    const msgs = this.state.msgs.map((m) => {
+      const mine = m.who === 'me';
+      const mem = MEMBERS[m.who] || {};
+      return {
+        key: m.id, mine, other: !mine, failed: !!m.failed,
+        text: m.text, name: mem.name || '', initials: mem.initials || '', avBg: mem.avBg || '#FDE4CF', avInk: mem.avInk || '#C2410C',
+        op: m.failed ? 0.55 : 1,
+        anim: m.fresh ? entrance : 'none',
+        retry: () => this.retry(m.id),
+        discard: () => this.setState((s) => ({ msgs: s.msgs.filter((x) => x.id !== m.id) })),
+      };
+    });
+    const draft = this.state.draft;
+    const len = draft.length;
+    const canSend = draft.trim().length > 0;
+    const lines = Math.min(4, Math.max(1, draft.split('\n').length));
+    return {
+      msgs,
+      draft,
+      onDraft: (e) => this.setState({ draft: e.target.value.slice(0, 2000) }),
+      fieldH: (lines * 19) + 'px',
+      send: () => this.send(canSend, failNext),
+      sendBg: canSend ? '#EA580C' : '#F5F5F4',
+      sendInk: canSend ? '#FFFFFF' : '#A59E99',
+      showCounter: len >= 1900,
+      counterText: len.toLocaleString('en-US') + ' / 2,000',
+      counterInk: len >= 2000 ? '#C2410C' : '#A59E99',
+    };
+  }
+  send(canSend, failNext) {
+    if (!canSend) return;
+    const text = this.state.draft.trim();
+    this.setState((s) => ({
+      msgs: [...s.msgs, { id: s.nextId, who: 'me', text, failed: failNext, fresh: true }],
+      nextId: s.nextId + 1, draft: '',
+    }));
+    if (!failNext && !this.state.replied) {
+      this.setState({ replied: true });
+      clearTimeout(this._r);
+      this._r = setTimeout(() => this.setState((s) => ({
+        msgs: [...s.msgs, { id: s.nextId, who: 'priya', text: 'Sounds good — see everyone at the pier.', fresh: true }],
+        nextId: s.nextId + 1,
+      })), 1400);
+    }
+  }
+  retry(id) {
+    this.setState((s) => ({ msgs: s.msgs.map((m) => (m.id === id ? { ...m, failed: false, fresh: false } : m)) }));
+  }
+}
+</script>
+</body>
+</html>
