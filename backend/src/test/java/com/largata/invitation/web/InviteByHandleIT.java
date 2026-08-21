@@ -3,9 +3,9 @@ package com.largata.invitation.web;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.support.PostgresTestBase;
+import com.largata.support.ShortHandles;
 import com.largata.support.TestJwtSupport;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +21,6 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class InviteByHandleIT extends PostgresTestBase {
-
-    private static final AtomicInteger FOUNDER_HANDLES_TAKEN = new AtomicInteger();
 
     private RestTestClient rest;
 
@@ -428,11 +426,7 @@ class InviteByHandleIT extends PostgresTestBase {
     }
 
     private String plantFounderHandle(UUID travelerId) {
-        String alphabet = "abcdefghijklmnopqrstuvwxyz";
-        int taken = FOUNDER_HANDLES_TAKEN.getAndIncrement();
-        String handle =
-                "" + alphabet.charAt(taken / alphabet.length() % alphabet.length())
-                        + alphabet.charAt(taken % alphabet.length());
+        String handle = ShortHandles.mintUnclaimed(jdbc);
         jdbc.update("UPDATE traveler SET handle = ? WHERE id = ?", handle, travelerId);
         return handle;
     }

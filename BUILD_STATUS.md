@@ -379,6 +379,14 @@ The mobile web viewport locks to the app frame, because **iOS Safari was zooming
 
 ---
 
+**2026-08-21**
+
+Two integration tests minted two-character handles from **separate static counters that both started at `aa`**, and collided against the shared Testcontainers database — **`dev` had been red on every push since 05:41**, which nobody could see. `ShortHandleSurvivesProfileSaveIT` has planted short handles since S4.14; `5d3d69b` gave `InviteByHandleIT` a `plantFounderHandle` that copied the generator verbatim, counter and all. Neither IT cleans up, so whichever class ran second died on `duplicate key (lower(handle))=(aa)`. Both now mint through one authority, `com.largata.support.ShortHandles`, which **reads the table before it hands a candidate back** — so a third planter cannot reintroduce the class of bug, only this instance of it.
+
+*Why it wasn't a story —* a broken build on `dev`, fixed at the fixture rather than the product; no product code changed and no assertion moved. **The order-dependence is the part worth keeping:** the same collision killed `InviteByHandleIT` locally and `ShortHandleSurvivesProfileSaveIT` in CI, because class execution order differs — so the failing test name names the loser, never the cause. The skip logic is proven by a **unit** test (`ShortHandlesTest`, 0.2s, no database): it counts the candidates the minter is offered and fails if a minter takes its first one regardless, which is exactly what the old generators did. That test is also the small worked example of pushing a pure rule down out of the integration layer.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
