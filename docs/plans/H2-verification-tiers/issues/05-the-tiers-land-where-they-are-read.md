@@ -4,7 +4,7 @@
 
 **Blocked by:** nothing, but land it after 01–04 so the commands it documents exist.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] **CLAUDE.md:103 rewritten in place.** It currently demands *"Before proposing a promotion — the whole stack, once: full mobile suite, full backend ITs…, and `npm run smoke`."* It becomes: **CI green on the branch's HEAD, read not re-run, plus the device walk.** Do not delete the bullet — the next agent fills holes with caution, which means running everything again (decision 14)
 - [ ] **Both copies of "read the counts, never the exit code" narrowed**, not deleted. True of the bare `failsafe:integration-test` goal; false of `mvn verify`, which CI has run honestly all along. Name the invocation each applies to

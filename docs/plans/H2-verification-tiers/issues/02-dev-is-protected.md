@@ -4,7 +4,7 @@
 
 **Blocked by:** nothing any more — **done 2026-08-22, ahead of 01, at the founder's request.**
 
-**Status:** needs-triage — the protection is live; what remains is the documentation and the hand-off to the other agent.
+**Status:** ready-for-agent — the protection is live; what remains is the documentation and the hand-off to the other agent.
 
 **How it differs from the plan:** protection was applied against the **three current job names**, not the `ci` aggregator, because the aggregator does not exist yet. That is correct today and **becomes the pending-forever trap the instant ticket 01 lands path filters** — ticket 01 now carries the obligation to swap the contexts in the same change.
 

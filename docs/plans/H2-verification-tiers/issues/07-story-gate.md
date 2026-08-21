@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02, 03, 04, 05, 06.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [x] **ADR-031** minted with the spec (H1's precedent — the ADR lands with the spec, not at the gate), in `docs/design/adr-log.md` where ADR-018+ actually live, *not* `04-architecture.md`, which stops at ADR-017 despite CLAUDE.md's index pointing there. Confirm at the gate that its Consequences and Invalidating condition still match what shipped
 - [ ] **`preprod` and `main` protected — required checks, no required PR** — and **only after** the `dev → preprod` promotion has landed. That promotion is 112 commits on the `git read-tree --reset -u dev` mechanic and has not run since Epic 1; a PR merge there has no true fast-forward and would mint a different SHA, destroying `git rev-parse main preprod` (decision 9)

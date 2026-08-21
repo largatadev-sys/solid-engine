@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Secrets set via `gh secret set` from the gitignored `mobile/.env`, never printed: `LARGATA_TEST_POOL_PASSWORD`, `LARGATA_TEST_POOL_EMAIL_BASE`, and the five `EXPO_PUBLIC_*` build args. **Consequence to carry into CLAUDE.md: a workflow file can now read them, so workflow edits become sensitive**
 - [ ] Trigger is `pull_request` targeting `dev` **plus `workflow_dispatch`** — not every push (minutes for no extra signal) and not nightly (an unattended 3am red nobody triages is the lying-suite problem restated)

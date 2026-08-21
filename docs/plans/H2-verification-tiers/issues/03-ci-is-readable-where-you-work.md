@@ -4,7 +4,7 @@
 
 **Blocked by:** nothing — parallel with 01.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] The **GitHub Actions VS Code extension** installed and confirmed showing runs per branch with failure logs inline
 - [ ] **Email is explicitly not a signal — the founder does not read it** (decision 15). Do not design any part of this around a mailbox

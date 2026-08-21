@@ -1,6 +1,6 @@
 # H2 — Verification tiers: CI answers for the suites, the machine answers for the eye
 
-**Status:** needs-triage — grilled 2026-08-21 (grill-with-docs, five rounds, 22 questions); the owner reviews before any ticket flips `ready-for-agent`.
+**Status:** ready-for-agent — grilled 2026-08-21 (grill-with-docs, five rounds, 22 questions); owner review passed 2026-08-22.
 **Raised:** 2026-08-21 (founder) — *"every feature takes too much time on test suites, especially running those suites that are not even affected or touched by the feature… we can actually say full regression now."*
 **ADR:** ADR-031 — minted with this spec, in `docs/design/adr-log.md` (where ADR-018+ actually live; `04-architecture.md` stops at ADR-017 despite CLAUDE.md's index).
 **Candidate-capability note:** none — this story ships no traveler-facing act; verification tooling is not a capability surface.

@@ -4,7 +4,7 @@
 
 **Blocked by:** nothing.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `"incremental": true` in `mobile/tsconfig.json` with an explicit `tsBuildInfoFile`, and `*.tsbuildinfo` added to `.gitignore` — a build artifact must be **unstageable**, not merely un-staged. Measure the second run against the 47-second cold baseline and record it; if the saving is not real on this tree, say so and revert rather than keeping a change that only looks like one
 - [ ] The scope map as **one line by example** — `-Dit.test='com.largata.<module>.**.*IT'` — framed for a tight local loop while debugging a backend change, never as a per-story ritual. A twelve-row table would rot for a use case that now arises occasionally (decision 12)
