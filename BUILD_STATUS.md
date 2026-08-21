@@ -355,6 +355,22 @@ The activity form's currency text box retired; the currency now renders as a **r
 
 *Related ruling, no code —* the founder challenged canon's *"free is an explicit 0"* with **"0 doesn't mean free"**, and the challenge holds where it counts: a zero **total** is not a fact about the trip, because the estimate sums activity costs and never flights or accommodation. So the published stat's existing silence on an all-zero plan is **correct**, and the epic-map line that had called it a defect was rewritten to say so deliberately. "Free" stays a per-activity fact. The ambiguity the founder named is real but historical: before S4.24 the prefill made an amount mandatory, so `0` was the escape hatch for "I don't know" — from here, blank is that escape hatch, so a `0` typed today means zero.
 
+**2026-08-21**
+
+Inviting a traveler by handle stopped applying the **handle minimum**, which is a *minting* rule and never belonged on a *lookup*. Founders hold two-character handles; the minimum returned to 3 for everyone else at 09239dd, and the invite screen gated both its Find button and its lookup query on that same constant — so a founder could not be invited to a trip at all. The restriction was **entirely client-side**: the backend lookup only ever normalised (strip + lowercase), which is why the fix touches no server code. Claiming is untouched and still refuses anything shorter than three characters, verified against the running server rather than read off the source (`PATCH /v1/me` with `ab`, `x`, `ed` all answer `400 HANDLE_MALFORMED`; `abc` succeeds), and the availability endpoint reports `MALFORMED` so the UI never offers one.
+
+*Why it wasn't a story —* a one-line consequence of an earlier decision, found by the founder while testing S4.10's chat; no new surface, no wire change, no decision to take. Two ITs now hold the pair apart: a planted two-character handle is looked up and invited, and a claim of one is refused. **Sabotage-verified** — re-introducing a minimum on the lookup fails exactly the founder-handle test with *"expected 200 OK but was 404"*. Worth recording that the **first sabotage attempt reported green** because its `perl` substitution silently never matched (CRLF line endings), and only grepping for the sabotage before trusting the run caught it: a probe that cannot fail proves nothing, whatever colour it prints.
+
+---
+
+**2026-08-21**
+
+CLAUDE.md's Testcontainers cleanup command gained a `label=org.testcontainers=true` filter, because the version recorded there **deletes the running stack**. `docker compose` serves the app's Postgres from the same `postgres:18-alpine` image the ITs use, so an ancestor-only filter matches it and `rm -f` takes out the live database — which is what happened mid-session, while the founder was using the app. The symptom names nothing: `/v1/health` keeps answering from the web tier while every real request dies on `HikariPool-1 - Connection is not available … (total=0, active=0, idle=0, waiting=5)` and `SQLState: 08001`, which reads as a pool leak and sends you into the datasource config. **The discriminating check is `docker compose ps postgres` printing no row at all.**
+
+*Why it wasn't a story —* an incident and the documentation fix that follows it; no product surface. Recovery is `docker compose up -d postgres` then `docker compose restart backend`, and **the data is unrecoverable** by design (no volume) — a property this tree treats as a feature everywhere except when the deletion was an accident. Proven rather than asserted: on this machine the ancestor-only filter matches 2 containers, the labelled pair matches 0.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.

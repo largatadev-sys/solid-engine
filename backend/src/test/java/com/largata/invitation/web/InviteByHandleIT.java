@@ -5,8 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
@@ -19,13 +22,70 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @Import(TestJwtSupport.Config.class)
 class InviteByHandleIT extends PostgresTestBase {
 
+    private static final AtomicInteger FOUNDER_HANDLES_TAKEN = new AtomicInteger();
+
     private RestTestClient rest;
 
     @LocalServerPort private int port;
 
+    @Autowired private JdbcTemplate jdbc;
+
     @BeforeEach
     void setUp() {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    }
+
+
+    @Test
+    void aFoundersTwoCharacterHandleIsStillLookedUpAndInvited() {
+        String owner = travelerWithHandle("owner" + suffix());
+        String trip = createTrip(owner);
+        String founder = travelerWithHandle("founder" + suffix());
+        UUID founderId = travelerIdOf(founder);
+        String twoCharacters = plantFounderHandle(founderId);
+
+        rest.get()
+                .uri("/v1/handles/" + twoCharacters)
+                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.handle")
+                .isEqualTo(twoCharacters);
+
+        rest.post()
+                .uri("/v1/itineraries/" + trip + "/invitations/by-handle")
+                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"handle\":\"" + twoCharacters + "\"}")
+                .exchange()
+                .expectStatus()
+                .isCreated()
+                .expectBody()
+                .jsonPath("$.inviteeTravelerId")
+                .isEqualTo(founderId.toString())
+                .jsonPath("$.inviteeHandle")
+                .isEqualTo(twoCharacters);
+    }
+
+
+    @Test
+    void nobodyCanClaimATwoCharacterHandleForThemselves() {
+        String uid = "uid-" + UUID.randomUUID();
+        String token = TestJwtSupport.verifiedToken(uid, uid + "@example.com");
+
+        rest.patch()
+                .uri("/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"handle\":\"ed\"}")
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("HANDLE_MALFORMED");
     }
 
     @Test
@@ -366,6 +426,17 @@ class InviteByHandleIT extends PostgresTestBase {
                 .expectStatus()
                 .isOk();
     }
+
+    private String plantFounderHandle(UUID travelerId) {
+        String alphabet = "abcdefghijklmnopqrstuvwxyz";
+        int taken = FOUNDER_HANDLES_TAKEN.getAndIncrement();
+        String handle =
+                "" + alphabet.charAt(taken / alphabet.length() % alphabet.length())
+                        + alphabet.charAt(taken % alphabet.length());
+        jdbc.update("UPDATE traveler SET handle = ? WHERE id = ?", handle, travelerId);
+        return handle;
+    }
+
 
     private String travelerWithHandle(String handle) {
         String uid = "uid-" + UUID.randomUUID();
