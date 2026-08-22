@@ -1,5 +1,5 @@
 import {
-  addBarVisible,
+  canAddTravelers,
   agoLabelOf,
   EMAIL_INVITATION_TITLE,
   EMAIL_INVITED_SUB,
@@ -312,9 +312,9 @@ describe('the published freeze on the surface', () => {
   });
 
   it('takes the add bar away, and archive keeps it away', () => {
-    expect(addBarVisible('open')).toBe(true);
-    expect(addBarVisible('published')).toBe(false);
-    expect(addBarVisible('archived')).toBe(false);
+    expect(canAddTravelers('open')).toBe(true);
+    expect(canAddTravelers('published')).toBe(false);
+    expect(canAddTravelers('archived')).toBe(false);
   });
 });
 

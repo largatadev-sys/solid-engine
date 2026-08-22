@@ -3,7 +3,7 @@ import type { WorkspaceTab } from './WorkspaceTabRow';
 
 export const LADDER_TAB: WorkspaceTab = 'day-by-day';
 
-export const DOCKED_TABS: readonly WorkspaceTab[] = ['chat', 'travelers'];
+export const DOCKED_TABS: readonly WorkspaceTab[] = ['chat'];
 
 
 export function laddersOn(tab: WorkspaceTab): boolean {

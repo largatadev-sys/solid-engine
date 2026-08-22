@@ -175,3 +175,13 @@ The lifecycle CTA now renders **only on Day-by-Day**, where the plan the act is 
 `workspaceChrome.ts` holds both rules as named predicates rather than tab-name comparisons scattered through the screen, and its test walks **every** tab in `WORKSPACE_TABS` — so a tab added later cannot quietly inherit the rail, and no tab can ever both dock a bar and carry one, which is the defect this fixes.
 
 *(S4.10's chat guard asserted the docking by pinning the screen's literal source text, `scrollEnabled={active !== 'chat'}`. It now asserts the same property through the predicate. The guard was right; only its spelling was stale.)*
+
+### 2026-08-22 — Add traveler becomes a section-header action, not a docked CTA *(founder decision, superseding the entry above)*
+
+Pinning the bar (previous entry) put the affordance where C5 asks for it and immediately raised the better question: the **Polls** tab already had an idiom for *create a thing* — a quiet accent text action on the section-header line — and the workspace was now carrying two idioms for the same job.
+
+Add traveler moves onto the `TRAVELERS · N` header line as `+ Add traveler`, matching Polls' populated-state treatment. The docked bar is deleted, and Travelers leaves the docked tab set, so it scrolls as one page again like every tab but Chat.
+
+**This drops C5's "pinned bottom bar" and frame 1's docked CTA, knowingly.** The argument against was reachability — a header action scrolls off a long roster while a docked bar stays under the thumb — and the founder took the consistency instead. Recorded so the deviation is legible next to the two smaller ones already noted here.
+
+*(`addBarVisible` is renamed `canAddTravelers`: the rule it encodes — open trips only, never published or archived — is unchanged, but the old name described furniture that no longer exists.)*

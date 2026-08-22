@@ -205,6 +205,6 @@ function menuVisibleOn(
 }
 
 
-export function addBarVisible(posture: TripPosture): boolean {
+export function canAddTravelers(posture: TripPosture): boolean {
   return posture === 'open';
 }

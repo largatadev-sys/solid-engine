@@ -23,11 +23,45 @@ import {
 } from './travelerCopy';
 
 
-export function SectionHeading({ heading, count }: { heading: string; count: number }) {
+export function SectionHeading({
+  heading,
+  count,
+  onAdd,
+}: {
+  heading: string;
+  count: number;
+  onAdd?: (() => void) | undefined;
+}) {
+  const press = usePressFeedback();
+
+  if (onAdd === undefined) {
+    return (
+      <Text style={styles.heading}>
+        {heading} · {count}
+      </Text>
+    );
+  }
+
   return (
-    <Text style={styles.heading}>
-      {heading} · {count}
-    </Text>
+    <View style={styles.headingRow}>
+      <Text style={styles.heading}>
+        {heading} · {count}
+      </Text>
+      <AnimatedPressable
+        style={[styles.addCta, { opacity: press.opacity }]}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
+        onPress={onAdd}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={ADD_TRAVELER_LABEL}
+      >
+        <Icon name="plus" size={14} color={travelerColors.accent} />
+        <Text style={styles.addLabel} numberOfLines={1}>
+          {ADD_TRAVELER_LABEL}
+        </Text>
+      </AnimatedPressable>
+    </View>
   );
 }
 
@@ -191,25 +225,6 @@ export function RequestRow({
 }
 
 
-export function AddTravelerBar({ onPress }: { onPress: () => void }) {
-  const press = usePressFeedback();
-
-  return (
-    <View style={styles.addBar}>
-      <AnimatedPressable
-        style={[styles.addCta, { opacity: press.opacity }]}
-        onPressIn={press.onPressIn}
-        onPressOut={press.onPressOut}
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={ADD_TRAVELER_LABEL}
-      >
-        <Icon name="plus" size={16} color={travelerColors.onAccent} />
-        <Text style={styles.addLabel}>{ADD_TRAVELER_LABEL}</Text>
-      </AnimatedPressable>
-    </View>
-  );
-}
 
 
 
@@ -272,6 +287,11 @@ const styles = StyleSheet.create({
     paddingBottom: travelerMetrics.sectionHeaderBottom,
     paddingHorizontal: travelerMetrics.rowPaddingH,
   },
+  headingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -330,25 +350,17 @@ const styles = StyleSheet.create({
     ...travelerTypography.rowAction,
     color: travelerColors.accent,
   },
-  addBar: {
-    paddingVertical: travelerMetrics.addBarPaddingV,
-    paddingHorizontal: travelerMetrics.addBarPaddingH,
-    borderTopWidth: 1,
-    borderTopColor: travelerColors.hairline,
-    backgroundColor: travelerColors.surface,
-  },
   addCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: travelerColors.accent,
-    borderRadius: travelerRadii.card,
-    padding: travelerMetrics.addBarCtaPadding,
+    flexShrink: 0,
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: travelerMetrics.rowPaddingH,
   },
   addLabel: {
-    ...travelerTypography.addBarLabel,
-    color: travelerColors.onAccent,
+    ...travelerTypography.rowAction,
+    color: travelerColors.accent,
   },
   menuEntry: {
     flexDirection: 'row',

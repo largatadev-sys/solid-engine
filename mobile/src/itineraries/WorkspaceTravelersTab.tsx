@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { confirmWith } from '../components/confirmDestructive';
 import {
@@ -19,7 +19,6 @@ import { OwnershipOfferCard } from '../members/OwnershipOfferCard';
 import { RowEntrance } from '../members/RowEntrance';
 import { RowMenuSheet, type RowMenuSubject } from '../members/RowMenuSheet';
 import {
-  AddTravelerBar,
   InvitedRow,
   MemberRow,
   Notice,
@@ -27,7 +26,7 @@ import {
   SectionHeading,
 } from '../members/TravelerRows';
 import {
-  addBarVisible,
+  canAddTravelers,
   handleLabelOf,
   travelerSections,
   type TravelerRowModel,
@@ -211,7 +210,7 @@ export function WorkspaceTravelersTab({
 
   return (
     <View style={styles.tab}>
-      <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+      <View style={styles.list}>
         {offeredToMe !== undefined && open ? (
           <RowEntrance delayMs={nextDelay()} replayKey={visitKey}>
             <OwnershipOfferCard
@@ -242,7 +241,15 @@ export function WorkspaceTravelersTab({
         {sections.map((section) => (
           <View key={section.key}>
             <RowEntrance delayMs={nextDelay()} replayKey={visitKey}>
-              <SectionHeading heading={section.heading} count={section.count} />
+              <SectionHeading
+                heading={section.heading}
+                count={section.count}
+                onAdd={
+                  section.key === 'travelers' && canAddTravelers(posture)
+                    ? () => setSheetOpen(true)
+                    : undefined
+                }
+              />
             </RowEntrance>
 
             {section.rows.map((row) => (
@@ -308,17 +315,7 @@ export function WorkspaceTravelersTab({
             ))}
           </View>
         ))}
-      </ScrollView>
-
-      {addBarVisible(posture) ? (
-        <RowEntrance
-          delayMs={travelerMotion.addBarDelayMs}
-          durationMs={travelerMotion.addBarInMs}
-          replayKey={visitKey}
-        >
-          <AddTravelerBar onPress={() => setSheetOpen(true)} />
-        </RowEntrance>
-      ) : null}
+      </View>
 
       <AddTravelerSheet
         open={sheetOpen}
@@ -398,9 +395,6 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
-  },
-  listContent: {
-    paddingBottom: 8,
   },
   centered: {
     padding: 24,

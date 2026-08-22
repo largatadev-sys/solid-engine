@@ -21,15 +21,8 @@ describe('which workspace tab carries the lifecycle CTA', () => {
 });
 
 describe('which tabs pin their own bottom bar', () => {
-  it('pins the roster’s Add traveler and the chat composer', () => {
-    expect(docksItsOwnBar('travelers')).toBe(true);
-    expect(docksItsOwnBar('chat')).toBe(true);
-  });
-
-  it('lets the others scroll their content as one page', () => {
-    expect(docksItsOwnBar('day-by-day')).toBe(false);
-    expect(docksItsOwnBar('polls')).toBe(false);
-    expect(docksItsOwnBar('photo-dump')).toBe(false);
+  it('pins the chat composer, and nothing else — every other tab scrolls as one page', () => {
+    expect(EVERY_TAB.filter(docksItsOwnBar)).toEqual(['chat']);
   });
 
   it('never docks a tab that also carries the rail — two stacked bars is the bug this fixes', () => {
