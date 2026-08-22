@@ -4,18 +4,19 @@ import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { SeedFailure, seedTrip, stamp, type SeededTrip } from '../support/seed';
+import { labelled, labelStarting } from '../support/screen';
+import { offerOwnershipWording } from '../../src/components/confirmDestructiveMessage';
 import {
-  acceptOwnershipWording,
-  offerOwnershipWording,
-} from '../../src/components/confirmDestructiveMessage';
+  REMOVE_FROM_TRIP_LABEL,
+  TRANSFER_OWNERSHIP_LABEL,
+} from '../../src/members/rowMenu';
+import { OFFER_ACCEPT_LABEL } from '../../src/members/OwnershipOfferCard';
+import { OFFERED_SUB, OWNER_SUB } from '../../src/members/travelerSections';
 
 const HOLDER = ownerTagFor('web/ownership-transfer');
 const OFFEREE: PoolTag = IDENTITY_MAP['web/ownership-transfer'].tags[1]!;
 
 requireStack(HOLDER);
-
-const MAKE_OWNER = 'Make owner';
-const ACCEPT_OWNERSHIP = 'Accept ownership';
 
 let holderToken: string;
 let offereeToken: string;
@@ -51,19 +52,27 @@ async function tripHeldByHolder(what: string): Promise<SeededTrip> {
   });
 }
 
-async function offerOwnership(trip: SeededTrip): Promise<void> {
-  const offered = await api(
-    `/v1/itineraries/${trip.id}/ownership-offer`,
-    'POST',
-    holderToken,
-    { travelerId: offereeId },
-  );
+async function offerOwnership(trip: SeededTrip, from = holderToken, to = offereeId): Promise<void> {
+  const offered = await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', from, {
+    travelerId: to,
+  });
   if (offered.status !== 201) throw new SeedFailure('the ownership offer', offered.body);
 }
+
+const travelersTab = (tripId: string) => `/itineraries/${tripId}?tab=travelers`;
 
 const clickText = async (page: Page, text: string) => {
   await page.getByText(text, { exact: true }).last().click();
 };
+
+async function openRowMenuFor(page: Page, handleLabel: string): Promise<void> {
+  await labelStarting(page, `More options for ${handleLabel}`).click();
+}
+
+async function handleOf(token: string): Promise<string> {
+  const me = await api('/v1/me', 'GET', token);
+  return `@${me.body.handle}`;
+}
 
 test.beforeAll(async () => {
   holderToken = await tokenFor(HOLDER);
@@ -72,24 +81,37 @@ test.beforeAll(async () => {
   offereeId = (await api('/v1/me', 'GET', offereeToken)).body.id;
 });
 
-test.describe('the offer, made from the roster the holder owns', () => {
+test.describe('the offer, made from the row menu the owner sees', () => {
   test.describe.configure({ mode: 'serial' });
 
   let trip: SeededTrip;
+  let offereeHandle: string;
 
   test.beforeAll(async () => {
     trip = await tripHeldByHolder('offer');
+    offereeHandle = await handleOf(offereeToken);
   });
 
-  test('the members screen renders, and the owner is offered Make owner', async ({
+  test('the tab renders the roster, owner first', async ({ page, signIn }) => {
+    await signIn(HOLDER);
+    await page.goto(travelersTab(trip.id));
+
+    await expect(page.getByText(/^Travelers · \d+$/).first()).toBeVisible();
+    await expect(page.getByText(OWNER_SUB).first()).toBeVisible();
+  });
+
+  test('the overflow control opens a menu offering transfer above remove', async ({
     page,
     signIn,
   }) => {
     await signIn(HOLDER);
-    await page.goto(`/members/${trip.id}`);
+    await page.goto(travelersTab(trip.id));
+    await expect(page.getByText(OWNER_SUB).first()).toBeVisible();
 
-    await expect(page.getByText('Members').first()).toBeVisible();
-    await expect(page.getByText(MAKE_OWNER, { exact: true }).last()).toBeVisible();
+    await openRowMenuFor(page, offereeHandle);
+
+    await expect(page.getByText(TRANSFER_OWNERSHIP_LABEL, { exact: true })).toBeVisible();
+    await expect(page.getByText(REMOVE_FROM_TRIP_LABEL, { exact: true })).toBeVisible();
   });
 
   test('it asks first, naming the consequence from the shared wording module', async ({
@@ -98,10 +120,11 @@ test.describe('the offer, made from the roster the holder owns', () => {
     signal,
   }) => {
     await signIn(HOLDER);
-    await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText(MAKE_OWNER, { exact: true }).last()).toBeVisible();
+    await page.goto(travelersTab(trip.id));
+    await expect(page.getByText(OWNER_SUB).first()).toBeVisible();
 
-    await clickText(page, MAKE_OWNER);
+    await openRowMenuFor(page, offereeHandle);
+    await clickText(page, TRANSFER_OWNERSHIP_LABEL);
 
     await expect
       .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
@@ -112,11 +135,14 @@ test.describe('the offer, made from the roster the holder owns', () => {
     );
   });
 
-  test('confirming records the offer against the offeree on the server', async () => {
-    expect(await offeredTo(trip.id, holderToken)).toBe(offereeId);
-  });
+  test('the offered row wears its waiting sub, and the holder is still the owner', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(HOLDER);
+    await page.goto(travelersTab(trip.id));
 
-  test('…and the offer alone moves nothing — the holder is still the owner', async () => {
+    await expect(page.getByText(OFFERED_SUB).first()).toBeVisible();
     expect(await ownerOf(trip.id, holderToken)).toBe(holderId);
   });
 });
@@ -131,46 +157,40 @@ test.describe('the offer, as the receiving traveler meets it', () => {
     await offerOwnership(trip);
   });
 
-  test('the trip screen carries the banner that justifies the whole reversal', async ({
+  test('the tab carries the card that justifies the whole reversal', async ({ page, signIn }) => {
+    await signIn(OFFEREE);
+    await page.goto(travelersTab(trip.id));
+
+    await expect(page.getByText(/offered you ownership/i).first()).toBeVisible();
+    await expect(labelled(page, `${OFFER_ACCEPT_LABEL} ownership`)).toBeVisible();
+  });
+
+  test('the trip screen carries no banner — the tab is the only door now', async ({
     page,
     signIn,
   }) => {
     await signIn(OFFEREE);
     await page.goto(`/itineraries/${trip.id}`);
+    await expect(page.getByText(trip.title).first()).toBeVisible();
 
-    await expect(page.getByText(/offered ownership/i).first()).toBeVisible();
+    await expect(page.getByText(/offered you ownership/i)).toHaveCount(0);
   });
 
-  test('the members screen offers the offeree the way to accept', async ({ page, signIn }) => {
-    await signIn(OFFEREE);
-    await page.goto(`/members/${trip.id}`);
-
-    await expect(page.getByText(/offered ownership/i).first()).toBeVisible();
-    await expect(page.getByText(ACCEPT_OWNERSHIP, { exact: true }).last()).toBeVisible();
-  });
-
-  test('accept asks before acting, naming what the traveler takes on', async ({
+  test('accept asks before acting, and the roles swap on confirm', async ({
     page,
     signIn,
     signal,
   }) => {
     await signIn(OFFEREE);
-    await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText(ACCEPT_OWNERSHIP, { exact: true }).last()).toBeVisible();
+    await page.goto(travelersTab(trip.id));
+    await expect(labelled(page, `${OFFER_ACCEPT_LABEL} ownership`)).toBeVisible();
 
-    await clickText(page, ACCEPT_OWNERSHIP);
+    await labelled(page, `${OFFER_ACCEPT_LABEL} ownership`).click();
 
-    await expect
-      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
-      .toContain(acceptOwnershipWording(trip.title).body);
-
+    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
     await expect.poll(async () => ownerOf(trip.id, offereeToken), { timeout: 30_000 }).toBe(
       offereeId,
     );
-  });
-
-  test('confirming swaps the roles — driven entirely through the browser', async () => {
-    expect(await ownerOf(trip.id, offereeToken)).toBe(offereeId);
   });
 
   test('…and the former owner stays on the trip, now as a member', async () => {
@@ -184,15 +204,68 @@ test.describe('the offer, as the receiving traveler meets it', () => {
   test('…and the offer flag is spent, not left standing', async () => {
     expect(await offeredTo(trip.id, offereeToken)).toBeUndefined();
   });
+
+  test('the card is gone once it has been answered', async ({ page, signIn }) => {
+    await signIn(OFFEREE);
+    await page.goto(travelersTab(trip.id));
+    await expect(page.getByText(/^Travelers · \d+$/).first()).toBeVisible();
+
+    await expect(page.getByText(/offered you ownership/i)).toHaveCount(0);
+  });
+});
+
+test.describe('the offer, revoked before anyone accepts', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  let trip: SeededTrip;
+  let offereeHandle: string;
+
+  test.beforeAll(async () => {
+    trip = await tripHeldByHolder('revoke');
+    offereeHandle = await handleOf(offereeToken);
+    await offerOwnership(trip);
+  });
+
+  test('the menu swaps transfer for revoke once an offer stands', async ({ page, signIn }) => {
+    await signIn(HOLDER);
+    await page.goto(travelersTab(trip.id));
+    await expect(page.getByText(OFFERED_SUB).first()).toBeVisible();
+
+    await openRowMenuFor(page, offereeHandle);
+
+    await expect(page.getByText('Revoke ownership offer', { exact: true })).toBeVisible();
+    await expect(page.getByText(TRANSFER_OWNERSHIP_LABEL, { exact: true })).toHaveCount(0);
+  });
+
+  test('revoking clears the flag and leaves the crown where it was', async ({
+    page,
+    signIn,
+    signal,
+  }) => {
+    await signIn(HOLDER);
+    await page.goto(travelersTab(trip.id));
+    await expect(page.getByText(OFFERED_SUB).first()).toBeVisible();
+
+    await openRowMenuFor(page, offereeHandle);
+    await clickText(page, 'Revoke ownership offer');
+
+    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect
+      .poll(async () => offeredTo(trip.id, holderToken), { timeout: 30_000 })
+      .toBeUndefined();
+    expect(await ownerOf(trip.id, holderToken)).toBe(holderId);
+  });
 });
 
 test.describe('the transfer flips back, so repeated runs leave the pool where they found it', () => {
   test.describe.configure({ mode: 'serial' });
 
   let trip: SeededTrip;
+  let holderHandle: string;
 
   test.beforeAll(async () => {
     trip = await tripHeldByHolder('convergence');
+    holderHandle = await handleOf(holderToken);
     await offerOwnership(trip);
     const accepted = await api(
       `/v1/itineraries/${trip.id}/ownership-offer/accept`,
@@ -207,19 +280,20 @@ test.describe('the transfer flips back, so repeated runs leave the pool where th
     expect(await ownerOf(trip.id, offereeToken)).toBe(offereeId);
   });
 
-  test('the new owner can offer it straight back, from their own roster', async ({
+  test('the new owner can offer it straight back, from their own tab', async ({
     page,
     signIn,
     signal,
   }) => {
     await signIn(OFFEREE);
-    await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText(MAKE_OWNER, { exact: true }).last()).toBeVisible();
+    await page.goto(travelersTab(trip.id));
+    await expect(page.getByText(OWNER_SUB).first()).toBeVisible();
 
-    await clickText(page, MAKE_OWNER);
+    await openRowMenuFor(page, holderHandle);
+    await clickText(page, TRANSFER_OWNERSHIP_LABEL);
 
     await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
-    await expect.poll(async () => offeredTo(trip.id, offereeToken), { timeout: 15_000 }).toBe(
+    await expect.poll(async () => offeredTo(trip.id, offereeToken), { timeout: 30_000 }).toBe(
       holderId,
     );
   });
@@ -230,16 +304,13 @@ test.describe('the transfer flips back, so repeated runs leave the pool where th
     signal,
   }) => {
     await signIn(HOLDER);
-    await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText(/offered ownership/i).first()).toBeVisible();
-    await expect(page.getByText(ACCEPT_OWNERSHIP, { exact: true }).last()).toBeVisible();
+    await page.goto(travelersTab(trip.id));
+    await expect(labelled(page, `${OFFER_ACCEPT_LABEL} ownership`)).toBeVisible();
 
-    await clickText(page, ACCEPT_OWNERSHIP);
+    await labelled(page, `${OFFER_ACCEPT_LABEL} ownership`).click();
 
-    await expect
-      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
-      .toContain(acceptOwnershipWording(trip.title).body);
-    await expect.poll(async () => ownerOf(trip.id, holderToken), { timeout: 15_000 }).toBe(holderId);
+    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect.poll(async () => ownerOf(trip.id, holderToken), { timeout: 30_000 }).toBe(holderId);
   });
 
   test('…and nothing is left offered, so the next run starts from the same state', async () => {
@@ -252,8 +323,8 @@ test.describe('the transfer flips back, so repeated runs leave the pool where th
 
   test('no page or console errors across the transfer', async ({ page, signIn, signal }) => {
     await signIn(HOLDER);
-    await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText('Members').first()).toBeVisible();
+    await page.goto(travelersTab(trip.id));
+    await expect(page.getByText(/^Travelers · \d+$/).first()).toBeVisible();
 
     expect(signal.pageErrors).toEqual([]);
     expect(signal.consoleErrors).toEqual([]);

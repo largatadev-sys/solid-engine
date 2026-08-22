@@ -142,20 +142,20 @@ test.describe('the frozen posture the archive act produces', () => {
     await expect(page.getByText(PLANNED_STOP)).toBeVisible();
   });
 
-  test('the members screen still shows the roster on an archived trip', async ({ page }) => {
-    await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText('Members').first()).toBeVisible();
-    await expect(page.getByText('owner').first()).toBeVisible();
-    await expect(page.getByText('member').first()).toBeVisible();
+  test('the Travelers tab still shows the roster on an archived trip', async ({ page }) => {
+    await page.goto(`/itineraries/${trip.id}?tab=travelers`);
+
+    await expect(page.getByText(/^Travelers · \d+$/).first()).toBeVisible();
+    await expect(page.getByText('Trip owner').first()).toBeVisible();
   });
 
   test('…but the roster offers no act that would change the frozen trip', async ({ page }) => {
-    await page.goto(`/members/${trip.id}`);
-    await expect(page.getByText('Members').first()).toBeVisible();
+    await page.goto(`/itineraries/${trip.id}?tab=travelers`);
+    await expect(page.getByText(/^Travelers · \d+$/).first()).toBeVisible();
 
-    await expect(page.getByText('Remove', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('Make owner', { exact: true })).toHaveCount(0);
-    await expect(page.getByText(/invite/i)).toHaveCount(0);
+    await expect(page.getByText('Add traveler', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Invited', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Requests', { exact: true })).toHaveCount(0);
   });
 
   test('My Trips no longer lists the archived trip', async ({ page }) => {

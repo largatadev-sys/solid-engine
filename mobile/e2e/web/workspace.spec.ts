@@ -167,19 +167,26 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     await seedPlan(trip, ACTIVITIES);
   });
 
-  test('Edit Itinerary opens the editor, which offers Invite Traveler and the editing affordances', async ({
-    page,
-    signIn,
-  }) => {
+  test('Edit Itinerary opens the editor and its editing affordances', async ({ page, signIn }) => {
     await signIn(OWNER);
     await page.goto(`/itineraries/${trip.id}`);
     await labelled(page, 'Edit Itinerary').click();
 
     await expect(page).toHaveURL(/edit-plan/);
-    await expect(labelled(page, 'Invite Traveler')).toBeVisible();
     await expect(page.getByText('Add Activity').first()).toBeVisible();
     await expect(page.getByText('Add a Day')).toBeVisible();
     await expect(page.getByText('Save Changes')).toBeVisible();
+  });
+
+  test('the editor no longer carries an invite door — membership lives on its own tab', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(OWNER);
+    await page.goto(`/itineraries/${trip.id}/edit-plan`);
+    await expect(page.getByText('Save Changes')).toBeVisible();
+
+    await expect(labelled(page, 'Invite Traveler')).toHaveCount(0);
   });
 
   test('the accordion opens Day 1 by default with its activities', async ({ page, signIn }) => {

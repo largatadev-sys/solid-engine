@@ -21,6 +21,7 @@ export const IDENTITY_MAP = {
   'api/archive-posture': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'api/api-surface': { tags: ['t1', 't2', 't3'], sharesWith: 'shared' },
   'api/polls': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'api/join-link': { tags: ['t1', 't2', 't3'], sharesWith: 'shared' },
 
   'web/discovery': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'web/create-flow': { tags: ['t4'], sharesWith: 'shared' },
@@ -41,6 +42,9 @@ export const IDENTITY_MAP = {
   'web/socket-echo': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'web/chat': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'api/chat': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'web/travelers': { tags: ['t1', 't2', 't4'], sharesWith: 'shared' },
+  'web/join-landing': { tags: ['t3', 't4'], sharesWith: 'shared' },
+  'web/invitation-inbox': { tags: ['t5', 't3'], sharesWith: 'shared' },
 } as const satisfies Record<string, SpecIdentities>;
 
 export type SpecKey = keyof typeof IDENTITY_MAP;
