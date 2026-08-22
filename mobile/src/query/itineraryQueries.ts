@@ -16,6 +16,7 @@ import { useAuth } from '../hooks/authContext';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { PHOTO_DUMP_PHOTO_ADDED, PHOTO_DUMP_PHOTO_REMOVED } from '../media/photoDumpEvents';
 import { itineraryRepository } from '../repositories/itineraryRepository';
+import { joinKeys } from './joinKeys';
 import type {
   ActivityRequest,
   ActivityResponse,
@@ -101,6 +102,14 @@ export async function onPlanChanged(client: QueryClient, itineraryId: string): P
 }
 
 
+export async function invalidateShareLink(
+  client: QueryClient,
+  itineraryId: string,
+): Promise<void> {
+  await client.invalidateQueries({ queryKey: joinKeys.link(itineraryId) });
+}
+
+
 export function useMyItineraries(
   category?: TripCategory,
 ): UseInfiniteQueryResult<InfiniteData<Page<ItineraryResponse>>> {
@@ -134,7 +143,9 @@ export function useUpdateItinerary(
   const client = useQueryClient();
   return useMutation({
     mutationFn: (request: UpdateItineraryRequest) => itineraryRepository.update(id, request),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
+    onSuccess: async (updated) => {
+      await Promise.all([onItineraryUpdated(client, updated), invalidateShareLink(client, id)]);
+    },
   });
 }
 
@@ -144,7 +155,9 @@ export function useUploadCover(id: string): UseMutationResult<ItineraryResponse,
   const client = useQueryClient();
   return useMutation({
     mutationFn: (photo: PickedPhoto) => itineraryRepository.uploadCover(id, photo),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
+    onSuccess: async (updated) => {
+      await Promise.all([onItineraryUpdated(client, updated), invalidateShareLink(client, id)]);
+    },
   });
 }
 
@@ -153,7 +166,9 @@ export function useRemoveCover(id: string): UseMutationResult<void, Error, void>
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => itineraryRepository.removeCover(id),
-    onSuccess: () => onPlanChanged(client, id),
+    onSuccess: async () => {
+      await Promise.all([onPlanChanged(client, id), invalidateShareLink(client, id)]);
+    },
   });
 }
 

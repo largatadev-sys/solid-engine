@@ -10,6 +10,7 @@ import {
 import { joinRepository } from '../repositories/joinRepository';
 import { invitationKeys } from './invitationQueries';
 import { itineraryKeys } from './itineraryQueries';
+import { joinKeys } from './joinKeys';
 import type {
   JoinLinkResponse,
   JoinRequestResponse,
@@ -19,14 +20,6 @@ import type {
   Page,
 } from '../types/api';
 
-
-export const joinKeys = {
-  all: ['join'] as const,
-  link: (itineraryId: string) => [...joinKeys.all, 'link', itineraryId] as const,
-  teaser: (token: string) => [...joinKeys.all, 'teaser', token] as const,
-  requests: (itineraryId: string) => [...joinKeys.all, 'requests', itineraryId] as const,
-  mine: () => [...joinKeys.all, 'mine'] as const,
-};
 
 
 export function myJoinRequestsOptions() {
@@ -55,7 +48,7 @@ export function joinLinkOptions(itineraryId: string) {
   return queryOptions({
     queryKey: joinKeys.link(itineraryId),
     queryFn: () => joinRepository.fetchLink(itineraryId),
-    staleTime: Infinity,
+    staleTime: 0,
   });
 }
 
