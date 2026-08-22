@@ -13,7 +13,6 @@ import {
   foundCardVisible,
   INVITE_LABEL,
   INVITED_GHOST_LABEL,
-  linkRowVisible,
   noOneMatchesLabel,
   isSearchable,
   normalizeHandleQuery,
@@ -158,29 +157,18 @@ export function AddTravelerSheet({
       ) : null}
 
       {pivotVisible(state) && 'query' in state ? (
-        <>
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>{noOneMatchesLabel(state.query)}</Text>
-            <Text style={styles.emptyBody}>{NOT_ON_LARGATA}</Text>
-          </View>
-          <ShareRow
-            promoted
-            label={copyFeedback ?? SHARE_LINK_LABEL}
-            onPress={onShareLink}
-          />
-        </>
+        <View style={styles.empty}>
+          <Text style={styles.emptyTitle}>{noOneMatchesLabel(state.query)}</Text>
+          <Text style={styles.emptyBody}>{NOT_ON_LARGATA}</Text>
+        </View>
       ) : null}
 
-      {linkRowVisible(state) ? (
-        <>
-          <View style={styles.divider} />
-          <ShareRow
-            promoted={false}
-            label={copyFeedback ?? SHARE_LINK_LABEL}
-            onPress={onShareLink}
-          />
-        </>
-      ) : null}
+      <View style={styles.divider} />
+      <ShareRow
+        promoted={pivotVisible(state)}
+        label={copyFeedback ?? SHARE_LINK_LABEL}
+        onPress={onShareLink}
+      />
     </BottomSheet>
   );
 }

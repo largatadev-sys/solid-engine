@@ -185,3 +185,11 @@ Add traveler moves onto the `TRAVELERS · N` header line as `+ Add traveler`, ma
 **This drops C5's "pinned bottom bar" and frame 1's docked CTA, knowingly.** The argument against was reachability — a header action scrolls off a long roster while a docked bar stays under the thumb — and the founder took the consistency instead. Recorded so the deviation is legible next to the two smaller ones already noted here.
 
 *(`addBarVisible` is renamed `canAddTravelers`: the rule it encodes — open trips only, never published or archived — is unchanged, but the old name described furniture that no longer exists.)*
+
+### 2026-08-22 — the link row holds its place; only its emphasis changes *(founder decision)*
+
+Frame 2b hides the footer link row on a no-results search and draws a promoted one directly beneath the empty message, so the control **relocated** between states. With the renaming already removed (note above), that movement was the only thing left changing — and a control that jumps while keeping its name reads as flicker rather than as emphasis.
+
+There is now **one** row, rendered in one position below the divider, whose treatment switches to frame 2b's accent well (`#FFF7ED` on `#FED7AA`) when a search dead-ends. Measured on the preview, it shifts 7px vertically between states rather than moving to a different part of the sheet — the residue is the promoted padding and frame 2b's bare accent icon standing in for the plain row's 40px link disc, both of which the canvas draws.
+
+**The pivot's intent survives**: C7's *"search dead ends pivot instead of stalling"* is about the link becoming the visible answer when a handle fails, and the accent well still does that. `linkRowVisible` is deleted — with the row always present, the predicate had nothing left to decide.

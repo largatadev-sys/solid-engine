@@ -67,11 +67,6 @@ export function foundCardVisible(state: AddSheetState): boolean {
 }
 
 
-export function linkRowVisible(state: AddSheetState): boolean {
-  return state.kind !== 'noResults';
-}
-
-
 export function pivotVisible(state: AddSheetState): boolean {
   return state.kind === 'noResults';
 }

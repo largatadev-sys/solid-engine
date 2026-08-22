@@ -2,7 +2,6 @@ import { HANDLE_MIN_LENGTH, HANDLE_SEARCH_MIN_LENGTH } from '../src/identity/han
 import {
   addSheetState,
   foundCardVisible,
-  linkRowVisible,
   noOneMatchesLabel,
   isSearchable,
   normalizeHandleQuery,
@@ -90,20 +89,18 @@ describe('what the sheet shows', () => {
     expect(foundCardVisible(addSheetState(lookup({ found: null, notFound: true })))).toBe(false);
   });
 
-  it('hides the plain link row exactly when the pivot takes over', () => {
+  it('promotes the link row exactly when a search dead-ends', () => {
     const noResults = addSheetState(lookup({ found: null, notFound: true }));
 
     expect(pivotVisible(noResults)).toBe(true);
-    expect(linkRowVisible(noResults)).toBe(false);
   });
 
-  it('keeps the plain link row in every other state', () => {
+  it('leaves it unpromoted in every other state, so only the emphasis moves', () => {
     for (const state of [
       addSheetState(lookup({ query: '' })),
       addSheetState(lookup()),
       addSheetState(lookup({ looking: true, found: null })),
     ]) {
-      expect(linkRowVisible(state)).toBe(true);
       expect(pivotVisible(state)).toBe(false);
     }
   });
