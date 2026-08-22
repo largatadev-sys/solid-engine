@@ -11,6 +11,8 @@ export type AddSheetState =
 
 export const SEARCH_PLACEHOLDER = 'Search by @handle';
 export const SEARCH_ACTION_LABEL = 'Search for this handle';
+export const SEARCH_HINT = 'Handles match exactly — enter the whole one.';
+export const SEARCHING_LABEL = 'Searching…';
 export const INVITE_LABEL = 'Invite';
 export const INVITED_GHOST_LABEL = 'Invited';
 export const ON_THIS_TRIP_LABEL = 'On this trip';

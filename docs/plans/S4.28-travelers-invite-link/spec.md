@@ -193,3 +193,15 @@ Frame 2b hides the footer link row on a no-results search and draws a promoted o
 There is now **one** row, rendered in one position below the divider, whose treatment switches to frame 2b's accent well (`#FFF7ED` on `#FED7AA`) when a search dead-ends. Measured on the preview, it shifts 7px vertically between states rather than moving to a different part of the sheet — the residue is the promoted padding and frame 2b's bare accent icon standing in for the plain row's 40px link disc, both of which the canvas draws.
 
 **The pivot's intent survives**: C7's *"search dead ends pivot instead of stalling"* is about the link becoming the visible answer when a handle fails, and the accent well still does that. `linkRowVisible` is deleted — with the row always present, the predicate had nothing left to decide.
+
+### 2026-08-22 — the add sheet reserves the result's space, and fills it with status *(founder decision)*
+
+The sheet resized as you searched: idle sat 80px shorter than a resolved search, so the whole drawer grew under the traveler's thumb the moment a result arrived. Measured before the change: the gap between the search field and the link row was **54px idle, 134px found, 134px no-match** — one transition, not many, but the most noticeable of the three motions removed this session, because the surface being typed into is the surface that moved.
+
+A fixed **80px result slot** now holds every outcome — the found card, the no-match message, the searching spinner, and an idle hint. Idle and found are pixel-identical afterwards (sheet top 645, link row 848 in both).
+
+**The space is not left blank.** `SEARCH_HINT` — *"Handles match exactly — enter the whole one."* — states the one constraint the placeholder does not: that this is a lookup, never a prefix search. It earns the reservation rather than decorating it, and it is the same fact the explicitly-triggered search (note above) exists to honour.
+
+**The founder's forward-looking argument is recorded but was not the reason.** Reserving space for the v2 annex's Suggested section would be designing for a feature explicitly deferred until public profiles exist — and that story brings a section header, several rows and a batch CTA, so it reshapes the sheet regardless. The reason is the present one: the resize communicated nothing.
+
+*(One state still differs: no-match runs ~25px taller, because frame 2b's accent well is a chunkier treatment than the plain link row — bigger padding and its own margins. That is the emphasis having weight, not the slot failing; left as drawn.)*

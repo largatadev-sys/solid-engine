@@ -1,13 +1,23 @@
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Icon } from '../components/Icon';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { Icon } from "../components/Icon";
+import {
+  AnimatedPressable,
+  usePressFeedback,
+} from "../components/usePressFeedback";
 import {
   travelerColors,
   travelerMetrics,
   travelerRadii,
   travelerTypography,
-} from '../theme/workspaceTokens';
+} from "../theme/workspaceTokens";
 import {
   addSheetState,
   foundCardVisible,
@@ -20,20 +30,21 @@ import {
   ON_THIS_TRIP_LABEL,
   pivotVisible,
   SEARCH_ACTION_LABEL,
+  SEARCH_HINT,
+  SEARCHING_LABEL,
   SEARCH_PLACEHOLDER,
   SHARE_LINK_LABEL,
   SHARE_LINK_SUB,
   type LookupInput,
-} from './addSheet';
-import { BottomSheet } from './BottomSheet';
-import { TravelerAvatar } from './TravelerAvatar';
+} from "./addSheet";
+import { BottomSheet } from "./BottomSheet";
+import { TravelerAvatar } from "./TravelerAvatar";
 
-import { ADD_SHEET_TITLE } from './travelerCopy';
-
+import { ADD_SHEET_TITLE } from "./travelerCopy";
 
 interface AddTravelerSheetProps {
   readonly open: boolean;
-  readonly lookup: Omit<LookupInput, 'query'>;
+  readonly lookup: Omit<LookupInput, "query">;
   readonly foundName: string | null;
   readonly inviting: boolean;
   readonly onQueryChange: (query: string) => void;
@@ -42,7 +53,6 @@ interface AddTravelerSheetProps {
   readonly copyFeedback: string | null;
   readonly onDismiss: () => void;
 }
-
 
 export function AddTravelerSheet({
   open,
@@ -55,16 +65,16 @@ export function AddTravelerSheet({
   copyFeedback,
   onDismiss,
 }: AddTravelerSheetProps) {
-  const [query, setQuery] = useState('');
-  const [submitted, setSubmitted] = useState('');
+  const [query, setQuery] = useState("");
+  const [submitted, setSubmitted] = useState("");
   const state = addSheetState({ ...lookup, query: submitted });
   const searchable = isSearchable(query);
 
   const typed = (next: string) => {
     setQuery(next);
-    if (submitted !== '') {
-      setSubmitted('');
-      onQueryChange('');
+    if (submitted !== "") {
+      setSubmitted("");
+      onQueryChange("");
     }
   };
 
@@ -76,9 +86,9 @@ export function AddTravelerSheet({
   };
 
   const dismiss = () => {
-    setQuery('');
-    setSubmitted('');
-    onQueryChange('');
+    setQuery("");
+    setSubmitted("");
+    onQueryChange("");
     onDismiss();
   };
 
@@ -98,70 +108,85 @@ export function AddTravelerSheet({
           autoCorrect={false}
           accessibilityLabel={SEARCH_PLACEHOLDER}
         />
-        {state.kind === 'looking' ? (
-          <ActivityIndicator size="small" color={travelerColors.iconMuted} />
-        ) : (
-          <Pressable
-            onPress={search}
-            disabled={!searchable}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !searchable }}
-            accessibilityLabel={SEARCH_ACTION_LABEL}
-          >
-            <Icon
-              name="search"
-              size={16}
-              color={searchable ? travelerColors.accent : travelerColors.iconMuted}
-            />
-          </Pressable>
-        )}
+        <Pressable
+          onPress={search}
+          disabled={!searchable}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !searchable }}
+          accessibilityLabel={SEARCH_ACTION_LABEL}
+        >
+          <Icon
+            name="search"
+            size={16}
+            color={
+              searchable ? travelerColors.accent : travelerColors.iconMuted
+            }
+          />
+        </Pressable>
       </View>
 
-      {foundCardVisible(state) && 'handle' in state ? (
-        <View style={styles.foundCard}>
-          <TravelerAvatar
-            tintKey={lookup.found?.travelerId ?? state.handle}
-            displayName={foundName ?? state.handle}
-            avatarUrl={null}
-          />
-          <View style={styles.foundText}>
-            <Text style={styles.foundHandle} numberOfLines={1}>
-              @{state.handle}
-            </Text>
-            {foundName !== null && foundName !== '' ? (
-              <Text style={styles.foundName} numberOfLines={1}>
-                {foundName}
+      <View style={styles.resultSlot}>
+        {state.kind === "idle" ? (
+          <View style={styles.status}>
+            <Text style={styles.statusLabel}>{SEARCH_HINT}</Text>
+          </View>
+        ) : null}
+
+        {state.kind === "looking" ? (
+          <View style={styles.status}>
+            <ActivityIndicator size="small" color={travelerColors.iconMuted} />
+            <Text style={styles.statusLabel}>{SEARCHING_LABEL}</Text>
+          </View>
+        ) : null}
+
+        {foundCardVisible(state) && "handle" in state ? (
+          <View style={styles.foundCard}>
+            <TravelerAvatar
+              tintKey={lookup.found?.travelerId ?? state.handle}
+              displayName={foundName ?? state.handle}
+              avatarUrl={null}
+            />
+            <View style={styles.foundText}>
+              <Text style={styles.foundHandle} numberOfLines={1}>
+                @{state.handle}
               </Text>
+              {foundName !== null && foundName !== "" ? (
+                <Text style={styles.foundName} numberOfLines={1}>
+                  {foundName}
+                </Text>
+              ) : null}
+            </View>
+
+            {state.kind === "invitable" ? (
+              <InvitePill
+                busy={inviting}
+                handle={state.handle}
+                onPress={() => onInvite(state.handle)}
+              />
+            ) : null}
+
+            {state.kind === "pending" ? (
+              <View style={styles.ghostPill}>
+                <Text style={styles.ghostLabel}>{INVITED_GHOST_LABEL}</Text>
+              </View>
+            ) : null}
+
+            {state.kind === "member" ? (
+              <Text style={styles.onTrip}>{ON_THIS_TRIP_LABEL}</Text>
             ) : null}
           </View>
+        ) : null}
 
-          {state.kind === 'invitable' ? (
-            <InvitePill
-              busy={inviting}
-              handle={state.handle}
-              onPress={() => onInvite(state.handle)}
-            />
-          ) : null}
-
-          {state.kind === 'pending' ? (
-            <View style={styles.ghostPill}>
-              <Text style={styles.ghostLabel}>{INVITED_GHOST_LABEL}</Text>
-            </View>
-          ) : null}
-
-          {state.kind === 'member' ? (
-            <Text style={styles.onTrip}>{ON_THIS_TRIP_LABEL}</Text>
-          ) : null}
-        </View>
-      ) : null}
-
-      {pivotVisible(state) && 'query' in state ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>{noOneMatchesLabel(state.query)}</Text>
-          <Text style={styles.emptyBody}>{NOT_ON_LARGATA}</Text>
-        </View>
-      ) : null}
+        {pivotVisible(state) && "query" in state ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyTitle}>
+              {noOneMatchesLabel(state.query)}
+            </Text>
+            <Text style={styles.emptyBody}>{NOT_ON_LARGATA}</Text>
+          </View>
+        ) : null}
+      </View>
 
       <View style={styles.divider} />
       <ShareRow
@@ -172,7 +197,6 @@ export function AddTravelerSheet({
     </BottomSheet>
   );
 }
-
 
 function InvitePill({
   busy,
@@ -205,7 +229,6 @@ function InvitePill({
   );
 }
 
-
 function ShareRow({
   promoted,
   label,
@@ -219,7 +242,10 @@ function ShareRow({
 
   return (
     <AnimatedPressable
-      style={[promoted ? styles.pivotRow : styles.linkRow, { opacity: press.opacity }]}
+      style={[
+        promoted ? styles.pivotRow : styles.linkRow,
+        { opacity: press.opacity },
+      ]}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
       onPress={onPress}
@@ -246,11 +272,10 @@ function ShareRow({
   );
 }
 
-
 const styles = StyleSheet.create({
   field: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     marginHorizontal: travelerMetrics.rowPaddingH,
     marginBottom: 4,
@@ -264,14 +289,30 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     ...travelerTypography.rowTitle,
-    fontWeight: '400',
+    fontWeight: "400",
     lineHeight: 19,
     color: travelerColors.ink,
     padding: 0,
   },
+  resultSlot: {
+    minHeight: travelerMetrics.addSheetResultSlot,
+    justifyContent: "center",
+  },
+  status: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+  },
+  statusLabel: {
+    ...travelerTypography.emptyBody,
+    color: travelerColors.iconMuted,
+    textAlign: "center",
+  },
   foundCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: travelerMetrics.rowGap,
     marginTop: 12,
     marginBottom: 2,
@@ -297,8 +338,8 @@ const styles = StyleSheet.create({
   invitePill: {
     flexShrink: 0,
     minWidth: 74,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: travelerColors.accent,
     borderRadius: travelerRadii.pill,
     paddingVertical: 9,
@@ -323,7 +364,7 @@ const styles = StyleSheet.create({
   onTrip: {
     flexShrink: 0,
     ...travelerTypography.foundName,
-    fontWeight: '600',
+    fontWeight: "600",
     color: travelerColors.muted,
     paddingVertical: 8,
     paddingHorizontal: 4,
@@ -332,18 +373,18 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 4,
     paddingHorizontal: 20,
-    alignItems: 'center',
+    alignItems: "center",
     gap: 3,
   },
   emptyTitle: {
     ...travelerTypography.emptyTitle,
     color: travelerColors.ink,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyBody: {
     ...travelerTypography.emptyBody,
     color: travelerColors.muted,
-    textAlign: 'center',
+    textAlign: "center",
   },
   divider: {
     height: 1,
@@ -352,16 +393,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: travelerMetrics.rowGap,
     paddingVertical: 6,
     paddingHorizontal: 20,
     minHeight: travelerMetrics.avatarHit,
   },
   pivotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: travelerMetrics.rowGap,
     marginTop: 14,
     marginBottom: 2,
@@ -380,8 +421,8 @@ const styles = StyleSheet.create({
     backgroundColor: travelerColors.wellWarm,
     borderWidth: 1,
     borderColor: travelerColors.accentBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   linkText: {
     flex: 1,

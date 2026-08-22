@@ -563,6 +563,7 @@ export const travelerTypography = {
 
 
 export const travelerMetrics = {
+  addSheetResultSlot: 80,
   avatar: 40,
   avatarHit: 44,
   facepileAvatar: 26,
