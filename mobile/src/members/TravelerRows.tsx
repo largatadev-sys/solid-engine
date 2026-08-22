@@ -34,33 +34,28 @@ export function SectionHeading({
 }) {
   const press = usePressFeedback();
 
-  if (onAdd === undefined) {
-    return (
-      <Text style={styles.heading}>
-        {heading} · {count}
-      </Text>
-    );
-  }
-
   return (
     <View style={styles.headingRow}>
       <Text style={styles.heading}>
         {heading} · {count}
       </Text>
-      <AnimatedPressable
-        style={[styles.addCta, { opacity: press.opacity }]}
-        onPressIn={press.onPressIn}
-        onPressOut={press.onPressOut}
-        onPress={onAdd}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityLabel={ADD_TRAVELER_LABEL}
-      >
-        <Icon name="plus" size={14} color={travelerColors.accent} />
-        <Text style={styles.addLabel} numberOfLines={1}>
-          {ADD_TRAVELER_LABEL}
-        </Text>
-      </AnimatedPressable>
+
+      {onAdd === undefined ? null : (
+        <AnimatedPressable
+          style={[styles.addCta, { opacity: press.opacity }]}
+          onPressIn={press.onPressIn}
+          onPressOut={press.onPressOut}
+          onPress={onAdd}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={ADD_TRAVELER_LABEL}
+        >
+          <Icon name="plus" size={14} color={travelerColors.accent} />
+          <Text style={styles.addLabel} numberOfLines={1}>
+            {ADD_TRAVELER_LABEL}
+          </Text>
+        </AnimatedPressable>
+      )}
     </View>
   );
 }
@@ -283,14 +278,14 @@ const styles = StyleSheet.create({
     ...travelerTypography.sectionHeading,
     color: travelerColors.muted,
     textTransform: 'uppercase',
-    paddingTop: travelerMetrics.sectionHeaderTop,
-    paddingBottom: travelerMetrics.sectionHeaderBottom,
-    paddingHorizontal: travelerMetrics.rowPaddingH,
   },
   headingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: travelerMetrics.sectionHeaderTop,
+    paddingBottom: travelerMetrics.sectionHeaderBottom,
+    paddingHorizontal: travelerMetrics.rowPaddingH,
   },
   row: {
     flexDirection: 'row',
@@ -355,8 +350,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexShrink: 0,
     gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: travelerMetrics.rowPaddingH,
   },
   addLabel: {
     ...travelerTypography.rowAction,
