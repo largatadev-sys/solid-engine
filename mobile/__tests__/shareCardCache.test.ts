@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import {
   itineraryKeys,
   onPlanChanged,
-  onShareCardInputsChanged,
+  invalidateShareLink,
 } from '../src/query/itineraryQueries';
 import { joinKeys } from '../src/query/joinKeys';
 import { joinLinkOptions } from '../src/query/joinQueries';
@@ -20,6 +20,9 @@ const linkAt = (version: number) => ({
 const seed = (client: QueryClient, itineraryId: string, version: number): void => {
   client.setQueryData(joinKeys.link(itineraryId), linkAt(version));
 };
+
+const cachedVersion = (client: QueryClient, itineraryId: string): string =>
+  (client.getQueryData(joinKeys.link(itineraryId)) as { shareUrl: string }).shareUrl.split('?')[1]!;
 
 const isStale = (client: QueryClient, itineraryId: string): boolean =>
   client.getQueryState(joinKeys.link(itineraryId))?.isInvalidated === true;
@@ -39,7 +42,7 @@ describe('the shared invite link after a card input changes', () => {
   it('is refetched, so the copy button never hands out a version the platform already cached', async () => {
     seed(client, TRIP, 1);
 
-    await onShareCardInputsChanged(client, TRIP);
+    await invalidateShareLink(client, TRIP);
 
     expect(isStale(client, TRIP)).toBe(true);
   });
@@ -48,12 +51,12 @@ describe('the shared invite link after a card input changes', () => {
     seed(client, TRIP, 1);
     seed(client, OTHER, 1);
 
-    await onShareCardInputsChanged(client, TRIP);
+    await invalidateShareLink(client, TRIP);
 
     expect(isStale(client, OTHER)).toBe(false);
   });
 
-  it('is NOT refetched for a plan edit — the server does not bump for those', async () => {
+  it('is NOT refetched by a plan edit, which is the helper the day/activity writes use', async () => {
     seed(client, TRIP, 1);
 
     await onPlanChanged(client, TRIP);
@@ -61,12 +64,21 @@ describe('the shared invite link after a card input changes', () => {
     expect(isStale(client, TRIP)).toBe(false);
   });
 
-  it('still invalidates the trip itself, so the two stay in step', async () => {
+  it('leaves the trip entity alone — its caller already wrote the authoritative response', async () => {
     client.setQueryData(itineraryKeys.one(TRIP), { id: TRIP });
 
-    await onShareCardInputsChanged(client, TRIP);
+    await invalidateShareLink(client, TRIP);
 
-    expect(client.getQueryState(itineraryKeys.one(TRIP))?.isInvalidated).toBe(true);
+    expect(client.getQueryState(itineraryKeys.one(TRIP))?.isInvalidated).toBe(false);
+  });
+
+
+  it('keeps the stale version readable until the refetch lands, rather than blanking the button', async () => {
+    seed(client, TRIP, 4);
+
+    await invalidateShareLink(client, TRIP);
+
+    expect(cachedVersion(client, TRIP)).toBe('v=4');
   });
 });
 

@@ -15,7 +15,11 @@ import {
   validateTripForm,
   type TripFormValues,
 } from '../../../../src/itineraries/tripFormContract';
-import { onItineraryUpdated, useCreateItinerary } from '../../../../src/query/itineraryQueries';
+import {
+  invalidateShareLink,
+  onItineraryUpdated,
+  useCreateItinerary,
+} from '../../../../src/query/itineraryQueries';
 
 
 export default function NewItineraryScreen() {
@@ -55,6 +59,7 @@ export default function NewItineraryScreen() {
       const withCover = await itineraryRepository.uploadCover(itineraryId, chosenCover);
       await itineraryRepository.releaseEditLock(itineraryId, { subjectType: 'header' });
       await onItineraryUpdated(client, withCover);
+      await invalidateShareLink(client, itineraryId);
     } catch {
       keepTheTripAndSayTheCoverDidNotAttach();
     } finally {

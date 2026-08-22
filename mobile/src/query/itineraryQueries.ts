@@ -102,14 +102,11 @@ export async function onPlanChanged(client: QueryClient, itineraryId: string): P
 }
 
 
-export async function onShareCardInputsChanged(
+export async function invalidateShareLink(
   client: QueryClient,
   itineraryId: string,
 ): Promise<void> {
-  await Promise.all([
-    onPlanChanged(client, itineraryId),
-    client.invalidateQueries({ queryKey: joinKeys.link(itineraryId) }),
-  ]);
+  await client.invalidateQueries({ queryKey: joinKeys.link(itineraryId) });
 }
 
 
@@ -146,7 +143,9 @@ export function useUpdateItinerary(
   const client = useQueryClient();
   return useMutation({
     mutationFn: (request: UpdateItineraryRequest) => itineraryRepository.update(id, request),
-    onSuccess: (updated) => onItineraryUpdated(client, updated).then(() => onShareCardInputsChanged(client, id)),
+    onSuccess: async (updated) => {
+      await Promise.all([onItineraryUpdated(client, updated), invalidateShareLink(client, id)]);
+    },
   });
 }
 
@@ -156,7 +155,9 @@ export function useUploadCover(id: string): UseMutationResult<ItineraryResponse,
   const client = useQueryClient();
   return useMutation({
     mutationFn: (photo: PickedPhoto) => itineraryRepository.uploadCover(id, photo),
-    onSuccess: (updated) => onItineraryUpdated(client, updated).then(() => onShareCardInputsChanged(client, id)),
+    onSuccess: async (updated) => {
+      await Promise.all([onItineraryUpdated(client, updated), invalidateShareLink(client, id)]);
+    },
   });
 }
 
@@ -165,7 +166,9 @@ export function useRemoveCover(id: string): UseMutationResult<void, Error, void>
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => itineraryRepository.removeCover(id),
-    onSuccess: () => onShareCardInputsChanged(client, id),
+    onSuccess: async () => {
+      await Promise.all([onPlanChanged(client, id), invalidateShareLink(client, id)]);
+    },
   });
 }
 
