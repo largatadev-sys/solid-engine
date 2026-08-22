@@ -486,8 +486,18 @@ export type InvitationResponse = {
   inviteeTravelerId: string | null;
   inviteeHandle: string | null;
 
+  inviterHandle: string | null;
+  emailLegacy: boolean;
+
   createdAt: string;
   expiresAt: string;
+};
+
+
+export type GoingTravelerResponse = {
+  travelerId: string;
+  displayName: string;
+  avatarUrl: string | null;
 };
 
 
@@ -496,8 +506,47 @@ export type InboxInvitationResponse = {
   itineraryId: string;
   tripTitle: string;
   inviterName: string;
+  inviterHandle: string | null;
+  destination: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  hasCover: boolean;
+  going: GoingTravelerResponse[];
+  travelerCount: number;
   createdAt: string;
   expiresAt: string;
+};
+
+
+export type JoinLinkResponse = {
+  token: string;
+  shareUrl: string;
+};
+
+
+export type JoinTeaserResponse = {
+  title: string;
+  destination: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  travelerCount: number;
+  hasCover: boolean;
+  viewerState: 'signedOut' | 'canRequest' | 'pending' | 'member' | 'dead';
+};
+
+
+export type JoinRequestResponse = {
+  viewerState: 'signedOut' | 'canRequest' | 'pending' | 'member' | 'dead';
+};
+
+
+export type JoinRequestSummaryResponse = {
+  id: string;
+  travelerId: string;
+  displayName: string;
+  handle: string | null;
+  avatarUrl: string | null;
+  requestedAt: string;
 };
 
 

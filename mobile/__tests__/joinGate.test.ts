@@ -1,0 +1,122 @@
+import { isJoinRoute, JOIN_SEGMENT, SIGNED_IN_HOME } from '../src/navigation/authRoutes';
+import {
+  destinationFor,
+  isSettling,
+  VERIFY_CODE_ROUTE,
+  type GateInput,
+} from '../src/onboarding/onboardingGate';
+import { joinRouteFor, tokenFromJoinPath } from '../src/join/pendingJoin';
+
+const TOKEN = ['join', 'link', 'sample', '1234567890', 'abcdefghij'].join('_');
+
+function gate(over: Partial<GateInput> = {}): GateInput {
+  return {
+    auth: 'signedIn',
+    emailVerified: true,
+    profile: { handle: 'someone', interests: ['food'], country: 'PH', onboardingCompleted: true },
+    profileUnreadable: false,
+    segment: undefined,
+    ...over,
+  };
+}
+
+describe('the join segment', () => {
+  it('is recognised as its own thing, not as a public route', () => {
+    expect(isJoinRoute(JOIN_SEGMENT)).toBe(true);
+    expect(isJoinRoute('welcome')).toBe(false);
+  });
+
+  it('admits a signed-out visitor — the app’s only pre-auth screen', () => {
+    expect(destinationFor(gate({ auth: 'signedOut', segment: JOIN_SEGMENT }))).toBeNull();
+  });
+
+  it('stops holding a signed-out visitor behind the splash', () => {
+    expect(isSettling(gate({ auth: 'signedOut', segment: JOIN_SEGMENT }))).toBe(false);
+  });
+
+  it('still waits while auth restores — the CTA depends on whether a bearer is coming', () => {
+    expect(isSettling(gate({ auth: 'restoring', segment: JOIN_SEGMENT }))).toBe(true);
+  });
+
+  it('leaves a signed-in traveler on the landing rather than bouncing them Home', () => {
+    expect(destinationFor(gate({ segment: JOIN_SEGMENT }))).toBeNull();
+  });
+
+  it('does not divert an unverified traveler off the landing', () => {
+    expect(destinationFor(gate({ emailVerified: false, segment: JOIN_SEGMENT }))).toBeNull();
+  });
+
+  it('still sends a signed-out visitor away from anywhere else', () => {
+    expect(destinationFor(gate({ auth: 'signedOut', segment: 'trips' }))).toBe('/welcome');
+  });
+
+  it('still holds an unverified traveler at verification everywhere else', () => {
+    expect(destinationFor(gate({ emailVerified: false, segment: 'trips' }))).toBe(VERIFY_CODE_ROUTE);
+  });
+});
+
+describe('returning from sign-up with a link in hand', () => {
+  it('lands on the invitation rather than Home', () => {
+    expect(destinationFor(gate({ segment: 'welcome', pendingJoinToken: TOKEN }))).toBe(
+      joinRouteFor(TOKEN),
+    );
+  });
+
+  it('lands Home when no link is waiting', () => {
+    expect(destinationFor(gate({ segment: 'welcome' }))).toBe(SIGNED_IN_HOME);
+    expect(destinationFor(gate({ segment: 'welcome', pendingJoinToken: null }))).toBe(
+      SIGNED_IN_HOME,
+    );
+  });
+
+  it('survives the verify-code round trip', () => {
+    expect(destinationFor(gate({ segment: 'verify-code', pendingJoinToken: TOKEN }))).toBe(
+      joinRouteFor(TOKEN),
+    );
+  });
+
+  it('carries an unreadable profile to the landing too', () => {
+    expect(
+      destinationFor(
+        gate({
+          profile: null,
+          profileUnreadable: true,
+          segment: 'welcome',
+          pendingJoinToken: TOKEN,
+        }),
+      ),
+    ).toBe(joinRouteFor(TOKEN));
+  });
+
+  it('finishes onboarding before it honours the link', () => {
+    expect(
+      destinationFor(
+        gate({
+          profile: { handle: null, interests: [], country: null, onboardingCompleted: false },
+          segment: 'welcome',
+          pendingJoinToken: TOKEN,
+        }),
+      ),
+    ).toBe('/onboarding/profile');
+  });
+});
+
+describe('reading a token out of a link', () => {
+  it('takes the token from a join path', () => {
+    expect(tokenFromJoinPath(`/join/${TOKEN}`)).toBe(TOKEN);
+  });
+
+  it('ignores anything after the token', () => {
+    expect(tokenFromJoinPath(`/join/${TOKEN}?from=chat`)).toBe(TOKEN);
+  });
+
+  it('refuses a path that is not a join link', () => {
+    expect(tokenFromJoinPath('/trips')).toBeNull();
+    expect(tokenFromJoinPath('/join/')).toBeNull();
+  });
+
+  it('refuses a token that could not have been minted', () => {
+    expect(tokenFromJoinPath('/join/short')).toBeNull();
+    expect(tokenFromJoinPath('/join/has spaces and punctuation!')).toBeNull();
+  });
+});
