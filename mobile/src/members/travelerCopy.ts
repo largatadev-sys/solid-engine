@@ -19,6 +19,7 @@ export const PENDING_QUIET = 'Request sent';
 export const MEMBER_CTA = 'Open trip workspace';
 export const DEAD_QUIET = "This trip isn't taking new travelers.";
 export const DEAD_COVER_OPACITY = 0.45;
+export const LEAVE_LANDING_LABEL = 'Back to my trips';
 
 
 export function offerCardTitle(offererHandleLabel: string): string {

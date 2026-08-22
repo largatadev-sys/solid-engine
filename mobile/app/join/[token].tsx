@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ApiError } from '../../src/api/ApiError';
 import { useAuth } from '../../src/hooks/authContext';
 import { JoinPostcard } from '../../src/join/JoinPostcard';
-import { DEAD_QUIET, WORDMARK } from '../../src/members/travelerCopy';
+import { DEAD_QUIET, LEAVE_LANDING_LABEL, WORDMARK } from '../../src/members/travelerCopy';
 import { forgetPendingJoin, stashPendingJoin } from '../../src/join/pendingJoinStore';
 import { trackJoinLandingViewed } from '../../src/members/memberEvents';
 import { TRIPS_TAB_ROUTE, WELCOME_ROUTE } from '../../src/navigation/authRoutes';
@@ -45,8 +45,13 @@ export default function JoinLandingScreen() {
     );
   }
 
+  const leaveLanding = () => {
+    forgetPendingJoin();
+    router.replace(TRIPS_TAB_ROUTE);
+  };
+
   if (teaser.isError || teaser.data === undefined) {
-    return <DeadPostcard />;
+    return <DeadPostcard onLeave={signedIn ? leaveLanding : null} />;
   }
 
   const state = teaser.data.viewerState;
@@ -84,12 +89,13 @@ export default function JoinLandingScreen() {
       coverUrl={teaser.data.hasCover ? joinRepository.coverPath(token) : null}
       busy={request.isPending}
       onPrimary={act}
+      onLeave={signedIn && state !== 'member' ? leaveLanding : null}
     />
   );
 }
 
 
-function DeadPostcard() {
+function DeadPostcard({ onLeave }: { onLeave: (() => void) | null }) {
   return (
     <View style={styles.well}>
       <Text style={styles.wordmark}>{WORDMARK}</Text>
@@ -98,6 +104,16 @@ function DeadPostcard() {
           <Text style={styles.quietLabel}>{DEAD_QUIET}</Text>
         </View>
       </View>
+      {onLeave === null ? null : (
+        <Pressable
+          style={styles.leave}
+          onPress={onLeave}
+          accessibilityRole="button"
+          accessibilityLabel={LEAVE_LANDING_LABEL}
+        >
+          <Text style={styles.leaveLabel}>{LEAVE_LANDING_LABEL}</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -137,6 +153,16 @@ const styles = StyleSheet.create({
     ...travelerTypography.postcardQuiet,
     color: travelerColors.muted,
     textAlign: 'center',
+  },
+  leave: {
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  leaveLabel: {
+    ...travelerTypography.postcardQuiet,
+    color: travelerColors.muted,
   },
 });
 

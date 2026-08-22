@@ -17,6 +17,7 @@ import {
   DEAD_COVER_OPACITY,
   DEAD_QUIET,
   KICKER,
+  LEAVE_LANDING_LABEL,
   MEMBER_CTA,
   PENDING_QUIET,
   REQUEST_CTA,
@@ -47,10 +48,17 @@ interface JoinPostcardProps {
   readonly coverUrl: string | null;
   readonly busy: boolean;
   readonly onPrimary: () => void;
+  readonly onLeave: (() => void) | null;
 }
 
 
-export function JoinPostcard({ teaser, coverUrl, busy, onPrimary }: JoinPostcardProps) {
+export function JoinPostcard({
+  teaser,
+  coverUrl,
+  busy,
+  onPrimary,
+  onLeave,
+}: JoinPostcardProps) {
   const entrance = useRef(new Animated.Value(0)).current;
   const reducedMotion = useReducedMotion();
   const dead = teaser.viewerState === 'dead';
@@ -101,7 +109,31 @@ export function JoinPostcard({ teaser, coverUrl, busy, onPrimary }: JoinPostcard
           <PostcardAction state={teaser.viewerState} busy={busy} onPress={onPrimary} />
         </View>
       </Animated.View>
+
+      {onLeave === null ? null : (
+        <Animated.View style={{ opacity: entrance, transform: [{ translateY }] }}>
+          <LeaveLanding onPress={onLeave} />
+        </Animated.View>
+      )}
     </View>
+  );
+}
+
+
+function LeaveLanding({ onPress }: { onPress: () => void }) {
+  const press = usePressFeedback();
+
+  return (
+    <AnimatedPressable
+      style={[styles.leave, { opacity: press.opacity }]}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={LEAVE_LANDING_LABEL}
+    >
+      <Text style={styles.leaveLabel}>{LEAVE_LANDING_LABEL}</Text>
+    </AnimatedPressable>
   );
 }
 
@@ -158,6 +190,16 @@ export function ctaLabelFor(state: JoinTeaserResponse['viewerState']): string | 
 
 
 const styles = StyleSheet.create({
+  leave: {
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  leaveLabel: {
+    ...travelerTypography.postcardQuiet,
+    color: travelerColors.muted,
+  },
   well: {
     flex: 1,
     backgroundColor: travelerColors.wellWarm,

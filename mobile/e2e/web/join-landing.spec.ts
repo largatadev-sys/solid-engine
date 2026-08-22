@@ -7,12 +7,14 @@ import { labelled } from '../support/screen';
 import {
   DEAD_QUIET,
   KICKER,
+  LEAVE_LANDING_LABEL,
   MEMBER_CTA,
   PENDING_QUIET,
   REQUEST_CTA,
   SIGNED_OUT_CTA,
   WORDMARK,
 } from '../../src/members/travelerCopy';
+import { TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
 
 const OWNER = ownerTagFor('web/join-landing');
 const VISITOR: PoolTag = IDENTITY_MAP['web/join-landing'].tags[1]!;
@@ -61,6 +63,15 @@ test.describe('7a · the link opens for somebody with no account', () => {
     await page.goto(landing(token));
 
     await expect(labelled(page, SIGNED_OUT_CTA)).toBeVisible();
+  });
+
+  test('and offers no way back to Trips, because a signed-out visitor has none', async ({
+    page,
+  }) => {
+    await page.goto(landing(token));
+    await expect(labelled(page, SIGNED_OUT_CTA)).toBeVisible();
+
+    await expect(labelled(page, LEAVE_LANDING_LABEL)).toHaveCount(0);
   });
 
   test('it names the trip and its shape, and nobody who is on it', async ({ page }) => {
@@ -118,6 +129,21 @@ test.describe('7b → 7c · a signed-in visitor asks, in place', () => {
     const queue = await api(`/v1/itineraries/${trip.id}/join-requests`, 'GET', ownerToken);
 
     expect(queue.body.items.length).toBe(1);
+  });
+
+  test('a waiting traveler is not stranded — the landing offers a way back to Trips', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(VISITOR);
+    await page.goto(landing(token));
+    await expect(page.getByText(PENDING_QUIET, { exact: true })).toBeVisible({ timeout: 20_000 });
+
+    await labelled(page, LEAVE_LANDING_LABEL).click();
+
+    await expect
+      .poll(() => new URL(page.url()).pathname, { timeout: 20_000 })
+      .toBe(TRIPS_TAB_ROUTE);
   });
 
   test('7c · re-opening the link while pending lands on the quiet state', async ({
