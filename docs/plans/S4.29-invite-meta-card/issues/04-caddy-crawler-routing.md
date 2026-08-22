@@ -15,5 +15,6 @@
 - [x] A crawler UA on a non-`/join` path still gets the SPA (matcher is path-scoped)
 - [x] All eight listed crawler UAs match, and the SPA's own routes (`/`, `/trips`) still answer 200
 - [x] The generic sitewide og tags injected at export time are untouched for non-crawler and non-join traffic
+- [x] A regression guard exists and was sabotage-checked — `e2e/api/join-link.spec.ts`, *"routes crawlers to the per-trip card"*: four tests probing the live preview container with both user agents, skipping (never failing) when none is up. Restoring the bare `try_files` turns it red on *"a crawler asking for an invite link gets THAT trip in the tags"*, so the trap now has a failure mode rather than only a Gotchas line.
 - [ ] CI's clean-checkout compose build passes with the new Caddyfile *(CI builds the compose stack, not the preview image — carried to the story gate)*
 - [x] Demoable: the two curl commands above, side by side

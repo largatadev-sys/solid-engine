@@ -235,3 +235,56 @@ test('any member may read the link, not just the owner — the C1 widening', asy
   expect(shared.status).toBe(200);
   expect(shared.body.token).toBe(token);
 });
+
+
+const PREVIEW = process.env.LARGATA_PREVIEW_URL ?? 'http://localhost:8081';
+const CRAWLER = 'facebookexternalhit/1.1';
+const BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36';
+
+const asAgent = async (agent: string, path: string): Promise<string> => {
+  const answer = await request(`${PREVIEW}${path}`, 'GET', undefined, { 'User-Agent': agent });
+  return typeof answer.body === 'string' ? answer.body : '';
+};
+
+const previewServed = async (): Promise<boolean> =>
+  (await asAgent(BROWSER, '/')).includes('<div id="root">');
+
+test.describe('the preview container routes crawlers to the per-trip card', () => {
+  test.beforeAll(async () => {
+    if (!(await previewServed())) {
+      test.skip(
+        true,
+        `no preview container at ${PREVIEW} — this spec never ran; it is not a product failure`,
+      );
+    }
+  });
+
+  test('a crawler asking for an invite link gets THAT trip in the tags', async () => {
+    const unfurled = await asAgent(CRAWLER, `/join/${token}`);
+
+    expect(unfurled).toContain(`content="You&#39;re invited: ${trip.title}"`);
+    expect(unfurled).toContain(`/v1/join/${token}/card.png`);
+  });
+
+  test('a browser asking for the same link gets the app, not the crawler stub', async () => {
+    const app = await asAgent(BROWSER, `/join/${token}`);
+
+    expect(app).toContain('<div id="root">');
+    expect(app).not.toContain('You&#39;re invited:');
+  });
+
+  test('the two answers DIFFER — both are 200, so a status code proves nothing here', async () => {
+    const [crawler, browser] = await Promise.all([
+      asAgent(CRAWLER, `/join/${token}`),
+      asAgent(BROWSER, `/join/${token}`),
+    ]);
+
+    expect(crawler).not.toBe(browser);
+  });
+
+  test('a crawler on a non-join path still gets the app — the matcher is path-scoped', async () => {
+    const elsewhere = await asAgent(CRAWLER, '/trips');
+
+    expect(elsewhere).toContain('<div id="root">');
+  });
+});
