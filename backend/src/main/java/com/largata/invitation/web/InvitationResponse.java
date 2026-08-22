@@ -10,6 +10,8 @@ public record InvitationResponse(
         String email,
         UUID inviteeTravelerId,
         String inviteeHandle,
+        String inviterHandle,
+        boolean emailLegacy,
         Instant createdAt,
         Instant expiresAt) {
 
@@ -19,6 +21,8 @@ public record InvitationResponse(
                 pending.email(),
                 pending.inviteeTravelerId(),
                 pending.inviteeHandle(),
+                pending.inviterHandle(),
+                pending.isEmailLegacy(),
                 pending.createdAt(),
                 pending.expiresAt());
     }

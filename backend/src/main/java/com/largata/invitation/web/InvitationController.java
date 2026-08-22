@@ -6,8 +6,11 @@ import com.largata.identity.web.AuthEmail;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.identity.web.VerifiedContact;
 import com.largata.invitation.InvitationService;
+import com.largata.media.web.PhotoBytes;
 import java.util.UUID;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,9 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 class InvitationController {
 
     private final InvitationService invitations;
+    private final PhotoBytes covers;
 
-    InvitationController(InvitationService invitations) {
+    InvitationController(InvitationService invitations, PhotoBytes covers) {
         this.invitations = invitations;
+        this.covers = covers;
     }
 
 
@@ -31,6 +36,16 @@ class InvitationController {
     Page<InboxInvitationResponse> inbox(@CurrentTraveler Traveler traveler, @AuthEmail VerifiedContact contact) {
         return Page.exhausted(
                 invitations.inbox(contact, traveler.id()).stream().map(InboxInvitationResponse::of).toList());
+    }
+
+
+    @GetMapping("/{invitationId}/cover")
+    ResponseEntity<InputStreamResource> cover(
+            @CurrentTraveler Traveler traveler,
+            @AuthEmail VerifiedContact contact,
+            @PathVariable UUID invitationId) {
+        return covers.thumbnailOfItinerary(
+                invitations.itineraryOfInvitationTo(invitationId, contact, traveler.id()));
     }
 
     @PostMapping("/{invitationId}/accept")

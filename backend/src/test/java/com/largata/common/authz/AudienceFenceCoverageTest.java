@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +28,12 @@ class AudienceFenceCoverageTest {
             Set.of(
                     "TripJoinController.java#link",
                     "TripJoinController.java#queue");
+
+
+    private static final Map<String, String> CAPABILITY_SCOPED_COVER_READS =
+            Map.of(
+                    "JoinController.java#cover", "join.itineraryBehind(",
+                    "InvitationController.java#cover", "invitations.itineraryOfInvitationTo(");
 
 
     private static final Set<String> KNOWN_WORKSPACE_SCOPED_GETS =
@@ -148,6 +155,35 @@ class AudienceFenceCoverageTest {
 
 
     @Test
+    void everyCapabilityScopedCoverReadResolvesItsSubjectThroughTheCapabilityThatAuthorizesIt()
+            throws IOException {
+        for (Map.Entry<String, String> read : CAPABILITY_SCOPED_COVER_READS.entrySet()) {
+            String[] split = read.getKey().split("#");
+            ScannedHandler handler =
+                    handlerNamed(split[0], split[1])
+                            .orElseThrow(
+                                    () ->
+                                            new AssertionError(
+                                                    "a stale capability exemption is a blind spot that widens in "
+                                                            + "silence: " + read.getKey()));
+
+            assertThat(handler.body())
+                    .as(
+                            "ADR-032: these two cover reads exist BECAUSE the audience fence correctly "
+                                    + "refuses their audiences — a not-yet-member holding an invitation, and "
+                                    + "an anonymous viewer holding a join token. The token and the invitation "
+                                    + "ARE the authorization, so the handler must resolve its itinerary "
+                                    + "through the capability check rather than taking an id from the path. "
+                                    + "A handler that reached PhotoBytes with a caller-supplied itinerary id "
+                                    + "would serve any trip's cover to anyone, and no other test here would "
+                                    + "see it: neither scan above matches a handler with no guard call at "
+                                    + "all. " + read.getKey())
+                    .contains(read.getValue());
+        }
+    }
+
+
+    @Test
     void theLifecycleFencedExemptionsAreQualifiedByControllerAndStillExist() throws IOException {
         List<String> scanned = scannedHandlers().stream().map(ScannedHandler::qualifiedName).toList();
 
@@ -193,6 +229,23 @@ class AudienceFenceCoverageTest {
             }
         }
         return scanned;
+    }
+
+
+    private static java.util.Optional<ScannedHandler> handlerNamed(String file, String name)
+            throws IOException {
+        for (Path controller : controllerSources()) {
+            if (!controller.getFileName().toString().equals(file)) {
+                continue;
+            }
+            Matcher handler = ANY_HANDLER.matcher(Files.readString(controller));
+            while (handler.find()) {
+                if (handler.group(1).equals(name)) {
+                    return java.util.Optional.of(new ScannedHandler(file, name, handler.group(3)));
+                }
+            }
+        }
+        return java.util.Optional.empty();
     }
 
 

@@ -18,6 +18,7 @@ import com.largata.invitation.InvitationExceptions.InvitationNotFoundException;
 import com.largata.invitation.InvitationExceptions.InvitationNotPendingException;
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
 import com.largata.itinerary.ItineraryService;
+import com.largata.itinerary.TripTeaser;
 import com.largata.workspace.MembershipView;
 import com.largata.workspace.WorkspaceService;
 import java.time.Clock;
@@ -31,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,6 +45,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class InvitationService {
 
     private static final Logger log = LoggerFactory.getLogger(InvitationService.class);
+
+    private static final int GOING_PREVIEW_SIZE = 3;
 
     private final InvitationRepository invitations;
     private final WorkspaceService workspaces;
@@ -106,7 +110,7 @@ public class InvitationService {
                     dispatch(mail);
                     emitSent(invitation.id(), itineraryId, member.travelerId(), "email");
                 });
-        return pendingOf(invitation, null);
+        return pendingOf(invitation, null, handleOf(member.travelerId()));
     }
 
 
@@ -132,7 +136,7 @@ public class InvitationService {
                 member.travelerId(),
                 invitee.id());
         afterCommit(() -> emitSent(invitation.id(), itineraryId, member.travelerId(), "handle"));
-        return pendingOf(invitation, invitee.handle());
+        return pendingOf(invitation, invitee.handle(), handleOf(member.travelerId()));
     }
 
 
@@ -155,12 +159,14 @@ public class InvitationService {
     }
 
 
-    private static PendingInvitation pendingOf(Invitation invitation, String inviteeHandle) {
+    private static PendingInvitation pendingOf(
+            Invitation invitation, String inviteeHandle, String inviterHandle) {
         return new PendingInvitation(
                 invitation.id(),
                 invitation.email(),
                 invitation.inviteeTravelerId(),
                 inviteeHandle,
+                inviterHandle,
                 invitation.createdAt(),
                 invitation.expiresAt());
     }
@@ -199,10 +205,20 @@ public class InvitationService {
         List<Invitation> rows =
                 invitations.findByWorkspaceIdAndStatusAndExpiresAtAfterOrderByIdDesc(
                         workspaceId, InvitationStatus.PENDING, Instant.now(clock));
-        Map<UUID, String> handles =
-                handlesByIds(rows.stream().map(Invitation::inviteeTravelerId).filter(Objects::nonNull).toList());
+        List<UUID> named =
+                Stream.concat(
+                                rows.stream().map(Invitation::inviteeTravelerId).filter(Objects::nonNull),
+                                rows.stream().map(Invitation::invitedBy))
+                        .distinct()
+                        .toList();
+        Map<UUID, String> handles = handlesByIds(named);
         return rows.stream()
-                .map(i -> pendingOf(i, i.isAddressedByEmail() ? null : handles.get(i.inviteeTravelerId())))
+                .map(
+                        i ->
+                                pendingOf(
+                                        i,
+                                        i.isAddressedByEmail() ? null : handles.get(i.inviteeTravelerId()),
+                                        handles.get(i.invitedBy())))
                 .toList();
     }
 
@@ -260,21 +276,62 @@ public class InvitationService {
         if (live.isEmpty()) {
             return List.of();
         }
-        Map<UUID, String> titles = itineraries.titlesByIds(itineraryIds.values());
-        Map<UUID, String> inviterNames = namesByIds(live.stream().map(Invitation::invitedBy).toList());
+        List<UUID> inviterIds = live.stream().map(Invitation::invitedBy).distinct().toList();
+        Map<UUID, TravelerSummary> inviters =
+                travelers.summariesByIds(inviterIds).stream()
+                        .collect(Collectors.toMap(TravelerSummary::id, summary -> summary));
         return live.stream()
-                .map(
-                        i -> {
-                            UUID itineraryId = itineraryIds.get(i.workspaceId());
-                            return new InboxInvitation(
-                                    i.id(),
-                                    itineraryId,
-                                    titles.getOrDefault(itineraryId, ""),
-                                    inviterNames.getOrDefault(i.invitedBy(), ""),
-                                    i.createdAt(),
-                                    i.expiresAt());
-                        })
+                .map(i -> inboxCardOf(i, itineraryIds.get(i.workspaceId()), inviters.get(i.invitedBy())))
                 .toList();
+    }
+
+
+    private InboxInvitation inboxCardOf(Invitation invitation, UUID itineraryId, TravelerSummary inviter) {
+        Optional<TripTeaser> trip = itineraries.teaserOf(itineraryId);
+        List<MembershipView> roster = workspaces.membersOf(itineraryId);
+        return new InboxInvitation(
+                invitation.id(),
+                itineraryId,
+                trip.map(TripTeaser::title).orElse(""),
+                inviter == null ? "" : inviter.displayName(),
+                inviter == null ? null : inviter.handle(),
+                trip.map(TripTeaser::destination).orElse(null),
+                trip.map(TripTeaser::startDate).orElse(null),
+                trip.map(TripTeaser::endDate).orElse(null),
+                trip.map(t -> t.coverImageUrl() != null).orElse(false),
+                goingPreviewOf(roster),
+                roster.size(),
+                invitation.createdAt(),
+                invitation.expiresAt());
+    }
+
+
+    private List<InboxInvitation.GoingTraveler> goingPreviewOf(List<MembershipView> roster) {
+        List<UUID> shown =
+                roster.stream().map(MembershipView::travelerId).limit(GOING_PREVIEW_SIZE).toList();
+        Map<UUID, TravelerSummary> profiles =
+                travelers.summariesByIds(shown).stream()
+                        .collect(Collectors.toMap(TravelerSummary::id, summary -> summary));
+        return shown.stream()
+                .map(profiles::get)
+                .filter(Objects::nonNull)
+                .map(
+                        p ->
+                                new InboxInvitation.GoingTraveler(
+                                        p.id(), p.displayName(), p.avatarUrl()))
+                .toList();
+    }
+
+
+    @Transactional(readOnly = true)
+    public UUID itineraryOfInvitationTo(UUID invitationId, VerifiedContact contact, UUID travelerId) {
+        Invitation invitation = liveInvitationFor(invitationId, contact, travelerId);
+        UUID workspaceId = invitation.workspaceId();
+        UUID itineraryId = workspaces.itineraryIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
+        if (itineraryId == null) {
+            throw new InvitationNotFoundException();
+        }
+        return itineraryId;
     }
 
 
@@ -404,6 +461,11 @@ public class InvitationService {
         }
         pending.expire(Instant.now(clock));
         invitations.saveAndFlush(pending);
+    }
+
+
+    private String handleOf(UUID travelerId) {
+        return travelers.summaryById(travelerId).map(TravelerSummary::handle).orElse(null);
     }
 
 

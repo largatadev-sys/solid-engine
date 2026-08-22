@@ -38,8 +38,9 @@ class ProfileShowcaseIT extends PostgresTestBase {
         String ownedDraft = createTrip(traveler);
 
         String host = freshTraveler();
-        String hostedPublished = publishedTrip(host);
+        String hostedPublished = createTrip(host);
         joinExistingTraveler(host, hostedPublished, traveler);
+        publish(host, hostedPublished);
 
         assertThat(showcaseIds(traveler))
                 .as("what the traveler published, of the trips they own")
@@ -56,8 +57,9 @@ class ProfileShowcaseIT extends PostgresTestBase {
         createTrip(traveler);
 
         String host = freshTraveler();
-        String hostedPublished = publishedTrip(host);
+        String hostedPublished = createTrip(host);
         joinExistingTraveler(host, hostedPublished, traveler);
+        publish(host, hostedPublished);
 
         assertThat(publishedCount(traveler))
                 .as("owned and published only — the draft and the hosted trip do not count")
@@ -96,11 +98,12 @@ class ProfileShowcaseIT extends PostgresTestBase {
     @Test
     void theFormerOwnerLosesTheShowcaseCardTheNewOwnerGains() {
         String owner = freshTraveler();
-        String trip = publishedTrip(owner);
+        String trip = createTrip(owner);
         String member = joinAsMember(owner, trip, uniqueEmail());
 
         offer(owner, trip, travelerIdOf(member)).expectStatus().isCreated();
         accept(member, trip).expectStatus().isNoContent();
+        publish(member, trip);
 
         assertThat(showcaseIds(owner)).as("no longer theirs to show").isEmpty();
         assertThat(showcaseIds(member)).as("the showcase follows ownership").containsExactly(trip);
@@ -252,10 +255,14 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
     private String publishedTrip(String token) {
         String tripId = createTrip(token);
+        publish(token, tripId);
+        return tripId;
+    }
+
+    private void publish(String token, String tripId) {
         act(token, tripId, "start").expectStatus().isOk();
         act(token, tripId, "complete").expectStatus().isOk();
         act(token, tripId, "publish").expectStatus().isOk();
-        return tripId;
     }
 
     private String createTrip(String token) {
