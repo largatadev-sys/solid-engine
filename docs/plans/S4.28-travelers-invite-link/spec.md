@@ -205,3 +205,15 @@ A fixed **80px result slot** now holds every outcome — the found card, the no-
 **The founder's forward-looking argument is recorded but was not the reason.** Reserving space for the v2 annex's Suggested section would be designing for a feature explicitly deferred until public profiles exist — and that story brings a section header, several rows and a batch CTA, so it reshapes the sheet regardless. The reason is the present one: the resize communicated nothing.
 
 *(One state still differs: no-match runs ~25px taller, because frame 2b's accent well is a chunkier treatment than the plain link row — bigger padding and its own margins. That is the emphasis having weight, not the slot failing; left as drawn.)*
+
+### 2026-08-22 — one link-row treatment, and the sheet stops moving entirely *(founder decision)*
+
+Reserving the result slot (note above) left one motion: the no-match state ran ~25px taller, because frame 2b's promoted well is a chunkier treatment than the plain footer row — its own margins, more padding, and a bare accent icon where the plain row carries a 40px link disc. Two treatments meant the sheet still resized whenever a search resolved or its text was cleared.
+
+The link row now wears frame 2b's accent well **always** — idle, searching, found, and no-match alike. `pivotRow` and `linkDisc` are deleted; `ShareRow` lost its `promoted` prop, since there is nothing left to vary.
+
+Measured across all four transitions including clearing the field: **sheet top 622, link row y=841 x=73, identical in every one.** The add sheet is now completely static.
+
+**This ends frame 2b's promotion as a state change** — the emphasis it drew is now simply the row's permanent treatment. What frame 2b actually wanted survives: when a handle dead-ends, the link is visibly the answer. It is the answer in every state now, which is arguably truer to a sheet whose two doors are *invite by handle* and *send the link*.
+
+*(Correction on process: an earlier commit in this sequence, `1dfdde4`, ran `prettier --write` on this file. The repo has no prettier config and does not carry it as a dependency, so it rewrote the whole file to double quotes — 138 insertions for ~30 lines of real change. The formatting was reverted here and the changes re-applied by hand in the file's own style; ignoring whitespace, the real diff is 38 insertions.)*

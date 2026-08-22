@@ -1,23 +1,13 @@
-import { useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { Icon } from "../components/Icon";
-import {
-  AnimatedPressable,
-  usePressFeedback,
-} from "../components/usePressFeedback";
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Icon } from '../components/Icon';
+import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import {
   travelerColors,
   travelerMetrics,
   travelerRadii,
   travelerTypography,
-} from "../theme/workspaceTokens";
+} from '../theme/workspaceTokens';
 import {
   addSheetState,
   foundCardVisible,
@@ -36,15 +26,16 @@ import {
   SHARE_LINK_LABEL,
   SHARE_LINK_SUB,
   type LookupInput,
-} from "./addSheet";
-import { BottomSheet } from "./BottomSheet";
-import { TravelerAvatar } from "./TravelerAvatar";
+} from './addSheet';
+import { BottomSheet } from './BottomSheet';
+import { TravelerAvatar } from './TravelerAvatar';
 
-import { ADD_SHEET_TITLE } from "./travelerCopy";
+import { ADD_SHEET_TITLE } from './travelerCopy';
+
 
 interface AddTravelerSheetProps {
   readonly open: boolean;
-  readonly lookup: Omit<LookupInput, "query">;
+  readonly lookup: Omit<LookupInput, 'query'>;
   readonly foundName: string | null;
   readonly inviting: boolean;
   readonly onQueryChange: (query: string) => void;
@@ -53,6 +44,7 @@ interface AddTravelerSheetProps {
   readonly copyFeedback: string | null;
   readonly onDismiss: () => void;
 }
+
 
 export function AddTravelerSheet({
   open,
@@ -65,16 +57,16 @@ export function AddTravelerSheet({
   copyFeedback,
   onDismiss,
 }: AddTravelerSheetProps) {
-  const [query, setQuery] = useState("");
-  const [submitted, setSubmitted] = useState("");
+  const [query, setQuery] = useState('');
+  const [submitted, setSubmitted] = useState('');
   const state = addSheetState({ ...lookup, query: submitted });
   const searchable = isSearchable(query);
 
   const typed = (next: string) => {
     setQuery(next);
-    if (submitted !== "") {
-      setSubmitted("");
-      onQueryChange("");
+    if (submitted !== '') {
+      setSubmitted('');
+      onQueryChange('');
     }
   };
 
@@ -86,9 +78,9 @@ export function AddTravelerSheet({
   };
 
   const dismiss = () => {
-    setQuery("");
-    setSubmitted("");
-    onQueryChange("");
+    setQuery('');
+    setSubmitted('');
+    onQueryChange('');
     onDismiss();
   };
 
@@ -119,28 +111,26 @@ export function AddTravelerSheet({
           <Icon
             name="search"
             size={16}
-            color={
-              searchable ? travelerColors.accent : travelerColors.iconMuted
-            }
+            color={searchable ? travelerColors.accent : travelerColors.iconMuted}
           />
         </Pressable>
       </View>
 
       <View style={styles.resultSlot}>
-        {state.kind === "idle" ? (
+        {state.kind === 'idle' ? (
           <View style={styles.status}>
             <Text style={styles.statusLabel}>{SEARCH_HINT}</Text>
           </View>
         ) : null}
 
-        {state.kind === "looking" ? (
+        {state.kind === 'looking' ? (
           <View style={styles.status}>
             <ActivityIndicator size="small" color={travelerColors.iconMuted} />
             <Text style={styles.statusLabel}>{SEARCHING_LABEL}</Text>
           </View>
         ) : null}
 
-        {foundCardVisible(state) && "handle" in state ? (
+        {foundCardVisible(state) && 'handle' in state ? (
           <View style={styles.foundCard}>
             <TravelerAvatar
               tintKey={lookup.found?.travelerId ?? state.handle}
@@ -151,14 +141,14 @@ export function AddTravelerSheet({
               <Text style={styles.foundHandle} numberOfLines={1}>
                 @{state.handle}
               </Text>
-              {foundName !== null && foundName !== "" ? (
+              {foundName !== null && foundName !== '' ? (
                 <Text style={styles.foundName} numberOfLines={1}>
                   {foundName}
                 </Text>
               ) : null}
             </View>
 
-            {state.kind === "invitable" ? (
+            {state.kind === 'invitable' ? (
               <InvitePill
                 busy={inviting}
                 handle={state.handle}
@@ -166,37 +156,32 @@ export function AddTravelerSheet({
               />
             ) : null}
 
-            {state.kind === "pending" ? (
+            {state.kind === 'pending' ? (
               <View style={styles.ghostPill}>
                 <Text style={styles.ghostLabel}>{INVITED_GHOST_LABEL}</Text>
               </View>
             ) : null}
 
-            {state.kind === "member" ? (
+            {state.kind === 'member' ? (
               <Text style={styles.onTrip}>{ON_THIS_TRIP_LABEL}</Text>
             ) : null}
           </View>
         ) : null}
 
-        {pivotVisible(state) && "query" in state ? (
+        {pivotVisible(state) && 'query' in state ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>
-              {noOneMatchesLabel(state.query)}
-            </Text>
+            <Text style={styles.emptyTitle}>{noOneMatchesLabel(state.query)}</Text>
             <Text style={styles.emptyBody}>{NOT_ON_LARGATA}</Text>
           </View>
         ) : null}
       </View>
 
       <View style={styles.divider} />
-      <ShareRow
-        promoted={pivotVisible(state)}
-        label={copyFeedback ?? SHARE_LINK_LABEL}
-        onPress={onShareLink}
-      />
+      <ShareRow label={copyFeedback ?? SHARE_LINK_LABEL} onPress={onShareLink} />
     </BottomSheet>
   );
 }
+
 
 function InvitePill({
   busy,
@@ -229,53 +214,34 @@ function InvitePill({
   );
 }
 
-function ShareRow({
-  promoted,
-  label,
-  onPress,
-}: {
-  promoted: boolean;
-  label: string;
-  onPress: () => void;
-}) {
+
+function ShareRow({ label, onPress }: { label: string; onPress: () => void }) {
   const press = usePressFeedback();
 
   return (
     <AnimatedPressable
-      style={[
-        promoted ? styles.pivotRow : styles.linkRow,
-        { opacity: press.opacity },
-      ]}
+      style={[styles.linkRow, { opacity: press.opacity }]}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      {promoted ? (
-        <Icon name="link" size={20} color={travelerColors.accent} />
-      ) : (
-        <View style={styles.linkDisc}>
-          <Icon name="link" size={17} color={travelerColors.accent} />
-        </View>
-      )}
+      <Icon name="link" size={20} color={travelerColors.accent} />
       <View style={styles.linkText}>
         <Text style={styles.linkLabel}>{label}</Text>
         <Text style={styles.linkSub}>{SHARE_LINK_SUB}</Text>
       </View>
-      <Icon
-        name="share"
-        size={18}
-        color={promoted ? travelerColors.accent : travelerColors.iconMuted}
-      />
+      <Icon name="share" size={18} color={travelerColors.accent} />
     </AnimatedPressable>
   );
 }
 
+
 const styles = StyleSheet.create({
   field: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
     marginHorizontal: travelerMetrics.rowPaddingH,
     marginBottom: 4,
@@ -289,30 +255,30 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     ...travelerTypography.rowTitle,
-    fontWeight: "400",
+    fontWeight: '400',
     lineHeight: 19,
     color: travelerColors.ink,
     padding: 0,
   },
   resultSlot: {
     minHeight: travelerMetrics.addSheetResultSlot,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   status: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
     paddingHorizontal: 20,
   },
   statusLabel: {
     ...travelerTypography.emptyBody,
     color: travelerColors.iconMuted,
-    textAlign: "center",
+    textAlign: 'center',
   },
   foundCard: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: travelerMetrics.rowGap,
     marginTop: 12,
     marginBottom: 2,
@@ -338,8 +304,8 @@ const styles = StyleSheet.create({
   invitePill: {
     flexShrink: 0,
     minWidth: 74,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: travelerColors.accent,
     borderRadius: travelerRadii.pill,
     paddingVertical: 9,
@@ -364,7 +330,7 @@ const styles = StyleSheet.create({
   onTrip: {
     flexShrink: 0,
     ...travelerTypography.foundName,
-    fontWeight: "600",
+    fontWeight: '600',
     color: travelerColors.muted,
     paddingVertical: 8,
     paddingHorizontal: 4,
@@ -373,18 +339,18 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 4,
     paddingHorizontal: 20,
-    alignItems: "center",
+    alignItems: 'center',
     gap: 3,
   },
   emptyTitle: {
     ...travelerTypography.emptyTitle,
     color: travelerColors.ink,
-    textAlign: "center",
+    textAlign: 'center',
   },
   emptyBody: {
     ...travelerTypography.emptyBody,
     color: travelerColors.muted,
-    textAlign: "center",
+    textAlign: 'center',
   },
   divider: {
     height: 1,
@@ -393,18 +359,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   linkRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: travelerMetrics.rowGap,
-    paddingVertical: 6,
-    paddingHorizontal: 20,
-    minHeight: travelerMetrics.avatarHit,
-  },
-  pivotRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: travelerMetrics.rowGap,
-    marginTop: 14,
+    marginTop: 12,
     marginBottom: 2,
     marginHorizontal: travelerMetrics.rowPaddingH,
     paddingVertical: 12,
@@ -413,16 +371,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: travelerColors.accentBorder,
     borderRadius: travelerRadii.card,
-  },
-  linkDisc: {
-    width: travelerMetrics.avatar,
-    height: travelerMetrics.avatar,
-    borderRadius: travelerRadii.pill,
-    backgroundColor: travelerColors.wellWarm,
-    borderWidth: 1,
-    borderColor: travelerColors.accentBorder,
-    alignItems: "center",
-    justifyContent: "center",
   },
   linkText: {
     flex: 1,
