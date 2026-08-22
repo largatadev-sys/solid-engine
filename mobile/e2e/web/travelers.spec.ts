@@ -17,7 +17,6 @@ import {
   SEARCH_ACTION_LABEL,
   SEARCH_PLACEHOLDER,
   SHARE_LINK_LABEL,
-  SHARE_LINK_PIVOT_LABEL,
 } from '../../src/members/addSheet';
 import { LEAVE_TRIP_LABEL, REMOVE_FROM_TRIP_LABEL } from '../../src/members/rowMenu';
 import { APPROVE_LABEL, DECLINE_LABEL, REVOKE_LABEL } from '../../src/members/travelerCopy';
@@ -179,8 +178,20 @@ test.describe('the roster the owner sees', () => {
     await search(page, '@nobodyholdsthishandle999');
 
     await expect(page.getByText(/No one matches/).first()).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByText(SHARE_LINK_PIVOT_LABEL, { exact: true })).toBeVisible();
-    await expect(page.getByText(SHARE_LINK_LABEL, { exact: true })).toHaveCount(0);
+    await expect(page.getByText(SHARE_LINK_LABEL, { exact: true })).toBeVisible();
+  });
+
+  test('the link row reads the same before and after a search that found nobody — one label, '
+    + 'so the copy action never renames itself under the traveler', async ({ page, signIn }) => {
+    await signIn(OWNER);
+    await page.goto(travelersTab(trip.id));
+    await openAddSheet(page);
+    await expect(page.getByText(SHARE_LINK_LABEL, { exact: true })).toBeVisible();
+
+    await search(page, '@nobodyholdsthishandle999');
+    await expect(page.getByText(/No one matches/).first()).toBeVisible({ timeout: 20_000 });
+
+    await expect(page.getByText(SHARE_LINK_LABEL, { exact: true })).toHaveCount(1);
   });
 });
 

@@ -23,7 +23,6 @@ import {
   SEARCH_ACTION_LABEL,
   SEARCH_PLACEHOLDER,
   SHARE_LINK_LABEL,
-  SHARE_LINK_PIVOT_LABEL,
   SHARE_LINK_SUB,
   type LookupInput,
 } from './addSheet';
@@ -166,7 +165,7 @@ export function AddTravelerSheet({
           </View>
           <ShareRow
             promoted
-            label={copyFeedback ?? SHARE_LINK_PIVOT_LABEL}
+            label={copyFeedback ?? SHARE_LINK_LABEL}
             onPress={onShareLink}
           />
         </>

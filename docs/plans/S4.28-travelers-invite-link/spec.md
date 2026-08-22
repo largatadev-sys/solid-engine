@@ -159,3 +159,9 @@ The lookup now waits to be asked. The search field's magnifier becomes the trigg
 **The gate is TWO characters, deliberately below the three the server enforces** *(founder, same session)*. `Handle.MIN_LENGTH` is 3 and `[a-z0-9_]{3,20}` refuses anything shorter — but **two-character handles exist and are grandfathered**: the founders minted them while the gate was looser and it was tightened afterwards, so those handles can never be recreated and cannot be validated against the current rule. Gating the search at the mint minimum would make exactly those travelers **permanently unfindable by handle**. `HANDLE_SEARCH_MIN_LENGTH` is therefore its own constant rather than a reuse of the mint rule, the two are asserted to differ, and the reason lives in that test because no code comment may carry it.
 
 *(Cost was never the real argument: the lookup is an exact match against `traveler_handle_idx`, a unique index on `lower(handle)`, so each query was an index probe returning at most one row. The waste was in meaning, not in load.)*
+
+### 2026-08-22 — the link row keeps one label in every state *(founder decision)*
+
+Frame 2b promotes the invite link into the accent well on a no-results search **and renames it** — the canvas draws "Send them the invite link" there against "Share invite link" in the default footer. Carried into the copy-only wording (the note above), that became "Copy the invite link for them" versus "Copy invite link", so the control renamed itself under the traveler depending on whether their last search happened to match.
+
+It is now **"Copy invite link" in every state** — idle, found, and no-match. `SHARE_LINK_PIVOT_LABEL` is deleted rather than left unused, so it cannot drift back. The promotion into the accent well **stays**: frame 2b's pivot is about drawing the eye to the link when a handle dead-ends, and that still works with a stable name — it is the renaming that was the defect, not the emphasis.

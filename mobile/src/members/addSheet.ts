@@ -15,7 +15,6 @@ export const INVITE_LABEL = 'Invite';
 export const INVITED_GHOST_LABEL = 'Invited';
 export const ON_THIS_TRIP_LABEL = 'On this trip';
 export const SHARE_LINK_LABEL = 'Copy invite link';
-export const SHARE_LINK_PIVOT_LABEL = 'Copy the invite link for them';
 export const SHARE_LINK_SUB = 'Anyone with the link can request to join';
 export const NOT_ON_LARGATA = 'They might not be on Largata yet.';
 
