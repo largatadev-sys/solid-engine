@@ -6,13 +6,20 @@ import { travelerMotion } from '../theme/workspaceTokens';
 
 interface RowEntranceProps {
   readonly delayMs?: number;
+  readonly durationMs?: number;
   readonly replayKey?: number | string;
   readonly style?: StyleProp<ViewStyle>;
   readonly children: ReactNode;
 }
 
 
-export function RowEntrance({ delayMs = 0, replayKey, style, children }: RowEntranceProps) {
+export function RowEntrance({
+  delayMs = 0,
+  durationMs = travelerMotion.rowEntranceMs,
+  replayKey,
+  style,
+  children,
+}: RowEntranceProps) {
   const progress = useRef(new Animated.Value(0)).current;
   const reducedMotion = useReducedMotion();
 
@@ -20,12 +27,12 @@ export function RowEntrance({ delayMs = 0, replayKey, style, children }: RowEntr
     progress.setValue(0);
     Animated.timing(progress, {
       toValue: 1,
-      duration: reducedMotion ? 0 : travelerMotion.rowEntranceMs,
+      duration: reducedMotion ? 0 : durationMs,
       delay: reducedMotion ? 0 : delayMs,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [delayMs, progress, reducedMotion, replayKey]);
+  }, [delayMs, durationMs, progress, reducedMotion, replayKey]);
 
   const translateY = progress.interpolate({
     inputRange: [0, 1],

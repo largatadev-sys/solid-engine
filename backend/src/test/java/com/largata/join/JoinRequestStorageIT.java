@@ -43,24 +43,72 @@ class JoinRequestStorageIT extends PostgresTestBase {
 
     @Test
     void aPendingRequestIsStoredWithTheUpperCaseNameThePartialIndexTests() {
-        UUID workspaceId = workspaceOfAFreshTrip();
-        UUID travelerId = UUID.randomUUID();
+        String owner = rig.travelerWithHandle(uniqueHandle("owner"));
+        String trip = rig.createTrip(owner, 1);
+        String asker = rig.travelerWithHandle(uniqueHandle("asker"));
+        String token = joinTokenOf(owner, trip);
 
-        insertRequest(workspaceId, travelerId, "PENDING");
+        rest.post()
+                .uri("/v1/join/" + token + "/request")
+                .header(HttpHeaders.AUTHORIZATION, bearer(asker))
+                .exchange()
+                .expectStatus()
+                .isOk();
 
         String stored =
                 jdbc.queryForObject(
-                        "SELECT status FROM join_request WHERE workspace_id = ? AND traveler_id = ?",
+                        "SELECT status FROM join_request WHERE traveler_id = ?",
                         String.class,
-                        workspaceId,
-                        travelerId);
+                        rig.travelerIdOf(asker));
         assertThat(stored)
                 .as(
-                        "V38's join_request_one_pending_idx has WHERE status = 'PENDING'. If "
+                        "V38's join_request_one_pending_idx has WHERE status = 'PENDING', so this asserts "
+                                + "what HIBERNATE writes, not what a hand-written literal round-trips. If "
                                 + "@Enumerated(STRING)'s spelling ever moved, the index would match nothing, "
                                 + "create successfully and enforce nothing — the S1.1 `WHERE role = 'owner'` "
                                 + "near-miss, which is the quietest possible failure")
                 .isEqualTo("PENDING");
+    }
+
+
+    @Test
+    void anApprovedRequestIsStoredWithItsOwnUpperCaseName() {
+        String owner = rig.travelerWithHandle(uniqueHandle("owner"));
+        String trip = rig.createTrip(owner, 1);
+        String asker = rig.travelerWithHandle(uniqueHandle("asker"));
+        String token = joinTokenOf(owner, trip);
+        rest.post()
+                .uri("/v1/join/" + token + "/request")
+                .header(HttpHeaders.AUTHORIZATION, bearer(asker))
+                .exchange()
+                .expectStatus()
+                .isOk();
+        String requestId =
+                fieldIn(
+                        rest.get()
+                                .uri("/v1/itineraries/" + trip + "/join-requests")
+                                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
+                                .exchange()
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id");
+
+        rest.post()
+                .uri("/v1/itineraries/" + trip + "/join-requests/" + requestId + "/approve")
+                .header(HttpHeaders.AUTHORIZATION, bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT status FROM join_request WHERE traveler_id = ?",
+                                String.class,
+                                rig.travelerIdOf(asker)))
+                .isEqualTo("APPROVED");
     }
 
 
@@ -156,6 +204,24 @@ class JoinRequestStorageIT extends PostgresTestBase {
         assertThat(token).matches("[A-Za-z0-9_-]+");
     }
 
+
+    private String joinTokenOf(String ownerToken, String tripId) {
+        return fieldIn(
+                rest.get()
+                        .uri("/v1/itineraries/" + tripId + "/join-link")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
+                        .exchange()
+                        .expectStatus()
+                        .isOk()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent(),
+                "token");
+    }
+
+    private static String uniqueHandle(String role) {
+        return role + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    }
 
     private UUID workspaceOfAFreshTrip() {
         String owner = rig.travelerWithHandle("owner" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));

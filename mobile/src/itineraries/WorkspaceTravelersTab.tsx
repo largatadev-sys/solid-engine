@@ -3,6 +3,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { confirmWith } from '../components/confirmDestructive';
 import {
+  acceptOwnershipWording,
+  declineOwnershipWording,
   leaveTripWording,
   offerOwnershipWording,
   removeMemberWording,
@@ -10,8 +12,9 @@ import {
 } from '../components/confirmDestructiveMessage';
 import { notify } from '../components/notify';
 import { useLayoutClose } from '../members/layoutClose';
+import { membershipErrorMessage } from '../members/membershipErrors';
 import { AddTravelerSheet } from '../members/AddTravelerSheet';
-import { cascadeDelayFor } from '../members/cascade';
+import { cascadeDelayFor, onTabBlurred, onTabFocused, UNVISITED } from '../members/cascade';
 import { OwnershipOfferCard } from '../members/OwnershipOfferCard';
 import { RowEntrance } from '../members/RowEntrance';
 import { RowMenuSheet, type RowMenuSubject } from '../members/RowMenuSheet';
@@ -47,7 +50,7 @@ import {
 import { useApproveRequest, useDeclineRequest, useJoinLink, useJoinRequests } from '../query/joinQueries';
 import { useTravelerByHandle } from '../query/travelerQueries';
 import { shareLink } from '../itineraries/shareLink';
-import { travelerColors } from '../theme/workspaceTokens';
+import { travelerColors, travelerMotion } from '../theme/workspaceTokens';
 import { trackLinkShared } from '../members/memberEvents';
 import type { MemberResponse } from '../types/api';
 
@@ -130,7 +133,7 @@ export function WorkspaceTravelersTab({
         closeLayout();
         endMembership.mutate(
           { travelerId: member.travelerId, leaving: false },
-          { onError: (error) => notify('Could not remove them', messageFor(error)) },
+          { onError: (error) => notify('Could not remove them', membershipErrorMessage(error)) },
         );
       });
       return;
@@ -142,7 +145,7 @@ export function WorkspaceTravelersTab({
           { travelerId: member.travelerId, leaving: true },
           {
             onSuccess: () => router.replace(TRIPS_TAB_ROUTE),
-            onError: (error) => notify('Could not leave the trip', messageFor(error)),
+            onError: (error) => notify('Could not leave the trip', membershipErrorMessage(error)),
           },
         );
       });
@@ -153,7 +156,7 @@ export function WorkspaceTravelersTab({
       confirmWith(offerOwnershipWording(label), () => {
         closeLayout();
         offerOwnership.mutate(member.travelerId, {
-          onError: (error) => notify('Could not offer ownership', messageFor(error)),
+          onError: (error) => notify('Could not offer ownership', membershipErrorMessage(error)),
         });
       });
       return;
@@ -163,7 +166,7 @@ export function WorkspaceTravelersTab({
       confirmWith(revokeOwnershipOfferWording(label), () => {
         closeLayout();
         revokeOffer.mutate(undefined, {
-          onError: (error) => notify('Could not revoke the offer', messageFor(error)),
+          onError: (error) => notify('Could not revoke the offer', membershipErrorMessage(error)),
         });
       });
     }
@@ -203,35 +206,22 @@ export function WorkspaceTravelersTab({
               offererLabel={handleLabelOf(offerer?.handle, offerer?.displayName ?? 'The owner')}
               busy={acceptOffer.isPending || declineOffer.isPending}
               onAccept={() =>
-                confirmWith(
-                  {
-                    title: `Become the owner of ${tripTitle}?`,
-                    body: 'You take over managing members and ownership. The current owner stays on as a member.',
-                    confirmLabel: 'Accept',
-                    tone: 'accent',
-                  },
-                  () => {
-                    closeLayout();
-                    acceptOffer.mutate(undefined, {
-                      onError: (error) => notify('Could not accept ownership', messageFor(error)),
-                    });
-                  },
-                )
+                confirmWith(acceptOwnershipWording(tripTitle), () => {
+                  closeLayout();
+                  acceptOffer.mutate(undefined, {
+                    onError: (error) =>
+                      notify('Could not accept ownership', membershipErrorMessage(error)),
+                  });
+                })
               }
               onDecline={() =>
-                confirmWith(
-                  {
-                    title: 'Decline ownership?',
-                    body: 'The current owner keeps the trip. They can offer it to you again later.',
-                    confirmLabel: 'Decline',
-                  },
-                  () => {
-                    closeLayout();
-                    declineOffer.mutate(undefined, {
-                      onError: (error) => notify('Could not decline ownership', messageFor(error)),
-                    });
-                  },
-                )
+                confirmWith(declineOwnershipWording(), () => {
+                  closeLayout();
+                  declineOffer.mutate(undefined, {
+                    onError: (error) =>
+                      notify('Could not decline ownership', membershipErrorMessage(error)),
+                  });
+                })
               }
             />
           </RowEntrance>
@@ -263,8 +253,8 @@ export function WorkspaceTravelersTab({
                         displayName: row.displayName,
                         viewerIsOwner,
                         isYou: row.isYou,
-                        rowIsOwner: row.sub === 'Trip owner',
-                        offerPendingOnRow: row.subIsAccent,
+                        rowIsOwner: row.isOwner,
+                        offerPendingOnRow: row.offerPending,
                         posture,
                       })
                     }
@@ -278,7 +268,7 @@ export function WorkspaceTravelersTab({
                       closeLayout();
                       revokeInvitation.mutate(row.invitationId, {
                         onError: (error) =>
-                          notify('Could not revoke the invitation', messageFor(error)),
+                          notify('Could not revoke the invitation', membershipErrorMessage(error)),
                       });
                     }}
                   />
@@ -291,13 +281,13 @@ export function WorkspaceTravelersTab({
                     onApprove={() => {
                       closeLayout();
                       approve.mutate(row.requestId, {
-                        onError: (error) => notify('Could not approve', messageFor(error)),
+                        onError: (error) => notify('Could not approve', membershipErrorMessage(error)),
                       });
                     }}
                     onDecline={() => {
                       closeLayout();
                       decline.mutate(row.requestId, {
-                        onError: (error) => notify('Could not decline', messageFor(error)),
+                        onError: (error) => notify('Could not decline', membershipErrorMessage(error)),
                       });
                     }}
                   />
@@ -309,7 +299,11 @@ export function WorkspaceTravelersTab({
       </View>
 
       {addBarVisible(posture) ? (
-        <RowEntrance delayMs={0} replayKey={visitKey}>
+        <RowEntrance
+          delayMs={travelerMotion.addBarDelayMs}
+          durationMs={travelerMotion.addBarInMs}
+          replayKey={visitKey}
+        >
           <AddTravelerBar onPress={() => setSheetOpen(true)} />
         </RowEntrance>
       ) : null}
@@ -333,7 +327,7 @@ export function WorkspaceTravelersTab({
         onQueryChange={setQuery}
         onInvite={(handle) =>
           invite.mutate(handle, {
-            onError: (error) => notify('Could not send the invitation', messageFor(error)),
+            onError: (error) => notify('Could not send the invitation', membershipErrorMessage(error)),
           })
         }
         onShareLink={() => {
@@ -362,39 +356,19 @@ function rowKeyOf(row: TravelerRowModel): string {
 }
 
 
-function messageFor(error: unknown): string {
-  const code = (error as { code?: string } | null)?.code;
-  if (code === 'MEMBERSHIP_FROZEN') {
-    return 'This trip is published, so its travelers are settled. Unpublish it to change who is on the trip.';
-  }
-  if (code === 'OWNER_CANNOT_LEAVE') {
-    return 'Offer ownership to another member and have them accept before leaving this trip.';
-  }
-  if (code === 'NOT_PERMITTED') return 'Only the trip owner can do that.';
-  if (code === 'ITINERARY_NOT_FOUND') return 'This trip is no longer available to you.';
-  if (code === 'ALREADY_A_MEMBER') return 'They are already on this trip.';
-  if (code === 'TRAVELER_NOT_FOUND') return 'No traveler with that handle.';
-  return 'Something went wrong. Try again.';
-}
 
 
 function useTabVisit(): number {
-  const [visit, setVisit] = useState(0);
-  const played = useRef(false);
+  const [state, setState] = useState(UNVISITED);
 
   useFocusEffect(
     useCallback(() => {
-      if (!played.current) {
-        played.current = true;
-        setVisit((at) => at + 1);
-      }
-      return () => {
-        played.current = false;
-      };
+      setState(onTabFocused);
+      return () => setState(onTabBlurred);
     }, []),
   );
 
-  return visit;
+  return state.visit;
 }
 
 

@@ -72,7 +72,7 @@ export default function DraftWorkspaceScreen() {
   const { state: meState } = useMe();
   const myId = meState.kind === 'ok' ? meState.me.id : undefined;
   const roster = members.data?.items ?? [];
-  const { isOwner } = memberControls(roster, myId, data?.archived ?? false);
+  const { isOwner } = memberControls(roster, myId);
 
   const session = useEditLock(id);
   const savePlan = useSavePlan(id);

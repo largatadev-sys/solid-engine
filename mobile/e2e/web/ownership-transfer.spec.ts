@@ -5,12 +5,20 @@ import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { SeedFailure, seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled, labelStarting } from '../support/screen';
-import { offerOwnershipWording } from '../../src/components/confirmDestructiveMessage';
+import {
+  acceptOwnershipWording,
+  declineOwnershipWording,
+  offerOwnershipWording,
+  revokeOwnershipOfferWording,
+} from '../../src/components/confirmDestructiveMessage';
 import {
   REMOVE_FROM_TRIP_LABEL,
   TRANSFER_OWNERSHIP_LABEL,
 } from '../../src/members/rowMenu';
-import { OFFER_ACCEPT_LABEL } from '../../src/members/OwnershipOfferCard';
+import {
+  OFFER_ACCEPT_LABEL,
+  OFFER_DECLINE_LABEL,
+} from '../../src/members/OwnershipOfferCard';
 import { OFFERED_SUB, OWNER_SUB } from '../../src/members/travelerSections';
 
 const HOLDER = ownerTagFor('web/ownership-transfer');
@@ -187,7 +195,9 @@ test.describe('the offer, as the receiving traveler meets it', () => {
 
     await labelled(page, `${OFFER_ACCEPT_LABEL} ownership`).click();
 
-    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect
+      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
+      .toContain(acceptOwnershipWording(trip.title).body);
     await expect.poll(async () => ownerOf(trip.id, offereeToken), { timeout: 30_000 }).toBe(
       offereeId,
     );
@@ -249,11 +259,58 @@ test.describe('the offer, revoked before anyone accepts', () => {
     await openRowMenuFor(page, offereeHandle);
     await clickText(page, 'Revoke ownership offer');
 
-    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect
+      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
+      .toContain(revokeOwnershipOfferWording('x').body.replace('x ', ''));
     await expect
       .poll(async () => offeredTo(trip.id, holderToken), { timeout: 30_000 })
       .toBeUndefined();
     expect(await ownerOf(trip.id, holderToken)).toBe(holderId);
+  });
+});
+
+test.describe('the offer, declined by the traveler it was made to', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  let trip: SeededTrip;
+
+  test.beforeAll(async () => {
+    trip = await tripHeldByHolder('decline');
+    await offerOwnership(trip);
+  });
+
+  test('the offeree can refuse it from the same card', async ({ page, signIn, signal }) => {
+    await signIn(OFFEREE);
+    await page.goto(travelersTab(trip.id));
+    await expect(labelled(page, `${OFFER_DECLINE_LABEL} ownership`)).toBeVisible();
+
+    await labelled(page, `${OFFER_DECLINE_LABEL} ownership`).click();
+
+    await expect
+      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
+      .toContain(declineOwnershipWording().body);
+    await expect
+      .poll(async () => offeredTo(trip.id, offereeToken), { timeout: 30_000 })
+      .toBeUndefined();
+  });
+
+  test('the crown stays exactly where it was', async () => {
+    expect(await ownerOf(trip.id, holderToken)).toBe(holderId);
+  });
+
+  test('the card is gone, and the holder’s row loses its waiting sub', async ({ page, signIn }) => {
+    await signIn(HOLDER);
+    await page.goto(travelersTab(trip.id));
+    await expect(page.getByText(/^Travelers · \d+$/).first()).toBeVisible();
+
+    await expect(page.getByText(OFFERED_SUB)).toHaveCount(0);
+  });
+
+  test('and the owner may offer it again — declining is not a door closing', async () => {
+    await offerOwnership(trip);
+
+    expect(await offeredTo(trip.id, holderToken)).toBe(offereeId);
+    await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'DELETE', holderToken, {});
   });
 });
 
@@ -292,7 +349,9 @@ test.describe('the transfer flips back, so repeated runs leave the pool where th
     await openRowMenuFor(page, holderHandle);
     await clickText(page, TRANSFER_OWNERSHIP_LABEL);
 
-    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect
+      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
+      .toContain(offerOwnershipWording('x').body);
     await expect.poll(async () => offeredTo(trip.id, offereeToken), { timeout: 30_000 }).toBe(
       holderId,
     );
@@ -309,7 +368,9 @@ test.describe('the transfer flips back, so repeated runs leave the pool where th
 
     await labelled(page, `${OFFER_ACCEPT_LABEL} ownership`).click();
 
-    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect
+      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
+      .toContain(acceptOwnershipWording(trip.title).body);
     await expect.poll(async () => ownerOf(trip.id, holderToken), { timeout: 30_000 }).toBe(holderId);
   });
 

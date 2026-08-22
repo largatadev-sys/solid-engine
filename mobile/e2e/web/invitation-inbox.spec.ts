@@ -77,6 +77,22 @@ test.describe('the card an invitee meets on Trips', () => {
     await expect(page.getByText(/Expires in/).first()).toBeVisible();
   });
 
+  test('fetches the cover through the invitation, which is what authorizes it', async ({
+    page,
+    signIn,
+    signal,
+  }) => {
+    await signIn(INVITEE);
+    await page.goto(TRIPS_TAB_ROUTE);
+    await expect(page.getByText(trip.title).first()).toBeVisible();
+
+    const covers = signal.apiRequests.filter((call) => call.url.includes('/cover'));
+    for (const call of covers) {
+      expect(call.url).toContain('/v1/invitations/');
+      expect(call.auth).toBe('bearer');
+    }
+  });
+
   test('never shows an address anywhere on the card', async ({ page, signIn }) => {
     await signIn(INVITEE);
     await page.goto(TRIPS_TAB_ROUTE);

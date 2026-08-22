@@ -154,8 +154,8 @@ test.describe('the frozen posture the archive act produces', () => {
     await expect(page.getByText(/^Travelers · \d+$/).first()).toBeVisible();
 
     await expect(page.getByText('Add traveler', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('Invited', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('Requests', { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/^Invited · \d+$/)).toHaveCount(0);
+    await expect(page.getByText(/^Requests · \d+$/)).toHaveCount(0);
   });
 
   test('My Trips no longer lists the archived trip', async ({ page }) => {

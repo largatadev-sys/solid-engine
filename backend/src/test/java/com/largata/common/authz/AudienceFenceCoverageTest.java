@@ -36,6 +36,13 @@ class AudienceFenceCoverageTest {
                     "InvitationController.java#cover", "invitations.itineraryOfInvitationTo(");
 
 
+    private static final Map<String, String> DELIBERATELY_UNAUTHENTICATED_HANDLERS =
+            Map.of(
+                    "JoinController.java#teaser", "join.teaserFor(",
+                    "JoinController.java#cover", "join.itineraryBehind(",
+                    "JoinController.java#request", "viewer.token().orElseThrow(");
+
+
     private static final Set<String> KNOWN_WORKSPACE_SCOPED_GETS =
             Set.of(
                     "ItineraryController.java#view",
@@ -184,6 +191,30 @@ class AudienceFenceCoverageTest {
 
 
     @Test
+    void everyHandlerBehindThePermitAllJoinPathIsNamedHereAndResolvesItsOwnToken()
+            throws IOException {
+        List<ScannedHandler> reachable = handlersIn("JoinController.java");
+
+        assertThat(reachable.stream().map(ScannedHandler::qualifiedName).toList())
+                .as(
+                        "SecurityConfig permits /v1/join/** unauthenticated, so NOTHING upstream checks a "
+                                + "caller here — the join token is the only authorization, and a handler that "
+                                + "forgot to resolve it would serve a stranger whatever it touches. Neither "
+                                + "scan above can see these: they call no guard at all. A new handler added "
+                                + "to this controller inherits permitAll silently, so it fails here until "
+                                + "somebody names it and states what authorizes it (ADR-032's recorded "
+                                + "exception to the everything-authenticated posture)")
+                .containsExactlyInAnyOrderElementsOf(DELIBERATELY_UNAUTHENTICATED_HANDLERS.keySet());
+
+        for (ScannedHandler handler : reachable) {
+            assertThat(handler.body())
+                    .as("this handler must resolve the capability itself: " + handler.qualifiedName())
+                    .contains(DELIBERATELY_UNAUTHENTICATED_HANDLERS.get(handler.qualifiedName()));
+        }
+    }
+
+
+    @Test
     void theLifecycleFencedExemptionsAreQualifiedByControllerAndStillExist() throws IOException {
         List<String> scanned = scannedHandlers().stream().map(ScannedHandler::qualifiedName).toList();
 
@@ -229,6 +260,22 @@ class AudienceFenceCoverageTest {
             }
         }
         return scanned;
+    }
+
+
+    private static List<ScannedHandler> handlersIn(String file) throws IOException {
+        List<ScannedHandler> found = new ArrayList<>();
+
+        for (Path controller : controllerSources()) {
+            if (!controller.getFileName().toString().equals(file)) {
+                continue;
+            }
+            Matcher handler = ANY_HANDLER.matcher(Files.readString(controller));
+            while (handler.find()) {
+                found.add(new ScannedHandler(file, handler.group(1), handler.group(3)));
+            }
+        }
+        return found;
     }
 
 

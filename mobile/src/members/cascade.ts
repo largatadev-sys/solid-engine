@@ -8,17 +8,20 @@ export function cascadeDelayFor(index: number, reducedMotion: boolean): number {
 }
 
 
-export interface CascadeGate {
-  readonly played: boolean;
-  readonly visitKey: number;
+export interface VisitState {
+  readonly visit: number;
+  readonly playedThisVisit: boolean;
+}
+
+export const UNVISITED: VisitState = { visit: 0, playedThisVisit: false };
+
+
+export function onTabFocused(state: VisitState): VisitState {
+  if (state.playedThisVisit) return state;
+  return { visit: state.visit + 1, playedThisVisit: true };
 }
 
 
-export function cascadeGateFor(
-  focused: boolean,
-  previous: CascadeGate,
-): CascadeGate {
-  if (!focused) return { played: false, visitKey: previous.visitKey };
-  if (previous.played) return previous;
-  return { played: true, visitKey: previous.visitKey + 1 };
+export function onTabBlurred(state: VisitState): VisitState {
+  return { visit: state.visit, playedThisVisit: false };
 }

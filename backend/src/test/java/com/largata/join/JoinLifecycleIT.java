@@ -493,7 +493,14 @@ class JoinLifecycleIT extends PostgresTestBase {
         Trip trip = trip();
         String token = tokenOf(trip.owner, trip.id);
 
-        rest.post().uri("/v1/join/" + token + "/request").exchange().expectStatus().isForbidden();
+        rest.post()
+                .uri("/v1/join/" + token + "/request")
+                .exchange()
+                .expectStatus()
+                .isForbidden()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("SIGN_IN_REQUIRED");
     }
 
 

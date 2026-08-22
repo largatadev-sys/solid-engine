@@ -548,7 +548,13 @@ export const travelerTypography = {
   postcardMeta: { fontSize: 13, lineHeight: 17, fontWeight: '400' },
   postcardCta: { fontSize: 14.5, lineHeight: 19, fontWeight: '700' },
   postcardQuiet: { fontSize: 13.5, lineHeight: 18, fontWeight: '600' },
-  wordmark: { fontSize: 15, lineHeight: 20, fontWeight: '700' },
+  wordmark: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
 } as const;
 
 

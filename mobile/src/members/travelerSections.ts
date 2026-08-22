@@ -25,6 +25,8 @@ export interface MemberRowModel {
   readonly sub: string;
   readonly subIsAccent: boolean;
   readonly isYou: boolean;
+  readonly isOwner: boolean;
+  readonly offerPending: boolean;
   readonly avatarUrl: string | null;
   readonly displayName: string;
   readonly showMenu: boolean;
@@ -148,6 +150,8 @@ export function travelerSections(input: SectionInput): TravelerSection[] {
       sub,
       subIsAccent: accent,
       isYou,
+      isOwner: member.role === 'owner',
+      offerPending: member.ownershipOffered === true,
       avatarUrl: member.avatarUrl,
       displayName: member.displayName,
       showMenu: menuVisibleOn(member, { viewerIsOwner, isYou, posture }),

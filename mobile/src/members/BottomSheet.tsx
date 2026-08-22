@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MOBILE_FRAME_WIDTH } from '../components/mobileFrameContract';
 import { useReducedMotion } from '../components/useReducedMotion';
@@ -30,8 +30,11 @@ export function BottomSheet({ open, title, onDismiss, children }: BottomSheetPro
   const travel = useRef(new Animated.Value(0)).current;
   const scrim = useRef(new Animated.Value(0)).current;
   const reducedMotion = useReducedMotion();
+  const [mounted, setMounted] = useState(open);
   const dismiss = useRef(onDismiss);
   dismiss.current = onDismiss;
+
+  if (open && !mounted) setMounted(true);
 
   useEffect(() => {
     Animated.parallel([
@@ -47,7 +50,9 @@ export function BottomSheet({ open, title, onDismiss, children }: BottomSheetPro
         easing: open ? Easing.out(Easing.quad) : Easing.in(Easing.quad),
         useNativeDriver: true,
       }),
-    ]).start();
+    ]).start(({ finished }) => {
+      if (finished && !open) setMounted(false);
+    });
   }, [open, reducedMotion, scrim, travel]);
 
   const swipe = useRef(
@@ -59,7 +64,7 @@ export function BottomSheet({ open, title, onDismiss, children }: BottomSheetPro
     }),
   ).current;
 
-  if (!open) {
+  if (!mounted) {
     return null;
   }
 
@@ -69,7 +74,7 @@ export function BottomSheet({ open, title, onDismiss, children }: BottomSheetPro
   });
 
   return (
-    <Modal visible={open} transparent animationType="none" onRequestClose={onDismiss}>
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={onDismiss}>
       <View style={styles.stage}>
         <Animated.View style={[styles.scrim, { opacity: scrim }]}>
           <Pressable

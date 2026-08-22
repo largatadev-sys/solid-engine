@@ -85,10 +85,21 @@ describe('mediaSourceFor on the web — a blob, because <Image> drops headers', 
 });
 
 describe('isOurMedia', () => {
-  it('recognises the media path and nothing else', () => {
+  it('recognises the media path', () => {
     expect(isOurMedia('/v1/media/x')).toBe(true);
     expect(isOurMedia('https://lh3.googleusercontent.com/a/abc')).toBe(false);
     expect(isOurMedia('https://evil.test/v1/media/x')).toBe(false);
+  });
+
+  it('recognises the two capability-scoped covers, which are ours but not under /v1/media', () => {
+    expect(isOurMedia('/v1/join/sometoken/cover')).toBe(true);
+    expect(isOurMedia('/v1/invitations/some-id/cover')).toBe(true);
+  });
+
+  it('claims neither of those paths beyond their cover, so nothing else is fetched as an image', () => {
+    expect(isOurMedia('/v1/join/sometoken')).toBe(false);
+    expect(isOurMedia('/v1/invitations')).toBe(false);
+    expect(isOurMedia('https://evil.test/v1/join/x/cover')).toBe(false);
   });
 });
 
@@ -106,5 +117,10 @@ describe('thumbOf — small renders fetch the thumb rung, never the full display
   it('passes through the no-photo cases unchanged', () => {
     expect(thumbOf(null)).toBeNull();
     expect(thumbOf('')).toBe('');
+  });
+
+  it('leaves a capability cover alone — it serves the thumbnail already, and /thumb would 404', () => {
+    expect(thumbOf('/v1/join/sometoken/cover')).toBe('/v1/join/sometoken/cover');
+    expect(thumbOf('/v1/invitations/some-id/cover')).toBe('/v1/invitations/some-id/cover');
   });
 });

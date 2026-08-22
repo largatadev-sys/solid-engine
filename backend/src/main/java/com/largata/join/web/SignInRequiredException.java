@@ -6,6 +6,6 @@ import com.largata.common.error.ForbiddenException;
 class SignInRequiredException extends ForbiddenException {
 
     SignInRequiredException() {
-        super("UNAUTHENTICATED", "Sign in to ask to join this trip.");
+        super("SIGN_IN_REQUIRED", "Sign in to ask to join this trip.");
     }
 }

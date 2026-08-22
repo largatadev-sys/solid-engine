@@ -67,7 +67,7 @@ export default function TripWorkspaceScreen() {
   const { state: meState } = useMe();
   const myId = meState.kind === 'ok' ? meState.me.id : undefined;
   const roster = members.data?.items ?? [];
-  const { isOwner } = memberControls(roster, myId, data?.archived ?? false);
+  const { isOwner } = memberControls(roster, myId);
 
   const lifecycle = useTripLifecycle(id);
   const capturing = data !== undefined && capturesAreOpen(data.state);

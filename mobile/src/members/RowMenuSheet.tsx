@@ -28,6 +28,7 @@ export function RowMenuSheet({ subject, lastSubject, onSelect, onDismiss }: RowM
 
   const entries = rowMenuEntries(shown);
 
+
   return (
     <BottomSheet open={subject !== null} title={shown.title} onDismiss={onDismiss}>
       {entries.map((entry, at) => (

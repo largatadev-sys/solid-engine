@@ -86,6 +86,7 @@ export function acceptOwnershipWording(tripTitle: string): ConfirmWording {
     title: `Become the owner of ${tripTitle}?`,
     body: 'You take over managing members, ownership and the trip itself. The current owner stays on as a member.',
     confirmLabel: 'Accept',
+    tone: 'accent',
   };
 }
 

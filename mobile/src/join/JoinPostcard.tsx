@@ -3,6 +3,7 @@ import { ActivityIndicator, Animated, Easing, StyleSheet, Text, View } from 'rea
 import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import { useReducedMotion } from '../components/useReducedMotion';
 import { MediaThumb } from '../media/MediaThumb';
+import { compactDateRange } from '../members/invitationCard';
 import {
   travelerColors,
   travelerMetrics,
@@ -31,32 +32,11 @@ export function teaserMetaLine(teaser: {
   const parts: string[] = [];
   if (teaser.destination !== null && teaser.destination !== '') parts.push(teaser.destination);
 
-  const dates = dateRangeOf(teaser.startDate, teaser.endDate);
+  const dates = compactDateRange(teaser.startDate, teaser.endDate);
   if (dates !== null) parts.push(dates);
 
   parts.push(`${teaser.travelerCount} ${teaser.travelerCount === 1 ? 'traveler' : 'travelers'}`);
   return parts.join(' · ');
-}
-
-
-export function dateRangeOf(startDate: string | null, endDate: string | null): string | null {
-  if (startDate === null) return null;
-
-  const start = new Date(`${startDate}T00:00:00Z`);
-  if (Number.isNaN(start.getTime())) return null;
-
-  const opts = { month: 'short', day: 'numeric', timeZone: 'UTC' } as const;
-  const from = start.toLocaleDateString('en-US', opts);
-  if (endDate === null) return from;
-
-  const end = new Date(`${endDate}T00:00:00Z`);
-  if (Number.isNaN(end.getTime())) return from;
-
-  const sameMonth = start.getUTCMonth() === end.getUTCMonth();
-  const to = sameMonth
-    ? String(end.getUTCDate())
-    : end.toLocaleDateString('en-US', opts);
-  return `${from}–${to}`;
 }
 
 
