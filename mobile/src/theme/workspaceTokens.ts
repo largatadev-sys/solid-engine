@@ -577,6 +577,18 @@ export const travelerMetrics = {
 } as const;
 
 
+export const travelerAvatarTints = [
+  { well: '#DBEAFE', ink: '#1D4ED8' },
+  { well: '#FDE4CF', ink: '#C2410C' },
+  { well: '#DCFCE7', ink: '#15803D' },
+  { well: '#FEF9C3', ink: '#A16207' },
+  { well: '#EDE9FE', ink: '#6D28D9' },
+  { well: '#FCE7F3', ink: '#BE185D' },
+  { well: '#CFFAFE', ink: '#0E7490' },
+  { well: '#FEE2E2', ink: '#B91C1C' },
+] as const;
+
+
 export const travelerRadii = {
   card: 12,
   inviteCard: 16,
