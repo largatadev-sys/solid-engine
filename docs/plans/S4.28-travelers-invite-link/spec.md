@@ -225,3 +225,17 @@ Measured across all four transitions including clearing the field: **sheet top 6
 **Two crossfades, both at M4's 150ms state value.** The **copy invite link** row now crossfades its label when it swaps to "Link copied" and back — the founder's ask, since tapping a row whose only response was an instant text swap read as unresponsive. And the add sheet's **Invite pill → "Invited" ghost** gains the crossfade M4 specified all along (*"Invite → 'Invited' ghost is a 150ms crossfade (the state value)"*) and which the build had been doing as an instant swap. One `Crossfade` serves both, jump-cutting under Reduce Motion.
 
 *(A consequence worth knowing: with the card lingering, a traveler can edit the field and still tap Invite on the previous result. That is not a misfire — the card names the handle it is offering, and it is the handle that was actually looked up. The typed text is a question not yet asked.)*
+
+### 2026-08-22 — press feedback gains a spring scale, app-wide *(founder decision)*
+
+The founder proposed a Motion One press animation — `scale: 0.8` on press, spring back on release. Three things had to change before it could be adopted, and the third is the one that mattered.
+
+**The library does not transfer.** Motion One is DOM-only; on Android it would do nothing. The idea ports to `Animated.spring` with a `scale` transform, which the tree already uses once (`HeartBurst`).
+
+**0.8 is wrong at this size.** A 20% shrink reads well on a 100px square and reads as collapsing on a full-width row. `pressedScale` is **0.97**.
+
+**Doing it on one control would have been the worst option.** M5 makes press feedback *"the shared app value"* — opacity 1→0.85, 100/150 — on every tappable, and `usePressFeedback` is that value, used by 11 files. Giving the copy row a spring nothing else had would make it read as a glitch rather than a flourish. The scale therefore lands in the hook: **every** pressable gains it at once — menu entries, Approve/Decline, Revoke, Withdraw, avatars, the Invite pill, the postcard CTAs, the chat controls.
+
+**This amends M5 rather than breaking it**: the 100/150 opacity is untouched and still leads; the spring rides alongside it. Press is now the vocabulary's second spring, beside the facepile pop. The hook also grew a `style` field so a call site spends one prop instead of composing opacity and transform by hand — sixteen call sites moved to it, which is what keeps the next change to press a one-file change.
+
+Recorded frame by frame on the preview: **1.000 → 0.995 → 0.988 → 0.981 → 0.975 → 0.971 → 0.968**, easing back on release.

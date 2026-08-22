@@ -51,7 +51,7 @@ function TextAction({
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={chatMetrics.hitSlop}
-      style={StyleSheet.flatten([styles.action, { opacity: press.opacity }])}
+      style={StyleSheet.flatten([styles.action, press.style])}
     >
       <Text style={[styles.actionLabel, { color: tint }]}>{label}</Text>
     </AnimatedPressable>

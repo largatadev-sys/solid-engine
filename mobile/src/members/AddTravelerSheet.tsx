@@ -229,7 +229,7 @@ function InvitePill({
 
   return (
     <AnimatedPressable
-      style={[styles.invitePill, { opacity: press.opacity }]}
+      style={[styles.invitePill, press.style]}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
       onPress={onPress}
@@ -253,7 +253,7 @@ function ShareRow({ label, onPress }: { label: string; onPress: () => void }) {
 
   return (
     <AnimatedPressable
-      style={[styles.linkRow, { opacity: press.opacity }]}
+      style={[styles.linkRow, press.style]}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
       onPress={onPress}

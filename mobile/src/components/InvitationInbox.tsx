@@ -120,7 +120,7 @@ function RequestedCard({ request }: { request: MyJoinRequestResponse }) {
           </View>
 
           <AnimatedPressable
-            style={[styles.decline, { opacity: withdrawPress.opacity }]}
+            style={[styles.decline, withdrawPress.style]}
             onPressIn={withdrawPress.onPressIn}
             onPressOut={withdrawPress.onPressOut}
             onPress={onWithdraw}
@@ -226,7 +226,7 @@ function InvitationCard({
 
         <View style={styles.actions}>
           <AnimatedPressable
-            style={[styles.accept, { opacity: acceptPress.opacity }]}
+            style={[styles.accept, acceptPress.style]}
             onPressIn={acceptPress.onPressIn}
             onPressOut={acceptPress.onPressOut}
             onPress={onAccept}
@@ -243,7 +243,7 @@ function InvitationCard({
           </AnimatedPressable>
 
           <AnimatedPressable
-            style={[styles.decline, { opacity: declinePress.opacity }]}
+            style={[styles.decline, declinePress.style]}
             onPressIn={declinePress.onPressIn}
             onPressOut={declinePress.onPressOut}
             onPress={onDecline}

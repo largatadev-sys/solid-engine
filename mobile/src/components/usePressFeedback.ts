@@ -5,6 +5,7 @@ import { tripTabMotion } from '../theme/workspaceTokens';
 
 export type PressFeedback = {
   opacity: Animated.Value;
+  style: { opacity: Animated.Value; transform: [{ scale: Animated.Value }] };
   onPressIn: () => void;
   onPressOut: () => void;
 };
@@ -12,21 +13,45 @@ export type PressFeedback = {
 
 export function usePressFeedback(): PressFeedback {
   const opacity = useRef(new Animated.Value(1)).current;
+  const scale = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => () => opacity.stopAnimation(), [opacity]);
+  useEffect(
+    () => () => {
+      opacity.stopAnimation();
+      scale.stopAnimation();
+    },
+    [opacity, scale],
+  );
 
-  const settle = (toValue: number, duration: number) =>
+  const settle = (toOpacity: number, duration: number, toScale: number, stiffness: number) => {
     Animated.timing(opacity, {
-      toValue,
+      toValue: toOpacity,
       duration,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
 
+    Animated.spring(scale, {
+      toValue: toScale,
+      stiffness,
+      damping: tripTabMotion.pressDamping,
+      mass: tripTabMotion.pressMass,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return {
     opacity,
-    onPressIn: () => settle(tripTabMotion.pressedOpacity, tripTabMotion.pressInMs),
-    onPressOut: () => settle(1, tripTabMotion.pressOutMs),
+    style: { opacity, transform: [{ scale }] },
+    onPressIn: () =>
+      settle(
+        tripTabMotion.pressedOpacity,
+        tripTabMotion.pressInMs,
+        tripTabMotion.pressedScale,
+        tripTabMotion.pressInStiffness,
+      ),
+    onPressOut: () =>
+      settle(1, tripTabMotion.pressOutMs, 1, tripTabMotion.pressOutStiffness),
   };
 }
 

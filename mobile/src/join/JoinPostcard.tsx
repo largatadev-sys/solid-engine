@@ -125,7 +125,7 @@ function LeaveLanding({ onPress }: { onPress: () => void }) {
 
   return (
     <AnimatedPressable
-      style={[styles.leave, { opacity: press.opacity }]}
+      style={[styles.leave, press.style]}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
       onPress={onPress}
@@ -162,7 +162,7 @@ function PostcardAction({
 
   return (
     <AnimatedPressable
-      style={[styles.cta, { opacity: press.opacity }]}
+      style={[styles.cta, press.style]}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
       onPress={onPress}

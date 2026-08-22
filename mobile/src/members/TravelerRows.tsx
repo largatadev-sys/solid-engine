@@ -42,7 +42,7 @@ export function SectionHeading({
 
       {onAdd === undefined ? null : (
         <AnimatedPressable
-          style={[styles.addCta, { opacity: press.opacity }]}
+          style={[styles.addCta, press.style]}
           onPressIn={press.onPressIn}
           onPressOut={press.onPressOut}
           onPress={onAdd}
@@ -76,7 +76,7 @@ export function MemberRow({
   return (
     <View style={styles.row}>
       <AnimatedPressable
-        style={[styles.avatarHit, { opacity: avatarPress.opacity }]}
+        style={[styles.avatarHit, avatarPress.style]}
         onPressIn={avatarPress.onPressIn}
         onPressOut={avatarPress.onPressOut}
         onPress={onOpenProfile}
@@ -105,7 +105,7 @@ export function MemberRow({
 
       {row.showMenu ? (
         <AnimatedPressable
-          style={[styles.menuHit, { opacity: menuPress.opacity }]}
+          style={[styles.menuHit, menuPress.style]}
           onPressIn={menuPress.onPressIn}
           onPressOut={menuPress.onPressOut}
           onPress={onOpenMenu}
@@ -144,7 +144,7 @@ export function InvitedRow({ row, onRevoke }: { row: InvitedRowModel; onRevoke: 
 
       {row.canRevoke ? (
         <AnimatedPressable
-          style={[styles.textAction, { opacity: press.opacity }]}
+          style={[styles.textAction, press.style]}
           onPressIn={press.onPressIn}
           onPressOut={press.onPressOut}
           onPress={onRevoke}
@@ -191,7 +191,7 @@ export function RequestRow({
       </View>
 
       <AnimatedPressable
-        style={[styles.textAction, { opacity: approve.opacity }]}
+        style={[styles.textAction, approve.style]}
         onPressIn={approve.onPressIn}
         onPressOut={approve.onPressOut}
         onPress={onApprove}
@@ -204,7 +204,7 @@ export function RequestRow({
       </AnimatedPressable>
 
       <AnimatedPressable
-        style={[styles.textAction, { opacity: decline.opacity }]}
+        style={[styles.textAction, decline.style]}
         onPressIn={decline.onPressIn}
         onPressOut={decline.onPressOut}
         onPress={onDecline}
@@ -239,7 +239,7 @@ export function MenuEntryRow({
 
   return (
     <AnimatedPressable
-      style={[styles.menuEntry, { opacity: press.opacity }]}
+      style={[styles.menuEntry, press.style]}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
       onPress={onPress}

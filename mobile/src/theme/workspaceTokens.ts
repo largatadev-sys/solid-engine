@@ -619,6 +619,11 @@ export const tripTabMotion = {
   pressInMs: 100,
   pressOutMs: 150,
   pressedOpacity: 0.85,
+  pressedScale: 0.97,
+  pressInStiffness: 1000,
+  pressOutStiffness: 500,
+  pressDamping: 40,
+  pressMass: 1,
 } as const;
 
 
