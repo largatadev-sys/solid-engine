@@ -3,6 +3,7 @@ import { confirmWith } from '../src/components/confirmDestructive';
 import {
   confirmDestructiveMessage,
   leaveTripWording,
+  offerOwnershipWording,
   removeMemberWording,
 } from '../src/components/confirmDestructiveMessage';
 import { missingItineraryMessage } from '../src/components/missingItineraryMessage';
@@ -26,21 +27,25 @@ function tapConfirm(): void {
 }
 
 describe('the wording both forks share', () => {
-  it('names the person being removed and says they can come back', () => {
-    const { title, body, confirmLabel } = removeMemberWording('Beto Cruz');
+  it('names the person being removed and promises their content stays (S4.28 frame 4)', () => {
+    const { title, body, confirmLabel } = removeMemberWording('@betocruz');
 
-    expect(title).toBe('Remove Beto Cruz?');
-    expect(body).toMatch(/invite them again/i);
+    expect(title).toBe('Remove @betocruz?');
+    expect(body).toBe(
+      "They'll lose access to this trip. Their messages, votes, and photos stay.",
+    );
     expect(confirmLabel).toBe('Remove');
   });
 
-  it('tells a leaver what they lose and that the way back is the owner', () => {
-    const { title, body, confirmLabel } = leaveTripWording();
+  it('tells a leaver what they lose and that what they made stays (S4.28 frame 5)', () => {
+    const { title, body, confirmLabel, cancelLabel } = leaveTripWording();
 
     expect(title).toBe('Leave this trip?');
-    expect(body).toMatch(/lose access/i);
-    expect(body).toMatch(/owner can invite you back/i);
+    expect(body).toBe(
+      "You'll lose access to the plan, chat, and photos. Everything you added stays with the group.",
+    );
     expect(confirmLabel).toBe('Leave');
+    expect(cancelLabel).toBe('Not yet');
   });
 
   it('never labels a destructive button "OK" — the word names the act', () => {
@@ -78,7 +83,7 @@ describe('confirmWith (native fork)', () => {
     expect(onConfirm).not.toHaveBeenCalled();
     const [title, body] = (Alert.alert as jest.Mock).mock.calls[0];
     expect(title).toBe('Remove Beto Cruz?');
-    expect(body).toMatch(/invite them again/i);
+    expect(body).toMatch(/messages, votes, and photos stay/i);
 
     tapConfirm();
     expect(onConfirm).toHaveBeenCalledTimes(1);
@@ -89,8 +94,7 @@ describe('confirmWith (native fork)', () => {
 
     confirmWith(leaveTripWording(), onConfirm);
     const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as { text: string; style?: string }[];
-    const cancel = buttons.find((button) => button.text === 'Cancel');
-    expect(cancel?.style).toBe('cancel');
+    expect(buttons[0]?.style).toBe('cancel');
 
     expect(onConfirm).not.toHaveBeenCalled();
   });
@@ -99,7 +103,22 @@ describe('confirmWith (native fork)', () => {
     confirmWith(leaveTripWording(), jest.fn());
 
     const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as { text: string; style?: string }[];
-    expect(buttons.map((button) => button.text)).toEqual(['Cancel', 'Leave']);
+    expect(buttons.map((button) => button.text)).toEqual(['Not yet', 'Leave']);
     expect(buttons[1]?.style).toBe('destructive');
+  });
+
+  it('defaults the cancel label when the wording does not name one', () => {
+    confirmWith(removeMemberWording('@ana'), jest.fn());
+
+    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as { text: string; style?: string }[];
+    expect(buttons.map((button) => button.text)).toEqual(['Cancel', 'Remove']);
+  });
+
+  it('keeps an accent confirm off the destructive style — offering is not a loss', () => {
+    confirmWith(offerOwnershipWording('@ana'), jest.fn());
+
+    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as { text: string; style?: string }[];
+    expect(buttons[1]?.text).toBe('Offer');
+    expect(buttons[1]?.style).toBe('default');
   });
 });

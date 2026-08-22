@@ -396,7 +396,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
       join(MOBILE_ROOT, 'src', 'itineraries', 'TripRow.tsx'),
       join(MOBILE_ROOT, 'src', 'itineraries', 'AvatarStack.tsx'),
       join(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
-      join(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx'),
+      join(MOBILE_ROOT, 'src', 'members', 'TravelerAvatar.tsx'),
       join(MOBILE_ROOT, 'src', 'components', 'Avatar.tsx'),
       join(MOBILE_ROOT, 'src', 'profile', 'ProfileCardView.tsx'),
       join(TRIPS, '[id]', 'created.tsx'),
@@ -990,8 +990,16 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
   it('opens the dialog on the tapped traveler, so two rows cannot show one profile', () => {
     const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
 
-    expect(travelers).toContain('setOpened(member)');
-    expect(travelers).toContain('traveler={opened}');
+    expect(travelers).toContain('setProfileFor(member)');
+    expect(travelers).toContain('traveler={profileFor}');
+  });
+
+  it('makes the avatar the row’s only tap target — the rest of the row is inert (S4.28 C3)', () => {
+    const rows = read(MOBILE_ROOT, 'src', 'members', 'TravelerRows.tsx');
+
+    expect(rows).toContain('view profile');
+    expect(rows).toContain('travelerMetrics.avatarHit');
+    expect(rows).not.toMatch(/<Pressable[^>]*style=\{styles\.row\}/);
   });
 
   it('retires the stub route the dialog replaced, leaving no screen nothing reaches', () => {

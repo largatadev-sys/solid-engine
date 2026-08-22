@@ -237,7 +237,15 @@ export default function TripWorkspaceScreen() {
           />
         ) : null}
 
-        {active === 'travelers' ? <WorkspaceTravelersTab itineraryId={id} /> : null}
+        {active === 'travelers' ? (
+          <WorkspaceTravelersTab
+            itineraryId={id}
+            tripTitle={data.title}
+            myId={myId}
+            published={data.published}
+            archived={data.archived ?? false}
+          />
+        ) : null}
 
         {active === 'chat' ? (
           <View style={styles.chatBody}>

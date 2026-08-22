@@ -306,7 +306,15 @@ export default function DraftWorkspaceScreen() {
           </View>
         ) : null}
 
-        {active === 'travelers' ? <WorkspaceTravelersTab itineraryId={id} /> : null}
+        {active === 'travelers' ? (
+          <WorkspaceTravelersTab
+            itineraryId={id}
+            tripTitle={data.title}
+            myId={myId}
+            published={data.published}
+            archived={data.archived ?? false}
+          />
+        ) : null}
 
       </ScrollView>
 

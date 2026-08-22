@@ -55,7 +55,11 @@ export type IconName =
   | 'copy'
   | 'chevronUp'
   | 'barChart'
-  | 'checkCircleFilled';
+  | 'checkCircleFilled'
+  | 'mail'
+  | 'moreHorizontal'
+  | 'transfer'
+  | 'removeUser';
 
 interface IconProps {
   readonly name: IconName;
@@ -77,6 +81,38 @@ export function Icon({ name, size, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       {name === 'back' && <Polyline points="15 18 9 12 15 6" {...shared} />}
+
+      {name === 'mail' && (
+        <>
+          <Rect x="2" y="4" width="20" height="16" rx="2" {...shared} />
+          <Path d="m22 7-10 6L2 7" {...shared} />
+        </>
+      )}
+
+      {name === 'moreHorizontal' && (
+        <>
+          <Circle cx="5" cy="12" r="2" fill={color} stroke="none" />
+          <Circle cx="12" cy="12" r="2" fill={color} stroke="none" />
+          <Circle cx="19" cy="12" r="2" fill={color} stroke="none" />
+        </>
+      )}
+
+      {name === 'transfer' && (
+        <>
+          <Path d="M16 3h5v5" {...shared} />
+          <Path d="M8 21H3v-5" {...shared} />
+          <Path d="M21 3 3 21" {...shared} />
+        </>
+      )}
+
+      {name === 'removeUser' && (
+        <>
+          <Path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" {...shared} />
+          <Circle cx="9" cy="7" r="4" {...shared} />
+          <Path d="m17 8 5 5" {...shared} />
+          <Path d="m22 8-5 5" {...shared} />
+        </>
+      )}
 
       {name === 'mailCheck' && (
         <>
