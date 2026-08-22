@@ -1,5 +1,6 @@
 import {
   forgetPendingJoin,
+  pendingJoinSettled,
   pendingJoinToken,
   resetPendingJoinForTests,
   restorePendingJoin,
@@ -132,6 +133,33 @@ describe('clearing it once the landing has been reached', () => {
     forgetPendingJoin();
 
     expect(await restorePendingJoin()).toBeNull();
+  });
+});
+
+describe('knowing whether storage has answered yet', () => {
+  it('has not answered before anything asks it', () => {
+    expect(pendingJoinSettled()).toBe(false);
+  });
+
+  it('needs no answer once a token is stashed this session', () => {
+    stashPendingJoin(TOKEN);
+
+    expect(pendingJoinSettled()).toBe(true);
+  });
+
+  it('has answered once the read comes back, even carrying nothing', async () => {
+    await restorePendingJoin();
+
+    expect(pendingJoinSettled()).toBe(true);
+  });
+
+  it('wakes the gate on an EMPTY read too, or it waits on the splash forever', async () => {
+    const woken = jest.fn();
+    subscribeToPendingJoin(woken);
+
+    await restorePendingJoin();
+
+    expect(woken).toHaveBeenCalled();
   });
 });
 

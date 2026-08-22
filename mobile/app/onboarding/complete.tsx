@@ -13,7 +13,8 @@ import {
   completionSummary,
 } from '../../src/onboarding/completionSummary';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
-import { SIGNED_IN_HOME } from '../../src/navigation/authRoutes';
+import { forgetPendingJoin, pendingJoinToken } from '../../src/join/pendingJoinStore';
+import { landingAfterSignIn } from '../../src/onboarding/onboardingGate';
 import { useCompleteOnboarding } from '../../src/query/travelerQueries';
 import { colors, controls, radii, spacing, typography } from '../../src/theme';
 
@@ -32,7 +33,9 @@ export default function CompleteStepScreen() {
     setMessage(null);
     try {
       await finish.mutateAsync();
-      router.replace(SIGNED_IN_HOME);
+      const waiting = pendingJoinToken();
+      forgetPendingJoin();
+      router.replace(landingAfterSignIn(waiting));
     } catch (error) {
       setMessage(messageForVerificationFailure(error));
     }

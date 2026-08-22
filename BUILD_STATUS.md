@@ -389,6 +389,14 @@ Two integration tests minted two-character handles from **separate static counte
 
 ---
 
+**2026-08-22**
+
+A traveler who opened an invite link, signed in, and still owed onboarding was **dumped on Home instead of returned to the postcard** *(founder report, on dev preview, clicking their own link)*. The stash, the storage round-trip and the gate were all correct; the hole was the **exit**. `destinationFor` consults the pending token only inside `settledHomeOf`, which it reaches only when `nextOnboardingStep()` returns `null` — so the moment onboarding was owed the gate handed control to the onboarding stack, and its last screen ran a hardcoded `router.replace(SIGNED_IN_HOME)`. The token was never read and never cleared, so it also sat in `localStorage` indefinitely. Both call sites now go through one exported `landingAfterSignIn(token)`. A second defect in the same feature was found while reading it: `isSettling` never waited for `restorePendingJoin()`, whose storage read resolves in a **microtask** while the gate's `router.replace` runs synchronously in the same effect flush — so on a cold load, where the token exists only in storage, the gate deterministically decided *before* the answer arrived. The store now separates "in flight" from "settled" and the gate holds for that one tick.
+
+*Why it wasn't a story —* a defect fix in S4.28, which had already merged to `dev` (`ac8ca0d`); no new surface, no API change, no spec change. **The part worth keeping is that the test suite named the gap without covering it:** `joinGate.test.ts` carried a case called *"finishes onboarding **before** it honours the link"* — a name whose whole force is that the link is honoured *afterwards* — and nothing asserted that it was. 4553 Jest tests and `tsc` stayed green the entire time, because every one of them tested pure modules and the defect was a hardcoded string in a screen. That is why the guard added here is **structural** (`onboardingExit.test.ts` scans `app/onboarding/` and fails any screen routing to `SIGNED_IN_HOME` on its own authority) rather than another pure-function test: the function was always right, and the wiring was what drifted. Sabotage-checked — reinstating the original exit turns 2 of its 8 red.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
