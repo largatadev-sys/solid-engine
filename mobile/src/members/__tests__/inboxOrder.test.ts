@@ -1,7 +1,11 @@
 import { inboxCards } from '../inboxOrder';
 
-const invitation = (id: string, expiresAt: string) => ({ id, expiresAt });
-const request = (id: string) => ({ id });
+const invitation = (id: string, expiresAt: string, itineraryId = `trip-${id}`) => ({
+  id,
+  expiresAt,
+  itineraryId,
+});
+const request = (id: string, itineraryId = `trip-${id}`) => ({ id, itineraryId });
 
 describe('what the Trips inbox shows, and in what order', () => {
   const NOW = Date.parse('2026-08-22T00:00:00Z');
@@ -50,5 +54,26 @@ describe('what the Trips inbox shows, and in what order', () => {
     });
 
     expect(cards.map((c) => c.key)).toEqual(['request:r1']);
+  });
+
+  it('shows one card per trip when the traveler both asked and was asked — the link route wins, '
+    + 'so Accept and Decline never appear beside a request the owner has still to answer', () => {
+    const cards = inboxCards({
+      invitations: [invitation('i1', LIVE, 'trip-x')],
+      requests: [request('r1', 'trip-x')],
+      now: NOW,
+    });
+
+    expect(cards.map((c) => c.key)).toEqual(['request:r1']);
+  });
+
+  it('still shows an invitation to a DIFFERENT trip than the one being asked about', () => {
+    const cards = inboxCards({
+      invitations: [invitation('i1', LIVE, 'trip-a')],
+      requests: [request('r1', 'trip-b')],
+      now: NOW,
+    });
+
+    expect(cards.map((c) => c.key)).toEqual(['invitation:i1', 'request:r1']);
   });
 });

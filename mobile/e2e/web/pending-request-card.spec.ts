@@ -98,6 +98,37 @@ test.describe('the card a traveler sees while waiting on a trip', () => {
   });
 });
 
+test.describe('when the traveler both asked and was asked about one trip', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  let trip: SeededTrip;
+
+  test.beforeAll(async () => {
+    trip = await seedTrip({ ownerTag: OWNER, title: stamp('both directions') });
+    await askToJoin(trip.id);
+
+    const handle = (await api('/v1/me', 'GET', askerToken)).body.handle;
+    const invited = await api(`/v1/itineraries/${trip.id}/invitations/by-handle`, 'POST', ownerToken, {
+      handle,
+    });
+    expect(invited.status).toBe(201);
+  });
+
+  test('shows the waiting card only — Accept and Decline never appear for a trip already asked about', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(ASKER);
+    await page.goto(TRIPS_TAB_ROUTE);
+    await expect(page.getByText(trip.title).first()).toBeVisible({ timeout: 20_000 });
+
+    await expect(page.getByText(trip.title)).toHaveCount(1);
+    await expect(labelled(page, `${WITHDRAW_LABEL} request to join ${trip.title}`)).toBeVisible();
+    await expect(labelled(page, `Accept invitation to ${trip.title}`)).toHaveCount(0);
+    await expect(labelled(page, `Decline invitation to ${trip.title}`)).toHaveCount(0);
+  });
+});
+
 test.describe('withdrawing, behind its confirm', () => {
   test.describe.configure({ mode: 'serial' });
 
