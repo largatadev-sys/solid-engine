@@ -25,8 +25,7 @@ import {
 } from '../theme/workspaceTokens';
 import type { InboxInvitationResponse } from '../types/api';
 
-export const ACCEPT_LABEL = 'Accept';
-export const DECLINE_LABEL = 'Decline';
+import { ACCEPT_LABEL, DECLINE_LABEL } from '../members/travelerCopy';
 
 
 export function InvitationInbox() {

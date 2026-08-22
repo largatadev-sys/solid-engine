@@ -9,13 +9,13 @@ import {
   travelerRadii,
   travelerTypography,
 } from '../theme/workspaceTokens';
+import { SHEET_DISMISS_LABEL } from './travelerCopy';
 
 
 const SWIPE_CLAIM_PX = 8;
 
 const SWIPE_DISMISS_PX = 60;
 
-export const SHEET_DISMISS_LABEL = 'Dismiss';
 
 
 interface BottomSheetProps {

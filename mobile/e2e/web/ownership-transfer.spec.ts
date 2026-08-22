@@ -18,7 +18,7 @@ import {
 import {
   OFFER_ACCEPT_LABEL,
   OFFER_DECLINE_LABEL,
-} from '../../src/members/OwnershipOfferCard';
+} from '../../src/members/travelerCopy';
 import { OFFERED_SUB, OWNER_SUB } from '../../src/members/travelerSections';
 
 const HOLDER = ownerTagFor('web/ownership-transfer');

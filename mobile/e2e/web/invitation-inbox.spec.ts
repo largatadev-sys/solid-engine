@@ -4,7 +4,7 @@ import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled } from '../support/screen';
-import { ACCEPT_LABEL, DECLINE_LABEL } from '../../src/components/InvitationInbox';
+import { ACCEPT_LABEL, DECLINE_LABEL } from '../../src/members/travelerCopy';
 import { declineInvitationWording } from '../../src/components/confirmDestructiveMessage';
 import { TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
 

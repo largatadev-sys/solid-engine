@@ -28,7 +28,7 @@ import {
 import { BottomSheet } from './BottomSheet';
 import { TravelerAvatar } from './TravelerAvatar';
 
-export const ADD_SHEET_TITLE = 'Add traveler';
+import { ADD_SHEET_TITLE } from './travelerCopy';
 
 
 interface AddTravelerSheetProps {

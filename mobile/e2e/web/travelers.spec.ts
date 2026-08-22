@@ -8,7 +8,7 @@ import { labelled, labelStarting } from '../support/screen';
 import { removeMemberWording } from '../../src/components/confirmDestructiveMessage';
 import {
   ADD_SHEET_TITLE,
-} from '../../src/members/AddTravelerSheet';
+} from '../../src/members/travelerCopy';
 import {
   INVITE_LABEL,
   INVITED_GHOST_LABEL,
@@ -17,7 +17,7 @@ import {
   SHARE_LINK_LABEL,
 } from '../../src/members/addSheet';
 import { REMOVE_FROM_TRIP_LABEL } from '../../src/members/rowMenu';
-import { APPROVE_LABEL, DECLINE_LABEL, REVOKE_LABEL } from '../../src/members/TravelerRows';
+import { APPROVE_LABEL, DECLINE_LABEL, REVOKE_LABEL } from '../../src/members/travelerCopy';
 
 const OWNER = ownerTagFor('web/travelers');
 const MEMBER: PoolTag = IDENTITY_MAP['web/travelers'].tags[1]!;

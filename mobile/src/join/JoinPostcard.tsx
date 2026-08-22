@@ -13,14 +13,16 @@ import {
 } from '../theme/workspaceTokens';
 import type { JoinTeaserResponse } from '../types/api';
 
-export const WORDMARK = 'Largata';
-export const KICKER = "You're invited";
-export const SIGNED_OUT_CTA = 'Sign in or create account';
-export const REQUEST_CTA = 'Request to join';
-export const PENDING_QUIET = 'Request sent';
-export const MEMBER_CTA = 'Open trip workspace';
-export const DEAD_QUIET = "This trip isn't taking new travelers.";
-export const DEAD_COVER_OPACITY = 0.45;
+import {
+  DEAD_COVER_OPACITY,
+  DEAD_QUIET,
+  KICKER,
+  MEMBER_CTA,
+  PENDING_QUIET,
+  REQUEST_CTA,
+  SIGNED_OUT_CTA,
+  WORDMARK,
+} from '../members/travelerCopy';
 
 
 export function teaserMetaLine(teaser: {

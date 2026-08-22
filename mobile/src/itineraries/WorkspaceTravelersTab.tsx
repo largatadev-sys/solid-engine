@@ -19,7 +19,6 @@ import { OwnershipOfferCard } from '../members/OwnershipOfferCard';
 import { RowEntrance } from '../members/RowEntrance';
 import { RowMenuSheet, type RowMenuSubject } from '../members/RowMenuSheet';
 import {
-  ADD_TRAVELER_LABEL,
   AddTravelerBar,
   InvitedRow,
   MemberRow,

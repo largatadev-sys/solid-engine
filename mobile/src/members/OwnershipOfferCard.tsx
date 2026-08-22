@@ -8,13 +8,7 @@ import {
   travelerTypography,
 } from '../theme/workspaceTokens';
 
-export const OFFER_ACCEPT_LABEL = 'Accept';
-export const OFFER_DECLINE_LABEL = 'Decline';
-
-
-export function offerCardTitle(offererHandleLabel: string): string {
-  return `${offererHandleLabel} offered you ownership`;
-}
+import { offerCardTitle, OFFER_ACCEPT_LABEL, OFFER_DECLINE_LABEL } from './travelerCopy';
 
 
 interface OwnershipOfferCardProps {

@@ -12,7 +12,7 @@ import {
   REQUEST_CTA,
   SIGNED_OUT_CTA,
   WORDMARK,
-} from '../../src/join/JoinPostcard';
+} from '../../src/members/travelerCopy';
 
 const OWNER = ownerTagFor('web/join-landing');
 const VISITOR: PoolTag = IDENTITY_MAP['web/join-landing'].tags[1]!;

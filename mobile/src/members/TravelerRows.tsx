@@ -15,9 +15,12 @@ import {
   type RequestRowModel,
 } from './travelerSections';
 
-export const REVOKE_LABEL = 'Revoke';
-export const APPROVE_LABEL = 'Approve';
-export const DECLINE_LABEL = 'Decline';
+import {
+  ADD_TRAVELER_LABEL,
+  APPROVE_LABEL,
+  DECLINE_LABEL,
+  REVOKE_LABEL,
+} from './travelerCopy';
 
 
 export function SectionHeading({ heading, count }: { heading: string; count: number }) {
@@ -208,7 +211,6 @@ export function AddTravelerBar({ onPress }: { onPress: () => void }) {
   );
 }
 
-export const ADD_TRAVELER_LABEL = 'Add traveler';
 
 
 export function MenuEntryRow({
