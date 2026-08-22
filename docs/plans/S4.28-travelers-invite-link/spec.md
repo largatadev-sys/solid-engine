@@ -239,3 +239,11 @@ The founder proposed a Motion One press animation — `scale: 0.8` on press, spr
 **This amends M5 rather than breaking it**: the 100/150 opacity is untouched and still leads; the spring rides alongside it. Press is now the vocabulary's second spring, beside the facepile pop. The hook also grew a `style` field so a call site spends one prop instead of composing opacity and transform by hand — sixteen call sites moved to it, which is what keeps the next change to press a one-file change.
 
 Recorded frame by frame on the preview: **1.000 → 0.995 → 0.988 → 0.981 → 0.975 → 0.971 → 0.968**, easing back on release.
+
+### 2026-08-22 — the copy row's content flash is removed; the press spring carries it *(founder decision)*
+
+With the press spring in the shared hook (note above), the copy row was doing two things at once: springing on touch **and** dipping its whole content to 0.3 and back when the label swapped. The founder confirmed the spring on the device and cut the flash — one acknowledgement is enough, and the quieter one is the one that fires on touch rather than after the clipboard resolves.
+
+The row keeps M5's press values and nothing more: measured on the preview, opacity bottoms at **0.85** — the shared press value, with no extra dip — while scale springs to **0.968**. The label still swaps to "Link copied" and reverts; it simply does so without announcing itself.
+
+*(The `Crossfade` component stays, still serving the Invite pill → "Invited" ghost, which is M4's own specified 150ms crossfade and a genuine mount rather than a content swap. Its `from` prop, added only for the row's dip, is removed with it.)*

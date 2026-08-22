@@ -191,16 +191,8 @@ export function AddTravelerSheet({
 }
 
 
-function Crossfade({
-  style,
-  from = 0,
-  children,
-}: {
-  style: ViewStyle;
-  from?: number;
-  children: ReactNode;
-}) {
-  const entrance = useRef(new Animated.Value(from)).current;
+function Crossfade({ style, children }: { style: ViewStyle; children: ReactNode }) {
+  const entrance = useRef(new Animated.Value(0)).current;
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -260,14 +252,12 @@ function ShareRow({ label, onPress }: { label: string; onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Crossfade key={label} from={0.3} style={styles.linkRowInner}>
-        <Icon name="link" size={20} color={travelerColors.accent} />
-        <View style={styles.linkText}>
-          <Text style={styles.linkLabel}>{label}</Text>
-          <Text style={styles.linkSub}>{SHARE_LINK_SUB}</Text>
-        </View>
-        <Icon name="share" size={18} color={travelerColors.accent} />
-      </Crossfade>
+      <Icon name="link" size={20} color={travelerColors.accent} />
+      <View style={styles.linkText}>
+        <Text style={styles.linkLabel}>{label}</Text>
+        <Text style={styles.linkSub}>{SHARE_LINK_SUB}</Text>
+      </View>
+      <Icon name="share" size={18} color={travelerColors.accent} />
     </AnimatedPressable>
   );
 }
@@ -394,6 +384,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: travelerMetrics.rowGap,
     marginTop: 12,
     marginBottom: 2,
     marginHorizontal: travelerMetrics.rowPaddingH,
@@ -407,11 +400,6 @@ const styles = StyleSheet.create({
   linkText: {
     flex: 1,
     gap: 1,
-  },
-  linkRowInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: travelerMetrics.rowGap,
   },
   linkLabel: {
     ...travelerTypography.linkLabel,
