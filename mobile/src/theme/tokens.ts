@@ -53,6 +53,7 @@ const fonts = {
   semiBold: 'Inter_600SemiBold',
   bold: 'Inter_700Bold',
   extraBold: 'Inter_800ExtraBold',
+  wordmark: 'Outfit_700Bold',
 } as const;
 
 export const fontAssetNames = Object.values(fonts);

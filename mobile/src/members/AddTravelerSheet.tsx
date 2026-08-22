@@ -39,6 +39,7 @@ interface AddTravelerSheetProps {
   readonly onQueryChange: (query: string) => void;
   readonly onInvite: (handle: string) => void;
   readonly onShareLink: () => void;
+  readonly copyFeedback: string | null;
   readonly onDismiss: () => void;
 }
 
@@ -51,6 +52,7 @@ export function AddTravelerSheet({
   onQueryChange,
   onInvite,
   onShareLink,
+  copyFeedback,
   onDismiss,
 }: AddTravelerSheetProps) {
   const [query, setQuery] = useState('');
@@ -130,14 +132,22 @@ export function AddTravelerSheet({
             <Text style={styles.emptyTitle}>{noOneMatchesLabel(state.query)}</Text>
             <Text style={styles.emptyBody}>{NOT_ON_LARGATA}</Text>
           </View>
-          <ShareRow promoted label={SHARE_LINK_PIVOT_LABEL} onPress={onShareLink} />
+          <ShareRow
+            promoted
+            label={copyFeedback ?? SHARE_LINK_PIVOT_LABEL}
+            onPress={onShareLink}
+          />
         </>
       ) : null}
 
       {linkRowVisible(state) ? (
         <>
           <View style={styles.divider} />
-          <ShareRow promoted={false} label={SHARE_LINK_LABEL} onPress={onShareLink} />
+          <ShareRow
+            promoted={false}
+            label={copyFeedback ?? SHARE_LINK_LABEL}
+            onPress={onShareLink}
+          />
         </>
       ) : null}
     </BottomSheet>

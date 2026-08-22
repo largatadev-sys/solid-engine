@@ -497,6 +497,8 @@ export const travelerMotion = {
 
   postcardInMs: 200,
   postcardRisePx: 8,
+
+  copyFeedbackMs: 1600,
 } as const;
 
 
@@ -549,11 +551,10 @@ export const travelerTypography = {
   postcardCta: { fontSize: 14.5, lineHeight: 19, fontWeight: '700' },
   postcardQuiet: { fontSize: 13.5, lineHeight: 18, fontWeight: '600' },
   wordmark: {
-    fontFamily: 'Inter_800ExtraBold',
+    fontFamily: 'Outfit_700Bold',
     fontSize: 15,
     lineHeight: 20,
-    fontWeight: '800',
-    letterSpacing: -0.2,
+    fontWeight: '700',
   },
 } as const;
 

@@ -15,6 +15,7 @@ import {
   ON_THIS_TRIP_LABEL,
   SEARCH_PLACEHOLDER,
   SHARE_LINK_LABEL,
+  SHARE_LINK_PIVOT_LABEL,
 } from '../../src/members/addSheet';
 import { LEAVE_TRIP_LABEL, REMOVE_FROM_TRIP_LABEL } from '../../src/members/rowMenu';
 import { APPROVE_LABEL, DECLINE_LABEL, REVOKE_LABEL } from '../../src/members/travelerCopy';
@@ -124,7 +125,7 @@ test.describe('the roster the owner sees', () => {
     await search(page, '@nobodyholdsthishandle999');
 
     await expect(page.getByText(/No one matches/).first()).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByText('Send them the invite link', { exact: true })).toBeVisible();
+    await expect(page.getByText(SHARE_LINK_PIVOT_LABEL, { exact: true })).toBeVisible();
     await expect(page.getByText(SHARE_LINK_LABEL, { exact: true })).toHaveCount(0);
   });
 });

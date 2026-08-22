@@ -13,6 +13,7 @@ import {
 import { notify } from '../components/notify';
 import { useLayoutClose } from '../members/layoutClose';
 import { membershipErrorMessage } from '../members/membershipErrors';
+import { afterSheetDismissed } from '../members/afterSheetDismissed';
 import { AddTravelerSheet } from '../members/AddTravelerSheet';
 import { cascadeDelayFor, onTabBlurred, onTabFocused, UNVISITED } from '../members/cascade';
 import { OwnershipOfferCard } from '../members/OwnershipOfferCard';
@@ -48,7 +49,8 @@ import {
 } from '../query/invitationQueries';
 import { useApproveRequest, useDeclineRequest, useJoinLink, useJoinRequests } from '../query/joinQueries';
 import { useTravelerByHandle } from '../query/travelerQueries';
-import { shareLink } from '../itineraries/shareLink';
+import { copyLink } from '../itineraries/shareLink';
+import { copyLinkFeedback } from '../itineraries/shareLinkContract';
 import { travelerColors, travelerMotion } from '../theme/workspaceTokens';
 import { trackLinkShared } from '../members/memberEvents';
 import type { MemberResponse } from '../types/api';
@@ -85,6 +87,8 @@ export function WorkspaceTravelersTab({
   const lastMenu = useRef<RowMenuSubject | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const copyRevert = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const visitKey = useTabVisit();
   const closeLayout = useLayoutClose();
@@ -128,46 +132,54 @@ export function WorkspaceTravelersTab({
     const label = subject.title;
 
     if (entry === 'remove') {
-      confirmWith(removeMemberWording(label), () => {
-        closeLayout();
-        endMembership.mutate(
-          { travelerId: member.travelerId, leaving: false },
-          { onError: (error) => notify('Could not remove them', membershipErrorMessage(error)) },
-        );
-      });
+      afterSheetDismissed(() =>
+        confirmWith(removeMemberWording(label), () => {
+          closeLayout();
+          endMembership.mutate(
+            { travelerId: member.travelerId, leaving: false },
+            { onError: (error) => notify('Could not remove them', membershipErrorMessage(error)) },
+          );
+        }),
+      );
       return;
     }
 
     if (entry === 'leave') {
-      confirmWith(leaveTripWording(), () => {
-        endMembership.mutate(
-          { travelerId: member.travelerId, leaving: true },
-          {
-            onSuccess: () => router.replace(TRIPS_TAB_ROUTE),
-            onError: (error) => notify('Could not leave the trip', membershipErrorMessage(error)),
-          },
-        );
-      });
+      afterSheetDismissed(() =>
+        confirmWith(leaveTripWording(), () => {
+          endMembership.mutate(
+            { travelerId: member.travelerId, leaving: true },
+            {
+              onSuccess: () => router.replace(TRIPS_TAB_ROUTE),
+              onError: (error) => notify('Could not leave the trip', membershipErrorMessage(error)),
+            },
+          );
+        }),
+      );
       return;
     }
 
     if (entry === 'transfer') {
-      confirmWith(offerOwnershipWording(label), () => {
-        closeLayout();
-        offerOwnership.mutate(member.travelerId, {
-          onError: (error) => notify('Could not offer ownership', membershipErrorMessage(error)),
-        });
-      });
+      afterSheetDismissed(() =>
+        confirmWith(offerOwnershipWording(label), () => {
+          closeLayout();
+          offerOwnership.mutate(member.travelerId, {
+            onError: (error) => notify('Could not offer ownership', membershipErrorMessage(error)),
+          });
+        }),
+      );
       return;
     }
 
     if (entry === 'revokeOffer') {
-      confirmWith(revokeOwnershipOfferWording(label), () => {
-        closeLayout();
-        revokeOffer.mutate(undefined, {
-          onError: (error) => notify('Could not revoke the offer', membershipErrorMessage(error)),
-        });
-      });
+      afterSheetDismissed(() =>
+        confirmWith(revokeOwnershipOfferWording(label), () => {
+          closeLayout();
+          revokeOffer.mutate(undefined, {
+            onError: (error) => notify('Could not revoke the offer', membershipErrorMessage(error)),
+          });
+        }),
+      );
     }
   };
 
@@ -178,7 +190,12 @@ export function WorkspaceTravelersTab({
       return;
     }
     trackLinkShared(itineraryId);
-    await shareLink({ title: tripTitle, url });
+    setCopyFeedback(copyLinkFeedback(await copyLink(url)));
+    if (copyRevert.current !== null) clearTimeout(copyRevert.current);
+    copyRevert.current = setTimeout(
+      () => setCopyFeedback(null),
+      travelerMotion.copyFeedbackMs,
+    );
   };
 
   if (members.isPending) {
@@ -332,7 +349,11 @@ export function WorkspaceTravelersTab({
         onShareLink={() => {
           void share();
         }}
-        onDismiss={() => setSheetOpen(false)}
+        copyFeedback={copyFeedback}
+        onDismiss={() => {
+          setSheetOpen(false);
+          setCopyFeedback(null);
+        }}
       />
 
       <RowMenuSheet
