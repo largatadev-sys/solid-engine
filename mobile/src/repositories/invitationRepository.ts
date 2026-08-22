@@ -18,6 +18,11 @@ export const invitationRepository = {
   },
 
 
+  coverPath(invitationId: string): string {
+    return `/v1/invitations/${invitationId}/cover`;
+  },
+
+
   async accept(invitationId: string): Promise<AcceptResponse> {
     return apiClient.post<AcceptResponse>(`/v1/invitations/${invitationId}/accept`, {});
   },

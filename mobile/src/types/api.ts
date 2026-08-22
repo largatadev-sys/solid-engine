@@ -532,6 +532,8 @@ export type JoinTeaserResponse = {
   travelerCount: number;
   hasCover: boolean;
   viewerState: 'signedOut' | 'canRequest' | 'pending' | 'member' | 'dead';
+
+  itineraryId: string | null;
 };
 
 

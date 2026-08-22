@@ -1,7 +1,6 @@
 export const COMING_SOON_SURFACES = {
   search: 'Search',
   chat: 'Trip chat',
-  network: 'From your network',
   diary: 'Diary entries',
   comments: 'Comments',
   reviews: 'Reviews',

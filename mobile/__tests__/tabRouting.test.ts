@@ -32,7 +32,7 @@ function tripScreens(): [string, string][] {
           : [join(dir, entry.name)],
     );
 
-  return [...walk(TRIPS), ...walk(join(TRIPS_GROUP, 'members'))].map((path) => [
+  return walk(TRIPS).map((path) => [
     path.slice(TRIPS_GROUP.length + 1).replace(/\\/g, '/'),
     readFileSync(path, 'utf8'),
   ]);
@@ -72,7 +72,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   });
 
   it('nests no second stack under the trip stack, which is what stranded back on a sibling', () => {
-    for (const nested of ['itineraries', 'members', 'published']) {
+    for (const nested of ['itineraries', 'published']) {
       expect(existsSync(join(TRIPS_GROUP, nested, '_layout.tsx'))).toBe(false);
     }
   });
@@ -980,11 +980,29 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(dialog).not.toContain('{traveler !== null && (');
   });
 
-  it('leaves the offer banner as the members screen’s one surviving door (S4.20 decision 4)', () => {
-    const banner = read(MOBILE_ROOT, 'src', 'members', 'OwnershipOfferBanner.tsx');
+  it('deletes the members screen, the offer banner and the invite screen (S4.28 tickets 06/07)', () => {
+    expect(existsSync(join(TRIPS_GROUP, 'members'))).toBe(false);
+    expect(existsSync(join(MOBILE_ROOT, 'src', 'members', 'OwnershipOfferBanner.tsx'))).toBe(false);
+    expect(existsSync(join(TRIPS, '[id]', 'invite.tsx'))).toBe(false);
+  });
 
-    expect(banner).toContain('/members/');
-    expect(existsSync(join(TRIPS_GROUP, 'members', '[itineraryId].tsx'))).toBe(true);
+  it('leaves no navigation reference behind to any of them — the S4.13 dead-weight lesson', () => {
+    for (const [route, source] of tripScreens()) {
+      const where = `${route}: ${source}`;
+
+      expect(where).not.toMatch(/href=\{?['"`][^'"`]*\/members\//);
+      expect(where).not.toMatch(/pathname: ['"]\/members\//);
+      expect(where).not.toContain("'/itineraries/[id]/invite'");
+      expect(where).not.toContain('Invite Traveler');
+    }
+  });
+
+  it('rehomes ownership transfer into the Travelers tab, which is now its only door', () => {
+    const travelers = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTravelersTab.tsx');
+
+    expect(travelers).toContain('OwnershipOfferCard');
+    expect(travelers).toContain('useAcceptOwnershipOffer');
+    expect(travelers).toContain('useOfferOwnership');
   });
 
   it('opens the dialog on the tapped traveler, so two rows cannot show one profile', () => {
@@ -1112,7 +1130,6 @@ describe('every greyed affordance is wired to the shared helper (register #2)', 
     read(TRIPS, '[id]', 'index.tsx'),
     read(TRIPS, '[id]', 'edit-plan.tsx'),
     read(TRIPS, '[id]', 'activity.tsx'),
-    read(TRIPS, '[id]', 'invite.tsx'),
     read(MOBILE_ROOT, 'src', 'components', 'ComingSoonScreen.tsx'),
     read(MOBILE_ROOT, 'src', 'itineraries', 'PublishedItineraryView.tsx'),
     read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTabRow.tsx'),

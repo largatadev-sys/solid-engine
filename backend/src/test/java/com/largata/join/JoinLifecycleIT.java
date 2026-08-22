@@ -131,8 +131,29 @@ class JoinLifecycleIT extends PostgresTestBase {
                 .doesNotContain("member")
                 .doesNotContain("handle")
                 .doesNotContain("days")
-                .doesNotContain("activities")
-                .doesNotContain("itineraryId");
+                .doesNotContain("activities");
+    }
+
+
+    @Test
+    void theTeaserWithholdsTheWorkspaceIdFromEveryoneWhoCannotAlreadyOpenIt() {
+        Trip trip = trip();
+        String token = tokenOf(trip.owner, trip.id);
+        String stranger = rig.travelerWithHandle(uniqueHandle("stranger"));
+
+        rest.get()
+                .uri("/v1/join/" + token)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.itineraryId")
+                .isEmpty();
+        teaserAs(token, stranger).jsonPath("$.itineraryId").isEmpty();
+
+        teaserAs(token, trip.owner)
+                .jsonPath("$.itineraryId")
+                .isEqualTo(trip.id);
     }
 
 

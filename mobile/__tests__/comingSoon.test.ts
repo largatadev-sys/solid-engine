@@ -37,7 +37,6 @@ describe('comingSoonMessage — the wording both forks share', () => {
         'comments',
         'diary',
         'follow',
-        'network',
         'notifications',
         'profile',
         'rating',

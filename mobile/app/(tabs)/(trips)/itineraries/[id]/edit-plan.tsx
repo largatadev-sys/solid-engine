@@ -226,9 +226,6 @@ export default function DraftWorkspaceScreen() {
           badge={stateBadge(data, 'editor')}
           title={data.title}
           onBack={attemptExit}
-          actionLabel="Invite Traveler"
-          actionIcon="userPlus"
-          onAction={() => router.push({ pathname: '/itineraries/[id]/invite', params: { id } })}
           onEditTitle={() => router.push({ pathname: '/itineraries/[id]/edit', params: { id } })}
         />
 

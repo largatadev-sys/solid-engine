@@ -47,7 +47,6 @@ import {
   workspaceTypography,
 } from '../../../../../src/theme/workspaceTokens';
 import { memberControls } from '../../../../../src/members/memberControls';
-import { OwnershipOfferBanner } from '../../../../../src/members/OwnershipOfferBanner';
 import { useMembers } from '../../../../../src/query/invitationQueries';
 import { useItinerary, useTripLifecycle, useUnpublishTrip } from '../../../../../src/query/itineraryQueries';
 import { useMyDiaryEntries } from '../../../../../src/query/diaryQueries';
@@ -187,7 +186,6 @@ export default function TripWorkspaceScreen() {
         />
 
         <TripArchiveBanner itinerary={data} />
-        <OwnershipOfferBanner itineraryId={id} />
 
         <WorkspaceTabRow active={active} onSelect={setActive} />
 

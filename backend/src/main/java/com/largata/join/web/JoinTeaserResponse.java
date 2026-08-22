@@ -1,7 +1,9 @@
 package com.largata.join.web;
 
 import com.largata.join.JoinTeaser;
+import com.largata.join.ViewerJoinState;
 import java.time.LocalDate;
+import java.util.UUID;
 
 
 public record JoinTeaserResponse(
@@ -11,7 +13,8 @@ public record JoinTeaserResponse(
         LocalDate endDate,
         int travelerCount,
         boolean hasCover,
-        String viewerState) {
+        String viewerState,
+        UUID itineraryId) {
 
     static JoinTeaserResponse of(JoinTeaser teaser) {
         return new JoinTeaserResponse(
@@ -21,6 +24,7 @@ public record JoinTeaserResponse(
                 teaser.endDate(),
                 teaser.travelerCount(),
                 teaser.coverUrl() != null,
-                teaser.viewerState().wireName());
+                teaser.viewerState().wireName(),
+                teaser.viewerState() == ViewerJoinState.MEMBER ? teaser.itineraryId() : null);
     }
 }

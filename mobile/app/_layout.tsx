@@ -12,6 +12,7 @@ import { useAuth } from '../src/hooks/authContext';
 import { useMe } from '../src/hooks/useMe';
 import { AuthProvider } from '../src/hooks/useAuth';
 import { MobileFrame } from '../src/components/MobileFrame';
+import { usePendingJoin } from '../src/join/usePendingJoin';
 import { CropStation } from '../src/media/CropStation';
 import { createQueryClient } from '../src/query/queryClient';
 import { destinationFor, isSettling, type GateInput } from '../src/onboarding/onboardingGate';
@@ -60,12 +61,15 @@ function AuthGate() {
 
   useSocketLifecycle(auth.kind === 'signedIn');
 
+  const pendingJoin = usePendingJoin();
+
   const gate: GateInput = {
     auth: auth.kind,
     emailVerified: auth.kind === 'signedIn' && auth.emailVerified,
     profile: state.kind === 'ok' ? state.me : null,
     profileUnreadable: state.kind === 'error',
     segment: segments[0],
+    pendingJoinToken: pendingJoin,
   };
 
   const destination = destinationFor(gate);
@@ -85,6 +89,7 @@ function AuthGate() {
     >
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="join/[token]" options={{ headerShown: false }} />
     </Stack>
   );
 }
