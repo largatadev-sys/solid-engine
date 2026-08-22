@@ -208,4 +208,16 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
     @Query(value = "SELECT plan_version FROM itinerary WHERE id = :itineraryId FOR UPDATE",
             nativeQuery = true)
     Long lockedPlanVersion(@Param("itineraryId") UUID itineraryId);
+
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+            value =
+                    "UPDATE itinerary SET share_card_version = share_card_version + 1 WHERE id = :itineraryId",
+            nativeQuery = true)
+    void bumpShareCardVersion(@Param("itineraryId") UUID itineraryId);
+
+
+    @Query(value = "SELECT share_card_version FROM itinerary WHERE id = :itineraryId", nativeQuery = true)
+    Long shareCardVersionOf(@Param("itineraryId") UUID itineraryId);
 }

@@ -1,0 +1,21 @@
+# 04 — Caddy routes crawlers to the preview
+
+**What to build:** The one Caddyfile (preview container and deployed rung alike) gains a curated crawler-UA matcher on `/join/*` — facebookexternalhit, Facebot, WhatsApp, Twitterbot, TelegramBot, LinkedInBot, Slackbot, Discordbot — reverse-proxying matched requests to ticket 03's preview route on the backend. Every other user agent keeps the static SPA exactly as today. Adding a missed platform later is a one-line change reviewable in git. Remember the standing rule: workflow-adjacent deploy config edits get credential-change scrutiny.
+
+**Blocked by:** 03 — the preview route being proxied to.
+
+**Status:** done — verified end to end against the rebuilt preview container and the rebuilt backend on the local stack (2026-08-23).
+
+**The bug this ticket nearly shipped, found only by running it.** `try_files` is a `rewrite`, and **Caddy orders directives by its own precedence table rather than by their order in the file** — so `try_files` ran BEFORE the `handle @crawler` block and rewrote every crawler request to `/index.html` before the matcher was ever consulted. The crawler therefore got the SPA's generic card: no error, no log line, `caddy validate` perfectly happy, and a preview container that looked healthy. The fix is to wrap the SPA branch in its own `handle`, so the two branches are mutually exclusive and the order is settled explicitly rather than inherited from a precedence table.
+
+**Why an earlier check wrongly said this worked.** A throwaway Caddy on the compose network *did* show the backend logging `GET /v1/join/<token>/preview` — but that container served an **empty `/srv`**, so `try_files` found no `index.html`, fell through, and reached the matcher. The real image has a real `index.html`, which is precisely what activates the bug. **A harness differing from the artifact in one detail inverted the result**; only the real preview image was trustworthy. Same family as this repo's verify-at-the-layer-that-ships rule.
+
+- [x] `curl -A "facebookexternalhit/1.1" http://localhost:8081/join/<token>` against the rebuilt preview container returns that trip's tags
+- [x] The same URL with a browser UA returns the SPA shell (`<div id="root">`, generic sitewide tags)
+- [x] A crawler UA on a non-`/join` path still gets the SPA (matcher is path-scoped)
+- [x] All eight listed crawler UAs match, and the SPA's own routes (`/`, `/trips`) still answer 200
+- [x] The generic sitewide og tags injected at export time are untouched for non-crawler and non-join traffic
+- [x] A regression guard exists and was sabotage-checked — `e2e/api/join-link.spec.ts`, *"routes crawlers to the per-trip card"*: four tests probing the live preview container with both user agents, skipping (never failing) when none is up. Restoring the bare `try_files` turns it red on *"a crawler asking for an invite link gets THAT trip in the tags"*, so the trap now has a failure mode rather than only a Gotchas line.
+- [x] CI's preview container is given `LARGATA_API_UPSTREAM` — found by reading `ci.yml` rather than by a red run, because the playwright job only fires on a **pull request** and no PR is open yet. Reproduced the CI shape locally (no upstream, host-style networking): the container starts, the SPA answers 200, and **only the crawler path 503s** — so the first PR would have gone red on the new guard for a missing env var while reading as a broken feature. `--network host` makes `localhost:8080` the compose backend's published port.
+- [ ] CI's clean-checkout compose build passes with the new Caddyfile *(the `stack` job builds compose only; the preview image is the `playwright` job's, which runs on PRs — verified at the gate)*
+- [x] Demoable: the two curl commands above, side by side

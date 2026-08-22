@@ -36,7 +36,7 @@ class JoinController {
 
     @GetMapping("/{token}/cover")
     ResponseEntity<InputStreamResource> cover(@PathVariable String token) {
-        return covers.thumbnailOfItinerary(join.itineraryBehind(token));
+        return covers.anonymousThumbnailOfItinerary(join.itineraryBehind(token));
     }
 
 

@@ -83,7 +83,7 @@ class JoinLifecycleIT extends PostgresTestBase {
         String token = fieldIn(body, "token");
         String shareUrl = fieldIn(body, "shareUrl");
 
-        assertThat(shareUrl).endsWith("/join/" + token);
+        assertThat(shareUrl).contains("/join/" + token).matches(".*/join/" + token + "\\?v=\\d+$");
     }
 
 

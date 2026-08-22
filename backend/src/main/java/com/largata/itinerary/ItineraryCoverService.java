@@ -21,16 +21,19 @@ public class ItineraryCoverService {
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PhotoService photos;
+    private final ShareCardVersionService shareCardVersions;
 
     ItineraryCoverService(
             ItineraryRepository itineraries,
             EditLeaseService editLease,
             ActivityHistoryService history,
-            PhotoService photos) {
+            PhotoService photos,
+            ShareCardVersionService shareCardVersions) {
         this.itineraries = itineraries;
         this.editLease = editLease;
         this.history = history;
         this.photos = photos;
+        this.shareCardVersions = shareCardVersions;
     }
 
 
@@ -48,19 +51,25 @@ public class ItineraryCoverService {
                 member.itineraryId(),
                 stored.id(),
                 member.travelerId());
-        return itinerary;
+        return bumpedAndReloaded(member);
     }
 
 
     @Transactional
     public Itinerary removeCover(Membership member) {
         Itinerary itinerary = editableHeaderOf(member);
+        boolean hadCover = itinerary.coverImageUrl() != null;
         photos.deleteSingle(PhotoSubject.ITINERARY_COVER, member.itineraryId());
         itinerary.showCover(null, member.travelerId(), Instant.now());
         itineraries.save(itinerary);
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(member.itineraryId()));
         log.info("Itinerary cover removed: id={} editor={}", member.itineraryId(), member.travelerId());
-        return itinerary;
+        return hadCover ? bumpedAndReloaded(member) : itinerary;
+    }
+
+
+    private Itinerary bumpedAndReloaded(Membership member) {
+        return shareCardVersions.bumpAndReload(member.itineraryId());
     }
 
 

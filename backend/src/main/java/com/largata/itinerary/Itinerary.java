@@ -83,6 +83,7 @@ public class Itinerary {
     private long planVersion;
 
 
+
     @Column(name = "started_at")
     private Instant startedAt;
 

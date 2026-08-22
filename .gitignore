@@ -69,3 +69,4 @@ tmp/
 
 # Testcontainers credential-helper workaround (CLAUDE.md, S1.2) — a throwaway DOCKER_CONFIG dir
 backend/cfg/
+docs/plans/S4.29-invite-meta-card/verification/index.html

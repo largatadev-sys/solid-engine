@@ -78,6 +78,8 @@ Chosen over page/offset because the system's big lists (discovery feed, workspac
 > - **Assumption.** Additive evolution suffices through alpha/beta — the domain model's stability (Artifact 02 at production depth) is what makes this credible.
 > - **What would invalidate it.** A domain-level reshape that cannot be expressed additively → `/v2`, with a sunset window for `/v1` measured against real version-adoption telemetry.
 
+**Reachability is part of the rule — checked, not assumed** *(S4.29, 2026-08-23)*. The rule's subject is *what a released client can be holding*, so "is this field shipped?" is a branch question, not an API-surface one. Two changes at S4.29 looked like breaches and were not: `shareUrl` (`GET /v1/itineraries/{id}/join-link`) gained a `?v=N` suffix, and the anonymous `GET /v1/join/{token}/cover` moved from `Cache-Control: private` to `public`. Both fields were born at S4.28 and `git branch -r --contains` puts neither on `preprod` or `main` — no released app has ever seen either, so the "multiple app versions for weeks" context that motivates additivity does not yet apply to them. **Run that check before assuming a field is shipped**; had either been on `main`, this would have needed a real waiver or an additive second field. The cache-header half is additionally a *correction*: `private` on an anonymous route was wrong the day it was written, and the fix was scoped to a new `cachePublic` variant precisely because the same helper still serves two *authenticated* routes that must stay `private`.
+
 *(This ADR also lives in Artifact 04's log — recorded here at its point of decision, assembled there.)*
 
 ## Conventions deferred until the surface needs them

@@ -1,0 +1,16 @@
+-- S4.29 — the invite card's cache-busting counter.
+--
+-- WHY A SECOND COUNTER RATHER THAN plan_version: V26 states its scope in the negative — it counts
+-- writes to the PLAN DOCUMENT and explicitly NOT trip-field edits and NOT the cover image, which
+-- are precisely the four inputs this card draws. Reusing it would bump the share URL on every
+-- activity edit (churning platform caches for a card that did not change) while missing a title
+-- edit entirely (the one case the versioning exists for). Two counters, two questions.
+--
+-- WHAT IT COUNTS: title, destination, start_date, end_date, and the cover image — the card's
+-- inputs, and nothing else. Chat, membership, plan edits and lifecycle transitions do not touch it.
+--
+-- WHY IT STARTS AT 1 RATHER THAN 0: the handed-out share URL always carries ?v=N, and v=1 reads as
+-- a first version rather than as an absent one. Nothing on the server ever READS this value — it is
+-- a platform cache key only, which is what guarantees that any scrape of any version renders the
+-- trip's current data.
+ALTER TABLE itinerary ADD COLUMN share_card_version BIGINT NOT NULL DEFAULT 1;

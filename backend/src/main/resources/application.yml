@@ -41,6 +41,12 @@ largata:
     # Android App Links later without reprinting anything already forwarded through a chat.
     # Per-environment: the local default is the preview container's pinned 8081.
     base-url: ${LARGATA_WEB_BASE_URL:http://localhost:8081}
+  api:
+    # Where THIS backend is reachable from the public internet (S4.29). The invite card's og:image
+    # must be an absolute URL on the API origin: a crawler resolves it against nothing, and some
+    # platforms fetch the image with a plain user agent that Caddy's crawler matcher would miss.
+    # Per-environment: the local default is the compose backend's 8080.
+    base-url: ${LARGATA_API_BASE_URL:http://localhost:8080}
   storage:
     # S3-class object storage (ADR-021). Endpoint-driven so the same code speaks to Garage locally
     # and Railway Buckets or R2 on a deployed rung. Unset endpoint = no bucket = UnconfiguredObjectStore,

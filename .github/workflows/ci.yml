@@ -217,7 +217,14 @@ jobs:
             --build-arg EXPO_PUBLIC_FIREBASE_APP_ID \
             --build-arg EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID \
             -t largata-preview:ci .
-          docker run -d --name largata-preview --network host -e PORT=8081 largata-preview:ci
+          # LARGATA_API_UPSTREAM (S4.29) is what lets Caddy proxy crawler-UA hits on /join/* to the
+          # backend's Open Graph preview route. `--network host` means localhost IS the runner, so
+          # the compose backend's published 8080 is the upstream. Leave it unset and the container
+          # still starts, the SPA still serves, and only the crawler path 503s — which reads as a
+          # broken feature rather than as missing config. Neither value is a secret; both are
+          # literals for the same reason `-e PORT=8081` is.
+          docker run -d --name largata-preview --network host \
+            -e PORT=8081 -e LARGATA_API_UPSTREAM=localhost:8080 largata-preview:ci
 
       - name: Wait for backend and preview
         run: |
