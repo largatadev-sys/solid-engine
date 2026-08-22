@@ -50,6 +50,23 @@
 	# or deleted invite link rendered the backend's raw JSON instead of the app's dead postcard.
 	# `handle_response` is what intercepts by STATUS; `handle_errors` below covers the other case,
 	# an upstream Caddy cannot reach at all. The e2e spec's garbage-token walk is the guard.
+	# UPSTREAM SHAPE MATTERS, and the failure is silent. Caddy forwards the ORIGINAL Host to the
+	# upstream — verified against an echo server: a request for founders.largata.com arrives at the
+	# backend carrying `Host: founders.largata.com`, not the upstream's own name. That is fine for an
+	# upstream addressed by internal DNS (a compose service name locally, *.railway.internal on a
+	# deployed rung), because routing there is by name and Host is ignored.
+	#
+	# It breaks if this is ever pointed at a PUBLIC HTTPS endpoint (say https://api-dev.largata.com):
+	# the platform edge routes by Host, receives the preview's hostname instead of the API's, and
+	# misroutes. The fix, if that day comes, is one line inside this block —
+	# `header_up Host {upstream_hostport}` — deliberately NOT added today, because it would defend a
+	# configuration nothing uses. Relevant when preprod and prod are stood up.
+	#
+	# WHAT CHANGED THE STAKES: this note was written when only CRAWLERS were proxied, and said the
+	# failure would read as a broken feature. Every invite open is proxied now, so a misaddressed
+	# upstream is every traveler failing to open an invite — with `handle_response` and
+	# `handle_errors` below quietly serving the SPA over the top, which is exactly the shape that
+	# hides it. Check this before pointing LARGATA_API_UPSTREAM at anything public.
 	handle @invite {
 		rewrite * /v1/join/{re.join.1}/preview
 		reverse_proxy {$LARGATA_API_UPSTREAM} {
