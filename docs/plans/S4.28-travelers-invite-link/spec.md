@@ -217,3 +217,11 @@ Measured across all four transitions including clearing the field: **sheet top 6
 **This ends frame 2b's promotion as a state change** — the emphasis it drew is now simply the row's permanent treatment. What frame 2b actually wanted survives: when a handle dead-ends, the link is visibly the answer. It is the answer in every state now, which is arguably truer to a sheet whose two doors are *invite by handle* and *send the link*.
 
 *(Correction on process: an earlier commit in this sequence, `1dfdde4`, ran `prettier --write` on this file. The repo has no prettier config and does not carry it as a dependency, so it rewrote the whole file to double quotes — 138 insertions for ~30 lines of real change. The formatting was reverted here and the changes re-applied by hand in the file's own style; ignoring whitespace, the real diff is 38 insertions.)*
+
+### 2026-08-22 — the result lingers until the next search, and two controls gain their crossfade *(founder decision)*
+
+**The slot no longer resets when the query is edited.** Typing after a search — including emptying the field — used to clear the result back to the idle hint, so a found card or a "No one matches" message vanished the moment the traveler touched the field again. It now sits until the *next* search resolves, or the drawer closes. Editing the field changes only what the next search will ask for; it says nothing about the last answer, so it should not erase it.
+
+**Two crossfades, both at M4's 150ms state value.** The **copy invite link** row now crossfades its label when it swaps to "Link copied" and back — the founder's ask, since tapping a row whose only response was an instant text swap read as unresponsive. And the add sheet's **Invite pill → "Invited" ghost** gains the crossfade M4 specified all along (*"Invite → 'Invited' ghost is a 150ms crossfade (the state value)"*) and which the build had been doing as an instant swap. One `Crossfade` serves both, jump-cutting under Reduce Motion.
+
+*(A consequence worth knowing: with the card lingering, a traveler can edit the field and still tap Invite on the previous result. That is not a misfire — the card names the handle it is offering, and it is the handle that was actually looked up. The typed text is a question not yet asked.)*

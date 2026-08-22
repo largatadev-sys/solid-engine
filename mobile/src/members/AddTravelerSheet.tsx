@@ -1,10 +1,22 @@
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { Icon } from '../components/Icon';
+import { useReducedMotion } from '../components/useReducedMotion';
 import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import {
   travelerColors,
   travelerMetrics,
+  travelerMotion,
   travelerRadii,
   travelerTypography,
 } from '../theme/workspaceTokens';
@@ -64,10 +76,6 @@ export function AddTravelerSheet({
 
   const typed = (next: string) => {
     setQuery(next);
-    if (submitted !== '') {
-      setSubmitted('');
-      onQueryChange('');
-    }
   };
 
   const search = () => {
@@ -157,9 +165,9 @@ export function AddTravelerSheet({
             ) : null}
 
             {state.kind === 'pending' ? (
-              <View style={styles.ghostPill}>
+              <Crossfade style={styles.ghostPill}>
                 <Text style={styles.ghostLabel}>{INVITED_GHOST_LABEL}</Text>
-              </View>
+              </Crossfade>
             ) : null}
 
             {state.kind === 'member' ? (
@@ -180,6 +188,23 @@ export function AddTravelerSheet({
       <ShareRow label={copyFeedback ?? SHARE_LINK_LABEL} onPress={onShareLink} />
     </BottomSheet>
   );
+}
+
+
+function Crossfade({ style, children }: { style: ViewStyle; children: ReactNode }) {
+  const entrance = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: reducedMotion ? 0 : travelerMotion.crossfadeMs,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [entrance, reducedMotion]);
+
+  return <Animated.View style={[style, { opacity: entrance }]}>{children}</Animated.View>;
 }
 
 
@@ -229,7 +254,9 @@ function ShareRow({ label, onPress }: { label: string; onPress: () => void }) {
     >
       <Icon name="link" size={20} color={travelerColors.accent} />
       <View style={styles.linkText}>
-        <Text style={styles.linkLabel}>{label}</Text>
+        <Crossfade key={label} style={styles.linkLabelRow}>
+          <Text style={styles.linkLabel}>{label}</Text>
+        </Crossfade>
         <Text style={styles.linkSub}>{SHARE_LINK_SUB}</Text>
       </View>
       <Icon name="share" size={18} color={travelerColors.accent} />
@@ -375,6 +402,9 @@ const styles = StyleSheet.create({
   linkText: {
     flex: 1,
     gap: 1,
+  },
+  linkLabelRow: {
+    alignSelf: 'flex-start',
   },
   linkLabel: {
     ...travelerTypography.linkLabel,
