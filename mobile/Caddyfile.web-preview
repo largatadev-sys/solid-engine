@@ -21,6 +21,18 @@
 	# human the app: they would get this branded stub instead of the product, with no way back except
 	# the link in it. Adding a platform later is one line, reviewable in git.
 	#
+	# ONE PLATFORM IS SEVERAL AGENTS. The founder found a link unfurling in a Facebook GROUP chat and
+	# not in a direct message — same platform, same URL, different crawler. Meta documents a family,
+	# and only `facebookexternalhit` was matched: `meta-externalfetcher` is the one that "fetches
+	# individual links at a user's request", which is the shape of a link shared into a DM, and
+	# `facebookcatalog`, `meta-externalagent`, `meta-externalads` and `meta-webindexer` all fell
+	# through too. The whole family is matched now.
+	#
+	# What must NOT be matched is the token `facebook` on its own: Meta's IN-APP BROWSER is a HUMAN,
+	# and it carries FBAN/FBAV/FB_IAB. Matching loosely would serve the stub to every person who taps
+	# a link inside the Facebook or Instagram app — the exact false positive this list exists to
+	# avoid. Verified: those three UAs still get the SPA.
+	#
 	# LARGATA_API_UPSTREAM must be host:port reachable from THIS container — on the local rung that
 	# is the compose service name, not localhost, which inside a container is the container itself.
 	#
@@ -32,7 +44,7 @@
 	# the SPA branch in its own `handle` makes the two mutually exclusive and settles the order.
 	@crawler {
 		path_regexp join ^/join/([^/?]+)/?$
-		header_regexp User-Agent (?i)(facebookexternalhit|facebot|whatsapp|twitterbot|telegrambot|linkedinbot|slackbot|discordbot)
+		header_regexp User-Agent (?i)(facebookexternalhit|facebookcatalog|facebot|meta-external(agent|fetcher|ads)|meta-webindexer|whatsapp|twitterbot|telegrambot|linkedinbot|slackbot|discordbot)
 	}
 	handle @crawler {
 		rewrite * /v1/join/{re.join.1}/preview

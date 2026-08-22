@@ -282,6 +282,29 @@ test.describe('the preview container routes crawlers to the per-trip card', () =
     expect(crawler).not.toBe(browser);
   });
 
+  test('every Meta agent gets the card, not just the one that unfurls a group chat', async () => {
+    const metaFamily = [
+      'facebookexternalhit/1.1',
+      'facebookcatalog/1.0',
+      'Facebot',
+      'meta-externalagent/1.1',
+      'meta-externalfetcher/1.1',
+    ];
+
+    for (const agent of metaFamily) {
+      expect(await asAgent(agent, `/join/${token}`)).toContain('You&#39;re invited:');
+    }
+  });
+
+
+  test('a human inside a Meta app still gets the product, never the crawler stub', async () => {
+    const inApp =
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 [FBAN/FBIOS;FBAV/450.0]';
+
+    expect(await asAgent(inApp, `/join/${token}`)).toContain('<div id="root">');
+  });
+
+
   test('a crawler on a non-join path still gets the app — the matcher is path-scoped', async () => {
     const elsewhere = await asAgent(CRAWLER, '/trips');
 
