@@ -4,6 +4,7 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
@@ -16,7 +17,6 @@ import com.largata.invitation.InvitationExceptions.InvitationExpiredException;
 import com.largata.invitation.InvitationExceptions.InvitationNotFoundException;
 import com.largata.invitation.InvitationExceptions.InvitationNotPendingException;
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
-import com.largata.invitation.InvitationExceptions.NotWorkspaceOwnerException;
 import com.largata.itinerary.ItineraryService;
 import com.largata.workspace.MembershipView;
 import com.largata.workspace.WorkspaceService;
@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ public class InvitationService {
     private final TravelerService travelers;
     private final AuthorizationGuard guard;
     private final WriteFence fence;
+    private final PublicationState publication;
     private final InvitationMailer mailer;
     private final Analytics analytics;
     private final Clock clock;
@@ -59,10 +61,12 @@ public class InvitationService {
             TravelerService travelers,
             AuthorizationGuard guard,
             WriteFence fence,
+            PublicationState publication,
             InvitationMailer mailer,
             Analytics analytics,
             Clock clock) {
         this.fence = fence;
+        this.publication = publication;
         this.invitations = invitations;
         this.workspaces = workspaces;
         this.itineraries = itineraries;
@@ -76,9 +80,9 @@ public class InvitationService {
 
 
     @Transactional
-    public PendingInvitation invite(Membership owner, String rawEmail) {
-        UUID itineraryId = owner.itineraryId();
-        UUID workspaceId = authorizeIssuance(owner);
+    public PendingInvitation invite(Membership member, String rawEmail) {
+        UUID itineraryId = member.itineraryId();
+        UUID workspaceId = authorizeIssuance(member);
         String email = normalize(rawEmail);
 
         if (isAlreadyMember(itineraryId, email)) {
@@ -88,24 +92,24 @@ public class InvitationService {
         travelers.travelerIdsWithEmail(email).forEach(id -> reconcileExistingPendingFor(workspaceId, id));
 
         Instant now = Instant.now(clock);
-        Invitation invitation = invitations.save(Invitation.open(workspaceId, email, owner.travelerId(), now));
-        log.info("Invitation opened: id={} workspaceId={} invitedBy={}", invitation.id(), workspaceId, owner.travelerId());
+        Invitation invitation = invitations.save(Invitation.open(workspaceId, email, member.travelerId(), now));
+        log.info("Invitation opened: id={} workspaceId={} invitedBy={}", invitation.id(), workspaceId, member.travelerId());
 
         InvitationMail mail =
-                new InvitationMail(invitation.id(), email, tripTitle(itineraryId), inviterName(owner.travelerId()));
+                new InvitationMail(invitation.id(), email, tripTitle(itineraryId), inviterName(member.travelerId()));
         afterCommit(
                 () -> {
                     dispatch(mail);
-                    emitSent(invitation.id(), itineraryId, owner.travelerId(), "email");
+                    emitSent(invitation.id(), itineraryId, member.travelerId(), "email");
                 });
         return pendingOf(invitation, null);
     }
 
 
     @Transactional
-    public PendingInvitation inviteByHandle(Membership owner, String rawHandle) {
-        UUID itineraryId = owner.itineraryId();
-        UUID workspaceId = authorizeIssuance(owner);
+    public PendingInvitation inviteByHandle(Membership member, String rawHandle) {
+        UUID itineraryId = member.itineraryId();
+        UUID workspaceId = authorizeIssuance(member);
         TravelerSummary invitee =
                 travelers.byExactHandle(rawHandle).orElseThrow(NoSuchHandleException::new);
 
@@ -116,26 +120,23 @@ public class InvitationService {
 
         Instant now = Instant.now(clock);
         Invitation invitation =
-                invitations.save(Invitation.openFor(workspaceId, invitee.id(), owner.travelerId(), now));
+                invitations.save(Invitation.openFor(workspaceId, invitee.id(), member.travelerId(), now));
         log.info(
                 "Invitation opened by handle: id={} workspaceId={} invitedBy={} invitee={}",
                 invitation.id(),
                 workspaceId,
-                owner.travelerId(),
+                member.travelerId(),
                 invitee.id());
-        afterCommit(() -> emitSent(invitation.id(), itineraryId, owner.travelerId(), "handle"));
+        afterCommit(() -> emitSent(invitation.id(), itineraryId, member.travelerId(), "handle"));
         return pendingOf(invitation, invitee.handle());
     }
 
 
-    private UUID authorizeIssuance(Membership owner) {
-        fence.requireWritable(owner);
-        if (!owner.isOwner()) {
-            throw new NotWorkspaceOwnerException();
-        }
+    private UUID authorizeIssuance(Membership member) {
+        fence.requireMembershipMutable(member);
         return workspaces
-                .workspaceIdOf(owner.itineraryId())
-                .orElseThrow(() -> new IllegalStateException("Owner has no workspace - invariant breach"));
+                .workspaceIdOf(member.itineraryId())
+                .orElseThrow(() -> new IllegalStateException("Member has no workspace - invariant breach"));
     }
 
 
@@ -168,10 +169,7 @@ public class InvitationService {
         UUID itineraryId =
                 workspaces.itineraryIdsByWorkspace(List.of(invitation.workspaceId())).get(invitation.workspaceId());
         Membership caller = guard.requireMember(travelerId, itineraryId);
-        fence.requireWritable(caller);
-        if (!caller.isOwner()) {
-            throw new NotWorkspaceOwnerException();
-        }
+        fence.requireMembershipMutable(caller);
         if (invitation.status() != InvitationStatus.PENDING) {
             throw new InvitationNotPendingException();
         }
@@ -190,6 +188,9 @@ public class InvitationService {
 
     @Transactional(readOnly = true)
     public List<PendingInvitation> pendingInvitations(Membership member) {
+        if (publication.isPublished(member.itineraryId())) {
+            return List.of();
+        }
         UUID workspaceId = workspaces.workspaceIdOf(member.itineraryId()).orElseThrow();
         List<Invitation> rows =
                 invitations.findByWorkspaceIdAndStatusAndExpiresAtAfterOrderByIdDesc(
@@ -249,9 +250,15 @@ public class InvitationService {
         }
         Map<UUID, UUID> itineraryIds =
                 workspaces.itineraryIdsByWorkspace(rows.stream().map(Invitation::workspaceId).toList());
+        Set<UUID> frozen = publication.publishedAmong(itineraryIds.values());
+        List<Invitation> live =
+                rows.stream().filter(i -> !frozen.contains(itineraryIds.get(i.workspaceId()))).toList();
+        if (live.isEmpty()) {
+            return List.of();
+        }
         Map<UUID, String> titles = itineraries.titlesByIds(itineraryIds.values());
-        Map<UUID, String> inviterNames = namesByIds(rows.stream().map(Invitation::invitedBy).toList());
-        return rows.stream()
+        Map<UUID, String> inviterNames = namesByIds(live.stream().map(Invitation::invitedBy).toList());
+        return live.stream()
                 .map(
                         i -> {
                             UUID itineraryId = itineraryIds.get(i.workspaceId());
@@ -276,6 +283,7 @@ public class InvitationService {
         if (workspaces.isMember(itineraryId, travelerId)) {
             throw new AlreadyMemberException("You are already a member of this trip.");
         }
+        fence.requireMembershipUnfrozen(itineraryId);
 
         Instant now = Instant.now(clock);
         invitation.accept(travelerId, now);
