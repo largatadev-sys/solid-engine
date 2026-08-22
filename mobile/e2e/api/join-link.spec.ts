@@ -241,6 +241,22 @@ const PREVIEW = process.env.LARGATA_PREVIEW_URL ?? 'http://localhost:8081';
 const CRAWLER = 'facebookexternalhit/1.1';
 const BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36';
 
+const META_UNFURLERS = [
+  CRAWLER,
+  'facebookcatalog/1.0',
+  'Facebot',
+  'meta-externalagent/1.1',
+  'meta-externalfetcher/1.1',
+];
+
+const META_CRAWLERS_THAT_UNFURL_NOTHING = ['meta-externalads/1.1', 'meta-webindexer/1.1'];
+
+const HUMANS_INSIDE_META_APPS = [
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 [FBAN/FBIOS;FBAV/450.0]',
+  'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/450.0;]',
+  'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 Instagram 300.0.0.29.110',
+];
+
 const asAgent = async (agent: string, path: string): Promise<string> => {
   const answer = await request(`${PREVIEW}${path}`, 'GET', undefined, { 'User-Agent': agent });
   return typeof answer.body === 'string' ? answer.body : '';
@@ -283,25 +299,38 @@ test.describe('the preview container routes crawlers to the per-trip card', () =
   });
 
   test('every Meta agent gets the card, not just the one that unfurls a group chat', async () => {
-    const metaFamily = [
-      'facebookexternalhit/1.1',
-      'facebookcatalog/1.0',
-      'Facebot',
-      'meta-externalagent/1.1',
-      'meta-externalfetcher/1.1',
-    ];
+    const served = await Promise.all(
+      META_UNFURLERS.map(async (agent) => ({
+        agent,
+        card: (await asAgent(agent, `/join/${token}`)).includes('You&#39;re invited:'),
+      })),
+    );
 
-    for (const agent of metaFamily) {
-      expect(await asAgent(agent, `/join/${token}`)).toContain('You&#39;re invited:');
-    }
+    expect(served.filter((row) => !row.card).map((row) => row.agent)).toEqual([]);
+  });
+
+
+  test('the Meta crawlers that unfurl nothing are left on the SPA, not handed the stub', async () => {
+    const served = await Promise.all(
+      META_CRAWLERS_THAT_UNFURL_NOTHING.map(async (agent) => ({
+        agent,
+        app: (await asAgent(agent, `/join/${token}`)).includes('<div id="root">'),
+      })),
+    );
+
+    expect(served.filter((row) => !row.app).map((row) => row.agent)).toEqual([]);
   });
 
 
   test('a human inside a Meta app still gets the product, never the crawler stub', async () => {
-    const inApp =
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 [FBAN/FBIOS;FBAV/450.0]';
+    const served = await Promise.all(
+      HUMANS_INSIDE_META_APPS.map(async (agent) => ({
+        agent,
+        app: (await asAgent(agent, `/join/${token}`)).includes('<div id="root">'),
+      })),
+    );
 
-    expect(await asAgent(inApp, `/join/${token}`)).toContain('<div id="root">');
+    expect(served.filter((row) => !row.app).map((row) => row.agent)).toEqual([]);
   });
 
 
