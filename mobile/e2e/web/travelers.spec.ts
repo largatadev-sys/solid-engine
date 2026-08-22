@@ -279,7 +279,7 @@ test.describe('removal, behind the owner’s confirm', () => {
   });
 });
 
-test.describe('the published freeze, on the surface', () => {
+test.describe('the frozen surface, walked on an archived trip', () => {
   test.describe.configure({ mode: 'serial' });
 
   let trip: SeededTrip;
@@ -289,16 +289,14 @@ test.describe('the published freeze, on the surface', () => {
       ownerTag: OWNER,
       title: stamp('travelers frozen'),
       members: [MEMBER],
-      durationDays: 2,
     });
     await api(`/v1/itineraries/${trip.id}/invitations/by-handle`, 'POST', ownerToken, {
       handle: (await profileFor(STRANGER)).handle,
     });
-    await climbTo(trip, 'completed');
-    await api(`/v1/itineraries/${trip.id}/publish`, 'POST', ownerToken, {});
+    await api(`/v1/itineraries/${trip.id}/archive`, 'POST', ownerToken, {});
   });
 
-  test('a published trip shows the roster and nothing that would change it', async ({
+  test('a frozen trip shows the roster and nothing that would change it', async ({
     page,
     signIn,
   }) => {
@@ -311,7 +309,7 @@ test.describe('the published freeze, on the surface', () => {
     await expect(page.getByText(/^Requests · \d+$/)).toHaveCount(0);
   });
 
-  test('…except the viewer’s own way out, which survives publication', async ({ page, signIn }) => {
+  test('…except the viewer’s own way out, which survives the freeze', async ({ page, signIn }) => {
     await signIn(MEMBER);
     await page.goto(travelersTab(trip.id));
     await expect(page.getByText('Travelers · 2', { exact: true })).toBeVisible();
@@ -320,6 +318,24 @@ test.describe('the published freeze, on the surface', () => {
 
     const ownerHandle = (await api('/v1/me', 'GET', ownerToken)).body.handle;
     await expect(labelStarting(page, `More options for @${ownerHandle}`)).toHaveCount(0);
+  });
+
+  test('a published trip is not reachable through this route at all', async ({ page, signIn }) => {
+    const shipped = await seedTrip({
+      ownerTag: OWNER,
+      title: stamp('travelers published'),
+      members: [MEMBER],
+      durationDays: 2,
+    });
+    await climbTo(shipped, 'completed');
+    await api(`/v1/itineraries/${shipped.id}/publish`, 'POST', ownerToken, {});
+
+    await signIn(MEMBER);
+    await page.goto(travelersTab(shipped.id));
+
+    await expect
+      .poll(() => new URL(page.url()).pathname, { timeout: 20_000 })
+      .toContain(`/published/${shipped.id}`);
   });
 
   test('the add sheet’s member state renders for somebody already aboard', async ({

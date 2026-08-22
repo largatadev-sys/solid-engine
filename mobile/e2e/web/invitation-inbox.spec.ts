@@ -43,6 +43,7 @@ test.describe('the card an invitee meets on Trips', () => {
   test.describe.configure({ mode: 'serial' });
 
   let trip: SeededTrip;
+  let invitationId: string;
 
   test.beforeAll(async () => {
     trip = await seedTrip({
@@ -50,7 +51,7 @@ test.describe('the card an invitee meets on Trips', () => {
       title: stamp('inbox card'),
       destination: 'El Nido',
     });
-    await inviteThem(trip.id);
+    invitationId = await inviteThem(trip.id);
   });
 
   test('carries the trip’s context, not just a line of text', async ({ page, signIn }) => {
@@ -113,12 +114,18 @@ test.describe('the card an invitee meets on Trips', () => {
       .toContain(`/itineraries/${trip.id}`);
   });
 
-  test('and the card is gone from Trips once it has been answered', async ({ page, signIn }) => {
+  test('and this trip’s card is gone from Trips once it has been answered', async ({
+    page,
+    signIn,
+  }) => {
     await signIn(INVITEE);
     await page.goto(TRIPS_TAB_ROUTE);
     await expect(page.getByText(/Trips/i).first()).toBeVisible();
 
-    await expect(page.getByText(/Invited by @/)).toHaveCount(0);
+    await expect(
+      labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`),
+    ).toHaveCount(0);
+    expect(await inboxIds()).not.toContain(invitationId);
   });
 });
 
