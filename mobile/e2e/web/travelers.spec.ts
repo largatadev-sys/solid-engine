@@ -16,7 +16,7 @@ import {
   SEARCH_PLACEHOLDER,
   SHARE_LINK_LABEL,
 } from '../../src/members/addSheet';
-import { REMOVE_FROM_TRIP_LABEL } from '../../src/members/rowMenu';
+import { LEAVE_TRIP_LABEL, REMOVE_FROM_TRIP_LABEL } from '../../src/members/rowMenu';
 import { APPROVE_LABEL, DECLINE_LABEL, REVOKE_LABEL } from '../../src/members/travelerCopy';
 
 const OWNER = ownerTagFor('web/travelers');
@@ -177,6 +177,21 @@ test.describe('any member may revoke, which is the C1 widening on the surface', 
     const ownerHandle = (await api('/v1/me', 'GET', ownerToken)).body.handle;
     await expect(labelStarting(page, `More options for @${ownerHandle}`)).toHaveCount(0);
   });
+
+  test('…but does see it on their own row, which is the only leave door left', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(MEMBER);
+    await page.goto(travelersTab(trip.id));
+    await expect(page.getByText('Trip owner').first()).toBeVisible();
+
+    await expect(labelStarting(page, `More options for @${memberHandle}`)).toBeVisible();
+
+    await labelStarting(page, `More options for @${memberHandle}`).click();
+    await expect(page.getByText(LEAVE_TRIP_LABEL, { exact: true })).toBeVisible();
+    await expect(page.getByText(REMOVE_FROM_TRIP_LABEL, { exact: true })).toHaveCount(0);
+  });
 });
 
 test.describe('the owner answers the requests queue', () => {
@@ -300,7 +315,7 @@ test.describe('the frozen surface, walked on an archived trip', () => {
     page,
     signIn,
   }) => {
-    await signIn(MEMBER);
+    await signIn(OWNER);
     await page.goto(travelersTab(trip.id));
 
     await expect(page.getByText('Travelers · 2', { exact: true })).toBeVisible();
@@ -309,15 +324,25 @@ test.describe('the frozen surface, walked on an archived trip', () => {
     await expect(page.getByText(/^Requests · \d+$/)).toHaveCount(0);
   });
 
-  test('…except the viewer’s own way out, which survives the freeze', async ({ page, signIn }) => {
-    await signIn(MEMBER);
+  test('the owner sees no overflow at all — there is nothing left to act on', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(OWNER);
     await page.goto(travelersTab(trip.id));
     await expect(page.getByText('Travelers · 2', { exact: true })).toBeVisible();
 
-    await expect(labelStarting(page, `More options for @${memberHandle}`)).toBeVisible();
+    await expect(labelStarting(page, `More options for @${memberHandle}`)).toHaveCount(0);
+  });
 
-    const ownerHandle = (await api('/v1/me', 'GET', ownerToken)).body.handle;
-    await expect(labelStarting(page, `More options for @${ownerHandle}`)).toHaveCount(0);
+  test('a member is masked from the archived trip entirely — ADR-017, owner-only sight', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(MEMBER);
+    await page.goto(travelersTab(trip.id));
+
+    await expect(page.getByText('Travelers · 2', { exact: true })).toHaveCount(0);
   });
 
   test('a published trip is not reachable through this route at all', async ({ page, signIn }) => {
