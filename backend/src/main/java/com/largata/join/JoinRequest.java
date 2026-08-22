@@ -76,6 +76,13 @@ public class JoinRequest {
     }
 
 
+    void withdraw(Instant now) {
+        this.status = JoinRequestStatus.WITHDRAWN;
+        this.decidedBy = travelerId;
+        this.decidedAt = now;
+    }
+
+
     UUID id() {
         return id;
     }

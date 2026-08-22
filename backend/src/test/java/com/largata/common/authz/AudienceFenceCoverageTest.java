@@ -33,7 +33,8 @@ class AudienceFenceCoverageTest {
     private static final Map<String, String> CAPABILITY_SCOPED_COVER_READS =
             Map.of(
                     "JoinController.java#cover", "join.itineraryBehind(",
-                    "InvitationController.java#cover", "invitations.itineraryOfInvitationTo(");
+                    "InvitationController.java#cover", "invitations.itineraryOfInvitationTo(",
+                    "MyJoinRequestController.java#cover", "join.itineraryOfMyRequest(");
 
 
     private static final Map<String, String> DELIBERATELY_UNAUTHENTICATED_HANDLERS =

@@ -78,6 +78,15 @@ export function revokeOwnershipOfferWording(handleLabel: string): ConfirmWording
 }
 
 
+export function withdrawJoinRequestWording(): ConfirmWording {
+  return {
+    title: 'Withdraw your request?',
+    body: "You'll need the invite link again to ask a second time.",
+    confirmLabel: 'Withdraw',
+  };
+}
+
+
 export function declineInvitationWording(inviterHandleLabel: string): ConfirmWording {
   return {
     title: 'Decline this invitation?',

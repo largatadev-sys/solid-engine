@@ -3,7 +3,7 @@ export interface MediaSource {
   readonly headers?: Record<string, string>;
 }
 
-const CAPABILITY_SCOPED_COVERS = ['/v1/join/', '/v1/invitations/'];
+const CAPABILITY_SCOPED_COVERS = ['/v1/join/', '/v1/join-requests/', '/v1/invitations/'];
 
 
 export function isOurMedia(url: string): boolean {

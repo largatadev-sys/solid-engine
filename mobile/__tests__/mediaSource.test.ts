@@ -1,6 +1,8 @@
 import { mediaSourceFor as nativeSource } from '../src/media/mediaSource.native';
 import { mediaSourceFor as webSource } from '../src/media/mediaSource.web';
 import { isOurMedia, thumbOf } from '../src/media/mediaSourceContract';
+import { invitationRepository } from '../src/repositories/invitationRepository';
+import { joinRepository } from '../src/repositories/joinRepository';
 import { apiClient } from '../src/api/apiClient';
 import { File } from 'expo-file-system';
 
@@ -91,15 +93,30 @@ describe('isOurMedia', () => {
     expect(isOurMedia('https://evil.test/v1/media/x')).toBe(false);
   });
 
-  it('recognises the two capability-scoped covers, which are ours but not under /v1/media', () => {
+  it('recognises the capability-scoped covers, which are ours but not under /v1/media', () => {
     expect(isOurMedia('/v1/join/sometoken/cover')).toBe(true);
     expect(isOurMedia('/v1/invitations/some-id/cover')).toBe(true);
+    expect(isOurMedia('/v1/join-requests/some-id/cover')).toBe(true);
   });
 
-  it('claims neither of those paths beyond their cover, so nothing else is fetched as an image', () => {
+  it('claims none of those paths beyond their cover, so nothing else is fetched as an image', () => {
     expect(isOurMedia('/v1/join/sometoken')).toBe(false);
     expect(isOurMedia('/v1/invitations')).toBe(false);
+    expect(isOurMedia('/v1/join-requests/some-id')).toBe(false);
     expect(isOurMedia('https://evil.test/v1/join/x/cover')).toBe(false);
+  });
+
+  it('claims every cover path the repositories actually hand it — an allowlist that misses one '
+    + 'sends the image out anonymous, and nothing below a rendered browser sees it', () => {
+    const handedOut = [
+      invitationRepository.coverPath('some-id'),
+      joinRepository.coverPath('sometoken'),
+      joinRepository.myRequestCoverPath('some-id'),
+    ];
+
+    for (const path of handedOut) {
+      expect(isOurMedia(path)).toBe(true);
+    }
   });
 });
 

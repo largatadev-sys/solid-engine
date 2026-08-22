@@ -15,6 +15,7 @@ import type {
   JoinRequestResponse,
   JoinRequestSummaryResponse,
   JoinTeaserResponse,
+  MyJoinRequestResponse,
   Page,
 } from '../types/api';
 
@@ -24,7 +25,30 @@ export const joinKeys = {
   link: (itineraryId: string) => [...joinKeys.all, 'link', itineraryId] as const,
   teaser: (token: string) => [...joinKeys.all, 'teaser', token] as const,
   requests: (itineraryId: string) => [...joinKeys.all, 'requests', itineraryId] as const,
+  mine: () => [...joinKeys.all, 'mine'] as const,
 };
+
+
+export function myJoinRequestsOptions() {
+  return queryOptions({
+    queryKey: joinKeys.mine(),
+    queryFn: () => joinRepository.fetchMyRequests(),
+  });
+}
+
+
+export function useMyJoinRequests(): UseQueryResult<Page<MyJoinRequestResponse>, Error> {
+  return useQuery(myJoinRequestsOptions());
+}
+
+
+export function useWithdrawJoinRequest(): UseMutationResult<void, Error, string> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (requestId: string) => joinRepository.withdraw(requestId),
+    onSuccess: () => client.invalidateQueries({ queryKey: joinKeys.mine() }),
+  });
+}
 
 
 export function joinLinkOptions(itineraryId: string) {

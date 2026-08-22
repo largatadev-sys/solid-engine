@@ -18,6 +18,7 @@ import com.largata.join.JoinExceptions.JoinRequestNotPendingException;
 import com.largata.join.JoinExceptions.LinkClosedException;
 import com.largata.join.JoinExceptions.NotTripOwnerException;
 import com.largata.join.JoinExceptions.UnknownJoinTokenException;
+import com.largata.workspace.MembershipView;
 import com.largata.workspace.WorkspaceService;
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -25,6 +26,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -44,6 +46,8 @@ public class JoinService {
     private static final int TOKEN_BYTES = 32;
 
     private static final int TOKEN_LOG_PREFIX = 8;
+
+    private static final int GOING_PREVIEW_SIZE = 3;
 
     private final JoinLinkRepository links;
     private final JoinRequestRepository requests;
@@ -233,6 +237,84 @@ public class JoinService {
                 profile == null ? null : profile.handle(),
                 profile == null ? null : profile.avatarUrl(),
                 row.createdAt());
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<MyJoinRequest> askedByMe(UUID travelerId) {
+        List<JoinRequest> rows =
+                requests.findByTravelerIdAndStatusOrderByCreatedAtDesc(
+                        travelerId, JoinRequestStatus.PENDING);
+        return rows.stream().map(this::myRequestOf).flatMap(Optional::stream).toList();
+    }
+
+
+    private Optional<MyJoinRequest> myRequestOf(JoinRequest row) {
+        UUID itineraryId = itineraryIdOf(row.workspaceId());
+        Optional<TripTeaser> trip = itineraries.teaserOf(itineraryId);
+        if (trip.isEmpty()) {
+            return Optional.empty();
+        }
+        List<MembershipView> roster = workspaces.membersOf(itineraryId);
+        return Optional.of(
+                new MyJoinRequest(
+                        row.id(),
+                        itineraryId,
+                        trip.get().title(),
+                        trip.get().destination(),
+                        trip.get().startDate(),
+                        trip.get().endDate(),
+                        trip.get().coverImageUrl() != null,
+                        goingPreviewOf(roster),
+                        roster.size(),
+                        row.createdAt()));
+    }
+
+
+    private List<MyJoinRequest.GoingTraveler> goingPreviewOf(List<MembershipView> roster) {
+        List<UUID> shown =
+                roster.stream().map(MembershipView::travelerId).limit(GOING_PREVIEW_SIZE).toList();
+        Map<UUID, TravelerSummary> profiles =
+                travelers.summariesByIds(shown).stream()
+                        .collect(Collectors.toMap(TravelerSummary::id, summary -> summary));
+        return shown.stream()
+                .map(profiles::get)
+                .filter(Objects::nonNull)
+                .map(p -> new MyJoinRequest.GoingTraveler(p.id(), p.displayName(), p.avatarUrl()))
+                .toList();
+    }
+
+
+    @Transactional
+    public void withdraw(UUID travelerId, UUID requestId) {
+        JoinRequest mine = requests.findById(requestId).orElseThrow(JoinRequestNotFoundException::new);
+        if (!mine.travelerId().equals(travelerId)) {
+            throw new JoinRequestNotFoundException();
+        }
+        if (mine.status() != JoinRequestStatus.PENDING) {
+            throw new JoinRequestNotPendingException();
+        }
+
+        mine.withdraw(Instant.now(clock));
+        requests.saveAndFlush(mine);
+
+        UUID itineraryId = itineraryIdOf(mine.workspaceId());
+        log.info(
+                "Join request withdrawn: requestId={} itineraryId={} travelerId={}",
+                requestId,
+                itineraryId,
+                travelerId);
+        emitDecision("join_request_withdrawn", requestId, itineraryId, travelerId, travelerId);
+    }
+
+
+    @Transactional(readOnly = true)
+    public UUID itineraryOfMyRequest(UUID travelerId, UUID requestId) {
+        JoinRequest mine = requests.findById(requestId).orElseThrow(JoinRequestNotFoundException::new);
+        if (!mine.travelerId().equals(travelerId) || mine.status() != JoinRequestStatus.PENDING) {
+            throw new JoinRequestNotFoundException();
+        }
+        return itineraryIdOf(mine.workspaceId());
     }
 
 

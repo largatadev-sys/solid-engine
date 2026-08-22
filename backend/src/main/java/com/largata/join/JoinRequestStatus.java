@@ -5,5 +5,6 @@ public enum JoinRequestStatus {
     PENDING,
     APPROVED,
     DECLINED,
-    SUPERSEDED
+    SUPERSEDED,
+    WITHDRAWN
 }

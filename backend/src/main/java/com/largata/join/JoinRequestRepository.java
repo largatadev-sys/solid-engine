@@ -14,4 +14,8 @@ interface JoinRequestRepository extends JpaRepository<JoinRequest, UUID> {
 
     List<JoinRequest> findByWorkspaceIdAndStatusOrderByCreatedAtAsc(
             UUID workspaceId, JoinRequestStatus status);
+
+
+    List<JoinRequest> findByTravelerIdAndStatusOrderByCreatedAtDesc(
+            UUID travelerId, JoinRequestStatus status);
 }

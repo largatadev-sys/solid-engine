@@ -4,6 +4,7 @@ import type {
   JoinRequestResponse,
   JoinRequestSummaryResponse,
   JoinTeaserResponse,
+  MyJoinRequestResponse,
   Page,
 } from '../types/api';
 
@@ -51,7 +52,22 @@ export const joinRepository = {
   },
 
 
+  async fetchMyRequests(): Promise<Page<MyJoinRequestResponse>> {
+    return apiClient.get<Page<MyJoinRequestResponse>>('/v1/join-requests');
+  },
+
+
+  async withdraw(requestId: string): Promise<void> {
+    await apiClient.delete(`/v1/join-requests/${requestId}`);
+  },
+
+
   coverPath(token: string): string {
     return `/v1/join/${encodeURIComponent(token)}/cover`;
+  },
+
+
+  myRequestCoverPath(requestId: string): string {
+    return `/v1/join-requests/${requestId}/cover`;
   },
 };

@@ -8,6 +8,9 @@ export const SHEET_DISMISS_LABEL = 'Dismiss';
 export const ACCEPT_LABEL = 'Accept';
 export const DECLINE_LABEL = 'Decline';
 
+export const REQUESTED_GHOST_LABEL = 'Requested';
+export const WITHDRAW_LABEL = 'Withdraw';
+
 export const OFFER_ACCEPT_LABEL = 'Accept';
 export const OFFER_DECLINE_LABEL = 'Decline';
 

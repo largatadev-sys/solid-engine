@@ -518,6 +518,20 @@ export type InboxInvitationResponse = {
 };
 
 
+export type MyJoinRequestResponse = {
+  id: string;
+  itineraryId: string;
+  tripTitle: string;
+  destination: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  hasCover: boolean;
+  going: GoingTravelerResponse[];
+  travelerCount: number;
+  requestedAt: string;
+};
+
+
 export type JoinLinkResponse = {
   token: string;
   shareUrl: string;
