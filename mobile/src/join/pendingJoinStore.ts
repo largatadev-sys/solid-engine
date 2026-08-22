@@ -1,7 +1,8 @@
 import { clearPendingJoin, loadPendingJoin, savePendingJoin } from './pendingJoinStorage';
 
 let stashed: string | null = null;
-let restored = false;
+let settled = false;
+let loading: Promise<string | null> | null = null;
 
 const listeners = new Set<() => void>();
 
@@ -22,7 +23,7 @@ export function subscribeToPendingJoin(listener: () => void): () => void {
 export function stashPendingJoin(token: string): void {
   if (stashed === token) return;
   stashed = token;
-  restored = true;
+  settled = true;
   void savePendingJoin(token);
   announce();
 }
@@ -33,22 +34,33 @@ export function pendingJoinToken(): string | null {
 }
 
 
-export async function restorePendingJoin(): Promise<string | null> {
-  if (restored) return stashed;
+export function pendingJoinSettled(): boolean {
+  return settled;
+}
 
-  restored = true;
-  if (stashed === null) {
-    stashed = await loadPendingJoin();
-    if (stashed !== null) announce();
-  }
-  return stashed;
+
+export async function restorePendingJoin(): Promise<string | null> {
+  if (settled) return stashed;
+  if (loading !== null) return loading;
+
+  loading = loadPendingJoin().then((stored) => {
+    loading = null;
+    if (!settled) {
+      stashed = stored;
+      settled = true;
+    }
+    announce();
+    return stashed;
+  });
+
+  return loading;
 }
 
 
 export function forgetPendingJoin(): void {
   if (stashed === null) return;
   stashed = null;
-  restored = true;
+  settled = true;
   void clearPendingJoin();
   announce();
 }
@@ -56,6 +68,7 @@ export function forgetPendingJoin(): void {
 
 export function resetPendingJoinForTests(): void {
   stashed = null;
-  restored = false;
+  settled = false;
+  loading = null;
   listeners.clear();
 }

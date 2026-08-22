@@ -71,7 +71,8 @@ function AuthGate() {
     profile: state.kind === 'ok' ? state.me : null,
     profileUnreadable: state.kind === 'error',
     segment: segments[0],
-    pendingJoinToken: pendingJoin,
+    pendingJoinToken: pendingJoin.token,
+    pendingJoinSettled: pendingJoin.settled,
   };
 
   const destination = destinationFor(gate);

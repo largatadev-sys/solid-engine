@@ -62,7 +62,21 @@ RUN test -n "$EXPO_PUBLIC_API_BASE_URL" || (echo "EXPO_PUBLIC_API_BASE_URL is re
 RUN test -n "$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID" || \
     (echo "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is required (S0.6: the web Google doorway)" && exit 1)
 
+# The Open Graph card. `app/+html.tsx` is the documented way to own the HTML shell and it is
+# SILENTLY IGNORED when `web.output` is "single", which this repo requires — that was written,
+# disproved and deleted at the 2026-08-21 viewport fix. And the runtime DOM rewrite that solved
+# *that* problem cannot solve this one: a crawler never executes JavaScript, so a meta tag written
+# at startup is invisible to every unfurl. A post-export step is the only place the tags can land.
+#
+# The base URL is a build arg with no default for the same reason the API URL is: it must be
+# absolute or no crawler fetches the image, and a localhost fallback would ship dead previews while
+# looking perfectly healthy locally — which is exactly how the join link shipped `localhost:8081`.
+ARG LARGATA_WEB_BASE_URL
+RUN test -n "$LARGATA_WEB_BASE_URL" || \
+    (echo "LARGATA_WEB_BASE_URL is required (og:image must be an absolute URL)" && exit 1)
+
 RUN npx expo export --platform web
+RUN LARGATA_WEB_BASE_URL="$LARGATA_WEB_BASE_URL" node scripts/inject-web-meta.js
 
 # ---- runtime stage -----------------------------------------------------------------------
 # Static files and nothing else: no server logic, no secrets, no state. Caddy because it serves SPAs

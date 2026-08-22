@@ -141,6 +141,7 @@ curl -s http://localhost:8080/v1/health          # {"status":"ok"}
 cd mobile && set -a && . ./.env && set +a
 docker build -f Dockerfile.web-preview \
   --build-arg EXPO_PUBLIC_API_BASE_URL="http://localhost:8080" \
+  --build-arg LARGATA_WEB_BASE_URL="http://localhost:8081" \
   --build-arg EXPO_PUBLIC_FIREBASE_API_KEY="$EXPO_PUBLIC_FIREBASE_API_KEY" \
   --build-arg EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN="$EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN" \
   --build-arg EXPO_PUBLIC_FIREBASE_PROJECT_ID="$EXPO_PUBLIC_FIREBASE_PROJECT_ID" \

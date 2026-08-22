@@ -2,6 +2,7 @@ import { isJoinRoute, JOIN_SEGMENT, SIGNED_IN_HOME } from '../src/navigation/aut
 import {
   destinationFor,
   isSettling,
+  landingAfterSignIn,
   VERIFY_CODE_ROUTE,
   type GateInput,
 } from '../src/onboarding/onboardingGate';
@@ -98,6 +99,58 @@ describe('returning from sign-up with a link in hand', () => {
         }),
       ),
     ).toBe('/onboarding/profile');
+  });
+});
+
+describe('leaving onboarding with a link still in hand', () => {
+  it('lands on the postcard the traveler arrived from, not Home', () => {
+    expect(landingAfterSignIn(TOKEN)).toBe(joinRouteFor(TOKEN));
+  });
+
+  it('lands Home when nobody arrived from a link', () => {
+    expect(landingAfterSignIn(null)).toBe(SIGNED_IN_HOME);
+    expect(landingAfterSignIn(undefined)).toBe(SIGNED_IN_HOME);
+  });
+});
+
+describe('waiting for storage to say whether a link is waiting', () => {
+  it('holds rather than guessing Home while the answer is still coming', () => {
+    const cold = gate({ segment: 'welcome', pendingJoinToken: null, pendingJoinSettled: false });
+
+    expect(destinationFor(cold)).toBeNull();
+    expect(isSettling(cold)).toBe(true);
+  });
+
+  it('goes Home the moment storage answers with nothing', () => {
+    const answered = gate({
+      segment: 'welcome',
+      pendingJoinToken: null,
+      pendingJoinSettled: true,
+    });
+
+    expect(destinationFor(answered)).toBe(SIGNED_IN_HOME);
+    expect(isSettling(answered)).toBe(false);
+  });
+
+  it('goes to the landing the moment storage answers with a token', () => {
+    const answered = gate({
+      segment: 'welcome',
+      pendingJoinToken: TOKEN,
+      pendingJoinSettled: true,
+    });
+
+    expect(destinationFor(answered)).toBe(joinRouteFor(TOKEN));
+  });
+
+  it('never holds a traveler who still owes onboarding', () => {
+    const owing = gate({
+      profile: { handle: null, interests: [], country: null, onboardingCompleted: false },
+      segment: 'welcome',
+      pendingJoinSettled: false,
+    });
+
+    expect(destinationFor(owing)).toBe('/onboarding/profile');
+    expect(isSettling(owing)).toBe(false);
   });
 });
 

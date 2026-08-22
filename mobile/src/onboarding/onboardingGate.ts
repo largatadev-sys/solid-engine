@@ -50,6 +50,12 @@ export interface GateInput {
   readonly segment: string | undefined;
 
   readonly pendingJoinToken?: string | null;
+  readonly pendingJoinSettled?: boolean;
+}
+
+
+export function landingAfterSignIn(token: string | null | undefined): string {
+  return token === null || token === undefined ? SIGNED_IN_HOME : joinRouteFor(token);
 }
 
 
@@ -79,9 +85,14 @@ export function destinationFor(input: GateInput): string | null {
 }
 
 
-function settledHomeOf(input: GateInput): string {
-  const token = input.pendingJoinToken;
-  return token === null || token === undefined ? SIGNED_IN_HOME : joinRouteFor(token);
+function pendingJoinIsKnown(input: GateInput): boolean {
+  return input.pendingJoinSettled !== false;
+}
+
+
+function settledHomeOf(input: GateInput): string | null {
+  if (!pendingJoinIsKnown(input)) return null;
+  return landingAfterSignIn(input.pendingJoinToken);
 }
 
 
@@ -93,9 +104,9 @@ export function isSettling(input: GateInput): boolean {
   if (auth === 'signedOut') return !isPublicRoute(segment);
   if (!emailVerified) return segment !== VERIFY_CODE_SEGMENT;
 
-  return (
-    profile === null &&
-    !profileUnreadable &&
-    (isPublicRoute(segment) || segment === VERIFY_CODE_SEGMENT)
-  );
+  if (!isPublicRoute(segment) && segment !== VERIFY_CODE_SEGMENT) return false;
+
+  if (profile === null) return !profileUnreadable || !pendingJoinIsKnown(input);
+
+  return nextOnboardingStep(profile) === null && !pendingJoinIsKnown(input);
 }
