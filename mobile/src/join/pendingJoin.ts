@@ -1,6 +1,6 @@
 export const PENDING_JOIN_STORAGE_KEY = 'largata.join.pending';
 
-const TOKEN_PATTERN = /^[A-Za-z0-9_-]{16,512}$/;
+const TOKEN_PATTERN = /^[A-Za-z0-9_-]{8,512}$/;
 
 
 export function joinRouteFor(token: string): string {

@@ -199,11 +199,11 @@ class JoinRequestStorageIT extends PostgresTestBase {
                         "token");
 
         assertThat(token.length() * 6)
-                .as("ADR-032 requires >=128 bits; url-safe base64 carries 6 bits a character")
-                .isGreaterThanOrEqualTo(128);
+                .as("ADR-032 amended 2026-08-23 to >=64 bits; url-safe base64 carries 6 bits a character")
+                .isGreaterThanOrEqualTo(64);
         assertThat(token.length())
                 .as("a link a traveler pastes into a chat; the founder called 43 characters too long")
-                .isLessThanOrEqualTo(32);
+                .isLessThanOrEqualTo(16);
         assertThat(token).matches("[A-Za-z0-9_-]+");
     }
 
