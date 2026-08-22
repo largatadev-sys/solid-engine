@@ -4,6 +4,7 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
+import com.largata.common.authz.ItineraryNotFoundException;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
@@ -53,6 +54,7 @@ public class ItineraryService {
     private final TravelerService travelers;
     private final WriteFence fence;
     private final Analytics analytics;
+    private final ShareCardVersionService shareCardVersions;
 
     ItineraryService(
             ItineraryRepository itineraries,
@@ -63,7 +65,8 @@ public class ItineraryService {
             ActivityHistoryService history,
             TravelerService travelers,
             WriteFence fence,
-            Analytics analytics) {
+            Analytics analytics,
+            ShareCardVersionService shareCardVersions) {
         this.itineraries = itineraries;
         this.activities = activities;
         this.workspaces = workspaces;
@@ -73,6 +76,7 @@ public class ItineraryService {
         this.travelers = travelers;
         this.fence = fence;
         this.analytics = analytics;
+        this.shareCardVersions = shareCardVersions;
     }
 
 
@@ -185,6 +189,8 @@ public class ItineraryService {
         ItineraryFields fields = merge.apply(fieldsOf(itinerary));
 
         String currencyBefore = itinerary.currency();
+        ShareCardVersionService.CardInputs cardBefore =
+                ShareCardVersionService.CardInputs.of(itinerary);
         itinerary.editFields(fields, member.travelerId(), Instant.now());
         itineraries.save(itinerary);
 
@@ -208,7 +214,14 @@ public class ItineraryService {
                                         .with("hasDates", itinerary.startDate() != null || itinerary.endDate() != null)
                                         .with("currency", itinerary.currency())
                                         .build()));
-        return itinerary;
+
+        ShareCardVersionService.CardInputs cardAfter =
+                ShareCardVersionService.CardInputs.of(itinerary);
+        if (cardBefore.equals(cardAfter)) {
+            return itinerary;
+        }
+        shareCardVersions.bump(itinerary.id());
+        return itineraries.findById(itinerary.id()).orElseThrow(ItineraryNotFoundException::new);
     }
 
 

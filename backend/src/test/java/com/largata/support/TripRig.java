@@ -1,10 +1,17 @@
 package com.largata.support;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.UUID;
+import javax.imageio.ImageIO;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
@@ -86,6 +93,71 @@ public final class TripRig {
                 .expectStatus()
                 .isOk();
         return memberToken;
+    }
+
+
+    public void editHeader(String ownerToken, String tripId, String body) {
+        hold(ownerToken, tripId, "HEADER", UUID.fromString(tripId));
+        rest.patch()
+                .uri("/v1/itineraries/" + tripId)
+                .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .exchange()
+                .expectStatus()
+                .isOk();
+        releaseLease(ownerToken, tripId, "HEADER", UUID.fromString(tripId));
+    }
+
+
+    public void uploadCover(String ownerToken, String tripId) {
+        hold(ownerToken, tripId, "HEADER", UUID.fromString(tripId));
+        MultipartBodyBuilder photo = new MultipartBodyBuilder();
+        photo.part("photo", new ByteArrayResource(jpeg()) {
+                    @Override
+                    public String getFilename() {
+                        return "cover.jpg";
+                    }
+                })
+                .contentType(MediaType.IMAGE_JPEG);
+        rest.post()
+                .uri("/v1/itineraries/" + tripId + "/cover")
+                .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(photo.build())
+                .exchange()
+                .expectStatus()
+                .isOk();
+        releaseLease(ownerToken, tripId, "HEADER", UUID.fromString(tripId));
+    }
+
+
+    public void removeCover(String ownerToken, String tripId) {
+        hold(ownerToken, tripId, "HEADER", UUID.fromString(tripId));
+        rest.delete()
+                .uri("/v1/itineraries/" + tripId + "/cover")
+                .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+        releaseLease(ownerToken, tripId, "HEADER", UUID.fromString(tripId));
+    }
+
+
+    private static byte[] jpeg() {
+        BufferedImage photo = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < photo.getHeight(); y++) {
+            for (int x = 0; x < photo.getWidth(); x++) {
+                photo.setRGB(x, y, (x * 7 + y * 3) & 0xFFFFFF);
+            }
+        }
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(photo, "jpg", bytes);
+        } catch (IOException unwritable) {
+            throw new UncheckedIOException(unwritable);
+        }
+        return bytes.toByteArray();
     }
 
 

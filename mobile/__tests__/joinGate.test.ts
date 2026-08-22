@@ -163,6 +163,12 @@ describe('reading a token out of a link', () => {
     expect(tokenFromJoinPath(`/join/${TOKEN}?from=chat`)).toBe(TOKEN);
   });
 
+  it('ignores the card version the server appends, whatever it has climbed to', () => {
+    expect(tokenFromJoinPath(`/join/${TOKEN}?v=1`)).toBe(TOKEN);
+    expect(tokenFromJoinPath(`/join/${TOKEN}?v=417`)).toBe(TOKEN);
+    expect(tokenFromJoinPath(`/join/${TOKEN}?v=2&from=chat`)).toBe(TOKEN);
+  });
+
   it('refuses a path that is not a join link', () => {
     expect(tokenFromJoinPath('/trips')).toBeNull();
     expect(tokenFromJoinPath('/join/')).toBeNull();

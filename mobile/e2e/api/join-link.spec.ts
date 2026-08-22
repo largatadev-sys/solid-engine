@@ -55,6 +55,12 @@ test('the link is minted once and reused forever', async () => {
   expect(again.body.shareUrl).toContain(`/join/${token}`);
 });
 
+test('the shared URL carries the card version, so a re-share unfurls fresh', async () => {
+  const link = await api(`/v1/itineraries/${trip.id}/join-link`, 'GET', owner);
+
+  expect(link.body.shareUrl).toMatch(new RegExp(`/join/${token}\\?v=\\d+$`));
+});
+
 test('the teaser answers a visitor carrying no credential at all', async () => {
   const anonymous = await teaserFor();
 

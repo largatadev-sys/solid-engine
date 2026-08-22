@@ -10,6 +10,7 @@ import com.largata.identity.TravelerSummary;
 import com.largata.identity.web.VerifiedContact;
 import com.largata.invitation.InvitationService;
 import com.largata.itinerary.ItineraryService;
+import com.largata.itinerary.ShareCardVersionService;
 import com.largata.itinerary.TripTeaser;
 import com.largata.join.JoinExceptions.AlreadyMemberException;
 import com.largata.join.JoinExceptions.EmailNotVerifiedException;
@@ -58,6 +59,7 @@ public class JoinService {
     private final WriteFence fence;
     private final Analytics analytics;
     private final Clock clock;
+    private final ShareCardVersionService shareCardVersions;
     private final SecureRandom random = new SecureRandom();
     private final String webBaseUrl;
 
@@ -71,6 +73,7 @@ public class JoinService {
             WriteFence fence,
             Analytics analytics,
             Clock clock,
+            ShareCardVersionService shareCardVersions,
             @Value("${largata.web.base-url:http://localhost:8081}") String webBaseUrl) {
         this.links = links;
         this.requests = requests;
@@ -81,6 +84,7 @@ public class JoinService {
         this.fence = fence;
         this.analytics = analytics;
         this.clock = clock;
+        this.shareCardVersions = shareCardVersions;
         this.webBaseUrl = webBaseUrl;
     }
 
@@ -90,7 +94,10 @@ public class JoinService {
         fence.requireMembershipMutable(member);
         UUID workspaceId = workspaceIdOf(member.itineraryId());
         JoinLink link = links.findByWorkspaceId(workspaceId).orElseGet(() -> mint(workspaceId));
-        return new JoinLinkView(link.token(), shareUrlOf(link.token()));
+        return new JoinLinkView(
+                link.token(),
+                versionedShareUrlOf(
+                        link.token(), shareCardVersions.currentVersion(member.itineraryId())));
     }
 
 
@@ -116,20 +123,31 @@ public class JoinService {
     }
 
 
-    private String shareUrlOf(String token) {
+    private String versionedShareUrlOf(String token, long shareCardVersion) {
         String base = webBaseUrl.endsWith("/") ? webBaseUrl.substring(0, webBaseUrl.length() - 1) : webBaseUrl;
-        return base + "/join/" + token;
+        return base + "/join/" + token + "?v=" + shareCardVersion;
     }
 
 
     @Transactional(readOnly = true)
     public JoinTeaser teaserFor(String token, Optional<UUID> viewerId) {
+        JoinTeaser teaser = teaserOf(token, viewerId);
+        emitTeaserViewed(teaser.itineraryId(), viewerId.isPresent(), teaser.viewerState());
+        return teaser;
+    }
+
+
+    @Transactional(readOnly = true)
+    public JoinTeaser cardTeaserFor(String token) {
+        return teaserOf(token, Optional.empty());
+    }
+
+
+    private JoinTeaser teaserOf(String token, Optional<UUID> viewerId) {
         JoinLink link = links.findByToken(token).orElseThrow(UnknownJoinTokenException::new);
         UUID itineraryId = itineraryIdOf(link.workspaceId());
         TripTeaser trip = itineraries.teaserOf(itineraryId).orElseThrow(UnknownJoinTokenException::new);
 
-        ViewerJoinState state = viewerStateOf(link, itineraryId, trip, viewerId);
-        emitTeaserViewed(itineraryId, viewerId.isPresent(), state);
         return new JoinTeaser(
                 itineraryId,
                 trip.title(),
@@ -138,7 +156,7 @@ public class JoinService {
                 trip.endDate(),
                 workspaces.membersOf(itineraryId).size(),
                 trip.coverImageUrl(),
-                state);
+                viewerStateOf(link, itineraryId, trip, viewerId));
     }
 
 

@@ -148,7 +148,18 @@ docker build -f Dockerfile.web-preview \
   --build-arg EXPO_PUBLIC_FIREBASE_APP_ID="$EXPO_PUBLIC_FIREBASE_APP_ID" \
   --build-arg EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID="$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID" \
   -t largata-preview:local .
-docker run -d --name largata-preview -p 8081:8080 -e PORT=8080 largata-preview:local
+# LARGATA_API_UPSTREAM (S4.29) lets Caddy proxy crawler-UA hits on /join/* to the backend's Open
+# Graph preview route. It must be reachable FROM THE CONTAINER, so join the compose network and use
+# the service name — `localhost` inside a container is the container. Omit it and the matcher never
+# fires: the SPA is served as today, which is a silent degradation, so curl-check it (below).
+docker run -d --name largata-preview -p 8081:8080 -e PORT=8080 \
+  --network app_default -e LARGATA_API_UPSTREAM=backend:8080 largata-preview:local
+
+# Prove the crawler split rather than assuming it — the two answers must DIFFER:
+#   curl -A "facebookexternalhit/1.1" http://localhost:8081/join/<token>   # per-trip og: tags
+#   curl -A "Mozilla/5.0" http://localhost:8081/join/<token>               # the SPA shell
+# Both 404 while the backend predates the route, which is the indistinguishable-outcomes trap — read
+# `content_type` (backend JSON vs Caddy's bare 404) or the backend log's `endpoint` field instead.
 
 # 3. Native DEV build on the emulator (UI + flows; JS comes from Metro, debug-signed)
 export ANDROID_HOME="$LOCALAPPDATA/Android/Sdk"      # REQUIRED — see gotcha below
