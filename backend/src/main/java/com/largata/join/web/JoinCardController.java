@@ -1,9 +1,10 @@
 package com.largata.join.web;
 
+import com.largata.common.error.NotFoundException;
 import com.largata.join.JoinCard;
 import com.largata.join.JoinCardService;
+import com.largata.join.JoinTokens;
 import com.largata.join.card.CardRenderer;
-import com.largata.join.card.CardSubject;
 import com.largata.join.card.GenericCard;
 import com.largata.join.card.PreviewPage;
 import com.largata.join.card.PreviewSubject;
@@ -27,8 +28,6 @@ class JoinCardController {
 
     private static final Duration CARD_MAX_AGE = Duration.ofHours(1);
 
-    private static final int TOKEN_LOG_PREFIX = 8;
-
     private final JoinCardService cards;
     private final CardRenderer renderer;
     private final GenericCard generic;
@@ -45,21 +44,22 @@ class JoinCardController {
 
     @GetMapping(value = "/{token}/card.png", produces = MediaType.IMAGE_PNG_VALUE)
     ResponseEntity<byte[]> card(@PathVariable String token) {
-        CardSubject subject = cards.cardFor(token).subject();
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
                 .cacheControl(CacheControl.maxAge(CARD_MAX_AGE).cachePublic())
-                .body(drawnOrGeneric(subject, token));
+                .body(drawnOrGeneric(token));
     }
 
 
-    private byte[] drawnOrGeneric(CardSubject subject, String token) {
+    private byte[] drawnOrGeneric(String token) {
         try {
-            return renderer.render(subject);
+            return renderer.render(cards.cardFor(token).subject());
+        } catch (NotFoundException unknownToken) {
+            throw unknownToken;
         } catch (RuntimeException unrenderable) {
             log.warn(
-                    "Invite card render failed, serving the generic card: tokenPrefix={} cause={}",
-                    prefixOf(token),
+                    "Invite card unavailable, serving the generic card: tokenPrefix={} cause={}",
+                    JoinTokens.logPrefixOf(token),
                     unrenderable.getClass().getSimpleName());
             return generic.bytes();
         }
@@ -80,10 +80,5 @@ class JoinCardController {
                 .contentType(MediaType.TEXT_HTML)
                 .cacheControl(CacheControl.noCache())
                 .body(PreviewPage.render(subject));
-    }
-
-
-    private static String prefixOf(String token) {
-        return token.substring(0, Math.min(TOKEN_LOG_PREFIX, token.length()));
     }
 }

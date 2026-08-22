@@ -55,7 +55,7 @@ class PreviewPageTest {
 
     @Test
     void aDeadLinkSaysSoWithoutNamingTheTrip() {
-        String page = PreviewPage.render(PreviewSubject.dead(IMAGE, LANDING));
+        String page = PreviewPage.render(new PreviewSubject(null, null, IMAGE, LANDING, false));
 
         assertThat(page)
                 .contains("<meta property=\"og:title\" content=\"Largata\">")

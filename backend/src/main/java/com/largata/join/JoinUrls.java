@@ -3,7 +3,7 @@ package com.largata.join;
 
 public final class JoinUrls {
 
-    public static final String VERSION_PARAM = "v";
+    private static final String VERSION_PARAM = "v";
 
     private JoinUrls() {}
 

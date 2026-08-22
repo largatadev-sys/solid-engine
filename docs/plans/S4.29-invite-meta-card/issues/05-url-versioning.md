@@ -7,9 +7,9 @@
 **Status:** built and tested — the code ACs are closed; the demo-on-the-running-stack line waits on a rebuilt container at the story gate.
 
 - [x] Additive migration only; the schema diff is one column with a default
-- [x] ITs per trigger: title, destination, start/end dates, and cover set/replace/remove each bump exactly once; plan edits, lifecycle transitions, chat and membership writes do not
+- [x] ITs per trigger: title, destination, start/end dates, and cover set/replace/remove each bump exactly once; plan edits, lifecycle transitions, chat and membership writes do not — all eight covered in `JoinCardIT` (chat, membership and cover-replace added 2026-08-23 after a review found the box ticked but three of them untested)
 - [x] The join-link endpoint returns the share URL suffixed `?v=N`; a fresh trip hands out `v=1`
 - [x] The preview's `og:image` URL carries the same `v` as the page URL (spec decision 13)
 - [x] Grep-level assertion in review: no server code path reads the `v` parameter
-- [x] No mobile diff
+- [x] No mobile PRODUCT code — the client still copies the URL opaquely. Two test-side changes were required and are not exceptions to this: `joinGate.test.ts` pins that the token parser ignores `?v=` (spec decision 13 asks for exactly that), and `e2e/api/join-link.spec.ts` asserts the handed-out suffix and the crawler split
 - [ ] Demoable: share-link → edit title → share-link again shows the bumped suffix; both URLs' cards render current data *(open: needs the rebuilt backend container; `JoinCardIT` asserts exactly this sequence over real HTTP.)*

@@ -45,6 +45,22 @@ public final class CardArt {
 
     public static final float INITIALS_SIZE = 170f;
 
+    public static final int BLOB_DIAMETER = 420;
+
+    public static final int BLOB_LEFT = -110;
+
+    public static final int BLOB_TOP = -120;
+
+    public static final int DECOR_DIAMETER = 300;
+
+    public static final int DECOR_OVERHANG_RIGHT = 60;
+
+    public static final int DECOR_OVERHANG_BOTTOM = 90;
+
+    public static final int DECOR_LEFT = PANEL_WIDTH + DECOR_OVERHANG_RIGHT - DECOR_DIAMETER;
+
+    public static final int DECOR_TOP = HEIGHT + DECOR_OVERHANG_BOTTOM - DECOR_DIAMETER;
+
     public static final float KICKER_TRACKING = 4f;
 
     public static final int DIVIDER_WIDTH = 64;

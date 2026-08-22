@@ -102,9 +102,11 @@ public class CardRenderer {
         g.fillRect(0, 0, CardArt.PANEL_WIDTH, CardArt.HEIGHT);
 
         g.setColor(CardArt.DIVIDER);
-        g.fill(new Ellipse2D.Double(-110, -120, 420, 420));
+        g.fill(new Ellipse2D.Double(
+                CardArt.BLOB_LEFT, CardArt.BLOB_TOP, CardArt.BLOB_DIAMETER, CardArt.BLOB_DIAMETER));
         g.setColor(halfOpaque(CardArt.DECOR));
-        g.fill(new Ellipse2D.Double(CardArt.PANEL_WIDTH - 360, CardArt.HEIGHT - 210, 300, 300));
+        g.fill(new Ellipse2D.Double(
+                CardArt.DECOR_LEFT, CardArt.DECOR_TOP, CardArt.DECOR_DIAMETER, CardArt.DECOR_DIAMETER));
 
         if (!initials.isEmpty()) {
             Font face = fonts.covering(fonts.display(CardArt.INITIALS_SIZE), initials);

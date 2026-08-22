@@ -46,8 +46,6 @@ public class JoinService {
 
     private static final int TOKEN_BYTES = 8;
 
-    private static final int TOKEN_LOG_PREFIX = 8;
-
     private static final int GOING_PREVIEW_SIZE = 3;
 
     private final JoinLinkRepository links;
@@ -108,7 +106,7 @@ public class JoinService {
             log.info(
                     "Join link minted: workspaceId={} tokenPrefix={}",
                     workspaceId,
-                    prefixOf(minted.token()));
+                    JoinTokens.logPrefixOf(minted.token()));
             return minted;
         } catch (DataIntegrityViolationException anotherReaderMintedFirst) {
             return links.findByWorkspaceId(workspaceId).orElseThrow(() -> anotherReaderMintedFirst);
@@ -449,10 +447,5 @@ public class JoinService {
             throw new UnknownJoinTokenException();
         }
         return itineraryId;
-    }
-
-
-    private static String prefixOf(String token) {
-        return token.substring(0, Math.min(TOKEN_LOG_PREFIX, token.length()));
     }
 }

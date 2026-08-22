@@ -82,8 +82,6 @@ public class Itinerary {
     @Column(name = "plan_version", nullable = false, insertable = false, updatable = false)
     private long planVersion;
 
-    @Column(name = "share_card_version", nullable = false, insertable = false, updatable = false)
-    private long shareCardVersion;
 
 
     @Column(name = "started_at")
@@ -365,11 +363,6 @@ public class Itinerary {
 
     public long planVersion() {
         return planVersion;
-    }
-
-
-    public long shareCardVersion() {
-        return shareCardVersion;
     }
 
 

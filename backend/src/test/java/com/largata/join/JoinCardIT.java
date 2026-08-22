@@ -288,6 +288,44 @@ class JoinCardIT extends ObjectStoreTestBase {
 
 
     @Test
+    void replacingAnExistingCoverBumpsItAgain() {
+        Trip trip = trip();
+        rig.uploadCover(trip.owner(), trip.id());
+        assertThat(shareUrlOf(trip)).endsWith("?v=2");
+
+        rig.uploadCover(trip.owner(), trip.id());
+
+        assertThat(shareUrlOf(trip)).endsWith("?v=3");
+    }
+
+
+    @Test
+    void aChatMessageDoesNotBumpIt() {
+        Trip trip = trip();
+
+        rig.send(
+                        HttpMethod.POST,
+                        "/v1/itineraries/" + trip.id() + "/chat/messages",
+                        trip.owner(),
+                        "{\"body\":\"anyone booked flights yet\"}")
+                .expectStatus()
+                .isCreated();
+
+        assertThat(shareUrlOf(trip)).endsWith("?v=1");
+    }
+
+
+    @Test
+    void aMembershipArrivalDoesNotBumpIt() {
+        Trip trip = trip();
+
+        rig.joinAsMember(trip.owner(), trip.id(), uniqueHandle("joiner"));
+
+        assertThat(shareUrlOf(trip)).endsWith("?v=1");
+    }
+
+
+    @Test
     void aLifecycleTransitionDoesNotBumpIt() {
         Trip trip = trip();
 

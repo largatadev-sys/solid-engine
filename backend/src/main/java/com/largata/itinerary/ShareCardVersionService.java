@@ -19,14 +19,8 @@ public class ShareCardVersionService {
 
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void bump(UUID itineraryId) {
-        itineraries.bumpShareCardVersion(itineraryId);
-    }
-
-
-    @Transactional(propagation = Propagation.MANDATORY)
     public Itinerary bumpAndReload(UUID itineraryId) {
-        bump(itineraryId);
+        itineraries.bumpShareCardVersion(itineraryId);
         return itineraries.findById(itineraryId).orElseThrow(ItineraryNotFoundException::new);
     }
 
