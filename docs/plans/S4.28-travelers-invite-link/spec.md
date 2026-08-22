@@ -147,3 +147,15 @@ Decision 17 and C7 already specified it — *"everything else exits to the Trips
 **Withdraw is confirmed, and the wording carries real information**: re-requesting needs the invite link, which the traveler may no longer have, so the act is less reversible than C2's "they may request again" implies — *"Withdraw your request? / You'll need the invite link again to ask a second time."*
 
 **The tradeoff, taken knowingly:** the card renders only while the request is `PENDING`, so on decline it exits and the requester can infer they were refused — a partial erosion of C2's *"declines (silent)"*. Accepted because "silent" there means no notification and no confrontation, a card quietly vanishing is the gentlest available signal, and the alternative — a card lingering on a dead request — actively lies.
+
+### 2026-08-22 — the add sheet's lookup is explicitly triggered, not rolling *(founder decision)*
+
+Decision 14 calls the add sheet "exact-handle lookup only", and the built version fired a query on **every keystroke**: typing `pool_t3` cost **seven** requests, six of which asked whether a traveler exists whose handle is `p`, `po`, `poo`… Not partial matches — wrong questions. The founder's reasoning, which is better than the cost argument: rolling results belong to the deferred suggestions story ("people you had a trip with, or within your network"), and showing them now trains the traveler to expect prefix matching this feature does not do.
+
+The lookup now waits to be asked. The search field's magnifier becomes the trigger, the keyboard's return/enter key does the same, and typing sends nothing. Seven requests became **one**, measured on the preview.
+
+**This deviates from frame 2, knowingly.** The canvas draws the magnifier as decoration on the field's left with a text cursor after the handle, and no submit control anywhere. It is now a tappable control that colours accent when the query is long enough. The deviation is the founder's call and is recorded here rather than left to read as an accident.
+
+**The gate is TWO characters, deliberately below the three the server enforces** *(founder, same session)*. `Handle.MIN_LENGTH` is 3 and `[a-z0-9_]{3,20}` refuses anything shorter — but **two-character handles exist and are grandfathered**: the founders minted them while the gate was looser and it was tightened afterwards, so those handles can never be recreated and cannot be validated against the current rule. Gating the search at the mint minimum would make exactly those travelers **permanently unfindable by handle**. `HANDLE_SEARCH_MIN_LENGTH` is therefore its own constant rather than a reuse of the mint rule, the two are asserted to differ, and the reason lives in that test because no code comment may carry it.
+
+*(Cost was never the real argument: the lookup is an exact match against `traveler_handle_idx`, a unique index on `lower(handle)`, so each query was an index probe returning at most one row. The waste was in meaning, not in load.)*

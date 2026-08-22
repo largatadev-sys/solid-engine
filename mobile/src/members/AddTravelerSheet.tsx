@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import {
@@ -15,10 +15,12 @@ import {
   INVITED_GHOST_LABEL,
   linkRowVisible,
   noOneMatchesLabel,
+  isSearchable,
   normalizeHandleQuery,
   NOT_ON_LARGATA,
   ON_THIS_TRIP_LABEL,
   pivotVisible,
+  SEARCH_ACTION_LABEL,
   SEARCH_PLACEHOLDER,
   SHARE_LINK_LABEL,
   SHARE_LINK_PIVOT_LABEL,
@@ -56,15 +58,28 @@ export function AddTravelerSheet({
   onDismiss,
 }: AddTravelerSheetProps) {
   const [query, setQuery] = useState('');
-  const state = addSheetState({ ...lookup, query });
+  const [submitted, setSubmitted] = useState('');
+  const state = addSheetState({ ...lookup, query: submitted });
+  const searchable = isSearchable(query);
 
   const typed = (next: string) => {
     setQuery(next);
-    onQueryChange(normalizeHandleQuery(next));
+    if (submitted !== '') {
+      setSubmitted('');
+      onQueryChange('');
+    }
+  };
+
+  const search = () => {
+    if (!searchable) return;
+    const handle = normalizeHandleQuery(query);
+    setSubmitted(handle);
+    onQueryChange(handle);
   };
 
   const dismiss = () => {
     setQuery('');
+    setSubmitted('');
     onQueryChange('');
     onDismiss();
   };
@@ -72,11 +87,13 @@ export function AddTravelerSheet({
   return (
     <BottomSheet open={open} title={ADD_SHEET_TITLE} onDismiss={dismiss}>
       <View style={styles.field}>
-        <Icon name="search" size={16} color={travelerColors.iconMuted} />
         <TextInput
           style={styles.input}
           value={query}
           onChangeText={typed}
+          onSubmitEditing={search}
+          returnKeyType="search"
+          submitBehavior="submit"
           placeholder={SEARCH_PLACEHOLDER}
           placeholderTextColor={travelerColors.iconMuted}
           autoCapitalize="none"
@@ -85,7 +102,22 @@ export function AddTravelerSheet({
         />
         {state.kind === 'looking' ? (
           <ActivityIndicator size="small" color={travelerColors.iconMuted} />
-        ) : null}
+        ) : (
+          <Pressable
+            onPress={search}
+            disabled={!searchable}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !searchable }}
+            accessibilityLabel={SEARCH_ACTION_LABEL}
+          >
+            <Icon
+              name="search"
+              size={16}
+              color={searchable ? travelerColors.accent : travelerColors.iconMuted}
+            />
+          </Pressable>
+        )}
       </View>
 
       {foundCardVisible(state) && 'handle' in state ? (

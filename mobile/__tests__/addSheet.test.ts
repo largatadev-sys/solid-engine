@@ -1,8 +1,10 @@
+import { HANDLE_MIN_LENGTH, HANDLE_SEARCH_MIN_LENGTH } from '../src/identity/handleRules';
 import {
   addSheetState,
   foundCardVisible,
   linkRowVisible,
   noOneMatchesLabel,
+  isSearchable,
   normalizeHandleQuery,
   pivotVisible,
   type LookupInput,
@@ -108,5 +110,30 @@ describe('what the sheet shows', () => {
 
   it('quotes the handle back with its @ in the empty state', () => {
     expect(noOneMatchesLabel('renz')).toBe('No one matches "@renz"');
+  });
+});
+
+describe('isSearchable — the gate on an explicitly triggered lookup', () => {
+  it('refuses a query no handle could ever be', () => {
+    expect(isSearchable('')).toBe(false);
+    expect(isSearchable('p')).toBe(false);
+    expect(isSearchable('@')).toBe(false);
+  });
+
+  it('allows TWO characters, because grandfathered two-character handles exist and are '
+    + 'no longer mintable — gating at the current mint minimum would make those travelers '
+    + 'permanently unfindable by handle', () => {
+    expect(isSearchable('ed')).toBe(true);
+    expect(HANDLE_SEARCH_MIN_LENGTH).toBeLessThan(HANDLE_MIN_LENGTH);
+  });
+
+  it('allows ordinary handles', () => {
+    expect(isSearchable('poo')).toBe(true);
+    expect(isSearchable('pool_t3')).toBe(true);
+  });
+
+  it('judges the normalized handle, not the raw text — @ and spaces are not length', () => {
+    expect(isSearchable('@e')).toBe(false);
+    expect(isSearchable('  @ed  ')).toBe(true);
   });
 });

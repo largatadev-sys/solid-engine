@@ -1,3 +1,5 @@
+import { HANDLE_SEARCH_MIN_LENGTH } from '../identity/handleRules';
+
 export type AddSheetState =
   | { readonly kind: 'idle' }
   | { readonly kind: 'looking' }
@@ -8,6 +10,7 @@ export type AddSheetState =
 
 
 export const SEARCH_PLACEHOLDER = 'Search by @handle';
+export const SEARCH_ACTION_LABEL = 'Search for this handle';
 export const INVITE_LABEL = 'Invite';
 export const INVITED_GHOST_LABEL = 'Invited';
 export const ON_THIS_TRIP_LABEL = 'On this trip';
@@ -19,6 +22,11 @@ export const NOT_ON_LARGATA = 'They might not be on Largata yet.';
 
 export function normalizeHandleQuery(raw: string): string {
   return raw.trim().replace(/^@+/, '').toLowerCase();
+}
+
+
+export function isSearchable(raw: string): boolean {
+  return normalizeHandleQuery(raw).length >= HANDLE_SEARCH_MIN_LENGTH;
 }
 
 

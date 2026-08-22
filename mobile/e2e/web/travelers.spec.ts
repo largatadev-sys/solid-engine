@@ -13,6 +13,7 @@ import {
   INVITE_LABEL,
   INVITED_GHOST_LABEL,
   ON_THIS_TRIP_LABEL,
+  SEARCH_ACTION_LABEL,
   SEARCH_PLACEHOLDER,
   SHARE_LINK_LABEL,
   SHARE_LINK_PIVOT_LABEL,
@@ -49,6 +50,7 @@ async function openAddSheet(page: Page): Promise<void> {
 
 async function search(page: Page, handle: string): Promise<void> {
   await labelled(page, SEARCH_PLACEHOLDER).fill(handle);
+  await labelled(page, SEARCH_ACTION_LABEL).click();
 }
 
 test.beforeAll(async () => {
@@ -112,6 +114,38 @@ test.describe('the roster the owner sees', () => {
 
     await expect(page.getByText(INVITED_GHOST_LABEL, { exact: true }).last()).toBeVisible();
     await expect(labelled(page, `${INVITE_LABEL} @${memberHandle}`)).toHaveCount(0);
+  });
+
+  test('typing alone asks the server nothing — the lookup waits to be triggered', async ({
+    page,
+    signIn,
+    signal,
+  }) => {
+    await signIn(OWNER);
+    await page.goto(travelersTab(trip.id));
+    await openAddSheet(page);
+
+    signal.apiRequests.length = 0;
+    await labelled(page, SEARCH_PLACEHOLDER).type(memberHandle, { delay: 60 });
+    await page.waitForTimeout(1_200);
+
+    expect(signal.apiRequests.filter((c) => c.url.includes('/v1/handles/'))).toHaveLength(0);
+  });
+
+  test('the return key searches too, so a keyboard never needs the button', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(OWNER);
+    await page.goto(travelersTab(trip.id));
+    await openAddSheet(page);
+
+    await labelled(page, SEARCH_PLACEHOLDER).fill(`@${memberHandle}`);
+    await labelled(page, SEARCH_PLACEHOLDER).press('Enter');
+
+    await expect(page.getByText(`@${memberHandle}`, { exact: true }).last()).toBeVisible({
+      timeout: 20_000,
+    });
   });
 
   test('a handle that matches nobody pivots to the link instead of stalling', async ({
