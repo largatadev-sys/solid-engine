@@ -1,0 +1,91 @@
+# S4.29 — Per-trip invite meta card (OG preview), with URL versioning
+
+**Status:** ready-for-agent
+**Grilled:** 2026-08-23 (grill-with-docs, two rounds + a fact-finding sweep + a Java2D fidelity prototype) — founder rulings recorded per decision below.
+**Design baseline:** the founder's design bundle **"Invite Meta Card"** (frame 1 card spec, frame 2 no-cover fallback, frame 3 long-title clamp, frame 4 platform mocks, plus the contract block — high-fidelity: colors, type, spacing and copy are final). Archived copy: `mock/` beside this spec. Two deviations from the bundle are ruled on the record and normative here: the **"Invited by @{handle}" line is dropped** (ADR-032 — one eternal token per trip cannot say who shared it; decided at S4.28's parked block, not re-litigated), and the bundle's "system sans" body roles render in **bundled Noto Sans** (a server has no system font — platform-forced deviation, stated per the fidelity rule).
+**ADR:** ADR-033 (crawler-facing card serving: render live at scrape time; version the handed-out URL, never the link).
+**Candidate-capability note:** per-trip invite preview card — a capability (custom share presentation), footprint-growing, not governance → register #14's accumulating map.
+**Prototype:** `prototype/CardProto.java` — the throwaway Java2D renderer that produced the three fidelity frames reviewed at the grilling; it seeds the real renderer rather than being re-derived.
+
+## Problem Statement
+
+A shared invite link looks anonymous. Every `/join/<token>` URL pasted into Messenger, WhatsApp or Facebook unfurls with the same generic brand card shipped at S4.28 — the recipient sees "Largata — plan the trip together" and nothing about *the trip they were just invited to*. The founder saw the generic card unfurl on the first real share and asked for the per-trip card outright the next day. The design bundle already specifies it: the trip's cover, title, destination and dates on a 1200×630 card, with a fallback when there is no cover and a graceful card for dead links. And because chat platforms cache previews by URL, the card must not fossilize: a trip whose title, dates or cover change after a share should unfurl fresh on the *next* share — without ever breaking the links already sitting in chat threads, which ADR-032 made eternal on purpose.
+
+## Solution
+
+When a chat platform's crawler fetches `/join/<token>`, it receives an HTML head whose Open Graph tags describe **that trip**, and an `og:image` pointing at a **1200×630 PNG rendered live from the trip's current data** — cover photo (or the destination-initials fallback panel), title with the design's step-down and clamp, and the destination · dates meta line. Humans are untouched: the same URL keeps serving the SPA. Dead links (published or archived trips) unfurl a branded "no longer active" card so old threads never leak or mislead; unknown tokens get nothing. The copy-link action hands out the URL with a version suffix (`?v=N`) that bumps whenever a card input changes, so platforms — which cache by full URL — scrape fresh cards for new shares while every previously shared link keeps resolving forever. The card renders at scrape time from live data; nothing is pre-generated and nothing on the server ever reads `v`.
+
+## User Stories
+
+1. As a trip member sharing the invite link, I want the chat preview to show my trip's cover, title, destination and dates, so that the invite is recognizably ours and not an anonymous brand card.
+2. As a link recipient, I want the preview to tell me what, where and when before I tap, so that I can tell at a glance whether this invite is for me.
+3. As a trip member on a trip with no cover photo yet, I want the preview to show a branded panel with the destination's initials, so that the card still looks deliberate rather than broken — and never shows a stock photo.
+4. As a trip member with a long trip title, I want the card's title to step down in size and clamp at three lines with an ellipsis, so that the card never overflows or truncates mid-layout.
+5. As a trip member on a trip without dates, I want the card and description to show the destination alone, so that missing dates degrade the line rather than the card.
+6. As a link recipient in an Instagram DM, where only a tiny center crop of the image survives, I want the link title itself to read "You're invited: {trip title}", so that the invite survives the platforms that mangle the image.
+7. As a link recipient, I want tapping the preview to open the same `/join` postcard landing that exists today, so that the card changes nothing about the join flow itself.
+8. As a trip member, I want the card to show no traveler names, avatars or member count, so that the preview respects the same privacy tier as the anonymous teaser.
+9. As a trip member, I want the card to name no sharer, so that a link forwarded by anyone renders identically and never mis-attributes the invite.
+10. As a trip member who edits the trip's title, dates, destination or cover after sharing, I want my next share to unfurl with the updated card, so that the preview keeps up with the plan.
+11. As a recipient of a link shared *before* such an edit, I want that link to keep unfurling exactly as it was shared, so that old threads stay stable — a preview shows the trip as it was when it was shared (founder ruling: past shares are deliberately left alone).
+12. As a recipient of an old-version URL forwarded to a platform that never cached it, I want the fresh scrape to render the trip as it is today, so that no stored snapshot ever masquerades as current.
+13. As a link recipient holding a link to a published or archived trip, I want the preview to say the invite is no longer active, so that a stale preview in an old thread neither leaks the trip nor teases a closed door.
+14. As the operator, I want an unknown token to produce no preview at all, so that token-guessing probes get nothing to enumerate against.
+15. As a human whose browser was misclassified as a crawler, I want the response to be a branded page with a working "Open this invite" link, so that misclassification is an inconvenience rather than a dead end.
+16. As the operator, I want a renderer failure to fall back to the committed generic brand card, so that a crawler never sees a broken image or an error page.
+17. As a trip member, I want the versioned URL to come out of the copy-link and share actions automatically, so that versioning costs me nothing and requires no app update.
+18. As the operator, I want the image URL itself versioned alongside the page URL, so that platforms which cache the image by its URL refetch it when the card changes.
+19. As the founder, I want the rendered card to match the design bundle's frames, so that the first thing a stranger sees of Largata looks finished.
+20. As the operator, I want the whole pipeline in-process with no external rendering service or quota, so that unfurls can never fail on a third party or spend a shared budget.
+
+## Implementation Decisions
+
+**Serving path**
+
+1. **Crawler detection lives at Caddy, on the web origin.** A curated user-agent matcher (facebookexternalhit, Facebot, WhatsApp, Twitterbot, TelegramBot, LinkedInBot, Slackbot, Discordbot — extendable one line at a time) on `/join/*` rewrites to the backend's HTML preview route via reverse proxy; every other user agent keeps the static SPA exactly as today. The single Caddyfile is both the preview container's and the deployed rung's config, so one edit covers every environment and CI's compose run exercises it.
+2. **The HTML preview route sits under the join surface's existing anonymous matcher** — the backend's first `text/html` endpoint, deliberately confined to the join surface. No security-chain change (the stop rule stays uncrossed): the `/v1/join/**` permitAll posture from ADR-032 already covers it. The response is the meta head plus a minimal branded body with a plain "Open this invite" link — **no auto-redirect**, which would loop (a misclassified browser re-sends the same UA and matches again). `Cache-Control: no-cache`.
+3. **The card image is its own route beside the preview, on the API origin, path-served to every user agent** — `og:image` is an absolute API-origin URL, so image fetchers never depend on the crawler UA match (some platforms fetch images with a plain UA; UA-routing the image is a silent-failure trap). `Cache-Control: public, max-age=3600` — safe because the URL carries the version. The existing token-scoped cover route's `private` cache header is corrected to `public` in passing (it is an anonymous route).
+4. **Dead vs unknown are distinct answers**: a DEAD link (trip published or archived — the teaser's existing computation) returns 200 with the "no longer active" card; an unknown token returns 404 with no card. A dead link once lived in real threads and deserves grace; an unknown token was never shared and gets nothing (ADR-032's entropy is load-bearing — enumeration is rewarded with silence).
+
+**Renderer**
+
+5. **The renderer lives in the join module** and composes over the existing service interfaces: the trip teaser for text fields and the media service's display-variant bytes (2048px long edge — ample for the 552×630 panel) for the cover. The join surface already consumes the media module's public web component; no new cross-module seam.
+6. **Java2D, 1200×630 PNG, rendered live on every crawler request — no server-side cache and no pre-generation.** This deliberately amends the backlog line's "cached per trip": a cache reintroduces exactly the staleness class the "render from live data, never read `v`" rule exists to delete, and crawler traffic is a handful of fetches per share. The committed generic brand card from S4.28 is the *failure* fallback only — a renderer exception serves it rather than a 500. PNG over JPEG: text crispness is the card's whole job at thumbnail size.
+7. **Layout is the bundle's frame 1, minus the dropped inviter line**: left 552×630 cover panel (center-crop, seam gradient into the warm well), right text column vertically centered — wordmark, kicker, title, meta line, divider — 10px brand bar across the bottom. Frame 2's fallback panel (tinted well, two decorative circles, destination initials at 170px/35% opacity) renders when the trip has no cover. Frame 3's rule for long titles: over ~30 characters the title steps 58→46px and clamps at three lines with an ellipsis. Exact colors, sizes, offsets and spacing are in the archived bundle — the mock's own markup answers layout questions, per the standing rule.
+8. **Fonts are bundled resources** (OFL): Outfit 700/800 for wordmark, title and initials; Noto Sans 400/700 for kicker, meta line and body. Glyph fallback is whole-string: if Outfit cannot display the full title, that string renders in Noto Sans instead; a string neither face covers shows tofu at alpha — per-glyph fallback is explicitly not built.
+9. **The meta line and `og:description` are a Java twin of the client's existing trip-meta rule** (`tripMetaLine`/`compactDateRange`): destination and compact date range joined with " · ", each part omitted when absent; both dates → "Mar 12–18" / "Mar 12–Apr 2"; start only → "Mar 12"; no start → destination alone (never empty — destination is non-null end to end). The twin inherits the rule's quirks knowingly: no year is ever rendered, and an end date without a start date renders nothing.
+10. **The initials are a Java twin of the client's existing initials rule** (`initialsFor` semantics: split on whitespace and separator punctuation, first code point of the first two qualifying words, letters/digits only, uppercase, max two) applied to the destination. An empty result draws the panel with circles only — never `'?'`, never a stock image.
+11. **Tag copy**: live card — `og:title` "You're invited: {trip title}", `og:description` = the meta line, `og:site_name` "Largata", `twitter:card` `summary_large_image`, image dimensions declared. Dead card — `og:title` "Largata", `og:description` "This invite link is no longer active." The "You're invited:" prefix is load-bearing (story 6).
+
+**Versioning**
+
+12. **An additive `share_card_version` counter on the itinerary** (the `plan_version` pattern: DB-owned, read-only to the ORM), bumped when any card input changes: **title, destination, dates, or cover** — destination is a recorded correction to the parked design, which listed only three. `plan_version` is explicitly not reused: its own migration scopes it to plan-document writes and excludes exactly these fields.
+13. **The share URL always carries the version** — `?v=N` from `v=1` — appended server-side where the share URL is already composed; the image URL inside the preview carries the same `v`. **The server never reads `v`**: it is a platform-cache key only, which is what guarantees any fresh scrape of any version renders current data. `/join/<token>` bare resolves forever (ADR-032 untouched); the client's token parsing already ignores query strings, with a test pinning it.
+14. **Past shares are deliberately not refreshed** (founder scope cut, recorded at the backlog promotion): no Graph re-scrape calls, no app tokens, no bookkeeping of shipped versions. A previously shared link keeps the card it was shared with — which is what the recipient was actually sent.
+15. **Zero mobile code changes.** The share URL is composed server-side and copied opaquely by the client.
+
+## Testing Decisions
+
+Tests assert external behavior at the highest existing seams; no new seams are introduced for testing.
+
+- **The two HTTP routes are the primary seam** — integration tests in the join module's existing IT mould (singleton-Postgres base, real Spring context): the preview route answers `text/html` with exactly the specified tags for a live trip; the image route's bytes decode to exactly 1200×630; the three variants (cover, no-cover, dead) produce distinct images and the dead/unknown split is 200-card vs 404; cache headers are as specified; the version query is accepted and ignored. Prior art: the join teaser and cover-route ITs from S4.28.
+- **The pure rules are unit-tested as pure functions** (the extracted-math discipline): the meta-line twin and initials twin each carry the client rule's test vectors, duplicated verbatim on both sides so a drift fails a test rather than a glance; the wrap/step-down/clamp math is exercised at the boundaries (exactly 30 characters, a word wider than the column, a three-line overflow).
+- **The version counter is integration-tested per trigger**: each of the four writes bumps it exactly once, unrelated writes (plan edits, lifecycle, chat) do not, and the share-link endpoint returns the suffixed URL.
+- **No golden-image byte assertions** — font rasterization differs across JVMs and platforms (CI is Linux, workstations are Windows), so byte-exact tests would be flake by construction. Fidelity is a human screenshot pass against the archived frames, per the mock-fidelity standing rule.
+- **The Caddy matcher is verified at the layer that ships**: CI's clean-checkout compose run builds the container with the new Caddyfile; a curl-with-crawler-UA probe against the local preview container asserts the rewrite (crawler UA → tags for that trip; browser UA → the SPA shell). The closing AC is a **real unfurl on deployed dev** — Facebook's Sharing Debugger plus a live Messenger or WhatsApp paste — the only rung that proves UA matching, absolute URLs and platform caching together.
+
+## Out of Scope
+
+- **Refreshing already-posted links** (Graph re-scrape, app tokens, per-platform purge) — founder scope cut, recorded in the epic map.
+- **Any sharer attribution** ("Invited by @handle", per-sharer links) — settled at S4.28's parked block; reopening it is an ADR-032 amendment, not a card feature.
+- **OG previews for published trips, postcards, or any surface other than `/join`** — the general outbound-unfurl architecture question stays with the web read-only surface backlog line (S4.8's must-answers); this story builds the join-surface mechanism that work can later generalize.
+- **Server-side render caching or pre-generation** — deliberately cut (decision 6); the epic-map line's "cached per trip" wording is amended by this spec.
+- **Per-glyph font fallback / full CJK-emoji coverage** — whole-string fallback only (decision 8).
+- **Rate limiting on the anonymous routes** — the parked epic-map line stands; nothing here depends on it.
+
+## Further Notes
+
+- The whole pipeline is in-process: no external rendering service, no Node runtime beside the Java backend (the bundle's README suggests Satori/Puppeteer-class tools — they do not fit this stack and the prototype proved Java2D covers the design), no quota shared with anything.
+- The Java2D prototype beside this spec rendered the bundle's frames 1–3 from the real fonts and real photo bytes at the grilling; its one observed platform gap — Java's line-breaking wraps slightly earlier than a browser's — was reviewed and accepted (wrap positions are tunable but never glyph-identical to Chrome).
+- The generic card's injection step and committed PNG (S4.28) are untouched: they remain the sitewide default for every non-`/join` URL and the renderer-failure fallback here.
+- Verification against real platforms spends nothing scarce, but note Facebook's debugger requires a signed-in FB account; the founder runs that check.
