@@ -707,7 +707,7 @@ test.describe('the controls with no backend behind them yet', () => {
     await page.locator('[aria-label$=", traveler profile"]').locator('visible=true').first().click();
     await page.waitForTimeout(600);
 
-    expect(signal.dialogs.length).toBeGreaterThanOrEqual(6);
+    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThanOrEqual(6);
   });
 
   test('long-pressing a photo opens the three-action sheet the mock draws', async ({ page }) => {

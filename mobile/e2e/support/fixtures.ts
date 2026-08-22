@@ -78,6 +78,14 @@ export const test = base.extend<LargataFixtures>({
 export { expect };
 
 
+const DIALOG_POLL_MS = 60;
+
+
+export async function dialogsSettled(page: Page): Promise<void> {
+  await page.waitForTimeout(DIALOG_POLL_MS * 3).catch(() => undefined);
+}
+
+
 function watchConfirmDialogs(page: Page, signal: Signal): { stop: () => void } {
   let live = true;
   const seen = new Set<string>();
@@ -98,7 +106,7 @@ function watchConfirmDialogs(page: Page, signal: Signal): { stop: () => void } {
       } catch {
         // the page navigated or closed mid-poll; the next tick re-reads it
       }
-      await page.waitForTimeout(120).catch(() => undefined);
+      await page.waitForTimeout(DIALOG_POLL_MS).catch(() => undefined);
     }
   };
 
