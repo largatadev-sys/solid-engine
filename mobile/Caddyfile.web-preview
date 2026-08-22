@@ -23,8 +23,13 @@
 	#
 	# LARGATA_API_UPSTREAM must be host:port reachable from THIS container — on the local rung that
 	# is the compose service name, not localhost, which inside a container is the container itself.
-	# With no upstream configured the matcher never fires and the SPA is served as usual, so a
-	# misconfigured preview degrades to today's behaviour rather than to an error page.
+	#
+	# BOTH branches are `handle` blocks, and that is load-bearing rather than stylistic. Caddy orders
+	# directives by ITS OWN precedence table, not by their order in this file, and `try_files` is a
+	# `rewrite` — which runs BEFORE `handle`. Left bare, it rewrote every crawler request to
+	# /index.html before the matcher below was ever consulted, so the crawler silently got the SPA's
+	# generic card: no error, no log line, a preview container that looked perfectly healthy. Wrapping
+	# the SPA branch in its own `handle` makes the two mutually exclusive and settles the order.
 	@crawler {
 		path_regexp join ^/join/([^/?]+)/?$
 		header_regexp User-Agent (?i)(facebookexternalhit|facebot|whatsapp|twitterbot|telegrambot|linkedinbot|slackbot|discordbot)
@@ -38,8 +43,10 @@
 	# refresh or a shared link, and no such file exists on disk. Without this, that request 404s and
 	# the preview looks broken in exactly the situation a founder is most likely to hit — pasting a
 	# link to something they want to show someone.
-	try_files {path} {path}/ /index.html
-	file_server
+	handle {
+		try_files {path} {path}/ /index.html
+		file_server
+	}
 
 	# The bundle's filenames are content-hashed by Metro, so they may be cached hard; index.html must
 	# not be, or a founder keeps loading yesterday's app against today's API and reports ghosts.

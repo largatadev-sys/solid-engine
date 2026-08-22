@@ -4,16 +4,16 @@
 
 **Blocked by:** 03 — the preview route being proxied to.
 
-**Status:** in-progress — the Caddyfile is written and its routing proven; the container-level ACs need a rebuilt preview image and stay open for the story gate.
+**Status:** done — verified end to end against the rebuilt preview container and the rebuilt backend on the local stack (2026-08-23).
 
-**Proven so far (2026-08-23), against a throwaway Caddy on the compose network rather than the preview image:** `caddy validate` accepts the config, and with a crawler UA the **backend's own log recorded `GET /v1/join/<token>/preview`** — the token captured and the path rewritten. That log line is the discriminating evidence, because all three UA/path combinations answer **404** against a backend that predates the route: the two 404s differ only by `content_type` (backend JSON vs Caddy's bare 404), which is exactly the indistinguishable-outcomes trap this repo keeps paying for. A crawler UA on `/v1/health` through the proxy was **not** reachable, so the matcher is confirmed path-scoped.
+**The bug this ticket nearly shipped, found only by running it.** `try_files` is a `rewrite`, and **Caddy orders directives by its own precedence table rather than by their order in the file** — so `try_files` ran BEFORE the `handle @crawler` block and rewrote every crawler request to `/index.html` before the matcher was ever consulted. The crawler therefore got the SPA's generic card: no error, no log line, `caddy validate` perfectly happy, and a preview container that looked healthy. The fix is to wrap the SPA branch in its own `handle`, so the two branches are mutually exclusive and the order is settled explicitly rather than inherited from a precedence table.
 
-**Still open, and each needs the rebuilt image** (`LARGATA_API_UPSTREAM` must be set and the container joined to the compose network — recorded in CLAUDE.md's recipe):
+**Why an earlier check wrongly said this worked.** A throwaway Caddy on the compose network *did* show the backend logging `GET /v1/join/<token>/preview` — but that container served an **empty `/srv`**, so `try_files` found no `index.html`, fell through, and reached the matcher. The real image has a real `index.html`, which is precisely what activates the bug. **A harness differing from the artifact in one detail inverted the result**; only the real preview image was trustworthy. Same family as this repo's verify-at-the-layer-that-ships rule.
 
-- [x] The Caddyfile matches the curated UA list on `/join/*` and rewrites to the preview route — proven by the backend log above
-- [x] A crawler UA on a non-`/join` path is not proxied (matcher is path-scoped)
-- [ ] `curl -A "facebookexternalhit/1.1" http://localhost:8081/join/<token>` against the **rebuilt preview container** returns that trip's tags
-- [ ] The same URL with a browser UA returns the SPA shell (`<div id="root">`-style export, no per-trip tags)
-- [ ] The generic sitewide og tags injected at export time are untouched for non-crawler and non-join traffic
-- [ ] CI's clean-checkout compose build passes with the new Caddyfile
-- [ ] Demoable: the two curl commands above, side by side
+- [x] `curl -A "facebookexternalhit/1.1" http://localhost:8081/join/<token>` against the rebuilt preview container returns that trip's tags
+- [x] The same URL with a browser UA returns the SPA shell (`<div id="root">`, generic sitewide tags)
+- [x] A crawler UA on a non-`/join` path still gets the SPA (matcher is path-scoped)
+- [x] All eight listed crawler UAs match, and the SPA's own routes (`/`, `/trips`) still answer 200
+- [x] The generic sitewide og tags injected at export time are untouched for non-crawler and non-join traffic
+- [ ] CI's clean-checkout compose build passes with the new Caddyfile *(CI builds the compose stack, not the preview image — carried to the story gate)*
+- [x] Demoable: the two curl commands above, side by side
