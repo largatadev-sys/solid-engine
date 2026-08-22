@@ -35,6 +35,12 @@ spring:
           issuer-uri: ${FIREBASE_ISSUER_URI:https://securetoken.google.com/largata-dev}
 
 largata:
+  web:
+    # Where a shared invite link points (S4.28, ADR-032). The share URL is composed server-side —
+    # `<base>/join/<token>` — so links open the web app today and the same URLs can be claimed as
+    # Android App Links later without reprinting anything already forwarded through a chat.
+    # Per-environment: the local default is the preview container's pinned 8081.
+    base-url: ${LARGATA_WEB_BASE_URL:http://localhost:8081}
   storage:
     # S3-class object storage (ADR-021). Endpoint-driven so the same code speaks to Garage locally
     # and Railway Buckets or R2 on a deployed rung. Unset endpoint = no bucket = UnconfiguredObjectStore,

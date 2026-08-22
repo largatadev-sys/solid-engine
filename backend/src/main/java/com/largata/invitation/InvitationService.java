@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +53,7 @@ public class InvitationService {
     private final PublicationState publication;
     private final InvitationMailer mailer;
     private final Analytics analytics;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     InvitationService(
@@ -64,9 +66,11 @@ public class InvitationService {
             PublicationState publication,
             InvitationMailer mailer,
             Analytics analytics,
+            ApplicationEventPublisher events,
             Clock clock) {
         this.fence = fence;
         this.publication = publication;
+        this.events = events;
         this.invitations = invitations;
         this.workspaces = workspaces;
         this.itineraries = itineraries;
@@ -289,6 +293,7 @@ public class InvitationService {
         invitation.accept(travelerId, now);
         invitations.saveAndFlush(invitation);
         workspaces.admitMember(itineraryId, travelerId, now);
+        events.publishEvent(new MembershipArrived(workspaceId, travelerId));
         log.info("Invitation accepted: id={} itineraryId={} travelerId={}", invitationId, itineraryId, travelerId);
         afterCommit(
                 () ->
@@ -312,6 +317,23 @@ public class InvitationService {
                 () ->
                         analytics.emit(
                                 AnalyticsEvent.named("invite_declined").with("invitationId", invitationId).build()));
+    }
+
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void supersedePendingInvitationsFor(UUID workspaceId, UUID inviteeTravelerId) {
+        invitations
+                .findByWorkspaceIdAndInviteeTravelerIdAndStatus(
+                        workspaceId, inviteeTravelerId, InvitationStatus.PENDING)
+                .ifPresent(
+                        open -> {
+                            open.voidBySystem(Instant.now(clock));
+                            invitations.saveAndFlush(open);
+                            log.info(
+                                    "Invitation superseded by an approved join request: id={} invitee={}",
+                                    open.id(),
+                                    inviteeTravelerId);
+                        });
     }
 
 

@@ -23,6 +23,12 @@ class AudienceFenceCoverageTest {
             Set.of("preview", "listMine");
 
 
+    private static final Set<String> MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE =
+            Set.of(
+                    "TripJoinController.java#link",
+                    "TripJoinController.java#queue");
+
+
     private static final Set<String> KNOWN_WORKSPACE_SCOPED_GETS =
             Set.of(
                     "ItineraryController.java#view",
@@ -62,7 +68,8 @@ class AudienceFenceCoverageTest {
 
         for (ScannedHandler handler : scannedHandlers()) {
             if (handler.body().contains("requireInAudience")
-                    || OWNER_ONLY_OR_DELIBERATELY_UNFENCED.contains(handler.name())) {
+                    || OWNER_ONLY_OR_DELIBERATELY_UNFENCED.contains(handler.name())
+                    || MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE.contains(handler.qualifiedName())) {
                 continue;
             }
             unfenced.add(handler.qualifiedName());
@@ -137,6 +144,24 @@ class AudienceFenceCoverageTest {
                     .as("a stale exception silently widens the fence's blind spot: " + exempt)
                     .contains(" " + exempt + "(");
         }
+    }
+
+
+    @Test
+    void theLifecycleFencedExemptionsAreQualifiedByControllerAndStillExist() throws IOException {
+        List<String> scanned = scannedHandlers().stream().map(ScannedHandler::qualifiedName).toList();
+
+        assertThat(scanned)
+                .as(
+                        "S4.28's join reads are exempt from the AUDIENCE fence because they are not "
+                                + "audience-shaped: the link and the owner's request queue are membership "
+                                + "surfaces whose archived/published posture is enforced by WriteFence inside "
+                                + "JoinService, not by ADR-017's owner-only-sight rule. The exemption is "
+                                + "qualified by controller so it cannot silently cover a same-named handler "
+                                + "somewhere else — the epic map's bare-name blind-spot line. If one of these "
+                                + "handlers is renamed or deleted, this fails rather than leaving a dead "
+                                + "exemption widening the blind spot")
+                .containsAll(MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE);
     }
 
 

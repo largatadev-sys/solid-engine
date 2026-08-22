@@ -242,7 +242,7 @@ public class MembershipService {
 
     @Transactional
     public void acceptOwnershipOffer(Membership caller) {
-        fence.requireMembershipMutable(caller);
+        fence.requireMembershipUnfrozen(caller.itineraryId());
         OwnershipOffer offer = requireOfferFor(caller);
         UUID itineraryId = caller.itineraryId();
         UUID newOwnerId = caller.travelerId();
@@ -284,7 +284,7 @@ public class MembershipService {
 
     @Transactional
     public void declineOwnershipOffer(Membership caller) {
-        fence.requireMembershipMutable(caller);
+        fence.requireMembershipUnfrozen(caller.itineraryId());
         OwnershipOffer offer = requireOfferFor(caller);
         offer.decline(Instant.now());
         offers.saveAndFlush(offer);
