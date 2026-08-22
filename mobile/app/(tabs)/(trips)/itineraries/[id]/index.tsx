@@ -46,6 +46,7 @@ import {
   workspaceRadii,
   workspaceTypography,
 } from '../../../../../src/theme/workspaceTokens';
+import { docksItsOwnBar, laddersOn } from '../../../../../src/itineraries/workspaceChrome';
 import { memberControls } from '../../../../../src/members/memberControls';
 import { useMembers } from '../../../../../src/query/invitationQueries';
 import { useItinerary, useTripLifecycle, useUnpublishTrip } from '../../../../../src/query/itineraryQueries';
@@ -151,8 +152,8 @@ export default function TripWorkspaceScreen() {
     <View style={styles.screen}>
       <ScrollView
         style={styles.scroller}
-        contentContainerStyle={active === 'chat' ? styles.dockedContainer : styles.container}
-        scrollEnabled={active !== 'chat'}
+        contentContainerStyle={docksItsOwnBar(active) ? styles.dockedContainer : styles.container}
+        scrollEnabled={!docksItsOwnBar(active)}
       >
         <WorkspaceHeader
           badge={badge}
@@ -262,7 +263,7 @@ export default function TripWorkspaceScreen() {
 
       </ScrollView>
 
-      {ladder !== null ? (
+      {ladder !== null && laddersOn(active) ? (
         <View style={styles.rail}>
           {ladder.blockedBy !== undefined ? (
             <Text style={styles.blockedNote}>{`Being edited by ${ladder.blockedBy}`}</Text>

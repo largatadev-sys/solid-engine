@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { confirmWith } from '../components/confirmDestructive';
 import {
@@ -211,7 +211,7 @@ export function WorkspaceTravelersTab({
 
   return (
     <View style={styles.tab}>
-      <View style={styles.list}>
+      <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {offeredToMe !== undefined && open ? (
           <RowEntrance delayMs={nextDelay()} replayKey={visitKey}>
             <OwnershipOfferCard
@@ -308,7 +308,7 @@ export function WorkspaceTravelersTab({
             ))}
           </View>
         ))}
-      </View>
+      </ScrollView>
 
       {addBarVisible(posture) ? (
         <RowEntrance
@@ -398,6 +398,9 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
+  },
+  listContent: {
+    paddingBottom: 8,
   },
   centered: {
     padding: 24,

@@ -165,3 +165,13 @@ The lookup now waits to be asked. The search field's magnifier becomes the trigg
 Frame 2b promotes the invite link into the accent well on a no-results search **and renames it** — the canvas draws "Send them the invite link" there against "Share invite link" in the default footer. Carried into the copy-only wording (the note above), that became "Copy the invite link for them" versus "Copy invite link", so the control renamed itself under the traveler depending on whether their last search happened to match.
 
 It is now **"Copy invite link" in every state** — idle, found, and no-match. `SHARE_LINK_PIVOT_LABEL` is deleted rather than left unused, so it cannot drift back. The promotion into the accent well **stays**: frame 2b's pivot is about drawing the eye to the link when a handle dead-ends, and that still works with a stable name — it is the renaming that was the defect, not the emphasis.
+
+### 2026-08-22 — Add traveler pins to the bottom, and the lifecycle CTA leaves every tab but Day-by-Day *(founder decision)*
+
+C5 calls Add traveler "the pinned bottom bar's single accent CTA" and frame 1 draws it docked above the home indicator. It shipped **inside the scrolling content** instead, so on a long roster it scrolled away and on a short one it floated mid-screen. Worse, the workspace's lifecycle rail — **Start Trip / Complete Trip / Publish Itinerary** — rendered on *every* tab, so the Travelers tab docked two stacked bars and Add traveler was not even the lower of them.
+
+The lifecycle CTA now renders **only on Day-by-Day**, where the plan the act is about lives; Travelers, Polls, Photo Dump and Chat carry none. Travelers joins Chat in the docked treatment that already existed for the composer: the roster scrolls inside its own bounded height and the bar is pinned beneath it.
+
+`workspaceChrome.ts` holds both rules as named predicates rather than tab-name comparisons scattered through the screen, and its test walks **every** tab in `WORKSPACE_TABS` — so a tab added later cannot quietly inherit the rail, and no tab can ever both dock a bar and carry one, which is the defect this fixes.
+
+*(S4.10's chat guard asserted the docking by pinning the screen's literal source text, `scrollEnabled={active !== 'chat'}`. It now asserts the same property through the predicate. The guard was right; only its spelling was stale.)*
