@@ -398,6 +398,18 @@ A traveler who opened an invite link, signed in, and still owed onboarding was *
 
 ---
 
+**2026-08-23**
+
+An invite link unfurled in a Facebook **group chat** and not in a **direct message** — same platform, same URL, different crawler. The Caddy matcher knew only `facebookexternalhit`, while Meta documents a family; `facebookcatalog`, `meta-externalagent` and `meta-externalfetcher` all fell through to the generic card, and Meta describes that last one as fetching *"individual links at a user's request"* — the shape of a link shared into a DM. Those three are matched now. `meta-externalads` and `meta-webindexer` were deliberately left out: they crawl for ad quality and AI search, unfurl nothing, and adding them would have been breadth without a reason.
+
+**The trap avoided is worth more than the fix.** The obvious repair is to match `facebook` loosely, and it would have been worse than the bug: Meta's in-app browser is a **human**, carrying `FBAN`/`FBAV`/`FB_IAB`, so a loose match would serve the crawler stub to everyone who taps a link inside the Facebook or Instagram app — the exact false positive the curated list exists to prevent. The e2e guard now runs in three directions (unfurlers get the card, non-unfurlers and in-app browsers do not) and is sabotage-checked both ways: narrowing the regex turns it red, and widening it turns it red too, each failure naming the offending agent.
+
+**The causal agent was never confirmed.** That evidence is in the access log, which was not reachable; the fix is a sweep of the user-share family rather than a targeted match, and the closing check is a real DM paste on deployed dev once this ships. Recorded rather than smoothed over, because "very likely" and "verified" are different words.
+
+*Why it wasn't a story —* a defect fix in S4.29, already merged to `dev` (`333c608`); no new surface, no API change, no schema change. The spec's decision 1, ticket 04's acceptance criterion and the epic-map backlog line were all amended in the same commit rather than left describing eight agents. **What the epic map's crawler-UA line got wrong, and now records:** it was written expecting the gap to be an unknown *platform*. It was a known platform with several *agents* — so the question to ask of that list is not only "which platforms are missing?" but "which of the ones we already match have more than one agent?". The line's other half, that **noticing** a miss is the real problem, remains untouched and open.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
