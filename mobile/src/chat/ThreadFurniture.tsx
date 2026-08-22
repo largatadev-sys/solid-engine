@@ -65,7 +65,7 @@ export function NewMessagesPill({ onPress }: { readonly onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel={chatCopy.newMessages}
       hitSlop={chatMetrics.hitSlop}
-      style={StyleSheet.flatten([styles.pill, { opacity: press.opacity }])}
+      style={StyleSheet.flatten([styles.pill, press.style])}
     >
       <Text style={styles.pillInk}>{chatCopy.newMessages}</Text>
     </AnimatedPressable>

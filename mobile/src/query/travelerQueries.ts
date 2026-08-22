@@ -7,6 +7,7 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
+import { HANDLE_MIN_LENGTH } from '../identity/handleRules';
 import { useAuth } from '../hooks/authContext';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { travelerRepository } from '../repositories/travelerRepository';
@@ -20,7 +21,7 @@ import type {
 } from '../types/api';
 
 
-export const HANDLE_MIN_LENGTH = 3;
+export { HANDLE_MIN_LENGTH };
 
 const HANDLE_FRESHNESS_MS = 30_000;
 

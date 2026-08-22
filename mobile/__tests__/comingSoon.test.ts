@@ -5,15 +5,19 @@ import {
   COMING_SOON_TAPPED,
   comingSoonMessage,
 } from '../src/components/comingSoonMessage';
+import { askForConfirmation } from '../src/components/ConfirmStation';
 import { confirmDestructive } from '../src/components/confirmDestructive';
 import { confirmDestructiveMessage } from '../src/components/confirmDestructiveMessage';
 
-
+jest.mock('../src/components/ConfirmStation', () => ({
+  askForConfirmation: jest.fn(() => true),
+}));
 
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
 beforeEach(() => {
   (Alert.alert as jest.Mock).mockClear();
+  (askForConfirmation as jest.Mock).mockClear();
 });
 
 describe('comingSoonMessage — the wording both forks share', () => {
@@ -37,7 +41,6 @@ describe('comingSoonMessage — the wording both forks share', () => {
         'comments',
         'diary',
         'follow',
-        'network',
         'notifications',
         'profile',
         'rating',
@@ -94,17 +97,19 @@ describe('confirmDestructive', () => {
     expect(confirmDestructiveMessage('Day 2').body).toMatch(/cannot be undone/);
   });
 
-  it('(native) asks before acting, and runs the action only from the Delete button', () => {
+  it('asks before acting, and runs the action only when the dialog confirms', () => {
     const onConfirm = jest.fn();
     confirmDestructive('Day 2', onConfirm);
 
-    expect(Alert.alert).toHaveBeenCalledTimes(1);
-    const [title, , buttons] = (Alert.alert as jest.Mock).mock.calls[0];
-    expect(title).toBe('Delete Day 2?');
+    expect(askForConfirmation).toHaveBeenCalledTimes(1);
+    const [wording, confirmed] = (askForConfirmation as jest.Mock).mock.calls[0] as [
+      { title: string },
+      () => void,
+    ];
+    expect(wording.title).toBe('Delete Day 2?');
     expect(onConfirm).not.toHaveBeenCalled();
 
-    const destructive = buttons.find((b: { style?: string }) => b.style === 'destructive');
-    destructive.onPress();
+    confirmed();
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 });

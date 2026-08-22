@@ -1,17 +1,12 @@
-import { Alert } from 'react-native';
+import { askForConfirmation } from './ConfirmStation';
 import {
   confirmDestructiveMessage,
   type ConfirmWith,
 } from './confirmDestructiveMessage';
 
 
-
-
 export const confirmWith: ConfirmWith = (wording, onConfirm) => {
-  Alert.alert(wording.title, wording.body, [
-    { text: 'Cancel', style: 'cancel' },
-    { text: wording.confirmLabel, style: 'destructive', onPress: onConfirm },
-  ]);
+  askForConfirmation(wording, onConfirm);
 };
 
 

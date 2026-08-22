@@ -342,7 +342,9 @@ class PublishedProjectionIT extends PostgresTestBase {
                 .jsonPath("$.creator.id")
                 .isEqualTo(travelerIdOf(owner).toString());
 
+        unpublish(owner, tripId);
         transferOwnership(owner, tripId, successor);
+        republish(successor, tripId);
 
         publicView(freshTraveler(), tripId)
                 .expectStatus()
@@ -603,6 +605,14 @@ class PublishedProjectionIT extends PostgresTestBase {
 
     private void publish(String token, String itineraryId) {
         travel(token, itineraryId);
+        act(token, itineraryId, "publish");
+    }
+
+    private void unpublish(String token, String itineraryId) {
+        act(token, itineraryId, "unpublish");
+    }
+
+    private void republish(String token, String itineraryId) {
         act(token, itineraryId, "publish");
     }
 

@@ -1,3 +1,4 @@
+import { docksItsOwnBar } from '../src/itineraries/workspaceChrome';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { WORKSPACE_TABS, workspaceTabFrom } from '../src/itineraries/WorkspaceTabRow';
@@ -58,8 +59,9 @@ describe('the Chat tab goes live — S4.10', () => {
   it('gives the thread a bounded height so the composer docks rather than scrolling away', () => {
     const screen = readFileSync(WORKSPACE_SCREEN, 'utf8');
 
-    expect(screen).toMatch(/scrollEnabled=\{active !== 'chat'\}/);
+    expect(screen).toMatch(/scrollEnabled=\{!docksItsOwnBar\(active\)\}/);
     expect(screen).toMatch(/dockedContainer:[\s\S]{0,80}height: '100%'/);
+    expect(docksItsOwnBar('chat')).toBe(true);
   });
 });
 

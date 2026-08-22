@@ -99,18 +99,23 @@ async function upload<T>(path: string, part: FormData): Promise<T> {
 
 async function fetchBlob(path: string): Promise<Blob | null> {
   const token = await currentToken();
-  if (token === null) return null;
+  if (token === null && !servesAnonymously(path)) return null;
 
   let response: Response;
   try {
     response = await fetch(`${baseUrl()}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token === null ? {} : { Authorization: `Bearer ${token}` },
     });
   } catch {
     throw ApiError.offline();
   }
 
   return response.ok ? await response.blob() : null;
+}
+
+
+function servesAnonymously(path: string): boolean {
+  return path.startsWith('/v1/join/');
 }
 
 export const apiClient = {

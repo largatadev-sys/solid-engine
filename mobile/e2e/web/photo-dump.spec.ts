@@ -1,4 +1,4 @@
-import { test, expect } from '../support/fixtures';
+import { test, expect, dialogsSettled } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, type PoolTag } from '../support/identities';
@@ -78,6 +78,7 @@ test.describe('the shared pool', () => {
     await labelled(page, 'Photo Dump').click();
 
     await expect(page.getByText(PHOTO_DUMP_EMPTY_TITLE)).toBeVisible();
+    await dialogsSettled(page);
     expect(signal.dialogs).toEqual([]);
   });
 

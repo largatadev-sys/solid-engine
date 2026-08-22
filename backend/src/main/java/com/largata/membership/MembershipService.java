@@ -72,7 +72,7 @@ public class MembershipService {
         boolean leaving = caller.travelerId().equals(targetTravelerId);
 
         if (!leaving) {
-            fence.requireWritable(caller);
+            fence.requireMembershipMutable(caller);
             if (!caller.isOwner()) {
                 throw NotTripOwnerException.toRemoveAMember();
             }
@@ -192,7 +192,7 @@ public class MembershipService {
     @Transactional
     public void offerOwnership(Membership owner, UUID targetTravelerId) {
         UUID itineraryId = owner.itineraryId();
-        fence.requireWritable(owner);
+        fence.requireMembershipMutable(owner);
         if (!owner.isOwner()) {
             throw NotTripOwnerException.toOfferOwnership();
         }
@@ -223,7 +223,7 @@ public class MembershipService {
     @Transactional
     public void revokeOwnershipOffer(Membership owner) {
         UUID itineraryId = owner.itineraryId();
-        fence.requireWritable(owner);
+        fence.requireMembershipMutable(owner);
         if (!owner.isOwner()) {
             throw NotTripOwnerException.toRevokeAnOffer();
         }
@@ -242,6 +242,7 @@ public class MembershipService {
 
     @Transactional
     public void acceptOwnershipOffer(Membership caller) {
+        fence.requireMembershipUnfrozen(caller.itineraryId());
         OwnershipOffer offer = requireOfferFor(caller);
         UUID itineraryId = caller.itineraryId();
         UUID newOwnerId = caller.travelerId();
@@ -283,6 +284,7 @@ public class MembershipService {
 
     @Transactional
     public void declineOwnershipOffer(Membership caller) {
+        fence.requireMembershipUnfrozen(caller.itineraryId());
         OwnershipOffer offer = requireOfferFor(caller);
         offer.decline(Instant.now());
         offers.saveAndFlush(offer);

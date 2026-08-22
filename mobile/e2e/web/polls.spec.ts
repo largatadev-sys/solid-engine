@@ -1,4 +1,4 @@
-import { test, expect } from '../support/fixtures';
+import { test, expect, dialogsSettled } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, type PoolTag } from '../support/identities';
@@ -86,6 +86,8 @@ test.describe('the board, from empty to a closed winner', () => {
     await labelled(page, 'Polls').click();
 
     await expect(page.getByText(POLLS_EMPTY_TITLE)).toBeVisible();
+    await dialogsSettled(page);
+
     expect(signal.dialogs).toEqual([]);
   });
 
@@ -230,6 +232,8 @@ test.describe('the board, from empty to a closed winner', () => {
 
     await expect.poll(async () => (await boardOf(trip.id)).completed.length, { timeout: 20_000 })
       .toBe(1);
+    await dialogsSettled(page);
+
     expect(signal.dialogs).toEqual([]);
   });
 
@@ -303,6 +307,8 @@ test.describe('deleting a poll', () => {
     expect(wording, 'the dialog names the poll it will destroy').toContain('Karaoke Night?');
     expect(wording, 'and states the votes going with it').toMatch(/1 vote/);
     expect(wording).toMatch(/gone for everyone/i);
+    await dialogsSettled(page);
+
     expect(signal.dialogs, 'no platform dialog — v2 draws this one in-app').toEqual([]);
   });
 

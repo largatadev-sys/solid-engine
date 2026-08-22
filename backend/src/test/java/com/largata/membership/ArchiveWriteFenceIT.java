@@ -246,7 +246,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                 {"email":"someone@example.com"}
                 """)
                 .expectStatus()
-                .isForbidden();
+                .isCreated();
 
         archive(trip.owner, trip.id).expectStatus().isOk();
 

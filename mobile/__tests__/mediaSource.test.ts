@@ -1,6 +1,8 @@
 import { mediaSourceFor as nativeSource } from '../src/media/mediaSource.native';
 import { mediaSourceFor as webSource } from '../src/media/mediaSource.web';
 import { isOurMedia, thumbOf } from '../src/media/mediaSourceContract';
+import { invitationRepository } from '../src/repositories/invitationRepository';
+import { joinRepository } from '../src/repositories/joinRepository';
 import { apiClient } from '../src/api/apiClient';
 import { File } from 'expo-file-system';
 
@@ -85,10 +87,36 @@ describe('mediaSourceFor on the web — a blob, because <Image> drops headers', 
 });
 
 describe('isOurMedia', () => {
-  it('recognises the media path and nothing else', () => {
+  it('recognises the media path', () => {
     expect(isOurMedia('/v1/media/x')).toBe(true);
     expect(isOurMedia('https://lh3.googleusercontent.com/a/abc')).toBe(false);
     expect(isOurMedia('https://evil.test/v1/media/x')).toBe(false);
+  });
+
+  it('recognises the capability-scoped covers, which are ours but not under /v1/media', () => {
+    expect(isOurMedia('/v1/join/sometoken/cover')).toBe(true);
+    expect(isOurMedia('/v1/invitations/some-id/cover')).toBe(true);
+    expect(isOurMedia('/v1/join-requests/some-id/cover')).toBe(true);
+  });
+
+  it('claims none of those paths beyond their cover, so nothing else is fetched as an image', () => {
+    expect(isOurMedia('/v1/join/sometoken')).toBe(false);
+    expect(isOurMedia('/v1/invitations')).toBe(false);
+    expect(isOurMedia('/v1/join-requests/some-id')).toBe(false);
+    expect(isOurMedia('https://evil.test/v1/join/x/cover')).toBe(false);
+  });
+
+  it('claims every cover path the repositories actually hand it — an allowlist that misses one '
+    + 'sends the image out anonymous, and nothing below a rendered browser sees it', () => {
+    const handedOut = [
+      invitationRepository.coverPath('some-id'),
+      joinRepository.coverPath('sometoken'),
+      joinRepository.myRequestCoverPath('some-id'),
+    ];
+
+    for (const path of handedOut) {
+      expect(isOurMedia(path)).toBe(true);
+    }
   });
 });
 
@@ -106,5 +134,10 @@ describe('thumbOf — small renders fetch the thumb rung, never the full display
   it('passes through the no-photo cases unchanged', () => {
     expect(thumbOf(null)).toBeNull();
     expect(thumbOf('')).toBe('');
+  });
+
+  it('leaves a capability cover alone — it serves the thumbnail already, and /thumb would 404', () => {
+    expect(thumbOf('/v1/join/sometoken/cover')).toBe('/v1/join/sometoken/cover');
+    expect(thumbOf('/v1/invitations/some-id/cover')).toBe('/v1/invitations/some-id/cover');
   });
 });

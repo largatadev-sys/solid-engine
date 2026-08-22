@@ -100,7 +100,7 @@ function arg(name, fallback) {
     onboarding: 'pre-completed over the API, so a device walk lands on My Trips (S4.0)',
     password: '(LARGATA_TEST_POOL_PASSWORD in mobile/.env)',
     roster: roster.body?.items?.map((m) => `${m.displayName} [${m.role}]`),
-    webPreview: `http://localhost:8081/members/${trip.body.id}`,
-    deepLink: `largata://members/${trip.body.id}`,
+    webPreview: `http://localhost:8081/itineraries/${trip.body.id}?tab=travelers`,
+    deepLink: `largata://itineraries/${trip.body.id}?tab=travelers`,
   }, null, 2));
 })().catch((e) => { console.error('SEED FAILED:', e.message); process.exit(1); });

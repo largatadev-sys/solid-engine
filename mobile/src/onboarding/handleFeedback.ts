@@ -1,3 +1,4 @@
+import { HANDLE_MAX_LENGTH } from '../identity/handleRules';
 import type { HandleAvailabilityResponse } from '../types/api';
 import { HANDLE_MIN_LENGTH } from '../query/travelerQueries';
 
@@ -52,4 +53,4 @@ export function normalizeHandleInput(raw: string): string {
 }
 
 
-export const HANDLE_MAX_LENGTH = 20;
+export { HANDLE_MAX_LENGTH } from '../identity/handleRules';

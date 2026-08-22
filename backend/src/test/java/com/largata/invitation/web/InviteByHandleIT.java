@@ -355,7 +355,7 @@ class InviteByHandleIT extends PostgresTestBase {
     }
 
     @Test
-    void aMemberWhoIsNotTheOwnerCannotInviteByHandle() {
+    void aMemberWhoIsNotTheOwnerMayInviteByHandle() {
         String ownerToken = travelerWithHandle("owner" + suffix());
         String tripId = createTrip(ownerToken);
         String memberHandle = "member" + suffix();
@@ -371,10 +371,7 @@ class InviteByHandleIT extends PostgresTestBase {
                 .body("{\"handle\":\"" + outsiderHandle + "\"}")
                 .exchange()
                 .expectStatus()
-                .isForbidden()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("NOT_PERMITTED");
+                .isCreated();
     }
 
     @Test

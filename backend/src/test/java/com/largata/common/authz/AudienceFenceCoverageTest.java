@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,6 +22,26 @@ class AudienceFenceCoverageTest {
 
     private static final Set<String> OWNER_ONLY_OR_DELIBERATELY_UNFENCED =
             Set.of("preview", "listMine");
+
+
+    private static final Set<String> MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE =
+            Set.of(
+                    "TripJoinController.java#link",
+                    "TripJoinController.java#queue");
+
+
+    private static final Map<String, String> CAPABILITY_SCOPED_COVER_READS =
+            Map.of(
+                    "JoinController.java#cover", "join.itineraryBehind(",
+                    "InvitationController.java#cover", "invitations.itineraryOfInvitationTo(",
+                    "MyJoinRequestController.java#cover", "join.itineraryOfMyRequest(");
+
+
+    private static final Map<String, String> DELIBERATELY_UNAUTHENTICATED_HANDLERS =
+            Map.of(
+                    "JoinController.java#teaser", "join.teaserFor(",
+                    "JoinController.java#cover", "join.itineraryBehind(",
+                    "JoinController.java#request", "viewer.token().orElseThrow(");
 
 
     private static final Set<String> KNOWN_WORKSPACE_SCOPED_GETS =
@@ -62,7 +83,8 @@ class AudienceFenceCoverageTest {
 
         for (ScannedHandler handler : scannedHandlers()) {
             if (handler.body().contains("requireInAudience")
-                    || OWNER_ONLY_OR_DELIBERATELY_UNFENCED.contains(handler.name())) {
+                    || OWNER_ONLY_OR_DELIBERATELY_UNFENCED.contains(handler.name())
+                    || MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE.contains(handler.qualifiedName())) {
                 continue;
             }
             unfenced.add(handler.qualifiedName());
@@ -140,6 +162,77 @@ class AudienceFenceCoverageTest {
     }
 
 
+    @Test
+    void everyCapabilityScopedCoverReadResolvesItsSubjectThroughTheCapabilityThatAuthorizesIt()
+            throws IOException {
+        for (Map.Entry<String, String> read : CAPABILITY_SCOPED_COVER_READS.entrySet()) {
+            String[] split = read.getKey().split("#");
+            ScannedHandler handler =
+                    handlerNamed(split[0], split[1])
+                            .orElseThrow(
+                                    () ->
+                                            new AssertionError(
+                                                    "a stale capability exemption is a blind spot that widens in "
+                                                            + "silence: " + read.getKey()));
+
+            assertThat(handler.body())
+                    .as(
+                            "ADR-032: these two cover reads exist BECAUSE the audience fence correctly "
+                                    + "refuses their audiences — a not-yet-member holding an invitation, and "
+                                    + "an anonymous viewer holding a join token. The token and the invitation "
+                                    + "ARE the authorization, so the handler must resolve its itinerary "
+                                    + "through the capability check rather than taking an id from the path. "
+                                    + "A handler that reached PhotoBytes with a caller-supplied itinerary id "
+                                    + "would serve any trip's cover to anyone, and no other test here would "
+                                    + "see it: neither scan above matches a handler with no guard call at "
+                                    + "all. " + read.getKey())
+                    .contains(read.getValue());
+        }
+    }
+
+
+    @Test
+    void everyHandlerBehindThePermitAllJoinPathIsNamedHereAndResolvesItsOwnToken()
+            throws IOException {
+        List<ScannedHandler> reachable = handlersIn("JoinController.java");
+
+        assertThat(reachable.stream().map(ScannedHandler::qualifiedName).toList())
+                .as(
+                        "SecurityConfig permits /v1/join/** unauthenticated, so NOTHING upstream checks a "
+                                + "caller here — the join token is the only authorization, and a handler that "
+                                + "forgot to resolve it would serve a stranger whatever it touches. Neither "
+                                + "scan above can see these: they call no guard at all. A new handler added "
+                                + "to this controller inherits permitAll silently, so it fails here until "
+                                + "somebody names it and states what authorizes it (ADR-032's recorded "
+                                + "exception to the everything-authenticated posture)")
+                .containsExactlyInAnyOrderElementsOf(DELIBERATELY_UNAUTHENTICATED_HANDLERS.keySet());
+
+        for (ScannedHandler handler : reachable) {
+            assertThat(handler.body())
+                    .as("this handler must resolve the capability itself: " + handler.qualifiedName())
+                    .contains(DELIBERATELY_UNAUTHENTICATED_HANDLERS.get(handler.qualifiedName()));
+        }
+    }
+
+
+    @Test
+    void theLifecycleFencedExemptionsAreQualifiedByControllerAndStillExist() throws IOException {
+        List<String> scanned = scannedHandlers().stream().map(ScannedHandler::qualifiedName).toList();
+
+        assertThat(scanned)
+                .as(
+                        "S4.28's join reads are exempt from the AUDIENCE fence because they are not "
+                                + "audience-shaped: the link and the owner's request queue are membership "
+                                + "surfaces whose archived/published posture is enforced by WriteFence inside "
+                                + "JoinService, not by ADR-017's owner-only-sight rule. The exemption is "
+                                + "qualified by controller so it cannot silently cover a same-named handler "
+                                + "somewhere else — the epic map's bare-name blind-spot line. If one of these "
+                                + "handlers is renamed or deleted, this fails rather than leaving a dead "
+                                + "exemption widening the blind spot")
+                .containsAll(MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE);
+    }
+
+
     private record ScannedHandler(String file, String name, String body) {
 
         String qualifiedName() {
@@ -168,6 +261,39 @@ class AudienceFenceCoverageTest {
             }
         }
         return scanned;
+    }
+
+
+    private static List<ScannedHandler> handlersIn(String file) throws IOException {
+        List<ScannedHandler> found = new ArrayList<>();
+
+        for (Path controller : controllerSources()) {
+            if (!controller.getFileName().toString().equals(file)) {
+                continue;
+            }
+            Matcher handler = ANY_HANDLER.matcher(Files.readString(controller));
+            while (handler.find()) {
+                found.add(new ScannedHandler(file, handler.group(1), handler.group(3)));
+            }
+        }
+        return found;
+    }
+
+
+    private static java.util.Optional<ScannedHandler> handlerNamed(String file, String name)
+            throws IOException {
+        for (Path controller : controllerSources()) {
+            if (!controller.getFileName().toString().equals(file)) {
+                continue;
+            }
+            Matcher handler = ANY_HANDLER.matcher(Files.readString(controller));
+            while (handler.find()) {
+                if (handler.group(1).equals(name)) {
+                    return java.util.Optional.of(new ScannedHandler(file, name, handler.group(3)));
+                }
+            }
+        }
+        return java.util.Optional.empty();
     }
 
 

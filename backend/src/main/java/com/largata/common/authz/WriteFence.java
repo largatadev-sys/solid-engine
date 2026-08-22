@@ -1,5 +1,6 @@
 package com.largata.common.authz;
 
+import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 
@@ -30,6 +31,19 @@ public class WriteFence {
         requireWritable(member);
         if (publication.isPublished(member.itineraryId())) {
             throw new ItineraryPublishedException();
+        }
+    }
+
+
+    public void requireMembershipMutable(Membership member) {
+        requireWritable(member);
+        requireMembershipUnfrozen(member.itineraryId());
+    }
+
+
+    public void requireMembershipUnfrozen(UUID itineraryId) {
+        if (publication.isPublished(itineraryId)) {
+            throw new MembershipFrozenException();
         }
     }
 }

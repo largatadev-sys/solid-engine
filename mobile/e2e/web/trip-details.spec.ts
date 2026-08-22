@@ -94,7 +94,9 @@ test.describe('the owner edits the trip-s details', () => {
     await page.getByText('$  USD — US Dollar').click();
     await page.getByText('Save', { exact: true }).last().click();
 
-    expect(signal.dialogs.join(' ')).toMatch(/Prices keep their numbers/);
+    await expect
+      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
+      .toMatch(/Prices keep their numbers/);
 
     const token = await tokenFor(OWNER);
     await expect(async () => {

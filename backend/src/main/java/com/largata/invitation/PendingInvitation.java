@@ -9,5 +9,12 @@ public record PendingInvitation(
         String email,
         UUID inviteeTravelerId,
         String inviteeHandle,
+        String inviterHandle,
         Instant createdAt,
-        Instant expiresAt) {}
+        Instant expiresAt) {
+
+
+    public boolean isEmailLegacy() {
+        return inviteeTravelerId == null;
+    }
+}

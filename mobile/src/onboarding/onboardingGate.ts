@@ -1,4 +1,5 @@
-import { SIGNED_IN_HOME, WELCOME_ROUTE, isPublicRoute } from '../navigation/authRoutes';
+import { joinRouteFor } from '../join/pendingJoin';
+import { SIGNED_IN_HOME, WELCOME_ROUTE, isJoinRoute, isPublicRoute } from '../navigation/authRoutes';
 import type { MeResponse } from '../types/api';
 
 
@@ -47,6 +48,8 @@ export interface GateInput {
 
   readonly profileUnreadable: boolean;
   readonly segment: string | undefined;
+
+  readonly pendingJoinToken?: string | null;
 }
 
 
@@ -55,22 +58,30 @@ export function destinationFor(input: GateInput): string | null {
 
   if (auth === 'restoring') return null;
 
+  if (isJoinRoute(segment)) return null;
+
   if (auth === 'signedOut') return isPublicRoute(segment) ? null : WELCOME_ROUTE;
 
   if (!emailVerified) return segment === VERIFY_CODE_SEGMENT ? null : VERIFY_CODE_ROUTE;
 
   if (profile === null) {
     if (!profileUnreadable) return null;
-    return isPublicRoute(segment) || segment === VERIFY_CODE_SEGMENT ? SIGNED_IN_HOME : null;
+    return isPublicRoute(segment) || segment === VERIFY_CODE_SEGMENT ? settledHomeOf(input) : null;
   }
 
   const step = nextOnboardingStep(profile);
 
   if (step === null) {
-    return isPublicRoute(segment) || segment === VERIFY_CODE_SEGMENT ? SIGNED_IN_HOME : null;
+    return isPublicRoute(segment) || segment === VERIFY_CODE_SEGMENT ? settledHomeOf(input) : null;
   }
 
   return segment === ONBOARDING_SEGMENT ? null : step;
+}
+
+
+function settledHomeOf(input: GateInput): string {
+  const token = input.pendingJoinToken;
+  return token === null || token === undefined ? SIGNED_IN_HOME : joinRouteFor(token);
 }
 
 
@@ -78,6 +89,7 @@ export function isSettling(input: GateInput): boolean {
   const { auth, emailVerified, profile, profileUnreadable, segment } = input;
 
   if (auth === 'restoring') return true;
+  if (isJoinRoute(segment)) return false;
   if (auth === 'signedOut') return !isPublicRoute(segment);
   if (!emailVerified) return segment !== VERIFY_CODE_SEGMENT;
 

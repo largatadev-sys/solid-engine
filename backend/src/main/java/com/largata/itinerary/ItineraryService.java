@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -430,6 +431,24 @@ public class ItineraryService {
     public Map<UUID, String> titlesByIds(Collection<UUID> itineraryIds) {
         return itineraries.findAllById(itineraryIds).stream()
                 .collect(Collectors.toMap(Itinerary::id, Itinerary::title));
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<TripTeaser> teaserOf(UUID itineraryId) {
+        return itineraries.findById(itineraryId).map(ItineraryService::teaserFrom);
+    }
+
+
+    private static TripTeaser teaserFrom(Itinerary itinerary) {
+        return new TripTeaser(
+                itinerary.id(),
+                itinerary.title(),
+                itinerary.destination(),
+                itinerary.startDate(),
+                itinerary.endDate(),
+                itinerary.coverImageUrl(),
+                itinerary.isPublished());
     }
 
     private static int clamp(Integer requestedLimit) {

@@ -9,8 +9,15 @@ export const PROFILE_TAB_ROUTE = '/profile';
 
 const PUBLIC_SEGMENTS = ['welcome', 'sign-up', 'sign-in'] as const;
 
+export const JOIN_SEGMENT = 'join';
+
 export function isPublicRoute(segment: string | undefined): boolean {
   return PUBLIC_SEGMENTS.some((route) => route === segment);
+}
+
+
+export function isJoinRoute(segment: string | undefined): boolean {
+  return segment === JOIN_SEGMENT;
 }
 
 export function landingRouteFor(

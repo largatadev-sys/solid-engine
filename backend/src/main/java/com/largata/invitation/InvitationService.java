@@ -4,6 +4,7 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
@@ -16,8 +17,8 @@ import com.largata.invitation.InvitationExceptions.InvitationExpiredException;
 import com.largata.invitation.InvitationExceptions.InvitationNotFoundException;
 import com.largata.invitation.InvitationExceptions.InvitationNotPendingException;
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
-import com.largata.invitation.InvitationExceptions.NotWorkspaceOwnerException;
 import com.largata.itinerary.ItineraryService;
+import com.largata.itinerary.TripTeaser;
 import com.largata.workspace.MembershipView;
 import com.largata.workspace.WorkspaceService;
 import java.time.Clock;
@@ -28,10 +29,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,14 +46,18 @@ public class InvitationService {
 
     private static final Logger log = LoggerFactory.getLogger(InvitationService.class);
 
+    private static final int GOING_PREVIEW_SIZE = 3;
+
     private final InvitationRepository invitations;
     private final WorkspaceService workspaces;
     private final ItineraryService itineraries;
     private final TravelerService travelers;
     private final AuthorizationGuard guard;
     private final WriteFence fence;
+    private final PublicationState publication;
     private final InvitationMailer mailer;
     private final Analytics analytics;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     InvitationService(
@@ -59,10 +67,14 @@ public class InvitationService {
             TravelerService travelers,
             AuthorizationGuard guard,
             WriteFence fence,
+            PublicationState publication,
             InvitationMailer mailer,
             Analytics analytics,
+            ApplicationEventPublisher events,
             Clock clock) {
         this.fence = fence;
+        this.publication = publication;
+        this.events = events;
         this.invitations = invitations;
         this.workspaces = workspaces;
         this.itineraries = itineraries;
@@ -76,9 +88,9 @@ public class InvitationService {
 
 
     @Transactional
-    public PendingInvitation invite(Membership owner, String rawEmail) {
-        UUID itineraryId = owner.itineraryId();
-        UUID workspaceId = authorizeIssuance(owner);
+    public PendingInvitation invite(Membership member, String rawEmail) {
+        UUID itineraryId = member.itineraryId();
+        UUID workspaceId = authorizeIssuance(member);
         String email = normalize(rawEmail);
 
         if (isAlreadyMember(itineraryId, email)) {
@@ -88,24 +100,24 @@ public class InvitationService {
         travelers.travelerIdsWithEmail(email).forEach(id -> reconcileExistingPendingFor(workspaceId, id));
 
         Instant now = Instant.now(clock);
-        Invitation invitation = invitations.save(Invitation.open(workspaceId, email, owner.travelerId(), now));
-        log.info("Invitation opened: id={} workspaceId={} invitedBy={}", invitation.id(), workspaceId, owner.travelerId());
+        Invitation invitation = invitations.save(Invitation.open(workspaceId, email, member.travelerId(), now));
+        log.info("Invitation opened: id={} workspaceId={} invitedBy={}", invitation.id(), workspaceId, member.travelerId());
 
         InvitationMail mail =
-                new InvitationMail(invitation.id(), email, tripTitle(itineraryId), inviterName(owner.travelerId()));
+                new InvitationMail(invitation.id(), email, tripTitle(itineraryId), inviterName(member.travelerId()));
         afterCommit(
                 () -> {
                     dispatch(mail);
-                    emitSent(invitation.id(), itineraryId, owner.travelerId(), "email");
+                    emitSent(invitation.id(), itineraryId, member.travelerId(), "email");
                 });
-        return pendingOf(invitation, null);
+        return pendingOf(invitation, null, handleOf(member.travelerId()));
     }
 
 
     @Transactional
-    public PendingInvitation inviteByHandle(Membership owner, String rawHandle) {
-        UUID itineraryId = owner.itineraryId();
-        UUID workspaceId = authorizeIssuance(owner);
+    public PendingInvitation inviteByHandle(Membership member, String rawHandle) {
+        UUID itineraryId = member.itineraryId();
+        UUID workspaceId = authorizeIssuance(member);
         TravelerSummary invitee =
                 travelers.byExactHandle(rawHandle).orElseThrow(NoSuchHandleException::new);
 
@@ -116,26 +128,23 @@ public class InvitationService {
 
         Instant now = Instant.now(clock);
         Invitation invitation =
-                invitations.save(Invitation.openFor(workspaceId, invitee.id(), owner.travelerId(), now));
+                invitations.save(Invitation.openFor(workspaceId, invitee.id(), member.travelerId(), now));
         log.info(
                 "Invitation opened by handle: id={} workspaceId={} invitedBy={} invitee={}",
                 invitation.id(),
                 workspaceId,
-                owner.travelerId(),
+                member.travelerId(),
                 invitee.id());
-        afterCommit(() -> emitSent(invitation.id(), itineraryId, owner.travelerId(), "handle"));
-        return pendingOf(invitation, invitee.handle());
+        afterCommit(() -> emitSent(invitation.id(), itineraryId, member.travelerId(), "handle"));
+        return pendingOf(invitation, invitee.handle(), handleOf(member.travelerId()));
     }
 
 
-    private UUID authorizeIssuance(Membership owner) {
-        fence.requireWritable(owner);
-        if (!owner.isOwner()) {
-            throw new NotWorkspaceOwnerException();
-        }
+    private UUID authorizeIssuance(Membership member) {
+        fence.requireMembershipMutable(member);
         return workspaces
-                .workspaceIdOf(owner.itineraryId())
-                .orElseThrow(() -> new IllegalStateException("Owner has no workspace - invariant breach"));
+                .workspaceIdOf(member.itineraryId())
+                .orElseThrow(() -> new IllegalStateException("Member has no workspace - invariant breach"));
     }
 
 
@@ -150,12 +159,14 @@ public class InvitationService {
     }
 
 
-    private static PendingInvitation pendingOf(Invitation invitation, String inviteeHandle) {
+    private static PendingInvitation pendingOf(
+            Invitation invitation, String inviteeHandle, String inviterHandle) {
         return new PendingInvitation(
                 invitation.id(),
                 invitation.email(),
                 invitation.inviteeTravelerId(),
                 inviteeHandle,
+                inviterHandle,
                 invitation.createdAt(),
                 invitation.expiresAt());
     }
@@ -168,10 +179,7 @@ public class InvitationService {
         UUID itineraryId =
                 workspaces.itineraryIdsByWorkspace(List.of(invitation.workspaceId())).get(invitation.workspaceId());
         Membership caller = guard.requireMember(travelerId, itineraryId);
-        fence.requireWritable(caller);
-        if (!caller.isOwner()) {
-            throw new NotWorkspaceOwnerException();
-        }
+        fence.requireMembershipMutable(caller);
         if (invitation.status() != InvitationStatus.PENDING) {
             throw new InvitationNotPendingException();
         }
@@ -190,14 +198,27 @@ public class InvitationService {
 
     @Transactional(readOnly = true)
     public List<PendingInvitation> pendingInvitations(Membership member) {
+        if (publication.isPublished(member.itineraryId())) {
+            return List.of();
+        }
         UUID workspaceId = workspaces.workspaceIdOf(member.itineraryId()).orElseThrow();
         List<Invitation> rows =
                 invitations.findByWorkspaceIdAndStatusAndExpiresAtAfterOrderByIdDesc(
                         workspaceId, InvitationStatus.PENDING, Instant.now(clock));
-        Map<UUID, String> handles =
-                handlesByIds(rows.stream().map(Invitation::inviteeTravelerId).filter(Objects::nonNull).toList());
+        List<UUID> named =
+                Stream.concat(
+                                rows.stream().map(Invitation::inviteeTravelerId).filter(Objects::nonNull),
+                                rows.stream().map(Invitation::invitedBy))
+                        .distinct()
+                        .toList();
+        Map<UUID, String> handles = handlesByIds(named);
         return rows.stream()
-                .map(i -> pendingOf(i, i.isAddressedByEmail() ? null : handles.get(i.inviteeTravelerId())))
+                .map(
+                        i ->
+                                pendingOf(
+                                        i,
+                                        i.isAddressedByEmail() ? null : handles.get(i.inviteeTravelerId()),
+                                        handles.get(i.invitedBy())))
                 .toList();
     }
 
@@ -249,21 +270,68 @@ public class InvitationService {
         }
         Map<UUID, UUID> itineraryIds =
                 workspaces.itineraryIdsByWorkspace(rows.stream().map(Invitation::workspaceId).toList());
-        Map<UUID, String> titles = itineraries.titlesByIds(itineraryIds.values());
-        Map<UUID, String> inviterNames = namesByIds(rows.stream().map(Invitation::invitedBy).toList());
-        return rows.stream()
-                .map(
-                        i -> {
-                            UUID itineraryId = itineraryIds.get(i.workspaceId());
-                            return new InboxInvitation(
-                                    i.id(),
-                                    itineraryId,
-                                    titles.getOrDefault(itineraryId, ""),
-                                    inviterNames.getOrDefault(i.invitedBy(), ""),
-                                    i.createdAt(),
-                                    i.expiresAt());
-                        })
+        Set<UUID> frozen = publication.publishedAmong(itineraryIds.values());
+        List<Invitation> live =
+                rows.stream().filter(i -> !frozen.contains(itineraryIds.get(i.workspaceId()))).toList();
+        if (live.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> inviterIds = live.stream().map(Invitation::invitedBy).distinct().toList();
+        Map<UUID, TravelerSummary> inviters =
+                travelers.summariesByIds(inviterIds).stream()
+                        .collect(Collectors.toMap(TravelerSummary::id, summary -> summary));
+        return live.stream()
+                .map(i -> inboxCardOf(i, itineraryIds.get(i.workspaceId()), inviters.get(i.invitedBy())))
                 .toList();
+    }
+
+
+    private InboxInvitation inboxCardOf(Invitation invitation, UUID itineraryId, TravelerSummary inviter) {
+        Optional<TripTeaser> trip = itineraries.teaserOf(itineraryId);
+        List<MembershipView> roster = workspaces.membersOf(itineraryId);
+        return new InboxInvitation(
+                invitation.id(),
+                itineraryId,
+                trip.map(TripTeaser::title).orElse(""),
+                inviter == null ? "" : inviter.displayName(),
+                inviter == null ? null : inviter.handle(),
+                trip.map(TripTeaser::destination).orElse(null),
+                trip.map(TripTeaser::startDate).orElse(null),
+                trip.map(TripTeaser::endDate).orElse(null),
+                trip.map(t -> t.coverImageUrl() != null).orElse(false),
+                goingPreviewOf(roster),
+                roster.size(),
+                invitation.createdAt(),
+                invitation.expiresAt());
+    }
+
+
+    private List<InboxInvitation.GoingTraveler> goingPreviewOf(List<MembershipView> roster) {
+        List<UUID> shown =
+                roster.stream().map(MembershipView::travelerId).limit(GOING_PREVIEW_SIZE).toList();
+        Map<UUID, TravelerSummary> profiles =
+                travelers.summariesByIds(shown).stream()
+                        .collect(Collectors.toMap(TravelerSummary::id, summary -> summary));
+        return shown.stream()
+                .map(profiles::get)
+                .filter(Objects::nonNull)
+                .map(
+                        p ->
+                                new InboxInvitation.GoingTraveler(
+                                        p.id(), p.displayName(), p.avatarUrl()))
+                .toList();
+    }
+
+
+    @Transactional(readOnly = true)
+    public UUID itineraryOfInvitationTo(UUID invitationId, VerifiedContact contact, UUID travelerId) {
+        Invitation invitation = liveInvitationFor(invitationId, contact, travelerId);
+        UUID workspaceId = invitation.workspaceId();
+        UUID itineraryId = workspaces.itineraryIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
+        if (itineraryId == null) {
+            throw new InvitationNotFoundException();
+        }
+        return itineraryId;
     }
 
 
@@ -276,11 +344,13 @@ public class InvitationService {
         if (workspaces.isMember(itineraryId, travelerId)) {
             throw new AlreadyMemberException("You are already a member of this trip.");
         }
+        fence.requireMembershipUnfrozen(itineraryId);
 
         Instant now = Instant.now(clock);
         invitation.accept(travelerId, now);
         invitations.saveAndFlush(invitation);
         workspaces.admitMember(itineraryId, travelerId, now);
+        events.publishEvent(new MembershipArrived(workspaceId, travelerId));
         log.info("Invitation accepted: id={} itineraryId={} travelerId={}", invitationId, itineraryId, travelerId);
         afterCommit(
                 () ->
@@ -304,6 +374,23 @@ public class InvitationService {
                 () ->
                         analytics.emit(
                                 AnalyticsEvent.named("invite_declined").with("invitationId", invitationId).build()));
+    }
+
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void supersedePendingInvitationsFor(UUID workspaceId, UUID inviteeTravelerId) {
+        invitations
+                .findByWorkspaceIdAndInviteeTravelerIdAndStatus(
+                        workspaceId, inviteeTravelerId, InvitationStatus.PENDING)
+                .ifPresent(
+                        open -> {
+                            open.voidBySystem(Instant.now(clock));
+                            invitations.saveAndFlush(open);
+                            log.info(
+                                    "Invitation superseded by an approved join request: id={} invitee={}",
+                                    open.id(),
+                                    inviteeTravelerId);
+                        });
     }
 
 
@@ -374,6 +461,11 @@ public class InvitationService {
         }
         pending.expire(Instant.now(clock));
         invitations.saveAndFlush(pending);
+    }
+
+
+    private String handleOf(UUID travelerId) {
+        return travelers.summaryById(travelerId).map(TravelerSummary::handle).orElse(null);
     }
 
 

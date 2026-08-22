@@ -46,8 +46,8 @@ import {
   workspaceRadii,
   workspaceTypography,
 } from '../../../../../src/theme/workspaceTokens';
+import { docksItsOwnBar, laddersOn } from '../../../../../src/itineraries/workspaceChrome';
 import { memberControls } from '../../../../../src/members/memberControls';
-import { OwnershipOfferBanner } from '../../../../../src/members/OwnershipOfferBanner';
 import { useMembers } from '../../../../../src/query/invitationQueries';
 import { useItinerary, useTripLifecycle, useUnpublishTrip } from '../../../../../src/query/itineraryQueries';
 import { useMyDiaryEntries } from '../../../../../src/query/diaryQueries';
@@ -68,7 +68,7 @@ export default function TripWorkspaceScreen() {
   const { state: meState } = useMe();
   const myId = meState.kind === 'ok' ? meState.me.id : undefined;
   const roster = members.data?.items ?? [];
-  const { isOwner } = memberControls(roster, myId, data?.archived ?? false);
+  const { isOwner } = memberControls(roster, myId);
 
   const lifecycle = useTripLifecycle(id);
   const capturing = data !== undefined && capturesAreOpen(data.state);
@@ -152,8 +152,8 @@ export default function TripWorkspaceScreen() {
     <View style={styles.screen}>
       <ScrollView
         style={styles.scroller}
-        contentContainerStyle={active === 'chat' ? styles.dockedContainer : styles.container}
-        scrollEnabled={active !== 'chat'}
+        contentContainerStyle={docksItsOwnBar(active) ? styles.dockedContainer : styles.container}
+        scrollEnabled={!docksItsOwnBar(active)}
       >
         <WorkspaceHeader
           badge={badge}
@@ -187,7 +187,6 @@ export default function TripWorkspaceScreen() {
         />
 
         <TripArchiveBanner itinerary={data} />
-        <OwnershipOfferBanner itineraryId={id} />
 
         <WorkspaceTabRow active={active} onSelect={setActive} />
 
@@ -237,7 +236,15 @@ export default function TripWorkspaceScreen() {
           />
         ) : null}
 
-        {active === 'travelers' ? <WorkspaceTravelersTab itineraryId={id} /> : null}
+        {active === 'travelers' ? (
+          <WorkspaceTravelersTab
+            itineraryId={id}
+            tripTitle={data.title}
+            myId={myId}
+            published={data.published}
+            archived={data.archived ?? false}
+          />
+        ) : null}
 
         {active === 'chat' ? (
           <View style={styles.chatBody}>
@@ -256,7 +263,7 @@ export default function TripWorkspaceScreen() {
 
       </ScrollView>
 
-      {ladder !== null ? (
+      {ladder !== null && laddersOn(active) ? (
         <View style={styles.rail}>
           {ladder.blockedBy !== undefined ? (
             <Text style={styles.blockedNote}>{`Being edited by ${ladder.blockedBy}`}</Text>

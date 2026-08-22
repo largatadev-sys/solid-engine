@@ -254,6 +254,7 @@ test.beforeAll(async () => {
     destination: 'Tokyo, Japan',
     durationDays: 4,
   });
+  await joinTrip(hosted, TRAVELER);
   await climbTo(hosted, 'completed');
   const hostedPublished = await api(`/v1/itineraries/${hosted.id}/publish`, 'POST', hostToken, {
     visibility: 'public',
@@ -261,7 +262,6 @@ test.beforeAll(async () => {
   if (hostedPublished.status !== 200) {
     throw new SeedFailure('publishing the hosted trip', hostedPublished.body);
   }
-  await joinTrip(hosted, TRAVELER);
   hostedId = hosted.id;
 
   const diaryTrip = await seedTrip({

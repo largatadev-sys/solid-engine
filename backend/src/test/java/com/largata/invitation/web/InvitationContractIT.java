@@ -134,7 +134,7 @@ class InvitationContractIT extends PostgresTestBase {
     }
 
     @Test
-    void aMemberWhoIsNotTheOwnerCannotInvite() {
+    void aMemberWhoIsNotTheOwnerMayInvite() {
         String owner = verified("owner@example.com");
         String itinerary = createItinerary(owner);
         String memberEmail = uniqueGuest();
@@ -150,14 +150,11 @@ class InvitationContractIT extends PostgresTestBase {
                         """)
                 .exchange()
                 .expectStatus()
-                .isForbidden()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("NOT_PERMITTED");
+                .isCreated();
     }
 
     @Test
-    void aMemberWhoIsNotTheOwnerCannotRevoke() {
+    void aMemberWhoIsNotTheOwnerMayRevokeSomebodyElsesInvitation() {
         String owner = verified("owner@example.com");
         String itinerary = createItinerary(owner);
         String memberEmail = uniqueGuest();
@@ -170,10 +167,7 @@ class InvitationContractIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .exchange()
                 .expectStatus()
-                .isForbidden()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("NOT_PERMITTED");
+                .isNoContent();
     }
 
 

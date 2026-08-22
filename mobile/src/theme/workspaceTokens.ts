@@ -476,6 +476,140 @@ export const sheetMotion = {
 } as const;
 
 
+export const travelerMotion = {
+  scrimInMs: 150,
+  scrimOutMs: 150,
+  sheetInMs: 200,
+  sheetOutMs: 150,
+  sheetTravelPx: 420,
+
+  rowEntranceMs: 150,
+  rowRisePx: 8,
+  cascadeStepMs: 30,
+  cascadeCap: 10,
+  addBarInMs: 200,
+  addBarDelayMs: 240,
+
+  layoutMs: 200,
+  crossfadeMs: 150,
+  popMs: 200,
+  popStaggerMs: 40,
+
+  postcardInMs: 200,
+  postcardRisePx: 8,
+
+  copyFeedbackMs: 1600,
+} as const;
+
+
+export const travelerColors = {
+  accent: '#EA580C',
+  accentDark: '#C2410C',
+  ink: '#1C1917',
+  muted: '#78716C',
+  iconMuted: '#A59E99',
+  hairline: '#E7E5E4',
+  divider: '#F5F5F4',
+  wellNeutral: '#FAFAF9',
+  wellWarm: '#FFF7ED',
+  accentBorder: '#FED7AA',
+  destructive: '#B91C1C',
+  surface: '#FFFFFF',
+  onAccent: '#FFFFFF',
+  scrim: 'rgba(28,25,23,0.4)',
+  coverWell: '#FFEDD5',
+  invitedOpacity: 0.55,
+} as const;
+
+
+export const travelerTypography = {
+  sectionHeading: { fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 1.2 },
+  rowTitle: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  rowYou: { fontSize: 14, lineHeight: 18, fontWeight: '400' },
+  rowSub: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  rowAction: { fontSize: 13, lineHeight: 17, fontWeight: '600' },
+  sheetTitle: { fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  menuEntry: { fontSize: 15, lineHeight: 20, fontWeight: '600' },
+  addBarLabel: { fontSize: 15, lineHeight: 20, fontWeight: '700' },
+  invitePill: { fontSize: 13, lineHeight: 17, fontWeight: '700' },
+  ghostPill: { fontSize: 13, lineHeight: 17, fontWeight: '600' },
+  foundName: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  emptyTitle: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  emptyBody: { fontSize: 12.5, lineHeight: 17, fontWeight: '400' },
+  linkLabel: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  linkSub: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  offerTitle: { fontSize: 13, lineHeight: 17, fontWeight: '700' },
+  offerAccept: { fontSize: 12.5, lineHeight: 16, fontWeight: '700' },
+  offerDecline: { fontSize: 12.5, lineHeight: 16, fontWeight: '600' },
+  cardTitle: { fontSize: 16, lineHeight: 21, fontWeight: '700' },
+  cardMeta: { fontSize: 12.5, lineHeight: 16, fontWeight: '400' },
+  cardGoing: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  cardExpiry: { fontSize: 11.5, lineHeight: 15, fontWeight: '400' },
+  postcardKicker: { fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 1.4 },
+  postcardTitle: { fontSize: 18, lineHeight: 23, fontWeight: '700' },
+  postcardMeta: { fontSize: 13, lineHeight: 17, fontWeight: '400' },
+  postcardCta: { fontSize: 14.5, lineHeight: 19, fontWeight: '700' },
+  postcardQuiet: { fontSize: 13.5, lineHeight: 18, fontWeight: '600' },
+  wordmark: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '700',
+  },
+  alertTitle: { fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  alertBody: { fontSize: 13.5, lineHeight: 19, fontWeight: '400' },
+  alertAction: { fontSize: 15, lineHeight: 20, fontWeight: '600' },
+} as const;
+
+
+export const travelerMetrics = {
+  addSheetResultSlot: 80,
+  avatar: 40,
+  avatarHit: 44,
+  facepileAvatar: 26,
+  facepileOverlap: -8,
+  facepileRing: 2,
+  rowPaddingV: 10,
+  rowPaddingH: 16,
+  rowGap: 12,
+  sectionHeaderTop: 16,
+  sectionHeaderBottom: 6,
+  addBarPaddingV: 12,
+  addBarPaddingH: 16,
+  addBarCtaPadding: 13,
+  grabberWidth: 36,
+  grabberHeight: 4,
+  menuEntryPaddingV: 14,
+  menuEntryPaddingH: 20,
+  menuIcon: 19,
+  inboxCover: 120,
+  postcardCover: 136,
+  offerIcon: 16,
+} as const;
+
+
+export const travelerAvatarTints = [
+  { well: '#DBEAFE', ink: '#1D4ED8' },
+  { well: '#FDE4CF', ink: '#C2410C' },
+  { well: '#DCFCE7', ink: '#15803D' },
+  { well: '#FEF9C3', ink: '#A16207' },
+  { well: '#EDE9FE', ink: '#6D28D9' },
+  { well: '#FCE7F3', ink: '#BE185D' },
+  { well: '#CFFAFE', ink: '#0E7490' },
+  { well: '#FEE2E2', ink: '#B91C1C' },
+] as const;
+
+
+export const travelerRadii = {
+  card: 12,
+  inviteCard: 16,
+  sheet: 20,
+  postcard: 18,
+  pill: 100,
+  alert: 14,
+} as const;
+
+
 export const tripTabMotion = {
   underlineMs: 200,
   labelColorMs: 150,
@@ -485,6 +619,11 @@ export const tripTabMotion = {
   pressInMs: 100,
   pressOutMs: 150,
   pressedOpacity: 0.85,
+  pressedScale: 0.97,
+  pressInStiffness: 1000,
+  pressOutStiffness: 500,
+  pressDamping: 40,
+  pressMass: 1,
 } as const;
 
 
