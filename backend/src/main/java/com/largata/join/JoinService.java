@@ -43,7 +43,7 @@ public class JoinService {
 
     private static final Logger log = LoggerFactory.getLogger(JoinService.class);
 
-    private static final int TOKEN_BYTES = 32;
+    private static final int TOKEN_BYTES = 16;
 
     private static final int TOKEN_LOG_PREFIX = 8;
 
