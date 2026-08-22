@@ -58,24 +58,18 @@ public class ItineraryCoverService {
     @Transactional
     public Itinerary removeCover(Membership member) {
         Itinerary itinerary = editableHeaderOf(member);
-        if (itinerary.coverImageUrl() == null) {
-            return itinerary;
-        }
+        boolean hadCover = itinerary.coverImageUrl() != null;
         photos.deleteSingle(PhotoSubject.ITINERARY_COVER, member.itineraryId());
         itinerary.showCover(null, member.travelerId(), Instant.now());
         itineraries.save(itinerary);
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(member.itineraryId()));
         log.info("Itinerary cover removed: id={} editor={}", member.itineraryId(), member.travelerId());
-        return bumpedAndReloaded(member);
+        return hadCover ? bumpedAndReloaded(member) : itinerary;
     }
 
 
     private Itinerary bumpedAndReloaded(Membership member) {
-        shareCardVersions.bump(member.itineraryId());
-        return itineraries
-                .findById(member.itineraryId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "The cover was written to an itinerary that no longer exists"));
+        return shareCardVersions.bumpAndReload(member.itineraryId());
     }
 
 

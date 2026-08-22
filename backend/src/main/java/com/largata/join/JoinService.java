@@ -124,8 +124,7 @@ public class JoinService {
 
 
     private String versionedShareUrlOf(String token, long shareCardVersion) {
-        String base = webBaseUrl.endsWith("/") ? webBaseUrl.substring(0, webBaseUrl.length() - 1) : webBaseUrl;
-        return base + "/join/" + token + "?v=" + shareCardVersion;
+        return JoinUrls.landingUrl(webBaseUrl, token, shareCardVersion);
     }
 
 

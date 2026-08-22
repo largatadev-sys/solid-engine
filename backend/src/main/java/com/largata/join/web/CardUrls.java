@@ -1,5 +1,6 @@
 package com.largata.join.web;
 
+import com.largata.join.JoinUrls;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -13,22 +14,17 @@ class CardUrls {
     CardUrls(
             @Value("${largata.api.base-url:http://localhost:8080}") String apiBaseUrl,
             @Value("${largata.web.base-url:http://localhost:8081}") String webBaseUrl) {
-        this.apiBaseUrl = trimTrailingSlash(apiBaseUrl);
-        this.webBaseUrl = trimTrailingSlash(webBaseUrl);
+        this.apiBaseUrl = apiBaseUrl;
+        this.webBaseUrl = webBaseUrl;
     }
 
 
     String cardUrlFor(String token, long shareCardVersion) {
-        return apiBaseUrl + "/v1/join/" + token + "/card.png?v=" + shareCardVersion;
+        return JoinUrls.cardUrl(apiBaseUrl, token, shareCardVersion);
     }
 
 
     String landingUrlFor(String token, long shareCardVersion) {
-        return webBaseUrl + "/join/" + token + "?v=" + shareCardVersion;
-    }
-
-
-    private static String trimTrailingSlash(String url) {
-        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+        return JoinUrls.landingUrl(webBaseUrl, token, shareCardVersion);
     }
 }

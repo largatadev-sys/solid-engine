@@ -4,7 +4,6 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
-import com.largata.common.authz.ItineraryNotFoundException;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
@@ -220,8 +219,7 @@ public class ItineraryService {
         if (cardBefore.equals(cardAfter)) {
             return itinerary;
         }
-        shareCardVersions.bump(itinerary.id());
-        return itineraries.findById(itinerary.id()).orElseThrow(ItineraryNotFoundException::new);
+        return shareCardVersions.bumpAndReload(itinerary.id());
     }
 
 

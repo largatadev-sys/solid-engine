@@ -31,12 +31,7 @@ public class CardFonts {
     }
 
 
-    public Font wordmark(float size) {
-        return outfit800.deriveFont(size);
-    }
-
-
-    public Font initials(float size) {
+    public Font display(float size) {
         return outfit800.deriveFont(size);
     }
 

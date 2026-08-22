@@ -109,6 +109,22 @@ class PreviewPageTest {
     }
 
 
+    @Test
+    void theEmptyMetaLineIsReachableBecauseNotNullStillPermitsTheEmptyString() {
+        assertThat(TripMetaLine.of("", null, null)).isNull();
+    }
+
+
+    @Test
+    void thePagePaintsItselfFromTheCardsPaletteRatherThanItsOwnCopyOfIt() {
+        String page = livePage("Trip");
+
+        assertThat(page).contains("background:#FFF7ED").contains("background:#EA580C");
+        assertThat(CardArt.WELL.getRGB() & 0xFFFFFF).isEqualTo(0xFFF7ED);
+        assertThat(CardArt.BRAND.getRGB() & 0xFFFFFF).isEqualTo(0xEA580C);
+    }
+
+
     private static String livePage(String title) {
         return PreviewPage.render(
                 new PreviewSubject(title, "El Nido · Mar 12–18", IMAGE, LANDING, true));

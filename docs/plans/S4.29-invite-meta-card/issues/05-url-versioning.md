@@ -4,12 +4,12 @@
 
 **Blocked by:** 03 — the preview whose `og:image` URL carries the version.
 
-**Status:** ready-for-agent
+**Status:** built and tested — the code ACs are closed; the demo-on-the-running-stack line waits on a rebuilt container at the story gate.
 
-- [ ] Additive migration only; the schema diff is one column with a default
-- [ ] ITs per trigger: title, destination, start/end dates, and cover set/replace/remove each bump exactly once; plan edits, lifecycle transitions, chat and membership writes do not
-- [ ] The join-link endpoint returns the share URL suffixed `?v=N`; a fresh trip hands out `v=1`
-- [ ] The preview's `og:image` URL carries the same `v` as the page URL (spec decision 13)
-- [ ] Grep-level assertion in review: no server code path reads the `v` parameter
-- [ ] No mobile diff
-- [ ] Demoable: share-link → edit title → share-link again shows the bumped suffix; both URLs' cards render current data
+- [x] Additive migration only; the schema diff is one column with a default
+- [x] ITs per trigger: title, destination, start/end dates, and cover set/replace/remove each bump exactly once; plan edits, lifecycle transitions, chat and membership writes do not
+- [x] The join-link endpoint returns the share URL suffixed `?v=N`; a fresh trip hands out `v=1`
+- [x] The preview's `og:image` URL carries the same `v` as the page URL (spec decision 13)
+- [x] Grep-level assertion in review: no server code path reads the `v` parameter
+- [x] No mobile diff
+- [ ] Demoable: share-link → edit title → share-link again shows the bumped suffix; both URLs' cards render current data *(open: needs the rebuilt backend container; `JoinCardIT` asserts exactly this sequence over real HTTP.)*

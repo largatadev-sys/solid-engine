@@ -24,6 +24,13 @@ public class ShareCardVersionService {
     }
 
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Itinerary bumpAndReload(UUID itineraryId) {
+        bump(itineraryId);
+        return itineraries.findById(itineraryId).orElseThrow(ItineraryNotFoundException::new);
+    }
+
+
     @Transactional(readOnly = true)
     public long currentVersion(UUID itineraryId) {
         Long version = itineraries.shareCardVersionOf(itineraryId);

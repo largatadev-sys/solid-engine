@@ -107,7 +107,7 @@ public class CardRenderer {
         g.fill(new Ellipse2D.Double(CardArt.PANEL_WIDTH - 360, CardArt.HEIGHT - 210, 300, 300));
 
         if (!initials.isEmpty()) {
-            Font face = fonts.covering(fonts.initials(CardArt.INITIALS_SIZE), initials);
+            Font face = fonts.covering(fonts.display(CardArt.INITIALS_SIZE), initials);
             g.setFont(face);
             g.setColor(fadedInitials());
             FontMetrics metrics = g.getFontMetrics();
@@ -148,7 +148,7 @@ public class CardRenderer {
         List<String> lines =
                 TitleBlock.wrapClamp(title, CardArt.TEXT_WIDTH, titleMetrics::stringWidth);
 
-        Font wordmarkFont = fonts.wordmark(CardArt.WORDMARK_SIZE);
+        Font wordmarkFont = fonts.display(CardArt.WORDMARK_SIZE);
         Font kickerFont = tracked(fonts.kicker(CardArt.KICKER_SIZE));
         Font metaFont =
                 metaLine == null ? fonts.body(CardArt.META_SIZE)

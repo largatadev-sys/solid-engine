@@ -265,6 +265,17 @@ class JoinCardIT extends ObjectStoreTestBase {
 
 
     @Test
+    void removingACoverThatWasNeverThereDoesNotBumpItButStillRecordsTheEdit() {
+        Trip trip = trip();
+
+        rig.removeCover(trip.owner(), trip.id());
+
+        assertThat(shareUrlOf(trip)).endsWith("?v=1");
+        assertThat(rig.historyActs(trip.id())).contains("HEADER_EDITED");
+    }
+
+
+    @Test
     void aPlanEditDoesNotBumpIt() {
         Trip trip = trip();
         UUID day = rig.dayAt(trip.id(), 1);

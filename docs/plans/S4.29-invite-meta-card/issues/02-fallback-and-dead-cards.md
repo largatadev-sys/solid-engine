@@ -4,11 +4,11 @@
 
 **Blocked by:** 01 — the card route and renderer.
 
-**Status:** ready-for-agent
+**Status:** built and tested — the code ACs are closed; the demo-on-the-running-stack line waits on a rebuilt container at the story gate.
 
-- [ ] No-cover trip → frame 2 panel (circles at the mock's offsets, initials rule as specified); cover trip unchanged
-- [ ] Initials twin unit-tested with the client rule's vectors verbatim; the all-punctuation destination case draws circles only
-- [ ] DEAD token (published or archived trip) → 200 with the dead card; unknown token still 404 (spec decision 4)
-- [ ] A forced renderer exception serves the committed generic PNG with a 200, never a 500
-- [ ] ITs assert the three variants (cover / no-cover / dead) produce three distinct images
-- [ ] Demoable: seed a coverless trip and an archived trip; curl both card URLs and eyeball the two variants
+- [x] No-cover trip → frame 2 panel (circles at the mock's offsets, initials rule as specified); cover trip unchanged
+- [x] Initials twin unit-tested with the client rule's vectors verbatim; the all-punctuation destination case draws circles only
+- [x] DEAD token (published or archived trip) → 200 with the dead card; unknown token still 404 (spec decision 4)
+- [x] A forced renderer exception serves the committed generic PNG with a 200, never a 500
+- [x] ITs assert the three variants (cover / no-cover / dead) produce three distinct images
+- [ ] Demoable: seed a coverless trip and an archived trip; curl both card URLs and eyeball the two variants *(open: needs the rebuilt backend container. Both variants were rendered and eyeballed at build time, and `JoinCardIT` asserts cover/no-cover/dead produce three distinct images.)*

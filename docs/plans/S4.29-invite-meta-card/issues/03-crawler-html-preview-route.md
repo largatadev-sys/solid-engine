@@ -4,13 +4,13 @@
 
 **Blocked by:** 01 — the card route the `og:image` URL must point at.
 
-**Status:** ready-for-agent
+**Status:** built and tested — the code ACs are closed; the demo-on-the-running-stack line waits on a rebuilt container at the story gate.
 
-- [ ] Preview route answers `text/html` with exactly the specified tags for a live trip (spec decision 11); the meta line matches the card's
-- [ ] `og:image` is absolute, API-origin, and resolves (the IT fetches it)
-- [ ] Body contains a working link to the SPA's `/join/<token>` landing and no meta-refresh or script redirect
-- [ ] DEAD → 200 with dead tag copy; unknown → 404
-- [ ] `Cache-Control: no-cache` on the HTML
-- [ ] Route lives under the existing anonymous join matcher — the security config diff is empty
-- [ ] Prior art followed: the join teaser ITs' shape, singleton-Postgres base
-- [ ] Demoable: curl the preview URL for a seeded trip and read that trip's title in the tags
+- [x] Preview route answers `text/html` with exactly the specified tags for a live trip (spec decision 11); the meta line matches the card's
+- [x] `og:image` is absolute, API-origin, and resolves (the IT fetches it)
+- [x] Body contains a working link to the SPA's `/join/<token>` landing and no meta-refresh or script redirect
+- [x] DEAD → 200 with dead tag copy; unknown → 404
+- [x] `Cache-Control: no-cache` on the HTML
+- [x] Route lives under the existing anonymous join matcher — the security config diff is empty
+- [x] Prior art followed: the join teaser ITs' shape, singleton-Postgres base
+- [ ] Demoable: curl the preview URL for a seeded trip and read that trip's title in the tags *(open: needs the rebuilt backend container; `JoinCardIT` asserts the tags over real HTTP.)*

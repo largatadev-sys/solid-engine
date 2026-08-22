@@ -1,5 +1,7 @@
 package com.largata.join.card;
 
+import java.awt.Color;
+
 
 public final class PreviewPage {
 
@@ -45,12 +47,12 @@ public final class PreviewPage {
                 <meta name="twitter:description" content="%s">
                 <meta name="twitter:image" content="%s">
                 <style>
-                body{margin:0;background:#FFF7ED;color:#1C1917;font-family:system-ui,sans-serif;\
+                body{margin:0;background:%s;color:%s;font-family:system-ui,sans-serif;\
                 display:flex;min-height:100vh;align-items:center;justify-content:center}
                 main{text-align:center;padding:32px}
                 h1{font-size:28px;margin:0 0 8px}
-                p{color:#78716C;margin:0 0 24px}
-                a{display:inline-block;background:#EA580C;color:#fff;text-decoration:none;\
+                p{color:%s;margin:0 0 24px}
+                a{display:inline-block;background:%s;color:#fff;text-decoration:none;\
                 padding:14px 28px;border-radius:999px;font-weight:700}
                 </style>
                 </head>
@@ -77,10 +79,19 @@ public final class PreviewPage {
                         escape(title),
                         escape(description),
                         escape(subject.imageUrl()),
+                        hex(CardArt.WELL),
+                        hex(CardArt.INK),
+                        hex(CardArt.MUTED),
+                        hex(CardArt.BRAND),
                         escape(title),
                         escape(description),
                         escape(subject.landingUrl()),
                         escape(OPEN_LABEL));
+    }
+
+
+    private static String hex(Color color) {
+        return String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
     }
 
 
