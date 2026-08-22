@@ -168,6 +168,10 @@ describe('reading a token out of a link', () => {
     expect(tokenFromJoinPath('/join/')).toBeNull();
   });
 
+  it('accepts the SHORT token the server now mints — 8 bytes is 11 characters', () => {
+    expect(tokenFromJoinPath('/join/Ab3-_9xKq7Z')).toBe('Ab3-_9xKq7Z');
+  });
+
   it('refuses a token that could not have been minted', () => {
     expect(tokenFromJoinPath('/join/short')).toBeNull();
     expect(tokenFromJoinPath('/join/has spaces and punctuation!')).toBeNull();
