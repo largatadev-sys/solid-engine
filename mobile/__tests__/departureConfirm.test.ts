@@ -1,30 +1,40 @@
-import { Alert } from 'react-native';
+import { askForConfirmation } from '../src/components/ConfirmStation';
 import { confirmWith } from '../src/components/confirmDestructive';
 import {
+  CANCEL_LABEL,
   confirmDestructiveMessage,
   leaveTripWording,
   offerOwnershipWording,
   removeMemberWording,
+  type ConfirmWording,
 } from '../src/components/confirmDestructiveMessage';
 import { missingItineraryMessage } from '../src/components/missingItineraryMessage';
 
+jest.mock('../src/components/ConfirmStation', () => ({
+  askForConfirmation: jest.fn(() => true),
+}));
 
+interface Asked {
+  readonly wording: ConfirmWording;
+  readonly title: string;
+  readonly body: string;
+  readonly onConfirm: () => void;
+}
 
-jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+function asked(): Asked[] {
+  return (askForConfirmation as jest.Mock).mock.calls.map(
+    ([wording, onConfirm]: [ConfirmWording, () => void]) => ({
+      wording,
+      title: wording.title,
+      body: wording.body,
+      onConfirm,
+    }),
+  );
+}
 
 beforeEach(() => {
-  (Alert.alert as jest.Mock).mockClear();
+  (askForConfirmation as jest.Mock).mockClear();
 });
-
-
-function tapConfirm(): void {
-  const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as {
-    text: string;
-    onPress?: () => void;
-  }[];
-  const affirmative = buttons.find((button) => button.text !== 'Cancel');
-  affirmative?.onPress?.();
-}
 
 describe('the wording both forks share', () => {
   it('names the person being removed and promises their content stays (S4.28 frame 4)', () => {
@@ -74,51 +84,53 @@ describe('the missing-trip copy an evicted member lands on', () => {
   });
 });
 
-describe('confirmWith (native fork)', () => {
-  it('asks before removing, and only acts when the traveler confirms', () => {
+describe('confirmWith hands the app-drawn dialog its wording', () => {
+  it('asks before removing, and never acts on its own', () => {
     const onConfirm = jest.fn();
 
     confirmWith(removeMemberWording('Beto Cruz'), onConfirm);
 
     expect(onConfirm).not.toHaveBeenCalled();
-    const [title, body] = (Alert.alert as jest.Mock).mock.calls[0];
-    expect(title).toBe('Remove Beto Cruz?');
-    expect(body).toMatch(/messages, votes, and photos stay/i);
+    expect(asked()).toEqual([
+      expect.objectContaining({
+        title: 'Remove Beto Cruz?',
+        body: expect.stringMatching(/messages, votes, and photos stay/i),
+      }),
+    ]);
+  });
 
-    tapConfirm();
+  it('runs the action only when the dialog reports a confirm', () => {
+    const onConfirm = jest.fn();
+
+    confirmWith(removeMemberWording('Beto Cruz'), onConfirm);
+    asked()[0]?.onConfirm();
+
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it('does nothing at all when the traveler cancels', () => {
-    const onConfirm = jest.fn();
-
-    confirmWith(leaveTripWording(), onConfirm);
-    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as { text: string; style?: string }[];
-    expect(buttons[0]?.style).toBe('cancel');
-
-    expect(onConfirm).not.toHaveBeenCalled();
-  });
-
-  it('carries the wording label onto the affirmative button', () => {
+  it('carries the wording labels the frames drew', () => {
     confirmWith(leaveTripWording(), jest.fn());
 
-    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as { text: string; style?: string }[];
-    expect(buttons.map((button) => button.text)).toEqual(['Not yet', 'Leave']);
-    expect(buttons[1]?.style).toBe('destructive');
+    expect(asked()[0]?.wording.confirmLabel).toBe('Leave');
+    expect(asked()[0]?.wording.cancelLabel).toBe('Not yet');
   });
 
-  it('defaults the cancel label when the wording does not name one', () => {
+  it('leaves the cancel label unset when the wording does not name one, so the dialog defaults it', () => {
     confirmWith(removeMemberWording('@ana'), jest.fn());
 
-    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as { text: string; style?: string }[];
-    expect(buttons.map((button) => button.text)).toEqual(['Cancel', 'Remove']);
+    expect(asked()[0]?.wording.cancelLabel).toBeUndefined();
+    expect(CANCEL_LABEL).toBe('Cancel');
   });
 
-  it('keeps an accent confirm off the destructive style — offering is not a loss', () => {
+  it('keeps an accent confirm off the destructive tone — offering is not a loss', () => {
     confirmWith(offerOwnershipWording('@ana'), jest.fn());
 
-    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as { text: string; style?: string }[];
-    expect(buttons[1]?.text).toBe('Offer');
-    expect(buttons[1]?.style).toBe('default');
+    expect(asked()[0]?.wording.tone).toBe('accent');
+  });
+
+  it('marks a removal destructive rather than accent', () => {
+    confirmWith(removeMemberWording('@ana'), jest.fn());
+
+    expect(asked()[0]?.wording.tone).not.toBe('accent');
   });
 });

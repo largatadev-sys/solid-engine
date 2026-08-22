@@ -1,6 +1,7 @@
 import { test as base, expect, type Page } from '@playwright/test';
 import { profileFor, tokenFor } from './pool';
 import { assertVerified, type PoolTag } from './identities';
+import { CONFIRM_DIALOG_TESTID } from '../../src/components/confirmDestructiveMessage';
 
 const SESSION_KEY = 'largata.web.session';
 
@@ -44,7 +45,9 @@ export const test = base.extend<LargataFixtures>({
       await dialog.accept();
     });
 
+    const watching = watchConfirmDialogs(page, signal);
     await use(signal);
+    watching.stop();
   },
 
   signIn: async ({ page, baseURL }, use) => {
@@ -73,6 +76,39 @@ export const test = base.extend<LargataFixtures>({
 });
 
 export { expect };
+
+
+function watchConfirmDialogs(page: Page, signal: Signal): { stop: () => void } {
+  let live = true;
+  const seen = new Set<string>();
+
+  const poll = async () => {
+    while (live) {
+      try {
+        const dialog = page.getByTestId(CONFIRM_DIALOG_TESTID);
+        if ((await dialog.count()) > 0 && (await dialog.first().isVisible())) {
+          const text = (await dialog.first().innerText()).replace(/\s+/g, ' ').trim();
+          if (!seen.has(text)) {
+            seen.add(text);
+            signal.dialogs.push(`confirm: ${text}`);
+          }
+          const confirm = dialog.first().getByRole('button').last();
+          await confirm.click({ timeout: 2_000 });
+        }
+      } catch {
+        // the page navigated or closed mid-poll; the next tick re-reads it
+      }
+      await page.waitForTimeout(120).catch(() => undefined);
+    }
+  };
+
+  void poll();
+  return {
+    stop: () => {
+      live = false;
+    },
+  };
+}
 
 export async function settled(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle').catch(() => undefined);

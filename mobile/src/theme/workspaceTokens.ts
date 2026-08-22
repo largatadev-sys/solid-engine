@@ -556,6 +556,9 @@ export const travelerTypography = {
     lineHeight: 20,
     fontWeight: '700',
   },
+  alertTitle: { fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  alertBody: { fontSize: 13.5, lineHeight: 19, fontWeight: '400' },
+  alertAction: { fontSize: 15, lineHeight: 20, fontWeight: '600' },
 } as const;
 
 
@@ -602,6 +605,7 @@ export const travelerRadii = {
   sheet: 20,
   postcard: 18,
   pill: 100,
+  alert: 14,
 } as const;
 
 

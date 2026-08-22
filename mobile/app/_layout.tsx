@@ -11,6 +11,7 @@ import { authCapabilities } from '../src/repositories/authRepository';
 import { useAuth } from '../src/hooks/authContext';
 import { useMe } from '../src/hooks/useMe';
 import { AuthProvider } from '../src/hooks/useAuth';
+import { ConfirmStation } from '../src/components/ConfirmStation';
 import { MobileFrame } from '../src/components/MobileFrame';
 import { usePendingJoin } from '../src/join/usePendingJoin';
 import { CropStation } from '../src/media/CropStation';
@@ -46,6 +47,7 @@ export default function RootLayout() {
             <AuthGate />
           </MobileFrame>
           <CropStation />
+          <ConfirmStation />
         </AuthProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

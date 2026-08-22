@@ -15,6 +15,12 @@ export type ConfirmWording = {
 export type ConfirmWith = (wording: ConfirmWording, onConfirm: () => void) => void;
 
 
+export const CANCEL_LABEL = 'Cancel';
+
+
+export const CONFIRM_DIALOG_TESTID = 'confirm-dialog';
+
+
 export function confirmDestructiveMessage(what: string): ConfirmWording {
   return {
     title: `Delete ${what}?`,

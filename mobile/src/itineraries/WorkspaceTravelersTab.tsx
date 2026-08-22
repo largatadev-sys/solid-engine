@@ -13,7 +13,6 @@ import {
 import { notify } from '../components/notify';
 import { useLayoutClose } from '../members/layoutClose';
 import { membershipErrorMessage } from '../members/membershipErrors';
-import { afterSheetDismissed } from '../members/afterSheetDismissed';
 import { AddTravelerSheet } from '../members/AddTravelerSheet';
 import { cascadeDelayFor, onTabBlurred, onTabFocused, UNVISITED } from '../members/cascade';
 import { OwnershipOfferCard } from '../members/OwnershipOfferCard';
@@ -132,54 +131,46 @@ export function WorkspaceTravelersTab({
     const label = subject.title;
 
     if (entry === 'remove') {
-      afterSheetDismissed(() =>
-        confirmWith(removeMemberWording(label), () => {
-          closeLayout();
-          endMembership.mutate(
-            { travelerId: member.travelerId, leaving: false },
-            { onError: (error) => notify('Could not remove them', membershipErrorMessage(error)) },
-          );
-        }),
-      );
+      confirmWith(removeMemberWording(label), () => {
+        closeLayout();
+        endMembership.mutate(
+          { travelerId: member.travelerId, leaving: false },
+          { onError: (error) => notify('Could not remove them', membershipErrorMessage(error)) },
+        );
+      });
       return;
     }
 
     if (entry === 'leave') {
-      afterSheetDismissed(() =>
-        confirmWith(leaveTripWording(), () => {
-          endMembership.mutate(
-            { travelerId: member.travelerId, leaving: true },
-            {
-              onSuccess: () => router.replace(TRIPS_TAB_ROUTE),
-              onError: (error) => notify('Could not leave the trip', membershipErrorMessage(error)),
-            },
-          );
-        }),
-      );
+      confirmWith(leaveTripWording(), () => {
+        endMembership.mutate(
+          { travelerId: member.travelerId, leaving: true },
+          {
+            onSuccess: () => router.replace(TRIPS_TAB_ROUTE),
+            onError: (error) => notify('Could not leave the trip', membershipErrorMessage(error)),
+          },
+        );
+      });
       return;
     }
 
     if (entry === 'transfer') {
-      afterSheetDismissed(() =>
-        confirmWith(offerOwnershipWording(label), () => {
-          closeLayout();
-          offerOwnership.mutate(member.travelerId, {
-            onError: (error) => notify('Could not offer ownership', membershipErrorMessage(error)),
-          });
-        }),
-      );
+      confirmWith(offerOwnershipWording(label), () => {
+        closeLayout();
+        offerOwnership.mutate(member.travelerId, {
+          onError: (error) => notify('Could not offer ownership', membershipErrorMessage(error)),
+        });
+      });
       return;
     }
 
     if (entry === 'revokeOffer') {
-      afterSheetDismissed(() =>
-        confirmWith(revokeOwnershipOfferWording(label), () => {
-          closeLayout();
-          revokeOffer.mutate(undefined, {
-            onError: (error) => notify('Could not revoke the offer', membershipErrorMessage(error)),
-          });
-        }),
-      );
+      confirmWith(revokeOwnershipOfferWording(label), () => {
+        closeLayout();
+        revokeOffer.mutate(undefined, {
+          onError: (error) => notify('Could not revoke the offer', membershipErrorMessage(error)),
+        });
+      });
     }
   };
 
