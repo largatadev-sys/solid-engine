@@ -1,0 +1,121 @@
+# S4.28 — Travelers tab: member management + invite link
+
+**Status:** ready-for-agent
+**Grilled:** 2026-08-22 (grill-with-docs, four rounds + design-prompt cycle) — founder rulings recorded per question in this spec and in ADR-032.
+**Design baseline:** the founder's Claude Design canvas **Travelers Spec s2** (frames 0–8 + component contract C1–C7 + motion contract M1–M7, all normative; the dashed **v2 annex is explicitly not built**). Archived copy: `mock/` beside this spec. Per the standing rule, the mock's own markup answers layout/icon/copy questions.
+**ADR:** ADR-032 (invite link + join request model; membership-policy changes).
+**Candidate-capability note:** `invitation.send` (already on ADR-009's list) and **join-link issuance** (`invitation.link` — a capability, footprint-growing, not governance) → register #14's accumulating map.
+
+## Problem Statement
+
+Inviting a co-traveler today lives in the wrong place and covers too few people. The only door is the "Invite Traveler" header action inside the Itinerary Workspace *editor* — a membership act buried in a plan-editing surface — and it only works for people the inviter can name by email or exact @handle, which requires the invitee to already be on Largata. There is no way to bring in someone who isn't on the app short of dictating an email address, the accept experience is a bare text card, and the Travelers tab — the natural home of "who is on this trip" — is a read-only roster. Ownership transfer, remove and leave are stranded on a soft-retired members screen nobody can find.
+
+## Solution
+
+The Travelers tab becomes the trip's member-management surface, and a shareable **invite link** becomes the door for people not on the app:
+
+- The tab shows the roster in sections (**Travelers · Invited · Requests**) with a pinned **Add traveler** CTA. Any member invites by @handle or shares the trip's invite link; the owner alone removes members and answers link-join requests.
+- The **invite link** works like a Discord invite with a consent gate: anyone with the link opens a postcard-style landing, signs up if needed (full, unmodified onboarding), and **requests to join**; the owner approves (membership immediately — the request was their consent) or declines silently. One live link per trip, no expiry, no regeneration.
+- The handle-invitation accept experience on the Trips tab becomes a context-rich card (cover, destination, dates, who's going, expiry) with an asymmetric Accept / Decline.
+- Ownership transfer rehomes into the tab (owner: row ⋯ menu; offeree: an inline Accept/Decline card at the top of the tab). The members screen and the old invite screen are deleted.
+- **Membership freezes at publish**: no inviting, removing, requesting, approving, or ownership transfer on a published trip; leave stays.
+
+## User Stories
+
+1. As a trip member, I want a Travelers tab that lists everyone on the trip in sections (Travelers, Invited, Requests), so that I can see the state of the whole roster at a glance.
+2. As a trip member, I want an always-reachable "Add traveler" button pinned at the bottom of the tab, so that growing the group never requires scrolling or hunting through an editor.
+3. As a trip member, I want to invite any traveler by their exact @handle from the add sheet, so that I can bring in friends without waiting on the owner.
+4. As a trip member, I want the add sheet to tell me when a handle matches nobody and pivot me to the invite link, so that a friend not yet on Largata still gets invited in the same motion.
+5. As a trip member, I want to share the trip's invite link through my platform's share sheet, so that I can invite people over WhatsApp/Messenger without typing anything into Largata.
+6. As a trip member, I want the same live link every time I share, so that earlier shares never go stale.
+7. As a trip member, I want to see pending invitations in an Invited section (with who invited them) and revoke any of them, so that the group can manage its own outstanding asks.
+8. As a link recipient without a Largata account, I want the link to open a postcard showing the trip's cover, title, destination, dates and traveler count, so that I know what I'm joining before I'm asked to sign up.
+9. As a link recipient without an account, I want one CTA that takes me through the standard sign-up and onboarding and then **returns me to the invite landing**, so that I never have to dig the link out of my chat again.
+10. As a signed-in link recipient, I want a "Request to join" CTA on the landing, so that I can ask to join without knowing anyone's handle.
+11. As a link recipient, I want the landing to show "Request sent" after I request (and whenever I re-open the link while pending), so that I know the ball is with the owner.
+12. As a link recipient whose request was approved, I want the trip to simply appear in my Trips (and the landing to offer "Open trip workspace"), so that joining completes without a second handshake.
+13. As a link recipient whose request was declined, I want no notification and the ability to request again, so that a decline stays socially weightless.
+14. As a link recipient who is already a member, I want the landing to recognize me and open the workspace, so that a stale link never dead-ends.
+15. As a link recipient holding a link to an archived or published trip (or a broken token), I want an honest "This trip isn't taking new travelers" state, so that I don't chase a closed door.
+16. As the trip owner, I want link-join requests in a Requests section only I can see, with Approve/Decline per row, so that strangers pass through my consent before entering the workspace.
+17. As the trip owner, I want Approve to create the membership immediately, so that the person who already asked doesn't wait on a third handshake.
+18. As the trip owner, I want to remove any member behind a confirm that says their content stays, so that I can manage the group without destroying its record.
+19. As a non-owner member, I want to leave the trip from my own row behind a confirm, so that exiting is self-service.
+20. As the trip owner, I want to offer ownership from a member's ⋯ menu, revoke a standing offer from the same menu, and see "Ownership offered · waiting on them" on their row, so that transfer lives where the people are.
+21. As a member offered ownership, I want an Accept/Decline card at the top of my Travelers tab, so that I can take or refuse the role without hunting for a hidden screen.
+22. As an invitee, I want my invitation on the Trips tab as a card with the trip's cover, destination, dates, who's going, who invited me, and when it expires, so that I have context before committing.
+23. As an invitee, I want Accept to show progress in the button and land me in the workspace, so that joining feels immediate.
+24. As an invitee, I want Decline behind a confirm that tells me the inviter won't be notified and can invite me again, so that declining is safe.
+25. As an invitee with an unverified email, I want Accept to route me to verification first, so that the verified-mailbox gate holds.
+26. As a traveler, I want expired invitations to render nowhere (inbox or Invited section), so that dead asks don't clutter either side.
+27. As a trip member, I want every avatar to show the traveler's photo with tinted initials only as fallback, and tapping an avatar to open their profile dialog, so that the roster stays recognizably human.
+28. As a trip member on a published trip, I want the tab read-only for membership (no add bar, no Invited/Requests, no remove/transfer) while Leave still works, so that a published record's group is stable but nobody is trapped.
+29. As a traveler, I want nobody's email address rendered anywhere on the roster (email-legacy invitations show a neutral "Email invitation" row), so that addresses stay private.
+30. As a traveler using the app, I want the tab, sheets, menus, cards and landing to follow the motion contract (and jump-cut under Reduce Motion), so that the surface feels finished rather than assembled.
+31. As a founder, I want analytics on link shares, teaser views, requests and their outcomes, so that the parked guest-accounts trigger ("conversion dying at the sign-up wall") is measurable rather than a hunch.
+
+## Implementation Decisions
+
+**Authorization policy (three changes, all founder-ruled on the record — ADR-032; /v1 semantics changes ride its waiver):**
+
+1. **Any member** may invite by handle, revoke a pending invitation, and read/share the invite link. Issuance stops requiring owner-ness (the additive widening S1.2's grilling explicitly anticipated). **Owner-only:** removing members, the Requests queue and its approve/decline, offering/revoking ownership transfer.
+2. **Owner-only removal is reaffirmed** (the s1 mock's any-member-removal was challenged and rejected: an approve-then-purge griefing surface). Self-leave stays self-only; the owner can neither leave nor be removed (transfer first).
+3. **Publish freezes membership**: invitation issuance/revocation, member removal, join-request creation/approval, invitation acceptance, and all ownership-offer operations (offer, revoke, accept, decline) are refused on a published trip. Pending invitations and offers become inert and hidden (they resurface if the trip unpublishes; invitations still expire naturally). **Leave stays allowed.** Completed-but-unpublished trips keep everything open (post-trip adds are a real use case: bring in the friend who was there). Archive keeps its existing posture.
+
+**Domain (new concepts — glossary + entity table updated in the domain model):**
+
+4. **Join Link** — the trip's single shareable invite token: one per workspace, opaque and unguessable (≥128-bit URL-safe random), minted lazily on first member fetch, reused forever. No expiry, no regeneration (reset parked with trigger). It is dead — computed at read time, not stored — while the trip is archived or published.
+5. **Join Request** — a traveler asking the trip: workspace + traveler + status `pending → approved | declined | superseded`. At most one pending per workspace+traveler; decline is terminal for that row but the traveler may request again (new row). **Membership arriving by any path supersedes the other path**: accepting a handle invitation resolves an open request, and approving a request voids pending invitations for that traveler on that trip.
+6. The two consent directions are the model's spine: an **Invitation** is the trip asking the traveler (traveler consents by accepting); a **Join Request** is the traveler asking the trip (owner consents by approving — approval creates the membership immediately, with no second handshake).
+7. Creating a join request requires a **verified email**, the same gate invitation-accept holds. Since requesting requires a signed-in, onboarded account, approval never admits a half-built identity — onboarding always happened before the request existed.
+
+**Wire (all additive within /v1):**
+
+8. New endpoints: fetch-or-mint the trip's join link (member-scoped; returns the full share URL) · the **join teaser** read by token (answers anonymously with title, destination, dates, traveler count, cover reference, and — when a bearer token is present — the viewer's state: can-request / pending / member / dead) · create join request (by token, authenticated + verified) · list join requests (owner) · approve / decline a request (owner).
+9. **The teaser is the app's first anonymous product endpoint** — deliberate, token-gated, returning teaser fields only (never roster names, never plan content). Recorded in ADR-032 as the exception to the everything-authenticated posture.
+10. **Two capability-scoped cover reads exist because the audience fence correctly refuses both audiences**: the join teaser's viewer (anonymous or non-member) and an invitation's invitee cannot pass the itinerary-cover audience check. The join token and the invitation are themselves the authorization: a token-scoped cover route under the join surface, and an invitation-scoped cover route for the inbox card. Both serve the thumbnail variant only.
+11. The inbox invitation payload gains additive fields: destination, date range, cover reference, inviter handle, and a going-preview (first few member summaries + total count). The pending-invitations payload gains the inviter's handle; email-born rows are recognizable (no handle/invitee id) and the client renders them addressless.
+12. The share URL is composed server-side from per-environment configuration (`<web-base>/join/<token>`), so links open the web app today and the same URLs can become Android App Links later without reprinting anything.
+
+**Mobile:**
+
+13. The Travelers tab is rebuilt to the canvas: sections with live counts (owner first, then join date), pinned add bar, avatar-only row tap opening the existing read-only profile dialog (≥44px hit), ⋯ on rows per the permission matrix.
+14. The **add sheet (v1)** is exact-handle lookup only: search field → found-traveler card with a direct Invite action (ghost "Invited" pill when pending, "On this trip" when a member) → share-link row → the no-results pivot. No Suggested section, no multi-select, no batch CTA (all deferred with the suggestions story; the canvas's v2 annex is their design, untouched).
+15. **⋯ menus are app-drawn compact bottom sheets** (Android has no platform action sheet), sharing the add sheet's present/dismiss. Variants: owner-on-member [Transfer ownership · Remove from trip] · owner-on-offered-member [Revoke ownership offer · Remove from trip] · own-row [Leave trip]. Every confirm behind them stays a platform alert with the canvas's exact copy.
+16. **Ownership transfer rehomes**: the trip-screen offer banner is deleted along with the members screen and its route; the offeree acts on the frame-8 card pinned at the top of their Travelers tab; the owner acts through the ⋯ menu and reads the "Ownership offered · waiting on them" row sub. The offer/accept backend semantics (one pending per workspace, INV-4 swap at accept) are untouched.
+17. The **/join landing** is a new route reachable only by the link — in no tab or nav graph. It renders the postcard (one card, one entering unit) with the five states as drawn. It is the app's only pre-auth screen: the auth gate admits the join segment unauthenticated.
+18. A **persisted pending-join store** carries the token through sign-up/onboarding and app restarts (module-scoped store + storage — state that must survive navigation and process death never lives in a screen's component state): opening `/join/<token>` signed-out stashes the token; when the gate settles into the app it routes to the landing instead of Home, then clears.
+19. The **per-member avatar tint map** (the canvas's eight well/ink pairs) is minted as a shared module, assigned deterministically by traveler id, and used only to paint initials fallbacks — photos are always primary. Chat (S4.10) inherits it instead of duplicating it.
+20. The old invite screen, the editor header's "Invite Traveler" action, and the email-invite UI are deleted. The email endpoint stays on the wire, dormant (ADR-008).
+21. The inbox card is rebuilt to frame 6: cover, title, destination · dates, facepile + "going" line, "Invited by @handle · Nd ago", expiry (destructive tint under 48h; expired never render), Accept pill with in-pill spinner, Decline behind its confirm. Existing behaviors are kept: accept navigates to the workspace; unverified email reroutes to verification.
+22. **Motion contract M1–M7 is normative** (entrances, exits+layout close, approve = exit+entrance, sheet timing, press feedback, once-per-visit cascade, postcard-as-one-unit), including Reduce Motion (entrances jump-cut, opacity fades stay) and "nothing else animates". One platform-forced deviation, recorded: RN's new architecture deprecates `LayoutAnimation`, so the 200ms layout-close is implemented with reanimated layout transitions at the same curve/duration; the web fallback stays a 200ms CSS height transition as written.
+23. Analytics: server-side events for teaser views, request creation and approve/decline; client-side track events for link shares. Together with the existing invite events they make the parked guest-accounts trigger measurable.
+24. Live updates are **not** in scope (parked): the tab is pull-based — refetch on focus and after mutations, which is also what the motion keys off. What already works stays: WS-1's membership eviction closes a removed member's socket subscriptions.
+
+## Testing Decisions
+
+Good tests here assert **external behavior at the highest existing seam** — the HTTP surface for the backend, pure modules and the Playwright suite for the client — never internals. Every authorization/fence test must have a **distinguishable failure**: assert the discriminating error code, not just the status (two 404s with different codes are different worlds — the repo's standing indistinguishable-outcomes rule).
+
+- **Backend integration tests** (the existing `*IT` + singleton-container pattern) at the HTTP seam: the policy matrix (member can invite/revoke, member cannot remove or approve, owner-only paths refuse members by the named code) · the publish-freeze matrix (each membership/offer operation refused on a published trip, allowed on completed-unpublished; invitation accept refused; leave allowed) · join-link lifecycle (lazy mint, stable reuse, member-scoped read) · join-request lifecycle (verified-email gate; approve creates membership and supersedes pending invitations; decline allows re-request; one pending per traveler) · the anonymous teaser (valid token → teaser fields and nothing else — assert roster/plan absence; invalid token → not-found; archived/published → dead state) · both capability-scoped cover routes (authorized by token/invitation, refused otherwise) · additive inbox/pending fields.
+- **Coverage tests**: the join controller is deliberately reachable without the guard — its exemption must be **qualified by controller + reason**, not a bare handler name (the epic-map line about the exemption set's bare-name blind spot applies; do not widen it).
+- **No data migration** — the story's schema is two additive tables, so no migration-stepping IT is owed.
+- **Mobile Jest** at pure-module seams (the codebase's established pattern): section assembly from roster+invited+requests · menu-variant selection · tint-map determinism · the pending-join store (stash, settle-route, clear; survives a simulated restart) · gate destinations including the unauthenticated join segment · expiry labels and the 48-hour switch · the add-sheet state machine (query → found/pending/member/no-results) · the once-per-visit cascade guard.
+- **Playwright specs** (the H1 suite, both projects): the tab walk (invite → Invited → revoke), owner approve/decline with an API-seeded request, the five landing states (the web rung is exactly where /join lives today), the ownership-offer flow end to end across two pool travelers, and the inbox card accept/decline. Prior art: the existing e2e specs driving the verified pool (`t1`–`t5`) — reach for the pool for every 2+-traveler scenario, and state which tag played which role.
+- **Device rung** (the gate, per H2's tiers): the motion contract and the real share sheet are closable only on a device; the link-open path (chat app → browser → web landing) is walked by hand once.
+
+## Out of Scope
+
+- **Suggestions ("people you had trips with"), multi-select and the batch CTA** — deferred until public profiles exist; the canvas's v2 annex is their design (epic-map line + trigger).
+- **Guest accounts** — parked (epic-map line; trigger: invite-link conversion visibly dying at the sign-up wall, measured by this story's analytics). Link joiners go through the full, unmodified onboarding — **no trimmed path (rejected, not parked)**.
+- **Link expiry / regeneration / reset** — parked (trigger: first real link-request spam report).
+- **Live roster/queue updates over the socket** — parked (trigger: S4.10 mints the subscription client patterns).
+- **Notifications** of approval/decline/removal — the notifications backlog line, unchanged.
+- Moderation/blocking, member caps, roles beyond owner, "added you" system messages, tab badges, profile stats on rows — the canvas's ruled-out list, binding.
+- Email-invite UI (endpoint dormant on the wire) · Chat (S4.10) · Android App Links registration (the URL shape is ready for it).
+
+## Further Notes
+
+- **One canvas caption is corrected by this spec**: frame 7's "Approval never returns the traveler here — they get a notification" — no notification system exists (parked backlog line). Approval's discovery is the trip appearing in Trips, plus the landing's member state if the link is re-opened. The rest of C7 stands.
+- **One canvas line is flagged for the owner review rather than silently adopted**: the archived-trip tab drawn with "no ⋯ at all, no Leave" contradicts S1.9's ruling (and the shipped server semantics) that **self-leave survives archive** — and this tab is now the only leave door in the app. Recommendation: keep ⋯ → Leave on the viewer's own row on archived trips; the server already allows it. Owner decides at review; the build follows the ruling.
+- The archived mock set under `mock/` is the design baseline; the conversation-attached copy suffered encoding mangling in transit, so the founder drops the original `Travelers Spec.dc.html` + `support.js` beside the archived README (the Claude Design canvas remains authoritative meanwhile).
+- The Invitation entity's S1.2 issuance rule ("owner only; widening to members would be additive") is superseded exactly as it predicted — recorded in the domain model and ADR-032.
