@@ -6,6 +6,7 @@ import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { climbTo, seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled, labelStarting } from '../support/screen';
 import { removeMemberWording } from '../../src/components/confirmDestructiveMessage';
+import { copyLinkFeedback } from '../../src/itineraries/shareLinkContract';
 import {
   ADD_SHEET_TITLE,
 } from '../../src/members/travelerCopy';
@@ -114,6 +115,25 @@ test.describe('the roster the owner sees', () => {
 
     await expect(page.getByText(INVITED_GHOST_LABEL, { exact: true }).last()).toBeVisible();
     await expect(labelled(page, `${INVITE_LABEL} @${memberHandle}`)).toHaveCount(0);
+  });
+
+  test('the copied badge belongs to the copy, and steps aside the moment you do anything else', async ({
+    page,
+    context,
+    signIn,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await signIn(OWNER);
+    await page.goto(travelersTab(trip.id));
+    await openAddSheet(page);
+
+    await page.getByText(SHARE_LINK_LABEL, { exact: true }).click();
+    await expect(page.getByText(copyLinkFeedback('copied'), { exact: true })).toBeVisible();
+
+    await search(page, `@${memberHandle}`);
+
+    await expect(page.getByText(copyLinkFeedback('copied'), { exact: true })).toHaveCount(0);
+    await expect(page.getByText(SHARE_LINK_LABEL, { exact: true })).toBeVisible();
   });
 
   test('typing alone asks the server nothing — the lookup waits to be triggered', async ({

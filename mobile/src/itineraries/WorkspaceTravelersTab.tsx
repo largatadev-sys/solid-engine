@@ -89,6 +89,11 @@ export function WorkspaceTravelersTab({
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const copyRevert = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const forgetCopyFeedback = useCallback(() => {
+    if (copyRevert.current !== null) clearTimeout(copyRevert.current);
+    setCopyFeedback(null);
+  }, []);
+
   const visitKey = useTabVisit();
   const closeLayout = useLayoutClose();
 
@@ -331,12 +336,16 @@ export function WorkspaceTravelersTab({
         }}
         foundName={found.data?.displayName ?? null}
         inviting={invite.isPending}
-        onQueryChange={setQuery}
-        onInvite={(handle) =>
+        onQueryChange={(next) => {
+          forgetCopyFeedback();
+          setQuery(next);
+        }}
+        onInvite={(handle) => {
+          forgetCopyFeedback();
           invite.mutate(handle, {
             onError: (error) => notify('Could not send the invitation', membershipErrorMessage(error)),
-          })
-        }
+          });
+        }}
         onShareLink={() => {
           void share();
         }}
