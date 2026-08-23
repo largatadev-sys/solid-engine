@@ -1,3 +1,4 @@
+import type { AuthUser } from '../src/repositories/authContract';
 
 
 const STORAGE_KEY = 'largata.web.session';
@@ -117,21 +118,16 @@ describe('signInWithIdp — the Google doorway (S0.6)', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const rest = require('../src/auth/firebaseWebRest');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { viewerChanged } = require('../src/query/viewerScopedCache');
+    const { authStateOf, viewerChanged } = require('../src/query/viewerScopedCache');
 
-    const seen: ({ uid: string } | null)[] = [];
-    rest.subscribe((user: { uid: string } | null) => seen.push(user));
+    const seen: (AuthUser | null)[] = [];
+    rest.subscribe((user: AuthUser | null) => seen.push(user));
 
     await rest.signInWithGoogleIdToken('google-id-token', 'https://x.test');
 
-    const asAuthState = (user: { uid: string } | null) =>
-      user === null
-        ? { kind: 'signedOut' as const }
-        : { kind: 'signedIn' as const, firebaseUid: user.uid, emailVerified: false };
-
     const [first, second] = seen;
     expect(seen).toHaveLength(2);
-    expect(viewerChanged(asAuthState(first ?? null), asAuthState(second ?? null))).toBe(true);
+    expect(viewerChanged(authStateOf(first ?? null), authStateOf(second ?? null))).toBe(true);
   });
 
   it('translates an IdP failure into the shared auth error vocabulary', async () => {

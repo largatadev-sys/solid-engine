@@ -1,8 +1,16 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { AuthState } from '../hooks/authContext';
+import type { AuthUser } from '../repositories/authContract';
 
 
-export type ViewerIdentity = string | null;
+type ViewerIdentity = string | null;
+
+
+export function authStateOf(user: AuthUser | null): AuthState {
+  return user === null
+    ? { kind: 'signedOut' }
+    : { kind: 'signedIn', firebaseUid: user.uid, emailVerified: user.emailVerified };
+}
 
 
 export function viewerIdentityOf(state: AuthState): ViewerIdentity {

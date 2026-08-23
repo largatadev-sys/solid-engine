@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { QueryClient } from '@tanstack/react-query';
 import type { AuthState } from '../src/hooks/authContext';
 import { joinKeys } from '../src/query/joinKeys';
@@ -142,23 +144,39 @@ describe('the postcard a traveler reads after signing in from the invite', () =>
     client.clear();
   });
 
-  it('would still say Sign in if the app default governed it, which is the bug', async () => {
+  it('is stale on arrival without the clear, which is why the clear is the load-bearing half', async () => {
     const client = new QueryClient(APP_DEFAULTS);
+    const options = { ...joinTeaserOptions(TOKEN), staleTime: 30_000 };
 
-    const first = await client.fetchQuery({
-      queryKey: joinKeys.teaser(TOKEN),
-      queryFn: () => Promise.resolve(teaser('signedOut')),
-      staleTime: 30_000,
-    });
+    await client.fetchQuery({ ...options, queryFn: () => Promise.resolve(teaser('signedOut')) });
     const reused = await client.fetchQuery({
-      queryKey: joinKeys.teaser(TOKEN),
+      ...options,
       queryFn: () => Promise.resolve(teaser('canRequest')),
-      staleTime: 30_000,
     });
 
-    expect(first.viewerState).toBe('signedOut');
     expect(reused.viewerState).toBe('signedOut');
 
     client.clear();
+  });
+});
+
+
+describe('the provider that has to notice the viewer moved', () => {
+  const source = readFileSync(join(__dirname, '..', 'src', 'hooks', 'useAuth.tsx'), 'utf8');
+
+  it('asks whether the viewer changed on every auth emission', () => {
+    expect(source).toMatch(/viewerChanged\(\s*previous\.current\s*,\s*next\s*\)/);
+  });
+
+  it('clears the cache when it did, or the invite postcard keeps the last traveler answer', () => {
+    expect(source).toMatch(/if\s*\(viewerChanged\([^)]*\)\)\s*onViewerChanged\(client\)/);
+  });
+
+  it('remembers the state it just saw, or every emission compares against the first one', () => {
+    expect(source).toMatch(/previous\.current\s*=\s*next/);
+  });
+
+  it('derives the state through the shared mapping, so the test pins what ships', () => {
+    expect(source).toContain('authStateOf(user)');
   });
 });

@@ -445,7 +445,11 @@ The invite hand-off page stops painting the card and starts painting the app's l
 
 **2026-08-23**
 
-The invite postcard kept offering *"Sign in or create account"* to a traveler who had just signed in, where it owed them *"Request to join"*. Fixed in `AuthProvider` — it now compares the firebase uid across auth emissions and clears the query cache when the viewer changes — plus `staleTime: 0` on the teaser in its own right. `viewerScopedCache.ts` holds the pure transition rule; `viewerScopedCache.test.ts` covers it, both halves sabotage-checked.
+The invite postcard kept offering *"Sign in or create account"* to a traveler who had just signed in, where it owed them *"Request to join"*. Fixed in `AuthProvider` — it now compares the firebase uid across auth emissions and clears the query cache when the viewer changes — plus `staleTime: 0` on the teaser in its own right. `viewerScopedCache.ts` holds the pure transition rule and the shared `user → AuthState` mapping, so the provider and its tests cannot drift.
+
+**The clear is the load-bearing half, and `staleTime: 0` is not redundant.** Without the clear, the cached `signedOut` is still *returned* on mount — `isPending` is false — so the postcard paints the wrong label for a frame before flipping, and never reflips at all if the screen is not remounted. `staleTime: 0` earns its place on a different case: same-viewer staleness, `pending → member` inside the 30-second default, which no identity change would catch.
+
+**Sabotage covers the wiring, not just the module — the first draft did not, and a review caught it.** Every test passed while `AuthProvider`'s two fix lines could be deleted, because the cache tests call `onViewerChanged(client)` directly; the claim "both halves sabotage-checked" was true of the pure functions and false of the code that actually fixes the bug. Jest cannot render the navigator-bearing provider tree here, so the guard is structural in the `navigatorStaysMounted.test.ts` mould: four assertions pin the `viewerChanged → onViewerChanged` call, the `previous.current` write that makes the comparison meaningful, and the shared mapping.
 
 **The server was never wrong, and proving that first is what kept the fix small.** `/v1/join/<token>` probed with the same token seconds apart answers `signedOut` anonymously and `canRequest` with a bearer — two distinct outcomes, so the probe had a real failure mode. Everything after that was client-side by elimination, and the permitAll route (a shape this repo has been burned by) was cleared rather than suspected.
 

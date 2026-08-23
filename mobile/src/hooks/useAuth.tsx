@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authRepository } from '../repositories/authRepository';
-import { onViewerChanged, viewerChanged } from '../query/viewerScopedCache';
+import { authStateOf, onViewerChanged, viewerChanged } from '../query/viewerScopedCache';
 import { AuthContext, type AuthState } from './authContext';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -11,10 +11,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return authRepository.onAuthStateChanged((user) => {
-      const next: AuthState =
-        user === null
-          ? { kind: 'signedOut' }
-          : { kind: 'signedIn', firebaseUid: user.uid, emailVerified: user.emailVerified };
+      const next = authStateOf(user);
 
       if (viewerChanged(previous.current, next)) onViewerChanged(client);
       previous.current = next;
