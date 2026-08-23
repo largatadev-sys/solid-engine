@@ -81,26 +81,30 @@ function AuthGate() {
     if (destination !== null) router.replace(destination);
   }, [destination, router]);
 
-  if (destination !== null || isSettling(gate)) return <Splash />;
+  const settling = destination !== null || isSettling(gate);
 
   return (
-    <Stack
-      screenOptions={{
-        headerTitleStyle: typography.bodyStrong,
-        contentStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="join/[token]" options={{ headerShown: false }} />
-    </Stack>
+    <View style={styles.root}>
+      <Stack
+        screenOptions={{
+          headerTitleStyle: typography.bodyStrong,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="join/[token]" options={{ headerShown: false }} />
+      </Stack>
+
+      {settling && <Splash overlay />}
+    </View>
   );
 }
 
 
-function Splash() {
+function Splash({ overlay = false }: { overlay?: boolean }) {
   return (
-    <View style={styles.splash}>
+    <View style={overlay ? styles.splashOverlay : styles.splash}>
       <ActivityIndicator size="large" color={colors.accent} />
     </View>
   );
@@ -115,5 +119,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
+  },
+  splashOverlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+    zIndex: 1,
+    elevation: 1,
   },
 });
