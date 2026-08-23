@@ -5,6 +5,7 @@ import { ApiError } from '../../src/api/ApiError';
 import { useAuth } from '../../src/hooks/authContext';
 import { JoinPostcard } from '../../src/join/JoinPostcard';
 import { DEAD_QUIET, LEAVE_LANDING_LABEL, WORDMARK } from '../../src/members/travelerCopy';
+import { stripHandoffParam } from '../../src/join/handoffUrl';
 import { forgetPendingJoin, stashPendingJoin } from '../../src/join/pendingJoinStore';
 import { trackJoinLandingViewed } from '../../src/members/memberEvents';
 import { TRIPS_TAB_ROUTE, WELCOME_ROUTE } from '../../src/navigation/authRoutes';
@@ -26,6 +27,10 @@ export default function JoinLandingScreen() {
   const request = useRequestToJoin(token);
 
   const signedIn = auth.kind === 'signedIn';
+
+  useEffect(() => {
+    stripHandoffParam();
+  }, []);
 
   useEffect(() => {
     if (!signedIn) stashPendingJoin(token);

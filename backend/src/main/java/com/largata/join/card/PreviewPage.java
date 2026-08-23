@@ -15,6 +15,8 @@ public final class PreviewPage {
 
     public static final String OPEN_LABEL = "Open this invite";
 
+    public static final String OPEN_ANCHOR_ID = "open";
+
     private PreviewPage() {}
 
 
@@ -60,8 +62,9 @@ public final class PreviewPage {
                 <main>
                 <h1>%s</h1>
                 <p>%s</p>
-                <a href="%s">%s</a>
+                <a id="%s" href="%s">%s</a>
                 </main>
+                <script>location.replace(document.getElementById('%s').href)</script>
                 </body>
                 </html>
                 """
@@ -85,8 +88,10 @@ public final class PreviewPage {
                         hex(CardArt.BRAND),
                         escape(title),
                         escape(description),
-                        escape(subject.landingUrl()),
-                        escape(OPEN_LABEL));
+                        OPEN_ANCHOR_ID,
+                        escape(subject.appUrl()),
+                        escape(OPEN_LABEL),
+                        OPEN_ANCHOR_ID);
     }
 
 

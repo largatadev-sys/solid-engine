@@ -3,6 +3,7 @@ import { api, profileFor, request, tokenFor, API } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor } from '../support/identities';
 import { climbTo, seedTrip, stamp, type SeededTrip } from '../support/seed';
+import { APP_HANDOFF_PARAM } from '../../src/join/handoffParam';
 
 const OWNER = ownerTagFor('api/join-link');
 const ASKER = IDENTITY_MAP['api/join-link'].tags[1]!;
@@ -241,17 +242,25 @@ const PREVIEW = process.env.LARGATA_PREVIEW_URL ?? 'http://localhost:8081';
 const CRAWLER = 'facebookexternalhit/1.1';
 const BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36';
 
-const META_UNFURLERS = [
+const UNFURLERS = [
   CRAWLER,
   'facebookcatalog/1.0',
-  'Facebot',
-  'meta-externalagent/1.1',
   'meta-externalfetcher/1.1',
+  'WhatsApp/2.23.20.0',
+  'Twitterbot/1.0',
+  'Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)',
+  'Discordbot/2.0 (+https://discordapp.com)',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15 (Applebot/0.1; +http://www.apple.com/go/applebot)',
+  'Mozilla/5.0 (compatible; SkypeUriPreview Preview/0.5; +https://www.skype.com)',
+  'Mozilla/5.0 (compatible; Bluesky Cardyb/1.1; +mailto:support@bsky.app)',
+  'http.rb/5.1.1 (Mastodon/4.2.1; +https://mastodon.social/)',
+  'Mozilla/5.0 (compatible; redditbot/1.0; +http://www.reddit.com/feedback)',
+  'curl/8.4.0',
+  'python-requests/2.31.0',
 ];
 
-const META_CRAWLERS_THAT_UNFURL_NOTHING = ['meta-externalads/1.1', 'meta-webindexer/1.1'];
-
-const HUMANS_INSIDE_META_APPS = [
+const HUMANS = [
+  BROWSER,
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 [FBAN/FBIOS;FBAV/450.0]',
   'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/450.0;]',
   'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 Instagram 300.0.0.29.110',
@@ -265,7 +274,9 @@ const asAgent = async (agent: string, path: string): Promise<string> => {
 const previewServed = async (): Promise<boolean> =>
   (await asAgent(BROWSER, '/')).includes('<div id="root">');
 
-test.describe('the preview container routes crawlers to the per-trip card', () => {
+const HANDOFF = `?${APP_HANDOFF_PARAM}=1`;
+
+test.describe('the preview container answers every invite link with the per-trip card', () => {
   test.beforeAll(async () => {
     if (!(await previewServed())) {
       test.skip(
@@ -282,25 +293,10 @@ test.describe('the preview container routes crawlers to the per-trip card', () =
     expect(unfurled).toContain(`/v1/join/${token}/card.png`);
   });
 
-  test('a browser asking for the same link gets the app, not the crawler stub', async () => {
-    const app = await asAgent(BROWSER, `/join/${token}`);
 
-    expect(app).toContain('<div id="root">');
-    expect(app).not.toContain('You&#39;re invited:');
-  });
-
-  test('the two answers DIFFER — both are 200, so a status code proves nothing here', async () => {
-    const [crawler, browser] = await Promise.all([
-      asAgent(CRAWLER, `/join/${token}`),
-      asAgent(BROWSER, `/join/${token}`),
-    ]);
-
-    expect(crawler).not.toBe(browser);
-  });
-
-  test('every Meta agent gets the card, not just the one that unfurls a group chat', async () => {
+  test('EVERY unfurler gets it, including the ones no allowlist would have named', async () => {
     const served = await Promise.all(
-      META_UNFURLERS.map(async (agent) => ({
+      UNFURLERS.map(async (agent) => ({
         agent,
         card: (await asAgent(agent, `/join/${token}`)).includes('You&#39;re invited:'),
       })),
@@ -310,27 +306,47 @@ test.describe('the preview container routes crawlers to the per-trip card', () =
   });
 
 
-  test('the Meta crawlers that unfurl nothing are left on the SPA, not handed the stub', async () => {
-    const served = await Promise.all(
-      META_CRAWLERS_THAT_UNFURL_NOTHING.map(async (agent) => ({
-        agent,
-        app: (await asAgent(agent, `/join/${token}`)).includes('<div id="root">'),
-      })),
-    );
+  test('an agent nobody has ever heard of gets it too — that is the point of the flip', async () => {
+    const unheard = await asAgent('SomeCrawlerShippedTomorrow/9.9', `/join/${token}`);
 
-    expect(served.filter((row) => !row.app).map((row) => row.agent)).toEqual([]);
+    expect(unheard).toContain('You&#39;re invited:');
   });
 
 
-  test('a human inside a Meta app still gets the product, never the crawler stub', async () => {
+  test('a human gets the same page, and it carries the hand-off rather than stranding them', async () => {
     const served = await Promise.all(
-      HUMANS_INSIDE_META_APPS.map(async (agent) => ({
-        agent,
-        app: (await asAgent(agent, `/join/${token}`)).includes('<div id="root">'),
-      })),
+      HUMANS.map(async (agent) => {
+        const page = await asAgent(agent, `/join/${token}`);
+        return { agent, handed: page.includes('location.replace') && page.includes('app=1') };
+      }),
     );
 
-    expect(served.filter((row) => !row.app).map((row) => row.agent)).toEqual([]);
+    expect(served.filter((row) => !row.handed).map((row) => row.agent)).toEqual([]);
+  });
+
+
+  test('the hand-off names the same token, so nobody is handed a different trip', async () => {
+    const page = await asAgent(BROWSER, `/join/${token}`);
+
+    expect(page).toContain(`/join/${token}`);
+  });
+
+
+  test('the hand-off url is EXCLUDED from the matcher, or an invite link bounces forever', async () => {
+    const landed = await asAgent(BROWSER, `/join/${token}${HANDOFF}`);
+
+    expect(landed).toContain('<div id="root">');
+    expect(landed).not.toContain('You&#39;re invited:');
+  });
+
+
+  test('the two answers DIFFER — both are 200, so a status code proves nothing here', async () => {
+    const [invite, handoff] = await Promise.all([
+      asAgent(BROWSER, `/join/${token}`),
+      asAgent(BROWSER, `/join/${token}${HANDOFF}`),
+    ]);
+
+    expect(invite).not.toBe(handoff);
   });
 
 
