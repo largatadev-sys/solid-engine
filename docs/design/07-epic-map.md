@@ -121,8 +121,10 @@ The business model: two tiers, **Free / Subscriber**; launch is entirely free. P
   |---|---|---|---|---|---|
   | 1 | `.ring` | **backend**, server-rendered (`PreviewPage`) | **32×32** (26px + 3px border) | 195, **439** | `#FFF7ED` |
   | — | *(nothing)* | the JS bundle downloading | — | — | white |
-  | 2 | `ActivityIndicator size="large"` | app, `_layout.tsx` `AuthGate` → `<Splash>` | **51×51** | 195, **422** | `colors.background` |
-  | 3 | `ActivityIndicator` (default) | app, `join/[token].tsx` teaser load | ~**20×20** | centred | `#FFF7ED` |
+  | 2 | `ActivityIndicator size="large"` | app, `_layout.tsx` `AuthGate` → `<Splash>` | **27×27** | 195, **378** | `colors.background` |
+  | 3 | `ActivityIndicator` (default) | app, `join/[token].tsx` teaser load | **27×27** | 195, **422** | `#FFF7ED` |
+
+  **CORRECTED 2026-08-23, after re-measuring: the first pass had #2 at 51×51 and #3 at ~20×20, and both were wrong.** `ActivityIndicator` on react-native-web renders a wrapper that **scales while it spins**, so a single `getBoundingClientRect()` samples one frame of an animation and reports it as a fixed size — the raw trace shows the same element measuring 51, 40, 49, 50, 26, 24 and 28 across successive samples. Both app spinners are in fact **27×27 at 0.75s** — `size="large"` and the default are indistinguishable here. **The consequence: the surviving discontinuity is POSITION, not size** — 44px of vertical travel between two otherwise identical spinners (378 → 422), because `AuthGate`'s splash centres in a bare flex container while the join landing has `paddingHorizontal: 26` and a wordmark above it. **Option (a) was still correct** — the hand-off page's 32px ring was a genuinely different size and deleting it removed the only real size mismatch — but one of the reasons given for it was built on a bad measurement. **Lesson for the next person measuring an animated element: sample it repeatedly and take the mode, or read the declared style, never one frame.**
 
   Only #3 usually escapes notice, because the teaser resolves inside a frame; a throttled run shows it. **The discontinuity is not one property but three:** a 32→51 size jump (59%), a **17px vertical jump** (the hand-off centres a wordmark+spinner column, the splash centres a lone spinner), and a ground-colour change, since `AuthGate`'s splash paints `colors.background` while both the hand-off and the join landing paint `#FFF7ED`. Horizontal centre is the only thing that already agrees (`cx=195`).
 
