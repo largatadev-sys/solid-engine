@@ -92,11 +92,53 @@ class PreviewPageTest {
 
 
     @Test
-    void theScriptReadsTheUrlFromTheAnchorSoNoUrlIsEverInterpolatedIntoJavascript() {
+    void theVisibleBodyIsALoadingStateNamingNoTripSoTheCardCannotFlashBeforeTheHandoff() {
+        String page = livePage("Island Hopping in El Nido");
+        String body = page.substring(page.indexOf("<body>"));
+
+        assertThat(body)
+                .doesNotContain("Island Hopping")
+                .doesNotContain("El Nido")
+                .contains("class=\"ring\"")
+                .contains(">" + PreviewPage.SITE_NAME + "</p>");
+    }
+
+
+    @Test
+    void theSpinnerAnnouncesItselfSoAScreenReaderIsNotLeftOnASilentPage() {
+        assertThat(livePage("Trip"))
+                .contains("role=\"progressbar\" aria-label=\"" + PreviewPage.LOADING_LABEL + "\"");
+    }
+
+
+    @Test
+    void theHeadCarriesTheAppUrlSoTheRedirectNeedsNoBodyAtAll() {
+        assertThat(livePage("Trip"))
+                .contains(
+                        "<meta name=\"" + PreviewPage.APP_URL_META + "\" content=\"" + APP_ESCAPED + "\">");
+    }
+
+
+    @Test
+    void theScriptReadsTheUrlFromAMetaTagSoNoUrlIsEverInterpolatedIntoJavascript() {
         String page = livePage("Trip");
 
         String script = page.substring(page.indexOf("<script"), page.indexOf("</script>"));
-        assertThat(script).contains("getElementById").doesNotContain("http");
+        assertThat(script).contains(PreviewPage.APP_URL_META).doesNotContain("http");
+    }
+
+
+    @Test
+    void aScriptlessBrowserIsNotStrandedBecauseTheAnchorSurvivesInsideNoscript() {
+        String page = livePage("Trip");
+
+        assertThat(page)
+                .contains(
+                        "<noscript><a href=\""
+                                + APP_ESCAPED
+                                + "\">"
+                                + PreviewPage.OPEN_LABEL
+                                + "</a></noscript>");
     }
 
 
@@ -152,7 +194,11 @@ class PreviewPageTest {
     void thePagePaintsItselfFromTheCardsPaletteRatherThanItsOwnCopyOfIt() {
         String page = livePage("Trip");
 
-        assertThat(page).contains("background:#FFF7ED").contains("background:#EA580C");
+        assertThat(page)
+                .contains("background:#FFF7ED")
+                .contains("border:3px solid #FED7AA")
+                .contains("border-top-color:#EA580C")
+                .contains(".mark{margin:0;color:#EA580C");
         assertThat(CardArt.WELL.getRGB() & 0xFFFFFF).isEqualTo(0xFFF7ED);
         assertThat(CardArt.BRAND.getRGB() & 0xFFFFFF).isEqualTo(0xEA580C);
     }

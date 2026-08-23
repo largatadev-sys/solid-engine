@@ -424,6 +424,24 @@ The crawler user-agent allowlist is **deleted**. Caddy now rewrites every `/join
 
 ---
 
+**2026-08-23** *(same day, third entry — this one fixes what the second entry shipped)*
+
+The invite hand-off page stops painting the card and starts painting the app's loading state, so opening a shared link no longer flashes a postcard before the app appears. Founder report: *"when a link was freshly shared, when it loads it has this initial screen that says open this invite and quickly opens the post card"*.
+
+**It was not a race, and that is the point.** The script sat after `</main>`, so the parser reached it only after the entire card — title, meta line, "Open this invite" button — had been parsed and painted. Document order guaranteed the flash on **every** open of **every** invite link, for every traveler, from the moment the entry above shipped. Nothing was intermittent about it and nothing would have made it rarer.
+
+**The first fix was worse than the founder's, and the difference is the lesson.** Moving the script into the `<head>` removes the flash by removing the frame — nothing paints, and the traveler gets a blank white page instead, because a browser keeps showing the current document until the next one renders. The founder's answer inverted it: *"we can actually use the initial screen of the app and just put a loading spinner."* Painting a splash **identical to the destination** makes the hop invisible, and it covers the navigation gap rather than leaving it white. **Remove the difference, not the frame** — the same shape as S4.17's drag-and-drop, where each fix that damped a disagreement was beaten by the one that made the disagreement impossible.
+
+**So the test pins the invariant, not the mechanism.** What matters is that the visible body names no trip — `PreviewPageTest` asserts the body contains neither the title nor the meta line — rather than where the `<script>` sits, which is one implementation of that. An earlier draft asserted `indexOf("<script") < indexOf("<body")`, which passes when the script is missing entirely; a check with no failure mode, replaced before it landed rather than after. The palette test now pins three separate declarations, so a shift in the 25-argument `formatted()` call cannot pass unnoticed.
+
+**The URL still never enters JavaScript.** The old script read it off its own `<a href>` because `escape()` is HTML-escaping and a URL in a JS string literal needs JS-escaping. It now reads a `largata:app-url` meta tag — same guarantee, and it no longer depends on the body containing an anchor. The anchor survives inside `<noscript>`, which is its only remaining audience: with the allowlist deleted there are no misclassified humans left, only scripting-off ones.
+
+**What is still white, and it is not this page.** Between the hand-off and React's first frame the browser downloads the JS bundle and nothing paints. Warm cache makes it imperceptible — which is why the report said *"quickly"* — but a genuinely fresh share on mobile data is seconds of white. Closing it needs a static splash in the web shell (`app/+html.tsx`, which this repo does not have), and getting that wrong regresses every web route at once. Backlogged deliberately rather than smuggled into a papercut fix.
+
+*Why it wasn't a story —* a defect fix in S4.29; no new surface, no API change, no schema change. The spec's decision 1 is amended in place with a third entry, and the Caddyfile's own note re-anchored on what the page paints.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.

@@ -4,6 +4,7 @@ import static com.largata.support.TripRig.bearer;
 import static com.largata.support.TripRig.fieldIn;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.largata.join.card.PreviewPage;
 import com.largata.support.ObjectStoreTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
@@ -168,8 +169,29 @@ class JoinCardIT extends ObjectStoreTestBase {
         String token = tokenOf(trip());
         String page = previewBody(token);
 
-        assertThat(page).contains("/join/" + token).contains("Open this invite");
-        assertThat(page).contains("app=1").contains("location.replace");
+        assertThat(page)
+                .contains("<meta name=\"" + PreviewPage.APP_URL_META + "\" content=\"")
+                .contains("/join/" + token)
+                .contains("app=1")
+                .contains("location.replace");
+    }
+
+
+    @Test
+    void aScriptlessBrowserKeepsTheAnchorEvenThoughTheHandOffNoLongerNeedsIt() {
+        String page = previewBody(tokenOf(trip()));
+
+        assertThat(page).contains("<noscript>").contains(PreviewPage.OPEN_LABEL);
+    }
+
+
+    @Test
+    void theVisibleBodyNamesNoTripSoNoCardIsPaintedBeforeTheHandOff() {
+        String page = previewBody(tokenOf(trip()));
+        String body = page.substring(page.indexOf("<body>"));
+
+        assertThat(page).contains("<meta property=\"og:title\" content=\"You&#39;re invited: Trip\">");
+        assertThat(body).doesNotContain("You&#39;re invited").doesNotContain(">Trip<");
     }
 
 
