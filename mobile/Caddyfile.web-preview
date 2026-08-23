@@ -44,9 +44,21 @@
 		path_regexp join ^/join/([^/?]+)/?$
 		not query app=1
 	}
+	# TWO fallbacks are needed here and they catch different things — `handle_errors` alone is not
+	# enough, which is a trap worth naming because it looks sufficient. `reverse_proxy` treats an
+	# upstream 404 as a legitimate RESPONSE, not an error, so it passes straight through: a mistyped
+	# or deleted invite link rendered the backend's raw JSON instead of the app's dead postcard.
+	# `handle_response` is what intercepts by STATUS; `handle_errors` below covers the other case,
+	# an upstream Caddy cannot reach at all. The e2e spec's garbage-token walk is the guard.
 	handle @invite {
 		rewrite * /v1/join/{re.join.1}/preview
-		reverse_proxy {$LARGATA_API_UPSTREAM}
+		reverse_proxy {$LARGATA_API_UPSTREAM} {
+			@unrenderable status 4xx 5xx
+			handle_response @unrenderable {
+				rewrite * /index.html
+				file_server
+			}
+		}
 	}
 
 	# Expo Router produces a single-page app: the browser asks for /itineraries/<uuid> directly on a
