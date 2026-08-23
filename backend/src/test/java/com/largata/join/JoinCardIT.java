@@ -164,12 +164,26 @@ class JoinCardIT extends ObjectStoreTestBase {
 
 
     @Test
-    void thePreviewLinksToTheLandingWithoutRedirectingIntoALoop() {
+    void thePreviewHandsOffToTheAppOnAUrlTheInviteMatcherExcludes() {
         String token = tokenOf(trip());
         String page = previewBody(token);
 
         assertThat(page).contains("/join/" + token).contains("Open this invite");
-        assertThat(page).doesNotContain("http-equiv=\"refresh\"").doesNotContain("<script");
+        assertThat(page).contains("app=1").contains("location.replace");
+    }
+
+
+    @Test
+    void theHandOffIsScriptOnlyBecauseSomeCrawlersFollowAMetaRefreshAndWouldMissTheTags() {
+        assertThat(previewBody(tokenOf(trip()))).doesNotContain("http-equiv=\"refresh\"");
+    }
+
+
+    @Test
+    void theCanonicalUrlCarriesNoHandOffParamSoNobodyEverSharesOne() {
+        String page = previewBody(tokenOf(trip()));
+
+        assertThat(contentOf(page, "og:url")).doesNotContain("app=1");
     }
 
 
