@@ -15,6 +15,8 @@ public final class PreviewPage {
 
     public static final String OPEN_LABEL = "Open this invite";
 
+    public static final String LOADING_LABEL = "Opening";
+
     public static final String APP_URL_META = "largata:app-url";
 
     private PreviewPage() {}
@@ -49,23 +51,25 @@ public final class PreviewPage {
                 <meta name="twitter:description" content="%s">
                 <meta name="twitter:image" content="%s">
                 <meta name="%s" content="%s">
-                <script>location.replace(document.head.querySelector('meta[name="%s"]').content)</script>
                 <style>
                 body{margin:0;background:%s;color:%s;font-family:system-ui,sans-serif;\
                 display:flex;min-height:100vh;align-items:center;justify-content:center}
-                main{text-align:center;padding:32px}
-                h1{font-size:28px;margin:0 0 8px}
-                p{color:%s;margin:0 0 24px}
-                a{display:inline-block;background:%s;color:#fff;text-decoration:none;\
-                padding:14px 28px;border-radius:999px;font-weight:700}
+                main{display:flex;flex-direction:column;align-items:center;gap:14px;padding:32px}
+                .mark{margin:0;color:%s;font-size:15px;line-height:20px;font-weight:700}
+                .ring{width:26px;height:26px;border-radius:999px;border:3px solid %s;\
+                border-top-color:%s;animation:spin .8s linear infinite}
+                @keyframes spin{to{transform:rotate(360deg)}}
+                @media (prefers-reduced-motion:reduce){.ring{animation-duration:2.4s}}
+                a{color:%s;font-weight:700}
                 </style>
                 </head>
                 <body>
                 <main>
-                <h1>%s</h1>
-                <p>%s</p>
-                <a href="%s">%s</a>
+                <p class="mark">%s</p>
+                <div class="ring" role="progressbar" aria-label="%s"></div>
+                <noscript><a href="%s">%s</a></noscript>
                 </main>
+                <script>location.replace(document.head.querySelector('meta[name="%s"]').content)</script>
                 </body>
                 </html>
                 """
@@ -85,15 +89,17 @@ public final class PreviewPage {
                         escape(subject.imageUrl()),
                         APP_URL_META,
                         escape(subject.appUrl()),
-                        APP_URL_META,
                         hex(CardArt.WELL),
                         hex(CardArt.INK),
-                        hex(CardArt.MUTED),
                         hex(CardArt.BRAND),
-                        escape(title),
-                        escape(description),
+                        hex(CardArt.DIVIDER),
+                        hex(CardArt.BRAND),
+                        hex(CardArt.BRAND),
+                        escape(SITE_NAME),
+                        escape(LOADING_LABEL),
                         escape(subject.appUrl()),
-                        escape(OPEN_LABEL));
+                        escape(OPEN_LABEL),
+                        APP_URL_META);
     }
 
 
