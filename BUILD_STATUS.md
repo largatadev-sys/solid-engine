@@ -443,6 +443,28 @@ The invite hand-off page stops painting the card and starts painting the app's l
 
 ---
 
+**2026-08-23**
+
+The invite postcard kept offering *"Sign in or create account"* to a traveler who had just signed in, where it owed them *"Request to join"*. Fixed in `AuthProvider` — it now compares the firebase uid across auth emissions and clears the query cache when the viewer changes — plus `staleTime: 0` on the teaser in its own right. `viewerScopedCache.ts` holds the pure transition rule and the shared `user → AuthState` mapping, so the provider and its tests cannot drift.
+
+**The clear is the load-bearing half, and `staleTime: 0` is not redundant.** Without the clear, the cached `signedOut` is still *returned* on mount — `isPending` is false — so the postcard paints the wrong label for a frame before flipping, and never reflips at all if the screen is not remounted. `staleTime: 0` earns its place on a different case: same-viewer staleness, `pending → member` inside the 30-second default, which no identity change would catch.
+
+**Sabotage covers the wiring, not just the module — the first draft did not, and a review caught it.** Every test passed while `AuthProvider`'s two fix lines could be deleted, because the cache tests call `onViewerChanged(client)` directly; the claim "both halves sabotage-checked" was true of the pure functions and false of the code that actually fixes the bug. Jest cannot render the navigator-bearing provider tree here, so the guard is structural in the `navigatorStaysMounted.test.ts` mould: four assertions pin the `viewerChanged → onViewerChanged` call, the `previous.current` write that makes the comparison meaningful, and the shared mapping.
+
+**The server was never wrong, and proving that first is what kept the fix small.** `/v1/join/<token>` probed with the same token seconds apart answers `signedOut` anonymously and `canRequest` with a bearer — two distinct outcomes, so the probe had a real failure mode. Everything after that was client-side by elimination, and the permitAll route (a shape this repo has been burned by) was cleared rather than suspected.
+
+**The bug is the cache key, not the fetch.** The teaser is keyed on the token alone, so one entry serves every asker, and the app default trusts it for 30 seconds — comfortably longer than a sign-in. Nothing anywhere cleared the cache when identity changed, which makes this one instance of a class: the same latent bug sat under every viewer-dependent query, and the profile surviving *sign-out* is its twin. Clearing at `AuthProvider` fixes the class at the one place identity actually moves; keying the teaser per-viewer would have fixed only the teaser.
+
+**A probe that passes on both builds is not evidence, and this one nearly got recorded as such.** The first browser walk returned to the invite with `page.goto`, which is a full reload and throws the in-memory cache away — so the stale entry was never consulted and the *pre-fix control build showed "Request to join" too*. Caught only by running the control, which is the whole reason to run one. The trap is worth naming: the reproduction requires the cache to survive, so it requires in-app navigation, and any probe step that reloads silently tests nothing.
+
+**The verification then went badly wrong for three rounds, and the epic-map entry records it in full.** Every walk started on a preview port that was not 8081, and the backend's hand-off sends the browser to **8081 unconditionally** — so the walks measured a stale 22-Aug container instead of the build under test, and produced a confident phantom: *"the S4.30 onboarding redirect is back."* It was not; routing was correct the whole time. The founder overturned it from their own machine (*"when I try on dev, it's working"*), and the corrected A/B — both lanes on 8081 — shows the two builds differing **only** in the button: `dev` fetches the teaser once and reuses `signedOut` (*"Sign in or create account"*), the fix refetches and gets `canRequest` (*"Request to join"*). Routing identical, no onboarding redirect on either.
+
+**The lesson is one line: zero probe hits from instrumentation verified present in the bundle is not a broken probe, it is the app under test never running.** That signal appeared twice, was explained away twice as a harness fault, and the navigation trace naming `:8083 → :8081` sat unread in the output both times.
+
+*Why it wasn't a story —* a defect fix on the S4.28 invite surface; no new surface, no API change, no schema change.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.

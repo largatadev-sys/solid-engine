@@ -58,6 +58,7 @@ export function joinTeaserOptions(token: string) {
     queryKey: joinKeys.teaser(token),
     queryFn: () => joinRepository.fetchTeaser(token),
     retry: false,
+    staleTime: 0,
   });
 }
 

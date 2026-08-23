@@ -1,3 +1,4 @@
+import type { AuthUser } from '../src/repositories/authContract';
 
 
 const STORAGE_KEY = 'largata.web.session';
@@ -110,6 +111,23 @@ describe('signInWithIdp — the Google doorway (S0.6)', () => {
     await rest.signInWithGoogleIdToken('google-id-token', 'https://x.test');
 
     expect(seen).toEqual([null, 'firebase-uid-123']);
+  });
+
+  it('hands the cache the same viewer change a password sign-in does, so the invite postcard reprices', async () => {
+    mockFetchOnce(AUTH_RESPONSE);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const rest = require('../src/auth/firebaseWebRest');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { authStateOf, viewerChanged } = require('../src/query/viewerScopedCache');
+
+    const seen: (AuthUser | null)[] = [];
+    rest.subscribe((user: AuthUser | null) => seen.push(user));
+
+    await rest.signInWithGoogleIdToken('google-id-token', 'https://x.test');
+
+    const [first, second] = seen;
+    expect(seen).toHaveLength(2);
+    expect(viewerChanged(authStateOf(first ?? null), authStateOf(second ?? null))).toBe(true);
   });
 
   it('translates an IdP failure into the shared auth error vocabulary', async () => {
