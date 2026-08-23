@@ -92,22 +92,28 @@ class PreviewPageTest {
 
 
     @Test
-    void theVisibleBodyIsALoadingStateNamingNoTripSoTheCardCannotFlashBeforeTheHandoff() {
+    void theVisibleBodyIsATitleCardNamingNoTripSoTheCardCannotFlashBeforeTheHandoff() {
         String page = livePage("Island Hopping in El Nido");
         String body = page.substring(page.indexOf("<body>"));
 
         assertThat(body)
                 .doesNotContain("Island Hopping")
                 .doesNotContain("El Nido")
-                .contains("class=\"ring\"")
                 .contains(">" + PreviewPage.SITE_NAME + "</p>");
     }
 
 
     @Test
-    void theSpinnerAnnouncesItselfSoAScreenReaderIsNotLeftOnASilentPage() {
-        assertThat(livePage("Trip"))
-                .contains("role=\"progressbar\" aria-label=\"" + PreviewPage.LOADING_LABEL + "\"");
+    void thePageCarriesNoSpinnerOfItsOwnBecauseTheAppIsAboutToDrawOne() {
+        String page = livePage("Trip");
+
+        assertThat(page).doesNotContain("progressbar").doesNotContain("@keyframes");
+    }
+
+
+    @Test
+    void theWordmarkSitsWhereTheAppsOwnSpinnerLandsSoNothingJumpsAcrossTheHandoff() {
+        assertThat(livePage("Trip")).contains(".mark{margin:0;color:#EA580C;font-size:22px");
     }
 
 
@@ -196,8 +202,7 @@ class PreviewPageTest {
 
         assertThat(page)
                 .contains("background:#FFF7ED")
-                .contains("border:3px solid #FED7AA")
-                .contains("border-top-color:#EA580C")
+                .contains("color:#1C1917")
                 .contains(".mark{margin:0;color:#EA580C");
         assertThat(CardArt.WELL.getRGB() & 0xFFFFFF).isEqualTo(0xFFF7ED);
         assertThat(CardArt.BRAND.getRGB() & 0xFFFFFF).isEqualTo(0xEA580C);
