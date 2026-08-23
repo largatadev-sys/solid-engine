@@ -92,11 +92,40 @@ class PreviewPageTest {
 
 
     @Test
-    void theScriptReadsTheUrlFromTheAnchorSoNoUrlIsEverInterpolatedIntoJavascript() {
+    void theHandoffRunsInTheHeadSoTheCardIsNeverPaintedBeforeTheRedirect() {
+        String page = livePage("Trip");
+
+        String head = page.substring(page.indexOf("<head>"), page.indexOf("</head>"));
+        String body = page.substring(page.indexOf("<body>"));
+
+        assertThat(head).contains("location.replace");
+        assertThat(body).doesNotContain("<script");
+    }
+
+
+    @Test
+    void theHeadCarriesTheAppUrlSoTheRedirectNeedsNoBodyAtAll() {
+        assertThat(livePage("Trip"))
+                .contains(
+                        "<meta name=\"" + PreviewPage.APP_URL_META + "\" content=\"" + APP_ESCAPED + "\">");
+    }
+
+
+    @Test
+    void theScriptReadsTheUrlFromAMetaTagSoNoUrlIsEverInterpolatedIntoJavascript() {
         String page = livePage("Trip");
 
         String script = page.substring(page.indexOf("<script"), page.indexOf("</script>"));
-        assertThat(script).contains("getElementById").doesNotContain("http");
+        assertThat(script).contains(PreviewPage.APP_URL_META).doesNotContain("http");
+    }
+
+
+    @Test
+    void theBodyStillOffersTheAnchorSoAScriptlessBrowserIsNotStranded() {
+        String page = livePage("Trip");
+
+        String body = page.substring(page.indexOf("<body"));
+        assertThat(body).contains("<a href=\"" + APP_ESCAPED + "\">Open this invite</a>");
     }
 
 

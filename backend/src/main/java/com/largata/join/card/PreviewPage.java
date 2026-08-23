@@ -15,7 +15,7 @@ public final class PreviewPage {
 
     public static final String OPEN_LABEL = "Open this invite";
 
-    public static final String OPEN_ANCHOR_ID = "open";
+    public static final String APP_URL_META = "largata:app-url";
 
     private PreviewPage() {}
 
@@ -48,6 +48,8 @@ public final class PreviewPage {
                 <meta name="twitter:title" content="%s">
                 <meta name="twitter:description" content="%s">
                 <meta name="twitter:image" content="%s">
+                <meta name="%s" content="%s">
+                <script>location.replace(document.head.querySelector('meta[name="%s"]').content)</script>
                 <style>
                 body{margin:0;background:%s;color:%s;font-family:system-ui,sans-serif;\
                 display:flex;min-height:100vh;align-items:center;justify-content:center}
@@ -62,9 +64,8 @@ public final class PreviewPage {
                 <main>
                 <h1>%s</h1>
                 <p>%s</p>
-                <a id="%s" href="%s">%s</a>
+                <a href="%s">%s</a>
                 </main>
-                <script>location.replace(document.getElementById('%s').href)</script>
                 </body>
                 </html>
                 """
@@ -82,16 +83,17 @@ public final class PreviewPage {
                         escape(title),
                         escape(description),
                         escape(subject.imageUrl()),
+                        APP_URL_META,
+                        escape(subject.appUrl()),
+                        APP_URL_META,
                         hex(CardArt.WELL),
                         hex(CardArt.INK),
                         hex(CardArt.MUTED),
                         hex(CardArt.BRAND),
                         escape(title),
                         escape(description),
-                        OPEN_ANCHOR_ID,
                         escape(subject.appUrl()),
-                        escape(OPEN_LABEL),
-                        OPEN_ANCHOR_ID);
+                        escape(OPEN_LABEL));
     }
 
 

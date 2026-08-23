@@ -24,13 +24,16 @@
 	# third-party Open Graph validator uses. Answering per-trip by default deletes the guess: a
 	# platform that ships tomorrow is already handled, and nothing has to be noticed to keep working.
 	#
-	# HUMANS ARE HANDED OFF BY THE PAGE ITSELF, which carries a one-line script following its own
-	# "Open this invite" anchor — the same link plus `app=1`. Crawlers run no JavaScript, so they
-	# read the tags and stop; a browser lands on the SPA one hop later, and a browser with scripting
-	# off sees the anchor as a button. `app=1` is what breaks the loop, so this matcher MUST exclude
-	# it: without that exclusion the hand-off arrives back here and bounces forever. og:url stays the
-	# clean link, and the app strips `app=1` from the address bar on arrival, so a URL copied from
-	# there still unfurls for whoever it is pasted to.
+	# HUMANS ARE HANDED OFF BY THE PAGE ITSELF, which carries a one-line script IN ITS HEAD reading
+	# the target from a `largata:app-url` meta tag — the same link plus `app=1`. The head placement
+	# is the fix for a flash the first version guaranteed: with the script at the end of the body,
+	# the branded card was fully parsed and painted before the redirect ran, so every traveler saw
+	# a card appear and vanish. Crawlers run no JavaScript, so they read the tags and stop; a
+	# browser lands on the SPA one hop later having painted nothing, and a browser with scripting
+	# off sees the body's anchor as a button. `app=1` is what breaks the loop, so this matcher MUST
+	# exclude it: without that exclusion the hand-off arrives back here and bounces forever. og:url
+	# stays the clean link, and the app strips `app=1` from the address bar on arrival, so a URL
+	# copied from there still unfurls for whoever it is pasted to.
 	#
 	# LARGATA_API_UPSTREAM must be host:port reachable from THIS container — on the local rung that
 	# is the compose service name, not localhost, which inside a container is the container itself.

@@ -424,6 +424,20 @@ The crawler user-agent allowlist is **deleted**. Caddy now rewrites every `/join
 
 ---
 
+**2026-08-23** *(same day, third entry — this one fixes what the second entry shipped)*
+
+The hand-off script moves from the end of `<body>` into the `<head>`, so opening a shared invite link no longer flashes the branded card before the app loads. Founder report: *"when a link was freshly shared, when it loads it has this initial screen that says open this invite and quickly opens the post card"*.
+
+**It was not a race, and that is the point.** The script sat after `</main>`, so the parser reached it only after the entire card — title, meta line, "Open this invite" button — had been parsed and painted. Document order guaranteed the flash on **every** open of **every** invite link, for every traveler, from the moment the entry above shipped. Nothing was intermittent about it and nothing would have made it rarer.
+
+**The property the anchor trick existed to protect is kept, by a different mechanism.** The old script read the URL off its own `<a href>` specifically so no URL was ever interpolated into JavaScript source — `escape()` is HTML-escaping, and a URL in a JS string literal needs JS-escaping. In the head there is no anchor yet, so the target moves to a `largata:app-url` meta tag and the script reads `.content`. Same guarantee, one hop earlier. The anchor stays in the body untouched for the scripting-off case (ticket 04's misclassified-human AC).
+
+**The test that would have caught it is now there and is not vacuous.** `PreviewPageTest` asserts the head contains `location.replace` *and* the body contains no `<script>` at all. The first draft compared `indexOf("<script") < indexOf("<body")`, which passes when the script is missing entirely — a check with no failure mode, replaced before it landed rather than after.
+
+*Why it wasn't a story —* a defect fix in S4.29; no new surface, no API change, no schema change. The spec's decision 1 is amended in place with a third entry, and the Caddyfile's own note re-anchored on the head placement.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
