@@ -27,4 +27,9 @@ class CardUrls {
     String landingUrlFor(String token, long shareCardVersion) {
         return JoinUrls.landingUrl(webBaseUrl, token, shareCardVersion);
     }
+
+
+    String appHandoffUrlFor(String token, long shareCardVersion) {
+        return JoinUrls.appHandoffUrl(webBaseUrl, token, shareCardVersion);
+    }
 }

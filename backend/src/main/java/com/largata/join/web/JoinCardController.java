@@ -75,6 +75,7 @@ class JoinCardController {
                         card.metaLine(),
                         urls.cardUrlFor(token, card.version()),
                         urls.landingUrlFor(token, card.version()),
+                        urls.appHandoffUrlFor(token, card.version()),
                         card.live());
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)

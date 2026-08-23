@@ -11,6 +11,10 @@ class PreviewPageTest {
 
     private static final String LANDING = "https://largata.test/join/abc?v=3";
 
+    private static final String APP = LANDING + "&app=1";
+
+    private static final String APP_ESCAPED = "https://largata.test/join/abc?v=3&amp;app=1";
+
 
     @Test
     void theTitleCarriesTheInviteBecauseInstagramCropsTheImageToNothing() {
@@ -55,7 +59,7 @@ class PreviewPageTest {
 
     @Test
     void aDeadLinkSaysSoWithoutNamingTheTrip() {
-        String page = PreviewPage.render(new PreviewSubject(null, null, IMAGE, LANDING, false));
+        String page = PreviewPage.render(new PreviewSubject(null, null, IMAGE, LANDING, APP, false));
 
         assertThat(page)
                 .contains("<meta property=\"og:title\" content=\"Largata\">")
@@ -65,13 +69,42 @@ class PreviewPageTest {
 
 
     @Test
-    void theBodyLinksToTheLandingRatherThanRedirectingIntoALoop() {
+    void theBodyHandsOffToTheAppUrlBecauseTheCleanLinkWouldReturnHereForever() {
         String page = livePage("Trip");
 
-        assertThat(page).contains("href=\"" + LANDING + "\"");
-        assertThat(page).doesNotContain("http-equiv=\"refresh\"");
-        assertThat(page).doesNotContain("<script");
-        assertThat(page).doesNotContain("location.replace");
+        assertThat(page).contains("href=\"" + APP_ESCAPED + "\"");
+        assertThat(page).doesNotContain("href=\"" + LANDING + "\"");
+    }
+
+
+    @Test
+    void theCanonicalUrlStaysTheCleanLinkSoNobodyEverSharesTheHandoffParam() {
+        String page = livePage("Trip");
+
+        assertThat(page).contains("<meta property=\"og:url\" content=\"" + LANDING + "\">");
+    }
+
+
+    @Test
+    void theHandoffIsScriptOnlyBecauseSomeCrawlersFollowAMetaRefreshAndWouldMissTheTags() {
+        assertThat(livePage("Trip")).doesNotContain("http-equiv=\"refresh\"");
+    }
+
+
+    @Test
+    void theScriptReadsTheUrlFromTheAnchorSoNoUrlIsEverInterpolatedIntoJavascript() {
+        String page = livePage("Trip");
+
+        String script = page.substring(page.indexOf("<script"), page.indexOf("</script>"));
+        assertThat(script).contains("getElementById").doesNotContain("http");
+    }
+
+
+    @Test
+    void aDeadLinkStillHandsOffSoAClosedInviteExplainsItselfInTheAppRatherThanHere() {
+        String page = PreviewPage.render(new PreviewSubject(null, null, IMAGE, LANDING, APP, false));
+
+        assertThat(page).contains("href=\"" + APP_ESCAPED + "\"").contains("location.replace");
     }
 
 
@@ -101,7 +134,7 @@ class PreviewPageTest {
     @Test
     void aTripWithNoMetaLineDescribesItselfWithoutAStrayEmptyTag() {
         String page =
-                PreviewPage.render(new PreviewSubject("Trip", null, IMAGE, LANDING, true));
+                PreviewPage.render(new PreviewSubject("Trip", null, IMAGE, LANDING, APP, true));
 
         assertThat(page)
                 .contains(
@@ -127,6 +160,6 @@ class PreviewPageTest {
 
     private static String livePage(String title) {
         return PreviewPage.render(
-                new PreviewSubject(title, "El Nido · Mar 12–18", IMAGE, LANDING, true));
+                new PreviewSubject(title, "El Nido · Mar 12–18", IMAGE, LANDING, APP, true));
     }
 }

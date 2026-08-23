@@ -410,6 +410,20 @@ An invite link unfurled in a Facebook **group chat** and not in a **direct messa
 
 ---
 
+**2026-08-23** *(same day, second entry — this one closes the line the entry above left open)*
+
+The crawler user-agent allowlist is **deleted**. Caddy now rewrites every `/join/<token>` request to the backend's per-trip page whatever asked for it, and the page hands humans off to the SPA with a one-line script following its own "Open this invite" anchor — the same link plus `app=1`, which the matcher excludes so the hand-off cannot bounce back. Crawlers execute no JavaScript, so they read the tags and stop.
+
+**The entry above widened the list; this one proves widening was the wrong move.** Probed against deployed dev with a bogus token — which discriminates cleanly, since a matched agent is proxied to the backend's 404 while an unmatched one gets the SPA's 200 — **9 of 9 unlisted agents fell through to the generic card**: Applebot (iMessage), SkypeUriPreview (Teams/Skype/Outlook), Bluesky, Mastodon, redditbot, and curl, axios, python-requests and Go's client. **That last group is why nobody could have noticed.** Every third-party Open Graph validator uses a plain HTTP client, so pointing any checker at an invite link returned the generic card — our own tooling could not see our own cards, and the cheapest check anyone would run was the one guaranteed to mislead. The founder found it exactly that way: *"i tried to check the og card on other sites, it shares this old one"*.
+
+**The generalisation worth keeping.** When a guard is an allowlist of things you must remember to add, the maintenance burden is not a chore to tool around — it is the tell that the polarity is wrong. Ask whether the safe default can be the *general* case before building anything to watch the exceptions. Here the general case was always available: the backend's preview route had no user-agent check in it at any point, so the list was never protecting the card, only deciding who got routed to it.
+
+**The cost is accepted, not hidden.** The backend is now on the path for every human invite open. `handle_errors` reduces that to the pre-flip behaviour — any error serves the SPA at status 200 — rather than eliminating it. Status is forced to 200 deliberately: some in-app browsers replace a 5xx body with their own error page, which would turn a degraded card into a dead invite link.
+
+*Why it wasn't a story —* a defect fix in S4.29; no new surface, no API change, no schema change. The spec's decision 1 is superseded in place with the measurement that forced it, and the epic map's crawler-UA line is marked **closed by deletion**. **One check is still outstanding at the time of writing:** `caddy validate` proves syntax only — S4.29 already shipped a config that validated cleanly and never fired — so the behavioural run against the real preview image is the closing evidence, not this entry.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.

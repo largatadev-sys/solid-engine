@@ -12,48 +12,53 @@
 	root * /srv
 	encode gzip
 
-	# S4.29 — a chat platform's crawler asking for an invite link gets the backend's per-trip Open
-	# Graph tags; every other user agent keeps the SPA exactly as before. The card cannot be served
-	# from here: a crawler executes no JavaScript, so the tags must already be in the HTML, and this
-	# export ships ONE index.html for every route (web.output "single").
+	# S4.29 — EVERY request for an invite link is answered by the backend's per-trip Open Graph page,
+	# whatever asked for it. The card cannot be served from here: this export ships ONE index.html
+	# for every route (web.output "single"), baked at build time, so it cannot know which token was
+	# asked for — and a crawler executes no JavaScript, so the tags must already be in the HTML.
 	#
-	# The list is curated rather than a catch-all `bot` pattern, because a false positive costs a
-	# human the app: they would get this branded stub instead of the product, with no way back except
-	# the link in it. Adding a platform later is one line, reviewable in git.
+	# This replaced a curated crawler User-Agent allowlist. That list could only ever be a guess at
+	# which platforms unfurl, and it guessed short: measured against deployed dev, 9 of 9 unlisted
+	# agents fell through to the SPA's generic card — Applebot (iMessage), SkypeUriPreview (Teams,
+	# Skype, Outlook), Bluesky, Mastodon, redditbot, and every plain HTTP client, which is what every
+	# third-party Open Graph validator uses. Answering per-trip by default deletes the guess: a
+	# platform that ships tomorrow is already handled, and nothing has to be noticed to keep working.
 	#
-	# ONE PLATFORM IS SEVERAL AGENTS. The founder found a link unfurling in a Facebook GROUP chat and
-	# not in a direct message — same platform, same URL, different crawler. Only `facebookexternalhit`
-	# was matched, and Meta documents a family. Matched here are the ones that fetch a link A USER
-	# SHARED: `meta-externalfetcher`, documented as fetching "individual links at a user's request"
-	# (the shape of a DM share), plus `facebookcatalog` and `meta-externalagent`. Deliberately NOT
-	# matched are `meta-externalads` and `meta-webindexer` — ad-quality and AI-search crawlers that
-	# unfurl nothing, so they keep getting the SPA like any other non-crawler.
-	#
-	# The causal agent was never confirmed — that evidence is in the access log. This is a sweep of
-	# the user-share family rather than a targeted match, which is why the guard covers all of them.
-	#
-	# What must NOT be matched is the token `facebook` on its own: Meta's IN-APP BROWSER is a HUMAN,
-	# and it carries FBAN/FBAV/FB_IAB. Matching loosely would serve the stub to every person who taps
-	# a link inside the Facebook or Instagram app — the exact false positive this list exists to
-	# avoid. The e2e guard asserts each in-app browser still gets the product; trust that test rather
-	# than this paragraph.
+	# HUMANS ARE HANDED OFF BY THE PAGE ITSELF, which carries a one-line script following its own
+	# "Open this invite" anchor — the same link plus `app=1`. Crawlers run no JavaScript, so they
+	# read the tags and stop; a browser lands on the SPA one hop later, and a browser with scripting
+	# off sees the anchor as a button. `app=1` is what breaks the loop, so this matcher MUST exclude
+	# it: without that exclusion the hand-off arrives back here and bounces forever. og:url stays the
+	# clean link, and the app strips `app=1` from the address bar on arrival, so a URL copied from
+	# there still unfurls for whoever it is pasted to.
 	#
 	# LARGATA_API_UPSTREAM must be host:port reachable from THIS container — on the local rung that
 	# is the compose service name, not localhost, which inside a container is the container itself.
 	#
 	# BOTH branches are `handle` blocks, and that is load-bearing rather than stylistic. Caddy orders
 	# directives by ITS OWN precedence table, not by their order in this file, and `try_files` is a
-	# `rewrite` — which runs BEFORE `handle`. Left bare, it rewrote every crawler request to
-	# /index.html before the matcher below was ever consulted, so the crawler silently got the SPA's
-	# generic card: no error, no log line, a preview container that looked perfectly healthy. Wrapping
-	# the SPA branch in its own `handle` makes the two mutually exclusive and settles the order.
-	@crawler {
+	# `rewrite` — which runs BEFORE `handle`. Left bare, it rewrote every invite request to
+	# /index.html before the matcher below was ever consulted, so the wrong card was served with no
+	# error, no log line, and a preview container that looked perfectly healthy at every other layer.
+	@invite {
 		path_regexp join ^/join/([^/?]+)/?$
-		header_regexp User-Agent (?i)(facebookexternalhit|facebookcatalog|facebot|meta-external(agent|fetcher)|whatsapp|twitterbot|telegrambot|linkedinbot|slackbot|discordbot)
+		not query app=1
 	}
-	handle @crawler {
+	# TWO fallbacks are needed here and they catch different things — `handle_errors` alone is not
+	# enough, which is a trap worth naming because it looks sufficient. `reverse_proxy` treats an
+	# upstream 404 as a legitimate RESPONSE, not an error, so it passes straight through: a mistyped
+	# or deleted invite link rendered the backend's raw JSON instead of the app's dead postcard.
+	# `handle_response` is what intercepts by STATUS; `handle_errors` below covers the other case,
+	# an upstream Caddy cannot reach at all. The e2e spec's garbage-token walk is the guard.
+	handle @invite {
 		rewrite * /v1/join/{re.join.1}/preview
-		reverse_proxy {$LARGATA_API_UPSTREAM}
+		reverse_proxy {$LARGATA_API_UPSTREAM} {
+			@unrenderable status 4xx 5xx
+			handle_response @unrenderable {
+				rewrite * /index.html
+				file_server
+			}
+		}
 	}
 
 	# Expo Router produces a single-page app: the browser asks for /itineraries/<uuid> directly on a
@@ -69,6 +74,18 @@
 	# not be, or a founder keeps loading yesterday's app against today's API and reports ghosts.
 	@html path *.html
 	header @html Cache-Control "no-cache"
+
+	# The backend is now on the path for every invite open, so its failure must not be. Any error the
+	# site produces — an unreachable upstream, an unknown token's 404 — serves the SPA instead, which
+	# is exactly what this container did before the flip: the app loads and reports the problem
+	# itself. The status is forced to 200 because some in-app browsers replace a 5xx body with their
+	# own error page, which would turn a degraded card into a dead invite link.
+	handle_errors {
+		rewrite * /index.html
+		file_server {
+			status 200
+		}
+	}
 
 	# The preview is a public URL by design (access control is the empty dev sandbox behind it, per
 	# the spec). These headers are not a substitute for that decision — they are the cheap floor:
