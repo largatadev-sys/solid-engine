@@ -443,6 +443,22 @@ The invite hand-off page stops painting the card and starts painting the app's l
 
 ---
 
+**2026-08-23**
+
+The invite postcard kept offering *"Sign in or create account"* to a traveler who had just signed in, where it owed them *"Request to join"*. Fixed in `AuthProvider` — it now compares the firebase uid across auth emissions and clears the query cache when the viewer changes — plus `staleTime: 0` on the teaser in its own right. `viewerScopedCache.ts` holds the pure transition rule; `viewerScopedCache.test.ts` covers it, both halves sabotage-checked.
+
+**The server was never wrong, and proving that first is what kept the fix small.** `/v1/join/<token>` probed with the same token seconds apart answers `signedOut` anonymously and `canRequest` with a bearer — two distinct outcomes, so the probe had a real failure mode. Everything after that was client-side by elimination, and the permitAll route (a shape this repo has been burned by) was cleared rather than suspected.
+
+**The bug is the cache key, not the fetch.** The teaser is keyed on the token alone, so one entry serves every asker, and the app default trusts it for 30 seconds — comfortably longer than a sign-in. Nothing anywhere cleared the cache when identity changed, which makes this one instance of a class: the same latent bug sat under every viewer-dependent query, and the profile surviving *sign-out* is its twin. Clearing at `AuthProvider` fixes the class at the one place identity actually moves; keying the teaser per-viewer would have fixed only the teaser.
+
+**A probe that passes on both builds is not evidence, and this one nearly got recorded as such.** The first browser walk returned to the invite with `page.goto`, which is a full reload and throws the in-memory cache away — so the stale entry was never consulted and the *pre-fix control build showed "Request to join" too*. Caught only by running the control, which is the whole reason to run one. The trap is worth naming: the reproduction requires the cache to survive, so it requires in-app navigation, and any probe step that reloads silently tests nothing.
+
+**A second, separate bug is still open and was found on the way.** Signing in *from an invite* lands on `/onboarding/goals` for a traveler whose `/v1/me` says `onboardingCompleted: true`; a plain sign-in with no invite lands on `/` correctly. The gate cannot produce that route — `nextOnboardingStep` never returns `goals` — so it is a navigator reconstruction, the S4.30 signature surviving the overlay fix, and `destinationFor` then declines to eject anyone already on an onboarding segment. Recorded in the epic map, deliberately not fixed here: it is a different defect on a different seam, and folding it in would have made neither fix reviewable.
+
+*Why it wasn't a story —* a defect fix on the S4.28 invite surface; no new surface, no API change, no schema change.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
