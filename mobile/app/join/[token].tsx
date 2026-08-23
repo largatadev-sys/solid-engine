@@ -94,7 +94,7 @@ export default function JoinLandingScreen() {
       coverUrl={teaser.data.hasCover ? joinRepository.coverPath(token) : null}
       busy={request.isPending}
       onPrimary={act}
-      onLeave={signedIn && state !== 'member' ? leaveLanding : null}
+      onLeave={signedIn ? leaveLanding : null}
     />
   );
 }

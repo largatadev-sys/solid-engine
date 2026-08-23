@@ -190,6 +190,35 @@ test.describe('7d · a member re-opening their own link', () => {
       .poll(() => new URL(page.url()).pathname, { timeout: 20_000 })
       .toContain(`/itineraries/${trip.id}`);
   });
+
+  test('is not stranded either — the way back to Trips is offered here too', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(VISITOR);
+    await page.goto(landing(token));
+    await expect(labelled(page, MEMBER_CTA)).toBeVisible();
+
+    await expect(labelled(page, LEAVE_LANDING_LABEL)).toBeVisible();
+  });
+
+  test('and leaving goes to Trips rather than into the trip the CTA would have opened', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(VISITOR);
+    await page.goto(landing(token));
+    await expect(labelled(page, LEAVE_LANDING_LABEL)).toBeVisible({ timeout: 20_000 });
+
+    await labelled(page, LEAVE_LANDING_LABEL).click();
+
+    await expect
+      .poll(() => new URL(page.url()).pathname, { timeout: 20_000 })
+      .toBe(TRIPS_TAB_ROUTE);
+
+    await page.waitForTimeout(2_000);
+    expect(new URL(page.url()).pathname).toBe(TRIPS_TAB_ROUTE);
+  });
 });
 
 test.describe('7e · the dead link', () => {
