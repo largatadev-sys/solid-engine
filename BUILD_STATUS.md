@@ -465,6 +465,20 @@ The invite postcard kept offering *"Sign in or create account"* to a traveler wh
 
 ---
 
+**2026-08-24**
+
+A member re-opening their own invite link had no *"Back to my trips"* — the landing rendered it only when signed in **and not already a member**. One clause deleted; the rule is now simply *signed in → an exit to Trips*.
+
+**The exclusion was deliberate and still wrong, which is the part worth keeping.** The reasoning was that `Open trip workspace` is already an exit, so a second one is clutter. **The two exits do not go to the same place** — the CTA opens *that trip*, and a member who taps their own invite without wanting to open it had nowhere else to go. The join route is registered `headerShown: false`, so on a device there is no back chevron and the browser-back escape web quietly relied on does not exist: one tap available, and it was the one they might not want. It also contradicted the sentence it implemented — S4.28's decision 17 reads *"everything else exits to the Trips tab (signed-in)"* — so the spec has said the right thing all along while the code said otherwise. Signed-out visitors still get no exit, deliberately: they have no Trips, the CTA is the funnel, and the test asserting its absence stays green.
+
+**The new tests guard the failure family the last two fixes lived in, not just the affordance.** One asserts the button is there; the other clicks it, waits for `/trips`, and then asserts it is *still* `/trips` two seconds later — because the way this breaks is not a missing button but the gate bouncing a leaver straight back to `/join/<token>` on a pending-join that was never forgotten. Sabotage-checked on a rebuilt preview: restoring the old clause reddens exactly those two while the two existing member tests keep passing.
+
+**The sabotage landed on the wrong line first.** `String.replace` takes the earliest match, and `DeadPostcard` carries a byte-identical expression — so the patch edited that instead, leaving a reference to `state` three lines above its declaration. Grepping *both* call sites caught it; trusting the substitution would have produced a red run that proved nothing about the rule under test. Same lesson as the S4.31 no-op substitution, arriving through a different mechanism: **verify what the patch actually changed, not that a patch ran.**
+
+*Why it wasn't a story —* a one-clause defect fix on the S4.28 invite surface, from a founder walk; no new surface, no API change, no schema change.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
