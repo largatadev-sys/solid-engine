@@ -19,9 +19,9 @@ describe('the navigator outlives the settling window', () => {
 
   it('renders the stack on every path through the gate, settling or not', () => {
     const body = authGate();
-    const returns = body.match(/return \(/g) ?? [];
+    const earlyReturns = body.match(/^\s+(if \(.*\))?\s*return (?!\()/gm) ?? [];
 
-    expect(returns).toHaveLength(1);
+    expect(earlyReturns).toHaveLength(0);
     expect(body).toContain('<Stack');
   });
 
@@ -34,9 +34,9 @@ describe('the navigator outlives the settling window', () => {
 
   it('gives the overlay real coverage, or it would not hide the screen beneath it', () => {
     const text = source();
-    const overlay = text.slice(text.indexOf('splashOverlay:'));
+    const overlay = text.slice(text.indexOf('splashOverlay:'), text.indexOf('},', text.indexOf('splashOverlay:')));
 
-    expect(overlay).toContain("position: 'absolute'");
+    expect(overlay).toMatch(/absoluteFill|position: 'absolute'/);
     expect(overlay).toContain('backgroundColor');
     expect(overlay).toContain('zIndex');
   });

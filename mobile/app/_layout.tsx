@@ -104,11 +104,7 @@ function AuthGate() {
 
 function Splash({ overlay = false }: { overlay?: boolean }) {
   return (
-    <View
-      style={overlay ? styles.splashOverlay : styles.splash}
-      accessibilityViewIsModal={overlay}
-      importantForAccessibility={overlay ? 'yes' : 'auto'}
-    >
+    <View style={overlay ? styles.splashOverlay : styles.splash}>
       <ActivityIndicator size="large" color={colors.accent} />
     </View>
   );
@@ -125,14 +121,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   splashOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
     zIndex: 1,
+    elevation: 1,
   },
 });
