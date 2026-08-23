@@ -6,6 +6,7 @@ import { OnboardingScreen } from '../../src/components/OnboardingScreen';
 import { SelectableOption } from '../../src/components/SelectableOption';
 import { useMe } from '../../src/hooks/useMe';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
+import { enteredMidFlow } from '../../src/onboarding/resumeNotice';
 import { GOALS, toggle } from '../../src/onboarding/preferenceOptions';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { useUpdateProfile } from '../../src/query/travelerQueries';
@@ -42,6 +43,7 @@ export default function GoalsStepScreen() {
   return (
     <OnboardingScreen
       step={STEP_NUMBERS.goals}
+      resuming={enteredMidFlow()}
       title="What are you hoping to do?"
       subtitle="Select all that apply"
       message={message}

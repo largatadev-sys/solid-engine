@@ -30,7 +30,8 @@ Two client-side defects sit alongside it and make the same symptom reachable by 
 
 Onboarding stops being a gate and becomes a suggestion the traveler can decline, and completion stops depending on one tap.
 
-- **Every step offers a way out.** "Skip for now" completes onboarding server-side and lands the traveler wherever they were going — the invite, or Home. The remaining questions are all answerable later from Profile, which is already true today for every one of them.
+- **An existing account gets a way out.** "Skip for now" completes onboarding server-side and lands the traveler wherever they were going. The remaining questions are all answerable later from Profile, which is already true today for every one of them. **A fresh signup does not get it and walks the whole flow** *(founder ruling, 2026-08-23)* — the relief is for people the app has already met and is asking twice, not for the front door itself.
+- **The invite does not outrank onboarding, and this spec was wrong to propose that it should.** S4.28 decided the opposite deliberately — *"link joiners go through the full, unmodified onboarding — no trimmed path (rejected, not parked)"* — because a join request approved by an owner must not come from a half-built identity, and **nothing in the backend enforces that; the gate's ordering is the whole guarantee.** Reversing it would have removed the guarantee silently. Founder-confirmed on the same reasoning. See ticket 05, closed unbuilt.
 - **Completion is recorded when the last data step saves**, so the celebration screen celebrates rather than commits. Leaving it by any means — back, a closed tab, a deep link — no longer costs the traveler the whole flow.
 - **A resumed flow says it is resuming** and resumes at the first genuinely unanswered step, goals included.
 - **An invite outranks onboarding.** A traveler arriving with a pending join sees the postcard first. Onboarding is offered after, not before.

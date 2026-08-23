@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { Icon } from '../../src/components/Icon';
@@ -13,8 +13,7 @@ import {
   completionSummary,
 } from '../../src/onboarding/completionSummary';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
-import { forgetPendingJoin, pendingJoinToken } from '../../src/join/pendingJoinStore';
-import { landingAfterSignIn } from '../../src/onboarding/onboardingGate';
+import { landingOnTheWayOut } from '../../src/onboarding/leaveOnboarding';
 import { useCompleteOnboarding } from '../../src/query/travelerQueries';
 import { colors, controls, radii, spacing, typography } from '../../src/theme';
 
@@ -29,13 +28,19 @@ export default function CompleteStepScreen() {
 
   const rows = state.kind === 'ok' ? completionSummary(state.me) : [];
 
+  const settled = state.kind === 'ok' && state.me.onboardingCompleted;
+  const record = finish.mutate;
+
+  useEffect(() => {
+    if (state.kind !== 'ok' || settled) return;
+    record();
+  }, [state.kind, settled, record]);
+
   const done = async () => {
     setMessage(null);
     try {
       await finish.mutateAsync();
-      const waiting = pendingJoinToken();
-      forgetPendingJoin();
-      router.replace(landingAfterSignIn(waiting));
+      router.replace(landingOnTheWayOut());
     } catch (error) {
       setMessage(messageForVerificationFailure(error));
     }

@@ -6,6 +6,7 @@ import { OnboardingScreen } from '../../src/components/OnboardingScreen';
 import { SelectableChip } from '../../src/components/SelectableChip';
 import { useMe } from '../../src/hooks/useMe';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
+import { enteredMidFlow } from '../../src/onboarding/resumeNotice';
 import { INTERESTS, hasEnoughInterests, toggle } from '../../src/onboarding/preferenceOptions';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { useUpdateProfile } from '../../src/query/travelerQueries';
@@ -42,6 +43,7 @@ export default function InterestsStepScreen() {
   return (
     <OnboardingScreen
       step={STEP_NUMBERS.interests}
+      resuming={enteredMidFlow()}
       title="What kind of trips interest you?"
       subtitle="Pick at least 3"
       message={message}

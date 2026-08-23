@@ -13,6 +13,7 @@ import {
 import { profileSaveFor } from '../../src/onboarding/handleSubmission';
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import { ONBOARDING_ROUTES, STEP_NUMBERS } from '../../src/onboarding/onboardingGate';
+import { enteredMidFlow } from '../../src/onboarding/resumeNotice';
 import { messageForVerificationFailure } from '../../src/onboarding/verificationMessages';
 import { AvatarPicker } from '../../src/media/AvatarPicker';
 import { messageForPhotoFailure } from '../../src/media/photoMessages';
@@ -86,6 +87,7 @@ export default function ProfileStepScreen() {
   return (
     <OnboardingScreen
       step={editing ? undefined : STEP_NUMBERS.profile}
+      resuming={!editing && enteredMidFlow()}
       message={photoAction.failure ?? message}
       footer={
         <Button

@@ -8,8 +8,9 @@ This is the root cause of the reported bug. `onboarding_completed_at` is written
 
 **Status:** ready-for-agent
 
-- [ ] Answering the last data step records completion, so a traveler who never reaches the celebration screen is still complete.
+- [ ] **Reaching** the celebration screen records completion, rather than tapping its button — so closing the tab, losing signal or navigating away on that screen costs nothing.
 - [ ] Completion stays an explicit call, not a side effect of saving a profile field — an unrelated PATCH must not carry a lifecycle change.
-- [ ] The celebration screen's button only navigates. Reaching that screen twice, or leaving and returning, changes nothing (the completion call is already idempotent).
+- [ ] The button keeps completing before it navigates, unchanged. **This is not belt-and-braces, it is required**: the resume rule routes an already-answered but incomplete traveler *to* this screen, so a button that only navigated would send them out and let the gate bring them straight back — a loop. Both calls are idempotent.
+- [ ] The arrival call does not fire for a traveler who is already complete, so opening the screen again is silent.
 - [ ] A traveler who completed under the old rule is unaffected — no migration, no backfill, no repair.
 - [ ] The exit-path guard still holds: the celebration screen keeps routing through the gate's own landing rather than naming Home itself.

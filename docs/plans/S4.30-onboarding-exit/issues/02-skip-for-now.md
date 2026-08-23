@@ -8,6 +8,7 @@ Skipping is the existing completion call with the questions unanswered. There is
 
 **Status:** ready-for-agent
 
+- [ ] **Only an existing account is offered the skip; a fresh signup walks the whole flow** *(founder ruling, 2026-08-23: "if the traveler is a fresh signup, of course he needs to go through the full onboarding" · "only existing accounts get to skip the whole onboarding")*. The signal is the one ticket 04 already computes: the gate dropped this traveler **past** the first step, which it only does when they have answers from a previous session. A fresh signup enters at step 1 and, walking straight through, is never marked — so the skip never appears for them, in the same session or any later one until they leave answers behind. **The honest limit, stated rather than hidden:** an existing account that never got past step 1 is indistinguishable from a fresh one — `MeResponse` carries no created-at — so it is offered no skip. Closing that needs a backend field, which decision 1 rules out for this story.
 - [ ] Every counted step offers the skip, from one definition rather than four copies — a new step added later inherits it without being told to.
 - [ ] Skipping records completion, so the flow is never offered again on any later sign-in.
 - [ ] Skipping lands the traveler exactly where finishing would have: the pending invite if there is one, Home if not, and the token is spent on the way out either way.

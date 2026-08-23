@@ -1,12 +1,18 @@
-import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useState, type ReactNode } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StepIndicator } from './StepIndicator';
+import { RESUME_LINE, SKIP_LABEL, landingOnTheWayOut } from '../onboarding/leaveOnboarding';
+import { trackOnboardingSkipped } from '../onboarding/onboardingEvents';
+import { messageForVerificationFailure } from '../onboarding/verificationMessages';
+import { useCompleteOnboarding } from '../query/travelerQueries';
 import { colors, spacing, typography } from '../theme';
 
 interface OnboardingScreenProps {
   readonly step?: number;
   readonly canGoBack?: boolean;
+  readonly resuming?: boolean;
   readonly title?: string;
   readonly subtitle?: string;
   readonly children: ReactNode;
@@ -17,6 +23,7 @@ interface OnboardingScreenProps {
 export function OnboardingScreen({
   step,
   canGoBack,
+  resuming = false,
   title,
   subtitle,
   children,
@@ -24,12 +31,30 @@ export function OnboardingScreen({
   message,
 }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const skip = useCompleteOnboarding();
+  const [skipFailure, setSkipFailure] = useState<string | null>(null);
+
+  const leave = async (from: number) => {
+    setSkipFailure(null);
+    try {
+      await skip.mutateAsync();
+      trackOnboardingSkipped(from);
+      router.replace(landingOnTheWayOut());
+    } catch (error) {
+      setSkipFailure(messageForVerificationFailure(error));
+    }
+  };
+
+  const notice = skipFailure ?? message ?? null;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.inner}>
           <StepIndicator step={step} canGoBack={canGoBack} />
+
+          {resuming && <Text style={styles.resume}>{RESUME_LINE}</Text>}
 
           <View style={styles.body}>
             {title !== undefined && <Text style={styles.title}>{title}</Text>}
@@ -42,8 +67,20 @@ export function OnboardingScreen({
 
       <View style={styles.footer}>
         <View style={styles.inner}>
-          {message !== undefined && message !== null && <Text style={styles.message}>{message}</Text>}
+          {notice !== null && <Text style={styles.message}>{notice}</Text>}
           {footer}
+
+          {step !== undefined && resuming && (
+            <Pressable
+              style={styles.skip}
+              onPress={() => void leave(step)}
+              disabled={skip.isPending}
+              accessibilityRole="button"
+              accessibilityLabel={SKIP_LABEL}
+            >
+              <Text style={styles.skipLabel}>{SKIP_LABEL}</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </View>
@@ -61,4 +98,7 @@ const styles = StyleSheet.create({
   subtitle: { ...typography.body, color: colors.textSecondary },
   footer: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, alignItems: 'center' },
   message: { ...typography.caption, color: colors.danger, textAlign: 'center' },
+  resume: { ...typography.caption, color: colors.textSecondary, paddingTop: spacing.xs },
+  skip: { paddingTop: spacing.md, paddingBottom: spacing.xs, alignItems: 'center' },
+  skipLabel: { ...typography.bodyStrong, color: colors.textSecondary },
 });

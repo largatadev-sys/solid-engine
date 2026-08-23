@@ -17,6 +17,7 @@ import { usePendingJoin } from '../src/join/usePendingJoin';
 import { CropStation } from '../src/media/CropStation';
 import { createQueryClient } from '../src/query/queryClient';
 import { destinationFor, isSettling, type GateInput } from '../src/onboarding/onboardingGate';
+import { noteOnboardingEntry } from '../src/onboarding/resumeNotice';
 import { colors, typography } from '../src/theme';
 import { interFontMap } from '../src/theme/interFonts';
 import { useSocketLifecycle } from '../src/ws/useSocketLifecycle';
@@ -78,7 +79,10 @@ function AuthGate() {
   const destination = destinationFor(gate);
 
   useEffect(() => {
-    if (destination !== null) router.replace(destination);
+    if (destination === null) return;
+
+    noteOnboardingEntry(destination);
+    router.replace(destination);
   }, [destination, router]);
 
   if (destination !== null || isSettling(gate)) return <Splash />;
