@@ -105,6 +105,13 @@ class PreviewPageTest {
 
 
     @Test
+    void theSpinnerAnnouncesItselfSoAScreenReaderIsNotLeftOnASilentPage() {
+        assertThat(livePage("Trip"))
+                .contains("role=\"progressbar\" aria-label=\"" + PreviewPage.LOADING_LABEL + "\"");
+    }
+
+
+    @Test
     void theHeadCarriesTheAppUrlSoTheRedirectNeedsNoBodyAtAll() {
         assertThat(livePage("Trip"))
                 .contains(
@@ -126,7 +133,12 @@ class PreviewPageTest {
         String page = livePage("Trip");
 
         assertThat(page)
-                .contains("<noscript><a href=\"" + APP_ESCAPED + "\">Open this invite</a></noscript>");
+                .contains(
+                        "<noscript><a href=\""
+                                + APP_ESCAPED
+                                + "\">"
+                                + PreviewPage.OPEN_LABEL
+                                + "</a></noscript>");
     }
 
 
