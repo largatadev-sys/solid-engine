@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures';
-import { api, profileFor, tokenFor } from '../support/pool';
+import { api, profileFor, request, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { climbTo, seedTrip, stamp, type SeededTrip } from '../support/seed';
@@ -15,6 +15,9 @@ import {
   WORDMARK,
 } from '../../src/members/travelerCopy';
 import { TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
+import { APP_HANDOFF_PARAM } from '../../src/join/handoffParam';
+
+const PREVIEW = process.env.LARGATA_PREVIEW_URL ?? 'http://localhost:8081';
 
 const OWNER = ownerTagFor('web/join-landing');
 const VISITOR: PoolTag = IDENTITY_MAP['web/join-landing'].tags[1]!;
@@ -29,6 +32,8 @@ async function linkFor(tripId: string): Promise<string> {
 }
 
 const landing = (token: string) => `/join/${token}`;
+
+const originOf = (url: string) => new URL(url).origin;
 
 test.beforeAll(async () => {
   ownerToken = await tokenFor(OWNER);
@@ -279,5 +284,70 @@ test.describe('the landing sits in no navigation graph', () => {
 
     expect(signal.pageErrors).toEqual([]);
     expect(signal.consoleErrors).toEqual([]);
+  });
+});
+
+
+test.describe('the hand-off lands on the build under test, and not some other one', () => {
+  let trip: SeededTrip;
+  let token: string;
+
+  test.beforeAll(async () => {
+    trip = await seedTrip({ ownerTag: OWNER, title: stamp('join landing origin') });
+    token = await linkFor(trip.id);
+
+    const answer = await request(`${PREVIEW}${landing(token)}`, 'GET');
+    const served = typeof answer.body === 'string' ? answer.body : '';
+
+    if (!served.includes(`${APP_HANDOFF_PARAM}=1`)) {
+      test.skip(
+        true,
+        `${PREVIEW} serves the SPA directly on /join — the hand-off never runs here, so this ` +
+          `spec never ran; set LARGATA_API_UPSTREAM on the preview container. Not a product failure`,
+      );
+    }
+  });
+
+  test('an invite link never moves the traveler to another origin', async ({
+    page,
+    signIn,
+    baseURL,
+  }) => {
+    const expectedOrigin = originOf(baseURL as string);
+
+    const visited = new Set<string>();
+    page.on('framenavigated', (frame) => {
+      if (frame !== page.mainFrame()) return;
+      const url = frame.url();
+      if (url !== '' && url !== 'about:blank') visited.add(originOf(url));
+    });
+
+    await signIn(VISITOR);
+    await page.goto(landing(token));
+
+    await expect.poll(() => originOf(page.url()), { timeout: 20_000 }).toBe(expectedOrigin);
+    expect([...visited]).toEqual([expectedOrigin]);
+
+    await expect(labelled(page, REQUEST_CTA)).toBeVisible({ timeout: 20_000 });
+  });
+
+  test('the traveler really did come through the hand-off, or the guard above proves nothing', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(VISITOR);
+    await page.goto(landing(token));
+
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get(APP_HANDOFF_PARAM), { timeout: 20_000 })
+      .toBe('1');
+  });
+
+  test('the share url the owner hands out points at the origin the suite drives', async ({
+    baseURL,
+  }) => {
+    const link = await api(`/v1/itineraries/${trip.id}/join-link`, 'GET', ownerToken);
+
+    expect(originOf(link.body.shareUrl)).toBe(originOf(baseURL as string));
   });
 });
