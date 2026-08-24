@@ -10,7 +10,7 @@ import {
   FEED_CAPTION_MORE,
   FEED_NEW_POSTS,
   FEED_NOTIFICATIONS_LABEL,
-  FEED_REFRESHED_TOAST,
+  CAUGHT_UP_TOAST,
   FEED_SEARCH_LABEL,
   FEED_TITLE,
   FEED_TRIP_BADGE,
@@ -787,7 +787,7 @@ test.describe('the header and the scroll it answers to', () => {
         { timeout: 15_000 },
       )
       .toBeGreaterThan(readsBefore);
-    await expect(page.getByText(FEED_REFRESHED_TOAST).first()).toBeVisible();
+    await expect(page.getByText(CAUGHT_UP_TOAST).first()).toBeVisible();
   });
 });
 
@@ -918,6 +918,8 @@ test.describe('the new-posts pill, waited out over one real poll cycle', () => {
     await page.locator(`[aria-label="${FEED_NEW_POSTS}"]`).locator('visible=true').last().click();
 
     await expect.poll(async () => feedScrollTop(page), { timeout: 15_000 }).toBe(0);
+
+    await expect(page.getByText(newest).last()).toBeVisible({ timeout: 15_000 });
 
     const shown = await page.evaluate(() => document.body.innerText);
     expect(shown.indexOf(newest), 'the new postcard must be on screen after the pill').toBeGreaterThan(-1);

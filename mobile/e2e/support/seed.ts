@@ -174,3 +174,40 @@ export async function climbTo(
     if (rung === state) return;
   }
 }
+
+export async function seedSharedPostcard(
+  trip: SeededTrip,
+  caption: string,
+): Promise<{ id: string; caption: string }> {
+  const [activityId] = await seedPlan(trip, [{ title: `${caption} stop` }]);
+  if (activityId === undefined) throw new SeedFailure('the activity a postcard hangs on', trip.id);
+
+  await climbTo(trip, 'ongoing');
+
+  const boundary = `----largatae2e${process.hrtime.bigint().toString(36)}`;
+  const entry = { activityId, caption, fromDump: [] };
+  const payload = Buffer.concat([
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="entry"\r\n`
+        + `Content-Type: application/json\r\n\r\n${JSON.stringify(entry)}\r\n`,
+    ),
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="photos"; `
+        + `filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`,
+    ),
+    readFileSync(FIXTURE_PHOTO),
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+
+  const posted = await request(
+    `${API}/v1/itineraries/${trip.id}/diary/entries`,
+    'POST',
+    payload,
+    {
+      Authorization: `Bearer ${trip.ownerToken}`,
+      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+    },
+  );
+  if (posted.status !== 201) throw new SeedFailure('a shared postcard', posted.body);
+  return { id: posted.body.id, caption };
+}

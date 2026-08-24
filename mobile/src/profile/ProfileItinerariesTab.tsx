@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { publishedRoute } from '../itineraries/publishedExit';
 import { MediaThumb } from '../media/MediaThumb';
 import { useMyPublishedItineraries } from '../query/profileQueries';
+import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { colors, spacing } from '../theme';
 import {
   profileColors,
@@ -21,6 +22,8 @@ export function ProfileItinerariesTab() {
   const router = useRouter();
   const published = useMyPublishedItineraries();
   const cards = (published.data?.pages ?? []).flatMap((page) => page.items);
+
+  useRevalidateOnFocus(published);
 
   if (published.isPending) {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;

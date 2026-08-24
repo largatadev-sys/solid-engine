@@ -35,6 +35,16 @@ spring:
           issuer-uri: ${FIREBASE_ISSUER_URI:https://securetoken.google.com/largata-dev}
 
 largata:
+  auth:
+    jwks:
+      # Google signs every Firebase ID token with the securetoken service account, so this JWKS is
+      # the same for every project — the issuer above stays per-environment, the keys do not.
+      # JwtDecoderConfig refreshes this set AHEAD of expiry and serves the cached copy through an
+      # outage (cache-ttl / refresh-ahead / outage-tolerance, defaults in the config class). Before
+      # that, an expired cache blocked every authenticated request on the refetch, and a slow
+      # answer from Google surfaced as "Timeout while waiting for cache refresh (15000ms
+      # exceeded)" 500s across the whole API (found during S4.34's e2e runs).
+      uri: ${LARGATA_JWKS_URI:https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com}
   web:
     # Where a shared invite link points (S4.28, ADR-032). The share URL is composed server-side —
     # `<base>/join/<token>` — so links open the web app today and the same URLs can be claimed as

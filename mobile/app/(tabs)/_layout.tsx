@@ -9,7 +9,7 @@ import {
   PROFILE_TAB_ROUTE,
   TRIPS_TAB_ROUTE,
 } from '../../src/navigation/authRoutes';
-import { homeTabRetapped } from '../../src/feed/homeTabRetap';
+import { tabRetapped } from '../../src/navigation/tabRetap';
 import {
   inDiscoverStack,
   inHomeStack,
@@ -65,7 +65,7 @@ export default function TabsLayout() {
           tabPress: (event) => {
             event.preventDefault();
             if (inHomeStack(pathname)) {
-              homeTabRetapped();
+              tabRetapped(HOME_TAB_ROUTE);
               return;
             }
             router[tabJump(router.canDismiss(), false)](HOME_TAB_ROUTE);
@@ -81,6 +81,10 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
+            if (pathname === DISCOVER_TAB_ROUTE) {
+              tabRetapped(DISCOVER_TAB_ROUTE);
+              return;
+            }
             router[tabJump(router.canDismiss(), inDiscoverStack(pathname))](DISCOVER_TAB_ROUTE);
           },
         }}
@@ -91,6 +95,10 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
+            if (pathname === TRIPS_TAB_ROUTE) {
+              tabRetapped(TRIPS_TAB_ROUTE);
+              return;
+            }
             router[tabJump(router.canDismiss(), inTripsStack(pathname))](TRIPS_TAB_ROUTE);
           },
         }}
@@ -101,6 +109,10 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
+            if (pathname === PROFILE_TAB_ROUTE) {
+              tabRetapped(PROFILE_TAB_ROUTE);
+              return;
+            }
             router[tabJump(router.canDismiss(), inProfileStack(pathname))](PROFILE_TAB_ROUTE);
           },
         }}

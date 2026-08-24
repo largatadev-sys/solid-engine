@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import { feedColors, feedMetrics } from '../theme/feedTokens';
 import type { FeedPostcardResponse } from '../types/api';
 import { feedRepository } from '../repositories/feedRepository';
 import { useFeed } from '../query/feedQueries';
+import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { FeedCard, type StubControl } from './FeedCard';
 import { FeedHeader } from './FeedHeader';
 import {
@@ -27,10 +28,12 @@ import {
   FeedTerminalCard,
 } from './FeedStates';
 import { FeedToast } from './FeedToast';
-import { FEED_REFRESHED_TOAST } from './feedCopy';
+import { CAUGHT_UP_TOAST } from './feedCopy';
 import { atTop, HEADER_SHOWING, onScroll } from './headerVisibility';
 import { freshCount, POLL_MS, showsPill } from './freshPosts';
-import { onHomeTabRetap } from './homeTabRetap';
+import { HOME_TAB_ROUTE } from '../navigation/authRoutes';
+import { useTabRetap } from '../navigation/useTabRetap';
+import { SCROLL_TO_TOP_ANIMATED } from '../navigation/scrollToTop';
 import { NewPostsPill } from './NewPostsPill';
 import { prefetchThreshold } from './prefetchDistance';
 import { PhotoActionSheet, type PhotoSheetAction } from './PhotoActionSheet';
@@ -45,11 +48,14 @@ export function FeedScreen() {
   const insets = useSafeAreaInsets();
   const feed = useFeed();
 
+  useRevalidateOnFocus(feed);
+
   const [now, setNow] = useState(() => Date.now());
   const [header, setHeader] = useState(HEADER_SHOWING);
   const [fresh, setFresh] = useState(0);
   const [scrolledDown, setScrolledDown] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [pulling, setPulling] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewport, setViewport] = useState(0);
   const [cardHeight, setCardHeight] = useState(0);
@@ -72,7 +78,7 @@ export function FeedScreen() {
   }, [header.hidden, slide]);
 
   const toTop = useCallback((animated: boolean) => {
-    list.current?.scrollToOffset({ offset: 0, animated });
+    list.current?.scrollToOffset({ offset: 0, animated: animated && SCROLL_TO_TOP_ANIMATED });
   }, []);
 
   const shownCount = cards.length;
@@ -82,44 +88,45 @@ export function FeedScreen() {
       const had = shownCount;
       setNow(Date.now());
       setFresh(0);
-      void feed.refetch().then((result) => {
+      return feed.refetch().then((result) => {
         const after = (result.data?.pages ?? []).flatMap((page) => page.items).length;
         if (toastWhenNothingNew && after <= had) {
-          setToast(FEED_REFRESHED_TOAST);
+          setToast(CAUGHT_UP_TOAST);
         }
       });
     },
     [feed, shownCount],
   );
 
-  useEffect(
-    () =>
-      onHomeTabRetap(() => {
-        if (atTop(offset.current)) {
-          refresh(true);
-          return;
-        }
-        toTop(true);
-      }),
-    [refresh, toTop],
+  useTabRetap(
+    HOME_TAB_ROUTE,
+    useCallback(() => {
+      if (atTop(offset.current)) {
+        void refresh(true);
+        return;
+      }
+      toTop(true);
+    }, [refresh, toTop]),
   );
 
   const known = useRef(shownIds);
   known.current = shownIds;
 
-  useEffect(() => {
-    const tick = setInterval(() => {
-      if (known.current === '') {
-        return;
-      }
-      const showing = known.current.split(',');
-      void feedRepository
-        .fetchPage()
-        .then((page) => setFresh(freshCount(page.items.map((card) => card.id), showing)))
-        .catch(() => undefined);
-    }, POLL_MS);
-    return () => clearInterval(tick);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const tick = setInterval(() => {
+        if (known.current === '') {
+          return;
+        }
+        const showing = known.current.split(',');
+        void feedRepository
+          .fetchPage()
+          .then((page) => setFresh(freshCount(page.items.map((card) => card.id), showing)))
+          .catch(() => undefined);
+      }, POLL_MS);
+      return () => clearInterval(tick);
+    }, []),
+  );
 
   const pageOf = (cardId: string) => pages.current.get(cardId) ?? 0;
 
@@ -172,7 +179,7 @@ export function FeedScreen() {
 
   const takeTheFreshPosts = () => {
     toTop(true);
-    refresh(false);
+    void refresh(false);
   };
 
   const reachedTheEnd = () => {
@@ -250,8 +257,11 @@ export function FeedScreen() {
         onEndReachedThreshold={prefetchThreshold(cardHeight, viewport)}
         refreshControl={
           <RefreshControl
-            refreshing={feed.isRefetching && !feed.isFetchingNextPage}
-            onRefresh={() => refresh(true)}
+            refreshing={pulling}
+            onRefresh={() => {
+              setPulling(true);
+              void refresh(true).finally(() => setPulling(false));
+            }}
             tintColor={colors.accent}
             colors={[colors.accent]}
           />

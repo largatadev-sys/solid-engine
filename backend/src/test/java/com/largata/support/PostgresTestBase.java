@@ -20,6 +20,10 @@ public abstract class PostgresTestBase {
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add("spring.datasource.hikari.maximum-pool-size", () -> POOL_SIZE_PER_CONTEXT);
+        registry.add("largata.auth.jwks.uri", TestJwtSupport::jwksUrl);
+        registry.add(
+                "spring.security.oauth2.resourceserver.jwt.issuer-uri",
+                () -> TestJwtSupport.ISSUER);
     }
 
 

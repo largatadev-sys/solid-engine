@@ -16,6 +16,7 @@ import { MobileFrame } from '../src/components/MobileFrame';
 import { usePendingJoin } from '../src/join/usePendingJoin';
 import { CropStation } from '../src/media/CropStation';
 import { createQueryClient } from '../src/query/queryClient';
+import { useAppStateFocus } from '../src/query/useAppStateFocus';
 import { destinationFor, isSettling, type GateInput } from '../src/onboarding/onboardingGate';
 import { colors, typography } from '../src/theme';
 import { interFontMap } from '../src/theme/interFonts';
@@ -61,6 +62,7 @@ function AuthGate() {
   const segments = useSegments();
   const router = useRouter();
 
+  useAppStateFocus();
   useSocketLifecycle(auth.kind === 'signedIn');
 
   const pendingJoin = usePendingJoin();

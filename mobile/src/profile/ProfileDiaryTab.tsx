@@ -7,6 +7,7 @@ import { Postcard } from '../diary/Postcard';
 import { PostcardPreview } from '../diary/PostcardPreview';
 import { inTripDayOrder, tripEntryCountLabel } from '../diary/postcardAnatomy';
 import { useMyDiaryEntries, useMyDiaryTrips } from '../query/diaryQueries';
+import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { colors, spacing } from '../theme';
 import {
   profileColors,
@@ -32,6 +33,8 @@ export function ProfileDiaryTab() {
   const trips = useMyDiaryTrips();
   const rows = (trips.data?.pages ?? []).flatMap((page) => page.items);
   const state = diaryPaneState(trips, rows.length);
+
+  useRevalidateOnFocus(trips);
 
   if (state === 'loading') {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;

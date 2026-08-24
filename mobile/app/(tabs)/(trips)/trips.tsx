@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -27,28 +27,63 @@ import {
   type TripTab,
 } from '../../../src/itineraries/tripTabs';
 import { useMyItineraries } from '../../../src/query/itineraryQueries';
+import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
+import { TRIPS_TAB_ROUTE } from '../../../src/navigation/authRoutes';
+import { useTabRetap } from '../../../src/navigation/useTabRetap';
+import { atTop } from '../../../src/feed/headerVisibility';
+import { RETAP_SCROLL_THROTTLE_MS } from '../../../src/navigation/retapScroll';
+import { SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
+import { FeedToast } from '../../../src/feed/FeedToast';
+import { CAUGHT_UP_TOAST } from '../../../src/feed/feedCopy';
 import type { ItineraryResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 import { tripTabColors, tripTabMetrics, tripTabMotion, tripTabTypography } from '../../../src/theme/workspaceTokens';
 
 
 export default function MyTripsScreen() {
-  const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMyItineraries();
+  const trips = useMyItineraries();
+  const { data, isPending, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    trips;
+
+  useRevalidateOnFocus(trips);
 
   const picked = usePickedTab();
   const offsets = useRef<Partial<Record<TripTab, number>>>({});
+  const lists = useRef<Partial<Record<TripTab, FlatList<ItineraryResponse> | null>>>({});
+  const [toast, setToast] = useState<string | null>(null);
+  const [pulling, setPulling] = useState(false);
 
   const itineraries = data?.pages.flatMap((page) => page.items) ?? [];
   const active = landingTab(itineraries, picked);
   const rows = tripsInTab(itineraries, active);
 
   const listFor = (tab: TripTab) => (list: FlatList<ItineraryResponse> | null) => {
+    if (list === null) {
+      return;
+    }
+    lists.current[tab] = list;
     const offset = offsets.current[tab];
-    if (list !== null && offset !== undefined && offset > 0) {
+    if (offset !== undefined && offset > 0) {
       list.scrollToOffset({ offset, animated: false });
     }
   };
+
+  const activeTab = useRef(active);
+  activeTab.current = active;
+
+  useTabRetap(
+    TRIPS_TAB_ROUTE,
+    useCallback(() => {
+      const tab = activeTab.current;
+      if (atTop(offsets.current[tab] ?? 0)) {
+        void refetch();
+        setToast(CAUGHT_UP_TOAST);
+        return;
+      }
+      offsets.current[tab] = 0;
+      lists.current[tab]?.scrollToOffset({ offset: 0, animated: SCROLL_TO_TOP_ANIMATED });
+    }, [refetch]),
+  );
 
   return (
     <View style={styles.container}>
@@ -82,9 +117,12 @@ export default function MyTripsScreen() {
             onScroll={(event) => {
               offsets.current[active] = event.nativeEvent.contentOffset.y;
             }}
-            scrollEventThrottle={SCROLL_THROTTLE_MS}
-            onRefresh={() => void refetch()}
-            refreshing={isRefetching}
+            scrollEventThrottle={RETAP_SCROLL_THROTTLE_MS}
+            onRefresh={() => {
+              setPulling(true);
+              void refetch().finally(() => setPulling(false));
+            }}
+            refreshing={pulling}
             onEndReached={() => {
               if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
             }}
@@ -108,6 +146,8 @@ export default function MyTripsScreen() {
           <PlanATripBar />
         </View>
       )}
+
+      <FeedToast message={toast} onDone={() => setToast(null)} />
     </View>
   );
 }
@@ -210,7 +250,6 @@ const CREATE_LABEL = 'Plan a Trip';
 
 const ARCHIVED_LINK_LABEL = 'Archived trips';
 
-const SCROLL_THROTTLE_MS = 100;
 
 const HEADER_ICON_SIZE = 20;
 
