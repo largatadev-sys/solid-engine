@@ -281,3 +281,37 @@ test.describe('the landing sits in no navigation graph', () => {
     expect(signal.consoleErrors).toEqual([]);
   });
 });
+
+
+test.describe('the hand-off lands on the build under test, and not some other one', () => {
+  test('an invite link never moves the traveler to another origin', async ({
+    page,
+    signIn,
+    baseURL,
+  }) => {
+    const trip = await seedTrip({ ownerTag: OWNER, title: stamp('join landing origin') });
+    const token = await linkFor(trip.id);
+    const expected = new URL(baseURL ?? '').origin;
+
+    const visited = new Set<string>();
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) visited.add(new URL(frame.url()).origin);
+    });
+
+    await signIn(VISITOR);
+    await page.goto(landing(token));
+    await expect(labelled(page, REQUEST_CTA)).toBeVisible({ timeout: 20_000 });
+
+    expect([...visited]).toEqual([expected]);
+    expect(new URL(page.url()).origin).toBe(expected);
+  });
+
+  test('the share url the owner hands out points at the origin the suite drives', async ({
+    baseURL,
+  }) => {
+    const trip = await seedTrip({ ownerTag: OWNER, title: stamp('join landing shareurl') });
+    const link = await api(`/v1/itineraries/${trip.id}/join-link`, 'GET', ownerToken);
+
+    expect(new URL(link.body.shareUrl).origin).toBe(new URL(baseURL ?? '').origin);
+  });
+});
