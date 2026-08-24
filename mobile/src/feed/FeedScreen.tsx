@@ -33,6 +33,7 @@ import { atTop, HEADER_SHOWING, onScroll } from './headerVisibility';
 import { freshCount, POLL_MS, showsPill } from './freshPosts';
 import { HOME_TAB_ROUTE } from '../navigation/authRoutes';
 import { useTabRetap } from '../navigation/useTabRetap';
+import { SCROLL_TO_TOP_ANIMATED } from '../navigation/scrollToTop';
 import { NewPostsPill } from './NewPostsPill';
 import { prefetchThreshold } from './prefetchDistance';
 import { PhotoActionSheet, type PhotoSheetAction } from './PhotoActionSheet';
@@ -76,7 +77,7 @@ export function FeedScreen() {
   }, [header.hidden, slide]);
 
   const toTop = useCallback((animated: boolean) => {
-    list.current?.scrollToOffset({ offset: 0, animated });
+    list.current?.scrollToOffset({ offset: 0, animated: animated && SCROLL_TO_TOP_ANIMATED });
   }, []);
 
   const shownCount = cards.length;

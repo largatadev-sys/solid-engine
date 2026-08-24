@@ -18,6 +18,7 @@ import { PROFILE_TAB_ROUTE } from '../../../src/navigation/authRoutes';
 import { useTabRetap } from '../../../src/navigation/useTabRetap';
 import { CAUGHT_UP_TOAST } from '../../../src/navigation/retapCopy';
 import { atTop } from '../../../src/feed/headerVisibility';
+import { SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
 import { FeedToast } from '../../../src/feed/FeedToast';
 import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { colors, spacing } from '../../../src/theme';
@@ -47,7 +48,7 @@ export default function ProfileScreen() {
         return;
       }
       offset.current = 0;
-      scroll.current?.scrollTo({ y: 0, animated: true });
+      scroll.current?.scrollTo({ y: 0, animated: SCROLL_TO_TOP_ANIMATED });
     }, [client]),
   );
 

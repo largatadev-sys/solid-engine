@@ -153,3 +153,34 @@ describe('all four tabs answer a retap, not only Home (S4.34 ticket 03, AC 6)', 
     }
   });
 });
+
+describe('scroll-to-top is platform-forked, because animated:true no-ops on the web (S4.34)', () => {
+  const read = (...parts: string[]) => readFileSync(join(MOBILE_ROOT, ...parts), 'utf8');
+
+  it('animates on native, where scrollToOffset honours the flag', () => {
+    expect(read('src', 'navigation', 'scrollToTop.native.ts')).toMatch(
+      /SCROLL_TO_TOP_ANIMATED\s*=\s*true/,
+    );
+  });
+
+  it('declines the animation on web, where it silently scrolls nowhere at all', () => {
+    expect(read('src', 'navigation', 'scrollToTop.web.ts')).toMatch(
+      /SCROLL_TO_TOP_ANIMATED:\s*boolean\s*=\s*false/,
+    );
+  });
+
+  it('no retap surface passes a bare animated:true — that is the shape that does nothing', () => {
+    const surfaces = [
+      join('src', 'feed', 'FeedScreen.tsx'),
+      join('app', '(tabs)', '(trips)', 'trips.tsx'),
+      join('src', 'discovery', 'DiscoveryLandingScreen.tsx'),
+      join('app', '(tabs)', '(profile)', 'profile.tsx'),
+    ];
+
+    for (const file of surfaces) {
+      const source = read(file);
+      expect(source).toMatch(/SCROLL_TO_TOP_ANIMATED/);
+      expect(source).not.toMatch(/scrollTo(Offset)?\(\{[^}]*animated:\s*true/);
+    }
+  });
+});

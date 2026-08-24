@@ -10,6 +10,10 @@ import { POLL_MS } from '../../src/feed/freshPosts';
 
 const SETTLE_MS = 3_000;
 
+const DESTINATION = 'Palawan';
+
+const SAMPLE_MS = 40;
+
 const TRAVELER = ownerTagFor('web/focus-freshness');
 
 requireStack(TRAVELER);
@@ -19,7 +23,12 @@ let trip: SeededTrip;
 
 test.beforeAll(async () => {
   token = await tokenFor(TRAVELER);
-  trip = await seedTrip({ ownerTag: TRAVELER, title: stamp('focus freshness'), durationDays: 2 });
+  trip = await seedTrip({
+    ownerTag: TRAVELER,
+    title: stamp('focus freshness'),
+    destination: DESTINATION,
+    durationDays: 2,
+  });
 });
 
 test.beforeEach(async ({ signIn }) => {
@@ -29,8 +38,18 @@ test.beforeEach(async ({ signIn }) => {
 const tab = (page: Page, name: string) =>
   page.locator('[role="tab"]').filter({ hasText: new RegExp(`^${name}$`) }).last();
 
+const HEADER_LEASE = { subjectType: 'header' };
+
 async function renameTheTrip(title: string): Promise<void> {
-  const edited = await api(`/v1/itineraries/${trip.id}`, 'PATCH', token, { title });
+  const lease = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', token, HEADER_LEASE);
+  expect([200, 201]).toContain(lease.status);
+
+  const edited = await api(`/v1/itineraries/${trip.id}`, 'PATCH', token, {
+    title,
+    destination: DESTINATION,
+  });
+  await api(`/v1/itineraries/${trip.id}/edit-lock`, 'DELETE', token, HEADER_LEASE);
+
   expect(edited.status).toBe(200);
 }
 
@@ -52,7 +71,7 @@ test('a trip edited elsewhere is correct on returning to Trips, with no refresh 
   trip.title = renamed;
 });
 
-test('the revalidation happens underneath the list — no spinner, the old rows never leave (AC 1)', async ({
+test('the revalidation happens underneath the list — the rows never blank out (AC 1)', async ({
   page,
 }) => {
   await page.goto(TRIPS_TAB_ROUTE);
@@ -64,12 +83,30 @@ test('the revalidation happens underneath the list — no spinner, the old rows 
   await tab(page, 'Home').click();
   await expect(page).toHaveURL(new RegExp(`${HOME_TAB_ROUTE}$`));
 
-  const stale = page.getByText(trip.title);
-  await tab(page, 'Trips').click();
+  const rowsShowing = () =>
+    page.evaluate(
+      (heading) =>
+        Array.from(document.querySelectorAll('*')).some(
+          (el) =>
+            el.children.length === 0
+            && (el.textContent ?? '').trim().length > 0
+            && (el.textContent ?? '').trim() !== heading,
+        ),
+      'Trips',
+    );
 
-  await expect(stale).toBeVisible();
+  const watch: boolean[] = [];
+  const sampling = setInterval(() => {
+    void rowsShowing().then((showing) => watch.push(showing)).catch(() => undefined);
+  }, SAMPLE_MS);
+
+  await tab(page, 'Trips').click();
   await expect(page.getByText(renamed)).toBeVisible();
+  clearInterval(sampling);
   trip.title = renamed;
+
+  expect(watch.length).toBeGreaterThan(0);
+  expect(watch.filter((showing) => !showing)).toEqual([]);
 });
 
 test('returning to Trips re-reads the list — the request is the proof (AC 1)', async ({

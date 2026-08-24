@@ -31,6 +31,7 @@ import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { TRIPS_TAB_ROUTE } from '../../../src/navigation/authRoutes';
 import { useTabRetap } from '../../../src/navigation/useTabRetap';
 import { atTop } from '../../../src/feed/headerVisibility';
+import { SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
 import { FeedToast } from '../../../src/feed/FeedToast';
 import { CAUGHT_UP_TOAST } from '../../../src/navigation/retapCopy';
 import type { ItineraryResponse } from '../../../src/types/api';
@@ -55,25 +56,31 @@ export default function MyTripsScreen() {
   const rows = tripsInTab(itineraries, active);
 
   const listFor = (tab: TripTab) => (list: FlatList<ItineraryResponse> | null) => {
+    if (list === null) {
+      return;
+    }
     lists.current[tab] = list;
     const offset = offsets.current[tab];
-    if (list !== null && offset !== undefined && offset > 0) {
+    if (offset !== undefined && offset > 0) {
       list.scrollToOffset({ offset, animated: false });
     }
   };
 
+  const activeTab = useRef(active);
+  activeTab.current = active;
+
   useTabRetap(
     TRIPS_TAB_ROUTE,
     useCallback(() => {
-      const tab = landingTab(itineraries, picked);
+      const tab = activeTab.current;
       if (atTop(offsets.current[tab] ?? 0)) {
         void refetch();
         setToast(CAUGHT_UP_TOAST);
         return;
       }
       offsets.current[tab] = 0;
-      lists.current[tab]?.scrollToOffset({ offset: 0, animated: true });
-    }, [itineraries, picked, refetch]),
+      lists.current[tab]?.scrollToOffset({ offset: 0, animated: SCROLL_TO_TOP_ANIMATED });
+    }, [refetch]),
   );
 
   return (

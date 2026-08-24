@@ -11,6 +11,7 @@ import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { useTabRetap } from '../navigation/useTabRetap';
 import { CAUGHT_UP_TOAST } from '../navigation/retapCopy';
 import { atTop } from '../feed/headerVisibility';
+import { SCROLL_TO_TOP_ANIMATED } from '../navigation/scrollToTop';
 import { FeedToast } from '../feed/FeedToast';
 import { colors, spacing } from '../theme';
 import {
@@ -56,7 +57,7 @@ export function DiscoveryLandingScreen() {
         return;
       }
       offset.current = 0;
-      scroll.current?.scrollTo({ y: 0, animated: true });
+      scroll.current?.scrollTo({ y: 0, animated: SCROLL_TO_TOP_ANIMATED });
     }, [recommended, trending]),
   );
 
