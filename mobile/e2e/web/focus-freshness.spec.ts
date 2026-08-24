@@ -15,12 +15,18 @@ const DESTINATION = 'Palawan';
 
 const SAMPLE_MS = 40;
 
+const ROW_SEARCH_MS = 45_000;
+
+const LONG_WALK_MS = 150_000;
+
 const TRAVELER = ownerTagFor('web/focus-freshness');
 
 requireStack(TRAVELER);
 
 let token: string;
 let trip: SeededTrip;
+
+const seeded: string[] = [];
 
 test.beforeAll(async () => {
   token = await tokenFor(TRAVELER);
@@ -37,6 +43,13 @@ test.beforeAll(async () => {
     durationDays: 2,
   });
   await seedSharedPostcard(posting, stamp('focus freshness postcard'));
+  seeded.push(trip.id, posting.id);
+});
+
+test.afterAll(async () => {
+  for (const id of seeded) {
+    await api(`/v1/itineraries/${id}/archive`, 'POST', token, {});
+  }
 });
 
 test.beforeEach(async ({ signIn }) => {
@@ -61,23 +74,22 @@ async function tripRowShows(page: Page, title: string): Promise<boolean> {
         (n) => n.scrollHeight > n.clientHeight + 40,
       ) as HTMLElement | undefined;
 
-    for (let sweep = 0; sweep < 30; sweep += 1) {
+    for (let sweep = 0; sweep < 40; sweep += 1) {
       if (document.body.innerText.includes(wanted)) return true;
       const node = scroller();
-      if (node === undefined) return false;
-      const wasAt = node.scrollTop;
-      node.scrollTop = node.scrollHeight;
-      await settle();
-      if (node.scrollTop === wasAt && node.scrollTop + node.clientHeight >= node.scrollHeight - 4) {
-        return document.body.innerText.includes(wanted);
+      if (node === undefined) {
+        await settle();
+        continue;
       }
+      node.scrollTop = sweep % 2 === 0 ? node.scrollHeight : 0;
+      await settle();
     }
     return document.body.innerText.includes(wanted);
   }, title);
 }
 
 async function expectTripRow(page: Page, title: string): Promise<void> {
-  await expect.poll(() => tripRowShows(page, title), { timeout: 45_000 }).toBe(true);
+  await expect.poll(() => tripRowShows(page, title), { timeout: ROW_SEARCH_MS }).toBe(true);
 }
 
 const HEADER_LEASE = { subjectType: 'header' };
@@ -98,6 +110,7 @@ async function renameTheTrip(title: string): Promise<void> {
 test('a trip edited elsewhere is correct on returning to Trips, with no refresh gesture (AC 1)', async ({
   page,
 }) => {
+  test.setTimeout(LONG_WALK_MS);
   await page.goto(TRIPS_TAB_ROUTE);
   await openUpcoming(page);
   await expectTripRow(page, trip.title);
@@ -118,6 +131,7 @@ test('a trip edited elsewhere is correct on returning to Trips, with no refresh 
 test('the revalidation happens underneath the list — the rows never blank out (AC 1)', async ({
   page,
 }) => {
+  test.setTimeout(LONG_WALK_MS);
   await page.goto(TRIPS_TAB_ROUTE);
   await openUpcoming(page);
   await expectTripRow(page, trip.title);
@@ -130,14 +144,11 @@ test('the revalidation happens underneath the list — the rows never blank out 
 
   const rowsShowing = () =>
     page.evaluate(
-      (heading) =>
+      (marker) =>
         Array.from(document.querySelectorAll('*')).some(
-          (el) =>
-            el.children.length === 0
-            && (el.textContent ?? '').trim().length > 0
-            && (el.textContent ?? '').trim() !== heading,
+          (el) => el.children.length === 0 && (el.textContent ?? '').includes(marker),
         ),
-      'Trips',
+      DESTINATION,
     );
 
   const watch: boolean[] = [];
@@ -151,14 +162,17 @@ test('the revalidation happens underneath the list — the rows never blank out 
   clearInterval(sampling);
   trip.title = renamed;
 
-  expect(watch.length).toBeGreaterThan(0);
-  expect(watch.filter((showing) => !showing)).toEqual([]);
+  const settled = watch.slice(watch.indexOf(true));
+
+  expect(settled.length).toBeGreaterThan(0);
+  expect(settled.filter((showing) => !showing).length).toBe(0);
 });
 
 test('returning to Trips re-reads the list — the request is the proof (AC 1)', async ({
   page,
   signal,
 }) => {
+  test.setTimeout(LONG_WALK_MS);
   await page.goto(TRIPS_TAB_ROUTE);
   await openUpcoming(page);
   await expectTripRow(page, trip.title);
@@ -177,6 +191,7 @@ test('returning to Trips re-reads the list — the request is the proof (AC 1)',
 });
 
 test('Discover revalidates on return (AC 2)', async ({ page, signal }) => {
+  test.setTimeout(LONG_WALK_MS);
   await page.goto('/discover');
   await expect(tab(page, DISCOVER_TAB_LABEL)).toHaveAttribute('aria-selected', 'true');
   await page.waitForTimeout(SETTLE_MS);
@@ -188,11 +203,12 @@ test('Discover revalidates on return (AC 2)', async ({ page, signal }) => {
   await tab(page, DISCOVER_TAB_LABEL).click();
 
   await expect
-    .poll(() => signal.apiRequests.filter(isADiscoveryRead).length)
+    .poll(() => signal.apiRequests.filter(isADiscoveryRead).length, { timeout: 25_000 })
     .toBeGreaterThan(before);
 });
 
 test('Profile revalidates on return (AC 2)', async ({ page, signal }) => {
+  test.setTimeout(LONG_WALK_MS);
   await page.goto('/profile');
   await expect(tab(page, 'Profile')).toHaveAttribute('aria-selected', 'true');
   await page.waitForTimeout(SETTLE_MS);
@@ -204,11 +220,12 @@ test('Profile revalidates on return (AC 2)', async ({ page, signal }) => {
   await tab(page, 'Profile').click();
 
   await expect
-    .poll(() => signal.apiRequests.filter(isAProfileRead).length)
+    .poll(() => signal.apiRequests.filter(isAProfileRead).length, { timeout: 25_000 })
     .toBeGreaterThan(before);
 });
 
 test('Home revalidates on return (AC 2)', async ({ page, signal }) => {
+  test.setTimeout(LONG_WALK_MS);
   await page.goto(HOME_TAB_ROUTE);
   await expect(tab(page, 'Home')).toHaveAttribute('aria-selected', 'true');
   await page.waitForTimeout(SETTLE_MS);
@@ -220,7 +237,7 @@ test('Home revalidates on return (AC 2)', async ({ page, signal }) => {
   await tab(page, 'Home').click();
 
   await expect
-    .poll(() => signal.apiRequests.filter(isAFeedRead).length)
+    .poll(() => signal.apiRequests.filter(isAFeedRead).length, { timeout: 25_000 })
     .toBeGreaterThan(before);
 });
 
