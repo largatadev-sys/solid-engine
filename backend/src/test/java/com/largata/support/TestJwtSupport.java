@@ -3,8 +3,13 @@ package com.largata.support;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.sun.net.httpserver.HttpServer;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
@@ -12,10 +17,6 @@ import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.Date;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtValidators;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 
 public final class TestJwtSupport {
@@ -24,8 +25,14 @@ public final class TestJwtSupport {
     public static final String ISSUER = "https://securetoken.google.com/largata-test";
 
     private static final KeyPair KEY_PAIR = generateKeyPair();
+    private static final HttpServer JWKS_SERVER = startJwksServer();
 
     private TestJwtSupport() {}
+
+
+    public static String jwksUrl() {
+        return "http://localhost:" + JWKS_SERVER.getAddress().getPort() + "/jwks";
+    }
 
 
     public static String tokenFor(String firebaseUid, String email) {
@@ -118,16 +125,28 @@ public final class TestJwtSupport {
         }
     }
 
+    private static HttpServer startJwksServer() {
+        try {
+            RSAKey key = new RSAKey.Builder((RSAPublicKey) KEY_PAIR.getPublic()).build();
+            byte[] body = new JWKSet(key).toString().getBytes(StandardCharsets.UTF_8);
 
-    @TestConfiguration
-    public static class Config {
-
-        @Bean
-        JwtDecoder jwtDecoder() {
-            NimbusJwtDecoder decoder =
-                    NimbusJwtDecoder.withPublicKey((RSAPublicKey) KEY_PAIR.getPublic()).build();
-            decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(ISSUER));
-            return decoder;
+            HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+            server.createContext(
+                    "/jwks",
+                    exchange -> {
+                        exchange.getResponseHeaders().add("Content-Type", "application/json");
+                        exchange.sendResponseHeaders(200, body.length);
+                        exchange.getResponseBody().write(body);
+                        exchange.close();
+                    });
+            server.start();
+            return server;
+        } catch (Exception e) {
+            throw new IllegalStateException("could not start the test JWKS server", e);
         }
     }
+
+
+    @TestConfiguration
+    public static class Config {}
 }

@@ -481,6 +481,14 @@ A member re-opening their own invite link had no *"Back to my trips"* — the la
 
 ---
 
+**2026-08-25**
+
+JWKS refresh no longer blocks authentication (`JwtDecoderConfig`, owner-approved same day). The auto-configured decoder blocked every authenticated request while its Google key cache refreshed on expiry, and a slow answer from Google surfaced as `Timeout while waiting for cache refresh (15000ms exceeded)` 500s across the whole API — caught in the backend log during S4.34's e2e runs, in exactly the windows where the suite's flakes clustered. The decoder now builds its own JWK source: refresh-ahead (keys refetched in the background before expiry), outage-tolerant (the cached set keeps serving through a failed refresh, default 8h), rate-limited, with the JWKS URI and timings as `largata.auth.jwks.*` properties. Guarded by `JwksOutageToleranceIT` (own Postgres container, stub key server that goes dark mid-test; sabotage-verified — removing the outage tolerance turns it red on the exact property). The IT harness change that came with it: `TestJwtSupport.Config` no longer overrides `JwtDecoder` (Boot refuses a test override of a user-defined bean); every IT now exercises the REAL decoder against a local JWKS stub served from `TestJwtSupport`, wired once in `PostgresTestBase`.
+
+*Why it wasn't a story —* an infrastructure defect found mid-S4.34 and pulled forward by the owner ("can we fix first the jwks", 2026-08-25); auth config, so it ran the stop-rule gate rather than a spec. No API change, no schema change, no product surface.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.

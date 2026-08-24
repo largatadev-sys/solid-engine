@@ -63,4 +63,9 @@ Neither is unguarded.
 
 **Residual:** at `retries: 1` the suite passed the first post-fix run (12 passed / 1 flaky) and failed the second only inside the logged JWKS window.
 
+**Owner calls, 2026-08-25:**
+
+- **The JWKS stall is fixed, same day** — "can we fix first the jwks" cleared the stop-rule gate. `JwtDecoderConfig` + `JwksOutageToleranceIT` (sabotage-verified); the IT harness now runs every IT through the REAL decoder against a local key stub (`TestJwtSupport` serves it, `PostgresTestBase` wires it) because Boot refuses a test override of a user-defined bean. Detail in the off-epic ledger, 2026-08-25.
+- **The device walk is DEFERRED to S4.35** — AC 3 (AppState foregrounding) and the device half of AC 6 move to S4.35's device pass rather than holding this story open. The blocked-Gradle finding above stands; whoever runs S4.35's device rung inherits it. The gate-record Artifact travels with the device walk.
+
 **Incident, same session (2026-08-25): the local database was wiped by accident while writing THIS note.** A bash quoting failure executed documentation text as a command — the string `docker compose down && up -d`, inside what should have been an inert code span, ran its first half. The containers were removed; the DB mounts no volume by design, so the ~300 accumulated walk fixtures and the seeded demo dataset are gone. Firebase pool accounts are unaffected (they live in `largata-dev` cloud), and travelers re-provision on first sign-in. The stack was left DOWN pending the owner's word on bringing it back up (`docker compose up -d`) and whether to reseed the demo dataset (`seed-travelers.js`). The mechanism is recorded so it is never repeated: never pass prose containing backticks through a double-quoted shell string — write files with the editing tools, not `bash -c` heredocs.
