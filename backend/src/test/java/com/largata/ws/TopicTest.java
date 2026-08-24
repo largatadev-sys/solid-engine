@@ -9,6 +9,8 @@ class TopicTest {
 
     private static final UUID ITINERARY = UUID.fromString("0198a7c0-1111-7000-8000-000000000001");
 
+    private static final UUID TRAVELER = UUID.fromString("0198a7c0-2222-7000-8000-000000000002");
+
     @Test
     void anItineraryTopicParsesToItsItineraryAndChannel() {
         Topic topic = Topic.parse("itinerary:" + ITINERARY + ":chat").orElseThrow();
@@ -77,5 +79,42 @@ class TopicTest {
     void theDebugTopicIsEqualHoweverItWasObtained() {
         assertThat(Topic.parse(Topic.DEBUG_ECHO)).contains(Topic.debugEcho());
         assertThat(Topic.debugEcho().name()).isEqualTo(Topic.DEBUG_ECHO);
+    }
+
+
+    @Test
+    void aTravelerTopicParsesToItsTravelerAndNamesNoItinerary() {
+        Topic topic = Topic.parse("traveler:" + TRAVELER).orElseThrow();
+
+        assertThat(topic.travelerId()).contains(TRAVELER);
+        assertThat(topic.itineraryId()).isEmpty();
+        assertThat(topic.isDebugEcho()).isFalse();
+        assertThat(topic.name()).isEqualTo("traveler:" + TRAVELER);
+    }
+
+    @Test
+    void aTravelerTopicTakesNoChannelSegmentBecauseASubsetHasNoConsumer() {
+        assertThat(Topic.parse("traveler:" + TRAVELER + ":trips")).isEmpty();
+        assertThat(Topic.parse("traveler:" + TRAVELER + ":")).isEmpty();
+    }
+
+    @Test
+    void aMalformedTravelerIdIsRefusedRatherThanThrowing() {
+        assertThat(Topic.parse("traveler:not-a-uuid")).isEmpty();
+        assertThat(Topic.parse("traveler:")).isEmpty();
+        assertThat(Topic.parse("traveler")).isEmpty();
+    }
+
+    @Test
+    void aTravelerTopicIsBuildableFromItsPartsAndRoundTrips() {
+        Topic built = Topic.ofTraveler(TRAVELER);
+
+        assertThat(Topic.parse(built.name())).contains(built);
+    }
+
+    @Test
+    void aTravelerTopicIsNeverEqualToAnItineraryTopicSharingItsUuid() {
+        assertThat(Topic.ofTraveler(ITINERARY)).isNotEqualTo(Topic.ofItinerary(ITINERARY, "chat"));
+        assertThat(Topic.ofTraveler(ITINERARY).name()).isNotEqualTo(Topic.ofItinerary(ITINERARY, "chat").name());
     }
 }

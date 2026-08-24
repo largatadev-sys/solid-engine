@@ -63,6 +63,11 @@ public class SessionRegistry {
     }
 
 
+    public boolean holds(Session session, Topic topic) {
+        return bySession.getOrDefault(session.id(), Set.of()).contains(topic);
+    }
+
+
     public List<Held> subscriptionsOf(UUID travelerId, UUID itineraryId) {
         return sessions.stream()
                 .filter(session -> session.travelerId().equals(travelerId))
