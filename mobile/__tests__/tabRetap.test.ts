@@ -129,6 +129,15 @@ describe('scroll-to-top is platform-forked, because animated:true no-ops on the 
     );
   });
 
+  it('forks only what differs — the scroll throttle keeps one definition', () => {
+    for (const fork of ['scrollToTop.native.ts', 'scrollToTop.web.ts']) {
+      expect(read('src', 'navigation', fork)).not.toMatch(/RETAP_SCROLL_THROTTLE_MS/);
+    }
+    expect(read('src', 'navigation', 'retapScroll.ts')).toMatch(
+      /RETAP_SCROLL_THROTTLE_MS\s*=\s*\d+/,
+    );
+  });
+
   it('no retap surface passes a bare animated:true — that is the shape that does nothing', () => {
     const surfaces = [
       join('src', 'feed', 'FeedScreen.tsx'),

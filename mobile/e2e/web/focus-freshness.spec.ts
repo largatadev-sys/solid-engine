@@ -102,6 +102,12 @@ function trackApiTraffic(page: Page): () => Promise<void> {
   };
 }
 
+async function currentTitle(): Promise<string> {
+  const read = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
+  expect(read.status).toBe(200);
+  return read.body.title;
+}
+
 const HEADER_LEASE = { subjectType: 'header' };
 
 async function renameTheTrip(title: string): Promise<void> {
@@ -123,7 +129,7 @@ test('a trip edited elsewhere is correct on returning to Trips, with no refresh 
   test.setTimeout(LONG_WALK_MS);
   await page.goto(TRIPS_TAB_ROUTE);
   await openUpcoming(page);
-  await expectTripRow(page, trip.title);
+  await expectTripRow(page, await currentTitle());
 
   const renamed = stamp('renamed by another traveler');
   await renameTheTrip(renamed);
@@ -135,7 +141,6 @@ test('a trip edited elsewhere is correct on returning to Trips, with no refresh 
   await openUpcoming(page);
 
   await expectTripRow(page, renamed);
-  trip.title = renamed;
 });
 
 test('the revalidation happens underneath the list — the rows never blank out (AC 1)', async ({
@@ -144,7 +149,7 @@ test('the revalidation happens underneath the list — the rows never blank out 
   test.setTimeout(LONG_WALK_MS);
   await page.goto(TRIPS_TAB_ROUTE);
   await openUpcoming(page);
-  await expectTripRow(page, trip.title);
+  await expectTripRow(page, await currentTitle());
 
   const renamed = stamp('renamed while nobody watched');
   await renameTheTrip(renamed);
@@ -170,7 +175,6 @@ test('the revalidation happens underneath the list — the rows never blank out 
   await openUpcoming(page);
   await expectTripRow(page, renamed);
   clearInterval(sampling);
-  trip.title = renamed;
 
   const settled = watch.slice(watch.indexOf(true));
 
@@ -185,7 +189,7 @@ test('returning to Trips re-reads the list — the request is the proof (AC 1)',
   test.setTimeout(LONG_WALK_MS);
   await page.goto(TRIPS_TAB_ROUTE);
   await openUpcoming(page);
-  await expectTripRow(page, trip.title);
+  await expectTripRow(page, await currentTitle());
 
   await tab(page, 'Home').click();
   await expect(page).toHaveURL(new RegExp(`${HOME_TAB_ROUTE}$`));
@@ -193,7 +197,7 @@ test('returning to Trips re-reads the list — the request is the proof (AC 1)',
   const before = signal.apiRequests.filter(isATripsRead).length;
   await tab(page, 'Trips').click();
   await openUpcoming(page);
-  await expectTripRow(page, trip.title);
+  await expectTripRow(page, await currentTitle());
 
   await expect
     .poll(() => signal.apiRequests.filter(isATripsRead).length)

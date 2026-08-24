@@ -11,7 +11,8 @@ import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { useTabRetap } from '../navigation/useTabRetap';
 import { CAUGHT_UP_TOAST } from '../feed/feedCopy';
 import { atTop } from '../feed/headerVisibility';
-import { RETAP_SCROLL_THROTTLE_MS, SCROLL_TO_TOP_ANIMATED } from '../navigation/scrollToTop';
+import { RETAP_SCROLL_THROTTLE_MS } from '../navigation/retapScroll';
+import { SCROLL_TO_TOP_ANIMATED } from '../navigation/scrollToTop';
 import { FeedToast } from '../feed/FeedToast';
 import { colors, spacing } from '../theme';
 import {

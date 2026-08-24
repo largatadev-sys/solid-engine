@@ -55,6 +55,7 @@ export function FeedScreen() {
   const [fresh, setFresh] = useState(0);
   const [scrolledDown, setScrolledDown] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [pulling, setPulling] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewport, setViewport] = useState(0);
   const [cardHeight, setCardHeight] = useState(0);
@@ -87,7 +88,7 @@ export function FeedScreen() {
       const had = shownCount;
       setNow(Date.now());
       setFresh(0);
-      void feed.refetch().then((result) => {
+      return feed.refetch().then((result) => {
         const after = (result.data?.pages ?? []).flatMap((page) => page.items).length;
         if (toastWhenNothingNew && after <= had) {
           setToast(CAUGHT_UP_TOAST);
@@ -101,7 +102,7 @@ export function FeedScreen() {
     HOME_TAB_ROUTE,
     useCallback(() => {
       if (atTop(offset.current)) {
-        refresh(true);
+        void refresh(true);
         return;
       }
       toTop(true);
@@ -178,7 +179,7 @@ export function FeedScreen() {
 
   const takeTheFreshPosts = () => {
     toTop(true);
-    refresh(false);
+    void refresh(false);
   };
 
   const reachedTheEnd = () => {
@@ -256,8 +257,11 @@ export function FeedScreen() {
         onEndReachedThreshold={prefetchThreshold(cardHeight, viewport)}
         refreshControl={
           <RefreshControl
-            refreshing={feed.isRefetching && !feed.isFetchingNextPage}
-            onRefresh={() => refresh(true)}
+            refreshing={pulling}
+            onRefresh={() => {
+              setPulling(true);
+              void refresh(true).finally(() => setPulling(false));
+            }}
             tintColor={colors.accent}
             colors={[colors.accent]}
           />

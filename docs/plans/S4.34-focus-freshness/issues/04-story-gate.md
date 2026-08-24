@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 03.
 
-**Status:** in-progress
+**Status:** closed
 
 - [x] Playwright walks green for AC 1, 2 and 6 of the spec: leave-and-return revalidation on Trips, Discover and Profile; retap on all four tabs.
 - [ ] **Device rung — dev build on the `largata` AVD**, not a release APK: nothing in this story differs by signing key, so a release build proves nothing extra and costs a prebuild plus a password prompt. Background the app past `staleTime`, foreground it, confirm the focused screen revalidates; walk retap on all four tabs with real touch.
@@ -69,3 +69,18 @@ Neither is unguarded.
 - **The device walk is DEFERRED to S4.35** — AC 3 (AppState foregrounding) and the device half of AC 6 move to S4.35's device pass rather than holding this story open. The blocked-Gradle finding above stands; whoever runs S4.35's device rung inherits it. The gate-record Artifact travels with the device walk.
 
 **Incident, same session (2026-08-25): the local database was wiped by accident while writing THIS note.** A bash quoting failure executed documentation text as a command — the string `docker compose down && up -d`, inside what should have been an inert code span, ran its first half. The containers were removed; the DB mounts no volume by design, so the ~300 accumulated walk fixtures and the seeded demo dataset are gone. Firebase pool accounts are unaffected (they live in `largata-dev` cloud), and travelers re-provision on first sign-in. The stack was left DOWN pending the owner's word on bringing it back up (`docker compose up -d`) and whether to reseed the demo dataset (`seed-travelers.js`). The mechanism is recorded so it is never repeated: never pass prose containing backticks through a double-quoted shell string — write files with the editing tools, not `bash -c` heredocs.
+
+**2026-08-25, code review (two axes, fixed point `origin/dev`) — four findings acted on, three deferred with a home. AC 5 is now PROVEN rather than claimed, and one real product defect was caught.**
+
+**Fixed here:**
+
+1. **AC 1's "no spinner" was false on native, and this story caused it.** `trips.tsx` and `FeedScreen.tsx` bind `RefreshControl`'s `refreshing` to react-query's `isRefetching` — a line this branch never touched. But focus revalidation calls `refetch()`, which sets that flag, so **every return to Trips or Home would have flashed the pull-to-refresh spinner on the device** — against the spec's locked decision that the cached list stays on screen. Invisible to every rung available: react-native-web's `RefreshControl` is inert, so no Playwright walk can see it, and the device rung is deferred. Both surfaces now bind `refreshing` to a `pulling` state set only inside `onRefresh`, so the spinner answers the gesture and nothing else. Guarded by `focusFreshness.test.ts` — *"a focus revalidation is silent — only the pull gesture spins"* — sabotage-verified by restoring the old binding, which turns it red. **Its device confirmation rides with S4.35's deferred pass, like the rest of AC 3/AC 6.**
+2. **The Travelers-tab widening is reverted** — see ticket 02's 2026-08-25 note. Out-of-scope by the spec's own list and by AC 7; the gap it found is carried to S4.35 as an epic-map line.
+3. **AC 5 is proven, and proving it found a racing assertion.** The claim rested on one grep asserting the JSX line survived — which proves nothing about behaviour, and the poll moving into `useFocusEffect` is exactly the change that could break it. Ran the real walks: `home.spec.ts` — **35 passed**, with the pill's own two tests exercised. The pill-tap test failed **deterministically** (2/2) until the trace explained it: the pill was clicked at 295.7s and the test sampled `document.body.innerText` at **296.0s**, while the refetch that tap triggers takes ~500ms to answer — it read the page before the refresh it asked for could land. It now waits for the caption before sampling; the ordering assertions after it are untouched and pass. **The product was correct the whole time; the assertion was premature.** Whether it raced before this branch is unproven — Playwright is not in CI, so nothing recorded it either way.
+4. **Ticket 03's record is corrected** — two boxes described a double-tap window module that was deleted at review; see that ticket's Comments. Spec **AC 8's first clause is unmeetable as written** ("a broken window comparison … must turn a test red" — there is no comparison); its second clause is met and sabotage-verified.
+
+**Deferred with a home, not dropped** (epic-map lines, all triggered by S4.35, which re-enters these same screens): the four retap surfaces repeating one shape and `CAUGHT_UP_TOAST`/`FeedToast` living in `src/feed/` while three non-feed screens import them · Home's retap firing from anywhere in its stack while the other three require the tab root, whose consequence differs by platform and is unverified on both · the Travelers roster's missing focus revalidation.
+
+**Also fixed, smaller:** `RETAP_SCROLL_THROTTLE_MS` was duplicated verbatim in both platform forks while only `SCROLL_TO_TOP_ANIMATED` genuinely forks — one definition now (`retapScroll.ts`), with a guard that fails if it re-forks. And the three AC-1 e2e tests read the trip's current title from the API instead of a module variable that a sibling test mutates, so no test depends on another having run.
+
+**Status: closed.** The web rung is green — `focus-freshness.spec.ts` and `home.spec.ts` — Jest is 141 suites / 4769 tests, CI is green, and the device rung is S4.35's by owner call.

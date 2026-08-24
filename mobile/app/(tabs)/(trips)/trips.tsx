@@ -31,7 +31,8 @@ import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { TRIPS_TAB_ROUTE } from '../../../src/navigation/authRoutes';
 import { useTabRetap } from '../../../src/navigation/useTabRetap';
 import { atTop } from '../../../src/feed/headerVisibility';
-import { RETAP_SCROLL_THROTTLE_MS, SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
+import { RETAP_SCROLL_THROTTLE_MS } from '../../../src/navigation/retapScroll';
+import { SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
 import { FeedToast } from '../../../src/feed/FeedToast';
 import { CAUGHT_UP_TOAST } from '../../../src/feed/feedCopy';
 import type { ItineraryResponse } from '../../../src/types/api';
@@ -41,7 +42,7 @@ import { tripTabColors, tripTabMetrics, tripTabMotion, tripTabTypography } from 
 
 export default function MyTripsScreen() {
   const trips = useMyItineraries();
-  const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isPending, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     trips;
 
   useRevalidateOnFocus(trips);
@@ -50,6 +51,7 @@ export default function MyTripsScreen() {
   const offsets = useRef<Partial<Record<TripTab, number>>>({});
   const lists = useRef<Partial<Record<TripTab, FlatList<ItineraryResponse> | null>>>({});
   const [toast, setToast] = useState<string | null>(null);
+  const [pulling, setPulling] = useState(false);
 
   const itineraries = data?.pages.flatMap((page) => page.items) ?? [];
   const active = landingTab(itineraries, picked);
@@ -116,8 +118,11 @@ export default function MyTripsScreen() {
               offsets.current[active] = event.nativeEvent.contentOffset.y;
             }}
             scrollEventThrottle={RETAP_SCROLL_THROTTLE_MS}
-            onRefresh={() => void refetch()}
-            refreshing={isRefetching}
+            onRefresh={() => {
+              setPulling(true);
+              void refetch().finally(() => setPulling(false));
+            }}
+            refreshing={pulling}
             onEndReached={() => {
               if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
             }}

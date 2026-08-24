@@ -26,8 +26,22 @@ const SURFACES: ReadonlyArray<readonly [string, string]> = [
   ['the Profile itineraries pane', join('src', 'profile', 'ProfileItinerariesTab.tsx')],
   ['the Profile diary pane', join('src', 'profile', 'ProfileDiaryTab.tsx')],
   ['the poll board', join('src', 'query', 'pollQueries.ts')],
-  ['the Travelers tab', join('src', 'itineraries', 'WorkspaceTravelersTab.tsx')],
 ];
+
+describe('a focus revalidation is silent — only the pull gesture spins (S4.34 AC 1)', () => {
+  const PULLERS: ReadonlyArray<readonly [string, string]> = [
+    ['Home', join('src', 'feed', 'FeedScreen.tsx')],
+    ['Trips', join('app', '(tabs)', '(trips)', 'trips.tsx')],
+  ];
+
+  it.each(PULLERS)('%s never binds refreshing to a query flag', (_name, file) => {
+    const source = read(file);
+
+    expect(source).not.toMatch(/refreshing=\{[^}]*isRefetching/);
+    expect(source).toMatch(/refreshing=\{pulling\}/);
+    expect(source).toMatch(/setPulling\(true\)/);
+  });
+});
 
 describe('every surface that revalidates on focus goes through the one helper (S4.34 ticket 02)', () => {
   it.each(SURFACES)('%s reaches for the shared helper', (_name, file) => {

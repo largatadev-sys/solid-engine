@@ -919,6 +919,8 @@ test.describe('the new-posts pill, waited out over one real poll cycle', () => {
 
     await expect.poll(async () => feedScrollTop(page), { timeout: 15_000 }).toBe(0);
 
+    await expect(page.getByText(newest).last()).toBeVisible({ timeout: 15_000 });
+
     const shown = await page.evaluate(() => document.body.innerText);
     expect(shown.indexOf(newest), 'the new postcard must be on screen after the pill').toBeGreaterThan(-1);
     expect(await feedCards(page).count(), 'the feed must render cards to sort').toBeGreaterThan(0);
