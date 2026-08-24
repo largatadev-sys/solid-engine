@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `AppState` drives react-query's `focusManager` (app-level): background → foreground marks the client focused and revalidates what is on screen. Lives beside `useSocketLifecycle` in the root layout — the same lifecycle question asked of a second subsystem. The web fork keeps react-query's own window-focus default; only native supplies `AppState`.
 - [ ] One shared helper — `useRevalidateOnFocus` — wrapping `useFocusEffect` + `refetch`, applied to the Trips list query **and nowhere else in this ticket**.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 03.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] The plan bulk save raises `plan.saved` with a payload; the client absorbs the new plan version into the cached trip. Zero queries.
 - [ ] `JoinService` raises `membership.granted` as a **signal** — the client refetches trips **and** the inbox, because a whole trip must appear and the client holds none of its data. This is the one refetch-shaped event on this surface, and the asymmetry is deliberate.

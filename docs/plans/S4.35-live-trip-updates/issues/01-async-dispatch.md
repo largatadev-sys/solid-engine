@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `Session.send` enqueues and hands `drain()` to a **bounded executor** instead of running it on the caller's thread. `SEND_QUEUE_LIMIT = 256` and the overflow close are unchanged — the structure was already right, only the thread was wrong.
 - [ ] `Heartbeats` gets a real `TaskScheduler` pool. Today no `TaskScheduler` bean and no `spring.task` config exist, so Boot's **single-threaded** default carries both the ping loop and the ticket sweeper, and one stalled socket delays pings for every session behind it — the mechanism that detects dead sessions blocked by dead sessions.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 05, 06, 07.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] **Device walk on a release APK, on the founder's phone** — the founder's call at the grilling. Background the app; a second traveler edits and then approves a join request; foreground, and Trips is correct. This is WS-1's AC 10, deferred once into S4.10 and again out of its ticket 04; it closes here. The build needs `LARGATA_ANDROID_JAVA_HOME` set on this workstation — the plugin's own candidate JDK paths all miss here.
 - [ ] Dismiss the LogBox banner before tapping anything in a bottom docked rail (S4.19), and never `KEYCODE_BACK` to close a keyboard — it navigates the router.

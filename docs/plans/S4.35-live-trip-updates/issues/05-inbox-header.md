@@ -4,7 +4,7 @@
 
 **Blocked by:** 03.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] The handle-invitation issue path raises `invitation.received` with a payload, addressed to the **recipient**, absorbed into the cached inbox. Zero queries.
 - [ ] The existing inbox response already carries what the event absorbs — confirm rather than assume, and add **no `/v1` change**.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 01.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Home, Discover and Profile list queries revalidate on focus through the ticket-01 helper — one line each, no second copy of the logic.
 - [ ] `pollQueries` (S2.1) and `WorkspaceTravelersTab` (S4.28) migrate onto the shared helper. **Behaviour is unchanged on both** — the poll surface and the roster still refetch exactly when they did. Two existing copies of a pattern about to gain four more is how the counter-pill chrome ended up in three files.

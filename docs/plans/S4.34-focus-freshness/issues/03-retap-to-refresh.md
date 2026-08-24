@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — **a file-ownership edge, not a logical one.** Retap does not need focus revalidation to work; it touches the same four tab screens, and this repo bans concurrent agents on shared paths. If 02 is not in flight, this can start immediately.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `onHomeTabRetap` generalizes to a per-tab registry keyed by route; each tab screen registers its own handler. Home's existing behaviour is the contract, not a starting point to redesign.
 - [ ] **The web fork reads `Date.now()` itself.** `nativeEvent.timestamp` is not populated on react-native-web — the feed's double-tap silently never fired for exactly this reason (S4.22), and the pure module's Jest tests passed the whole time because they pass real numbers. A test that feeds real numbers cannot catch this; the browser rung is the one that can.

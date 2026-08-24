@@ -4,7 +4,7 @@
 
 **Blocked by:** 03.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `roster.changed` is a **signal**; the client refetches members. Membership grant and removal both raise it.
 - [ ] `join-requests.changed` is a **signal that carries no payload whatsoever**. The queue is owner-only (`useJoinRequests` is enabled for the owner alone), so a payload on a trip-wide frame would tell ordinary members what REST withholds. **An IT asserts the frame's payload is empty** — this is the rule ADR-030's amendment adds, and a test that only checks delivery would pass while the rule is broken.

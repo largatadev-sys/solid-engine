@@ -1,6 +1,6 @@
 # S4.34 — Focus freshness: the four tabs stop needing a manual refresh
 
-**Status:** specced — awaiting owner review *(flips to ready-for-agent at the owner's pass — the S4.19/S4.20 precedent)* · **Epic:** E4 · **Depends on:** nothing · **Consumed by:** S4.35 (its reconnect contract marks queries stale and relies on focus to fetch them)
+**Status:** ready-for-agent · **Epic:** E4 · **Depends on:** nothing · **Consumed by:** S4.35 (its reconnect contract marks queries stale and relies on focus to fetch them)
 **Grilled:** 2026-08-24 (grill-with-docs, four rounds) — founder rulings recorded per question below.
 **ADR:** none. No architectural decision is taken here; the shape was already recorded as an epic-map line (*"Trips-list freshness — focus revalidation, deliberately not sockets"*, 2026-08-15) and this story is that line pulled.
 **Candidate-capability note:** **None.** Client-side read freshness: no traveler act, no footprint growth, nothing gateable.
@@ -93,4 +93,6 @@ Any socket, subscription or server push (**S4.35**) · changing `staleTime` or a
 
 ## Comments
 
-*(none yet — appended during implementation)*
+**2026-08-24, owner review — passed.** All four tickets approved as written ("tickets are all good and confirm"); statuses flipped `needs-triage` → `ready-for-agent`. Implementation deliberately not started — the owner triggers the build. Ticket 01 has no blockers and can begin immediately; so can S4.35's ticket 01, and the two do not touch each other.
+
+**One thing the owner should know is still open, recorded here rather than lost in the transcript.** The gate ticket's *gate record* section was added at the owner's ask and answers "results get lost in translation". It does **not** answer the second thing the owner raised — a fix that was lost and a bug reintroduced in Discovery — because a published page does not fail when a fix is reverted. The instrument for that already exists in this repo and was not used: `REGRESSION_CHECKLIST.md`'s ratchet (*"every bug that escapes to a human adds a line here"*) holds **no Discovery line at all**, and there is no off-epic ledger entry for the incident. The owner deferred deciding how to maintain this. Whoever picks the thread up needs two facts only the owner has: **which** Discovery bug it was, and **how** the fix was lost (a merge or rebase dropped it · someone rewrote the code without knowing why it was that way · it was never committed) — the remedy differs by shape.

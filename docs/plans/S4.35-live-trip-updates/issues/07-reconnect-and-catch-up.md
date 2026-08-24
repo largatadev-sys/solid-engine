@@ -4,7 +4,7 @@
 
 **Blocked by:** 04, 06, **and S4.34 ticket 02** *(cross-story: the fetch half is focus revalidation, which does not exist until then)*.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] On reconnect the client resubscribes to `traveler:{id}` and calls `invalidateQueries({ refetchType: 'none' })` — **marks stale, does not fetch**. Blunt invalidate-everything was considered and rejected: mobile foreground/background cycling would fire it dozens of times a day.
 - [ ] S4.34's focus revalidation performs the fetch when a screen is actually being read. A traveler who foregrounds onto Trips gets one refetch; one who foregrounds onto Home gets none until they navigate.

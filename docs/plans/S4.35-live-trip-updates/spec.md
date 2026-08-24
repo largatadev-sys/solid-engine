@@ -1,6 +1,6 @@
 # S4.35 — Live trip updates: the traveler topic
 
-**Status:** specced — awaiting owner review *(flips to ready-for-agent at the owner's pass — the S4.19/S4.20 precedent)* · **Epic:** E4 · **Depends on:** WS-1 (shipped — the transport), S4.10 (shipped — the first subscription client patterns), **S4.34 (this pull — its focus revalidation is what the reconnect contract fetches on)**, S4.28 (shipped — the roster, join requests and the inbox this lights up)
+**Status:** ready-for-agent · **Epic:** E4 · **Depends on:** WS-1 (shipped — the transport), S4.10 (shipped — the first subscription client patterns), **S4.34 (this pull — its focus revalidation is what the reconnect contract fetches on)**, S4.28 (shipped — the roster, join requests and the inbox this lights up)
 **Grilled:** 2026-08-24 (grill-with-docs, four rounds) — founder rulings recorded per question below.
 **ADR:** **ADR-030 amended** (a second topic subject kind; the narrow-audience frame rule; the async dispatcher). No new ADR — it is the same decision growing a subject, and splitting it would put the topic grammar in two documents.
 **Design record:** the settled design published as an artifact, *The Traveler Topic* — the two subjects, the subscribe-time fan-in, one event's journey, the audience rule and the fan-out bound, drawn from the code.
@@ -144,4 +144,8 @@ Push on Home, Discover or Profile (**S4.34** covers their freshness; a public fe
 
 ## Comments
 
-*(none yet — appended during implementation)*
+**2026-08-24, owner review — passed.** All eight tickets approved as written ("tickets are all good and confirm"); statuses flipped `needs-triage` → `ready-for-agent`. Implementation deliberately not started — the owner triggers the build.
+
+**Two notes on the ticket breakdown, so the reasoning survives the transcript.** The owner asked for the original ticket 4 to be **split**, and it was split **by surface** — the Trips list (04) and the inbox header (05) — rather than by event. The reason: "three events across two surfaces" was the stated reason for bundling it, so the surface line is the seam, and a per-event split would make `plan.saved` a ticket for one absorb function, which is thinner than a vertical slice. If a per-event split was meant, splitting 04 again is trivial. Separately, **the async dispatcher stayed inside this story as ticket 01** rather than becoming a third unit — the owner ruled two stories at the grilling and approved folding the dispatcher in when it was raised, so re-proposing it as off-epic work was reopening a settled decision, not a real question.
+
+**The gate record (ticket 08) is deliberately built from run outputs, never from this spec.** The design is already drawn — *The Traveler Topic*, published at the grilling — and redrawing it would prove only that the spec was read. The page's most valuable content is wherever the build **diverged** from the design, and in particular whether any event's payload/signal choice drifted from ADR-030's amendment: the audience rule is the one thing here a reviewer cannot check by looking at a screen.

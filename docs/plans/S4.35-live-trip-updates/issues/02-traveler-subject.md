@@ -4,7 +4,7 @@
 
 **Blocked by:** 01.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] `Topic.parse` accepts a two-segment `traveler:{uuid}` form beside `debug:echo` and the three-segment `itinerary:{uuid}:{channel}`. **No channel segment** — the client subscribes to all of it, so a subset has no consumer.
 - [ ] Authorization is **identity**, not membership: you may subscribe to your own and to nothing else.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 03.
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] Playwright walks green for AC 1, 2 and 6 of the spec: leave-and-return revalidation on Trips, Discover and Profile; retap on all four tabs.
 - [ ] **Device rung — dev build on the `largata` AVD**, not a release APK: nothing in this story differs by signing key, so a release build proves nothing extra and costs a prebuild plus a password prompt. Background the app past `staleTime`, foreground it, confirm the focused screen revalidates; walk retap on all four tabs with real touch.
