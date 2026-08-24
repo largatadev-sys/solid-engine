@@ -31,7 +31,8 @@ import { FeedToast } from './FeedToast';
 import { FEED_REFRESHED_TOAST } from './feedCopy';
 import { atTop, HEADER_SHOWING, onScroll } from './headerVisibility';
 import { freshCount, POLL_MS, showsPill } from './freshPosts';
-import { onHomeTabRetap } from './homeTabRetap';
+import { HOME_TAB_ROUTE } from '../navigation/authRoutes';
+import { useTabRetap } from '../navigation/useTabRetap';
 import { NewPostsPill } from './NewPostsPill';
 import { prefetchThreshold } from './prefetchDistance';
 import { PhotoActionSheet, type PhotoSheetAction } from './PhotoActionSheet';
@@ -95,16 +96,15 @@ export function FeedScreen() {
     [feed, shownCount],
   );
 
-  useEffect(
-    () =>
-      onHomeTabRetap(() => {
-        if (atTop(offset.current)) {
-          refresh(true);
-          return;
-        }
-        toTop(true);
-      }),
-    [refresh, toTop],
+  useTabRetap(
+    HOME_TAB_ROUTE,
+    useCallback(() => {
+      if (atTop(offset.current)) {
+        refresh(true);
+        return;
+      }
+      toTop(true);
+    }, [refresh, toTop]),
   );
 
   const known = useRef(shownIds);

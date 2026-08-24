@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { atTop, HEADER_SHOWING, HIDE_AFTER, onScroll } from '../src/feed/headerVisibility';
 import { freshCount, POLL_MS, showsPill } from '../src/feed/freshPosts';
-import { homeTabRetapped, onHomeTabRetap } from '../src/feed/homeTabRetap';
+import { onTabRetap, tabRetapped } from '../src/navigation/tabRetap';
+import { HOME_TAB_ROUTE } from '../src/navigation/authRoutes';
 
 const MOBILE_ROOT = join(__dirname, '..');
 const SCREEN = readFileSync(join(MOBILE_ROOT, 'src', 'feed', 'FeedScreen.tsx'), 'utf8');
@@ -76,20 +77,20 @@ describe('the new-posts pill offers rather than yanks (behavior card 5)', () => 
 describe('the Home tab re-tap seam', () => {
   it('hands the tap to whoever is listening, and stops when they leave', () => {
     let taps = 0;
-    const stop = onHomeTabRetap(() => {
+    const stop = onTabRetap(HOME_TAB_ROUTE, () => {
       taps += 1;
     });
 
-    homeTabRetapped();
+    tabRetapped(HOME_TAB_ROUTE);
     expect(taps).toBe(1);
 
     stop();
-    homeTabRetapped();
+    tabRetapped(HOME_TAB_ROUTE);
     expect(taps).toBe(1);
   });
 
   it('is harmless when nothing is listening', () => {
-    expect(() => homeTabRetapped()).not.toThrow();
+    expect(() => tabRetapped(HOME_TAB_ROUTE)).not.toThrow();
   });
 });
 
@@ -116,9 +117,9 @@ describe('the screen wires the dynamics the way the mock describes', () => {
     const armed = SCREEN.slice(SCREEN.indexOf('const tick = setInterval'));
     const deps = armed.slice(armed.indexOf('clearInterval'), armed.indexOf('const pageOf'));
 
-    expect(deps).toContain('}, []);');
+    expect(deps).toMatch(/\}, \[\]\)[,;]/);
     expect(armed).toContain('known.current');
-    expect(SCREEN).not.toContain('}, [shownIds]);');
+    expect(SCREEN).not.toContain('[shownIds]');
   });
 
   it('toasts only when a refresh brought nothing new, on EVERY path that refreshes', () => {

@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -28,6 +28,11 @@ import {
 } from '../../../src/itineraries/tripTabs';
 import { useMyItineraries } from '../../../src/query/itineraryQueries';
 import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
+import { TRIPS_TAB_ROUTE } from '../../../src/navigation/authRoutes';
+import { useTabRetap } from '../../../src/navigation/useTabRetap';
+import { atTop } from '../../../src/feed/headerVisibility';
+import { FeedToast } from '../../../src/feed/FeedToast';
+import { CAUGHT_UP_TOAST } from '../../../src/navigation/retapCopy';
 import type { ItineraryResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 import { tripTabColors, tripTabMetrics, tripTabMotion, tripTabTypography } from '../../../src/theme/workspaceTokens';
@@ -42,17 +47,34 @@ export default function MyTripsScreen() {
 
   const picked = usePickedTab();
   const offsets = useRef<Partial<Record<TripTab, number>>>({});
+  const lists = useRef<Partial<Record<TripTab, FlatList<ItineraryResponse> | null>>>({});
+  const [toast, setToast] = useState<string | null>(null);
 
   const itineraries = data?.pages.flatMap((page) => page.items) ?? [];
   const active = landingTab(itineraries, picked);
   const rows = tripsInTab(itineraries, active);
 
   const listFor = (tab: TripTab) => (list: FlatList<ItineraryResponse> | null) => {
+    lists.current[tab] = list;
     const offset = offsets.current[tab];
     if (list !== null && offset !== undefined && offset > 0) {
       list.scrollToOffset({ offset, animated: false });
     }
   };
+
+  useTabRetap(
+    TRIPS_TAB_ROUTE,
+    useCallback(() => {
+      const tab = landingTab(itineraries, picked);
+      if (atTop(offsets.current[tab] ?? 0)) {
+        void refetch();
+        setToast(CAUGHT_UP_TOAST);
+        return;
+      }
+      offsets.current[tab] = 0;
+      lists.current[tab]?.scrollToOffset({ offset: 0, animated: true });
+    }, [itineraries, picked, refetch]),
+  );
 
   return (
     <View style={styles.container}>
@@ -112,6 +134,8 @@ export default function MyTripsScreen() {
           <PlanATripBar />
         </View>
       )}
+
+      <FeedToast message={toast} onDone={() => setToast(null)} />
     </View>
   );
 }

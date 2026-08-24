@@ -179,3 +179,62 @@ test('the feed poll runs on Home and stops on every other tab (AC 4)', async ({ 
     .poll(() => signal.apiRequests.filter(isAFeedRead).length, { timeout: POLL_MS + 20_000 })
     .toBeGreaterThan(away);
 });
+
+const RETAP_TABS: ReadonlyArray<readonly [string, string]> = [
+  ['Home', HOME_TAB_ROUTE],
+  [DISCOVER_TAB_LABEL, '/discover'],
+  ['Trips', TRIPS_TAB_ROUTE],
+  ['Profile', '/profile'],
+];
+
+for (const [name, route] of RETAP_TABS) {
+  test(`retapping ${name} at the top refreshes it rather than doing nothing (AC 6)`, async ({
+    page,
+    signal,
+  }) => {
+    await page.goto(route);
+    await expect(tab(page, name)).toHaveAttribute('aria-selected', 'true');
+    await page.waitForTimeout(SETTLE_MS);
+
+    const before = signal.apiRequests.length;
+    await tab(page, name).click();
+
+    await expect.poll(() => signal.apiRequests.length).toBeGreaterThan(before);
+    await expect(page).toHaveURL(new RegExp(`${route === HOME_TAB_ROUTE ? '/' : route}$`));
+    expect(signal.pageErrors).toEqual([]);
+  });
+
+  test(`retapping ${name} scrolled down returns it to the top (AC 6)`, async ({ page }) => {
+    await page.goto(route);
+    await expect(tab(page, name)).toHaveAttribute('aria-selected', 'true');
+    await page.waitForTimeout(SETTLE_MS);
+
+    const scroller = scrollerOn(page);
+    await page.evaluate(() => {
+      const node = document.scrollingElement ?? document.documentElement;
+      node.scrollTop = 600;
+      for (const el of Array.from(document.querySelectorAll('*'))) {
+        if (el.scrollHeight > el.clientHeight + 40) (el as HTMLElement).scrollTop = 600;
+      }
+    });
+    await page.waitForTimeout(SETTLE_MS);
+
+    const scrolled = await scroller();
+    test.skip(scrolled === 0, `${name} has nothing to scroll in this fixture`);
+
+    await tab(page, name).click();
+    await expect.poll(scroller).toBe(0);
+  });
+}
+
+function scrollerOn(page: Page): () => Promise<number> {
+  return () =>
+    page.evaluate(() => {
+      const root = document.scrollingElement ?? document.documentElement;
+      let deepest = root.scrollTop;
+      for (const el of Array.from(document.querySelectorAll('*'))) {
+        if (el.scrollHeight > el.clientHeight + 40) deepest = Math.max(deepest, el.scrollTop);
+      }
+      return deepest;
+    });
+}

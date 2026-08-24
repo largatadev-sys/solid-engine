@@ -185,7 +185,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     const homeTab = layout.slice(layout.indexOf('name="(home)"'));
 
     expect(homeTab).toContain('inHomeStack(pathname)');
-    expect(homeTab).toContain('homeTabRetapped()');
+    expect(homeTab).toContain('tabRetapped(HOME_TAB_ROUTE)');
   });
 
   it('moves the Trips index off "/" so the root belongs to the feed (S4.22)', () => {
