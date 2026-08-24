@@ -66,30 +66,40 @@ async function openUpcoming(page: Page): Promise<void> {
     .click();
 }
 
-async function tripRowShows(page: Page, title: string): Promise<boolean> {
-  return page.evaluate(async (wanted) => {
-    const settle = () => new Promise((done) => setTimeout(done, 250));
-    const scroller = () =>
-      Array.from(document.querySelectorAll('*')).find(
-        (n) => n.scrollHeight > n.clientHeight + 40,
-      ) as HTMLElement | undefined;
-
-    for (let sweep = 0; sweep < 40; sweep += 1) {
-      if (document.body.innerText.includes(wanted)) return true;
-      const node = scroller();
-      if (node === undefined) {
-        await settle();
-        continue;
-      }
-      node.scrollTop = sweep % 2 === 0 ? node.scrollHeight : 0;
-      await settle();
-    }
-    return document.body.innerText.includes(wanted);
-  }, title);
+async function expectTripRow(page: Page, title: string): Promise<void> {
+  await expect(page.getByText(title).last()).toBeVisible({ timeout: ROW_SEARCH_MS });
 }
 
-async function expectTripRow(page: Page, title: string): Promise<void> {
-  await expect.poll(() => tripRowShows(page, title), { timeout: ROW_SEARCH_MS }).toBe(true);
+function trackApiTraffic(page: Page): () => Promise<void> {
+  let inFlight = 0;
+  let total = 0;
+  const counts = (url: string) => url.includes('/v1/');
+  page.on('request', (r) => {
+    if (counts(r.url())) {
+      inFlight += 1;
+      total += 1;
+    }
+  });
+  page.on('requestfinished', (r) => {
+    if (counts(r.url())) inFlight -= 1;
+  });
+  page.on('requestfailed', (r) => {
+    if (counts(r.url())) inFlight -= 1;
+  });
+
+  return async () => {
+    let seen = -1;
+    await expect
+      .poll(
+        () => {
+          const settled = inFlight === 0 && total === seen;
+          seen = total;
+          return settled;
+        },
+        { intervals: [1_500], timeout: 45_000 },
+      )
+      .toBe(true);
+  };
 }
 
 const HEADER_LEASE = { subjectType: 'header' };
@@ -192,9 +202,10 @@ test('returning to Trips re-reads the list — the request is the proof (AC 1)',
 
 test('Discover revalidates on return (AC 2)', async ({ page, signal }) => {
   test.setTimeout(LONG_WALK_MS);
+  const apiSettled = trackApiTraffic(page);
   await page.goto('/discover');
   await expect(tab(page, DISCOVER_TAB_LABEL)).toHaveAttribute('aria-selected', 'true');
-  await page.waitForTimeout(SETTLE_MS);
+  await apiSettled();
 
   await tab(page, 'Trips').click();
   await expect(page).toHaveURL(new RegExp(`${TRIPS_TAB_ROUTE}$`));
@@ -209,9 +220,10 @@ test('Discover revalidates on return (AC 2)', async ({ page, signal }) => {
 
 test('Profile revalidates on return (AC 2)', async ({ page, signal }) => {
   test.setTimeout(LONG_WALK_MS);
+  const apiSettled = trackApiTraffic(page);
   await page.goto('/profile');
   await expect(tab(page, 'Profile')).toHaveAttribute('aria-selected', 'true');
-  await page.waitForTimeout(SETTLE_MS);
+  await apiSettled();
 
   await tab(page, 'Trips').click();
   await expect(page).toHaveURL(new RegExp(`${TRIPS_TAB_ROUTE}$`));
@@ -226,9 +238,10 @@ test('Profile revalidates on return (AC 2)', async ({ page, signal }) => {
 
 test('Home revalidates on return (AC 2)', async ({ page, signal }) => {
   test.setTimeout(LONG_WALK_MS);
+  const apiSettled = trackApiTraffic(page);
   await page.goto(HOME_TAB_ROUTE);
   await expect(tab(page, 'Home')).toHaveAttribute('aria-selected', 'true');
-  await page.waitForTimeout(SETTLE_MS);
+  await apiSettled();
 
   await tab(page, 'Trips').click();
   await expect(page).toHaveURL(new RegExp(`${TRIPS_TAB_ROUTE}$`));
@@ -305,9 +318,10 @@ for (const [name, route] of RETAP_TABS) {
     page,
     signal,
   }) => {
+    const apiSettled = trackApiTraffic(page);
     await page.goto(route);
     await expect(tab(page, name)).toHaveAttribute('aria-selected', 'true');
-    await page.waitForTimeout(SETTLE_MS);
+    await apiSettled();
 
     const before = signal.apiRequests.length;
     await tab(page, name).click();
