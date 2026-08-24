@@ -29,3 +29,19 @@
 - [ ] Screenshots and traces from the actual runs — the release APK walk included — at the sizes they were taken.
 - [ ] **Every bug found during this story is named on the page beside the thing that now fails if it returns** — the test, or a `REGRESSION_CHECKLIST.md` line where no test can catch it. A bug with neither is listed as **unguarded**, in as many words. *A published page does not fail when a fix is reverted — a test does. The page's job is to make it obvious which bugs have one.*
 - [ ] Record the published URL in this ticket's `## Comments`, with the date and the commit it describes.
+
+## Comments
+
+**2026-08-25, reconciliation with S4.34's close (pre-implementation) — this rung inherited scope and a blocker, both dated after this ticket was approved.** The owner's 2026-08-25 calls on S4.34 (recorded in its ticket 04 Comments) moved three things into this device pass:
+
+- **S4.34's AC 3 closes here:** background the app past `staleTime`, foreground it, the focused screen revalidates. Currently unproven on any rung.
+- **S4.34's AC 6 device half closes here:** retap on all four tabs with real touch, the scrolled-down half included. The web rung proved that half on Trips only — Home, Discover and Profile had nothing to scroll in the fixture, and those tests skip on the record rather than pass vacuously.
+- **The silent-revalidation fix gets its device confirmation here:** Trips and Home bind `RefreshControl.refreshing` to a gesture-owned `pulling` state (S4.34 review finding 1), because focus revalidation's `refetch()` raises `isRefetching`. react-native-web's `RefreshControl` is inert, so no web walk can see the defect or the fix — confirm on the device that a focus revalidation never spins the pull control. Guard: `focusFreshness.test.ts`.
+
+Nothing about the three differs by signing key, so the body's release walk closes them — no extra build, and any dev-build walk on the AVD closes them equally if it runs first.
+
+**The S4.34 gate-record Artifact travels with this walk** (same owner call): it was deliberately not published because the device half had produced no runs. Once this rung closes, publish it — carrying the blockage history at the same visual weight as the greens — beside this story's own gate record. Two pages, two stories; neither absorbs the other.
+
+**Inherited blocker, found at S4.34's gate:** `:app:assembleDebug` fails on this workstation at configuration time — *"Could not determine the dependencies of task ':app:compileDebugJavaWithJavac' — Cannot query the value of this provider because it has no value available"* — with the JDK pin verified in the generated `gradle.properties`, after `--stop` plus a clean of `app/build`, and **identically on a clean `dev` worktree**, so it is not branch-caused. It fails at configuration time, so expect the release build to hit it too (unproven). Whoever runs this rung clears it first; budget for that before the walk, not during it.
+
+**An owner decision waits on this pass** (epic-map line, 2026-08-25): Home's retap fires from anywhere in its stack while the other three tabs require the tab root, and the consequence differs by platform — on native a hidden feed refreshes, on web the handler has unregistered and the tap does nothing while `preventDefault` still swallows it. Neither half is verified; this pass is where it becomes observable. Put the choice — pop to root, refresh, or both — to the owner with what the walk shows.
