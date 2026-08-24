@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import { feedColors, feedMetrics } from '../theme/feedTokens';
 import type { FeedPostcardResponse } from '../types/api';
 import { feedRepository } from '../repositories/feedRepository';
 import { useFeed } from '../query/feedQueries';
+import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { FeedCard, type StubControl } from './FeedCard';
 import { FeedHeader } from './FeedHeader';
 import {
@@ -44,6 +45,8 @@ export function FeedScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const feed = useFeed();
+
+  useRevalidateOnFocus(feed);
 
   const [now, setNow] = useState(() => Date.now());
   const [header, setHeader] = useState(HEADER_SHOWING);
@@ -107,19 +110,21 @@ export function FeedScreen() {
   const known = useRef(shownIds);
   known.current = shownIds;
 
-  useEffect(() => {
-    const tick = setInterval(() => {
-      if (known.current === '') {
-        return;
-      }
-      const showing = known.current.split(',');
-      void feedRepository
-        .fetchPage()
-        .then((page) => setFresh(freshCount(page.items.map((card) => card.id), showing)))
-        .catch(() => undefined);
-    }, POLL_MS);
-    return () => clearInterval(tick);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const tick = setInterval(() => {
+        if (known.current === '') {
+          return;
+        }
+        const showing = known.current.split(',');
+        void feedRepository
+          .fetchPage()
+          .then((page) => setFresh(freshCount(page.items.map((card) => card.id), showing)))
+          .catch(() => undefined);
+      }, POLL_MS);
+      return () => clearInterval(tick);
+    }, []),
+  );
 
   const pageOf = (cardId: string) => pages.current.get(cardId) ?? 0;
 

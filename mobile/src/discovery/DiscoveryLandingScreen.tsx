@@ -6,6 +6,7 @@ import {
   useRecommended,
   useTrendingDestinations,
 } from '../query/discoveryQueries';
+import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { colors, spacing } from '../theme';
 import {
   discoveryColors,
@@ -32,6 +33,9 @@ export function DiscoveryLandingScreen() {
   const recommended = useRecommended();
   const trending = useTrendingDestinations();
   const insets = useSafeAreaInsets();
+
+  useRevalidateOnFocus(recommended);
+  useRevalidateOnFocus(trending);
 
   const cards = recommended.data ?? [];
   const destinations = trending.data ?? [];

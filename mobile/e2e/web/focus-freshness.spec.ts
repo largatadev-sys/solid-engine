@@ -6,6 +6,9 @@ import { ownerTagFor } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { DISCOVER_TAB_LABEL } from '../../src/discovery/discoveryCopy';
 import { HOME_TAB_ROUTE, TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
+import { POLL_MS } from '../../src/feed/freshPosts';
+
+const SETTLE_MS = 3_000;
 
 const TRAVELER = ownerTagFor('web/focus-freshness');
 
@@ -148,3 +151,31 @@ function isAProfileRead(entry: { url: string }): boolean {
 function isAFeedRead(entry: { url: string }): boolean {
   return entry.url.includes('/v1/feed');
 }
+
+test('the feed poll runs on Home and stops on every other tab (AC 4)', async ({ page, signal }) => {
+  test.setTimeout(POLL_MS * 3 + 60_000);
+
+  await page.goto(HOME_TAB_ROUTE);
+  await expect(tab(page, 'Home')).toHaveAttribute('aria-selected', 'true');
+
+  const parked = signal.apiRequests.filter(isAFeedRead).length;
+  await expect
+    .poll(() => signal.apiRequests.filter(isAFeedRead).length, { timeout: POLL_MS + 20_000 })
+    .toBeGreaterThan(parked);
+
+  await tab(page, 'Trips').click();
+  await expect(page).toHaveURL(new RegExp(`${TRIPS_TAB_ROUTE}$`));
+  await page.waitForTimeout(SETTLE_MS);
+
+  const away = signal.apiRequests.filter(isAFeedRead).length;
+  await page.waitForTimeout(POLL_MS + 10_000);
+
+  expect(signal.apiRequests.filter(isAFeedRead).length).toBe(away);
+
+  await tab(page, 'Home').click();
+  await expect(tab(page, 'Home')).toHaveAttribute('aria-selected', 'true');
+
+  await expect
+    .poll(() => signal.apiRequests.filter(isAFeedRead).length, { timeout: POLL_MS + 20_000 })
+    .toBeGreaterThan(away);
+});

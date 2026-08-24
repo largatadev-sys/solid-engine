@@ -12,6 +12,7 @@ import { PROFILE_LOAD_FAILED } from '../../../src/profile/profileCopy';
 import { profileCardOf } from '../../../src/profile/profileCard';
 import { selectTab, selectedTab, type ProfileTab } from '../../../src/profile/profileViewState';
 import { useProfileStats } from '../../../src/query/profileQueries';
+import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { colors, spacing } from '../../../src/theme';
 import { workspaceColors } from '../../../src/theme/workspaceTokens';
 
@@ -21,6 +22,8 @@ export default function ProfileScreen() {
   const { state } = useMe();
   const stats = useProfileStats();
   const [tab, setTab] = useState<ProfileTab>(selectedTab);
+
+  useRevalidateOnFocus(stats);
 
   if (state.kind === 'loading') {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
