@@ -9,9 +9,9 @@ import {
 } from '../query/discoveryQueries';
 import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { useTabRetap } from '../navigation/useTabRetap';
-import { CAUGHT_UP_TOAST } from '../navigation/retapCopy';
+import { CAUGHT_UP_TOAST } from '../feed/feedCopy';
 import { atTop } from '../feed/headerVisibility';
-import { SCROLL_TO_TOP_ANIMATED } from '../navigation/scrollToTop';
+import { RETAP_SCROLL_THROTTLE_MS, SCROLL_TO_TOP_ANIMATED } from '../navigation/scrollToTop';
 import { FeedToast } from '../feed/FeedToast';
 import { colors, spacing } from '../theme';
 import {
@@ -95,7 +95,7 @@ export function DiscoveryLandingScreen() {
         onScroll={(event) => {
           offset.current = event.nativeEvent.contentOffset.y;
         }}
-        scrollEventThrottle={SCROLL_THROTTLE_MS}
+        scrollEventThrottle={RETAP_SCROLL_THROTTLE_MS}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.searchRow}>
@@ -142,7 +142,6 @@ export function DiscoveryLandingScreen() {
   );
 }
 
-const SCROLL_THROTTLE_MS = 100;
 
 const styles = StyleSheet.create({
   screen: {

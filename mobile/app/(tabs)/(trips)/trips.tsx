@@ -31,9 +31,9 @@ import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { TRIPS_TAB_ROUTE } from '../../../src/navigation/authRoutes';
 import { useTabRetap } from '../../../src/navigation/useTabRetap';
 import { atTop } from '../../../src/feed/headerVisibility';
-import { SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
+import { RETAP_SCROLL_THROTTLE_MS, SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
 import { FeedToast } from '../../../src/feed/FeedToast';
-import { CAUGHT_UP_TOAST } from '../../../src/navigation/retapCopy';
+import { CAUGHT_UP_TOAST } from '../../../src/feed/feedCopy';
 import type { ItineraryResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 import { tripTabColors, tripTabMetrics, tripTabMotion, tripTabTypography } from '../../../src/theme/workspaceTokens';
@@ -115,7 +115,7 @@ export default function MyTripsScreen() {
             onScroll={(event) => {
               offsets.current[active] = event.nativeEvent.contentOffset.y;
             }}
-            scrollEventThrottle={SCROLL_THROTTLE_MS}
+            scrollEventThrottle={RETAP_SCROLL_THROTTLE_MS}
             onRefresh={() => void refetch()}
             refreshing={isRefetching}
             onEndReached={() => {
@@ -245,7 +245,6 @@ const CREATE_LABEL = 'Plan a Trip';
 
 const ARCHIVED_LINK_LABEL = 'Archived trips';
 
-const SCROLL_THROTTLE_MS = 100;
 
 const HEADER_ICON_SIZE = 20;
 

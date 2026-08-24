@@ -124,8 +124,8 @@ describe('the screen wires the dynamics the way the mock describes', () => {
 
   it('toasts only when a refresh brought nothing new, on EVERY path that refreshes', () => {
     expect(SCREEN).toContain('if (toastWhenNothingNew && after <= had)');
-    expect(SCREEN).toContain('FEED_REFRESHED_TOAST');
-    expect(SCREEN.match(/setToast\(FEED_REFRESHED_TOAST\)/g) ?? []).toHaveLength(1);
+    expect(SCREEN).toContain('CAUGHT_UP_TOAST');
+    expect(SCREEN.match(/setToast\(CAUGHT_UP_TOAST\)/g) ?? []).toHaveLength(1);
   });
 
   it('takes the fresh posts WITHOUT claiming there were none', () => {

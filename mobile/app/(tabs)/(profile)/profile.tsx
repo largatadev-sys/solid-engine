@@ -16,9 +16,9 @@ import { profileKeys, useProfileStats } from '../../../src/query/profileQueries'
 import { diaryKeys } from '../../../src/query/diaryQueries';
 import { PROFILE_TAB_ROUTE } from '../../../src/navigation/authRoutes';
 import { useTabRetap } from '../../../src/navigation/useTabRetap';
-import { CAUGHT_UP_TOAST } from '../../../src/navigation/retapCopy';
+import { CAUGHT_UP_TOAST } from '../../../src/feed/feedCopy';
 import { atTop } from '../../../src/feed/headerVisibility';
-import { SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
+import { RETAP_SCROLL_THROTTLE_MS, SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
 import { FeedToast } from '../../../src/feed/FeedToast';
 import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { colors, spacing } from '../../../src/theme';
@@ -72,7 +72,7 @@ export default function ProfileScreen() {
         onScroll={(event) => {
           offset.current = event.nativeEvent.contentOffset.y;
         }}
-        scrollEventThrottle={SCROLL_THROTTLE_MS}
+        scrollEventThrottle={RETAP_SCROLL_THROTTLE_MS}
       >
         <ProfileHeader
           card={profileCardOf(state.me)}
@@ -97,7 +97,6 @@ export default function ProfileScreen() {
 }
 
 
-const SCROLL_THROTTLE_MS = 100;
 
 
 const styles = StyleSheet.create({

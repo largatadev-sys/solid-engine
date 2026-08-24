@@ -8,10 +8,3 @@ export type TabRoute =
   | typeof DISCOVER_TAB_ROUTE
   | typeof TRIPS_TAB_ROUTE
   | typeof PROFILE_TAB_ROUTE;
-
-export const TAB_ROUTES: readonly TabRoute[] = [
-  HOME_TAB_ROUTE,
-  DISCOVER_TAB_ROUTE,
-  TRIPS_TAB_ROUTE,
-  PROFILE_TAB_ROUTE,
-];

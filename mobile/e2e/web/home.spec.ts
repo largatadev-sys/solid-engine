@@ -10,7 +10,7 @@ import {
   FEED_CAPTION_MORE,
   FEED_NEW_POSTS,
   FEED_NOTIFICATIONS_LABEL,
-  FEED_REFRESHED_TOAST,
+  CAUGHT_UP_TOAST,
   FEED_SEARCH_LABEL,
   FEED_TITLE,
   FEED_TRIP_BADGE,
@@ -787,7 +787,7 @@ test.describe('the header and the scroll it answers to', () => {
         { timeout: 15_000 },
       )
       .toBeGreaterThan(readsBefore);
-    await expect(page.getByText(FEED_REFRESHED_TOAST).first()).toBeVisible();
+    await expect(page.getByText(CAUGHT_UP_TOAST).first()).toBeVisible();
   });
 });
 

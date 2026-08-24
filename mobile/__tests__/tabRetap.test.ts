@@ -1,13 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  RETAP_WINDOW_MS,
-  isRetap,
-  onTabRetap,
-  retapRouteFor,
-  tabRetapped,
-  type RetapClock,
-} from '../src/navigation/tabRetap';
+import { onTabRetap, tabRetapped } from '../src/navigation/tabRetap';
 import {
   DISCOVER_TAB_ROUTE,
   HOME_TAB_ROUTE,
@@ -16,33 +9,6 @@ import {
 } from '../src/navigation/retapRoutes';
 
 const MOBILE_ROOT = join(__dirname, '..');
-
-function clockAt(...readings: number[]): RetapClock {
-  const queue = [...readings];
-  return () => queue.shift() ?? 0;
-}
-
-describe('a retap is a second tap inside the window, measured by a clock the caller owns (S4.34 ticket 03)', () => {
-  it('is not a retap the first time — there is nothing to be second to', () => {
-    expect(isRetap(null, 1_000)).toBe(false);
-  });
-
-  it('is a retap when the second tap lands inside the window', () => {
-    expect(isRetap(1_000, 1_000 + RETAP_WINDOW_MS - 1)).toBe(true);
-  });
-
-  it('is not a retap once the window has passed — two deliberate visits are not a double-tap', () => {
-    expect(isRetap(1_000, 1_000 + RETAP_WINDOW_MS + 1)).toBe(false);
-  });
-
-  it('takes the window boundary itself as a retap, so the edge is decided rather than accidental', () => {
-    expect(isRetap(1_000, 1_000 + RETAP_WINDOW_MS)).toBe(true);
-  });
-
-  it('refuses a reading that runs backwards rather than reporting a retap', () => {
-    expect(isRetap(1_000, 900)).toBe(false);
-  });
-});
 
 describe('the registry is keyed by route, so each tab answers for itself (S4.34 ticket 03)', () => {
   it('calls only the handler registered for the tapped route', () => {
@@ -87,32 +53,26 @@ describe('the registry is keyed by route, so each tab answers for itself (S4.34 
   });
 });
 
-describe('every tab has a route the registry can key on (S4.34 ticket 03)', () => {
-  it('maps each of the four tab stacks to its own route', () => {
-    expect(retapRouteFor(HOME_TAB_ROUTE)).toBe(HOME_TAB_ROUTE);
-    expect(retapRouteFor('/feed/diary/abc')).toBe(HOME_TAB_ROUTE);
-    expect(retapRouteFor(DISCOVER_TAB_ROUTE)).toBe(DISCOVER_TAB_ROUTE);
-    expect(retapRouteFor(PROFILE_TAB_ROUTE)).toBe(PROFILE_TAB_ROUTE);
-    expect(retapRouteFor('/account')).toBe(PROFILE_TAB_ROUTE);
-    expect(retapRouteFor(TRIPS_TAB_ROUTE)).toBe(TRIPS_TAB_ROUTE);
-    expect(retapRouteFor('/itineraries/abc')).toBe(TRIPS_TAB_ROUTE);
-  });
-});
-
-describe('the timing is read from a clock, never from a synthetic event (S4.22, ticket 03)', () => {
-  const SOURCE = readFileSync(
+describe('the retap needs no event timing at all (S4.22, ticket 03)', () => {
+  const REGISTRY = readFileSync(
     join(MOBILE_ROOT, 'src', 'navigation', 'tabRetap.ts'),
     'utf8',
   );
+  const TAB_BAR = readFileSync(
+    join(MOBILE_ROOT, 'app', '(tabs)', '_layout.tsx'),
+    'utf8',
+  );
 
-  it('never reads nativeEvent.timestamp, which react-native-web does not populate', () => {
-    expect(SOURCE).not.toMatch(/nativeEvent/);
-    expect(SOURCE).not.toMatch(/\.timestamp/);
+  it('decides a retap from the route the traveler is standing on, not from a tap window', () => {
+    expect(TAB_BAR).toMatch(/inHomeStack\(pathname\)/);
+    expect(TAB_BAR).toMatch(/pathname === TRIPS_TAB_ROUTE/);
   });
 
-  it('lets a caller inject the clock, so a test never steers Date.now()', () => {
-    const clock = clockAt(5_000);
-    expect(clock()).toBe(5_000);
+  it('reads no synthetic-event timing, which react-native-web does not populate', () => {
+    for (const source of [REGISTRY, TAB_BAR]) {
+      expect(source).not.toMatch(/nativeEvent/);
+      expect(source).not.toMatch(/\.timestamp/);
+    }
   });
 });
 
@@ -149,7 +109,7 @@ describe('all four tabs answer a retap, not only Home (S4.34 ticket 03, AC 6)', 
 
   it('says the same thing on every tab — one copy constant, not four strings', () => {
     for (const [, file] of SCREENS) {
-      expect(read(file)).toMatch(/(CAUGHT_UP_TOAST|FEED_REFRESHED_TOAST)/);
+      expect(read(file)).toMatch(/CAUGHT_UP_TOAST/);
     }
   });
 });

@@ -28,7 +28,7 @@ import {
   FeedTerminalCard,
 } from './FeedStates';
 import { FeedToast } from './FeedToast';
-import { FEED_REFRESHED_TOAST } from './feedCopy';
+import { CAUGHT_UP_TOAST } from './feedCopy';
 import { atTop, HEADER_SHOWING, onScroll } from './headerVisibility';
 import { freshCount, POLL_MS, showsPill } from './freshPosts';
 import { HOME_TAB_ROUTE } from '../navigation/authRoutes';
@@ -90,7 +90,7 @@ export function FeedScreen() {
       void feed.refetch().then((result) => {
         const after = (result.data?.pages ?? []).flatMap((page) => page.items).length;
         if (toastWhenNothingNew && after <= had) {
-          setToast(FEED_REFRESHED_TOAST);
+          setToast(CAUGHT_UP_TOAST);
         }
       });
     },
