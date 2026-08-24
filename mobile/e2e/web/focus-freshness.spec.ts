@@ -3,9 +3,10 @@ import { test, expect } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
-import { seedTrip, stamp, type SeededTrip } from '../support/seed';
+import { seedSharedPostcard, seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { DISCOVER_TAB_LABEL } from '../../src/discovery/discoveryCopy';
 import { HOME_TAB_ROUTE, TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
+import { TAB_ROW_LABEL, tabLabel } from '../../src/itineraries/tripTabs';
 import { POLL_MS } from '../../src/feed/freshPosts';
 
 const SETTLE_MS = 3_000;
@@ -29,6 +30,13 @@ test.beforeAll(async () => {
     destination: DESTINATION,
     durationDays: 2,
   });
+  const posting = await seedTrip({
+    ownerTag: TRAVELER,
+    title: stamp('focus freshness feed'),
+    destination: DESTINATION,
+    durationDays: 2,
+  });
+  await seedSharedPostcard(posting, stamp('focus freshness postcard'));
 });
 
 test.beforeEach(async ({ signIn }) => {
@@ -37,6 +45,40 @@ test.beforeEach(async ({ signIn }) => {
 
 const tab = (page: Page, name: string) =>
   page.locator('[role="tab"]').filter({ hasText: new RegExp(`^${name}$`) }).last();
+
+async function openUpcoming(page: Page): Promise<void> {
+  await page
+    .getByRole('tablist', { name: TAB_ROW_LABEL })
+    .getByRole('tab', { name: tabLabel('upcoming') })
+    .click();
+}
+
+async function tripRowShows(page: Page, title: string): Promise<boolean> {
+  return page.evaluate(async (wanted) => {
+    const settle = () => new Promise((done) => setTimeout(done, 250));
+    const scroller = () =>
+      Array.from(document.querySelectorAll('*')).find(
+        (n) => n.scrollHeight > n.clientHeight + 40,
+      ) as HTMLElement | undefined;
+
+    for (let sweep = 0; sweep < 30; sweep += 1) {
+      if (document.body.innerText.includes(wanted)) return true;
+      const node = scroller();
+      if (node === undefined) return false;
+      const wasAt = node.scrollTop;
+      node.scrollTop = node.scrollHeight;
+      await settle();
+      if (node.scrollTop === wasAt && node.scrollTop + node.clientHeight >= node.scrollHeight - 4) {
+        return document.body.innerText.includes(wanted);
+      }
+    }
+    return document.body.innerText.includes(wanted);
+  }, title);
+}
+
+async function expectTripRow(page: Page, title: string): Promise<void> {
+  await expect.poll(() => tripRowShows(page, title), { timeout: 45_000 }).toBe(true);
+}
 
 const HEADER_LEASE = { subjectType: 'header' };
 
@@ -57,7 +99,8 @@ test('a trip edited elsewhere is correct on returning to Trips, with no refresh 
   page,
 }) => {
   await page.goto(TRIPS_TAB_ROUTE);
-  await expect(page.getByText(trip.title)).toBeVisible();
+  await openUpcoming(page);
+  await expectTripRow(page, trip.title);
 
   const renamed = stamp('renamed by another traveler');
   await renameTheTrip(renamed);
@@ -66,8 +109,9 @@ test('a trip edited elsewhere is correct on returning to Trips, with no refresh 
   await expect(page).toHaveURL(new RegExp(`${HOME_TAB_ROUTE}$`));
 
   await tab(page, 'Trips').click();
+  await openUpcoming(page);
 
-  await expect(page.getByText(renamed)).toBeVisible();
+  await expectTripRow(page, renamed);
   trip.title = renamed;
 });
 
@@ -75,7 +119,8 @@ test('the revalidation happens underneath the list — the rows never blank out 
   page,
 }) => {
   await page.goto(TRIPS_TAB_ROUTE);
-  await expect(page.getByText(trip.title)).toBeVisible();
+  await openUpcoming(page);
+  await expectTripRow(page, trip.title);
 
   const renamed = stamp('renamed while nobody watched');
   await renameTheTrip(renamed);
@@ -101,7 +146,8 @@ test('the revalidation happens underneath the list — the rows never blank out 
   }, SAMPLE_MS);
 
   await tab(page, 'Trips').click();
-  await expect(page.getByText(renamed)).toBeVisible();
+  await openUpcoming(page);
+  await expectTripRow(page, renamed);
   clearInterval(sampling);
   trip.title = renamed;
 
@@ -114,14 +160,16 @@ test('returning to Trips re-reads the list — the request is the proof (AC 1)',
   signal,
 }) => {
   await page.goto(TRIPS_TAB_ROUTE);
-  await expect(page.getByText(trip.title)).toBeVisible();
+  await openUpcoming(page);
+  await expectTripRow(page, trip.title);
 
   await tab(page, 'Home').click();
   await expect(page).toHaveURL(new RegExp(`${HOME_TAB_ROUTE}$`));
 
   const before = signal.apiRequests.filter(isATripsRead).length;
   await tab(page, 'Trips').click();
-  await expect(page.getByText(trip.title)).toBeVisible();
+  await openUpcoming(page);
+  await expectTripRow(page, trip.title);
 
   await expect
     .poll(() => signal.apiRequests.filter(isATripsRead).length)
@@ -131,6 +179,7 @@ test('returning to Trips re-reads the list — the request is the proof (AC 1)',
 test('Discover revalidates on return (AC 2)', async ({ page, signal }) => {
   await page.goto('/discover');
   await expect(tab(page, DISCOVER_TAB_LABEL)).toHaveAttribute('aria-selected', 'true');
+  await page.waitForTimeout(SETTLE_MS);
 
   await tab(page, 'Trips').click();
   await expect(page).toHaveURL(new RegExp(`${TRIPS_TAB_ROUTE}$`));
@@ -146,6 +195,7 @@ test('Discover revalidates on return (AC 2)', async ({ page, signal }) => {
 test('Profile revalidates on return (AC 2)', async ({ page, signal }) => {
   await page.goto('/profile');
   await expect(tab(page, 'Profile')).toHaveAttribute('aria-selected', 'true');
+  await page.waitForTimeout(SETTLE_MS);
 
   await tab(page, 'Trips').click();
   await expect(page).toHaveURL(new RegExp(`${TRIPS_TAB_ROUTE}$`));
@@ -161,6 +211,7 @@ test('Profile revalidates on return (AC 2)', async ({ page, signal }) => {
 test('Home revalidates on return (AC 2)', async ({ page, signal }) => {
   await page.goto(HOME_TAB_ROUTE);
   await expect(tab(page, 'Home')).toHaveAttribute('aria-selected', 'true');
+  await page.waitForTimeout(SETTLE_MS);
 
   await tab(page, 'Trips').click();
   await expect(page).toHaveURL(new RegExp(`${TRIPS_TAB_ROUTE}$`));
@@ -190,10 +241,18 @@ function isAFeedRead(entry: { url: string }): boolean {
 }
 
 test('the feed poll runs on Home and stops on every other tab (AC 4)', async ({ page, signal }) => {
-  test.setTimeout(POLL_MS * 3 + 60_000);
+  test.setTimeout(POLL_MS * 3 + 90_000);
 
   await page.goto(HOME_TAB_ROUTE);
   await expect(tab(page, 'Home')).toHaveAttribute('aria-selected', 'true');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const cards = await page.locator('[aria-label$=", photo 1"]').count();
+  test.skip(
+    cards === 0,
+    'the feed is empty, so the poll self-suppresses by design — this check never ran, '
+      + 'and its absence is not evidence that the poll stopped',
+  );
 
   const parked = signal.apiRequests.filter(isAFeedRead).length;
   await expect

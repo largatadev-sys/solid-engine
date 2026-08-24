@@ -1,5 +1,5 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { shouldRevalidate } from './revalidateOnFocus';
 
 
@@ -11,13 +11,18 @@ export interface RevalidatableQuery {
 
 
 export function useRevalidateOnFocus(query: RevalidatableQuery, enabled = true): void {
-  const { isPending, isFetching, refetch } = query;
+  const latest = useRef(query);
+  latest.current = query;
+
+  const armed = useRef(enabled);
+  armed.current = enabled;
 
   useFocusEffect(
     useCallback(() => {
-      if (shouldRevalidate({ enabled, isPending, isFetching })) {
+      const { isPending, isFetching, refetch } = latest.current;
+      if (shouldRevalidate({ enabled: armed.current, isPending, isFetching })) {
         void refetch();
       }
-    }, [enabled, isPending, isFetching, refetch]),
+    }, []),
   );
 }

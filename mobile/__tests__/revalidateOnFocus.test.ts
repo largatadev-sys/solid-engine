@@ -37,3 +37,29 @@ describe('the helper is the only copy of this pattern (S4.34 ticket 02)', () => 
     expect(hook).toMatch(/useFocusEffect/);
   });
 });
+
+describe('the helper fires ONCE per focus, not once per query state change (S4.34)', () => {
+  const HOOK = readFileSync(
+    join(MOBILE_ROOT, 'src', 'query', 'useRevalidateOnFocus.ts'),
+    'utf8',
+  );
+
+  it('arms the focus effect with an EMPTY dependency list', () => {
+    const effect = HOOK.slice(HOOK.indexOf('useFocusEffect'));
+    expect(effect).toMatch(/\}, \[\]\)/);
+  });
+
+  it('never puts the query flags in the dep list — each transition would re-fire the effect', () => {
+    const effect = HOOK.slice(HOOK.indexOf('useFocusEffect'));
+    const deps = effect.slice(effect.lastIndexOf('}, ['));
+
+    expect(deps).not.toMatch(/isFetching/);
+    expect(deps).not.toMatch(/isPending/);
+    expect(deps).not.toMatch(/refetch/);
+  });
+
+  it('reads the live query through a ref, so an empty dep list is still correct', () => {
+    expect(HOOK).toMatch(/useRef\(/);
+    expect(HOOK).toMatch(/latest\.current/);
+  });
+});
