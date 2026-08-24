@@ -27,14 +27,18 @@ import {
   type TripTab,
 } from '../../../src/itineraries/tripTabs';
 import { useMyItineraries } from '../../../src/query/itineraryQueries';
+import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import type { ItineraryResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 import { tripTabColors, tripTabMetrics, tripTabMotion, tripTabTypography } from '../../../src/theme/workspaceTokens';
 
 
 export default function MyTripsScreen() {
+  const trips = useMyItineraries();
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMyItineraries();
+    trips;
+
+  useRevalidateOnFocus(trips);
 
   const picked = usePickedTab();
   const offsets = useRef<Partial<Record<TripTab, number>>>({});
