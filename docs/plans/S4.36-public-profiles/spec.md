@@ -100,3 +100,8 @@ Decision 5's "no new canvas" is superseded: the founder ran the design prompt an
 - **New chrome adopted:** the pushed screen's header row (back chevron, "Profile" title), the People-first group order in suggestions, the addressable `/discover/people?q=` results route with its pagination values, the no-results state, and M2–M5 as the motion contract, Reduce Motion normative.
 
 **Two canvas lines are decisions, not values, and await founder ruling:** *(a)* C4 routes self-search to the own Profile tab, **contradicting decision 9** (one route + Edit affordance, grilled and ruled) — tickets build to decision 9 until re-ruled; *(b)* C5 excludes self from suggestions — new, recommended for adoption, pending the same breath.
+
+### 2026-08-25 — the two open lines close, and decision 9 is superseded *(founder, at the canvas delivery)*
+
+- **C4 adopted — decision 9 is superseded.** Viewing yourself lands on your **own Profile tab**, never the public projection: a tap on your own byline redirects there, and a direct address of your own handle redirects the same way. The public screen never renders for its owner, so its self-view Edit affordance and the "see what others see" framing go with it (user story 13 supersedes accordingly). If "view as others see it" ever earns its way back, it returns as an affordance on the Profile tab, not as a route.
+- **Self is excluded from People search entirely — suggestions and results**, enforced server-side (the search reads know their caller). C5's suggestions-only line is adopted and widened to the whole search surface. Founder's ground, on the record: you shouldn't be able to search yourself — other social platforms don't.

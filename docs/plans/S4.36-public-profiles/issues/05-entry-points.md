@@ -13,4 +13,4 @@
 
 ## Comments
 
-*(none yet)*
+**2026-08-25 — the self re-ruling reaches this ticket** (spec Comments, C4 adopted): a tap on your **own** byline routes to the own Profile tab, never the public route — the wiring branches on subject-is-viewer, and the sweep asserts this fifth case alongside the four entry points (the refusal absent, the *Profile tab* present).
