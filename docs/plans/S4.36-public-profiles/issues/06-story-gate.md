@@ -15,3 +15,11 @@
 ## Comments
 
 *(none yet)*
+
+**2026-08-26 — the gate's result, and the one failure that is not this story's.**
+
+CI on the PR, after two rounds of fixes: **Playwright 760 passed, 1 failed**; backend **1045/1045**; mobile Jest **4985/4985**; typecheck and the compose-stack smoke green. The push-triggered run (everything but Playwright, which only fires on `pull_request`) is fully green.
+
+**The single remaining failure is `e2e/web/live-travelers.spec.ts:56` — S4.35's socket spec, and it pre-dates this branch.** Not assumed: the CI run at **`fb73bd7`**, this branch's point before a line of S4.36 code, already failed the same spec (2 failed / 738 passed there). This branch touches no `ws/`, no live-travelers surface, and no Travelers tab file. S4.35 is still 🔄 in BUILD_STATUS and its own gate owns it.
+
+**What the first Playwright run cost, recorded so the next story does not repeat it.** Four failures came back, and **none was the product**. Two were pre-existing specs still asserting the refusals ticket 05 deletes — the e2e twins of three Jest tests already updated, missed because **Jest is the only suite runnable locally on this workstation**, so "green locally" never covered the rung that matters most for a UI story. Two were this story's own new sweep, wrong against a working screen: `getByText('Profile')` also matches the **tab bar's** Profile label, so an "absent" assertion checked count 0 against a locator that resolves to 2 and could never pass; and the sweep entered at `/discover`, whose rails are recommended/trending, with nothing guaranteeing the seeded author's card was on them. **The generalisation: when a walk fails, ask what the harness did before reading the component** — and treat a UI story's local run as incomplete until CI's Playwright job has spoken.
