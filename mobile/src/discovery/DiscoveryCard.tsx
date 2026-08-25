@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { comingSoon } from '../components/comingSoon';
+import { useOpenTravelerProfile } from '../profile/useOpenTravelerProfile';
 import { MediaThumb } from '../media/MediaThumb';
 import { CoverWell } from './CoverWell';
 import { pricePillLabel } from '../profile/showcaseCard';
@@ -35,6 +36,7 @@ export function DiscoveryCard({
   const price = pricePillLabel(stubPricePerPersonFor(card.id));
   const meta = discoveryMetaLine(card);
   const author = discoveryAuthorLabel(card);
+  const openProfile = useOpenTravelerProfile('discoveryCard');
 
   return (
     <Pressable
@@ -90,7 +92,7 @@ export function DiscoveryCard({
 
           <Pressable
             style={styles.authorTap}
-            onPress={() => comingSoon('profile')}
+            onPress={() => openProfile(card.author.handle)}
             accessibilityRole="button"
             accessibilityLabel={`Open the profile of ${author}`}
           >

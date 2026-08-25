@@ -37,11 +37,12 @@ export function useFeed(): UseInfiniteQueryResult<
 export function usePublicTripDiary(
   itineraryId: string,
   authorId: string,
+  enabled = true,
 ): UseQueryResult<PublicTripDiaryResponse, Error> {
   const { kind } = useAuth();
   return useQuery({
     queryKey: feedKeys.tripDiary(itineraryId, authorId),
     queryFn: () => feedRepository.fetchTripDiary(itineraryId, authorId),
-    enabled: kind === 'signedIn' && itineraryId !== '' && authorId !== '',
+    enabled: kind === 'signedIn' && itineraryId !== '' && authorId !== '' && enabled,
   });
 }

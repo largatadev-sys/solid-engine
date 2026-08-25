@@ -391,6 +391,15 @@ export type ProfileStatsResponse = {
 };
 
 
+export type PublicProfileResponse = {
+  traveler: TravelerCardResponse;
+  bio: string | null;
+  vanityNumber: string | null;
+  publishedCount: number;
+  postcardCount: number;
+};
+
+
 export type ShowcaseItineraryResponse = {
   id: string;
   title: string;
@@ -426,6 +435,7 @@ export type DiscoveryCountResponse = {
 export type DiscoverySuggestionsResponse = {
   destinations: string[];
   itineraries: string[];
+  people?: TravelerCardResponse[];
 };
 
 

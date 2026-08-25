@@ -83,14 +83,20 @@ describe('the chrome is wired the way the mock and the kill-switch require', () 
   });
 
   it('refuses every backendless control through the shared helper', () => {
-    for (const stub of ['comment', 'share', 'save', 'author', 'photoSheet']) {
+    for (const stub of ['comment', 'share', 'save', 'photoSheet']) {
       expect(CARD).toContain(`'${stub}'`);
     }
     expect(SCREEN).toContain("comingSoon('comments')");
     expect(SCREEN).toContain("comingSoon('share')");
     expect(SCREEN).toContain("comingSoon('saved')");
-    expect(SCREEN).toContain("comingSoon('profile')");
     expect(SCREEN).toContain("comingSoon('report')");
+  });
+
+  it('routes the byline to the real profile rather than refusing it (S4.36 ticket 05)', () => {
+    expect(CARD).toContain('onOpenAuthor(card)');
+    expect(CARD).not.toContain("'author'");
+    expect(SCREEN).toContain('onOpenAuthor={(card) => openProfile(card.author.handle)}');
+    expect(SCREEN).not.toContain("comingSoon('profile')");
   });
 
   it('long-presses the photo into the quick-action sheet rather than doing nothing', () => {

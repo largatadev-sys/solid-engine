@@ -64,11 +64,12 @@ interface FeedCardProps {
   readonly onPageChange: (page: number) => void;
   readonly onOpenTrip: (card: FeedPostcardResponse) => void;
   readonly onOpenTripDiary: (card: FeedPostcardResponse) => void;
+  readonly onOpenAuthor: (card: FeedPostcardResponse) => void;
   readonly onStubTap: (what: StubControl) => void;
 }
 
 
-export type StubControl = 'comment' | 'share' | 'save' | 'author' | 'photoSheet';
+export type StubControl = 'comment' | 'share' | 'save' | 'photoSheet';
 
 
 export function FeedCard({
@@ -78,6 +79,7 @@ export function FeedCard({
   onPageChange,
   onOpenTrip,
   onOpenTripDiary,
+  onOpenAuthor,
   onStubTap,
 }: FeedCardProps) {
   const [photoWidth, setPhotoWidth] = useState(0);
@@ -148,7 +150,7 @@ export function FeedCard({
       <View style={styles.authorRow}>
         <Pressable
           style={styles.avatar}
-          onPress={() => onStubTap('author')}
+          onPress={() => onOpenAuthor(card)}
           accessibilityRole="button"
           accessibilityLabel={`${authorName(card)}, traveler profile`}
         >
@@ -167,7 +169,7 @@ export function FeedCard({
         <View style={styles.authorText}>
           <Pressable
             style={styles.nameRow}
-            onPress={() => onStubTap('author')}
+            onPress={() => onOpenAuthor(card)}
             accessibilityRole="button"
             accessibilityLabel={authorName(card)}
           >

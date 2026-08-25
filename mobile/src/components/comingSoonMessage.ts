@@ -8,7 +8,6 @@ export const COMING_SOON_SURFACES = {
   follow: 'Following a creator',
   booking: 'Booking options',
   tripSearch: 'Searching your trips',
-  profile: 'Traveler profiles',
   share: 'Sharing a postcard',
   saved: 'Saved postcards',
   report: 'Reporting a postcard',

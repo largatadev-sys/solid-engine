@@ -59,7 +59,9 @@ export type IconName =
   | 'mail'
   | 'moreHorizontal'
   | 'transfer'
-  | 'removeUser';
+  | 'removeUser'
+  | 'postcard'
+  | 'personSearch';
 
 interface IconProps {
   readonly name: IconName;
@@ -81,6 +83,24 @@ export function Icon({ name, size, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       {name === 'back' && <Polyline points="15 18 9 12 15 6" {...shared} />}
+
+      {name === 'postcard' && (
+        <>
+          <Rect x="3.5" y="5.5" width="17" height="13" rx="2" {...shared} />
+          <Path d="M3.5 9h17" {...shared} />
+          <Path d="M14 13.5h4" {...shared} />
+          <Path d="M14 16h2.5" {...shared} />
+          <Circle cx="8" cy="14.5" r="1.8" {...shared} />
+        </>
+      )}
+
+      {name === 'personSearch' && (
+        <>
+          <Circle cx="10.2" cy="10.2" r="6.6" {...shared} />
+          <Path d="M15.6 15.6l6 6" {...shared} />
+          <Path d="M7.8 10.2h4.8" {...shared} />
+        </>
+      )}
 
       {name === 'mail' && (
         <>

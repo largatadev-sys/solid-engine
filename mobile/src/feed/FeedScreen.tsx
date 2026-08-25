@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { comingSoon } from '../components/comingSoon';
+import { useOpenTravelerProfile } from '../profile/useOpenTravelerProfile';
 import { colors, spacing } from '../theme';
 import { feedColors, feedMetrics } from '../theme/feedTokens';
 import type { FeedPostcardResponse } from '../types/api';
@@ -145,6 +146,8 @@ export function FeedScreen() {
     setHeader((state) => onScroll(state, y));
   };
 
+  const openProfile = useOpenTravelerProfile('feedByline');
+
   const openTrip = (card: FeedPostcardResponse) => {
     if (card.publishedItineraryId === null) {
       return;
@@ -163,8 +166,7 @@ export function FeedScreen() {
   };
 
   const refuse = (what: StubControl) => {
-    if (what === 'author') comingSoon('profile');
-    else if (what === 'comment') comingSoon('comments');
+    if (what === 'comment') comingSoon('comments');
     else if (what === 'share') comingSoon('share');
     else if (what === 'save') comingSoon('saved');
     else setSheetOpen(true);
@@ -248,6 +250,7 @@ export function FeedScreen() {
               onPageChange={(page) => rememberPage(item.id, page)}
               onOpenTrip={openTrip}
               onOpenTripDiary={openTripDiary}
+              onOpenAuthor={(card) => openProfile(card.author.handle)}
               onStubTap={refuse}
             />
           </View>

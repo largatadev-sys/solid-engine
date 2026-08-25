@@ -198,6 +198,10 @@ export const profileColors = {
   dotIdle: 'rgba(255, 255, 255, 0.5)',
   postcardBorder: '#F5F5F4',
   coverWell: '#E7E5E4',
+  emptyWell: '#FFF7ED',
+  onAccent: '#FFFFFF',
+  groupLabel: '#A8A29E',
+  rowChevron: '#D6D3D1',
 } as const;
 
 
@@ -227,6 +231,15 @@ export const profileTypography = {
   },
   pricePill: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700' },
   rating: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, fontWeight: '700' },
+  emptyTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, fontWeight: '700' },
+  emptyBody: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 19.5, fontWeight: '400' },
+  personName: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, fontWeight: '700' },
+  personHandle: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 17, fontWeight: '400' },
+  suggestionName: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  suggestionHandle: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 15, fontWeight: '400' },
+  suggestionInitials: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, fontWeight: '700' },
+  personInitials: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, fontWeight: '700' },
+  countLine: { fontFamily: fonts.semiBold, fontSize: 13, lineHeight: 17, fontWeight: '600' },
 } as const;
 
 
@@ -250,6 +263,14 @@ export const profileMetrics = {
   cogGlyph: 16,
   dotSize: 6,
   pillInset: 10,
+  emptyCircle: 56,
+  emptyGlyph: 24,
+  emptyBodyWidth: 240,
+  personRow: 44,
+  personSuggestion: 36,
+  noResultsCircle: 48,
+  noResultsGlyph: 22,
+  noResultsBodyWidth: 250,
 } as const;
 
 

@@ -1,6 +1,5 @@
 import { useRef } from 'react';
 import { Modal, Pressable, StyleSheet, Text } from 'react-native';
-import { comingSoon } from '../components/comingSoon';
 import {
   workspaceColors,
   workspaceMetrics,
@@ -11,14 +10,13 @@ import type { MemberResponse } from '../types/api';
 import { stillShowing } from '../components/stillShowing';
 import { profileCardOfMember } from './profileCard';
 import { ProfileCardView } from './ProfileCardView';
+import { useOpenTravelerProfile } from './useOpenTravelerProfile';
 
 export const VISIT_PROFILE_LABEL = 'Visit Profile';
 
 export const TRAVELER_DIALOG_DISMISS_LABEL = 'Close';
 
 const DIALOG_MAX_WIDTH = 380;
-
-const GREYED_OPACITY = 0.45;
 
 
 interface TravelerDialogProps {
@@ -36,6 +34,7 @@ function useRetainedWhileClosing(traveler: MemberResponse | null): MemberRespons
 
 export function TravelerDialog({ traveler, onDismiss }: TravelerDialogProps) {
   const shown = useRetainedWhileClosing(traveler);
+  const openProfile = useOpenTravelerProfile('travelerDialog');
 
   return (
     <Modal visible={traveler !== null} transparent animationType="none" onRequestClose={onDismiss}>
@@ -50,9 +49,12 @@ export function TravelerDialog({ traveler, onDismiss }: TravelerDialogProps) {
 
           <Pressable
             style={styles.visit}
-            onPress={() => comingSoon('profile')}
+            onPress={() => {
+              onDismiss();
+              openProfile(shown?.handle ?? null);
+            }}
             accessibilityRole="button"
-            accessibilityLabel={`${VISIT_PROFILE_LABEL}, coming soon`}
+            accessibilityLabel={VISIT_PROFILE_LABEL}
           >
             <Text style={styles.visitLabel}>{VISIT_PROFILE_LABEL}</Text>
           </Pressable>
@@ -96,7 +98,6 @@ const styles = StyleSheet.create({
     backgroundColor: workspaceColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: GREYED_OPACITY,
   },
   visitLabel: {
     ...workspaceTypography.ctaPrimary,
