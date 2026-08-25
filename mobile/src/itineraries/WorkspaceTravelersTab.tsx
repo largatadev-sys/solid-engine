@@ -46,6 +46,7 @@ import {
   useRevokeOwnershipOffer,
 } from '../query/invitationQueries';
 import { useApproveRequest, useDeclineRequest, useJoinLink, useJoinRequests } from '../query/joinQueries';
+import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { useTravelerByHandle } from '../query/travelerQueries';
 import { copyLink } from '../itineraries/shareLink';
 import { copyLinkFeedback } from '../itineraries/shareLinkContract';
@@ -79,6 +80,9 @@ export function WorkspaceTravelersTab({
   const roster = useMemo(() => members.data?.items ?? [], [members.data]);
   const viewerIsOwner = roster.some((m) => m.travelerId === myId && m.role === 'owner');
   const requests = useJoinRequests(itineraryId, open && viewerIsOwner);
+
+  useRevalidateOnFocus(members);
+  useRevalidateOnFocus(invitations);
 
   const [profileFor, setProfileFor] = useState<MemberResponse | null>(null);
   const [menuFor, setMenuFor] = useState<RowMenuSubject | null>(null);

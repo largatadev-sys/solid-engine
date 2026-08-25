@@ -19,12 +19,17 @@ public class MembershipAdmissionListener {
     private final SessionRegistry registry;
     private final TopicSubscriptions subscriptions;
     private final WorkspaceService workspaces;
+    private final EventFanout fanout;
 
     MembershipAdmissionListener(
-            SessionRegistry registry, TopicSubscriptions subscriptions, WorkspaceService workspaces) {
+            SessionRegistry registry,
+            TopicSubscriptions subscriptions,
+            WorkspaceService workspaces,
+            EventFanout fanout) {
         this.registry = registry;
         this.subscriptions = subscriptions;
         this.workspaces = workspaces;
+        this.fanout = fanout;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -47,5 +52,14 @@ public class MembershipAdmissionListener {
                     arrival.travelerId(),
                     sessions.size());
         }
+        fanout.broadcast(
+                Topic.ofTraveler(arrival.travelerId()),
+                TripEventTypes.MEMBERSHIP_GRANTED,
+                new MembershipGrantedFrame(itineraryId));
+        fanout.broadcast(
+                Topic.ofItinerary(itineraryId, TopicSubscriptions.TRIPS_CHANNEL), TripEventTypes.ROSTER_CHANGED, null);
     }
+
+
+    public record MembershipGrantedFrame(UUID itineraryId) {}
 }

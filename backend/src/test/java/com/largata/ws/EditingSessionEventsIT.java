@@ -83,11 +83,11 @@ class EditingSessionEventsIT extends PostgresTestBase {
         try (WsTestClient theirs = rig.connectAs(watcher)) {
             subscribeAsTraveler(theirs, watcherId);
             tripRig.hold(owner, trip, SESSION, UUID.fromString(trip));
-            assertThat(theirs.awaitFrame()).contains(TripsTopic.EDITING_SESSION_ACQUIRED);
+            theirs.awaitFrameContaining(TripsTopic.EDITING_SESSION_ACQUIRED);
 
             tripRig.releaseLease(owner, trip, SESSION, UUID.fromString(trip)).expectStatus().isNoContent();
 
-            JsonNode envelope = json.readTree(theirs.awaitFrame());
+            JsonNode envelope = json.readTree(theirs.awaitFrameContaining(TripsTopic.EDITING_SESSION_RELEASED));
             assertThat(envelope.path("type").asString()).isEqualTo(TripsTopic.EDITING_SESSION_RELEASED);
             assertThat(envelope.path("payload").path("editingSession").isNull())
                     .as("A released session names nobody. The client writes this straight over the"

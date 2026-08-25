@@ -178,7 +178,7 @@ class TravelerTopicIT extends PostgresTestBase {
 
             fanout.broadcast(Topic.ofItinerary(UUID.fromString(trip), "trips"), "test.probe", "after-admission");
 
-            assertThat(theirs.awaitFrame())
+            assertThat(theirs.awaitFrameContaining("after-admission"))
                     .as("Admission mirrors eviction. Without it the session subscribed before joining"
                             + " is registered under nothing, so the one traveler an admission concerns"
                             + " is the one traveler who never hears about it.")

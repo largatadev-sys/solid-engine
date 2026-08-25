@@ -17,9 +17,11 @@ public class MembershipEvictionListener {
     private static final Logger log = LoggerFactory.getLogger(MembershipEvictionListener.class);
 
     private final SessionRegistry registry;
+    private final EventFanout fanout;
 
-    MembershipEvictionListener(SessionRegistry registry) {
+    MembershipEvictionListener(SessionRegistry registry, EventFanout fanout) {
         this.registry = registry;
+        this.fanout = fanout;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -33,5 +35,9 @@ public class MembershipEvictionListener {
                     ended.travelerId(),
                     held.size());
         }
+        fanout.broadcast(
+                Topic.ofItinerary(ended.itineraryId(), TopicSubscriptions.TRIPS_CHANNEL),
+                TripEventTypes.ROSTER_CHANGED,
+                null);
     }
 }

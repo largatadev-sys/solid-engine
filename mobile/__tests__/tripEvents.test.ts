@@ -1,12 +1,21 @@
 import {
   EDITING_SESSION_ACQUIRED,
   EDITING_SESSION_RELEASED,
+  INVITATION_RECEIVED,
+  JOIN_REQUESTS_CHANGED,
+  MEMBERSHIP_GRANTED,
+  PLAN_SAVED,
+  ROSTER_CHANGED,
   absorbEditingSession,
+  absorbInvitation,
+  absorbPlanSaved,
+  itineraryOfTopic,
+  markStaleOnReconnect,
   travelerTopicFor,
   tripEventHandlerFor,
 } from '../src/query/tripEvents';
-import type { InfiniteData } from '@tanstack/react-query';
-import type { ItineraryResponse, Page } from '../src/types/api';
+import type { InfiniteData, QueryClient } from '@tanstack/react-query';
+import type { InboxInvitationResponse, ItineraryResponse, Page } from '../src/types/api';
 
 type TripPages = InfiniteData<Page<ItineraryResponse>>;
 
@@ -82,10 +91,119 @@ describe('absorbing an editing session into the cached trips list', () => {
   });
 });
 
+describe('absorbing a co-member save into the cached trips list', () => {
+  it('writes the new plan version, day count and edit time onto the named trip', () => {
+    const before = pages(trip('a', { planVersion: 3, dayCount: 2 } as Partial<ItineraryResponse>));
+
+    const after = absorbPlanSaved(before, {
+      itineraryId: 'a',
+      planVersion: 4,
+      dayCount: 5,
+      lastEditedAt: '2026-08-25T10:00:00Z',
+    });
+
+    const saved = after!.pages[0]!.items[0]!;
+    expect(saved.planVersion).toBe(4);
+    expect(saved.dayCount).toBe(5);
+    expect(saved.lastEditedAt).toBe('2026-08-25T10:00:00Z');
+  });
+
+  it('leaves a trip the save did not name untouched', () => {
+    const before = pages(trip('a', { planVersion: 1 } as Partial<ItineraryResponse>), trip('b'));
+
+    const after = absorbPlanSaved(before, {
+      itineraryId: 'b',
+      planVersion: 9,
+      dayCount: 1,
+      lastEditedAt: '2026-08-25T10:00:00Z',
+    });
+
+    expect(after!.pages[0]!.items[0]).toBe(before.pages[0]!.items[0]);
+  });
+
+  it('never clears the editing card, because a save happens inside a live session', () => {
+    const before = pages(trip('a', { beingEdited: true, editingSession: HOLDER }));
+
+    const after = absorbPlanSaved(before, {
+      itineraryId: 'a',
+      planVersion: 2,
+      dayCount: 1,
+      lastEditedAt: '2026-08-25T10:00:00Z',
+    });
+
+    expect(after!.pages[0]!.items[0]!.beingEdited).toBe(true);
+    expect(after!.pages[0]!.items[0]!.editingSession).toEqual(HOLDER);
+  });
+});
+
+describe('absorbing an invitation into the cached inbox', () => {
+  const invite = (id: string) => ({ id, itineraryId: `trip-${id}` }) as InboxInvitationResponse;
+
+  const inbox = (...items: InboxInvitationResponse[]) =>
+    ({ items, nextCursor: null }) as unknown as Page<InboxInvitationResponse>;
+
+  it('puts the new invitation at the top, where the newest one belongs', () => {
+    const after = absorbInvitation(inbox(invite('old')), invite('new'));
+
+    expect(after!.items.map((one) => one.id)).toEqual(['new', 'old']);
+  });
+
+  it('does not duplicate an invitation the inbox already holds', () => {
+    const before = inbox(invite('a'));
+
+    const after = absorbInvitation(before, invite('a'));
+
+    expect(after).toBe(before);
+  });
+
+  it('survives an empty cache, because an event can arrive before the first fetch', () => {
+    expect(absorbInvitation(undefined, invite('a'))).toBeUndefined();
+  });
+});
+
+describe('reading the trip a contentless signal is about', () => {
+  it('takes the itinerary id from the topic, because a signal carries no payload', () => {
+    expect(itineraryOfTopic('itinerary:trip-7:trips')).toBe('trip-7');
+  });
+
+  it('refuses a topic that names no itinerary rather than inventing one', () => {
+    expect(itineraryOfTopic('traveler:t1')).toBeNull();
+    expect(itineraryOfTopic('debug:echo')).toBeNull();
+    expect(itineraryOfTopic('')).toBeNull();
+  });
+});
+
+describe('what a reconnect does to the cache', () => {
+  it('marks the live-updated queries stale and fetches NONE of them', () => {
+    const invalidated: Array<Record<string, unknown>> = [];
+    const client = {
+      invalidateQueries: (options: Record<string, unknown>) => {
+        invalidated.push(options);
+      },
+    } as unknown as QueryClient;
+
+    markStaleOnReconnect(client);
+
+    expect(invalidated.length).toBeGreaterThan(0);
+    expect(invalidated.every((one) => one.refetchType === 'none')).toBe(true);
+  });
+});
+
 describe('the event dispatch table', () => {
   it('routes the two editing-session types', () => {
     expect(tripEventHandlerFor(EDITING_SESSION_ACQUIRED)).toBeDefined();
     expect(tripEventHandlerFor(EDITING_SESSION_RELEASED)).toBeDefined();
+  });
+
+  it('routes the save, the grant and the invitation', () => {
+    expect(tripEventHandlerFor(PLAN_SAVED)).toBeDefined();
+    expect(tripEventHandlerFor(MEMBERSHIP_GRANTED)).toBeDefined();
+    expect(tripEventHandlerFor(INVITATION_RECEIVED)).toBeDefined();
+  });
+
+  it('routes the two Travelers-tab signals', () => {
+    expect(tripEventHandlerFor(JOIN_REQUESTS_CHANGED)).toBeDefined();
+    expect(tripEventHandlerFor(ROSTER_CHANGED)).toBeDefined();
   });
 
   it('ignores an unknown type silently, because old apps meet new servers (ADR-030)', () => {
