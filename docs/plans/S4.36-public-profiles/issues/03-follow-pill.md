@@ -13,4 +13,4 @@
 
 ## Comments
 
-*(none yet)*
+**2026-08-25 — the design baseline is now the S4.36 canvas**: the pill's resting treatment is settled — **filled #EA580C, white label, height 40, radius 999, 13.5/700, press scale 0.96 @120ms** (C2's Follow half; M1's press scale). **Explicitly not built here:** the Following state, C1's optimistic state machine, and M1's crossfade — they are story B's design input, pre-drawn in the canvas and fenced off in the digest. This ticket's pill has exactly one state.

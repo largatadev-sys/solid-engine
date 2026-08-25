@@ -89,4 +89,14 @@ One public projection of the Profile screen, addressed by handle, readable by an
 
 ## Comments
 
-*(none yet)*
+### 2026-08-25 — the design baseline arrives: the S4.36 canvas *(founder-supplied, same day as the grilling)*
+
+Decision 5's "no new canvas" is superseded: the founder ran the design prompt and the canvas (**four frames + contracts C1–C7 + motion M1–M5**) is now the **normative design baseline**, archived beside this spec (`mock-render.dc.html`, handoff in `mock-handoff.md`, load-bearing values in `public-profiles-mock-digest.md`). What changes and what doesn't:
+
+- **The open pill-treatment question is answered: Follow = filled terracotta, white label** (C2's first half). The three deltas of decision 5 survive intact — the canvas simply draws them.
+- **The canvas deliberately draws story B too, and the digest fences it off:** C1's follow state machine, C2's Following treatment, and M1's crossfade are **story B's design input, not this story's scope**. S4.36's pill has one state and its tap fires the coming-soon prompt per decision 11 — unchanged.
+- **One named deviation from the frame:** the postcard card's likes row ("♥ 31 likes") does not ship — decision 6 forbids invented numbers in front of strangers and no real count exists until S4.4/S4.6. Stated per the mock rule rather than passed silently.
+- **C7's "This profile isn't available" copy is adopted as the 404 state's rendering** (unknown/renamed handle, un-onboarded account); no block/deactivation feature exists or ships here.
+- **New chrome adopted:** the pushed screen's header row (back chevron, "Profile" title), the People-first group order in suggestions, the addressable `/discover/people?q=` results route with its pagination values, the no-results state, and M2–M5 as the motion contract, Reduce Motion normative.
+
+**Two canvas lines are decisions, not values, and await founder ruling:** *(a)* C4 routes self-search to the own Profile tab, **contradicting decision 9** (one route + Edit affordance, grilled and ruled) — tickets build to decision 9 until re-ruled; *(b)* C5 excludes self from suggestions — new, recommended for adoption, pending the same breath.

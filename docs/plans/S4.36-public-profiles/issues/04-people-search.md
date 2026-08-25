@@ -16,4 +16,4 @@
 
 ## Comments
 
-*(none yet)*
+**2026-08-25 — the design baseline is now the S4.36 canvas**, frames **1c/1d** and contracts **C5/C6**: group order is **People first** (People → Destinations → Itineraries); people row and See-all anatomy per the digest; the results screen is the addressable **`/discover/people?q=`** route (deep-link restores), cursor pagination at **page 20, prefetch at 5 rows from end**, count line `"{n} people"`, and the no-results variant's final copy — never a blank list. Motion per **M3/M4**, Reduce Motion per M5. C5's match rule refines the spec's default: **prefix** match on display name or handle, case-insensitive. One pending founder confirmation rides this ticket: C5's "self is excluded from suggestions" (new, recommended — see the spec's Comments).

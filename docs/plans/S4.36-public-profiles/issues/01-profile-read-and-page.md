@@ -19,4 +19,4 @@
 
 ## Comments
 
-*(none yet)*
+**2026-08-25 — the design baseline is now the S4.36 canvas** (`mock-render.dc.html`, values in `public-profiles-mock-digest.md`), frames **1a/1b**: build the header row (back chevron in a 36px hit target + "Profile" 15/700 — new chrome for a pushed screen), the identity block per the digest, the two-cell stats row, and 1b's empty-state anatomy with its final copy. The bio row is omitted entirely when empty — no placeholder. The 404 state renders C7's copy: **"This profile isn't available"**. One pending founder ruling rides this ticket: the canvas's C4 routes self-search to the own Profile tab, contradicting the spec's decision 9 (one route + Edit affordance) — **build decision 9 unless the founder re-rules**.

@@ -14,4 +14,4 @@
 
 ## Comments
 
-*(none yet)*
+**2026-08-25 — the design baseline is now the S4.36 canvas**, frame **1a**: trip-section and postcard-card anatomy per the digest, tab and expand motion per **M2** (Reduce Motion per M5, normative). **One named deviation from the frame: the postcard's likes row ("♥ 31 likes") does not ship** — no real count exists and the spec's decision 6 forbids stub numbers in front of strangers; it returns with S4.4/S4.6. Empty tab states per 1b, the Itineraries empty mirroring the Diary one (C7).
