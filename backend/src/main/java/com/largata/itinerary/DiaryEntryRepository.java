@@ -82,6 +82,47 @@ interface DiaryEntryRepository extends JpaRepository<DiaryEntry, UUID> {
     List<DiaryEntry> findSharedOfTrip(
             @Param("itineraryId") UUID itineraryId, @Param("travelerId") UUID travelerId);
 
+    @Query(
+            """
+            SELECT e.itineraryId AS itineraryId, COUNT(e) AS entryCount, MAX(e.id) AS latestEntryId
+            FROM DiaryEntry e
+            WHERE e.travelerId = :travelerId
+              AND e.sharedAt IS NOT NULL
+            GROUP BY e.itineraryId
+            ORDER BY MAX(e.id) DESC
+            """)
+    List<DiaryTripRow> findSharedTrips(@Param("travelerId") UUID travelerId, Limit limit);
+
+    @Query(
+            """
+            SELECT e.itineraryId AS itineraryId, COUNT(e) AS entryCount, MAX(e.id) AS latestEntryId
+            FROM DiaryEntry e
+            WHERE e.travelerId = :travelerId
+              AND e.sharedAt IS NOT NULL
+            GROUP BY e.itineraryId
+            HAVING MAX(e.id) < :cursor
+            ORDER BY MAX(e.id) DESC
+            """)
+    List<DiaryTripRow> findSharedTripsBefore(
+            @Param("travelerId") UUID travelerId, @Param("cursor") UUID cursor, Limit limit);
+
+    @Query(
+            """
+            SELECT COUNT(e) FROM DiaryEntry e
+            WHERE e.travelerId = :travelerId AND e.sharedAt IS NOT NULL
+            """)
+    long countShared(@Param("travelerId") UUID travelerId);
+
+    @Query(
+            """
+            SELECT COUNT(e) FROM DiaryEntry e
+            WHERE e.travelerId = :travelerId
+              AND e.sharedAt IS NOT NULL
+              AND e.itineraryId NOT IN :archived
+            """)
+    long countSharedOutsideArchived(
+            @Param("travelerId") UUID travelerId, @Param("archived") Collection<UUID> archived);
+
 
     interface DiaryTripRow {
 

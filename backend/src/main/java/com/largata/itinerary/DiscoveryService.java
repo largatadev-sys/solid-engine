@@ -1,5 +1,6 @@
 package com.largata.itinerary;
 
+import com.largata.common.api.Cursor;
 import com.largata.common.api.InstantCursor;
 import com.largata.common.api.Page;
 import com.largata.identity.TravelerService;
@@ -126,14 +127,38 @@ public class DiscoveryService {
 
 
     @Transactional(readOnly = true)
-    public DiscoverySuggestionsResponse suggestions(DiscoveryFilters filters) {
+    public DiscoverySuggestionsResponse suggestions(DiscoveryFilters filters, UUID callerId) {
         if (filters.query() == null) {
-            return new DiscoverySuggestionsResponse(List.of(), List.of());
+            return new DiscoverySuggestionsResponse(List.of(), List.of(), List.of());
         }
         return new DiscoverySuggestionsResponse(
                 itineraries.suggestDestinations(
                         archivedArray(), filters.query(), SUGGESTIONS_PER_GROUP),
-                itineraries.suggestTitles(archivedArray(), filters.query(), SUGGESTIONS_PER_GROUP));
+                itineraries.suggestTitles(archivedArray(), filters.query(), SUGGESTIONS_PER_GROUP),
+                peopleCards(filters.query(), callerId, null, SUGGESTIONS_PER_GROUP));
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<TravelerCardResponse> people(
+            String query, UUID callerId, String cursor, Integer requestedLimit) {
+        int limit = clamp(requestedLimit);
+        UUID from = cursor == null ? null : Cursor.decode(cursor);
+
+        List<TravelerCardResponse> found = peopleCards(query, callerId, from, limit + 1);
+
+        boolean more = found.size() > limit;
+        List<TravelerCardResponse> rows = more ? found.subList(0, limit) : found;
+
+        return more ? Page.of(rows, Cursor.encode(rows.getLast().id())) : Page.exhausted(rows);
+    }
+
+
+    private List<TravelerCardResponse> peopleCards(
+            String query, UUID callerId, UUID cursorId, int pageSize) {
+        return travelers.searchPeople(query, callerId, cursorId, pageSize).stream()
+                .map(TravelerCardResponse::of)
+                .toList();
     }
 
 

@@ -2,6 +2,7 @@ package com.largata.itinerary.web;
 
 import com.largata.common.api.Page;
 import com.largata.identity.Traveler;
+import com.largata.identity.api.TravelerCardResponse;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.DiscoveryFilters;
 import com.largata.itinerary.DiscoveryService;
@@ -64,6 +65,16 @@ class DiscoveryController {
     @GetMapping("/suggestions")
     DiscoverySuggestionsResponse suggestions(
             @CurrentTraveler Traveler traveler, @RequestParam(required = false) String q) {
-        return discovery.suggestions(DiscoveryFilters.of(q, null, null));
+        return discovery.suggestions(DiscoveryFilters.of(q, null, null), traveler.id());
+    }
+
+
+    @GetMapping("/people")
+    Page<TravelerCardResponse> people(
+            @CurrentTraveler Traveler traveler,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit) {
+        return discovery.people(q, traveler.id(), cursor, limit);
     }
 }
