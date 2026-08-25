@@ -4,10 +4,16 @@
 
 **Blocked by:** 03.
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] The handle-invitation issue path raises `invitation.received` with a payload, addressed to the **recipient**, absorbed into the cached inbox. Zero queries.
-- [ ] The existing inbox response already carries what the event absorbs — confirm rather than assume, and add **no `/v1` change**.
-- [ ] The invite-link path is untouched: a link join produces a **Join Request**, not an invitation, and lands via ticket 04's `membership.granted` on approval. Do not conflate the two doors — they have different consent semantics (ADR-032).
-- [ ] A revoked or expired invitation does not resurrect through absorb; the absorbed row respects the same visibility the REST read applies.
-- [ ] Playwright, two contexts: t2 invites t1 by handle while t1 sits on Trips; the header changes with no refresh gesture.
+- [x] The handle-invitation issue path raises `invitation.received` with a payload, addressed to the **recipient**, absorbed into the cached inbox. Zero queries.
+- [x] The existing inbox response already carries what the event absorbs — confirm rather than assume, and add **no `/v1` change**.
+- [x] The invite-link path is untouched: a link join produces a **Join Request**, not an invitation, and lands via ticket 04's `membership.granted` on approval. Do not conflate the two doors — they have different consent semantics (ADR-032).
+- [x] A revoked or expired invitation does not resurrect through absorb; the absorbed row respects the same visibility the REST read applies.
+- [x] Playwright, two contexts: t2 invites t1 by handle while t1 sits on Trips; the header changes with no refresh gesture.
+
+**2026-08-25, implementation — closed.** `invitation.received` carries the **whole inbox row** the REST read returns — `InboxTopic` reuses `InvitationService.inboxCardOf`, so the absorbed row and the fetched row cannot drift by construction. The client absorbs it at the top of the cached inbox, de-duplicated by id; `live-trips.spec.ts`'s *"an invitation lands in the inbox header with no refresh"* proves it end to end.
+
+**The invite-link path is untouched, as the ticket required:** a link join produces a Join Request and lands via ticket 04's `membership.granted` on approval. Only `inviteByHandle` raises this event.
+
+**One ordering consequence worth keeping:** issuing an invitation and accepting it are now two events on one act, so `invitation.received` arrives **before** `membership.granted` on the admit path. Three ITs had assumed one act raises one frame and read only the next one; `WsTestClient.awaitFrameContaining` now finds the frame under test. A test that asserts an ordering nobody promised is a test that will fail on the next event added.

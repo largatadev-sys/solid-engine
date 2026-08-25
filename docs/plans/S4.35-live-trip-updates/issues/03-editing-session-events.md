@@ -4,7 +4,7 @@
 
 **Blocked by:** 02.
 
-**Status:** ready-for-agent
+**Status:** closed
 
 - [x] `EditLeaseService` raises `editing-session.acquired` and `editing-session.released` through the existing `AfterCommit` seam, fanned onto the trip's topic. A rolled-back acquisition broadcasts nothing (the AFTER_COMMIT pair, IT-proven).
 - [x] Both carry a **payload**, absorbed straight into the cached trip — **zero queries**. `ItineraryResponse` already carries `beingEdited`, `lease`, `editingSession` and `lastEditedBy*`, so the fields have somewhere to land and **no `/v1` change is needed**; confirmed by reading the record, not assumed.
