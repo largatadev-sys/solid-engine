@@ -181,6 +181,57 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
   });
 
 
+  test('an approved join request makes the trip appear and clears its pending row, from one event', async ({
+    signIn,
+    page,
+  }) => {
+    await recordEveryFrameTheAppReceives(page);
+    await signIn(WATCHER);
+    await openUpcoming(page);
+    await waitForTheTravelerSubscription(page);
+
+    const hostTitle = stamp('Approval Walk');
+    const host = await api('/v1/itineraries', 'POST', editorToken, {
+      title: hostTitle,
+      destination: 'Bantayan',
+      durationDays: 2,
+    });
+    expect(host.status, 'the owner needs a trip to approve into').toBe(201);
+
+    const link = await api(`/v1/itineraries/${host.body.id}/join-link`, 'GET', editorToken);
+    expect(link.status).toBe(200);
+    const asked = await api(`/v1/join/${link.body.token}/request`, 'POST', watcherToken, {});
+    expect([200, 201], 'the watcher must actually ask to join').toContain(asked.status);
+
+    await expect(
+      page.getByText(hostTitle),
+      'a requested trip is not a member trip yet, so it must NOT be in the list before approval'
+        + ' — otherwise the assertion after approval proves nothing',
+    ).toHaveCount(0);
+
+    const queue = await api(`/v1/itineraries/${host.body.id}/join-requests`, 'GET', editorToken);
+    expect(queue.status, 'the owner must be able to see the queue').toBe(200);
+    const mine = (queue.body.items ?? [])[0];
+    expect(mine, 'the request must be in the queue to approve').toBeDefined();
+
+    const approved = await api(
+      `/v1/itineraries/${host.body.id}/join-requests/${mine.id}/approve`,
+      'POST',
+      editorToken,
+      {},
+    );
+    expect(approved.status, 'the owner must actually approve').toBe(204);
+
+    await expect
+      .poll(() => capturedTypes(page), { timeout: ARRIVAL_TIMEOUT_MS })
+      .toContain('membership.granted');
+    await expect(
+      page.getByText(hostTitle),
+      'one event, two parts of one screen: the trip joins the list with no refresh gesture',
+    ).toBeVisible({ timeout: ARRIVAL_TIMEOUT_MS });
+  });
+
+
   test('a reconnect marks queries stale and fetches nothing until focus', async ({ signIn, page }) => {
     await recordEveryFrameTheAppReceives(page);
     await signIn(WATCHER);

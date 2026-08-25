@@ -157,3 +157,16 @@ Push on Home, Discover or Profile (**S4.34** covers their freshness; a public fe
 - **Ticket 04** must choose the `membership.granted` invalidation key knowing `archived.tsx` still binds its pull control to `isRefetching` — the last surface on the binding S4.34's review found spinning.
 
 Standing nearby, not scope: the epic map's remaining S4.35-triggered line — the four retap surfaces repeating one shape — is the implementer's judgment call while these screens are open, per that line's own restraint note. The JWKS bedrock under this spec's seven multi-context Playwright ACs is fixed and guarded (`JwksOutageToleranceIT`, off-epic ledger 2026-08-25).
+
+**2026-08-25, scope added by owner during the live walk — the motions.** Watching the events land, the founder asked for the changes to *announce* themselves: *"we should put some text motions for this so the signal is easily captured"* and *"put a motion for that when the text is changing, just to make the cards responsive and interactive"*. This overrides the out-of-scope line *"any change to what these surfaces render"* for this one case, by the owner's call, recorded here rather than rewriting the body (immutable-intent rule).
+
+**Two motions, because there are two different events**, and the asymmetry is the design decision:
+
+- **The advisory row enters and exits** (`LiveAdvisory`) — rise 6px + fade, 200ms in / 150ms out. It is genuinely new content arriving, so movement is honest. It holds its children through the exit (the S3.4 `stillShowing` lesson: a closing element must retain the subject it renders, or it tears down in two visible stages).
+- **The subline blooms and decays** (`LiveValue`) — a brief `accentTint` wash, 180ms up / 220ms hold / 420ms down. **Deliberately not a cross-fade**: mid-transition a cross-fade is illegible, so a traveler glancing at the moment of change reads nothing. A tint leaves the text readable the whole time and still says *this just changed*. Movement would also be a lie — the field did not go anywhere, its value changed.
+
+**Constraints honoured, each from a past burn:** both use plain RN `Animated` (the `RowEntrance`/`MessageEntrance` idiom), not reanimated, whose native init kills any Jest suite importing a screen (S4.17). Both gate on `useReducedMotion()`, as every other animation in this tree does. Neither binds to `isRefetching`, or focus revalidation would flash cards nobody touched (S4.34 review finding 1). The trigger is a real **value change**, not a re-render: `changedSince` returns false on first sight and on an unchanged re-render, so a list re-key does not pulse the screen.
+
+**What is proven and what is not.** The pure seam is Jest-tested (`liveValueChange.test.ts`, 5 cases) and the whole suite is green at 143 suites / 4,838 tests; the nine live walks pass with the motions in. **The animation itself is verified on the WEB preview only** — motion is the most platform-divergent surface in React Native, and the device rung is blocked on the missing `google-services.json`. Whoever closes that rung looks at these two motions on a real device before anyone calls them done.
+
+**One token was added to the palette:** `accentTintClear` (`rgba(217,108,74,0)`), because the S0.3 layering guard correctly refused an inline `rgba()` literal in a component — colours live in the token layer.
