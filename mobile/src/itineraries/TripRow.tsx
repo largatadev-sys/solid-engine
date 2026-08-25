@@ -7,6 +7,9 @@ import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedb
 import { colors, radii, spacing, typography } from '../theme';
 import { tripTabColors } from '../theme/workspaceTokens';
 import type { ItineraryResponse } from '../types/api';
+import { LiveAdvisory } from '../components/LiveAdvisory';
+import { LivePulse } from '../components/LivePulse';
+import { LiveValue } from '../components/LiveValue';
 import { publicationBadge } from './tripCardAnatomy';
 import { editingAdvisory, tripCardSubline } from './tripTabs';
 
@@ -45,16 +48,18 @@ export function TripRow({ itinerary }: { itinerary: ItineraryResponse }) {
             {itinerary.title}
           </Text>
 
-          <Text style={styles.subline} numberOfLines={1}>
-            {subline}
-          </Text>
+          <LiveValue value={subline}>
+            <Text style={styles.subline} numberOfLines={1}>
+              {subline}
+            </Text>
+          </LiveValue>
 
-          {advisory !== null && (
+          <LiveAdvisory showing={advisory !== null}>
             <View style={styles.status}>
-              <View style={styles.statusDot} />
+              <LivePulse style={styles.statusDot} />
               <Text style={styles.statusText}>{advisory}</Text>
             </View>
-          )}
+          </LiveAdvisory>
         </View>
 
         {badge !== null && (

@@ -476,6 +476,22 @@ export const sheetMotion = {
 } as const;
 
 
+export const liveUpdateMotion = {
+  advisoryInMs: 200,
+  advisoryOutMs: 150,
+  advisoryRisePx: 6,
+
+  valueBloomMs: 180,
+  valueHoldMs: 220,
+  valueFadeMs: 420,
+
+  pulseOutMs: 900,
+  pulseInMs: 900,
+  pulseFloorOpacity: 0.35,
+  pulseFloorScale: 0.7,
+} as const;
+
+
 export const travelerMotion = {
   scrimInMs: 150,
   scrimOutMs: 150,

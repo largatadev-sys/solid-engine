@@ -1,6 +1,7 @@
 package com.largata.workspace;
 
 import com.largata.common.authz.Role;
+import com.largata.invitation.MembershipArrived;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
@@ -13,6 +14,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,12 +27,17 @@ public class WorkspaceService {
 
     private final WorkspaceRepository workspaces;
     private final MembershipRepository memberships;
+    private final ApplicationEventPublisher events;
 
     @PersistenceContext private EntityManager entityManager;
 
-    WorkspaceService(WorkspaceRepository workspaces, MembershipRepository memberships) {
+    WorkspaceService(
+            WorkspaceRepository workspaces,
+            MembershipRepository memberships,
+            ApplicationEventPublisher events) {
         this.workspaces = workspaces;
         this.memberships = memberships;
+        this.events = events;
     }
 
 
@@ -42,6 +49,7 @@ public class WorkspaceService {
                 workspace.id(),
                 itineraryId,
                 ownerTravelerId);
+        events.publishEvent(new MembershipArrived(workspace.id(), ownerTravelerId));
     }
 
 

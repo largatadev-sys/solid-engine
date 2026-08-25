@@ -6,6 +6,14 @@ export type ReconnectListener = () => void;
 
 type Entry = { onEvent: EventListener; onReconnect?: ReconnectListener };
 
+const TRAVELER_PREFIX = 'traveler:';
+
+const TRIPS_SUFFIX = ':trips';
+
+function isTripsTopic(topic: string): boolean {
+  return topic.startsWith('itinerary:') && topic.endsWith(TRIPS_SUFFIX);
+}
+
 export class SubscriptionLedger {
   private readonly entries = new Map<string, Entry[]>();
 
@@ -38,13 +46,31 @@ export class SubscriptionLedger {
   }
 
   deliver(topic: string, frame: Extract<SocketFrame, { kind: 'event' }>): void {
+    const reached = new Set<EventListener>();
     for (const entry of this.entries.get(topic) ?? []) {
+      reached.add(entry.onEvent);
       try {
         entry.onEvent(frame);
       } catch {
         continue;
       }
     }
+    if (!isTripsTopic(topic)) return;
+
+    for (const held of this.travelerEntries()) {
+      if (reached.has(held.onEvent)) continue;
+      try {
+        held.onEvent(frame);
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  private travelerEntries(): Entry[] {
+    return [...this.entries.entries()]
+      .filter(([topic]) => topic.startsWith(TRAVELER_PREFIX))
+      .flatMap(([, held]) => held);
   }
 
   announceReconnect(): void {

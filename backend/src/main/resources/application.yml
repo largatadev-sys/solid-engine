@@ -16,6 +16,13 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  task:
+    scheduling:
+      pool:
+        # Boot's default is ONE thread, shared by every @Scheduled task: the WS heartbeat that
+        # detects dead sessions, and the connection-ticket sweeper. A ping walking a wedged socket
+        # would delay both — the mechanism that detects dead sessions blocked by dead sessions.
+        size: 4
   servlet:
     multipart:
       # Slightly above ImageIngest.MAX_UPLOAD_BYTES (10 MB) on purpose. Spring rejects at this bound

@@ -109,4 +109,46 @@ describe('SubscriptionLedger', () => {
       ledger.deliver(CHAT, { kind: 'event', topic: CHAT, type: 't', eventId: 'e', at: 'a', payload: 1 }),
     ).not.toThrow();
   });
+
+  describe('the traveler subject receives what the server fanned in on its behalf', () => {
+    const TRAVELER = 'traveler:t1';
+    const TRIPS = 'itinerary:trip-9:trips';
+
+    it('delivers a trip frame to a holder of the traveler topic', () => {
+      const onEvent = jest.fn();
+      ledger.add(TRAVELER, onEvent);
+
+      ledger.deliver(TRIPS, { kind: 'event', topic: TRIPS, type: 't', eventId: 'e', at: 'a', payload: 1 });
+
+      expect(onEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not hand a chat frame to the traveler subject, which never asked for one', () => {
+      const onEvent = jest.fn();
+      ledger.add(TRAVELER, onEvent);
+
+      ledger.deliver(CHAT, { kind: 'event', topic: CHAT, type: 't', eventId: 'e', at: 'a', payload: 1 });
+
+      expect(onEvent).not.toHaveBeenCalled();
+    });
+
+    it('still delivers a trip frame to an explicit holder of that exact topic', () => {
+      const explicit = jest.fn();
+      ledger.add(TRIPS, explicit);
+
+      ledger.deliver(TRIPS, { kind: 'event', topic: TRIPS, type: 't', eventId: 'e', at: 'a', payload: 1 });
+
+      expect(explicit).toHaveBeenCalledTimes(1);
+    });
+
+    it('delivers once when a session holds both the traveler subject and the trip topic', () => {
+      const onEvent = jest.fn();
+      ledger.add(TRAVELER, onEvent);
+      ledger.add(TRIPS, onEvent);
+
+      ledger.deliver(TRIPS, { kind: 'event', topic: TRIPS, type: 't', eventId: 'e', at: 'a', payload: 1 });
+
+      expect(onEvent).toHaveBeenCalledTimes(1);
+    });
+  });
 });

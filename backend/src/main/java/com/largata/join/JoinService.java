@@ -2,6 +2,7 @@ package com.largata.join;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
+import com.largata.invitation.MembershipArrived;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +58,8 @@ public class JoinService {
     private final InvitationService invitations;
     private final WriteFence fence;
     private final Analytics analytics;
+    private final JoinQueueTopic joinQueue;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
     private final ShareCardVersionService shareCardVersions;
     private final SecureRandom random = new SecureRandom();
@@ -70,9 +74,13 @@ public class JoinService {
             InvitationService invitations,
             WriteFence fence,
             Analytics analytics,
+            JoinQueueTopic joinQueue,
+            ApplicationEventPublisher events,
             Clock clock,
             ShareCardVersionService shareCardVersions,
             @Value("${largata.web.base-url:http://localhost:8081}") String webBaseUrl) {
+        this.joinQueue = joinQueue;
+        this.events = events;
         this.links = links;
         this.requests = requests;
         this.workspaces = workspaces;
@@ -222,6 +230,7 @@ public class JoinService {
                                         .with("itineraryId", itineraryId)
                                         .with("travelerId", travelerId)
                                         .build()));
+        joinQueue.broadcastQueueChanged(itineraryId);
         return ViewerJoinState.PENDING;
     }
 
@@ -350,6 +359,8 @@ public class JoinService {
                 itineraryId,
                 asked.travelerId(),
                 owner.travelerId());
+        events.publishEvent(new MembershipArrived(asked.workspaceId(), asked.travelerId()));
+        joinQueue.broadcastQueueChanged(itineraryId);
         emitDecision("join_request_approved", requestId, itineraryId, asked.travelerId(), owner.travelerId());
     }
 
@@ -365,6 +376,7 @@ public class JoinService {
                 requestId,
                 owner.itineraryId(),
                 owner.travelerId());
+        joinQueue.broadcastQueueChanged(owner.itineraryId());
         emitDecision(
                 "join_request_declined", requestId, owner.itineraryId(), asked.travelerId(), owner.travelerId());
     }

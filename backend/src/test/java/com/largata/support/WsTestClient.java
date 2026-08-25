@@ -64,6 +64,30 @@ public final class WsTestClient implements AutoCloseable {
     }
 
 
+    public String awaitFrameContaining(String needle) throws InterruptedException {
+        java.util.List<String> seen = new java.util.ArrayList<>();
+        long deadline = System.nanoTime() + WAIT.toNanos();
+        while (System.nanoTime() < deadline) {
+            String frame = sink.frames.poll(500, TimeUnit.MILLISECONDS);
+            if (frame == null) {
+                continue;
+            }
+            if (frame.contains(needle)) {
+                return frame;
+            }
+            seen.add(frame);
+        }
+        throw new AssertionError(
+                "No frame containing \""
+                        + needle
+                        + "\" arrived within "
+                        + WAIT.toSeconds()
+                        + "s. One act can raise several events, so a test that reads only the NEXT"
+                        + " frame asserts an ordering nobody promised. Frames seen: "
+                        + seen);
+    }
+
+
     public boolean receivedNothingWithin(Duration window) throws InterruptedException {
         return sink.frames.poll(window.toMillis(), TimeUnit.MILLISECONDS) == null;
     }

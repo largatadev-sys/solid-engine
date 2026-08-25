@@ -38,6 +38,7 @@ public class PlanSaveService {
     private final PlanVersionService planVersion;
     private final WriteFence fence;
     private final Analytics analytics;
+    private final TripsTopic trips;
     private final Clock clock;
 
     @PersistenceContext private EntityManager entityManager;
@@ -51,6 +52,7 @@ public class PlanSaveService {
             PlanVersionService planVersion,
             WriteFence fence,
             Analytics analytics,
+            TripsTopic trips,
             Clock clock) {
         this.days = days;
         this.activities = activities;
@@ -60,6 +62,7 @@ public class PlanSaveService {
         this.planVersion = planVersion;
         this.fence = fence;
         this.analytics = analytics;
+        this.trips = trips;
         this.clock = clock;
     }
 
@@ -132,6 +135,7 @@ public class PlanSaveService {
                 entries.size(),
                 saved);
         emit(member, itineraryId, entries.size());
+        trips.broadcastPlanSaved(itineraryId, saved, request.days().size(), at);
         return saved;
     }
 

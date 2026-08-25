@@ -55,6 +55,7 @@ public class InvitationService {
     private final AuthorizationGuard guard;
     private final WriteFence fence;
     private final PublicationState publication;
+    private final InboxTopic inbox;
     private final InvitationMailer mailer;
     private final Analytics analytics;
     private final ApplicationEventPublisher events;
@@ -71,7 +72,9 @@ public class InvitationService {
             InvitationMailer mailer,
             Analytics analytics,
             ApplicationEventPublisher events,
+            InboxTopic inbox,
             Clock clock) {
+        this.inbox = inbox;
         this.fence = fence;
         this.publication = publication;
         this.events = events;
@@ -136,6 +139,12 @@ public class InvitationService {
                 member.travelerId(),
                 invitee.id());
         afterCommit(() -> emitSent(invitation.id(), itineraryId, member.travelerId(), "handle"));
+        inbox.broadcastInvitationReceived(
+                invitee.id(),
+                inboxCardOf(invitation, itineraryId, travelers.summariesByIds(List.of(member.travelerId()))
+                        .stream()
+                        .findFirst()
+                        .orElse(null)));
         return pendingOf(invitation, invitee.handle(), handleOf(member.travelerId()));
     }
 

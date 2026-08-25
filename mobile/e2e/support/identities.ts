@@ -47,6 +47,8 @@ export const IDENTITY_MAP = {
   'web/invitation-inbox': { tags: ['t5', 't3'], sharesWith: 'shared' },
   'web/pending-request-card': { tags: ['t2', 't5'], sharesWith: 'shared' },
   'web/focus-freshness': { tags: ['t3'], sharesWith: 'shared' },
+  'web/live-trips': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'web/live-travelers': { tags: ['t3', 't4', 't5'], sharesWith: 'shared' },
 } as const satisfies Record<string, SpecIdentities>;
 
 export type SpecKey = keyof typeof IDENTITY_MAP;
