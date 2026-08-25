@@ -211,11 +211,11 @@ test('the bookmark refuses honestly rather than pretending to save', async ({ pa
   await expect.poll(() => signal.dialogs.join(' ')).toMatch(/coming soon|still being built/i);
 });
 
-test('the author tap refuses honestly too — no dead clicks on either control', async ({ page, signal }) => {
+test('the author tap opens the real profile now — S4.36 replaced the refusal', async ({ page }) => {
   await page.goto('/discovery-results');
   await labelled(page, 'Open the profile of').click();
 
-  await expect.poll(() => signal.dialogs.length).toBeGreaterThan(0);
+  await expect.poll(() => page.url(), { timeout: 20_000 }).toMatch(/[/]travelers[/][a-z0-9_]+/);
 });
 
 test('a card opens the published itinerary view that already exists', async ({ page }) => {

@@ -4,9 +4,9 @@ import { api, profileFor, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
 import { SeedFailure, climbTo, seedTrip, stamp } from '../support/seed';
-import { labelled } from '../support/screen';
-import { PUBLIC_PROFILE_TITLE } from '../../src/profile/publicProfileCopy';
+import { labelStarting, labelled } from '../support/screen';
 import { EDIT_PROFILE_LABEL } from '../../src/profile/profileCopy';
+import { FOLLOW_LABEL } from '../../src/profile/publicProfileCopy';
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 
 const VIEWER = ownerTagFor('web/author-taps');
@@ -52,7 +52,7 @@ test.beforeEach(async ({ signIn }) => {
 
 
 test('the discovery card author tap opens the profile, and refuses nothing', async ({ page }) => {
-  await page.goto('/discover');
+  await page.goto(`/discovery-results?q=${encodeURIComponent(publishedTitle)}`);
 
   const byline = labelled(page, `Open the profile of @${author.handle}`);
   await expect(byline).toBeVisible({ timeout: 25_000 });
@@ -61,7 +61,7 @@ test('the discovery card author tap opens the profile, and refuses nothing', asy
   await byline.click();
 
   await expect.poll(() => page.url(), { timeout: 20_000 }).toMatch(PROFILE_ROUTE);
-  await expect(page.getByText(PUBLIC_PROFILE_TITLE).last()).toBeVisible({ timeout: 20_000 });
+  await expect(labelStarting(page, FOLLOW_LABEL)).toBeVisible({ timeout: 20_000 });
 });
 
 
@@ -76,7 +76,7 @@ test('the published itinerary traveler chrome opens the profile, and refuses not
   await creator.click();
 
   await expect.poll(() => page.url(), { timeout: 20_000 }).toMatch(PROFILE_ROUTE);
-  await expect(page.getByText(PUBLIC_PROFILE_TITLE).last()).toBeVisible({ timeout: 20_000 });
+  await expect(labelStarting(page, FOLLOW_LABEL)).toBeVisible({ timeout: 20_000 });
 });
 
 
@@ -90,7 +90,7 @@ test('a people result opens the profile, and refuses nothing', async ({ page }) 
   await row.click();
 
   await expect.poll(() => page.url(), { timeout: 20_000 }).toMatch(PROFILE_ROUTE);
-  await expect(page.getByText(PUBLIC_PROFILE_TITLE).last()).toBeVisible({ timeout: 20_000 });
+  await expect(labelStarting(page, FOLLOW_LABEL)).toBeVisible({ timeout: 20_000 });
 });
 
 
@@ -117,5 +117,5 @@ test('my own byline lands on my own Profile tab, never the public screen', async
 
   await expect.poll(() => new URL(page.url()).pathname, { timeout: 20_000 }).toBe(PROFILE_TAB_ROUTE);
   await expect(labelled(page, EDIT_PROFILE_LABEL)).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText(PUBLIC_PROFILE_TITLE)).toHaveCount(0);
+  await expect(page.url()).not.toMatch(/[/]travelers[/]/);
 });

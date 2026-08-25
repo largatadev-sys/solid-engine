@@ -704,10 +704,20 @@ test.describe('the controls with no backend behind them yet', () => {
       await page.waitForTimeout(600);
     }
 
-    await page.locator('[aria-label$=", traveler profile"]').locator('visible=true').first().click();
-    await page.waitForTimeout(600);
+    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThanOrEqual(5);
+  });
 
-    await expect.poll(() => signal.dialogs.length, { timeout: 15_000 }).toBeGreaterThanOrEqual(6);
+  test('the postcard byline opens the real profile now — S4.36 replaced the refusal', async ({
+    page,
+  }) => {
+    await page.goto(HOME_TAB_ROUTE);
+    await expect(feedCards(page).first()).toBeVisible();
+
+    await page.locator('[aria-label$=", traveler profile"]').locator('visible=true').first().click();
+
+    await expect
+      .poll(() => page.url(), { timeout: 20_000 })
+      .toMatch(/[/]travelers[/][a-z0-9_]+|[/]profile/);
   });
 
   test('long-pressing a photo opens the three-action sheet the mock draws', async ({ page }) => {
