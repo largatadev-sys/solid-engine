@@ -8,10 +8,10 @@
 
 - [ ] **Device walk on a release APK, on the founder's phone** — the founder's call at the grilling. Background the app; a second traveler edits and then approves a join request; foreground, and Trips is correct. This is WS-1's AC 10, deferred once into S4.10 and again out of its ticket 04; it closes here. The build needs `LARGATA_ANDROID_JAVA_HOME` set on this workstation — the plugin's own candidate JDK paths all miss here.
 - [ ] Dismiss the LogBox banner before tapping anything in a bottom docked rail (S4.19), and never `KEYCODE_BACK` to close a keyboard — it navigates the router.
-- [ ] An unknown event type is ignored without error on the new subject (extends WS-1's existing dispatcher test).
+- [x] An unknown event type is ignored without error on the new subject (extends WS-1's existing dispatcher test).
 - [ ] The **single-replica pin** is in place as configuration, with the constraint stated where the deployment lives rather than remembered. The broker trigger is the instance count changing — **not** a connection number; no instrument exists that would measure one honestly against the real edge, and that absence is recorded rather than papered over.
-- [ ] Run the **full `npx jest` once** before the push — this story adds several modules under `src/` and `--changedSince` cannot see the 22 structural suites (S4.28).
-- [ ] CI green: read the `Tests run:` counts from the log, never the conclusion alone.
+- [x] Run the **full `npx jest` once** before the push — this story adds several modules under `src/` and `--changedSince` cannot see the 22 structural suites (S4.28).
+- [x] CI green: read the `Tests run:` counts from the log, never the conclusion alone.
 - [ ] Confirm **ADR-030's amendment**, the **Editing Session** glossary line and the two discharged epic-map lines still read true against what shipped. If the build diverged, the docs change rather than rot.
 - [ ] BUILD_STATUS: the S4.35 row flips (status + spec link, nothing else) in the **last commit on this branch**.
 - [ ] Open the PR to `dev` and do not merge it. Propose the promotion; never execute it.
@@ -45,3 +45,24 @@ Nothing about the three differs by signing key, so the body's release walk close
 **Inherited blocker, found at S4.34's gate:** `:app:assembleDebug` fails on this workstation at configuration time — *"Could not determine the dependencies of task ':app:compileDebugJavaWithJavac' — Cannot query the value of this provider because it has no value available"* — with the JDK pin verified in the generated `gradle.properties`, after `--stop` plus a clean of `app/build`, and **identically on a clean `dev` worktree**, so it is not branch-caused. It fails at configuration time, so expect the release build to hit it too (unproven). Whoever runs this rung clears it first; budget for that before the walk, not during it.
 
 **An owner decision waits on this pass** (epic-map line, 2026-08-25): Home's retap fires from anywhere in its stack while the other three tabs require the tab root, and the consequence differs by platform — on native a hidden feed refreshes, on web the handler has unregistered and the tap does nothing while `preventDefault` still swallows it. Neither half is verified; this pass is where it becomes observable. Put the choice — pop to root, refresh, or both — to the owner with what the walk shows.
+
+**2026-08-25, gate pass — the web rung is closed; the DEVICE rung is BLOCKED, and the blocker is now diagnosed rather than inherited.**
+
+**Closed by this pass:**
+
+- **Backend** — 204 ITs green across `ws`, `join` and `invitation` (`TravelerTopicIT`, `EditingSessionEventsIT`, `TripListEventsIT`, `SchedulerPoolIT`, the posture ITs). CI green on every push; read from the `Tests run:` counts, not the conclusion.
+- **Mobile Jest** — 142 suites / 4,808 tests green, run in full before each push because this story adds files under `src/` (S4.28's rule).
+- **Playwright** — `live-trips.spec.ts` (6) and `live-travelers.spec.ts` (2) green, **8/8 at `--workers=1`**, against a rebuilt preview container and a rebuilt backend on a fresh database.
+- **Unknown event types** are ignored silently — `tripEvents.test.ts` pins it on the new subject, extending WS-1's dispatcher test.
+
+**BLOCKED — the device rung, and S4.34's AC 3 / AC 6 that ride with it.** `:app:assembleDebug` fails at configuration time with *"Could not determine the dependencies of task ':app:compileDebugJavaWithJavac' — Cannot query the value of this provider because it has no value available."* **S4.34 recorded this as a workstation toolchain fault; it is not.** The cause is **`mobile/google-services.json` is absent**. `app.json` names it (`android.googleServicesFile`), the generated `android/app/build.gradle` applies `com.google.gms.google-services`, and with no file the plugin contributes an empty provider — which surfaces as the Gradle message above, naming a Java compile task and nothing about a missing config file. The file is **gitignored by design** (it carries an API key) and has never been tracked, so no amount of branch-switching produces it; CLAUDE.md's *"a fresh clone cannot prebuild without `mobile/google-services.json`"* is exactly this, one layer further along than the error suggests.
+
+**What is NOT the problem, ruled out by running it:** the JDK. This workstation has Temurin **21.0.12** at `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.8-hotspot` — the plugin's hardcoded candidates all miss it, but `LARGATA_ANDROID_JAVA_HOME` pins it correctly and `org.gradle.java.home` is verified present in the generated `gradle.properties`. Prebuild succeeds; 28 Gradle tasks run; the failure is downstream of all of it.
+
+**To unblock:** download `google-services.json` from the Firebase console → `largata-dev` → Project settings → the `com.largata.app` Android app, drop it at `mobile/google-services.json`, then `npx expo prebuild --platform android` and `./gradlew app:assembleDebug`. That needs console access, so it is the owner's step, not an agent's.
+
+**Consequence, stated plainly rather than quietly dropped.** Unproven on any rung: this story's **AC 12** (background the app, a second traveler edits and approves, foreground, Trips is correct — WS-1's AC 10, now deferred a third time); **S4.34's AC 3** (`AppState` foregrounding); **S4.34's AC 6 device half** (retap with real touch); and the **device confirmation of S4.34's silent-revalidation fix** (react-native-web's `RefreshControl` is inert, so no web walk can see a pull spinner that should not spin). The owner decision on Home's anywhere-in-stack retap also waits on that pass.
+
+**NOT DONE — the gate-record Artifact, deliberately.** Its own framing forbids the page this pass could honestly produce: every claim must come from an observed run, and the device half produced none. Publishing greens for the web while the device rung is blocked is the marketing page the ticket warns against. It should be written once the device rung closes, carrying the blockage at the same visual weight as the greens — and S4.34's own gate record travels with it.
+
+**One harness property worth recording, because it will be read as a product failure.** The two live specs pass 8/8 serially and contend in parallel: they share a five-account pool with 27 other specs (`gate.ts`'s `unmetExclusivity()` already reports this posture), and one of them removes a member while another asserts on that member's inbox. Both now call `profileFor` in their seeds — without it, a fresh database has pool accounts with **no handle**, and the by-handle invitation seed dies with *"A handle is required"*, which reads as a broken invite path rather than an unbootstrapped fixture.
