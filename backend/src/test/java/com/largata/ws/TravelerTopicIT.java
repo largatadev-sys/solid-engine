@@ -163,6 +163,30 @@ class TravelerTopicIT extends PostgresTestBase {
     }
 
     @Test
+    void aTripCreatedAfterSubscribingStillReachesItsOwner() throws Exception {
+        String tag = WsRig.tag();
+        String owner = tripRig.travelerWithHandle("tvnew" + tag);
+        UUID ownerId = tripRig.travelerIdOf(owner);
+
+        try (WsTestClient theirs = rig.connectAs(owner)) {
+            theirs.send(WsRig.subscribeTo(travelerTopic(ownerId)));
+            assertThat(theirs.awaitFrame()).contains("\"subscribed\"");
+
+            String freshTrip = tripRig.createTrip(owner, 2);
+            fanout.broadcast(
+                    Topic.ofItinerary(UUID.fromString(freshTrip), "trips"), "test.probe", "on-my-own-new-trip");
+
+            assertThat(theirs.awaitFrameContaining("on-my-own-new-trip"))
+                    .as("The fan-in resolves memberships once AT SUBSCRIBE, so a trip created"
+                            + " afterwards has no registration unless creation announces itself. Its"
+                            + " owner would then miss join requests and roster changes on their own"
+                            + " new trip until they reconnected — and every e2e walk seeds its trips"
+                            + " before connecting, so no walk can see this.")
+                    .contains("on-my-own-new-trip");
+        }
+    }
+
+    @Test
     void aNewlyAdmittedMemberReceivesTheTripsEventsWithoutResubscribing() throws Exception {
         String tag = WsRig.tag();
         String owner = tripRig.travelerWithHandle("tvado" + tag);

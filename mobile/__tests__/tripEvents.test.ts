@@ -161,6 +161,31 @@ describe('absorbing an invitation into the cached inbox', () => {
   });
 });
 
+describe('a co-member save must never leave the detail cache half-updated', () => {
+  it('invalidates the trip detail rather than writing a new version onto old days', () => {
+    const calls: Array<{ key: string; kind: 'set' | 'invalidate' }> = [];
+    const client = {
+      getQueryCache: () => ({ findAll: () => [] }),
+      setQueryData: (key: readonly unknown[]) => {
+        calls.push({ key: JSON.stringify(key), kind: 'set' });
+      },
+      invalidateQueries: (options: { queryKey: readonly unknown[] }) => {
+        calls.push({ key: JSON.stringify(options.queryKey), kind: 'invalidate' });
+      },
+    } as unknown as QueryClient;
+
+    tripEventHandlerFor(PLAN_SAVED)!(
+      client,
+      { itineraryId: 'a', planVersion: 7, dayCount: 4, lastEditedAt: '2026-08-25T10:00:00Z' },
+      'itinerary:a:trips',
+    );
+
+    const detail = calls.filter((one) => one.key.includes('"one"'));
+    expect(detail).not.toEqual([]);
+    expect(detail.every((one) => one.kind === 'invalidate')).toBe(true);
+  });
+});
+
 describe('reading the trip a contentless signal is about', () => {
   it('takes the itinerary id from the topic, because a signal carries no payload', () => {
     expect(itineraryOfTopic('itinerary:trip-7:trips')).toBe('trip-7');
