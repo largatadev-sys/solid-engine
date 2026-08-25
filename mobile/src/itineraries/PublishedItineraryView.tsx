@@ -138,7 +138,7 @@ function PublishedHeader({
   const pill = destinationPillLabel(projection.destination);
   const duration = durationLabel(projection.durationDays);
   const total = estimatedTotalLabel(projection.estimatedCost);
-  const openProfile = useOpenTravelerProfile('publishedItinerary');
+  const openProfile = useOpenTravelerProfile();
   const handle = bylineHandle(projection.creator.handle);
 
   return (

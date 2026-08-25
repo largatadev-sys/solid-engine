@@ -51,6 +51,7 @@ export const IDENTITY_MAP = {
   'web/live-travelers': { tags: ['t3', 't4', 't5'], sharesWith: 'shared' },
   'web/public-profile': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'web/people-search': { tags: ['t1', 't2'], sharesWith: 'shared' },
+  'web/author-taps': { tags: ['t1', 't2'], sharesWith: 'shared' },
 } as const satisfies Record<string, SpecIdentities>;
 
 export type SpecKey = keyof typeof IDENTITY_MAP;

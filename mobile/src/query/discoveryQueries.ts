@@ -17,7 +17,7 @@ import type {
   DiscoverySuggestionsResponse,
   Page,
   TrendingDestinationResponse,
-  TravelerCardResponse,
+  PeoplePageResponse,
 } from '../types/api';
 
 
@@ -95,7 +95,7 @@ export function useSearchSuggestions(
 
 export function usePeopleSearch(
   query: string,
-): UseInfiniteQueryResult<InfiniteData<Page<TravelerCardResponse>>, Error> {
+): UseInfiniteQueryResult<InfiniteData<PeoplePageResponse>, Error> {
   const { kind } = useAuth();
   const trimmed = query.trim();
   return useInfiniteQuery({
@@ -103,7 +103,7 @@ export function usePeopleSearch(
     queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
       discoveryRepository.fetchPeople(trimmed, pageParam),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage: Page<TravelerCardResponse>) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: PeoplePageResponse) => lastPage.nextCursor ?? undefined,
     enabled: kind === 'signedIn' && searchesFor(trimmed),
   });
 }

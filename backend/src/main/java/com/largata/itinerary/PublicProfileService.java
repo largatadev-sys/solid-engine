@@ -36,6 +36,7 @@ public class PublicProfileService {
     private final WorkspaceService workspaces;
     private final TravelerService travelers;
     private final Analytics analytics;
+    private final StrangersSurface surface;
 
     PublicProfileService(
             ItineraryRepository itineraries,
@@ -43,13 +44,15 @@ public class PublicProfileService {
             DayService days,
             WorkspaceService workspaces,
             TravelerService travelers,
-            Analytics analytics) {
+            Analytics analytics,
+            StrangersSurface surface) {
         this.itineraries = itineraries;
         this.entries = entries;
         this.days = days;
         this.workspaces = workspaces;
         this.travelers = travelers;
         this.analytics = analytics;
+        this.surface = surface;
     }
 
 
@@ -67,7 +70,7 @@ public class PublicProfileService {
                 TravelerCardResponse.of(subject),
                 subject.bio(),
                 subject.vanityNumber(),
-                itineraries.countOnTheStrangersSurface(subject.id(), archivedArray()),
+                itineraries.countOnTheStrangersSurface(subject.id(), surface.archivedArray()),
                 postcardCountOf(subject.id()));
     }
 
@@ -76,13 +79,13 @@ public class PublicProfileService {
     public Page<ShowcaseItineraryResponse> showcaseOf(
             String rawHandle, String cursor, Integer requestedLimit) {
         TravelerSummary subject = onboardedByHandle(rawHandle);
-        int limit = clamp(requestedLimit);
+        int limit = StrangersSurface.clamp(requestedLimit);
         InstantCursor from = cursor == null ? null : InstantCursor.decode(cursor);
 
         List<Itinerary> found =
                 itineraries.findStrangersSurfacePage(
                         subject.id(),
-                        archivedArray(),
+                        surface.archivedArray(),
                         from == null ? null : from.at(),
                         from == null ? null : from.id(),
                         limit + 1);
@@ -103,7 +106,7 @@ public class PublicProfileService {
     public Page<DiaryTripResponse> diaryTripsOf(
             String rawHandle, String cursor, Integer requestedLimit) {
         TravelerSummary subject = onboardedByHandle(rawHandle);
-        int limit = clamp(requestedLimit);
+        int limit = StrangersSurface.clamp(requestedLimit);
         UUID from = cursor == null ? null : Cursor.decode(cursor);
 
         List<DiaryEntryRepository.DiaryTripRow> found =
@@ -188,18 +191,6 @@ public class PublicProfileService {
     }
 
 
-    private String archivedArray() {
-        Set<UUID> archived = workspaces.allArchivedItineraryIds();
-        return archived.isEmpty()
-                ? "{}"
-                : archived.stream().map(UUID::toString).collect(Collectors.joining(",", "{", "}"));
-    }
 
 
-    private static int clamp(Integer requestedLimit) {
-        if (requestedLimit == null || requestedLimit < 1) {
-            return DEFAULT_PAGE_SIZE;
-        }
-        return Math.min(requestedLimit, MAX_PAGE_SIZE);
-    }
 }

@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, ActivityIndicator, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MediaThumb } from '../media/MediaThumb';
 import { Postcard } from '../diary/Postcard';
 import { PostcardPreview } from '../diary/PostcardPreview';
 import { inTripDayOrder, tripEntryCountLabel } from '../diary/postcardAnatomy';
+import { useReducedMotion } from '../components/useReducedMotion';
 import { asDiaryEntry } from '../feed/publicDiaryPostcard';
 import { usePublicDiaryTrips } from '../query/publicProfileQueries';
 import { usePublicTripDiary } from '../query/feedQueries';
@@ -13,6 +14,7 @@ import {
   profileColors,
   profileMetrics,
   profileTypography,
+  publicProfileMotion,
   workspaceColors,
 } from '../theme/workspaceTokens';
 import { diaryPaneState } from './diaryPaneState';
@@ -96,6 +98,17 @@ function TripSection({
   readonly first: boolean;
 }) {
   const [open, setOpen] = useState(first);
+  const spin = useRef(new Animated.Value(first ? 1 : 0)).current;
+  const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    Animated.timing(spin, {
+      toValue: open ? 1 : 0,
+      duration: reducedMotion ? 0 : publicProfileMotion.sectionExpandMs,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [open, reducedMotion, spin]);
   const diary = usePublicTripDiary(trip.itineraryId, subjectId, open);
 
   const postcards =
@@ -127,7 +140,21 @@ function TripSection({
               tripEntryCountLabel(trip.entryCount)}
           </Text>
         </View>
-        <View style={open ? styles.chevronOpen : styles.chevronClosed} />
+        <Animated.View
+          style={[
+            styles.chevron,
+            {
+              transform: [
+                {
+                  rotate: spin.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['-45deg', '45deg'],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
       </Pressable>
 
       {open && (
@@ -207,8 +234,7 @@ const styles = StyleSheet.create({
     ...profileTypography.sectionMeta,
     color: profileColors.meta,
   },
-  chevronOpen: { ...CHEVRON, transform: [{ rotate: '45deg' }] },
-  chevronClosed: { ...CHEVRON, transform: [{ rotate: '-45deg' }] },
+  chevron: CHEVRON,
   sectionBody: {
     paddingHorizontal: spacing.sm3,
     paddingBottom: spacing.sm3,

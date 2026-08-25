@@ -11,6 +11,8 @@ import { usePublicProfile } from '../query/publicProfileQueries';
 import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { colors, spacing } from '../theme';
 import { profileTypography, workspaceColors } from '../theme/workspaceTokens';
+import { RowEntrance } from '../members/RowEntrance';
+import { publicProfileMotion } from '../theme/workspaceTokens';
 import { ProfileTabs } from './ProfileTabs';
 import { PublicDiaryTab } from './PublicDiaryTab';
 import { PublicItinerariesTab } from './PublicItinerariesTab';
@@ -51,7 +53,7 @@ export function PublicProfileScreen() {
 
   useEffect(() => {
     if (profile.data !== undefined) {
-      trackPublicProfileViewed(subject, 'publicProfile');
+      trackPublicProfileViewed(profile.data.traveler.id, 'publicProfile');
     }
   }, [profile.data, subject]);
 
@@ -90,13 +92,18 @@ export function PublicProfileScreen() {
             publishedCount={profile.data.publishedCount}
             postcardCount={profile.data.postcardCount}
             onFollow={() => {
-              trackFollowTapped(subject);
+              trackFollowTapped(profile.data.traveler.id);
               comingSoon('follow');
             }}
           />
 
           <ProfileTabs selected={tab} onSelect={setTab} />
 
+          <RowEntrance
+            replayKey={tab}
+            durationMs={publicProfileMotion.panelRiseMs}
+            risePx={publicProfileMotion.panelRisePx}
+          >
           {tab === 'diary' ? (
             <PublicDiaryTab
               handle={subject}
@@ -109,6 +116,7 @@ export function PublicProfileScreen() {
               displayName={profile.data.traveler.displayName ?? subject}
             />
           )}
+          </RowEntrance>
         </ScrollView>
       )}
     </View>

@@ -66,4 +66,10 @@ interface TravelerRepository extends JpaRepository<Traveler, UUID> {
             @Param("callerId") UUID callerId,
             @Param("cursorId") UUID cursorId,
             @Param("pageSize") int pageSize);
+
+    @Query(value = """
+            SELECT count(*) FROM traveler t
+            WHERE
+            """ + PEOPLE_MATCH, nativeQuery = true)
+    long countPeople(@Param("prefix") String prefix, @Param("callerId") UUID callerId);
 }

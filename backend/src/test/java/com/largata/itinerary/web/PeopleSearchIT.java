@@ -193,6 +193,49 @@ class PeopleSearchIT extends PostgresTestBase {
         assertThat(pages).as("five people at two per page").isEqualTo(3);
         assertThat(walked).containsExactlyInAnyOrderElementsOf(planted).doesNotHaveDuplicates();
     }
+    @Test
+    void theCountLineCountsEveryMatchRatherThanThePageInHand() {
+        String prefix = uniquePrefix();
+        for (int i = 0; i < 5; i++) {
+            onboarded(prefix + "person" + i, "Person " + i);
+        }
+        String viewer = onboarded(uniquePrefix() + "viewer", "The Viewer");
+
+        byte[] firstPage = read("/v1/discovery/people?q=" + prefix + "&limit=2", viewer);
+
+        assertThat(handlesIn(firstPage)).hasSize(2);
+        assertThat(totalCountIn(firstPage))
+                .as("the count line is about the query, not about the page in hand")
+                .isEqualTo(5);
+    }
+
+
+    @Test
+    void suggestionsSaySoWhenMorePeopleMatchThanTheCapShows() {
+        String prefix = uniquePrefix();
+        for (int i = 0; i < 5; i++) {
+            onboarded(prefix + "person" + i, "Person " + i);
+        }
+        String viewer = onboarded(uniquePrefix() + "viewer", "The Viewer");
+
+        assertThat(new String(suggestions(viewer, prefix)))
+                .as("five match and three show, so See all people has somewhere to go")
+                .contains("\"morePeople\":true");
+    }
+
+
+    @Test
+    void suggestionsStaySilentWhenTheCapAlreadyShowsEverybody() {
+        String prefix = uniquePrefix();
+        onboarded(prefix + "only", "The Only One");
+        String viewer = onboarded(uniquePrefix() + "viewer", "The Viewer");
+
+        assertThat(new String(suggestions(viewer, prefix)))
+                .as("one match, all of it shown — See all people would open a list of one")
+                .contains("\"morePeople\":false");
+    }
+
+
 
 
     @Test
@@ -303,5 +346,14 @@ class PeopleSearchIT extends PostgresTestBase {
 
     private static String bearer(String token) {
         return "Bearer " + token;
+    }
+
+
+    private static long totalCountIn(byte[] body) {
+        Matcher found = Pattern.compile("totalCount.:([0-9]+)").matcher(new String(body));
+        if (!found.find()) {
+            throw new AssertionError("no totalCount in " + new String(body));
+        }
+        return Long.parseLong(found.group(1));
     }
 }

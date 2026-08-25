@@ -34,7 +34,7 @@ function useRetainedWhileClosing(traveler: MemberResponse | null): MemberRespons
 
 export function TravelerDialog({ traveler, onDismiss }: TravelerDialogProps) {
   const shown = useRetainedWhileClosing(traveler);
-  const openProfile = useOpenTravelerProfile('travelerDialog');
+  const openProfile = useOpenTravelerProfile();
 
   return (
     <Modal visible={traveler !== null} transparent animationType="none" onRequestClose={onDismiss}>

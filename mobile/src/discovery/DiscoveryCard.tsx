@@ -36,7 +36,7 @@ export function DiscoveryCard({
   const price = pricePillLabel(stubPricePerPersonFor(card.id));
   const meta = discoveryMetaLine(card);
   const author = discoveryAuthorLabel(card);
-  const openProfile = useOpenTravelerProfile('discoveryCard');
+  const openProfile = useOpenTravelerProfile();
 
   return (
     <Pressable

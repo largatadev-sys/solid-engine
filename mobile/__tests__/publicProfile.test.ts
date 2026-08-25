@@ -132,3 +132,36 @@ describe('the profile refusal is gone from the product, dead copy and all', () =
     }
   });
 });
+
+
+describe('the motion contract (M2-M4), with M5 normative', () => {
+  const SEARCH = read('src', 'discovery', 'DiscoverySearchScreen.tsx');
+  const RESULTS = read('src', 'discovery', 'PeopleResultsScreen.tsx');
+
+  it('rises the incoming tab panel rather than swapping it (M2)', () => {
+    expect(SCREEN).toContain('<RowEntrance');
+    expect(SCREEN).toContain('publicProfileMotion.panelRiseMs');
+    expect(SCREEN).toContain('publicProfileMotion.panelRisePx');
+  });
+
+  it('rotates the section chevron rather than flipping it (M2)', () => {
+    expect(DIARY).toContain('publicProfileMotion.sectionExpandMs');
+    expect(DIARY).toContain('spin.interpolate');
+  });
+
+  it('staggers the suggestion rows and caps the stagger at the group cap (M3)', () => {
+    expect(SEARCH).toContain('publicProfileMotion.suggestionStepMs');
+    expect(SEARCH).toContain('publicProfileMotion.suggestionCap - 1');
+  });
+
+  it('cascades the first results only, so later pages append unanimated (M4)', () => {
+    expect(RESULTS).toContain('publicProfileMotion.resultStepMs');
+    expect(RESULTS).toContain('index < publicProfileMotion.resultCap');
+  });
+
+  it('conveys nothing through motion alone — every animation runs through the reduce-motion helper (M5)', () => {
+    expect(read('src', 'members', 'RowEntrance.tsx')).toContain('useReducedMotion');
+    expect(DIARY).toContain('useReducedMotion');
+    expect(DIARY).toContain('reducedMotion ? 0 :');
+  });
+});

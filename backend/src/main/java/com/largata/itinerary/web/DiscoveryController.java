@@ -9,6 +9,7 @@ import com.largata.itinerary.DiscoveryService;
 import com.largata.itinerary.api.DiscoveryCardResponse;
 import com.largata.itinerary.api.DiscoveryCountResponse;
 import com.largata.itinerary.api.DiscoverySuggestionsResponse;
+import com.largata.itinerary.api.PeoplePageResponse;
 import com.largata.itinerary.api.TrendingDestinationResponse;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -70,7 +71,7 @@ class DiscoveryController {
 
 
     @GetMapping("/people")
-    Page<TravelerCardResponse> people(
+    PeoplePageResponse people(
             @CurrentTraveler Traveler traveler,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String cursor,

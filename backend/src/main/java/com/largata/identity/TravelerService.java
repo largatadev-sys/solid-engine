@@ -94,6 +94,14 @@ public class TravelerService {
 
 
     @Transactional(readOnly = true)
+    public long countPeople(String rawQuery, UUID callerId) {
+        return PeopleQuery.of(rawQuery)
+                .map(query -> travelers.countPeople(query.prefix(), callerId))
+                .orElse(0L);
+    }
+
+
+    @Transactional(readOnly = true)
     public Optional<TravelerSummary> onboardedByExactHandle(String rawHandle) {
         String normalized = Handle.normalize(rawHandle);
         if (normalized.isEmpty()) {

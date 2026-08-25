@@ -391,6 +391,13 @@ export type ProfileStatsResponse = {
 };
 
 
+export type PeoplePageResponse = {
+  items: TravelerCardResponse[];
+  nextCursor: string | null;
+  totalCount: number;
+};
+
+
 export type PublicProfileResponse = {
   traveler: TravelerCardResponse;
   bio: string | null;
@@ -436,6 +443,7 @@ export type DiscoverySuggestionsResponse = {
   destinations: string[];
   itineraries: string[];
   people?: TravelerCardResponse[];
+  morePeople?: boolean;
 };
 
 

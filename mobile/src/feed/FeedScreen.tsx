@@ -146,7 +146,7 @@ export function FeedScreen() {
     setHeader((state) => onScroll(state, y));
   };
 
-  const openProfile = useOpenTravelerProfile('feedByline');
+  const openProfile = useOpenTravelerProfile();
 
   const openTrip = (card: FeedPostcardResponse) => {
     if (card.publishedItineraryId === null) {

@@ -248,11 +248,4 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
             @Param("cursorAt") Instant cursorAt,
             @Param("cursorId") UUID cursorId,
             @Param("pageSize") int pageSize);
-
-
-    @Query(value = """
-            SELECT i.id FROM itinerary i
-            WHERE
-            """ + ON_THE_STRANGERS_SURFACE, nativeQuery = true)
-    List<UUID> idsOnTheStrangersSurface(@Param("archivedIds") String archivedIds);
 }

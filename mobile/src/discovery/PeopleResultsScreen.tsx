@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../components/Icon';
+import { RowEntrance } from '../members/RowEntrance';
 import { useSafeBack } from '../navigation/safeBack';
 import { PersonRow, handleLabel } from '../profile/PersonRow';
 import { trackPeopleResultTapped } from '../profile/profileEvents';
@@ -19,6 +20,7 @@ import {
   profileColors,
   profileMetrics,
   profileTypography,
+  publicProfileMotion,
   workspaceColors,
 } from '../theme/workspaceTokens';
 import { fetchesMore } from './resultsPaging';
@@ -32,7 +34,9 @@ export function PeopleResultsScreen() {
   const query = q ?? '';
 
   const people = usePeopleSearch(query);
-  const rows = (people.data?.pages ?? []).flatMap((page) => page.items);
+  const pages = people.data?.pages ?? [];
+  const rows = pages.flatMap((page) => page.items);
+  const matched = pages[0]?.totalCount ?? rows.length;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -69,21 +73,28 @@ export function PeopleResultsScreen() {
         </View>
       ) : (
         <>
-          <Text style={styles.count}>{peopleCountLabel(rows.length)}</Text>
+          <Text style={styles.count}>{peopleCountLabel(matched)}</Text>
           <FlatList
             data={rows}
             keyExtractor={(person) => person.id}
             contentContainerStyle={styles.list}
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
+              <RowEntrance
+                replayKey={item.id}
+                durationMs={publicProfileMotion.resultRiseMs}
+                risePx={publicProfileMotion.resultRisePx}
+                delayMs={index < publicProfileMotion.resultCap ? index * publicProfileMotion.resultStepMs : 0}
+              >
               <PersonRow
                 person={item}
                 onPress={() => {
-                  trackPeopleResultTapped(handleLabel(item), 'peopleResults');
+                  trackPeopleResultTapped(item.id, 'peopleResults');
                   if (item.handle !== null) {
                     router.push(publicProfileRoute(item.handle));
                   }
                 }}
               />
+              </RowEntrance>
             )}
             onEndReachedThreshold={0.5}
             onEndReached={() => {

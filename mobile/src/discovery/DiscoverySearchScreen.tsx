@@ -23,6 +23,7 @@ import {
   profileColors,
   profileMetrics,
   profileTypography,
+  publicProfileMotion,
   workspaceColors,
 } from '../theme/workspaceTokens';
 import {
@@ -35,6 +36,7 @@ import {
   SUGGESTED_ITINERARIES_LABEL,
   SUGGESTED_SECTION_LABEL,
 } from './discoveryCopy';
+import { RowEntrance } from '../members/RowEntrance';
 import { PersonRow, handleLabel } from '../profile/PersonRow';
 import { trackPeopleResultTapped } from '../profile/profileEvents';
 import { PEOPLE_GROUP_LABEL, SEE_ALL_PEOPLE_LABEL } from '../profile/publicProfileCopy';
@@ -88,6 +90,7 @@ export function DiscoverySearchScreen() {
   const suggestedDestinations = suggestions.data?.destinations ?? [];
   const suggestedItineraries = suggestions.data?.itineraries ?? [];
   const suggestedPeople = suggestions.data?.people ?? [];
+  const morePeople = suggestions.data?.morePeople ?? false;
   const typing = typed.trim() !== "";
 
   return (
@@ -127,19 +130,27 @@ export function DiscoverySearchScreen() {
             {suggestedPeople.length > 0 && (
               <View style={styles.group}>
                 <Text style={styles.groupLabel}>{PEOPLE_GROUP_LABEL}</Text>
-                {suggestedPeople.map((person) => (
-                  <PersonRow
+                {suggestedPeople.map((person, index) => (
+                  <RowEntrance
                     key={person.id}
+                    replayKey={person.id}
+                    durationMs={publicProfileMotion.suggestionRiseMs}
+                    risePx={publicProfileMotion.suggestionRisePx}
+                    delayMs={Math.min(index, publicProfileMotion.suggestionCap - 1) * publicProfileMotion.suggestionStepMs}
+                  >
+                  <PersonRow
                     person={person}
                     compact
                     onPress={() => {
                       if (person.handle === null) return;
-                      trackPeopleResultTapped(handleLabel(person), 'suggestions');
+                      trackPeopleResultTapped(person.id, 'suggestions');
                       Keyboard.dismiss();
                       router.push(publicProfileRoute(person.handle));
                     }}
                   />
+                  </RowEntrance>
                 ))}
+                {morePeople && (
                 <Pressable
                   style={styles.seeAllPeople}
                   onPress={() => openPeople(typed)}
@@ -151,6 +162,7 @@ export function DiscoverySearchScreen() {
                   </View>
                   <Text style={styles.seeAllLabel}>{SEE_ALL_PEOPLE_LABEL}</Text>
                 </Pressable>
+                )}
               </View>
             )}
 

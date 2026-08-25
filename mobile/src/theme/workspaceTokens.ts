@@ -200,7 +200,6 @@ export const profileColors = {
   coverWell: '#E7E5E4',
   emptyWell: '#FFF7ED',
   onAccent: '#FFFFFF',
-  groupLabel: '#A8A29E',
   rowChevron: '#D6D3D1',
 } as const;
 
@@ -768,4 +767,19 @@ export const chatCopy = {
   retry: 'Retry',
   discard: 'Discard',
   newMessages: '↓ New messages',
+} as const;
+
+
+export const publicProfileMotion = {
+  panelRiseMs: 200,
+  panelRisePx: 8,
+  sectionExpandMs: 180,
+  suggestionRiseMs: 180,
+  suggestionRisePx: 6,
+  suggestionStepMs: 30,
+  suggestionCap: 3,
+  resultRiseMs: 200,
+  resultRisePx: 6,
+  resultStepMs: 40,
+  resultCap: 8,
 } as const;

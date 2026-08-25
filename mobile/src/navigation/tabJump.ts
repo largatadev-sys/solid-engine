@@ -13,7 +13,7 @@ const HOME_STACK = [HOME_TAB_ROUTE, '/feed'];
 const DISCOVER_STACK = ['/discover', '/discovery-results', '/discovery-people'];
 
 
-const ABOVE_THE_TABS = ['/travelers', '/join'];
+const ABOVE_THE_TABS = ['/travelers'];
 
 
 export function inProfileStack(pathname: string): boolean {
