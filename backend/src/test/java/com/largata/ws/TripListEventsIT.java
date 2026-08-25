@@ -97,7 +97,10 @@ class TripListEventsIT extends PostgresTestBase {
                             + " event is about is the one traveler who never receives it. Asserted"
                             + " from the APPROVED traveler's own session, not a bystander's.")
                     .isEqualTo(TripEventTypes.MEMBERSHIP_GRANTED);
-            assertThat(envelope.path("payload").path("itineraryId").asString()).isEqualTo(trip);
+            assertThat(envelope.path("topic").asString())
+                    .as("Addressed to the approved traveler's own subject, which is what makes a"
+                            + " contentless frame sufficient: the recipient IS the audience.")
+                    .isEqualTo("traveler:" + joinerId);
         }
     }
 
@@ -115,11 +118,12 @@ class TripListEventsIT extends PostgresTestBase {
 
             JsonNode payload =
                     json.readTree(theirs.awaitFrameContaining(TripEventTypes.MEMBERSHIP_GRANTED)).path("payload");
-            assertThat(payload.propertyNames())
-                    .as("A signal carries the trip id and nothing else: the client refetches,"
-                            + " because it holds none of that trip's data and REST stays the sole"
-                            + " authority on what this traveler may read.")
-                    .containsExactly("itineraryId");
+            assertThat(payload.isNull())
+                    .as("A signal carries NOTHING: the client refetches, because it holds none of"
+                            + " that trip's data and REST stays the sole authority on what this"
+                            + " traveler may read. The spec's event table marks this one a signal,"
+                            + " and a frame that quietly grew a payload would still deliver.")
+                    .isTrue();
         }
     }
 

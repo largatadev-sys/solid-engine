@@ -37,6 +37,10 @@ public class MembershipAdmissionListener {
         UUID itineraryId =
                 workspaces.itineraryIdsByWorkspace(List.of(arrival.workspaceId())).get(arrival.workspaceId());
         if (itineraryId == null) {
+            log.warn(
+                    "WS admission skipped: no itinerary behind workspaceId={} travelerId={}",
+                    arrival.workspaceId(),
+                    arrival.travelerId());
             return;
         }
         var sessions =
@@ -55,11 +59,10 @@ public class MembershipAdmissionListener {
         fanout.broadcast(
                 Topic.ofTraveler(arrival.travelerId()),
                 TripEventTypes.MEMBERSHIP_GRANTED,
-                new MembershipGrantedFrame(itineraryId));
+                null);
         fanout.broadcast(
                 Topic.ofItinerary(itineraryId, TopicSubscriptions.TRIPS_CHANNEL), TripEventTypes.ROSTER_CHANGED, null);
     }
 
 
-    public record MembershipGrantedFrame(UUID itineraryId) {}
 }

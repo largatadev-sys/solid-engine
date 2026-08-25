@@ -19,11 +19,9 @@ spring:
   task:
     scheduling:
       pool:
-        # Boot's default is ONE thread, and every @Scheduled task in the app shares it: the WS
-        # heartbeat that detects dead sessions, and the connection-ticket sweeper. A ping walking a
-        # wedged socket therefore delays the sweeper AND the next round of pings — the mechanism
-        # that detects dead sessions blocked by dead sessions. Nothing goes red when it happens;
-        # the tasks simply queue. SchedulerPoolIT holds the line (S4.35 ticket 01).
+        # Boot's default is ONE thread, shared by every @Scheduled task: the WS heartbeat that
+        # detects dead sessions, and the connection-ticket sweeper. A ping walking a wedged socket
+        # would delay both — the mechanism that detects dead sessions blocked by dead sessions.
         size: 4
   servlet:
     multipart:

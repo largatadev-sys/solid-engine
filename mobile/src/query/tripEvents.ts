@@ -132,7 +132,16 @@ function absorbPlanSavedEverywhere(client: QueryClient, payload: unknown): void 
     client.setQueryData<TripPages>(queryKey, (cached) => absorbPlanSaved(cached, frame));
   });
 
-  void client.invalidateQueries({ queryKey: itineraryKeys.one(frame.itineraryId) });
+  client.setQueryData<ItineraryResponse>(itineraryKeys.one(frame.itineraryId), (trip) =>
+    trip === undefined
+      ? trip
+      : {
+          ...trip,
+          planVersion: frame.planVersion,
+          dayCount: frame.dayCount,
+          lastEditedAt: frame.lastEditedAt,
+        },
+  );
 }
 
 

@@ -4,7 +4,7 @@ import { test, expect } from '../support/fixtures';
 import { api, profileFor, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor } from '../support/identities';
-import { SeedFailure, stamp } from '../support/seed';
+import { SeedFailure, seedTrip, stamp } from '../support/seed';
 
 const OWNER = ownerTagFor('web/live-travelers');
 const MEMBER = IDENTITY_MAP['web/live-travelers'].tags[1]!;
@@ -28,30 +28,18 @@ const travelersRoute = (): string => `/itineraries/${trip}?tab=travelers`;
 
 
 async function seedSharedTrip(): Promise<void> {
-  ownerToken = await tokenFor(OWNER);
-  memberToken = await tokenFor(MEMBER);
-  requesterToken = await tokenFor(REQUESTER);
-  await Promise.all([profileFor(OWNER), profileFor(MEMBER), profileFor(REQUESTER)]);
-
-  const created = await api('/v1/itineraries', 'POST', ownerToken, {
+  const seeded = await seedTrip({
+    ownerTag: OWNER,
     title: stamp('Live Travelers Walk'),
     destination: 'Bohol',
-    durationDays: 2,
+    members: [MEMBER],
   });
-  if (created.status !== 201) throw new SeedFailure('the shared trip', created.body);
-  trip = created.body.id;
 
-  const memberHandle = (await api('/v1/me', 'GET', memberToken)).body.handle;
-  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', ownerToken, {
-    handle: memberHandle,
-  });
-  if (invited.status !== 201) throw new SeedFailure('the invitation', invited.body);
-
-  const inbox = (await api('/v1/invitations', 'GET', memberToken)).body.items ?? [];
-  const mine = inbox.find((one: { itineraryId: string }) => one.itineraryId === trip);
-  if (mine === undefined) throw new SeedFailure('the inbox invitation', inbox);
-  const accepted = await api(`/v1/invitations/${mine.id}/accept`, 'POST', memberToken, {});
-  if (accepted.status !== 200) throw new SeedFailure('the accept', accepted.body);
+  trip = seeded.id;
+  ownerToken = seeded.ownerToken;
+  memberToken = await tokenFor(MEMBER);
+  requesterToken = await tokenFor(REQUESTER);
+  await profileFor(REQUESTER);
 
   const link = await api(`/v1/itineraries/${trip}/join-link`, 'GET', ownerToken);
   if (link.status !== 200) throw new SeedFailure('the join link', link.body);

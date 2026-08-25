@@ -1,8 +1,8 @@
 import { test, expect } from '../support/fixtures';
-import { api, profileFor, tokenFor } from '../support/pool';
+import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor } from '../support/identities';
-import { SeedFailure, stamp } from '../support/seed';
+import { seedTrip, stamp } from '../support/seed';
 import { TAB_ROW_LABEL, editingAdvisory, tabLabel } from '../../src/itineraries/tripTabs';
 
 const WATCHER = ownerTagFor('web/live-trips');
@@ -28,31 +28,17 @@ const sessionBody = () => ({ subjectType: 'SESSION', subjectId: trip });
 
 
 async function seedSharedTrip(): Promise<void> {
-  watcherToken = await tokenFor(WATCHER);
-  editorToken = await tokenFor(EDITOR);
-  await Promise.all([profileFor(WATCHER), profileFor(EDITOR)]);
-
-  title = stamp('Live Trips Walk');
-  const created = await api('/v1/itineraries', 'POST', watcherToken, {
-    title,
+  const seeded = await seedTrip({
+    ownerTag: WATCHER,
+    title: stamp('Live Trips Walk'),
     destination: 'Coron',
-    durationDays: 2,
+    members: [EDITOR],
   });
-  if (created.status !== 201) throw new SeedFailure('the shared trip', created.body);
-  trip = created.body.id;
 
-  const editorHandle = (await api('/v1/me', 'GET', editorToken)).body.handle;
-  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', watcherToken, {
-    handle: editorHandle,
-  });
-  if (invited.status !== 201) throw new SeedFailure('the invitation', invited.body);
-
-  const inbox = (await api('/v1/invitations', 'GET', editorToken)).body.items ?? [];
-  const mine = inbox.find((one: { itineraryId: string }) => one.itineraryId === trip);
-  if (mine === undefined) throw new SeedFailure('the inbox invitation', inbox);
-
-  const accepted = await api(`/v1/invitations/${mine.id}/accept`, 'POST', editorToken, {});
-  if (accepted.status !== 200) throw new SeedFailure('the accept', accepted.body);
+  trip = seeded.id;
+  title = seeded.title;
+  watcherToken = seeded.ownerToken;
+  editorToken = await tokenFor(EDITOR);
 }
 
 
