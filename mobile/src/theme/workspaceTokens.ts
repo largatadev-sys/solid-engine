@@ -484,6 +484,11 @@ export const liveUpdateMotion = {
   valueBloomMs: 180,
   valueHoldMs: 220,
   valueFadeMs: 420,
+
+  pulseOutMs: 900,
+  pulseInMs: 900,
+  pulseFloorOpacity: 0.35,
+  pulseFloorScale: 0.7,
 } as const;
 
 

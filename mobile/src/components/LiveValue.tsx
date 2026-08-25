@@ -46,7 +46,7 @@ export function LiveValue({ value, style, children }: LiveValueProps) {
 
   const backgroundColor = bloom.interpolate({
     inputRange: [0, 1],
-    outputRange: [colors.accentTintClear, colors.accentTint],
+    outputRange: [colors.accentTintClear, colors.liveChangeWash],
   });
 
   return (
