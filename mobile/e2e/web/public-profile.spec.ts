@@ -20,8 +20,8 @@ const SUBJECT = 't2';
 
 requireStack(VIEWER);
 
-let subject: { handle: string | null; displayName: string | null };
-let viewer: { handle: string | null; displayName: string | null };
+let subject: { handle: string };
+let viewer: { handle: string };
 let showcaseTitle: string;
 let privateTitle: string;
 
@@ -111,13 +111,14 @@ test('the Follow pill answers honestly and writes nothing', async ({ page, signa
 
 test('a traveler who has published nothing renders honestly rather than dead-ending', async ({ page }) => {
   const emptyOne = await profileFor('t4');
+  const emptyName = (await api('/v1/me', 'GET', await tokenFor('t4'))).body.displayName;
   await page.goto(`/travelers/${emptyOne.handle}`);
 
   await expect(page.getByText(PUBLIC_PROFILE_TITLE).last()).toBeVisible({ timeout: 20_000 });
   await expect(labelled(page, DIARY_TAB_LABEL)).toBeVisible();
 
   const bodies = await page.getByText(PUBLIC_DIARY_EMPTY_TITLE).count();
-  const emptyBody = publicDiaryEmptyBody(emptyOne.displayName);
+  const emptyBody = publicDiaryEmptyBody(emptyName ?? null);
   if (bodies > 0) {
     await expect(page.getByText(emptyBody).last()).toBeVisible();
   }

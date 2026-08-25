@@ -9,8 +9,8 @@ const SUBJECT = 't2';
 requireStack(VIEWER);
 
 let token: string;
-let subject: { handle: string | null; displayName: string | null };
-let viewer: { handle: string | null; displayName: string | null };
+let subject: { handle: string };
+let viewer: { handle: string };
 let subjectEmail: string;
 
 function handlesIn(body: any): string[] {
