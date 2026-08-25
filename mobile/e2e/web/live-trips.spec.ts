@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures';
-import { api, tokenFor } from '../support/pool';
+import { api, profileFor, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor } from '../support/identities';
 import { SeedFailure, stamp } from '../support/seed';
@@ -30,6 +30,7 @@ const sessionBody = () => ({ subjectType: 'SESSION', subjectId: trip });
 async function seedSharedTrip(): Promise<void> {
   watcherToken = await tokenFor(WATCHER);
   editorToken = await tokenFor(EDITOR);
+  await Promise.all([profileFor(WATCHER), profileFor(EDITOR)]);
 
   title = stamp('Live Trips Walk');
   const created = await api('/v1/itineraries', 'POST', watcherToken, {

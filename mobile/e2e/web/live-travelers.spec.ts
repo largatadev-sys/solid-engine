@@ -69,16 +69,17 @@ test.describe('the Travelers tab, and the audience rule proved (S4.35 AC 7, 8)',
     signIn,
     page,
     browser,
+    baseURL,
   }) => {
     await signIn(OWNER);
     await page.goto(travelersRoute());
     const ownerSettled = trackApiTraffic(page);
     await ownerSettled();
 
-    const memberContext = await browser.newContext();
+    const memberContext = await browser.newContext({ baseURL });
     const memberPage = await memberContext.newPage();
-    await injectSession(memberPage, memberToken);
-    await memberPage.goto(travelersRoute());
+    await injectSession(memberPage, memberToken, baseURL!);
+    await memberPage.goto(travelersRoute(), { waitUntil: 'domcontentloaded' });
     const memberSettled = trackApiTraffic(memberPage);
     await memberSettled();
 
@@ -178,8 +179,8 @@ function trackApiTraffic(page: Page): () => Promise<void> {
 }
 
 
-async function injectSession(page: Page, idToken: string): Promise<void> {
-  await page.goto('/');
+async function injectSession(page: Page, idToken: string, baseURL: string): Promise<void> {
+  await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
   await page.evaluate(
     ([token, expires]) => {
       window.localStorage.setItem(
