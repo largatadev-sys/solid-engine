@@ -4,6 +4,7 @@ import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor } from '../support/identities';
 import { seedTrip, stamp } from '../support/seed';
 import { TAB_ROW_LABEL, editingAdvisory, tabLabel } from '../../src/itineraries/tripTabs';
+import { REQUESTED_GHOST_LABEL } from '../../src/members/travelerCopy';
 
 const WATCHER = ownerTagFor('web/live-trips');
 const EDITOR = IDENTITY_MAP['web/live-trips'].tags[1]!;
@@ -203,11 +204,26 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
     const asked = await api(`/v1/join/${link.body.token}/request`, 'POST', watcherToken, {});
     expect([200, 201], 'the watcher must actually ask to join').toContain(asked.status);
 
+    await openUpcoming(page);
+    await waitForTheTravelerSubscription(page);
+
     await expect(
-      page.getByText(hostTitle),
-      'a requested trip is not a member trip yet, so it must NOT be in the list before approval'
-        + ' — otherwise the assertion after approval proves nothing',
+      page.getByRole('link', { name: hostTitle }),
+      'a requested trip is not a member trip yet, so it must not be a LIST CARD before approval.'
+        + ' Scoped to the link role because the title is already on screen inside the pending'
+        + ' request row — a bare text query would answer for that instead and never fail.',
     ).toHaveCount(0);
+    const pendingRows = page.getByText(REQUESTED_GHOST_LABEL, { exact: true });
+    await expect
+      .poll(() => pendingRows.count(), {
+        timeout: ARRIVAL_TIMEOUT_MS,
+        message:
+          'the pending row is on screen before approval — established by a fetch, because nothing'
+          + ' pushes a traveler their own request. Counted rather than matched, because the pool'
+          + ' carries requests from other walks and a bare locator is ambiguous.',
+      })
+      .toBeGreaterThan(0);
+    const pendingBefore = await pendingRows.count();
 
     const queue = await api(`/v1/itineraries/${host.body.id}/join-requests`, 'GET', editorToken);
     expect(queue.status, 'the owner must be able to see the queue').toBe(200);
@@ -226,9 +242,17 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
       .poll(() => capturedTypes(page), { timeout: ARRIVAL_TIMEOUT_MS })
       .toContain('membership.granted');
     await expect(
-      page.getByText(hostTitle),
+      page.getByRole('link', { name: hostTitle }),
       'one event, two parts of one screen: the trip joins the list with no refresh gesture',
     ).toBeVisible({ timeout: ARRIVAL_TIMEOUT_MS });
+    await expect
+      .poll(() => pendingRows.count(), {
+        timeout: ARRIVAL_TIMEOUT_MS,
+        message:
+          'and the same single event clears the pending row — two events for this would be a'
+          + ' design regression, not a convenience (ticket 04)',
+      })
+      .toBeLessThan(pendingBefore);
   });
 
 

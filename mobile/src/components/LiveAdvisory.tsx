@@ -16,6 +16,7 @@ export function LiveAdvisory({ showing, style, children }: LiveAdvisoryProps) {
   const [mounted, setMounted] = useState(showing);
   const [naturalHeight, setNaturalHeight] = useState<number | null>(null);
   const held = useRef<ReactNode>(children);
+  const startedShown = useRef(showing);
   const reducedMotion = useReducedMotion();
 
   if (showing) held.current = children;
@@ -37,7 +38,7 @@ export function LiveAdvisory({ showing, style, children }: LiveAdvisoryProps) {
   }, [progress, reducedMotion, showing]);
 
   const measure = (event: LayoutChangeEvent) => {
-    const measured = Math.round(event.nativeEvent.layout.height);
+    const measured = Math.ceil(event.nativeEvent.layout.height);
     if (measured > 0 && measured !== naturalHeight) setNaturalHeight(measured);
   };
 
@@ -50,7 +51,9 @@ export function LiveAdvisory({ showing, style, children }: LiveAdvisoryProps) {
 
   const collapsing =
     naturalHeight === null
-      ? {}
+      ? startedShown.current
+        ? {}
+        : { height: 0 }
       : { height: progress.interpolate({ inputRange: [0, 1], outputRange: [0, naturalHeight] }) };
 
   return (

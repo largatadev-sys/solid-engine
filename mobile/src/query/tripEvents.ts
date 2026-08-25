@@ -149,6 +149,7 @@ function absorbInvitationIntoInbox(client: QueryClient, payload: unknown): void 
 function refetchTripsAndInbox(client: QueryClient): void {
   void client.invalidateQueries({ queryKey: itineraryKeys.lists() });
   void client.invalidateQueries({ queryKey: invitationKeys.inbox() });
+  void client.invalidateQueries({ queryKey: joinKeys.mine() });
 }
 
 

@@ -161,6 +161,25 @@ describe('absorbing an invitation into the cached inbox', () => {
   });
 });
 
+describe('an approval clears BOTH parts of the screen it touches', () => {
+  it('refetches the trips list, the invitation inbox AND the traveler own join requests', () => {
+    const keys: string[] = [];
+    const client = {
+      invalidateQueries: (options: { queryKey: readonly unknown[] }) => {
+        keys.push(JSON.stringify(options.queryKey));
+      },
+    } as unknown as QueryClient;
+
+    tripEventHandlerFor(MEMBERSHIP_GRANTED)!(client, null, 'traveler:t1');
+
+    expect(keys.some((k) => k.includes('itineraries'))).toBe(true);
+    expect(keys.some((k) => k.includes('invitations'))).toBe(true);
+    expect(
+      keys.some((k) => k.includes('join')),
+    ).toBe(true);
+  });
+});
+
 describe('a co-member save must never leave the detail cache half-updated', () => {
   it('invalidates the trip detail rather than writing a new version onto old days', () => {
     const calls: Array<{ key: string; kind: 'set' | 'invalidate' }> = [];

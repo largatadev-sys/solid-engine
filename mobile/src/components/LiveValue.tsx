@@ -56,9 +56,6 @@ export function LiveValue({ value, style, children }: LiveValueProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    alignSelf: 'flex-start',
     borderRadius: radii.sm,
-    marginHorizontal: -4,
-    paddingHorizontal: 4,
   },
 });
