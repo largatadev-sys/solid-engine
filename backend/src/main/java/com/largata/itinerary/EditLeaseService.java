@@ -42,6 +42,7 @@ public class EditLeaseService {
     private final TravelerService travelers;
     private final Analytics analytics;
     private final WriteFence fence;
+    private final TripsTopic trips;
     private final Clock clock;
     private final Duration ttl;
 
@@ -53,6 +54,7 @@ public class EditLeaseService {
             TravelerService travelers,
             Analytics analytics,
             WriteFence fence,
+            TripsTopic trips,
             Clock clock,
             @Value("${largata.edit-lock.ttl:PT3M}") Duration ttl) {
         this.leases = leases;
@@ -62,6 +64,7 @@ public class EditLeaseService {
         this.travelers = travelers;
         this.analytics = analytics;
         this.fence = fence;
+        this.trips = trips;
         this.clock = clock;
         this.ttl = ttl;
     }
@@ -98,6 +101,7 @@ public class EditLeaseService {
         leases.save(lease);
         logAcquisition(subject, travelerId);
         emit(member, tookOverExpired ? "edit_lock_expired_takeover" : "edit_lock_acquired", subject);
+        announceSessionAcquired(member, subject, lease);
         return EditLeaseView.of(lease);
     }
 
@@ -128,6 +132,7 @@ public class EditLeaseService {
                                     subject.type(),
                                     subject.id(),
                                     member.travelerId());
+                            announceSessionReleased(member.itineraryId(), subject.type());
                         });
     }
 
@@ -144,6 +149,7 @@ public class EditLeaseService {
                 itineraryId,
                 travelerId,
                 held.size());
+        announceSessionReleasedIfAmong(itineraryId, held);
     }
 
 
@@ -155,6 +161,7 @@ public class EditLeaseService {
         }
         leases.deleteAll(all);
         log.info("Edit leases released on archive: itineraryId={} count={}", itineraryId, all.size());
+        announceSessionReleasedIfAmong(itineraryId, all);
     }
 
 
@@ -293,9 +300,33 @@ public class EditLeaseService {
                     inserter.insert(member.itineraryId(), subject, member.travelerId(), now, expiresAt);
             logAcquisition(subject, member.travelerId());
             emit(member, "edit_lock_acquired", subject);
+            announceSessionAcquired(member, subject, fresh);
             return EditLeaseView.of(fresh);
         } catch (DataIntegrityViolationException somebodyElseGotThereFirst) {
             return null;
+        }
+    }
+
+
+    private void announceSessionAcquired(Membership member, LeaseSubject subject, EditLease lease) {
+        if (subject.type() != LeaseSubjectType.SESSION) {
+            return;
+        }
+        TravelerSummary summary = summariesOf(List.of(lease.holderId())).get(lease.holderId());
+        trips.broadcastEditingSessionAcquired(member.itineraryId(), holderOf(lease, summary));
+    }
+
+
+    private void announceSessionReleased(UUID itineraryId, LeaseSubjectType type) {
+        if (type == LeaseSubjectType.SESSION) {
+            trips.broadcastEditingSessionReleased(itineraryId);
+        }
+    }
+
+
+    private void announceSessionReleasedIfAmong(UUID itineraryId, Collection<EditLease> released) {
+        if (released.stream().anyMatch(lease -> lease.subject().type() == LeaseSubjectType.SESSION)) {
+            trips.broadcastEditingSessionReleased(itineraryId);
         }
     }
 

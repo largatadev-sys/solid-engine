@@ -21,6 +21,7 @@ import { destinationFor, isSettling, type GateInput } from '../src/onboarding/on
 import { colors, typography } from '../src/theme';
 import { interFontMap } from '../src/theme/interFonts';
 import { useSocketLifecycle } from '../src/ws/useSocketLifecycle';
+import { useTripDelivery } from '../src/query/useTripDelivery';
 import { lockViewportToTheAppFrame } from '../src/components/viewportLock';
 
 
@@ -64,6 +65,7 @@ function AuthGate() {
 
   useAppStateFocus();
   useSocketLifecycle(auth.kind === 'signedIn');
+  useTripDelivery(state.kind === 'ok' ? state.me.id : null);
 
   const pendingJoin = usePendingJoin();
 
