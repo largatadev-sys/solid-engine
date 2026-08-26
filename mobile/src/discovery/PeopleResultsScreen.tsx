@@ -15,7 +15,6 @@ import { publicProfileRoute } from '../profile/travelerRoutes';
 import { usePeopleSearch } from '../query/discoveryQueries';
 import { colors, spacing } from '../theme';
 import {
-  discoveryTypography,
   profileColors,
   profileMetrics,
   profileTypography,
@@ -23,6 +22,7 @@ import {
   workspaceColors,
 } from '../theme/workspaceTokens';
 import { fetchesMore } from './resultsPaging';
+import { SearchFieldRow, SEARCH_GLYPH, searchFieldStyles } from './SearchField';
 
 
 export function PeopleResultsScreen() {
@@ -39,22 +39,14 @@ export function PeopleResultsScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View style={styles.headerRow}>
-        <Pressable
-          style={styles.back}
-          onPress={goBack}
-          accessibilityRole="button"
-          accessibilityLabel={PEOPLE_RESULTS_BACK_LABEL}
-        >
-          <Icon name="back" size={20} color={workspaceColors.title} />
-        </Pressable>
-        <View style={styles.field}>
-          <Icon name="search" size={16} color={profileColors.meta} />
-          <Text style={styles.query} numberOfLines={1}>
+      <SearchFieldRow onBack={goBack} backLabel={PEOPLE_RESULTS_BACK_LABEL}>
+        <View style={searchFieldStyles.field}>
+          <Icon name="search" size={SEARCH_GLYPH} color={profileColors.meta} />
+          <Text style={searchFieldStyles.text} numberOfLines={1}>
             {query}
           </Text>
         </View>
-      </View>
+      </SearchFieldRow>
 
       {people.isPending ? (
         <ActivityIndicator style={styles.loading} color={colors.accent} />
@@ -119,40 +111,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: workspaceColors.surface,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm2,
-    paddingHorizontal: spacing.md2,
-    paddingTop: spacing.sm3,
-    paddingBottom: spacing.sm2,
-  },
-  back: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-  field: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm3,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm3,
-    backgroundColor: workspaceColors.pressed,
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    borderRadius: profileMetrics.statsRadius,
-  },
-  query: {
-    flex: 1,
-    ...discoveryTypography.searchField,
-    color: workspaceColors.title,
   },
   count: {
     ...profileTypography.countLine,

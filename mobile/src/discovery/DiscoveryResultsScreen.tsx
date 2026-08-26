@@ -26,7 +26,6 @@ import { colors, spacing } from '../theme';
 import {
   discoveryColors,
   discoveryMetrics,
-  discoveryTypography,
   followColors,
   followMetrics,
   followTypography,
@@ -38,6 +37,7 @@ import {
 } from '../theme/workspaceTokens';
 import type { DiscoveryCardResponse, TravelerCardResponse } from '../types/api';
 import { cappedPeople, combinedCountLine, showsPeopleGroup } from './combinedResults';
+import { SearchField, SearchFieldRow } from './SearchField';
 import { DiscoveryCard } from './DiscoveryCard';
 import { FilterSheet } from './FilterSheet';
 import { publishedItineraryRoute } from './discoveryCardCopy';
@@ -132,43 +132,26 @@ export function DiscoveryResultsScreen() {
       {filters.query === null ? (
         <ScreenHeader title={BROWSE_ALL_TITLE} size="heading" back backTo={DISCOVER_TAB_ROUTE} />
       ) : (
-        <View style={[styles.headerRow, { paddingTop: insets.top }]}>
-          <Pressable
-            style={styles.back}
-            onPress={goBack}
-            accessibilityRole="button"
-            accessibilityLabel={SEARCH_BACK_LABEL}
-          >
-            <Icon name="back" size={20} color={workspaceColors.title} />
-          </Pressable>
-          <Pressable
-            style={styles.field}
-            onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
-            accessibilityRole="button"
-            accessibilityLabel={`Edit the search for ${filters.query}`}
-          >
-            <Icon name="search" size={16} color={profileColors.meta} />
-            <Text style={styles.query} numberOfLines={1}>
-              {filters.query}
-            </Text>
-          </Pressable>
+        <View style={{ paddingTop: insets.top }}>
+          <SearchFieldRow onBack={goBack} backLabel={SEARCH_BACK_LABEL}>
+            <SearchField
+              label={filters.query}
+              onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
+              accessibilityLabel={`Edit the search for ${filters.query}`}
+            />
+          </SearchFieldRow>
         </View>
       )}
 
       {filters.query === null && (
-        <View style={styles.searchRow}>
-          <Pressable
-            style={styles.searchBar}
+        <SearchFieldRow>
+          <SearchField
+            label={SEARCH_PLACEHOLDER}
+            placeholder
             onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
-            accessibilityRole="button"
             accessibilityLabel={SEARCH_PLACEHOLDER}
-          >
-            <Icon name="search" size={16} color={profileColors.meta} />
-            <Text style={styles.searchLabel} numberOfLines={1}>
-              {SEARCH_PLACEHOLDER}
-            </Text>
-          </Pressable>
-        </View>
+          />
+        </SearchFieldRow>
       )}
 
       <View style={styles.controls}>
@@ -376,63 +359,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm2,
-    paddingHorizontal: spacing.md2,
-    paddingBottom: spacing.sm2,
-  },
-  back: {
-    width: discoveryMetrics.backButton,
-    height: discoveryMetrics.backButton,
-    borderRadius: discoveryMetrics.backButton / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-  field: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm3,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm3,
-    backgroundColor: workspaceColors.pressed,
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    borderRadius: profileMetrics.statsRadius,
-  },
-  query: {
-    flex: 1,
-    ...discoveryTypography.searchField,
-    color: workspaceColors.title,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm2,
-    paddingHorizontal: spacing.md2,
-    paddingBottom: spacing.sm3,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm2,
-    paddingHorizontal: spacing.sm3,
-    paddingVertical: spacing.sm2,
-    backgroundColor: workspaceColors.pressed,
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    borderRadius: profileMetrics.statsRadius,
-  },
-  searchLabel: {
-    ...discoveryTypography.searchField,
-    color: workspaceColors.title,
-    flex: 1,
   },
   controls: {
     flexDirection: 'row',

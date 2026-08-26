@@ -41,6 +41,7 @@ import { PersonRow } from '../profile/PersonRow';
 import { PEOPLE_GROUP_LABEL, SEE_ALL_PEOPLE_LABEL } from '../profile/publicProfileCopy';
 import { peopleResultsRoute, publicProfileRoute } from '../profile/travelerRoutes';
 import { resultsRoute } from './discoveryRoutes';
+import { SEARCH_GLYPH, searchFieldStyles } from './SearchField';
 import { clearedRecents, forgetSearch, rememberSearch } from './recentSearches';
 import { loadRecents, saveRecents } from './recentsStore';
 import { SEARCH_DEBOUNCE_MS, submittableQuery } from './searchGating';
@@ -95,7 +96,7 @@ export function DiscoverySearchScreen() {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.searchRow}>
         <View style={styles.field}>
-          <Icon name="search" size={18} color={profileColors.meta} />
+          <Icon name="search" size={SEARCH_GLYPH} color={profileColors.meta} />
           <TextInput
             style={styles.input}
             value={typed}
@@ -319,25 +320,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm2,
     paddingHorizontal: spacing.md2,
-    paddingVertical: spacing.sm3,
+    paddingTop: spacing.sm3,
+    paddingBottom: spacing.sm2,
   },
   field: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm3,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm2,
-    backgroundColor: workspaceColors.pressed,
+    ...searchFieldStyles.field,
     borderWidth: 1.5,
     borderColor: colors.accent,
-    borderRadius: profileMetrics.statsRadius,
   },
-  input: {
-    flex: 1,
-    ...discoveryTypography.searchField,
-    color: workspaceColors.title,
-  },
+  input: searchFieldStyles.text,
   cancel: {
     ...profileTypography.editPill,
     color: colors.accent,
