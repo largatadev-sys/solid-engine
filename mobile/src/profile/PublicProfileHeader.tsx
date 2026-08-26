@@ -15,6 +15,7 @@ import {
   workspaceRadii,
 } from '../theme/workspaceTokens';
 import { profileMetaLine } from './profileMetaLine';
+import { StatCells } from './StatCells';
 import {
   DESTINATIONS_STAT_LABEL,
   FOLLOWS_YOU_LABEL,
@@ -107,33 +108,7 @@ export function PublicProfileHeader({
         </View>
       </View>
 
-      <View style={styles.stats}>
-        {cells.map((cell, index) =>
-          cell.open === null ? (
-            <View key={cell.label} style={[styles.cell, index > 0 && styles.divided]}>
-              <Text style={styles.statValue}>{cell.value}</Text>
-              <Text style={styles.statLabel}>{cell.label}</Text>
-            </View>
-          ) : (
-            <Pressable
-              key={cell.label}
-              style={({ pressed }) =>
-                StyleSheet.flatten([
-                  styles.cell,
-                  index > 0 && styles.divided,
-                  pressed && styles.cellPressed,
-                ])
-              }
-              onPress={cell.open}
-              accessibilityRole="button"
-              accessibilityLabel={`${cell.value} ${cell.label}`}
-            >
-              <Text style={styles.statValue}>{cell.value}</Text>
-              <Text style={styles.statLabel}>{cell.label}</Text>
-            </Pressable>
-          ),
-        )}
-      </View>
+      <StatCells cells={cells} />
 
       <AnimatedPressable
         style={StyleSheet.flatten([
@@ -243,33 +218,6 @@ const styles = StyleSheet.create({
   bio: {
     ...profileTypography.bio,
     color: profileColors.bio,
-  },
-  stats: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    borderRadius: profileMetrics.statsRadius,
-    paddingVertical: spacing.sm2,
-  },
-  cell: {
-    flex: 1,
-    alignItems: 'center',
-    gap: spacing.hair,
-  },
-  divided: {
-    borderLeftWidth: 1,
-    borderLeftColor: profileColors.cellDivider,
-  },
-  cellPressed: {
-    backgroundColor: followColors.rowPress,
-  },
-  statValue: {
-    ...profileTypography.statValue,
-    color: workspaceColors.title,
-  },
-  statLabel: {
-    ...profileTypography.statLabel,
-    color: profileColors.meta,
   },
   followPill: {
     height: profileMetrics.editPillHeight,

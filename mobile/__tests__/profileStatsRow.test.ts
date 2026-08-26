@@ -10,6 +10,7 @@ import { AWAITING_COUNT, DESTINATIONS_STAT_LABEL } from '../src/profile/publicPr
 const MOBILE_ROOT = join(__dirname, '..');
 
 const ROW = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'ProfileStatsRow.tsx'), 'utf8');
+const CELLS = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'StatCells.tsx'), 'utf8');
 const SCREEN = readFileSync(
   join(MOBILE_ROOT, 'app', '(tabs)', '(profile)', 'profile.tsx'),
   'utf8',
@@ -51,7 +52,7 @@ describe('the stats row: every cell is real or honestly empty', () => {
   });
 
   it('holds a count that has not arrived yet rather than rendering a wrong zero', () => {
-    expect(ROW).toContain('cell.value ?? AWAITING_COUNT');
+    expect(CELLS).toContain('cell.value ?? AWAITING_COUNT');
     expect(AWAITING_COUNT).toBe('—');
     expect(SCREEN).toContain('?? null');
   });
@@ -61,7 +62,17 @@ describe('the stats row: every cell is real or honestly empty', () => {
     expect(ROW).toContain('{ label: FOLLOWING_STAT_LABEL, value: stats.following, open: stats.openFollowing }');
     expect(ROW).toContain('{ label: PUBLISHED_STAT_LABEL, value: stats.published, open: null }');
     expect(ROW).toContain('{ label: DESTINATIONS_STAT_LABEL, value: stats.destinations, open: null }');
-    expect(ROW).toContain('cell.open === null ? (');
+    expect(CELLS).toContain('if (cell.open === null)');
+  });
+
+  it('draws both rows from ONE cell component, so the two can never drift apart', () => {
+    const HEADER = readFileSync(
+      join(MOBILE_ROOT, 'src', 'profile', 'PublicProfileHeader.tsx'),
+      'utf8',
+    );
+
+    expect(ROW).toContain('<StatCells cells={cells} />');
+    expect(HEADER).toContain('<StatCells cells={cells} />');
   });
 
   it('opens each list against the traveler\'s own handle', () => {

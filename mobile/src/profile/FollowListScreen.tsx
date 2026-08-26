@@ -91,7 +91,7 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
 
       {list.isPending ? (
         <ActivityIndicator style={styles.loading} color={colors.accent} />
-      ) : list.isError ? (
+      ) : list.isError && rows.length === 0 ? (
         <Pressable
           style={styles.retry}
           onPress={() => void list.refetch()}
@@ -169,6 +169,18 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
                 void list.fetchNextPage();
               }
             }}
+            ListFooterComponent={
+              list.isError || list.isFetchNextPageError ? (
+                <Pressable
+                  style={styles.retry}
+                  onPress={() => void list.fetchNextPage()}
+                  accessibilityRole="button"
+                  accessibilityLabel={FOLLOW_LIST_RETRY_LABEL}
+                >
+                  <Text style={styles.retryLabel}>{FOLLOW_LIST_RETRY_LABEL}</Text>
+                </Pressable>
+              ) : null
+            }
           />
         </>
       )}
