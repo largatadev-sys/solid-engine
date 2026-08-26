@@ -130,3 +130,19 @@ Story B replaces the two `—` cells with real counts and changes nothing else �
 Also removed as newly dead: `DiaryEntryRepository.countShared` / `countSharedOutsideArchived` and the service's `postcardCountOf`, whose only caller was the retired cell.
 
 Three ITs hold the new count: distinct-and-case-insensitive (`Kyoto` + `kyoto ` + `Siargao` = 2), private-and-archived excluded, and a blank destination not inflating the number.
+
+### 2026-08-26 — the own Profile tab's row is aligned to the public one *(founder, at the walk)*
+
+The founder noticed the asymmetry on the device: **Destinations appeared only on other travelers' profiles**, while their own row still read Published · Trips · Followers · Following with the last two rendering the stub hash. Ruled: **make the two rows identical.** The own Profile tab now reads **Published · Destinations · Followers · Following**, with the follow cells showing `—` exactly as the public one does.
+
+This deliberately reaches outside S4.36's stated scope, which had left the own-profile surface untouched. Recorded as the founder's call, with what it changes:
+
+- **`ProfileStatsResponse.tripCount` becomes `destinationCount`** — distinct destinations across trips the traveler **owns**, public and private alike, because on your own page there is nobody to hide a private trip from. (The public read counts owned *and* public-surfaced only; the two are deliberately different queries for the same word.)
+- **The stub follow counts stop rendering anywhere.** `stubFollowerCountFor` / `stubFollowingCountFor` now have no production caller — `stubMetrics` stays for ratings and prices, and story B deletes the follow half properly.
+- **Three symbols went dead and were removed rather than left**: `WorkspaceService.itineraryCountFor`, `MembershipRepository.countItinerariesNotIn`, and `ProfileStatsRow`'s `subjectId` prop (whose only purpose was feeding the stub hash) along with `profileSubjectId`'s last call site.
+
+**Two shipped ITs asserted the retired semantics and were rewritten to the new meaning rather than deleted**, because the behaviours they covered are still real: `ProfileShowcaseIT`'s "every trip the traveler belongs to" becomes "destinations across trips they own", and its ownership-transfer case now asserts the former owner's count drops to **zero** — the count follows ownership, which is a sharper claim than the membership count could make.
+
+The web walk found what no unit test could: `profile.spec.ts` asserted `stats.tripCount`, which serialized as `undefined` — and it failed **twice** before passing, first because the backend container still ran the old JAR after a local recompile, then because the replacement test computed an expected value from `/v1/itineraries`, a list that includes trips the traveler merely joined. The second failure was the test being wrong and the server being right; the fixed test asserts a property that holds regardless of what earlier runs left in the database.
+
+Verified: `PublicProfileIT` 14/14, `ProfileShowcaseIT` 11/11, the whole itinerary module **512/512**, mobile Jest 4987/4987, and both profile walks **43/43** against a rebuilt backend and preview.

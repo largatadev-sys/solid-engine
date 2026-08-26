@@ -4,8 +4,8 @@ import {
   FOLLOWERS_STAT_LABEL,
   FOLLOWING_STAT_LABEL,
   PUBLISHED_STAT_LABEL,
-  TRIPS_STAT_LABEL,
 } from '../src/profile/profileCopy';
+import { AWAITING_COUNT, DESTINATIONS_STAT_LABEL } from '../src/profile/publicProfileCopy';
 
 const MOBILE_ROOT = join(__dirname, '..');
 
@@ -16,38 +16,41 @@ const SCREEN = readFileSync(
 );
 
 
-describe('the stats row: two counts that are true, two that are dressing', () => {
+describe('the stats row: every cell is real or honestly empty', () => {
   it('draws the four cells in the mock order', () => {
     const cells = ROW.slice(ROW.indexOf('const cells = ['), ROW.indexOf('];'));
     const at = (label: string) => cells.indexOf(label);
 
-    expect(at('PUBLISHED_STAT_LABEL')).toBeLessThan(at('TRIPS_STAT_LABEL'));
-    expect(at('TRIPS_STAT_LABEL')).toBeLessThan(at('FOLLOWERS_STAT_LABEL'));
+    expect(at('PUBLISHED_STAT_LABEL')).toBeLessThan(at('DESTINATIONS_STAT_LABEL'));
+    expect(at('DESTINATIONS_STAT_LABEL')).toBeLessThan(at('FOLLOWERS_STAT_LABEL'));
     expect(at('FOLLOWERS_STAT_LABEL')).toBeLessThan(at('FOLLOWING_STAT_LABEL'));
   });
 
   it('labels them the way the mock does', () => {
     expect([
       PUBLISHED_STAT_LABEL,
-      TRIPS_STAT_LABEL,
+      DESTINATIONS_STAT_LABEL,
       FOLLOWERS_STAT_LABEL,
       FOLLOWING_STAT_LABEL,
-    ]).toEqual(['Published', 'Trips', 'Followers', 'Following']);
+    ]).toEqual(['Published', 'Destinations', 'Followers', 'Following']);
   });
 
   it('takes the two backed counts from the server and never invents them', () => {
     expect(SCREEN).toContain('publishedCount');
-    expect(SCREEN).toContain('tripCount');
+    expect(SCREEN).toContain('destinationCount');
     expect(ROW).not.toContain('Math.random');
   });
 
-  it('takes the two unbacked ones only from the stub module (register: one seam to delete)', () => {
-    expect(ROW).toContain('stubFollowerCountFor(subjectId)');
-    expect(ROW).toContain('stubFollowingCountFor(subjectId)');
+  it('shows no invented follow count on the own profile either, since S4.36 aligned the rows', () => {
+    expect(ROW).not.toContain('stubFollowerCountFor');
+    expect(ROW).not.toContain('stubFollowingCountFor');
+    expect(ROW).toContain('{ label: FOLLOWERS_STAT_LABEL, value: null }');
+    expect(ROW).toContain('{ label: FOLLOWING_STAT_LABEL, value: null }');
   });
 
   it('holds a count that has not arrived yet rather than rendering a wrong zero', () => {
-    expect(ROW).toContain("cell.value === null ? '—' : cell.value");
+    expect(ROW).toContain('cell.value ?? AWAITING_COUNT');
+    expect(AWAITING_COUNT).toBe('—');
     expect(SCREEN).toContain('?? null');
   });
 

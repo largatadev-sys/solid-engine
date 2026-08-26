@@ -25,8 +25,8 @@ import {
   PER_PERSON_SUFFIX,
   PUBLISHED_BADGE,
   PUBLISHED_STAT_LABEL,
-  TRIPS_STAT_LABEL,
 } from '../../src/profile/profileCopy';
+import { DESTINATIONS_STAT_LABEL } from '../../src/profile/publicProfileCopy';
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 
 const TRAVELER = ownerTagFor('web/profile');
@@ -324,7 +324,7 @@ test.describe('the header the profile tab lands on', () => {
 
     for (const cell of [
       PUBLISHED_STAT_LABEL,
-      TRIPS_STAT_LABEL,
+      DESTINATIONS_STAT_LABEL,
       FOLLOWERS_STAT_LABEL,
       FOLLOWING_STAT_LABEL,
     ]) {
@@ -340,13 +340,30 @@ test.describe('the header the profile tab lands on', () => {
     expect(stats.publishedCount).toBeGreaterThanOrEqual(showcase.length);
   });
 
-  test('Trips counts every trip the traveler belongs to, the hosted one included', async () => {
+  test('Destinations counts places they OWN, so a hosted trip contributes none', async () => {
     const trips = await everyItem(token, '/v1/itineraries');
-    expect(trips.some((trip) => trip.id === hostedId)).toBe(true);
-    expect(trips.some((trip) => trip.id === draftId)).toBe(true);
+    const hosted = trips.find((trip) => trip.id === hostedId);
+    expect(hosted, 'the hosted trip is in sight but not owned').toBeDefined();
 
+    const owned = await everyItem(token, '/v1/me/profile/published');
     const stats = (await api('/v1/me/profile/stats', 'GET', token)).body;
-    expect(stats.tripCount).toBeGreaterThanOrEqual(trips.length);
+
+    const hostedPlace = (hosted.destination ?? '').trim().toLowerCase();
+    const ownedPlaces = new Set(
+      owned
+        .map((card: { destination?: string | null }) => (card.destination ?? '').trim().toLowerCase())
+        .filter((place: string) => place !== ''),
+    );
+
+    expect(
+      ownedPlaces.has(hostedPlace),
+      'the fixture only proves something if the hosted place is unique to the hosted trip',
+    ).toBe(false);
+    expect(
+      stats.destinationCount,
+      'the hosted trip adds no destination, so the count never reaches every trip in sight',
+    ).toBeLessThan(trips.length);
+    expect(stats.destinationCount).toBeGreaterThanOrEqual(ownedPlaces.size);
   });
 
   test('the counts move with the fixture this spec planted', async () => {
@@ -363,7 +380,7 @@ test.describe('the header the profile tab lands on', () => {
 
     const shown = await page.evaluate(() => document.body.innerText);
     expect(shown).toContain(String(stats.publishedCount));
-    expect(shown).toContain(String(stats.tripCount));
+    expect(shown).toContain(String(stats.destinationCount));
   });
 });
 

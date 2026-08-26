@@ -12,31 +12,24 @@ import {
   PUBLISHED_STAT_LABEL,
   STATS_RETRY_LABEL,
   STATS_UNAVAILABLE,
-  TRIPS_STAT_LABEL,
 } from './profileCopy';
-import { stubFollowerCountFor, stubFollowingCountFor } from './stubMetrics';
+import { AWAITING_COUNT, DESTINATIONS_STAT_LABEL } from './publicProfileCopy';
 
 
 export interface ProfileStats {
   readonly published: number | null;
-  readonly trips: number | null;
+  readonly destinations: number | null;
   readonly failed: boolean;
   readonly retry: () => void;
 }
 
 
-export function ProfileStatsRow({
-  stats,
-  subjectId,
-}: {
-  readonly stats: ProfileStats;
-  readonly subjectId: string;
-}) {
+export function ProfileStatsRow({ stats }: { readonly stats: ProfileStats }) {
   const cells = [
     { label: PUBLISHED_STAT_LABEL, value: stats.published },
-    { label: TRIPS_STAT_LABEL, value: stats.trips },
-    { label: FOLLOWERS_STAT_LABEL, value: stubFollowerCountFor(subjectId) },
-    { label: FOLLOWING_STAT_LABEL, value: stubFollowingCountFor(subjectId) },
+    { label: DESTINATIONS_STAT_LABEL, value: stats.destinations },
+    { label: FOLLOWERS_STAT_LABEL, value: null },
+    { label: FOLLOWING_STAT_LABEL, value: null },
   ];
 
   return (
@@ -44,7 +37,7 @@ export function ProfileStatsRow({
       <View style={styles.row}>
         {cells.map((cell, index) => (
           <View key={cell.label} style={[styles.cell, index > 0 && styles.divided]}>
-            <Text style={styles.value}>{cell.value === null ? '—' : cell.value}</Text>
+            <Text style={styles.value}>{cell.value ?? AWAITING_COUNT}</Text>
             <Text style={styles.label}>{cell.label}</Text>
           </View>
         ))}

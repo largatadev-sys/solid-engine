@@ -79,7 +79,7 @@ export default function ProfileScreen() {
           card={profileCardOf(state.me)}
           stats={{
             published: stats.data?.publishedCount ?? null,
-            trips: stats.data?.tripCount ?? null,
+            destinations: stats.data?.destinationCount ?? null,
             failed: stats.isError,
             retry: () => void stats.refetch(),
           }}

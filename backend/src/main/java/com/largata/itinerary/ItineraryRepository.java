@@ -55,6 +55,11 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
     long countPublishedAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
 
 
+    @Query("SELECT COUNT(DISTINCT lower(trim(i.destination))) FROM Itinerary i "
+            + "WHERE i.id IN :itineraryIds AND trim(i.destination) <> ''")
+    long countDestinationsAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
+
+
     String ON_THE_STRANGERS_SURFACE = """
             i.published = true
               AND i.visibility = 'PUBLIC'

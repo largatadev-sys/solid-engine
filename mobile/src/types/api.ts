@@ -387,7 +387,7 @@ export type DiaryTripResponse = {
 
 export type ProfileStatsResponse = {
   publishedCount: number;
-  tripCount: number;
+  destinationCount: number;
 };
 
 

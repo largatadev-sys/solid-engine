@@ -64,9 +64,10 @@ class ProfileShowcaseIT extends PostgresTestBase {
         assertThat(publishedCount(traveler))
                 .as("owned and published only — the draft and the hosted trip do not count")
                 .isEqualTo(2);
-        assertThat(tripCount(traveler))
-                .as("every trip the traveler belongs to, owned or joined")
-                .isEqualTo(4);
+        assertThat(destinationCount(traveler))
+                .as("destinations across trips they OWN — the hosted trip is not theirs, and all"
+                        + " three of their own go to the same place")
+                .isEqualTo(1);
     }
 
 
@@ -91,7 +92,9 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
         assertThat(showcaseIds(traveler)).isEmpty();
         assertThat(publishedCount(traveler)).isZero();
-        assertThat(tripCount(traveler)).as("it is still their trip, just not on show").isEqualTo(1);
+        assertThat(destinationCount(traveler))
+                .as("unpublishing hides the trip from strangers; it is still a place they own")
+                .isEqualTo(1);
     }
 
 
@@ -107,7 +110,9 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
         assertThat(showcaseIds(owner)).as("no longer theirs to show").isEmpty();
         assertThat(showcaseIds(member)).as("the showcase follows ownership").containsExactly(trip);
-        assertThat(tripCount(owner)).as("the former owner is still a member").isEqualTo(1);
+        assertThat(destinationCount(owner))
+                .as("the count follows OWNERSHIP, so the former owner keeps no destination")
+                .isZero();
     }
 
 
@@ -120,7 +125,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
         assertThat(showcaseIds(traveler)).isEmpty();
         assertThat(publishedCount(traveler)).isZero();
-        assertThat(tripCount(traveler)).isZero();
+        assertThat(destinationCount(traveler)).isZero();
     }
 
 
@@ -130,7 +135,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
         assertThat(showcaseIds(traveler)).isEmpty();
         assertThat(publishedCount(traveler)).isZero();
-        assertThat(tripCount(traveler)).isZero();
+        assertThat(destinationCount(traveler)).isZero();
     }
 
 
@@ -237,8 +242,8 @@ class ProfileShowcaseIT extends PostgresTestBase {
         return numberIn(stats(token), "publishedCount");
     }
 
-    private long tripCount(String token) {
-        return numberIn(stats(token), "tripCount");
+    private long destinationCount(String token) {
+        return numberIn(stats(token), "destinationCount");
     }
 
     private byte[] stats(String token) {

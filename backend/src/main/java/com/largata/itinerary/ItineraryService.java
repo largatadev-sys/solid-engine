@@ -434,7 +434,8 @@ public class ItineraryService {
     public ProfileStatsResponse statsFor(UUID travelerId) {
         List<UUID> ownedIds = workspaces.ownedItineraryIdsFor(travelerId);
         long publishedCount = ownedIds.isEmpty() ? 0 : itineraries.countPublishedAmong(ownedIds);
-        return new ProfileStatsResponse(publishedCount, workspaces.itineraryCountFor(travelerId));
+        long destinationCount = ownedIds.isEmpty() ? 0 : itineraries.countDestinationsAmong(ownedIds);
+        return new ProfileStatsResponse(publishedCount, destinationCount);
     }
 
 
