@@ -210,11 +210,14 @@ class PublicProfileIT extends ObjectStoreTestBase {
         String handle = handle();
         String subject = onboardedTraveler(handle);
         publish(subject, tripTo(subject, "Kyoto"));
-        publish(subject, tripTo(subject, "   "));
+        String blanked = tripTo(subject, "Reykjavik");
+        publish(subject, blanked);
+        jdbc.update("UPDATE itinerary SET destination = '   ' WHERE id = ?", UUID.fromString(blanked));
         String viewer = onboardedTraveler(handle());
 
         assertThat(numberIn(read(profileUri(handle), viewer), "destinationCount"))
-                .as("an unnamed place must not inflate the number")
+                .as("the API refuses a blank destination, so this row is planted — the SQL guard is"
+                        + " for legacy rows and any path that skips the create request's validation")
                 .isEqualTo(1);
     }
 
