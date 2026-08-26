@@ -41,7 +41,7 @@ import { PersonRow } from '../profile/PersonRow';
 import { PEOPLE_GROUP_LABEL, SEE_ALL_PEOPLE_LABEL } from '../profile/publicProfileCopy';
 import { peopleResultsRoute, publicProfileRoute } from '../profile/travelerRoutes';
 import { resultsRoute } from './discoveryRoutes';
-import { SEARCH_GLYPH, searchFieldStyles } from './SearchField';
+import { SearchFieldRow, SEARCH_GLYPH_FOCUSED, searchFieldStyles } from './SearchField';
 import { clearedRecents, forgetSearch, rememberSearch } from './recentSearches';
 import { loadRecents, saveRecents } from './recentsStore';
 import { SEARCH_DEBOUNCE_MS, submittableQuery } from './searchGating';
@@ -94,9 +94,9 @@ export function DiscoverySearchScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View style={styles.searchRow}>
+      <SearchFieldRow>
         <View style={styles.field}>
-          <Icon name="search" size={SEARCH_GLYPH} color={profileColors.meta} />
+          <Icon name="search" size={SEARCH_GLYPH_FOCUSED} color={profileColors.meta} />
           <TextInput
             style={styles.input}
             value={typed}
@@ -110,13 +110,14 @@ export function DiscoverySearchScreen() {
           />
         </View>
         <Pressable
+          style={styles.cancelButton}
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel={SEARCH_CANCEL_LABEL}
         >
           <Text style={styles.cancel}>{SEARCH_CANCEL_LABEL}</Text>
         </Pressable>
-      </View>
+      </SearchFieldRow>
 
       <ScrollView
         style={styles.body}
@@ -315,20 +316,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: workspaceColors.surface,
   },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm2,
-    paddingHorizontal: spacing.md2,
-    paddingTop: spacing.sm3,
-    paddingBottom: spacing.sm2,
-  },
-  field: {
-    ...searchFieldStyles.field,
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-  },
+  field: searchFieldStyles.focusedField,
   input: searchFieldStyles.text,
+  cancelButton: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   cancel: {
     ...profileTypography.editPill,
     color: colors.accent,

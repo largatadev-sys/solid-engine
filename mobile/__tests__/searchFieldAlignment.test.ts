@@ -23,7 +23,7 @@ describe('the search bar holds still across discovery (S4.37)', () => {
 
     expect(field).toContain('gap: spacing.sm3');
     expect(field).toContain('paddingHorizontal: spacing.md');
-    expect(field).toContain('paddingVertical: spacing.sm3');
+    expect(field).toContain('paddingVertical: discoveryMetrics.searchFieldPadding');
   });
 
   it('seats every screen at the same height, so the bar never jumps between them', () => {
@@ -43,13 +43,41 @@ describe('the search bar holds still across discovery (S4.37)', () => {
     }
   });
 
-  it('draws one glyph size in the field, never a per-screen guess', () => {
-    expect(SHARED).toContain('export const SEARCH_GLYPH = 16');
+  it('draws its glyph from the shared constants, never a per-screen guess', () => {
+    expect(SHARED).toContain('discoveryMetrics.searchFieldGlyph');
+    expect(SHARED).toContain('discoveryMetrics.searchFieldGlyphFocused');
 
-    for (const screen of ['DiscoverySearchScreen.tsx', 'PeopleResultsScreen.tsx']) {
-      const source = read('src', 'discovery', screen);
+    expect(read('src', 'discovery', 'PeopleResultsScreen.tsx')).toContain(
+      '<Icon name="search" size={SEARCH_GLYPH}',
+    );
+    expect(read('src', 'discovery', 'DiscoverySearchScreen.tsx')).toContain(
+      '<Icon name="search" size={SEARCH_GLYPH_FOCUSED}',
+    );
+  });
 
-      expect(source).toContain('<Icon name="search" size={SEARCH_GLYPH}');
-    }
+  it('keeps the focused field the same HEIGHT as the resting one, which is what the extra padding buys', () => {
+    const focused = SHARED.slice(SHARED.indexOf('focusedField: {'));
+
+    expect(focused).toContain('borderWidth: 1.5');
+    expect(focused).toContain('discoveryMetrics.searchFieldFocusedPadding');
+  });
+
+  it('gives the back chevron its own row, so the field starts at the same edge everywhere', () => {
+    expect(SHARED).toContain('<View style={styles.row}>{children}</View>');
+    expect(SHARED).toContain('styles.backRow');
+
+    const fieldRow = SHARED.slice(
+      SHARED.indexOf('<View style={styles.row}>'),
+      SHARED.indexOf('export function SearchField('),
+    );
+
+    expect(fieldRow).not.toContain('styles.back');
+  });
+
+  it('never lets Cancel squeeze the field it sits beside', () => {
+    const entry = read('src', 'discovery', 'DiscoverySearchScreen.tsx');
+
+    expect(entry).toContain('cancelButton');
+    expect(entry.slice(entry.indexOf('cancelButton: {'))).toContain('flexShrink: 0');
   });
 });

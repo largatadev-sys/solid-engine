@@ -322,6 +322,10 @@ export const discoveryMetrics = {
   badgeSize: 16,
   pillRadius: 999,
   searchBarPadding: 14,
+  searchFieldPadding: 12,
+  searchFieldFocusedPadding: 13,
+  searchFieldGlyph: 16,
+  searchFieldGlyphFocused: 18,
   backButton: 36,
 } as const;
 

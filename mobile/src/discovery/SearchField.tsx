@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
-import { spacing } from '../theme';
+import { colors, spacing } from '../theme';
 import {
   discoveryMetrics,
   discoveryTypography,
@@ -10,7 +10,9 @@ import {
   workspaceColors,
 } from '../theme/workspaceTokens';
 
-export const SEARCH_GLYPH = 16;
+export const SEARCH_GLYPH = discoveryMetrics.searchFieldGlyph;
+
+export const SEARCH_GLYPH_FOCUSED = discoveryMetrics.searchFieldGlyphFocused;
 
 
 export function SearchFieldRow({
@@ -23,19 +25,21 @@ export function SearchFieldRow({
   readonly children: ReactNode;
 }) {
   return (
-    <View style={styles.row}>
+    <>
       {onBack !== undefined && (
-        <Pressable
-          style={styles.back}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel={backLabel}
-        >
-          <Icon name="back" size={20} color={workspaceColors.title} />
-        </Pressable>
+        <View style={styles.backRow}>
+          <Pressable
+            style={styles.back}
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel={backLabel}
+          >
+            <Icon name="back" size={20} color={workspaceColors.title} />
+          </Pressable>
+        </View>
       )}
-      {children}
-    </View>
+      <View style={styles.row}>{children}</View>
+    </>
   );
 }
 
@@ -74,7 +78,7 @@ export const searchFieldStyles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm3,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm3,
+    paddingVertical: discoveryMetrics.searchFieldPadding,
     backgroundColor: workspaceColors.pressed,
     borderWidth: 1,
     borderColor: workspaceColors.hairline,
@@ -84,6 +88,18 @@ export const searchFieldStyles = StyleSheet.create({
     flex: 1,
     ...discoveryTypography.searchField,
     color: workspaceColors.title,
+  },
+  focusedField: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm3,
+    paddingHorizontal: spacing.md,
+    paddingVertical: discoveryMetrics.searchFieldFocusedPadding,
+    backgroundColor: workspaceColors.pressed,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    borderRadius: profileMetrics.statsRadius,
   },
 });
 
@@ -96,6 +112,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md2,
     paddingTop: spacing.sm3,
     paddingBottom: spacing.sm2,
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm3,
+    paddingTop: spacing.xs2,
   },
   back: {
     width: discoveryMetrics.backButton,
