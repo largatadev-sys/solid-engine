@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
-import { AWAITING_COUNT, FOLLOW_LABEL, DESTINATIONS_STAT_LABEL } from '../src/profile/publicProfileCopy';
+import { FOLLOW_LABEL, DESTINATIONS_STAT_LABEL } from '../src/profile/publicProfileCopy';
 import {
   FOLLOWERS_STAT_LABEL,
   FOLLOWING_STAT_LABEL,
@@ -22,32 +22,42 @@ const OWN_HEADER = read('src', 'profile', 'ProfileHeader.tsx');
 
 
 describe('the three deltas the canvas draws on someone else\'s profile', () => {
-  it('carries the four-cell row, with the follow counts awaiting story B', () => {
-    const cells = HEADER.slice(HEADER.indexOf('{[\n          { label:'), HEADER.indexOf('].map((cell'));
+  it('carries the four-cell row in the order the canvas draws it', () => {
+    const cells = HEADER.slice(HEADER.indexOf('const cells = ['), HEADER.indexOf('];'));
+    const at = (label: string) => cells.indexOf(label);
 
-    expect(cells).toContain('PUBLISHED_STAT_LABEL');
-    expect(cells).toContain('DESTINATIONS_STAT_LABEL');
-    expect(cells).toContain('FOLLOWERS_STAT_LABEL');
-    expect(cells).toContain('FOLLOWING_STAT_LABEL');
+    expect(at('PUBLISHED_STAT_LABEL')).toBeLessThan(at('DESTINATIONS_STAT_LABEL'));
+    expect(at('DESTINATIONS_STAT_LABEL')).toBeLessThan(at('FOLLOWERS_STAT_LABEL'));
+    expect(at('FOLLOWERS_STAT_LABEL')).toBeLessThan(at('FOLLOWING_STAT_LABEL'));
     expect(PUBLISHED_STAT_LABEL).toBe('Published');
     expect(DESTINATIONS_STAT_LABEL).toBe('Destinations');
   });
 
   it('never shows the private trip count, which includes trips a stranger cannot see', () => {
-    const cells = HEADER.slice(HEADER.indexOf('{[\n          { label:'), HEADER.indexOf('].map((cell'));
+    const cells = HEADER.slice(HEADER.indexOf('const cells = ['), HEADER.indexOf('];'));
 
     expect(cells).not.toContain('TRIPS_STAT_LABEL');
   });
 
-  it('leaves the follow counts unnumbered until story B, rather than inventing them', () => {
-    const cells = HEADER.slice(HEADER.indexOf('{[\n          { label:'), HEADER.indexOf('].map((cell'));
-
-    expect(cells).toContain('{ label: FOLLOWERS_STAT_LABEL, value: null }');
-    expect(cells).toContain('{ label: FOLLOWING_STAT_LABEL, value: null }');
-    expect(HEADER).toContain('cell.value ?? AWAITING_COUNT');
-    expect(AWAITING_COUNT).toBe('—');
+  it('numbers the follow counts from the server now that the graph is real (S4.37)', () => {
+    expect(HEADER).toContain('{ label: FOLLOWERS_STAT_LABEL, value: followersCount');
+    expect(HEADER).toContain('{ label: FOLLOWING_STAT_LABEL, value: followingCount');
+    expect(HEADER).not.toContain('AWAITING_COUNT');
+    expect(SCREEN).toContain('followersCount=');
+    expect(SCREEN).toContain('followingCount={profile.data.followingCount}');
     expect(FOLLOWERS_STAT_LABEL).toBe('Followers');
     expect(FOLLOWING_STAT_LABEL).toBe('Following');
+  });
+
+  it('opens the matching list from each follow cell, and leaves the other two inert (C4)', () => {
+    expect(HEADER).toContain('open: onOpenFollowers');
+    expect(HEADER).toContain('open: onOpenFollowing');
+    expect(HEADER).toContain('{ label: PUBLISHED_STAT_LABEL, value: publishedCount, open: null }');
+    expect(HEADER).toContain(
+      '{ label: DESTINATIONS_STAT_LABEL, value: destinationCount, open: null }',
+    );
+    expect(SCREEN).toContain('followersRoute(subject)');
+    expect(SCREEN).toContain('followingRoute(subject)');
   });
 
   it('shows no invented number about a real person — no stub metric reaches this surface', () => {
@@ -84,18 +94,29 @@ describe('the own Profile tab is untouched by the projection', () => {
 });
 
 
-describe('C1 and M1 are story B\'s — this pill has exactly one state', () => {
-  it('never renders a Following state or a check', () => {
-    expect(HEADER).not.toContain('Following');
-    expect(HEADER).not.toContain('isFollowing');
-    expect(HEADER).not.toContain("name=\"check\"");
+describe('C1 and M1 arrive with S4.37 — the pill now has both states', () => {
+  it('renders the Following treatment with its leading check (C2)', () => {
+    expect(HEADER).toContain('FOLLOWING_LABEL');
+    expect(HEADER).toContain('following && styles.followingPill');
+    expect(HEADER).toContain("name=\"check\"");
   });
 
-  it('mutates nothing — the tap prompts and counts, and no write leaves the app', () => {
-    expect(SCREEN).toContain("comingSoon('follow')");
-    expect(SCREEN).toContain('trackFollowTapped');
-    expect(SCREEN).not.toContain('useMutation');
-    expect(SCREEN).not.toContain('apiClient.post');
+  it('flips the screen before the server answers, and reverts with a toast on failure (C1)', () => {
+    expect(SCREEN).toContain('tapped(before)');
+    expect(SCREEN).toContain('setFollow(next.state)');
+    expect(SCREEN).toContain('setFollow(reverted(before))');
+    expect(SCREEN).toContain('followFailedToast');
+    expect(SCREEN).not.toContain("comingSoon('follow')");
+  });
+
+  it('asks nobody to confirm an unfollow, and swallows taps already in flight', () => {
+    expect(SCREEN).not.toContain('confirmDestructive');
+    expect(SCREEN).toContain('if (next.intent === null)');
+  });
+
+  it('writes through the repository layer, never a raw call from the screen (ADR-001)', () => {
+    expect(SCREEN).toContain('useFollowMutation');
+    expect(SCREEN).not.toContain('apiClient');
   });
 });
 

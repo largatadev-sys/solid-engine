@@ -5,7 +5,6 @@ import { Icon } from '../components/Icon';
 import { RowEntrance } from '../members/RowEntrance';
 import { useSafeBack } from '../navigation/safeBack';
 import { PersonRow } from '../profile/PersonRow';
-import { trackPeopleResultTapped } from '../profile/profileEvents';
 import {
   PEOPLE_NO_RESULTS_SUPPORT,
   PEOPLE_RESULTS_BACK_LABEL,
@@ -88,7 +87,6 @@ export function PeopleResultsScreen() {
               <PersonRow
                 person={item}
                 onPress={() => {
-                  trackPeopleResultTapped(item.id, 'peopleResults');
                   if (item.handle !== null) {
                     router.push(publicProfileRoute(item.handle));
                   }

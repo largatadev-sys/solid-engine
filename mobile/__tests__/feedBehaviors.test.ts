@@ -67,8 +67,13 @@ describe('B5.5 — a page failure shows the inline row, never a full-screen erro
 
 describe('an empty page with a cursor is not an empty feed', () => {
   it('withholds the empty state while the stream still has pages', () => {
-    expect(SCREEN).toContain('feed.hasNextPage === true ? null : (');
+    expect(SCREEN).toContain('feed.hasNextPage === true ? null :');
     expect(SCREEN).toContain('<FeedEmptyState />');
+  });
+
+  it('says the Following lane is empty in its own words, never the public feed\'s (S4.37)', () => {
+    expect(SCREEN).toContain("scope === 'following' ? (");
+    expect(SCREEN).toContain('<FollowingEmptyState');
   });
 
   it('pulls the next page itself, because FlatList fires no onEndReached on an empty list', () => {

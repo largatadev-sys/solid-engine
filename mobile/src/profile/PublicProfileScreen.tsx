@@ -2,29 +2,38 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { comingSoon } from '../components/comingSoon';
 import { Icon } from '../components/Icon';
 import { ScreenMessage } from '../components/ScreenMessage';
+import { FeedToast } from '../feed/FeedToast';
 import { useMe } from '../hooks/useMe';
 import { useSafeBack } from '../navigation/safeBack';
+import { useFollowMutation } from '../query/followQueries';
 import { usePublicProfile } from '../query/publicProfileQueries';
 import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { colors, spacing } from '../theme';
 import { profileTypography, workspaceColors } from '../theme/workspaceTokens';
 import { RowEntrance } from '../members/RowEntrance';
 import { publicProfileMotion } from '../theme/workspaceTokens';
+import { followStateFrom, reverted, settled, tapped, type FollowState } from './followState';
 import { ProfileTabs } from './ProfileTabs';
 import { PublicDiaryTab } from './PublicDiaryTab';
 import { PublicItinerariesTab } from './PublicItinerariesTab';
 import { PublicProfileHeader } from './PublicProfileHeader';
-import { trackFollowTapped, trackPublicProfileViewed } from './profileEvents';
+import { trackPublicProfileViewed } from './profileEvents';
 import {
+  followFailedToast,
+  unfollowFailedToast,
   PROFILE_UNAVAILABLE,
   PROFILE_UNAVAILABLE_BODY,
   PUBLIC_PROFILE_BACK_LABEL,
   PUBLIC_PROFILE_TITLE,
 } from './publicProfileCopy';
-import { ownProfileRoute, travelerDestination } from './travelerRoutes';
+import {
+  followersRoute,
+  followingRoute,
+  ownProfileRoute,
+  travelerDestination,
+} from './travelerRoutes';
 import type { ProfileTab } from './profileViewState';
 
 
@@ -42,6 +51,9 @@ export function PublicProfileScreen() {
 
   const profile = usePublicProfile(isSelf ? '' : subject);
   const [tab, setTab] = useState<ProfileTab>('diary');
+  const [follow, setFollow] = useState<FollowState | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const followMutation = useFollowMutation();
 
   useRevalidateOnFocus(profile, !isSelf);
 
@@ -56,6 +68,42 @@ export function PublicProfileScreen() {
       trackPublicProfileViewed(profile.data.traveler.id, 'publicProfile');
     }
   }, [profile.data, subject]);
+
+  useEffect(() => {
+    setFollow(null);
+  }, [subject]);
+
+  const served =
+    profile.data === undefined
+      ? null
+      : followStateFrom(profile.data.followedByViewer, profile.data.followersCount);
+  const shown = follow ?? served;
+
+  function onFollow() {
+    if (profile.data === undefined || shown === null) {
+      return;
+    }
+    const before = shown;
+    const next = tapped(before);
+    if (next.intent === null) {
+      return;
+    }
+    setFollow(next.state);
+
+    const handle = profile.data.traveler.handle;
+    followMutation.mutate(
+      { travelerId: profile.data.traveler.id, intent: next.intent },
+      {
+        onSuccess: () => setFollow(settled(next.state)),
+        onError: () => {
+          setFollow(reverted(before));
+          setToast(
+            next.intent === 'follow' ? followFailedToast(handle) : unfollowFailedToast(handle),
+          );
+        },
+      },
+    );
+  }
 
   if (isSelf) {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
@@ -91,10 +139,13 @@ export function PublicProfileScreen() {
             vanityNumber={profile.data.vanityNumber}
             publishedCount={profile.data.publishedCount}
             destinationCount={profile.data.destinationCount}
-            onFollow={() => {
-              trackFollowTapped(profile.data.traveler.id);
-              comingSoon('follow');
-            }}
+            followersCount={shown?.followersCount ?? profile.data.followersCount}
+            followingCount={profile.data.followingCount}
+            following={shown?.following ?? profile.data.followedByViewer}
+            followsViewer={profile.data.followsViewer}
+            onFollow={onFollow}
+            onOpenFollowers={() => router.push(followersRoute(subject))}
+            onOpenFollowing={() => router.push(followingRoute(subject))}
           />
 
           <ProfileTabs selected={tab} onSelect={setTab} />
@@ -119,6 +170,12 @@ export function PublicProfileScreen() {
           </RowEntrance>
         </ScrollView>
       )}
+
+      <FeedToast
+        message={toast}
+        holdMs={publicProfileMotion.toastHoldMs}
+        onDone={() => setToast(null)}
+      />
     </View>
   );
 }

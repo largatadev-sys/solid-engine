@@ -11,10 +11,11 @@ const HOLD_MS = 1600;
 interface FeedToastProps {
   readonly message: string | null;
   readonly onDone: () => void;
+  readonly holdMs?: number;
 }
 
 
-export function FeedToast({ message, onDone }: FeedToastProps) {
+export function FeedToast({ message, onDone, holdMs = HOLD_MS }: FeedToastProps) {
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -23,14 +24,14 @@ export function FeedToast({ message, onDone }: FeedToastProps) {
     }
     const run = Animated.sequence([
       Animated.timing(opacity, { toValue: 1, duration: SHOW_MS, useNativeDriver: true }),
-      Animated.delay(HOLD_MS),
+      Animated.delay(holdMs),
       Animated.timing(opacity, { toValue: 0, duration: SHOW_MS, useNativeDriver: true }),
     ]);
     run.start(({ finished }) => {
       if (finished) onDone();
     });
     return () => run.stop();
-  }, [message, onDone, opacity]);
+  }, [holdMs, message, onDone, opacity]);
 
   if (message === null) {
     return null;

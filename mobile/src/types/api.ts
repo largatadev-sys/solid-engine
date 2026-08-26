@@ -388,6 +388,8 @@ export type DiaryTripResponse = {
 export type ProfileStatsResponse = {
   publishedCount: number;
   destinationCount: number;
+  followersCount: number;
+  followingCount: number;
 };
 
 
@@ -404,6 +406,10 @@ export type PublicProfileResponse = {
   vanityNumber: string | null;
   publishedCount: number;
   destinationCount: number;
+  followersCount: number;
+  followingCount: number;
+  followedByViewer: boolean;
+  followsViewer: boolean;
 };
 
 

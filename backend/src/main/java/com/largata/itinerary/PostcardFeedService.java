@@ -55,15 +55,32 @@ public class PostcardFeedService {
 
     @Transactional(readOnly = true)
     public Page<FeedPostcardResponse> page(String cursor, Integer requestedLimit) {
+        return page(cursor, requestedLimit, null);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<FeedPostcardResponse> page(
+            String cursor, Integer requestedLimit, List<UUID> onlyAuthors) {
         int limit = clamp(requestedLimit);
         Limit probe = Limit.of(limit + 1);
 
+        if (onlyAuthors != null && onlyAuthors.isEmpty()) {
+            return Page.exhausted(List.of());
+        }
+
         List<DiaryEntry> found;
         if (cursor == null) {
-            found = entries.findFirstFeedPage(probe);
+            found =
+                    onlyAuthors == null
+                            ? entries.findFirstFeedPage(probe)
+                            : entries.findFirstFeedPageBy(onlyAuthors, probe);
         } else {
             InstantCursor from = InstantCursor.decode(cursor);
-            found = entries.findFeedPageAfter(from.at(), from.id(), probe);
+            found =
+                    onlyAuthors == null
+                            ? entries.findFeedPageAfter(from.at(), from.id(), probe)
+                            : entries.findFeedPageByAfter(onlyAuthors, from.at(), from.id(), probe);
         }
 
         boolean more = found.size() > limit;

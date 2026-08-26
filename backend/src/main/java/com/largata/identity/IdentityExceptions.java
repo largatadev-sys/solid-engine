@@ -50,4 +50,11 @@ public final class IdentityExceptions {
             super("VANITY_POOL_UNAVAILABLE", "We could not finish setting up your account. Please try again.");
         }
     }
+
+
+    public static final class SelfFollowException extends ValidationException {
+        SelfFollowException() {
+            super("FOLLOW_SELF", "You cannot follow yourself.");
+        }
+    }
 }

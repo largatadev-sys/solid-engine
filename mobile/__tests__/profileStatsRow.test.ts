@@ -41,11 +41,13 @@ describe('the stats row: every cell is real or honestly empty', () => {
     expect(ROW).not.toContain('Math.random');
   });
 
-  it('shows no invented follow count on the own profile either, since S4.36 aligned the rows', () => {
+  it('takes the follow counts from the server too, and still invents nothing (S4.37)', () => {
     expect(ROW).not.toContain('stubFollowerCountFor');
     expect(ROW).not.toContain('stubFollowingCountFor');
-    expect(ROW).toContain('{ label: FOLLOWERS_STAT_LABEL, value: null }');
-    expect(ROW).toContain('{ label: FOLLOWING_STAT_LABEL, value: null }');
+    expect(ROW).toContain('{ label: FOLLOWERS_STAT_LABEL, value: stats.followers');
+    expect(ROW).toContain('{ label: FOLLOWING_STAT_LABEL, value: stats.following');
+    expect(SCREEN).toContain('followers: stats.data?.followersCount ?? null');
+    expect(SCREEN).toContain('following: stats.data?.followingCount ?? null');
   });
 
   it('holds a count that has not arrived yet rather than rendering a wrong zero', () => {
@@ -54,11 +56,17 @@ describe('the stats row: every cell is real or honestly empty', () => {
     expect(SCREEN).toContain('?? null');
   });
 
-  it('makes no CELL tappable — the row reports, it does not navigate (spec mechanics)', () => {
-    const cells = ROW.slice(ROW.indexOf('{cells.map('), ROW.indexOf('{stats.failed'));
+  it('makes the two follow cells tappable and leaves the other two inert (S4.37, C4)', () => {
+    expect(ROW).toContain('{ label: FOLLOWERS_STAT_LABEL, value: stats.followers, open: stats.openFollowers }');
+    expect(ROW).toContain('{ label: FOLLOWING_STAT_LABEL, value: stats.following, open: stats.openFollowing }');
+    expect(ROW).toContain('{ label: PUBLISHED_STAT_LABEL, value: stats.published, open: null }');
+    expect(ROW).toContain('{ label: DESTINATIONS_STAT_LABEL, value: stats.destinations, open: null }');
+    expect(ROW).toContain('cell.open === null ? (');
+  });
 
-    expect(cells).not.toContain('Pressable');
-    expect(cells).not.toContain('onPress');
+  it('opens each list against the traveler\'s own handle', () => {
+    expect(SCREEN).toContain('followersRoute(myHandle)');
+    expect(SCREEN).toContain('followingRoute(myHandle)');
   });
 
   it('says so and offers a retry when the counts fail, rather than holding an em dash forever', () => {

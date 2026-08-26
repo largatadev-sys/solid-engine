@@ -6,27 +6,28 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { useAuth } from '../hooks/authContext';
+import { DEFAULT_FEED_SCOPE, type FeedScope } from '../feed/feedScope';
 import { feedRepository } from '../repositories/feedRepository';
 import type { FeedPostcardResponse, Page, PublicTripDiaryResponse } from '../types/api';
 
 
 export const feedKeys = {
   all: ['feed'] as const,
-  postcards: () => [...feedKeys.all, 'postcards'] as const,
+  postcards: (scope: FeedScope = DEFAULT_FEED_SCOPE) =>
+    [...feedKeys.all, 'postcards', scope] as const,
   tripDiary: (itineraryId: string, authorId: string) =>
     [...feedKeys.all, 'tripDiary', itineraryId, authorId] as const,
 };
 
 
-export function useFeed(): UseInfiniteQueryResult<
-  InfiniteData<Page<FeedPostcardResponse>>,
-  Error
-> {
+export function useFeed(
+  scope: FeedScope = DEFAULT_FEED_SCOPE,
+): UseInfiniteQueryResult<InfiniteData<Page<FeedPostcardResponse>>, Error> {
   const { kind } = useAuth();
   return useInfiniteQuery({
-    queryKey: feedKeys.postcards(),
+    queryKey: feedKeys.postcards(scope),
     queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-      feedRepository.fetchPage(pageParam),
+      feedRepository.fetchPage(pageParam, scope),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: Page<FeedPostcardResponse>) => lastPage.nextCursor ?? undefined,
     enabled: kind === 'signedIn',

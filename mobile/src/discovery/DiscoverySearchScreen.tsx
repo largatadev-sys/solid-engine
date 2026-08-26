@@ -38,7 +38,6 @@ import {
 } from './discoveryCopy';
 import { RowEntrance } from '../members/RowEntrance';
 import { PersonRow } from '../profile/PersonRow';
-import { trackPeopleResultTapped } from '../profile/profileEvents';
 import { PEOPLE_GROUP_LABEL, SEE_ALL_PEOPLE_LABEL } from '../profile/publicProfileCopy';
 import { peopleResultsRoute, publicProfileRoute } from '../profile/travelerRoutes';
 import { resultsRoute } from './discoveryRoutes';
@@ -90,7 +89,6 @@ export function DiscoverySearchScreen() {
   const suggestedDestinations = suggestions.data?.destinations ?? [];
   const suggestedItineraries = suggestions.data?.itineraries ?? [];
   const suggestedPeople = suggestions.data?.people ?? [];
-  const morePeople = suggestions.data?.morePeople ?? false;
   const typing = typed.trim() !== "";
 
   return (
@@ -143,14 +141,12 @@ export function DiscoverySearchScreen() {
                     compact
                     onPress={() => {
                       if (person.handle === null) return;
-                      trackPeopleResultTapped(person.id, 'suggestions');
                       Keyboard.dismiss();
                       router.push(publicProfileRoute(person.handle));
                     }}
                   />
                   </RowEntrance>
                 ))}
-                {morePeople && (
                 <Pressable
                   style={styles.seeAllPeople}
                   onPress={() => openPeople(typed)}
@@ -162,7 +158,6 @@ export function DiscoverySearchScreen() {
                   </View>
                   <Text style={styles.seeAllLabel}>{SEE_ALL_PEOPLE_LABEL}</Text>
                 </Pressable>
-                )}
               </View>
             )}
 
