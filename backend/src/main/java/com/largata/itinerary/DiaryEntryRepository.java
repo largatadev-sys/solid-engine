@@ -106,24 +106,6 @@ interface DiaryEntryRepository extends JpaRepository<DiaryEntry, UUID> {
     List<DiaryTripRow> findSharedTripsBefore(
             @Param("travelerId") UUID travelerId, @Param("cursor") UUID cursor, Limit limit);
 
-    @Query(
-            """
-            SELECT COUNT(e) FROM DiaryEntry e
-            WHERE e.travelerId = :travelerId AND e.sharedAt IS NOT NULL
-            """)
-    long countShared(@Param("travelerId") UUID travelerId);
-
-    @Query(
-            """
-            SELECT COUNT(e) FROM DiaryEntry e
-            WHERE e.travelerId = :travelerId
-              AND e.sharedAt IS NOT NULL
-              AND e.itineraryId NOT IN :archived
-            """)
-    long countSharedOutsideArchived(
-            @Param("travelerId") UUID travelerId, @Param("archived") Collection<UUID> archived);
-
-
     interface DiaryTripRow {
 
         UUID getItineraryId();

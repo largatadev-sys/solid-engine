@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
-import { AWAITING_COUNT, FOLLOW_LABEL, POSTCARDS_STAT_LABEL } from '../src/profile/publicProfileCopy';
+import { AWAITING_COUNT, FOLLOW_LABEL, DESTINATIONS_STAT_LABEL } from '../src/profile/publicProfileCopy';
 import {
   FOLLOWERS_STAT_LABEL,
   FOLLOWING_STAT_LABEL,
@@ -26,11 +26,11 @@ describe('the three deltas the canvas draws on someone else\'s profile', () => {
     const cells = HEADER.slice(HEADER.indexOf('{[\n          { label:'), HEADER.indexOf('].map((cell'));
 
     expect(cells).toContain('PUBLISHED_STAT_LABEL');
-    expect(cells).toContain('POSTCARDS_STAT_LABEL');
+    expect(cells).toContain('DESTINATIONS_STAT_LABEL');
     expect(cells).toContain('FOLLOWERS_STAT_LABEL');
     expect(cells).toContain('FOLLOWING_STAT_LABEL');
     expect(PUBLISHED_STAT_LABEL).toBe('Published');
-    expect(POSTCARDS_STAT_LABEL).toBe('Postcards');
+    expect(DESTINATIONS_STAT_LABEL).toBe('Destinations');
   });
 
   it('never shows the private trip count, which includes trips a stranger cannot see', () => {

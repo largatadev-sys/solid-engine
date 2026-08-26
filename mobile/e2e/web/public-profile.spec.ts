@@ -13,7 +13,7 @@ import {
 } from '../../src/profile/profileCopy';
 import {
   FOLLOW_LABEL,
-  POSTCARDS_STAT_LABEL,
+  DESTINATIONS_STAT_LABEL,
   PROFILE_UNAVAILABLE,
   PUBLIC_DIARY_EMPTY_TITLE,
   PUBLIC_PROFILE_TITLE,
@@ -76,7 +76,7 @@ test('the public profile shows the header the canvas draws, and no owner chrome'
   await expect(page.getByText(`@${subject.handle}`, { exact: false }).last()).toBeVisible();
 
   await expect(page.getByText(PUBLISHED_STAT_LABEL).last()).toBeVisible();
-  await expect(page.getByText(POSTCARDS_STAT_LABEL).last()).toBeVisible();
+  await expect(page.getByText(DESTINATIONS_STAT_LABEL).last()).toBeVisible();
   await expect(page.getByText(FOLLOWERS_STAT_LABEL).last()).toBeVisible();
   await expect(page.getByText(FOLLOWING_STAT_LABEL).last()).toBeVisible();
   await expect(page.getByText('Trips', { exact: true })).toHaveCount(0);

@@ -75,7 +75,7 @@ class PublicProfileIT extends ObjectStoreTestBase {
                 .exists()
                 .jsonPath("$.publishedCount")
                 .isEqualTo(0)
-                .jsonPath("$.postcardCount")
+                .jsonPath("$.destinationCount")
                 .isEqualTo(0);
     }
 
@@ -133,7 +133,7 @@ class PublicProfileIT extends ObjectStoreTestBase {
         assertThat(numberIn(body, "publishedCount"))
                 .as("the public stats read is its own method — the owner's trip count cannot reach here")
                 .isZero();
-        assertThat(numberIn(body, "postcardCount")).isZero();
+        assertThat(numberIn(body, "destinationCount")).isZero();
     }
 
 
@@ -174,6 +174,52 @@ class PublicProfileIT extends ObjectStoreTestBase {
 
 
     @Test
+    void theDestinationCountIsDistinctPlacesOnTheStrangersSurface() {
+        String handle = handle();
+        String subject = onboardedTraveler(handle);
+        publish(subject, tripTo(subject, "Kyoto"));
+        publish(subject, tripTo(subject, "kyoto "));
+        publish(subject, tripTo(subject, "Siargao"));
+        String viewer = onboardedTraveler(handle());
+
+        assertThat(numberIn(read(profileUri(handle), viewer), "destinationCount"))
+                .as("two trips to one place is one destination — case and padding do not make a new one")
+                .isEqualTo(2);
+    }
+
+
+    @Test
+    void aPrivateOrArchivedTripsDestinationIsNotCounted() {
+        String handle = handle();
+        String subject = onboardedTraveler(handle);
+        publish(subject, tripTo(subject, "Kyoto"));
+        publishPrivately(subject, tripTo(subject, "Reykjavik"));
+        String archived = tripTo(subject, "Lisbon");
+        publish(subject, archived);
+        archive(subject, archived);
+        String viewer = onboardedTraveler(handle());
+
+        assertThat(numberIn(read(profileUri(handle), viewer), "destinationCount"))
+                .as("the count says where a stranger can see they went, never where they went privately")
+                .isEqualTo(1);
+    }
+
+
+    @Test
+    void aBlankDestinationIsNotADestination() {
+        String handle = handle();
+        String subject = onboardedTraveler(handle);
+        publish(subject, tripTo(subject, "Kyoto"));
+        publish(subject, tripTo(subject, "   "));
+        String viewer = onboardedTraveler(handle());
+
+        assertThat(numberIn(read(profileUri(handle), viewer), "destinationCount"))
+                .as("an unnamed place must not inflate the number")
+                .isEqualTo(1);
+    }
+
+
+    @Test
     void theShowcaseCountAgreesWithWhatTheShowcaseLists() {
         String handle = handle();
         String subject = onboardedTraveler(handle);
@@ -205,9 +251,6 @@ class PublicProfileIT extends ObjectStoreTestBase {
                 .as("only trips with shared postcards contribute a section header")
                 .containsExactly(trip.tripId());
         assertThat(numberIn(body, "entryCount")).isEqualTo(2);
-        assertThat(numberIn(read(profileUri(handle), viewer), "postcardCount"))
-                .as("the Postcards stat counts the same postcards the Diary tab lists")
-                .isEqualTo(2);
     }
 
 
@@ -365,6 +408,23 @@ class PublicProfileIT extends ObjectStoreTestBase {
 
     private String createTrip(String token) {
         return rig.createTrip(token, 3);
+    }
+
+
+    private String tripTo(String token, String destination) {
+        byte[] created =
+                rest.post()
+                        .uri("/v1/itineraries")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"title\":\"Trip\",\"destination\":\"" + destination + "\",\"durationDays\":3}")
+                        .exchange()
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent();
+        return TripRig.fieldIn(created, "id");
     }
 
 

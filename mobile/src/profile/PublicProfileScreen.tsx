@@ -90,7 +90,7 @@ export function PublicProfileScreen() {
             bio={profile.data.bio}
             vanityNumber={profile.data.vanityNumber}
             publishedCount={profile.data.publishedCount}
-            postcardCount={profile.data.postcardCount}
+            destinationCount={profile.data.destinationCount}
             onFollow={() => {
               trackFollowTapped(profile.data.traveler.id);
               comingSoon('follow');

@@ -403,7 +403,7 @@ export type PublicProfileResponse = {
   bio: string | null;
   vanityNumber: string | null;
   publishedCount: number;
-  postcardCount: number;
+  destinationCount: number;
 };
 
 

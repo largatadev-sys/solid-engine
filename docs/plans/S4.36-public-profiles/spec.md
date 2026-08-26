@@ -115,3 +115,18 @@ Decision 5's "no new canvas" is superseded: the founder ran the design prompt an
 - **What was considered and set aside:** relabelling the two cells to *Itineraries · Diaries* (rejected on the founder's own observation — those words are already the two tab labels immediately below, so the row would read as a duplicate of the tabs); and showing `0 · 0` (honest today, but it asserts a count where the feature does not exist, and reads as "nobody follows this person" rather than "not yet").
 
 Story B replaces the two `—` cells with real counts and changes nothing else — no layout move, no copy change. `publicProfile.test.ts` holds all three halves: the four labels present, `TRIPS_STAT_LABEL` absent, and the follow cells carrying `value: null` rather than any computed number. The last was sabotage-checked — planting `stubFollowerCountFor` in the row turns two tests red.
+
+### 2026-08-26 — the second stat cell becomes Destinations *(founder, same review)*
+
+**Postcards is replaced by Destinations** — distinct destinations across the subject's trips **on the stranger's surface** (published + public + non-archived), matched case-insensitively on `lower(trim(destination))` and skipping blanks, which is the grouping key S4.3's trending query already uses.
+
+**The founder asked for `Trips`, sourced from completed trips, and named the privacy cost up front** — *"i know it's a PII and will be a privacy issue but it's a social media site; we can have settings that hide it later, but the influencer program gets a lot of value from it."* Two facts moved the answer without moving the goal:
+
+1. **The shipped `Trips` count is not the travel-experience number it looks like.** `WorkspaceService.itineraryCountFor` counts every non-archived *membership* — private trips and trips the traveler merely joined. A stranger reading "14" would learn how many private trips someone has, which is a leak with no upside even under a social-media posture, because the number does not mean what a visitor would read it as.
+2. **`COMPLETED` is orthogonal to visibility.** Filtering to completed-and-public lands within one or two of `Published`, so the row would carry two cells saying nearly the same thing.
+
+**Destinations gets the intent with neither problem**: it is the well-travelled signal the influencer case wants, every counted place is one the visitor can open, and it is genuinely different from a count of itineraries — ten trips to Kyoto is one destination. The privacy setting the founder anticipated is therefore **not needed for this cell**; if a later cell does need one, that is its own story.
+
+Also removed as newly dead: `DiaryEntryRepository.countShared` / `countSharedOutsideArchived` and the service's `postcardCountOf`, whose only caller was the retired cell.
+
+Three ITs hold the new count: distinct-and-case-insensitive (`Kyoto` + `kyoto ` + `Siargao` = 2), private-and-archived excluded, and a blank destination not inflating the number.

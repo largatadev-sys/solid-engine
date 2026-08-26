@@ -231,6 +231,16 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
 
     @Query(value = """
+            SELECT count(DISTINCT lower(trim(i.destination))) FROM itinerary i
+            WHERE i.owner_id = :ownerId
+              AND trim(i.destination) <> ''
+              AND
+            """ + ON_THE_STRANGERS_SURFACE, nativeQuery = true)
+    long countDestinationsOnTheStrangersSurface(
+            @Param("ownerId") UUID ownerId, @Param("archivedIds") String archivedIds);
+
+
+    @Query(value = """
             SELECT * FROM itinerary i
             WHERE i.owner_id = :ownerId
               AND

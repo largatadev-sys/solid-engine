@@ -4,7 +4,7 @@ export const PUBLIC_PROFILE_BACK_LABEL = 'Back';
 
 export const FOLLOW_LABEL = 'Follow';
 
-export const POSTCARDS_STAT_LABEL = 'Postcards';
+export const DESTINATIONS_STAT_LABEL = 'Destinations';
 
 export const AWAITING_COUNT = '—';
 

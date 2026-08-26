@@ -5,4 +5,4 @@ public record PublicProfileResponse(
         String bio,
         String vanityNumber,
         long publishedCount,
-        long postcardCount) {}
+        long destinationCount) {}

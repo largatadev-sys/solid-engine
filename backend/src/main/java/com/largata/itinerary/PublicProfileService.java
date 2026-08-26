@@ -71,7 +71,8 @@ public class PublicProfileService {
                 subject.bio(),
                 subject.vanityNumber(),
                 itineraries.countOnTheStrangersSurface(subject.id(), surface.archivedArray()),
-                postcardCountOf(subject.id()));
+                itineraries.countDestinationsOnTheStrangersSurface(
+                        subject.id(), surface.archivedArray()));
     }
 
 
@@ -127,14 +128,6 @@ public class PublicProfileService {
 
     private TravelerSummary onboardedByHandle(String rawHandle) {
         return travelers.onboardedByExactHandle(rawHandle).orElseThrow(NoSuchHandleException::new);
-    }
-
-
-    private long postcardCountOf(UUID subjectId) {
-        Set<UUID> archived = workspaces.allArchivedItineraryIds();
-        return archived.isEmpty()
-                ? entries.countShared(subjectId)
-                : entries.countSharedOutsideArchived(subjectId, archived);
     }
 
 

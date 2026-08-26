@@ -12,7 +12,7 @@ import {
   workspaceRadii,
 } from '../theme/workspaceTokens';
 import { profileMetaLine } from './profileMetaLine';
-import { AWAITING_COUNT, FOLLOW_LABEL, POSTCARDS_STAT_LABEL } from './publicProfileCopy';
+import { AWAITING_COUNT, DESTINATIONS_STAT_LABEL, FOLLOW_LABEL } from './publicProfileCopy';
 import {
   FOLLOWERS_STAT_LABEL,
   FOLLOWING_STAT_LABEL,
@@ -27,7 +27,7 @@ interface PublicProfileHeaderProps {
   readonly bio: string | null;
   readonly vanityNumber: string | null;
   readonly publishedCount: number;
-  readonly postcardCount: number;
+  readonly destinationCount: number;
   readonly onFollow: () => void;
 }
 
@@ -39,7 +39,7 @@ export function PublicProfileHeader({
   bio,
   vanityNumber,
   publishedCount,
-  postcardCount,
+  destinationCount,
   onFollow,
 }: PublicProfileHeaderProps) {
   const meta = profileMetaLine(handle, vanityNumber);
@@ -76,7 +76,7 @@ export function PublicProfileHeader({
       <View style={styles.stats}>
         {[
           { label: PUBLISHED_STAT_LABEL, value: publishedCount },
-          { label: POSTCARDS_STAT_LABEL, value: postcardCount },
+          { label: DESTINATIONS_STAT_LABEL, value: destinationCount },
           { label: FOLLOWERS_STAT_LABEL, value: null },
           { label: FOLLOWING_STAT_LABEL, value: null },
         ].map((cell, index) => (
