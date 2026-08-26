@@ -35,6 +35,7 @@ export function FeedScopeChips({ scope, onSelect }: FeedScopeChipsProps) {
             onPress={() => onSelect(chip.key)}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
+            aria-selected={active}
             accessibilityLabel={chip.label}
           >
             <Text style={[styles.label, active ? styles.labelActive : styles.labelIdle]}>

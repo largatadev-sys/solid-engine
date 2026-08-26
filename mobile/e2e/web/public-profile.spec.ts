@@ -65,6 +65,8 @@ test.beforeAll(async () => {
 });
 
 test.beforeEach(async ({ signIn }) => {
+  const subjectId = (await api('/v1/me', 'GET', await tokenFor(SUBJECT))).body.id;
+  await api(`/v1/travelers/${subjectId}/follow`, 'DELETE', await tokenFor(VIEWER));
   await signIn(VIEWER);
 });
 
@@ -98,7 +100,7 @@ test('the Itineraries tab shows the published trip and never the private one', a
 });
 
 
-test('the Follow pill answers honestly and writes nothing', async ({ page, signal }) => {
+test('the Follow pill writes the edge it promises (S4.37 made it real)', async ({ page, signal }) => {
   await page.goto(`/travelers/${subject.handle}`);
   await expect(page.getByText(PUBLIC_PROFILE_TITLE).last()).toBeVisible({ timeout: 20_000 });
 
@@ -106,13 +108,19 @@ test('the Follow pill answers honestly and writes nothing', async ({ page, signa
   await labelStarting(page, `${FOLLOW_LABEL} `).click();
 
   await expect
-    .poll(() => signal.dialogs.join(' | '), { timeout: 10_000 })
-    .toContain('coming soon');
+    .poll(
+      () =>
+        signal.apiRequests
+          .slice(before)
+          .filter((call) => call.url.includes('/follow')).length,
+      { timeout: 10_000 },
+    )
+    .toBeGreaterThan(0);
 
-  const wrote = signal.apiRequests
-    .slice(before)
-    .filter((call) => call.url.includes('/follow') || call.url.includes('/followers'));
-  expect(wrote, 'the pill mutates nothing — no write leaves the app').toEqual([]);
+  expect(
+    signal.dialogs.join(' | '),
+    'the coming-soon prompt retired with the stub',
+  ).not.toContain('coming soon');
 });
 
 
