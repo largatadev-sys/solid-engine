@@ -28,8 +28,6 @@ describe('stub metrics are a pure function of the subject id', () => {
       expect(second.stubPricePerPersonFor(id)).toBe(first.stubPricePerPersonFor(id));
       expect(second.stubLikeCountFor(id)).toBe(first.stubLikeCountFor(id));
       expect(second.stubCommentCountFor(id)).toBe(first.stubCommentCountFor(id));
-      expect(second.stubFollowerCountFor(id)).toBe(first.stubFollowerCountFor(id));
-      expect(second.stubFollowingCountFor(id)).toBe(first.stubFollowingCountFor(id));
     }
   });
 
@@ -71,7 +69,7 @@ describe('stub metrics are a pure function of the subject id', () => {
     const metrics = freshModule();
     const id = 'itinerary-7';
 
-    expect(metrics.stubRatingFor(id)).not.toBe(metrics.stubFollowerCountFor(id));
+    expect(metrics.stubRatingFor(id)).not.toBe(metrics.stubLikeCountFor(id));
     expect(metrics.stubLikeCountFor(id)).not.toBe(metrics.stubCommentCountFor(id));
   });
 });
@@ -99,23 +97,7 @@ describe('the drawn values stay inside the ranges the screens were designed agai
     }
   });
 
-  it('counts followers and following as integers within 1 and 100', () => {
-    const counts = [
-      ...ids.map((id) => metrics.stubFollowerCountFor(id)),
-      ...ids.map((id) => metrics.stubFollowingCountFor(id)),
-    ];
-    for (const count of counts) {
-      expect(Number.isInteger(count)).toBe(true);
-      expect(count).toBeGreaterThanOrEqual(1);
-      expect(count).toBeLessThanOrEqual(100);
-    }
-  });
-
   it('reaches both ends of the ranges across enough ids', () => {
-    const followers = ids.map((id) => metrics.stubFollowerCountFor(id));
-    expect(Math.min(...followers)).toBeLessThan(10);
-    expect(Math.max(...followers)).toBeGreaterThan(90);
-
     const prices = ids.map((id) => metrics.stubPricePerPersonFor(id)!);
     expect(Math.min(...prices)).toBeLessThan(11_000);
     expect(Math.max(...prices)).toBeGreaterThan(19_000);
@@ -134,7 +116,6 @@ describe('the drawn values stay inside the ranges the screens were designed agai
       expect(metrics.stubCommentCountFor(id)!).toBeLessThanOrEqual(60);
       expect(metrics.stubRatingFor(id)!).toBeGreaterThanOrEqual(1);
       expect(metrics.stubPricePerPersonFor(id)!).toBeGreaterThanOrEqual(10_000);
-      expect(metrics.stubFollowerCountFor(id)).toBeGreaterThanOrEqual(1);
     }
   });
 });
@@ -150,9 +131,9 @@ describe('the kill-switch still takes every number away', () => {
     expect(metrics.stubCommentCountFor('x', false)).toBeNull();
   });
 
-  it('renders follower and following counts as zero, as the stats row expects', () => {
-    expect(metrics.stubFollowerCountFor('x', false)).toBe(0);
-    expect(metrics.stubFollowingCountFor('x', false)).toBe(0);
+  it('holds no follow stub at all — S4.37 made those counts real', () => {
+    expect(metrics).not.toHaveProperty('stubFollowerCountFor');
+    expect(metrics).not.toHaveProperty('stubFollowingCountFor');
   });
 
   it('ships with the stubs on, since the founders are eyeballing the dressed screen', () => {

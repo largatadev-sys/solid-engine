@@ -1,16 +1,6 @@
 export const STUB_METRICS_ON = true;
 
 
-export function stubFollowerCountFor(subjectId: string, on: boolean = STUB_METRICS_ON): number {
-  return on ? integerBetween(subjectId, 'followers', 1, 100) : 0;
-}
-
-
-export function stubFollowingCountFor(subjectId: string, on: boolean = STUB_METRICS_ON): number {
-  return on ? integerBetween(subjectId, 'following', 1, 100) : 0;
-}
-
-
 export function stubLikeCountFor(subjectId: string, on: boolean = STUB_METRICS_ON): number | null {
   return on ? integerBetween(subjectId, 'likes', 1, 1400) : null;
 }

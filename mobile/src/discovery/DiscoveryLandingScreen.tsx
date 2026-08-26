@@ -18,9 +18,7 @@ import { colors, spacing } from '../theme';
 import {
   discoveryColors,
   discoveryMetrics,
-  discoveryTypography,
   profileColors,
-  profileMetrics,
   profileTypography,
   workspaceColors,
 } from '../theme/workspaceTokens';
@@ -30,9 +28,10 @@ import { TrendingRail } from './TrendingRail';
 import { publishedItineraryRoute } from './discoveryCardCopy';
 import { NO_FILTERS } from './discoveryFilters';
 import {
+  DISCOVER_SEARCH_LABEL,
+  DISCOVER_TITLE,
   LANDING_EMPTY_BODY,
   LANDING_EMPTY_TITLE,
-  SEARCH_PLACEHOLDER,
 } from './discoveryCopy';
 import { DISCOVER_TAB_ROUTE, DISCOVERY_SEARCH_ROUTE, resultsRoute } from './discoveryRoutes';
 
@@ -89,25 +88,27 @@ export function DiscoveryLandingScreen() {
       <ScrollView
         ref={scroll}
         style={styles.screen}
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: insets.top + spacing.sm3 },
-        ]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top }]}
         onScroll={(event) => {
           offset.current = event.nativeEvent.contentOffset.y;
         }}
         scrollEventThrottle={RETAP_SCROLL_THROTTLE_MS}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.searchRow}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{DISCOVER_TITLE}</Text>
           <Pressable
-            style={styles.searchBar}
+            style={styles.headerAction}
             onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
             accessibilityRole="button"
-            accessibilityLabel={SEARCH_PLACEHOLDER}
+            accessibilityLabel={DISCOVER_SEARCH_LABEL}
+            hitSlop={8}
           >
-            <Icon name="search" size={18} color={profileColors.meta} />
-            <Text style={styles.searchLabel}>{SEARCH_PLACEHOLDER}</Text>
+            <Icon
+              name="search"
+              size={discoveryMetrics.headerGlyph}
+              color={workspaceColors.title}
+            />
           </Pressable>
         </View>
 
@@ -150,27 +151,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    paddingTop: spacing.sm3,
     paddingBottom: spacing.xl,
     gap: spacing.lg,
   },
-  searchRow: {
-    paddingHorizontal: spacing.md2,
-  },
-  searchBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm3,
-    paddingHorizontal: spacing.md,
-    paddingVertical: discoveryMetrics.searchBarPadding,
-    backgroundColor: workspaceColors.pressed,
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    borderRadius: profileMetrics.statsRadius,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md2,
+    paddingTop: spacing.sm3,
+    paddingBottom: spacing.sm,
   },
-  searchLabel: {
-    ...discoveryTypography.searchField,
-    color: profileColors.meta,
+  headerTitle: {
+    ...profileTypography.displayName,
+    color: workspaceColors.title,
+  },
+  headerAction: {
+    width: discoveryMetrics.headerAction,
+    height: discoveryMetrics.headerAction,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   empty: {
     paddingHorizontal: spacing.md2,

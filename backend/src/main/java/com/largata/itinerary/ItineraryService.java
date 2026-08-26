@@ -9,7 +9,6 @@ import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.itinerary.api.ProfileStatsResponse;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;
 import com.largata.workspace.WorkspaceService;
 import com.largata.workspace.WorkspaceState;
@@ -431,11 +430,11 @@ public class ItineraryService {
 
 
     @Transactional(readOnly = true)
-    public ProfileStatsResponse statsFor(UUID travelerId) {
+    public TripStats tripStatsFor(UUID travelerId) {
         List<UUID> ownedIds = workspaces.ownedItineraryIdsFor(travelerId);
         long publishedCount = ownedIds.isEmpty() ? 0 : itineraries.countPublishedAmong(ownedIds);
         long destinationCount = ownedIds.isEmpty() ? 0 : itineraries.countDestinationsAmong(ownedIds);
-        return new ProfileStatsResponse(publishedCount, destinationCount);
+        return new TripStats(publishedCount, destinationCount);
     }
 
 

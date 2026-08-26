@@ -29,7 +29,7 @@ import {
 import {
   RECENT_CLEAR_LABEL,
   RECENT_SECTION_LABEL,
-  SEARCH_CANCEL_LABEL,
+  SEARCH_DISMISS_LABEL,
   SEE_ALL_LABEL,
   SEARCH_PLACEHOLDER,
   SUGGESTED_DESTINATIONS_LABEL,
@@ -38,10 +38,10 @@ import {
 } from './discoveryCopy';
 import { RowEntrance } from '../members/RowEntrance';
 import { PersonRow } from '../profile/PersonRow';
-import { trackPeopleResultTapped } from '../profile/profileEvents';
 import { PEOPLE_GROUP_LABEL, SEE_ALL_PEOPLE_LABEL } from '../profile/publicProfileCopy';
 import { peopleResultsRoute, publicProfileRoute } from '../profile/travelerRoutes';
 import { resultsRoute } from './discoveryRoutes';
+import { SearchFieldRow, SEARCH_GLYPH_FOCUSED, searchFieldStyles } from './SearchField';
 import { clearedRecents, forgetSearch, rememberSearch } from './recentSearches';
 import { loadRecents, saveRecents } from './recentsStore';
 import { SEARCH_DEBOUNCE_MS, submittableQuery } from './searchGating';
@@ -90,14 +90,13 @@ export function DiscoverySearchScreen() {
   const suggestedDestinations = suggestions.data?.destinations ?? [];
   const suggestedItineraries = suggestions.data?.itineraries ?? [];
   const suggestedPeople = suggestions.data?.people ?? [];
-  const morePeople = suggestions.data?.morePeople ?? false;
   const typing = typed.trim() !== "";
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View style={styles.searchRow}>
+      <SearchFieldRow onBack={() => router.back()} backLabel={SEARCH_DISMISS_LABEL}>
         <View style={styles.field}>
-          <Icon name="search" size={18} color={profileColors.meta} />
+          <Icon name="search" size={SEARCH_GLYPH_FOCUSED} color={profileColors.meta} />
           <TextInput
             style={styles.input}
             value={typed}
@@ -110,14 +109,7 @@ export function DiscoverySearchScreen() {
             accessibilityLabel={SEARCH_PLACEHOLDER}
           />
         </View>
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel={SEARCH_CANCEL_LABEL}
-        >
-          <Text style={styles.cancel}>{SEARCH_CANCEL_LABEL}</Text>
-        </Pressable>
-      </View>
+      </SearchFieldRow>
 
       <ScrollView
         style={styles.body}
@@ -143,14 +135,12 @@ export function DiscoverySearchScreen() {
                     compact
                     onPress={() => {
                       if (person.handle === null) return;
-                      trackPeopleResultTapped(person.id, 'suggestions');
                       Keyboard.dismiss();
                       router.push(publicProfileRoute(person.handle));
                     }}
                   />
                   </RowEntrance>
                 ))}
-                {morePeople && (
                 <Pressable
                   style={styles.seeAllPeople}
                   onPress={() => openPeople(typed)}
@@ -162,7 +152,6 @@ export function DiscoverySearchScreen() {
                   </View>
                   <Text style={styles.seeAllLabel}>{SEE_ALL_PEOPLE_LABEL}</Text>
                 </Pressable>
-                )}
               </View>
             )}
 
@@ -319,34 +308,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: workspaceColors.surface,
   },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm2,
-    paddingHorizontal: spacing.md2,
-    paddingVertical: spacing.sm3,
-  },
-  field: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm3,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm2,
-    backgroundColor: workspaceColors.pressed,
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-    borderRadius: profileMetrics.statsRadius,
-  },
-  input: {
-    flex: 1,
-    ...discoveryTypography.searchField,
-    color: workspaceColors.title,
-  },
-  cancel: {
-    ...profileTypography.editPill,
-    color: colors.accent,
-  },
+  field: searchFieldStyles.focusedField,
+  input: searchFieldStyles.text,
   body: {
     flex: 1,
   },

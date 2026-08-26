@@ -5,4 +5,8 @@ public record PublicProfileResponse(
         String bio,
         String vanityNumber,
         long publishedCount,
-        long destinationCount) {}
+        long destinationCount,
+        long followersCount,
+        long followingCount,
+        boolean followedByViewer,
+        boolean followsViewer) {}

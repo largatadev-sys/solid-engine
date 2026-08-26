@@ -4,6 +4,10 @@ export const PUBLIC_PROFILE_BACK_LABEL = 'Back';
 
 export const FOLLOW_LABEL = 'Follow';
 
+export const FOLLOWING_LABEL = 'Following';
+
+export const FOLLOWS_YOU_LABEL = 'Follows you';
+
 export const DESTINATIONS_STAT_LABEL = 'Destinations';
 
 export const AWAITING_COUNT = '—';
@@ -36,6 +40,44 @@ export function publicItinerariesEmptyBody(displayName: string | null): string {
 
 export function peopleCountLabel(count: number): string {
   return count === 1 ? '1 person' : `${count} people`;
+}
+
+
+export const FOLLOWERS_TITLE = 'Followers';
+
+export const FOLLOWING_TITLE = 'Following';
+
+export const FOLLOWERS_EMPTY_TITLE = 'No followers yet';
+
+export const FOLLOWERS_EMPTY_BODY = "When travelers follow you, they'll show up here.";
+
+export const FOLLOWING_EMPTY_TITLE = 'Not following anyone yet';
+
+export const FOLLOWING_EMPTY_BODY =
+  'Follow travelers to see their postcards in your Home feed.';
+
+export const FIND_PEOPLE_LABEL = 'Find people';
+
+export const FOLLOW_LIST_RETRY_LABEL = 'Could not load. Tap to retry.';
+
+
+export function followersCountLabel(count: number): string {
+  return count === 1 ? '1 follower' : `${count} followers`;
+}
+
+
+export function followingCountLabel(count: number): string {
+  return `${count} following`;
+}
+
+
+export function followFailedToast(handle: string | null): string {
+  return handle === null ? "Couldn't follow that traveler" : `Couldn't follow @${handle}`;
+}
+
+
+export function unfollowFailedToast(handle: string | null): string {
+  return handle === null ? "Couldn't unfollow that traveler" : `Couldn't unfollow @${handle}`;
 }
 
 

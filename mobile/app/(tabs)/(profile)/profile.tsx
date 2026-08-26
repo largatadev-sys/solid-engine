@@ -12,6 +12,7 @@ import { ProfileTabs } from '../../../src/profile/ProfileTabs';
 import { PROFILE_LOAD_FAILED } from '../../../src/profile/profileCopy';
 import { profileCardOf } from '../../../src/profile/profileCard';
 import { selectTab, selectedTab, type ProfileTab } from '../../../src/profile/profileViewState';
+import { followersRoute, followingRoute } from '../../../src/profile/travelerRoutes';
 import { profileKeys, useProfileStats } from '../../../src/query/profileQueries';
 import { diaryKeys } from '../../../src/query/diaryQueries';
 import { PROFILE_TAB_ROUTE } from '../../../src/navigation/authRoutes';
@@ -32,6 +33,7 @@ export default function ProfileScreen() {
   const client = useQueryClient();
   const stats = useProfileStats();
   const [tab, setTab] = useState<ProfileTab>(selectedTab);
+  const myHandle = state.kind === 'ok' ? state.me.handle : null;
 
   useRevalidateOnFocus(stats);
 
@@ -80,8 +82,16 @@ export default function ProfileScreen() {
           stats={{
             published: stats.data?.publishedCount ?? null,
             destinations: stats.data?.destinationCount ?? null,
+            followers: stats.data?.followersCount ?? null,
+            following: stats.data?.followingCount ?? null,
             failed: stats.isError,
             retry: () => void stats.refetch(),
+            openFollowers: () => {
+              if (myHandle !== null) router.push(followersRoute(myHandle));
+            },
+            openFollowing: () => {
+              if (myHandle !== null) router.push(followingRoute(myHandle));
+            },
           }}
           onEditProfile={() => router.push(`${ONBOARDING_ROUTES.profile}?mode=edit`)}
           onOpenAccount={() => router.push('/account')}

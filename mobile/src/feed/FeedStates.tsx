@@ -10,7 +10,17 @@ import {
   FEED_RETRY_LABEL,
   FEED_UNREACHABLE_BODY,
   FEED_UNREACHABLE_TITLE,
+  FOLLOWING_EMPTY_BODY,
+  FOLLOWING_EMPTY_TITLE,
 } from './feedCopy';
+import { FIND_PEOPLE_LABEL } from '../profile/publicProfileCopy';
+import {
+  followMetrics,
+  followTypography,
+  profileColors,
+  workspaceColors,
+  workspaceRadii,
+} from '../theme/workspaceTokens';
 
 const CHECK_GLYPH = 18;
 
@@ -57,6 +67,31 @@ export function FeedEmptyState() {
 }
 
 
+export function FollowingEmptyState({
+  onFindPeople,
+}: {
+  readonly onFindPeople: () => void;
+}) {
+  return (
+    <View style={styles.terminal}>
+      <View style={styles.disc}>
+        <Icon name="userPlus" size={CHECK_GLYPH} color={feedColors.tagInk} />
+      </View>
+      <Text style={styles.terminalTitle}>{FOLLOWING_EMPTY_TITLE}</Text>
+      <Text style={styles.terminalBody}>{FOLLOWING_EMPTY_BODY}</Text>
+      <Pressable
+        style={styles.findPeople}
+        onPress={onFindPeople}
+        accessibilityRole="button"
+        accessibilityLabel={FIND_PEOPLE_LABEL}
+      >
+        <Text style={styles.findPeopleLabel}>{FIND_PEOPLE_LABEL}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+
 export function FeedLoadFailed({ onRetry }: { readonly onRetry: () => void }) {
   return (
     <View style={styles.terminal}>
@@ -86,6 +121,19 @@ export function FeedRetryRow({ onRetry }: { readonly onRetry: () => void }) {
 
 
 const styles = StyleSheet.create({
+  findPeople: {
+    marginTop: spacing.xs,
+    height: followMetrics.seeAllCircle,
+    paddingHorizontal: spacing.md2,
+    borderRadius: workspaceRadii.pill,
+    backgroundColor: workspaceColors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  findPeopleLabel: {
+    ...followTypography.filterChip,
+    color: profileColors.onAccent,
+  },
   skeleton: {
     borderWidth: 1,
     borderStyle: 'dashed',

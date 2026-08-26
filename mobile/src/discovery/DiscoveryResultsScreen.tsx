@@ -9,20 +9,35 @@ import {
   View,
   type ViewToken,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useDiscoveryBrowse, useDiscoveryCount } from '../query/discoveryQueries';
+import { useSafeBack } from '../navigation/safeBack';
+import { RowEntrance } from '../members/RowEntrance';
+import { PersonRow } from '../profile/PersonRow';
+import { PEOPLE_GROUP_LABEL, SEE_ALL_PEOPLE_LABEL } from '../profile/publicProfileCopy';
+import { peopleResultsRoute, publicProfileRoute } from '../profile/travelerRoutes';
+import {
+  useDiscoveryBrowse,
+  useDiscoveryCount,
+  usePeopleSearch,
+} from '../query/discoveryQueries';
 import { colors, spacing } from '../theme';
 import {
   discoveryColors,
   discoveryMetrics,
-  discoveryTypography,
+  followColors,
+  followMetrics,
+  followTypography,
   profileColors,
   profileMetrics,
   profileTypography,
+  publicProfileMotion,
   workspaceColors,
 } from '../theme/workspaceTokens';
-import type { DiscoveryCardResponse } from '../types/api';
+import type { DiscoveryCardResponse, TravelerCardResponse } from '../types/api';
+import { cappedPeople, combinedCountLine, showsPeopleGroup } from './combinedResults';
+import { SearchField, SearchFieldRow } from './SearchField';
 import { DiscoveryCard } from './DiscoveryCard';
 import { FilterSheet } from './FilterSheet';
 import { publishedItineraryRoute } from './discoveryCardCopy';
@@ -30,12 +45,16 @@ import {
   BROWSE_ALL_TITLE,
   CLEAR_FILTERS_LABEL,
   noResultsLine,
+  noTripsMatchTitle,
+  NO_TRIPS_SUPPORT,
   RESULTS_LOAD_FAILED,
   RESULTS_RETRY_LABEL,
+  SEARCH_BACK_LABEL,
   SEARCH_PLACEHOLDER,
   resultCountLine,
   SEARCH_RETRY_ACTION,
   SEARCH_RETRY_BANNER,
+  TRIPS_GROUP_LABEL,
 } from './discoveryCopy';
 import {
   activeFilterGroups,
@@ -64,15 +83,24 @@ export function DiscoveryResultsScreen() {
     [params.q, params.destination, params.duration],
   );
   const [filtering, setFiltering] = useState(false);
+  const insets = useSafeAreaInsets();
+  const goBack = useSafeBack(DISCOVER_TAB_ROUTE);
 
   const browse = useDiscoveryBrowse(filters);
   const matched = useDiscoveryCount(filters, true);
+  const people = usePeopleSearch(filters.query ?? '');
+
+  const peopleRows = (people.data?.pages ?? []).flatMap((page) => page.items);
+  const peopleMatched = people.data?.pages[0]?.totalCount ?? peopleRows.length;
 
   const cards: DiscoveryCardResponse[] =
     browse.data?.pages.flatMap((page) => page.items) ?? [];
   const badge = activeFilterGroups(filters);
   const settled = !browse.isPending && !browse.isFetching;
-  const empty = settled && !browse.isError && cards.length === 0;
+  const noTrips = settled && !browse.isError && cards.length === 0;
+  const tripsMatched = matched.isSuccess ? matched.data.count : cards.length;
+  const showsPeople = filters.query !== null && showsPeopleGroup(peopleMatched);
+  const empty = noTrips && !showsPeople;
 
   const loaded = useRef({ count: 0, more: false, busy: false, loadMore: () => {} });
   loaded.current = {
@@ -101,45 +129,36 @@ export function DiscoveryResultsScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader
-        title={filters.query ?? BROWSE_ALL_TITLE}
-        size="heading"
-        back
-        backTo={DISCOVER_TAB_ROUTE}
-      />
+      {filters.query === null ? (
+        <ScreenHeader title={BROWSE_ALL_TITLE} size="heading" back backTo={DISCOVER_TAB_ROUTE} />
+      ) : (
+        <View style={{ paddingTop: insets.top }}>
+          <SearchFieldRow onBack={goBack} backLabel={SEARCH_BACK_LABEL}>
+            <SearchField
+              label={filters.query}
+              onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
+              accessibilityLabel={`Edit the search for ${filters.query}`}
+            />
+          </SearchFieldRow>
+        </View>
+      )}
 
-      <View style={styles.searchRow}>
-        <Pressable
-          style={styles.searchBar}
-          onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
-          accessibilityRole="button"
-          accessibilityLabel={
-            filters.query === null
-              ? SEARCH_PLACEHOLDER
-              : `Edit the search for ${filters.query}`
-          }
-        >
-          <Icon name="search" size={16} color={profileColors.meta} />
-          <Text style={styles.searchLabel} numberOfLines={1}>
-            {filters.query ?? SEARCH_PLACEHOLDER}
-          </Text>
-        </Pressable>
-        {filters.query !== null && (
-          <Pressable
-            onPress={() =>
-              router.replace(resultsRoute({ ...filters, query: null }))
-            }
-            accessibilityRole="button"
-            accessibilityLabel={`Clear the search for ${filters.query}`}
-          >
-            <Icon name="close" size={14} color={profileColors.chevron} />
-          </Pressable>
-        )}
-      </View>
+      {filters.query === null && (
+        <SearchFieldRow>
+          <SearchField
+            label={SEARCH_PLACEHOLDER}
+            placeholder
+            onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
+            accessibilityLabel={SEARCH_PLACEHOLDER}
+          />
+        </SearchFieldRow>
+      )}
 
       <View style={styles.controls}>
-        <Text style={styles.count}>
-          {resultCountLine(matched.isSuccess ? matched.data.count : cards.length)}
+        <Text style={filters.query === null ? styles.count : styles.countLine}>
+          {filters.query === null
+            ? resultCountLine(tripsMatched)
+            : combinedCountLine(peopleMatched, tripsMatched)}
         </Text>
         <Pressable
           style={[styles.filterButton, badge > 0 && styles.filterButtonActive]}
@@ -201,12 +220,38 @@ export function DiscoveryResultsScreen() {
           showsVerticalScrollIndicator={false}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={VIEWABILITY}
+          ListHeaderComponent={
+            showsPeople ? (
+              <PeopleGroup
+                people={cappedPeople(peopleRows)}
+                onOpenPerson={(handle) => router.push(publicProfileRoute(handle))}
+                onSeeAll={() => router.push(peopleResultsRoute(filters.query ?? ''))}
+              />
+            ) : null
+          }
           renderItem={({ item }) => (
             <DiscoveryCard
               card={item}
               onPress={() => router.push(publishedItineraryRoute(item.id))}
             />
           )}
+          ListEmptyComponent={
+            noTrips ? (
+              <View style={styles.noTrips}>
+                <View style={styles.noTripsCircle}>
+                  <Icon
+                    name="search"
+                    size={followMetrics.emptyGlyph}
+                    color={workspaceColors.accent}
+                  />
+                </View>
+                <Text style={styles.emptyTitle}>
+                  {noTripsMatchTitle(filters.query ?? '')}
+                </Text>
+                <Text style={styles.noTripsBody}>{NO_TRIPS_SUPPORT}</Text>
+              </View>
+            ) : null
+          }
           ListFooterComponent={
             <ResultsFooter
               loading={browse.isFetchingNextPage}
@@ -223,6 +268,53 @@ export function DiscoveryResultsScreen() {
         onApply={applyFilters}
         onDismiss={() => setFiltering(false)}
       />
+    </View>
+  );
+}
+
+function PeopleGroup({
+  people,
+  onOpenPerson,
+  onSeeAll,
+}: {
+  readonly people: readonly TravelerCardResponse[];
+  readonly onOpenPerson: (handle: string) => void;
+  readonly onSeeAll: () => void;
+}) {
+  return (
+    <View style={styles.peopleGroup}>
+      <Text style={styles.groupLabel}>{PEOPLE_GROUP_LABEL.toUpperCase()}</Text>
+      {people.map((person, index) => (
+        <RowEntrance
+          key={person.id}
+          replayKey={person.id}
+          durationMs={publicProfileMotion.resultRiseMs}
+          risePx={publicProfileMotion.resultRisePx}
+          delayMs={index * publicProfileMotion.resultStepMs}
+        >
+          <PersonRow
+            person={person}
+            compact
+            onPress={() => {
+              if (person.handle !== null) onOpenPerson(person.handle);
+            }}
+          />
+        </RowEntrance>
+      ))}
+      <Pressable
+        style={styles.seeAllPeople}
+        onPress={onSeeAll}
+        accessibilityRole="button"
+        accessibilityLabel={SEE_ALL_PEOPLE_LABEL}
+      >
+        <View style={styles.seeAllCircle}>
+          <Icon name="chevronRight" size={followMetrics.seeAllGlyph} color={profileColors.meta} />
+        </View>
+        <Text style={styles.seeAllLabel}>{SEE_ALL_PEOPLE_LABEL}</Text>
+      </Pressable>
+
+      <View style={styles.groupDivider} />
+      <Text style={styles.groupLabel}>{TRIPS_GROUP_LABEL.toUpperCase()}</Text>
     </View>
   );
 }
@@ -268,30 +360,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm2,
-    paddingHorizontal: spacing.md2,
-    paddingBottom: spacing.sm3,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm2,
-    paddingHorizontal: spacing.sm3,
-    paddingVertical: spacing.sm2,
-    backgroundColor: workspaceColors.pressed,
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    borderRadius: profileMetrics.statsRadius,
-  },
-  searchLabel: {
-    ...discoveryTypography.searchField,
-    color: workspaceColors.title,
-    flex: 1,
-  },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -302,6 +370,10 @@ const styles = StyleSheet.create({
   count: {
     ...profileTypography.sectionTitle,
     color: workspaceColors.title,
+  },
+  countLine: {
+    ...profileTypography.countLine,
+    color: profileColors.meta,
   },
   filterButton: {
     flexDirection: 'row',
@@ -373,6 +445,58 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md2,
     paddingBottom: spacing.xl,
     gap: profileMetrics.cardGap,
+  },
+  peopleGroup: {
+    gap: spacing.xs,
+  },
+  groupLabel: {
+    ...followTypography.groupLabel,
+    color: profileColors.chevron,
+  },
+  seeAllPeople: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm2,
+    paddingVertical: spacing.sm,
+  },
+  seeAllCircle: {
+    width: followMetrics.seeAllCircle,
+    height: followMetrics.seeAllCircle,
+    borderRadius: followMetrics.seeAllCircle / 2,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: followColors.rowChevron,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seeAllLabel: {
+    ...followTypography.seeAll,
+    color: profileColors.badgeInk,
+  },
+  groupDivider: {
+    height: 1,
+    backgroundColor: profileColors.cellDivider,
+    marginVertical: spacing.sm,
+  },
+  noTrips: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    alignItems: 'center',
+    gap: spacing.sm2,
+  },
+  noTripsCircle: {
+    width: followMetrics.emptyCircle,
+    height: followMetrics.emptyCircle,
+    borderRadius: followMetrics.emptyCircle / 2,
+    backgroundColor: profileColors.emptyWell,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noTripsBody: {
+    ...profileTypography.emptyBody,
+    color: profileColors.meta,
+    textAlign: 'center',
+    maxWidth: profileMetrics.noResultsBodyWidth,
   },
   skeletons: {
     gap: profileMetrics.cardGap,

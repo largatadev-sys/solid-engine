@@ -1,8 +1,10 @@
 package com.largata.itinerary.web;
 
 import com.largata.common.api.Page;
+import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
 import com.largata.identity.api.PublicProfileResponse;
+import com.largata.identity.api.TravelerCardResponse;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.PublicProfileService;
 import com.largata.itinerary.api.DiaryTripResponse;
@@ -19,9 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 class PublicProfileController {
 
     private final PublicProfileService profiles;
+    private final FollowService follows;
 
-    PublicProfileController(PublicProfileService profiles) {
+    PublicProfileController(PublicProfileService profiles, FollowService follows) {
         this.profiles = profiles;
+        this.follows = follows;
     }
 
 
@@ -48,5 +52,25 @@ class PublicProfileController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
         return profiles.diaryTripsOf(handle, cursor, limit);
+    }
+
+
+    @GetMapping("/followers")
+    Page<TravelerCardResponse> followers(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable String handle,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit) {
+        return follows.followersOf(handle, cursor, limit);
+    }
+
+
+    @GetMapping("/following")
+    Page<TravelerCardResponse> following(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable String handle,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit) {
+        return follows.followingOf(handle, cursor, limit);
     }
 }

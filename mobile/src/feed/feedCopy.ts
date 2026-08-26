@@ -35,3 +35,11 @@ export const PHOTO_SHEET_CANCEL = 'Close these options';
 export const FEED_SEARCH_LABEL = 'Search';
 
 export const FEED_NOTIFICATIONS_LABEL = 'Notifications';
+
+export const FEED_SCOPE_ALL = 'All';
+
+export const FEED_SCOPE_FOLLOWING = 'Following';
+
+export const FOLLOWING_EMPTY_TITLE = 'No postcards yet';
+
+export const FOLLOWING_EMPTY_BODY = 'Postcards from travelers you follow will show up here.';

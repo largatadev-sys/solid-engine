@@ -27,8 +27,12 @@ import {
   FeedRetryRow,
   FeedSkeletonCard,
   FeedTerminalCard,
+  FollowingEmptyState,
 } from './FeedStates';
 import { FeedToast } from './FeedToast';
+import { FeedScopeChips } from './FeedScopeChips';
+import { DEFAULT_FEED_SCOPE, type FeedScope } from './feedScope';
+import { DISCOVERY_SEARCH_ROUTE } from '../discovery/discoveryRoutes';
 import { CAUGHT_UP_TOAST } from './feedCopy';
 import { atTop, HEADER_SHOWING, onScroll } from './headerVisibility';
 import { freshCount, POLL_MS, showsPill } from './freshPosts';
@@ -47,7 +51,8 @@ const HEADER_SLIDE_MS = 180;
 export function FeedScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const feed = useFeed();
+  const [scope, setScope] = useState<FeedScope>(DEFAULT_FEED_SCOPE);
+  const feed = useFeed(scope);
 
   useRevalidateOnFocus(feed);
 
@@ -60,6 +65,7 @@ export function FeedScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewport, setViewport] = useState(0);
   const [cardHeight, setCardHeight] = useState(0);
+  const [chromeHeight, setChromeHeight] = useState<number>(feedMetrics.headerHeight);
   const [, redrawPages] = useState(0);
 
   const pages = useRef(new Map<string, number>());
@@ -72,11 +78,11 @@ export function FeedScreen() {
 
   useEffect(() => {
     Animated.timing(slide, {
-      toValue: header.hidden ? -feedMetrics.headerHeight : 0,
+      toValue: header.hidden ? -chromeHeight : 0,
       duration: HEADER_SLIDE_MS,
       useNativeDriver: true,
     }).start();
-  }, [header.hidden, slide]);
+  }, [chromeHeight, header.hidden, slide]);
 
   const toTop = useCallback((animated: boolean) => {
     list.current?.scrollToOffset({ offset: 0, animated: animated && SCROLL_TO_TOP_ANIMATED });
@@ -113,6 +119,9 @@ export function FeedScreen() {
   const known = useRef(shownIds);
   known.current = shownIds;
 
+  const lane = useRef(scope);
+  lane.current = scope;
+
   useFocusEffect(
     useCallback(() => {
       const tick = setInterval(() => {
@@ -121,7 +130,7 @@ export function FeedScreen() {
         }
         const showing = known.current.split(',');
         void feedRepository
-          .fetchPage()
+          .fetchPage(undefined, lane.current)
           .then((page) => setFresh(freshCount(page.items.map((card) => card.id), showing)))
           .catch(() => undefined);
       }, POLL_MS);
@@ -202,10 +211,21 @@ export function FeedScreen() {
   }, [cards.length, feed.hasNextPage, feed.isFetchingNextPage, feed.isPending, feed]);
 
   const chrome = (
-    <Animated.View style={[styles.header, { transform: [{ translateY: slide }] }]}>
+    <Animated.View
+      style={[styles.header, { transform: [{ translateY: slide }] }]}
+      onLayout={(event) => setChromeHeight(event.nativeEvent.layout.height)}
+    >
       <FeedHeader
         onSearch={() => comingSoon('search')}
         onNotifications={() => comingSoon('notifications')}
+      />
+      <FeedScopeChips
+        scope={scope}
+        onSelect={(chosen) => {
+          if (chosen === scope) return;
+          setFresh(0);
+          setScope(chosen);
+        }}
       />
     </Animated.View>
   );
@@ -272,7 +292,9 @@ export function FeedScreen() {
         ListEmptyComponent={
           feed.isError ? (
             <FeedLoadFailed onRetry={() => refresh(false)} />
-          ) : feed.hasNextPage === true ? null : (
+          ) : feed.hasNextPage === true ? null : scope === 'following' ? (
+            <FollowingEmptyState onFindPeople={() => router.push(DISCOVERY_SEARCH_ROUTE)} />
+          ) : (
             <FeedEmptyState />
           )
         }

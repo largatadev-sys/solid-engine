@@ -5,6 +5,8 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.InstantCursor;
 import com.largata.common.api.Page;
+import com.largata.identity.FollowService;
+import com.largata.identity.FollowStanding;
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -35,6 +37,7 @@ public class PublicProfileService {
     private final TravelerService travelers;
     private final Analytics analytics;
     private final StrangersSurface surface;
+    private final FollowService follows;
 
     PublicProfileService(
             ItineraryRepository itineraries,
@@ -43,7 +46,8 @@ public class PublicProfileService {
             WorkspaceService workspaces,
             TravelerService travelers,
             Analytics analytics,
-            StrangersSurface surface) {
+            StrangersSurface surface,
+            FollowService follows) {
         this.itineraries = itineraries;
         this.entries = entries;
         this.days = days;
@@ -51,6 +55,7 @@ public class PublicProfileService {
         this.travelers = travelers;
         this.analytics = analytics;
         this.surface = surface;
+        this.follows = follows;
     }
 
 
@@ -64,13 +69,19 @@ public class PublicProfileService {
                         .with("subjectId", subject.id())
                         .build());
 
+        FollowStanding standing = follows.standingOf(subject.id(), viewerId);
+
         return new PublicProfileResponse(
                 TravelerCardResponse.of(subject),
                 subject.bio(),
                 subject.vanityNumber(),
                 itineraries.countOnTheStrangersSurface(subject.id(), surface.archivedArray()),
                 itineraries.countDestinationsOnTheStrangersSurface(
-                        subject.id(), surface.archivedArray()));
+                        subject.id(), surface.archivedArray()),
+                standing.followersCount(),
+                standing.followingCount(),
+                standing.followedByViewer(),
+                standing.followsViewer());
     }
 
 

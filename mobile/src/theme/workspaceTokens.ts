@@ -321,7 +321,12 @@ export const discoveryMetrics = {
   grabberRadius: 2,
   badgeSize: 16,
   pillRadius: 999,
-  searchBarPadding: 14,
+  searchFieldPadding: 12,
+  searchFieldFocusedPadding: 13,
+  searchFieldGlyph: 16,
+  searchFieldGlyphFocused: 18,
+  headerGlyph: 20,
+  headerAction: 36,
   backButton: 36,
 } as const;
 
@@ -782,4 +787,49 @@ export const publicProfileMotion = {
   resultRisePx: 6,
   resultStepMs: 40,
   resultCap: 8,
+  pillCrossfadeMs: 160,
+  chipSwitchMs: 160,
+  toastHoldMs: 2500,
+} as const;
+
+
+export const followColors = {
+  followingWell: '#FFFFFF',
+  followingBorder: '#E7E5E4',
+  followingInk: '#1C1917',
+  chipWell: '#F5F5F4',
+  chipInk: '#78716C',
+  filterIdleWell: '#FFFFFF',
+  filterIdleBorder: '#E7E5E4',
+  filterIdleInk: '#57534E',
+  rowPress: '#FAFAF9',
+  rowChevron: '#D6D3D1',
+} as const;
+
+
+export const followTypography = {
+  chip: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  filterChip: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, fontWeight: '700' },
+  listTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, fontWeight: '700' },
+  groupLabel: {
+    fontFamily: fonts.extraBold,
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  seeAll: { fontFamily: fonts.bold, fontSize: 13.5, lineHeight: 17, fontWeight: '700' },
+} as const;
+
+
+export const followMetrics = {
+  checkGlyph: 14,
+  filterChipHeight: 32,
+  listAvatar: 44,
+  seeAllCircle: 36,
+  seeAllGlyph: 15,
+  emptyCircle: 48,
+  emptyGlyph: 22,
+  fetchAheadRows: 5,
+  pageSize: 20,
 } as const;

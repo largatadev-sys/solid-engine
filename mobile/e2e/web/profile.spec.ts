@@ -378,9 +378,13 @@ test.describe('the header the profile tab lands on', () => {
     await page.goto(PROFILE_TAB_ROUTE);
     await expect(page.getByText(PUBLISHED_STAT_LABEL, { exact: true }).first()).toBeVisible();
 
+    await expect
+      .poll(() => page.evaluate(() => document.body.innerText), { timeout: 20_000 })
+      .toContain(String(stats.publishedCount));
+
     const shown = await page.evaluate(() => document.body.innerText);
-    expect(shown).toContain(String(stats.publishedCount));
     expect(shown).toContain(String(stats.destinationCount));
+    expect(shown, 'every cell is served, so none of them holds a dash').not.toContain('—');
   });
 });
 

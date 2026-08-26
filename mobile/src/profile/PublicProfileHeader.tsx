@@ -1,10 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { initialsFor } from '../onboarding/initials';
 import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import { spacing } from '../theme';
 import {
+  followColors,
+  followMetrics,
+  followTypography,
   profileColors,
   profileMetrics,
   profileTypography,
@@ -12,7 +15,13 @@ import {
   workspaceRadii,
 } from '../theme/workspaceTokens';
 import { profileMetaLine } from './profileMetaLine';
-import { AWAITING_COUNT, DESTINATIONS_STAT_LABEL, FOLLOW_LABEL } from './publicProfileCopy';
+import { StatCells } from './StatCells';
+import {
+  DESTINATIONS_STAT_LABEL,
+  FOLLOWS_YOU_LABEL,
+  FOLLOWING_LABEL,
+  FOLLOW_LABEL,
+} from './publicProfileCopy';
 import {
   FOLLOWERS_STAT_LABEL,
   FOLLOWING_STAT_LABEL,
@@ -28,7 +37,13 @@ interface PublicProfileHeaderProps {
   readonly vanityNumber: string | null;
   readonly publishedCount: number;
   readonly destinationCount: number;
+  readonly followersCount: number;
+  readonly followingCount: number;
+  readonly following: boolean;
+  readonly followsViewer: boolean;
   readonly onFollow: () => void;
+  readonly onOpenFollowers: () => void;
+  readonly onOpenFollowing: () => void;
 }
 
 
@@ -40,10 +55,23 @@ export function PublicProfileHeader({
   vanityNumber,
   publishedCount,
   destinationCount,
+  followersCount,
+  followingCount,
+  following,
+  followsViewer,
   onFollow,
+  onOpenFollowers,
+  onOpenFollowing,
 }: PublicProfileHeaderProps) {
   const meta = profileMetaLine(handle, vanityNumber);
   const press = usePressFeedback();
+
+  const cells = [
+    { label: PUBLISHED_STAT_LABEL, value: publishedCount, open: null },
+    { label: DESTINATIONS_STAT_LABEL, value: destinationCount, open: null },
+    { label: FOLLOWERS_STAT_LABEL, value: followersCount, open: onOpenFollowers },
+    { label: FOLLOWING_STAT_LABEL, value: followingCount, open: onOpenFollowing },
+  ];
 
   return (
     <View style={styles.header}>
@@ -60,11 +88,18 @@ export function PublicProfileHeader({
           <Text style={styles.displayName} numberOfLines={1}>
             {displayName}
           </Text>
-          {meta !== null && (
-            <Text style={styles.meta} numberOfLines={1}>
-              {meta}
-            </Text>
-          )}
+          <View style={styles.metaRow}>
+            {meta !== null && (
+              <Text style={styles.meta} numberOfLines={1}>
+                {meta}
+              </Text>
+            )}
+            {followsViewer && (
+              <View style={styles.followsYouChip}>
+                <Text style={styles.followsYouLabel}>{FOLLOWS_YOU_LABEL}</Text>
+              </View>
+            )}
+          </View>
           {bio !== null && bio.trim() !== '' && (
             <Text style={styles.bio} numberOfLines={2}>
               {bio}
@@ -73,29 +108,30 @@ export function PublicProfileHeader({
         </View>
       </View>
 
-      <View style={styles.stats}>
-        {[
-          { label: PUBLISHED_STAT_LABEL, value: publishedCount },
-          { label: DESTINATIONS_STAT_LABEL, value: destinationCount },
-          { label: FOLLOWERS_STAT_LABEL, value: null },
-          { label: FOLLOWING_STAT_LABEL, value: null },
-        ].map((cell, index) => (
-          <View key={cell.label} style={[styles.cell, index > 0 && styles.divided]}>
-            <Text style={styles.statValue}>{cell.value ?? AWAITING_COUNT}</Text>
-            <Text style={styles.statLabel}>{cell.label}</Text>
-          </View>
-        ))}
-      </View>
+      <StatCells cells={cells} />
 
       <AnimatedPressable
-        style={StyleSheet.flatten([styles.followPill, press.style])}
+        style={StyleSheet.flatten([
+          styles.followPill,
+          following && styles.followingPill,
+          press.style,
+        ])}
         onPress={onFollow}
         onPressIn={press.onPressIn}
         onPressOut={press.onPressOut}
         accessibilityRole="button"
-        accessibilityLabel={`${FOLLOW_LABEL} ${displayName}`}
+        accessibilityLabel={`${following ? FOLLOWING_LABEL : FOLLOW_LABEL} ${displayName}`}
       >
-        <Text style={styles.followLabel}>{FOLLOW_LABEL}</Text>
+        {following && (
+          <Icon
+            name="check"
+            size={followMetrics.checkGlyph}
+            color={followColors.followingInk}
+          />
+        )}
+        <Text style={[styles.followLabel, following && styles.followingLabel]}>
+          {following ? FOLLOWING_LABEL : FOLLOW_LABEL}
+        </Text>
       </AnimatedPressable>
     </View>
   );
@@ -158,37 +194,30 @@ const styles = StyleSheet.create({
     ...profileTypography.displayName,
     color: workspaceColors.title,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   meta: {
     ...profileTypography.meta,
     color: profileColors.meta,
+    flexShrink: 1,
+  },
+  followsYouChip: {
+    backgroundColor: followColors.chipWell,
+    borderRadius: workspaceRadii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.hair,
+    flexShrink: 0,
+  },
+  followsYouLabel: {
+    ...followTypography.chip,
+    color: followColors.chipInk,
   },
   bio: {
     ...profileTypography.bio,
     color: profileColors.bio,
-  },
-  stats: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    borderRadius: profileMetrics.statsRadius,
-    paddingVertical: spacing.sm2,
-  },
-  cell: {
-    flex: 1,
-    alignItems: 'center',
-    gap: spacing.hair,
-  },
-  divided: {
-    borderLeftWidth: 1,
-    borderLeftColor: profileColors.cellDivider,
-  },
-  statValue: {
-    ...profileTypography.statValue,
-    color: workspaceColors.title,
-  },
-  statLabel: {
-    ...profileTypography.statLabel,
-    color: profileColors.meta,
   },
   followPill: {
     height: profileMetrics.editPillHeight,
@@ -196,12 +225,21 @@ const styles = StyleSheet.create({
     borderColor: workspaceColors.accent,
     backgroundColor: workspaceColors.accent,
     borderRadius: workspaceRadii.pill,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: spacing.xs2,
+  },
+  followingPill: {
+    borderColor: followColors.followingBorder,
+    backgroundColor: followColors.followingWell,
   },
   followLabel: {
     ...profileTypography.editPill,
     color: profileColors.onAccent,
+  },
+  followingLabel: {
+    color: followColors.followingInk,
   },
   empty: {
     paddingHorizontal: spacing.lg,

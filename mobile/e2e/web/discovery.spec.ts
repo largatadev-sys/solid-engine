@@ -5,6 +5,8 @@ import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { SeedFailure, seedCover, stamp } from '../support/seed';
 import { labelled, labelStarting, dragStripBy } from '../support/screen';
 import {
+  DISCOVER_SEARCH_LABEL,
+  DISCOVER_TITLE,
   RECOMMENDED_SECTION_TITLE,
   SEARCH_PLACEHOLDER,
   SEE_ALL_LABEL,
@@ -14,6 +16,12 @@ import {
 } from '../../src/discovery/discoveryCopy';
 
 const SEARCH_FIELD = SEARCH_PLACEHOLDER.replace(/…$/, '');
+
+
+async function openSearch(page: import('@playwright/test').Page): Promise<void> {
+  await labelled(page, DISCOVER_SEARCH_LABEL).click();
+  await expect(labelled(page, SEARCH_FIELD)).toBeVisible({ timeout: 20_000 });
+}
 
 const PUBLISHER = ownerTagFor('web/discovery');
 const BROWSER = IDENTITY_MAP['web/discovery'].tags[1]!;
@@ -127,15 +135,29 @@ test("the filtered results show only that destination's trips", async ({ page })
   await expect(page.getByText(`Lima ceviche ${mark}`)).toHaveCount(0);
 });
 
+test('Discover is titled like its sibling tabs, with a glass rather than a bar', async ({ page }) => {
+  await page.goto('/discover');
+
+  await expect(page.getByText(DISCOVER_TITLE, { exact: true }).last()).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(labelled(page, DISCOVER_SEARCH_LABEL)).toBeVisible();
+  await expect(
+    labelled(page, SEARCH_FIELD),
+    'the tab root carries no search field — the bar belongs to the search screens',
+  ).toHaveCount(0);
+});
+
+
 test('the search bar opens full-screen search mode', async ({ page }) => {
   await page.goto('/discover');
-  await labelled(page, SEARCH_FIELD).click();
+  await openSearch(page);
   await expect(page.getByText(/trending searches|recent/i).first()).toBeVisible();
 });
 
 test('typing surfaces grouped suggestions for the partial query', async ({ page }) => {
   await page.goto('/discover');
-  await labelled(page, SEARCH_FIELD).click();
+  await openSearch(page);
   await labelled(page, SEARCH_FIELD).fill('Kyoto');
 
   await expect(page.getByText(SUGGESTED_DESTINATIONS_LABEL, { exact: true })).toBeVisible();
@@ -146,7 +168,7 @@ test('submitting a suggestion lands on results carrying the query, showing the m
   page,
 }) => {
   await page.goto('/discover');
-  await labelled(page, SEARCH_FIELD).click();
+  await openSearch(page);
   await labelled(page, SEARCH_FIELD).fill(`Kyoto temples ${mark}`);
   await labelled(page, `Search for Kyoto temples ${mark}`).click();
 
@@ -156,13 +178,13 @@ test('submitting a suggestion lands on results carrying the query, showing the m
 
 test('the submitted query is remembered as a recent search on this device', async ({ page }) => {
   await page.goto('/discover');
-  await labelled(page, SEARCH_FIELD).click();
+  await openSearch(page);
   await labelled(page, SEARCH_FIELD).fill(`Kyoto temples ${mark}`);
   await labelled(page, `Search for Kyoto temples ${mark}`).click();
   await expect(page).toHaveURL(/q=/);
 
   await page.goto('/discover');
-  await labelled(page, SEARCH_FIELD).click();
+  await openSearch(page);
 
   await expect(page.getByText(/recent/i).first()).toBeVisible();
   await expect

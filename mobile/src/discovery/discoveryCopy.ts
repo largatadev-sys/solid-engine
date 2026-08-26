@@ -36,7 +36,23 @@ export function tripCountLine(count: number): string {
 }
 
 
-export const SEARCH_CANCEL_LABEL = 'Cancel';
+export const TRIPS_GROUP_LABEL = 'Trips';
+
+export const SEARCH_BACK_LABEL = 'Back to Discover';
+
+export const DISCOVER_TITLE = 'Discover';
+
+export const DISCOVER_SEARCH_LABEL = 'Search destinations, itineraries and people';
+
+export const NO_TRIPS_SUPPORT = 'Try a destination or itinerary name.';
+
+
+export function noTripsMatchTitle(query: string): string {
+  return `No trips match "${query}"`;
+}
+
+
+export const SEARCH_DISMISS_LABEL = 'Close search';
 
 export const RECENT_SECTION_LABEL = 'Recent';
 

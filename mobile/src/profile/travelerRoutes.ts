@@ -4,6 +4,10 @@ export const PUBLIC_PROFILE_PATHNAME = '/travelers/[handle]';
 
 export const PEOPLE_RESULTS_PATHNAME = '/discovery-people';
 
+export const FOLLOWERS_PATHNAME = '/travelers/[handle]/followers';
+
+export const FOLLOWING_PATHNAME = '/travelers/[handle]/following';
+
 
 export type TravelerDestination =
   | { readonly kind: 'own' }
@@ -44,6 +48,22 @@ export function peopleResultsRoute(query: string): {
   params: { q: string };
 } {
   return { pathname: PEOPLE_RESULTS_PATHNAME, params: { q: query } };
+}
+
+
+export function followersRoute(handle: string): {
+  pathname: typeof FOLLOWERS_PATHNAME;
+  params: { handle: string };
+} {
+  return { pathname: FOLLOWERS_PATHNAME, params: { handle } };
+}
+
+
+export function followingRoute(handle: string): {
+  pathname: typeof FOLLOWING_PATHNAME;
+  params: { handle: string };
+} {
+  return { pathname: FOLLOWING_PATHNAME, params: { handle } };
 }
 
 

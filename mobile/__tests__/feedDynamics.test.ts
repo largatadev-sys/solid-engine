@@ -103,7 +103,12 @@ describe('the screen wires the dynamics the way the mock describes', () => {
 
   it('moves the header by transform rather than by unmounting it', () => {
     expect(SCREEN).toContain('translateY: slide');
-    expect(SCREEN).toContain('-feedMetrics.headerHeight');
+    expect(SCREEN).toContain('toValue: header.hidden ? -chromeHeight : 0');
+  });
+
+  it('slides the chrome by what it MEASURES, since S4.37 put a chip row under the header', () => {
+    expect(SCREEN).toContain('setChromeHeight(event.nativeEvent.layout.height)');
+    expect(SCREEN).toContain('useState<number>(feedMetrics.headerHeight)');
   });
 
   it('never moves scroll on the poll — the pill is the only door', () => {
