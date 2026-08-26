@@ -186,6 +186,19 @@ test('the own Profile tab opens its own following list from the same cell', asyn
 });
 
 
+test('the list screens draw their own header and no navigator one above it', async ({ page }) => {
+  for (const which of ['followers', 'following']) {
+    await page.goto(`/travelers/${follower.handle}/${which}`);
+    await expect(page.getByText(which === 'followers' ? FOLLOWERS_TITLE : FOLLOWING_TITLE).last())
+      .toBeVisible({ timeout: 20_000 });
+
+    const shown = await page.evaluate(() => document.body.innerText);
+    expect(shown, 'the route pattern must never render as a title').not.toContain('[handle]');
+    expect(shown).not.toContain('travelers/');
+  }
+});
+
+
 test('following nobody renders the empty state and its door into People search', async ({ page }) => {
   await page.goto(`/travelers/${follower.handle}/following`);
 

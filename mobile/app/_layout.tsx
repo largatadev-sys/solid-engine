@@ -98,7 +98,7 @@ function AuthGate() {
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="join/[token]" options={{ headerShown: false }} />
-        <Stack.Screen name="travelers/[handle]" options={{ headerShown: false }} />
+        <Stack.Screen name="travelers" options={{ headerShown: false }} />
       </Stack>
 
       {settling && <Splash overlay />}

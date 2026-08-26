@@ -202,6 +202,14 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('shows no navigator header anywhere — every heading is drawn as page content', () => {
     expect(read(TABS, '_layout.tsx')).toContain('headerShown: false');
     expect(read(TRIPS_GROUP, '_layout.tsx')).toContain('headerShown: false');
+    expect(read(APP, 'travelers', '_layout.tsx')).toContain('headerShown: false');
+  });
+
+  it('suppresses the header for the whole travelers subtree, not one route at a time', () => {
+    const root = read(APP, '_layout.tsx');
+
+    expect(root).toContain('<Stack.Screen name="travelers" options={{ headerShown: false }} />');
+    expect(root).not.toContain('name="travelers/[handle]"');
   });
 
   const FULL_BLEED = [
