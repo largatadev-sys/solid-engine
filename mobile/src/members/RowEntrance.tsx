@@ -7,6 +7,7 @@ import { travelerMotion } from '../theme/workspaceTokens';
 interface RowEntranceProps {
   readonly delayMs?: number;
   readonly durationMs?: number;
+  readonly risePx?: number;
   readonly replayKey?: number | string;
   readonly style?: StyleProp<ViewStyle>;
   readonly children: ReactNode;
@@ -16,6 +17,7 @@ interface RowEntranceProps {
 export function RowEntrance({
   delayMs = 0,
   durationMs = travelerMotion.rowEntranceMs,
+  risePx = travelerMotion.rowRisePx,
   replayKey,
   style,
   children,
@@ -36,7 +38,7 @@ export function RowEntrance({
 
   const translateY = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [travelerMotion.rowRisePx, 0],
+    outputRange: [risePx, 0],
   });
 
   return (

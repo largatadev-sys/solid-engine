@@ -123,3 +123,21 @@ Nothing about the three differs by signing key, so the body's release walk close
 **Disputed, briefly:** the review called `TravelersTabEventsIT`'s `.as()` descriptions *why*-knowledge that 06b §10 puts in the spec. Existing ITs in this tree carry exactly this weight (`EventFanoutIT`'s *"ADR-030 says `at` is a UTC instant. Jackson renders an Instant as a decimal epoch by default…"*), so it is house style rather than a violation. An assertion message explains what a failure means; that is its job.
 
 **Still unproven and NOT closed** (recorded rather than ticked): **AC 11's negative** — *"a reconnect while parked on an unfocused-list screen issues no request until focus returns"* — is asserted only at the option level (`refetchType: 'none'` in a Jest test), never as an observed request count. `trackApiTraffic` exists and is used in two other specs; this one would need it. And **AC 2's render half for the save**: the walk asserts the `plan.saved` frame arrives, not that the card re-renders. Both are test-coverage gaps rather than defects, and both should be closed before anyone calls the story fully proven.
+
+**2026-08-26 — `live-travelers.spec.ts:56` is red in CI, diagnosed from S4.36's gate. The diagnosis is recorded here so this gate does not re-derive it.**
+
+**It is not a product defect, and it is not the assertion failing.** The test dies at **line 65** — `await ownerSettled()`, the *setup* — so it never reaches the audience-rule assertion it exists to prove. CI's message is `trackApiTraffic`'s own: *"the screen must stop fetching before its request count means anything"*.
+
+**The mechanism.** `trackApiTraffic` settles on a quiet second: nothing in flight, and `state.total` unchanged since the previous 1-second sample, giving up at 45s. Its filter is `url.includes('/v1/')` — which **counts the socket's own handshake**, `POST /v1/ws-ticket`, because that goes through `apiClient`. On a slow runner the reconnect backoff (1s → 2s → 4s, capped at 30s) keeps landing inside the sampling window, and each reconnect fires *two* counted things: the ticket, and `markStaleOnReconnect` refetching every stale query. The count never stops moving.
+
+**Why it reads as a product failure and is not:** it **passes locally in ~8 seconds** against the same code, because the socket is stable here. The discriminating fact is the environment, not the branch.
+
+**It pre-dates S4.36.** The CI run at `fb73bd7` — S4.36's branch point, before a line of that story's code — failed the same spec, and no S4.36 file touches `src/ws/`, the Travelers tab, or this spec.
+
+**The fix is harness-only, and belongs to this gate:**
+1. Stop counting the handshake — `url.includes('/v1/') && !url.includes('/v1/ws-ticket')`. It is transport housekeeping, not screen traffic, and counting it is what makes the quiet window unreachable.
+2. Settle on **N consecutive quiet samples** rather than one, so a single late reconnect-driven refetch does not reset the wait.
+
+**Verify it on CI, not locally** — the failure does not reproduce here, so a local green proves nothing about it. That is the same shape as this repo's stale-bundle and shared-profile traps: *check the state the harness actually has.*
+
+**Cost of leaving it:** `REGRESSION_CHECKLIST.md` line 30 records the invariant as **UNGUARDED** in as many words — the test is correct but its failure carries no signal, so adding a payload to `join-request.arrived` would leak the requester's identity to every member of the trip with nothing red to stop it.

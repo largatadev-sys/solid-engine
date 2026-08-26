@@ -17,6 +17,7 @@ import type {
   DiscoverySuggestionsResponse,
   Page,
   TrendingDestinationResponse,
+  PeoplePageResponse,
 } from '../types/api';
 
 
@@ -27,6 +28,7 @@ export const discoveryKeys = {
   recommended: () => [...discoveryKeys.all, 'recommended'] as const,
   trending: () => [...discoveryKeys.all, 'trending'] as const,
   suggestions: (query: string) => [...discoveryKeys.all, 'suggestions', query] as const,
+  people: (query: string) => [...discoveryKeys.all, 'people', query] as const,
 };
 
 
@@ -87,5 +89,21 @@ export function useSearchSuggestions(
     queryKey: discoveryKeys.suggestions(query.trim()),
     queryFn: () => discoveryRepository.fetchSuggestions(query.trim()),
     enabled: kind === 'signedIn' && searchesFor(query),
+  });
+}
+
+
+export function usePeopleSearch(
+  query: string,
+): UseInfiniteQueryResult<InfiniteData<PeoplePageResponse>, Error> {
+  const { kind } = useAuth();
+  const trimmed = query.trim();
+  return useInfiniteQuery({
+    queryKey: discoveryKeys.people(trimmed),
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+      discoveryRepository.fetchPeople(trimmed, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: PeoplePageResponse) => lastPage.nextCursor ?? undefined,
+    enabled: kind === 'signedIn' && searchesFor(trimmed),
   });
 }

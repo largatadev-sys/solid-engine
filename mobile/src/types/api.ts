@@ -387,7 +387,23 @@ export type DiaryTripResponse = {
 
 export type ProfileStatsResponse = {
   publishedCount: number;
-  tripCount: number;
+  destinationCount: number;
+};
+
+
+export type PeoplePageResponse = {
+  items: TravelerCardResponse[];
+  nextCursor: string | null;
+  totalCount: number;
+};
+
+
+export type PublicProfileResponse = {
+  traveler: TravelerCardResponse;
+  bio: string | null;
+  vanityNumber: string | null;
+  publishedCount: number;
+  destinationCount: number;
 };
 
 
@@ -426,6 +442,8 @@ export type DiscoveryCountResponse = {
 export type DiscoverySuggestionsResponse = {
   destinations: string[];
   itineraries: string[];
+  people?: TravelerCardResponse[];
+  morePeople?: boolean;
 };
 
 

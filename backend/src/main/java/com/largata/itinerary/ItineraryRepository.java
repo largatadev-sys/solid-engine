@@ -55,6 +55,11 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
     long countPublishedAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
 
 
+    @Query("SELECT COUNT(DISTINCT lower(trim(i.destination))) FROM Itinerary i "
+            + "WHERE i.id IN :itineraryIds AND trim(i.destination) <> ''")
+    long countDestinationsAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
+
+
     String ON_THE_STRANGERS_SURFACE = """
             i.published = true
               AND i.visibility = 'PUBLIC'
@@ -220,4 +225,42 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
     @Query(value = "SELECT share_card_version FROM itinerary WHERE id = :itineraryId", nativeQuery = true)
     Long shareCardVersionOf(@Param("itineraryId") UUID itineraryId);
+
+    @Query(value = """
+            SELECT count(*) FROM itinerary i
+            WHERE i.owner_id = :ownerId
+              AND
+            """ + ON_THE_STRANGERS_SURFACE, nativeQuery = true)
+    long countOnTheStrangersSurface(
+            @Param("ownerId") UUID ownerId, @Param("archivedIds") String archivedIds);
+
+
+    @Query(value = """
+            SELECT count(DISTINCT lower(trim(i.destination))) FROM itinerary i
+            WHERE i.owner_id = :ownerId
+              AND trim(i.destination) <> ''
+              AND
+            """ + ON_THE_STRANGERS_SURFACE, nativeQuery = true)
+    long countDestinationsOnTheStrangersSurface(
+            @Param("ownerId") UUID ownerId, @Param("archivedIds") String archivedIds);
+
+
+    @Query(value = """
+            SELECT * FROM itinerary i
+            WHERE i.owner_id = :ownerId
+              AND
+            """ + ON_THE_STRANGERS_SURFACE + """
+              AND (CAST(:cursorId AS uuid) IS NULL
+                   OR i.published_at < CAST(:cursorAt AS timestamptz)
+                   OR (i.published_at = CAST(:cursorAt AS timestamptz)
+                       AND i.id < CAST(:cursorId AS uuid)))
+            ORDER BY i.published_at DESC, i.id DESC
+            LIMIT :pageSize
+            """, nativeQuery = true)
+    List<Itinerary> findStrangersSurfacePage(
+            @Param("ownerId") UUID ownerId,
+            @Param("archivedIds") String archivedIds,
+            @Param("cursorAt") Instant cursorAt,
+            @Param("cursorId") UUID cursorId,
+            @Param("pageSize") int pageSize);
 }

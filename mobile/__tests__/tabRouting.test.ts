@@ -1024,12 +1024,14 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(existsSync(join(TRIPS, '[id]', 'travelers'))).toBe(false);
   });
 
-  it('greys Visit Profile through the shared helper, so it SAYS something on both platforms', () => {
+  it('opens Visit Profile for real, and keeps no refusal or greying behind (S4.36 ticket 05)', () => {
     const dialog = read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx');
 
-    expect(dialog).toContain("comingSoon('profile')");
+    expect(dialog).toContain('openProfile(shown?.handle ?? null)');
+    expect(dialog).not.toContain('comingSoon');
+    expect(dialog).not.toContain('GREYED_OPACITY');
     expect(dialog).not.toMatch(/disabled=\{true\}/);
-    expect(COMING_SOON_SURFACES).toHaveProperty('profile');
+    expect(COMING_SOON_SURFACES).not.toHaveProperty('profile');
   });
 
   it('reads the three axes through helpers, never by comparing them inline (ADR-019)', () => {

@@ -34,10 +34,6 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
             @Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
 
 
-    @Query("SELECT COUNT(m) FROM Membership m WHERE m.travelerId = :travelerId "
-            + "AND m.workspace.state <> :state")
-    long countItinerariesNotIn(@Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
-
 
     @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
             + "AND (m.workspace.state <> :state OR m.role = com.largata.common.authz.Role.OWNER)")

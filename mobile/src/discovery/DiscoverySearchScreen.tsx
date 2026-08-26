@@ -23,6 +23,7 @@ import {
   profileColors,
   profileMetrics,
   profileTypography,
+  publicProfileMotion,
   workspaceColors,
 } from '../theme/workspaceTokens';
 import {
@@ -35,6 +36,11 @@ import {
   SUGGESTED_ITINERARIES_LABEL,
   SUGGESTED_SECTION_LABEL,
 } from './discoveryCopy';
+import { RowEntrance } from '../members/RowEntrance';
+import { PersonRow } from '../profile/PersonRow';
+import { trackPeopleResultTapped } from '../profile/profileEvents';
+import { PEOPLE_GROUP_LABEL, SEE_ALL_PEOPLE_LABEL } from '../profile/publicProfileCopy';
+import { peopleResultsRoute, publicProfileRoute } from '../profile/travelerRoutes';
 import { resultsRoute } from './discoveryRoutes';
 import { clearedRecents, forgetSearch, rememberSearch } from './recentSearches';
 import { loadRecents, saveRecents } from './recentsStore';
@@ -72,8 +78,19 @@ export function DiscoverySearchScreen() {
     router.replace(resultsRoute({ query: null, destination, duration: null }));
   }
 
+  function openPeople(query: string) {
+    const submittable = submittableQuery(query);
+    if (submittable === null) {
+      return;
+    }
+    Keyboard.dismiss();
+    router.push(peopleResultsRoute(submittable));
+  }
+
   const suggestedDestinations = suggestions.data?.destinations ?? [];
   const suggestedItineraries = suggestions.data?.itineraries ?? [];
+  const suggestedPeople = suggestions.data?.people ?? [];
+  const morePeople = suggestions.data?.morePeople ?? false;
   const typing = typed.trim() !== "";
 
   return (
@@ -110,6 +127,45 @@ export function DiscoverySearchScreen() {
       >
         {typing ? (
           <>
+            {suggestedPeople.length > 0 && (
+              <View style={styles.group}>
+                <Text style={styles.groupLabel}>{PEOPLE_GROUP_LABEL}</Text>
+                {suggestedPeople.map((person, index) => (
+                  <RowEntrance
+                    key={person.id}
+                    replayKey={person.id}
+                    durationMs={publicProfileMotion.suggestionRiseMs}
+                    risePx={publicProfileMotion.suggestionRisePx}
+                    delayMs={Math.min(index, publicProfileMotion.suggestionCap - 1) * publicProfileMotion.suggestionStepMs}
+                  >
+                  <PersonRow
+                    person={person}
+                    compact
+                    onPress={() => {
+                      if (person.handle === null) return;
+                      trackPeopleResultTapped(person.id, 'suggestions');
+                      Keyboard.dismiss();
+                      router.push(publicProfileRoute(person.handle));
+                    }}
+                  />
+                  </RowEntrance>
+                ))}
+                {morePeople && (
+                <Pressable
+                  style={styles.seeAllPeople}
+                  onPress={() => openPeople(typed)}
+                  accessibilityRole="button"
+                  accessibilityLabel={SEE_ALL_PEOPLE_LABEL}
+                >
+                  <View style={styles.seeAllCircle}>
+                    <Icon name="chevronRight" size={15} color={profileColors.meta} />
+                  </View>
+                  <Text style={styles.seeAllLabel}>{SEE_ALL_PEOPLE_LABEL}</Text>
+                </Pressable>
+                )}
+              </View>
+            )}
+
             {suggestedDestinations.length > 0 && (
               <View style={styles.group}>
                 <View style={styles.groupHeader}>
@@ -328,6 +384,27 @@ const styles = StyleSheet.create({
   },
   rowTap: {
     flex: 1,
+  },
+  seeAllPeople: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm3,
+    paddingVertical: spacing.sm2,
+    paddingHorizontal: spacing.sm3,
+  },
+  seeAllCircle: {
+    width: profileMetrics.personSuggestion,
+    height: profileMetrics.personSuggestion,
+    borderRadius: profileMetrics.personSuggestion / 2,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: profileColors.rowChevron,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seeAllLabel: {
+    ...profileTypography.editPill,
+    color: profileColors.avatarInk,
   },
   rowLabel: {
     ...discoveryTypography.searchField,

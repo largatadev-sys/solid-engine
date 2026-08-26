@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
+import { useOpenTravelerProfile } from '../profile/useOpenTravelerProfile';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
 import { dragToScroll } from '../components/stripScroll';
@@ -137,6 +138,7 @@ function PublishedHeader({
   const pill = destinationPillLabel(projection.destination);
   const duration = durationLabel(projection.durationDays);
   const total = estimatedTotalLabel(projection.estimatedCost);
+  const openProfile = useOpenTravelerProfile();
   const handle = bylineHandle(projection.creator.handle);
 
   return (
@@ -156,11 +158,18 @@ function PublishedHeader({
       </View>
 
       <View style={styles.creatorRow}>
-        <CreatorAvatar creator={projection.creator} />
-        <View style={styles.creatorNames}>
-          <Text style={styles.creatorName}>{projection.creator.displayName}</Text>
-          {handle !== undefined && <Text style={styles.creatorHandle}>{handle}</Text>}
-        </View>
+        <Pressable
+          style={styles.creatorTap}
+          onPress={() => openProfile(projection.creator.handle)}
+          accessibilityRole="button"
+          accessibilityLabel={`Open the profile of ${projection.creator.displayName}`}
+        >
+          <CreatorAvatar creator={projection.creator} />
+          <View style={styles.creatorNames}>
+            <Text style={styles.creatorName}>{projection.creator.displayName}</Text>
+            {handle !== undefined && <Text style={styles.creatorHandle}>{handle}</Text>}
+          </View>
+        </Pressable>
         {audience === 'consumer' && (
           <Pressable
             style={styles.followButton}
@@ -369,6 +378,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   creatorInitials: { ...typography.label, color: colors.accent },
+  creatorTap: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
   creatorNames: { flex: 1 },
   creatorName: { ...typography.label, color: colors.textPrimary },
   creatorHandle: { ...typography.caption, color: colors.textSecondary },

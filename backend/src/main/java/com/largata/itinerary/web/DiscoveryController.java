@@ -2,12 +2,14 @@ package com.largata.itinerary.web;
 
 import com.largata.common.api.Page;
 import com.largata.identity.Traveler;
+import com.largata.identity.api.TravelerCardResponse;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.DiscoveryFilters;
 import com.largata.itinerary.DiscoveryService;
 import com.largata.itinerary.api.DiscoveryCardResponse;
 import com.largata.itinerary.api.DiscoveryCountResponse;
 import com.largata.itinerary.api.DiscoverySuggestionsResponse;
+import com.largata.itinerary.api.PeoplePageResponse;
 import com.largata.itinerary.api.TrendingDestinationResponse;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -64,6 +66,16 @@ class DiscoveryController {
     @GetMapping("/suggestions")
     DiscoverySuggestionsResponse suggestions(
             @CurrentTraveler Traveler traveler, @RequestParam(required = false) String q) {
-        return discovery.suggestions(DiscoveryFilters.of(q, null, null));
+        return discovery.suggestions(DiscoveryFilters.of(q, null, null), traveler.id());
+    }
+
+
+    @GetMapping("/people")
+    PeoplePageResponse people(
+            @CurrentTraveler Traveler traveler,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit) {
+        return discovery.people(q, traveler.id(), cursor, limit);
     }
 }

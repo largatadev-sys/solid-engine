@@ -6,6 +6,8 @@ import type {
   DiscoverySuggestionsResponse,
   Page,
   TrendingDestinationResponse,
+  PeoplePageResponse,
+  TravelerCardResponse,
 } from '../types/api';
 
 
@@ -42,6 +44,14 @@ export const discoveryRepository = {
   async fetchSuggestions(query: string): Promise<DiscoverySuggestionsResponse> {
     return apiClient.get<DiscoverySuggestionsResponse>(
       `/v1/discovery/suggestions?q=${encodeURIComponent(query)}`,
+    );
+  },
+
+
+  async fetchPeople(query: string, cursor?: string): Promise<PeoplePageResponse> {
+    const paged = cursor === undefined ? '' : `&cursor=${encodeURIComponent(cursor)}`;
+    return apiClient.get<PeoplePageResponse>(
+      `/v1/discovery/people?q=${encodeURIComponent(query)}${paged}`,
     );
   },
 };

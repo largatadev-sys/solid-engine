@@ -78,6 +78,42 @@ public class TravelerService {
     }
 
 
+    @Transactional(readOnly = true)
+    public List<TravelerSummary> searchPeople(
+            String rawQuery, UUID callerId, UUID cursorId, int pageSize) {
+        return PeopleQuery.of(rawQuery)
+                .map(
+                        query ->
+                                travelers
+                                        .searchPeople(query.prefix(), callerId, cursorId, pageSize)
+                                        .stream()
+                                        .map(TravelerService::summaryOf)
+                                        .toList())
+                .orElseGet(List::of);
+    }
+
+
+    @Transactional(readOnly = true)
+    public long countPeople(String rawQuery, UUID callerId) {
+        return PeopleQuery.of(rawQuery)
+                .map(query -> travelers.countPeople(query.prefix(), callerId))
+                .orElse(0L);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<TravelerSummary> onboardedByExactHandle(String rawHandle) {
+        String normalized = Handle.normalize(rawHandle);
+        if (normalized.isEmpty()) {
+            return Optional.empty();
+        }
+        return travelers
+                .findByHandle(normalized)
+                .filter(Traveler::onboardingCompleted)
+                .map(TravelerService::summaryOf);
+    }
+
+
     private static TravelerSummary summaryOf(Traveler t) {
         return new TravelerSummary(
                 t.id(), t.displayName(), t.handle(), t.avatarUrl(), t.bio(), t.vanityNumber());
