@@ -35,11 +35,12 @@ describe('the search bar holds still across discovery (S4.37)', () => {
 
   it('is the only definition — no screen builds its own field', () => {
     for (const screen of SCREENS) {
-      const source = read('src', 'discovery', screen);
-
-      expect(source).not.toContain('discoveryMetrics.searchBarPadding');
-      expect(source).not.toContain('searchBar: {');
+      expect(read('src', 'discovery', screen)).not.toContain('searchBar: {');
     }
+  });
+
+  it('left no retired padding token behind for a future screen to reach for', () => {
+    expect(read('src', 'theme', 'workspaceTokens.ts')).not.toContain('searchBarPadding');
   });
 
   it('draws its glyph from the shared constants, never a per-screen guess', () => {

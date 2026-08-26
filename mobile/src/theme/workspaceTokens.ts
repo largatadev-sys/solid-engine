@@ -321,7 +321,6 @@ export const discoveryMetrics = {
   grabberRadius: 2,
   badgeSize: 16,
   pillRadius: 999,
-  searchBarPadding: 14,
   searchFieldPadding: 12,
   searchFieldFocusedPadding: 13,
   searchFieldGlyph: 16,
