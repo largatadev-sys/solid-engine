@@ -9,8 +9,10 @@ import {
   View,
   type ViewToken,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { useSafeBack } from '../navigation/safeBack';
 import { RowEntrance } from '../members/RowEntrance';
 import { PersonRow } from '../profile/PersonRow';
 import { PEOPLE_GROUP_LABEL, SEE_ALL_PEOPLE_LABEL } from '../profile/publicProfileCopy';
@@ -47,6 +49,7 @@ import {
   NO_TRIPS_SUPPORT,
   RESULTS_LOAD_FAILED,
   RESULTS_RETRY_LABEL,
+  SEARCH_BACK_LABEL,
   SEARCH_PLACEHOLDER,
   resultCountLine,
   SEARCH_RETRY_ACTION,
@@ -80,6 +83,8 @@ export function DiscoveryResultsScreen() {
     [params.q, params.destination, params.duration],
   );
   const [filtering, setFiltering] = useState(false);
+  const insets = useSafeAreaInsets();
+  const goBack = useSafeBack(DISCOVER_TAB_ROUTE);
 
   const browse = useDiscoveryBrowse(filters);
   const matched = useDiscoveryCount(filters, true);
@@ -124,44 +129,50 @@ export function DiscoveryResultsScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader
-        title={filters.query ?? BROWSE_ALL_TITLE}
-        size="heading"
-        back
-        backTo={DISCOVER_TAB_ROUTE}
-      />
-
-      <View style={styles.searchRow}>
-        <Pressable
-          style={styles.searchBar}
-          onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
-          accessibilityRole="button"
-          accessibilityLabel={
-            filters.query === null
-              ? SEARCH_PLACEHOLDER
-              : `Edit the search for ${filters.query}`
-          }
-        >
-          <Icon name="search" size={16} color={profileColors.meta} />
-          <Text style={styles.searchLabel} numberOfLines={1}>
-            {filters.query ?? SEARCH_PLACEHOLDER}
-          </Text>
-        </Pressable>
-        {filters.query !== null && (
+      {filters.query === null ? (
+        <ScreenHeader title={BROWSE_ALL_TITLE} size="heading" back backTo={DISCOVER_TAB_ROUTE} />
+      ) : (
+        <View style={[styles.headerRow, { paddingTop: insets.top }]}>
           <Pressable
-            onPress={() =>
-              router.replace(resultsRoute({ ...filters, query: null }))
-            }
+            style={styles.back}
+            onPress={goBack}
             accessibilityRole="button"
-            accessibilityLabel={`Clear the search for ${filters.query}`}
+            accessibilityLabel={SEARCH_BACK_LABEL}
           >
-            <Icon name="close" size={14} color={profileColors.chevron} />
+            <Icon name="back" size={20} color={workspaceColors.title} />
           </Pressable>
-        )}
-      </View>
+          <Pressable
+            style={styles.field}
+            onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit the search for ${filters.query}`}
+          >
+            <Icon name="search" size={16} color={profileColors.meta} />
+            <Text style={styles.query} numberOfLines={1}>
+              {filters.query}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      {filters.query === null && (
+        <View style={styles.searchRow}>
+          <Pressable
+            style={styles.searchBar}
+            onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
+            accessibilityRole="button"
+            accessibilityLabel={SEARCH_PLACEHOLDER}
+          >
+            <Icon name="search" size={16} color={profileColors.meta} />
+            <Text style={styles.searchLabel} numberOfLines={1}>
+              {SEARCH_PLACEHOLDER}
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={styles.controls}>
-        <Text style={styles.count}>
+        <Text style={filters.query === null ? styles.count : styles.countLine}>
           {filters.query === null
             ? resultCountLine(tripsMatched)
             : combinedCountLine(peopleMatched, tripsMatched)}
@@ -366,6 +377,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm2,
+    paddingHorizontal: spacing.md2,
+    paddingBottom: spacing.sm2,
+  },
+  back: {
+    width: discoveryMetrics.backButton,
+    height: discoveryMetrics.backButton,
+    borderRadius: discoveryMetrics.backButton / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  field: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm3,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm3,
+    backgroundColor: workspaceColors.pressed,
+    borderWidth: 1,
+    borderColor: workspaceColors.hairline,
+    borderRadius: profileMetrics.statsRadius,
+  },
+  query: {
+    flex: 1,
+    ...discoveryTypography.searchField,
+    color: workspaceColors.title,
+  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -400,6 +444,10 @@ const styles = StyleSheet.create({
   count: {
     ...profileTypography.sectionTitle,
     color: workspaceColors.title,
+  },
+  countLine: {
+    ...profileTypography.countLine,
+    color: profileColors.meta,
   },
   filterButton: {
     flexDirection: 'row',

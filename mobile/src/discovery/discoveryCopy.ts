@@ -38,6 +38,8 @@ export function tripCountLine(count: number): string {
 
 export const TRIPS_GROUP_LABEL = 'Trips';
 
+export const SEARCH_BACK_LABEL = 'Back to search';
+
 export const NO_TRIPS_SUPPORT = 'Try a destination or itinerary name.';
 
 

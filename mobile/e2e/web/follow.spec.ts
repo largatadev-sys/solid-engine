@@ -19,6 +19,7 @@ import {
   followFailedToast,
 } from '../../src/profile/publicProfileCopy';
 import { FEED_SCOPE_ALL, FEED_SCOPE_FOLLOWING, FOLLOWING_EMPTY_TITLE } from '../../src/feed/feedCopy';
+import { NO_TRIPS_SUPPORT, noTripsMatchTitle } from '../../src/discovery/discoveryCopy';
 import { HOME_TAB_ROUTE, PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 
 const FOLLOWER = ownerTagFor('web/follow');
@@ -231,6 +232,33 @@ test('Home lands on All at every cold start, and Following narrows the feed', as
     page.locator(`[aria-label="${FEED_SCOPE_ALL}" i]`).locator('visible=true').last(),
     'the choice is remembered only while the app runs',
   ).toHaveAttribute('aria-selected', 'true', { timeout: 20_000 });
+});
+
+
+test('the results screen shows the query once, in the field, per frame 4', async ({ page }) => {
+  const query = followed.handle.slice(0, 5);
+  await page.goto(`/discovery-results?q=${query}`);
+
+  await expect(labelled(page, `Edit the search for ${query}`)).toBeVisible({ timeout: 20_000 });
+
+  const shown = await page.evaluate(() => document.body.innerText);
+  const echoed = shown
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line === query);
+  expect(echoed, 'a heading above the field repeated the query').toHaveLength(1);
+});
+
+
+test('a query only people match keeps the People group and says the trips half is empty (4b)', async ({
+  page,
+}) => {
+  const query = followed.handle;
+  await page.goto(`/discovery-results?q=${query}`);
+
+  await expect(page.getByText(`@${query}`).last()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(noTripsMatchTitle(query)).last()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(NO_TRIPS_SUPPORT).last()).toBeVisible();
 });
 
 
