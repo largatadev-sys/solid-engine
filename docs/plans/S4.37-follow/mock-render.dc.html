@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#F5F1EA; font-family:'Inter',-apple-system,sans-serif; }
+  a { color:#C2410C; } a:hover { color:#9A3412; }
+  @keyframes tabIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes rowIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration:1ms !important; transition-duration:1ms !important; } }
+</style>
+</helmet>
+<div style="display:flex; flex-direction:column; gap:32px; padding:44px 48px 72px; max-width:1900px;">
+
+  <div style="display:flex; flex-direction:column; gap:6px; max-width:960px;">
+    <div style="font-size:12px; font-weight:800; letter-spacing:2px; color:#78716C; text-transform:uppercase;">Largata · S4.37 · Follow</div>
+    <div style="font-size:30px; font-weight:800; color:#1C1917; line-height:1.15; letter-spacing:-0.5px;">Follow graph + people in executed search — interactive spec</div>
+    <div style="font-size:14px; line-height:1.6; color:#57534E;">Sibling of S4.36. <b>1a/1b</b> follower and following lists, <b>1c</b> their empty states, <b>2</b> the Following pill + Follows-you chip + live stat cells (tap the pill), <b>3</b> the Home All/Following filter (tap the chips), <b>3b</b> its empty state, <b>4/4b</b> executed search with a People group above Trips. Contracts C1&#8211;C8 and motion M1&#8211;M4 below.</div>
+  </div>
+
+  <div style="display:flex; gap:40px; flex-wrap:wrap; align-items:flex-start;">
+
+    <div id="1a" style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="#1a" style="background:#1C1917; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">1a</a>
+        <span style="font-size:13px; font-weight:600; color:#57534E;">Followers list</span>
+      </div>
+      <div style="width:393px; background:#FFFFFF; border-radius:28px; border:1px solid #E7E5E4; box-shadow:0 24px 48px rgba(28,25,23,.12); overflow:hidden; display:flex; flex-direction:column;" data-screen-label="Followers list">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px 6px;">
+          <span style="font-size:15px; font-weight:600; color:#1C1917;">9:41</span>
+          <div style="display:flex; align-items:flex-end; gap:2px;"><div style="width:3px; height:4px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:6px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:8px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:10px; background:#1C1917; border-radius:1px;"></div></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:6px 14px 0;">
+          <div style="width:36px; height:36px; border-radius:18px; display:flex; align-items:center; justify-content:center; cursor:pointer;" style-hover="background:#FAFAF9;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1C1917" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"></path></svg>
+          </div>
+          <span style="font-size:15px; font-weight:700; color:#1C1917;">Followers</span>
+        </div>
+        <div style="padding:10px 20px 4px;"><span style="font-size:13px; font-weight:600; color:#78716C;">128 followers</span></div>
+        <div style="display:flex; flex-direction:column; padding:0 8px 20px;">
+          <sc-for list="{{ followers }}" as="p" hint-placeholder-count="7">
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; cursor:pointer; animation:rowIn 200ms ease both; animation-delay:{{ p.delay }};" style-hover="background:#FAFAF9;">
+              <div style="width:44px; height:44px; border-radius:22px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.12) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center; flex:none;">
+                <span style="font-size:15px; font-weight:700; color:#C2410C;">{{ p.initials }}</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:1px; flex:1; min-width:0;">
+                <span style="font-size:15px; font-weight:700; color:#1C1917;">{{ p.name }}</span>
+                <span style="font-size:13px; color:#78716C;">{{ p.handle }}</span>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#D6D3D1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5L13 10l-5.5 5.5"></path></svg>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="#1b" style="background:#1C1917; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">1b</a>
+        <span style="font-size:13px; font-weight:600; color:#57534E;">Following list</span>
+      </div>
+      <div style="width:393px; background:#FFFFFF; border-radius:28px; border:1px solid #E7E5E4; box-shadow:0 24px 48px rgba(28,25,23,.12); overflow:hidden; display:flex; flex-direction:column;" data-screen-label="Following list">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px 6px;">
+          <span style="font-size:15px; font-weight:600; color:#1C1917;">9:41</span>
+          <div style="display:flex; align-items:flex-end; gap:2px;"><div style="width:3px; height:4px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:6px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:8px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:10px; background:#1C1917; border-radius:1px;"></div></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:6px 14px 0;">
+          <div style="width:36px; height:36px; border-radius:18px; display:flex; align-items:center; justify-content:center; cursor:pointer;" style-hover="background:#FAFAF9;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1C1917" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"></path></svg>
+          </div>
+          <span style="font-size:15px; font-weight:700; color:#1C1917;">Following</span>
+        </div>
+        <div style="padding:10px 20px 4px;"><span style="font-size:13px; font-weight:600; color:#78716C;">87 following</span></div>
+        <div style="display:flex; flex-direction:column; padding:0 8px 20px;">
+          <sc-for list="{{ followingList }}" as="p" hint-placeholder-count="6">
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; cursor:pointer; animation:rowIn 200ms ease both; animation-delay:{{ p.delay }};" style-hover="background:#FAFAF9;">
+              <div style="width:44px; height:44px; border-radius:22px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.12) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center; flex:none;">
+                <span style="font-size:15px; font-weight:700; color:#C2410C;">{{ p.initials }}</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:1px; flex:1; min-width:0;">
+                <span style="font-size:15px; font-weight:700; color:#1C1917;">{{ p.name }}</span>
+                <span style="font-size:13px; color:#78716C;">{{ p.handle }}</span>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#D6D3D1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5L13 10l-5.5 5.5"></path></svg>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div id="1c" style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="#1c" style="background:#1C1917; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">1c</a>
+        <span style="font-size:13px; font-weight:600; color:#57534E;">List empty states</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="width:340px; background:#FFFFFF; border-radius:20px; border:1px dashed #D6D3D1; padding:24px 28px 28px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; box-sizing:border-box;" data-screen-label="Followers empty">
+          <span style="align-self:flex-start; font-size:11px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">Followers · empty</span>
+          <div style="width:48px; height:48px; border-radius:24px; background:#FFF7ED; display:flex; align-items:center; justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"></circle><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"></path><path d="M16 8.5h5"></path><path d="M18.5 6v5"></path></svg>
+          </div>
+          <span style="font-size:15px; font-weight:700; color:#1C1917;">No followers yet</span>
+          <span style="font-size:13px; line-height:1.5; color:#78716C; max-width:240px;">When travelers follow you, they'll show up here.</span>
+        </div>
+        <div style="width:340px; background:#FFFFFF; border-radius:20px; border:1px dashed #D6D3D1; padding:24px 28px 28px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; box-sizing:border-box;" data-screen-label="Following empty">
+          <span style="align-self:flex-start; font-size:11px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">Following · empty</span>
+          <div style="width:48px; height:48px; border-radius:24px; background:#FFF7ED; display:flex; align-items:center; justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="#EA580C" stroke-width="1.6" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M13 13l5 5"></path></svg>
+          </div>
+          <span style="font-size:15px; font-weight:700; color:#1C1917;">Not following anyone yet</span>
+          <span style="font-size:13px; line-height:1.5; color:#78716C; max-width:240px;">Follow travelers to see their postcards in your Home feed.</span>
+          <div style="margin-top:4px; height:36px; padding:0 20px; border-radius:999px; background:#EA580C; color:#FFFFFF; font-size:13px; font-weight:700; display:flex; align-items:center; cursor:pointer; transition:transform 120ms ease;" style-active="transform:scale(0.96);" style-hover="background:#C2410C;">Find people</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="2" style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="#2" style="background:#1C1917; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">2</a>
+        <span style="font-size:13px; font-weight:600; color:#57534E;">Public profile — Following state + Follows-you chip (tap the pill)</span>
+      </div>
+      <div style="width:393px; background:#FFFFFF; border-radius:28px; border:1px solid #E7E5E4; box-shadow:0 24px 48px rgba(28,25,23,.12); overflow:hidden; display:flex; flex-direction:column;" data-screen-label="Public profile - Following state">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px 6px;">
+          <span style="font-size:15px; font-weight:600; color:#1C1917;">9:41</span>
+          <div style="display:flex; align-items:flex-end; gap:2px;"><div style="width:3px; height:4px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:6px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:8px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:10px; background:#1C1917; border-radius:1px;"></div></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:6px 14px 0;">
+          <div style="width:36px; height:36px; border-radius:18px; display:flex; align-items:center; justify-content:center; cursor:pointer;" style-hover="background:#FAFAF9;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1C1917" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"></path></svg>
+          </div>
+          <span style="font-size:15px; font-weight:700; color:#1C1917;">Profile</span>
+        </div>
+        <div style="padding:10px 20px 0; display:flex; flex-direction:column; gap:14px;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div style="width:72px; height:72px; border-radius:36px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.12) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center; flex:none;">
+              <span style="font-size:22px; font-weight:700; color:#C2410C;">MS</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:2px; flex:1;">
+              <span style="font-size:22px; font-weight:800; color:#1C1917;">Maya Santos</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:13px; color:#78716C;">@mayasantos · #23</span>
+                <span style="background:#F5F5F4; color:#78716C; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;">Follows you</span>
+              </div>
+              <span style="font-size:13.5px; color:#44403C;">Slow travel, fast ferries · PH x JP</span>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); border:1px solid #E7E5E4; border-radius:14px; padding:10px 0;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:1px;"><span style="font-size:16px; font-weight:700; color:#1C1917;">4</span><span style="font-size:11px; color:#78716C;">Published</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:1px; border-left:1px solid #F5F5F4;"><span style="font-size:16px; font-weight:700; color:#1C1917;">9</span><span style="font-size:11px; color:#78716C;">Destinations</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:1px; border-left:1px solid #F5F5F4; cursor:pointer; border-radius:8px;" style-hover="background:#FAFAF9;"><span style="font-size:16px; font-weight:700; color:#1C1917;">128</span><span style="font-size:11px; color:#78716C;">Followers</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:1px; border-left:1px solid #F5F5F4; cursor:pointer; border-radius:8px;" style-hover="background:#FAFAF9;"><span style="font-size:16px; font-weight:700; color:#1C1917;">87</span><span style="font-size:11px; color:#78716C;">Following</span></div>
+          </div>
+          <div onClick="{{ toggleFollow }}" style="height:40px; border-radius:999px; display:flex; align-items:center; justify-content:center; gap:7px; font-size:13.5px; font-weight:700; cursor:pointer; transition:background 180ms ease, color 180ms ease, border-color 180ms ease, transform 120ms ease; {{ followStyle }}" style-active="transform:scale(0.96);">
+            <sc-if value="{{ isFollowing }}" hint-placeholder-val="{{ true }}">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#1C1917" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7.5-8"></path></svg>
+            </sc-if>
+            <span>{{ followLabel }}</span>
+          </div>
+        </div>
+        <div style="display:flex; border-bottom:1px solid #E7E5E4; margin-top:6px;">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px 0 0;">
+            <span style="font-size:14px; font-weight:700; color:#EA580C;">Diary</span>
+            <div style="width:100%; height:3px; background:#EA580C; border-radius:100px 100px 0 0;"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px 0 0;">
+            <span style="font-size:14px; font-weight:500; color:#78716C;">Itineraries</span>
+            <div style="width:100%; height:3px;"></div>
+          </div>
+        </div>
+        <div style="padding:16px 20px 24px; display:flex; flex-direction:column; gap:12px;">
+          <div style="border:1px solid #E7E5E4; border-radius:16px; display:flex; align-items:center; gap:10px; padding:12px; cursor:pointer;" style-hover="background:#FAFAF9;">
+            <div style="width:44px; height:44px; border-radius:10px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.10) 0 6px,transparent 6px 12px),#FDE4CF; flex:none;"></div>
+            <div style="display:flex; flex-direction:column; gap:1px; flex:1;">
+              <span style="font-size:15px; font-weight:700; color:#1C1917;">Autumn in Kyoto</span>
+              <span style="font-size:12px; color:#78716C;">Kyoto, Japan · 6 days</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#A8A29E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"></path></svg>
+          </div>
+        </div>
+      </div>
+      <div style="width:361px; padding:12px 16px; background:#FFF; border:1px solid #E7E5E4; border-radius:12px; font-size:12.5px; line-height:1.55; color:#78716C;"><b style="color:#1C1917;">Failure toast</b> (revert per <a href="#c1">C1</a>): dark pill, bottom-anchored, 2.5s — <span style="background:#1C1917; color:#fff; font-size:11px; font-weight:600; padding:4px 12px; border-radius:999px; white-space:nowrap;">Couldn't follow @mayasantos</span></div>
+    </div>
+
+    <div id="3" style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="#3" style="background:#1C1917; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">3</a>
+        <span style="font-size:13px; font-weight:600; color:#57534E;">Home — All / Following filter (tap the chips)</span>
+      </div>
+      <div style="width:393px; background:#FFFFFF; border-radius:28px; border:1px solid #E7E5E4; box-shadow:0 24px 48px rgba(28,25,23,.12); overflow:hidden; display:flex; flex-direction:column;" data-screen-label="Home - Following filter">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px 6px;">
+          <span style="font-size:15px; font-weight:600; color:#1C1917;">9:41</span>
+          <div style="display:flex; align-items:flex-end; gap:2px;"><div style="width:3px; height:4px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:6px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:8px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:10px; background:#1C1917; border-radius:1px;"></div></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 20px; border-bottom:1px solid #F5F5F4;">
+          <span style="font-size:22px; font-weight:800; color:#1C1917; letter-spacing:-0.3px;">Largata</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:18px; cursor:pointer;" style-hover="background:#FAFAF9;"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1C1917" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M13 13l5 5" stroke-linecap="round"></path></svg></div>
+            <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:18px; cursor:pointer;" style-hover="background:#FAFAF9;"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1C1917" stroke-width="1.8"><path d="M10 2.5a5 5 0 0 0-5 5c0 4-1.7 5.5-1.7 5.5h13.4S15 11.5 15 7.5a5 5 0 0 0-5-5z" stroke-linejoin="round"></path><path d="M8.5 16.5a1.6 1.6 0 0 0 3 0" stroke-linecap="round"></path></svg></div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; padding:12px 20px 4px;">
+          <div onClick="{{ goAll }}" style="height:32px; padding:0 16px; border-radius:999px; display:flex; align-items:center; font-size:13px; font-weight:700; cursor:pointer; transition:background 160ms ease, color 160ms ease, border-color 160ms ease; {{ allChip }}">All</div>
+          <div onClick="{{ goFollowing }}" style="height:32px; padding:0 16px; border-radius:999px; display:flex; align-items:center; font-size:13px; font-weight:700; cursor:pointer; transition:background 160ms ease, color 160ms ease, border-color 160ms ease; {{ followingChip }}">Following</div>
+        </div>
+        <sc-if value="{{ onFollowingFeed }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:14px; padding:12px 16px 24px; animation:tabIn 200ms cubic-bezier(.2,0,0,1);">
+            <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:10px; padding:12px;">
+                <div style="width:36px; height:36px; border-radius:18px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.12) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center; flex:none;"><span style="font-size:13px; font-weight:700; color:#C2410C;">MS</span></div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:1px;">
+                  <div style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:14px; font-weight:700; color:#1C1917;">Maya Santos</span><span style="font-size:11px; color:#A8A29E;">2h</span></div>
+                  <span style="font-size:11px; font-weight:600; color:#C2410C;">Autumn in Kyoto · Day 2</span>
+                </div>
+              </div>
+              <div style="height:180px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.10) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center;"><span style="font-family:monospace; font-size:10px; color:#B45309;">postcard photo</span></div>
+              <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:13.5px; line-height:1.45; color:#44403C;">Fushimi Inari at dawn. Beat the crowds by two hours.</span>
+                <div style="display:flex; align-items:center; gap:6px;"><span style="color:#EA580C; font-size:14px;">&#9829;</span><span style="font-size:12px; font-weight:600; color:#78716C;">31 likes</span></div>
+              </div>
+            </div>
+            <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:10px; padding:12px;">
+                <div style="width:36px; height:36px; border-radius:18px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.12) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center; flex:none;"><span style="font-size:13px; font-weight:700; color:#C2410C;">MA</span></div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:1px;">
+                  <div style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:14px; font-weight:700; color:#1C1917;">Marco Alonzo</span><span style="font-size:11px; color:#A8A29E;">6h</span></div>
+                  <span style="font-size:11px; font-weight:600; color:#C2410C;">Siargao Surf Week · Day 5</span>
+                </div>
+              </div>
+              <div style="height:120px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.10) 0 6px,transparent 6px 12px),#FCEFD9; display:flex; align-items:center; justify-content:center;"><span style="font-family:monospace; font-size:10px; color:#B45309;">postcard photo</span></div>
+              <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:13.5px; line-height:1.45; color:#44403C;">Cloud 9 at golden hour never misses.</span>
+                <div style="display:flex; align-items:center; gap:6px;"><span style="color:#EA580C; font-size:14px;">&#9829;</span><span style="font-size:12px; font-weight:600; color:#78716C;">12 likes</span></div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ onAllFeed }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:14px; padding:12px 16px 24px; animation:tabIn 200ms cubic-bezier(.2,0,0,1);">
+            <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:10px; padding:12px;">
+                <div style="width:36px; height:36px; border-radius:18px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.12) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center; flex:none;"><span style="font-size:13px; font-weight:700; color:#C2410C;">NB</span></div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:1px;">
+                  <div style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:14px; font-weight:700; color:#1C1917;">Noor Bautista</span><span style="font-size:11px; color:#A8A29E;">1h</span></div>
+                  <span style="font-size:11px; font-weight:600; color:#C2410C;">Markets of Marrakech · Day 1</span>
+                </div>
+              </div>
+              <div style="height:180px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.10) 0 6px,transparent 6px 12px),#FCEFD9; display:flex; align-items:center; justify-content:center;"><span style="font-family:monospace; font-size:10px; color:#B45309;">postcard photo</span></div>
+              <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:13.5px; line-height:1.45; color:#44403C;">Jemaa el-Fnaa before the crowds arrive.</span>
+                <div style="display:flex; align-items:center; gap:6px;"><span style="color:#EA580C; font-size:14px;">&#9829;</span><span style="font-size:12px; font-weight:600; color:#78716C;">54 likes</span></div>
+              </div>
+            </div>
+            <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:10px; padding:12px;">
+                <div style="width:36px; height:36px; border-radius:18px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.12) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center; flex:none;"><span style="font-size:13px; font-weight:700; color:#C2410C;">MS</span></div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:1px;">
+                  <div style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:14px; font-weight:700; color:#1C1917;">Maya Santos</span><span style="font-size:11px; color:#A8A29E;">2h</span></div>
+                  <span style="font-size:11px; font-weight:600; color:#C2410C;">Autumn in Kyoto · Day 2</span>
+                </div>
+              </div>
+              <div style="height:120px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.10) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center;"><span style="font-family:monospace; font-size:10px; color:#B45309;">postcard photo</span></div>
+              <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+                <span style="font-size:13.5px; line-height:1.45; color:#44403C;">Fushimi Inari at dawn. Beat the crowds by two hours.</span>
+                <div style="display:flex; align-items:center; gap:6px;"><span style="color:#EA580C; font-size:14px;">&#9829;</span><span style="font-size:12px; font-weight:600; color:#78716C;">31 likes</span></div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div id="3b" style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="#3b" style="background:#1C1917; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">3b</a>
+        <span style="font-size:13px; font-weight:600; color:#57534E;">Home — Following empty state</span>
+      </div>
+      <div style="width:393px; background:#FFFFFF; border-radius:28px; border:1px solid #E7E5E4; box-shadow:0 24px 48px rgba(28,25,23,.12); overflow:hidden; display:flex; flex-direction:column;" data-screen-label="Home - Following empty">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px 6px;">
+          <span style="font-size:15px; font-weight:600; color:#1C1917;">9:41</span>
+          <div style="display:flex; align-items:flex-end; gap:2px;"><div style="width:3px; height:4px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:6px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:8px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:10px; background:#1C1917; border-radius:1px;"></div></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 20px; border-bottom:1px solid #F5F5F4;">
+          <span style="font-size:22px; font-weight:800; color:#1C1917; letter-spacing:-0.3px;">Largata</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:18px; cursor:pointer;" style-hover="background:#FAFAF9;"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1C1917" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M13 13l5 5" stroke-linecap="round"></path></svg></div>
+            <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:18px; cursor:pointer;" style-hover="background:#FAFAF9;"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1C1917" stroke-width="1.8"><path d="M10 2.5a5 5 0 0 0-5 5c0 4-1.7 5.5-1.7 5.5h13.4S15 11.5 15 7.5a5 5 0 0 0-5-5z" stroke-linejoin="round"></path><path d="M8.5 16.5a1.6 1.6 0 0 0 3 0" stroke-linecap="round"></path></svg></div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; padding:12px 20px 4px;">
+          <div style="height:32px; padding:0 16px; border-radius:999px; display:flex; align-items:center; font-size:13px; font-weight:700; background:#FFFFFF; border:1px solid #E7E5E4; color:#57534E; box-sizing:border-box;">All</div>
+          <div style="height:32px; padding:0 16px; border-radius:999px; display:flex; align-items:center; font-size:13px; font-weight:700; background:#EA580C; border:1px solid #EA580C; color:#FFFFFF; box-sizing:border-box;">Following</div>
+        </div>
+        <div style="padding:64px 32px 88px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;">
+          <div style="width:56px; height:56px; border-radius:28px; background:#FFF7ED; display:flex; align-items:center; justify-content:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"></circle><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"></path><path d="M16 8.5h5"></path><path d="M18.5 6v5"></path></svg>
+          </div>
+          <span style="font-size:15px; font-weight:700; color:#1C1917;">No postcards yet</span>
+          <span style="font-size:13px; line-height:1.5; color:#78716C; max-width:240px;">Postcards from travelers you follow will show up here.</span>
+          <div style="margin-top:4px; height:36px; padding:0 20px; border-radius:999px; background:#EA580C; color:#FFFFFF; font-size:13px; font-weight:700; display:flex; align-items:center; cursor:pointer; transition:transform 120ms ease;" style-active="transform:scale(0.96);" style-hover="background:#C2410C;">Find people</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="4" style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="#4" style="background:#1C1917; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">4</a>
+        <span style="font-size:13px; font-weight:600; color:#57534E;">Executed search — People above Trips</span>
+      </div>
+      <div style="width:393px; background:#FFFFFF; border-radius:28px; border:1px solid #E7E5E4; box-shadow:0 24px 48px rgba(28,25,23,.12); overflow:hidden; display:flex; flex-direction:column;" data-screen-label="Search results - people + trips">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px 6px;">
+          <span style="font-size:15px; font-weight:600; color:#1C1917;">9:41</span>
+          <div style="display:flex; align-items:flex-end; gap:2px;"><div style="width:3px; height:4px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:6px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:8px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:10px; background:#1C1917; border-radius:1px;"></div></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; padding:12px 20px 10px;">
+          <div style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:18px; cursor:pointer;" style-hover="background:#FAFAF9;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1C1917" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"></path></svg>
+          </div>
+          <div style="flex:1; display:flex; align-items:center; gap:12px; padding:12px 16px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:12px;">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#78716C" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M13 13l5 5" stroke-linecap="round"></path></svg>
+            <span style="font-size:15px; color:#1C1917; flex:1;">ma</span>
+          </div>
+        </div>
+        <div style="padding:4px 20px 8px;"><span style="font-size:13px; font-weight:600; color:#78716C;">6 people · 12 trips</span></div>
+        <div style="display:flex; flex-direction:column; padding:0 8px 20px;">
+          <div style="padding:6px 12px 4px;"><span style="font-size:12px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">People</span></div>
+          <sc-for list="{{ searchPeople }}" as="p" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:12px; cursor:pointer; animation:rowIn 200ms ease both; animation-delay:{{ p.delay }};" style-hover="background:#FAFAF9;">
+              <div style="width:36px; height:36px; border-radius:18px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.12) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center; flex:none;">
+                <span style="font-size:13px; font-weight:700; color:#C2410C;">{{ p.initials }}</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:0px; flex:1; min-width:0;">
+                <span style="font-size:14px; font-weight:700; color:#1C1917;">{{ p.name }}</span>
+                <span style="font-size:12px; color:#78716C;">{{ p.handle }}</span>
+              </div>
+            </div>
+          </sc-for>
+          <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; cursor:pointer;" style-hover="background:#FAFAF9;">
+            <div style="width:36px; height:36px; border-radius:18px; border:1px dashed #D6D3D1; display:flex; align-items:center; justify-content:center; flex:none;">
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#78716C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12"></path><path d="M11 5l5 5-5 5"></path></svg>
+            </div>
+            <span style="font-size:13.5px; font-weight:700; color:#C2410C;">See all people</span>
+          </div>
+          <div style="height:1px; background:#F5F5F4; margin:8px 12px;"></div>
+          <div style="padding:6px 12px 8px;"><span style="font-size:12px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">Trips</span></div>
+          <div style="display:flex; flex-direction:column; gap:12px; padding:0 8px;">
+            <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden; cursor:pointer;" style-hover="background:#FAFAF9;">
+              <div style="height:130px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.10) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center;"><span style="font-family:monospace; font-size:10px; color:#B45309;">cover photo</span></div>
+              <div style="padding:12px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:15px; font-weight:700; color:#1C1917;">Markets of Marrakech</span>
+                <span style="font-size:12px; color:#78716C;">Marrakech, Morocco · 4 days · by @noorb</span>
+              </div>
+            </div>
+            <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden; cursor:pointer;" style-hover="background:#FAFAF9;">
+              <div style="height:130px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.10) 0 6px,transparent 6px 12px),#FCEFD9; display:flex; align-items:center; justify-content:center;"><span style="font-family:monospace; font-size:10px; color:#B45309;">cover photo</span></div>
+              <div style="padding:12px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:15px; font-weight:700; color:#1C1917;">Manila Food Crawl</span>
+                <span style="font-size:12px; color:#78716C;">Manila, Philippines · 2 days · by @jebguardiario</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="4b" style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="#4b" style="background:#1C1917; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">4b</a>
+        <span style="font-size:13px; font-weight:600; color:#57534E;">Executed search — only people match</span>
+      </div>
+      <div style="width:393px; background:#FFFFFF; border-radius:28px; border:1px solid #E7E5E4; box-shadow:0 24px 48px rgba(28,25,23,.12); overflow:hidden; display:flex; flex-direction:column;" data-screen-label="Search results - people only">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px 6px;">
+          <span style="font-size:15px; font-weight:600; color:#1C1917;">9:41</span>
+          <div style="display:flex; align-items:flex-end; gap:2px;"><div style="width:3px; height:4px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:6px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:8px; background:#1C1917; border-radius:1px;"></div><div style="width:3px; height:10px; background:#1C1917; border-radius:1px;"></div></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; padding:12px 20px 10px;">
+          <div style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:18px; cursor:pointer;" style-hover="background:#FAFAF9;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1C1917" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"></path></svg>
+          </div>
+          <div style="flex:1; display:flex; align-items:center; gap:12px; padding:12px 16px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:12px;">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#78716C" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M13 13l5 5" stroke-linecap="round"></path></svg>
+            <span style="font-size:15px; color:#1C1917; flex:1;">martina</span>
+          </div>
+        </div>
+        <div style="padding:4px 20px 8px;"><span style="font-size:13px; font-weight:600; color:#78716C;">1 person · 0 trips</span></div>
+        <div style="display:flex; flex-direction:column; padding:0 8px 24px;">
+          <div style="padding:6px 12px 4px;"><span style="font-size:12px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">People</span></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:12px; cursor:pointer; animation:rowIn 200ms ease both;" style-hover="background:#FAFAF9;">
+            <div style="width:36px; height:36px; border-radius:18px; background:repeating-linear-gradient(135deg,rgba(234,88,12,.12) 0 6px,transparent 6px 12px),#FDE4CF; display:flex; align-items:center; justify-content:center; flex:none;">
+              <span style="font-size:13px; font-weight:700; color:#C2410C;">MR</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0px; flex:1; min-width:0;">
+              <span style="font-size:14px; font-weight:700; color:#1C1917;">Martina Reyes</span>
+              <span style="font-size:12px; color:#78716C;">@martinareyes</span>
+            </div>
+          </div>
+          <div style="height:1px; background:#F5F5F4; margin:8px 12px;"></div>
+          <div style="padding:6px 12px 4px;"><span style="font-size:12px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">Trips</span></div>
+          <div style="padding:28px 32px 20px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;">
+            <div style="width:48px; height:48px; border-radius:24px; background:#FFF7ED; display:flex; align-items:center; justify-content:center;">
+              <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="#EA580C" stroke-width="1.6" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M13 13l5 5"></path><path d="M6.5 8.5h4"></path></svg>
+            </div>
+            <span style="font-size:15px; font-weight:700; color:#1C1917;">No trips match "martina"</span>
+            <span style="font-size:13px; line-height:1.5; color:#78716C; max-width:250px;">Try a destination or itinerary name.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="c1" style="display:flex; flex-direction:column; gap:16px; max-width:1520px;">
+    <div style="font-size:16px; font-weight:800; color:#1C1917;">Contracts</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:16px;">
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#B91C1C;">C1 · FOLLOW STATE MACHINE</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">Inherited from S4.36 and restated: <b>not_following &#8594; pending &#8594; following</b>. Tap is optimistic — pill flips immediately, request fires in background. On failure: revert + toast "Couldn't follow @handle". Tapping Following unfollows with <b>no confirm dialog</b>, same optimistic pattern. Pending taps are ignored; follow is idempotent server-side.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#B91C1C;">C2 · PILL TREATMENTS</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;"><b>Follow</b> = filled #EA580C, white 13.5/700 label. <b>Following</b> = white fill, 1px #E7E5E4 border, ink label, leading 14px check glyph. Both: height 40, radius 999, press scale 0.96. No width jump — the pill spans the content column in both states.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#B91C1C;">C3 · LIST PAGINATION + COUNT</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">Follower/Following lists: infinite scroll, cursor pages of 20, fetch at 5 rows from end. Count line "{n} followers" / "{n} following" 13/600 muted under the title. Rows are <b>plain</b> — 44px avatar r22, name 15/700, handle 13 muted, trailing chevron #D6D3D1; no follow button in rows (the pill lives on the profile). Tap opens that traveler's profile.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#B91C1C;">C4 · STAT-CELL TAPS</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">Followers and Following cells are pressable on <b>both</b> the traveler's own Profile tab and any public profile — each pushes the matching list screen (<a href="#1a">1a</a>/<a href="#1b">1b</a>). Published and Destinations cells stay inert. Counts render real numbers; the em dashes shipped in S4.36 are retired.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#B91C1C;">C5 · FOLLOWS-YOU CHIP</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">Shown next to the "@handle · #N" meta line when the profile's owner follows the viewer. Read-only, quiet: #F5F5F4 well, 11/700 muted label, radius 999. <b>Never on your own profile</b>, never a tap target, and it does not change the pill's treatment.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#B91C1C;">C6 · HOME FILTER SEMANTICS</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">Chip row under the Home header: All (default) · Following. <b>Cold start always lands on All</b>; the selection is remembered only while the app runs — never persisted. Following shows only postcards from travelers you follow; feed cards themselves are unchanged. Empty per <a href="#3b">3b</a> — both when following nobody and when follows have no posts.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#B91C1C;">C7 · OFFLINE</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">Profile header (avatar, name, stats) renders from cache when offline. Follower/Following lists and search results show an inline Retry row instead of a blank screen. Follow taps while offline fail fast into the revert + toast path — no queued mutations.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#B91C1C;">C8 · EXECUTED-SEARCH SEMANTICS</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">Submitting a query always lands on the <b>combined results screen</b> (<a href="#4">4</a>). The People group renders whenever <b>at least one</b> person matches — the old "only if more than 3" rule is gone; same for "See all people" in the suggestions overlay. Fences unchanged: min 2 chars, no empty-query browse, match on handle + display name only, never email. People cap 3 + "See all people" &#8594; full People results; trips render below, unchanged.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:16px; max-width:1520px;">
+    <div style="font-size:16px; font-weight:800; color:#1C1917;">Motion — M1&#8211;M4 (live in the frames)</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:16px;">
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#0F766E;">M1 · PILL CROSSFADE</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">Fill, border, and label crossfade ~160ms ease between states; check glyph fades with the label swap. Press scale 0.96 at 120ms. Revert-on-failure reuses the same crossfade back — no bounce, no confetti.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#0F766E;">M2 · LIST CASCADE</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">Follower/Following rows and search-result rows: fade + 6px rise, 200ms ease, 40ms stagger, <b>first 8 rows only</b>. Later pages append unanimated — motion marks arrival, not pagination.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#0F766E;">M3 · CHIP SWITCH</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">All &#8596; Following: chip fill/label transitions 160ms; incoming feed panel fades + rises 8px over 200ms cubic-bezier(.2,0,0,1). Outgoing panel is removed, not animated — content never overlaps.</div>
+      </div>
+      <div style="background:#FFF; border:1px solid #E7E5E4; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#0F766E;">M4 · REDUCE MOTION</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">prefers-reduced-motion: all translates and staggers drop; every state change becomes a plain 120ms opacity swap. Press-scale removed. Nothing in this spec conveys meaning through motion alone.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { following: true, feed: 'following' };
+  renderVals() {
+    const s = this.state;
+    const stagger = (list) => list.map((p, i) => ({ ...p, delay: (i * 40) + 'ms' }));
+    const chip = a => a
+      ? 'background:#EA580C; border:1px solid #EA580C; color:#FFFFFF;'
+      : 'background:#FFFFFF; border:1px solid #E7E5E4; color:#57534E;';
+    return {
+      isFollowing: s.following,
+      followLabel: s.following ? 'Following' : 'Follow',
+      followStyle: s.following
+        ? 'background:#FFFFFF; border:1px solid #E7E5E4; color:#1C1917;'
+        : 'background:#EA580C; border:1px solid #EA580C; color:#FFFFFF;',
+      toggleFollow: () => this.setState({ following: !s.following }),
+      onAllFeed: s.feed === 'all', onFollowingFeed: s.feed === 'following',
+      goAll: () => this.setState({ feed: 'all' }), goFollowing: () => this.setState({ feed: 'following' }),
+      allChip: chip(s.feed === 'all'), followingChip: chip(s.feed === 'following'),
+      followers: stagger([
+        { name: 'Diego Alonte', handle: '@diegoalonte', initials: 'DA' },
+        { name: 'Noor Bautista', handle: '@noorb', initials: 'NB' },
+        { name: 'Jeb Guardiario', handle: '@jebguardiario', initials: 'JG' },
+        { name: 'Amara Chen', handle: '@amarachen', initials: 'AC' },
+        { name: 'Lena Okafor', handle: '@lenaokafor', initials: 'LO' },
+        { name: 'Tomas Rivera', handle: '@tomasrivera', initials: 'TR' },
+        { name: 'Priya Nair', handle: '@priyanair', initials: 'PN' },
+      ]),
+      followingList: stagger([
+        { name: 'Maya Santos', handle: '@mayasantos', initials: 'MS' },
+        { name: 'Marco Alonzo', handle: '@marcoalonzo', initials: 'MA' },
+        { name: 'Martina Reyes', handle: '@martinareyes', initials: 'MR' },
+        { name: 'Kai Cabrera', handle: '@kaicabrera', initials: 'KC' },
+        { name: 'Noor Bautista', handle: '@noorb', initials: 'NB' },
+        { name: 'Sam Ito', handle: '@samito', initials: 'SI' },
+      ]),
+      searchPeople: stagger([
+        { name: 'Maya Santos', handle: '@mayasantos', initials: 'MS' },
+        { name: 'Marco Alonzo', handle: '@marcoalonzo', initials: 'MA' },
+        { name: 'Martina Reyes', handle: '@martinareyes', initials: 'MR' },
+      ]),
+    };
+  }
+}
+</script>
+</body>
+</html>
