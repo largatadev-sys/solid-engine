@@ -29,7 +29,7 @@ import {
 import {
   RECENT_CLEAR_LABEL,
   RECENT_SECTION_LABEL,
-  SEARCH_CANCEL_LABEL,
+  SEARCH_DISMISS_LABEL,
   SEE_ALL_LABEL,
   SEARCH_PLACEHOLDER,
   SUGGESTED_DESTINATIONS_LABEL,
@@ -94,7 +94,7 @@ export function DiscoverySearchScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <SearchFieldRow>
+      <SearchFieldRow onBack={() => router.back()} backLabel={SEARCH_DISMISS_LABEL}>
         <View style={styles.field}>
           <Icon name="search" size={SEARCH_GLYPH_FOCUSED} color={profileColors.meta} />
           <TextInput
@@ -109,14 +109,6 @@ export function DiscoverySearchScreen() {
             accessibilityLabel={SEARCH_PLACEHOLDER}
           />
         </View>
-        <Pressable
-          style={styles.cancelButton}
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel={SEARCH_CANCEL_LABEL}
-        >
-          <Text style={styles.cancel}>{SEARCH_CANCEL_LABEL}</Text>
-        </Pressable>
       </SearchFieldRow>
 
       <ScrollView
@@ -318,14 +310,6 @@ const styles = StyleSheet.create({
   },
   field: searchFieldStyles.focusedField,
   input: searchFieldStyles.text,
-  cancelButton: {
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-  cancel: {
-    ...profileTypography.editPill,
-    color: colors.accent,
-  },
   body: {
     flex: 1,
   },

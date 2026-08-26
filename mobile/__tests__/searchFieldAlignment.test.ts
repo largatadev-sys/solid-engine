@@ -37,7 +37,6 @@ describe('the search bar holds still across discovery (S4.37)', () => {
     for (const screen of SCREENS) {
       const source = read('src', 'discovery', screen);
 
-      expect(source.includes('searchFieldStyles') || source.includes('<SearchField')).toBe(true);
       expect(source).not.toContain('discoveryMetrics.searchBarPadding');
       expect(source).not.toContain('searchBar: {');
     }
@@ -74,10 +73,28 @@ describe('the search bar holds still across discovery (S4.37)', () => {
     expect(fieldRow).not.toContain('styles.back');
   });
 
-  it('never lets Cancel squeeze the field it sits beside', () => {
-    const entry = read('src', 'discovery', 'DiscoverySearchScreen.tsx');
+  it('gives Discover the title-and-glass header its sibling tabs use, not a bar of its own', () => {
+    const landing = read('src', 'discovery', 'DiscoveryLandingScreen.tsx');
 
-    expect(entry).toContain('cancelButton');
-    expect(entry.slice(entry.indexOf('cancelButton: {'))).toContain('flexShrink: 0');
+    expect(landing).toContain('DISCOVER_TITLE');
+    expect(landing).toContain('discoveryMetrics.headerGlyph');
+    expect(landing).not.toContain('<SearchField');
+  });
+
+  it('leaves the bar only on the screens a search is actually being run from', () => {
+    const withBar = SCREENS.filter((screen) => {
+      const source = read('src', 'discovery', screen);
+      return source.includes('searchFieldStyles') || source.includes('<SearchField');
+    });
+
+    expect(withBar.sort()).toEqual(
+      ['DiscoveryResultsScreen.tsx', 'DiscoverySearchScreen.tsx', 'PeopleResultsScreen.tsx'].sort(),
+    );
+  });
+
+  it('opens every search bar with the same leading chevron, so both rows sit at one edge', () => {
+    for (const screen of ['DiscoverySearchScreen.tsx', 'PeopleResultsScreen.tsx']) {
+      expect(read('src', 'discovery', screen)).toContain('<SearchFieldRow onBack=');
+    }
   });
 });

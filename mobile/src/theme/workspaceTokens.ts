@@ -326,6 +326,8 @@ export const discoveryMetrics = {
   searchFieldFocusedPadding: 13,
   searchFieldGlyph: 16,
   searchFieldGlyphFocused: 18,
+  headerGlyph: 20,
+  headerAction: 36,
   backButton: 36,
 } as const;
 

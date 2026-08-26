@@ -17,6 +17,7 @@ import { FeedToast } from '../feed/FeedToast';
 import { colors, spacing } from '../theme';
 import {
   discoveryColors,
+  discoveryMetrics,
   profileColors,
   profileTypography,
   workspaceColors,
@@ -27,12 +28,12 @@ import { TrendingRail } from './TrendingRail';
 import { publishedItineraryRoute } from './discoveryCardCopy';
 import { NO_FILTERS } from './discoveryFilters';
 import {
+  DISCOVER_SEARCH_LABEL,
+  DISCOVER_TITLE,
   LANDING_EMPTY_BODY,
   LANDING_EMPTY_TITLE,
-  SEARCH_PLACEHOLDER,
 } from './discoveryCopy';
 import { DISCOVER_TAB_ROUTE, DISCOVERY_SEARCH_ROUTE, resultsRoute } from './discoveryRoutes';
-import { SearchField, SearchFieldRow } from './SearchField';
 
 export function DiscoveryLandingScreen() {
   const recommended = useRecommended();
@@ -94,14 +95,22 @@ export function DiscoveryLandingScreen() {
         scrollEventThrottle={RETAP_SCROLL_THROTTLE_MS}
         showsVerticalScrollIndicator={false}
       >
-        <SearchFieldRow>
-          <SearchField
-            label={SEARCH_PLACEHOLDER}
-            placeholder
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{DISCOVER_TITLE}</Text>
+          <Pressable
+            style={styles.headerAction}
             onPress={() => router.push(DISCOVERY_SEARCH_ROUTE)}
-            accessibilityLabel={SEARCH_PLACEHOLDER}
-          />
-        </SearchFieldRow>
+            accessibilityRole="button"
+            accessibilityLabel={DISCOVER_SEARCH_LABEL}
+            hitSlop={8}
+          >
+            <Icon
+              name="search"
+              size={discoveryMetrics.headerGlyph}
+              color={workspaceColors.title}
+            />
+          </Pressable>
+        </View>
 
         {nothingAnywhere ? (
           <View style={styles.empty}>
@@ -144,6 +153,24 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: spacing.xl,
     gap: spacing.lg,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md2,
+    paddingTop: spacing.sm3,
+    paddingBottom: spacing.sm,
+  },
+  headerTitle: {
+    ...profileTypography.displayName,
+    color: workspaceColors.title,
+  },
+  headerAction: {
+    width: discoveryMetrics.headerAction,
+    height: discoveryMetrics.headerAction,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   empty: {
     paddingHorizontal: spacing.md2,
