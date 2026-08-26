@@ -12,8 +12,12 @@ import {
   workspaceRadii,
 } from '../theme/workspaceTokens';
 import { profileMetaLine } from './profileMetaLine';
-import { FOLLOW_LABEL, POSTCARDS_STAT_LABEL } from './publicProfileCopy';
-import { PUBLISHED_STAT_LABEL } from './profileCopy';
+import { AWAITING_COUNT, FOLLOW_LABEL, POSTCARDS_STAT_LABEL } from './publicProfileCopy';
+import {
+  FOLLOWERS_STAT_LABEL,
+  FOLLOWING_STAT_LABEL,
+  PUBLISHED_STAT_LABEL,
+} from './profileCopy';
 
 
 interface PublicProfileHeaderProps {
@@ -73,9 +77,11 @@ export function PublicProfileHeader({
         {[
           { label: PUBLISHED_STAT_LABEL, value: publishedCount },
           { label: POSTCARDS_STAT_LABEL, value: postcardCount },
+          { label: FOLLOWERS_STAT_LABEL, value: null },
+          { label: FOLLOWING_STAT_LABEL, value: null },
         ].map((cell, index) => (
           <View key={cell.label} style={[styles.cell, index > 0 && styles.divided]}>
-            <Text style={styles.statValue}>{cell.value}</Text>
+            <Text style={styles.statValue}>{cell.value ?? AWAITING_COUNT}</Text>
             <Text style={styles.statLabel}>{cell.label}</Text>
           </View>
         ))}

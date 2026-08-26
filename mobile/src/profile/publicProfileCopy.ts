@@ -6,6 +6,8 @@ export const FOLLOW_LABEL = 'Follow';
 
 export const POSTCARDS_STAT_LABEL = 'Postcards';
 
+export const AWAITING_COUNT = '—';
+
 export const PROFILE_UNAVAILABLE = "This profile isn't available";
 
 export const PUBLIC_DIARY_EMPTY_TITLE = 'Nothing published yet';

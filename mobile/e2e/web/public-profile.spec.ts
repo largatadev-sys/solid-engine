@@ -4,7 +4,13 @@ import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
 import { SeedFailure, climbTo, seedTrip, stamp } from '../support/seed';
 import { labelled, labelStarting } from '../support/screen';
-import { DIARY_TAB_LABEL, ITINERARIES_TAB_LABEL, PUBLISHED_STAT_LABEL } from '../../src/profile/profileCopy';
+import {
+  DIARY_TAB_LABEL,
+  FOLLOWERS_STAT_LABEL,
+  FOLLOWING_STAT_LABEL,
+  ITINERARIES_TAB_LABEL,
+  PUBLISHED_STAT_LABEL,
+} from '../../src/profile/profileCopy';
 import {
   FOLLOW_LABEL,
   POSTCARDS_STAT_LABEL,
@@ -71,8 +77,9 @@ test('the public profile shows the header the canvas draws, and no owner chrome'
 
   await expect(page.getByText(PUBLISHED_STAT_LABEL).last()).toBeVisible();
   await expect(page.getByText(POSTCARDS_STAT_LABEL).last()).toBeVisible();
-  await expect(page.getByText('Followers')).toHaveCount(0);
-  await expect(page.getByText('Following')).toHaveCount(0);
+  await expect(page.getByText(FOLLOWERS_STAT_LABEL).last()).toBeVisible();
+  await expect(page.getByText(FOLLOWING_STAT_LABEL).last()).toBeVisible();
+  await expect(page.getByText('Trips', { exact: true })).toHaveCount(0);
 
   await expect(labelStarting(page, `${FOLLOW_LABEL} `)).toBeVisible();
   await expect(labelled(page, 'Edit Profile')).toHaveCount(0);

@@ -32,3 +32,7 @@ The canvas is the **design baseline** (CLAUDE.md mock rule), superseding the spe
 
 1. **C4's self-routing contradicted spec decision 9, and the founder re-ruled in C4's favour** *(2026-08-25, recorded in the spec's Comments)*: viewing yourself — byline tap or direct address of your own handle — lands on the **own Profile tab**, never the public projection, which therefore never renders for its owner. The frames' Follow pill and back-chevron chrome are strictly another-traveler UI.
 2. **C5's self-exclusion adopted and widened**: self never appears in People **suggestions or results**, enforced server-side. The founder's ground: you shouldn't be able to search yourself — other social platforms don't.
+
+## Amended after the build — the stats row *(2026-08-26, founder at the build review)*
+
+**C3's two-cell row is superseded: four cells ship** — Published · Postcards · Followers · Following. **The last two render `—`, not a number**, until story B. The canvas's line *"Follower counts are not public"* is overtaken by the founder's call that the slots should exist now, since following is the next story and a layout that moves twice is worse than a slot that waits. What the canvas got right and this amendment keeps: **no invented number reaches a stranger** — the stub metrics stay owner-only, which was the point C3's two-cell cut was serving. `Trips` remains off the row, unamended, because the owner's count includes private memberships. Full reasoning and the rejected alternatives are in the spec's Comments.

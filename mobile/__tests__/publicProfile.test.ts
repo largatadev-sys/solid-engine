@@ -1,8 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
-import { FOLLOW_LABEL, POSTCARDS_STAT_LABEL } from '../src/profile/publicProfileCopy';
-import { PUBLISHED_STAT_LABEL } from '../src/profile/profileCopy';
+import { AWAITING_COUNT, FOLLOW_LABEL, POSTCARDS_STAT_LABEL } from '../src/profile/publicProfileCopy';
+import {
+  FOLLOWERS_STAT_LABEL,
+  FOLLOWING_STAT_LABEL,
+  PUBLISHED_STAT_LABEL,
+} from '../src/profile/profileCopy';
 
 const MOBILE_ROOT = join(__dirname, '..');
 
@@ -18,16 +22,32 @@ const OWN_HEADER = read('src', 'profile', 'ProfileHeader.tsx');
 
 
 describe('the three deltas the canvas draws on someone else\'s profile', () => {
-  it('carries a two-cell stats row — Published and Postcards, and nothing else', () => {
+  it('carries the four-cell row, with the follow counts awaiting story B', () => {
     const cells = HEADER.slice(HEADER.indexOf('{[\n          { label:'), HEADER.indexOf('].map((cell'));
 
     expect(cells).toContain('PUBLISHED_STAT_LABEL');
     expect(cells).toContain('POSTCARDS_STAT_LABEL');
+    expect(cells).toContain('FOLLOWERS_STAT_LABEL');
+    expect(cells).toContain('FOLLOWING_STAT_LABEL');
     expect(PUBLISHED_STAT_LABEL).toBe('Published');
     expect(POSTCARDS_STAT_LABEL).toBe('Postcards');
-    expect(cells).not.toContain('FOLLOWERS_STAT_LABEL');
-    expect(cells).not.toContain('FOLLOWING_STAT_LABEL');
+  });
+
+  it('never shows the private trip count, which includes trips a stranger cannot see', () => {
+    const cells = HEADER.slice(HEADER.indexOf('{[\n          { label:'), HEADER.indexOf('].map((cell'));
+
     expect(cells).not.toContain('TRIPS_STAT_LABEL');
+  });
+
+  it('leaves the follow counts unnumbered until story B, rather than inventing them', () => {
+    const cells = HEADER.slice(HEADER.indexOf('{[\n          { label:'), HEADER.indexOf('].map((cell'));
+
+    expect(cells).toContain('{ label: FOLLOWERS_STAT_LABEL, value: null }');
+    expect(cells).toContain('{ label: FOLLOWING_STAT_LABEL, value: null }');
+    expect(HEADER).toContain('cell.value ?? AWAITING_COUNT');
+    expect(AWAITING_COUNT).toBe('—');
+    expect(FOLLOWERS_STAT_LABEL).toBe('Followers');
+    expect(FOLLOWING_STAT_LABEL).toBe('Following');
   });
 
   it('shows no invented number about a real person — no stub metric reaches this surface', () => {
