@@ -55,3 +55,8 @@ export function firstNameOf(displayName: string | null): string {
 
 export const PROFILE_UNAVAILABLE_BODY =
   'It may have been removed, or the handle may have changed.';
+
+
+export const SHOW_MORE_LABEL = 'Show more';
+
+export const UNTITLED_TRIP = 'Untitled trip';

@@ -20,7 +20,12 @@ import {
 import { diaryPaneState } from './diaryPaneState';
 import { PROFILE_DIARY_FAILED, PROFILE_DIARY_RETRY_LABEL } from './profileCopy';
 import { PublicProfileEmptyState } from './PublicProfileHeader';
-import { PUBLIC_DIARY_EMPTY_TITLE, publicDiaryEmptyBody } from './publicProfileCopy';
+import {
+  PUBLIC_DIARY_EMPTY_TITLE,
+  SHOW_MORE_LABEL,
+  UNTITLED_TRIP,
+  publicDiaryEmptyBody,
+} from './publicProfileCopy';
 import { showcaseMetaLine } from './showcaseCard';
 import type { DiaryEntryResponse, DiaryTripResponse } from '../types/api';
 
@@ -80,7 +85,7 @@ export function PublicDiaryTab({ handle, subjectId, displayName }: PublicDiaryTa
           accessibilityRole="button"
           accessibilityLabel={`Show more trips from ${displayName}`}
         >
-          <Text style={styles.moreLabel}>Show more</Text>
+          <Text style={styles.moreLabel}>{SHOW_MORE_LABEL}</Text>
         </Pressable>
       )}
     </View>
@@ -123,17 +128,17 @@ function TripSection({
         onPress={() => setOpen(!open)}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
-        accessibilityLabel={`${open ? 'Collapse' : 'Expand'} postcards from ${trip.title ?? 'Untitled trip'}`}
+        accessibilityLabel={`${open ? 'Collapse' : 'Expand'} postcards from ${trip.title ?? UNTITLED_TRIP}`}
       >
         <MediaThumb
           url={trip.coverImageUrl ?? null}
           style={styles.thumb}
-          accessibilityLabel={`Cover photo for ${trip.title ?? 'Untitled trip'}`}
+          accessibilityLabel={`Cover photo for ${trip.title ?? UNTITLED_TRIP}`}
           fallback={<View />}
         />
         <View style={styles.sectionText}>
           <Text style={styles.sectionTitle} numberOfLines={1}>
-            {trip.title ?? 'Untitled trip'}
+            {trip.title ?? UNTITLED_TRIP}
           </Text>
           <Text style={styles.sectionMeta} numberOfLines={1}>
             {showcaseMetaLine(trip.destination, trip.dayCount ?? 0) ??

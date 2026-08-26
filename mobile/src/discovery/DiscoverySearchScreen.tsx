@@ -37,7 +37,7 @@ import {
   SUGGESTED_SECTION_LABEL,
 } from './discoveryCopy';
 import { RowEntrance } from '../members/RowEntrance';
-import { PersonRow, handleLabel } from '../profile/PersonRow';
+import { PersonRow } from '../profile/PersonRow';
 import { trackPeopleResultTapped } from '../profile/profileEvents';
 import { PEOPLE_GROUP_LABEL, SEE_ALL_PEOPLE_LABEL } from '../profile/publicProfileCopy';
 import { peopleResultsRoute, publicProfileRoute } from '../profile/travelerRoutes';

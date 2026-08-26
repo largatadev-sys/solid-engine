@@ -27,8 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PublicProfileService {
 
-    private static final int DEFAULT_PAGE_SIZE = 20;
-    private static final int MAX_PAGE_SIZE = 50;
 
     private final ItineraryRepository itineraries;
     private final DiaryEntryRepository entries;
@@ -182,8 +180,5 @@ public class PublicProfileService {
         return itineraries.findAllById(ids).stream()
                 .collect(Collectors.toMap(Itinerary::id, itinerary -> itinerary));
     }
-
-
-
 
 }

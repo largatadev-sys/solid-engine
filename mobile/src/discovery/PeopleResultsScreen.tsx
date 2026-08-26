@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../components/Icon';
 import { RowEntrance } from '../members/RowEntrance';
 import { useSafeBack } from '../navigation/safeBack';
-import { PersonRow, handleLabel } from '../profile/PersonRow';
+import { PersonRow } from '../profile/PersonRow';
 import { trackPeopleResultTapped } from '../profile/profileEvents';
 import {
   PEOPLE_NO_RESULTS_SUPPORT,

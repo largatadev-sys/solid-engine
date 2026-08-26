@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** closed
 
 - [ ] The by-handle profile read returns the traveler card (id, handle, display name, avatar), bio, vanity number, and the two counts. **The load-bearing IT asserts the exclusion list on the serialized wire, not the DTO:** email, country, home city, preferred currency, goals, and interests appear in no payload this ticket adds.
 - [ ] An unknown handle answers 404. A provisioned-but-un-onboarded traveler answers 404 — the fixture is driven over HTTP without completing onboarding (no handle claimed), never planted with psql.

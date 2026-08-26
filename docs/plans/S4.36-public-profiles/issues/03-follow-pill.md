@@ -4,7 +4,7 @@
 
 **Blocked by:** 01.
 
-**Status:** ready-for-agent
+**Status:** closed
 
 - [ ] The pill renders on every non-self profile in the Edit slot with the mock's pill geometry (the third delta of the spec's design-baseline ruling); it does not render on self-view.
 - [ ] Tapping fires the app-drawn, platform-forked coming-soon prompt — the web fork proves the dialog (the harness auto-accepts and prints its wording; a native `Alert` would be a silent no-op on web, the recorded trap family).

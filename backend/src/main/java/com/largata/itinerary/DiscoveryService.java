@@ -28,8 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DiscoveryService {
 
-    private static final int DEFAULT_PAGE_SIZE = 20;
-    private static final int MAX_PAGE_SIZE = 50;
     private static final int RECOMMENDED_CAP = 8;
     private static final int RECOMMENDED_PROBE = 200;
     private static final int TRENDING_CAP = 12;

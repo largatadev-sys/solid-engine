@@ -17,6 +17,7 @@ import { PUBLISHED_BADGE } from './profileCopy';
 import { PublicProfileEmptyState } from './PublicProfileHeader';
 import {
   PUBLIC_ITINERARIES_EMPTY_TITLE,
+  SHOW_MORE_LABEL,
   publicItinerariesEmptyBody,
 } from './publicProfileCopy';
 import { showcaseMetaLine } from './showcaseCard';
@@ -65,7 +66,7 @@ export function PublicItinerariesTab({ handle, displayName }: PublicItinerariesT
           accessibilityRole="button"
           accessibilityLabel={`Show more itineraries from ${displayName}`}
         >
-          <Text style={styles.moreLabel}>Show more</Text>
+          <Text style={styles.moreLabel}>{SHOW_MORE_LABEL}</Text>
         </Pressable>
       )}
     </View>

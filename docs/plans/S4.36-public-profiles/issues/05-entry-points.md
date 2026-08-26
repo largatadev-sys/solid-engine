@@ -4,7 +4,7 @@
 
 **Blocked by:** 01.
 
-**Status:** ready-for-agent
+**Status:** closed
 
 - [ ] All four entry points navigate to `/travelers/{handle}`; the handle comes from the tapped payload's traveler card (always fresh — this is what makes a handle rename self-heal, per the spec's address-vs-identity ruling).
 - [ ] Every "coming soon" refusal on those taps is deleted — the dead copy goes with it, not just the wiring.

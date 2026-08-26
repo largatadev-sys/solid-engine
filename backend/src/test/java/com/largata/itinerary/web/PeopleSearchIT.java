@@ -23,6 +23,8 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @Import(TestJwtSupport.Config.class)
 class PeopleSearchIT extends PostgresTestBase {
 
+    private static final Pattern JSON_KEY = Pattern.compile("\"([A-Za-z][A-Za-z0-9]*)\"[ ]*:");
+
     private RestTestClient rest;
 
     @LocalServerPort private int port;
@@ -236,9 +238,29 @@ class PeopleSearchIT extends PostgresTestBase {
     }
 
 
-
-
     @Test
+    void theExclusionListIsAbsentFromThePeoplePayloadsThisStoryAdds() {
+        String handle = uniquePrefix() + "santos";
+        String email = "found-" + UUID.randomUUID() + "@example.com";
+        onboardedWithEmail(handle, "Maya Santos", email);
+        String viewer = onboarded(uniquePrefix() + "viewer", "The Viewer");
+
+        for (byte[] body :
+                List.of(peopleResults(viewer, handle), suggestions(viewer, handle))) {
+            String served = new String(body);
+
+            assertThat(keysIn(body))
+                    .as("the named exclusion list, on the wire — the search payloads are part of"
+                            + " \"never in any payload of this story\" too")
+                    .doesNotContain(
+                            "email", "country", "homeCity", "preferredCurrency", "goals", "interests");
+            assertThat(served)
+                    .as("and the address itself never appears, whatever a future card might carry")
+                    .doesNotContain(email);
+        }
+    }
+
+
     void bothPeopleReadsRefuseAnUnauthenticatedCaller() {
         for (String uri : List.of("/v1/discovery/people?q=ma", "/v1/discovery/suggestions?q=ma")) {
             rest.get().uri(uri).exchange().expectStatus().isUnauthorized();
@@ -355,5 +377,15 @@ class PeopleSearchIT extends PostgresTestBase {
             throw new AssertionError("no totalCount in " + new String(body));
         }
         return Long.parseLong(found.group(1));
+    }
+
+
+    private static List<String> keysIn(byte[] body) {
+        List<String> keys = new ArrayList<>();
+        Matcher found = JSON_KEY.matcher(new String(body));
+        while (found.find()) {
+            keys.add(found.group(1));
+        }
+        return keys;
     }
 }

@@ -4,7 +4,7 @@
 
 **Blocked by:** 01.
 
-**Status:** ready-for-agent
+**Status:** closed
 
 - [ ] The by-handle showcase read filters by the S4.3 public predicate (published + public + non-archived) — **never the owner's list.** The IT establishes presence before absence: a published trip appears, then a private trip and an archived trip planted for the same subject are proven absent. An absence with no established presence proves nothing.
 - [ ] The by-handle diary read mirrors the own Diary tab's trip-grouped anatomy; only trips with shared postcards contribute section headers (trip-title exposure is precedented — the public feed already ships it).

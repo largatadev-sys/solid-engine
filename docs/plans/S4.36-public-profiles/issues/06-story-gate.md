@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 03, 04, 05.
 
-**Status:** ready-for-agent
+**Status:** closed
 
 - [ ] The profile walk runs with two pool travelers — state which tag played which role (t1 = viewer, t2 = subject) — covering: the full projection, the self-redirect (own byline → own Profile tab, per the 2026-08-25 re-ruling), the empty profile reachable from search, and the Follow prompt.
 - [ ] The fences walk proves the enumeration posture end to end: short query yields nothing, email query yields nothing, results paginate.

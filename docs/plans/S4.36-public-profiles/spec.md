@@ -146,3 +146,21 @@ This deliberately reaches outside S4.36's stated scope, which had left the own-p
 The web walk found what no unit test could: `profile.spec.ts` asserted `stats.tripCount`, which serialized as `undefined` — and it failed **twice** before passing, first because the backend container still ran the old JAR after a local recompile, then because the replacement test computed an expected value from `/v1/itineraries`, a list that includes trips the traveler merely joined. The second failure was the test being wrong and the server being right; the fixed test asserts a property that holds regardless of what earlier runs left in the database.
 
 Verified: `PublicProfileIT` 14/14, `ProfileShowcaseIT` 11/11, the whole itinerary module **512/512**, mobile Jest 4987/4987, and both profile walks **43/43** against a rebuilt backend and preview.
+
+### 2026-08-26 — the ADR-008 question on `/v1/me/profile/stats`, asked and answered by checking
+
+The own-profile alignment **renamed a field on an existing endpoint**: `ProfileStatsResponse.tripCount` became `destinationCount`, and its semantics changed with it. ADR-008 says *"**Never** rename, retype, remove, or change the semantics of anything shipped"*, and CLAUDE.md lists *"anything that breaks /v1 additivity"* under the stop rules. The implementer raised it as a breach and put it to the founder before the merge.
+
+**It is not a breach, and the reason is checkable rather than arguable.** ADR-008's subject is what a *released* client can be holding — its own rationale says so: *"old app versions live for weeks"*. `/v1/me/profile/stats` was born at S4.21 (`66e6c13`) and has never left `dev`:
+
+```
+git show origin/main:…/ProfileStatsResponse.java      → does not exist in 'origin/main'
+git show origin/preprod:…/ProfileStatsResponse.java   → does not exist in 'origin/preprod'
+git merge-base --is-ancestor 66e6c13 origin/main      → false
+```
+
+No release carries the endpoint, so no client can break. The mirrored TypeScript type moved in the same commit, so the two sides never disagreed.
+
+**The check is recorded because the check is the justification.** A future reader looking only at the diff sees a renamed field on a shipped-looking endpoint and has no way to reconstruct why that was allowed. **The rule for next time: before treating an ADR-008 rename as safe, run the three commands above and paste the result** — reachability is a branch question, not a file question, and the implementer's first instinct here was to raise the alarm on the file's existence alone.
+
+**Founder's answer, on the record:** keep the rename. The waiver they authorised turned out to be unnecessary once the reachability check ran, and no waiver is recorded — an unnecessary waiver in the log would misinform the next reader as surely as a missing one.
