@@ -1,18 +1,16 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Animated, Easing, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { useReducedMotion } from '../components/useReducedMotion';
 import { radii, spacing } from '../theme';
 import { removalColors, removalMetrics, removalMotion, removalTypography } from '../theme/removalTokens';
-
 import { DELETE_TRIP_LABEL, LEAVE_TRIP_LABEL, swipeActionLabel } from './removalCopy';
-import { OPEN_X, engages, restingX, trackedX } from './swipeReveal';
 
 
 export type SwipeAction = 'delete' | 'leave';
 
 
-interface SwipeRevealRowProps {
+export interface SwipeRowProps {
   readonly action: SwipeAction;
   readonly subjectTitle: string;
   readonly open: boolean;
@@ -24,26 +22,10 @@ interface SwipeRevealRowProps {
 }
 
 
-export function SwipeRevealRow({
-  action,
-  subjectTitle,
-  open,
-  peek,
-  onOpen,
-  onClose,
-  onAct,
-  children,
-}: SwipeRevealRowProps) {
+export function useSwipeTrack(open: boolean, peek: boolean) {
   const x = useRef(new Animated.Value(0)).current;
   const at = useRef(0);
-  const base = useRef(0);
   const reducedMotion = useReducedMotion();
-  const openRef = useRef(open);
-  openRef.current = open;
-  const settle = useRef(onOpen);
-  settle.current = onOpen;
-  const shut = useRef(onClose);
-  shut.current = onClose;
 
   useEffect(() => {
     const listener = x.addListener(({ value }) => {
@@ -52,71 +34,78 @@ export function SwipeRevealRow({
     return () => x.removeListener(listener);
   }, [x]);
 
+  const wasOpen = useRef(open);
+
   useEffect(() => {
-    if (open) {
+    const closing = wasOpen.current && !open;
+    wasOpen.current = open;
+    if (!closing) {
       return;
     }
     Animated.timing(x, {
       toValue: 0,
       duration: reducedMotion ? 0 : removalMotion.snapMs,
       easing: Easing.bezier(0.2, 0.7, 0.2, 1),
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
   }, [open, reducedMotion, x]);
+
+  const hinting = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const stopHint = () => {
+    for (const timer of hinting.current) clearTimeout(timer);
+    hinting.current = [];
+  };
 
   useEffect(() => {
     if (!peek || reducedMotion) {
       return;
     }
-    const out = setTimeout(() => {
+    const settle = (to: number) =>
       Animated.timing(x, {
-        toValue: removalMotion.peekPx,
+        toValue: to,
         duration: removalMotion.snapMs,
         easing: Easing.bezier(0.2, 0.7, 0.2, 1),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
-    }, removalMotion.peekOutAtMs);
 
-    const back = setTimeout(() => {
-      Animated.timing(x, {
-        toValue: 0,
-        duration: removalMotion.snapMs,
-        easing: Easing.bezier(0.2, 0.7, 0.2, 1),
-        useNativeDriver: true,
-      }).start();
-    }, removalMotion.peekBackAtMs);
+    hinting.current = [
+      setTimeout(() => settle(removalMotion.peekPx), removalMotion.peekOutAtMs),
+      setTimeout(() => settle(0), removalMotion.peekBackAtMs),
+    ];
 
-    return () => {
-      clearTimeout(out);
-      clearTimeout(back);
-    };
+    return stopHint;
   }, [peek, reducedMotion, x]);
 
-  const pan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_event, gesture) => engages(gesture.dx, gesture.dy),
-      onPanResponderGrant: () => {
-        base.current = at.current;
-        x.stopAnimation();
-      },
-      onPanResponderMove: (_event, gesture) => {
-        x.setValue(trackedX(base.current, gesture.dx));
-      },
-      onPanResponderRelease: (_event, gesture) => {
-        const landing = restingX(trackedX(base.current, gesture.dx));
-        Animated.timing(x, {
-          toValue: landing,
-          duration: removalMotion.snapMs,
-          easing: Easing.bezier(0.2, 0.7, 0.2, 1),
-          useNativeDriver: true,
-        }).start();
-        if (landing === OPEN_X) settle.current();
-        else if (openRef.current) shut.current();
-      },
-      onPanResponderTerminationRequest: () => false,
-    }),
-  ).current;
+  const grab = () => {
+    stopHint();
+    x.stopAnimation();
+  };
 
+  const snapTo = (landing: number) => {
+    Animated.timing(x, {
+      toValue: landing,
+      duration: reducedMotion ? 0 : removalMotion.snapMs,
+      easing: Easing.bezier(0.2, 0.7, 0.2, 1),
+      useNativeDriver: false,
+    }).start();
+  };
+
+  return { x, at, grab, snapTo };
+}
+
+
+export function SwipeStage({
+  action,
+  subjectTitle,
+  onAct,
+  children,
+}: {
+  readonly action: SwipeAction;
+  readonly subjectTitle: string;
+  readonly onAct: () => void;
+  readonly children: ReactNode;
+}) {
   const danger = action === 'delete';
 
   return (
@@ -137,9 +126,7 @@ export function SwipeRevealRow({
         </Pressable>
       </View>
 
-      <Animated.View style={{ transform: [{ translateX: x }] }} {...pan.panHandlers}>
-        {children}
-      </Animated.View>
+      {children}
     </View>
   );
 }

@@ -63,23 +63,23 @@ test('the published card carries a kebab whose menu is details, the page, then U
 }) => {
   await labelled(page, itineraryMenuLabel(title)).click();
 
-  await expect(page.getByText(EDIT_ITINERARY_DETAILS_LABEL)).toBeVisible();
-  await expect(page.getByText(VIEW_PUBLISHED_PAGE_LABEL)).toBeVisible();
-  await expect(page.getByText(UNPUBLISH_LABEL)).toBeVisible();
+  await expect(labelled(page, EDIT_ITINERARY_DETAILS_LABEL)).toBeVisible();
+  await expect(labelled(page, VIEW_PUBLISHED_PAGE_LABEL)).toBeVisible();
+  await expect(labelled(page, UNPUBLISH_LABEL)).toBeVisible();
 });
 
 test('View published page opens the published route, rather than dying as a dead click', async ({
   page,
 }) => {
   await labelled(page, itineraryMenuLabel(title)).click();
-  await page.getByText(VIEW_PUBLISHED_PAGE_LABEL).click();
+  await labelled(page, VIEW_PUBLISHED_PAGE_LABEL).click();
 
   await expect(page).toHaveURL(new RegExp(`/showcase/${trip.id}`));
 });
 
 test('Edit details opens the details editor', async ({ page }) => {
   await labelled(page, itineraryMenuLabel(title)).click();
-  await page.getByText(EDIT_ITINERARY_DETAILS_LABEL).click();
+  await labelled(page, EDIT_ITINERARY_DETAILS_LABEL).click();
 
   await expect(page).toHaveURL(new RegExp(`/itineraries/${trip.id}/edit`));
 });
@@ -88,7 +88,7 @@ test('Unpublish collapses the card and offers Republish — and it is called imm
   page,
 }) => {
   await labelled(page, itineraryMenuLabel(title)).click();
-  await page.getByText(UNPUBLISH_LABEL).click();
+  await labelled(page, UNPUBLISH_LABEL).click();
 
   await expect(page.getByText(ITINERARY_UNPUBLISHED_TOAST)).toBeVisible();
   await expect(labelled(page, REPUBLISH_LABEL)).toBeVisible();
@@ -99,7 +99,7 @@ test('Unpublish collapses the card and offers Republish — and it is called imm
 
 test('Republish restores the card, the PUBLISHED pill and the public page', async ({ page }) => {
   await labelled(page, itineraryMenuLabel(title)).click();
-  await page.getByText(UNPUBLISH_LABEL).click();
+  await labelled(page, UNPUBLISH_LABEL).click();
   await expect(labelled(page, REPUBLISH_LABEL)).toBeVisible();
 
   await labelled(page, REPUBLISH_LABEL).click();

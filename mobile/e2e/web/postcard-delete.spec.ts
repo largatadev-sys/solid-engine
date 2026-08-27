@@ -103,8 +103,8 @@ test('the postcard carries a kebab, and it opens the house sheet with Edit and D
 }) => {
   await labelled(page, postcardMenuLabel(FIRST)).click();
 
-  await expect(page.getByText(EDIT_POSTCARD_LABEL)).toBeVisible();
-  await expect(page.getByText(DELETE_POSTCARD_LABEL)).toBeVisible();
+  await expect(labelled(page, EDIT_POSTCARD_LABEL)).toBeVisible();
+  await expect(labelled(page, DELETE_POSTCARD_LABEL)).toBeVisible();
 });
 
 test('the diary card carries its own kebab, and its menu offers no delete at all', async ({
@@ -112,12 +112,12 @@ test('the diary card carries its own kebab, and its menu offers no delete at all
 }) => {
   await labelled(page, diaryMenuLabel(tripTitle)).click();
 
-  await expect(page.getByText(DELETE_POSTCARD_LABEL)).toHaveCount(0);
+  await expect(labelled(page, DELETE_POSTCARD_LABEL)).toHaveCount(0);
 });
 
 test('deleting collapses the postcard out of the list and offers Undo', async ({ page }) => {
   await labelled(page, postcardMenuLabel(SECOND)).click();
-  await page.getByText(DELETE_POSTCARD_LABEL).click();
+  await labelled(page, DELETE_POSTCARD_LABEL).click();
 
   await expect(page.getByText(POSTCARD_DELETED_TOAST)).toBeVisible();
   await expect(labelled(page, UNDO_LABEL)).toBeVisible();
@@ -131,7 +131,7 @@ test('Undo restores the row in place and NO delete ever reaches the wire', async
   const before = await entryCount();
 
   await labelled(page, postcardMenuLabel(SECOND)).click();
-  await page.getByText(DELETE_POSTCARD_LABEL).click();
+  await labelled(page, DELETE_POSTCARD_LABEL).click();
   await expect(page.getByText(POSTCARD_DELETED_TOAST)).toBeVisible();
   await labelled(page, UNDO_LABEL).click();
 
@@ -148,7 +148,7 @@ test('letting the toast expire sends exactly one delete, and the postcard is gon
   const before = await entryCount();
 
   await labelled(page, postcardMenuLabel(SECOND)).click();
-  await page.getByText(DELETE_POSTCARD_LABEL).click();
+  await labelled(page, DELETE_POSTCARD_LABEL).click();
   await expect(page.getByText(POSTCARD_DELETED_TOAST)).toBeVisible();
 
   await expect.poll(entryCount, { timeout: 20_000 }).toBe(before - 1);
@@ -164,7 +164,7 @@ test('deleting the last postcard collapses the diary card behind it, and undo re
   await expect(labelled(page, diaryMenuLabel(tripTitle))).toBeVisible();
 
   await labelled(page, postcardMenuLabel(FIRST)).click();
-  await page.getByText(DELETE_POSTCARD_LABEL).click();
+  await labelled(page, DELETE_POSTCARD_LABEL).click();
 
   await expect(page.getByText(POSTCARD_DELETED_TOAST)).toBeVisible();
   await expect(labelled(page, diaryMenuLabel(tripTitle))).toHaveCount(0);
