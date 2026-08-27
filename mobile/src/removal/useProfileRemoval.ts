@@ -1,12 +1,17 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { comingSoon } from '../components/comingSoon';
 import { entryEditorRoute } from '../diary/diaryEntryExit';
 import { publishedRoute } from '../itineraries/publishedExit';
 import { useRemovalCommands } from '../query/removalMutations';
 import type { RemovalSubject } from './RemovalSheet';
-import { ITINERARY_UNPUBLISHED_TOAST, POSTCARD_DELETED_TOAST } from './removalCopy';
-import { removalActionFor } from './removalDestinations';
+import {
+  ITINERARY_UNPUBLISHED_TOAST,
+  OPENING_EDITOR_TOAST,
+  OPENING_PUBLISHED_PAGE_TOAST,
+  POSTCARD_DELETED_TOAST,
+} from './removalCopy';
+import { PUBLISHED_AUDIENCE, removalActionFor } from './removalDestinations';
 import type { RemovalMenuKey } from './removalMenu';
 import { useRemovalQueue, type RemovalQueue } from './useRemovalQueue';
 
@@ -17,31 +22,28 @@ export interface ProfileRemoval {
 }
 
 
-export function useProfileRemoval(): ProfileRemoval {
+export function useProfileRemoval(announce: (message: string) => void): ProfileRemoval {
   const router = useRouter();
-  const commands = useRemovalCommands();
-  const subjects = useRef(new Map<string, RemovalSubject>()).current;
+  const commands = useRemovalCommands(announce);
 
   const removal = useRemovalQueue(
     useCallback(
       (ref) => {
-        const subject = subjects.get(ref.subjectId);
-        subjects.delete(ref.subjectId);
-        if (ref.kind === 'deletePostcard' && subject?.itineraryId !== undefined) {
-          void commands.deletePostcard(subject.itineraryId, ref.subjectId);
+        if (ref.kind === 'deletePostcard' && ref.itineraryId !== null) {
+          commands.run(() => commands.deletePostcard(ref.itineraryId!, ref.subjectId));
         }
       },
-      [commands, subjects],
+      [commands],
     ),
     useCallback(
       (ref) => {
-        const subject = subjects.get(ref.subjectId);
-        subjects.delete(ref.subjectId);
         if (ref.kind === 'unpublish') {
-          void commands.republish(ref.subjectId, subject?.audience ?? 'public');
+          commands.run(() =>
+            commands.republish(ref.subjectId, ref.audience ?? PUBLISHED_AUDIENCE),
+          );
         }
       },
-      [commands, subjects],
+      [commands],
     ),
   );
 
@@ -51,47 +53,50 @@ export function useProfileRemoval(): ProfileRemoval {
       const action = removalActionFor(entry);
 
       if (action.kind === 'delete') {
-        subjects.set(subject.id, subject);
         removal.request({
           subjectId: subject.id,
           kind: 'deletePostcard',
           message: POSTCARD_DELETED_TOAST,
+          ...(subject.itineraryId === undefined ? {} : { itineraryId: subject.itineraryId }),
         });
         return;
       }
 
       if (action.kind === 'unpublish') {
-        subjects.set(subject.id, subject);
-        void commands.unpublish(subject.id);
+        commands.run(() => commands.unpublish(subject.id));
         removal.request({
           subjectId: subject.id,
           kind: 'unpublish',
           message: ITINERARY_UNPUBLISHED_TOAST,
           deferred: false,
+          audience: subject.audience ?? PUBLISHED_AUDIENCE,
         });
         return;
       }
 
       if (action.kind === 'editPostcard') {
         if (subject.itineraryId !== undefined) {
+          announce(OPENING_EDITOR_TOAST);
           router.push(entryEditorRoute('profile', subject.itineraryId, subject.id));
         }
         return;
       }
 
       if (action.kind === 'viewPublished') {
+        announce(OPENING_PUBLISHED_PAGE_TOAST);
         router.push(publishedRoute('profile', subject.id));
         return;
       }
 
       if (action.kind === 'editItineraryDetails') {
+        announce(OPENING_EDITOR_TOAST);
         router.push({ pathname: '/itineraries/[id]/edit', params: { id: subject.id } });
         return;
       }
 
       comingSoon(action.surface);
     },
-    [commands, removal, router, subjects],
+    [announce, commands, removal, router],
   );
 
   return { removal, choose };

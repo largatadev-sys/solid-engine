@@ -40,12 +40,12 @@ export function useRemovalQueue(
   const revertRef = useRef(onRevert);
   revertRef.current = onRevert;
 
-  const held = useRef(queue);
-  held.current = queue;
+  const current = useRef(queue);
+  current.current = queue;
 
   useEffect(
     () => () => {
-      for (const ref of commit(held.current).commits) commitRef.current(ref);
+      for (const ref of commit(current.current).commits) commitRef.current(ref);
     },
     [],
   );
@@ -60,13 +60,13 @@ export function useRemovalQueue(
   );
 
   const request = useCallback(
-    (removal: RemovalRequest) => apply(requested(held.current, removal)),
+    (removal: RemovalRequest) => apply(requested(current.current, removal)),
     [apply],
   );
 
-  const undo = useCallback((token: number) => apply(cancelled(held.current, token)), [apply]);
+  const undo = useCallback((token: number) => apply(cancelled(current.current, token)), [apply]);
 
-  const settle = useCallback((token: number) => apply(expired(held.current, token)), [apply]);
+  const settle = useCallback((token: number) => apply(expired(current.current, token)), [apply]);
 
   const openMenu = useCallback((next: RemovalSubject) => {
     setSubject(next);

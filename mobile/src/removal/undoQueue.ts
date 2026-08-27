@@ -1,3 +1,4 @@
+import type { PublishAudience } from '../types/api';
 import {
   BACK_IN_TRIP_TOAST,
   ITINERARY_REPUBLISHED_TOAST,
@@ -24,6 +25,8 @@ export interface Removal {
   readonly kind: RemovalKind;
   readonly token: number;
   readonly deferred: boolean;
+  readonly itineraryId: string | null;
+  readonly audience: PublishAudience | null;
 }
 
 
@@ -46,6 +49,18 @@ export interface UndoQueue {
 export interface RemovalRef {
   readonly subjectId: string;
   readonly kind: RemovalKind;
+  readonly itineraryId: string | null;
+  readonly audience: PublishAudience | null;
+}
+
+
+function refOf(removal: Removal): RemovalRef {
+  return {
+    subjectId: removal.subjectId,
+    kind: removal.kind,
+    itineraryId: removal.itineraryId,
+    audience: removal.audience,
+  };
 }
 
 
@@ -63,14 +78,16 @@ export interface RemovalRequest {
   readonly deferred?: boolean;
   readonly undoable?: boolean;
   readonly undoLabel?: string;
+  readonly itineraryId?: string;
+  readonly audience?: PublishAudience;
 }
 
 
-const RESTORED_MESSAGE: Record<RemovalKind, string> = {
+const RESTORED_MESSAGE: Record<RemovalKind, string | null> = {
   deletePostcard: POSTCARD_RESTORED_TOAST,
   leaveTrip: BACK_IN_TRIP_TOAST,
   unpublish: ITINERARY_REPUBLISHED_TOAST,
-  deleteTrip: '',
+  deleteTrip: null,
 };
 
 
@@ -106,7 +123,14 @@ export function requested(queue: UndoQueue, request: RemovalRequest): UndoStep {
   return {
     queue: {
       pending: undoable
-        ? { subjectId: request.subjectId, kind: request.kind, token, deferred }
+        ? {
+            subjectId: request.subjectId,
+            kind: request.kind,
+            token,
+            deferred,
+            itineraryId: request.itineraryId ?? null,
+            audience: request.audience ?? null,
+          }
         : null,
       toast,
       nextToken: token + 1,
@@ -129,7 +153,7 @@ export function cancelled(queue: UndoQueue, token: number): UndoStep {
     queue: {
       pending: null,
       toast:
-        message === ''
+        message === null
           ? null
           : {
               token: queue.nextToken,
@@ -141,7 +165,7 @@ export function cancelled(queue: UndoQueue, token: number): UndoStep {
       nextToken: queue.nextToken + 1,
     },
     commits: [],
-    reverts: held.deferred ? [] : [{ subjectId: held.subjectId, kind: held.kind }],
+    reverts: held.deferred ? [] : [refOf(held)],
   };
 }
 
@@ -168,7 +192,7 @@ export function commit(queue: UndoQueue): UndoStep {
 
   return {
     queue: { ...queue, pending: null },
-    commits: held.deferred ? [{ subjectId: held.subjectId, kind: held.kind }] : [],
+    commits: held.deferred ? [refOf(held)] : [],
     reverts: [],
   };
 }

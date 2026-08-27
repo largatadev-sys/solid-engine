@@ -27,9 +27,7 @@ export const TRIP_DELETED_TOAST = 'Trip deleted';
 export const REMOVAL_FAILED_TOAST = 'That did not go through — nothing was changed';
 
 export const OPENING_EDITOR_TOAST = 'Opening editor';
-export const LINK_COPIED_TOAST = 'Link copied';
 export const OPENING_PUBLISHED_PAGE_TOAST = 'Opening published page';
-export const COMING_SOON_TOAST = 'Coming soon';
 
 export const DELETE_TRIP_CANCEL_LABEL = 'Cancel';
 export const DELETE_TRIP_CTA_LABEL = 'Delete trip';

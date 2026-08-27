@@ -12,6 +12,8 @@ export const COMING_SOON_SURFACES = {
   saved: 'Saved postcards',
   report: 'Reporting a postcard',
   notifications: 'Notifications',
+  diaryDetails: 'Editing diary details',
+  diaryLink: 'Sharing a diary',
 } as const;
 
 export type ComingSoonSurface = keyof typeof COMING_SOON_SURFACES;

@@ -260,6 +260,8 @@ export const profileMetrics = {
   chevronStroke: 2.5,
   kebabGlyph: 20,
   kebabHit: 44,
+  kebabRowInset: -8,
+  kebabFooterInset: -10,
   starSize: 13,
   heartSize: 14,
   cogGlyph: 16,

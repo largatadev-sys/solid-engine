@@ -2,8 +2,8 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { entryEditorRoute } from '../diary/diaryEntryExit';
-import { Icon } from '../components/Icon';
 import { CollapsingRow } from '../removal/CollapsingRow';
+import { KebabButton } from '../removal/KebabButton';
 import { diaryMenuLabel, UNTITLED_TRIP } from '../removal/removalCopy';
 import { diaryIsEmptied, visibleAfterRemoval } from '../removal/removalProjection';
 import type { RemovalQueue } from '../removal/useRemovalQueue';
@@ -101,116 +101,109 @@ function TripSection({
   };
 
   const loaded = entries.data === undefined ? undefined : inTripDayOrder(entries.data);
-  const postcards = visibleAfterRemoval(loaded ?? [], removal.removedIds);
-  const sectionState = diaryPaneState(entries, postcards.length);
+  const surviving = visibleAfterRemoval(loaded ?? [], removal.removedIds);
+  const sectionState = diaryPaneState(entries, surviving.length);
   const [previewing, setPreviewing] = useState<DiaryEntryResponse | null>(null);
   const emptied = diaryIsEmptied(loaded, removal.removedIds);
 
   return (
     <CollapsingRow collapsed={emptied} gap={spacing.sm3}>
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Pressable
-          style={styles.sectionOpen}
-          onPress={() =>
-            router.push({ pathname: '/diary/[id]', params: { id: trip.itineraryId } })
-          }
-          accessibilityRole="button"
-          accessibilityLabel={`Open the diary for ${trip.title ?? UNTITLED_TRIP}, ${tripEntryCountLabel(trip.entryCount)}`}
-        >
-          <MediaThumb
-            url={trip.coverImageUrl ?? null}
-            style={styles.thumb}
-            accessibilityLabel={`Cover photo for ${trip.title ?? UNTITLED_TRIP}`}
-            fallback={<View />}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Pressable
+            style={styles.sectionOpen}
+            onPress={() =>
+              router.push({ pathname: '/diary/[id]', params: { id: trip.itineraryId } })
+            }
+            accessibilityRole="button"
+            accessibilityLabel={`Open the diary for ${trip.title ?? UNTITLED_TRIP}, ${tripEntryCountLabel(trip.entryCount)}`}
+          >
+            <MediaThumb
+              url={trip.coverImageUrl ?? null}
+              style={styles.thumb}
+              accessibilityLabel={`Cover photo for ${trip.title ?? UNTITLED_TRIP}`}
+              fallback={<View />}
+            />
+            <View style={styles.sectionText}>
+              <Text style={styles.sectionTitle} numberOfLines={1}>
+                {trip.title ?? UNTITLED_TRIP}
+              </Text>
+              <Text style={styles.sectionMeta} numberOfLines={1}>
+                {showcaseMetaLine(trip.destination, trip.dayCount ?? 0) ??
+                  tripEntryCountLabel(trip.entryCount)}
+              </Text>
+            </View>
+          </Pressable>
+          <KebabButton
+            label={diaryMenuLabel(trip.title ?? UNTITLED_TRIP)}
+            inset="row"
+            onPress={() =>
+              removal.openMenu({
+                id: trip.itineraryId,
+                kind: 'diary',
+                title: trip.title ?? UNTITLED_TRIP,
+                itineraryId: trip.itineraryId,
+              })
+            }
           />
-          <View style={styles.sectionText}>
-            <Text style={styles.sectionTitle} numberOfLines={1}>
-              {trip.title ?? UNTITLED_TRIP}
-            </Text>
-            <Text style={styles.sectionMeta} numberOfLines={1}>
-              {showcaseMetaLine(trip.destination, trip.dayCount ?? 0) ??
-                tripEntryCountLabel(trip.entryCount)}
-            </Text>
-          </View>
-        </Pressable>
-        <Pressable
-          style={styles.menuHit}
-          onPress={() =>
-            removal.openMenu({
-              id: trip.itineraryId,
-              kind: 'diary',
-              title: trip.title ?? UNTITLED_TRIP,
-              itineraryId: trip.itineraryId,
-            })
-          }
-          accessibilityRole="button"
-          accessibilityLabel={diaryMenuLabel(trip.title ?? UNTITLED_TRIP)}
-        >
-          <Icon
-            name="moreHorizontal"
-            size={profileMetrics.kebabGlyph}
-            color={profileColors.kebab}
-          />
-        </Pressable>
-        <Pressable
-          style={styles.chevronHit}
-          onPress={toggle}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: open }}
-          accessibilityLabel={`${open ? 'Collapse' : 'Expand'} entries for ${trip.title ?? UNTITLED_TRIP}`}
-        >
-          <View style={open ? styles.chevronOpen : styles.chevronClosed} />
-        </Pressable>
-      </View>
-
-      {open && (
-        <View style={styles.sectionBody}>
-          {sectionState === 'loading' && <ActivityIndicator color={colors.accent} />}
-          {sectionState === 'failed' && (
-            <Pressable
-              onPress={() => void entries.refetch()}
-              accessibilityRole="button"
-              accessibilityLabel={PROFILE_DIARY_SECTION_RETRY_LABEL}
-            >
-              <Text style={styles.failed}>{PROFILE_DIARY_SECTION_FAILED}</Text>
-            </Pressable>
-          )}
-          {sectionState === 'rows' &&
-            (loaded ?? []).map((entry) => (
-              <CollapsingRow
-                key={entry.id}
-                collapsed={removal.isRemoved(entry.id)}
-                gap={spacing.sm3}
-              >
-                <Postcard
-                  entry={entry}
-                  likes={stubLikeCountFor(entry.id)}
-                  onPress={() => setPreviewing(entry)}
-                  onOpenMenu={() =>
-                    removal.openMenu({
-                      id: entry.id,
-                      kind: 'postcard',
-                      title: entry.activityTitle,
-                      itineraryId: trip.itineraryId,
-                    })
-                  }
-                />
-              </CollapsingRow>
-            ))}
+          <Pressable
+            style={styles.chevronHit}
+            onPress={toggle}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: open }}
+            accessibilityLabel={`${open ? 'Collapse' : 'Expand'} entries for ${trip.title ?? UNTITLED_TRIP}`}
+          >
+            <View style={open ? styles.chevronOpen : styles.chevronClosed} />
+          </Pressable>
         </View>
-      )}
-
-      <PostcardPreview
-        entry={previewing}
-        tripTitle={trip.title}
-        onEdit={(entry) => {
-          setPreviewing(null);
-          router.push(entryEditorRoute('profile', trip.itineraryId, entry.id));
-        }}
-        onDismiss={() => setPreviewing(null)}
-      />
-    </View>
+  
+        {open && (
+          <View style={styles.sectionBody}>
+            {sectionState === 'loading' && <ActivityIndicator color={colors.accent} />}
+            {sectionState === 'failed' && (
+              <Pressable
+                onPress={() => void entries.refetch()}
+                accessibilityRole="button"
+                accessibilityLabel={PROFILE_DIARY_SECTION_RETRY_LABEL}
+              >
+                <Text style={styles.failed}>{PROFILE_DIARY_SECTION_FAILED}</Text>
+              </Pressable>
+            )}
+            {sectionState === 'rows' &&
+              (loaded ?? []).map((entry) => (
+                <CollapsingRow
+                  key={entry.id}
+                  collapsed={removal.isRemoved(entry.id)}
+                  gap={spacing.sm3}
+                >
+                  <Postcard
+                    entry={entry}
+                    likes={stubLikeCountFor(entry.id)}
+                    onPress={() => setPreviewing(entry)}
+                    onOpenMenu={() =>
+                      removal.openMenu({
+                        id: entry.id,
+                        kind: 'postcard',
+                        title: entry.activityTitle,
+                        itineraryId: trip.itineraryId,
+                      })
+                    }
+                  />
+                </CollapsingRow>
+              ))}
+          </View>
+        )}
+  
+        <PostcardPreview
+          entry={previewing}
+          tripTitle={trip.title}
+          onEdit={(entry) => {
+            setPreviewing(null);
+            router.push(entryEditorRoute('profile', trip.itineraryId, entry.id));
+          }}
+          onDismiss={() => setPreviewing(null)}
+        />
+      </View>
     </CollapsingRow>
   );
 }
@@ -265,15 +258,6 @@ const styles = StyleSheet.create({
   chevronHit: {
     paddingLeft: spacing.sm2,
     paddingVertical: spacing.xs,
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-  menuHit: {
-    minWidth: profileMetrics.kebabHit,
-    minHeight: profileMetrics.kebabHit,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: -spacing.sm,
     flexGrow: 0,
     flexShrink: 0,
   },

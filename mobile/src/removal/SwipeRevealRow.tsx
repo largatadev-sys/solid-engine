@@ -129,7 +129,7 @@ export function SwipeRevealRow({
           accessibilityLabel={swipeActionLabel(action, subjectTitle)}
         >
           <Icon
-            name={danger ? 'trash' : 'back'}
+            name={danger ? 'trash' : 'logOut'}
             size={removalMetrics.panelGlyph}
             color={removalColors.onPanel}
           />

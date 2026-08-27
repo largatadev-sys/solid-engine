@@ -1,9 +1,9 @@
-export interface Identified {
+export interface Removable {
   readonly id: string;
 }
 
 
-export function visibleAfterRemoval<T extends Identified>(
+export function visibleAfterRemoval<T extends Removable>(
   rows: readonly T[],
   removedIds: readonly string[],
 ): T[] {
@@ -16,7 +16,7 @@ export function visibleAfterRemoval<T extends Identified>(
 
 
 export function diaryIsEmptied(
-  entries: readonly Identified[] | undefined,
+  entries: readonly Removable[] | undefined,
   removedIds: readonly string[],
 ): boolean {
   if (entries === undefined || entries.length === 0) {

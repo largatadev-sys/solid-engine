@@ -63,7 +63,8 @@ export default function MyTripsScreen() {
   const active = landingTab(itineraries, picked);
   const rows = tripsInTab(itineraries, active);
 
-  const { removal, openCard, setOpenCard, closeCards, leave, deleteTrip } = useTripsRemoval();
+  const { removal, openCard, setOpenCard, closeCards, leave, deleteTrip } =
+    useTripsRemoval(setToast);
   const [confirming, setConfirming] = useState<ItineraryResponse | null>(null);
   const [hint] = useState(claimSwipeHint);
 

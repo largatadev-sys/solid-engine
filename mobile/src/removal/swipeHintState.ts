@@ -1,15 +1,10 @@
-let peeked = false;
+let shown = false;
 
 
 export function claimSwipeHint(): boolean {
-  if (peeked) {
+  if (shown) {
     return false;
   }
-  peeked = true;
+  shown = true;
   return true;
-}
-
-
-export function resetSwipeHint(): void {
-  peeked = false;
 }

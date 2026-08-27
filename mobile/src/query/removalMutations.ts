@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { track } from '../analytics/track';
 import { DIARY_ENTRY_DELETED } from '../diary/diaryEvents';
+import { failureToast } from '../removal/removalFailure';
 import { diaryRepository } from '../repositories/diaryRepository';
 import { invitationRepository } from '../repositories/invitationRepository';
 import { itineraryRepository } from '../repositories/itineraryRepository';
@@ -18,16 +19,20 @@ export interface RemovalCommands {
   readonly republish: (itineraryId: string, audience: PublishAudience) => Promise<void>;
   readonly leaveTrip: (itineraryId: string, travelerId: string) => Promise<void>;
   readonly archiveTrip: (itineraryId: string) => Promise<void>;
+  readonly run: (command: () => Promise<void>) => void;
 }
 
 
-export function useRemovalCommands(): RemovalCommands {
+export function useRemovalCommands(announce: (message: string) => void): RemovalCommands {
   const client = useQueryClient();
+  const say = useRef(announce);
+  say.current = announce;
 
   const refreshDiary = useCallback(
     async (itineraryId: string) => {
       await client.invalidateQueries({ queryKey: diaryKeys.mine(itineraryId) });
       await client.invalidateQueries({ queryKey: diaryKeys.trips() });
+      await client.invalidateQueries({ queryKey: profileKeys.all });
       await client.invalidateQueries({ queryKey: feedKeys.all });
     },
     [client],
@@ -80,5 +85,12 @@ export function useRemovalCommands(): RemovalCommands {
       },
       [refreshItineraries],
     ),
+
+    run: useCallback((command: () => Promise<void>) => {
+      void command().catch((cause: unknown) => {
+        const message = failureToast(cause);
+        if (message !== null) say.current(message);
+      });
+    }, []),
   };
 }

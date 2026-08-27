@@ -22,8 +22,8 @@ export interface TripsRemoval {
 }
 
 
-export function useTripsRemoval(): TripsRemoval {
-  const commands = useRemovalCommands();
+export function useTripsRemoval(announce: (message: string) => void): TripsRemoval {
+  const commands = useRemovalCommands(announce);
   const { state } = useMe();
   const travelerId = state.kind === 'ok' ? state.me.id : null;
   const me = useRef(travelerId);
@@ -35,7 +35,8 @@ export function useTripsRemoval(): TripsRemoval {
     useCallback(
       (ref) => {
         if (ref.kind === 'leaveTrip' && me.current !== null) {
-          void commands.leaveTrip(ref.subjectId, me.current);
+          const traveler = me.current;
+          commands.run(() => commands.leaveTrip(ref.subjectId, traveler));
         }
       },
       [commands],
@@ -57,7 +58,7 @@ export function useTripsRemoval(): TripsRemoval {
   const deleteTrip = useCallback(
     (itinerary: ItineraryResponse) => {
       setOpenCard(null);
-      void commands.archiveTrip(itinerary.id);
+      commands.run(() => commands.archiveTrip(itinerary.id));
       removal.request({
         subjectId: itinerary.id,
         kind: 'deleteTrip',

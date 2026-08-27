@@ -1,3 +1,6 @@
+import { colors } from './tokens';
+import { profileColors, travelerColors } from './workspaceTokens';
+
 const fonts = {
   regular: 'Inter_400Regular',
   semiBold: 'Inter_600SemiBold',
@@ -8,33 +11,33 @@ const fonts = {
 export const removalColors = {
   cautionary: '#B45309',
 
-  panelDelete: '#B3261E',
-  panelLeave: '#5C6470',
-  onPanel: '#FFFFFF',
+  panelDelete: colors.danger,
+  panelLeave: colors.textSecondary,
+  onPanel: colors.textOnAccent,
 
   profileToastWell: 'rgba(28, 25, 23, 0.92)',
   profileToastAccent: '#FDBA74',
-  tripsToastWell: '#1C1917',
+  tripsToastWell: travelerColors.ink,
   tripsToastAccent: '#EFC9BA',
-  toastInk: '#FFFFFF',
+  toastInk: colors.textOnAccent,
   toastDivider: 'rgba(255, 255, 255, 0.2)',
 
-  modalScrim: 'rgba(27, 38, 59, 0.549)',
-  modalSurface: '#FFFFFF',
-  modalTitle: '#1B263B',
-  modalBody: '#5C6470',
-  modalEmphasis: '#1B263B',
-  ackWell: '#FAF9F6',
-  ackBorder: '#E2E4E8',
-  ackBoxBorder: '#B3261E',
-  ackFill: '#B91C1C',
-  ackTick: '#FFFFFF',
-  ackLabel: '#1B263B',
-  ctaIdleWell: '#F5F5F4',
-  ctaIdleInk: '#A8A29E',
-  ctaArmedWell: '#B91C1C',
-  ctaArmedInk: '#FFFFFF',
-  cancelInk: '#5C6470',
+  modalScrim: colors.scrim,
+  modalSurface: colors.surface,
+  modalTitle: colors.textPrimary,
+  modalBody: colors.textSecondary,
+  ackWell: colors.background,
+  ackBorder: colors.border,
+  ackBoxBorder: colors.danger,
+  ackFill: travelerColors.destructive,
+  ackTick: colors.textOnAccent,
+  ackLabel: colors.textPrimary,
+  ctaIdleWell: travelerColors.divider,
+  ctaIdleInk: profileColors.chevron,
+  ctaArmedWell: travelerColors.destructive,
+  ctaArmedInk: colors.textOnAccent,
+  cancelInk: colors.textSecondary,
+
 } as const;
 
 
@@ -53,11 +56,13 @@ export const removalTypography = {
 
 export const removalMetrics = {
   toastRadiusProfile: 14,
+  toastRadiusTrips: 100,
   toastPaddingV: 10,
   toastPaddingH: 18,
   toastActionPaddingV: 11,
   toastActionPaddingLeft: 16,
   toastActionPaddingRight: 6,
+  toastDividerWidth: 1,
   toastDividerHeight: 20,
   toastDividerHeightTrips: 18,
   undoTarget: 44,
@@ -79,6 +84,10 @@ export const removalMetrics = {
   modalPaddingTop: 20,
   modalPaddingBottom: 12,
   modalInset: 24,
+  modalShadowOffset: 24,
+  modalShadowRadius: 60,
+  modalShadowOpacity: 0.28,
+  modalElevation: 24,
   ackRadius: 8,
   ackPadding: 12,
   ackGap: 10,
@@ -101,8 +110,6 @@ export const removalMotion = {
 
   drainFloorMs: 90,
 
-  panelBeatMs: 120,
-
   snapMs: 220,
   revealPx: 96,
   overdragPx: 12,
@@ -116,6 +123,4 @@ export const removalMotion = {
   modalFromScale: 0.96,
   ackTickMs: 140,
   ctaSwapMs: 160,
-
-  entryStaggerMs: 40,
 } as const;

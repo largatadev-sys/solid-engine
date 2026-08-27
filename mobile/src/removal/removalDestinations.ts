@@ -1,5 +1,9 @@
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
+import type { PublishAudience } from '../types/api';
 import type { RemovalMenuKey } from './removalMenu';
+
+
+export const PUBLISHED_AUDIENCE: PublishAudience = 'public';
 
 
 export type RemovalAction =
@@ -24,7 +28,8 @@ export function removalActionFor(entry: RemovalMenuKey): RemovalAction {
     case 'unpublish':
       return { kind: 'unpublish' };
     case 'editDiaryDetails':
+      return { kind: 'comingSoon', surface: 'diaryDetails' };
     case 'copyPublicLink':
-      return { kind: 'comingSoon', surface: 'diary' };
+      return { kind: 'comingSoon', surface: 'diaryLink' };
   }
 }

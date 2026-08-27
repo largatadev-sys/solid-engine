@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     backgroundColor: removalColors.profileToastWell,
   },
   tripsToast: {
-    borderRadius: 100,
+    borderRadius: removalMetrics.toastRadiusTrips,
     backgroundColor: removalColors.tripsToastWell,
   },
   plain: {
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   divider: {
-    width: 1,
+    width: removalMetrics.toastDividerWidth,
     backgroundColor: removalColors.toastDivider,
     marginLeft: spacing.sm3,
     flexGrow: 0,

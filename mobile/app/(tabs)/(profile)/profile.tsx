@@ -43,7 +43,7 @@ export default function ProfileScreen() {
   const scroll = useRef<ScrollView | null>(null);
   const offset = useRef(0);
   const [toast, setToast] = useState<string | null>(null);
-  const { removal, choose } = useProfileRemoval();
+  const { removal, choose } = useProfileRemoval(setToast);
 
   useTabRetap(
     PROFILE_TAB_ROUTE,

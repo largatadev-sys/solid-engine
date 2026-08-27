@@ -85,7 +85,7 @@ describe('expiry is the commit point', () => {
     const { queue } = request(emptyUndoQueue(), 'card-1');
     const done = expired(queue, queue.pending!.token);
 
-    expect(done.commits).toEqual([{ subjectId: 'card-1', kind: 'deletePostcard' }]);
+    expect(done.commits).toMatchObject([{ subjectId: 'card-1', kind: 'deletePostcard' }]);
     expect(done.queue.pending).toBeNull();
     expect(done.queue.toast).toBeNull();
   });
@@ -105,7 +105,7 @@ describe('a newer removal supersedes the older one, committing it first', () => 
     const first = request(emptyUndoQueue(), 'card-1');
     const second = request(first.queue, 'card-2');
 
-    expect(second.commits).toEqual([{ subjectId: 'card-1', kind: 'deletePostcard' }]);
+    expect(second.commits).toMatchObject([{ subjectId: 'card-1', kind: 'deletePostcard' }]);
     expect(second.queue.pending?.subjectId).toBe('card-2');
     expect(isPending(second.queue, 'card-1')).toBe(false);
     expect(isPending(second.queue, 'card-2')).toBe(true);
@@ -131,12 +131,48 @@ describe('a newer removal supersedes the older one, committing it first', () => 
 });
 
 
+describe('the removal carries what committing it needs, so nothing is looked up again later', () => {
+  it('hands the itinerary back on commit, so the delete knows where the postcard lived', () => {
+    const { queue } = requested(emptyUndoQueue(), {
+      subjectId: 'card-1',
+      kind: 'deletePostcard',
+      message: 'Postcard deleted',
+      itineraryId: 'trip-77',
+    });
+    const done = expired(queue, queue.pending!.token);
+
+    expect(done.commits[0]?.itineraryId).toBe('trip-77');
+  });
+
+  it('hands the audience back on undo, so republish restores what the trip had', () => {
+    const { queue } = requested(emptyUndoQueue(), {
+      subjectId: 'trip-1',
+      kind: 'unpublish',
+      message: 'Itinerary unpublished',
+      deferred: false,
+      audience: 'public',
+    });
+    const undone = cancelled(queue, queue.pending!.token);
+
+    expect(undone.reverts[0]?.audience).toBe('public');
+  });
+
+  it('reports null rather than guessing when the request carried neither', () => {
+    const { queue } = request(emptyUndoQueue(), 'card-1');
+    const done = expired(queue, queue.pending!.token);
+
+    expect(done.commits[0]?.itineraryId).toBeNull();
+    expect(done.commits[0]?.audience).toBeNull();
+  });
+});
+
+
 describe('commit drains whatever is still held, so a screen leaving loses nothing', () => {
   it('emits the pending removal and empties the queue', () => {
     const { queue } = request(emptyUndoQueue(), 'card-1');
     const drained = commit(queue);
 
-    expect(drained.commits).toEqual([{ subjectId: 'card-1', kind: 'deletePostcard' }]);
+    expect(drained.commits).toMatchObject([{ subjectId: 'card-1', kind: 'deletePostcard' }]);
     expect(drained.queue.pending).toBeNull();
   });
 
@@ -172,7 +208,7 @@ describe('server-undo removals are never deferred', () => {
     });
     const undone = cancelled(queue, queue.pending!.token);
 
-    expect(undone.reverts).toEqual([{ subjectId: 'trip-1', kind: 'unpublish' }]);
+    expect(undone.reverts).toMatchObject([{ subjectId: 'trip-1', kind: 'unpublish' }]);
     expect(undone.queue.toast?.message).toBe('Itinerary republished');
   });
 
@@ -214,7 +250,7 @@ describe('a plain toast carries no undo and supersedes a pending removal', () =>
       undoable: false,
     });
 
-    expect(plain.commits).toEqual([{ subjectId: 'card-1', kind: 'deletePostcard' }]);
+    expect(plain.commits).toMatchObject([{ subjectId: 'card-1', kind: 'deletePostcard' }]);
     expect(plain.queue.toast?.message).toBe('Trip deleted');
     expect(plain.queue.toast?.undoable).toBe(false);
     expect(plain.queue.pending).toBeNull();

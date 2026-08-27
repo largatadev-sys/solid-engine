@@ -25,6 +25,7 @@ import {
   profileTypography,
   workspaceColors,
 } from '../theme/workspaceTokens';
+import { KebabButton } from '../removal/KebabButton';
 import { postcardMenuLabel } from '../removal/removalCopy';
 import type { DiaryEntryResponse } from '../types/api';
 import {
@@ -134,18 +135,11 @@ export function Postcard({ entry, onPress, likes = null, onOpenMenu }: PostcardP
           )}
 
           {onOpenMenu !== undefined && (
-            <Pressable
-              style={styles.menuHit}
+            <KebabButton
+              label={postcardMenuLabel(entry.activityTitle)}
+              inset="footer"
               onPress={onOpenMenu}
-              accessibilityRole="button"
-              accessibilityLabel={postcardMenuLabel(entry.activityTitle)}
-            >
-              <Icon
-                name="moreHorizontal"
-                size={profileMetrics.kebabGlyph}
-                color={profileColors.kebab}
-              />
-            </Pressable>
+            />
           )}
         </View>
       </View>
@@ -209,16 +203,6 @@ const styles = StyleSheet.create({
   },
   summary: {
     gap: spacing.xs2,
-  },
-  menuHit: {
-    minWidth: profileMetrics.kebabHit,
-    minHeight: profileMetrics.kebabHit,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: -spacing.sm2,
-    marginRight: -spacing.sm2,
-    flexGrow: 0,
-    flexShrink: 0,
   },
   titleRow: {
     flexDirection: 'row',

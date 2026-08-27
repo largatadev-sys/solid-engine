@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { Icon } from '../components/Icon';
 import { publishedRoute } from '../itineraries/publishedExit';
 import { CollapsingRow } from '../removal/CollapsingRow';
+import { KebabButton } from '../removal/KebabButton';
 import { itineraryMenuLabel } from '../removal/removalCopy';
 import { visibleAfterRemoval } from '../removal/removalProjection';
 import type { RemovalQueue } from '../removal/useRemovalQueue';
@@ -93,42 +94,42 @@ function ShowcaseCard({
 
   return (
     <View style={styles.card}>
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`Open the published view of ${card.title}`}
-    >
-      <View style={styles.cover}>
-        <MediaThumb
-          url={card.coverImageUrl}
-          full
-          style={styles.coverImage}
-          fallbackStyle={styles.coverWell}
-          accessibilityLabel={`Cover photo for ${card.title}`}
-          fallback={<View />}
-        />
-        {price !== null && (
-          <View style={styles.pricePill}>
-            <Text style={styles.pricePillLabel} numberOfLines={1}>
-              {price}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.body}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={2}>
-            {card.title}
-          </Text>
-          <View style={styles.publishedBadge}>
-            <Text style={styles.publishedLabel}>{PUBLISHED_BADGE}</Text>
-          </View>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Open the published view of ${card.title}`}
+      >
+        <View style={styles.cover}>
+          <MediaThumb
+            url={card.coverImageUrl}
+            full
+            style={styles.coverImage}
+            fallbackStyle={styles.coverWell}
+            accessibilityLabel={`Cover photo for ${card.title}`}
+            fallback={<View />}
+          />
+          {price !== null && (
+            <View style={styles.pricePill}>
+              <Text style={styles.pricePillLabel} numberOfLines={1}>
+                {price}
+              </Text>
+            </View>
+          )}
         </View>
 
-        {meta !== null && <Text style={styles.meta}>{meta}</Text>}
-      </View>
-    </Pressable>
+        <View style={styles.body}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={2}>
+              {card.title}
+            </Text>
+            <View style={styles.publishedBadge}>
+              <Text style={styles.publishedLabel}>{PUBLISHED_BADGE}</Text>
+            </View>
+          </View>
+
+          {meta !== null && <Text style={styles.meta}>{meta}</Text>}
+        </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <View style={styles.rating}>
@@ -140,18 +141,11 @@ function ShowcaseCard({
           {rating !== null && <Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>}
         </View>
 
-        <Pressable
-          style={styles.menuHit}
+        <KebabButton
+          label={itineraryMenuLabel(card.title)}
+          inset="footer"
           onPress={onOpenMenu}
-          accessibilityRole="button"
-          accessibilityLabel={itineraryMenuLabel(card.title)}
-        >
-          <Icon
-            name="moreHorizontal"
-            size={profileMetrics.kebabGlyph}
-            color={profileColors.kebab}
-          />
-        </Pressable>
+        />
       </View>
     </View>
   );
@@ -214,15 +208,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm3,
     paddingBottom: spacing.xs2,
     minHeight: profileMetrics.kebabHit,
-  },
-  menuHit: {
-    minWidth: profileMetrics.kebabHit,
-    minHeight: profileMetrics.kebabHit,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: -spacing.sm2,
-    flexGrow: 0,
-    flexShrink: 0,
   },
   titleRow: {
     flexDirection: 'row',

@@ -28,6 +28,8 @@ export function DeleteTripModal({ trip, onCancel, onConfirm }: DeleteTripModalPr
   const [last, setLast] = useState<ItineraryResponse | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const entrance = useRef(new Animated.Value(0)).current;
+  const arming = useRef(new Animated.Value(0)).current;
+  const ticking = useRef(new Animated.Value(0)).current;
   const reducedMotion = useReducedMotion();
 
   if (trip !== null && trip !== last) setLast(trip);
@@ -47,6 +49,23 @@ export function DeleteTripModal({ trip, onCancel, onConfirm }: DeleteTripModalPr
       useNativeDriver: true,
     }).start();
   }, [entrance, open, reducedMotion]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(arming, {
+        toValue: acknowledged ? 1 : 0,
+        duration: reducedMotion ? 0 : removalMotion.ctaSwapMs,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }),
+      Animated.timing(ticking, {
+        toValue: acknowledged ? 1 : 0,
+        duration: reducedMotion ? 0 : removalMotion.ackTickMs,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, [acknowledged, arming, reducedMotion, ticking]);
 
   if (shown === null) {
     return null;
@@ -84,7 +103,21 @@ export function DeleteTripModal({ trip, onCancel, onConfirm }: DeleteTripModalPr
             accessibilityState={{ checked: acknowledged }}
             accessibilityLabel={deleteTripAcknowledgement(shown.memberCount ?? 1)}
           >
-            <View style={acknowledged ? styles.ackBoxTicked : styles.ackBox}>
+            <Animated.View
+              style={[
+                styles.ackBox,
+                {
+                  backgroundColor: ticking.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [removalColors.ackWell, removalColors.ackFill],
+                  }),
+                  borderColor: ticking.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [removalColors.ackBoxBorder, removalColors.ackFill],
+                  }),
+                },
+              ]}
+            >
               {acknowledged && (
                 <Icon
                   name="check"
@@ -92,23 +125,44 @@ export function DeleteTripModal({ trip, onCancel, onConfirm }: DeleteTripModalPr
                   color={removalColors.ackTick}
                 />
               )}
-            </View>
+            </Animated.View>
             <Text style={styles.ackLabel}>
               {deleteTripAcknowledgement(shown.memberCount ?? 1)}
             </Text>
           </Pressable>
 
           <Pressable
-            style={acknowledged ? styles.ctaArmed : styles.ctaIdle}
             onPress={() => onConfirm(shown)}
             disabled={!acknowledged}
             accessibilityRole="button"
             accessibilityState={{ disabled: !acknowledged }}
             accessibilityLabel={DELETE_TRIP_CTA_LABEL}
           >
-            <Text style={acknowledged ? styles.ctaArmedLabel : styles.ctaIdleLabel}>
-              {DELETE_TRIP_CTA_LABEL}
-            </Text>
+            <Animated.View
+              style={[
+                styles.cta,
+                {
+                  backgroundColor: arming.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [removalColors.ctaIdleWell, removalColors.ctaArmedWell],
+                  }),
+                },
+              ]}
+            >
+              <Animated.Text
+                style={[
+                  styles.ctaLabel,
+                  {
+                    color: arming.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [removalColors.ctaIdleInk, removalColors.ctaArmedInk],
+                    }),
+                  },
+                ]}
+              >
+                {DELETE_TRIP_CTA_LABEL}
+              </Animated.Text>
+            </Animated.View>
           </Pressable>
 
           <Pressable
@@ -149,10 +203,10 @@ const styles = StyleSheet.create({
     paddingTop: removalMetrics.modalPaddingTop,
     paddingBottom: removalMetrics.modalPaddingBottom,
     shadowColor: removalColors.modalTitle,
-    shadowOffset: { width: 0, height: 24 },
-    shadowOpacity: 0.28,
-    shadowRadius: 60,
-    elevation: 24,
+    shadowOffset: { width: 0, height: removalMetrics.modalShadowOffset },
+    shadowOpacity: removalMetrics.modalShadowOpacity,
+    shadowRadius: removalMetrics.modalShadowRadius,
+    elevation: removalMetrics.modalElevation,
   },
   title: {
     ...removalTypography.modalTitle,
@@ -180,19 +234,6 @@ const styles = StyleSheet.create({
     height: removalMetrics.ackBox,
     borderRadius: removalMetrics.ackBoxRadius,
     borderWidth: removalMetrics.ackBoxBorder,
-    borderColor: removalColors.ackBoxBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-  ackBoxTicked: {
-    width: removalMetrics.ackBox,
-    height: removalMetrics.ackBox,
-    borderRadius: removalMetrics.ackBoxRadius,
-    borderWidth: removalMetrics.ackBoxBorder,
-    borderColor: removalColors.ackFill,
-    backgroundColor: removalColors.ackFill,
     alignItems: 'center',
     justifyContent: 'center',
     flexGrow: 0,
@@ -203,27 +244,14 @@ const styles = StyleSheet.create({
     color: removalColors.ackLabel,
     flex: 1,
   },
-  ctaIdle: {
+  cta: {
     height: removalMetrics.ctaHeight,
     borderRadius: removalMetrics.ctaRadius,
-    backgroundColor: removalColors.ctaIdleWell,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ctaArmed: {
-    height: removalMetrics.ctaHeight,
-    borderRadius: removalMetrics.ctaRadius,
-    backgroundColor: removalColors.ctaArmedWell,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaIdleLabel: {
+  ctaLabel: {
     ...removalTypography.cta,
-    color: removalColors.ctaIdleInk,
-  },
-  ctaArmedLabel: {
-    ...removalTypography.cta,
-    color: removalColors.ctaArmedInk,
   },
   cancel: {
     minHeight: removalMetrics.cancelHeight,
