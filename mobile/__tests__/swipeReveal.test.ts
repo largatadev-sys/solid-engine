@@ -5,6 +5,7 @@ import {
   REVEAL_PX,
   engages,
   landsOpen,
+  releaseOutcome,
   restingX,
   trackedX,
 } from '../src/removal/swipeReveal';
@@ -77,5 +78,43 @@ describe('release snaps by which half the card is in', () => {
 
   it('springs back from a shut card', () => {
     expect(restingX(0)).toBe(0);
+  });
+});
+
+
+describe('releasing a shut row', () => {
+  it('opens it when the drag passed half the panel', () => {
+    expect(releaseOutcome(0, -80, 0, false)).toEqual({ x: OPEN_X, opens: true, closes: false });
+  });
+
+  it('springs back without reporting an open when the drag fell short', () => {
+    expect(releaseOutcome(0, -20, 0, false)).toEqual({ x: 0, opens: false, closes: false });
+  });
+
+  it('leaves a tap alone, so tapping a shut card still reaches the trip', () => {
+    expect(releaseOutcome(0, -2, 0, false)).toEqual({ x: 0, opens: false, closes: false });
+  });
+
+  it('treats a mostly-vertical drag as a scroll, not a swipe', () => {
+    expect(releaseOutcome(0, -30, 90, false)).toEqual({ x: 0, opens: false, closes: false });
+  });
+});
+
+
+describe('releasing an open row', () => {
+  it('closes it when dragged back past half', () => {
+    expect(releaseOutcome(OPEN_X, 60, 0, true)).toEqual({ x: 0, opens: false, closes: true });
+  });
+
+  it('stays open when dragged back only a little', () => {
+    expect(releaseOutcome(OPEN_X, 20, 0, true)).toEqual({ x: OPEN_X, opens: false, closes: false });
+  });
+
+  it('closes on a TAP — the way back when a drag cannot be completed', () => {
+    expect(releaseOutcome(OPEN_X, 0, 0, true)).toEqual({ x: 0, opens: false, closes: true });
+  });
+
+  it('reports no second open when it was already open and stays open', () => {
+    expect(releaseOutcome(OPEN_X, -4, 0, true).opens).toBe(false);
   });
 });

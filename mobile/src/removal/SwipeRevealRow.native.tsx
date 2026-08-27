@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import { Animated, PanResponder } from 'react-native';
-import { SwipeStage, useSwipeTrack, type SwipeRowProps } from './swipeRowShell';
-import { OPEN_X, engages, restingX, trackedX } from './swipeReveal';
+import { SwipeStage, revealedFrom, type SwipeRowProps } from './swipeRowShell';
+import { useSwipeTrack } from './swipeTrack.native';
+import { engages, releaseOutcome, trackedX } from './swipeReveal';
 
 
 export type { SwipeAction } from './swipeRowShell';
@@ -28,6 +29,7 @@ export function SwipeRevealRow({
 
   const pan = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponder: () => openRef.current,
       onMoveShouldSetPanResponder: (_event, gesture) => engages(gesture.dx, gesture.dy),
       onPanResponderGrant: () => {
         base.current = at.current;
@@ -37,17 +39,17 @@ export function SwipeRevealRow({
         x.setValue(trackedX(base.current, gesture.dx));
       },
       onPanResponderRelease: (_event, gesture) => {
-        const landing = restingX(trackedX(base.current, gesture.dx));
-        snapTo(landing);
-        if (landing === OPEN_X) settle.current();
-        else if (openRef.current) shut.current();
+        const outcome = releaseOutcome(base.current, gesture.dx, gesture.dy, openRef.current);
+        snapTo(outcome.x);
+        if (outcome.opens) settle.current();
+        if (outcome.closes) shut.current();
       },
       onPanResponderTerminationRequest: () => false,
     }),
   ).current;
 
   return (
-    <SwipeStage action={action} subjectTitle={subjectTitle} onAct={onAct}>
+    <SwipeStage action={action} subjectTitle={subjectTitle} revealed={revealedFrom(x)} onAct={onAct}>
       <Animated.View style={{ transform: [{ translateX: x }] }} {...pan.panHandlers}>
         {children}
       </Animated.View>

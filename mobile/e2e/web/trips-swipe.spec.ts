@@ -20,6 +20,14 @@ import {
 } from '../../src/removal/removalCopy';
 import { REVEAL_PX } from '../../src/removal/swipeReveal';
 
+declare global {
+  interface Window { __swipeStage: (of: string) => HTMLElement | null }
+}
+
+const SETTLE_MS = 700;
+
+const SNAP_SETTLE_MS = 400;
+
 const OWNER = ownerTagFor('web/trips-swipe');
 const MEMBER = IDENTITY_MAP['web/trips-swipe'].tags[1] as PoolTag;
 
@@ -44,25 +52,35 @@ async function amMember(id: string): Promise<boolean> {
   return read.status === 200;
 }
 
-async function swipeOpen(page: Page, action: 'delete' | 'leave', title: string): Promise<void> {
-  const panel = page
-    .locator(`[aria-label="${swipeActionLabel(action, title)}" i]`)
-    .locator('visible=true')
-    .last();
-  await expect(panel).toHaveCount(1, { timeout: 20_000 });
-  await panel.scrollIntoViewIfNeeded();
+function panelAction(page: Page, action: 'delete' | 'leave', title: string) {
+  return page.locator(`[aria-label="${swipeActionLabel(action, title)}" i]`);
+}
 
-  const box = await page.evaluate((label) => {
-    const found = Array.from(document.querySelectorAll('[aria-label]')).find(
-      (node) => node.getAttribute('aria-label')?.toLowerCase() === label.toLowerCase(),
-    );
-    const stage = found?.parentElement?.parentElement as HTMLElement | null;
-    const card = stage?.lastElementChild as HTMLElement | null;
+
+async function swipeOpen(page: Page, action: 'delete' | 'leave', title: string): Promise<void> {
+  const panel = page.locator(`[aria-label="${swipeActionLabel(action, title)}" i]`);
+  await expect(panel).toHaveCount(1, { timeout: 20_000 });
+
+  const label = swipeActionLabel(action, title);
+  await page.evaluate((wanted) => {
+    window.__swipeStage = (of: string) => {
+      const found = Array.from(document.querySelectorAll('[aria-label]')).find(
+        (node) => node.getAttribute('aria-label')?.toLowerCase() === of.toLowerCase(),
+      );
+      return (found?.parentElement?.parentElement as HTMLElement | null) ?? null;
+    };
+    window.__swipeStage(wanted)?.scrollIntoView({ block: 'center' });
+  }, label);
+  await page.waitForTimeout(SETTLE_MS);
+
+  const box = await page.evaluate((wanted) => {
+    const card = window.__swipeStage(wanted)?.lastElementChild as HTMLElement | null;
     if (card === null || card === undefined) return null;
     const rect = card.getBoundingClientRect();
+    if (rect.y < 0 || rect.y + rect.height > window.innerHeight) return null;
     return { x: rect.x, y: rect.y, w: rect.width, h: rect.height };
-  }, swipeActionLabel(action, title));
-  if (box === null) throw new Error(`no swipe card for ${title}`);
+  }, label);
+  if (box === null) throw new Error(`the swipe card for ${title} is not fully on screen`);
 
   const y = Math.round(box.y + box.h / 2);
   const from = Math.round(box.x + box.w - 24);
@@ -73,7 +91,7 @@ async function swipeOpen(page: Page, action: 'delete' | 'leave', title: string):
     await page.waitForTimeout(40);
   }
   await page.mouse.up();
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(SNAP_SETTLE_MS);
 }
 
 async function openTrips(page: Page): Promise<void> {
@@ -117,7 +135,7 @@ test('Leave collapses the row and offers Undo — and undo sends NOTHING', async
   await openTrips(page);
 
   await swipeOpen(page, 'leave', joinedTitle);
-  await labelled(page, swipeActionLabel('leave', joinedTitle)).click();
+  await panelAction(page, 'leave', joinedTitle).click();
 
   await expect(page.getByText(LEFT_TRIP_TOAST)).toBeVisible();
   await labelled(page, UNDO_LABEL).click();
@@ -137,7 +155,7 @@ test("the owner's Delete opens the modal, and its copy claims no destruction tha
   await openTrips(page);
 
   await swipeOpen(page, 'delete', ownedTitle);
-  await labelled(page, swipeActionLabel('delete', ownedTitle)).click();
+  await panelAction(page, 'delete', ownedTitle).click();
 
   await expect(page.getByText(deleteTripTitle(ownedTitle))).toBeVisible();
   await expect(page.getByText(DELETE_TRIP_BODY)).toBeVisible();
@@ -152,9 +170,9 @@ test('the CTA is inert until the acknowledgement is ticked, and Cancel leaves th
   await openTrips(page);
 
   await swipeOpen(page, 'delete', ownedTitle);
-  await labelled(page, swipeActionLabel('delete', ownedTitle)).click();
+  await panelAction(page, 'delete', ownedTitle).click();
 
-  await labelled(page, DELETE_TRIP_CTA_LABEL).click();
+  await expect(labelled(page, DELETE_TRIP_CTA_LABEL)).toBeDisabled();
   await expect(page.getByText(deleteTripTitle(ownedTitle))).toBeVisible();
   expect(await isArchived(owned.id, ownerToken)).toBe(false);
 
@@ -171,7 +189,7 @@ test('acknowledging and committing archives the trip, with a plain toast and no 
   await openTrips(page);
 
   await swipeOpen(page, 'delete', ownedTitle);
-  await labelled(page, swipeActionLabel('delete', ownedTitle)).click();
+  await panelAction(page, 'delete', ownedTitle).click();
   await labelled(page, deleteTripAcknowledgement(1)).click();
   await labelled(page, DELETE_TRIP_CTA_LABEL).click();
 
@@ -203,7 +221,7 @@ test('letting the Leave toast expire ends the membership for real, exactly once'
   await openTrips(page);
 
   await swipeOpen(page, 'leave', joinedTitle);
-  await labelled(page, swipeActionLabel('leave', joinedTitle)).click();
+  await panelAction(page, 'leave', joinedTitle).click();
   await expect(page.getByText(LEFT_TRIP_TOAST)).toBeVisible();
 
   await expect.poll(() => amMember(joined.id), { timeout: 20_000 }).toBe(false);

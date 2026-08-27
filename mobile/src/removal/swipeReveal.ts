@@ -32,3 +32,24 @@ export function landsOpen(x: number): boolean {
 export function restingX(x: number): number {
   return landsOpen(x) ? OPEN_X : 0;
 }
+
+
+export interface Release {
+  readonly x: number;
+  readonly opens: boolean;
+  readonly closes: boolean;
+}
+
+
+export function releaseOutcome(
+  baseX: number,
+  dx: number,
+  dy: number,
+  wasOpen: boolean,
+): Release {
+  if (!engages(dx, dy)) {
+    return { x: wasOpen ? 0 : baseX, opens: false, closes: wasOpen };
+  }
+  const x = restingX(trackedX(baseX, dx));
+  return { x, opens: x === OPEN_X && !wasOpen, closes: x === 0 && wasOpen };
+}
