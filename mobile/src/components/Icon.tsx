@@ -61,6 +61,7 @@ export type IconName =
   | 'transfer'
   | 'removeUser'
   | 'postcard'
+  | 'logOut'
   | 'personSearch';
 
 interface IconProps {
@@ -83,6 +84,14 @@ export function Icon({ name, size, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       {name === 'back' && <Polyline points="15 18 9 12 15 6" {...shared} />}
+
+      {name === 'logOut' && (
+        <>
+          <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" {...shared} />
+          <Polyline points="16 17 21 12 16 7" {...shared} />
+          <Line x1="21" y1="12" x2="9" y2="12" {...shared} />
+        </>
+      )}
 
       {name === 'postcard' && (
         <>

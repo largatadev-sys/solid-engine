@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#F2F1ED; font-family:Inter, system-ui, sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#EA580C; text-decoration:none; }
+  a:hover { color:#C2410C; }
+  .scrollpane::-webkit-scrollbar, .strip::-webkit-scrollbar { display:none; }
+  @keyframes livePulse {
+    0%, 100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.35; transform:scale(0.7); }
+  }
+</style>
+</helmet>
+
+<div style="padding:56px; display:flex; gap:56px; align-items:flex-start;">
+
+  <div style="width:352px; flex:none; display:flex; flex-direction:column; gap:16px; padding-top:8px;">
+    <div style="font-size:12px; font-weight:800; letter-spacing:2px; color:#A8A29E; text-transform:uppercase;">Largata · Profile v2</div>
+    <div style="font-size:29px; font-weight:800; color:#1B263B; line-height:1.14; letter-spacing:-0.5px;">Two screens, two ways to remove</div>
+    <div style="font-size:13px; line-height:1.7; color:#5C6470; text-wrap:pretty;">Trips are swiped, everything inside a trip is kebabbed. The Trips screen is pulled from the shipped one — tabs, rows, Plan a Trip bar and all — with the swipe added to it. Note the two palettes meeting here: Trips runs on navy and terracotta, Profile on orange.</div>
+
+    <div style="height:1px; background:#E2E4E8; margin:2px 0;"></div>
+
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="font-weight:700; color:#1B263B; letter-spacing:0.4px; text-transform:uppercase; font-size:11px;">Reused, not rebuilt</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;">The sheet is <span style="font-family:monospace; font-size:11.5px; color:#78716C;">members/BottomSheet.tsx</span> — 36×4 grabber, 17/22 title, <span style="font-family:monospace; font-size:11.5px; color:#78716C;">travelerRadii.sheet</span> 20, scrim <span style="font-family:monospace; font-size:11.5px; color:#78716C;">rgba(28,25,23,0.4)</span>, swipe-dismiss at 60px. Entries follow <span style="font-family:monospace; font-size:11.5px; color:#78716C;">MenuEntryRow</span>: 19px glyph, 15/20 w600, 14/20 padding, destructive <span style="font-family:monospace; font-size:11.5px; color:#78716C;">#B91C1C</span>, <span style="font-family:monospace; font-size:11.5px; color:#78716C;">MenuDivider</span> between.</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;">The undo toast is the house toast widened to hold an action: 14px radius, 13/17 w600 label, a hairline divider, a 44px <span style="color:#1B263B; font-weight:600;">Undo</span> target, and a 2px line draining left to right over the window. No confirm drawer on this screen.</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;">The kebab is <span style="font-family:monospace; font-size:11.5px; color:#78716C;">moreHorizontal</span> at 20px in <span style="font-family:monospace; font-size:11.5px; color:#78716C;">#A59E99</span>, in a 44px hit area — the same glyph, size and colour <span style="font-family:monospace; font-size:11.5px; color:#78716C;">MemberRow</span> already uses.</div>
+    </div>
+
+    <div style="height:1px; background:#E2E4E8; margin:2px 0;"></div>
+
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      <div style="font-weight:700; color:#1B263B; letter-spacing:0.4px; text-transform:uppercase; font-size:11px;">Menus</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;"><span style="color:#1B263B; font-weight:600;">Diary</span> — Edit diary details · Copy public link</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;"><span style="color:#1B263B; font-weight:600;">Postcard</span> — Edit postcard · Delete postcard</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;"><span style="color:#1B263B; font-weight:600;">Itinerary</span> — Edit details · View published page · Unpublish</div>
+      <div style="font-size:11.5px; line-height:1.6; color:#A8A29E;">A diary has no delete and needs none — it is the collection of its postcards. Delete the last one and the diary card collapses out of the list behind it, so an empty diary is never shown. Undo brings both back. Removing an itinerary from the world is unpublish, not delete: the trip survives untouched, so the word has to say so.</div>
+    </div>
+
+    <div style="height:1px; background:#E2E4E8; margin:2px 0;"></div>
+
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="font-weight:700; color:#1B263B; letter-spacing:0.4px; text-transform:uppercase; font-size:11px;">One rule for destructive acts</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;">The weight of the confirm follows the blast radius, not the word delete. A sheet is for choosing; a modal is for stopping. Never both at once.</div>
+
+      <div style="display:flex; gap:10px;">
+        <div style="width:52px; flex:none; font-size:10px; font-weight:800; letter-spacing:0.6px; color:#15803D; padding-top:3px; text-transform:uppercase;">Undo</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;"><span style="color:#1B263B; font-weight:600;">One item, your own</span> — delete a postcard. No confirm. The row collapses and the toast holds Undo for 5s; the <span style="font-family:monospace; font-size:11px; color:#78716C;">DELETE</span> is held client-side until the window closes, so undo costs no round trip.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:52px; flex:none; font-size:10px; font-weight:800; letter-spacing:0.6px; color:#15803D; padding-top:3px; text-transform:uppercase;">Undo</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;"><span style="color:#1B263B; font-weight:600;">Reversible</span> — unpublish the itinerary. No confirm either: it is a state, not a loss. Toast offers Republish.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:52px; flex:none; font-size:10px; font-weight:800; letter-spacing:0.6px; color:#B91C1C; padding-top:3px; text-transform:uppercase;">Modal</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;"><span style="color:#1B263B; font-weight:600;">Cascading, other people's data</span> — delete a trip. Swipe the card, tap Delete, then a centre-screen modal with an acknowledgement to tick. Owner only; a member's swipe says Leave instead.</div>
+      </div>
+      <div style="font-size:11.5px; line-height:1.6; color:#A8A29E;">Nothing in the app confirms twice. The two-drawer stack is gone: a sheet is a menu, a modal is a wall, and a toast is the safety net after the fact.</div>
+    </div>
+
+    <div style="height:1px; background:#E2E4E8; margin:2px 0;"></div>
+
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      <div style="font-weight:700; color:#1B263B; letter-spacing:0.4px; text-transform:uppercase; font-size:11px;">Trips, as built</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;">The Trips screen is <span style="font-family:monospace; font-size:11.5px; color:#78716C;">app/(tabs)/(trips)/trips.tsx</span> as it stands: 28/34 title with the coming-soon search glyph, <span style="font-family:monospace; font-size:11.5px; color:#78716C;">TripTabRow</span> across Upcoming · Ongoing · Completed on a 44px row with the 3px <span style="font-family:monospace; font-size:11.5px; color:#78716C;">#D96C4A</span> underline, <span style="font-family:monospace; font-size:11.5px; color:#78716C;">TripRow</span> cards — 76px cover, 15/20 title, destination · days subline, live-edit advisory with its pulsing dot, publication pill in <span style="font-family:monospace; font-size:11.5px; color:#78716C;">accentTint</span>.</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;">Plan a Trip stays a 51px bar at 4px radius on Upcoming only; Archived trips stays an underlined link on Completed only; empty tabs keep their own copy. It opens on Ongoing, as <span style="font-family:monospace; font-size:11.5px; color:#78716C;">landingTab</span> does.</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;">The toast is <span style="font-family:monospace; font-size:11.5px; color:#78716C;">FeedToast</span> geometry — pill, <span style="font-family:monospace; font-size:11.5px; color:#78716C;">#1C1917</span>, 13/17 semibold, 32px inset — widened to carry the Undo. That widening is the one component change this screen asks for.</div>
+      <div style="font-size:11.5px; line-height:1.6; color:#A8A29E;">Note for the API: <span style="font-family:monospace; font-size:11.5px; color:#78716C;">ItineraryResponse</span> carries no owner or role, so the list can't tell whose trip it is — and the swipe has to choose between Delete and Leave before it opens. The rows need a viewer role on the trips payload.</div>
+    </div>
+
+    <div style="height:1px; background:#E2E4E8; margin:2px 0;"></div>
+
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      <div style="font-weight:700; color:#1B263B; letter-spacing:0.4px; text-transform:uppercase; font-size:11px;">The swipe</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;">Drag a trip card left to reveal a 96px action panel; it snaps open past half and springs back under. Only one card stays open at a time, and switching tabs closes it.</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#5C6470;">On first arrival the top card peeks 14px and settles — one 900ms hint that the gesture exists, shown once per session. Reduce Motion skips the peek.</div>
+      <div style="font-size:11.5px; line-height:1.6; color:#A8A29E;">The panel is <span style="font-family:monospace; font-size:11.5px; color:#78716C;">colors.danger</span> for an owner and <span style="font-family:monospace; font-size:11.5px; color:#78716C;">textSecondary</span> for Leave — the only filled destructive surface in the app. It is earned: swiping is cheap, so the reveal has to look like a live wire.</div>
+    </div>
+
+    <div style="height:1px; background:#E2E4E8; margin:2px 0;"></div>
+
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      <div style="font-weight:700; color:#1B263B; letter-spacing:0.4px; text-transform:uppercase; font-size:11px;">Motion</div>
+      <div style="font-size:11.5px; line-height:1.5; color:#A8A29E;">Every duration below is a constant already in the codebase.</div>
+
+      <div style="display:flex; gap:10px;">
+        <div style="width:24px; flex:none; font-size:11px; font-weight:800; color:#1B263B; padding-top:2px;">M1</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;">Screen entrance — header, stats, pill, tabs then sections rise 8px and fade, <span style="font-family:monospace; font-size:11px;">listRiseMs</span> 150, 60ms stagger.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:24px; flex:none; font-size:11px; font-weight:800; color:#1B263B; padding-top:2px;">M2</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;">Stat bloom — counts fade up on arrival, <span style="font-family:monospace; font-size:11px;">valueBloomMs</span> 180.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:24px; flex:none; font-size:11px; font-weight:800; color:#1B263B; padding-top:2px;">M3</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;">Tab swap — underline slides between tabs, <span style="font-family:monospace; font-size:11px;">underlineMs</span> 200; label colour <span style="font-family:monospace; font-size:11px;">labelColorMs</span> 150; panel rises 150.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:24px; flex:none; font-size:11px; font-weight:800; color:#1B263B; padding-top:2px;">M4</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;">Section expand — body opens over 260ms, chevron rotates with it instead of snapping.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:24px; flex:none; font-size:11px; font-weight:800; color:#1B263B; padding-top:2px;">M5</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;">Sheet — scrim <span style="font-family:monospace; font-size:11px;">scrimInMs</span> 150, sheet rises 420px over <span style="font-family:monospace; font-size:11px;">sheetInMs</span> 200; out at 150. Entries stagger 40ms behind it.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:24px; flex:none; font-size:11px; font-weight:800; color:#1B263B; padding-top:2px;">M6</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;">Undo bar — the 2px line drains full width to zero over the 5s window, linear, so the remaining time is readable at a glance.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:24px; flex:none; font-size:11px; font-weight:800; color:#1B263B; padding-top:2px;">M7</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;">Delete — the row collapses to nothing over 280ms rather than vanishing, so the list stays legible.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:24px; flex:none; font-size:11px; font-weight:800; color:#1B263B; padding-top:2px;">M8</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;">Toast — in over <span style="font-family:monospace; font-size:11px;">SHOW_MS</span> 180, out at 180. Plain toasts hold <span style="font-family:monospace; font-size:11px;">HOLD_MS</span> 1600; the undo toast holds 5000. Undo restores the row in place, expanding it back over 260ms.</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="width:24px; flex:none; font-size:11px; font-weight:800; color:#1B263B; padding-top:2px;">M9</div>
+        <div style="font-size:12px; line-height:1.55; color:#5C6470;">Press feedback — 0.985 scale on kebabs, menu entries and CTAs, matching <span style="font-family:monospace; font-size:11px;">usePressFeedback</span>.</div>
+      </div>
+      <div style="font-size:11.5px; line-height:1.55; color:#A8A29E; padding-top:2px;">Reduce Motion drops every rise, rotation and stagger and keeps the scrim fade, as <span style="font-family:monospace; font-size:11px;">BottomSheet</span> already does.</div>
+    </div>
+
+    <div style="height:1px; background:#E2E4E8; margin:2px 0;"></div>
+    <div style="font-size:12px; line-height:1.65; color:#5C6470;">Try it: kebab on a postcard or a published itinerary, then the destructive row — sheet → collapse → undo toast, one overlay the whole way. On Trips, drag a card left.</div>
+    <div style="font-size:12px; line-height:1.65; color:#5C6470;">Still open, and out of scope this round: stat counts are ungrouped (<span style="font-family:monospace; font-size:11.5px; color:#78716C;">1204</span>), and the 400px photo stage still letterboxes landscape shots.</div>
+  </div>
+
+  <div data-screen-label="Profile" style="width:393px; height:852px; flex:none; background:#FFFFFF; border-radius:44px; box-shadow:0 40px 90px rgba(27,38,59,0.18), 0 0 0 10px #1B263B; overflow:hidden; position:relative; display:flex; flex-direction:column;">
+
+    <div style="height:48px; flex:none; display:flex; align-items:flex-end; justify-content:space-between; padding:0 28px 6px; background:#FFFFFF;">
+      <div style="font-size:14px; font-weight:700; color:#1C1917; letter-spacing:-0.2px;">9:41</div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="#1C1917"><rect x="0" y="7" width="3" height="4" rx="0.7"></rect><rect x="4.5" y="5" width="3" height="6" rx="0.7"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="0.7"></rect><rect x="13.5" y="0" width="3" height="11" rx="0.7"></rect></svg>
+        <svg width="24" height="12" viewBox="0 0 24 12" fill="none"><rect x="0.6" y="0.6" width="19" height="10.8" rx="3" stroke="#1C1917" stroke-opacity="0.4"></rect><rect x="2.2" y="2.2" width="15.8" height="7.6" rx="2" fill="#1C1917"></rect><path d="M21.4 4.2v3.6a2 2 0 0 0 0-3.6z" fill="#1C1917" fill-opacity="0.5"></path></svg>
+      </div>
+    </div>
+
+    <div class="scrollpane" style="flex:1; overflow-y:auto; background:#FFFFFF; scrollbar-width:none;">
+
+      <div style="padding:12px 20px 0; display:flex; flex-direction:column; gap:16px;">
+
+        <div style="display:flex; align-items:center; gap:16px; opacity:0; transform:translateY(8px); transition:opacity 150ms ease-out, transform 150ms ease-out; {{ enter0 }}">
+          <div style="width:72px; height:72px; border-radius:36px; flex:none; background:#FDE4CF; display:flex; align-items:center; justify-content:center; font-size:22px; line-height:28px; font-weight:700; color:#C2410C;">EM</div>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+            <div style="font-size:22px; line-height:28px; font-weight:800; color:#1C1917; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Elena Marsh</div>
+            <div style="font-size:13px; line-height:17px; font-weight:400; color:#78716C; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@elenamarsh · #10428</div>
+            <div style="font-size:13.5px; line-height:18px; font-weight:400; color:#44403C;">Slow travel, long lunches. Currently mapping the Alentejo coast.</div>
+          </div>
+          <div style="box-sizing:border-box; width:38px; height:38px; border-radius:19px; flex:none; border:1px solid #E7E5E4; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background-color 140ms ease, transform 120ms ease-out;" style-hover="background:#FAFAF9;" style-active="transform:scale(0.985);" title="Open your account settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#68615E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </div>
+        </div>
+
+        <div style="display:flex; border:1px solid #E7E5E4; border-radius:14px; padding:10px 0; opacity:0; transform:translateY(8px); transition:opacity 150ms ease-out, transform 150ms ease-out; transition-delay:60ms; {{ enter1 }}">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;">
+            <div style="font-size:16px; line-height:20px; font-weight:700; color:#1C1917; opacity:0; transition:opacity 180ms ease-out; transition-delay:240ms; {{ bloom }}">6</div>
+            <div style="font-size:11px; line-height:14px; font-weight:400; color:#78716C;">Published</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; border-left:1px solid #F5F5F4;">
+            <div style="font-size:16px; line-height:20px; font-weight:700; color:#1C1917; opacity:0; transition:opacity 180ms ease-out; transition-delay:290ms; {{ bloom }}">14</div>
+            <div style="font-size:11px; line-height:14px; font-weight:400; color:#78716C;">Destinations</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; border-left:1px solid #F5F5F4; cursor:pointer;">
+            <div style="font-size:16px; line-height:20px; font-weight:700; color:#1C1917; opacity:0; transition:opacity 180ms ease-out; transition-delay:340ms; {{ bloom }}">1204</div>
+            <div style="font-size:11px; line-height:14px; font-weight:400; color:#78716C;">Followers</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; border-left:1px solid #F5F5F4; cursor:pointer;">
+            <div style="font-size:16px; line-height:20px; font-weight:700; color:#1C1917; opacity:0; transition:opacity 180ms ease-out; transition-delay:390ms; {{ bloom }}">318</div>
+            <div style="font-size:11px; line-height:14px; font-weight:400; color:#78716C;">Following</div>
+          </div>
+        </div>
+
+        <div style="box-sizing:border-box; height:40px; border:1px solid #E7E5E4; border-radius:999px; display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; transform:translateY(8px); transition:opacity 150ms ease-out, transform 150ms ease-out, background-color 140ms ease; transition-delay:100ms; {{ enter2 }}" style-hover="background:#FAFAF9;">
+          <div style="font-size:13.5px; line-height:17px; font-weight:700; color:#1C1917;">Edit Profile</div>
+        </div>
+      </div>
+
+      <div style="position:relative; display:flex; border-bottom:1px solid #E7E5E4; margin-top:6px; opacity:0; transition:opacity 150ms ease-out; transition-delay:140ms; {{ enter3 }}">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0 11px; cursor:pointer;" onClick="{{ pickDiary }}">
+          <div style="font-size:14px; line-height:18px; transition:color 150ms ease, font-weight 150ms ease; {{ diaryLabelSkin }}">Diary</div>
+        </div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0 11px; cursor:pointer;" onClick="{{ pickItineraries }}">
+          <div style="font-size:14px; line-height:18px; transition:color 150ms ease, font-weight 150ms ease; {{ itinLabelSkin }}">Itineraries</div>
+        </div>
+        <div style="position:absolute; bottom:0; left:0; width:50%; height:3px; background:#EA580C; border-top-left-radius:100px; border-top-right-radius:100px; transition:transform 200ms cubic-bezier(0.2,0.7,0.2,1); {{ underlineSkin }}"></div>
+      </div>
+
+      <sc-if value="{{ onDiary }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:16px 20px 32px; display:flex; flex-direction:column; gap:12px; opacity:0; transform:translateY(8px); transition:opacity 150ms ease-out, transform 150ms ease-out; transition-delay:180ms; {{ enter4 }}">
+
+          <div style="overflow:hidden; transition:max-height 280ms cubic-bezier(0.4,0,1,1), opacity 200ms ease, margin-bottom 280ms ease; max-height:1400px; {{ skins.diaryA }}">
+            <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; align-items:center; padding:12px;">
+                <div style="flex:1; display:flex; align-items:center; gap:10px; min-width:0; cursor:pointer;">
+                  <div style="width:44px; height:44px; border-radius:10px; flex:none; background:linear-gradient(150deg,#2F4858,#88A9A0 46%,#EFE3C8);"></div>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <div style="font-size:15px; line-height:19px; font-weight:700; color:#1C1917; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Alentejo Coast</div>
+                    <div style="font-size:12px; line-height:15px; font-weight:400; color:#78716C; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Alentejo, Portugal · 8 days</div>
+                  </div>
+                </div>
+                <div style="flex:none; width:44px; height:44px; margin-right:-8px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:22px; transition:background-color 140ms ease, transform 120ms ease-out;" style-hover="background:#FAFAF9;" style-active="transform:scale(0.985);" onClick="{{ menuDiaryA }}" title="More options for Alentejo Coast">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#A59E99"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                </div>
+                <div style="flex:none; padding:4px 0 4px 6px; cursor:pointer;" onClick="{{ toggleA }}">
+                  <div style="box-sizing:border-box; width:9px; height:9px; border-right:2.5px solid #A8A29E; border-bottom:2.5px solid #A8A29E; margin-right:4px; transition:transform 260ms cubic-bezier(0.2,0.7,0.2,1); {{ chevronA }}"></div>
+                </div>
+              </div>
+
+              <div style="overflow:hidden; transition:max-height 260ms cubic-bezier(0.2,0.7,0.2,1), opacity 200ms ease; max-height:0; opacity:0; {{ bodyA }}">
+                <div style="padding:0 12px 12px; display:flex; flex-direction:column; gap:12px;">
+
+                  <div style="overflow:hidden; transition:max-height 280ms cubic-bezier(0.4,0,1,1), opacity 200ms ease; max-height:700px; {{ skins.p1 }}">
+                    <div style="border:1px solid #F5F5F4; border-radius:14px; overflow:hidden; background:#FFFFFF;">
+                      <div style="position:relative; height:400px; background:#E7E5E4;">
+                        <div class="strip" style="display:flex; height:400px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none;" onScroll="{{ stripScrolled }}">
+                          <div style="width:325px; height:400px; flex:none; scroll-snap-align:start; background:linear-gradient(155deg,#2F4858,#7E9E96 48%,#EFE3C8);"></div>
+                          <div style="width:325px; height:400px; flex:none; scroll-snap-align:start; background:linear-gradient(155deg,#6B4A2F,#C08B5C 50%,#F3DCC0);"></div>
+                          <div style="width:325px; height:400px; flex:none; scroll-snap-align:start; background:linear-gradient(155deg,#26506B,#6C9CB8 46%,#DCEAF2);"></div>
+                          <div style="width:325px; height:400px; flex:none; scroll-snap-align:start; background:linear-gradient(155deg,#5C4A6B,#9B87AC 50%,#E6DEEE);"></div>
+                        </div>
+                        <div style="position:absolute; top:10px; right:10px; background:rgba(28,25,23,0.72); border-radius:999px; padding:3px 9px; font-size:10px; line-height:13px; font-weight:700; color:#FFFFFF; pointer-events:none;">{{ counter }}</div>
+                        <div style="position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:5px; pointer-events:none;">
+                          <sc-for list="{{ dots }}" as="dot" hint-placeholder-count="4">
+                            <div style="width:6px; height:6px; border-radius:3px; transition:background-color 200ms ease; background:{{ dot.fill }};"></div>
+                          </sc-for>
+                        </div>
+                      </div>
+                      <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                          <div style="flex:1; font-size:15px; line-height:19px; font-weight:700; color:#1C1917;">Cliff road to Bordeira</div>
+                          <div style="flex:none; background:#FFEDD5; border-radius:999px; padding:2px 9px; font-size:11px; line-height:14px; font-weight:700; color:#C2410C; white-space:nowrap;">Day 6 · 4:20 PM</div>
+                        </div>
+                        <div style="font-size:13.5px; line-height:19.6px; font-weight:400; color:#44403C;">Gravel the whole way down, then the sea opens up all at once. We stopped for melon at a roadside stand and stayed an hour.</div>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                          <div style="display:flex; align-items:center; gap:6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#EA580C" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.7-9.3-9A5.2 5.2 0 0 1 12 6.5 5.2 5.2 0 0 1 21.3 12c-1.8 4.3-9.3 9-9.3 9z"></path></svg>
+                            <div style="font-size:12px; line-height:15px; font-weight:600; color:#78716C;">128 likes</div>
+                          </div>
+                          <div style="flex:1;"></div>
+                          <div style="width:44px; height:44px; margin:-10px -10px -10px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:22px; transition:background-color 140ms ease, transform 120ms ease-out;" style-hover="background:#FAFAF9;" style-active="transform:scale(0.985);" onClick="{{ menuP1 }}" title="More options for Cliff road to Bordeira">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#A59E99"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="overflow:hidden; transition:max-height 280ms cubic-bezier(0.4,0,1,1), opacity 200ms ease; max-height:700px; {{ skins.p2 }}">
+                    <div style="border:1px solid #F5F5F4; border-radius:14px; overflow:hidden; background:#FFFFFF;">
+                      <div style="height:400px; background:linear-gradient(150deg,#7A5A2E,#C9A05C 50%,#F2E3C4);"></div>
+                      <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                          <div style="flex:1; font-size:15px; line-height:19px; font-weight:700; color:#1C1917;">Melon stand on the N268</div>
+                          <div style="flex:none; background:#FFEDD5; border-radius:999px; padding:2px 9px; font-size:11px; line-height:14px; font-weight:700; color:#C2410C; white-space:nowrap;">Day 6 · 6:05 PM</div>
+                        </div>
+                        <div style="font-size:13.5px; line-height:19.6px; font-weight:400; color:#44403C;">One euro a slice, cash in a tin. He wouldn't let us leave without a second.</div>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                          <div style="display:flex; align-items:center; gap:6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#EA580C" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.7-9.3-9A5.2 5.2 0 0 1 12 6.5 5.2 5.2 0 0 1 21.3 12c-1.8 4.3-9.3 9-9.3 9z"></path></svg>
+                            <div style="font-size:12px; line-height:15px; font-weight:600; color:#78716C;">64 likes</div>
+                          </div>
+                          <div style="flex:1;"></div>
+                          <div style="width:44px; height:44px; margin:-10px -10px -10px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:22px; transition:background-color 140ms ease, transform 120ms ease-out;" style-hover="background:#FAFAF9;" style-active="transform:scale(0.985);" onClick="{{ menuP2 }}" title="More options for Melon stand on the N268">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#A59E99"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="overflow:hidden; transition:max-height 280ms cubic-bezier(0.4,0,1,1), opacity 200ms ease, margin-bottom 280ms ease; max-height:1400px; {{ skins.diaryB }}">
+            <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; align-items:center; padding:12px;">
+                <div style="flex:1; display:flex; align-items:center; gap:10px; min-width:0; cursor:pointer;">
+                  <div style="width:44px; height:44px; border-radius:10px; flex:none; background:linear-gradient(150deg,#7C4A2D,#C98A5B 48%,#F0D9BE);"></div>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <div style="font-size:15px; line-height:19px; font-weight:700; color:#1C1917; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Bali Temple Run</div>
+                    <div style="font-size:12px; line-height:15px; font-weight:400; color:#78716C; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Bali, Indonesia · 12 days</div>
+                  </div>
+                </div>
+                <div style="flex:none; width:44px; height:44px; margin-right:-8px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:22px; transition:background-color 140ms ease, transform 120ms ease-out;" style-hover="background:#FAFAF9;" style-active="transform:scale(0.985);" onClick="{{ menuDiaryB }}" title="More options for Bali Temple Run">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#A59E99"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                </div>
+                <div style="flex:none; padding:4px 0 4px 6px; cursor:pointer;" onClick="{{ toggleB }}">
+                  <div style="box-sizing:border-box; width:9px; height:9px; border-right:2.5px solid #A8A29E; border-bottom:2.5px solid #A8A29E; margin-right:4px; transition:transform 260ms cubic-bezier(0.2,0.7,0.2,1); {{ chevronB }}"></div>
+                </div>
+              </div>
+
+              <div style="overflow:hidden; transition:max-height 260ms cubic-bezier(0.2,0.7,0.2,1), opacity 200ms ease; max-height:0; opacity:0; {{ bodyB }}">
+                <div style="padding:0 12px 12px;">
+                  <div style="overflow:hidden; transition:max-height 280ms cubic-bezier(0.4,0,1,1), opacity 200ms ease; max-height:700px; {{ skins.p3 }}">
+                    <div style="border:1px solid #F5F5F4; border-radius:14px; overflow:hidden; background:#FFFFFF;">
+                      <div style="height:400px; background:linear-gradient(155deg,#1F4E46,#4E8F79 48%,#CFE6D5);"></div>
+                      <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                          <div style="flex:1; font-size:15px; line-height:19px; font-weight:700; color:#1C1917;">Tirta Empul at first light</div>
+                          <div style="flex:none; background:#FFEDD5; border-radius:999px; padding:2px 9px; font-size:11px; line-height:14px; font-weight:700; color:#C2410C; white-space:nowrap;">Day 3 · 6:40 AM</div>
+                        </div>
+                        <div style="font-size:13.5px; line-height:19.6px; font-weight:400; color:#44403C;">Forty deep in the queue by six. Cold enough that nobody minded.</div>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                          <div style="display:flex; align-items:center; gap:6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#EA580C" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.7-9.3-9A5.2 5.2 0 0 1 12 6.5 5.2 5.2 0 0 1 21.3 12c-1.8 4.3-9.3 9-9.3 9z"></path></svg>
+                            <div style="font-size:12px; line-height:15px; font-weight:600; color:#78716C;">212 likes</div>
+                          </div>
+                          <div style="flex:1;"></div>
+                          <div style="width:44px; height:44px; margin:-10px -10px -10px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:22px; transition:background-color 140ms ease, transform 120ms ease-out;" style-hover="background:#FAFAF9;" style-active="transform:scale(0.985);" onClick="{{ menuP3 }}" title="More options for Tirta Empul at first light">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#A59E99"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <sc-if value="{{ allGone }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12px; line-height:15px; font-weight:400; color:#78716C; padding-top:4px;">No diary entries yet. Open a trip and add your first postcard.</div>
+          </sc-if>
+
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ onItineraries }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:16px 20px 32px; display:flex; flex-direction:column; gap:14px; opacity:0; transform:translateY(8px); transition:opacity 150ms ease-out, transform 150ms ease-out; {{ enter4 }}">
+
+          <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden; background:#FFFFFF; cursor:pointer; transition:max-height 280ms cubic-bezier(0.4,0,1,1), opacity 200ms ease, margin-bottom 280ms ease; max-height:400px; {{ skins.i1 }}">
+            <div style="position:relative; height:140px; background:#E7E5E4;">
+              <div style="width:100%; height:140px; background:linear-gradient(150deg,#2F4858,#88A9A0 46%,#EFE3C8);"></div>
+              <div style="position:absolute; top:10px; right:10px; background:rgba(28,25,23,0.75); border-radius:999px; padding:3px 10px; font-size:11px; line-height:14px; font-weight:700; color:#FFFFFF; white-space:nowrap;">$1,240 / person</div>
+            </div>
+            <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <div style="flex:1; font-size:17px; line-height:22px; font-weight:700; color:#1C1917;">Alentejo in Eight Days</div>
+                <div style="flex:none; background:#DCFCE7; border-radius:999px; padding:2px 8px; font-size:10px; line-height:13px; font-weight:700; letter-spacing:0.4px; color:#15803D;">PUBLISHED</div>
+              </div>
+              <div style="font-size:13px; line-height:17px; font-weight:400; color:#78716C;">Alentejo, Portugal · 8 days</div>
+              <div style="display:flex; align-items:center; gap:5px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"></polygon></svg>
+                <div style="font-size:13px; line-height:17px; font-weight:700; color:#1C1917;">4.8</div>
+                <div style="flex:1;"></div>
+                <div style="width:44px; height:44px; margin:-10px -10px -10px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:22px; transition:background-color 140ms ease, transform 120ms ease-out;" style-hover="background:#FAFAF9;" style-active="transform:scale(0.985);" onClick="{{ menuI1 }}" title="More options for Alentejo in Eight Days">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#A59E99"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="border:1px solid #E7E5E4; border-radius:16px; overflow:hidden; background:#FFFFFF; cursor:pointer; transition:max-height 280ms cubic-bezier(0.4,0,1,1), opacity 200ms ease, margin-bottom 280ms ease; max-height:400px; {{ skins.i2 }}">
+            <div style="position:relative; height:140px; background:#E7E5E4;">
+              <div style="width:100%; height:140px; background:linear-gradient(150deg,#1F4E46,#4E8F79 48%,#CFE6D5);"></div>
+              <div style="position:absolute; top:10px; right:10px; background:rgba(28,25,23,0.75); border-radius:999px; padding:3px 10px; font-size:11px; line-height:14px; font-weight:700; color:#FFFFFF; white-space:nowrap;">$890 / person</div>
+            </div>
+            <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <div style="flex:1; font-size:17px; line-height:22px; font-weight:700; color:#1C1917;">Temples Before Sunrise</div>
+                <div style="flex:none; background:#DCFCE7; border-radius:999px; padding:2px 8px; font-size:10px; line-height:13px; font-weight:700; letter-spacing:0.4px; color:#15803D;">PUBLISHED</div>
+              </div>
+              <div style="font-size:13px; line-height:17px; font-weight:400; color:#78716C;">Bali, Indonesia · 12 days</div>
+              <div style="display:flex; align-items:center; gap:5px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"></polygon></svg>
+                <div style="font-size:13px; line-height:17px; font-weight:700; color:#1C1917;">4.6</div>
+                <div style="flex:1;"></div>
+                <div style="width:44px; height:44px; margin:-10px -10px -10px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:22px; transition:background-color 140ms ease, transform 120ms ease-out;" style-hover="background:#FAFAF9;" style-active="transform:scale(0.985);" onClick="{{ menuI2 }}" title="More options for Temples Before Sunrise">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#A59E99"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </sc-if>
+
+    </div>
+
+    <div style="flex:none; display:flex; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8;">
+      <div style="flex:1; height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"></path><polyline points="9 21 9 13 15 13 15 21"></polyline></svg>
+        <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470;">Home</div>
+      </div>
+      <div style="flex:1; height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470;">Discover</div>
+      </div>
+      <div style="flex:1; height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 10.3h20V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z" fill="#5C6470"></path><path d="M2 6.5A1.5 1.5 0 0 1 3.5 5h17A1.5 1.5 0 0 1 22 6.5v2.3a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 8.8Z" fill="#5C6470"></path><path d="M9 5V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1" fill="none" stroke="#5C6470" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470;">Trips</div>
+      </div>
+      <div style="flex:1; height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <div style="font-size:13px; line-height:20px; font-weight:600; color:#EA580C;">Profile</div>
+      </div>
+    </div>
+
+    <div style="position:absolute; inset:0; background:rgba(28,25,23,0.4); opacity:0; transition:opacity 150ms ease; pointer-events:none; z-index:20; {{ scrimSkin }}" onClick="{{ dismissAll }}"></div>
+
+    <div style="position:absolute; left:0; right:0; bottom:0; background:#FFFFFF; border-top-left-radius:20px; border-top-right-radius:20px; padding:10px 0 24px; box-shadow:0 -8px 32px rgba(28,25,23,0.14); transform:translateY(420px); transition:transform 200ms cubic-bezier(0,0,0.58,1); z-index:21; {{ sheetSkin }}">
+      <div style="width:36px; height:4px; border-radius:100px; background:#E7E5E4; margin:0 auto 10px;"></div>
+      <div style="font-size:17px; line-height:22px; font-weight:700; color:#1C1917; padding:4px 20px 12px;">{{ sheetTitle }}</div>
+      <sc-for list="{{ entries }}" as="entry" hint-placeholder-count="3">
+        <div>
+          <div style="height:1px; background:#F5F5F4; margin:0 20px; {{ entry.dividerSkin }}"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:14px 20px; min-height:44px; box-sizing:border-box; cursor:pointer; opacity:0; transform:translateY(4px); transition:opacity 150ms ease-out, transform 150ms ease-out, background-color 140ms ease; {{ entry.enterSkin }}" style-hover="background:#FAFAF9;" onClick="{{ entry.press }}">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{ entry.tone }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ entry.d1 }}"></path><path d="{{ entry.d2 }}"></path><path d="{{ entry.d3 }}"></path></svg>
+            <div style="font-size:15px; line-height:20px; font-weight:600; color:{{ entry.tone }};">{{ entry.label }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="position:absolute; left:20px; right:20px; bottom:104px; display:flex; justify-content:center; pointer-events:none; z-index:40; opacity:0; transform:translateY(6px); transition:opacity 180ms ease, transform 180ms ease; {{ toastSkin }}">
+      <div style="position:relative; overflow:hidden; max-width:100%; background:rgba(28,25,23,0.92); border-radius:14px; display:flex; align-items:center; {{ toastBodySkin }}">
+        <div style="font-size:13px; line-height:17px; font-weight:600; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ toast }}</div>
+        <div style="display:none; align-items:center; flex:none; padding-left:14px; {{ undoRowSkin }}">
+          <div style="width:1px; height:20px; background:rgba(255,255,255,0.2);"></div>
+          <div style="min-height:44px; display:flex; align-items:center; padding:0 16px; cursor:pointer; transition:transform 120ms ease-out;" style-active="transform:scale(0.985);" onClick="{{ undo }}">
+            <div style="font-size:13.5px; line-height:17px; font-weight:700; color:#FDBA74;">Undo</div>
+          </div>
+        </div>
+        <div style="position:absolute; left:0; bottom:0; height:2px; background:#FDBA74; width:100%; transform-origin:left center; transform:scaleX(0); {{ barSkin }}"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div data-screen-label="Trips" style="width:393px; height:852px; flex:none; background:#FAF9F6; border-radius:44px; box-shadow:0 40px 90px rgba(27,38,59,0.18), 0 0 0 10px #1B263B; overflow:hidden; position:relative; display:flex; flex-direction:column;">
+
+    <div style="height:48px; flex:none; display:flex; align-items:flex-end; justify-content:space-between; padding:0 28px 6px; background:#FAF9F6;">
+      <div style="font-size:14px; font-weight:700; color:#1C1917; letter-spacing:-0.2px;">9:41</div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="#1C1917"><rect x="0" y="7" width="3" height="4" rx="0.7"></rect><rect x="4.5" y="5" width="3" height="6" rx="0.7"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="0.7"></rect><rect x="13.5" y="0" width="3" height="11" rx="0.7"></rect></svg>
+        <svg width="24" height="12" viewBox="0 0 24 12" fill="none"><rect x="0.6" y="0.6" width="19" height="10.8" rx="3" stroke="#1C1917" stroke-opacity="0.4"></rect><rect x="2.2" y="2.2" width="15.8" height="7.6" rx="2" fill="#1C1917"></rect><path d="M21.4 4.2v3.6a2 2 0 0 0 0-3.6z" fill="#1C1917" fill-opacity="0.5"></path></svg>
+      </div>
+    </div>
+
+    <div style="flex:none; display:flex; align-items:center; justify-content:space-between; padding:16px 24px 8px;">
+      <div style="font-size:28px; line-height:34px; font-weight:700; letter-spacing:-0.3px; color:#1B263B;">Trips</div>
+      <div style="width:44px; height:44px; margin:-10px -12px -10px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:opacity 100ms ease;" style-active="opacity:0.85;" title="Search trips, coming soon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B263B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </div>
+    </div>
+
+    <div style="position:relative; flex:none; display:flex; height:44px; border-bottom:1px solid #E2E4E8;">
+      <sc-for list="{{ tripTabs }}" as="tab" hint-placeholder-count="3">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:opacity 100ms ease;" style-active="opacity:0.85;" onClick="{{ tab.pick }}">
+          <div style="font-size:14px; line-height:18px; transition:color 150ms ease; {{ tab.skin }}">{{ tab.label }}</div>
+        </div>
+      </sc-for>
+      <div style="position:absolute; bottom:-1px; left:0; width:33.3333%; height:3px; background:#D96C4A; border-top-left-radius:100px; border-top-right-radius:100px; transition:transform 200ms cubic-bezier(0.2,0.7,0.2,1); {{ tripUnderlineSkin }}"></div>
+    </div>
+
+    <div class="scrollpane" style="flex:1; overflow-y:auto; scrollbar-width:none;">
+      <div style="padding:16px 16px 16px; display:flex; flex-direction:column; gap:8px;">
+
+        <sc-for list="{{ trips }}" as="trip" hint-placeholder-count="3">
+          <div style="overflow:hidden; transition:max-height 280ms cubic-bezier(0.4,0,1,1), opacity 200ms ease, margin-bottom 280ms ease; max-height:220px; {{ trip.rowSkin }}">
+            <div style="position:relative; border-radius:16px;">
+              <div style="position:absolute; inset:0; border-radius:16px; overflow:hidden; display:flex; justify-content:flex-end; background:{{ trip.panelFill }};">
+                <div style="width:96px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; cursor:pointer; transition:opacity 100ms ease;" style-active="opacity:0.85;" onClick="{{ trip.act }}">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ trip.actD1 }}"></path><path d="{{ trip.actD2 }}"></path><path d="{{ trip.actD3 }}"></path></svg>
+                  <div style="font-size:12px; line-height:15px; font-weight:600; color:#FFFFFF;">{{ trip.actLabel }}</div>
+                </div>
+              </div>
+              <div style="position:relative; box-sizing:border-box; display:flex; align-items:center; gap:12px; padding:12px; background:#FFFFFF; border:1px solid #E2E4E8; border-radius:16px; cursor:grab; touch-action:pan-y; transform:translateX(0); {{ trip.cardSkin }}" onPointerDown="{{ trip.down }}" onPointerMove="{{ trip.move }}" onPointerUp="{{ trip.up }}" onPointerCancel="{{ trip.up }}">
+                <div style="width:76px; height:76px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center; background:{{ trip.thumb }};">
+                  <sc-if value="{{ trip.noCover }}" hint-placeholder-val="{{ false }}">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 8 3 16 6 23 3 23 18 16 21 8 18 1 21"></polygon><line x1="8" y1="3" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="21"></line></svg>
+                  </sc-if>
+                </div>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <div style="font-size:15px; line-height:20px; font-weight:700; color:#1B263B; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ trip.title }}</div>
+                  <div style="font-size:12px; line-height:16px; font-weight:400; color:#5C6470; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ trip.subline }}</div>
+                  <sc-if value="{{ trip.editing }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex; align-items:center; gap:6px; padding-top:2px;">
+                      <div style="width:8px; height:8px; border-radius:100px; flex:none; background:#D97706; animation:livePulse 1800ms ease-in-out infinite;"></div>
+                      <div style="font-size:11px; line-height:14px; font-weight:600; color:#B45309;">Currently being edited</div>
+                    </div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ trip.badged }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex:none; border-radius:100px; padding:2px 8px; background:rgba(217,108,74,0.0627451);">
+                    <div style="font-size:11px; line-height:14px; font-weight:600; color:#D96C4A;">{{ trip.badge }}</div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ tabEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:96px 24px 0; display:flex; flex-direction:column; align-items:center; gap:12px;">
+            <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470; text-align:center;">{{ emptyCopy }}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showsArchived }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; justify-content:center; padding:16px 0 4px; cursor:pointer;">
+            <div style="font-size:12px; line-height:16px; font-weight:600; color:#5C6470; text-decoration:underline;">Archived trips</div>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+
+    <sc-if value="{{ showsCreate }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:none; padding:8px 16px 16px; background:#FAF9F6;">
+        <div style="height:51px; border-radius:4px; background:#D96C4A; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:opacity 100ms ease;" style-active="opacity:0.85;">
+          <div style="font-size:15px; line-height:18px; font-weight:600; color:#FFFFFF;">Plan a Trip</div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="flex:none; display:flex; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8;">
+      <div style="flex:1; height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"></path><polyline points="9 21 9 13 15 13 15 21"></polyline></svg>
+        <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470;">Home</div>
+      </div>
+      <div style="flex:1; height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470;">Discover</div>
+      </div>
+      <div style="flex:1; height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 10.3h20V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z" fill="#EA580C"></path><path d="M2 6.5A1.5 1.5 0 0 1 3.5 5h17A1.5 1.5 0 0 1 22 6.5v2.3a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 8.8Z" fill="#EA580C"></path><path d="M9 5V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1" fill="none" stroke="#EA580C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <div style="font-size:13px; line-height:20px; font-weight:600; color:#EA580C;">Trips</div>
+      </div>
+      <div style="flex:1; height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470;">Profile</div>
+      </div>
+    </div>
+
+    <div style="position:absolute; inset:0; background:rgba(27,38,59,0.5490196); opacity:0; transition:opacity 150ms ease; pointer-events:none; z-index:50; {{ modalScrimSkin }}" onClick="{{ closeModal }}"></div>
+
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:24px; pointer-events:none; z-index:51;">
+      <div style="box-sizing:border-box; width:100%; background:#FFFFFF; border-radius:14px; padding:20px 20px 12px; box-shadow:0 24px 60px rgba(27,38,59,0.28); opacity:0; transform:scale(0.96); transition:opacity 200ms cubic-bezier(0.2,0.7,0.2,1), transform 200ms cubic-bezier(0.2,0.7,0.2,1); {{ modalSkin }}">
+        <div style="font-size:17px; line-height:22px; font-weight:700; color:#1B263B; padding-bottom:8px;">Delete {{ modalTitle }}?</div>
+        <div style="font-size:13.5px; line-height:19px; font-weight:400; color:#5C6470; padding-bottom:14px; text-wrap:pretty;">This deletes the plan, the chat, the photo dump and <span style="color:#1B263B; font-weight:600;">every member's postcards and photos</span> — for everyone, instantly. It cannot be undone.</div>
+        <div style="display:flex; align-items:flex-start; gap:10px; background:#FAF9F6; border:1px solid #E2E4E8; border-radius:8px; padding:12px; margin-bottom:16px; cursor:pointer;" onClick="{{ toggleAck }}">
+          <div style="box-sizing:border-box; width:20px; height:20px; flex:none; border-radius:4px; border:2px solid #B3261E; display:flex; align-items:center; justify-content:center; margin-top:1px; transition:background-color 140ms ease; {{ ackBoxSkin }}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity:0; transition:opacity 140ms ease; {{ ackTickSkin }}"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <div style="font-size:12.5px; line-height:17px; font-weight:600; color:#1B263B;">I understand {{ modalMembers }} other members lose their postcards and photos.</div>
+        </div>
+        <div style="height:51px; border-radius:4px; display:flex; align-items:center; justify-content:center; transition:background-color 160ms ease, opacity 100ms ease; {{ modalCtaSkin }}" style-active="opacity:0.85;" onClick="{{ commitTrip }}">
+          <div style="font-size:16px; line-height:20px; font-weight:700; {{ modalCtaInk }}">Delete trip</div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:center; min-height:44px; cursor:pointer;" onClick="{{ closeModal }}">
+          <div style="font-size:15px; line-height:20px; font-weight:600; color:#5C6470;">Cancel</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="position:absolute; left:32px; right:32px; bottom:116px; display:flex; justify-content:center; pointer-events:none; z-index:60; opacity:0; transition:opacity 180ms ease; {{ tripToastSkin }}">
+      <div style="position:relative; overflow:hidden; max-width:100%; background:#1C1917; border-radius:100px; display:flex; align-items:center; justify-content:center; {{ tripToastBodySkin }}">
+        <div style="font-size:13px; line-height:17px; font-weight:600; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ tripToast }}</div>
+        <div style="display:none; align-items:center; flex:none; padding-left:14px; {{ undoTripRowSkin }}">
+          <div style="width:1px; height:18px; background:rgba(255,255,255,0.2);"></div>
+          <div style="min-height:44px; display:flex; align-items:center; padding:0 16px; cursor:pointer; transition:opacity 100ms ease;" style-active="opacity:0.85;" onClick="{{ undoTrip }}">
+            <div style="font-size:13px; line-height:17px; font-weight:600; color:#EFC9BA;">Undo</div>
+          </div>
+        </div>
+        <div style="position:absolute; left:0; bottom:0; height:2px; background:#EFC9BA; width:100%; transform-origin:left center; transform:scaleX(0); {{ tripBarSkin }}"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Motion&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#EA580C&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#EA580C&quot;,&quot;#D96C4A&quot;,&quot;#1B263B&quot;],&quot;section&quot;:&quot;Theme&quot;}}">
+const PHOTOS = 4;
+const SCRIM_MS = 150;
+const SHEET_IN_MS = 200;
+const SHEET_OUT_MS = 150;
+const TOAST_SHOW_MS = 180;
+const TOAST_HOLD_MS = 1600;
+const UNDO_MS = 5000;
+const COLLAPSE_MS = 280;
+const EXPAND_MS = 260;
+const REVEAL = 96;
+const SNAP_MS = 220;
+
+const PENCIL = 'M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z';
+const LINK_A = 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71';
+const LINK_B = 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71';
+const TRASH_A = 'M3 6h18';
+const TRASH_B = 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6';
+const TRASH_C = 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2';
+const EYE_A = 'M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19';
+const EYE_B = 'M6.61 6.61A18.15 18.15 0 0 0 2 12s3 8 10 8a9.12 9.12 0 0 0 5.39-1.61';
+const EYE_C = 'M2 2l20 20';
+const LEAVE_A = 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4';
+const LEAVE_B = 'M16 17l5-5-5-5';
+const LEAVE_C = 'M21 12H9';
+
+const TRIP_TABS = ['upcoming', 'ongoing', 'completed'];
+const TAB_LABELS = { upcoming: 'Upcoming', ongoing: 'Ongoing', completed: 'Completed' };
+const TAB_EMPTY = {
+  upcoming: 'No trips on the horizon yet.',
+  ongoing: 'No trip underway right now.',
+  completed: "Trips you've travelled will collect here.",
+};
+
+const TRIPS = [
+  { id: 't1', tab: 'ongoing', title: 'Alentejo Coast', destination: 'Alentejo, Portugal', days: 8, cover: 'linear-gradient(150deg,#2F4858,#88A9A0 46%,#EFE3C8)', badge: 'Published', editing: true, owner: true, members: 4 },
+  { id: 't2', tab: 'upcoming', title: 'Dolomites Hut Loop', destination: 'South Tyrol, Italy', days: 5, cover: null, badge: null, editing: false, owner: false, members: 3 },
+  { id: 't3', tab: 'upcoming', title: 'Faroe Islands Drive', destination: 'Faroe Islands', days: 4, cover: 'linear-gradient(150deg,#26506B,#6C9CB8 46%,#DCEAF2)', badge: 'Private', editing: false, owner: true, members: 2 },
+  { id: 't4', tab: 'completed', title: 'Bali Temple Run', destination: 'Bali, Indonesia', days: 12, cover: 'linear-gradient(150deg,#7C4A2D,#C98A5B 48%,#F0D9BE)', badge: 'Published', editing: false, owner: true, members: 6 },
+  { id: 't5', tab: 'completed', title: 'Kyoto in the Rain', destination: 'Kyoto, Japan', days: 6, cover: 'linear-gradient(155deg,#1F4E46,#4E8F79 48%,#CFE6D5)', badge: null, editing: false, owner: true, members: 5 },
+];
+
+const DIARY_CHILDREN = { diaryA: ['p1', 'p2'], diaryB: ['p3'] };
+
+const SUBJECTS = {
+  diaryA: { kind: 'diary', title: 'Alentejo Coast', count: 12 },
+  diaryB: { kind: 'diary', title: 'Bali Temple Run', count: 9 },
+  p1: { kind: 'entry', title: 'Cliff road to Bordeira', parent: 'Alentejo Coast' },
+  p2: { kind: 'entry', title: 'Melon stand on the N268', parent: 'Alentejo Coast' },
+  p3: { kind: 'entry', title: 'Tirta Empul at first light', parent: 'Bali Temple Run' },
+  i1: { kind: 'itinerary', title: 'Alentejo in Eight Days' },
+  i2: { kind: 'itinerary', title: 'Temples Before Sunrise' },
+};
+
+class Component extends DCLogic {
+  state = {
+    mounted: false,
+    tab: 'diary',
+    page: 0,
+    openA: true,
+    openB: false,
+    sheet: null,
+    toast: null,
+    pending: null,
+    bar: false,
+    gone: [],
+    collapsing: [],
+    swipe: {},
+    dragging: null,
+    modal: null,
+    ack: false,
+    tripTab: 'ongoing',
+    toastB: null,
+    pendingB: null,
+    barB: false,
+  };
+
+  lastSheet = null;
+  timers = [];
+  toastToken = 0;
+  tokenB = 0;
+  dragId = null;
+
+  componentDidMount() {
+    this.raf = requestAnimationFrame(() => this.setState({ mounted: true }));
+    if (this.reduce) return;
+    this.after(760, () => this.setState({ swipe: { t1: -14 } }));
+    this.after(1660, () => this.setState({ swipe: {} }));
+  }
+
+  componentWillUnmount() {
+    cancelAnimationFrame(this.raf);
+    cancelAnimationFrame(this.rafBar);
+    clearTimeout(this.undoTimer);
+    clearTimeout(this.undoTimerB);
+    this.timers.forEach(clearTimeout);
+  }
+
+  after(ms, fn) {
+    this.timers.push(setTimeout(fn, ms));
+  }
+
+  // Two frames: the first paints the resting bar, the second starts the drain.
+  // The timer is the floor for when frames are throttled and rAF never lands.
+  paintThen(fn) {
+    let spent = false;
+    const once = () => {
+      if (spent) return;
+      spent = true;
+      fn();
+    };
+    requestAnimationFrame(() => {
+      this.rafBar = requestAnimationFrame(once);
+    });
+    this.after(90, once);
+  }
+
+  get reduce() {
+    return this.props.reduceMotion === true;
+  }
+
+  openSheet(id) {
+    this.lastSheet = id;
+    this.setState({ sheet: id });
+  }
+
+  closeSheet() {
+    this.setState({ sheet: null });
+  }
+
+  showToast(message) {
+    const token = ++this.toastToken;
+    clearTimeout(this.undoTimer);
+    this.setState({ toast: message, pending: null, bar: false });
+    this.after(TOAST_SHOW_MS + TOAST_HOLD_MS, () => {
+      if (token === this.toastToken) this.setState({ toast: null });
+    });
+  }
+
+  // Delete is optimistic: the row goes at once and the DELETE call is held for
+  // the undo window, so Undo costs no round trip and no restore endpoint.
+  deleteEntry(id) {
+    this.setState({ sheet: null });
+    this.after(this.reduce ? 0 : SHEET_OUT_MS, () => {
+      this.setState((s) => ({ collapsing: s.collapsing.concat([id]) }));
+      this.after(this.reduce ? 0 : COLLAPSE_MS, () => {
+        this.setState((s) => ({ gone: s.gone.concat([id]) }));
+        this.offerUndo(id);
+      });
+    });
+  }
+
+  offerUndo(id) {
+    const token = ++this.toastToken;
+    const itinerary = (SUBJECTS[id] ?? {}).kind === 'itinerary';
+    clearTimeout(this.undoTimer);
+    this.setState({
+      toast: itinerary ? 'Itinerary unpublished' : 'Postcard deleted',
+      pending: id,
+      bar: false,
+    });
+    this.paintThen(() => {
+      if (token === this.toastToken) this.setState({ bar: true });
+    });
+    this.undoTimer = setTimeout(() => {
+      if (token !== this.toastToken) return;
+      this.setState({ toast: null, pending: null, bar: false }); // commit point
+    }, UNDO_MS);
+  }
+
+  undo() {
+    const id = this.state.pending;
+    if (id === null) return;
+    this.toastToken += 1;
+    clearTimeout(this.undoTimer);
+    this.setState((s) => ({
+      toast: null,
+      pending: null,
+      bar: false,
+      gone: s.gone.filter((x) => x !== id),
+    }));
+    this.after(20, () =>
+      this.setState((s) => ({ collapsing: s.collapsing.filter((x) => x !== id) })),
+    );
+    this.after(this.reduce ? 40 : EXPAND_MS, () =>
+      this.showToast(
+        (SUBJECTS[id] ?? {}).kind === 'itinerary' ? 'Itinerary republished' : 'Postcard restored',
+      ),
+    );
+  }
+
+  // ---- Trips: swipe, modal, leave ----
+
+  swipeDown(id, event) {
+    this.dragId = id;
+    this.dragFrom = event.clientX;
+    this.dragBase = this.state.swipe[id] ?? 0;
+    this.dragMoved = false;
+    if (event.currentTarget.setPointerCapture) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+  }
+
+  swipeMove(id, event) {
+    if (this.dragId !== id) return;
+    const dx = event.clientX - this.dragFrom;
+    if (!this.dragMoved && Math.abs(dx) < 4) return;
+    this.dragMoved = true;
+    const x = Math.max(-REVEAL - 12, Math.min(0, this.dragBase + dx));
+    this.setState({ swipe: { [id]: x }, dragging: id });
+  }
+
+  swipeUp(id) {
+    if (this.dragId !== id) return;
+    this.dragId = null;
+    const x = this.state.swipe[id] ?? 0;
+    const open = x < -REVEAL / 2;
+    this.setState({ swipe: open ? { [id]: -REVEAL } : {}, dragging: null });
+  }
+
+  askTrip(trip) {
+    if (trip.owner) {
+      this.setState({ modal: trip.id, ack: false });
+      return;
+    }
+    this.removeTrip(trip.id, 'Left the trip', true);
+  }
+
+  commitTrip() {
+    if (!this.state.ack) return;
+    const id = this.state.modal;
+    this.setState({ modal: null, ack: false });
+    this.removeTrip(id, 'Trip deleted', false);
+  }
+
+  removeTrip(id, message, undoable) {
+    this.setState({ swipe: {} });
+    this.after(this.reduce ? 0 : 120, () => {
+      this.setState((s) => ({ collapsing: s.collapsing.concat([id]) }));
+      this.after(this.reduce ? 0 : COLLAPSE_MS, () => {
+        this.setState((s) => ({ gone: s.gone.concat([id]) }));
+        if (undoable) this.offerUndoTrip(id, message);
+        else this.showToastB(message);
+      });
+    });
+  }
+
+  showToastB(message) {
+    const token = ++this.tokenB;
+    clearTimeout(this.undoTimerB);
+    this.setState({ toastB: message, pendingB: null, barB: false });
+    this.after(TOAST_SHOW_MS + TOAST_HOLD_MS, () => {
+      if (token === this.tokenB) this.setState({ toastB: null });
+    });
+  }
+
+  offerUndoTrip(id, message) {
+    const token = ++this.tokenB;
+    clearTimeout(this.undoTimerB);
+    this.setState({ toastB: message, pendingB: id, barB: false });
+    this.paintThen(() => {
+      if (token === this.tokenB) this.setState({ barB: true });
+    });
+    this.undoTimerB = setTimeout(() => {
+      if (token !== this.tokenB) return;
+      this.setState({ toastB: null, pendingB: null, barB: false });
+    }, UNDO_MS);
+  }
+
+  undoTrip() {
+    const id = this.state.pendingB;
+    if (id === null) return;
+    this.tokenB += 1;
+    clearTimeout(this.undoTimerB);
+    this.setState((s) => ({
+      toastB: null,
+      pendingB: null,
+      barB: false,
+      gone: s.gone.filter((x) => x !== id),
+    }));
+    this.after(20, () =>
+      this.setState((s) => ({ collapsing: s.collapsing.filter((x) => x !== id) })),
+    );
+    this.after(this.reduce ? 40 : EXPAND_MS, () => this.showToastB('You are back in the trip'));
+  }
+
+  entriesFor(id) {
+    const subject = SUBJECTS[id];
+    if (subject === undefined) return [];
+
+    const rows =
+      subject.kind === 'diary'
+        ? [
+            { key: 'edit', label: 'Edit diary details', tone: '#1C1917', paths: [PENCIL, '', ''] },
+            { key: 'link', label: 'Copy public link', tone: '#1C1917', paths: [LINK_A, LINK_B, ''] },
+          ]
+        : subject.kind === 'itinerary'
+          ? [
+              { key: 'edit', label: 'Edit details', tone: '#1C1917', paths: [PENCIL, '', ''] },
+              { key: 'view', label: 'View published page', tone: '#1C1917', paths: [LINK_A, LINK_B, ''] },
+              { key: 'unpublish', label: 'Unpublish', tone: '#B45309', paths: [EYE_A, EYE_B, EYE_C] },
+            ]
+          : [
+              { key: 'edit', label: 'Edit postcard', tone: '#1C1917', paths: [PENCIL, '', ''] },
+              { key: 'delete', label: 'Delete postcard', tone: '#B91C1C', paths: [TRASH_A, TRASH_B, TRASH_C] },
+            ];
+
+    const open = this.state.sheet !== null;
+    return rows.map((row, index) => ({
+      label: row.label,
+      tone: row.tone,
+      d1: row.paths[0],
+      d2: row.paths[1],
+      d3: row.paths[2],
+      dividerSkin: index === 0 ? 'display:none;' : '',
+      enterSkin: open
+        ? this.reduce
+          ? 'opacity:1; transform:none; transition:none;'
+          : `opacity:1; transform:none; transition-delay:${40 + index * 40}ms;`
+        : '',
+      press: () => {
+        if (row.key === 'delete' || row.key === 'unpublish') {
+          this.deleteEntry(id);
+          return;
+        }
+        this.closeSheet();
+        this.after(SHEET_OUT_MS, () =>
+          this.showToast(
+            row.key === 'link'
+              ? 'Link copied'
+              : row.key === 'view'
+                ? 'Opening published page'
+                : 'Opening editor',
+          ),
+        );
+      },
+    }));
+  }
+
+  renderVals() {
+    const reduce = this.reduce;
+    const on = this.state.mounted;
+    const settled = reduce ? 'opacity:1; transform:none; transition:none;' : 'opacity:1; transform:none;';
+    const enter = on ? settled : '';
+
+    const onDiary = this.state.tab === 'diary';
+    const sheetId = this.state.sheet ?? this.lastSheet;
+    const sheetSubject = SUBJECTS[sheetId] ?? SUBJECTS.diaryA;
+    const veiled = this.state.sheet !== null;
+    const tabRows = TRIPS.filter(
+      (trip) => trip.tab === this.state.tripTab && !this.state.gone.includes(trip.id),
+    );
+
+    const skinFor = (id) => {
+      if (this.state.gone.includes(id)) return 'display:none;';
+      if (this.state.collapsing.includes(id))
+        return reduce
+          ? 'max-height:0; opacity:0; margin-bottom:-12px; transition:none;'
+          : 'max-height:0; opacity:0; margin-bottom:-12px;';
+      return '';
+    };
+
+    // A diary is its postcards. Empty it and the card has nothing left to be,
+    // so it collapses out of the list behind the last postcard.
+    const diarySkin = (id) => {
+      const empty = DIARY_CHILDREN[id].every((child) => this.state.gone.includes(child));
+      if (!empty) return skinFor(id);
+      return reduce
+        ? 'max-height:0; opacity:0; margin-bottom:-12px; transition:none;'
+        : 'max-height:0; opacity:0; margin-bottom:-12px;';
+    };
+
+    const bodySkin = (open) =>
+      open
+        ? reduce
+          ? 'max-height:1400px; opacity:1; transition:none;'
+          : 'max-height:1400px; opacity:1;'
+        : '';
+
+    const chevron = (open) => {
+      const angle = open ? 45 : -45;
+      return reduce ? `transform:rotate(${angle}deg); transition:none;` : `transform:rotate(${angle}deg);`;
+    };
+
+    return {
+      enter0: enter,
+      enter1: enter,
+      enter2: enter,
+      enter3: on ? (reduce ? 'opacity:1; transition:none;' : 'opacity:1;') : '',
+      enter4: enter,
+      bloom: on ? (reduce ? 'opacity:1; transition:none;' : 'opacity:1;') : '',
+
+      onDiary,
+      onItineraries: !onDiary,
+      pickDiary: () => this.setState({ tab: 'diary' }),
+      pickItineraries: () => this.setState({ tab: 'itineraries' }),
+      diaryLabelSkin: onDiary ? 'font-weight:700; color:#EA580C;' : 'font-weight:600; color:#78716C;',
+      itinLabelSkin: onDiary ? 'font-weight:600; color:#78716C;' : 'font-weight:700; color:#EA580C;',
+      underlineSkin: onDiary
+        ? 'transform:translateX(0);'
+        : reduce
+          ? 'transform:translateX(100%); transition:none;'
+          : 'transform:translateX(100%);',
+
+      toggleA: () => this.setState((s) => ({ openA: !s.openA })),
+      toggleB: () => this.setState((s) => ({ openB: !s.openB })),
+      chevronA: chevron(this.state.openA),
+      chevronB: chevron(this.state.openB),
+      bodyA: bodySkin(this.state.openA),
+      bodyB: bodySkin(this.state.openB),
+
+      skins: {
+        diaryA: diarySkin('diaryA'),
+        diaryB: diarySkin('diaryB'),
+        p1: skinFor('p1'),
+        p2: skinFor('p2'),
+        p3: skinFor('p3'),
+        i1: skinFor('i1'),
+        i2: skinFor('i2'),
+      },
+      allGone: ['p1', 'p2', 'p3'].every((id) => this.state.gone.includes(id)),
+
+      menuDiaryA: () => this.openSheet('diaryA'),
+      menuDiaryB: () => this.openSheet('diaryB'),
+      menuP1: () => this.openSheet('p1'),
+      menuP2: () => this.openSheet('p2'),
+      menuP3: () => this.openSheet('p3'),
+      menuI1: () => this.openSheet('i1'),
+      menuI2: () => this.openSheet('i2'),
+
+      trips: TRIPS.filter((trip) => trip.tab === this.state.tripTab).map((trip) => {
+        const x = this.state.swipe[trip.id] ?? 0;
+        const held = this.state.dragging === trip.id;
+        return {
+          title: trip.title,
+          subline: `${trip.destination} · ${trip.days} ${trip.days === 1 ? 'day' : 'days'}`,
+          thumb: trip.cover ?? '#F2F1ED',
+          noCover: trip.cover === null,
+          editing: trip.editing,
+          badged: trip.badge !== null,
+          badge: trip.badge ?? '',
+          rowSkin: skinFor(trip.id),
+          panelFill: trip.owner ? '#B3261E' : '#5C6470',
+          actLabel: trip.owner ? 'Delete' : 'Leave',
+          actD1: trip.owner ? TRASH_A : LEAVE_A,
+          actD2: trip.owner ? TRASH_B : LEAVE_B,
+          actD3: trip.owner ? TRASH_C : LEAVE_C,
+          act: () => this.askTrip(trip),
+          cardSkin:
+            held || reduce
+              ? `transform:translateX(${x}px);`
+              : `transform:translateX(${x}px); transition:transform ${SNAP_MS}ms cubic-bezier(0.2,0.7,0.2,1);`,
+          down: (event) => this.swipeDown(trip.id, event),
+          move: (event) => this.swipeMove(trip.id, event),
+          up: () => this.swipeUp(trip.id),
+        };
+      }),
+
+      tripTabs: TRIP_TABS.map((tab) => ({
+        label: TAB_LABELS[tab],
+        skin:
+          tab === this.state.tripTab
+            ? 'font-weight:700; color:#1B263B;'
+            : 'font-weight:400; color:#5C6470;',
+        pick: () => this.setState({ tripTab: tab, swipe: {} }),
+      })),
+      tripUnderlineSkin: `transform:translateX(${TRIP_TABS.indexOf(this.state.tripTab) * 100}%);${reduce ? ' transition:none;' : ''}`,
+      tabEmpty: tabRows.length === 0,
+      emptyCopy: TAB_EMPTY[this.state.tripTab],
+      showsCreate: this.state.tripTab === 'upcoming',
+      showsArchived: this.state.tripTab === 'completed' && tabRows.length > 0,
+
+      modalScrimSkin: this.state.modal === null ? '' : 'opacity:1; pointer-events:auto;',
+      modalSkin:
+        this.state.modal === null
+          ? ''
+          : reduce
+            ? 'opacity:1; transform:none; transition:none; pointer-events:auto;'
+            : 'opacity:1; transform:none; pointer-events:auto;',
+      modalTitle: (TRIPS.find((t) => t.id === this.state.modal) ?? TRIPS[0]).title,
+      modalMembers: (TRIPS.find((t) => t.id === this.state.modal) ?? TRIPS[0]).members - 1,
+      toggleAck: () => this.setState((s) => ({ ack: !s.ack })),
+      ackBoxSkin: this.state.ack ? 'background:#B91C1C;' : '',
+      ackTickSkin: this.state.ack ? 'opacity:1;' : '',
+      modalCtaSkin: this.state.ack
+        ? 'background:#B91C1C; cursor:pointer;'
+        : 'background:#F5F5F4; cursor:not-allowed;',
+      modalCtaInk: this.state.ack ? 'color:#FFFFFF;' : 'color:#A8A29E;',
+      commitTrip: () => this.commitTrip(),
+      closeModal: () => this.setState({ modal: null, ack: false }),
+
+      tripToast: this.state.toastB ?? '',
+      canUndoTrip: this.state.pendingB !== null,
+      undoTripRowSkin: this.state.pendingB === null ? '' : 'display:flex;',
+      undoTrip: () => this.undoTrip(),
+      tripToastSkin:
+        this.state.toastB === null
+          ? ''
+          : this.state.pendingB === null
+            ? `opacity:1;${this.state.tripTab === 'upcoming' ? ' bottom:191px;' : ''}`
+            : `opacity:1; pointer-events:auto;${this.state.tripTab === 'upcoming' ? ' bottom:191px;' : ''}`,
+      tripToastBodySkin:
+        this.state.pendingB === null ? 'padding:10px 18px;' : 'padding:11px 6px 11px 16px;',
+      tripBarSkin:
+        this.state.pendingB === null
+          ? ''
+          : this.state.barB
+            ? `transform:scaleX(0); transition:transform ${UNDO_MS - 160}ms linear;`
+            : 'transform:scaleX(1); transition:none;',
+
+      scrimSkin: veiled ? 'opacity:1; pointer-events:auto;' : '',
+      sheetSkin:
+        this.state.sheet !== null
+          ? reduce
+            ? 'transform:none; transition:none;'
+            : 'transform:none;'
+          : reduce
+            ? 'transition:none;'
+            : `transition-duration:${SHEET_OUT_MS}ms;`,
+      sheetTitle: sheetSubject.title,
+      entries: this.entriesFor(sheetId),
+
+      dismissAll: () => this.setState({ sheet: null }),
+
+      toast: this.state.toast ?? '',
+      canUndo: this.state.pending !== null,
+      undoRowSkin: this.state.pending === null ? '' : 'display:flex;',
+      undo: () => this.undo(),
+      toastSkin:
+        this.state.toast === null
+          ? ''
+          : this.state.pending === null
+            ? 'opacity:1; transform:none;'
+            : 'opacity:1; transform:none; pointer-events:auto;',
+      toastBodySkin:
+        this.state.pending === null ? 'padding:10px 18px;' : 'padding:11px 6px 11px 16px;',
+      barSkin:
+        this.state.pending === null
+          ? ''
+          : this.state.bar
+            ? `transform:scaleX(0); transition:transform ${UNDO_MS - 160}ms linear;`
+            : 'transform:scaleX(1); transition:none;',
+
+      counter: `${this.state.page + 1}/${PHOTOS}`,
+      dots: Array.from({ length: PHOTOS }, (_u, i) => ({
+        fill: i === this.state.page ? '#FFFFFF' : 'rgba(255,255,255,0.5)',
+      })),
+      stripScrolled: (event) => {
+        const width = event.currentTarget.clientWidth || 1;
+        const page = Math.max(0, Math.min(PHOTOS - 1, Math.round(event.currentTarget.scrollLeft / width)));
+        if (page !== this.state.page) this.setState({ page });
+      },
+    };
+  }
+}
+
+</script>
+</body>
+</html>

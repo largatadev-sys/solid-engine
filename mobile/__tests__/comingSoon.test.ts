@@ -33,13 +33,15 @@ describe('comingSoonMessage — the wording both forks share', () => {
     expect(comingSoonMessage('chat').title).toBe('Trip chat — coming soon');
   });
 
-  it('covers every greyed affordance S4.9, S4.1, S4.13, S4.15, S4.17, S4.20, S3.4, S4.21, S4.22, S2.1 and S4.36 ship', () => {
+  it('covers every greyed affordance S4.9, S4.1, S4.13, S4.15, S4.17, S4.20, S3.4, S4.21, S4.22, S2.1, S4.36 and S4.38 ship', () => {
     expect(Object.keys(COMING_SOON_SURFACES).sort()).toEqual(
       [
         'booking',
         'chat',
         'comments',
         'diary',
+        'diaryDetails',
+        'diaryLink',
         'follow',
         'notifications',
         'rating',

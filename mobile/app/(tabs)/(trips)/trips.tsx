@@ -35,6 +35,12 @@ import { RETAP_SCROLL_THROTTLE_MS } from '../../../src/navigation/retapScroll';
 import { SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
 import { FeedToast } from '../../../src/feed/FeedToast';
 import { CAUGHT_UP_TOAST } from '../../../src/feed/feedCopy';
+import { CollapsingRow } from '../../../src/removal/CollapsingRow';
+import { DeleteTripModal } from '../../../src/removal/DeleteTripModal';
+import { SwipeRevealRow } from '../../../src/removal/SwipeRevealRow';
+import { UndoToast } from '../../../src/removal/UndoToast';
+import { claimSwipeHint } from '../../../src/removal/swipeHintState';
+import { swipeActionFor, useTripsRemoval } from '../../../src/removal/useTripsRemoval';
 import type { ItineraryResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
 import { tripTabColors, tripTabMetrics, tripTabMotion, tripTabTypography } from '../../../src/theme/workspaceTokens';
@@ -56,6 +62,21 @@ export default function MyTripsScreen() {
   const itineraries = data?.pages.flatMap((page) => page.items) ?? [];
   const active = landingTab(itineraries, picked);
   const rows = tripsInTab(itineraries, active);
+
+  const { removal, openCard, setOpenCard, closeCards, leave, deleteTrip } =
+    useTripsRemoval(setToast);
+  const [confirming, setConfirming] = useState<ItineraryResponse | null>(null);
+  const [hint] = useState(claimSwipeHint);
+
+  const chooseTab = (tab: TripTab) => {
+    closeCards();
+    pickTab(tab);
+  };
+
+  const askToDelete = (itinerary: ItineraryResponse) => {
+    closeCards();
+    setConfirming(itinerary);
+  };
 
   const listFor = (tab: TripTab) => (list: FlatList<ItineraryResponse> | null) => {
     if (list === null) {
@@ -92,7 +113,7 @@ export default function MyTripsScreen() {
         <SearchIcon />
       </View>
 
-      <TripTabRow selected={active} onSelect={pickTab} />
+      <TripTabRow selected={active} onSelect={chooseTab} />
 
       {isPending && <ActivityIndicator size="large" color={colors.accent} style={styles.centered} />}
 
@@ -113,7 +134,23 @@ export default function MyTripsScreen() {
             data={rows}
             keyExtractor={(itinerary) => itinerary.id}
             contentContainerStyle={rows.length === 0 ? styles.emptyContainer : styles.listContainer}
-            renderItem={({ item }) => <TripRow itinerary={item} />}
+            renderItem={({ item, index }) => (
+              <CollapsingRow collapsed={removal.isRemoved(item.id)} gap={spacing.sm}>
+                <SwipeRevealRow
+                  action={swipeActionFor(item)}
+                  subjectTitle={item.title}
+                  open={openCard === item.id}
+                  peek={index === 0 && hint}
+                  onOpen={() => setOpenCard(item.id)}
+                  onClose={closeCards}
+                  onAct={() =>
+                    swipeActionFor(item) === 'leave' ? leave(item) : askToDelete(item)
+                  }
+                >
+                  <TripRow itinerary={item} />
+                </SwipeRevealRow>
+              </CollapsingRow>
+            )}
             onScroll={(event) => {
               offsets.current[active] = event.nativeEvent.contentOffset.y;
             }}
@@ -148,6 +185,23 @@ export default function MyTripsScreen() {
       )}
 
       <FeedToast message={toast} onDone={() => setToast(null)} />
+
+      <UndoToast
+        toast={removal.queue.toast}
+        host="trips"
+        lifted={showsCreateBar(active)}
+        onUndo={removal.undo}
+        onDone={removal.settle}
+      />
+
+      <DeleteTripModal
+        trip={confirming}
+        onCancel={() => setConfirming(null)}
+        onConfirm={(trip) => {
+          setConfirming(null);
+          deleteTrip(trip);
+        }}
+      />
     </View>
   );
 }

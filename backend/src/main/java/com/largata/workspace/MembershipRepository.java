@@ -1,6 +1,7 @@
 package com.largata.workspace;
 
 import com.largata.common.authz.Role;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,6 +46,18 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
     @Query("SELECT m.travelerId FROM Membership m WHERE m.workspace.itineraryId = :itineraryId "
             + "AND m.role = com.largata.common.authz.Role.OWNER")
     Optional<UUID> findOwnerTravelerId(@Param("itineraryId") UUID itineraryId);
+
+
+    @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
+            + "AND m.role = com.largata.common.authz.Role.OWNER AND m.workspace.itineraryId IN :itineraryIds")
+    List<UUID> findOwnedItineraryIdsAmong(
+            @Param("travelerId") UUID travelerId, @Param("itineraryIds") Collection<UUID> itineraryIds);
+
+
+    @Query("SELECT new com.largata.workspace.MemberCountRow(m.workspace.itineraryId, COUNT(m)) "
+            + "FROM Membership m WHERE m.workspace.itineraryId IN :itineraryIds "
+            + "GROUP BY m.workspace.itineraryId")
+    List<MemberCountRow> countMembersAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
 
 
     @Query("SELECT new com.largata.workspace.MembershipView(m.travelerId, m.role, m.joinedAt) "

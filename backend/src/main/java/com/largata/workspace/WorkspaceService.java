@@ -130,6 +130,25 @@ public class WorkspaceService {
 
 
     @Transactional(readOnly = true)
+    public Set<UUID> ownedAmong(UUID travelerId, Collection<UUID> itineraryIds) {
+        if (itineraryIds.isEmpty()) {
+            return Set.of();
+        }
+        return Set.copyOf(memberships.findOwnedItineraryIdsAmong(travelerId, itineraryIds));
+    }
+
+
+    @Transactional(readOnly = true)
+    public Map<UUID, Integer> memberCountsAmong(Collection<UUID> itineraryIds) {
+        if (itineraryIds.isEmpty()) {
+            return Map.of();
+        }
+        return memberships.countMembersAmong(itineraryIds).stream()
+                .collect(Collectors.toMap(MemberCountRow::itineraryId, row -> (int) row.memberCount()));
+    }
+
+
+    @Transactional(readOnly = true)
     public boolean isMember(UUID itineraryId, UUID travelerId) {
         return memberships.findRole(travelerId, itineraryId).isPresent();
     }
