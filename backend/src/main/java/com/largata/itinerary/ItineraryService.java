@@ -158,6 +158,18 @@ public class ItineraryService {
     }
 
 
+    @Transactional(readOnly = true)
+    public Set<UUID> ownedAmong(UUID travelerId, Collection<UUID> itineraryIds) {
+        return workspaces.ownedAmong(travelerId, itineraryIds);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Map<UUID, Integer> memberCountsAmong(Collection<UUID> itineraryIds) {
+        return workspaces.memberCountsAmong(itineraryIds);
+    }
+
+
     private ItineraryPlan assemble(Itinerary itinerary, List<DayView> plan) {
         Set<UUID> editorIds = new LinkedHashSet<>();
         if (itinerary.lastEditedBy() != null) {

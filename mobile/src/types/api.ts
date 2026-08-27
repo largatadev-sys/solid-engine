@@ -118,6 +118,10 @@ export type ItineraryResponse = {
   planVersion?: number;
 
   forkedFrom?: ForkedFromResponse | null;
+
+  viewerRole?: 'owner' | 'member' | null;
+
+  memberCount?: number | null;
 };
 
 

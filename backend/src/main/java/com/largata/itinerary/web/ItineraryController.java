@@ -211,12 +211,16 @@ class ItineraryController {
         List<UUID> ids = page.items().stream().map(Itinerary::id).toList();
         Set<UUID> beingEdited = itineraries.beingEditedAmong(ids);
         Map<UUID, Long> dayCounts = itineraries.dayCountsAmong(ids);
+        Set<UUID> owned = itineraries.ownedAmong(traveler.id(), ids);
+        Map<UUID, Integer> memberCounts = itineraries.memberCountsAmong(ids);
         return page.map(itinerary ->
                 ItineraryResponse.summaryOf(
                         itinerary,
                         itineraries.stateOf(itinerary.id()),
                         beingEdited.contains(itinerary.id()),
-                        dayCounts.getOrDefault(itinerary.id(), 0L).intValue()));
+                        dayCounts.getOrDefault(itinerary.id(), 0L).intValue(),
+                        owned.contains(itinerary.id()) ? "owner" : "member",
+                        memberCounts.getOrDefault(itinerary.id(), 1)));
     }
 
 
