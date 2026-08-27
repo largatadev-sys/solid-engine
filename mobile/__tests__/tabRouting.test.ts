@@ -1146,6 +1146,7 @@ describe('every greyed affordance is wired to the shared helper (register #2)', 
     read(MOBILE_ROOT, 'src', 'profile', 'TravelerDialog.tsx'),
     read(MOBILE_ROOT, 'src', 'diary', 'PostcardPreview.tsx'),
     read(MOBILE_ROOT, 'src', 'feed', 'FeedScreen.tsx'),
+    read(MOBILE_ROOT, 'src', 'removal', 'removalDestinations.ts'),
   ].join('\n');
 
   it.each(Object.keys(COMING_SOON_SURFACES))('%s has a call site', (surface) => {

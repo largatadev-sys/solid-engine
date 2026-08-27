@@ -41,6 +41,7 @@ const styles = StyleSheet.create({
     minHeight: profileMetrics.kebabHit,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 'auto',
     flexGrow: 0,
     flexShrink: 0,
   },

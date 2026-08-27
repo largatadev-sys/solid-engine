@@ -121,9 +121,7 @@ export function Postcard({ entry, onPress, likes = null, onOpenMenu }: PostcardP
         </Pressable>
 
         <View style={styles.footer}>
-          {likes === null ? (
-            <View style={styles.spacer} />
-          ) : (
+          {likes !== null && (
             <View style={styles.likes}>
               <Icon
                 name="heartFilled"
@@ -236,9 +234,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs2,
   },
-  spacer: {
-    flexShrink: 1,
-  },
   likesLabel: {
     ...profileTypography.likes,
     color: profileColors.likeCount,
@@ -246,7 +241,6 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.sm3,
     minHeight: profileMetrics.kebabHit,
   },
