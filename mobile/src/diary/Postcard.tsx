@@ -25,6 +25,7 @@ import {
   profileTypography,
   workspaceColors,
 } from '../theme/workspaceTokens';
+import { postcardMenuLabel } from '../removal/removalCopy';
 import type { DiaryEntryResponse } from '../types/api';
 import {
   carouselCounter,
@@ -40,10 +41,11 @@ interface PostcardProps {
   readonly entry: DiaryEntryResponse;
   readonly onPress: () => void;
   readonly likes?: number | null;
+  readonly onOpenMenu?: (() => void) | undefined;
 }
 
 
-export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
+export function Postcard({ entry, onPress, likes = null, onOpenMenu }: PostcardProps) {
   const [page, setPage] = useState(0);
   const [photoWidth, setPhotoWidth] = useState(0);
 
@@ -96,27 +98,31 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
         )}
       </View>
 
-      <Pressable
-        style={styles.body}
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
-      >
-        <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={2}>
-            {entry.activityTitle}
-          </Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeLabel} numberOfLines={1}>
-              {dayTimeBadge(entry)}
+      <View style={styles.body}>
+        <Pressable
+          style={styles.summary}
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
+        >
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={2}>
+              {entry.activityTitle}
             </Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeLabel} numberOfLines={1}>
+                {dayTimeBadge(entry)}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        {entry.caption !== null && <Text style={styles.caption}>{entry.caption}</Text>}
+          {entry.caption !== null && <Text style={styles.caption}>{entry.caption}</Text>}
+        </Pressable>
 
         <View style={styles.footer}>
-          {likes !== null && (
+          {likes === null ? (
+            <View style={styles.spacer} />
+          ) : (
             <View style={styles.likes}>
               <Icon
                 name="heartFilled"
@@ -127,8 +133,22 @@ export function Postcard({ entry, onPress, likes = null }: PostcardProps) {
             </View>
           )}
 
+          {onOpenMenu !== undefined && (
+            <Pressable
+              style={styles.menuHit}
+              onPress={onOpenMenu}
+              accessibilityRole="button"
+              accessibilityLabel={postcardMenuLabel(entry.activityTitle)}
+            >
+              <Icon
+                name="moreHorizontal"
+                size={profileMetrics.kebabGlyph}
+                color={profileColors.kebab}
+              />
+            </Pressable>
+          )}
         </View>
-      </Pressable>
+      </View>
     </View>
   );
 }
@@ -187,6 +207,19 @@ const styles = StyleSheet.create({
     padding: spacing.sm3,
     gap: spacing.xs2,
   },
+  summary: {
+    gap: spacing.xs2,
+  },
+  menuHit: {
+    minWidth: profileMetrics.kebabHit,
+    minHeight: profileMetrics.kebabHit,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: -spacing.sm2,
+    marginRight: -spacing.sm2,
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -219,6 +252,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs2,
   },
+  spacer: {
+    flexShrink: 1,
+  },
   likesLabel: {
     ...profileTypography.likes,
     color: profileColors.likeCount,
@@ -226,6 +262,8 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.sm3,
+    minHeight: profileMetrics.kebabHit,
   },
 });

@@ -22,6 +22,9 @@ import { atTop } from '../../../src/feed/headerVisibility';
 import { RETAP_SCROLL_THROTTLE_MS } from '../../../src/navigation/retapScroll';
 import { SCROLL_TO_TOP_ANIMATED } from '../../../src/navigation/scrollToTop';
 import { FeedToast } from '../../../src/feed/FeedToast';
+import { RemovalSheet } from '../../../src/removal/RemovalSheet';
+import { UndoToast } from '../../../src/removal/UndoToast';
+import { useProfileRemoval } from '../../../src/removal/useProfileRemoval';
 import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { colors, spacing } from '../../../src/theme';
 import { workspaceColors } from '../../../src/theme/workspaceTokens';
@@ -40,6 +43,7 @@ export default function ProfileScreen() {
   const scroll = useRef<ScrollView | null>(null);
   const offset = useRef(0);
   const [toast, setToast] = useState<string | null>(null);
+  const { removal, choose } = useProfileRemoval();
 
   useTabRetap(
     PROFILE_TAB_ROUTE,
@@ -99,10 +103,28 @@ export default function ProfileScreen() {
 
         <ProfileTabs selected={tab} onSelect={chooseTab} />
 
-        {tab === 'diary' ? <ProfileDiaryTab /> : <ProfileItinerariesTab />}
+        {tab === 'diary' ? (
+          <ProfileDiaryTab removal={removal} />
+        ) : (
+          <ProfileItinerariesTab removal={removal} />
+        )}
       </ScrollView>
 
+      <RemovalSheet
+        subject={removal.subject}
+        lastSubject={removal.lastSubject}
+        onSelect={choose}
+        onDismiss={removal.closeMenu}
+      />
+
       <FeedToast message={toast} onDone={() => setToast(null)} />
+
+      <UndoToast
+        toast={removal.queue.toast}
+        host="profile"
+        onUndo={removal.undo}
+        onDone={removal.settle}
+      />
     </View>
   );
 }

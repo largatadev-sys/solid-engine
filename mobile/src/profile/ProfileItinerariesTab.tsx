@@ -2,6 +2,10 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { publishedRoute } from '../itineraries/publishedExit';
+import { CollapsingRow } from '../removal/CollapsingRow';
+import { itineraryMenuLabel } from '../removal/removalCopy';
+import { visibleAfterRemoval } from '../removal/removalProjection';
+import type { RemovalQueue } from '../removal/useRemovalQueue';
 import { MediaThumb } from '../media/MediaThumb';
 import { useMyPublishedItineraries } from '../query/profileQueries';
 import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
@@ -18,10 +22,11 @@ import { pricePillLabel, showcaseMetaLine } from './showcaseCard';
 import { stubPricePerPersonFor, stubRatingFor } from './stubMetrics';
 
 
-export function ProfileItinerariesTab() {
+export function ProfileItinerariesTab({ removal }: { readonly removal: RemovalQueue }) {
   const router = useRouter();
   const published = useMyPublishedItineraries();
   const cards = (published.data?.pages ?? []).flatMap((page) => page.items);
+  const visible = visibleAfterRemoval(cards, removal.removedIds);
 
   useRevalidateOnFocus(published);
 
@@ -31,16 +36,29 @@ export function ProfileItinerariesTab() {
 
   return (
     <View style={styles.pane}>
-      {cards.length === 0 ? (
+      {visible.length === 0 ? (
         <Text style={styles.empty}>{PROFILE_ITINERARIES_EMPTY}</Text>
       ) : (
         <>
           {cards.map((card) => (
-            <ShowcaseCard
+            <CollapsingRow
               key={card.id}
-              card={card}
-              onPress={() => router.push(publishedRoute('profile', card.id))}
-            />
+              collapsed={removal.isRemoved(card.id)}
+              gap={profileMetrics.cardGap}
+            >
+              <ShowcaseCard
+                card={card}
+                onPress={() => router.push(publishedRoute('profile', card.id))}
+                onOpenMenu={() =>
+                  removal.openMenu({
+                    id: card.id,
+                    kind: 'itinerary',
+                    title: card.title,
+                    audience: 'public',
+                  })
+                }
+              />
+            </CollapsingRow>
           ))}
 
           {published.hasNextPage === true && (
@@ -63,17 +81,19 @@ export function ProfileItinerariesTab() {
 function ShowcaseCard({
   card,
   onPress,
+  onOpenMenu,
 }: {
   readonly card: ShowcaseItineraryResponse;
   readonly onPress: () => void;
+  readonly onOpenMenu: () => void;
 }) {
   const rating = stubRatingFor(card.id);
   const price = pricePillLabel(stubPricePerPersonFor(card.id));
   const meta = showcaseMetaLine(card.destination, card.durationDays);
 
   return (
+    <View style={styles.card}>
     <Pressable
-      style={styles.card}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Open the published view of ${card.title}`}
@@ -107,7 +127,10 @@ function ShowcaseCard({
         </View>
 
         {meta !== null && <Text style={styles.meta}>{meta}</Text>}
+      </View>
+    </Pressable>
 
+      <View style={styles.footer}>
         <View style={styles.rating}>
           <Icon
             name={rating === null ? 'star' : 'starFilled'}
@@ -116,8 +139,21 @@ function ShowcaseCard({
           />
           {rating !== null && <Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>}
         </View>
+
+        <Pressable
+          style={styles.menuHit}
+          onPress={onOpenMenu}
+          accessibilityRole="button"
+          accessibilityLabel={itineraryMenuLabel(card.title)}
+        >
+          <Icon
+            name="moreHorizontal"
+            size={profileMetrics.kebabGlyph}
+            color={profileColors.kebab}
+          />
+        </Pressable>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -167,8 +203,26 @@ const styles = StyleSheet.create({
     color: profileColors.onPill,
   },
   body: {
-    padding: spacing.sm3,
+    paddingHorizontal: spacing.sm3,
+    paddingTop: spacing.sm3,
     gap: spacing.xs2,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.sm3,
+    paddingBottom: spacing.xs2,
+    minHeight: profileMetrics.kebabHit,
+  },
+  menuHit: {
+    minWidth: profileMetrics.kebabHit,
+    minHeight: profileMetrics.kebabHit,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -spacing.sm2,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   titleRow: {
     flexDirection: 'row',
