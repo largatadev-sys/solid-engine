@@ -47,6 +47,9 @@ export function deleteTripTitle(tripTitle: string): string {
 
 export function deleteTripAcknowledgement(memberCount: number): string {
   const others = Math.max(0, memberCount - 1);
+  if (others === 0) {
+    return 'I understand this removes the trip from Largata.';
+  }
   if (others === 1) {
     return 'I understand this removes the trip for 1 other member.';
   }

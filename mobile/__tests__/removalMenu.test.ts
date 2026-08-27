@@ -1,11 +1,13 @@
 import {
   COPY_PUBLIC_LINK_LABEL,
   DELETE_POSTCARD_LABEL,
+  DELETE_TRIP_BODY,
   EDIT_DIARY_DETAILS_LABEL,
   EDIT_ITINERARY_DETAILS_LABEL,
   EDIT_POSTCARD_LABEL,
   UNPUBLISH_LABEL,
   VIEW_PUBLISHED_PAGE_LABEL,
+  deleteTripAcknowledgement,
 } from '../src/removal/removalCopy';
 import { removalMenuEntries } from '../src/removal/removalMenu';
 
@@ -55,6 +57,38 @@ describe('the itinerary menu treats unpublish as cautionary, not destructive', (
 
   it('tones Unpublish cautionary — the trip survives', () => {
     expect(entries.at(-1)?.tone).toBe('cautionary');
+  });
+});
+
+
+describe('the delete-trip acknowledgement counts the OTHER members, and reads naturally at each count', () => {
+  it('names no one else when the traveler is alone on the trip', () => {
+    expect(deleteTripAcknowledgement(1)).toBe('I understand this removes the trip from Largata.');
+  });
+
+  it('says member, singular, when exactly one other traveler is on it', () => {
+    expect(deleteTripAcknowledgement(2)).toContain('1 other member.');
+  });
+
+  it('counts the rest, excluding the owner', () => {
+    expect(deleteTripAcknowledgement(5)).toContain('4 other members.');
+  });
+
+  it('never goes negative, however odd the count it is handed', () => {
+    expect(deleteTripAcknowledgement(0)).toBe('I understand this removes the trip from Largata.');
+  });
+});
+
+
+describe('the modal body promises only what archive actually does', () => {
+  it('names the visible effects that are true the moment archive lands', () => {
+    expect(DELETE_TRIP_BODY).toContain('removes the trip for everyone');
+    expect(DELETE_TRIP_BODY).toContain('leave Largata immediately');
+  });
+
+  it('claims no destruction, because nothing is destroyed (R2)', () => {
+    expect(DELETE_TRIP_BODY).not.toContain('cannot be undone');
+    expect(DELETE_TRIP_BODY).not.toContain('deletes');
   });
 });
 
