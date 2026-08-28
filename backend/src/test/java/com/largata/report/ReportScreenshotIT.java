@@ -169,11 +169,7 @@ class ReportScreenshotIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec submit(UUID reportId, List<byte[]> screenshots) {
         MultipartBodyBuilder body = new MultipartBodyBuilder();
-        body.part(
-                "report",
-                "{\"reportId\":\""
-                        + reportId
-                        + "\",\"type\":\"problem\",\"description\":\"Look at this.\",\"appVersion\":\"0.1.0\",\"platform\":\"web\"}");
+        body.part("report", ReportPayloads.reportJson(reportId, "problem", "Look at this."));
         int index = 0;
         for (byte[] screenshot : screenshots) {
             body.part("screenshot", named(screenshot, "shot" + index++ + ".jpg"))

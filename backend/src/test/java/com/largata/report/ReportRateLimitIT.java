@@ -174,9 +174,7 @@ class ReportRateLimitIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec submit(UUID reportId, String caller, String token) {
         MultipartBodyBuilder body = new MultipartBodyBuilder();
-        body.part(
-                "report",
-                "{\"reportId\":\"" + reportId + "\",\"type\":\"idea\",\"description\":\"Hello.\",\"appVersion\":\"0.1.0\",\"platform\":\"web\"}");
+        body.part("report", ReportPayloads.reportJson(reportId, "idea", "Hello."));
 
         var request =
                 rest.post()

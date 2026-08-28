@@ -105,13 +105,13 @@ class ReportAcceptIT extends PostgresTestBase {
         MultipartBodyBuilder body = new MultipartBodyBuilder();
         body.part(
                 "report",
-                "{\"reportId\":\""
-                        + reportId
-                        + "\",\"type\":\"problem\",\"description\":\"Impersonation attempt.\",\"appVersion\":\"0.1.0\",\"platform\":\"web\","
-                        + "\"reporter\":{\"uid\":\""
-                        + UUID.randomUUID()
-                        + "\",\"name\":\"Somebody Else\"},"
-                        + "\"reporterName\":\"Somebody Else\"}");
+                ReportPayloads.reportJson(
+                        reportId,
+                        "problem",
+                        "Impersonation attempt.",
+                        "\"reporter\":{\"uid\":\""
+                                + UUID.randomUUID()
+                                + "\",\"name\":\"Somebody Else\"},\"reporterName\":\"Somebody Else\""));
 
         rest.post()
                 .uri(ReportPaths.ANONYMOUS)
@@ -136,10 +136,8 @@ class ReportAcceptIT extends PostgresTestBase {
         MultipartBodyBuilder body = new MultipartBodyBuilder();
         body.part(
                 "report",
-                "{\"reportId\":\""
-                        + reportId
-                        + "\",\"type\":\"problem\",\"description\":\"Impersonation attempt.\",\"appVersion\":\"0.1.0\",\"platform\":\"web\","
-                        + "\"reporterName\":\"Somebody Else\"}");
+                ReportPayloads.reportJson(
+                        reportId, "problem", "Impersonation attempt.", "\"reporterName\":\"Somebody Else\""));
 
         rest.post()
                 .uri(ReportPaths.ANONYMOUS)
@@ -409,15 +407,7 @@ class ReportAcceptIT extends PostgresTestBase {
 
     private static MultipartBodyBuilder reportBody(UUID reportId, String type, String description) {
         MultipartBodyBuilder body = new MultipartBodyBuilder();
-        body.part(
-                "report",
-                "{\"reportId\":\""
-                        + reportId
-                        + "\",\"type\":\""
-                        + type
-                        + "\",\"description\":\""
-                        + description
-                        + "\",\"appVersion\":\"0.1.0\",\"platform\":\"web\"}");
+        body.part("report", ReportPayloads.reportJson(reportId, type, description));
         return body;
     }
 

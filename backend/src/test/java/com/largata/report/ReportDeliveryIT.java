@@ -223,13 +223,7 @@ class ReportDeliveryIT extends PostgresTestBase {
     private UUID acceptWith(String description, List<byte[]> screenshots) {
         UUID reportId = UUID.randomUUID();
         MultipartBodyBuilder body = new MultipartBodyBuilder();
-        body.part(
-                "report",
-                "{\"reportId\":\""
-                        + reportId
-                        + "\",\"type\":\"problem\",\"description\":\""
-                        + description
-                        + "\",\"appVersion\":\"0.1.0\",\"platform\":\"web\"}");
+        body.part("report", ReportPayloads.reportJson(reportId, "problem", description));
         int index = 0;
         for (byte[] screenshot : screenshots) {
             body.part("screenshot", named(screenshot, "shot" + index++ + ".jpg"))

@@ -4,7 +4,9 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -23,6 +25,9 @@ public class WorklogReportRelay implements ReportRelay {
 
     static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
     static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
+
+    static final Set<HttpStatus> TRANSIENT_REFUSALS =
+            Set.of(HttpStatus.REQUEST_TIMEOUT, HttpStatus.TOO_EARLY, HttpStatus.TOO_MANY_REQUESTS);
 
     static final String SECRET_HEADER = "X-Intake-Secret";
     static final String REPORT_PART = "report";
@@ -72,7 +77,7 @@ public class WorklogReportRelay implements ReportRelay {
 
 
     private static boolean isTransient(HttpStatusCode status) {
-        return status.value() == 408 || status.value() == 425 || status.value() == 429;
+        return TRANSIENT_REFUSALS.contains(HttpStatus.valueOf(status.value()));
     }
 
 

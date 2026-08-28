@@ -10,7 +10,7 @@ public enum ReportType {
 
 
     public static ReportType parse(String wireName) {
-        if (wireName == null) {
+        if (wireName == null || wireName.isBlank()) {
             throw new UnknownReportTypeException();
         }
         try {

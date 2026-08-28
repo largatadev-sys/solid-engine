@@ -122,6 +122,20 @@ Numbered decisions record the grilling round/question that settled each.
    5xx/network. A worklog 4xx is a permanent verdict: the row goes dead-letter with an error
    log naming the reportId and worklog's validation envelope keys — never the description or
    screenshot content (P3).
+
+    **Amended 2026-08-28, at the live verification — three 4xx codes are transient and retry.**
+    `408 Request Timeout`, `425 Too Early` and `429 Too Many Requests` no longer dead-letter;
+    they are treated exactly like a 5xx and back off. The original wording above is kept
+    because its *intent* is unchanged and still correct: a 4xx that means **"this report is
+    malformed"** must stop immediately and surface loudly (user story 23 — a contract bug
+    should surface the day it happens, not after a thousand silent retries). What the original
+    missed is that not every 4xx says that. **Railway sleeps an idle service and wakes it on
+    the first request**, so the relay's own call is what wakes worklog — and a platform edge
+    answering "timed out" or "slow down" mid-wake is reporting a *condition*, not a verdict on
+    the payload. Retrying it succeeds a minute later; dead-lettering it destroys a real
+    traveler's report for a reason that had already gone away. `400` and `401` remain permanent,
+    which is where the original decision's whole value lies. Found because the founder asked
+    what happens to reports filed while worklog is asleep.
 10. **Retention: keep the row, purge the bytes** *(R1-Q8)*. After a 2xx from worklog the outbox
     row stays as a delivery audit and its screenshot bytes are deleted — worklog is the system
     of record. Dead-letter rows keep their bytes (they were never delivered).
