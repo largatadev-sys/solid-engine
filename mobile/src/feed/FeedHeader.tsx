@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
+import { useRevealGesture } from '../feedback/useRevealGesture';
 import { radii, spacing } from '../theme';
 import { feedColors, feedMetrics, feedTypography } from '../theme/feedTokens';
 import { FEED_NOTIFICATIONS_LABEL, FEED_SEARCH_LABEL, FEED_TITLE } from './feedCopy';
@@ -12,9 +13,13 @@ interface FeedHeaderProps {
 
 
 export function FeedHeader({ onSearch, onNotifications }: FeedHeaderProps) {
+  const reveal = useRevealGesture();
+
   return (
     <View style={styles.header}>
-      <Text style={styles.wordmark}>{FEED_TITLE}</Text>
+      <Text style={styles.wordmark} onPress={reveal.onPress}>
+        {FEED_TITLE}
+      </Text>
 
       <View style={styles.actions}>
         <Pressable

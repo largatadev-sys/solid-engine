@@ -1,11 +1,13 @@
 import { Stack, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../src/components/Button';
+import { useRevealGesture } from '../src/feedback/useRevealGesture';
 import { colors, spacing, typography } from '../src/theme';
 
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const reveal = useRevealGesture();
 
   return (
     <View style={styles.container}>
@@ -13,7 +15,9 @@ export default function WelcomeScreen() {
 
       <View style={styles.hero}>
         <View style={styles.brand}>
-          <Text style={styles.wordmark}>Largata</Text>
+          <Text style={styles.wordmark} onPress={reveal.onPress}>
+            Largata
+          </Text>
           <Text style={styles.tagline}>Plan less. Experience more.</Text>
         </View>
       </View>
