@@ -176,7 +176,11 @@ jobs:
   # at a deployed rung would invert that and must not be done.
   playwright:
     name: playwright — api + web
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'pull_request'
+          && (needs.changes.outputs.mobile == 'true' || needs.changes.outputs.backend == 'true'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
