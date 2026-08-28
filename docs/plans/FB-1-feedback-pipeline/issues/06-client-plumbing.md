@@ -12,11 +12,11 @@ The label registry with its completeness guard. Error mapping: network failure �
 
 **Blocked by:** 03 (the walk needs the endpoint accepting screenshots).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A draft created on one screen keeps that screen's string after navigating into and around the report flow — capture happens at open, provably never at submit
-- [ ] Every route file has a label registry entry or the Jest completeness test fails; an unmapped route (test-only) falls back to bare segments; over-length pairs truncate the segments, never the label
-- [ ] The join screen's captured string contains the route placeholder, never a live invite token
-- [ ] `submitReport` re-called with the same draft sends the same `reportId` — proven by test
-- [ ] A signed-out submission carries no Authorization header and succeeds against the local stack; a signed-in one carries the bearer and the backend attributes the reporter
-- [ ] Full Jest suite green before push — the anonymous-allowance change touches shared API-client code (the standing shared-code rule)
+- [x] A draft created on one screen keeps that screen's string after navigating into and around the report flow — capture happens at open, provably never at submit
+- [x] Every route file has a label registry entry or the Jest completeness test fails; an unmapped route (test-only) falls back to bare segments; over-length pairs truncate the segments, never the label
+- [x] The join screen's captured string contains the route placeholder, never a live invite token
+- [x] `submitReport` re-called with the same draft sends the same `reportId` — proven by test
+- [x] A signed-out submission carries no Authorization header and succeeds against the local stack; a signed-in one carries the bearer and the backend attributes the reporter
+- [x] Full Jest suite green before push — the anonymous-allowance change touches shared API-client code (the standing shared-code rule)

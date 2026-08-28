@@ -9,10 +9,10 @@ protects worklog's permanent inbox from rotating IPs.
 
 **Blocked by:** 02 (the accept endpoint).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The sixth report from one IP within the hour → `429` in the standard envelope, no outbox row
-- [ ] Past the global daily cap, every caller answers `429` regardless of IP
-- [ ] A signed-in request obeys the same limits as an anonymous one
-- [ ] The limits scope to the reports route only — no other route's behavior moves
-- [ ] A `429`'d `reportId` retried after the window is accepted normally (the client's replay remains safe)
+- [x] The sixth report from one IP within the hour → `429` in the standard envelope, no outbox row
+- [x] Past the global daily cap, every caller answers `429` regardless of IP
+- [x] A signed-in request obeys the same limits as an anonymous one
+- [x] The limits scope to the reports route only — no other route's behavior moves
+- [x] A `429`'d `reportId` retried after the window is accepted normally (the client's replay remains safe)

@@ -90,6 +90,7 @@ public class GlobalExceptionHandler {
             case ValidationException _ -> HttpStatus.BAD_REQUEST;
             case ConflictException _ -> HttpStatus.CONFLICT;
             case ForbiddenException _ -> HttpStatus.FORBIDDEN;
+            case RateLimitedException _ -> HttpStatus.TOO_MANY_REQUESTS;
             case UnavailableException _ -> HttpStatus.SERVICE_UNAVAILABLE;
             default -> HttpStatus.INTERNAL_SERVER_ERROR;
         };

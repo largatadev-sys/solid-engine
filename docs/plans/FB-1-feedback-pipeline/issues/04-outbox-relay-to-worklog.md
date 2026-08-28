@@ -12,10 +12,10 @@ purged; 4xx → dead-letter, loudly; 5xx/network → retry forever.
 
 **Blocked by:** 03 (the relay sends screenshots).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] With no intake config, an accepted report is "delivered" by the logging sink and its row marked delivered — the log line names the reportId and never the description, screenshots, or any secret
-- [ ] With config present, the relay's request against a local stub server is worklog's contract exactly: file-part `report` JSON, 0–3 `screenshot` parts, the secret header
-- [ ] Stubbed-relay ITs: 201 and 200 both mean delivered — row kept, screenshot bytes purged; 400 means dead-letter — no further attempts, an error log naming the reportId and worklog's envelope keys only; 503/network means the row backs off and is retried
-- [ ] The `submittedAt` relayed is the accept-time stamp — a delivery retry never restamps it
-- [ ] Config rides two env-backed properties (`LARGATA_REPORTS_INTAKE_URL`, `LARGATA_REPORTS_INTAKE_SECRET`); `.env.example` gains placeholder keys only
+- [x] With no intake config, an accepted report is "delivered" by the logging sink and its row marked delivered — the log line names the reportId and never the description, screenshots, or any secret
+- [x] With config present, the relay's request against a local stub server is worklog's contract exactly: file-part `report` JSON, 0–3 `screenshot` parts, the secret header
+- [x] Stubbed-relay ITs: 201 and 200 both mean delivered — row kept, screenshot bytes purged; 400 means dead-letter — no further attempts, an error log naming the reportId and worklog's envelope keys only; 503/network means the row backs off and is retried
+- [x] The `submittedAt` relayed is the accept-time stamp — a delivery retry never restamps it
+- [x] Config rides two env-backed properties (`LARGATA_REPORTS_INTAKE_URL`, `LARGATA_REPORTS_INTAKE_SECRET`); `.env.example` gains placeholder keys only

@@ -9,9 +9,9 @@ object-store write. This makes ticket 03's change easy.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A sibling module can obtain a sanitized display JPEG from arbitrary uploaded bytes through the media module's public service surface only
-- [ ] ITs prove the contract properties: long edge ≤ 2048px, JPEG output, EXIF metadata gone with orientation baked in, small images never upscaled
-- [ ] Oversized (>10MB) and over-pixel inputs are refused with the ingest's existing named errors
-- [ ] Every existing photo flow is untouched — the media suite stays green
+- [x] A sibling module can obtain a sanitized display JPEG from arbitrary uploaded bytes through the media module's public service surface only
+- [x] ITs prove the contract properties: long edge ≤ 2048px, JPEG output, EXIF metadata gone with orientation baked in, small images never upscaled
+- [x] Oversized (>10MB) and over-pixel inputs are refused with the ingest's existing named errors
+- [x] Every existing photo flow is untouched — the media suite stays green

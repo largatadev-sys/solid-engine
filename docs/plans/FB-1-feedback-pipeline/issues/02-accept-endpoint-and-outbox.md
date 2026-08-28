@@ -10,11 +10,11 @@ the real path.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] An anonymous multipart POST with a valid `report` part → `201 {reportId}`; an outbox row exists in the pending state with no reporter fields
-- [ ] The same `reportId` posted again → `200`, still exactly one row, `submittedAt` unchanged
-- [ ] A signed-in POST stores reporter = traveler UUID + display name at submit, derived from the token; a traveler with no display name stores uid only
-- [ ] Reporter-shaped fields inside the client payload are ignored in both auth states — impersonation is structurally impossible
-- [ ] Validation refusals persist nothing: bad type, description outside 1–2000, screen over 200 chars → `400` in the standard envelope
-- [ ] Security ITs: the route is reachable without a token; a screenshot part answers `400` (until ticket 03); the dev CORS posture covers the route and the prod-absence invariant is untouched
+- [x] An anonymous multipart POST with a valid `report` part → `201 {reportId}`; an outbox row exists in the pending state with no reporter fields
+- [x] The same `reportId` posted again → `200`, still exactly one row, `submittedAt` unchanged
+- [x] A signed-in POST stores reporter = traveler UUID + display name at submit, derived from the token; a traveler with no display name stores uid only
+- [x] Reporter-shaped fields inside the client payload are ignored in both auth states — impersonation is structurally impossible
+- [x] Validation refusals persist nothing: bad type, description outside 1–2000, screen over 200 chars → `400` in the standard envelope
+- [x] Security ITs: the route is reachable without a token; a screenshot part answers `400` (until ticket 03); the dev CORS posture covers the route and the prod-absence invariant is untouched
