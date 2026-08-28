@@ -173,7 +173,7 @@ class ReportScreenshotIT extends PostgresTestBase {
                 "report",
                 "{\"reportId\":\""
                         + reportId
-                        + "\",\"type\":\"problem\",\"description\":\"Look at this.\"}");
+                        + "\",\"type\":\"problem\",\"description\":\"Look at this.\",\"appVersion\":\"0.1.0\",\"platform\":\"web\"}");
         int index = 0;
         for (byte[] screenshot : screenshots) {
             body.part("screenshot", named(screenshot, "shot" + index++ + ".jpg"))

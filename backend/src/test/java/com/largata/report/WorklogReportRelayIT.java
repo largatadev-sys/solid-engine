@@ -101,6 +101,26 @@ class WorklogReportRelayIT {
 
 
     @Test
+    void theContextAlwaysCarriesPlatformAndAppVersionBecauseWorklogRequiresThem() {
+        relay().relay(envelope(List.of()));
+
+        String json = receivedBody.get();
+        assertThat(json).contains("\"platform\":\"web\"");
+        assertThat(json).contains("\"appVersion\":\"0.1.0\"");
+        assertThat(json).doesNotContain("\"platform\":null");
+        assertThat(json).doesNotContain("\"appVersion\":null");
+    }
+
+
+    @Test
+    void anAbsentScreenIsSimplyOmittedBecauseWorklogTreatsItAsOptional() {
+        relay().relay(envelope(List.of()));
+
+        assertThat(receivedBody.get()).doesNotContain("\"screen\"");
+    }
+
+
+    @Test
     void aSignedOutReportSendsNoReporterObjectAtAll() {
         relay().relay(envelope(List.of()));
 
@@ -160,6 +180,33 @@ class WorklogReportRelayIT {
 
 
     @Test
+    void aPlatformWakingFromSleepIsRetriedRatherThanDeadLettered() {
+        answerWith.set(408);
+
+        assertThat(relay().relay(envelope(List.of())).verdict())
+                .isEqualTo(RelayOutcome.Verdict.UNREACHABLE);
+    }
+
+
+    @Test
+    void anEdgeRateLimitIsRetriedRatherThanCostingTheReport() {
+        answerWith.set(429);
+
+        assertThat(relay().relay(envelope(List.of())).verdict())
+                .isEqualTo(RelayOutcome.Verdict.UNREACHABLE);
+    }
+
+
+    @Test
+    void aGatewayErrorFromASleepingPlatformIsRetryable() {
+        answerWith.set(502);
+
+        assertThat(relay().relay(envelope(List.of())).verdict())
+                .isEqualTo(RelayOutcome.Verdict.UNREACHABLE);
+    }
+
+
+    @Test
     void anOutageIsRetryable() {
         answerWith.set(503);
 
@@ -209,8 +256,8 @@ class WorklogReportRelayIT {
                 ReportType.PROBLEM,
                 "Something went wrong.",
                 null,
-                null,
-                null,
+                "0.1.0",
+                "web",
                 null,
                 Instant.parse("2026-08-28T09:15:30Z"),
                 screenshots);

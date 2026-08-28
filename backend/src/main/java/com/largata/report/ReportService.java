@@ -3,6 +3,7 @@ package com.largata.report;
 import com.largata.media.SanitizedImage;
 import com.largata.media.SanitizedImageService;
 import com.largata.report.ReportExceptions.DescriptionTooLongException;
+import com.largata.report.ReportExceptions.MissingAppVersionException;
 import com.largata.report.ReportExceptions.MissingDescriptionException;
 import com.largata.report.ReportExceptions.ScreenTooLongException;
 import com.largata.report.ReportExceptions.TooManyScreenshotsException;
@@ -45,6 +46,8 @@ public class ReportService {
     public AcceptedReport accept(ReportSubmission submission) {
         String description = requireDescription(submission.description());
         String screen = boundedScreen(submission.screen());
+        String platform = ReportPlatform.parse(submission.platform()).wireName();
+        String appVersion = requireAppVersion(submission.appVersion());
         refuseTooManyScreenshots(submission.screenshots());
 
         if (outbox.existsById(submission.reportId())) {
@@ -58,8 +61,8 @@ public class ReportService {
                         submission.type(),
                         description,
                         screen,
-                        submission.appVersion(),
-                        submission.platform(),
+                        appVersion,
+                        platform,
                         submission.reporter(),
                         Instant.now(clock));
 
@@ -107,6 +110,14 @@ public class ReportService {
             throw new DescriptionTooLongException(MAX_DESCRIPTION_CHARS);
         }
         return trimmed;
+    }
+
+
+    private static String requireAppVersion(String appVersion) {
+        if (appVersion == null || appVersion.isBlank()) {
+            throw new MissingAppVersionException();
+        }
+        return appVersion.trim();
     }
 
 

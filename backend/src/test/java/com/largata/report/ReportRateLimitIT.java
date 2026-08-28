@@ -176,7 +176,7 @@ class ReportRateLimitIT extends PostgresTestBase {
         MultipartBodyBuilder body = new MultipartBodyBuilder();
         body.part(
                 "report",
-                "{\"reportId\":\"" + reportId + "\",\"type\":\"idea\",\"description\":\"Hello.\"}");
+                "{\"reportId\":\"" + reportId + "\",\"type\":\"idea\",\"description\":\"Hello.\",\"appVersion\":\"0.1.0\",\"platform\":\"web\"}");
 
         var request =
                 rest.post()

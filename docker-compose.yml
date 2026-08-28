@@ -128,6 +128,20 @@ services:
       # Unset endpoint is a supported posture and what a fresh clone gets if it runs the backend
       # outside compose: no bucket binds UnconfiguredObjectStore, which REFUSES with 503 rather than
       # reporting an upload it cannot deliver. Everything except media still works.
+      # Where accepted feedback reports are relayed into worklog's Reports intake (FB-1).
+      #
+      # Unset is the NORMAL local posture and binds LoggingReportRelay, which writes the report to
+      # this log and marks the outbox row delivered without touching the wire. That is deliberate,
+      # not a convenience: worklog's Reports are PERMANENT and have no delete, so a walk, a smoke
+      # run or a seeded fixture that reached the real inbox would deposit junk nobody can remove.
+      # The URL is what selects the real relay — a blank one selects the sink
+      # (ReportRelayBindingTest pins both halves).
+      #
+      # The secret is a REAL CREDENTIAL and is deliberately different per environment. It lives in
+      # the gitignored root .env locally and in the platform's env-var UI on deployed rungs, never
+      # in a committed file and never echoed into a shell command.
+      LARGATA_REPORTS_INTAKE_URL: ${LARGATA_REPORTS_INTAKE_URL:-}
+      LARGATA_REPORTS_INTAKE_SECRET: ${LARGATA_REPORTS_INTAKE_SECRET:-}
       LARGATA_STORAGE_ENDPOINT: ${LARGATA_STORAGE_ENDPOINT:-http://storage:3900}
       LARGATA_STORAGE_BUCKET: ${STORAGE_BUCKET:-largata-media}
       LARGATA_STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-largata-local}

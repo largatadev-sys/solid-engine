@@ -229,7 +229,7 @@ class ReportDeliveryIT extends PostgresTestBase {
                         + reportId
                         + "\",\"type\":\"problem\",\"description\":\""
                         + description
-                        + "\"}");
+                        + "\",\"appVersion\":\"0.1.0\",\"platform\":\"web\"}");
         int index = 0;
         for (byte[] screenshot : screenshots) {
             body.part("screenshot", named(screenshot, "shot" + index++ + ".jpg"))

@@ -1,5 +1,7 @@
 package com.largata.report;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.core.io.ByteArrayResource;
@@ -19,6 +21,9 @@ public class WorklogReportRelay implements ReportRelay {
 
     public static final String INTAKE_UNCONFIGURED = "'${largata.reports.intake-url:}'.isBlank()";
 
+    static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
+
     static final String SECRET_HEADER = "X-Intake-Secret";
     static final String REPORT_PART = "report";
     static final String REPORT_PART_FILENAME = "report.json";
@@ -35,7 +40,11 @@ public class WorklogReportRelay implements ReportRelay {
 
 
     public static RestClient.Builder statedTransport() {
-        return RestClient.builder().requestFactory(new JdkClientHttpRequestFactory());
+        JdkClientHttpRequestFactory factory =
+                new JdkClientHttpRequestFactory(
+                        HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build());
+        factory.setReadTimeout(READ_TIMEOUT);
+        return RestClient.builder().requestFactory(factory);
     }
 
 
@@ -52,13 +61,18 @@ public class WorklogReportRelay implements ReportRelay {
             if (status.is2xxSuccessful()) {
                 return RelayOutcome.delivered();
             }
-            if (status.is4xxClientError()) {
+            if (status.is4xxClientError() && !isTransient(status)) {
                 return RelayOutcome.refused("worklog answered " + status.value());
             }
             return RelayOutcome.unreachable("worklog answered " + status.value());
         } catch (RestClientException unreachable) {
             return RelayOutcome.unreachable(unreachable.getClass().getSimpleName());
         }
+    }
+
+
+    private static boolean isTransient(HttpStatusCode status) {
+        return status.value() == 408 || status.value() == 425 || status.value() == 429;
     }
 
 
@@ -103,12 +117,8 @@ public class WorklogReportRelay implements ReportRelay {
 
     private static Map<String, Object> contextOf(RelayEnvelope envelope) {
         Map<String, Object> context = new LinkedHashMap<>();
-        if (envelope.platform() != null) {
-            context.put("platform", envelope.platform());
-        }
-        if (envelope.appVersion() != null) {
-            context.put("appVersion", envelope.appVersion());
-        }
+        context.put("platform", envelope.platform());
+        context.put("appVersion", envelope.appVersion());
         if (envelope.screen() != null) {
             context.put("screen", envelope.screen());
         }

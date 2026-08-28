@@ -107,7 +107,7 @@ class ReportAcceptIT extends PostgresTestBase {
                 "report",
                 "{\"reportId\":\""
                         + reportId
-                        + "\",\"type\":\"problem\",\"description\":\"Impersonation attempt.\","
+                        + "\",\"type\":\"problem\",\"description\":\"Impersonation attempt.\",\"appVersion\":\"0.1.0\",\"platform\":\"web\","
                         + "\"reporter\":{\"uid\":\""
                         + UUID.randomUUID()
                         + "\",\"name\":\"Somebody Else\"},"
@@ -138,7 +138,7 @@ class ReportAcceptIT extends PostgresTestBase {
                 "report",
                 "{\"reportId\":\""
                         + reportId
-                        + "\",\"type\":\"problem\",\"description\":\"Impersonation attempt.\","
+                        + "\",\"type\":\"problem\",\"description\":\"Impersonation attempt.\",\"appVersion\":\"0.1.0\",\"platform\":\"web\","
                         + "\"reporterName\":\"Somebody Else\"}");
 
         rest.post()
@@ -202,6 +202,76 @@ class ReportAcceptIT extends PostgresTestBase {
 
 
     @Test
+    void aMissingPlatformIsRefusedRatherThanAcceptedAndLaterLostAtWorklog() {
+        UUID reportId = UUID.randomUUID();
+
+        submitRaw(reportId, "{\"reportId\":\"" + reportId
+                + "\",\"type\":\"problem\",\"description\":\"No platform.\",\"appVersion\":\"0.1.0\"}")
+                .expectStatus()
+                .isBadRequest();
+
+        assertThat(countOf(reportId)).isZero();
+    }
+
+
+    @Test
+    void anUnknownPlatformIsRefused() {
+        UUID reportId = UUID.randomUUID();
+
+        submitRaw(reportId, "{\"reportId\":\"" + reportId
+                + "\",\"type\":\"problem\",\"description\":\"Odd platform.\",\"appVersion\":\"0.1.0\","
+                + "\"platform\":\"blackberry\"}")
+                .expectStatus()
+                .isBadRequest();
+
+        assertThat(countOf(reportId)).isZero();
+    }
+
+
+    @Test
+    void aMissingAppVersionIsRefusedRatherThanAcceptedAndLaterLostAtWorklog() {
+        UUID reportId = UUID.randomUUID();
+
+        submitRaw(reportId, "{\"reportId\":\"" + reportId
+                + "\",\"type\":\"problem\",\"description\":\"No version.\",\"platform\":\"web\"}")
+                .expectStatus()
+                .isBadRequest();
+
+        assertThat(countOf(reportId)).isZero();
+    }
+
+
+    @Test
+    void aBlankAppVersionIsRefusedToo() {
+        UUID reportId = UUID.randomUUID();
+
+        submitRaw(reportId, "{\"reportId\":\"" + reportId
+                + "\",\"type\":\"problem\",\"description\":\"Blank version.\",\"platform\":\"web\","
+                + "\"appVersion\":\"   \"}")
+                .expectStatus()
+                .isBadRequest();
+
+        assertThat(countOf(reportId)).isZero();
+    }
+
+
+    @Test
+    void everyPlatformWorklogAcceptsIsStoredInItsWireSpelling() {
+        for (String platform : new String[] {"android", "ios", "web"}) {
+            UUID reportId = UUID.randomUUID();
+
+            submitRaw(reportId, "{\"reportId\":\"" + reportId
+                    + "\",\"type\":\"problem\",\"description\":\"Platform " + platform + ".\","
+                    + "\"appVersion\":\"0.1.0\",\"platform\":\"" + platform + "\"}")
+                    .expectStatus()
+                    .isCreated();
+
+            assertThat(rowOf(reportId).get("platform")).isEqualTo(platform);
+        }
+    }
+
+
+    @Test
     void aScreenBeyondTheLimitIsRefusedAndPersistsNothing() {
         UUID reportId = UUID.randomUUID();
         MultipartBodyBuilder body = new MultipartBodyBuilder();
@@ -209,7 +279,7 @@ class ReportAcceptIT extends PostgresTestBase {
                 "report",
                 "{\"reportId\":\""
                         + reportId
-                        + "\",\"type\":\"problem\",\"description\":\"Fine.\",\"screen\":\""
+                        + "\",\"type\":\"problem\",\"description\":\"Fine.\",\"appVersion\":\"0.1.0\",\"platform\":\"web\",\"screen\":\""
                         + "s".repeat(ReportService.MAX_SCREEN_CHARS + 1)
                         + "\"}");
 
@@ -325,6 +395,18 @@ class ReportAcceptIT extends PostgresTestBase {
     private static final AtomicInteger NEXT_ADDRESS = new AtomicInteger();
 
 
+    private RestTestClient.ResponseSpec submitRaw(UUID reportId, String reportJson) {
+        MultipartBodyBuilder body = new MultipartBodyBuilder();
+        body.part("report", reportJson);
+        return rest.post()
+                .uri(ReportPaths.ANONYMOUS)
+                .header("X-Forwarded-For", anIpAddress())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(body.build())
+                .exchange();
+    }
+
+
     private static MultipartBodyBuilder reportBody(UUID reportId, String type, String description) {
         MultipartBodyBuilder body = new MultipartBodyBuilder();
         body.part(
@@ -335,7 +417,7 @@ class ReportAcceptIT extends PostgresTestBase {
                         + type
                         + "\",\"description\":\""
                         + description
-                        + "\"}");
+                        + "\",\"appVersion\":\"0.1.0\",\"platform\":\"web\"}");
         return body;
     }
 

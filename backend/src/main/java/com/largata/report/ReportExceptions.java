@@ -59,6 +59,22 @@ public final class ReportExceptions {
     }
 
 
+    public static final class UnknownPlatformException extends ValidationException {
+
+        UnknownPlatformException() {
+            super("UNKNOWN_PLATFORM", "A report must say which platform it came from.");
+        }
+    }
+
+
+    public static final class MissingAppVersionException extends ValidationException {
+
+        MissingAppVersionException() {
+            super("APP_VERSION_REQUIRED", "A report must carry the app version it came from.");
+        }
+    }
+
+
     public static final class TooManyReportsException extends RateLimitedException {
 
         TooManyReportsException() {
