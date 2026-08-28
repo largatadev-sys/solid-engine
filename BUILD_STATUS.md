@@ -98,6 +98,12 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 
 *One entry per change, oldest first. Prose, not a table: these entries run to thousands of characters and a three-column cell renders them as an unreadable column of text.*
 
+**2026-08-28**
+
+Agent-skills sync from `mattpocock/skills` — 75 files under `.claude/skills/` and `.agents/skills/` plus the refreshed hashes in `skills-lock.json`. Upstream wording edits only (a heading's em-dash becoming a colon, phrasing tweaks); no skill gained or lost a step, and no repo-specific config in `docs/agents/` moved.
+
+*Why it wasn't a story —* Tooling config with no product surface, picked up by a sync during the FB-1 session rather than authored here. It rides FB-1's branch so it ships in one PR, but it is deliberately its **own commit**: bundling it into a `feat(feedback)` commit would put 75 unrelated files under a heading that claims they are the report pipeline, and `git log --grep FB-1` is how commits are located in this repo since BUILD_STATUS stores no SHAs. That is the H2 mistake (2026-08-21) in miniature, and the rule it produced — stage explicit paths, never the whole tree — is what kept the two apart here.
+
 **2026-07-15**
 
 Agent-skills config (`docs/agents/{issue-tracker,triage-labels,domain}.md` + `## Agent skills` in CLAUDE.md) and the repo `.gitignore`. Tracker = local markdown under `docs/plans/<story-id>-<slug>/`, tracked in git; domain docs mapped onto the existing `docs/design/` package.
