@@ -16,6 +16,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,10 +31,12 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = "largata.reports.poll-initial-delay-ms=3600000")
 @Import({TestJwtSupport.Config.class, ReportDeliveryIT.ScriptedRelayConfig.class})
 class ReportDeliveryIT extends PostgresTestBase {
 
@@ -51,6 +54,8 @@ class ReportDeliveryIT extends PostgresTestBase {
     void setUp() {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
         relay.reset();
+        jdbc.update("DELETE FROM report_screenshot");
+        jdbc.update("DELETE FROM report_outbox");
     }
 
 
@@ -232,6 +237,7 @@ class ReportDeliveryIT extends PostgresTestBase {
         }
         rest.post()
                 .uri(ReportPaths.ANONYMOUS)
+                .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
                 .exchange()
@@ -239,6 +245,15 @@ class ReportDeliveryIT extends PostgresTestBase {
                 .isCreated();
         return reportId;
     }
+
+
+    private static String anIpAddress() {
+        int octet = NEXT_ADDRESS.incrementAndGet();
+        return "192.0.2." + (octet % 250);
+    }
+
+
+    private static final AtomicInteger NEXT_ADDRESS = new AtomicInteger();
 
 
     private void makeDue(UUID reportId) {

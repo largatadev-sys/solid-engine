@@ -76,6 +76,12 @@ largata:
     # repo, never in a log line, never echoed into a shell command.
     intake-url: ${LARGATA_REPORTS_INTAKE_URL:}
     intake-secret: ${LARGATA_REPORTS_INTAKE_SECRET:}
+    # How often the outbox drains, and how long it waits before its first drain. The initial delay
+    # exists so an integration test can push the autonomous poller past its own lifetime and drive
+    # delivery deliberately — without it the poller races the assertions, which passes almost every
+    # time and is exactly the kind of timing luck this repo keeps paying for.
+    poll-interval-ms: ${LARGATA_REPORTS_POLL_INTERVAL_MS:60000}
+    poll-initial-delay-ms: ${LARGATA_REPORTS_POLL_INITIAL_DELAY_MS:60000}
   storage:
     # S3-class object storage (ADR-021). Endpoint-driven so the same code speaks to Garage locally
     # and Railway Buckets or R2 on a deployed rung. Unset endpoint = no bucket = UnconfiguredObjectStore,

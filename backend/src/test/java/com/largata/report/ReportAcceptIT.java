@@ -8,6 +8,7 @@ import com.largata.support.TestJwtSupport;
 import com.nimbusds.jwt.SignedJWT;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,6 +115,7 @@ class ReportAcceptIT extends PostgresTestBase {
 
         rest.post()
                 .uri(ReportPaths.ANONYMOUS)
+                .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
                 .exchange()
@@ -141,6 +143,7 @@ class ReportAcceptIT extends PostgresTestBase {
 
         rest.post()
                 .uri(ReportPaths.ANONYMOUS)
+                .header("X-Forwarded-For", anIpAddress())
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
@@ -212,6 +215,7 @@ class ReportAcceptIT extends PostgresTestBase {
 
         rest.post()
                 .uri(ReportPaths.ANONYMOUS)
+                .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
                 .exchange()
@@ -229,6 +233,7 @@ class ReportAcceptIT extends PostgresTestBase {
 
         rest.post()
                 .uri(ReportPaths.ANONYMOUS)
+                .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
                 .exchange()
@@ -251,6 +256,7 @@ class ReportAcceptIT extends PostgresTestBase {
 
         rest.post()
                 .uri(ReportPaths.ANONYMOUS)
+                .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
                 .exchange()
@@ -286,6 +292,7 @@ class ReportAcceptIT extends PostgresTestBase {
 
         rest.post()
                 .uri(ReportPaths.ANONYMOUS)
+                .header("X-Forwarded-For", anIpAddress())
                 .header(HttpHeaders.AUTHORIZATION, bearer(TestJwtSupport.expiredToken("uid-expired")))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(reportBody(reportId, "problem", "Sent with a stale session.").build())
@@ -299,15 +306,23 @@ class ReportAcceptIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec submit(
             UUID reportId, String token, String type, String description) {
-        var request =
-                rest.post()
-                        .uri(ReportPaths.ANONYMOUS)
-                        .contentType(MediaType.MULTIPART_FORM_DATA);
+        var request = rest.post().uri(ReportPaths.ANONYMOUS).header("X-Forwarded-For", anIpAddress());
         if (token != null) {
             request = request.header(HttpHeaders.AUTHORIZATION, bearer(token));
         }
-        return request.body(reportBody(reportId, type, description).build()).exchange();
+        return request
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(reportBody(reportId, type, description).build())
+                .exchange();
     }
+
+
+    private static String anIpAddress() {
+        return "192.0.2." + (NEXT_ADDRESS.incrementAndGet() % 250);
+    }
+
+
+    private static final AtomicInteger NEXT_ADDRESS = new AtomicInteger();
 
 
     private static MultipartBodyBuilder reportBody(UUID reportId, String type, String description) {

@@ -2,7 +2,6 @@ package com.largata.report;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import tools.jackson.databind.ObjectMapper;
@@ -22,7 +21,7 @@ class ReportRelayConfig {
     }
 
     @Bean
-    @ConditionalOnMissingBean(ReportRelay.class)
+    @ConditionalOnExpression(WorklogReportRelay.INTAKE_UNCONFIGURED)
     ReportRelay loggingReportRelay() {
         return new LoggingReportRelay();
     }

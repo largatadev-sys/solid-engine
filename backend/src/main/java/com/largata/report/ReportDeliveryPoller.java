@@ -14,7 +14,9 @@ class ReportDeliveryPoller {
     }
 
 
-    @Scheduled(fixedRateString = "#{T(com.largata.report.ReportOutboxEntry).FIRST_BACKOFF.toMillis()}")
+    @Scheduled(
+            fixedRateString = "${largata.reports.poll-interval-ms:60000}",
+            initialDelayString = "${largata.reports.poll-initial-delay-ms:60000}")
     void drainTheOutbox() {
         delivery.drainDueReports();
     }

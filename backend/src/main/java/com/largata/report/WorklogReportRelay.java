@@ -17,6 +17,8 @@ public class WorklogReportRelay implements ReportRelay {
 
     public static final String INTAKE_CONFIGURED = "!'${largata.reports.intake-url:}'.isBlank()";
 
+    public static final String INTAKE_UNCONFIGURED = "'${largata.reports.intake-url:}'.isBlank()";
+
     static final String SECRET_HEADER = "X-Intake-Secret";
     static final String REPORT_PART = "report";
     static final String REPORT_PART_FILENAME = "report.json";

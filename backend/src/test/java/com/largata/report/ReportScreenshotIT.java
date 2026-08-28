@@ -15,6 +15,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -180,10 +181,19 @@ class ReportScreenshotIT extends PostgresTestBase {
         }
         return rest.post()
                 .uri(ReportPaths.ANONYMOUS)
+                .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
                 .exchange();
     }
+
+
+    private static String anIpAddress() {
+        return "192.0.2." + (NEXT_ADDRESS.incrementAndGet() % 250);
+    }
+
+
+    private static final AtomicInteger NEXT_ADDRESS = new AtomicInteger();
 
 
     private static ByteArrayResource named(byte[] bytes, String filename) {
