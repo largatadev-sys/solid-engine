@@ -136,6 +136,7 @@ The generalisation this repo keeps re-learning: **verify at the layer that ships
 | **8081** | **preview container** | **Pinned three times** (S4.31 found the third): the backend's dev CORS allowlist (`docker-compose.yml` `LARGATA_CORS_ALLOWED_ORIGINS` — `localhost`/`127.0.0.1` on 8081–8083, plus `10.0.2.2` for the emulator's browser) · the Google OAuth client's authorized JavaScript origins (console-registered — S0.6) · **and the backend's own `LARGATA_WEB_BASE_URL`, which mints every invite `shareUrl` as `http://localhost:8081/join/…`**. Move the preview and Google refuses to render the button, the API preflights 403, *and* any invite walk silently hands itself to whatever occupies 8081. |
 | 8082 | Metro (`npx expo start --port 8082`) | The one that gives. Metro defaults to 8081 and *will* collide with the preview. |
 | 8083 | **preview built for the ANDROID EMULATOR's browser** (S4.21) | The only local rung with **real touch**, which is where the founder found the carousel erratic and headless Chrome cannot reach — its pointer is always a mouse. Needs three things to agree, and two fail silently: reach it at **`http://10.0.2.2:8083`** (on the device, `localhost` *is* the device); build it with `--build-arg EXPO_PUBLIC_API_BASE_URL="http://10.0.2.2:8080"`, because the 8081 image bakes `localhost:8080` and the device then calls itself; and keep `http://10.0.2.2:8083` in the dev CORS allowlist, or the app loads and every API call dies on preflight — which reads as a broken backend. Not 8082: that is Metro's, and the container simply exits on the collision. |
+| 8080 + 8081, **reached over the LAN IP** | **preview on the founder's REAL PHONE** (FB-2, 2026-08-29) | **The best rung available while the Gradle fault blocks device builds** — a real finger, a real phone viewport, real safe-area insets, no emulator and no Gradle. Compose already publishes to `0.0.0.0`, so **nothing needs exposing**; the work is making four things name the *LAN IP* instead of `localhost`. See the recipe below. |
 
 ```bash
 # 1. Full stack (fresh DB every time — that is the point)
@@ -193,7 +194,40 @@ powershell -File mobile/scripts/build-release.ps1    # -ApiBaseUrl defaults to h
 #   ^ prompts for the keystore password; echoes the baked API URL + signing cert in its summary.
 #     Other params: -KeystorePath (default ~/keys/largata-release.keystore), -Alias (default 'largata')
 adb install -r mobile/android/app/build/outputs/apk/release/*.apk
+
+# 5. The preview ON A REAL PHONE, over the LAN (FB-2). Docker already publishes to 0.0.0.0, so
+#    nothing needs "exposing" — the whole job is making four things say the LAN IP, not localhost.
+#    Find it first; it changes when the router re-leases, and a stale IP reads as a dead backend:
+#      powershell "Get-NetIPAddress -AddressFamily IPv4 | ? {$_.InterfaceAlias -notmatch 'Loopback|vEthernet|WSL'}"
+LAN=192.168.1.115                                    # <-- yours will differ. Re-check it every session.
+LARGATA_CORS_ALLOWED_ORIGINS="http://localhost:8081,http://127.0.0.1:8081,http://10.0.2.2:8081,http://$LAN:8081" \
+LARGATA_WEB_BASE_URL="http://$LAN:8081" \
+  docker compose up -d --build
+cd mobile && set -a && . ./.env && set +a
+docker build -f Dockerfile.web-preview \
+  --build-arg EXPO_PUBLIC_API_BASE_URL="http://$LAN:8080" \
+  --build-arg LARGATA_WEB_BASE_URL="http://$LAN:8081" \
+  --build-arg EXPO_PUBLIC_FIREBASE_API_KEY --build-arg EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN \
+  --build-arg EXPO_PUBLIC_FIREBASE_PROJECT_ID --build-arg EXPO_PUBLIC_FIREBASE_APP_ID \
+  --build-arg EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID -t largata-preview:lan .
+docker run -d --name largata-preview-lan -p 8081:8080 -e PORT=8080 \
+  --network app_default -e LARGATA_API_UPSTREAM=backend:8080 largata-preview:lan
+# One-time, and it is the step that makes it look broken when skipped (see below):
+#   powershell -Command "Start-Process powershell -Verb RunAs -ArgumentList '-Command','New-NetFirewallRule -DisplayName \"Largata LAN preview\" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8080,8081 -Profile Any'"
+# Then open http://$LAN:8081 on the phone. Prove the LAN origin really is allowed, on a SECURED route:
+#   curl -si -X OPTIONS http://$LAN:8080/v1/me -H "Origin: http://$LAN:8081" \
+#        -H "Access-Control-Request-Method: GET" -H "Access-Control-Request-Headers: authorization" | grep -i allow-origin
 ```
+
+**The LAN rung's five traps, four of which are silent (FB-2, 2026-08-29).** It is worth standing up because the recorded Gradle fault has blocked the device rung across four stories now, and this reaches a **real finger on a real phone** without Gradle, an AVD, or a release build — FB-2 found four genuine defects on it that every green suite had missed. What bites:
+
+- **The bundle bakes the API URL, so the 8081 image makes the PHONE call itself.** `EXPO_PUBLIC_*` are inlined at export (the S0.4 rule), so a preview built for `localhost:8080` sends every request to the device. Rebuild with the LAN IP, then **prove it landed by grepping the exported JS** — `docker run --rm --entrypoint sh largata-preview:lan -c "grep -c '<LAN>:8080' /srv/_expo/static/js/web/*.js"` — never by trusting the build args.
+- **CORS: the LAN origin must be in the allowlist**, or the app loads and every API call dies on preflight, which reads as a broken backend. Check it against a **secured** route (`/v1/me`), never the public `/v1/health`, which answers either way — the S0.4 discriminating-check rule.
+- **`LARGATA_WEB_BASE_URL` must name the LAN origin too**, or invite links hand the phone to `localhost:8081` — *the phone*. That is the S4.31 trap. FB-2 found this variable **was not mapped in `docker-compose.yml` at all**, so setting it did nothing; the mapping now exists, with the default unchanged.
+- **Windows classifies most Wi-Fi as `Public`, which blocks inbound — so the phone just times out** with everything on the host perfectly healthy. `Get-NetConnectionProfile` shows the category. The rule above is scoped to two ports and reversible (`Remove-NetFirewallRule -DisplayName "Largata LAN preview"`); prefer it to flipping the network to Private. **It needs elevation, and a UAC prompt is something an agent shell cannot answer** — the S3.3 lesson — so expect to click it yourself.
+- **Google sign-in will NOT render, and that is expected, not a bug.** Authorized JavaScript origins are console-registered per origin and Google will not accept a bare IP, so the button silently does not appear — exactly the S0.6 shape that reads as a code bug. **Sign in with email + password** using the verified pool (`t1`–`t5`); that path is REST-based and unaffected. Do not chase it.
+
+**What this rung still cannot close:** anything native. Native 1:1 gesture handling, keyboard avoidance, hardware back, and Reduce Motion all run different code, so a web result there proves nothing about them. And **do not judge animation smoothness here** — react-native-web animates by writing inline styles from a `requestAnimationFrame` loop, so the whole preview is stuttery by construction (founder's own read, FB-2). A *uniformly* rough animation is the platform; one that *freezes or jumps* is a bug, and that distinction is the only motion signal this rung gives you.
 
 **The local stack sends NO mail, and that is deliberate — keep `LARGATA_RESEND_API_KEY` commented out in the root `.env` (H1, 2026-08-18).** The Resend quota is **per account and shared with deployed dev**, so a local run spends the budget that real registration depends on — and `dispatch()` swallows the 429 into a `log.warn`, so nothing anywhere goes red while invitations silently stop arriving (the 2026-08-15 outage). With no key present, `InvitationMailConfig` selects **`LoggingInvitationMailer`** and every send becomes *"Invitation email dispatched (logging sink, no wire)"* in the backend log. **Nothing is lost by this**: the OTP helper reads codes from the log either way (S4.0 decision 2), and the invitation flows are driven through the in-app inbox, not a mailbox. Uncomment the key only to test the mail path itself, and comment it straight back. **Two traps this closes, both of which cost real quota before it was found:** the specs' invitations (now by-handle, which dispatches nothing at all — same move the seeders made at `4dba93c`), and **signing in as an unverified pool account**, which lands the app on the verify screen and auto-issues an OTP *per sign-in*. Only **`t1`–`t5` are verified**; `t6`–`t10` exist but were never clicked through, so `e2e/support/identities.ts` declares `VERIFIED_TAGS` and `assertVerified()` throws in the `signIn` fixture rather than letting a spec discover this by spending mail.
 
