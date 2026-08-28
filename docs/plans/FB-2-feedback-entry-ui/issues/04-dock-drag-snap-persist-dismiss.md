@@ -12,7 +12,7 @@ range and re-clamps on layout change.
 
 **Blocked by:** 02.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Geometry module Jest: nearer-rail at the midline, clamp at both ends (web floor 12), fraction round-trip across a resize, sub-threshold travel classified as a tap, dismiss-zone hit and miss
 - [ ] Native: the bubble follows the finger, overdrags 12px past a rail, and springs back to inset 16 keeping its vertical position

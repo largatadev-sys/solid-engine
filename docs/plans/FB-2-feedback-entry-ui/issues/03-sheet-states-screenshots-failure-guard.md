@@ -13,7 +13,7 @@ to a session token (the delete-undo guard) so a stale response cannot strand the
 
 **Blocked by:** 02.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] A report submitted with two screenshots shows both in its outbox row on the local stack; removal before send collapses the row and the add tile returns
 - [ ] The failure banner's five messages are the shipped strings verbatim — asserted against the shared copy module, never retyped

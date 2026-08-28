@@ -11,7 +11,7 @@ visual difference and no button announcement to screen readers.
 
 **Blocked by:** 02.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Counter module Jest: five-in-window reveals; four does not; a gap past the window resets the count; a sixth tap after reveal is inert
 - [ ] Five taps on the welcome wordmark set `'revealed'` and the bubble appears; same on the Home header wordmark

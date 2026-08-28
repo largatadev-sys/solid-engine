@@ -11,12 +11,12 @@ grilling ordered.
 
 **Blocked by:** 03, 05, 06.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The new spec passes against the preview container; `--list` confirms every other spec file's test count is unchanged
 - [ ] The absent-by-default assertion goes red when the visibility function is sabotaged open — prove the sabotage landed before trusting the run (the S4.30 lesson)
 - [ ] Full Jest sweep green before push (new files under the mobile source tree; two shared components touched)
-- [ ] Device walk: native glide and spring feel, the 4px threshold, keyboard avoidance, hardware back through the guard, Reduce Motion — on Metro against an installed dev build if the recorded Gradle fault blocks a fresh one
+- [ ] **DEFERRED by founder instruction (2026-08-28): the device rung and the AVD were explicitly excluded from this run.** Native glide and spring feel, the 4px tap/drag threshold, keyboard avoidance on the description field, hardware back through the dismiss guard, and Reduce Motion are therefore **unproven on a device** — every other rung is green. What is at risk is native-only feel, not correctness of the shared logic: the geometry, the counter, the visibility rule and the tap counter are all pure modules under Jest, and the web lane is covered by the opt-in walk. Close this on the next device session, or at the next story that opens the app on the emulator.
 - [ ] FB-1's spec carries the dated amendment recording the permanent hidden+gesture posture
 - [ ] The epic map gains the FB-2 line in the FB-series and the backlog entry for a discoverable public feedback surface (trigger: public launch)
 - [ ] BUILD_STATUS gains the FB-2 row — status + spec link only — updated in the last commit on the feature branch

@@ -11,7 +11,7 @@ Send inert until a character, the sending state, the terminal thank-you.
 
 **Blocked by:** 01.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Visibility function has a Jest case per lane (localhost, emulator alias, deployed dev, a prod-shaped URL, absent) × each tri-state value; `'hidden'` beats the dev default and `'revealed'` beats a non-dev lane
 - [ ] The base URL is read only through the API client's exported accessor — no new `process.env` access anywhere (the inlining rule)

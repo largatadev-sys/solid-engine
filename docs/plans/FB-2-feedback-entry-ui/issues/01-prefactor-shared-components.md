@@ -9,7 +9,7 @@ as "something is wrong here", not "reply".
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Every existing sheet's dismiss behavior is unchanged — no existing test edited, full suite green
 - [ ] A sheet passing the new seam sees scrim tap, swipe-down, and hardware back arrive through it; a sheet not passing it behaves exactly as today

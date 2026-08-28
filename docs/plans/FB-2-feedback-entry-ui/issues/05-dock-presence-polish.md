@@ -13,7 +13,7 @@ dock fades out while its own sheet is open and returns awake after close.
 
 **Blocked by:** 04 (the nudge re-snaps and persists through the drag machinery).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Untouched for 2.6s the bubble sits at 0.4 and still opens the sheet on tap; any touch/hover/focus restores full opacity in 120ms
 - [ ] Cold start with the dock visible: full opacity for 2.6s, then the idle fade; a build where the dock is hidden plays no wake
