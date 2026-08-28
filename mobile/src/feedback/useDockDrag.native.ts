@@ -19,7 +19,9 @@ export function useDockDrag({
   readonly onGrab: () => void;
   readonly onMove: (offset: Point) => void;
   readonly onRelease: (offset: Point) => void;
+  readonly onNudge: (key: string) => boolean;
   readonly threshold: number;
+  readonly dragging: boolean;
 }): DockDrag {
   const live = useRef({ onGrab, onMove, onRelease, threshold });
   live.current = { onGrab, onMove, onRelease, threshold };

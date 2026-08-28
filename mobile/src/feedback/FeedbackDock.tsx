@@ -27,10 +27,18 @@ import { dockVisible } from './feedbackVisibility';
 import { FeedbackSheet } from './FeedbackSheet';
 import type { ReportDraft } from './reportDraft';
 import { useDockDrag } from './useDockDrag';
+import { useDockPresence } from './useDockPresence';
 import { useReportDraft } from './useReportDraft';
 
 
 const DISMISS_RADIUS = 44;
+
+const NUDGES: Record<string, Point> = {
+  ArrowLeft: { x: -1, y: 0 },
+  ArrowRight: { x: 1, y: 0 },
+  ArrowUp: { x: 0, y: -1 },
+  ArrowDown: { x: 0, y: 1 },
+};
 
 
 export function FeedbackDock() {
@@ -43,6 +51,9 @@ export function FeedbackDock() {
   const [draft, setDraft] = useState<ReportDraft | null>(null);
   const [frame, setFrame] = useState<{ width: number; height: number } | null>(null);
   const [dragging, setDragging] = useState(false);
+
+  const visible = dockVisible(visibility, baseUrl());
+  const presence = useDockPresence(visible && draft === null);
 
   const offset = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const lift = useRef(new Animated.Value(0)).current;
@@ -91,6 +102,10 @@ export function FeedbackDock() {
     }).start();
   };
 
+  const open = () => {
+    setDraft((held) => held ?? mintDraft());
+  };
+
   const liftTo = (value: number) => {
     Animated.timing(lift, {
       toValue: value,
@@ -102,10 +117,13 @@ export function FeedbackDock() {
 
   const drag = useDockDrag({
     threshold: feedbackMotion.dragThresholdPx,
+    dragging,
+    onNudge: (key) => nudgeBy(key),
     onGrab: () => {
       moved.current = false;
       grabbedAt.current = restingAt();
       setDragging(true);
+      presence.wake();
       liftTo(1);
     },
     onMove: (delta) => {
@@ -129,7 +147,7 @@ export function FeedbackDock() {
 
       if (tapped) {
         offset.setValue({ x: 0, y: 0 });
-        setDraft(mintDraft());
+        open();
         return;
       }
 
@@ -156,7 +174,27 @@ export function FeedbackDock() {
     setFrame({ width, height });
   };
 
-  if (!dockVisible(visibility, baseUrl())) {
+  const nudgeBy = (key: string): boolean => {
+    if (bounds === null || parked === null) return false;
+
+    const nudge = NUDGES[key];
+    if (nudge === undefined) return false;
+    presence.wake();
+
+    const from = restingAt();
+    setDockPosition(
+      landingFor(
+        {
+          x: from.x + nudge.x * feedbackMotion.nudgePx,
+          y: from.y + nudge.y * feedbackMotion.nudgePx,
+        },
+        bounds,
+      ),
+    );
+    return true;
+  };
+
+  if (!visible) {
     return null;
   }
 
@@ -188,12 +226,18 @@ export function FeedbackDock() {
                     { scale },
                     ...press.style.transform,
                   ],
-                  opacity: draft === null ? press.style.opacity : 0,
+                  opacity:
+                    draft === null
+                      ? Animated.multiply(presence.opacity, press.style.opacity)
+                      : 0,
                 },
               ]}
               pointerEvents={draft === null ? 'auto' : 'none'}
               onPressIn={press.onPressIn}
               onPressOut={press.onPressOut}
+              onPress={open}
+              onHoverIn={presence.wake}
+              onFocus={presence.wake}
               hitSlop={2}
               accessibilityRole="button"
               accessibilityLabel={DOCK_LABEL}

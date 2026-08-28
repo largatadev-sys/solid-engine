@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { colors } from '../theme';
 import type { Point } from './dockGeometry';
 
 
@@ -13,15 +14,19 @@ export function useDockDrag({
   onGrab,
   onMove,
   onRelease,
+  onNudge,
   threshold,
+  dragging,
 }: {
   readonly onGrab: () => void;
   readonly onMove: (offset: Point) => void;
   readonly onRelease: (offset: Point) => void;
+  readonly onNudge: (key: string) => boolean;
   readonly threshold: number;
+  readonly dragging: boolean;
 }): DockDrag {
-  const live = useRef({ onGrab, onMove, onRelease, threshold });
-  live.current = { onGrab, onMove, onRelease, threshold };
+  const live = useRef({ onGrab, onMove, onRelease, onNudge, threshold });
+  live.current = { onGrab, onMove, onRelease, onNudge, threshold };
 
   const from = useRef<Point | null>(null);
   const settle = useRef<(event: PointerEvent) => void>(() => {});
@@ -55,12 +60,17 @@ export function useDockDrag({
         live.current.onGrab();
       },
       onContextMenu: (event: { preventDefault: () => void }) => event.preventDefault(),
+      onKeyDown: (event: { key?: string; preventDefault?: () => void }) => {
+        if (live.current.onNudge(event.key ?? '')) event.preventDefault?.();
+      },
     },
     discStyle: {
       touchAction: 'none',
       userSelect: 'none',
       WebkitTouchCallout: 'none',
-      cursor: 'grab',
+      cursor: dragging ? 'grabbing' : 'grab',
+      outlineColor: colors.accent,
+      outlineOffset: 2,
     },
     tracksPointer: false,
   };
