@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { baseUrl } from '../api/apiClient';
 import { Icon } from '../components/Icon';
 import { useReducedMotion } from '../components/useReducedMotion';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
+import { AnimatedPressable } from '../components/usePressFeedback';
 import { colors, radii } from '../theme';
 import { feedbackColors, feedbackMetrics, feedbackMotion } from '../theme/workspaceTokens';
 import type { DockPosition } from './dockPosition';
@@ -16,6 +16,7 @@ import {
   inDismissZone,
   isDrag,
   landingFor,
+  opensOnRelease,
   withOverdrag,
   yOf,
   type DockBounds,
@@ -31,7 +32,36 @@ import { useDockPresence } from './useDockPresence';
 import { useReportDraft } from './useReportDraft';
 
 
-const DISMISS_RADIUS = 44;
+const DISMISS_RADIUS = 56;
+
+type SpringShape = {
+  readonly stiffness: number;
+  readonly damping: number;
+  readonly mass: number;
+};
+
+
+function glide(
+  value: Animated.Value,
+  toValue: number,
+  linear: boolean,
+  duration: number,
+  spring: SpringShape,
+): Animated.CompositeAnimation {
+  return linear
+    ? Animated.timing(value, {
+        toValue,
+        duration,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      })
+    : Animated.spring(value, {
+        toValue,
+        useNativeDriver: false,
+        ...spring,
+      });
+}
+
 
 const NUDGES: Record<string, Point> = {
   ArrowLeft: { x: -1, y: 0 },
@@ -44,7 +74,6 @@ const NUDGES: Record<string, Point> = {
 export function FeedbackDock() {
   const { visibility, position } = useFeedbackState();
   const insets = useSafeAreaInsets();
-  const press = usePressFeedback();
   const reducedMotion = useReducedMotion();
   const mintDraft = useReportDraft();
 
@@ -57,8 +86,46 @@ export function FeedbackDock() {
 
   const offset = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const lift = useRef(new Animated.Value(0)).current;
+  const pressed = useRef(new Animated.Value(0)).current;
+  const entrance = useRef(new Animated.Value(0)).current;
+  const [mounted, setMounted] = useState(visible);
   const grabbedAt = useRef<Point>({ x: 0, y: 0 });
+  const grabbedMs = useRef(0);
   const moved = useRef(false);
+  const dragArmed = useRef(false);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pointerVerdict = useRef<boolean | null>(null);
+
+  useEffect(() => () => disarmHold(), []);
+
+  if (visible && !mounted) setMounted(true);
+
+  const motionless = useRef(reducedMotion);
+  motionless.current = reducedMotion;
+
+  useEffect(() => {
+    if (!mounted) return;
+    entrance.stopAnimation();
+
+    if (visible) {
+      entrance.setValue(0);
+      glide(entrance, 1, motionless.current, feedbackMotion.entranceMs, {
+        stiffness: feedbackMotion.entranceStiffness,
+        damping: feedbackMotion.entranceDamping,
+        mass: feedbackMotion.snapMass,
+      }).start();
+      return;
+    }
+
+    Animated.timing(entrance, {
+      toValue: 0,
+      duration: feedbackMotion.exitMs,
+      easing: motionless.current ? Easing.linear : Easing.in(Easing.quad),
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      if (finished) setMounted(false);
+    });
+  }, [visible, mounted, entrance]);
 
   const bounds: DockBounds | null =
     frame === null
@@ -88,14 +155,14 @@ export function FeedbackDock() {
         toValue: { x: 0, y: 0 },
         duration: feedbackMotion.snapMs,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
       return;
     }
 
     Animated.spring(offset, {
       toValue: { x: 0, y: 0 },
-      useNativeDriver: true,
+      useNativeDriver: false,
       stiffness: feedbackMotion.snapStiffness,
       damping: feedbackMotion.snapDamping,
       mass: feedbackMotion.snapMass,
@@ -106,12 +173,55 @@ export function FeedbackDock() {
     setDraft((held) => held ?? mintDraft());
   };
 
-  const liftTo = (value: number) => {
-    Animated.timing(lift, {
-      toValue: value,
-      duration: reducedMotion ? 0 : feedbackMotion.liftMs,
+  const activate = () => {
+    const verdict = pointerVerdict.current;
+    pointerVerdict.current = null;
+    if (verdict !== null) return;
+    open();
+  };
+
+  const pressIn = () => {
+    presence.wake();
+    Animated.timing(pressed, {
+      toValue: 1,
+      duration: reducedMotion ? 0 : feedbackMotion.pressInMs,
       easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const pressOut = () => {
+    glide(pressed, 0, reducedMotion, feedbackMotion.pressInMs, {
+      stiffness: feedbackMotion.pressOutStiffness,
+      damping: feedbackMotion.pressOutDamping,
+      mass: feedbackMotion.snapMass,
+    }).start();
+  };
+
+  const beginDrag = () => {
+    disarmHold();
+    if (dragArmed.current) return;
+    dragArmed.current = true;
+    setDragging(true);
+    liftTo(1);
+  };
+
+  const armHold = () => {
+    disarmHold();
+    holdTimer.current = setTimeout(beginDrag, feedbackMotion.holdToDragMs);
+  };
+
+  const disarmHold = () => {
+    if (holdTimer.current === null) return;
+    clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+  };
+
+  const liftTo = (value: number) => {
+    glide(lift, value, reducedMotion, feedbackMotion.liftMs, {
+      stiffness: feedbackMotion.liftStiffness,
+      damping: feedbackMotion.liftDamping,
+      mass: feedbackMotion.liftMass,
     }).start();
   };
 
@@ -119,18 +229,23 @@ export function FeedbackDock() {
     threshold: feedbackMotion.dragThresholdPx,
     dragging,
     onNudge: (key) => nudgeBy(key),
+    onActivate: () => open(),
     onGrab: () => {
       moved.current = false;
+      pointerVerdict.current = null;
       grabbedAt.current = restingAt();
-      setDragging(true);
+      grabbedMs.current = Date.now();
       presence.wake();
-      liftTo(1);
+      armHold();
     },
     onMove: (delta) => {
       if (bounds === null) return;
       if (!moved.current && isDrag({ x: 0, y: 0 }, delta, feedbackMotion.dragThresholdPx)) {
         moved.current = true;
+        beginDrag();
       }
+      if (!moved.current) return;
+
       const at = {
         x: withOverdrag(grabbedAt.current.x + delta.x, bounds, feedbackMotion.overdragPx),
         y: clampY(grabbedAt.current.y + delta.y, bounds),
@@ -138,12 +253,20 @@ export function FeedbackDock() {
       offset.setValue({ x: at.x - grabbedAt.current.x, y: at.y - grabbedAt.current.y });
     },
     onRelease: (delta) => {
+      disarmHold();
+      dragArmed.current = false;
       setDragging(false);
       liftTo(0);
       if (bounds === null) return;
 
       const release = { x: grabbedAt.current.x + delta.x, y: grabbedAt.current.y + delta.y };
-      const tapped = !isDrag({ x: 0, y: 0 }, delta, feedbackMotion.dragThresholdPx);
+      const tapped = opensOnRelease(
+        delta,
+        Date.now() - grabbedMs.current,
+        feedbackMotion.dragThresholdPx,
+        feedbackMotion.tapHoldLimitMs,
+      );
+      pointerVerdict.current = tapped;
 
       if (tapped) {
         offset.setValue({ x: 0, y: 0 });
@@ -194,15 +317,24 @@ export function FeedbackDock() {
     return true;
   };
 
-  if (!visible) {
+  if (!mounted) {
     return null;
   }
 
   const resting = restingAt();
-  const scale = lift.interpolate({
+  const liftScale = lift.interpolate({
     inputRange: [0, 1],
     outputRange: [1, reducedMotion ? 1 : feedbackMotion.liftScale],
   });
+  const pressScale = pressed.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, reducedMotion ? 1 : feedbackMotion.pressScale],
+  });
+  const entranceScale = entrance.interpolate({
+    inputRange: [0, 1],
+    outputRange: [reducedMotion ? 1 : feedbackMotion.entranceFromScale, 1],
+  });
+  const scale = Animated.multiply(Animated.multiply(liftScale, pressScale), entranceScale);
 
   return (
     <>
@@ -224,18 +356,15 @@ export function FeedbackDock() {
                     { translateX: offset.x },
                     { translateY: offset.y },
                     { scale },
-                    ...press.style.transform,
                   ],
                   opacity:
-                    draft === null
-                      ? Animated.multiply(presence.opacity, press.style.opacity)
-                      : 0,
+                    draft === null ? Animated.multiply(presence.opacity, entrance) : 0,
                 },
               ]}
               pointerEvents={draft === null ? 'auto' : 'none'}
-              onPressIn={press.onPressIn}
-              onPressOut={press.onPressOut}
-              onPress={open}
+              onPressIn={pressIn}
+              onPressOut={pressOut}
+              onPress={activate}
               onHoverIn={presence.wake}
               onFocus={presence.wake}
               hitSlop={2}
@@ -291,12 +420,12 @@ function DismissZone({ bottom }: { readonly bottom: number }) {
 
 
 function useFade(): Animated.Value {
-  const entrance = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(0)).current;
   const started = useRef(false);
 
   if (!started.current) {
     started.current = true;
-    Animated.timing(entrance, {
+    Animated.timing(fade, {
       toValue: 1,
       duration: feedbackMotion.railsInMs,
       easing: Easing.out(Easing.quad),
@@ -304,7 +433,7 @@ function useFade(): Animated.Value {
     }).start();
   }
 
-  return entrance;
+  return fade;
 }
 
 

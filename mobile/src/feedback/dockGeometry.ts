@@ -74,6 +74,17 @@ export function isDrag(from: Point, to: Point, threshold: number): boolean {
 }
 
 
+export function opensOnRelease(
+  travel: Point,
+  heldMs: number,
+  threshold: number,
+  holdLimitMs: number,
+): boolean {
+  if (isDrag({ x: 0, y: 0 }, travel, threshold)) return false;
+  return heldMs < holdLimitMs;
+}
+
+
 export function withOverdrag(x: number, bounds: DockBounds, overdrag: number): number {
   const left = bounds.rail - overdrag;
   const right = bounds.width - bounds.rail - bounds.disc + overdrag;

@@ -7,6 +7,7 @@ import {
   inDismissZone,
   isDrag,
   landingFor,
+  opensOnRelease,
   nearerEdge,
   verticalRange,
   withOverdrag,
@@ -119,6 +120,27 @@ describe('the tap/drag threshold', () => {
     expect(isDrag({ x: 0, y: 0 }, { x: 4, y: 0 }, 4)).toBe(true);
     expect(isDrag({ x: 0, y: 0 }, { x: 0, y: -9 }, 4)).toBe(true);
     expect(isDrag({ x: 10, y: 10 }, { x: 4, y: 10 }, 4)).toBe(true);
+  });
+});
+
+describe('opensOnRelease', () => {
+  const HOLD = 400;
+
+  it('opens on a short press that barely moved', () => {
+    expect(opensOnRelease({ x: 1, y: 1 }, 120, 4, HOLD)).toBe(true);
+  });
+
+  it('does not open when the press was held past the limit', () => {
+    expect(opensOnRelease({ x: 1, y: 1 }, HOLD, 4, HOLD)).toBe(false);
+    expect(opensOnRelease({ x: 0, y: 0 }, 2000, 4, HOLD)).toBe(false);
+  });
+
+  it('does not open when the pointer travelled, however brief', () => {
+    expect(opensOnRelease({ x: 40, y: 0 }, 50, 4, HOLD)).toBe(false);
+  });
+
+  it('opens right up to the hold limit', () => {
+    expect(opensOnRelease({ x: 0, y: 0 }, HOLD - 1, 4, HOLD)).toBe(true);
   });
 });
 

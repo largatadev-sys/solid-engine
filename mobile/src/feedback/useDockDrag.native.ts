@@ -20,6 +20,7 @@ export function useDockDrag({
   readonly onMove: (offset: Point) => void;
   readonly onRelease: (offset: Point) => void;
   readonly onNudge: (key: string) => boolean;
+  readonly onActivate: () => void;
   readonly threshold: number;
   readonly dragging: boolean;
 }): DockDrag {
