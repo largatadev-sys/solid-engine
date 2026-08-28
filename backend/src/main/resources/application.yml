@@ -64,6 +64,24 @@ largata:
     # platforms fetch the image with a plain user agent that Caddy's crawler matcher would miss.
     # Per-environment: the local default is the compose backend's 8080.
     base-url: ${LARGATA_API_BASE_URL:http://localhost:8080}
+  reports:
+    # Where accepted feedback reports are relayed, server-to-server, into worklog's Reports intake
+    # (FB-1, worklog contract v1.1). Unset URL = no relay bean = LoggingReportRelay, which "delivers"
+    # to the backend log and marks the row delivered. That is the DELIBERATE local and CI posture:
+    # worklog's reports are PERMANENT and have no delete, so a walk, a smoke run or a test that
+    # reached the real inbox would deposit junk nobody can remove.
+    #
+    # The secret is a REAL CREDENTIAL, deliberately different per environment (dev↔dev, prod↔prod).
+    # It lives in .env locally and in the platform's env-var UI on deployed rungs — never in the
+    # repo, never in a log line, never echoed into a shell command.
+    intake-url: ${LARGATA_REPORTS_INTAKE_URL:}
+    intake-secret: ${LARGATA_REPORTS_INTAKE_SECRET:}
+    # How often the outbox drains, and how long it waits before its first drain. The initial delay
+    # exists so an integration test can push the autonomous poller past its own lifetime and drive
+    # delivery deliberately — without it the poller races the assertions, which passes almost every
+    # time and is exactly the kind of timing luck this repo keeps paying for.
+    poll-interval-ms: ${LARGATA_REPORTS_POLL_INTERVAL_MS:60000}
+    poll-initial-delay-ms: ${LARGATA_REPORTS_POLL_INITIAL_DELAY_MS:60000}
   storage:
     # S3-class object storage (ADR-021). Endpoint-driven so the same code speaks to Garage locally
     # and Railway Buckets or R2 on a deployed rung. Unset endpoint = no bucket = UnconfiguredObjectStore,

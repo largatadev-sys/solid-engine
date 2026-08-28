@@ -3,6 +3,7 @@ package com.largata.common.security;
 import com.largata.common.logging.LogContextFilter;
 import com.largata.common.logging.UserContextFilter;
 import com.largata.join.JoinPaths;
+import com.largata.report.ReportPaths;
 import com.largata.ws.WebSocketPaths;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +39,8 @@ public class SecurityConfig {
                                         .requestMatchers(HttpMethod.GET, "/v1/health")
                                         .permitAll()
                                         .requestMatchers(JoinPaths.ANONYMOUS)
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.POST, ReportPaths.ANONYMOUS)
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())
