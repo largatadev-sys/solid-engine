@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, controls, radii, spacing, typography } from '../theme';
 
 export type ButtonVariant = 'primary' | 'secondary';
@@ -8,6 +8,7 @@ interface ButtonProps {
   readonly onPress: () => void;
   readonly variant?: ButtonVariant;
   readonly busy?: boolean;
+  readonly busyLabel?: string;
   readonly disabled?: boolean;
   readonly style?: StyleProp<ViewStyle>;
 }
@@ -17,6 +18,7 @@ export function Button({
   onPress,
   variant = 'primary',
   busy = false,
+  busyLabel,
   disabled = false,
   style,
 }: ButtonProps) {
@@ -33,7 +35,12 @@ export function Button({
       accessibilityState={{ disabled: inert, busy }}
     >
       {busy ? (
-        <ActivityIndicator color={secondary ? colors.accent : colors.textOnAccent} />
+        <View style={styles.busyRow}>
+          <ActivityIndicator color={secondary ? colors.accent : colors.textOnAccent} />
+          {busyLabel !== undefined && (
+            <Text style={secondary ? styles.secondaryLabel : styles.primaryLabel}>{busyLabel}</Text>
+          )}
+        </View>
       ) : (
         <Text style={secondary ? styles.secondaryLabel : styles.primaryLabel}>{label}</Text>
       )}
@@ -53,6 +60,7 @@ const styles = StyleSheet.create({
   primary: { backgroundColor: colors.accent },
   secondary: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
   inert: { opacity: 0.55 },
+  busyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   primaryLabel: { ...typography.action, color: colors.textOnAccent },
   secondaryLabel: { ...typography.action, color: colors.textPrimary },
 });
