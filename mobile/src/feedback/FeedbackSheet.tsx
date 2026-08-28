@@ -1,9 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { ApiError } from '../api/ApiError';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
+import { useReducedMotion } from '../components/useReducedMotion';
+import { usePhotoAction } from '../media/usePhotoAction';
+import type { PickedPhoto } from '../media/pickedPhoto';
 import { BottomSheet } from '../members/BottomSheet';
-import type { ReportType } from '../repositories/reportRepository';
+import { MAX_REPORT_SCREENSHOTS, type ReportType } from '../repositories/reportRepository';
 import { colors, radii, spacing } from '../theme';
 import {
   feedbackColors,
@@ -11,10 +25,12 @@ import {
   feedbackMotion,
   feedbackTypography,
 } from '../theme/workspaceTokens';
+import { FeedbackBanner } from './FeedbackBanner';
 import {
   DESCRIPTION_PLACEHOLDER,
   descriptionLabel,
   DONE_LABEL,
+  RETRY_LABEL,
   SEND_LABEL,
   SENDING_LABEL,
   SHEET_CLOSE_LABEL,
@@ -27,11 +43,18 @@ import {
 import {
   clampToCap,
   counterState,
+  fieldAtFault,
+  guardsDismiss,
   sendEnabled,
+  sendLabelFor,
+  type FailedAttempt,
   type FeedbackPhase,
+  type FieldAtFault,
 } from './feedbackForm';
+import { FeedbackScreenshots } from './FeedbackScreenshots';
+import type { ReportFailure } from './reportFailure';
 import type { ReportDraft } from './reportDraft';
-import { submitReport } from './submitReport';
+import { reportFailureOf, submitReport } from './submitReport';
 
 
 interface FeedbackSheetProps {
@@ -43,8 +66,19 @@ interface FeedbackSheetProps {
 export function FeedbackSheet({ draft, onClose }: FeedbackSheetProps) {
   const [type, setType] = useState<ReportType>('problem');
   const [description, setDescription] = useState('');
+  const [screenshots, setScreenshots] = useState<readonly PickedPhoto[]>([]);
   const [phase, setPhase] = useState<FeedbackPhase>('editing');
+  const [failure, setFailure] = useState<ReportFailure | null>(null);
+  const [atFault, setAtFault] = useState<FieldAtFault>(null);
+  const [failedAt, setFailedAt] = useState<FailedAttempt | null>(null);
+
   const session = useRef(0);
+  const live = useRef({ description: '', phase: 'editing' as FeedbackPhase });
+  live.current = { description, phase };
+
+  const photos = usePhotoAction();
+  const flash = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
 
   const open = draft !== null;
 
@@ -53,22 +87,32 @@ export function FeedbackSheet({ draft, onClose }: FeedbackSheetProps) {
     session.current += 1;
     setType('problem');
     setDescription('');
+    setScreenshots([]);
     setPhase('editing');
+    setFailure(null);
+    setAtFault(null);
+    setFailedAt(null);
   }, [open]);
 
   const send = () => {
     if (draft === null) return;
     const token = session.current;
+    const attempt: FailedAttempt = { description, screenshotCount: screenshots.length };
     setPhase('sending');
+    setFailure(null);
+    setAtFault(null);
 
-    submitReport(draft, { type, description, screenshots: [] })
+    submitReport(draft, { type, description, screenshots })
       .then(() => {
         if (session.current !== token) return;
         setPhase('sent');
       })
-      .catch(() => {
+      .catch((thrown: unknown) => {
         if (session.current !== token) return;
-        setPhase('editing');
+        setPhase('failed');
+        setFailure(reportFailureOf(thrown));
+        setAtFault(fieldAtFault(thrown instanceof ApiError ? thrown.status : null));
+        setFailedAt(attempt);
       });
   };
 
@@ -77,61 +121,134 @@ export function FeedbackSheet({ draft, onClose }: FeedbackSheetProps) {
     onClose();
   };
 
+  const flashGuard = () => {
+    Animated.sequence([
+      Animated.timing(flash, {
+        toValue: 1,
+        duration: reducedMotion ? 0 : feedbackMotion.guardFlashMs,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }),
+      Animated.delay(feedbackMotion.guardFlashHoldMs),
+      Animated.timing(flash, {
+        toValue: 0,
+        duration: reducedMotion ? 0 : feedbackMotion.guardFlashMs,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const attemptDismiss = (): boolean => {
+    if (live.current.phase === 'sending') return false;
+    if (!guardsDismiss(live.current.phase, live.current.description)) return true;
+    flashGuard();
+    return false;
+  };
+
   const counter = counterState([...description].length);
-  const canSend = sendEnabled(phase, description, 0, true, null);
+  const retryable = failure?.retryable ?? true;
+  const canSend = sendEnabled(phase, description, screenshots.length, retryable, failedAt);
+  const sending = phase === 'sending';
+
+  const borderColor =
+    atFault === 'description'
+      ? colors.danger
+      : flash.interpolate({
+          inputRange: [0, 1],
+          outputRange: [colors.inputBorder, colors.danger],
+        });
 
   return (
-    <BottomSheet open={open} title={phase === 'sent' ? '' : SHEET_TITLE} onDismiss={close}>
+    <BottomSheet
+      open={open}
+      title={phase === 'sent' ? '' : SHEET_TITLE}
+      onDismiss={close}
+      onAttemptDismiss={attemptDismiss}
+    >
       {phase === 'sent' ? (
         <ThankYou onDone={close} />
       ) : (
-        <View style={styles.body}>
-          <View style={styles.typeRow}>
-            <TypeChip
-              label={TYPE_PROBLEM_LABEL}
-              selected={type === 'problem'}
-              disabled={phase === 'sending'}
-              onPress={() => setType('problem')}
-            />
-            <TypeChip
-              label={TYPE_IDEA_LABEL}
-              selected={type === 'idea'}
-              disabled={phase === 'sending'}
-              onPress={() => setType('idea')}
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.body}>
+            <View style={styles.typeRow}>
+              <TypeChip
+                label={TYPE_PROBLEM_LABEL}
+                selected={type === 'problem'}
+                disabled={sending}
+                onPress={() => setType('problem')}
+              />
+              <TypeChip
+                label={TYPE_IDEA_LABEL}
+                selected={type === 'idea'}
+                disabled={sending}
+                onPress={() => setType('idea')}
+              />
+            </View>
+
+            <View style={sending ? styles.dimmed : null}>
+              <Text style={styles.fieldLabel}>{descriptionLabel(type)}</Text>
+              <Animated.View style={[styles.descriptionFrame, { borderColor }]}>
+                <TextInput
+                  style={styles.description}
+                  value={description}
+                  onChangeText={(next) => setDescription(clampToCap(next))}
+                  editable={!sending}
+                  multiline
+                  textAlignVertical="top"
+                  placeholder={DESCRIPTION_PLACEHOLDER}
+                  placeholderTextColor={colors.textSecondary}
+                  accessibilityLabel={descriptionLabel(type)}
+                />
+              </Animated.View>
+              {counter.visible ? (
+                <Text
+                  style={[
+                    styles.counter,
+                    counter.atCap && styles.counterAtCap,
+                    atFault === 'description' && styles.counterAtFault,
+                  ]}
+                >
+                  {counter.label}
+                </Text>
+              ) : null}
+            </View>
+
+            <View style={sending ? styles.dimmed : null}>
+              <FeedbackScreenshots
+                picked={screenshots}
+                atFault={atFault === 'screenshots'}
+                disabled={sending}
+                onAdd={() =>
+                  void photos.pickManyAndRun(
+                    MAX_REPORT_SCREENSHOTS - screenshots.length,
+                    async (picked) => {
+                      setScreenshots((held) =>
+                        [...held, ...picked].slice(0, MAX_REPORT_SCREENSHOTS),
+                      );
+                    },
+                  )
+                }
+                onRemove={(uri) =>
+                  setScreenshots((held) => held.filter((photo) => photo.uri !== uri))
+                }
+              />
+            </View>
+
+            {failure !== null ? <FeedbackBanner message={failure.message} /> : null}
+
+            <Button
+              label={sendLabelFor(phase, retryable, SEND_LABEL, RETRY_LABEL)}
+              busyLabel={SENDING_LABEL}
+              busy={sending}
+              disabled={!canSend}
+              onPress={send}
             />
           </View>
-
-          <View style={phase === 'sending' ? styles.dimmed : null}>
-            <Text style={styles.fieldLabel}>{descriptionLabel(type)}</Text>
-            <TextInput
-              style={styles.description}
-              value={description}
-              onChangeText={(next) => setDescription(clampToCap(next))}
-              editable={phase !== 'sending'}
-              multiline
-              textAlignVertical="top"
-              placeholder={DESCRIPTION_PLACEHOLDER}
-              placeholderTextColor={colors.textSecondary}
-              accessibilityLabel={descriptionLabel(type)}
-            />
-            {counter.visible ? (
-              <Text style={[styles.counter, counter.atCap && styles.counterAtCap]}>
-                {counter.label}
-              </Text>
-            ) : null}
-          </View>
-
-          <Button
-            label={SEND_LABEL}
-            busyLabel={SENDING_LABEL}
-            busy={phase === 'sending'}
-            disabled={!canSend}
-            onPress={send}
-          />
-        </View>
+        </KeyboardAvoidingView>
       )}
 
-      {phase !== 'sent' && phase !== 'sending' ? (
+      {phase !== 'sent' && !sending ? (
         <Pressable
           style={styles.close}
           onPress={close}
@@ -174,15 +291,16 @@ function TypeChip({
 
 function ThankYou({ onDone }: { readonly onDone: () => void }) {
   const entrance = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     Animated.timing(entrance, {
       toValue: 1,
-      duration: feedbackMotion.thankYouCrossfadeMs,
+      duration: reducedMotion ? 0 : feedbackMotion.thankYouCrossfadeMs,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [entrance]);
+  }, [entrance, reducedMotion]);
 
   return (
     <Animated.View style={[styles.thankYou, { opacity: entrance }]}>
@@ -239,11 +357,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
-  description: {
-    height: feedbackMetrics.descriptionHeight,
+  descriptionFrame: {
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.inputBorder,
+  },
+  description: {
+    height: feedbackMetrics.descriptionHeight,
     paddingVertical: 14,
     paddingHorizontal: spacing.md,
     ...feedbackTypography.description,
@@ -257,6 +376,9 @@ const styles = StyleSheet.create({
   },
   counterAtCap: {
     color: feedbackColors.counterAtCap,
+  },
+  counterAtFault: {
+    color: colors.danger,
   },
   close: {
     position: 'absolute',
