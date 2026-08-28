@@ -838,3 +838,96 @@ export const followMetrics = {
   fetchAheadRows: 5,
   pageSize: 20,
 } as const;
+
+
+export const feedbackMotion = {
+  dragThresholdPx: 4,
+  tapHoldLimitMs: 500,
+  holdToDragMs: 500,
+  overdragPx: 12,
+  railInsetPx: 16,
+  defaultBottomReservePx: 96,
+  clampInsetPx: 12,
+  liftScale: 1.18,
+  liftMs: 140,
+  liftStiffness: 260,
+  liftDamping: 18,
+  liftMass: 1,
+  pressScale: 0.9,
+  pressInMs: 90,
+  pressOutStiffness: 380,
+  pressOutDamping: 12,
+  railsInMs: 160,
+  snapMs: 340,
+  snapStiffness: 220,
+  snapDamping: 26,
+  snapMass: 1,
+  entranceFromScale: 0.6,
+  entranceStiffness: 170,
+  entranceDamping: 17,
+  entranceMs: 260,
+  exitMs: 180,
+  idleAfterMs: 2600,
+  idleOpacity: 0.4,
+  idleFadeMs: 400,
+  wakeMs: 120,
+  launchWakeMs: 2600,
+  nudgePx: 24,
+
+  chipSelectMs: 150,
+  counterCrossfadeMs: 150,
+  tilePopMs: 200,
+  tilePopFromScale: 0.5,
+  layoutMs: 200,
+  bannerInMs: 200,
+  bannerRisePx: 6,
+  bannerOutMs: 150,
+  guardFlashMs: 150,
+  guardFlashHoldMs: 300,
+  thankYouCrossfadeMs: 150,
+  inFlightOpacity: 0.85,
+  dimmedOpacity: 0.55,
+} as const;
+
+
+export const feedbackColors = {
+  counter: '#A59E99',
+  counterAtCap: '#C2410C',
+  addTileFill: '#FAF9F6',
+  addTileDash: '#D6D3D1',
+  removeDisc: 'rgba(27,38,59,0.70)',
+  dragRail: 'rgba(217,108,74,0.10)',
+} as const;
+
+
+export const feedbackTypography = {
+  sheetTitle: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
+  fieldLabel: { fontSize: 14, lineHeight: 17, fontWeight: '600' },
+  chip: { fontSize: 14, lineHeight: 17, fontWeight: '600' },
+  description: { fontSize: 16, lineHeight: 22, fontWeight: '400' },
+  counter: { fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  note: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  addTile: { fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  banner: { fontSize: 14, lineHeight: 20, fontWeight: '400' },
+  thankYouTitle: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
+  thankYouBody: { fontSize: 13, lineHeight: 20, fontWeight: '400' },
+} as const;
+
+
+export const feedbackMetrics = {
+  disc: 60,
+  glyph: 27,
+  chipHeight: 44,
+  descriptionHeight: 140,
+  tileHeight: 104,
+  closeDisc: 40,
+  closeGlyph: 16,
+  removeDisc: 24,
+  removeGlyph: 11,
+  thankYouDisc: 64,
+  thankYouGlyph: 30,
+  thankYouBodyMaxWidth: 266,
+  bannerGlyph: 18,
+  dismissZone: 72,
+  dismissGlyph: 28,
+} as const;

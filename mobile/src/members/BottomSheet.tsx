@@ -22,17 +22,21 @@ interface BottomSheetProps {
   readonly open: boolean;
   readonly title: string;
   readonly onDismiss: () => void;
+  readonly onAttemptDismiss?: () => boolean;
   readonly children: ReactNode;
 }
 
 
-export function BottomSheet({ open, title, onDismiss, children }: BottomSheetProps) {
+export function BottomSheet({ open, title, onDismiss, onAttemptDismiss, children }: BottomSheetProps) {
   const travel = useRef(new Animated.Value(0)).current;
   const scrim = useRef(new Animated.Value(0)).current;
   const reducedMotion = useReducedMotion();
   const [mounted, setMounted] = useState(open);
-  const dismiss = useRef(onDismiss);
-  dismiss.current = onDismiss;
+  const dismiss = useRef<() => void>(() => {});
+  dismiss.current = () => {
+    if (onAttemptDismiss !== undefined && !onAttemptDismiss()) return;
+    onDismiss();
+  };
 
   if (open && !mounted) setMounted(true);
 
@@ -74,12 +78,12 @@ export function BottomSheet({ open, title, onDismiss, children }: BottomSheetPro
   });
 
   return (
-    <Modal visible={mounted} transparent animationType="none" onRequestClose={onDismiss}>
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={() => dismiss.current()}>
       <View style={styles.stage}>
         <Animated.View style={[styles.scrim, { opacity: scrim }]}>
           <Pressable
             style={styles.scrimTarget}
-            onPress={onDismiss}
+            onPress={() => dismiss.current()}
             accessibilityRole="button"
             accessibilityLabel={SHEET_DISMISS_LABEL}
           />

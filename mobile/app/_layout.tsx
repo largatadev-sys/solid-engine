@@ -13,6 +13,7 @@ import { useMe } from '../src/hooks/useMe';
 import { AuthProvider } from '../src/hooks/useAuth';
 import { ConfirmStation } from '../src/components/ConfirmStation';
 import { MobileFrame } from '../src/components/MobileFrame';
+import { FeedbackDock } from '../src/feedback/FeedbackDock';
 import { usePendingJoin } from '../src/join/usePendingJoin';
 import { CropStation } from '../src/media/CropStation';
 import { createQueryClient } from '../src/query/queryClient';
@@ -47,6 +48,7 @@ export default function RootLayout() {
         <AuthProvider>
           <MobileFrame>
             <AuthGate />
+            <FeedbackDock />
           </MobileFrame>
           <CropStation />
           <ConfirmStation />

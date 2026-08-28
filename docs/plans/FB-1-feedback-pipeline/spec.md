@@ -13,6 +13,17 @@ outbox, relay) and the **client plumbing** (typed repository call, screen captur
 draft minting, the label registry). The founder builds the visible UI — the global entry-point
 button and the report form — against the contract in this spec.
 
+**Amendment, 2026-08-28 (FB-2's grilling): the entry point is permanently hidden by default,
+so this story's traveler stories are served for TESTERS ONLY until a public surface ships.**
+FB-2 built the UI half and the founder ruled its posture **permanent, not an alpha stopgap**:
+the dock is visible only on builds baked against deployed dev, and everywhere else it takes
+five rapid taps on the Largata wordmark to reveal. Nothing in this story's plumbing, API or
+backend changed — the reachability did. The consequence for stories 1–9 below, stated so no
+future session re-derives it: an ordinary traveler who does not know the gesture has **no
+feedback path at all**, and gains one only when the epic map's *discoverable public feedback
+surface* backlog entry ships (trigger: public launch), which reuses FB-2's sheet and this
+story's plumbing wholesale and changes only the entry point.
+
 **Candidate-capability note:** none — filing a feedback report is deliberately never gated
 (not footprint-growing, not governance; feedback stays free on every tier, forever).
 

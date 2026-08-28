@@ -62,7 +62,8 @@ export type IconName =
   | 'removeUser'
   | 'postcard'
   | 'logOut'
-  | 'personSearch';
+  | 'personSearch'
+  | 'feedback';
 
 interface IconProps {
   readonly name: IconName;
@@ -399,6 +400,17 @@ export function Icon({ name, size, color }: IconProps) {
           d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"
           {...shared}
         />
+      )}
+
+      {name === 'feedback' && (
+        <>
+          <Path
+            d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"
+            {...shared}
+          />
+          <Path d="M12.4 8v3.6" {...shared} />
+          <Path d="M12.4 14.7v.2" {...shared} />
+        </>
       )}
 
       {name === 'bookmark' && (

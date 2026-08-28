@@ -57,6 +57,7 @@ export const IDENTITY_MAP = {
   'web/author-taps': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'web/follow': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'api/follow': { tags: ['t4', 't5'], sharesWith: 'shared' },
+  'web/feedback-dock': { tags: ['t1'], sharesWith: 'shared' },
 } as const satisfies Record<string, SpecIdentities>;
 
 export type SpecKey = keyof typeof IDENTITY_MAP;
