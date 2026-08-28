@@ -85,6 +85,22 @@ Numbered decisions record the grilling round/question that settled each.
    release math is shared, so a future S4.38 fix upgrades web to live tracking with no
    redesign. Do not re-attempt the causes S4.38 rules out; the untested portal-outside-the-
    RN-root dodge was offered and declined (R1-Q1b).
+
+   **REVERSED 2026-08-29, by measurement, at the founder's LAN device walk.** The founder
+   dragged the shipped bubble and reported it did not follow his finger. The premise above
+   was then tested rather than trusted: instrumenting a `window` `pointermove` listener
+   against the running preview counted **6 of 6 moves delivered, mouse and touch alike**, in
+   both a synthetic dispatch and a real browser drag. S4.38's measurement stands for what it
+   measured — `onPointerMove` as an **RN-web prop on a `View`** — but a **`window` listener
+   is a different mechanism and is not affected.** The web dock now tracks 1:1, like native.
+   Two changes were required, not one: subscribing to `pointermove`, and taking every value
+   that shares the disc's transform **off the native driver**, because a native-driven value
+   is owned by the native side and the drag writes it with imperative `setValue` every frame
+   (the second defect S4.38's own notes list, hit here for real). `dockDragTracking.test.ts`
+   pins both and is sabotage-checked. The lesson, which cost this story a shipped
+   degradation: **a recorded gotcha bounds the mechanism it was measured on, not every
+   mechanism that shares its vocabulary** — one probe would have settled it before the
+   design decision was taken.
 2. **Visibility is one persisted tri-state: `'default' | 'revealed' | 'hidden'`** *(R1-Q2,
    R3-Q2)*. `'revealed'` → visible; `'hidden'` → hidden; `'default'` falls through to the
    environment rule: visible **only** when the baked API base URL exactly matches deployed
