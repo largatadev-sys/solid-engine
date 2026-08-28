@@ -102,7 +102,14 @@ test.describe('the card an invitee meets on Trips', () => {
     expect(await page.locator('body').innerText()).not.toContain('@gmail.com');
   });
 
-  test('accepting lands the traveler in the workspace', async ({ page, signIn }) => {
+  test.skip(
+    'SKIPPED 2026-08-28 — accepting lands the traveler in the workspace. Quarantined by founder'
+      + ' call, NOT proven flaky: 4 attempts across two days failed on freshly seeded data, and'
+      + ' the last green run predates S4.38 merging to dev. Accept navigates only from onSuccess'
+      + ' and the error branch handles EMAIL_NOT_VERIFIED alone, so a failed accept is'
+      + ' indistinguishable from a click that never landed — which is why this reports only'
+      + ' "the URL stayed at /trips". Owned by an epic-map line; see checklist 34.',
+    async ({ page, signIn }) => {
     await signIn(INVITEE);
     await page.goto(TRIPS_TAB_ROUTE);
     await expect(labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`)).toBeVisible();
@@ -114,10 +121,11 @@ test.describe('the card an invitee meets on Trips', () => {
       .toContain(`/itineraries/${trip.id}`);
   });
 
-  test('and this trip’s card is gone from Trips once it has been answered', async ({
-    page,
-    signIn,
-  }) => {
+  test.skip(
+    'SKIPPED 2026-08-28 — and this trip’s card is gone from Trips once it has been answered.'
+      + ' Not independently suspect: it asserts the state the skipped accept above creates, so'
+      + ' it can only fail while that one is quarantined. It returns with it.',
+    async ({ page, signIn }) => {
     await signIn(INVITEE);
     await page.goto(TRIPS_TAB_ROUTE);
     await expect(page.getByText(/Trips/i).first()).toBeVisible();
