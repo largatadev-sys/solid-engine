@@ -94,6 +94,14 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 
 *(Stories past Epic 0 are slice-level titles — elaborated agent-ready just-in-time when pulled, per the playbook. Splits/merges expected; update the table when they happen.)*
 
+## Quarantine ledger *(every test currently disabled in CI — this list should shrink to zero)*
+
+*A **live inventory**, not history: a row leaves when the test comes back. Distinct from the regression checklist, which is append-only and where a disabled test would quietly be lost. A story is never blocked by a red check on a path it never touched (CLAUDE.md's Tier-3 rule) — but the price of that freedom is this table, and a row nobody can explain is a row that should be re-enabled or deleted.*
+
+| Since | Test | Why it is out | What brings it back |
+|---|---|---|---|
+| 2026-08-28 | `e2e/web/invitation-inbox.spec.ts` — "accepting lands the traveler in the workspace" **and** its dependent "the card is gone once answered" | Failed FB-1's gate on a branch touching nothing in that path, and failed the day before on a **docs-only** branch — so not FB-1's. **Not proven flaky:** 4 attempts across two days, all on freshly seeded data, with the last green run predating S4.38's merge to `dev`. No root cause — CI keeps no Playwright artifacts, so the screenshot that would say whether the button spun, errored or ignored the click is gone. **The client accept path now has no e2e cover;** the server side stays covered by backend ITs. | A local reproduction (build the preview container, run the one spec, read the backend log for whether the request arrived) to settle broken-vs-flaky, **and** a visible failure state on `onAccept` — today it navigates only from `onSuccess` and swallows every error but `EMAIL_NOT_VERIFIED`, so a failed accept is indistinguishable from a click that never landed. Epic-map line + checklist 34 own it. |
+
 ## Off-epic ledger *(every change that wasn't a planned story)*
 
 *One entry per change, oldest first. Prose, not a table: these entries run to thousands of characters and a three-column cell renders them as an unreadable column of text.*
