@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #E9E7E1; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #D96C4A; text-decoration: none; }
+  a:hover { color: #B14E2E; }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; gap:88px; padding:64px; background:#E9E7E1; color:#1B263B">
+
+  <div style="display:flex; flex-direction:column; gap:14px; max-width:820px">
+    <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">LARGATA · GLOBAL FEEDBACK</div>
+    <div style="font-size:44px; line-height:50px; font-weight:800; letter-spacing:-0.8px">Report a problem, anywhere in the app</div>
+    <div style="font-size:16px; line-height:26px; font-weight:400; color:#5C6470; text-wrap:pretty">One entry point on every screen, signed in or out. Three placement candidates, the winning button at component level, the form in context, and every state the shipped <span style="font-weight:600; color:#1B263B">/v1/reports</span> contract can produce. Error copy is verbatim from <span style="font-weight:600; color:#1B263B">reportFailure.ts</span>.</div>
+  </div>
+
+  <!-- ══ 01 PLACEMENT VARIANTS ══════════════════════════════════ -->
+  <div style="display:flex; flex-direction:column; gap:28px">
+    <div style="display:flex; flex-direction:column; gap:8px">
+      <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">01 · PLACEMENT</div>
+      <div style="font-size:26px; line-height:32px; font-weight:700; letter-spacing:-0.3px">Three shapes for the same job</div>
+      <div style="font-size:15px; line-height:24px; font-weight:400; color:#5C6470; max-width:680px">The hard constraint is universality: it has to exist on signed-out screens with no tab bar and no header actions, and it must never sit on a docked action rail.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:row; gap:40px; align-items:flex-start; flex-wrap:wrap">
+
+      <!-- (a) floating bubble — WINNER -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; height:560px; border-radius:22px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column">
+          <div style="height:44px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 24px; font-size:13px; line-height:16px; font-weight:700; color:#1B263B"><span>9:41</span><span style="display:flex; gap:4px; align-items:center"><span style="width:16px;height:9px;border:1px solid #1B263B;border-radius:2px;display:block"></span></span></div>
+          <div style="flex:1; min-height:0; overflow:hidden; padding:0 16px; display:flex; flex-direction:column; gap:10px">
+            <div style="height:22px; width:120px; border-radius:6px; background:#EFEDE7"></div>
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+          </div>
+          <div style="height:64px; flex:none; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8; display:flex; flex-direction:row">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding-top:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D96C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"></path><polyline points="9 21 9 13 15 13 15 21"></polyline></svg><span style="font-size:13px; line-height:20px; font-weight:400; color:#D96C4A">Home</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding-top:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><span style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">Discover</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding-top:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10.3h20V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z" fill="#5C6470" stroke="none"></path><path d="M2 6.5A1.5 1.5 0 0 1 3.5 5h17A1.5 1.5 0 0 1 22 6.5v2.3a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 8.8Z" fill="#5C6470" stroke="none"></path><path d="M9 5V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1" stroke-width="1.8"></path></svg><span style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">Trips</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding-top:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">Profile</span></div>
+          </div>
+          <div style="position:absolute; right:16px; bottom:96px; width:40px; height:40px; border-radius:100px; background:#FFFFFF; border:1px solid #E2E4E8; box-shadow:0 4px 14px rgba(27,38,59,0.10), 0 1px 2px rgba(27,38,59,0.06); display:flex; align-items:center; justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D96C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path><path d="M12.4 8v3.6"></path><path d="M12.4 14.7v.2"></path></svg>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="display:flex; align-items:center; gap:8px"><span style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">A · FLOATING BUBBLE</span><span style="font-size:10px; line-height:13px; font-weight:700; letter-spacing:0.6px; color:#FFFFFF; background:#2F6B47; border-radius:100px; padding:3px 8px">CHOSEN</span></div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Best reach and the only shape that exists identically on every screen — but it floats over content, so it has to move for rails and withdraw for the keyboard.</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- (b) header slot -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; height:560px; border-radius:22px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column">
+          <div style="height:44px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 24px; font-size:13px; line-height:16px; font-weight:700; color:#1B263B"><span>9:41</span><span style="width:16px;height:9px;border:1px solid #1B263B;border-radius:2px;display:block"></span></div>
+          <div style="padding:16px 24px 8px; display:flex; flex-direction:row; align-items:center; gap:12px">
+            <div style="flex:1; font-size:28px; line-height:34px; font-weight:700; letter-spacing:-0.3px; color:#1B263B">Trips</div>
+            <div style="width:40px; height:40px; border-radius:100px; background:#FFFFFF; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D96C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path><path d="M12.4 8v3.6"></path><path d="M12.4 14.7v.2"></path></svg>
+            </div>
+            <div style="width:40px; height:40px; display:flex; align-items:center; justify-content:center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B263B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+          </div>
+          <div style="height:44px; border-bottom:1px solid #E2E4E8; display:flex; flex-direction:row; position:relative">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:18px; font-weight:400; color:#5C6470">Upcoming</div>
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:18px; font-weight:700; color:#1B263B">Ongoing</div>
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:18px; font-weight:400; color:#5C6470">Completed</div>
+            <div style="position:absolute; left:33.3333%; bottom:-1px; width:33.3333%; height:3px; background:#D96C4A; border-radius:100px 100px 0 0"></div>
+          </div>
+          <div style="flex:1; padding:16px; display:flex; flex-direction:column; gap:8px">
+            <div style="height:100px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+            <div style="height:100px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+          </div>
+          <div style="height:64px; flex:none; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8"></div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">B · HEADER SLOT</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Zero occlusion and it inherits the screen's own scroll — but it competes for a slot that search, filter and save already own, and the auth screens have no header to put it in.</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- (c) edge tab -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; height:560px; border-radius:22px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column">
+          <div style="height:44px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 24px; font-size:13px; line-height:16px; font-weight:700; color:#1B263B"><span>9:41</span><span style="width:16px;height:9px;border:1px solid #1B263B;border-radius:2px;display:block"></span></div>
+          <div style="flex:1; min-height:0; overflow:hidden; padding:0 16px; display:flex; flex-direction:column; gap:10px">
+            <div style="height:22px; width:120px; border-radius:6px; background:#EFEDE7"></div>
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+          </div>
+          <div style="height:64px; flex:none; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8"></div>
+          <div style="position:absolute; right:0; top:300px; width:30px; height:60px; border-radius:14px 0 0 14px; background:#FFFFFF; border:1px solid #E2E4E8; border-right:none; box-shadow:-3px 2px 12px rgba(27,38,59,0.10); display:flex; align-items:center; justify-content:center">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D96C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path><path d="M12.4 8v3.6"></path><path d="M12.4 14.7v.2"></path></svg>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">C · EDGE TAB</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Never touches a rail, tab bar or keyboard — but it lands in the back-swipe gutter and on top of the Trips swipe-to-reveal, and it reads as a web widget, not a travel app.</div>
+          </div>
+        </sc-if>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ 02 THE BUBBLE, COMPONENT LEVEL ═════════════════════════ -->
+  <div style="display:flex; flex-direction:column; gap:28px">
+    <div style="display:flex; flex-direction:column; gap:8px">
+      <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">02 · COMPONENT</div>
+      <div style="font-size:26px; line-height:32px; font-weight:700; letter-spacing:-0.3px">FeedbackBubble</div>
+      <div style="font-size:15px; line-height:24px; font-weight:400; color:#5C6470; max-width:680px">40×40 disc (<span style="font-weight:600; color:#1B263B">controls.navControl</span>), white surface, 1px border, 18px terracotta glyph. Quiet enough to lose an argument with any CTA on the screen; warm enough to find when you are annoyed.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:row; gap:32px; flex-wrap:wrap; align-items:flex-start">
+
+      <div style="display:flex; flex-direction:column; gap:14px; width:390px">
+        <div style="width:390px; height:230px; border-radius:18px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 12px 28px rgba(27,38,59,0.08); display:flex; flex-direction:column; justify-content:flex-end">
+          <div style="padding:0 16px 12px"><div style="height:80px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div></div>
+          <div style="height:64px; flex:none; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8"></div>
+          <div style="position:absolute; right:16px; bottom:96px; width:40px; height:40px; border-radius:100px; background:#FFFFFF; border:1px solid #E2E4E8; box-shadow:0 4px 14px rgba(27,38,59,0.10), 0 1px 2px rgba(27,38,59,0.06); display:flex; align-items:center; justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D96C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path><path d="M12.4 8v3.6"></path><path d="M12.4 14.7v.2"></path></svg>
+          </div>
+          <div style="position:absolute; right:66px; bottom:104px; display:flex; align-items:center; gap:6px"><span style="font-size:11px; line-height:14px; font-weight:600; color:#5C6470">right 16 · bottom = tab bar + 12</span><span style="width:14px; height:1px; background:#B9BCC4; display:block"></span></div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470"><span style="font-weight:700; color:#1B263B">Default.</span> Docked bottom-right, 12 above the tab bar, inside the safe area. 44 hit target via <span style="font-weight:600; color:#1B263B">hitSlop 2</span>.</div>
+        </sc-if>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:14px; width:390px">
+        <div style="width:390px; height:230px; border-radius:18px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 12px 28px rgba(27,38,59,0.08); display:flex; flex-direction:column; justify-content:flex-end">
+          <div style="padding:0 16px 12px"><div style="height:80px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div></div>
+          <div style="height:64px; flex:none; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8"></div>
+          <div style="position:absolute; right:16px; bottom:96px; width:40px; height:40px; border-radius:100px; background:#FAF9F6; border:1px solid #E2E4E8; box-shadow:0 1px 3px rgba(27,38,59,0.08); opacity:0.85; transform:scale(0.97); display:flex; align-items:center; justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B14E2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path><path d="M12.4 8v3.6"></path><path d="M12.4 14.7v.2"></path></svg>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470"><span style="font-weight:700; color:#1B263B">Pressed.</span> <span style="font-weight:600; color:#1B263B">usePressFeedback</span> unchanged — scale 0.97, opacity 0.85, surface drops to #FAF9F6.</div>
+        </sc-if>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:14px; width:390px">
+        <div style="width:390px; height:230px; border-radius:18px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 12px 28px rgba(27,38,59,0.08); display:flex; flex-direction:column; justify-content:flex-end">
+          <div style="flex:1; min-height:0; overflow:hidden; padding:0 16px 12px"><div style="height:60px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div></div>
+          <div style="flex:none; padding:8px 16px 16px; background:#FAF9F6">
+            <div style="height:51px; border-radius:12px; background:#D96C4A; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:19px; font-weight:600; color:#FFFFFF">Create Trip</div>
+          </div>
+          <div style="height:64px; flex:none; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8"></div>
+          <div style="position:absolute; right:16px; bottom:171px; width:40px; height:40px; border-radius:100px; background:#FFFFFF; border:1px solid #E2E4E8; box-shadow:0 4px 14px rgba(27,38,59,0.10), 0 1px 2px rgba(27,38,59,0.06); display:flex; align-items:center; justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D96C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path><path d="M12.4 8v3.6"></path><path d="M12.4 14.7v.2"></path></svg>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470"><span style="font-weight:700; color:#1B263B">Action rail present.</span> Lifts to 12 above the rail, animating over <span style="font-weight:600; color:#1B263B">layoutMs 200</span>. Screens that dock a rail declare its height; the bubble never overlaps one.</div>
+        </sc-if>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:14px; width:390px">
+        <div style="width:390px; height:230px; border-radius:18px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 12px 28px rgba(27,38,59,0.08); display:flex; flex-direction:column; justify-content:flex-end">
+          <div style="padding:0 16px 10px"><div style="height:51px; border-radius:12px; background:#FFFFFF; border:1px solid #121212"></div></div>
+          <div style="height:150px; background:#EDEBE6; border-top:1px solid #D9D6CF; display:flex; flex-direction:column; gap:8px; padding:12px 6px; justify-content:center">
+            <div style="display:flex; gap:6px; justify-content:center"><span style="flex:1; height:30px; border-radius:6px; background:#FFFFFF; box-shadow:0 1px 0 rgba(27,38,59,0.12)"></span><span style="flex:1; height:30px; border-radius:6px; background:#FFFFFF; box-shadow:0 1px 0 rgba(27,38,59,0.12)"></span><span style="flex:1; height:30px; border-radius:6px; background:#FFFFFF; box-shadow:0 1px 0 rgba(27,38,59,0.12)"></span><span style="flex:1; height:30px; border-radius:6px; background:#FFFFFF; box-shadow:0 1px 0 rgba(27,38,59,0.12)"></span></div>
+            <div style="display:flex; gap:6px; justify-content:center"><span style="flex:1; height:30px; border-radius:6px; background:#FFFFFF; box-shadow:0 1px 0 rgba(27,38,59,0.12)"></span><span style="flex:1; height:30px; border-radius:6px; background:#FFFFFF; box-shadow:0 1px 0 rgba(27,38,59,0.12)"></span><span style="flex:1; height:30px; border-radius:6px; background:#FFFFFF; box-shadow:0 1px 0 rgba(27,38,59,0.12)"></span><span style="flex:1; height:30px; border-radius:6px; background:#FFFFFF; box-shadow:0 1px 0 rgba(27,38,59,0.12)"></span></div>
+          </div>
+          <div style="position:absolute; right:16px; bottom:170px; width:40px; height:40px; border-radius:100px; background:#FFFFFF; border:1px dashed #C4C7CE; opacity:0.28; display:flex; align-items:center; justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path></svg>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470"><span style="font-weight:700; color:#1B263B">Keyboard open — withdrawn.</span> Fades to 0 over 150ms and stops taking touches. A keyboard-shrunk viewport has no room the bubble can sit in without covering the thing being typed into; it fades back 150ms after dismissal.</div>
+        </sc-if>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ 03 / 04 IN CONTEXT ═════════════════════════════════════ -->
+  <div style="display:flex; flex-direction:column; gap:28px">
+    <div style="display:flex; flex-direction:column; gap:8px">
+      <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">03 / 04 · IN CONTEXT</div>
+      <div style="font-size:26px; line-height:32px; font-weight:700; letter-spacing:-0.3px">Same button, signed in and signed out</div>
+      <div style="font-size:15px; line-height:24px; font-weight:400; color:#5C6470; max-width:680px">Mounted once in the root layout, above the navigator. It does not know or care whether anyone is signed in.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:row; gap:40px; flex-wrap:wrap; align-items:flex-start">
+
+      <!-- Home feed -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; height:844px; border-radius:22px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column">
+          <div style="height:44px; background:#FFFFFF; display:flex; align-items:center; justify-content:space-between; padding:0 24px; font-size:13px; line-height:16px; font-weight:700; color:#1B263B"><span>9:41</span><span style="width:16px;height:9px;border:1px solid #1B263B;border-radius:2px;display:block"></span></div>
+
+          <div style="display:flex; flex-direction:row; align-items:center; justify-content:space-between; padding:12px 20px; background:#FFFFFF; border-bottom:1px solid #EBE9E2">
+            <div style="font-size:22px; line-height:27px; font-weight:800; letter-spacing:-0.3px; color:#1C1917">Largata</div>
+            <div style="display:flex; flex-direction:row; align-items:center; gap:8px">
+              <div style="width:36px; height:36px; border-radius:100px; display:flex; align-items:center; justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+              <div style="width:36px; height:36px; border-radius:100px; display:flex; align-items:center; justify-content:center; position:relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5a5 5 0 0 0-5 5c0 4-1.7 5.5-1.7 5.5h13.4S17 11.5 17 7.5a5 5 0 0 0-5-5z"></path><path d="M10.5 18.5a1.6 1.6 0 0 0 3 0"></path></svg><span style="position:absolute; top:7px; right:8px; width:8px; height:8px; border-radius:100px; background:#EA580C; border:1.5px solid #FFFFFF; display:block"></span></div>
+            </div>
+          </div>
+
+          <div style="flex:1; overflow:hidden; padding:16px; display:flex; flex-direction:column; gap:16px">
+            <div style="border:1px solid #EBE9E2; border-radius:16px; background:#FFFFFF; overflow:hidden">
+              <div style="padding:12px; display:flex; flex-direction:row; align-items:center; gap:10px">
+                <div style="width:36px; height:36px; border-radius:100px; background:#FDE4CF; display:flex; align-items:center; justify-content:center; font-size:13px; line-height:16px; font-weight:700; color:#C2410C">MO</div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:1px">
+                  <div style="font-size:14px; line-height:18px; font-weight:700; color:#1C1917">Maya Okonkwo</div>
+                  <div style="font-size:11px; line-height:14px; font-weight:600; color:#C2410C">Kyoto in autumn · Day 4</div>
+                </div>
+                <div style="font-size:11px; line-height:14px; font-weight:400; color:#A8A29E">3h</div>
+              </div>
+              <div style="height:430px; background:linear-gradient(158deg, #22577A 0%, #63A0BF 100%)"></div>
+              <div style="padding:12px; display:flex; flex-direction:column; gap:8px">
+                <div style="display:flex; flex-direction:row; align-items:center; gap:16px">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#57534E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#57534E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path></svg>
+                  <div style="flex:1"></div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#57534E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                </div>
+                <div style="font-size:12px; line-height:15px; font-weight:600; color:#78716C">218 likes</div>
+                <div style="font-size:14px; line-height:19px; font-weight:400; color:#1C1917; text-wrap:pretty">Nanzen-ji at seven in the morning, before the aqueduct fills with people.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:64px; flex:none; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8; display:flex; flex-direction:row">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding-top:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D96C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"></path><polyline points="9 21 9 13 15 13 15 21"></polyline></svg><span style="font-size:13px; line-height:20px; font-weight:400; color:#D96C4A">Home</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding-top:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><span style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">Discover</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding-top:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10.3h20V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z" fill="#5C6470" stroke="none"></path><path d="M2 6.5A1.5 1.5 0 0 1 3.5 5h17A1.5 1.5 0 0 1 22 6.5v2.3a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 8.8Z" fill="#5C6470" stroke="none"></path><path d="M9 5V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1" stroke-width="1.8"></path></svg><span style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">Trips</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding-top:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">Profile</span></div>
+          </div>
+
+          <div style="position:absolute; right:16px; bottom:96px; width:40px; height:40px; border-radius:100px; background:#FFFFFF; border:1px solid #E2E4E8; box-shadow:0 4px 14px rgba(27,38,59,0.10), 0 1px 2px rgba(27,38,59,0.06); display:flex; align-items:center; justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D96C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path><path d="M12.4 8v3.6"></path><path d="M12.4 14.7v.2"></path></svg>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">03 · SIGNED IN — HOME FEED</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Over a full-bleed photo the disc still separates: white on imagery, terracotta glyph, a shadow rather than a border doing the work.</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- Sign in -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; height:844px; border-radius:22px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column">
+          <div style="height:44px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 24px; font-size:13px; line-height:16px; font-weight:700; color:#1B263B"><span>9:41</span><span style="width:16px;height:9px;border:1px solid #1B263B;border-radius:2px;display:block"></span></div>
+
+          <div style="flex:1; padding:24px; display:flex; flex-direction:column; gap:16px">
+            <div style="width:32px; height:32px; display:flex; align-items:center; font-size:32px; line-height:32px; font-weight:700; color:#1B263B">‹</div>
+            <div style="font-size:28px; line-height:34px; font-weight:700; letter-spacing:-0.3px; color:#1B263B; margin-bottom:4px">Welcome back</div>
+
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="font-size:14px; line-height:17px; font-weight:600; color:#1B263B">Email Address</div>
+              <div style="height:51px; border:1px solid #E2E4E8; border-radius:12px; background:#FFFFFF; display:flex; align-items:center; padding:0 16px; font-size:16px; line-height:19px; font-weight:400; color:#5C6470">you@example.com</div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="font-size:14px; line-height:17px; font-weight:600; color:#1B263B">Password</div>
+              <div style="height:51px; border:1px solid #E2E4E8; border-radius:12px; background:#FFFFFF; display:flex; align-items:center; gap:8px; padding:0 16px">
+                <div style="flex:1; font-size:16px; line-height:19px; font-weight:400; color:#5C6470">Your password</div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </div>
+            </div>
+
+            <div style="align-self:flex-end; font-size:15px; line-height:18px; font-weight:700; color:#D96C4A">Forgot password?</div>
+
+            <div style="height:51px; border-radius:12px; background:#D96C4A; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:19px; font-weight:600; color:#FFFFFF; margin-top:8px">Sign In</div>
+
+            <div style="display:flex; flex-direction:row; align-items:center; gap:12px; padding:4px 0"><span style="flex:1; height:1px; background:#E2E4E8; display:block"></span><span style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">or</span><span style="flex:1; height:1px; background:#E2E4E8; display:block"></span></div>
+
+            <div style="height:51px; border-radius:12px; background:#FFFFFF; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center; gap:10px; font-size:16px; line-height:19px; font-weight:600; color:#1B263B">
+              <span style="width:18px; height:18px; border-radius:100px; background:#F2F1ED; display:block"></span>Continue with Google
+            </div>
+          </div>
+
+          <div style="padding:24px; display:flex; align-items:center; justify-content:center; font-size:15px; line-height:18px; font-weight:400; color:#5C6470">New to Largata? <span style="color:#D96C4A; padding-left:5px">Create an account</span></div>
+
+          <div style="position:absolute; right:16px; bottom:32px; width:40px; height:40px; border-radius:100px; background:#FFFFFF; border:1px solid #E2E4E8; box-shadow:0 4px 14px rgba(27,38,59,0.10), 0 1px 2px rgba(27,38,59,0.06); display:flex; align-items:center; justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D96C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5c-1.7 0-3.3-.5-4.6-1.3L3 20l1.3-4.9A8.38 8.38 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path><path d="M12.4 8v3.6"></path><path d="M12.4 14.7v.2"></path></svg>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">04 · SIGNED OUT — SIGN IN</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">No tab bar, so the bubble sits at bottom 32 — clear of the footer link's 44 target. This is the screen where feedback matters most and the one a header slot could not have served.</div>
+          </div>
+        </sc-if>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ 05 THE FORM ════════════════════════════════════════════ -->
+  <div style="display:flex; flex-direction:column; gap:28px">
+    <div style="display:flex; flex-direction:column; gap:8px">
+      <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">05 · THE FORM</div>
+      <div style="font-size:26px; line-height:32px; font-weight:700; letter-spacing:-0.3px">Three fields, no metadata, no identity</div>
+      <div style="font-size:15px; line-height:24px; font-weight:400; color:#5C6470; max-width:680px">A sheet rather than a route, so the screen being reported stays visible behind it. The draft captures the screen, platform and version on open; none of that appears in the form.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:row; gap:40px; flex-wrap:wrap; align-items:flex-start">
+
+      <!-- Empty, in context with scrim -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; height:844px; border-radius:22px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column">
+          <div style="height:44px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 24px; font-size:13px; line-height:16px; font-weight:700; color:#1B263B"><span>9:41</span><span style="width:16px;height:9px;border:1px solid #1B263B;border-radius:2px;display:block"></span></div>
+          <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:12px">
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+          </div>
+          <div style="height:64px; flex:none; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8"></div>
+          <div style="position:absolute; inset:0; background:rgba(27,38,59,0.55)"></div>
+
+          <div style="position:absolute; left:0; right:0; bottom:0; background:#FFFFFF; border-radius:20px 20px 0 0; box-shadow:0 -8px 32px rgba(27,38,59,0.14); padding-bottom:24px; display:flex; flex-direction:column">
+            <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8; margin:10px auto 0"></div>
+            <div style="padding:14px 20px 0; display:flex; flex-direction:row; align-items:center; gap:12px">
+              <div style="flex:1; font-size:22px; line-height:28px; font-weight:700; color:#1B263B">Send feedback</div>
+              <div style="width:40px; height:40px; border-radius:100px; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B263B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+            </div>
+            <div style="padding:16px 20px 0; display:flex; flex-direction:column; gap:20px">
+              <div style="display:flex; flex-direction:row; gap:8px">
+                <div style="flex:1; height:44px; border-radius:12px; background:rgba(217,108,74,0.06); border:1px solid #D96C4A; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#D96C4A">Problem</div>
+                <div style="flex:1; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#5C6470">Idea</div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div style="font-size:14px; line-height:17px; font-weight:600; color:#1B263B">What happened?</div>
+                <div style="height:140px; border-radius:12px; border:1px solid #121212; background:#FFFFFF; padding:14px 16px; font-size:16px; line-height:22px; font-weight:400; color:#5C6470">Tell us what you were doing and what went wrong.</div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div style="display:flex; flex-direction:row; align-items:baseline; gap:8px">
+                  <div style="flex:1; font-size:14px; line-height:17px; font-weight:600; color:#1B263B">Screenshots</div>
+                  <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">Optional · up to 3</div>
+                </div>
+                <div style="display:flex; flex-direction:row; gap:8px">
+                  <div style="width:104px; height:104px; border-radius:12px; background:#FAF9F6; border:1px dashed #D6D3D1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span style="font-size:11px; line-height:14px; font-weight:600; color:#5C6470">Add</span>
+                  </div>
+                  <div style="flex:1"></div>
+                </div>
+              </div>
+              <div style="height:51px; border-radius:12px; background:#D96C4A; opacity:0.55; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:19px; font-weight:600; color:#FFFFFF">Send</div>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">EMPTY</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Type defaults to <span style="font-weight:600; color:#1B263B">Problem</span> — the frustrated user is the one this exists for, and the contract needs a value either way. Send is inert until the description has a character.</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- Filled with 2 screenshots -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; border-radius:20px 20px 18px 18px; border:1px solid #D9D6CF; background:#FFFFFF; overflow:hidden; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column; padding-bottom:24px">
+          <div style="height:24px; background:rgba(27,38,59,0.55)"></div>
+          <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8; margin:10px auto 0"></div>
+          <div style="padding:14px 20px 0; display:flex; flex-direction:row; align-items:center; gap:12px">
+            <div style="flex:1; font-size:22px; line-height:28px; font-weight:700; color:#1B263B">Send feedback</div>
+            <div style="width:40px; height:40px; border-radius:100px; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B263B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+          </div>
+          <div style="padding:16px 20px 0; display:flex; flex-direction:column; gap:20px">
+            <div style="display:flex; flex-direction:row; gap:8px">
+              <div style="flex:1; height:44px; border-radius:12px; background:rgba(217,108,74,0.06); border:1px solid #D96C4A; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#D96C4A">Problem</div>
+              <div style="flex:1; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#5C6470">Idea</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="font-size:14px; line-height:17px; font-weight:600; color:#1B263B">What happened?</div>
+              <div style="height:140px; border-radius:12px; border:1px solid #121212; background:#FFFFFF; padding:14px 16px; font-size:16px; line-height:22px; font-weight:400; color:#1B263B; text-wrap:pretty">Adding an activity to Day 3 saves, but the day still shows the old order when I come back to it. Reordering again fixes it until I leave the screen.</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; flex-direction:row; align-items:baseline; gap:8px">
+                <div style="flex:1; font-size:14px; line-height:17px; font-weight:600; color:#1B263B">Screenshots</div>
+                <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">2 of 3</div>
+              </div>
+              <div style="display:flex; flex-direction:row; gap:8px">
+                <div style="width:104px; height:104px; border-radius:12px; background:linear-gradient(150deg, #22335C 0%, #5B4B8A 100%); position:relative">
+                  <div style="position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:100px; background:rgba(27,38,59,0.70); display:flex; align-items:center; justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+                </div>
+                <div style="width:104px; height:104px; border-radius:12px; background:linear-gradient(150deg, #4E7A3A 0%, #93B56E 100%); position:relative">
+                  <div style="position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:100px; background:rgba(27,38,59,0.70); display:flex; align-items:center; justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+                </div>
+                <div style="width:104px; height:104px; border-radius:12px; background:#FAF9F6; border:1px dashed #D6D3D1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span style="font-size:11px; line-height:14px; font-weight:600; color:#5C6470">Add</span>
+                </div>
+              </div>
+            </div>
+            <div style="height:51px; border-radius:12px; background:#D96C4A; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:19px; font-weight:600; color:#FFFFFF">Send</div>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">FILLED · 2 SCREENSHOTS</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Tiles fill left to right; the add tile is always last and disappears at three. Removing one collapses the row over 200ms and the add tile returns.</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- Near the limit -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; border-radius:20px 20px 18px 18px; border:1px solid #D9D6CF; background:#FFFFFF; overflow:hidden; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column; padding-bottom:24px">
+          <div style="height:24px; background:rgba(27,38,59,0.55)"></div>
+          <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8; margin:10px auto 0"></div>
+          <div style="padding:14px 20px 0; display:flex; flex-direction:row; align-items:center; gap:12px">
+            <div style="flex:1; font-size:22px; line-height:28px; font-weight:700; color:#1B263B">Send feedback</div>
+            <div style="width:40px; height:40px; border-radius:100px; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B263B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+          </div>
+          <div style="padding:16px 20px 0; display:flex; flex-direction:column; gap:20px">
+            <div style="display:flex; flex-direction:row; gap:8px">
+              <div style="flex:1; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#5C6470">Problem</div>
+              <div style="flex:1; height:44px; border-radius:12px; background:rgba(217,108,74,0.06); border:1px solid #D96C4A; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#D96C4A">Idea</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px">
+              <div style="font-size:14px; line-height:17px; font-weight:600; color:#1B263B">What's your idea?</div>
+              <div style="height:140px; border-radius:12px; border:1px solid #121212; background:#FFFFFF; padding:14px 16px; font-size:16px; line-height:22px; font-weight:400; color:#1B263B; overflow:hidden; text-wrap:pretty">Let a trip have more than one diary per traveller — right now everyone's postcards land in the same stream and by day nine it is impossible to find the ones you took yourself. If each traveller had their own lane inside the trip diary, with a combined view as the default, you could still scroll the whole trip but also pull out just your own. It would also make the export</div>
+              <div style="align-self:flex-end; font-size:11px; line-height:14px; font-weight:600; color:#A59E99">1,847 / 2000</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; flex-direction:row; align-items:baseline; gap:8px">
+                <div style="flex:1; font-size:14px; line-height:17px; font-weight:600; color:#1B263B">Screenshots</div>
+                <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470">Optional · up to 3</div>
+              </div>
+              <div style="display:flex; flex-direction:row; gap:8px">
+                <div style="width:104px; height:104px; border-radius:12px; background:#FAF9F6; border:1px dashed #D6D3D1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span style="font-size:11px; line-height:14px; font-weight:600; color:#5C6470">Add</span>
+                </div>
+                <div style="flex:1"></div>
+              </div>
+            </div>
+            <div style="height:51px; border-radius:12px; background:#D96C4A; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:19px; font-weight:600; color:#FFFFFF">Send</div>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">APPROACHING 2000</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">The counter is absent until 1,800, then appears in #A59E99 and turns #C2410C at the cap — the same rule the chat composer already uses. Input is hard-capped at 2000; nothing is silently truncated on send.</div>
+          </div>
+        </sc-if>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ 06 SENDING AND FAILURE ═════════════════════════════════ -->
+  <div style="display:flex; flex-direction:column; gap:28px">
+    <div style="display:flex; flex-direction:column; gap:8px">
+      <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">06 · SENDING &amp; FAILURE</div>
+      <div style="font-size:26px; line-height:32px; font-weight:700; letter-spacing:-0.3px">One error pattern, two behaviours</div>
+      <div style="font-size:15px; line-height:24px; font-weight:400; color:#5C6470; max-width:680px">Every failure renders the same banner above the send button. What changes is the button and where the banner points: retryable failures relabel the button, change-something-first failures mark the field at fault and hold the button until it changes.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:row; gap:40px; flex-wrap:wrap; align-items:flex-start">
+
+      <!-- Submitting -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; border-radius:20px 20px 18px 18px; border:1px solid #D9D6CF; background:#FFFFFF; overflow:hidden; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column; padding-bottom:24px">
+          <div style="height:24px; background:rgba(27,38,59,0.55)"></div>
+          <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8; margin:10px auto 0"></div>
+          <div style="padding:14px 20px 0; display:flex; flex-direction:row; align-items:center; gap:12px">
+            <div style="flex:1; font-size:22px; line-height:28px; font-weight:700; color:#1B263B">Send feedback</div>
+            <div style="width:40px; height:40px; border-radius:100px; border:1px solid #E2E4E8; opacity:0.4; display:flex; align-items:center; justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B263B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+          </div>
+          <div style="padding:16px 20px 0; display:flex; flex-direction:column; gap:20px; opacity:0.55">
+            <div style="display:flex; flex-direction:row; gap:8px">
+              <div style="flex:1; height:44px; border-radius:12px; background:rgba(217,108,74,0.06); border:1px solid #D96C4A; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#D96C4A">Problem</div>
+              <div style="flex:1; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#5C6470">Idea</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="font-size:14px; line-height:17px; font-weight:600; color:#1B263B">What happened?</div>
+              <div style="height:140px; border-radius:12px; border:1px solid #121212; background:#FFFFFF; padding:14px 16px; font-size:16px; line-height:22px; font-weight:400; color:#1B263B; text-wrap:pretty">Adding an activity to Day 3 saves, but the day still shows the old order when I come back to it.</div>
+            </div>
+            <div style="display:flex; flex-direction:row; gap:8px">
+              <div style="width:104px; height:104px; border-radius:12px; background:linear-gradient(150deg, #22335C 0%, #5B4B8A 100%)"></div>
+              <div style="width:104px; height:104px; border-radius:12px; background:linear-gradient(150deg, #4E7A3A 0%, #93B56E 100%)"></div>
+              <div style="flex:1"></div>
+            </div>
+          </div>
+          <div style="padding:20px 20px 0">
+            <div style="height:51px; border-radius:12px; background:#D96C4A; display:flex; align-items:center; justify-content:center; gap:10px">
+              <span style="width:16px; height:16px; border-radius:100px; border:2px solid rgba(255,255,255,0.35); border-top-color:#FFFFFF; display:block"></span>
+              <span style="font-size:16px; line-height:19px; font-weight:600; color:#FFFFFF">Sending…</span>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">SUBMITTING</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Fields dim to 0.55 and go inert, close is held, the button carries a spinner and the word. Duplicates are impossible server-side, but a silent button reads as a dropped tap.</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- Offline, retryable -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; border-radius:20px 20px 18px 18px; border:1px solid #D9D6CF; background:#FFFFFF; overflow:hidden; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column; padding-bottom:24px">
+          <div style="height:24px; background:rgba(27,38,59,0.55)"></div>
+          <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8; margin:10px auto 0"></div>
+          <div style="padding:14px 20px 0; display:flex; flex-direction:row; align-items:center; gap:12px">
+            <div style="flex:1; font-size:22px; line-height:28px; font-weight:700; color:#1B263B">Send feedback</div>
+            <div style="width:40px; height:40px; border-radius:100px; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B263B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+          </div>
+          <div style="padding:16px 20px 0; display:flex; flex-direction:column; gap:20px">
+            <div style="display:flex; flex-direction:row; gap:8px">
+              <div style="flex:1; height:44px; border-radius:12px; background:rgba(217,108,74,0.06); border:1px solid #D96C4A; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#D96C4A">Problem</div>
+              <div style="flex:1; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#5C6470">Idea</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="font-size:14px; line-height:17px; font-weight:600; color:#1B263B">What happened?</div>
+              <div style="height:140px; border-radius:12px; border:1px solid #121212; background:#FFFFFF; padding:14px 16px; font-size:16px; line-height:22px; font-weight:400; color:#1B263B; text-wrap:pretty">Adding an activity to Day 3 saves, but the day still shows the old order when I come back to it.</div>
+            </div>
+            <div style="display:flex; flex-direction:row; gap:8px">
+              <div style="width:104px; height:104px; border-radius:12px; background:linear-gradient(150deg, #22335C 0%, #5B4B8A 100%); position:relative"><div style="position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:100px; background:rgba(27,38,59,0.70); display:flex; align-items:center; justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div></div>
+              <div style="width:104px; height:104px; border-radius:12px; background:linear-gradient(150deg, #4E7A3A 0%, #93B56E 100%); position:relative"><div style="position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:100px; background:rgba(27,38,59,0.70); display:flex; align-items:center; justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div></div>
+              <div style="width:104px; height:104px; border-radius:12px; background:#FAF9F6; border:1px dashed #D6D3D1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C6470" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg><span style="font-size:11px; line-height:14px; font-weight:600; color:#5C6470">Add</span></div>
+            </div>
+            <div style="border:1px solid #B3261E; border-radius:12px; background:#FFFFFF; padding:12px; display:flex; flex-direction:row; gap:10px; align-items:flex-start">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B3261E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:1px"><circle cx="12" cy="12" r="9.75"></circle><path d="M12 11.25V16.5M12 7.5v.3"></path></svg>
+              <div style="flex:1; font-size:14px; line-height:20px; font-weight:400; color:#1B263B; text-wrap:pretty">Could not send just yet. Check your connection and try again.</div>
+            </div>
+            <div style="height:51px; border-radius:12px; background:#D96C4A; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:19px; font-weight:600; color:#FFFFFF; margin-top:-4px">Try again</div>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">RETRYABLE — OFFLINE, 429, 5XX</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Banner in, button becomes <span style="font-weight:600; color:#1B263B">Try again</span>, form untouched. The retry replays the same reportId, so the button can stay prominent without risking a duplicate.</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- 413, change something first -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; border-radius:20px 20px 18px 18px; border:1px solid #D9D6CF; background:#FFFFFF; overflow:hidden; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column; padding-bottom:24px">
+          <div style="height:24px; background:rgba(27,38,59,0.55)"></div>
+          <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8; margin:10px auto 0"></div>
+          <div style="padding:14px 20px 0; display:flex; flex-direction:row; align-items:center; gap:12px">
+            <div style="flex:1; font-size:22px; line-height:28px; font-weight:700; color:#1B263B">Send feedback</div>
+            <div style="width:40px; height:40px; border-radius:100px; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B263B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div>
+          </div>
+          <div style="padding:16px 20px 0; display:flex; flex-direction:column; gap:20px">
+            <div style="display:flex; flex-direction:row; gap:8px">
+              <div style="flex:1; height:44px; border-radius:12px; background:rgba(217,108,74,0.06); border:1px solid #D96C4A; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#D96C4A">Problem</div>
+              <div style="flex:1; height:44px; border-radius:12px; background:#FFFFFF; border:1px solid #E2E4E8; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:17px; font-weight:600; color:#5C6470">Idea</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="font-size:14px; line-height:17px; font-weight:600; color:#1B263B">What happened?</div>
+              <div style="height:140px; border-radius:12px; border:1px solid #121212; background:#FFFFFF; padding:14px 16px; font-size:16px; line-height:22px; font-weight:400; color:#1B263B; text-wrap:pretty">Adding an activity to Day 3 saves, but the day still shows the old order when I come back to it.</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; flex-direction:row; align-items:baseline; gap:8px">
+                <div style="flex:1; font-size:14px; line-height:17px; font-weight:600; color:#B3261E">Screenshots</div>
+                <div style="font-size:13px; line-height:20px; font-weight:400; color:#B3261E">3 of 3</div>
+              </div>
+              <div style="display:flex; flex-direction:row; gap:8px">
+                <div style="width:104px; height:104px; border-radius:12px; background:linear-gradient(150deg, #22335C 0%, #5B4B8A 100%); border:1px solid #B3261E; position:relative"><div style="position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:100px; background:rgba(27,38,59,0.70); display:flex; align-items:center; justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div></div>
+                <div style="width:104px; height:104px; border-radius:12px; background:linear-gradient(150deg, #4E7A3A 0%, #93B56E 100%); border:1px solid #B3261E; position:relative"><div style="position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:100px; background:rgba(27,38,59,0.70); display:flex; align-items:center; justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div></div>
+                <div style="width:104px; height:104px; border-radius:12px; background:linear-gradient(150deg, #7A3B2E 0%, #C9835E 100%); border:1px solid #B3261E; position:relative"><div style="position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:100px; background:rgba(27,38,59,0.70); display:flex; align-items:center; justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></div></div>
+              </div>
+            </div>
+            <div style="border:1px solid #B3261E; border-radius:12px; background:#FFFFFF; padding:12px; display:flex; flex-direction:row; gap:10px; align-items:flex-start">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B3261E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:1px"><circle cx="12" cy="12" r="9.75"></circle><path d="M12 11.25V16.5M12 7.5v.3"></path></svg>
+              <div style="flex:1; font-size:14px; line-height:20px; font-weight:400; color:#1B263B; text-wrap:pretty">Those images are too large. Try removing one.</div>
+            </div>
+            <div style="height:51px; border-radius:12px; background:#D96C4A; opacity:0.55; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:19px; font-weight:600; color:#FFFFFF; margin-top:-4px">Send</div>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">CHANGE SOMETHING FIRST — 413, 400</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Same banner, but the button stays <span style="font-weight:600; color:#1B263B">Send</span> and holds inert until the user edits, and the field the copy names is marked in danger — screenshots on 413, the description and counter on 400. Nothing is cleared, ever.</div>
+          </div>
+        </sc-if>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ 07 THANK YOU ═══════════════════════════════════════════ -->
+  <div style="display:flex; flex-direction:column; gap:28px">
+    <div style="display:flex; flex-direction:column; gap:8px">
+      <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">07 · TERMINAL</div>
+      <div style="font-size:26px; line-height:32px; font-weight:700; letter-spacing:-0.3px">Thank you, and nothing else</div>
+      <div style="font-size:15px; line-height:24px; font-weight:400; color:#5C6470; max-width:680px">No status, no ticket number, no "view my reports". The sheet contents crossfade in place; Done closes it and the screen underneath is exactly where they left it.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:row; gap:40px; flex-wrap:wrap; align-items:flex-start">
+      <div style="display:flex; flex-direction:column; gap:16px; width:390px">
+        <div style="width:390px; height:844px; border-radius:22px; border:1px solid #D9D6CF; background:#FAF9F6; overflow:hidden; position:relative; box-shadow:0 18px 40px rgba(27,38,59,0.10); display:flex; flex-direction:column">
+          <div style="height:44px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 24px; font-size:13px; line-height:16px; font-weight:700; color:#1B263B"><span>9:41</span><span style="width:16px;height:9px;border:1px solid #1B263B;border-radius:2px;display:block"></span></div>
+          <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:12px">
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+            <div style="height:150px; border-radius:16px; background:#FFFFFF; border:1px solid #E2E4E8"></div>
+          </div>
+          <div style="height:64px; flex:none; padding-bottom:20px; background:#FAF9F6; border-top:1px solid #E2E4E8"></div>
+          <div style="position:absolute; inset:0; background:rgba(27,38,59,0.55)"></div>
+
+          <div style="position:absolute; left:0; right:0; bottom:0; background:#FFFFFF; border-radius:20px 20px 0 0; box-shadow:0 -8px 32px rgba(27,38,59,0.14); padding:10px 20px 24px; display:flex; flex-direction:column; align-items:center">
+            <div style="width:36px; height:4px; border-radius:100px; background:#E2E4E8"></div>
+            <div style="width:64px; height:64px; border-radius:100px; background:#F2F1ED; display:flex; align-items:center; justify-content:center; margin-top:36px">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2F6B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 11 15 16 9"></polyline></svg>
+            </div>
+            <div style="font-size:22px; line-height:28px; font-weight:700; color:#1B263B; margin-top:20px; text-align:center">Thanks — that helps</div>
+            <div style="font-size:13px; line-height:20px; font-weight:400; color:#5C6470; margin-top:8px; text-align:center; max-width:266px; text-wrap:pretty">A real person reads every one of these. There is nothing else for you to do.</div>
+            <div style="align-self:stretch; height:51px; border-radius:12px; background:#D96C4A; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:19px; font-weight:600; color:#FFFFFF; margin-top:36px">Done</div>
+          </div>
+        </div>
+        <sc-if value="{{ showAnnotations }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">THANK YOU</div>
+            <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">The close X is gone in this state — one exit, and it is the warm one. Scrim tap still dismisses. No auto-dismiss: let them read it.</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ showSpec }}" hint-placeholder-val="{{ true }}">
+        <div style="width:520px; display:flex; flex-direction:column; gap:20px; background:#FFFFFF; border:1px solid #D9D6CF; border-radius:18px; padding:28px">
+          <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">FLOW</div>
+          <div style="display:flex; flex-direction:column; gap:14px">
+            <div style="display:flex; flex-direction:row; gap:14px; align-items:flex-start"><span style="width:22px; height:22px; border-radius:100px; background:#F2F1ED; font-size:11px; line-height:22px; font-weight:700; color:#1B263B; text-align:center; flex:none">1</span><span style="flex:1; font-size:14px; line-height:22px; color:#1B263B; text-wrap:pretty">Tap the bubble. <span style="color:#5C6470">A draft is minted with the route pattern, platform and app version. The user is shown none of it.</span></span></div>
+            <div style="display:flex; flex-direction:row; gap:14px; align-items:flex-start"><span style="width:22px; height:22px; border-radius:100px; background:#F2F1ED; font-size:11px; line-height:22px; font-weight:700; color:#1B263B; text-align:center; flex:none">2</span><span style="flex:1; font-size:14px; line-height:22px; color:#1B263B; text-wrap:pretty">Scrim fades, sheet rises 300ms. <span style="color:#5C6470">The description field takes focus only on tap — an auto-raised keyboard would hide the type toggle.</span></span></div>
+            <div style="display:flex; flex-direction:row; gap:14px; align-items:flex-start"><span style="width:22px; height:22px; border-radius:100px; background:#F2F1ED; font-size:11px; line-height:22px; font-weight:700; color:#1B263B; text-align:center; flex:none">3</span><span style="flex:1; font-size:14px; line-height:22px; color:#1B263B; text-wrap:pretty">Send. <span style="color:#5C6470">Fields dim and lock, button reads Sending…, close is held so a mid-flight dismiss cannot orphan the draft.</span></span></div>
+            <div style="display:flex; flex-direction:row; gap:14px; align-items:flex-start"><span style="width:22px; height:22px; border-radius:100px; background:#F2F1ED; font-size:11px; line-height:22px; font-weight:700; color:#1B263B; text-align:center; flex:none">4</span><span style="flex:1; font-size:14px; line-height:22px; color:#1B263B; text-wrap:pretty">201 or 200. <span style="color:#5C6470">Form crossfades out over 150ms, thank-you rises 8px over 200ms, sheet height animates down.</span></span></div>
+            <div style="display:flex; flex-direction:row; gap:14px; align-items:flex-start"><span style="width:22px; height:22px; border-radius:100px; background:#F2F1ED; font-size:11px; line-height:22px; font-weight:700; color:#1B263B; text-align:center; flex:none">5</span><span style="flex:1; font-size:14px; line-height:22px; color:#1B263B; text-wrap:pretty">Done. <span style="color:#5C6470">Sheet travels out 200ms, scrim clears 150ms. Draft released. Nothing persists.</span></span></div>
+          </div>
+
+          <div style="height:1px; background:#E2E4E8"></div>
+
+          <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">DISMISS WITH TEXT IN THE FIELD</div>
+          <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Scrim tap or swipe-down with a non-empty description does <span style="font-weight:600; color:#1B263B">not</span> discard silently — the sheet stays and the description field flashes its border to #B3261E for 300ms. Only the close X discards, and it discards outright. A frustrated user should not lose the paragraph they just typed to a stray tap.</div>
+
+          <div style="height:1px; background:#E2E4E8"></div>
+
+          <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">NAMING</div>
+          <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">This entry point says <span style="font-weight:600; color:#1B263B">feedback</span>, never <span style="font-weight:600; color:#1B263B">report</span>. <span style="font-weight:600; color:#1B263B">Report</span> is already spoken for by the postcard action sheet, which means reporting another traveller's content. Two different jobs, two different words — the API route keeps its name, the UI does not borrow it.</div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- ══ 08 MOTION ══════════════════════════════════════════════ -->
+  <sc-if value="{{ showSpec }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex; flex-direction:column; gap:28px">
+    <div style="display:flex; flex-direction:column; gap:8px">
+      <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">08 · MOTION</div>
+      <div style="font-size:26px; line-height:32px; font-weight:700; letter-spacing:-0.3px">No new durations</div>
+      <div style="font-size:15px; line-height:24px; font-weight:400; color:#5C6470; max-width:680px">Every value below already exists in <span style="font-weight:600; color:#1B263B">src/theme/workspaceTokens.ts</span>. Nothing here needs a new constant.</div>
+    </div>
+
+    <div style="background:#FFFFFF; border:1px solid #D9D6CF; border-radius:18px; overflow:hidden; max-width:1100px">
+      <div style="display:flex; flex-direction:row; padding:14px 24px; background:#FAF9F6; border-bottom:1px solid #E2E4E8">
+        <div style="width:210px; font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">MOMENT</div>
+        <div style="width:250px; font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">CONSTANT</div>
+        <div style="flex:1; font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">BEHAVIOUR</div>
+      </div>
+      <sc-for list="{{ motion }}" as="row" hint-placeholder-count="12">
+        <div style="display:flex; flex-direction:row; padding:13px 24px; border-bottom:1px solid #F2F1ED; align-items:flex-start">
+          <div style="width:210px; font-size:14px; line-height:20px; font-weight:600; color:#1B263B; padding-right:12px">{{ row.moment }}</div>
+          <div style="width:250px; font-size:13px; line-height:20px; font-weight:400; color:#D96C4A; padding-right:12px">{{ row.constant }}</div>
+          <div style="flex:1; font-size:14px; line-height:20px; font-weight:400; color:#5C6470">{{ row.behaviour }}</div>
+        </div>
+      </sc-for>
+      <div style="padding:16px 24px; background:#FAF9F6; font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty"><span style="font-weight:700; color:#1B263B">Reduce Motion.</span> The sheet appears without travel and the scrim still fades, matching the shipped drawer. The bubble's entrance rise, the tile pop, the banner rise and the thank-you rise all drop to a plain crossfade. Nothing becomes invisible; things simply stop moving.</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ══ 09 COMPONENT CONTRACT ══════════════════════════════════ -->
+  <sc-if value="{{ showSpec }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex; flex-direction:column; gap:28px">
+    <div style="display:flex; flex-direction:column; gap:8px">
+      <div style="font-size:11px; line-height:14px; font-weight:700; letter-spacing:1.5px; color:#5C6470">09 · COMPONENT CONTRACT</div>
+      <div style="font-size:26px; line-height:32px; font-weight:700; letter-spacing:-0.3px">What to build</div>
+      <div style="font-size:15px; line-height:24px; font-weight:400; color:#5C6470; max-width:680px">The data layer is already shipped. This is UI on top of <span style="font-weight:600; color:#1B263B">useReportDraft</span>, <span style="font-weight:600; color:#1B263B">submitReport</span> and <span style="font-weight:600; color:#1B263B">failureOf</span> — plus one change to <span style="font-weight:600; color:#1B263B">Button</span> and one new icon.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:row; gap:24px; flex-wrap:wrap; align-items:stretch">
+
+      <div style="width:520px; background:#FFFFFF; border:1px solid #D9D6CF; border-radius:18px; padding:28px; display:flex; flex-direction:column; gap:16px">
+        <div style="font-size:17px; line-height:22px; font-weight:700; color:#1B263B">FeedbackBubble</div>
+        <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Mounted once in <span style="font-weight:600; color:#1B263B">app/_layout.tsx</span> as a sibling above the navigator, inside the safe-area provider. No props. Never rendered per screen — that is how it reaches sign-in, verify-code, onboarding and join.</div>
+        <div style="display:flex; flex-direction:column; gap:9px">
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">useReportDraft()</span> — already shipped; mints the draft with the live route segments on press.</div>
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">useSafeAreaInsets()</span> — bottom inset.</div>
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">useKeyboardVisible()</span> — new, trivial; drives the withdraw.</div>
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">useDockedRail()</span> — new context. Screens with a bottom action rail publish its height; the bubble reads it and offsets. Default 0.</div>
+        </div>
+        <div style="height:1px; background:#E2E4E8"></div>
+        <div style="font-size:13px; line-height:21px; color:#5C6470; text-wrap:pretty"><span style="color:#1B263B; font-weight:600">Accessibility.</span> <span style="font-family:monospace; font-size:12px">accessibilityRole="button"</span>, label "Send feedback", 44 target via hitSlop 2. It is the last element in the reading order on every screen, so it never intercepts the first focus.</div>
+      </div>
+
+      <div style="width:520px; background:#FFFFFF; border:1px solid #D9D6CF; border-radius:18px; padding:28px; display:flex; flex-direction:column; gap:16px">
+        <div style="font-size:17px; line-height:22px; font-weight:700; color:#1B263B">FeedbackSheet</div>
+        <div style="display:flex; flex-direction:column; gap:9px">
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">draft: ReportDraft | null</span> — presence opens the sheet.</div>
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">onClose: () =&gt; void</span> — releases the draft.</div>
+        </div>
+        <div style="font-size:14px; line-height:22px; font-weight:400; color:#5C6470; text-wrap:pretty">Owns <span style="font-weight:600; color:#1B263B">type</span>, <span style="font-weight:600; color:#1B263B">description</span>, <span style="font-weight:600; color:#1B263B">screenshots</span> and one <span style="font-weight:600; color:#1B263B">phase</span> of <span style="font-family:monospace; font-size:12px">'editing' | 'sending' | 'failed' | 'sent'</span>, plus the <span style="font-weight:600; color:#1B263B">ReportFailure</span> returned by <span style="font-weight:600; color:#1B263B">failureOf</span>. On failure it also records the field values at the time of the failure, so a non-retryable error can re-enable Send the moment anything actually changes.</div>
+        <div style="height:1px; background:#E2E4E8"></div>
+        <div style="display:flex; flex-direction:column; gap:9px">
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">FeedbackTypeToggle</span> — two chips, <span style="font-family:monospace; font-size:12px">value / onChange</span>. Reuses SelectableChip geometry at 44 tall.</div>
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">ScreenshotStrip</span> — <span style="font-family:monospace; font-size:12px">photos / onAdd / onRemove / invalid</span>. Caps at MAX_REPORT_SCREENSHOTS.</div>
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">FeedbackFailureBanner</span> — <span style="font-family:monospace; font-size:12px">failure: ReportFailure</span>. Renders the message verbatim; never composes its own copy.</div>
+          <div style="font-size:13px; line-height:20px; color:#5C6470"><span style="color:#1B263B; font-weight:600">FeedbackThanks</span> — <span style="font-family:monospace; font-size:12px">onDone</span>.</div>
+        </div>
+      </div>
+
+      <div style="width:520px; background:#FFFFFF; border:1px solid #D9D6CF; border-radius:18px; padding:28px; display:flex; flex-direction:column; gap:16px">
+        <div style="font-size:17px; line-height:22px; font-weight:700; color:#1B263B">Changes to shipped components</div>
+        <div style="display:flex; flex-direction:column; gap:14px">
+          <div style="font-size:14px; line-height:22px; color:#5C6470; text-wrap:pretty"><span style="color:#1B263B; font-weight:600">Button</span> — add an optional <span style="font-family:monospace; font-size:12px">busyLabel?: string</span>. When busy and busyLabel is set, render the spinner and the label side by side with gap 10 instead of the spinner alone. Default behaviour is unchanged everywhere else.</div>
+          <div style="font-size:14px; line-height:22px; color:#5C6470; text-wrap:pretty"><span style="color:#1B263B; font-weight:600">Icon</span> — add <span style="font-family:monospace; font-size:12px">'feedback'</span>: the existing <span style="font-family:monospace; font-size:12px">comment</span> bubble path with a 3.6-unit stem and a dot at 12.4. It has to read as "something is wrong here", not "reply".</div>
+        </div>
+        <div style="height:1px; background:#E2E4E8"></div>
+        <div style="font-size:14px; line-height:22px; color:#5C6470; text-wrap:pretty"><span style="color:#1B263B; font-weight:600">Nothing else changes.</span> The sheet chrome, scrim, grabber and press feedback all come from existing patterns. No new colour, radius, spacing step or type ramp entry is introduced by this work.</div>
+      </div>
+
+      <div style="width:520px; background:#FFFFFF; border:1px solid #D9D6CF; border-radius:18px; padding:28px; display:flex; flex-direction:column; gap:16px">
+        <div style="font-size:17px; line-height:22px; font-weight:700; color:#1B263B">Contract notes for the implementer</div>
+        <div style="display:flex; flex-direction:column; gap:12px">
+          <div style="font-size:14px; line-height:22px; color:#5C6470; text-wrap:pretty"><span style="color:#1B263B; font-weight:600">Mint the draft on open, not on send.</span> The captured screen must be the one the user was looking at when they reached for the button.</div>
+          <div style="font-size:14px; line-height:22px; color:#5C6470; text-wrap:pretty"><span style="color:#1B263B; font-weight:600">Hold the same draft across retries.</span> <span style="font-family:monospace; font-size:12px">submitReport</span> releases it only on success, and the server deduplicates on reportId — so retry is a replay, and the button never has to hedge.</div>
+          <div style="font-size:14px; line-height:22px; color:#5C6470; text-wrap:pretty"><span style="color:#1B263B; font-weight:600">Do not surface identity.</span> The bearer is attached by the client when there is one. Signed-out reports send no Authorization header and the form looks identical.</div>
+          <div style="font-size:14px; line-height:22px; color:#5C6470; text-wrap:pretty"><span style="color:#1B263B; font-weight:600">The description field takes the ink border, sign-in does not.</span> The multiline field is drawn at <span style="font-family:monospace; font-size:12px">colors.inputBorder</span> (#121212) per the brand spec for inputs. Shipped <span style="font-family:monospace; font-size:12px">FormField</span> currently renders <span style="font-family:monospace; font-size:12px">colors.border</span> (#E2E4E8), which is what the sign-in mock shows. Worth reconciling app-wide, but not as a side effect of this work.</div>
+          <div style="font-size:14px; line-height:22px; color:#5C6470; text-wrap:pretty"><span style="color:#1B263B; font-weight:600">Failure copy is not editable.</span> All five strings come from <span style="font-family:monospace; font-size:12px">REPORT_FAILURES</span>. If a new status needs a new message, it belongs in that file, not in the sheet.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showAnnotations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Canvas&quot;},&quot;showSpec&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Canvas&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showAnnotations: this.props.showAnnotations ?? true,
+      showSpec: this.props.showSpec ?? true,
+      motion: [
+        { moment: 'Bubble entrance', constant: 'listRiseMs 150 · listRisePx 8', behaviour: 'Rises and fades in behind the screen content, one beat after it settles.' },
+        { moment: 'Bubble reposition', constant: 'layoutMs 200', behaviour: 'Rail appears or leaves; the bubble travels to its new offset.' },
+        { moment: 'Bubble withdraw', constant: 'crossfadeMs 150', behaviour: 'Keyboard opens: fade to 0, pointer events off. Returns 150ms after dismissal.' },
+        { moment: 'Press', constant: 'pressInMs 100 · pressOutMs 150', behaviour: 'usePressFeedback — scale 0.97, opacity 0.85, spring damping 40.' },
+        { moment: 'Scrim in / out', constant: 'scrimInMs 200 · scrimOutMs 150', behaviour: 'rgba(27,38,59,0.55). Matches the shipped workspace drawer exactly.' },
+        { moment: 'Sheet in / out', constant: 'travelInMs 300 · travelOutMs 200', behaviour: 'Travels from below; the grabber and title arrive with it, no stagger.' },
+        { moment: 'Type chip select', constant: 'rowSelectMs 150', behaviour: 'Border and label cross to accent; fill washes in at 6% terracotta.' },
+        { moment: 'Screenshot added', constant: 'popMs 200 · from scale 0.5', behaviour: 'Tile pops in; the add tile slides right over layoutMs 200.' },
+        { moment: 'Screenshot removed', constant: 'layoutMs 200', behaviour: 'Row closes the gap; the add tile reappears at the end.' },
+        { moment: 'Counter appears', constant: 'crossfadeMs 150', behaviour: 'Fades in at 1,800 characters. Colour crosses to #C2410C at 2,000.' },
+        { moment: 'Send pressed', constant: 'inFlightOpacity 0.85', behaviour: 'Fields dim to 0.55 and lock; button swaps to spinner plus Sending….' },
+        { moment: 'Failure banner', constant: 'advisoryInMs 200 · advisoryRisePx 6 · advisoryOutMs 150', behaviour: 'Rises into the gap above the button; the button relabels on the same frame.' },
+        { moment: 'Discard guard flash', constant: 'stateChangeMs 150 ×2', behaviour: 'Description border to #B3261E and back, once, on a blocked dismiss.' },
+        { moment: 'Form to thank-you', constant: 'crossfadeMs 150 then popMs 200', behaviour: 'Form fades out, thank-you rises 8px, sheet height animates down over layoutMs 200.' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
