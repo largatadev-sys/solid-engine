@@ -83,6 +83,7 @@ class WorklogReportRelayIT {
                                 "Home feed · (tabs)/(home)",
                                 "1.4.0",
                                 "android",
+                                DeviceContext.NONE,
                                 new Reporter(UUID.randomUUID(), "Maya Ocampo"),
                                 submittedAt,
                                 List.of()));
@@ -117,6 +118,40 @@ class WorklogReportRelayIT {
         relay().relay(envelope(List.of()));
 
         assertThat(receivedBody.get()).doesNotContain("\"screen\"");
+    }
+
+
+    @Test
+    void theDeviceContextRidesFlatInsideContextUnderTheContractKeys() {
+        relay().relay(envelope(List.of(), new DeviceContext("Windows 11", "Chrome 128", "Pixel 6")));
+
+        String json = receivedBody.get();
+        assertThat(json).contains("\"os\":\"Windows 11\"");
+        assertThat(json).contains("\"browser\":\"Chrome 128\"");
+        assertThat(json).contains("\"deviceModel\":\"Pixel 6\"");
+        assertThat(json).doesNotContain("\"device\":{");
+    }
+
+
+    @Test
+    void aPartialDeviceContextSendsExactlyWhatItHas() {
+        relay().relay(envelope(List.of(), new DeviceContext("Android 14", null, "SM-S918B")));
+
+        String json = receivedBody.get();
+        assertThat(json).contains("\"os\":\"Android 14\"");
+        assertThat(json).contains("\"deviceModel\":\"SM-S918B\"");
+        assertThat(json).doesNotContain("\"browser\"");
+    }
+
+
+    @Test
+    void aRowFromBeforeDeviceContextSendsAPayloadIdenticalToTheOneItAlwaysSent() {
+        relay().relay(envelope(List.of()));
+
+        String json = receivedBody.get();
+        assertThat(json).doesNotContain("\"os\"");
+        assertThat(json).doesNotContain("\"browser\"");
+        assertThat(json).doesNotContain("\"deviceModel\"");
     }
 
 
@@ -251,6 +286,11 @@ class WorklogReportRelayIT {
 
 
     private static RelayEnvelope envelope(List<ReportScreenshot> screenshots) {
+        return envelope(screenshots, DeviceContext.NONE);
+    }
+
+
+    private static RelayEnvelope envelope(List<ReportScreenshot> screenshots, DeviceContext device) {
         return new RelayEnvelope(
                 UUID.randomUUID(),
                 ReportType.PROBLEM,
@@ -258,6 +298,7 @@ class WorklogReportRelayIT {
                 null,
                 "0.1.0",
                 "web",
+                device,
                 null,
                 Instant.parse("2026-08-28T09:15:30Z"),
                 screenshots);

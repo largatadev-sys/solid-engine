@@ -339,6 +339,95 @@ class ReportAcceptIT extends PostgresTestBase {
 
 
     @Test
+    void theDeviceContextFieldsAreStoredWhenGiven() {
+        UUID reportId = UUID.randomUUID();
+
+        submitRaw(reportId, deviceReportJson(reportId, "\"os\":\"Windows 11\",\"browser\":\"Chrome 128\",\"deviceModel\":\"Pixel 6\""))
+                .expectStatus()
+                .isCreated();
+
+        Map<String, Object> row = rowOf(reportId);
+        assertThat(row.get("os")).isEqualTo("Windows 11");
+        assertThat(row.get("browser")).isEqualTo("Chrome 128");
+        assertThat(row.get("device_model")).isEqualTo("Pixel 6");
+    }
+
+
+    @Test
+    void aPreDeviceContextClientIsAcceptedExactlyAsBeforeAndStoresNulls() {
+        UUID reportId = UUID.randomUUID();
+
+        submit(reportId, null, "problem", "Sent by an old installed build.").expectStatus().isCreated();
+
+        Map<String, Object> row = rowOf(reportId);
+        assertThat(row.get("os")).isNull();
+        assertThat(row.get("browser")).isNull();
+        assertThat(row.get("device_model")).isNull();
+    }
+
+
+    @Test
+    void aPartialDeviceContextStoresOnlyWhatItCarries() {
+        UUID reportId = UUID.randomUUID();
+
+        submitRaw(reportId, deviceReportJson(reportId, "\"os\":\"Android 14\",\"deviceModel\":\"SM-S918B\""))
+                .expectStatus()
+                .isCreated();
+
+        Map<String, Object> row = rowOf(reportId);
+        assertThat(row.get("os")).isEqualTo("Android 14");
+        assertThat(row.get("browser")).isNull();
+        assertThat(row.get("device_model")).isEqualTo("SM-S918B");
+    }
+
+
+    @Test
+    void blankDeviceValuesStoreAsNullLikeScreen() {
+        UUID reportId = UUID.randomUUID();
+
+        submitRaw(reportId, deviceReportJson(reportId, "\"os\":\"   \",\"browser\":\"\",\"deviceModel\":\"  \""))
+                .expectStatus()
+                .isCreated();
+
+        Map<String, Object> row = rowOf(reportId);
+        assertThat(row.get("os")).isNull();
+        assertThat(row.get("browser")).isNull();
+        assertThat(row.get("device_model")).isNull();
+    }
+
+
+    @Test
+    void anOverLongDeviceValueIsClampedAndAcceptedUnlikeScreenWhichIsRefused() {
+        UUID reportId = UUID.randomUUID();
+        String pathological = "u".repeat(DeviceContext.MAX_CHARS + 40);
+
+        submitRaw(reportId, deviceReportJson(reportId, "\"os\":\"" + pathological + "\""))
+                .expectStatus()
+                .isCreated();
+
+        assertThat((String) rowOf(reportId).get("os")).hasSize(DeviceContext.MAX_CHARS);
+    }
+
+
+    @Test
+    void aReplayCarryingDifferentDeviceValuesKeepsTheOnesFirstAccepted() {
+        UUID reportId = UUID.randomUUID();
+        submitRaw(reportId, deviceReportJson(reportId, "\"os\":\"iOS 17.5\",\"browser\":\"Safari 17.5\""))
+                .expectStatus()
+                .isCreated();
+
+        submitRaw(reportId, deviceReportJson(reportId, "\"os\":\"Windows 11\",\"browser\":\"Edge 128\""))
+                .expectStatus()
+                .isOk();
+
+        assertThat(countOf(reportId)).isEqualTo(1);
+        Map<String, Object> row = rowOf(reportId);
+        assertThat(row.get("os")).isEqualTo("iOS 17.5");
+        assertThat(row.get("browser")).isEqualTo("Safari 17.5");
+    }
+
+
+    @Test
     void theAcceptedReportIdComesBackToTheClient() {
         UUID reportId = UUID.randomUUID();
 
@@ -402,6 +491,16 @@ class ReportAcceptIT extends PostgresTestBase {
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
                 .exchange();
+    }
+
+
+    private static String deviceReportJson(UUID reportId, String deviceFields) {
+        return "{\"reportId\":\""
+                + reportId
+                + "\",\"type\":\"problem\",\"description\":\"Device context rides along.\","
+                + "\"appVersion\":\"1.4.0\",\"platform\":\"web\","
+                + deviceFields
+                + "}";
     }
 
 

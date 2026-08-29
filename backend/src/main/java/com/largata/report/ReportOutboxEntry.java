@@ -36,6 +36,15 @@ public class ReportOutboxEntry {
     @Column(updatable = false)
     private String platform;
 
+    @Column(updatable = false)
+    private String os;
+
+    @Column(updatable = false)
+    private String browser;
+
+    @Column(name = "device_model", updatable = false)
+    private String deviceModel;
+
     @Column(name = "reporter_traveler_id", updatable = false)
     private UUID reporterTravelerId;
 
@@ -75,6 +84,7 @@ public class ReportOutboxEntry {
             String screen,
             String appVersion,
             String platform,
+            DeviceContext device,
             Reporter reporter,
             Instant submittedAt) {
         ReportOutboxEntry entry = new ReportOutboxEntry();
@@ -84,6 +94,9 @@ public class ReportOutboxEntry {
         entry.screen = screen;
         entry.appVersion = appVersion;
         entry.platform = platform;
+        entry.os = device.os();
+        entry.browser = device.browser();
+        entry.deviceModel = device.deviceModel();
         entry.reporterTravelerId = reporter == null ? null : reporter.travelerId();
         entry.reporterName = reporter == null ? null : reporter.name();
         entry.submittedAt = submittedAt;
@@ -146,6 +159,10 @@ public class ReportOutboxEntry {
 
     public String platform() {
         return platform;
+    }
+
+    public DeviceContext device() {
+        return new DeviceContext(os, browser, deviceModel);
     }
 
     public UUID reporterTravelerId() {

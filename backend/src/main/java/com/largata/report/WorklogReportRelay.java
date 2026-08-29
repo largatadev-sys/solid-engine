@@ -127,6 +127,16 @@ public class WorklogReportRelay implements ReportRelay {
         if (envelope.screen() != null) {
             context.put("screen", envelope.screen());
         }
+        DeviceContext device = envelope.device();
+        if (device.os() != null) {
+            context.put("os", device.os());
+        }
+        if (device.browser() != null) {
+            context.put("browser", device.browser());
+        }
+        if (device.deviceModel() != null) {
+            context.put("deviceModel", device.deviceModel());
+        }
         return context;
     }
 

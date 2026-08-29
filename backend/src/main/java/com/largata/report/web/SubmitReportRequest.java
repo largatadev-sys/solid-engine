@@ -7,4 +7,7 @@ record SubmitReportRequest(
         String description,
         String screen,
         String appVersion,
-        String platform) {}
+        String platform,
+        String os,
+        String browser,
+        String deviceModel) {}

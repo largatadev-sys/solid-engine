@@ -48,6 +48,7 @@ public class ReportService {
         String screen = boundedScreen(submission.screen());
         String platform = ReportPlatform.parse(submission.platform()).wireName();
         String appVersion = requireAppVersion(submission.appVersion());
+        DeviceContext device = submission.device().clamped();
         refuseTooManyScreenshots(submission.screenshots());
 
         if (outbox.existsById(submission.reportId())) {
@@ -63,6 +64,7 @@ public class ReportService {
                         screen,
                         appVersion,
                         platform,
+                        device,
                         submission.reporter(),
                         Instant.now(clock));
 

@@ -11,5 +11,6 @@ public record ReportSubmission(
         String screen,
         String appVersion,
         String platform,
+        DeviceContext device,
         Reporter reporter,
         List<byte[]> screenshots) {}

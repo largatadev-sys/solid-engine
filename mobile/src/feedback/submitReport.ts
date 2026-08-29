@@ -1,3 +1,4 @@
+import { deviceContextForReport } from './deviceContextStation';
 import type { ReportDraft } from './reportDraft';
 import { releaseDraft } from './reportDraft';
 import type { ReportFailure } from './reportFailure';
@@ -10,7 +11,7 @@ export async function submitReport(
   draft: ReportDraft,
   fields: ReportFields,
 ): Promise<SubmittedReport> {
-  const submitted = await reportRepository.submit(draft, fields);
+  const submitted = await reportRepository.submit(draft, fields, await deviceContextForReport());
   releaseDraft(draft.reportId);
   return submitted;
 }

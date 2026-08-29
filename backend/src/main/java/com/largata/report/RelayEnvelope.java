@@ -12,6 +12,7 @@ public record RelayEnvelope(
         String screen,
         String appVersion,
         String platform,
+        DeviceContext device,
         Reporter reporter,
         Instant submittedAt,
         List<ReportScreenshot> screenshots) {
@@ -24,6 +25,7 @@ public record RelayEnvelope(
                 entry.screen(),
                 entry.appVersion(),
                 entry.platform(),
+                entry.device(),
                 entry.reporterTravelerId() == null
                         ? null
                         : new Reporter(entry.reporterTravelerId(), entry.reporterName()),
