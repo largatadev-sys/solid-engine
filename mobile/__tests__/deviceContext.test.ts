@@ -207,7 +207,7 @@ describe('a capture can never cost the traveler their report', () => {
     expect(webDeviceContext(signals!).os).toBe('Windows');
   });
 
-  it('degrades to the user-agent when the whole Client-Hints API is absent', async () => {
+  it('degrades to the user-agent when the whole Client-Hints API is absent, as it is on any insecure context', async () => {
     const signals = await readWebSignals({ userAgent: UA.safariIphone, maxTouchPoints: 5 });
 
     expect(webDeviceContext(signals!).os).toBe('iOS 17.5');

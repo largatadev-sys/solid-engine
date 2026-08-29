@@ -228,5 +228,18 @@ internals. All seams are FB-1's existing ones; the story adds no new seam.
 - **Why this story is JS-only and immediately walkable**: decision 2. If a future story
   swaps to `expo-device`, it buys a cleaner API at the price of a native build — record the
   trade-off there, not here.
+- **Walk result, 2026-08-29 (founder, PC + real phone over the LAN rung) — and the one finding
+  worth carrying:** both walks passed. An iPhone filed `iOS 18.7` / `Safari 26.6` with no model,
+  and desktop Edge filed **bare `Windows`** / `Edge 151`. That "Windows" is **correct on that
+  rung and would be wrong to chase**: `navigator.userAgentData` is a **secure-context-only**
+  API, and `http://<LAN-IP>` is not a secure context, so Client Hints is absent and capture
+  falls to the coarse user-agent path exactly as decision 4 intends. Measured rather than
+  reasoned, same browser minutes apart: `localhost` → `isSecureContext: true`, hints present,
+  `platformVersion 19.0.0` (→ "Windows 11"); the LAN IP → `isSecureContext: false`, hints
+  absent (→ "Windows"). **Production is HTTPS, so real reports take the Client-Hints path and
+  the LAN rung systematically under-reports what they will carry** — which also means this rung
+  can never prove decision 4's Windows-11 branch or decision 6's web model. Those two are pinned
+  by fixtures and by the live check, never by a phone on the LAN. Recorded as the rung's sixth
+  trap in CLAUDE.md, generalised past this story: any secure-context API degrades silently here.
 - Every day before this ships is a day of permanently blank device fields on real reports —
   the story is small and its value is front-loaded; it should not queue behind larger work.
