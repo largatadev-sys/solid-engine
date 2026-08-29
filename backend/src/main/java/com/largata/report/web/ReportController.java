@@ -1,6 +1,7 @@
 package com.largata.report.web;
 
 import com.largata.report.AcceptedReport;
+import com.largata.report.DeviceContext;
 import com.largata.report.ReportId;
 import com.largata.report.ReportPaths;
 import com.largata.report.ReportRateLimiter;
@@ -60,6 +61,8 @@ class ReportController {
                                 request.screen(),
                                 request.appVersion(),
                                 request.platform(),
+                                new DeviceContext(
+                                        request.os(), request.browser(), request.deviceModel()),
                                 reporter.fromVerifiedTokenOnly(),
                                 bytesOf(screenshots)));
 
