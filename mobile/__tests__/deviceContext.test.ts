@@ -27,6 +27,8 @@ const UA = {
     'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
   safariIpad:
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15',
+  safariIpadOwning:
+    'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
   chromeAndroid:
     'Mozilla/5.0 (Linux; Android 14; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.88 Mobile Safari/537.36',
 };
@@ -96,6 +98,10 @@ describe('what a web reporter is running, when Client Hints is absent', () => {
 
   it('reads iPadOS off the Mac user-agent an iPad masquerades behind', () => {
     expect(plain(UA.safariIpad, 5).os).toBe('iPadOS');
+  });
+
+  it('keeps the version when an iPad owns up to being one, rather than throwing it away', () => {
+    expect(plain(UA.safariIpadOwning, 5).os).toBe('iPadOS 17.5');
   });
 
   it('still says macOS for a real Mac, which reports no touch points', () => {

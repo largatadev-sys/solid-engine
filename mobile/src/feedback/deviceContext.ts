@@ -42,7 +42,7 @@ const BRAND_NAMES: readonly (readonly [string, string])[] = [
 
 
 export function webDeviceContext(signals: WebSignals): DeviceContext {
-  return context({
+  return clampedContext({
     os: webOs(signals),
     browser: webBrowser(signals),
     deviceModel: text(signals.hints?.model),
@@ -51,7 +51,7 @@ export function webDeviceContext(signals: WebSignals): DeviceContext {
 
 
 export function nativeDeviceContext(signals: NativeSignals): DeviceContext {
-  return context({ os: nativeOs(signals), deviceModel: nativeModel(signals) });
+  return clampedContext({ os: nativeOs(signals), deviceModel: nativeModel(signals) });
 }
 
 
@@ -197,7 +197,7 @@ function text(value: unknown): string | undefined {
 }
 
 
-function context(fields: DeviceContext): DeviceContext {
+function clampedContext(fields: DeviceContext): DeviceContext {
   const clamped: { os?: string; browser?: string; deviceModel?: string } = {};
   if (fields.os !== undefined) clamped.os = clamp(fields.os);
   if (fields.browser !== undefined) clamped.browser = clamp(fields.browser);

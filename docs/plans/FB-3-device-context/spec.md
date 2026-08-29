@@ -92,10 +92,37 @@ Numbered decisions record the grilling round/question that settled each.
    Client-Hints brands list where present, else user-agent tokens (Firefox/, Version/…Safari,
    Chrome/, Edg/, OPR/). No detection library — worklog wants best-effort human-readable
    values, and the module is small and fixture-testable.
+
+   > **Amended 2026-08-29, at implementation, three refinements — each following this
+   > decision's own "only claim what you actually know" rule to a case the decision did not
+   > enumerate** *(raised by the spec-fidelity review of the FB-3 branch)*:
+   > **(a) The Windows read is three-way, not two.** As written above it is binary at major
+   > 13. But a platformVersion major of **0** is what Windows 7 / 8.1 report, so the binary
+   > rule would mint "Windows 10" for a machine that is neither — a false fact, which is the
+   > one outcome this decision exists to prevent. Major 0 (and an unreadable version) now
+   > read as bare **"Windows"**. ≥13 → "Windows 11" and everything else → "Windows 10" are
+   > unchanged.
+   > **(b) A genuine iPad user-agent keeps its version.** Decision 5 covers the *masquerade*,
+   > where the version is genuinely unknowable. An iPad that identifies itself (`iPad; CPU OS
+   > 17_5`) is not masquerading and its version is right there, so it reads **"iPadOS 17.5"**.
+   > Both paths are now pinned by their own fixture.
+   > **(c) The version-formatting rule, stated because it is a decision and was implicit.**
+   > A version is shortened to its first two dot-segments with a trailing `.0` dropped. That
+   > single rule is what turns Chrome's `128.0.6613.120` into **"Chrome 128"**, Android's
+   > `14.0.0` into **"Android 14"** and Safari's `17.5` into **"Safari 17.5"** — i.e. exactly
+   > the shapes worklog's contract gives as examples, from one rule rather than a per-vendor
+   > table.
+   >
+   > Two smaller consequences of the same rule, recorded so they do not read as accidents:
+   > **Chrome OS and Linux are detected** as bare names (a Linux Firefox reporter would
+   > otherwise arrive with no OS at all, which is the gap this story exists to close), and an
+   > **unlisted Chromium fork's brand is passed through verbatim** rather than dropped, since
+   > worklog stores the string opaquely and a fork's own name is better data than nothing.
 5. **The iPad tell is included** *(R2-Q2)*. iPad Safari masquerades as desktop macOS; a Mac
    user-agent plus multi-touch (`maxTouchPoints > 1`) reads as **"iPadOS"** bare (version
    unknowable). A wrong OS answer is worse than a coarse one; this is the one case where the
-   user-agent actively lies.
+   user-agent actively lies. *(Amended 2026-08-29 — see decision 4(b): this covers the
+   masquerade only; an iPad that names itself keeps its version.)*
 6. **Web `deviceModel` is sent exactly when Client Hints yields a non-empty model**
    *(R1-Q5)* — Android Chrome in practice, which includes the founder's own LAN phone rung.
    Everywhere else on web (desktop browsers, iPhone Safari — whose user-agent says only

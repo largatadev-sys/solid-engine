@@ -1,5 +1,6 @@
 import { captureDevice } from './captureDevice';
 import type { DeviceContext } from './deviceContext';
+import { settledWithin } from './settledWithin';
 
 export const SUBMIT_WAIT_MS = 1500;
 
@@ -18,21 +19,7 @@ export async function deviceContextForReport(
   waitMs: number = SUBMIT_WAIT_MS,
 ): Promise<DeviceContext> {
   if (settled !== null) return settled;
-
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    const answer = await Promise.race([
-      capture(),
-      new Promise<null>((resolve) => {
-        timer = setTimeout(() => resolve(null), waitMs);
-      }),
-    ]);
-    return answer ?? NOTHING;
-  } catch {
-    return NOTHING;
-  } finally {
-    if (timer !== undefined) clearTimeout(timer);
-  }
+  return settledWithin(capture, waitMs, NOTHING);
 }
 
 

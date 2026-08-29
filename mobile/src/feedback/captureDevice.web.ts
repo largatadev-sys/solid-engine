@@ -4,6 +4,7 @@ import {
   type DeviceContext,
   type WebSignals,
 } from './deviceContext';
+import { settledWithin } from './settledWithin';
 
 export const HINTS_TIMEOUT_MS = 1000;
 
@@ -53,24 +54,15 @@ async function hintsOf(
 ): Promise<ClientHints | undefined> {
   if (data === undefined || data === null) return undefined;
   const shallow = shallowHints(data);
-  if (typeof data.getHighEntropyValues !== 'function') return shallow;
+  const ask = data.getHighEntropyValues;
+  if (typeof ask !== 'function') return shallow;
 
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    const answered = await Promise.race([
-      data.getHighEntropyValues([...HIGH_ENTROPY_HINTS]),
-      new Promise<null>((resolve) => {
-        timer = setTimeout(() => resolve(null), timeoutMs);
-      }),
-    ]);
-    return answered === null || answered === undefined
-      ? shallow
-      : { ...shallow, ...deepHints(answered) };
-  } catch {
-    return shallow;
-  } finally {
-    if (timer !== undefined) clearTimeout(timer);
-  }
+  const answered = await settledWithin(
+    () => ask.call(data, [...HIGH_ENTROPY_HINTS]),
+    timeoutMs,
+    {},
+  );
+  return { ...shallow, ...deepHints(answered ?? {}) };
 }
 
 
