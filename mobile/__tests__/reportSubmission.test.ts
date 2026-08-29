@@ -173,6 +173,39 @@ describe('the device context rides every report', () => {
     expect(sent).not.toHaveProperty('os');
   });
 
+  it('lets a retry carry fields the first attempt was too early for, and the first accept still wins', async () => {
+    let settle: (context: { os: string }) => void = () => {};
+    mockCapture.mockReturnValue(new Promise((resolve) => {
+      settle = resolve as (context: { os: string }) => void;
+    }));
+    const draft = newReportDraft(['(tabs)', '(home)']);
+    mockFetch.mockRejectedValueOnce(new TypeError('Network request failed'));
+    mockFetch.mockResolvedValue(accepted(200, draft.reportId));
+
+    jest.useFakeTimers();
+    const early = submitReport(draft, {
+      type: 'problem',
+      description: 'Filed mid-capture.',
+      screenshots: [],
+    }).catch(() => undefined);
+    await jest.advanceTimersByTimeAsync(SUBMIT_WAIT_MS);
+    await early;
+    jest.useRealTimers();
+
+    settle({ os: 'Android 14' });
+    await submitReport(draft, {
+      type: 'problem',
+      description: 'Filed mid-capture.',
+      screenshots: [],
+    });
+
+    const first = JSON.parse(partIn(mockFetch.mock.calls[0][1].body, 'report'));
+    const second = JSON.parse(partIn(mockFetch.mock.calls[1][1].body, 'report'));
+    expect(first).not.toHaveProperty('os');
+    expect(second.os).toBe('Android 14');
+    expect(second.reportId).toBe(first.reportId);
+  });
+
   it('replays the same device values on a retry, so both hops stay idempotent', async () => {
     mockCapture.mockResolvedValue({ os: 'iOS 17.5', browser: 'Safari 17.5' });
     const draft = newReportDraft(['(tabs)', '(home)']);

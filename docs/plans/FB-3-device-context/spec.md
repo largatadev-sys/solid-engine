@@ -114,10 +114,15 @@ Numbered decisions record the grilling round/question that settled each.
    > table.
    >
    > Two smaller consequences of the same rule, recorded so they do not read as accidents:
-   > **Chrome OS and Linux are detected** as bare names (a Linux Firefox reporter would
-   > otherwise arrive with no OS at all, which is the gap this story exists to close), and an
-   > **unlisted Chromium fork's brand is passed through verbatim** rather than dropped, since
-   > worklog stores the string opaquely and a fork's own name is better data than nothing.
+   > **Chrome OS and Linux are detected** rather than left blank — a Linux Firefox reporter would
+   > otherwise arrive with no OS at all, which is the gap this story exists to close. From the
+   > user-agent they are bare names; from Client Hints they carry whatever version the platform
+   > reports, which on Linux is a **kernel** version ("Linux 6.5") and should be read as such.
+   > **A Chromium fork reads as "Chromium", not as itself** — Brave and Vivaldi advertise
+   > `Chromium` in their brands list, and the precedence above matches it before reaching the
+   > passthrough, so the fork's own name is dropped. That is truthful but coarse; naming the fork
+   > would be better triage data, and it is a deliberate non-goal here rather than an oversight —
+   > worth revisiting only if a fork ever shows up in the inbox.
 5. **The iPad tell is included** *(R2-Q2)*. iPad Safari masquerades as desktop macOS; a Mac
    user-agent plus multi-touch (`maxTouchPoints > 1`) reads as **"iPadOS"** bare (version
    unknowable). A wrong OS answer is worse than a coarse one; this is the one case where the
@@ -136,6 +141,15 @@ Numbered decisions record the grilling round/question that settled each.
    failed submission. The client clamps each value to 200 chars before sending (the worklog
    rule: a 400 on the relay hop is a permanently lost report, so over-length never leaves
    the building).
+7a. **Amended 2026-08-30, at the code review — what "a retry replays the same payload" actually
+    means.** Ticket 03 states it flatly, and it is true whenever capture has settled, which is
+    every ordinary case. It is **not** true in one window: if the first attempt times out waiting
+    on capture, it sends no device fields, the capture keeps running, and a retry seconds later
+    sends the full trio under the same `reportId`. The two payloads then differ. Nothing is
+    inconsistent downstream — the backend is idempotent on first accept, so the stored report
+    keeps the *first* attempt's absent fields and the later values are discarded. The cost is one
+    report without device context, which is exactly decision 7's posture: metadata never costs a
+    report, and never delays one either. Pinned by its own test rather than left as a surprise.
 8. **The mobile → backend contract grows three optional fields, additively** — the report
    JSON part gains `os`, `browser`, `deviceModel`, each optional. `/v1` additivity holds:
    nothing renamed, retyped or re-semanticized; a pre-FB-3 client omits all three and is
