@@ -1,3 +1,4 @@
+import { warmDeviceContext } from './deviceContextStation';
 import { screenStringOf } from './reportScreen';
 
 export type ReportDraft = {
@@ -11,6 +12,7 @@ const drafts = new Map<string, ReportDraft>();
 export function newReportDraft(segments: readonly string[]): ReportDraft {
   const draft: ReportDraft = { reportId: mintReportId(), screen: screenStringOf(segments) };
   drafts.set(draft.reportId, draft);
+  warmDeviceContext();
   return draft;
 }
 
