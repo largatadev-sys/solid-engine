@@ -8,6 +8,12 @@ put to the founder and settled in-session). The authoritative cross-repo wire co
 worklog repo) — frozen; worklog's IntakeEndpointTest pins it; this story builds to it and
 never asks for changes to it.
 
+> **Amended 2026-08-29 (FB-3): the live contract is now v1.2, and this story's shape is
+> unchanged by it.** Worklog's v1.2 bump adds three OPTIONAL fields to `context` — `os`,
+> `browser`, `deviceModel` — and nothing else; every payload FB-1 sends remains valid
+> forever, which is why no amendment below this line is needed. Read this spec for what the
+> pipeline *is* and `docs/plans/FB-3-device-context/spec.md` for what now rides in it.
+
 **Division of labor** *(founder, R1-Q1)*: this story ships the **backend** (accept endpoint,
 outbox, relay) and the **client plumbing** (typed repository call, screen capture at flow-open,
 draft minting, the label registry). The founder builds the visible UI — the global entry-point
