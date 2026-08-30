@@ -15,6 +15,7 @@
 - Engineering principles → `docs/design/06a-engineering-principles.md` *(ratified as-is)*
 - Engineering decisions → `docs/design/06b-engineering-decisions.md`
 - Epic map (the living backlog) → `docs/design/07-epic-map.md`
+- Object contracts (the four-object wire reference; CM-1, dark until the rewire) → `docs/design/08-object-contracts.md`
 
 All code conforms to 06a + 06b. **Dial: MVP grade, except the ledger and the authorization guard, which run at Full rigor.** Name and justify any pattern used (P9).
 
