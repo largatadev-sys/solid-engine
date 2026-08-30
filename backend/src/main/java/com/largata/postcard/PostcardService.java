@@ -2,15 +2,23 @@ package com.largata.postcard;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
+import com.largata.common.authz.Membership;
 import com.largata.common.authz.TripArchivedException;
 import com.largata.common.tx.AfterCommit;
+import com.largata.diary.Diary;
 import com.largata.diary.DiaryService;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
+import com.largata.postcard.PostcardExceptions.ActivityAlreadyPostcardedException;
+import com.largata.postcard.PostcardExceptions.PostcardActivityNotFoundException;
 import com.largata.postcard.PostcardExceptions.PostcardNeedsAPhotoException;
 import com.largata.postcard.PostcardExceptions.PostcardNotFoundException;
 import com.largata.postcard.PostcardExceptions.TooManyPostcardPhotosException;
+import com.largata.postcard.PostcardExceptions.TripNotStartedException;
+import com.largata.trip.ActivityFacts;
+import com.largata.trip.TripExceptions.TripNotFoundException;
+import com.largata.trip.TripFacts;
 import com.largata.trip.TripService;
 import java.time.Clock;
 import java.time.Instant;
@@ -18,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,6 +81,68 @@ public class PostcardService {
                 stored.size());
         emit(postcard, "postcard_created");
         return PostcardView.of(postcard, stored);
+    }
+
+
+    @Transactional
+    public PostcardView postFromActivity(
+            Membership member, UUID activityId, String caption, List<byte[]> devicePhotos) {
+        TripFacts trip = requireWritableTrip(member);
+        if (!trip.lifecycle().hasStarted()) {
+            throw new TripNotStartedException();
+        }
+        requirePhotoCountWithin(devicePhotos.size());
+        ActivityFacts activity =
+                trips.activityFactsOf(member.itineraryId(), activityId)
+                        .orElseThrow(PostcardActivityNotFoundException::new);
+        if (postcards.existsByAuthorIdAndActivityId(member.travelerId(), activityId)) {
+            throw new ActivityAlreadyPostcardedException();
+        }
+
+        Diary diary = diaries.mintTripDiary(member.travelerId(), member.itineraryId(), trip.title());
+        Postcard postcard = savePostedFrom(member, diary, activity, caption);
+        List<Photo> stored = storePhotos(postcard, member.travelerId(), devicePhotos);
+
+        log.info(
+                "Postcard posted from activity: id={} activityId={} photos={}",
+                postcard.id(),
+                activityId,
+                stored.size());
+        emit(postcard, "postcard_created");
+        return PostcardView.of(postcard, stored);
+    }
+
+
+    private Postcard savePostedFrom(
+            Membership member, Diary diary, ActivityFacts activity, String caption) {
+        try {
+            return postcards.saveAndFlush(
+                    Postcard.postedFromActivity(
+                            member.travelerId(),
+                            diary.id(),
+                            member.itineraryId(),
+                            activity.activityId(),
+                            activity.title(),
+                            activity.dayLabel(),
+                            activity.timeOfDay(),
+                            activity.place(),
+                            caption,
+                            Instant.now(clock)));
+        } catch (DataIntegrityViolationException lostTheRace) {
+            throw new ActivityAlreadyPostcardedException();
+        }
+    }
+
+
+    private TripFacts requireWritableTrip(Membership member) {
+        TripFacts trip = trips.factsOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
+        if (!trip.archived()) {
+            return trip;
+        }
+        if (member.isOwner()) {
+            throw new TripArchivedException();
+        }
+        throw new TripNotFoundException();
     }
 
 

@@ -37,7 +37,7 @@ class PostcardController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    PostcardResponse create(
+    PostcardResponse createStandalone(
             @CurrentTraveler Traveler traveler,
             @RequestPart(name = "postcard", required = false) String postcardJson,
             @RequestPart(name = "photos", required = false) List<MultipartFile> devicePhotos)

@@ -83,6 +83,38 @@ public class TripService {
 
 
     @Transactional(readOnly = true)
+    public Optional<ActivityFacts> activityFactsOf(UUID tripId, UUID activityId) {
+        if (activityId == null) {
+            return Optional.empty();
+        }
+        return db.sql(
+                        "SELECT a.id, a.title, a.time_of_day, a.place, d.ordinal, d.title AS day_title"
+                                + " FROM activity a JOIN day d ON d.id = a.day_id"
+                                + " WHERE a.id = ? AND d.itinerary_id = ?")
+                .param(activityId)
+                .param(tripId)
+                .query(TripService::activityFactsRow)
+                .optional();
+    }
+
+
+    private static ActivityFacts activityFactsRow(ResultSet row, int rowNumber) throws SQLException {
+        return new ActivityFacts(
+                row.getObject("id", UUID.class),
+                row.getString("title"),
+                dayLabelOf(row.getInt("ordinal"), row.getString("day_title")),
+                row.getObject("time_of_day", LocalTime.class),
+                row.getString("place"));
+    }
+
+
+    private static String dayLabelOf(int ordinal, String dayTitle) {
+        String prefix = "Day " + ordinal;
+        return dayTitle == null || dayTitle.isBlank() ? prefix : prefix + ": " + dayTitle.strip();
+    }
+
+
+    @Transactional(readOnly = true)
     public boolean frozen(UUID tripId) {
         return db.sql("SELECT state FROM workspace WHERE itinerary_id = ?")
                 .param(tripId)

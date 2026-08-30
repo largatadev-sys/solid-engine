@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,12 +28,19 @@ public class DiaryService {
 
     private final DiaryRepository diaries;
     private final DiaryContents contents;
+    private final TripDiaryInserter tripDiaries;
     private final Analytics analytics;
     private final Clock clock;
 
-    DiaryService(DiaryRepository diaries, DiaryContents contents, Analytics analytics, Clock clock) {
+    DiaryService(
+            DiaryRepository diaries,
+            DiaryContents contents,
+            TripDiaryInserter tripDiaries,
+            Analytics analytics,
+            Clock clock) {
         this.diaries = diaries;
         this.contents = contents;
+        this.tripDiaries = tripDiaries;
         this.analytics = analytics;
         this.clock = clock;
     }
@@ -78,6 +86,26 @@ public class DiaryService {
         Diary saved = diaries.saveAndFlush(diary);
         emit(saved, "diary_retitled");
         return saved;
+    }
+
+
+    @Transactional
+    public Diary mintTripDiary(UUID authorId, UUID tripId, String title) {
+        return diaries.findByAuthorIdAndTripId(authorId, tripId)
+                .orElseGet(() -> mint(authorId, tripId, title));
+    }
+
+
+    private Diary mint(UUID authorId, UUID tripId, String title) {
+        try {
+            Diary minted = tripDiaries.insert(authorId, tripId, title, Instant.now(clock));
+            log.info("Trip diary minted: id={} authorId={}", minted.id(), authorId);
+            emit(minted, "diary_created");
+            return minted;
+        } catch (DataIntegrityViolationException lostTheRace) {
+            return diaries.findByAuthorIdAndTripId(authorId, tripId)
+                    .orElseThrow(DiaryNotFoundException::new);
+        }
     }
 
 

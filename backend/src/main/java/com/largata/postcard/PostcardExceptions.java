@@ -46,6 +46,22 @@ public final class PostcardExceptions {
     }
 
 
+    public static final class TripNotStartedException extends ValidationException {
+
+        public TripNotStartedException() {
+            super("TRIP_NOT_STARTED", "You can post a postcard once the trip has started.");
+        }
+    }
+
+
+    public static final class PostcardActivityNotFoundException extends NotFoundException {
+
+        public PostcardActivityNotFoundException() {
+            super("ACTIVITY_NOT_FOUND", "No such activity.");
+        }
+    }
+
+
     public static final class ActivityAlreadyPostcardedException extends ConflictException {
 
         public ActivityAlreadyPostcardedException() {
