@@ -26,11 +26,13 @@ public class DiaryService {
     private static final Logger log = LoggerFactory.getLogger(DiaryService.class);
 
     private final DiaryRepository diaries;
+    private final DiaryContents contents;
     private final Analytics analytics;
     private final Clock clock;
 
-    DiaryService(DiaryRepository diaries, Analytics analytics, Clock clock) {
+    DiaryService(DiaryRepository diaries, DiaryContents contents, Analytics analytics, Clock clock) {
         this.diaries = diaries;
+        this.contents = contents;
         this.analytics = analytics;
         this.clock = clock;
     }
@@ -76,6 +78,17 @@ public class DiaryService {
         Diary saved = diaries.saveAndFlush(diary);
         emit(saved, "diary_retitled");
         return saved;
+    }
+
+
+    @Transactional
+    public void delete(UUID authorId, UUID diaryId) {
+        Diary diary = requireOwn(authorId, diaryId);
+        contents.destroyAllIn(diary.id());
+        diaries.delete(diary);
+        diaries.flush();
+        log.info("Diary deleted: id={} authorId={}", diaryId, authorId);
+        emit(diary, "diary_deleted");
     }
 
 

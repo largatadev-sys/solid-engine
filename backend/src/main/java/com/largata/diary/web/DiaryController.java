@@ -6,6 +6,7 @@ import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,5 +57,12 @@ class DiaryController {
             @PathVariable UUID diaryId,
             @RequestBody RetitleDiaryRequest request) {
         return DiaryResponse.of(diaries.retitle(traveler.id(), diaryId, request.title()));
+    }
+
+
+    @DeleteMapping("/{diaryId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void delete(@CurrentTraveler Traveler traveler, @PathVariable UUID diaryId) {
+        diaries.delete(traveler.id(), diaryId);
     }
 }
