@@ -4,11 +4,11 @@
 
 **Blocked by:** 04 (Standalone postcard).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The author deletes a diary: the diary and every postcard inside it are destroyed in one transaction — photo rows and stored objects included
-- [ ] Loose postcards and postcards in the author's other diaries are untouched, proven after the delete
-- [ ] A non-author's diary delete answers the masked not-found; a repeat delete answers not-found
-- [ ] Existing suites pass untouched
+- [x] The author deletes a diary: the diary and every postcard inside it are destroyed in one transaction — photo rows and stored objects included
+- [x] Loose postcards and postcards in the author's other diaries are untouched, proven after the delete
+- [x] A non-author's diary delete answers the masked not-found; a repeat delete answers not-found
+- [x] Existing suites pass untouched
 
 ## Comments

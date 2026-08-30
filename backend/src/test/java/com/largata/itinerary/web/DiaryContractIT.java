@@ -173,8 +173,11 @@ class DiaryContractIT extends ObjectStoreTestBase {
         assertThat(afterDelete.activityTitle()).isEqualTo(ACTIVITY_TITLE);
         assertThat(afterDelete.dayLabel()).isEqualTo("Day 1");
         assertThat(afterDelete.activityId())
-                .as("provenance clears structurally when the activity dies; the postcard stays")
-                .isNull();
+                .as(
+                        "since V47 the provenance pointer DANGLES when the activity dies — CM-1 dropped"
+                                + " the SET NULL so nothing destroyed can reach a posted memory; the"
+                                + " postcard stays and renders from its snapshot")
+                .isEqualTo(trip.activityId());
     }
 
 

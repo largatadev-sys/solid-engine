@@ -2,6 +2,7 @@ package com.largata.diary.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.largata.common.storage.ObjectStore;
 import com.largata.support.ObjectStoreTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
@@ -9,6 +10,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.UUID;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +38,8 @@ class DiaryDeleteContractIT extends ObjectStoreTestBase {
 
     @Autowired private JdbcTemplate jdbc;
 
+    @Autowired private ObjectStore store;
+
     @BeforeEach
     void setUp() {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
@@ -53,6 +57,15 @@ class DiaryDeleteContractIT extends ObjectStoreTestBase {
         String inSurviving = postInto(author, surviving);
         String loose = postInto(author, null);
         String doomedPhotoUrl = photoUrlOf(author, inDoomed);
+        List<String> doomedKeys =
+                jdbc.queryForList(
+                        "SELECT storage_key FROM photo WHERE subject_kind = 'POSTCARD'"
+                                + " AND subject_id IN (?, ?)",
+                        String.class,
+                        UUID.fromString(inDoomed),
+                        UUID.fromString(inDoomedToo));
+        assertThat(doomedKeys).hasSize(2);
+        doomedKeys.forEach(key -> assertThat(store.get(key)).as("stored before the delete").isPresent());
 
         rest.delete()
                 .uri("/v1/diaries/" + doomed)
@@ -89,6 +102,11 @@ class DiaryDeleteContractIT extends ObjectStoreTestBase {
                 .exchange()
                 .expectStatus()
                 .isNotFound();
+        doomedKeys.forEach(
+                key ->
+                        assertThat(store.get(key))
+                                .as("the stored objects die with the diary: " + key)
+                                .isEmpty());
         for (String standing : new String[] {inSurviving, loose}) {
             rest.get()
                     .uri("/v1/postcards/" + standing)

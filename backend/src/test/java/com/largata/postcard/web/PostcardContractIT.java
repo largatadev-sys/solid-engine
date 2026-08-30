@@ -2,6 +2,7 @@ package com.largata.postcard.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.largata.common.storage.ObjectStore;
 import com.largata.support.ObjectStoreTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
@@ -35,6 +36,8 @@ class PostcardContractIT extends ObjectStoreTestBase {
     @LocalServerPort private int port;
 
     @Autowired private JdbcTemplate jdbc;
+
+    @Autowired private ObjectStore store;
 
     @BeforeEach
     void setUp() {
@@ -165,6 +168,12 @@ class PostcardContractIT extends ObjectStoreTestBase {
         byte[] created = post(author, "{\"caption\":\"Before\"}", 1);
         String postcardId = TripRig.fieldIn(created, "id");
         String photoId = TripRig.fieldIn(created, "url").replace("/v1/media/", "");
+        String storageKey =
+                jdbc.queryForObject(
+                        "SELECT storage_key FROM photo WHERE id = ?",
+                        String.class,
+                        UUID.fromString(photoId));
+        assertThat(store.get(storageKey)).as("stored before the delete").isPresent();
 
         rest.patch()
                 .uri("/v1/postcards/" + postcardId)
@@ -199,6 +208,9 @@ class PostcardContractIT extends ObjectStoreTestBase {
                                 UUID.fromString(postcardId)))
                 .as("the photo rows die with the postcard")
                 .isZero();
+        assertThat(store.get(storageKey))
+                .as("the stored object dies with it — the row's absence alone cannot prove this")
+                .isEmpty();
         rest.get()
                 .uri("/v1/media/" + photoId)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
