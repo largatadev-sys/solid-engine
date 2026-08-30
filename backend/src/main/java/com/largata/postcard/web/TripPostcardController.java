@@ -44,8 +44,7 @@ class TripPostcardController {
             @RequestPart(name = "postcard", required = false) String postcardJson,
             @RequestPart(name = "photos", required = false) List<MultipartFile> devicePhotos)
             throws IOException {
-        Membership member =
-                guard.membershipOf(traveler.id(), tripId).orElseThrow(TripNotFoundException::new);
+        Membership member = requireMember(traveler, tripId);
         PostFromActivityRequest request =
                 postcardJson == null
                         ? new PostFromActivityRequest(null)
@@ -56,5 +55,10 @@ class TripPostcardController {
                         activityId,
                         request.caption(),
                         PostcardController.bytesOf(devicePhotos)));
+    }
+
+
+    private Membership requireMember(Traveler traveler, UUID tripId) {
+        return guard.membershipOf(traveler.id(), tripId).orElseThrow(TripNotFoundException::new);
     }
 }
