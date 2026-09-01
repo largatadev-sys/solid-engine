@@ -52,6 +52,7 @@ interface DraggableActivityListProps {
   readonly onDelete: (activity: ActivityResponse) => void;
   readonly onDrop: (activityId: string, toIndex: number) => void;
   readonly onNudge: (activityId: string, direction: 'up' | 'down') => void;
+  readonly destination?: string | null;
 }
 
 
@@ -62,6 +63,7 @@ export function DraggableActivityList({
   onDelete,
   onDrop,
   onNudge,
+  destination = null,
 }: DraggableActivityListProps) {
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
   const [pitch, setPitch] = useState<number>(workspaceMetrics.activityRowHeight + ROW_GAP);
@@ -118,6 +120,7 @@ export function DraggableActivityList({
           onEdit={onEdit}
           onDelete={onDelete}
           onNudge={onNudge}
+          destination={destination}
         />
       ))}
     </View>
@@ -140,6 +143,7 @@ function DraggableRow({
   onEdit,
   onDelete,
   onNudge,
+  destination,
 }: {
   activity: ActivityResponse;
   index: number;
@@ -155,6 +159,7 @@ function DraggableRow({
   onEdit: (activity: ActivityResponse) => void;
   onDelete: (activity: ActivityResponse) => void;
   onNudge: (activityId: string, direction: 'up' | 'down') => void;
+  destination: string | null;
 }) {
   const lift = useSharedValue(0);
 
@@ -220,6 +225,7 @@ function DraggableRow({
           affordances={affordances}
           onEdit={onEdit}
           onDelete={onDelete}
+          destination={destination}
           accessibilityActions={reorderActionsFor(index, count)}
           onAccessibilityAction={(action) => {
             if (action === 'moveUp' || action === 'moveDown') {

@@ -35,6 +35,23 @@ export function activityMetaLine(timeOfDay: string | null, place: string | null)
 }
 
 
+export type ActivityMetaParts = { clock: string | undefined; place: string | undefined };
+
+
+export function activityMetaParts(
+  timeOfDay: string | null,
+  place: string | null,
+): ActivityMetaParts {
+  const padded = formatTimeOfDay(timeOfDay);
+  const where = (place ?? '').trim();
+
+  return {
+    clock: padded === undefined ? undefined : padded.replace(/^0(\d:\d{2} [AP]M)$/, '$1'),
+    place: where === '' ? undefined : where,
+  };
+}
+
+
 const NOON = 12;
 
 
