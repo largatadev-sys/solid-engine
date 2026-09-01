@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    body { margin:0; background:#F3F1EC; font-family:'Geist',sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#EA580C; text-decoration:none; } a:hover { color:#C2410C; text-decoration:underline; }
+  </style>
+</helmet>
+
+<div style="padding:48px 56px 72px; display:flex; flex-direction:column; gap:40px;">
+
+  <div style="max-width:940px; display:flex; flex-direction:column; gap:14px;">
+    <div style="font-size:12px; font-weight:800; letter-spacing:2px; color:#A8A29E; text-transform:uppercase;">Largata · Geotagging · Tappable-location states</div>
+    <div style="font-size:30px; font-weight:800; color:#1C1917; line-height:1.15; letter-spacing:-0.5px;">Free-text locations become Google Maps links — read surfaces only</div>
+    <div style="font-size:13.5px; line-height:1.6; color:#44403C;">No form or picker changes. Every frame below is a read surface where an existing free-text place string gains a tap — Google Maps. One affordance vocabulary throughout; no pin glyphs are added to forms (the only pins drawn here are the feed/postcard tag chips, which already ship one).</div>
+    <div style="display:flex; gap:16px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:340px; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:11px; font-weight:800; letter-spacing:1.2px; color:#EA580C; text-transform:uppercase;">The vocabulary — one rule everywhere</div>
+        <div style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; line-height:1.6; color:#57534E;">
+          <div><b style="color:#EA580C;">Rest:</b> place text tinted <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">workspaceColors.accent #EA580C</span>, weight <span style="font-weight:{{ linkWeight }}; color:#EA580C;">{{ linkWeight }}</span>, no underline, no added glyph on plain-text links.</div>
+          <div><b style="color:#C2410C;">Pressed:</b> ink darkens to <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">#C2410C</span> (travelerColors.accentDark); chips also swap their well to a deeper wash. No scale, no opacity.</div>
+          <div><b>Ellipsis:</b> single line, tail-truncated. On split meta lines, numberOfLines lives on the outer Text (RN can't clamp a nested segment alone).</div>
+          <div><b>Glyphs:</b> the tag chips' existing pin is the only glyph — no external-link cue anywhere. Plain text links stay glyph-free; tint alone is the affordance.</div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:340px; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:11px; font-weight:800; letter-spacing:1.2px; color:#15803D; text-transform:uppercase;">Dev shape (no schema change)</div>
+        <div style="font-size:12.5px; line-height:1.65; color:#57534E;">
+          Every surface already carries the string: <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">activity.place</span>, <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">card.place</span>, <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">entry.place</span>, <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">projection.destination</span>.<br>
+          New util <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">mapsUrl(place)</span> → <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">google.com/maps/search/?api=1&amp;query=…</span> (URL-encoded free text), opened via an <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">openInMaps.native/.web</span> split (Linking.openURL / window.open '_blank') — the codebase's usual platform-split pattern; no Linking use exists yet.<br>
+          <b>Recommended:</b> on workspace/published activity rows, append the trip destination to the query ("Big Lagoon Kayaking, El Nido") — bare free text is too ambiguous for Maps. Feed/postcard tags query their own string as-is.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARTBOARD 1 · DAY CARD ROW -->
+  <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#A8A29E; text-transform:uppercase;">1 · Day card row — workspace</div>
+      <div data-screen-label="Day card rows" style="width:393px; background:#FFFFFF; border:1px solid #E2E4E8; border-radius:20px; box-shadow:0 10px 30px rgba(28,25,23,0.08); padding:20px 16px; display:flex; flex-direction:column; gap:12px;">
+        <div style="border:1px solid #E7E5E4; border-radius:12px; background:#FFFFFF; box-shadow:0 1px 3px rgba(28,25,23,0.06); padding:16px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="font-family:'Outfit'; font-size:18px; font-weight:700; color:#1C1917; flex:1;">Day 2 — Lagoons</div>
+            <div style="color:#78716C; font-size:13px;">⌃</div>
+          </div>
+          <div style="height:1px; background:#E7E5E4;"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #E7E5E4; border-radius:12px; min-height:60px; box-sizing:border-box;">
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px; min-width:0;">
+              <div style="font-size:14px; font-weight:600; color:#1C1917; line-height:18px;">Kayak the twin lagoons</div>
+              <div style="font-size:12px; color:#78716C; line-height:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">7:00 AM • <span style="color:#EA580C; font-weight:{{ linkWeight }};">Big Lagoon Kayaking</span></div>
+            </div>
+            <div style="display:flex; gap:10px; color:#EA580C;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3l4 4L8 20l-5 1 1-5z"></path></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M3 6h18M8 6V4h8v2m-11 0l1 15h12l1-15"></path></svg></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #E7E5E4; border-radius:12px; min-height:60px; box-sizing:border-box; outline:2px solid #EA580C; outline-offset:2px;">
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px; min-width:0;">
+              <div style="font-size:14px; font-weight:600; color:#1C1917; line-height:18px;">Kayak the twin lagoons</div>
+              <div style="font-size:12px; color:#78716C; line-height:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">7:00 AM • <span style="color:#C2410C; font-weight:{{ linkWeight }};">Big Lagoon Kayaking</span></div>
+            </div>
+            <div style="display:flex; gap:10px; color:#EA580C;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3l4 4L8 20l-5 1 1-5z"></path></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M3 6h18M8 6V4h8v2m-11 0l1 15h12l1-15"></path></svg></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #E7E5E4; border-radius:12px; min-height:60px; box-sizing:border-box;">
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px; min-width:0;">
+              <div style="font-size:14px; font-weight:600; color:#1C1917; line-height:18px;">Sunset at Las Cabanas</div>
+              <div style="font-size:12px; color:#78716C; line-height:15px;">5:30 PM</div>
+            </div>
+            <div style="display:flex; gap:10px; color:#EA580C;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3l4 4L8 20l-5 1 1-5z"></path></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M3 6h18M8 6V4h8v2m-11 0l1 15h12l1-15"></path></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:420px; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; margin-top:32px;">
+      <div style="font-size:11px; font-weight:800; letter-spacing:1.2px; color:#EA580C; text-transform:uppercase;">Row anatomy</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#57534E;">
+        Middle row = pressed (orange outline is annotation only). Third row = time-only contrast: nothing tappable, meta stays fully muted.<br>
+        <b>The real dev cost:</b> <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">activityMetaLine()</span> returns one joined string. It must return parts <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">{clock, place}</span> so the row renders <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">&lt;Text&gt;clock • &lt;Text onPress&gt;place&lt;/Text&gt;&lt;/Text&gt;</span>. Separator " • " stays plain and belongs to the outer Text.<br>
+        <b>Hit target:</b> the segment is 12px text — nested Text can't take hitSlop, so pressed feedback is ink-only and the acceptable target is the text run itself; do not wrap the whole meta line (mis-taps on the time would open Maps).<br>
+        <b>Clock format:</b> drawn "7:00 AM" (unpadded) per the diary's <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">postcardClock</span> precedent — shipped <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">formatTimeOfDay</span> pads "07:00 AM". Unify on unpadded while splitting the line.<br>
+        <b>A11y:</b> place segment gets <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">accessibilityRole="link"</span>, label "Big Lagoon Kayaking, open in Google Maps".
+      </div>
+    </div>
+  </div>
+
+  <!-- ARTBOARD 2 · PUBLISHED DAY-BY-DAY -->
+  <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#A8A29E; text-transform:uppercase;">2 · Published day-by-day + header destination</div>
+      <div data-screen-label="Published day-by-day" style="width:393px; background:#FAF9F6; border:1px solid #E2E4E8; border-radius:20px; box-shadow:0 10px 30px rgba(28,25,23,0.08); padding:20px 16px; display:flex; flex-direction:column; gap:14px;">
+        <div style="height:120px; border-radius:8px; background:linear-gradient(135deg,#22577A,#63A0BF); display:flex; align-items:flex-end; padding:12px;"><div style="color:rgba(255,255,255,0.85); font-size:11px; font-weight:600;">cover</div></div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div style="display:inline-flex; align-items:center; gap:5px; padding:4px 16px; border-radius:999px; background:#FFF0EC;">
+            <span style="font-size:11px; font-weight:700; letter-spacing:1.5px; color:#EA580C;">EL NIDO, PALAWAN</span>
+
+          </div>
+          <div style="font-size:14px; font-weight:600; color:#5C6470;">5 Days</div>
+        </div>
+        <div style="font-family:'Outfit'; font-size:26px; font-weight:800; color:#1B263B; letter-spacing:-0.4px; line-height:1.15;">El Nido Long Weekend</div>
+        <div style="display:flex; border-bottom:1px solid #E2E4E8; gap:2px;">
+          <div style="padding:8px; font-size:13px; color:#5C6470;">Overview</div>
+          <div style="padding:8px; font-size:13px; color:#D96C4A; font-weight:700; border-bottom:2px solid #D96C4A;">Day-by-Day</div>
+          <div style="padding:8px; font-size:13px; color:#5C6470; opacity:0.6;">Diary Entry</div>
+          <div style="padding:8px; font-size:13px; color:#5C6470; opacity:0.6;">Comments</div>
+        </div>
+        <div style="font-size:16px; font-weight:600; color:#1B263B;">Day 2 — Lagoons</div>
+        <div style="background:#FFFFFF; border:1px solid #E2E4E8; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:16px; font-weight:600; color:#1B263B; line-height:19px;">Kayak the twin lagoons</div>
+          <div style="font-size:13px; color:#EA580C; font-weight:{{ linkWeight }}; line-height:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Big Lagoon Kayaking</div>
+          <div style="margin-top:6px; padding:8px; border-radius:8px; background:rgba(217,108,74,0.063); display:flex; flex-direction:column; gap:2px;">
+            <div style="font-size:11px; font-weight:700; letter-spacing:1.5px; color:#D96C4A;">CREATOR TIP</div>
+            <div style="font-size:13px; color:#1B263B; line-height:20px;">Go before 8 — the lagoon fills up fast.</div>
+          </div>
+        </div>
+        <div style="background:#FFFFFF; border:1px solid #E2E4E8; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:16px; font-weight:600; color:#1B263B; line-height:19px;">Lunch on the boat</div>
+          <div style="font-size:13px; color:#C2410C; font-weight:{{ linkWeight }}; line-height:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Shimizu Island</div>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:420px; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; margin-top:32px;">
+      <div style="font-size:11px; font-weight:800; letter-spacing:1.2px; color:#EA580C; text-transform:uppercase;">Published surface</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#57534E;">
+        <b>Activity place</b> (<span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">styles.activityPlace</span>, today muted caption) takes the link ink. It is its own Text — no string splitting needed here. Second card shows pressed. Query is scoped: place + ", " + destination.<br>
+        <b>Destination pill</b> trades its navy fill for the link vocabulary: wash <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">#FFF0EC</span>, ink #EA580C, overline type unchanged. A solid-navy tappable pill would read as a filter chip, not a link — flagging the fill change explicitly since it re-colors a shipped element. Pressed: wash #FFE0D5, ink #C2410C.<br>
+        <b>Token note:</b> link ink is #EA580C on every surface, including this one (whose own accent is #D96C4A). One link color beats per-surface accents — it's already the feed tag ink and diary eyebrow. New token: <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">locationLink / locationLinkPressed</span> beside the shipped sets.
+      </div>
+    </div>
+  </div>
+
+  <!-- ARTBOARD 3 · FEED CARD -->
+  <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#A8A29E; text-transform:uppercase;">3 · Feed card — variant C re-chrome (the frame that matters)</div>
+      <div data-screen-label="Feed card" style="width:393px; background:#FAF9F6; border:1px solid #E2E4E8; border-radius:20px; box-shadow:0 10px 30px rgba(28,25,23,0.08); padding:16px; display:flex; flex-direction:column; gap:14px;">
+        <div style="border:1px solid #EBE9E2; border-radius:16px; background:#FFFFFF; overflow:hidden;">
+          <div style="display:flex; align-items:center; gap:10px; padding:12px;">
+            <div style="width:36px; height:36px; border-radius:999px; background:#FDE4CF; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#C2410C;">MR</div>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <div style="display:flex; align-items:baseline; gap:6px;">
+                <div style="font-size:14px; font-weight:700; color:#1C1917;">@maya.rivera</div>
+                <div style="font-size:11px; color:#A8A29E;">3h</div>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:#C2410C; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">El Nido Long Weekend · Day 2</div>
+            </div>
+            <div style="padding:4px 8px; background:#FAF9F5; border:1px solid #EBE9E2; border-radius:6px; font-size:11px; font-weight:700; color:#78716C;">Trip</div>
+          </div>
+          <div style="height:300px; background:linear-gradient(160deg,#1F6F78,#57B5B0); position:relative;">
+            <div style="position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.5); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700; color:#FFFFFF;">2 / 5</div>
+            <div style="position:absolute; bottom:12px; left:0; right:0; display:flex; justify-content:center; gap:6px;">
+              <div style="width:8px; height:8px; border-radius:999px; background:#FFFFFF; opacity:0.5;"></div>
+              <div style="width:8px; height:8px; border-radius:999px; background:#FFFFFF;"></div>
+              <div style="width:8px; height:8px; border-radius:999px; background:#FFFFFF; opacity:0.5;"></div>
+            </div>
+          </div>
+          <div style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              <div style="display:inline-flex; align-items:center; gap:4px; padding:4px 8px; background:#FFF0EC; border-radius:6px; max-width:100%;">
+                <span style="color:#EA580C;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"></path><circle cx="12" cy="10" r="2.6"></circle></svg></span>
+                <span style="font-size:11px; font-weight:700; color:#EA580C; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Big Lagoon, El Nido</span>
+              </div>
+            </div>
+            <div style="font-size:14px; color:#1C1917; line-height:19px;">Paddled in before the crowds. The water goes glass-still between the karst walls and every stroke echoes…</div>
+            <div style="font-size:14px; font-weight:600; color:#A8A29E;">more</div>
+            <div style="display:flex; align-items:center; gap:4px; padding-top:4px;">
+              <div style="display:flex; align-items:center; gap:6px; padding:6px 8px 6px 0;"><span style="font-size:16px; color:#EA580C;">♥</span><span style="font-size:12px; font-weight:600; color:#EA580C;">24</span></div>
+              <div style="display:flex; align-items:center; gap:6px; padding:6px 8px;"><span style="color:#57534E;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 12a8 8 0 0 1-8 8H4l1.6-3.2A8 8 0 1 1 21 12z"></path></svg></span><span style="font-size:12px; font-weight:600; color:#78716C;">8</span></div>
+              <div style="flex:1;"></div>
+              <div style="padding:6px 8px; font-size:15px; color:#57534E;">↗</div>
+              <div style="padding:6px 0 6px 8px; color:#57534E;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" style="display:block;"><path d="M6 3h12v18l-6-4.5L6 21z"></path></svg></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+            <div style="font-size:10px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">Tag pressed</div>
+            <div style="display:inline-flex; align-items:center; gap:4px; padding:4px 8px; background:#FFE0D5; border-radius:6px; align-self:flex-start;">
+              <span style="color:#C2410C;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"></path><circle cx="12" cy="10" r="2.6"></circle></svg></span>
+              <span style="font-size:11px; font-weight:700; color:#C2410C;">Big Lagoon, El Nido</span>
+            </div>
+          </div>
+          <div style="flex:1.4; display:flex; flex-direction:column; gap:6px;">
+            <div style="font-size:10px; font-weight:800; letter-spacing:1px; color:#A8A29E; text-transform:uppercase;">Trip line, not published</div>
+            <div style="font-size:11px; font-weight:600; color:#78716C;">El Nido Long Weekend · Day 2</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:420px; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; margin-top:32px;">
+      <div style="font-size:11px; font-weight:800; letter-spacing:1.2px; color:#EA580C; text-transform:uppercase;">Variant C — two doors, cleanly split</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#57534E;">
+        <b>Trip title line</b> stays the door to the published trip: tinted <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">feedColors.tripLine #C2410C</span> + tappable when <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">publishedItineraryId !== null</span>; when not published it goes inert <b>and untinted</b> (#78716C, drawn bottom-right) — today it stays tinted even when dead, which variant C fixes so tint = tappable holds card-wide.<br>
+        <b>Location tag</b> stops opening the trip (that was its old <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">navigates</span> branch) and always opens Google Maps — even on unpublished trips, which is the point: the tag never had a destination before unless published. The chip's shipped pin glyph carries the affordance — no extra cue added.<br>
+        <b>Pressed:</b> well #FFF0EC → #FFE0D5, ink → #C2410C (drawn bottom-left).<br>
+        <b>A11y relabel:</b> tag → "Big Lagoon, El Nido, open in Google Maps"; title line keeps "open the published trip".
+      </div>
+    </div>
+  </div>
+
+  <!-- ARTBOARD 4 · POSTCARD -->
+  <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="font-size:12px; font-weight:800; letter-spacing:1.5px; color:#A8A29E; text-transform:uppercase;">4 · Postcard — diary stream + entry view</div>
+      <div data-screen-label="Postcard surfaces" style="width:393px; background:#FFFFFF; border:1px solid #E2E4E8; border-radius:20px; box-shadow:0 10px 30px rgba(28,25,23,0.08); padding:20px 16px; display:flex; flex-direction:column; gap:20px;">
+        <div style="display:flex; flex-direction:column; gap:8px; border-bottom:1px solid #E7E5E4; padding-bottom:16px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; color:#EA580C; text-transform:uppercase;">Day 2 • 7:30 AM</div>
+          <div style="font-size:18px; font-weight:700; color:#1C1917; line-height:22px;">Kayak the twin lagoons</div>
+          <div style="display:inline-flex; align-items:center; gap:4px; padding:4px 8px; background:#FFF0EC; border-radius:6px; align-self:flex-start; max-width:100%;">
+            <span style="color:#EA580C;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"></path><circle cx="12" cy="10" r="2.6"></circle></svg></span>
+            <span style="font-size:11px; font-weight:700; color:#EA580C; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Big Lagoon, El Nido</span>
+          </div>
+          <div style="height:180px; margin:0 -16px; background:linear-gradient(150deg,#4E7A3A,#93B56E);"></div>
+          <div style="font-size:16px; color:#1C1917; line-height:22px;">Glass-still water all morning.</div>
+        </div>
+        <div style="border:1px solid #F5F5F4; border-radius:14px; overflow:hidden;">
+          <div style="height:160px; background:linear-gradient(150deg,#7A3B2E,#C9835E);"></div>
+          <div style="padding:12px; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <div style="font-size:15px; font-weight:700; color:#1C1917; flex:1;">Sunset at Las Cabanas</div>
+              <div style="padding:2px 9px; background:#FFEDD5; border-radius:999px; font-size:11px; font-weight:700; color:#C2410C;">Day 2 · 5:30 PM</div>
+            </div>
+            <div style="display:inline-flex; align-items:center; gap:4px; padding:4px 8px; background:#FFF0EC; border-radius:6px; align-self:flex-start; max-width:100%;">
+              <span style="color:#EA580C;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"></path><circle cx="12" cy="10" r="2.6"></circle></svg></span>
+              <span style="font-size:11px; font-weight:700; color:#EA580C; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Las Cabanas Beach, El Nido</span>
+            </div>
+            <div style="font-size:13.5px; color:#44403C; line-height:19.6px;">Zipline view of the whole bay.</div>
+            <div style="display:flex; align-items:center; gap:6px; min-height:24px;"><span style="font-size:13px; color:#EA580C;">♥</span><span style="font-size:12px; font-weight:600; color:#78716C;">12 likes</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:420px; background:#FFFFFF; border:1px solid #E7E5E4; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; margin-top:32px;">
+      <div style="font-size:11px; font-weight:800; letter-spacing:1.2px; color:#EA580C; text-transform:uppercase;">New rendering, not new data</div>
+      <div style="font-size:12.5px; line-height:1.65; color:#57534E;">
+        <span style="font-family:monospace; background:#F5F5F4; padding:1px 5px; border-radius:4px;">DiaryEntryResponse.place</span> ships in the payload today but <b>no postcard surface renders it</b> — Postcard, PostcardStreamEntry, and the entry view all skip it. This artboard introduces the tag (feed treatment verbatim: well #FFF0EC, pin glyph, ink #EA580C bold 11, same pressed states), sitting between title and caption on both.<br>
+        Top = stream entry (eyebrow / title / tag / photo / caption). Bottom = the trip-diary / profile Postcard card with its day-time badge — tag slots under the title row, above caption; skipped entirely when place is null (no layout ghost).<br>
+        On the entry (edit) screen the tag renders in the snapshot header — read-only and tappable even mid-edit; it is <b>not</b> a form field and gets no pin-glyph form affordance.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;linkWeight&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;600&quot;,&quot;700&quot;],&quot;default&quot;:&quot;600&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Link vocabulary&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      linkWeight: this.props.linkWeight ?? '600',
+    };
+  }
+}
+
+</script>
+</body>
+</html>
