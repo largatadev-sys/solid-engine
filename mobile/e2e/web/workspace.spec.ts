@@ -63,6 +63,16 @@ test.describe('the trip workspace as a viewer', () => {
     await expect(page.getByText('Sunset dinner')).toBeVisible();
   });
 
+  test('the window.open capture installs for a spec that never asks for the signal fixture', async ({
+    page,
+  }) => {
+    await page.goto(`/itineraries/${trip.id}`);
+
+    await page.evaluate(() => window.open('https://example.com/probe', '_blank'));
+
+    await expect.poll(() => lastOpenedUrl(page)).toBe('https://example.com/probe');
+  });
+
   test('the day card place opens Maps hinted with the trip destination, and the clock does not', async ({
     page,
   }) => {

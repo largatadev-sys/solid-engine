@@ -27,14 +27,7 @@ export interface LargataFixtures {
 }
 
 export const test = base.extend<LargataFixtures>({
-  signal: async ({ page }, use) => {
-    const signal: Signal = {
-      consoleErrors: [],
-      pageErrors: [],
-      apiRequests: [],
-      dialogs: [],
-    };
-
+  page: async ({ page }, use) => {
     await page.addInitScript((sink) => {
       const target = window as unknown as Record<string, unknown>;
       target[sink as string] = [];
@@ -43,6 +36,17 @@ export const test = base.extend<LargataFixtures>({
         return null;
       };
     }, OPENED_SINK);
+
+    await use(page);
+  },
+
+  signal: async ({ page }, use) => {
+    const signal: Signal = {
+      consoleErrors: [],
+      pageErrors: [],
+      apiRequests: [],
+      dialogs: [],
+    };
 
     page.on('console', (message) => {
       if (message.type() === 'error') signal.consoleErrors.push(message.text());
