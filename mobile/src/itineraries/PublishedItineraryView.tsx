@@ -159,7 +159,10 @@ function PublishedHeader({
           >
             {({ pressed }) => (
               <View style={StyleSheet.flatten([styles.pill, pressed && styles.pillPressed])}>
-                <Text style={StyleSheet.flatten([styles.pillText, pressed && styles.pillTextPressed])}>
+                <Text
+                  style={StyleSheet.flatten([styles.pillText, pressed && styles.pillTextPressed])}
+                  numberOfLines={1}
+                >
                   {pill}
                 </Text>
               </View>

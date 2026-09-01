@@ -6,6 +6,7 @@ import { burstLiked, likeStateFrom, toggled } from '../src/feed/likeState';
 const MOBILE_ROOT = join(__dirname, '..');
 const CARD = readFileSync(join(MOBILE_ROOT, 'src', 'feed', 'FeedCard.tsx'), 'utf8');
 const SCREEN = readFileSync(join(MOBILE_ROOT, 'src', 'feed', 'FeedScreen.tsx'), 'utf8');
+const TAG = readFileSync(join(MOBILE_ROOT, 'src', 'places', 'LocationTag.tsx'), 'utf8');
 
 const AT = 10_000;
 
@@ -115,11 +116,10 @@ describe('the chrome is wired the way the mock and the kill-switch require', () 
   });
 
   it('keeps the tag alive on every card — it opens Maps whether or not the trip is published (PL-1)', () => {
-    const tag = CARD.slice(CARD.indexOf('{card.place !== null &&'), CARD.indexOf('{card.caption !== null'));
-
-    expect(tag).not.toContain('navigates');
+    expect(CARD).toContain('<LocationTag place={card.place} destination={card.destination} />');
     expect(CARD).not.toContain('styles.tagInert');
     expect(CARD).not.toContain('styles.tripLineInert');
+    expect(TAG).not.toContain('navigates');
   });
 
   it('unticks the trip line when it is dead, so tint means tappable card-wide (PL-1 variant C)', () => {
@@ -131,14 +131,14 @@ describe('the chrome is wired the way the mock and the kill-switch require', () 
   });
 
   it('puts the PLACE behind the pin, never the activity title (founder, 2026-08-12)', () => {
-    const tag = CARD.slice(CARD.indexOf('{card.place !== null &&'), CARD.indexOf('{card.caption !== null'));
-
-    expect(tag).toContain('{card.place}');
-    expect(tag).not.toContain('{card.activityTitle}');
+    expect(CARD).toContain('<LocationTag place={card.place}');
+    expect(CARD).not.toContain('<LocationTag place={card.activityTitle}');
+    expect(TAG).toContain('{place}');
   });
 
   it('hides the pin entirely when the activity had no place — never a bare glyph', () => {
-    expect(CARD).toContain('{card.place !== null && placeUrl !== undefined && (');
+    expect(TAG).toContain('if (place === null || url === undefined) return null;');
+    expect(TAG).toContain('name="mapPin"');
   });
 
   it('offers "more" only once the caption is measured as overflowing', () => {

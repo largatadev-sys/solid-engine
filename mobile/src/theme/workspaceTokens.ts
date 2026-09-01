@@ -38,7 +38,6 @@ export const workspaceColors = {
 export const locationLinkColors = {
   link: '#EA580C',
   linkPressed: '#C2410C',
-  muted: '#78716C',
   tagWell: '#FFF0EC',
   tagWellPressed: '#FFE0D5',
 } as const;

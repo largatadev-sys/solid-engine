@@ -25,16 +25,6 @@ function grouped(value: number): string {
 }
 
 
-export function activityMetaLine(timeOfDay: string | null, place: string | null): string {
-  const parts: string[] = [];
-  const clock = formatTimeOfDay(timeOfDay);
-  if (clock !== undefined) parts.push(clock);
-  const where = (place ?? '').trim();
-  if (where !== '') parts.push(where);
-  return parts.join(' • ');
-}
-
-
 export type ActivityMetaParts = { clock: string | undefined; place: string | undefined };
 
 
@@ -42,13 +32,18 @@ export function activityMetaParts(
   timeOfDay: string | null,
   place: string | null,
 ): ActivityMetaParts {
-  const padded = formatTimeOfDay(timeOfDay);
   const where = (place ?? '').trim();
 
   return {
-    clock: padded === undefined ? undefined : padded.replace(/^0(\d:\d{2} [AP]M)$/, '$1'),
+    clock: unpaddedTimeOfDay(timeOfDay),
     place: where === '' ? undefined : where,
   };
+}
+
+
+export function activityMetaLine(timeOfDay: string | null, place: string | null): string {
+  const { place: where } = activityMetaParts(timeOfDay, place);
+  return [formatTimeOfDay(timeOfDay), where].filter((part) => part !== undefined).join(' • ');
 }
 
 
@@ -56,6 +51,16 @@ const NOON = 12;
 
 
 export function formatTimeOfDay(timeOfDay: string | null): string | undefined {
+  return twelveHourClock(timeOfDay, 2);
+}
+
+
+export function unpaddedTimeOfDay(timeOfDay: string | null): string | undefined {
+  return twelveHourClock(timeOfDay, 1);
+}
+
+
+function twelveHourClock(timeOfDay: string | null, hourDigits: number): string | undefined {
   if (timeOfDay === null) return undefined;
 
   const match = /^(\d{1,2}):(\d{2})/.exec(timeOfDay);
@@ -67,5 +72,5 @@ export function formatTimeOfDay(timeOfDay: string | null): string | undefined {
 
   const suffix = hours < NOON ? 'AM' : 'PM';
   const onTheClock = hours % NOON === 0 ? NOON : hours % NOON;
-  return `${String(onTheClock).padStart(2, '0')}:${minutes} ${suffix}`;
+  return `${String(onTheClock).padStart(hourDigits, '0')}:${minutes} ${suffix}`;
 }

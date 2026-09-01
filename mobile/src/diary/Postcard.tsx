@@ -124,11 +124,20 @@ export function Postcard({
               </Text>
             </View>
           </View>
-
-          {entry.caption !== null && <Text style={styles.caption}>{entry.caption}</Text>}
         </Pressable>
 
         <LocationTag place={entry.place} destination={destination ?? null} />
+
+        {entry.caption !== null && (
+          <Pressable
+            style={styles.summary}
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={`Open your entry for ${entry.activityTitle}`}
+          >
+            <Text style={styles.caption}>{entry.caption}</Text>
+          </Pressable>
+        )}
 
         <View style={styles.footer}>
           {likes !== null && (

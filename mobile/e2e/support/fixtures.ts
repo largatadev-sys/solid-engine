@@ -17,7 +17,6 @@ interface Signal {
   pageErrors: string[];
   apiRequests: Array<{ url: string; auth: 'bearer' | 'ANON' }>;
   dialogs: string[];
-  opened: string[];
 }
 
 const OPENED_SINK = '__largataOpened';
@@ -34,7 +33,6 @@ export const test = base.extend<LargataFixtures>({
       pageErrors: [],
       apiRequests: [],
       dialogs: [],
-      opened: [],
     };
 
     await page.addInitScript((sink) => {

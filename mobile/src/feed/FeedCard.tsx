@@ -16,8 +16,7 @@ import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { radii, spacing } from '../theme';
 import { feedColors, feedMetrics, feedTypography } from '../theme/feedTokens';
-import { mapsLinkLabel, mapsUrl } from '../places/mapsQuery';
-import { openInMaps } from '../places/openInMaps';
+import { LocationTag } from '../places/LocationTag';
 import type { FeedPostcardResponse } from '../types/api';
 import {
   authorInitials,
@@ -134,7 +133,6 @@ export function FeedCard({
   const window = dotWindow(page, photoCount);
   const line = tripLine(card);
   const navigates = tripLineNavigates(card);
-  const placeUrl = card.place === null ? undefined : mapsUrl(card.place, card.destination);
 
   const measure = (event: LayoutChangeEvent) => setPhotoWidth(event.nativeEvent.layout.width);
 
@@ -277,31 +275,7 @@ export function FeedCard({
       </View>
 
       <View style={styles.body}>
-        {card.place !== null && placeUrl !== undefined && (
-          <View style={styles.tagRow}>
-            <Pressable
-              onPress={() => openInMaps(placeUrl)}
-              accessibilityRole="link"
-              accessibilityLabel={mapsLinkLabel(card.place)}
-            >
-              {({ pressed }) => (
-                <View style={StyleSheet.flatten([styles.tag, pressed && styles.tagPressed])}>
-                  <Icon
-                    name="mapPin"
-                    size={feedMetrics.tagGlyph}
-                    color={pressed ? feedColors.tagInkPressed : feedColors.tagInk}
-                  />
-                  <Text
-                    style={StyleSheet.flatten([styles.tagLabel, pressed && styles.tagLabelPressed])}
-                    numberOfLines={1}
-                  >
-                    {card.place}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-          </View>
-        )}
+        <LocationTag place={card.place} destination={card.destination} />
 
         {card.caption !== null && (
           <View>
@@ -521,28 +495,6 @@ const styles = StyleSheet.create({
     padding: feedMetrics.cardPadding,
     gap: spacing.sm,
   },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs2,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: feedMetrics.chipPaddingY,
-    backgroundColor: feedColors.tagWell,
-    borderRadius: feedMetrics.chipRadius,
-    maxWidth: '100%',
-  },
-  tagPressed: { backgroundColor: feedColors.tagWellPressed },
-  tagLabel: {
-    ...feedTypography.tag,
-    color: feedColors.tagInk,
-    flexShrink: 1,
-  },
-  tagLabelPressed: { color: feedColors.tagInkPressed },
   caption: {
     ...feedTypography.caption,
     color: feedColors.caption,

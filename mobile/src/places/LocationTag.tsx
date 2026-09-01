@@ -45,7 +45,7 @@ export function LocationTag({
 
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs2 },
   tag: {
     flexDirection: 'row',
     alignItems: 'center',

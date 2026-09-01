@@ -176,14 +176,21 @@ describe('the public diary header behind the card holds the same posture (S4.23)
 
 describe('variant C — two doors, cleanly split (PL-1)', () => {
   const source = readFileSync(join(__dirname, '..', 'src', 'feed', 'FeedCard.tsx'), 'utf8');
+  const tag = readFileSync(join(__dirname, '..', 'src', 'places', 'LocationTag.tsx'), 'utf8');
 
-  it('the location tag opens Maps and no longer routes to the trip', () => {
-    expect(source).toMatch(/accessibilityLabel=\{mapsLinkLabel\(card\.place\)\}/);
-    expect(source).not.toMatch(/open the published trip`\}\s*>\s*<Icon name="mapPin"/);
+  it('the card draws no tag of its own — one definition serves every surface', () => {
+    expect(source).toMatch(/<LocationTag place=\{card\.place\} destination=\{card\.destination\} \/>/);
+    expect(source).not.toMatch(/name="mapPin"/);
   });
 
-  it('the tag is drawn once, not forked on whether the trip is published', () => {
-    expect(source.match(/name="mapPin"/g) ?? []).toHaveLength(1);
+  it('the tag opens Maps and no longer routes to the trip', () => {
+    expect(tag).toMatch(/accessibilityLabel=\{mapsLinkLabel\(place\)\}/);
+    expect(tag).toMatch(/onPress=\{\(\) => openInMaps\(url\)\}/);
+    expect(source).not.toMatch(/open the published trip`\}\s*>\s*<Icon/);
+  });
+
+  it('the tag hints its search with the destination the wire now carries', () => {
+    expect(tag).toMatch(/mapsUrl\(place, destination\)/);
   });
 
   it('the trip line is the only thing that still opens the published trip', () => {
@@ -194,9 +201,5 @@ describe('variant C — two doors, cleanly split (PL-1)', () => {
   it('a dead trip line renders untinted, so tint means tappable card-wide', () => {
     expect(source).toMatch(/styles\.tripLineDead/);
     expect(feedColors.tripLineDead).toBe(feedColors.badgeInk);
-  });
-
-  it('the tag hints its search with the destination the wire now carries', () => {
-    expect(source).toMatch(/mapsUrl\(card\.place, card\.destination\)/);
   });
 });
