@@ -28,6 +28,7 @@ import {
 import { KebabButton } from '../removal/KebabButton';
 import { postcardMenuLabel } from '../removal/removalCopy';
 import type { DiaryEntryResponse } from '../types/api';
+import { LocationTag } from '../places/LocationTag';
 import {
   carouselCounter,
   carouselPhotoWidth,
@@ -43,10 +44,17 @@ interface PostcardProps {
   readonly onPress: () => void;
   readonly likes?: number | null;
   readonly onOpenMenu?: (() => void) | undefined;
+  readonly destination?: string | null;
 }
 
 
-export function Postcard({ entry, onPress, likes = null, onOpenMenu }: PostcardProps) {
+export function Postcard({
+  entry,
+  onPress,
+  likes = null,
+  onOpenMenu,
+  destination = null,
+}: PostcardProps) {
   const [page, setPage] = useState(0);
   const [photoWidth, setPhotoWidth] = useState(0);
 
@@ -119,6 +127,8 @@ export function Postcard({ entry, onPress, likes = null, onOpenMenu }: PostcardP
 
           {entry.caption !== null && <Text style={styles.caption}>{entry.caption}</Text>}
         </Pressable>
+
+        <LocationTag place={entry.place} destination={destination ?? null} />
 
         <View style={styles.footer}>
           {likes !== null && (

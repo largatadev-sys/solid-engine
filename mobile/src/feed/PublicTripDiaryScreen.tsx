@@ -31,6 +31,7 @@ export function PublicTripDiaryScreen() {
   }
 
   const tripTitle = diary.data.tripTitle;
+  const destination = diary.data.postcards[0]?.destination ?? null;
   const postcards = diary.data.postcards.map(asDiaryEntry);
 
   return (
@@ -67,6 +68,7 @@ export function PublicTripDiaryScreen() {
             postcard={entry}
             eyebrow={snapshotEyebrow(entry)}
             openLabel={`Open this postcard from ${entry.activityTitle}`}
+            destination={destination}
             onOpen={() => setPreviewing(entry)}
           />
         ))}
