@@ -1,5 +1,5 @@
 import type { Locator } from '@playwright/test';
-import { test, expect } from '../support/fixtures';
+import { test, expect, lastOpenedUrl } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
@@ -10,6 +10,7 @@ import { comingSoonMessage } from '../../src/components/comingSoonMessage';
 import { copyLinkFeedback } from '../../src/itineraries/shareLinkContract';
 import { tabLabel } from '../../src/itineraries/tripTabs';
 import { publicationBadge } from '../../src/itineraries/tripCardAnatomy';
+import { mapsUrl } from '../../src/places/mapsQuery';
 
 const OWNER = ownerTagFor('web/publish');
 const STRANGER = IDENTITY_MAP['web/publish'].tags[1]!;
@@ -304,6 +305,25 @@ test.describe('the public projection, read by a stranger', () => {
     await expect(page.getByText(ACTIVITY, { exact: true })).toBeVisible();
     await expect(page.getByText(TIP, { exact: true })).toBeVisible();
     await expect(page.getByText('View Booking Options', { exact: true })).toBeVisible();
+  });
+
+  test('the activity place opens a destination-hinted Google Maps search', async ({ page }) => {
+    await page.goto(`/published/${published.id}`);
+    await labelled(page, 'Day-by-Day').click();
+    await labelled(page, `${PLACE}, open in Google Maps`).click();
+
+    await expect
+      .poll(() => lastOpenedUrl(page), { timeout: 15_000 })
+      .toBe(mapsUrl(PLACE, DESTINATION));
+  });
+
+  test('the header destination pill opens Maps on the destination itself', async ({ page }) => {
+    await page.goto(`/published/${published.id}`);
+    await labelled(page, `${DESTINATION}, open in Google Maps`).click();
+
+    await expect
+      .poll(() => lastOpenedUrl(page), { timeout: 15_000 })
+      .toBe(mapsUrl(DESTINATION, null));
   });
 
   test('View Booking Options greys with a message rather than opening a URL', async ({

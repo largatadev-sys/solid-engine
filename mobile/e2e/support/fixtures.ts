@@ -17,7 +17,10 @@ interface Signal {
   pageErrors: string[];
   apiRequests: Array<{ url: string; auth: 'bearer' | 'ANON' }>;
   dialogs: string[];
+  opened: string[];
 }
+
+const OPENED_SINK = '__largataOpened';
 
 export interface LargataFixtures {
   signIn: (tag: PoolTag) => Promise<void>;
@@ -26,7 +29,22 @@ export interface LargataFixtures {
 
 export const test = base.extend<LargataFixtures>({
   signal: async ({ page }, use) => {
-    const signal: Signal = { consoleErrors: [], pageErrors: [], apiRequests: [], dialogs: [] };
+    const signal: Signal = {
+      consoleErrors: [],
+      pageErrors: [],
+      apiRequests: [],
+      dialogs: [],
+      opened: [],
+    };
+
+    await page.addInitScript((sink) => {
+      const target = window as unknown as Record<string, unknown>;
+      target[sink as string] = [];
+      window.open = (url?: string | URL) => {
+        (target[sink as string] as string[]).push(String(url ?? ''));
+        return null;
+      };
+    }, OPENED_SINK);
 
     page.on('console', (message) => {
       if (message.type() === 'error') signal.consoleErrors.push(message.text());
@@ -76,6 +94,20 @@ export const test = base.extend<LargataFixtures>({
 });
 
 export { expect };
+
+
+export async function openedUrls(page: Page): Promise<string[]> {
+  return page.evaluate((sink) => {
+    const captured = (window as unknown as Record<string, unknown>)[sink as string];
+    return Array.isArray(captured) ? (captured as string[]).slice() : [];
+  }, OPENED_SINK);
+}
+
+
+export async function lastOpenedUrl(page: Page): Promise<string | undefined> {
+  const urls = await openedUrls(page);
+  return urls[urls.length - 1];
+}
 
 
 const DIALOG_POLL_MS = 60;

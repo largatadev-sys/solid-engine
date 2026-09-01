@@ -9,6 +9,10 @@ import { freeScroll } from '../components/stripSettle';
 import { galleryOf, galleryOverflow, GALLERY_VISIBLE_TILES } from '../media/galleryOf';
 import { MediaThumb } from '../media/MediaThumb';
 import { colors, radii, spacing, typography } from '../theme';
+import { locationLinkColors } from '../theme/workspaceTokens';
+import { LocationLink } from '../places/LocationLink';
+import { mapsLinkLabel, mapsUrl } from '../places/mapsQuery';
+import { openInMaps } from '../places/openInMaps';
 import type {
   PublishedActivityResponse,
   PublishedItineraryResponse,
@@ -136,6 +140,7 @@ function PublishedHeader({
   audience: 'preview' | 'consumer';
 }) {
   const pill = destinationPillLabel(projection.destination);
+  const destinationUrl = mapsUrl(projection.destination, null);
   const duration = durationLabel(projection.durationDays);
   const total = estimatedTotalLabel(projection.estimatedCost);
   const openProfile = useOpenTravelerProfile();
@@ -146,10 +151,20 @@ function PublishedHeader({
       <CoverSlot coverUrl={projection.coverImageUrl} />
 
       <View style={styles.pillRow}>
-        {pill !== undefined && (
-          <View style={styles.pill}>
-            <Text style={styles.pillText}>{pill}</Text>
-          </View>
+        {pill !== undefined && destinationUrl !== undefined && (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={mapsLinkLabel(projection.destination)}
+            onPress={() => openInMaps(destinationUrl)}
+          >
+            {({ pressed }) => (
+              <View style={StyleSheet.flatten([styles.pill, pressed && styles.pillPressed])}>
+                <Text style={StyleSheet.flatten([styles.pillText, pressed && styles.pillTextPressed])}>
+                  {pill}
+                </Text>
+              </View>
+            )}
+          </Pressable>
         )}
         {duration !== undefined && <Text style={styles.duration}>{duration}</Text>}
         {projection.bestTimeOfYear !== null && (
@@ -296,7 +311,13 @@ function DayByDay({ projection }: { projection: PublishedItineraryResponse }) {
           {day.activities.length === 0 ? (
             <Text style={styles.caption}>Nothing planned for this day.</Text>
           ) : (
-            day.activities.map((activity) => <ActivityCard key={activity.id} activity={activity} />)
+            day.activities.map((activity) => (
+              <ActivityCard
+                key={activity.id}
+                activity={activity}
+                destination={projection.destination}
+              />
+            ))
           )}
         </View>
       ))}
@@ -305,11 +326,23 @@ function DayByDay({ projection }: { projection: PublishedItineraryResponse }) {
 }
 
 
-function ActivityCard({ activity }: { activity: PublishedActivityResponse }) {
+function ActivityCard({
+  activity,
+  destination,
+}: {
+  activity: PublishedActivityResponse;
+  destination: string | null;
+}) {
   return (
     <View style={styles.activityCard}>
       <Text style={styles.activityTitle}>{activity.title}</Text>
-      {activity.place !== null && <Text style={styles.activityPlace}>{activity.place}</Text>}
+      {activity.place !== null && (
+        <LocationLink
+          place={activity.place}
+          destination={destination}
+          style={styles.activityPlace}
+        />
+      )}
       {activity.notes !== null && (
         <View style={styles.tips}>
           <Text style={styles.tipsLabel}>Creator tip</Text>
@@ -350,9 +383,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: colors.textPrimary,
+    backgroundColor: locationLinkColors.tagWell,
   },
-  pillText: { ...typography.overline, color: colors.textOnAccent },
+  pillPressed: { backgroundColor: locationLinkColors.tagWellPressed },
+  pillText: { ...typography.overline, color: locationLinkColors.link },
+  pillTextPressed: { color: locationLinkColors.linkPressed },
   duration: { ...typography.label, color: colors.textSecondary },
   cover: {
     height: COVER_HEIGHT,
@@ -464,7 +499,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   activityTitle: { ...typography.bodyStrong, color: colors.textPrimary },
-  activityPlace: { ...typography.caption, color: colors.textSecondary },
+  activityPlace: { ...typography.caption },
   tips: {
     gap: spacing.xs,
     padding: spacing.sm,
