@@ -9,6 +9,7 @@ function card(overrides: Partial<FeedPostcardResponse> = {}): FeedPostcardRespon
     author: { id: 't1', handle: 'wanderer', displayName: null, avatarUrl: null },
     itineraryId: 'i1',
     tripTitle: 'Bali Temple Run',
+    destination: 'Bali',
     publishedItineraryId: null,
     dayLabel: 'Day 3',
     activityTitle: 'Sunrise gate photo',

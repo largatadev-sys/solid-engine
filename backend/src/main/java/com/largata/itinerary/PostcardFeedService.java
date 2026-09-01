@@ -156,6 +156,7 @@ public class PostcardFeedService {
                 author,
                 entry.itineraryId(),
                 trip.title(),
+                trip.destination(),
                 navigableTripOf(trip),
                 entry.dayLabel(),
                 entry.activityTitle(),
