@@ -114,19 +114,20 @@ describe('the chrome is wired the way the mock and the kill-switch require', () 
     expect(SCREEN).toContain("else comingSoon('report');");
   });
 
-  it('makes the location tag tappable only where the trip line is, without dimming it', () => {
-    expect(CARD).toContain('navigates ? (');
+  it('keeps the tag alive on every card — it opens Maps whether or not the trip is published (PL-1)', () => {
+    const tag = CARD.slice(CARD.indexOf('{card.place !== null &&'), CARD.indexOf('{card.caption !== null'));
+
+    expect(tag).not.toContain('navigates');
     expect(CARD).not.toContain('styles.tagInert');
     expect(CARD).not.toContain('styles.tripLineInert');
   });
 
-  it('never dims the trip line or the pin — publication is not the card-s to signal', () => {
+  it('unticks the trip line when it is dead, so tint means tappable card-wide (PL-1 variant C)', () => {
     const tripLine = CARD.slice(CARD.indexOf('{line !== null &&'), CARD.indexOf('<View style={styles.badge}'));
-    const tag = CARD.slice(CARD.indexOf('{card.place !== null &&'), CARD.indexOf('{card.caption !== null'));
 
-    expect(tripLine.match(/styles\.tripLine\b/g) ?? []).toHaveLength(2);
-    expect(tag.match(/feedColors\.tagInk/g) ?? []).toHaveLength(2);
-    expect(tag.match(/styles\.tagLabel\b/g) ?? []).toHaveLength(2);
+    expect(tripLine).toContain('navigates ? (');
+    expect(tripLine.match(/styles\.tripLine\b/g) ?? []).toHaveLength(1);
+    expect(tripLine.match(/styles\.tripLineDead\b/g) ?? []).toHaveLength(1);
   });
 
   it('puts the PLACE behind the pin, never the activity title (founder, 2026-08-12)', () => {
@@ -137,7 +138,7 @@ describe('the chrome is wired the way the mock and the kill-switch require', () 
   });
 
   it('hides the pin entirely when the activity had no place — never a bare glyph', () => {
-    expect(CARD).toContain('{card.place !== null && (');
+    expect(CARD).toContain('{card.place !== null && placeUrl !== undefined && (');
   });
 
   it('offers "more" only once the caption is measured as overflowing', () => {
