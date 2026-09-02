@@ -23,6 +23,10 @@ import {
 } from '../../../../../src/itineraries/stagedPlan';
 import { colors, typography } from '../../../../../src/theme';
 import type { ActivityRequest } from '../../../../../src/types/api';
+import { PlacePickerModal } from '../../../../../src/maps/PlacePickerModal';
+import { SEARCH_PLACEHOLDER } from '../../../../../src/maps/mapCopy';
+import { pinAfterEdit, type Pin } from '../../../../../src/maps/pinRules';
+import { useItinerary } from '../../../../../src/query/itineraryQueries';
 
 
 export default function ActivityFormScreen() {
@@ -35,6 +39,7 @@ export default function ActivityFormScreen() {
   const existing: ActivityRequest | undefined = staged?.fields;
   const isEdit = activityId !== undefined;
 
+  const trip = useItinerary(id);
   const homeCurrency = meState.kind === 'ok' ? (meState.me.preferredCurrency ?? '') : '';
 
   const [title, setTitle] = useState(existing?.title ?? '');
@@ -43,6 +48,9 @@ export default function ActivityFormScreen() {
   const [costAmount, setCostAmount] = useState(existing?.costAmount ?? '');
   const costCurrency = existing?.costCurrency ?? homeCurrency;
   const [externalUrl, setExternalUrl] = useState(existing?.externalUrl ?? '');
+  const [pin, setPin] = useState<Pin | null>(existing?.pin ?? null);
+  const [pinnedAs, setPinnedAs] = useState(existing?.pin == null ? '' : (existing?.place ?? ''));
+  const [picking, setPicking] = useState(false);
   const [problem, setProblem] = useState<string | undefined>(undefined);
 
   const save = () => {
@@ -54,7 +62,7 @@ export default function ActivityFormScreen() {
     setProblem(undefined);
 
     const request = buildActivityRequest(
-      { title, timeOfDay, place, costAmount, costCurrency, externalUrl },
+      { title, timeOfDay, place, costAmount, costCurrency, externalUrl, pin: pinAfterEdit(pin, pinnedAs, place) },
       existing,
     );
 
@@ -88,13 +96,20 @@ export default function ActivityFormScreen() {
         <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
 
         <Field label="Location / Venue">
-          <Input
-            icon="mapPin"
-            value={place}
-            onChangeText={setPlace}
-            placeholder="Search for a place..."
-            accessibilityLabel="Location or venue"
-          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={place.trim() === '' ? SEARCH_PLACEHOLDER : `Location: ${place}`}
+            onPress={() => setPicking(true)}
+          >
+            <Input
+              icon="mapPin"
+              value={place}
+              onChangeText={setPlace}
+              placeholder={SEARCH_PLACEHOLDER}
+              accessibilityLabel="Location or venue"
+              editable={false}
+            />
+          </Pressable>
         </Field>
 
         <Field label="Estimated Price" optional>
@@ -122,6 +137,20 @@ export default function ActivityFormScreen() {
 
         {problem !== undefined ? <Text style={styles.problem}>{problem}</Text> : null}
       </ScrollView>
+
+      <PlacePickerModal
+        visible={picking}
+        place={place}
+        pin={pin}
+        openNear={trip.data?.pin ?? null}
+        onConfirm={(picked) => {
+          setPlace(picked.place);
+          setPin(picked.pin);
+          setPinnedAs(picked.pin === null ? '' : picked.place);
+          setPicking(false);
+        }}
+        onDismiss={() => setPicking(false)}
+      />
 
       <View style={styles.rail}>
         <Pressable

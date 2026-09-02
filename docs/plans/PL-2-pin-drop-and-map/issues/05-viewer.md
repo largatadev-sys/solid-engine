@@ -14,12 +14,12 @@ whole. The viewer announces the **label**, never raw coordinates.
 
 **Blocked by:** 01 (the tile surface), 03 (pins on the wire).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Viewer route opens at the pin's stored zoom and pans and pinches from there
-- [ ] Open in Google Maps hands off the destination-hinted query PL-1 already builds
-- [ ] A pinned place opens the viewer; a text-only place still opens Google Maps, on every surface PL-1 touched
-- [ ] The published header destination pill opens the viewer when the destination is pinned
-- [ ] Postcard and diary-entry tags are byte-for-byte unchanged in behaviour
-- [ ] A11y: the location announces as its label plus that it opens a map — never coordinates
-- [ ] Playwright: a viewer walk proves the pinned/text-only split, reusing PL-1's `window.open` capture for the text-only half
+- [x] Viewer route opens at the pin's stored zoom and pans and pinches from there
+- [x] Open in Google Maps hands off the destination-hinted query PL-1 already builds
+- [x] A pinned place opens the viewer; a text-only place still opens Google Maps, on every surface PL-1 touched
+- [x] The published header destination pill opens the viewer when the destination is pinned
+- [x] Postcard and diary-entry tags are byte-for-byte unchanged in behaviour
+- [x] A11y: the location announces as its label plus that it opens a map — never coordinates
+- [x] Playwright: a viewer walk proves the pinned/text-only split, reusing PL-1's `window.open` capture for the text-only half

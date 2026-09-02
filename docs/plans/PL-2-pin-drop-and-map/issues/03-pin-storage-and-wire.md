@@ -16,12 +16,12 @@ text clears its pin, compared against the text the pin was dropped with, evaluat
 
 **Blocked by:** None (can start immediately; independent of 01 and 02).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `V44` adds the six nullable columns; a stepped migration IT in the `WorkspaceBackfillIT` pattern proves it, and the sabotage is **grepped for before the run is believed**
-- [ ] Pin round-trips through create, read and update on both Activity and Itinerary; absent stays absent
-- [ ] Published projection carries pins for activities and the destination; existing published assertions untouched
-- [ ] Fork copies pins along with place, time and cost
-- [ ] Stale-ref Jest table: typo case keeps the pin, genuine rename clears it, search acceptance is atomic and never self-clears, empty→filled never clears
-- [ ] Validity table: out-of-range coordinates, zoom bounds, and a pin without a label are all refused
-- [ ] INV-11 and INV-2 amended in the domain model, with the argument recorded — not a silent change
+- [x] `V44` adds the six nullable columns; a stepped migration IT in the `WorkspaceBackfillIT` pattern proves it, and the sabotage is **grepped for before the run is believed**
+- [x] Pin round-trips through create, read and update on both Activity and Itinerary; absent stays absent
+- [x] Published projection carries pins for activities and the destination; existing published assertions untouched
+- [x] Fork copies pins along with place, time and cost
+- [x] Stale-ref Jest table: typo case keeps the pin, genuine rename clears it, search acceptance is atomic and never self-clears, empty→filled never clears
+- [x] Validity table: out-of-range coordinates, zoom bounds, and a pin without a label are all refused
+- [x] INV-11 and INV-2 amended in the domain model, with the argument recorded — not a silent change

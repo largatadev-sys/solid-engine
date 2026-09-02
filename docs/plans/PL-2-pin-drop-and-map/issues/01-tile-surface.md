@@ -15,11 +15,11 @@ of problem as a drag list.
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Projection Jest table: lat/lng → tile, tile → lat/lng, round-trip stability, pixel offset within a tile, viewport coverage at several zooms, and the poles/antimeridian edges
-- [ ] Rounding is symmetric — a pan of equal magnitude moves the same number of tiles in both directions (the S4.17 `Math.round(-0.5)` trap)
-- [ ] Surface pans by drag and zooms by pinch on both native and web, from one implementation
-- [ ] Tile URL resolves from configuration; no provider hostname is a literal in the component
-- [ ] Attribution renders on the surface and opens the OSM copyright page
-- [ ] Tiles that fail to load leave the grid usable — no blank screen, no thrown render
+- [x] Projection Jest table: lat/lng → tile, tile → lat/lng, round-trip stability, pixel offset within a tile, viewport coverage at several zooms, and the poles/antimeridian edges
+- [x] Rounding is symmetric — a pan of equal magnitude moves the same number of tiles in both directions (the S4.17 `Math.round(-0.5)` trap)
+- [x] Surface pans by drag and zooms by pinch on both native and web, from one implementation
+- [x] Tile URL resolves from configuration; no provider hostname is a literal in the component
+- [x] Attribution renders on the surface and opens the OSM copyright page
+- [x] Tiles that fail to load leave the grid usable — no blank screen, no thrown render

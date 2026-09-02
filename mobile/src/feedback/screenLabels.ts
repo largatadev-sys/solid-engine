@@ -51,5 +51,6 @@ export const SCREEN_LABELS: Readonly<Record<string, string>> = {
   'verify-code': 'Verify code',
   'join/[token]': 'Invite',
   'health': 'Health',
+  'map': 'Map',
   '': 'Home feed',
 };

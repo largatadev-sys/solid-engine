@@ -944,3 +944,30 @@ export const feedbackMetrics = {
   dismissZone: 72,
   dismissGlyph: 28,
 } as const;
+
+
+export const mapColors = {
+  tileVoid: '#E8E6E1',
+  pinBody: '#EA580C',
+  pinStroke: '#FFFFFF',
+  pinShadow: 'rgba(0, 0, 0, 0.28)',
+  attributionInk: '#44403C',
+  attributionBacking: 'rgba(255, 255, 255, 0.82)',
+  crosshair: '#1C1917',
+  controlBacking: '#FFFFFF',
+  controlInk: '#1C1917',
+  resultDivider: '#F0EEEB',
+} as const;
+
+
+export const mapMetrics = {
+  pinWidth: 26,
+  pinHeight: 34,
+  pinTipInset: 2,
+  crosshairSize: 28,
+  crosshairStroke: 2,
+  controlSize: 40,
+  attributionHeight: 18,
+  searchBoxHeight: 44,
+  resultRowHeight: 56,
+} as const;

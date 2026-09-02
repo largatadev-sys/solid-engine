@@ -16,13 +16,13 @@ discards the pin like everything else on that screen.
 
 **Blocked by:** 01 (the tile surface), 02 (search), 03 (validity and the stale-ref rule).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Opens on the trip's destination pin; falls back to the last pin dropped in the trip
-- [ ] Typing shows ranked results; tapping one places a draggable pin and offers its name
-- [ ] Accepting a result sets text and pin atomically — the stale-ref rule does not fire on it
-- [ ] Confirm refused without a label; "Remove pin" clears an existing one
-- [ ] Search failure leaves the map, the pan and the manual drop fully working
-- [ ] Cancelling the activity form discards the staged pin
-- [ ] A11y: the result list is a complete non-visual path — find, choose and confirm without touching the map
-- [ ] Playwright: a picker walk asserts the coordinates that reach the save request
+- [x] Opens on the trip's destination pin; falls back to the last pin dropped in the trip
+- [x] Typing shows ranked results; tapping one places a draggable pin and offers its name
+- [x] Accepting a result sets text and pin atomically — the stale-ref rule does not fire on it
+- [x] Confirm refused without a label; "Remove pin" clears an existing one
+- [x] Search failure leaves the map, the pan and the manual drop fully working
+- [x] Cancelling the activity form discards the staged pin
+- [x] A11y: the result list is a complete non-visual path — find, choose and confirm without touching the map
+- [x] Playwright: a picker walk asserts the coordinates that reach the save request

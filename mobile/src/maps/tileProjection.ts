@@ -154,3 +154,15 @@ export function pointAtScreen(offset: WorldPoint, viewport: Viewport): LatLng {
     viewport.zoom,
   );
 }
+
+
+export function zoomAfterPinch(startZoom: number, startSpan: number, span: number): number {
+  if (startSpan <= 0 || span <= 0) return clampZoom(startZoom);
+
+  return clampZoom(startZoom + Math.log2(span / startSpan));
+}
+
+
+export function spanBetween(a: WorldPoint, b: WorldPoint): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}

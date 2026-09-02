@@ -18,8 +18,11 @@ import {
   workspaceRadii,
   workspaceTypography,
 } from '../theme/workspaceTokens';
-import { mapsLinkLabel, mapsUrl } from '../places/mapsQuery';
-import { openInMaps } from '../places/openInMaps';
+import { mapsLinkLabel } from '../places/mapsQuery';
+import { pinnedLinkLabel } from '../maps/mapCopy';
+import type { Pin } from '../maps/pinRules';
+import { placeTapTarget } from '../maps/placeTap';
+import { useOpenPlace } from '../maps/useOpenPlace';
 import type { ActivityResponse, DayResponse } from '../types/api';
 import { dayHeading } from './dayHeading';
 import { dayPrefix } from './dayTitle';
@@ -218,15 +221,26 @@ interface ActivityRowProps {
 }
 
 
-function ActivityPlaceLink({ place, url }: { place: string; url: string }) {
+function ActivityPlaceLink({
+  place,
+  pin,
+  destination,
+}: {
+  place: string;
+  pin: Pin | null | undefined;
+  destination: string | null;
+}) {
   const [pressed, setPressed] = useState(false);
+  const open = useOpenPlace();
+  const target = placeTapTarget(place, pin, destination);
+  if (target === null) return null;
 
   return (
     <Text
       accessibilityRole="link"
-      accessibilityLabel={mapsLinkLabel(place)}
+      accessibilityLabel={target.kind === 'viewer' ? pinnedLinkLabel(place) : mapsLinkLabel(place)}
       style={pressed ? styles.activityPlacePressed : styles.activityPlace}
-      onPress={() => openInMaps(url)}
+      onPress={() => open(place, pin, destination)}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
     >
@@ -248,7 +262,6 @@ export function ActivityRow({
   destination = null,
 }: ActivityRowProps) {
   const meta = activityMetaParts(activity.timeOfDay, activity.place);
-  const placeUrl = meta.place === undefined ? undefined : mapsUrl(meta.place, destination);
 
   return (
     <View
@@ -278,8 +291,8 @@ export function ActivityRow({
           <Text style={styles.activityTime} numberOfLines={1}>
             {meta.clock}
             {meta.clock !== undefined && meta.place !== undefined ? ' • ' : null}
-            {meta.place !== undefined && placeUrl !== undefined ? (
-              <ActivityPlaceLink place={meta.place} url={placeUrl} />
+            {meta.place !== undefined ? (
+              <ActivityPlaceLink place={meta.place} pin={activity.pin} destination={destination ?? null} />
             ) : (
               meta.place
             )}

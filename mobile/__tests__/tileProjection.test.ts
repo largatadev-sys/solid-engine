@@ -9,6 +9,8 @@ import {
   tilesCovering,
   worldToLatLng,
   worldSize,
+  zoomAfterPinch,
+  spanBetween,
 } from '../src/maps/tileProjection';
 
 
@@ -220,5 +222,45 @@ describe('panning moves the same number of tiles in both directions (S4.17)', ()
     const south = worldToLatLng({ x: equator.x, y: equator.y + TILE_SIZE / 2 }, zoom);
 
     expect(north.lat).toBeCloseTo(-south.lat, 9);
+  });
+});
+
+
+describe('pinching changes zoom by the ratio of the fingers’ span', () => {
+  it('gains a level when the fingers travel twice as far apart', () => {
+    expect(zoomAfterPinch(12, 100, 200)).toBe(13);
+  });
+
+  it('loses a level when the span halves', () => {
+    expect(zoomAfterPinch(12, 200, 100)).toBe(11);
+  });
+
+  it('stays put when the span does not change', () => {
+    expect(zoomAfterPinch(12, 150, 150)).toBe(12);
+  });
+
+  it('is symmetric: doubling then halving returns to the start', () => {
+    expect(zoomAfterPinch(zoomAfterPinch(12, 100, 200), 200, 100)).toBe(12);
+  });
+
+  it('never leaves the provider’s range however hard the pinch', () => {
+    expect(zoomAfterPinch(18, 1, 100000)).toBe(MAX_ZOOM);
+    expect(zoomAfterPinch(3, 100000, 1)).toBe(MIN_ZOOM);
+  });
+
+  it.each([
+    ['a zero starting span', 0, 100],
+    ['a zero current span', 100, 0],
+    ['both zero', 0, 0],
+  ])('holds the zoom for %s rather than yielding NaN', (_name, startSpan, span) => {
+    const zoom = zoomAfterPinch(12, startSpan, span);
+
+    expect(Number.isInteger(zoom)).toBe(true);
+    expect(zoom).toBe(12);
+  });
+
+  it('measures the span between two fingers', () => {
+    expect(spanBetween({ x: 0, y: 0 }, { x: 3, y: 4 })).toBe(5);
+    expect(spanBetween({ x: 10, y: 10 }, { x: 10, y: 10 })).toBe(0);
   });
 });

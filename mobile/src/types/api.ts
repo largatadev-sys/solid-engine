@@ -73,6 +73,20 @@ export type TripCategory = 'draft' | 'upcoming' | 'ongoing' | 'complete';
 export type PublishAudience = Visibility;
 
 
+export type PlaceCandidateResponse = {
+  name: string;
+  context: string | null;
+  lat: number;
+  lng: number;
+  kind: string | null;
+};
+
+
+export type PlaceSearchResponse = {
+  results: PlaceCandidateResponse[];
+};
+
+
 export type Pin = {
   lat: number;
   lng: number;

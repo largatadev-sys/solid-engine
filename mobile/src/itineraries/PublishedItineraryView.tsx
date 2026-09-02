@@ -11,8 +11,10 @@ import { MediaThumb } from '../media/MediaThumb';
 import { colors, radii, spacing, typography } from '../theme';
 import { locationLinkColors } from '../theme/workspaceTokens';
 import { LocationLink } from '../places/LocationLink';
-import { mapsLinkLabel, mapsUrl } from '../places/mapsQuery';
-import { openInMaps } from '../places/openInMaps';
+import { pinnedLinkLabel } from '../maps/mapCopy';
+import { placeTapTarget } from '../maps/placeTap';
+import { useOpenPlace } from '../maps/useOpenPlace';
+import { mapsLinkLabel } from '../places/mapsQuery';
 import type {
   PublishedActivityResponse,
   PublishedItineraryResponse,
@@ -140,10 +142,11 @@ function PublishedHeader({
   audience: 'preview' | 'consumer';
 }) {
   const pill = destinationPillLabel(projection.destination);
-  const destinationUrl = mapsUrl(projection.destination, null);
+  const destinationTap = placeTapTarget(projection.destination, projection.pin, null);
   const duration = durationLabel(projection.durationDays);
   const total = estimatedTotalLabel(projection.estimatedCost);
   const openProfile = useOpenTravelerProfile();
+  const openPlace = useOpenPlace();
   const handle = bylineHandle(projection.creator.handle);
 
   return (
@@ -151,11 +154,15 @@ function PublishedHeader({
       <CoverSlot coverUrl={projection.coverImageUrl} />
 
       <View style={styles.pillRow}>
-        {pill !== undefined && destinationUrl !== undefined && (
+        {pill !== undefined && destinationTap !== null && (
           <Pressable
             accessibilityRole="link"
-            accessibilityLabel={mapsLinkLabel(projection.destination)}
-            onPress={() => openInMaps(destinationUrl)}
+            accessibilityLabel={
+              destinationTap.kind === 'viewer'
+                ? pinnedLinkLabel(projection.destination)
+                : mapsLinkLabel(projection.destination)
+            }
+            onPress={() => openPlace(projection.destination, projection.pin, null)}
           >
             {({ pressed }) => (
               <View style={StyleSheet.flatten([styles.pill, pressed && styles.pillPressed])}>
@@ -343,6 +350,7 @@ function ActivityCard({
         <LocationLink
           place={activity.place}
           destination={destination}
+          pin={activity.pin}
           style={styles.activityPlace}
         />
       )}

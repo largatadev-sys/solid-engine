@@ -14,11 +14,11 @@ interface only (ADR-002) — written the one day it is certainly true.
 
 **Blocked by:** None (can start immediately; independent of 01).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Search endpoint returns ranked candidates with coordinates; the lat/lng bias demonstrably reorders them
-- [ ] Fixture suggester selected by config; the IT suite runs green with no network egress
-- [ ] Cache hit avoids a second upstream call for the same query; the per-traveler limit refuses politely and is asserted
-- [ ] Upstream failure surfaces as a defined, non-500 outcome the client can render as "search unavailable"
-- [ ] ArchUnit: nothing outside `place` imports its internals, and the test fails when a violation is planted
-- [ ] The module's own outbound identification (User-Agent) names this application, per OSM/Photon policy
+- [x] Search endpoint returns ranked candidates with coordinates; the lat/lng bias demonstrably reorders them
+- [x] Fixture suggester selected by config; the IT suite runs green with no network egress
+- [x] Cache hit avoids a second upstream call for the same query; the per-traveler limit refuses politely and is asserted
+- [x] Upstream failure surfaces as a defined, non-500 outcome the client can render as "search unavailable"
+- [x] ArchUnit: nothing outside `place` imports its internals, and the test fails when a violation is planted
+- [x] The module's own outbound identification (User-Agent) names this application, per OSM/Photon policy
