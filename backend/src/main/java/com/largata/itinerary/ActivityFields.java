@@ -17,7 +17,8 @@ public record ActivityFields(
         String bookingPurpose,
         String bookingProvider,
         BigDecimal bookingPriceAmount,
-        String bookingPriceCurrency) {
+        String bookingPriceCurrency,
+        Pin pin) {
 
     public ActivityFields pricedIn(String tripCurrency) {
         if (costAmount == null || tripCurrency == null) {
@@ -35,7 +36,8 @@ public record ActivityFields(
                 bookingPurpose,
                 bookingProvider,
                 bookingPriceAmount,
-                bookingPriceCurrency);
+                bookingPriceCurrency,
+                pin);
     }
 
 
@@ -67,6 +69,9 @@ public record ActivityFields(
         if (bookingPriceAmount != null && bookingPriceAmount.signum() < 0) {
             throw new IllegalArgumentException("A booking price cannot be negative");
         }
+        if (pin != null && place == null) {
+            throw new IllegalArgumentException("A pinned location needs a place a traveler can read");
+        }
     }
 
     boolean describesSamePlanAs(ActivityFields other) {
@@ -81,7 +86,8 @@ public record ActivityFields(
                 && Objects.equals(bookingPurpose, other.bookingPurpose)
                 && Objects.equals(bookingProvider, other.bookingProvider)
                 && sameAmount(bookingPriceAmount, other.bookingPriceAmount)
-                && Objects.equals(bookingPriceCurrency, other.bookingPriceCurrency);
+                && Objects.equals(bookingPriceCurrency, other.bookingPriceCurrency)
+                && Objects.equals(pin, other.pin);
     }
 
 
@@ -106,7 +112,8 @@ public record ActivityFields(
                 activity.bookingPurpose(),
                 activity.bookingProvider(),
                 activity.bookingPriceAmount(),
-                activity.bookingPriceCurrency());
+                activity.bookingPriceCurrency(),
+                activity.pin());
     }
 
     private static String requireBoundedNonBlank(String value, int max, String blankMessage) {

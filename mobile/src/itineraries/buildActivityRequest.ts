@@ -1,4 +1,4 @@
-import type { ActivityRequest } from '../types/api';
+import type { ActivityRequest, Pin } from '../types/api';
 
 
 export type ActivityFormValues = {
@@ -8,6 +8,7 @@ export type ActivityFormValues = {
   costAmount?: string;
   costCurrency?: string;
   externalUrl?: string;
+  pin?: Pin | null;
 };
 
 
@@ -47,6 +48,8 @@ export function buildActivityRequest(
 
   const link = trimmed(form.externalUrl);
   if (link !== undefined) request.externalUrl = link;
+
+  if (form.pin !== undefined && (place !== undefined || form.pin === null)) request.pin = form.pin;
 
   if (existing !== undefined) {
     for (const field of CARRIED_OVER) {

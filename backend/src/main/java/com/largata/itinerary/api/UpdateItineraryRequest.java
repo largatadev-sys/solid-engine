@@ -21,7 +21,8 @@ public record UpdateItineraryRequest(
         Patchable<List<String>> standouts,
         Patchable<String> bestTimeOfYear,
         Patchable<LocalDate> startDate,
-        Patchable<LocalDate> endDate)
+        Patchable<LocalDate> endDate,
+        Patchable<@jakarta.validation.Valid PinPayload> pin)
         implements HasDateRange {
 
 
@@ -46,7 +47,16 @@ public record UpdateItineraryRequest(
                 standoutsOnto(current.standouts()),
                 bestTimeOfYearOnto(current.bestTimeOfYear()),
                 Patchable.applyTo(startDate, current.startDate()),
-                Patchable.applyTo(endDate, current.endDate()));
+                Patchable.applyTo(endDate, current.endDate()),
+                pinOnto(current.pin()));
+    }
+
+
+    private com.largata.itinerary.Pin pinOnto(com.largata.itinerary.Pin current) {
+        if (Patchable.isAbsent(pin)) {
+            return current;
+        }
+        return pin.clears() ? null : PinPayload.toPin(pin.value());
     }
 
 

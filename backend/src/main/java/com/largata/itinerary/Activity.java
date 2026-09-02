@@ -66,6 +66,13 @@ class Activity {
     private String bookingPriceCurrency;
 
 
+    @Column private BigDecimal latitude;
+
+    @Column private BigDecimal longitude;
+
+    @Column private Short zoom;
+
+
     @Column(name = "last_edited_by", nullable = false)
     private UUID lastEditedBy;
 
@@ -113,7 +120,8 @@ class Activity {
                 bookingPurpose,
                 bookingProvider,
                 bookingPriceAmount,
-                bookingPriceCurrency);
+                bookingPriceCurrency,
+                pin());
     }
 
 
@@ -145,6 +153,10 @@ class Activity {
         this.bookingProvider = fields.bookingProvider();
         this.bookingPriceAmount = fields.bookingPriceAmount();
         this.bookingPriceCurrency = fields.bookingPriceCurrency();
+        Pin pin = fields.pin();
+        this.latitude = pin == null ? null : pin.latitude();
+        this.longitude = pin == null ? null : pin.longitude();
+        this.zoom = pin == null ? null : (short) pin.zoom();
         this.lastEditedBy = editor;
         this.lastEditedAt = at;
     }
@@ -207,6 +219,10 @@ class Activity {
 
     String bookingPriceCurrency() {
         return bookingPriceCurrency;
+    }
+
+    Pin pin() {
+        return Pin.readFrom(latitude, longitude, zoom);
     }
 
     UUID lastEditedBy() {

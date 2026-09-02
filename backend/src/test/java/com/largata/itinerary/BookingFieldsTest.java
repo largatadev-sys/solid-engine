@@ -82,7 +82,8 @@ class BookingFieldsTest {
                         "River tour",
                         "Klook",
                         new BigDecimal("1800"),
-                        "PHP");
+                        "PHP",
+                        null);
 
         assertThat(fields.costAmount())
                 .as("the founder's recorded call: these are two numbers, and neither derives from the other")
@@ -155,7 +156,8 @@ class BookingFieldsTest {
                     purpose,
                     provider,
                     priceAmount,
-                    priceCurrency);
+                    priceCurrency,
+                    null);
         }
     }
 }

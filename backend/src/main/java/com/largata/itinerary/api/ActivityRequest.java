@@ -31,14 +31,16 @@ public record ActivityRequest(
                         regexp = "^$|^\\d+(\\.\\d{1,2})?$",
                         message = "A booking price must be a number like 1800 or 1800.00.")
                 String bookingPriceAmount,
-        @Size(max = 8, message = "A currency code may be at most 8 characters.") String bookingPriceCurrency)
+        @Size(max = 8, message = "A currency code may be at most 8 characters.") String bookingPriceCurrency,
+        @jakarta.validation.Valid PinPayload pin)
         implements HasPairedMoney {
 
 
     public ActivityFields toFields() {
         return new ActivityFields(
                 title, parseTime(timeOfDay), parseAmount(costAmount), costCurrency, place, description, notes,
-                externalUrl, bookingPurpose, bookingProvider, parseAmount(bookingPriceAmount), bookingPriceCurrency);
+                externalUrl, bookingPurpose, bookingProvider, parseAmount(bookingPriceAmount), bookingPriceCurrency,
+                PinPayload.toPin(pin));
     }
 
     private static LocalTime parseTime(String value) {

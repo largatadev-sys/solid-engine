@@ -141,6 +141,7 @@ function activityFrom(activity: ActivityResponse): StagedActivity {
       costAmount: activity.costAmount ?? undefined,
       costCurrency: activity.costCurrency ?? undefined,
       place: activity.place ?? undefined,
+      pin: activity.pin ?? undefined,
       description: activity.description ?? undefined,
       notes: activity.notes ?? undefined,
       externalUrl: activity.externalUrl ?? undefined,

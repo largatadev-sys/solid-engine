@@ -243,6 +243,21 @@
       <artifactId>testcontainers-minio</artifactId>
       <scope>test</scope>
     </dependency>
+    <!--
+      PL-2. The module-boundary pilot (ADR-002). `place` is born with its boundary ENFORCED rather
+      than documented, because the alternative is what `itinerary` became: 80 classes nothing stops
+      anyone reaching into. Written the one day it is certainly true — a boundary test added later
+      has to be argued past every violation that accumulated meanwhile.
+
+      Version pinned by hand: ArchUnit is not in the Spring Boot BOM, so there is nothing to inherit
+      from (unlike every Testcontainers artifact above).
+    -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <version>1.4.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

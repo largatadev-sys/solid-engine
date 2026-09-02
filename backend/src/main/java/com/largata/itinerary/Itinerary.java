@@ -7,6 +7,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -55,6 +56,13 @@ public class Itinerary {
 
     @Column(name = "cover_image_url")
     private String coverImageUrl;
+
+
+    @Column private BigDecimal latitude;
+
+    @Column private BigDecimal longitude;
+
+    @Column private Short zoom;
 
 
     @Column(name = "last_edited_by")
@@ -120,6 +128,11 @@ public class Itinerary {
         if (fields.standouts() != null) {
             this.standouts = fields.standouts();
         }
+        Pin pin = fields.pin();
+        this.latitude = pin == null ? null : pin.latitude();
+        this.longitude = pin == null ? null : pin.longitude();
+        this.zoom = pin == null ? null : (short) pin.zoom();
+
         if (fields.bestTimeOfYear() != null) {
             this.bestTimeOfYear = fields.bestTimeOfYear().isEmpty() ? null : fields.bestTimeOfYear();
         }
@@ -195,7 +208,8 @@ public class Itinerary {
                                 source.standouts(),
                                 source.bestTimeOfYear == null ? "" : source.bestTimeOfYear,
                                 null,
-                                null),
+                                null,
+                                source.pin()),
                         at);
         copy.lastEditedBy = forkerId;
         copy.lastEditedAt = at;
@@ -294,6 +308,11 @@ public class Itinerary {
 
     public String destination() {
         return destination;
+    }
+
+
+    public Pin pin() {
+        return Pin.readFrom(latitude, longitude, zoom);
     }
 
 

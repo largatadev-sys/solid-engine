@@ -73,10 +73,18 @@ export type TripCategory = 'draft' | 'upcoming' | 'ongoing' | 'complete';
 export type PublishAudience = Visibility;
 
 
+export type Pin = {
+  lat: number;
+  lng: number;
+  zoom: number;
+};
+
+
 export type ItineraryResponse = {
   id: string;
   title: string;
   destination: string;
+  pin: Pin | null;
   currency: string | null;
 
   description: string | null;
@@ -166,6 +174,7 @@ export type ActivityResponse = {
   costAmount: string | null;
   costCurrency: string | null;
   place: string | null;
+  pin: Pin | null;
   description: string | null;
   notes: string | null;
   externalUrl: string | null;
@@ -218,6 +227,7 @@ export type PublishedActivityResponse = {
   costAmount: string | null;
   costCurrency: string | null;
   place: string | null;
+  pin: Pin | null;
   description: string | null;
 
   notes: string | null;
@@ -252,6 +262,7 @@ export type PublishedItineraryResponse = {
   id: string;
   title: string;
   destination: string;
+  pin: Pin | null;
   description: string | null;
 
   standouts: string[];
@@ -308,6 +319,7 @@ export type ActivityRequest = {
   costAmount?: string;
   costCurrency?: string;
   place?: string;
+  pin?: Pin | null;
   description?: string;
   notes?: string;
   externalUrl?: string;
