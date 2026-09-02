@@ -209,7 +209,7 @@ export function PlacePickerModal({
               value={resolving ? '' : named}
               onChangeText={setNamed}
               placeholder={resolving ? RESOLVING_PLACE : PLACE_LABEL}
-              placeholderTextColor={workspaceColors.placeholder}
+              placeholderTextColor={workspaceColors.accent}
               accessibilityLabel={PLACE_LABEL}
               editable={!resolving}
               numberOfLines={1}
