@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { webStyle } from '../itineraries/webStyle';
+import { zoomAfterPinch } from './tileProjection';
+
+
+const TAP_SLOP = 6;
+
+const DOUBLE_TAP_MS = 320;
 
 
 export type MapGesture = {
@@ -13,29 +19,56 @@ export function useMapGesture({
   onPan,
   onSettle,
   onZoom,
+  zoom,
   surfaceRef,
   dragging,
 }: {
   readonly onPan: (dx: number, dy: number) => void;
   readonly onSettle: (dx: number, dy: number) => void;
   readonly onZoom: (by: number) => void;
+  readonly zoom: number;
   readonly surfaceRef?: { current: unknown };
   readonly dragging: boolean;
 }): MapGesture {
-  const live = useRef({ onPan, onSettle, onZoom });
-  live.current = { onPan, onSettle, onZoom };
+  const live = useRef({ onPan, onSettle, onZoom, zoom });
+  live.current = { onPan, onSettle, onZoom, zoom };
 
+  const down = useRef(new Map<number, { x: number; y: number }>());
   const from = useRef<{ x: number; y: number } | null>(null);
+  const pinch = useRef<{ span: number; zoom: number; applied: number } | null>(null);
+  const lastTap = useRef(0);
 
   useEffect(() => {
     const found = surfaceRef?.current as HTMLElement | null | undefined;
     if (found === null || found === undefined || typeof found.addEventListener !== 'function') return;
     const node: HTMLElement = found;
 
+    const spanOf = (): number => {
+      const [a, b] = [...down.current.values()];
+      if (a === undefined || b === undefined) return 0;
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    };
+
     const moving = (event: PointerEvent) => {
-      const start = from.current;
-      if (start === null) return;
-      live.current.onPan(event.clientX - start.x, event.clientY - start.y);
+      if (!down.current.has(event.pointerId)) return;
+      down.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+      if (down.current.size >= 2) {
+        const start = pinch.current;
+        if (start === null) return;
+
+        const wanted = zoomAfterPinch(start.zoom, start.span, spanOf());
+        const step = wanted - start.zoom - start.applied;
+        if (step !== 0) {
+          pinch.current = { ...start, applied: start.applied + step };
+          live.current.onZoom(step);
+        }
+        return;
+      }
+
+      const anchor = from.current;
+      if (anchor === null) return;
+      live.current.onPan(event.clientX - anchor.x, event.clientY - anchor.y);
     };
 
     const swallow = (event: Event) => event.preventDefault();
@@ -49,18 +82,49 @@ export function useMapGesture({
     }
 
     function settle(event: PointerEvent): void {
-      const start = from.current;
-      if (start === null) return;
+      down.current.delete(event.pointerId);
 
-      const dx = event.clientX - start.x;
-      const dy = event.clientY - start.y;
+      if (down.current.size >= 1) {
+        const [remaining] = [...down.current.values()];
+        from.current = remaining ?? null;
+        pinch.current = null;
+        return;
+      }
+
+      const anchor = from.current;
+      const pinched = pinch.current !== null;
       from.current = null;
+      pinch.current = null;
       release();
+
+      if (anchor === null || pinched) {
+        live.current.onSettle(0, 0);
+        return;
+      }
+
+      const dx = event.clientX - anchor.x;
+      const dy = event.clientY - anchor.y;
+
+      if (Math.hypot(dx, dy) <= TAP_SLOP) {
+        const now = Date.now();
+        const quick = now - lastTap.current <= DOUBLE_TAP_MS;
+        lastTap.current = quick ? 0 : now;
+        if (quick) live.current.onZoom(1);
+        live.current.onSettle(0, 0);
+        return;
+      }
 
       live.current.onSettle(dx, dy);
     }
 
     const grab = (event: PointerEvent) => {
+      down.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+      if (down.current.size === 2) {
+        pinch.current = { span: spanOf(), zoom: live.current.zoom, applied: 0 };
+        return;
+      }
+
       from.current = { x: event.clientX, y: event.clientY };
       window.addEventListener('pointermove', moving);
       window.addEventListener('pointerup', settle);
@@ -83,6 +147,7 @@ export function useMapGesture({
 
     return () => {
       release();
+      down.current.clear();
       node.removeEventListener('pointerdown', grab);
       node.removeEventListener('wheel', wheeling);
       node.removeEventListener('contextmenu', block);

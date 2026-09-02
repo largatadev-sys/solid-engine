@@ -4,7 +4,7 @@ import { ownerTagFor } from '../support/identities';
 import { seedTrip, stamp } from '../support/seed';
 import { labelled } from '../support/screen';
 import {
-  PICKER_CANCEL,
+  PICKER_DISMISS,
   PICKER_CONFIRM,
   PICKER_TITLE,
   SEARCH_PLACEHOLDER,
@@ -106,7 +106,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
     await labelled(page, OPEN_THE_MAP).click();
     await expect(page.locator(`text=${PICKER_TITLE}`).last()).toBeVisible({ timeout: 15_000 });
-    await labelled(page, PICKER_CANCEL).last().click();
+    await labelled(page, PICKER_DISMISS).last().click();
 
     await expect(labelled(page, 'Activity name').last()).toHaveValue('Unchanged');
   });

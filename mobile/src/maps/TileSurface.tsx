@@ -55,6 +55,7 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
       if (dx !== 0 || dy !== 0) onMove(panned(centre, zoom, dx, dy), zoom);
     },
     onZoom: (by) => onMove(centre, clampZoom(zoom + by)),
+    zoom,
     surfaceRef,
     dragging: drag !== null,
   });

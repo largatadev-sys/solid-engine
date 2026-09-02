@@ -12,7 +12,7 @@ export const PICKER_TITLE = 'Pick a location';
 
 export const PICKER_CONFIRM = 'Use this location';
 
-export const PICKER_CANCEL = 'Cancel';
+export const PICKER_DISMISS = 'Close the map';
 
 export const PICKER_REMOVE = 'Remove pin';
 
