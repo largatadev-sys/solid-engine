@@ -7,6 +7,8 @@ import { labelled } from '../support/screen';
 import { OPEN_IN_MAPS, pinnedLinkLabel, viewerLabel } from '../../src/maps/mapCopy';
 import { mapsLinkLabel } from '../../src/places/mapsQuery';
 
+const DAY_BY_DAY = 'Day-by-Day';
+
 const OWNER = ownerTagFor('web/pin-drop');
 
 requireStack(OWNER);
@@ -65,6 +67,7 @@ test.describe('a pinned place opens in-app; a text-only place still hands off (P
 
   test('a pinned place opens the in-app viewer rather than leaving the app', async ({ page }) => {
     await page.goto(`/published/${publishedId}`);
+    await labelled(page, DAY_BY_DAY).click();
     await expect(labelled(page, pinnedLinkLabel(PINNED)).last()).toBeVisible({ timeout: 20_000 });
 
     await labelled(page, pinnedLinkLabel(PINNED)).last().click();
@@ -77,6 +80,7 @@ test.describe('a pinned place opens in-app; a text-only place still hands off (P
 
   test('the viewer offers the Google Maps escape it exists beside', async ({ page }) => {
     await page.goto(`/published/${publishedId}`);
+    await labelled(page, DAY_BY_DAY).click();
     await labelled(page, pinnedLinkLabel(PINNED)).last().click();
     await expect(labelled(page, viewerLabel(PINNED)).last()).toBeVisible({ timeout: 15_000 });
 
@@ -90,6 +94,7 @@ test.describe('a pinned place opens in-app; a text-only place still hands off (P
 
   test('a text-only place still opens Google Maps, exactly as PL-1 shipped it', async ({ page }) => {
     await page.goto(`/published/${publishedId}`);
+    await labelled(page, DAY_BY_DAY).click();
     await expect(labelled(page, mapsLinkLabel(TEXT_ONLY)).last()).toBeVisible({ timeout: 20_000 });
 
     await labelled(page, mapsLinkLabel(TEXT_ONLY)).last().click();
@@ -103,6 +108,7 @@ test.describe('a pinned place opens in-app; a text-only place still hands off (P
 
   test('the viewer names the place, never its coordinates', async ({ page }) => {
     await page.goto(`/published/${publishedId}`);
+    await labelled(page, DAY_BY_DAY).click();
     await labelled(page, pinnedLinkLabel(PINNED)).last().click();
     await expect(labelled(page, viewerLabel(PINNED)).last()).toBeVisible({ timeout: 15_000 });
 
@@ -116,6 +122,7 @@ test.describe('a pinned place opens in-app; a text-only place still hands off (P
 
   test('the map credits OpenStreetMap, because attribution is a licence obligation', async ({ page }) => {
     await page.goto(`/published/${publishedId}`);
+    await labelled(page, DAY_BY_DAY).click();
     await labelled(page, pinnedLinkLabel(PINNED)).last().click();
     await expect(labelled(page, viewerLabel(PINNED)).last()).toBeVisible({ timeout: 15_000 });
 
