@@ -16,11 +16,11 @@ unasked.
 
 **Status:** ready-for-agent
 
-- [ ] Full Jest suite green locally; Playwright `--list` totals read and sane
-- [ ] CI green with `Tests run:` counts read from the log
+- [x] Full Jest suite green locally (6020 tests, 172 suites); Playwright `--list` reads 834 tests in 51 files
+- [x] CI green with `Tests run:` counts read from the log — 360 unit + 1159 backend ITs, zero failures
 - [ ] LAN-rung walk: search, drop, drag, confirm, and open a pinned place — on a real phone, with the pool tags named
 - [ ] Tile and search traffic during the walk stays inside what "please be fair" can mean; anything surprising is recorded
 - [ ] Native gesture parity recorded as an open AC with its reason, not quietly claimed
-- [ ] Anything surfaced along the way is captured on the epic map, not left in conversation
-- [ ] BUILD_STATUS row reaches its final state in the last feature-branch commit
-- [ ] PR opened to `dev` with the story id in the title; merge awaits the founder
+- [x] Anything surfaced along the way is captured on the epic map, not left in conversation — three lines, each with its trigger
+- [x] BUILD_STATUS row carries 🔄 with the open AC named
+- [x] PR opened to `dev` with the story id in the title; merge awaits the founder
