@@ -33,6 +33,11 @@ test.beforeAll(async () => {
 });
 
 
+test.beforeEach(async ({ signIn }) => {
+  await signIn(OWNER);
+});
+
+
 test.describe.configure({ mode: 'serial' });
 
 test.describe('picking a place drops a pin the save carries (PL-2)', () => {

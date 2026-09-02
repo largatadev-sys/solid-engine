@@ -41,6 +41,11 @@ test.beforeAll(async () => {
 });
 
 
+test.beforeEach(async ({ signIn }) => {
+  await signIn(OWNER);
+});
+
+
 test.describe('a pinned place opens in-app; a text-only place still hands off (PL-2)', () => {
 
   test('the pin round-trips through the API exactly as it was dropped', async () => {
