@@ -238,6 +238,53 @@ class PlanSaveIT extends PostgresTestBase {
     }
 
 
+    @Test
+    void aPinDroppedInTheBufferRidesTheSameSaveAsEveryOtherField() {
+        String owner = rig.travelerWithHandle("owner" + suffix());
+        String tripId = rig.createTrip(owner, 1);
+        UUID dayOne = rig.dayAt(tripId, 1);
+        long base = rig.planVersionOf(owner, tripId);
+
+        rig.hold(owner, tripId, "session", null);
+        savePlan(owner, tripId, base, """
+                {"basePlanVersion": %d, "days": [
+                  {"id": "%s", "activities": [
+                    {"fields": {"title": "Kayak", "place": "Big Lagoon",
+                                "pin": {"lat": 11.1949, "lng": 119.4013, "zoom": 15}}}
+                  ]}
+                ]}
+                """.formatted(base, dayOne))
+                .expectStatus()
+                .isOk();
+
+        assertThat(new String(rig.readTrip(owner, tripId)))
+                .as("the picker stages a pin like any other field, and Save Plan is what writes it")
+                .contains("11.194900")
+                .contains("119.401300");
+    }
+
+
+    @Test
+    void aPinnedActivityWithNoPlaceIsRefusedOnTheBufferedPathToo_notOnlyOnTheDirectOne() {
+        String owner = rig.travelerWithHandle("owner" + suffix());
+        String tripId = rig.createTrip(owner, 1);
+        UUID dayOne = rig.dayAt(tripId, 1);
+        long base = rig.planVersionOf(owner, tripId);
+
+        rig.hold(owner, tripId, "session", null);
+        savePlan(owner, tripId, base, """
+                {"basePlanVersion": %d, "days": [
+                  {"id": "%s", "activities": [
+                    {"fields": {"title": "Kayak",
+                                "pin": {"lat": 11.1949, "lng": 119.4013, "zoom": 15}}}
+                  ]}
+                ]}
+                """.formatted(base, dayOne))
+                .expectStatus()
+                .isBadRequest();
+    }
+
+
     private RestTestClient.ResponseSpec savePlan(String token, String tripId, long base, String body) {
         assertThat(base).isNotNegative();
         return rig.send(HttpMethod.PUT, "/v1/itineraries/" + tripId + "/plan", token, body);
