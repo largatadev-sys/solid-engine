@@ -48,10 +48,21 @@ const must = (res, what) => {
   return res.body;
 };
 
+async function pinFor(token, place, near) {
+  const bias = near === undefined ? '' : `&lat=${near.lat}&lng=${near.lng}`;
+  const found = await api(`/v1/places/search?q=${encodeURIComponent(place)}${bias}`, 'GET', token);
+  const best = found.body?.results?.[0];
+  if (best === undefined) return undefined;
+
+  return { lat: best.lat, lng: best.lng, zoom: 16 };
+}
+
+
 const TRIPS = [
   {
     title: 'Island Hopping in El Nido',
     destination: 'Palawan',
+    near: 'El Nido, Palawan, Philippines',
     description: "Four islands, one lagoon you will not stop talking about, and the best grilled fish of your life.",
     bestTimeOfYear: 'Dec – Apr',
     standouts: ['Big Lagoon Kayaking', 'Secret Beach at low tide', 'Local Seafood Dinners'],
@@ -81,6 +92,7 @@ const TRIPS = [
   {
     title: 'Hokkaido in Winter',
     destination: 'Sapporo',
+    near: 'Sapporo, Hokkaido, Japan',
     description: 'Powder, ramen, and the quietest train ride in Japan.',
     bestTimeOfYear: 'Jan – Feb',
     standouts: ['Otaru canal at night', 'Sapporo Snow Festival'],
@@ -102,6 +114,7 @@ const TRIPS = [
   {
     title: 'Lisbon, slowly',
     destination: 'Lisbon',
+    near: 'Lisboa, Portugal',
     description: 'No itinerary. Pastéis, trams, and a lot of walking uphill.',
     bestTimeOfYear: 'Sep – Oct',
     standouts: ['Tram 28 end to end'],
@@ -117,6 +130,7 @@ const TRIPS = [
   {
     title: 'Someday, Patagonia',
     destination: 'Patagonia',
+    near: 'El Chalten, Santa Cruz, Argentina',
     description: null,
     bestTimeOfYear: null,
     standouts: [],
@@ -154,16 +168,21 @@ async function main() {
       durationDays: spec.durationDays,
     }), `create ${spec.title}`);
 
+    const region = await pinFor(owner, spec.near ?? spec.destination);
+
     for (const [index, activities] of spec.days.entries()) {
       const dayId = created.days[index]?.id;
       if (dayId === undefined) continue;
       for (const activity of activities) {
-        must(await api(`/v1/itineraries/${created.id}/days/${dayId}/activities`, 'POST', owner, activity),
+        const pin = activity.place === undefined ? undefined : await pinFor(owner, activity.place, region);
+        must(
+          await api(`/v1/itineraries/${created.id}/days/${dayId}/activities`, 'POST', owner,
+            pin === undefined ? activity : { ...activity, pin }),
           `activity ${activity.title}`);
       }
     }
 
-    if (spec.standouts.length > 0 || spec.bestTimeOfYear !== null) {
+    if (spec.standouts.length > 0 || spec.bestTimeOfYear !== null || region !== undefined) {
       must(await api(`/v1/itineraries/${created.id}/edit-lock`, 'POST', owner, { subjectType: 'header' }),
         'header lease');
       must(await api(`/v1/itineraries/${created.id}`, 'PATCH', owner, {
@@ -172,6 +191,7 @@ async function main() {
         ...(spec.description === null ? {} : { description: spec.description }),
         standouts: spec.standouts,
         bestTimeOfYear: spec.bestTimeOfYear ?? '',
+        ...(region === undefined ? {} : { pin: region }),
       }), 'dress the header');
       await api(`/v1/itineraries/${created.id}/edit-lock`, 'DELETE', owner, { subjectType: 'header' });
     }
