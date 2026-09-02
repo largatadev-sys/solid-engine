@@ -168,3 +168,19 @@ describe('the empty name field asks for attention (PL-2 founder pass)', () => {
     expect(picker).toContain("if (named.trim() !== '') return;");
   });
 });
+
+
+describe('the Google handoff uses the pin, not the name (PL-2 founder pass)', () => {
+  it('the viewer hands Google the coordinates it is already showing', () => {
+    const viewer = read('MapViewerScreen.tsx');
+
+    expect(viewer).toContain('mapsPinUrl(pin.lat, pin.lng)');
+  });
+
+  it('a text-only place still searches by name — PL-1 behaviour, deliberately kept', () => {
+    const tap = read('placeTap.ts');
+
+    expect(tap).toContain('mapsUrl(named, destination)');
+    expect(tap).not.toContain('mapsPinUrl');
+  });
+});

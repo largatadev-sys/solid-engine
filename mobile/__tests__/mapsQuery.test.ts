@@ -1,4 +1,4 @@
-import { mapsLinkLabel, mapsQuery, mapsUrl } from '../src/places/mapsQuery';
+import { mapsLinkLabel, mapsPinUrl, mapsQuery, mapsUrl } from '../src/places/mapsQuery';
 
 
 describe('mapsQuery — the destination-hint rule (PL-1)', () => {
@@ -63,5 +63,27 @@ describe('mapsUrl — the universal Google Maps search link (PL-1)', () => {
 describe('the accessibility label every location link carries (PL-1)', () => {
   it('names the place and says the tap leaves for Google Maps', () => {
     expect(mapsLinkLabel('Big Lagoon')).toBe('Big Lagoon, open in Google Maps');
+  });
+});
+
+
+describe('a pinned place hands Google the POINT, not the name (PL-2)', () => {
+  it('sends coordinates, so the pin lands where the traveler put it', () => {
+    expect(mapsPinUrl(11.1949, 119.4013)).toBe(
+      'https://www.google.com/maps/search/?api=1&query=11.1949%2C119.4013',
+    );
+  });
+
+  it('works for a name Google has never heard of — which is the whole point', () => {
+    expect(mapsPinUrl(11.25, 119.3)).toContain('query=11.25%2C119.3');
+  });
+
+  it('handles the southern and western hemispheres without mangling the sign', () => {
+    expect(mapsPinUrl(-33.8688, -151.2093)).toContain('query=-33.8688%2C-151.2093');
+  });
+
+  it('refuses a coordinate that is not a number rather than sending "NaN"', () => {
+    expect(mapsPinUrl(Number.NaN, 119.4)).toBeUndefined();
+    expect(mapsPinUrl(11.19, Number.POSITIVE_INFINITY)).toBeUndefined();
   });
 });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { mapsUrl } from '../places/mapsQuery';
+import { mapsPinUrl, mapsUrl } from '../places/mapsQuery';
 import { openInMaps } from '../places/openInMaps';
 import { spacing } from '../theme';
 import { mapColors, mapMetrics, workspaceColors, workspaceRadii } from '../theme/workspaceTokens';
@@ -24,7 +24,7 @@ export function MapViewerScreen({ place, pin, zoom, destination, onClose }: MapV
   const config = useMapConfig();
   const [view, setView] = useState({ centre: pin, zoom });
 
-  const handoff = mapsUrl(place, destination);
+  const handoff = mapsPinUrl(pin.lat, pin.lng) ?? mapsUrl(place, destination);
 
   return (
     <View style={styles.screen} accessibilityLabel={viewerLabel(place)}>

@@ -24,3 +24,10 @@ export function mapsUrl(place: string, destination: string | null): string | und
 export function mapsLinkLabel(place: string): string {
   return `${place.trim()}, open in Google Maps`;
 }
+
+
+export function mapsPinUrl(lat: number, lng: number): string | undefined {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+
+  return `${MAPS_SEARCH}${encodeURIComponent(`${lat},${lng}`)}`;
+}
