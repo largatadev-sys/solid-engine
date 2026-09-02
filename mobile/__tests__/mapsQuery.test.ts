@@ -1,4 +1,10 @@
-import { mapsLinkLabel, mapsPinUrl, mapsQuery, mapsUrl } from '../src/places/mapsQuery';
+import {
+  mapsLinkLabel,
+  mapsPinUrl,
+  mapsPlaceUrl,
+  mapsQuery,
+  mapsUrl,
+} from '../src/places/mapsQuery';
 
 
 describe('mapsQuery — the destination-hint rule (PL-1)', () => {
@@ -85,5 +91,36 @@ describe('a pinned place hands Google the POINT, not the name (PL-2)', () => {
   it('refuses a coordinate that is not a number rather than sending "NaN"', () => {
     expect(mapsPinUrl(Number.NaN, 119.4)).toBeUndefined();
     expect(mapsPinUrl(11.19, Number.POSITIVE_INFINITY)).toBeUndefined();
+  });
+});
+
+
+describe('a pinned place asks Google for the PLACE, anchored at our point (PL-2)', () => {
+  it('sends the name with the map already centred where the traveler pinned it', () => {
+    expect(mapsPlaceUrl('Lapus Lapus Beach', 11.178, 119.389, 16)).toBe(
+      'https://www.google.com/maps/search/Lapus%20Lapus%20Beach/@11.178,119.389,16z',
+    );
+  });
+
+  it('carries the zoom the traveler framed, so the escape opens as tight as the pin', () => {
+    expect(mapsPlaceUrl('Big Lagoon', 11.19, 119.4, 19)).toContain(',19z');
+  });
+
+  it('clamps a zoom Google will not take rather than sending it', () => {
+    expect(mapsPlaceUrl('Big Lagoon', 11.19, 119.4, 99)).toContain(',21z');
+    expect(mapsPlaceUrl('Big Lagoon', 11.19, 119.4, -5)).toContain(',1z');
+  });
+
+  it('falls back to a sane zoom when the stored one is not a number', () => {
+    expect(mapsPlaceUrl('Big Lagoon', 11.19, 119.4, Number.NaN)).toContain(',16z');
+  });
+
+  it('refuses a nameless or off-the-map place, leaving the caller to send coordinates', () => {
+    expect(mapsPlaceUrl('   ', 11.19, 119.4, 16)).toBeUndefined();
+    expect(mapsPlaceUrl('Big Lagoon', Number.NaN, 119.4, 16)).toBeUndefined();
+  });
+
+  it('escapes a name that would otherwise break the path', () => {
+    expect(mapsPlaceUrl("Lolo Bob's B&B", 11.17, 119.39, 16)).toContain("Lolo%20Bob's%20B%26B");
   });
 });

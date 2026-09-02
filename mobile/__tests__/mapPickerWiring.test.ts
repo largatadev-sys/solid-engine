@@ -170,11 +170,19 @@ describe('the empty name field asks for attention (PL-2 founder pass)', () => {
 });
 
 
-describe('the Google handoff uses the pin, not the name (PL-2 founder pass)', () => {
-  it('the viewer hands Google the coordinates it is already showing', () => {
-    const viewer = read('MapViewerScreen.tsx');
+describe('the Google handoff asks for the place, not the words (PL-2 founder pass)', () => {
+  const viewer = read('MapViewerScreen.tsx');
 
+  it('asks for the named place with the map anchored at our point', () => {
+    expect(viewer).toContain('mapsPlaceUrl(place, pin.lat, pin.lng, zoom)');
+  });
+
+  it('falls back to bare coordinates, so a nameless pin still lands exactly', () => {
     expect(viewer).toContain('mapsPinUrl(pin.lat, pin.lng)');
+  });
+
+  it('keeps PL-1 text search as the last resort, for a place with no pin at all', () => {
+    expect(viewer).toContain('mapsUrl(place, destination)');
   });
 
   it('a text-only place still searches by name — PL-1 behaviour, deliberately kept', () => {
@@ -182,5 +190,6 @@ describe('the Google handoff uses the pin, not the name (PL-2 founder pass)', ()
 
     expect(tap).toContain('mapsUrl(named, destination)');
     expect(tap).not.toContain('mapsPinUrl');
+    expect(tap).not.toContain('mapsPlaceUrl');
   });
 });

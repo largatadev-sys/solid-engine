@@ -31,3 +31,19 @@ export function mapsPinUrl(lat: number, lng: number): string | undefined {
 
   return `${MAPS_SEARCH}${encodeURIComponent(`${lat},${lng}`)}`;
 }
+
+
+export function mapsPlaceUrl(
+  place: string,
+  lat: number,
+  lng: number,
+  zoom: number,
+): string | undefined {
+  const named = place.trim();
+  if (named.length === 0) return undefined;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+
+  const close = Number.isFinite(zoom) ? Math.max(1, Math.min(21, Math.round(zoom))) : 16;
+
+  return `https://www.google.com/maps/search/${encodeURIComponent(named)}/@${lat},${lng},${close}z`;
+}
