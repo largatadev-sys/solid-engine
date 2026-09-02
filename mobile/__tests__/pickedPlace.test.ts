@@ -34,31 +34,30 @@ describe('what the pin resolves to (PL-2, the Uber pattern)', () => {
 });
 
 
-describe('the headline under the map', () => {
-  it('reads name and type, the way a venue reads', () => {
-    expect(headlineFor(detailFrom(HOTEL, false))).toBe("Lolo Bob's B&B · hotel");
+describe('the name the map offers', () => {
+  it('is the venue name, with no OSM type appended', () => {
+    expect(headlineFor(detailFrom(HOTEL, false))).toBe("Lolo Bob's B&B");
   });
 
-  it('drops OSM’s meaningless "yes" type rather than printing it', () => {
-    expect(headlineFor(detailFrom({ ...HOTEL, kind: 'yes' }, false))).toBe("Lolo Bob's B&B");
-  });
-
-  it('says something honest when the map has nothing there', () => {
-    expect(headlineFor(null)).toBe('Dropped pin');
+  it('is empty when the map has nothing there, so the field shows its placeholder', () => {
+    expect(headlineFor(null)).toBe('');
   });
 });
 
 
-describe('what gets saved — always the map’s answer, never a typed one', () => {
-  it('saves the resolved name', () => {
-    expect(nameToSave(detailFrom(HOTEL, false))).toBe("Lolo Bob's B&B");
+describe('what gets saved is what the field holds', () => {
+  it('saves the name, trimmed', () => {
+    expect(nameToSave('  Nacpan Beach ')).toBe('Nacpan Beach');
   });
 
-  it('has nothing to save when nothing resolved, so confirm must stay blocked', () => {
-    expect(nameToSave(null)).toBe('');
+  it('has nothing to save when the traveler cleared it, so confirm must stay blocked', () => {
+    expect(nameToSave('   ')).toBe('');
+  });
+
+  it('saves a name the traveler typed over an unnamed spot', () => {
+    expect(nameToSave('Our secret cove')).toBe('Our secret cove');
   });
 });
-
 
 describe('a search pick stays exact until the traveler pans away', () => {
   const anchor = { lat: 11.1949, lng: 119.4013 };

@@ -18,15 +18,13 @@ export const PICKER_REMOVE = 'Remove pin';
 
 export const PICKER_NEEDS_LABEL = 'Nothing is named here — give this spot a name.';
 
-export const PLACE_LABEL = 'Place name';
+export const PLACE_LABEL = 'Name this place';
 
 export const MOVE_THE_MAP = 'Move the map to place the pin';
 
 export const RESOLVING_PLACE = 'Finding this place...';
 
 export const RESOLVING_CONTEXT = ' ';
-
-export const NOWHERE_NAMED = 'Dropped pin';
 
 export const PIN_AT_CENTRE = 'The pin sits at the centre of the map';
 
@@ -60,8 +58,3 @@ export const PICK_ON_MAP = 'Pick on map';
 
 export const PICKED_ON_MAP = 'Pinned — tap to change';
 
-
-export function placeDetailLine(name: string, kind: string | null): string {
-  const type = kind?.trim() ?? '';
-  return type === '' || type === 'yes' ? name.trim() : `${name.trim()} · ${type}`;
-}

@@ -126,16 +126,27 @@ describe('the map zooms by buttons and double tap only (PL-2 founder pass)', () 
 });
 
 
-describe('the picker never asks the traveler to type a name (PL-2 founder pass)', () => {
+describe('naming is one always-present field (PL-2 founder pass)', () => {
   const picker = read('PlacePickerModal.tsx');
 
-  it('has no name field — its visibility used to depend on the value it collected', () => {
-    expect(picker).not.toContain('PLACE_LABEL');
+  it('the name field is ALWAYS rendered — its old visibility depended on its own value', () => {
     expect(picker).not.toContain('mustType');
     expect(picker).not.toContain('needsTyping');
+    expect(picker).toContain('onChangeText={setNamed}');
   });
 
-  it('saves the name the map resolved, and nothing else', () => {
-    expect(picker).toContain('nameToSave(detail)');
+  it('an unnamed spot can still be pinned, because the traveler can name it', () => {
+    expect(picker).toContain('nameToSave(named)');
+    expect(picker).toContain('placeholder={resolving ? RESOLVING_PLACE : PLACE_LABEL}');
+  });
+
+  it('a resolved place seeds the field, so the common path needs no typing', () => {
+    expect(picker).toContain('setNamed(headlineFor(resolved))');
+    expect(picker).toContain('setNamed(headlineFor(picked))');
+  });
+
+  it('no OSM type is appended to the name a traveler sees or saves', () => {
+    expect(read('pickedPlace.ts')).not.toContain('placeDetailLine');
+    expect(read('mapCopy.ts')).not.toContain('placeDetailLine');
   });
 });

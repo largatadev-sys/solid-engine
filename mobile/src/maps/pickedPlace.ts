@@ -1,5 +1,5 @@
 import type { PlaceCandidateResponse } from '../types/api';
-import { NOWHERE_NAMED, placeDetailLine } from './mapCopy';
+
 
 
 export interface PickedDetail {
@@ -25,12 +25,12 @@ export function detailFrom(candidate: PlaceCandidateResponse | null, exact: bool
 
 
 export function headlineFor(detail: PickedDetail | null): string {
-  return detail === null ? NOWHERE_NAMED : placeDetailLine(detail.name, detail.kind);
+  return detail === null ? '' : detail.name;
 }
 
 
-export function nameToSave(detail: PickedDetail | null): string {
-  return detail === null ? '' : detail.name;
+export function nameToSave(typed: string): string {
+  return typed.trim();
 }
 
 

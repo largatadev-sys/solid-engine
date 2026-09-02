@@ -27,6 +27,7 @@ import {
   PICKER_CONFIRM,
   PICKER_DISMISS,
   PICKER_REMOVE,
+  PLACE_LABEL,
   PIN_AT_CENTRE,
   RESOLVING_CONTEXT,
   RESOLVING_PLACE,
@@ -92,6 +93,7 @@ export function PlacePickerModal({
 
   const [view, setView] = useState(() => openingView(pin, openNear));
   const [detail, setDetail] = useState<PickedDetail | null>(null);
+  const [named, setNamed] = useState('');
   const [resolving, setResolving] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -100,9 +102,10 @@ export function PlacePickerModal({
   useEffect(() => {
     if (!visible) return;
 
-    const named = place.trim();
     setView(openingView(pin, openNear));
-    setDetail(named === '' ? null : { name: named, kind: null, context: null, exact: true });
+    const seeded = place.trim();
+    setDetail(seeded === '' ? null : { name: seeded, kind: null, context: null, exact: true });
+    setNamed(seeded);
     exactAt.current = pin;
     setResolving(false);
     setQuery('');
@@ -119,7 +122,9 @@ export function PlacePickerModal({
       void nameForPin(view.centre.lat, view.centre.lng).then((found) => {
         if (!live) return;
         exactAt.current = null;
-        setDetail(detailFrom(found ?? null, false));
+        const resolved = detailFrom(found ?? null, false);
+        setDetail(resolved);
+        setNamed(headlineFor(resolved));
         setResolving(false);
       });
     }, SETTLE_MS);
@@ -133,13 +138,15 @@ export function PlacePickerModal({
   const accept = (candidate: PlaceCandidateResponse) => {
     const landed: LatLng = { lat: candidate.lat, lng: candidate.lng };
     exactAt.current = landed;
-    setDetail(detailFrom(candidate, true));
+    const picked = detailFrom(candidate, true);
+    setDetail(picked);
+    setNamed(headlineFor(picked));
     setView({ centre: landed, zoom: PICKED_ZOOM });
     setResolving(false);
     setQuery('');
   };
 
-  const confirmable = !resolving && nameToSave(detail).trim() !== '';
+  const confirmable = !resolving && nameToSave(named) !== '';
 
   return (
     <Modal visible={mounted} transparent animationType="none" onRequestClose={onDismiss}>
@@ -197,9 +204,16 @@ export function PlacePickerModal({
           </View>
 
           <View style={styles.detail}>
-            <Text style={styles.headline} numberOfLines={1}>
-              {resolving ? RESOLVING_PLACE : headlineFor(detail)}
-            </Text>
+            <TextInput
+              style={styles.headline}
+              value={resolving ? '' : named}
+              onChangeText={setNamed}
+              placeholder={resolving ? RESOLVING_PLACE : PLACE_LABEL}
+              placeholderTextColor={workspaceColors.placeholder}
+              accessibilityLabel={PLACE_LABEL}
+              editable={!resolving}
+              numberOfLines={1}
+            />
             <Text style={styles.context} numberOfLines={1}>
               {resolving ? RESOLVING_CONTEXT : (detail?.context ?? MOVE_THE_MAP)}
             </Text>
@@ -212,7 +226,7 @@ export function PlacePickerModal({
             disabled={!confirmable}
             onPress={() =>
               onConfirm({
-                place: nameToSave(detail),
+                place: nameToSave(named),
                 pin: { lat: view.centre.lat, lng: view.centre.lng, zoom: clampZoom(view.zoom) },
               })
             }
