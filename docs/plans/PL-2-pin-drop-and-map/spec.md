@@ -41,7 +41,7 @@ An activity's location becomes a **Pin**: a point on a map the traveler chose, s
 ## Implementation Decisions
 
 **The renderer, and why it is not a map library.**
-- A **hand-rolled raster tile viewer**: a pannable grid of OpenStreetMap tile images with a pinch-zoom, written once in JS and rendered identically on native and web. No map SDK.
+- A **hand-rolled raster tile viewer**: a pannable grid of OpenStreetMap tile images with double-tap, wheel and +/− zoom, written once in JS and rendered identically on native and web. No map SDK. *(Pinch shipped and was **removed at the founder's ruling, 2026-09-01** — it never tracked two fingers convincingly on either fork, and the controls make it redundant.)*
 - **`react-native-maps` was tested and rejected on evidence**, not preference: its web fork is a single line — `export {default} from 'react-native-web/dist/modules/UnimplementedView'` — which renders an empty `View`, red-bordered in development and **entirely invisible in production**. Verified in both 1.29.0 and 1.27.2, the version Expo SDK 57 pins. It would have shipped a blank rectangle on the only rung currently available, with no error. On Android it additionally renders through Google's SDK and wants a billed key.
 - **MapLibre was considered and deferred**: genuinely keyless and OSM-native, but a native module needing a new config plugin and a working Gradle build — the fault that has blocked the device rung across four stories. Swapping it in behind the same component later is a contained change, to be made with a working feature in hand rather than on a guess.
 
@@ -68,7 +68,7 @@ An activity's location becomes a **Pin**: a point on a map the traveler chose, s
 **Surfaces and shapes.**
 - **The picker is a modal overlay**, not a pushed route. expo-router unmounts the screen beneath a pushed route on web (the S4.18 finding) and the activity form holds its typed place in local state, so a full-screen picker would eat it on the founder's own verification rung. The `DumpPickerModal` shape is the precedent.
 - **The viewer is a pushed route** — nothing beneath it to lose, and it earns a URL.
-- **The viewer is interactive**: pans and pinches, opening at the pin's stored zoom. A map that cannot move reads as broken to anyone who has used a map.
+- **The viewer is interactive**: pans and zooms, opening at the pin's stored zoom. A map that cannot move reads as broken to anyone who has used a map.
 - Confirming a pin **stages into the draft store** with every other field of the activity form and persists on Save Plan. Writing immediately would make it the only field on that screen that survives a cancel.
 - Capture lands on **Activity** and on the **Itinerary's destination** — the destination pin is not a nicety, it is what lets every activity picker open in the right region with no geocoding call at all.
 
@@ -93,7 +93,7 @@ An activity's location becomes a **Pin**: a point on a map the traveler chose, s
 - **Pin validity is the third**: coordinate ranges, zoom bounds, and the label requirement.
 - **Backend**: the `place` module's suggester contract tested against the fixture implementation, the cache and the per-traveler limit tested at the service, and the **ArchUnit boundary test** asserting nothing outside `place` reaches its internals. Migration coverage follows the `WorkspaceBackfillIT` pattern — its own container, stepped to the prior version, legacy rows planted in raw SQL — and must be **sabotage-checked**, with the sabotage proven to have landed before the run is believed.
 - **Playwright** extends the existing suite: a picker walk (open, search, tap a result, confirm) asserting the coordinates that reach the request, and a viewer walk asserting a pinned place opens the in-app route while a text-only place still hands off to Google Maps via PL-1's captured `window.open`. Specs import strings from `.ts` modules only. Search is served by the fixture suggester, so no walk depends on Komoot being up.
-- **The rung no suite reaches:** real-finger pan and pinch. The LAN rung closes every functional AC — search, drop, drag, confirm, view — on a real phone with a real finger. **Native gesture parity is an explicit open AC**, as it was at PL-1: the recorded Gradle fault is budgeted per the gotcha, one diagnostic pass and not a session.
+- **The rung no suite reaches:** real-finger pan and zoom. The LAN rung closes every functional AC — search, pan-to-place, confirm, view — on a real phone with a real finger. **Native gesture parity is an explicit open AC**, as it was at PL-1: the recorded Gradle fault is budgeted per the gotcha, one diagnostic pass and not a session.
 
 ## Out of Scope
 

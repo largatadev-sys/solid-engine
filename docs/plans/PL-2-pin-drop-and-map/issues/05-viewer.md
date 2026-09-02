@@ -1,7 +1,7 @@
 # 05 — The viewer, and where taps land
 
 **What to build:** the reading half, and the one change PL-1's surfaces need. A **pushed route**
-carrying the tile surface with a pin at its stored zoom — **interactive**, panning and pinching,
+carrying the tile surface with a pin at its stored zoom — **interactive**, panning and zooming,
 because a map that cannot move reads as broken to anyone who has used a map. Inside it, an
 **Open in Google Maps** action built on PL-1's existing query builder: directions are the thing
 travelers most often want from a map and the thing we will never provide, so the escape stays
@@ -16,7 +16,7 @@ whole. The viewer announces the **label**, never raw coordinates.
 
 **Status:** done
 
-- [x] Viewer route opens at the pin's stored zoom and pans and pinches from there
+- [x] Viewer route opens at the pin's stored zoom and pans and zooms from there
 - [x] Open in Google Maps hands off the destination-hinted query PL-1 already builds
 - [x] A pinned place opens the viewer; a text-only place still opens Google Maps, on every surface PL-1 touched
 - [x] The published header destination pill opens the viewer when the destination is pinned

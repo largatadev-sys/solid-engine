@@ -6,7 +6,7 @@ for its `Total:` line, and CI green on the branch with the **`Tests run:` counts
 log, never the conclusion**. Then the rung no suite reaches: the **LAN preview on a real phone**,
 where a real finger pans the map, drops a pin, and opens a pinned place — the recipe and its six
 traps are in CLAUDE.md, and the LAN IP must be re-read rather than remembered. State which pool
-tag played which role. **Native pan and pinch parity is an explicit open AC**, as it was at PL-1:
+tag played which role. **Native pan and zoom parity is an explicit open AC**, as it was at PL-1:
 the recorded Gradle fault is budgeted at one diagnostic pass, not a session, and a JS-only story
 stays walkable through Metro regardless. Then BUILD_STATUS's PL-2 row lands in the last commit
 on the feature branch, and the PR to `dev` opens as the promotion proposal — never merged
