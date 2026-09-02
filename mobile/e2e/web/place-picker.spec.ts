@@ -1,8 +1,8 @@
 import { test, expect } from '../support/fixtures';
 import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
-import { seedDay, seedTrip, stamp } from '../support/seed';
-import { labelStarting, labelled } from '../support/screen';
+import { seedTrip, stamp } from '../support/seed';
+import { labelled } from '../support/screen';
 import {
   PICKER_CANCEL,
   PICKER_CONFIRM,
@@ -19,6 +19,8 @@ requireStack(OWNER);
 
 const BIG_LAGOON = 'Big Lagoon';
 
+const ADD_TO_DAY_ONE = 'Add an activity to Day 1';
+
 let tripId: string;
 
 test.beforeAll(async () => {
@@ -29,7 +31,6 @@ test.beforeAll(async () => {
     durationDays: 1,
   });
   tripId = trip.id;
-  await seedDay(trip, 2);
 });
 
 
@@ -44,8 +45,8 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
   test('the search box the placeholder has promised since S4.17 finally exists', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
-    await expect(labelStarting(page, 'Add an activity to')).toBeVisible({ timeout: 20_000 });
-    await labelStarting(page, 'Add an activity to').click();
+    await expect(labelled(page, ADD_TO_DAY_ONE)).toBeVisible({ timeout: 20_000 });
+    await labelled(page, ADD_TO_DAY_ONE).click();
 
     await labelled(page, PICK_ON_MAP).last().click();
 
@@ -55,7 +56,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
   test('a search result places a pin and offers its name, without imposing it', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
-    await labelStarting(page, 'Add an activity to').click();
+    await labelled(page, ADD_TO_DAY_ONE).click();
     await labelled(page, PICK_ON_MAP).last().click();
 
     await labelled(page, SEARCH_PLACEHOLDER).last().fill(BIG_LAGOON);
@@ -70,12 +71,15 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
   test('the coordinates the confirm produces reach the save request', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
-    await labelStarting(page, 'Add an activity to').click();
+    await labelled(page, ADD_TO_DAY_ONE).click();
 
     await labelled(page, 'Activity name').last().fill('Kayak the lagoon');
     await labelled(page, PICK_ON_MAP).last().click();
     await labelled(page, SEARCH_PLACEHOLDER).last().fill(BIG_LAGOON);
-    await labelled(page, resultLabel(BIG_LAGOON, 'El Nido, Palawan')).last().click();
+
+    const result = labelled(page, resultLabel(BIG_LAGOON, 'El Nido, Palawan')).last();
+    await expect(result).toBeVisible({ timeout: 15_000 });
+    await result.click();
     await labelled(page, PICKER_CONFIRM).last().click();
 
     const saved = page.waitForRequest(
@@ -97,7 +101,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
   test('cancelling the picker leaves the activity form as it was', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
-    await labelStarting(page, 'Add an activity to').click();
+    await labelled(page, ADD_TO_DAY_ONE).click();
     await labelled(page, 'Activity name').last().fill('Unchanged');
 
     await labelled(page, PICK_ON_MAP).last().click();
