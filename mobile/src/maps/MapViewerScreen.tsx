@@ -8,24 +8,23 @@ import { mapColors, mapMetrics, workspaceColors, workspaceRadii } from '../theme
 import { useMapConfig } from '../query/placeQueries';
 import { TileSurface } from './TileSurface';
 import { MAP_UNAVAILABLE, OPEN_IN_MAPS, viewerLabel } from './mapCopy';
+import type { Pin } from './pinRules';
 import type { LatLng } from './tileProjection';
 
 
 interface MapViewerScreenProps {
   readonly place: string;
-  readonly pin: LatLng;
-  readonly zoom: number;
+  readonly pin: Pin;
   readonly destination: string | null;
-  readonly onClose: () => void;
 }
 
 
-export function MapViewerScreen({ place, pin, zoom, destination, onClose }: MapViewerScreenProps) {
+export function MapViewerScreen({ place, pin, destination }: MapViewerScreenProps) {
   const config = useMapConfig();
-  const [view, setView] = useState({ centre: pin, zoom });
+  const [view, setView] = useState({ centre: pin as LatLng, zoom: pin.zoom });
 
   const handoff =
-    mapsPlaceUrl(place, pin.lat, pin.lng, zoom) ??
+    mapsPlaceUrl(place, pin.lat, pin.lng, pin.zoom) ??
     mapsPinUrl(pin.lat, pin.lng) ??
     mapsUrl(place, destination);
 

@@ -10,10 +10,12 @@ import {
 } from 'react-native';
 import { openInMaps } from '../places/openInMaps';
 import { mapColors, mapMetrics } from '../theme/workspaceTokens';
+import { MapPin } from './MapPin';
 import { spacing } from '../theme';
 import {
   MAX_ZOOM,
   MIN_ZOOM,
+  TILE_SIZE,
   clampZoom,
   panned,
   screenOffsetOf,
@@ -55,7 +57,6 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
       if (dx !== 0 || dy !== 0) onMove(panned(centre, zoom, dx, dy), zoom);
     },
     onZoom: (by) => onMove(centre, clampZoom(zoom + by)),
-    zoom,
     surfaceRef,
     dragging: drag !== null,
   });
@@ -84,16 +85,9 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
       </View>
 
       {pinAt === null ? null : (
-        <View
-          pointerEvents="none"
-          style={[
-            styles.pin,
-            { left: pinAt.x - mapMetrics.pinWidth / 2, top: pinAt.y - mapMetrics.pinHeight },
-          ]}
-        >
-          <View style={styles.pinHead} />
-          <View style={styles.pinTip} />
-        </View>
+        <MapPin
+          style={{ left: pinAt.x - mapMetrics.pinWidth / 2, top: pinAt.y - mapMetrics.pinHeight }}
+        />
       )}
 
       {children}
@@ -157,27 +151,7 @@ function ZoomControl({
 const styles = StyleSheet.create({
   surface: { flex: 1, overflow: 'hidden', backgroundColor: mapColors.tileVoid },
   field: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
-  tile: { position: 'absolute', width: 256, height: 256 },
-  pin: {
-    position: 'absolute',
-    width: mapMetrics.pinWidth,
-    height: mapMetrics.pinHeight,
-    alignItems: 'center',
-  },
-  pinHead: {
-    width: mapMetrics.pinWidth,
-    height: mapMetrics.pinWidth,
-    borderRadius: mapMetrics.pinWidth,
-    backgroundColor: mapColors.pinBody,
-    borderWidth: 3,
-    borderColor: mapColors.pinStroke,
-  },
-  pinTip: {
-    width: 4,
-    height: mapMetrics.pinHeight - mapMetrics.pinWidth,
-    marginTop: -mapMetrics.pinTipInset,
-    backgroundColor: mapColors.pinBody,
-  },
+  tile: { position: 'absolute', width: TILE_SIZE, height: TILE_SIZE },
   controls: {
     position: 'absolute',
     right: spacing.sm,

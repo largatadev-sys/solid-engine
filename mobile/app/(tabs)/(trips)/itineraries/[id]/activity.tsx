@@ -25,7 +25,7 @@ import { colors, spacing, typography } from '../../../../../src/theme';
 import type { ActivityRequest } from '../../../../../src/types/api';
 import { PlacePickerModal } from '../../../../../src/maps/PlacePickerModal';
 import { SEARCH_PLACEHOLDER, placeFieldLabel } from '../../../../../src/maps/mapCopy';
-import { pinAfterEdit, type Pin } from '../../../../../src/maps/pinRules';
+import type { Pin } from '../../../../../src/maps/pinRules';
 import { openingPinFor } from '../../../../../src/maps/openingPin';
 import { useItinerary } from '../../../../../src/query/itineraryQueries';
 
@@ -50,7 +50,6 @@ export default function ActivityFormScreen() {
   const costCurrency = existing?.costCurrency ?? homeCurrency;
   const [externalUrl, setExternalUrl] = useState(existing?.externalUrl ?? '');
   const [pin, setPin] = useState<Pin | null>(existing?.pin ?? null);
-  const [pinnedAs, setPinnedAs] = useState(existing?.pin == null ? '' : (existing?.place ?? ''));
   const [picking, setPicking] = useState(false);
   const [problem, setProblem] = useState<string | undefined>(undefined);
 
@@ -63,7 +62,7 @@ export default function ActivityFormScreen() {
     setProblem(undefined);
 
     const request = buildActivityRequest(
-      { title, timeOfDay, place, costAmount, costCurrency, externalUrl, pin: pinAfterEdit(pin, pinnedAs, place) },
+      { title, timeOfDay, place, costAmount, costCurrency, externalUrl, pin },
       existing,
     );
 
@@ -106,7 +105,6 @@ export default function ActivityFormScreen() {
               <Input
                 icon="mapPin"
                 value={place}
-                onChangeText={setPlace}
                 placeholder={SEARCH_PLACEHOLDER}
                 accessibilityLabel="Location or venue"
                 editable={false}
@@ -149,7 +147,6 @@ export default function ActivityFormScreen() {
         onConfirm={(picked) => {
           setPlace(picked.place);
           setPin(picked.pin);
-          setPinnedAs(picked.pin === null ? '' : picked.place);
           setPicking(false);
         }}
         onDismiss={() => setPicking(false)}
@@ -235,17 +232,7 @@ const HEADER_TOP_PADDING = 12;
 const emptyPlan: StagedPlan = { basePlanVersion: 0, days: [] };
 
 
-const PICK_ICON_SIZE = 16;
-
-
 const styles = StyleSheet.create({
-  pickOnMap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  pickOnMapLabel: { color: workspaceColors.accent },
   screen: {
     flex: 1,
     backgroundColor: colors.surface,

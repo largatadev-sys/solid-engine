@@ -44,7 +44,7 @@ describe('the picker is pan-under-a-fixed-pin, with ONE way to place it (PL-2)',
   });
 
   it('confirm commits the point under the pin, never a separately dropped one', () => {
-    expect(picker).toContain('pin: { lat: view.centre.lat, lng: view.centre.lng');
+    expect(picker).toContain('pinToCommit(placed, view.centre, clampZoom(view.zoom))');
   });
 
   it('there is no second way to place a pin — no drop button, no tap-to-drop', () => {
@@ -106,8 +106,9 @@ describe('the map zooms by buttons and double tap only (PL-2 founder pass)', () 
   it.each(['useMapGesture.web.ts', 'useMapGesture.native.ts'])('%s double taps to zoom', (fork) => {
     const source = read(fork);
 
-    expect(source).toContain('DOUBLE_TAP_MS');
+    expect(source).toContain('afterTap(');
     expect(source).toContain('onZoom(1)');
+    expect(read('mapGesture.ts')).toContain('DOUBLE_TAP_MS');
   });
 
   it.each(['useMapGesture.web.ts', 'useMapGesture.native.ts'])('%s carries NO pinch', (fork) => {
@@ -136,13 +137,14 @@ describe('naming is one always-present field (PL-2 founder pass)', () => {
   });
 
   it('an unnamed spot can still be pinned, because the traveler can name it', () => {
-    expect(picker).toContain('nameToSave(named)');
+    expect(picker).toContain("place: named.trim()");
     expect(picker).toContain('placeholder={resolving ? RESOLVING_PLACE : PLACE_LABEL}');
   });
 
   it('a resolved place seeds the field, so the common path needs no typing', () => {
-    expect(picker).toContain('setNamed(headlineFor(resolved))');
-    expect(picker).toContain('setNamed(headlineFor(picked))');
+    expect(picker).toContain('mayAutoName(showing, offered.current)');
+    expect(picker).toContain('offered.current = headlineFor(resolved)');
+    expect(picker).toContain('setNamed(offered.current)');
   });
 
   it('no OSM type is appended to the name a traveler sees or saves', () => {
@@ -174,7 +176,7 @@ describe('the Google handoff asks for the place, not the words (PL-2 founder pas
   const viewer = read('MapViewerScreen.tsx');
 
   it('asks for the named place with the map anchored at our point', () => {
-    expect(viewer).toContain('mapsPlaceUrl(place, pin.lat, pin.lng, zoom)');
+    expect(viewer).toContain('mapsPlaceUrl(place, pin.lat, pin.lng, pin.zoom)');
   });
 
   it('falls back to bare coordinates, so a nameless pin still lands exactly', () => {

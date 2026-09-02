@@ -41,13 +41,16 @@ export function usePlaceSearch(
   });
 }
 
-export async function nameForPin(
-  lat: number,
-  lng: number,
-): Promise<PlaceCandidateResponse | null> {
+export interface PinLookup {
+  readonly named: PlaceCandidateResponse | null;
+  readonly reachable: boolean;
+}
+
+
+export async function nameForPin(lat: number, lng: number): Promise<PinLookup> {
   try {
-    return (await placeRepository.nameFor(lat, lng)) ?? null;
+    return { named: (await placeRepository.nameFor(lat, lng)) ?? null, reachable: true };
   } catch {
-    return null;
+    return { named: null, reachable: false };
   }
 }

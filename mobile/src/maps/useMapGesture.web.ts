@@ -1,40 +1,21 @@
 import { useEffect, useRef } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
 import { webStyle } from '../itineraries/webStyle';
-
-
-const TAP_SLOP = 6;
-
-const DOUBLE_TAP_MS = 320;
-
-
-export type MapGesture = {
-  readonly handlers: object;
-  readonly surfaceStyle: StyleProp<ViewStyle>;
-};
+import { afterTap, wasATap, type MapGesture, type MapGestureProps } from './mapGesture';
 
 
 export function useMapGesture({
   onPan,
   onSettle,
   onZoom,
-  zoom,
   surfaceRef,
   dragging,
-}: {
-  readonly onPan: (dx: number, dy: number) => void;
-  readonly onSettle: (dx: number, dy: number) => void;
-  readonly onZoom: (by: number) => void;
-  readonly zoom: number;
-  readonly surfaceRef?: { current: unknown };
-  readonly dragging: boolean;
-}): MapGesture {
-  const live = useRef({ onPan, onSettle, onZoom, zoom });
-  live.current = { onPan, onSettle, onZoom, zoom };
+}: MapGestureProps): MapGesture {
+  const live = useRef({ onPan, onSettle, onZoom });
+  live.current = { onPan, onSettle, onZoom };
 
   const down = useRef(new Map<number, { x: number; y: number }>());
   const from = useRef<{ x: number; y: number } | null>(null);
-  const lastTap = useRef(0);
+  const lastTapAt = useRef(0);
 
   useEffect(() => {
     const found = surfaceRef?.current as HTMLElement | null | undefined;
@@ -81,11 +62,10 @@ export function useMapGesture({
       const dx = event.clientX - anchor.x;
       const dy = event.clientY - anchor.y;
 
-      if (Math.hypot(dx, dy) <= TAP_SLOP) {
-        const now = Date.now();
-        const quick = now - lastTap.current <= DOUBLE_TAP_MS;
-        lastTap.current = quick ? 0 : now;
-        if (quick) live.current.onZoom(1);
+      if (wasATap(dx, dy)) {
+        const tap = afterTap(lastTapAt.current, Date.now());
+        lastTapAt.current = tap.lastTapAt;
+        if (tap.zoomIn) live.current.onZoom(1);
         live.current.onSettle(0, 0);
         return;
       }

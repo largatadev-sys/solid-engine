@@ -30,11 +30,6 @@ export function headlineFor(detail: PickedDetail | null): string {
 }
 
 
-export function nameToSave(typed: string): string {
-  return typed.trim();
-}
-
-
 export function movedAwayFrom(
   anchor: { lat: number; lng: number } | null,
   centre: { lat: number; lng: number },
@@ -50,4 +45,18 @@ export function movedAwayFrom(
 
 export function whereLine(detail: PickedDetail | null): string {
   return detail?.context?.trim() ?? '';
+}
+
+
+export function mayAutoName(showing: string, lastOffered: string): boolean {
+  return showing.trim() === '' || showing === lastOffered;
+}
+
+
+export function pinToCommit(
+  placed: boolean,
+  centre: { lat: number; lng: number },
+  zoom: number,
+): { lat: number; lng: number; zoom: number } | null {
+  return placed ? { lat: centre.lat, lng: centre.lng, zoom } : null;
 }

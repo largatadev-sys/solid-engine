@@ -8,23 +8,17 @@ export const SEARCH_UNAVAILABLE = 'Search is unavailable right now. You can stil
 
 export const SEARCH_NO_RESULTS = 'No places found. Try a different name, or move the map to the spot.';
 
-export const PICKER_TITLE = 'Pick a location';
-
 export const PICKER_CONFIRM = 'Use this location';
 
 export const PICKER_DISMISS = 'Close the map';
 
 export const PICKER_REMOVE = 'Remove pin';
 
-export const PICKER_NEEDS_LABEL = 'Nothing is named here — give this spot a name.';
-
 export const PLACE_LABEL = 'Name this place';
-
-export const MOVE_THE_MAP = 'Move the map to place the pin';
 
 export const RESOLVING_PLACE = 'Finding this place...';
 
-export const RESOLVING_CONTEXT = ' ';
+export const LOOKUP_UNAVAILABLE = 'We could not look this spot up. Name it yourself.';
 
 export const PIN_AT_CENTRE = 'The pin sits at the centre of the map';
 

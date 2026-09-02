@@ -26,9 +26,9 @@ import {
   PICKER_CONFIRM,
   PICKER_DISMISS,
   PICKER_REMOVE,
+  LOOKUP_UNAVAILABLE,
   PLACE_LABEL,
   PIN_AT_CENTRE,
-  RESOLVING_CONTEXT,
   RESOLVING_PLACE,
   SEARCH_NO_RESULTS,
   SEARCH_PLACEHOLDER,
@@ -39,11 +39,13 @@ import {
   detailFrom,
   headlineFor,
   movedAwayFrom,
-  nameToSave,
+  mayAutoName,
+  pinToCommit,
   whereLine,
   type PickedDetail,
 } from './pickedPlace';
 import type { Pin } from './pinRules';
+import { MapPin } from './MapPin';
 import { TileSurface } from './TileSurface';
 import { useDrawerSlide } from './useDrawerSlide';
 import { clampZoom, type LatLng } from './tileProjection';
@@ -61,7 +63,9 @@ const SETTLE_MS = 450;
 
 const DETAIL_HEIGHT = 92;
 
-const WORLD_CENTRE: LatLng = { lat: 12.8797, lng: 121.774 };
+const PHILIPPINES_CENTRE: LatLng = { lat: 12.8797, lng: 121.774 };
+
+const COUNTRY_ZOOM = 6;
 
 
 export interface PickedPlace {
@@ -96,9 +100,12 @@ export function PlacePickerModal({
   const [named, setNamed] = useState('');
   const [resolving, setResolving] = useState(false);
   const [query, setQuery] = useState('');
+  const [placed, setPlaced] = useState(pin !== null);
+  const [lookupFailed, setLookupFailed] = useState(false);
 
   const exactAt = useRef<LatLng | null>(null);
   const nameField = useRef<TextInput | null>(null);
+  const offered = useRef('');
 
   useEffect(() => {
     if (!visible) return;
@@ -107,8 +114,11 @@ export function PlacePickerModal({
     const seeded = place.trim();
     setDetail(seeded === '' ? null : { name: seeded, nearby: false, kind: null, context: null, exact: true });
     setNamed(seeded);
+    offered.current = seeded;
+    setPlaced(pin !== null);
     exactAt.current = pin;
     setResolving(false);
+    setLookupFailed(false);
     setQuery('');
   }, [visible, place, pin, openNear]);
 
@@ -120,12 +130,17 @@ export function PlacePickerModal({
     setResolving(true);
 
     const timer = setTimeout(() => {
-      void nameForPin(view.centre.lat, view.centre.lng).then((found) => {
+      void nameForPin(view.centre.lat, view.centre.lng).then((lookup) => {
         if (!live) return;
         exactAt.current = null;
-        const resolved = detailFrom(found ?? null, false);
+        setLookupFailed(!lookup.reachable);
+        const resolved = detailFrom(lookup.named, false);
         setDetail(resolved);
-        setNamed(headlineFor(resolved));
+        setNamed((showing) => {
+          if (!mayAutoName(showing, offered.current)) return showing;
+          offered.current = headlineFor(resolved);
+          return offered.current;
+        });
         setResolving(false);
       });
     }, SETTLE_MS);
@@ -141,8 +156,11 @@ export function PlacePickerModal({
     exactAt.current = landed;
     const picked = detailFrom(candidate, true);
     setDetail(picked);
-    setNamed(headlineFor(picked));
+    offered.current = headlineFor(picked);
+    setNamed(offered.current);
+    setPlaced(true);
     setView({ centre: landed, zoom: PICKED_ZOOM });
+    setLookupFailed(false);
     setResolving(false);
     setQuery('');
   };
@@ -154,7 +172,7 @@ export function PlacePickerModal({
     nameField.current?.focus();
   }, [visible, resolving, named]);
 
-  const confirmable = !resolving && nameToSave(named) !== '';
+  const confirmable = !resolving && named.trim() !== '';
 
   return (
     <Modal visible={mounted} transparent animationType="none" onRequestClose={onDismiss}>
@@ -195,16 +213,12 @@ export function PlacePickerModal({
                 config={config.data}
                 centre={view.centre}
                 zoom={view.zoom}
-                onMove={(centre, zoom) => setView({ centre, zoom })}
+                onMove={(centre, zoom) => {
+                  setPlaced(true);
+                  setView({ centre, zoom });
+                }}
               >
-                <View
-                  style={styles.centrePin}
-                  pointerEvents="none"
-                  accessibilityLabel={PIN_AT_CENTRE}
-                >
-                  <View style={styles.pinHead} />
-                  <View style={styles.pinTip} />
-                </View>
+                <MapPin style={styles.centrePin} label={PIN_AT_CENTRE} />
               </TileSurface>
             )}
 
@@ -224,7 +238,7 @@ export function PlacePickerModal({
               numberOfLines={1}
             />
             <Text style={styles.context} numberOfLines={1}>
-              {resolving ? RESOLVING_CONTEXT : whereLine(detail)}
+              {contextLine(resolving, lookupFailed, detail)}
             </Text>
           </View>
 
@@ -235,8 +249,8 @@ export function PlacePickerModal({
             disabled={!confirmable}
             onPress={() =>
               onConfirm({
-                place: nameToSave(named),
-                pin: { lat: view.centre.lat, lng: view.centre.lng, zoom: clampZoom(view.zoom) },
+                place: named.trim(),
+                pin: pinToCommit(placed, view.centre, clampZoom(view.zoom)),
               })
             }
             style={StyleSheet.flatten([styles.primary, !confirmable && styles.primarySpent])}
@@ -249,7 +263,7 @@ export function PlacePickerModal({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={PICKER_REMOVE}
-                onPress={() => onConfirm({ place: '', pin: null })}
+                onPress={() => onConfirm({ place: named.trim(), pin: null })}
               >
                 <Text style={styles.removeText}>{PICKER_REMOVE}</Text>
               </Pressable>
@@ -310,11 +324,19 @@ function Results({
 }
 
 
+function contextLine(resolving: boolean, lookupFailed: boolean, detail: PickedDetail | null): string {
+  if (resolving) return '';
+  if (lookupFailed) return LOOKUP_UNAVAILABLE;
+
+  return whereLine(detail);
+}
+
+
 function openingView(pin: Pin | null, openNear: Pin | null): { centre: LatLng; zoom: number } {
   if (pin !== null) return { centre: pin, zoom: clampZoom(pin.zoom) };
   if (openNear !== null) return { centre: openNear, zoom: REGION_ZOOM };
 
-  return { centre: WORLD_CENTRE, zoom: 6 };
+  return { centre: PHILIPPINES_CENTRE, zoom: COUNTRY_ZOOM };
 }
 
 
@@ -379,39 +401,14 @@ const styles = StyleSheet.create({
   resultName: { color: workspaceColors.title },
   resultContext: { color: workspaceColors.muted },
   centrePin: {
-    position: 'absolute',
     left: '50%',
     top: '50%',
-    width: mapMetrics.pinWidth,
     marginLeft: -mapMetrics.pinWidth / 2,
     marginTop: -mapMetrics.pinHeight,
-    alignItems: 'center',
-  },
-  pinHead: {
-    width: mapMetrics.pinWidth,
-    height: mapMetrics.pinWidth,
-    borderRadius: mapMetrics.pinWidth,
-    backgroundColor: mapColors.pinBody,
-    borderWidth: 3,
-    borderColor: mapColors.pinStroke,
-  },
-  pinTip: {
-    width: 4,
-    height: mapMetrics.pinHeight - mapMetrics.pinWidth,
-    marginTop: -mapMetrics.pinTipInset,
-    backgroundColor: mapColors.pinBody,
   },
   detail: { height: DETAIL_HEIGHT, justifyContent: 'center', gap: spacing.xs },
   headline: { ...workspaceTypography.dayTitle, color: workspaceColors.title },
-  context: { color: workspaceColors.muted },
-  label: {
-    height: workspaceMetrics.inputHeight,
-    borderWidth: 1,
-    borderColor: workspaceColors.inputBorder,
-    borderRadius: workspaceRadii.control,
-    paddingHorizontal: spacing.sm,
-    color: workspaceColors.title,
-  },
+  context: { color: workspaceColors.muted, minHeight: mapMetrics.detailLineHeight },
   notice: { color: workspaceColors.muted },
   primary: {
     height: workspaceMetrics.sheetCtaHeight,

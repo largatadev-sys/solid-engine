@@ -6,7 +6,7 @@ import { labelled } from '../support/screen';
 import {
   PICKER_DISMISS,
   PICKER_CONFIRM,
-  PICKER_TITLE,
+  PLACE_LABEL,
   SEARCH_PLACEHOLDER,
   placeFieldLabel,
   resultLabel,
@@ -51,7 +51,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
     await labelled(page, OPEN_THE_MAP).click();
 
-    await expect(page.locator(`text=${PICKER_TITLE}`).last()).toBeVisible({ timeout: 15_000 });
+    await expect(labelled(page, SEARCH_PLACEHOLDER).last()).toBeVisible({ timeout: 15_000 });
   });
 
 
@@ -66,7 +66,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
     await expect(result).toBeVisible({ timeout: 15_000 });
     await result.click();
 
-    await expect(page.locator(`text=${BIG_LAGOON}`).last()).toBeVisible({ timeout: 10_000 });
+    await expect(labelled(page, PLACE_LABEL).last()).toHaveValue(BIG_LAGOON, { timeout: 10_000 });
   });
 
 
@@ -105,7 +105,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
     await labelled(page, 'Activity name').last().fill('Unchanged');
 
     await labelled(page, OPEN_THE_MAP).click();
-    await expect(page.locator(`text=${PICKER_TITLE}`).last()).toBeVisible({ timeout: 15_000 });
+    await expect(labelled(page, PICKER_CONFIRM).last()).toBeVisible({ timeout: 15_000 });
     await labelled(page, PICKER_DISMISS).last().click();
 
     await expect(labelled(page, 'Activity name').last()).toHaveValue('Unchanged');

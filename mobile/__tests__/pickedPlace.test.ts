@@ -2,7 +2,8 @@ import {
   detailFrom,
   headlineFor,
   movedAwayFrom,
-  nameToSave,
+  mayAutoName,
+  pinToCommit,
   whereLine,
 } from '../src/maps/pickedPlace';
 
@@ -52,20 +53,6 @@ describe('the name the map offers', () => {
 });
 
 
-describe('what gets saved is what the field holds', () => {
-  it('saves the name, trimmed', () => {
-    expect(nameToSave('  Nacpan Beach ')).toBe('Nacpan Beach');
-  });
-
-  it('has nothing to save when the traveler cleared it, so confirm must stay blocked', () => {
-    expect(nameToSave('   ')).toBe('');
-  });
-
-  it('saves a name the traveler typed over an unnamed spot', () => {
-    expect(nameToSave('Our secret cove')).toBe('Our secret cove');
-  });
-});
-
 describe('a search pick stays exact until the traveler pans away', () => {
   const anchor = { lat: 11.1949, lng: 119.4013 };
 
@@ -111,5 +98,43 @@ describe('a spot with nothing on it still tells the traveler WHERE (PL-2 founder
 
   it('says nothing rather than guessing when the geocoder gave no locality', () => {
     expect(whereLine(detailFrom({ ...NEARBY, context: null }, false))).toBe('');
+  });
+});
+
+
+describe('an auto-name never overwrites what the traveler typed (PL-2 review)', () => {
+  it('fills an empty field', () => {
+    expect(mayAutoName('', 'Nacpan Beach')).toBe(true);
+  });
+
+  it('replaces a name it offered itself, so panning keeps up', () => {
+    expect(mayAutoName('Nacpan Beach', 'Nacpan Beach')).toBe(true);
+  });
+
+  it('LEAVES a name the traveler typed over, however far they then pan', () => {
+    expect(mayAutoName('Our secret cove', 'Nacpan Beach')).toBe(false);
+  });
+
+  it('leaves a name the traveler edited only slightly', () => {
+    expect(mayAutoName('Nacpan Beach (north end)', 'Nacpan Beach')).toBe(false);
+  });
+});
+
+
+describe('a pin is committed only where the traveler actually placed one (PL-2 review)', () => {
+  const centre = { lat: 11.1949, lng: 119.4013 };
+
+  it('commits the point under the pin once the traveler has placed it', () => {
+    expect(pinToCommit(true, centre, 16)).toEqual({ lat: 11.1949, lng: 119.4013, zoom: 16 });
+  });
+
+  it('commits NO pin when the map was never engaged — that is a text-only place', () => {
+    expect(pinToCommit(false, centre, 16)).toBeNull();
+  });
+
+  it('never invents a pin from wherever the map happened to open', () => {
+    const worldCentre = { lat: 12.8797, lng: 121.774 };
+
+    expect(pinToCommit(false, worldCentre, 6)).toBeNull();
   });
 });
