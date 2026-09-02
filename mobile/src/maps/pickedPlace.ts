@@ -49,10 +49,5 @@ export function movedAwayFrom(
 
 
 export function whereLine(detail: PickedDetail | null): string {
-  if (detail === null) return '';
-
-  const around = detail.context?.trim() ?? '';
-  if (!detail.nearby) return around;
-
-  return around === '' ? `near ${detail.name}` : `near ${detail.name} · ${around}`;
+  return detail?.context?.trim() ?? '';
 }

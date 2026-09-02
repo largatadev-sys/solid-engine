@@ -93,15 +93,15 @@ describe('a spot with nothing on it still tells the traveler WHERE (PL-2 founder
     nearby: true,
   };
 
-  it('anchors an unnamed point to the nearest thing, without claiming to BE it', () => {
-    expect(whereLine(detailFrom(NEARBY, false))).toBe('near Tambalanang Island · El Nido, Palawan');
+  it('answers WHERE with the locality, never with a venue it is only close to', () => {
+    expect(whereLine(detailFrom(NEARBY, false))).toBe('El Nido, Palawan');
   });
 
   it('leaves the name empty for a nearby anchor, so the field still asks to be filled', () => {
     expect(headlineFor(detailFrom(NEARBY, false))).toBe('');
   });
 
-  it('a place that IS named reads as its own locality, with no near prefix', () => {
+  it('reads the same for a place that IS named — one slot, one meaning', () => {
     expect(whereLine(detailFrom(HOTEL, false))).toBe('El Nido, Palawan');
   });
 
@@ -109,7 +109,7 @@ describe('a spot with nothing on it still tells the traveler WHERE (PL-2 founder
     expect(whereLine(null)).toBe('');
   });
 
-  it('names the anchor even where the geocoder gave no locality', () => {
-    expect(whereLine(detailFrom({ ...NEARBY, context: null }, false))).toBe('near Tambalanang Island');
+  it('says nothing rather than guessing when the geocoder gave no locality', () => {
+    expect(whereLine(detailFrom({ ...NEARBY, context: null }, false))).toBe('');
   });
 });

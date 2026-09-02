@@ -150,3 +150,21 @@ describe('naming is one always-present field (PL-2 founder pass)', () => {
     expect(read('mapCopy.ts')).not.toContain('placeDetailLine');
   });
 });
+
+
+describe('the empty name field asks for attention (PL-2 founder pass)', () => {
+  const picker = read('PlacePickerModal.tsx');
+
+  it('takes focus when it is empty, so a caret blinks where the traveler must act', () => {
+    expect(picker).toContain('nameField.current?.focus()');
+    expect(picker).toContain('ref={nameField}');
+  });
+
+  it('never grabs focus while the map is still resolving, or it fights the lookup', () => {
+    expect(picker).toContain('if (!visible || resolving) return;');
+  });
+
+  it('never grabs focus once a name exists, so a resolved place is left alone', () => {
+    expect(picker).toContain("if (named.trim() !== '') return;");
+  });
+});

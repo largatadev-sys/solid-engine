@@ -98,6 +98,7 @@ export function PlacePickerModal({
   const [query, setQuery] = useState('');
 
   const exactAt = useRef<LatLng | null>(null);
+  const nameField = useRef<TextInput | null>(null);
 
   useEffect(() => {
     if (!visible) return;
@@ -145,6 +146,13 @@ export function PlacePickerModal({
     setResolving(false);
     setQuery('');
   };
+
+  useEffect(() => {
+    if (!visible || resolving) return;
+    if (named.trim() !== '') return;
+
+    nameField.current?.focus();
+  }, [visible, resolving, named]);
 
   const confirmable = !resolving && nameToSave(named) !== '';
 
@@ -205,6 +213,7 @@ export function PlacePickerModal({
 
           <View style={styles.detail}>
             <TextInput
+              ref={nameField}
               style={styles.headline}
               value={resolving ? '' : named}
               onChangeText={setNamed}
