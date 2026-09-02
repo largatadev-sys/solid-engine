@@ -2,7 +2,7 @@ import { test, expect } from '../support/fixtures';
 import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
 import { seedDay, seedTrip, stamp } from '../support/seed';
-import { labelled } from '../support/screen';
+import { labelStarting, labelled } from '../support/screen';
 import {
   PICKER_CANCEL,
   PICKER_CONFIRM,
@@ -44,8 +44,8 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
   test('the search box the placeholder has promised since S4.17 finally exists', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
-    await expect(labelled(page, 'Add Activity').first()).toBeVisible({ timeout: 20_000 });
-    await labelled(page, 'Add Activity').first().click();
+    await expect(labelStarting(page, 'Add an activity to')).toBeVisible({ timeout: 20_000 });
+    await labelStarting(page, 'Add an activity to').click();
 
     await labelled(page, PICK_ON_MAP).last().click();
 
@@ -55,7 +55,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
   test('a search result places a pin and offers its name, without imposing it', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
-    await labelled(page, 'Add Activity').first().click();
+    await labelStarting(page, 'Add an activity to').click();
     await labelled(page, PICK_ON_MAP).last().click();
 
     await labelled(page, SEARCH_PLACEHOLDER).last().fill(BIG_LAGOON);
@@ -70,7 +70,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
   test('the coordinates the confirm produces reach the save request', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
-    await labelled(page, 'Add Activity').first().click();
+    await labelStarting(page, 'Add an activity to').click();
 
     await labelled(page, 'Activity name').last().fill('Kayak the lagoon');
     await labelled(page, PICK_ON_MAP).last().click();
@@ -86,7 +86,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
       { timeout: 20_000 },
     );
     await labelled(page, 'Save Activity').last().click();
-    await labelled(page, 'Save Plan').last().click();
+    await labelled(page, 'Save Changes').last().click();
 
     const body = JSON.stringify((await saved).postDataJSON());
 
@@ -97,7 +97,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
   test('cancelling the picker leaves the activity form as it was', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
-    await labelled(page, 'Add Activity').first().click();
+    await labelStarting(page, 'Add an activity to').click();
     await labelled(page, 'Activity name').last().fill('Unchanged');
 
     await labelled(page, PICK_ON_MAP).last().click();
