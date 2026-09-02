@@ -167,7 +167,12 @@ function TripSection({
           {sectionState === 'loading' && <ActivityIndicator color={colors.accent} />}
           {sectionState === 'rows' &&
             postcards.map((entry) => (
-              <Postcard key={entry.id} entry={entry} onPress={() => setPreviewing(entry)} />
+              <Postcard
+                key={entry.id}
+                entry={entry}
+                destination={trip.destination ?? null}
+                onPress={() => setPreviewing(entry)}
+              />
             ))}
         </View>
       )}

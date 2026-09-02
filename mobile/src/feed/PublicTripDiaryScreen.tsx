@@ -13,7 +13,7 @@ import { feedColors, feedTypography } from '../theme/feedTokens';
 import { diaryScreenColors, diaryScreenMetrics, diaryScreenTypography } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
 import { publicDiaryByline } from './feedCardAnatomy';
-import { asDiaryEntry } from './publicDiaryPostcard';
+import { asDiaryEntry, tripDestinationOf } from './publicDiaryPostcard';
 
 
 export function PublicTripDiaryScreen() {
@@ -31,6 +31,7 @@ export function PublicTripDiaryScreen() {
   }
 
   const tripTitle = diary.data.tripTitle;
+  const destination = tripDestinationOf(diary.data.postcards);
   const postcards = diary.data.postcards.map(asDiaryEntry);
 
   return (
@@ -67,6 +68,7 @@ export function PublicTripDiaryScreen() {
             postcard={entry}
             eyebrow={snapshotEyebrow(entry)}
             openLabel={`Open this postcard from ${entry.activityTitle}`}
+            destination={destination}
             onOpen={() => setPreviewing(entry)}
           />
         ))}

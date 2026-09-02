@@ -16,6 +16,7 @@ import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { radii, spacing } from '../theme';
 import { feedColors, feedMetrics, feedTypography } from '../theme/feedTokens';
+import { LocationTag } from '../places/LocationTag';
 import type { FeedPostcardResponse } from '../types/api';
 import {
   authorInitials,
@@ -191,7 +192,7 @@ export function FeedCard({
                 </Text>
               </Pressable>
             ) : (
-              <Text style={styles.tripLine} numberOfLines={1}>
+              <Text style={styles.tripLineDead} numberOfLines={1}>
                 {line}
               </Text>
             ))}
@@ -274,30 +275,7 @@ export function FeedCard({
       </View>
 
       <View style={styles.body}>
-        {card.place !== null && (
-          <View style={styles.tagRow}>
-            {navigates ? (
-              <Pressable
-                style={styles.tag}
-                onPress={() => onOpenTrip(card)}
-                accessibilityRole="link"
-                accessibilityLabel={`${card.place}, open the published trip`}
-              >
-                <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tagInk} />
-                <Text style={styles.tagLabel} numberOfLines={1}>
-                  {card.place}
-                </Text>
-              </Pressable>
-            ) : (
-              <View style={styles.tag}>
-                <Icon name="mapPin" size={feedMetrics.tagGlyph} color={feedColors.tagInk} />
-                <Text style={styles.tagLabel} numberOfLines={1}>
-                  {card.place}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+        <LocationTag place={card.place} destination={card.destination} />
 
         {card.caption !== null && (
           <View>
@@ -450,6 +428,10 @@ const styles = StyleSheet.create({
     ...feedTypography.tripLine,
     color: feedColors.tripLine,
   },
+  tripLineDead: {
+    ...feedTypography.tripLine,
+    color: feedColors.tripLineDead,
+  },
   badge: {
     flexShrink: 0,
     paddingHorizontal: spacing.sm,
@@ -512,26 +494,6 @@ const styles = StyleSheet.create({
   body: {
     padding: feedMetrics.cardPadding,
     gap: spacing.sm,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs2,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: feedMetrics.chipPaddingY,
-    backgroundColor: feedColors.tagWell,
-    borderRadius: feedMetrics.chipRadius,
-    maxWidth: '100%',
-  },
-  tagLabel: {
-    ...feedTypography.tag,
-    color: feedColors.tagInk,
-    flexShrink: 1,
   },
   caption: {
     ...feedTypography.caption,

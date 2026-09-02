@@ -1,5 +1,6 @@
 import {
   activityMetaLine,
+  activityMetaParts,
   formatActivityCost,
   formatTimeOfDay,
 } from '../src/itineraries/formatActivityCost';
@@ -104,5 +105,47 @@ describe('activityMetaLine — when • where, and no money (founder, 2026-08-18
     expect(line).toContain('•');
     expect(line).not.toContain('·');
     expect(line.split(' • ')).toHaveLength(2);
+  });
+});
+
+
+describe('activityMetaParts — the split that lets the place alone be tappable (PL-1)', () => {
+  it('hands back the clock and the place separately', () => {
+    expect(activityMetaParts('17:30', 'Lio Beach')).toEqual({
+      clock: '5:30 PM',
+      place: 'Lio Beach',
+    });
+  });
+
+  it('unpads the leading hour zero — the diary postcardClock shape', () => {
+    expect(activityMetaParts('09:05', null).clock).toBe('9:05 AM');
+    expect(activityMetaParts('00:30', null).clock).toBe('12:30 AM');
+  });
+
+  it('leaves the place undefined when the activity names none', () => {
+    expect(activityMetaParts('14:00', null)).toEqual({ clock: '2:00 PM', place: undefined });
+  });
+
+  it('treats a blank place as no place', () => {
+    expect(activityMetaParts('09:00', '   ').place).toBeUndefined();
+  });
+
+  it('leaves the clock undefined when the activity names no time', () => {
+    expect(activityMetaParts(null, 'Puka Beach')).toEqual({
+      clock: undefined,
+      place: 'Puka Beach',
+    });
+  });
+
+  it('knows neither when told neither', () => {
+    expect(activityMetaParts(null, null)).toEqual({ clock: undefined, place: undefined });
+  });
+
+  it('trims the place it hands back, so the link text carries no stray spacing', () => {
+    expect(activityMetaParts(null, '  Lio Beach  ').place).toBe('Lio Beach');
+  });
+
+  it('hands back whatever it cannot read as a clock rather than inventing one', () => {
+    expect(activityMetaParts('banana', null).clock).toBe('banana');
   });
 });

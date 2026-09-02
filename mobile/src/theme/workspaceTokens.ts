@@ -35,6 +35,19 @@ export const workspaceColors = {
 } as const;
 
 
+export const locationLinkColors = {
+  link: '#EA580C',
+  linkPressed: '#C2410C',
+  tagWell: '#FFF0EC',
+  tagWellPressed: '#FFE0D5',
+} as const;
+
+
+export const locationLinkTypography = {
+  link: { fontFamily: fonts.semiBold, fontWeight: '600' },
+} as const;
+
+
 export const diaryColors = {
   eyebrow: '#EA580C',
   check: '#EA580C',

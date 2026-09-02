@@ -123,7 +123,8 @@ describe('C1 and M1 arrive with S4.37 — the pill now has both states', () => {
 
 describe('the named deviation from the frame', () => {
   it('ships the postcard card without the likes row — no real count exists yet', () => {
-    expect(DIARY).toContain('<Postcard key={entry.id} entry={entry}');
+    expect(DIARY).toContain('<Postcard');
+    expect(DIARY).toContain('entry={entry}');
     expect(DIARY).not.toContain('likes=');
   });
 });

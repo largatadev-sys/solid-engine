@@ -11,6 +11,7 @@ public record FeedPostcardResponse(
         TravelerCardResponse author,
         UUID itineraryId,
         String tripTitle,
+        String destination,
         UUID publishedItineraryId,
         String dayLabel,
         String activityTitle,

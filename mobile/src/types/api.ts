@@ -469,6 +469,7 @@ export type FeedPostcardResponse = {
   author: TravelerCardResponse;
   itineraryId: string;
   tripTitle: string | null;
+  destination: string | null;
   publishedItineraryId: string | null;
   dayLabel: string;
   activityTitle: string;

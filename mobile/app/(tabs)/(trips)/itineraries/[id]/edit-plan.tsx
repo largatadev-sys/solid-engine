@@ -239,6 +239,7 @@ export default function DraftWorkspaceScreen() {
                 day={d}
                 expanded={d.id === expandedDayId}
                 affordances={affordances}
+                destination={data.destination}
                 onToggle={() => setOpenDayId(toggleOpenDay(expandedDayId, d.id))}
                 onAddActivity={() => openActivityForm(d.id)}
                 activitySlot={
@@ -253,6 +254,7 @@ export default function DraftWorkspaceScreen() {
                     }
                     onDrop={(activityId, toIndex) => dropActivity(d.id, activityId, toIndex)}
                     onNudge={(activityId, direction) => nudgeActivity(d.id, activityId, direction)}
+                    destination={data.destination}
                   />
                 }
                 onDeleteDay={() =>
