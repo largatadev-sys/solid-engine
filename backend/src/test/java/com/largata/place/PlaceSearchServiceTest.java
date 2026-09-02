@@ -162,6 +162,11 @@ class PlaceSearchServiceTest {
         public PlaceCandidate nameFor(BigDecimal lat, BigDecimal lng) {
             throw new PlaceSearchUnavailableException("down", new RuntimeException());
         }
+
+        @Override
+        public PlaceCandidate nearestTo(BigDecimal lat, BigDecimal lng) {
+            throw new PlaceSearchUnavailableException("down", new RuntimeException());
+        }
     }
 
 
@@ -248,6 +253,12 @@ class PlaceSearchServiceTest {
             calls++;
             return List.of(
                     new PlaceCandidate("Big Lagoon", "El Nido, Palawan", EL_NIDO_LAT, EL_NIDO_LNG, "water"));
+        }
+
+        @Override
+        public PlaceCandidate nearestTo(BigDecimal lat, BigDecimal lng) {
+            reverseCalls++;
+            return new PlaceCandidate("Tambalanang Island", "El Nido, Palawan", EL_NIDO_LAT, EL_NIDO_LNG, "islet");
         }
 
         @Override

@@ -73,15 +73,31 @@ class PhotonPlaceSuggester implements PlaceSuggester {
     }
 
 
+    static final int NEARBY_RADIUS_KM = 10;
+
+
     @Override
     public PlaceCandidate nameFor(BigDecimal latitude, BigDecimal longitude) {
-        URI url =
+        return reverse(latitude, longitude, 0);
+    }
+
+
+    @Override
+    public PlaceCandidate nearestTo(BigDecimal latitude, BigDecimal longitude) {
+        return reverse(latitude, longitude, NEARBY_RADIUS_KM);
+    }
+
+
+    private PlaceCandidate reverse(BigDecimal latitude, BigDecimal longitude, int radiusKm) {
+        UriComponentsBuilder building =
                 UriComponentsBuilder.fromUriString(endpoint.replace("/api", "/reverse"))
                         .queryParam("lat", latitude)
                         .queryParam("lon", longitude)
-                        .queryParam("limit", 1)
-                        .build()
-                        .toUri();
+                        .queryParam("limit", 1);
+        if (radiusKm > 0) {
+            building = building.queryParam("radius", radiusKm);
+        }
+        URI url = building.build().toUri();
 
         try {
             JsonNode answer =

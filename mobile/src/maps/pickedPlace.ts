@@ -4,6 +4,7 @@ import type { PlaceCandidateResponse } from '../types/api';
 
 export interface PickedDetail {
   readonly name: string;
+  readonly nearby: boolean;
   readonly kind: string | null;
   readonly context: string | null;
   readonly exact: boolean;
@@ -20,12 +21,12 @@ export function detailFrom(candidate: PlaceCandidateResponse | null, exact: bool
   if (name === '') return null;
   if (!exact && UNHELPFUL_KINDS.includes(candidate.kind?.trim() ?? '')) return null;
 
-  return { name, kind: candidate.kind, context: candidate.context, exact };
+  return { name, nearby: candidate.nearby === true, kind: candidate.kind, context: candidate.context, exact };
 }
 
 
 export function headlineFor(detail: PickedDetail | null): string {
-  return detail === null ? '' : detail.name;
+  return detail === null || detail.nearby ? '' : detail.name;
 }
 
 
@@ -44,4 +45,14 @@ export function movedAwayFrom(
   return (
     Math.abs(anchor.lat - centre.lat) > tolerance || Math.abs(anchor.lng - centre.lng) > tolerance
   );
+}
+
+
+export function whereLine(detail: PickedDetail | null): string {
+  if (detail === null) return '';
+
+  const around = detail.context?.trim() ?? '';
+  if (!detail.nearby) return around;
+
+  return around === '' ? `near ${detail.name}` : `near ${detail.name} · ${around}`;
 }

@@ -10,4 +10,7 @@ public interface PlaceSuggester {
 
 
     PlaceCandidate nameFor(BigDecimal latitude, BigDecimal longitude);
+
+
+    PlaceCandidate nearestTo(BigDecimal latitude, BigDecimal longitude);
 }

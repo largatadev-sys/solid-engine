@@ -1,4 +1,10 @@
-import { detailFrom, headlineFor, movedAwayFrom, nameToSave } from '../src/maps/pickedPlace';
+import {
+  detailFrom,
+  headlineFor,
+  movedAwayFrom,
+  nameToSave,
+  whereLine,
+} from '../src/maps/pickedPlace';
 
 
 const HOTEL = { name: "Lolo Bob's B&B", context: 'El Nido, Palawan', lat: 11.17, lng: 119.39, kind: 'hotel' };
@@ -10,6 +16,7 @@ describe('what the pin resolves to (PL-2, the Uber pattern)', () => {
   it('turns a geocoder answer into something a traveler can read', () => {
     expect(detailFrom(HOTEL, false)).toEqual({
       name: "Lolo Bob's B&B",
+      nearby: false,
       kind: 'hotel',
       context: 'El Nido, Palawan',
       exact: false,
@@ -72,5 +79,37 @@ describe('a search pick stays exact until the traveler pans away', () => {
 
   it('treats an absent anchor as already moved, so panning always resolves', () => {
     expect(movedAwayFrom(null, anchor)).toBe(true);
+  });
+});
+
+
+describe('a spot with nothing on it still tells the traveler WHERE (PL-2 founder pass)', () => {
+  const NEARBY = {
+    name: 'Tambalanang Island',
+    context: 'El Nido, Palawan',
+    lat: 11.25,
+    lng: 119.3,
+    kind: 'islet',
+    nearby: true,
+  };
+
+  it('anchors an unnamed point to the nearest thing, without claiming to BE it', () => {
+    expect(whereLine(detailFrom(NEARBY, false))).toBe('near Tambalanang Island · El Nido, Palawan');
+  });
+
+  it('leaves the name empty for a nearby anchor, so the field still asks to be filled', () => {
+    expect(headlineFor(detailFrom(NEARBY, false))).toBe('');
+  });
+
+  it('a place that IS named reads as its own locality, with no near prefix', () => {
+    expect(whereLine(detailFrom(HOTEL, false))).toBe('El Nido, Palawan');
+  });
+
+  it('says nothing at all when the map returned nothing at all', () => {
+    expect(whereLine(null)).toBe('');
+  });
+
+  it('names the anchor even where the geocoder gave no locality', () => {
+    expect(whereLine(detailFrom({ ...NEARBY, context: null }, false))).toBe('near Tambalanang Island');
   });
 });

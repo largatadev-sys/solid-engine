@@ -41,9 +41,21 @@ class FixturePlaceSuggester implements PlaceSuggester {
 
     @Override
     public PlaceCandidate nameFor(BigDecimal latitude, BigDecimal longitude) {
+        return closestWithin(latitude, longitude, NAMEABLE_DEGREES);
+    }
+
+
+    static final double NEARBY_DEGREES = 0.5;
+
+    @Override
+    public PlaceCandidate nearestTo(BigDecimal latitude, BigDecimal longitude) {
+        return closestWithin(latitude, longitude, NEARBY_DEGREES);
+    }
+
+
+    private static PlaceCandidate closestWithin(BigDecimal latitude, BigDecimal longitude, double reach) {
         return WORLD.stream()
-                .filter(candidate -> squaredDistance(candidate, latitude, longitude)
-                        <= NAMEABLE_DEGREES * NAMEABLE_DEGREES)
+                .filter(candidate -> squaredDistance(candidate, latitude, longitude) <= reach * reach)
                 .min(Comparator.comparingDouble(
                         candidate -> squaredDistance(candidate, latitude, longitude)))
                 .orElse(null);

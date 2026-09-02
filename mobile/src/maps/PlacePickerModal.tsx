@@ -23,7 +23,6 @@ import { nameForPin, useMapConfig, usePlaceSearch } from '../query/placeQueries'
 import type { PlaceCandidateResponse } from '../types/api';
 import {
   MAP_UNAVAILABLE,
-  MOVE_THE_MAP,
   PICKER_CONFIRM,
   PICKER_DISMISS,
   PICKER_REMOVE,
@@ -41,6 +40,7 @@ import {
   headlineFor,
   movedAwayFrom,
   nameToSave,
+  whereLine,
   type PickedDetail,
 } from './pickedPlace';
 import type { Pin } from './pinRules';
@@ -104,7 +104,7 @@ export function PlacePickerModal({
 
     setView(openingView(pin, openNear));
     const seeded = place.trim();
-    setDetail(seeded === '' ? null : { name: seeded, kind: null, context: null, exact: true });
+    setDetail(seeded === '' ? null : { name: seeded, nearby: false, kind: null, context: null, exact: true });
     setNamed(seeded);
     exactAt.current = pin;
     setResolving(false);
@@ -215,7 +215,7 @@ export function PlacePickerModal({
               numberOfLines={1}
             />
             <Text style={styles.context} numberOfLines={1}>
-              {resolving ? RESOLVING_CONTEXT : (detail?.context ?? MOVE_THE_MAP)}
+              {resolving ? RESOLVING_CONTEXT : whereLine(detail)}
             </Text>
           </View>
 

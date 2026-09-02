@@ -79,6 +79,7 @@ export type PlaceCandidateResponse = {
   lat: number;
   lng: number;
   kind: string | null;
+  nearby?: boolean;
 };
 
 

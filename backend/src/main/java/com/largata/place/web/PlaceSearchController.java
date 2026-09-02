@@ -36,10 +36,10 @@ class PlaceSearchController {
     }
 
     @GetMapping("/reverse")
-    PlaceCandidateResponse nameFor(
+    PlaceCandidateResponse resolve(
             @CurrentTraveler Traveler traveler,
             @RequestParam("lat") BigDecimal latitude,
             @RequestParam("lng") BigDecimal longitude) {
-        return PlaceCandidateResponse.of(places.nameFor(traveler.id(), latitude, longitude));
+        return PlaceCandidateResponse.of(places.resolve(traveler.id(), latitude, longitude));
     }
 }

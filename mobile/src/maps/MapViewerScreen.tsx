@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { mapsUrl } from '../places/mapsQuery';
 import { openInMaps } from '../places/openInMaps';
 import { spacing } from '../theme';
@@ -27,19 +28,7 @@ export function MapViewerScreen({ place, pin, zoom, destination, onClose }: MapV
 
   return (
     <View style={styles.screen} accessibilityLabel={viewerLabel(place)}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          onPress={onClose}
-          style={styles.back}
-        >
-          <Text style={styles.backGlyph}>‹</Text>
-        </Pressable>
-        <Text style={styles.title} numberOfLines={1}>
-          {place}
-        </Text>
-      </View>
+      <ScreenHeader title={place} size="title" back />
 
       <View style={styles.stage}>
         {config.data === undefined ? (
@@ -78,16 +67,6 @@ export function MapViewerScreen({ place, pin, zoom, destination, onClose }: MapV
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: workspaceColors.surface },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  back: { width: mapMetrics.controlSize, height: mapMetrics.controlSize, justifyContent: 'center' },
-  backGlyph: { color: workspaceColors.title, lineHeight: mapMetrics.controlSize },
-  title: { flex: 1, color: workspaceColors.title },
   stage: { flex: 1 },
   waiting: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   unavailable: { color: workspaceColors.muted, paddingHorizontal: spacing.lg, textAlign: 'center' },

@@ -2,6 +2,7 @@ package com.largata.place;
 
 import com.largata.place.api.PlaceCandidate;
 import com.largata.place.api.PlaceSuggester;
+import com.largata.place.api.ResolvedPlace;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -45,6 +46,32 @@ public class PlaceSearchService {
         List<PlaceCandidate> found = suggester.suggest(asked, biasLatitude, biasLongitude);
         cache.put(asked, biasLatitude, biasLongitude, found);
         return found;
+    }
+
+
+    public ResolvedPlace resolve(UUID travelerId, BigDecimal latitude, BigDecimal longitude) {
+        PlaceCandidate here = nameFor(travelerId, latitude, longitude);
+        if (here != null) {
+            return ResolvedPlace.at(here);
+        }
+        if (latitude == null || longitude == null) {
+            return ResolvedPlace.NOWHERE;
+        }
+
+        String around = "near:"
+                + latitude.setScale(REVERSE_SCALE, RoundingMode.HALF_UP)
+                + ","
+                + longitude.setScale(REVERSE_SCALE, RoundingMode.HALF_UP);
+
+        List<PlaceCandidate> remembered = cache.get(around, null, null);
+        if (remembered != null) {
+            return remembered.isEmpty() ? ResolvedPlace.NOWHERE : ResolvedPlace.near(remembered.get(0));
+        }
+
+        limiter.admit(travelerId.toString());
+        PlaceCandidate found = suggester.nearestTo(latitude, longitude);
+        cache.put(around, null, null, found == null ? List.of() : List.of(found));
+        return ResolvedPlace.near(found);
     }
 
 
