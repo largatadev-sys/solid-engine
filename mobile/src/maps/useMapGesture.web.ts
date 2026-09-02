@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { webStyle } from '../itineraries/webStyle';
-import { zoomAfterPinch } from './tileProjection';
 
 
 const TAP_SLOP = 6;
@@ -35,7 +34,6 @@ export function useMapGesture({
 
   const down = useRef(new Map<number, { x: number; y: number }>());
   const from = useRef<{ x: number; y: number } | null>(null);
-  const pinch = useRef<{ span: number; zoom: number; applied: number } | null>(null);
   const lastTap = useRef(0);
 
   useEffect(() => {
@@ -43,28 +41,9 @@ export function useMapGesture({
     if (found === null || found === undefined || typeof found.addEventListener !== 'function') return;
     const node: HTMLElement = found;
 
-    const spanOf = (): number => {
-      const [a, b] = [...down.current.values()];
-      if (a === undefined || b === undefined) return 0;
-      return Math.hypot(a.x - b.x, a.y - b.y);
-    };
-
     const moving = (event: PointerEvent) => {
       if (!down.current.has(event.pointerId)) return;
       down.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-
-      if (down.current.size >= 2) {
-        const start = pinch.current;
-        if (start === null) return;
-
-        const wanted = zoomAfterPinch(start.zoom, start.span, spanOf());
-        const step = wanted - start.zoom - start.applied;
-        if (step !== 0) {
-          pinch.current = { ...start, applied: start.applied + step };
-          live.current.onZoom(step);
-        }
-        return;
-      }
 
       const anchor = from.current;
       if (anchor === null) return;
@@ -87,17 +66,14 @@ export function useMapGesture({
       if (down.current.size >= 1) {
         const [remaining] = [...down.current.values()];
         from.current = remaining ?? null;
-        pinch.current = null;
         return;
       }
 
       const anchor = from.current;
-      const pinched = pinch.current !== null;
       from.current = null;
-      pinch.current = null;
       release();
 
-      if (anchor === null || pinched) {
+      if (anchor === null) {
         live.current.onSettle(0, 0);
         return;
       }
@@ -120,10 +96,7 @@ export function useMapGesture({
     const grab = (event: PointerEvent) => {
       down.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
 
-      if (down.current.size === 2) {
-        pinch.current = { span: spanOf(), zoom: live.current.zoom, applied: 0 };
-        return;
-      }
+      if (down.current.size >= 2) return;
 
       from.current = { x: event.clientX, y: event.clientY };
       window.addEventListener('pointermove', moving);

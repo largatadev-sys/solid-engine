@@ -103,7 +103,7 @@ class PhotonPlaceSuggester implements PlaceSuggester {
         for (JsonNode feature : answer.path("features")) {
             JsonNode coordinates = feature.path("geometry").path("coordinates");
             JsonNode properties = feature.path("properties");
-            String name = properties.path("name").asString(null);
+            String name = readableName(properties);
 
             if (name == null || coordinates.size() < 2) {
                 continue;
@@ -117,6 +117,17 @@ class PhotonPlaceSuggester implements PlaceSuggester {
                             properties.path("osm_value").asString(null)));
         }
         return candidates;
+    }
+
+
+    private static String readableName(JsonNode properties) {
+        for (String field : new String[] {"name", "street", "district", "locality", "city"}) {
+            String value = properties.path(field).asString(null);
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 
 

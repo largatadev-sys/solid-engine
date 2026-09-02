@@ -5,7 +5,6 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { spanBetween } from './tileProjection';
 
 
 const TAP_SLOP = 6;
@@ -35,43 +34,15 @@ export function useMapGesture({
   const live = useRef({ onPan, onSettle, onZoom, zoom });
   live.current = { onPan, onSettle, onZoom, zoom };
 
-  const pinchFrom = useRef<number | null>(null);
   const lastTap = useRef(0);
-  const zoomedBy = useRef(0);
 
   const responder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        pinchFrom.current = null;
-        zoomedBy.current = 0;
-      },
-      onPanResponderMove: (event, gesture) => {
-        const fingers = touchesOf(event);
-
-        if (fingers === null) {
-          if (pinchFrom.current === null) live.current.onPan(gesture.dx, gesture.dy);
-          return;
-        }
-
-        const span = spanBetween(fingers[0], fingers[1]);
-        if (pinchFrom.current === null) {
-          pinchFrom.current = span;
-          return;
-        }
-
-        const levels = Math.trunc(Math.log2(span / pinchFrom.current));
-        if (levels !== zoomedBy.current) {
-          live.current.onZoom(levels - zoomedBy.current);
-          zoomedBy.current = levels;
-        }
-      },
+      onPanResponderMove: (_event, gesture) => live.current.onPan(gesture.dx, gesture.dy),
       onPanResponderRelease: (_event, gesture) => {
-        const pinched = pinchFrom.current !== null;
-        pinchFrom.current = null;
-
-        if (!pinched && Math.hypot(gesture.dx, gesture.dy) <= TAP_SLOP) {
+        if (Math.hypot(gesture.dx, gesture.dy) <= TAP_SLOP) {
           const now = Date.now();
           const quick = now - lastTap.current <= DOUBLE_TAP_MS;
           lastTap.current = quick ? 0 : now;
@@ -80,25 +51,12 @@ export function useMapGesture({
           return;
         }
 
-        live.current.onSettle(pinched ? 0 : gesture.dx, pinched ? 0 : gesture.dy);
+        live.current.onSettle(gesture.dx, gesture.dy);
       },
-      onPanResponderTerminate: () => {
-        pinchFrom.current = null;
-        live.current.onSettle(0, 0);
-      },
+      onPanResponderTerminate: () => live.current.onSettle(0, 0),
     }),
   ).current;
 
   return { handlers: responder.panHandlers, surfaceStyle: {} };
 }
 
-
-function touchesOf(event: GestureResponderEvent): [{ x: number; y: number }, { x: number; y: number }] | null {
-  const touches = event.nativeEvent.touches;
-  if (touches === undefined || touches.length < 2) return null;
-
-  return [
-    { x: touches[0]?.pageX ?? 0, y: touches[0]?.pageY ?? 0 },
-    { x: touches[1]?.pageX ?? 0, y: touches[1]?.pageY ?? 0 },
-  ];
-}

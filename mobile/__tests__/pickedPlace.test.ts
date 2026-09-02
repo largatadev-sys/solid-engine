@@ -1,10 +1,4 @@
-import {
-  detailFrom,
-  headlineFor,
-  movedAwayFrom,
-  nameToSave,
-  needsTyping,
-} from '../src/maps/pickedPlace';
+import { detailFrom, headlineFor, movedAwayFrom, nameToSave } from '../src/maps/pickedPlace';
 
 
 const HOTEL = { name: "Lolo Bob's B&B", context: 'El Nido, Palawan', lat: 11.17, lng: 119.39, kind: 'hotel' };
@@ -12,7 +6,7 @@ const HOTEL = { name: "Lolo Bob's B&B", context: 'El Nido, Palawan', lat: 11.17,
 const POSTCODE = { name: '5313', context: 'El Nido, Palawan', lat: 11.19, lng: 119.4, kind: 'postcode' };
 
 
-describe('what the crosshair resolves to (PL-2, the Uber pattern)', () => {
+describe('what the pin resolves to (PL-2, the Uber pattern)', () => {
   it('turns a geocoder answer into something a traveler can read', () => {
     expect(detailFrom(HOTEL, false)).toEqual({
       name: "Lolo Bob's B&B",
@@ -42,39 +36,26 @@ describe('what the crosshair resolves to (PL-2, the Uber pattern)', () => {
 
 describe('the headline under the map', () => {
   it('reads name and type, the way a venue reads', () => {
-    expect(headlineFor(detailFrom(HOTEL, false), '')).toBe("Lolo Bob's B&B · hotel");
+    expect(headlineFor(detailFrom(HOTEL, false))).toBe("Lolo Bob's B&B · hotel");
   });
 
   it('drops OSM’s meaningless "yes" type rather than printing it', () => {
-    expect(headlineFor(detailFrom({ ...HOTEL, kind: 'yes' }, false), '')).toBe("Lolo Bob's B&B");
+    expect(headlineFor(detailFrom({ ...HOTEL, kind: 'yes' }, false))).toBe("Lolo Bob's B&B");
   });
 
-  it('falls back to what the traveler typed when nothing resolved', () => {
-    expect(headlineFor(null, 'My secret cove')).toBe('My secret cove');
-  });
-
-  it('says something honest when there is neither', () => {
-    expect(headlineFor(null, '')).toBe('Dropped pin');
+  it('says something honest when the map has nothing there', () => {
+    expect(headlineFor(null)).toBe('Dropped pin');
   });
 });
 
 
-describe('what actually gets saved', () => {
-  it('saves the resolved name when the traveler typed nothing', () => {
-    expect(nameToSave(detailFrom(HOTEL, false), '')).toBe("Lolo Bob's B&B");
+describe('what gets saved — always the map’s answer, never a typed one', () => {
+  it('saves the resolved name', () => {
+    expect(nameToSave(detailFrom(HOTEL, false))).toBe("Lolo Bob's B&B");
   });
 
-  it('a typed name always wins over the resolved one', () => {
-    expect(nameToSave(detailFrom(HOTEL, false), 'The good B&B')).toBe('The good B&B');
-  });
-
-  it('has nothing to save when neither exists — confirm must stay blocked', () => {
-    expect(nameToSave(null, '')).toBe('');
-    expect(needsTyping(null, '')).toBe(true);
-  });
-
-  it('does not ask for typing when a place resolved', () => {
-    expect(needsTyping(detailFrom(HOTEL, false), '')).toBe(false);
+  it('has nothing to save when nothing resolved, so confirm must stay blocked', () => {
+    expect(nameToSave(null)).toBe('');
   });
 });
 

@@ -65,11 +65,6 @@ describe('the picker is pan-under-a-fixed-pin, with ONE way to place it (PL-2)',
     expect(picker).toContain('movedAwayFrom');
     expect(picker).toContain('detailFrom(candidate, true)');
   });
-
-  it('the name box appears only when nothing resolved — a fallback, not a chore', () => {
-    expect(picker).toContain('mustType');
-    expect(picker).toContain('needsTyping(detail, typed)');
-  });
 });
 
 
@@ -107,25 +102,40 @@ describe('the picker is a drawer with one CTA (PL-2 founder pass)', () => {
 });
 
 
-describe('the map zooms by pinch and by double tap (PL-2 founder pass)', () => {
-  it.each(['useMapGesture.web.ts', 'useMapGesture.native.ts'])('%s handles both', (fork) => {
+describe('the map zooms by buttons and double tap only (PL-2 founder pass)', () => {
+  it.each(['useMapGesture.web.ts', 'useMapGesture.native.ts'])('%s double taps to zoom', (fork) => {
     const source = read(fork);
 
     expect(source).toContain('DOUBLE_TAP_MS');
     expect(source).toContain('onZoom(1)');
   });
 
-  it('web pinches from the span between two pointers, sharing the tested maths', () => {
-    const web = read('useMapGesture.web.ts');
+  it.each(['useMapGesture.web.ts', 'useMapGesture.native.ts'])('%s carries NO pinch', (fork) => {
+    const source = read(fork);
 
-    expect(web).toContain('zoomAfterPinch');
-    expect(web).toContain('down.current.size >= 2');
+    expect(source).not.toContain('pinch');
+    expect(source).not.toContain('zoomAfterPinch');
   });
 
-  it('native pinches from its own two-touch span, sharing the same maths', () => {
-    const native = read('useMapGesture.native.ts');
+  it('the +/- controls are the deliberate zoom affordance', () => {
+    const surface = read('TileSurface.tsx');
 
-    expect(native).toContain('spanBetween');
-    expect(native).toContain('pinchFrom');
+    expect(surface).toContain('ZOOM_IN_LABEL');
+    expect(surface).toContain('ZOOM_OUT_LABEL');
+  });
+});
+
+
+describe('the picker never asks the traveler to type a name (PL-2 founder pass)', () => {
+  const picker = read('PlacePickerModal.tsx');
+
+  it('has no name field — its visibility used to depend on the value it collected', () => {
+    expect(picker).not.toContain('PLACE_LABEL');
+    expect(picker).not.toContain('mustType');
+    expect(picker).not.toContain('needsTyping');
+  });
+
+  it('saves the name the map resolved, and nothing else', () => {
+    expect(picker).toContain('nameToSave(detail)');
   });
 });

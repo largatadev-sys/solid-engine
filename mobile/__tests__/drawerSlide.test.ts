@@ -25,3 +25,17 @@ describe('the picker drawer slides rather than appearing (PL-2)', () => {
     expect(source).toContain('Animated.parallel');
   });
 });
+
+
+describe('the drawer survives being closed and reopened (PL-2 founder pass)', () => {
+  it('stays MOUNTED through the outro, or the closing animation never renders', () => {
+    expect(source).toContain('mounted');
+    expect(source).toContain('setMounted(false)');
+    expect(source).toContain('finished');
+  });
+
+  it('resets the sheet below the fold on every open, so the second open animates too', () => {
+    expect(source).toContain('translateY.setValue(travel)');
+    expect(source).toContain('scrim.setValue(0)');
+  });
+});

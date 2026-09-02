@@ -24,24 +24,13 @@ export function detailFrom(candidate: PlaceCandidateResponse | null, exact: bool
 }
 
 
-export function headlineFor(detail: PickedDetail | null, typed: string): string {
-  if (detail !== null) return placeDetailLine(detail.name, detail.kind);
-
-  const named = typed.trim();
-  return named === '' ? NOWHERE_NAMED : named;
+export function headlineFor(detail: PickedDetail | null): string {
+  return detail === null ? NOWHERE_NAMED : placeDetailLine(detail.name, detail.kind);
 }
 
 
-export function nameToSave(detail: PickedDetail | null, typed: string): string {
-  const named = typed.trim();
-  if (named !== '') return named;
-
+export function nameToSave(detail: PickedDetail | null): string {
   return detail === null ? '' : detail.name;
-}
-
-
-export function needsTyping(detail: PickedDetail | null, typed: string): boolean {
-  return detail === null && typed.trim() === '';
 }
 
 

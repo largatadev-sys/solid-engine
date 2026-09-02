@@ -26,10 +26,9 @@ import {
   MOVE_THE_MAP,
   PICKER_CONFIRM,
   PICKER_DISMISS,
-  PICKER_NEEDS_LABEL,
   PICKER_REMOVE,
   PIN_AT_CENTRE,
-  PLACE_LABEL,
+  RESOLVING_CONTEXT,
   RESOLVING_PLACE,
   SEARCH_NO_RESULTS,
   SEARCH_PLACEHOLDER,
@@ -41,7 +40,6 @@ import {
   headlineFor,
   movedAwayFrom,
   nameToSave,
-  needsTyping,
   type PickedDetail,
 } from './pickedPlace';
 import type { Pin } from './pinRules';
@@ -90,11 +88,10 @@ export function PlacePickerModal({
   onDismiss,
 }: PlacePickerModalProps) {
   const config = useMapConfig();
-  const { translateY, scrim } = useDrawerSlide(visible, SHEET_HEIGHT);
+  const { mounted, translateY, scrim } = useDrawerSlide(visible, SHEET_HEIGHT);
 
   const [view, setView] = useState(() => openingView(pin, openNear));
   const [detail, setDetail] = useState<PickedDetail | null>(null);
-  const [typed, setTyped] = useState('');
   const [resolving, setResolving] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -107,7 +104,6 @@ export function PlacePickerModal({
     setView(openingView(pin, openNear));
     setDetail(named === '' ? null : { name: named, kind: null, context: null, exact: true });
     exactAt.current = pin;
-    setTyped('');
     setResolving(false);
     setQuery('');
   }, [visible, place, pin, openNear]);
@@ -140,15 +136,13 @@ export function PlacePickerModal({
     setDetail(detailFrom(candidate, true));
     setView({ centre: landed, zoom: PICKED_ZOOM });
     setResolving(false);
-    setTyped('');
     setQuery('');
   };
 
-  const mustType = needsTyping(detail, typed) && !resolving;
-  const confirmable = !resolving && nameToSave(detail, typed).trim() !== '';
+  const confirmable = !resolving && nameToSave(detail).trim() !== '';
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss}>
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={onDismiss}>
       <View style={styles.stack}>
         <Animated.View style={[styles.scrim, { opacity: scrim }]}>
           <Pressable
@@ -203,30 +197,12 @@ export function PlacePickerModal({
           </View>
 
           <View style={styles.detail}>
-            {mustType ? (
-              <>
-                <Text style={styles.notice} numberOfLines={1}>
-                  {PICKER_NEEDS_LABEL}
-                </Text>
-                <TextInput
-                  style={styles.label}
-                  value={typed}
-                  onChangeText={setTyped}
-                  placeholder={PLACE_LABEL}
-                  placeholderTextColor={workspaceColors.placeholder}
-                  accessibilityLabel={PLACE_LABEL}
-                />
-              </>
-            ) : (
-              <>
-                <Text style={styles.headline} numberOfLines={1}>
-                  {resolving ? RESOLVING_PLACE : headlineFor(detail, typed)}
-                </Text>
-                <Text style={styles.context} numberOfLines={1}>
-                  {resolving ? '' : (detail?.context ?? MOVE_THE_MAP)}
-                </Text>
-              </>
-            )}
+            <Text style={styles.headline} numberOfLines={1}>
+              {resolving ? RESOLVING_PLACE : headlineFor(detail)}
+            </Text>
+            <Text style={styles.context} numberOfLines={1}>
+              {resolving ? RESOLVING_CONTEXT : (detail?.context ?? MOVE_THE_MAP)}
+            </Text>
           </View>
 
           <Pressable
@@ -236,7 +212,7 @@ export function PlacePickerModal({
             disabled={!confirmable}
             onPress={() =>
               onConfirm({
-                place: nameToSave(detail, typed),
+                place: nameToSave(detail),
                 pin: { lat: view.centre.lat, lng: view.centre.lng, zoom: clampZoom(view.zoom) },
               })
             }

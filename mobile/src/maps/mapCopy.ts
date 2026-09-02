@@ -24,6 +24,8 @@ export const MOVE_THE_MAP = 'Move the map to place the pin';
 
 export const RESOLVING_PLACE = 'Finding this place...';
 
+export const RESOLVING_CONTEXT = ' ';
+
 export const NOWHERE_NAMED = 'Dropped pin';
 
 export const PIN_AT_CENTRE = 'The pin sits at the centre of the map';
