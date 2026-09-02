@@ -51,7 +51,7 @@ class PinColumnsIT {
 
         seedLegacyPlan();
 
-        flywayTo("44").migrate();
+        flywayTo("45").migrate();
     }
 
 
@@ -100,6 +100,60 @@ class PinColumnsIT {
                 .as("a latitude alone plants a row every reader would have to defend against")
                 .isNotNull()
                 .hasMessageContaining("activity_pin_is_whole");
+    }
+
+
+    @Test
+    void aPinCannotBeStoredOnAnActivityThatNamesNoPlace() {
+        jdbc.update("UPDATE activity SET place = NULL WHERE id = ?", A_LEGACY_ACTIVITY);
+
+        assertThat(catchThrowable(() -> jdbc.update(
+                        "UPDATE activity SET latitude = ?, longitude = ?, zoom = ? WHERE id = ?",
+                        new BigDecimal("11.194900"),
+                        new BigDecimal("119.401300"),
+                        (short) 15,
+                        A_LEGACY_ACTIVITY)))
+                .as("a point on the earth with nothing to call it")
+                .isNotNull()
+                .hasMessageContaining("activity_pin_needs_a_place");
+
+        jdbc.update("UPDATE activity SET place = ? WHERE id = ?", "Big Lagoon", A_LEGACY_ACTIVITY);
+    }
+
+
+    @Test
+    void aPlaceOfNothingButSPACES_countsAsNoPlaceAtAll() {
+        jdbc.update("UPDATE activity SET place = ? WHERE id = ?", "   ", A_LEGACY_ACTIVITY);
+
+        assertThat(catchThrowable(() -> jdbc.update(
+                        "UPDATE activity SET latitude = ?, longitude = ?, zoom = ? WHERE id = ?",
+                        new BigDecimal("11.194900"),
+                        new BigDecimal("119.401300"),
+                        (short) 15,
+                        A_LEGACY_ACTIVITY)))
+                .as("blank reaches the column as readily as NULL, and means the same thing")
+                .isNotNull()
+                .hasMessageContaining("activity_pin_needs_a_place");
+
+        jdbc.update("UPDATE activity SET place = ? WHERE id = ?", "Big Lagoon", A_LEGACY_ACTIVITY);
+    }
+
+
+    @Test
+    void aPinCannotBeStoredOnATripThatNamesNoDestination() {
+        jdbc.update("UPDATE itinerary SET destination = ? WHERE id = ?", "", A_LEGACY_TRIP);
+
+        assertThat(catchThrowable(() -> jdbc.update(
+                        "UPDATE itinerary SET latitude = ?, longitude = ?, zoom = ? WHERE id = ?",
+                        new BigDecimal("11.194900"),
+                        new BigDecimal("119.401300"),
+                        (short) 12,
+                        A_LEGACY_TRIP)))
+                .as("NOT NULL admits the empty string, so the trim is what actually guards it")
+                .isNotNull()
+                .hasMessageContaining("itinerary_pin_needs_a_destination");
+
+        jdbc.update("UPDATE itinerary SET destination = ? WHERE id = ?", "El Nido, Palawan", A_LEGACY_TRIP);
     }
 
 

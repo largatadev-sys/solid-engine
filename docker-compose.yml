@@ -106,6 +106,10 @@ services:
       # Without this mapping the variable is silently inert — the FB-2 trap, where an env var set on
       # the command line reaches compose and stops there, and the app quietly serves the fallback.
       LARGATA_PHOTON_URL: ${LARGATA_PHOTON_URL:-}
+      # Photon serves forward search and reverse lookup on two different paths, so the second is
+      # its own variable. It was once derived by rewriting "/api" in the first, which mangles any
+      # host whose own name contains that string and then reverses against the wrong service.
+      LARGATA_PHOTON_REVERSE_URL: ${LARGATA_PHOTON_REVERSE_URL:-https://photon.komoot.io/reverse}
       # OSM/Photon policy wants an outbound identification naming the application; a browser cannot
       # set one, which is the second reason search is proxied rather than called from the app.
       LARGATA_PLACE_USER_AGENT: ${LARGATA_PLACE_USER_AGENT:-Largata/1.0 (+https://largata.com)}

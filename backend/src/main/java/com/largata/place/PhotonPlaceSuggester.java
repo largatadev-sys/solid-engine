@@ -30,13 +30,17 @@ class PhotonPlaceSuggester implements PlaceSuggester {
 
     private final RestClient http;
 
-    private final String endpoint;
+    private final String searchUrl;
+
+    private final String reverseUrl;
 
     private final String userAgent;
 
-    PhotonPlaceSuggester(RestClient.Builder builder, String endpoint, String userAgent) {
+    PhotonPlaceSuggester(
+            RestClient.Builder builder, String searchUrl, String reverseUrl, String userAgent) {
         this.http = builder.build();
-        this.endpoint = endpoint;
+        this.searchUrl = searchUrl;
+        this.reverseUrl = reverseUrl;
         this.userAgent = userAgent;
     }
 
@@ -52,7 +56,7 @@ class PhotonPlaceSuggester implements PlaceSuggester {
     @Override
     public List<PlaceCandidate> suggest(String query, BigDecimal biasLatitude, BigDecimal biasLongitude) {
         UriComponentsBuilder url =
-                UriComponentsBuilder.fromUriString(endpoint)
+                UriComponentsBuilder.fromUriString(searchUrl)
                         .queryParam("q", query)
                         .queryParam("limit", MAX_RESULTS);
         if (biasLatitude != null && biasLongitude != null) {
@@ -90,7 +94,7 @@ class PhotonPlaceSuggester implements PlaceSuggester {
 
     private PlaceCandidate reverse(BigDecimal latitude, BigDecimal longitude, int radiusKm) {
         UriComponentsBuilder building =
-                UriComponentsBuilder.fromUriString(endpoint.replace("/api", "/reverse"))
+                UriComponentsBuilder.fromUriString(reverseUrl)
                         .queryParam("lat", latitude)
                         .queryParam("lon", longitude)
                         .queryParam("limit", 1);

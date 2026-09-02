@@ -19,6 +19,8 @@ class SearchRateLimiter {
 
     static final int PER_TRAVELER_PER_MINUTE = 30;
 
+    static final int GLOBAL_PER_MINUTE = 300;
+
     private static final Duration WINDOW = Duration.ofMinutes(1);
 
     private static final Logger log = LoggerFactory.getLogger(SearchRateLimiter.class);
@@ -26,6 +28,8 @@ class SearchRateLimiter {
     private final Clock clock;
 
     private final Map<String, Deque<Instant>> searchesByTraveler = new HashMap<>();
+
+    private final Deque<Instant> allSearches = new ArrayDeque<>();
 
     SearchRateLimiter(Clock clock) {
         this.clock = clock;
@@ -36,6 +40,10 @@ class SearchRateLimiter {
         Instant now = Instant.now(clock);
         forgetExpired(now);
 
+        if (allSearches.size() >= GLOBAL_PER_MINUTE) {
+            log.warn("Place search refused, the whole app has spent its allowance: cap={}", GLOBAL_PER_MINUTE);
+            throw new TooManySearchesException("Place search is busy right now. Try again in a moment.");
+        }
         Deque<Instant> mine = searchesByTraveler.computeIfAbsent(traveler, unseen -> new ArrayDeque<>());
         if (mine.size() >= PER_TRAVELER_PER_MINUTE) {
             log.warn("Place search refused, this traveler's allowance is spent: limit={}", PER_TRAVELER_PER_MINUTE);
@@ -43,6 +51,7 @@ class SearchRateLimiter {
         }
 
         mine.addLast(now);
+        allSearches.addLast(now);
     }
 
 
@@ -57,6 +66,10 @@ class SearchRateLimiter {
             if (searches.isEmpty()) {
                 travelers.remove();
             }
+        }
+
+        while (!allSearches.isEmpty() && allSearches.peekFirst().isBefore(cutoff)) {
+            allSearches.pollFirst();
         }
     }
 }

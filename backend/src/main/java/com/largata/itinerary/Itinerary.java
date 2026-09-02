@@ -2,12 +2,12 @@ package com.largata.itinerary;
 
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -58,11 +58,7 @@ public class Itinerary {
     private String coverImageUrl;
 
 
-    @Column private BigDecimal latitude;
-
-    @Column private BigDecimal longitude;
-
-    @Column private Short zoom;
+    @Embedded private PinColumns pin;
 
 
     @Column(name = "last_edited_by")
@@ -128,10 +124,7 @@ public class Itinerary {
         if (fields.standouts() != null) {
             this.standouts = fields.standouts();
         }
-        Pin pin = fields.pin();
-        this.latitude = pin == null ? null : pin.latitude();
-        this.longitude = pin == null ? null : pin.longitude();
-        this.zoom = pin == null ? null : (short) pin.zoom();
+        this.pin = PinColumns.holding(fields.pin());
 
         if (fields.bestTimeOfYear() != null) {
             this.bestTimeOfYear = fields.bestTimeOfYear().isEmpty() ? null : fields.bestTimeOfYear();
@@ -312,7 +305,7 @@ public class Itinerary {
 
 
     public Pin pin() {
-        return Pin.readFrom(latitude, longitude, zoom);
+        return PinColumns.readFrom(pin);
     }
 
 

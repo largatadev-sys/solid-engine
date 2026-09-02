@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -49,6 +50,16 @@ public class GlobalExceptionHandler {
     ResponseEntity<ErrorResponse> handleNoHandler(Exception e) {
         log.warn("No handler for request: type={}", e.getClass().getSimpleName());
         return respond(HttpStatus.NOT_FOUND, "NOT_FOUND", "Not found.");
+    }
+
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    ResponseEntity<ErrorResponse> handleWrongMethod(HttpRequestMethodNotSupportedException e) {
+        log.warn("Method not supported on this route: method={}", e.getMethod());
+        return respond(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "METHOD_NOT_ALLOWED",
+                "That is not something this address does.");
     }
 
 

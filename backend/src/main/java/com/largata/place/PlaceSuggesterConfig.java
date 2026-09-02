@@ -14,8 +14,10 @@ class PlaceSuggesterConfig {
     @ConditionalOnExpression(PhotonPlaceSuggester.ENDPOINT_CONFIGURED)
     PlaceSuggester photonPlaceSuggester(
             @Value("${largata.place.photon-url}") String photonUrl,
+            @Value("${largata.place.photon-reverse-url}") String photonReverseUrl,
             @Value("${largata.place.user-agent}") String userAgent) {
-        return new PhotonPlaceSuggester(PhotonPlaceSuggester.statedTransport(), photonUrl, userAgent);
+        return new PhotonPlaceSuggester(
+                PhotonPlaceSuggester.statedTransport(), photonUrl, photonReverseUrl, userAgent);
     }
 
 

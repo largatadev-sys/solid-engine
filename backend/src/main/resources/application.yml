@@ -109,6 +109,10 @@ largata:
     # machinery, and in an ordinary @Configuration it is decoration that lets BOTH beans register
     # (the WS-1 finding).
     photon-url: ${LARGATA_PHOTON_URL:}
+    # Photon splits forward and reverse across two paths. Both are configuration rather than one
+    # derived from the other: deriving meant string surgery on a URL, which mangles any host whose
+    # own name contains the forward path and silently reverses against the wrong one.
+    photon-reverse-url: ${LARGATA_PHOTON_REVERSE_URL:https://photon.komoot.io/reverse}
     # OSM/Photon policy requires an outbound identification that names the application. A browser
     # cannot set one, which is a second reason search runs server-side rather than from the app.
     user-agent: ${LARGATA_PLACE_USER_AGENT:Largata/1.0 (+https://largata.com)}
