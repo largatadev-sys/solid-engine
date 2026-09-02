@@ -133,15 +133,35 @@ class PlaceSearchServiceTest {
 
     @Test
     void anUpstreamFailureSurfacesAsADefinedOutcomeTheClientCanRender() {
-        PlaceSearchService service =
-                serviceWith(
-                        (query, lat, lng) -> {
-                            throw new PlaceSearchUnavailableException("down", new RuntimeException());
-                        });
+        PlaceSearchService service = serviceWith(new UnreachableSuggester());
 
         assertThatThrownBy(() -> service.search(ANA, "Big Lagoon", null, null))
                 .as("search is an accelerator, never a dependency — the client renders this and keeps the map")
                 .isInstanceOf(PlaceSearchUnavailableException.class);
+    }
+
+
+    @Test
+    void anUpstreamFailureWhileNAMINGAPinSurfacesTheSameWay_soADropCanDegradeRatherThanHang() {
+        PlaceSearchService service = serviceWith(new UnreachableSuggester());
+
+        assertThatThrownBy(() -> service.nameFor(ANA, EL_NIDO_LAT, EL_NIDO_LNG))
+                .as("the client swallows this and leaves the traveler to type a name")
+                .isInstanceOf(PlaceSearchUnavailableException.class);
+    }
+
+
+    private static final class UnreachableSuggester implements PlaceSuggester {
+
+        @Override
+        public List<PlaceCandidate> suggest(String query, BigDecimal lat, BigDecimal lng) {
+            throw new PlaceSearchUnavailableException("down", new RuntimeException());
+        }
+
+        @Override
+        public PlaceCandidate nameFor(BigDecimal lat, BigDecimal lng) {
+            throw new PlaceSearchUnavailableException("down", new RuntimeException());
+        }
     }
 
 
@@ -171,6 +191,47 @@ class PlaceSearchServiceTest {
     }
 
 
+    @Test
+    void aDroppedPinIsNamedByTheGeocoder_soATravelerNeverHasToTypeWhatTheMapAlreadyKnows() {
+        PlaceSearchService service = serviceWith(new FixturePlaceSuggester());
+
+        PlaceCandidate named = service.nameFor(ANA, new BigDecimal("11.3167"), new BigDecimal("119.4167"));
+
+        assertThat(named).isNotNull();
+        assertThat(named.name()).isEqualTo("Nacpan Beach");
+    }
+
+
+    @Test
+    void aPinInTheMiddleOfNowhereIsNAMELESS_andThatIsTheOneCaseATravelerMustTypeThrough() {
+        PlaceSearchService service = serviceWith(new FixturePlaceSuggester());
+
+        assertThat(service.nameFor(ANA, new BigDecimal("11.9"), new BigDecimal("119.0"))).isNull();
+    }
+
+
+    @Test
+    void namingTheSamePointTwiceCostsOneUpstreamCall() {
+        CountingSuggester upstream = new CountingSuggester();
+        PlaceSearchService service = serviceWith(upstream);
+
+        service.nameFor(ANA, EL_NIDO_LAT, EL_NIDO_LNG);
+        service.nameFor(ANA, EL_NIDO_LAT, EL_NIDO_LNG);
+
+        assertThat(upstream.reverseCalls).isEqualTo(1);
+    }
+
+
+    @Test
+    void anAbsentPointIsNotAskedAbout() {
+        CountingSuggester upstream = new CountingSuggester();
+        PlaceSearchService service = serviceWith(upstream);
+
+        assertThat(service.nameFor(ANA, null, EL_NIDO_LNG)).isNull();
+        assertThat(upstream.reverseCalls).isZero();
+    }
+
+
     private PlaceSearchService serviceWith(PlaceSuggester suggester) {
         return new PlaceSearchService(suggester, new SuggestionCache(clock), new SearchRateLimiter(clock));
     }
@@ -180,11 +241,19 @@ class PlaceSearchServiceTest {
 
         private int calls;
 
+        private int reverseCalls;
+
         @Override
         public List<PlaceCandidate> suggest(String query, BigDecimal lat, BigDecimal lng) {
             calls++;
             return List.of(
                     new PlaceCandidate("Big Lagoon", "El Nido, Palawan", EL_NIDO_LAT, EL_NIDO_LNG, "water"));
+        }
+
+        @Override
+        public PlaceCandidate nameFor(BigDecimal lat, BigDecimal lng) {
+            reverseCalls++;
+            return new PlaceCandidate("Big Lagoon", "El Nido, Palawan", EL_NIDO_LAT, EL_NIDO_LNG, "water");
         }
     }
 

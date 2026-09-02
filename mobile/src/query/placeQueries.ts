@@ -40,3 +40,12 @@ export function usePlaceSearch(
     staleTime: A_DAY,
   });
 }
+
+export async function nameForPin(lat: number, lng: number): Promise<string | undefined> {
+  try {
+    const found = await placeRepository.nameFor(lat, lng);
+    return found?.name;
+  } catch {
+    return undefined;
+  }
+}

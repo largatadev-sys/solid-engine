@@ -37,6 +37,19 @@ class FixturePlaceSuggester implements PlaceSuggester {
     }
 
 
+    static final double NAMEABLE_DEGREES = 0.05;
+
+    @Override
+    public PlaceCandidate nameFor(BigDecimal latitude, BigDecimal longitude) {
+        return WORLD.stream()
+                .filter(candidate -> squaredDistance(candidate, latitude, longitude)
+                        <= NAMEABLE_DEGREES * NAMEABLE_DEGREES)
+                .min(Comparator.comparingDouble(
+                        candidate -> squaredDistance(candidate, latitude, longitude)))
+                .orElse(null);
+    }
+
+
     private static boolean matches(PlaceCandidate candidate, String needle) {
         return candidate.name().toLowerCase(Locale.ROOT).contains(needle)
                 || (candidate.context() != null && candidate.context().toLowerCase(Locale.ROOT).contains(needle));

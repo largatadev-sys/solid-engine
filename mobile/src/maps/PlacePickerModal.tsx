@@ -17,10 +17,11 @@ import {
   workspaceMetrics,
   workspaceRadii,
 } from '../theme/workspaceTokens';
-import { useMapConfig, usePlaceSearch } from '../query/placeQueries';
+import { nameForPin, useMapConfig, usePlaceSearch } from '../query/placeQueries';
 import type { PlaceCandidateResponse } from '../types/api';
 import {
   DROP_PIN_HERE,
+  TAP_MAP_HINT,
   MAP_UNAVAILABLE,
   PICKER_CANCEL,
   PICKER_CONFIRM,
@@ -97,7 +98,17 @@ export function PlacePickerModal({
     setQuery('');
   };
 
-  const dropHere = () => setDropped({ ...view.centre, zoom: clampZoom(view.zoom) });
+  const dropAt = (point: LatLng) => {
+    const landed: Pin = { ...point, zoom: clampZoom(view.zoom) };
+    setDropped(landed);
+    if (label.trim() !== '') return;
+
+    void nameForPin(landed.lat, landed.lng).then((named) => {
+      if (named !== undefined) setLabel((typed) => (typed.trim() === '' ? named : typed));
+    });
+  };
+
+  const dropHere = () => dropAt(view.centre);
 
   const confirmable = pinConfirmable(dropped, label) || (dropped === null && label.trim().length > 0);
 
@@ -162,11 +173,15 @@ export function PlacePickerModal({
                 zoom={view.zoom}
                 pin={dropped}
                 onMove={(centre, zoom) => setView({ centre, zoom })}
+                onTapPoint={dropAt}
               >
                 <View style={styles.crosshair} pointerEvents="none">
                   <View style={styles.crosshairBar} />
                   <View style={styles.crosshairPost} />
                 </View>
+                <Text style={styles.tapHint} pointerEvents="none">
+                  {TAP_MAP_HINT}
+                </Text>
               </TileSurface>
             )}
           </View>
@@ -323,6 +338,14 @@ const styles = StyleSheet.create({
     color: workspaceColors.title,
   },
   notice: { color: workspaceColors.muted },
+  tapHint: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: spacing.sm,
+    textAlign: 'center',
+    color: mapColors.attributionInk,
+  },
   actions: { flexDirection: 'row', gap: spacing.xs },
   secondary: {
     flex: 1,

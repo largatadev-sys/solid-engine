@@ -4,6 +4,7 @@ import com.largata.place.api.PlaceCandidate;
 import com.largata.place.api.PlaceSearchUnavailableException;
 import com.largata.place.api.PlaceSuggester;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -66,6 +67,27 @@ class PhotonPlaceSuggester implements PlaceSuggester {
                             .retrieve()
                             .body(JsonNode.class);
             return candidatesIn(answer);
+        } catch (RestClientException unreachable) {
+            throw new PlaceSearchUnavailableException("The place search service did not answer", unreachable);
+        }
+    }
+
+
+    @Override
+    public PlaceCandidate nameFor(BigDecimal latitude, BigDecimal longitude) {
+        URI url =
+                UriComponentsBuilder.fromUriString(endpoint.replace("/api", "/reverse"))
+                        .queryParam("lat", latitude)
+                        .queryParam("lon", longitude)
+                        .queryParam("limit", 1)
+                        .build()
+                        .toUri();
+
+        try {
+            JsonNode answer =
+                    http.get().uri(url).header("User-Agent", userAgent).retrieve().body(JsonNode.class);
+            List<PlaceCandidate> found = candidatesIn(answer);
+            return found.isEmpty() ? null : found.get(0);
         } catch (RestClientException unreachable) {
             throw new PlaceSearchUnavailableException("The place search service did not answer", unreachable);
         }

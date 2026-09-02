@@ -3,6 +3,9 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { webStyle } from '../itineraries/webStyle';
 
 
+const TAP_SLOP = 5;
+
+
 export type MapGesture = {
   readonly handlers: object;
   readonly surfaceStyle: StyleProp<ViewStyle>;
@@ -13,65 +16,93 @@ export function useMapGesture({
   onPan,
   onSettle,
   onZoom,
+  onTap,
+  surfaceRef,
   dragging,
 }: {
   readonly onPan: (dx: number, dy: number) => void;
   readonly onSettle: (dx: number, dy: number) => void;
   readonly onZoom: (by: number) => void;
+  readonly onTap?: (x: number, y: number) => void;
+  readonly surfaceRef?: { current: unknown };
   readonly dragging: boolean;
 }): MapGesture {
-  const live = useRef({ onPan, onSettle, onZoom });
-  live.current = { onPan, onSettle, onZoom };
+  const live = useRef({ onPan, onSettle, onZoom, onTap });
+  live.current = { onPan, onSettle, onZoom, onTap };
 
   const from = useRef<{ x: number; y: number } | null>(null);
 
-  const moving = useRef((event: PointerEvent) => {
-    const start = from.current;
-    if (start === null) return;
-    live.current.onPan(event.clientX - start.x, event.clientY - start.y);
-  }).current;
+  useEffect(() => {
+    const found = surfaceRef?.current as HTMLElement | null | undefined;
+    if (found === null || found === undefined || typeof found.addEventListener !== 'function') return;
+    const node: HTMLElement = found;
 
-  const forward = useRef((event: PointerEvent) => {
-    const start = from.current;
-    if (start === null) return;
-    from.current = null;
-    detach();
-    live.current.onSettle(event.clientX - start.x, event.clientY - start.y);
-  }).current;
+    const moving = (event: PointerEvent) => {
+      const start = from.current;
+      if (start === null) return;
+      live.current.onPan(event.clientX - start.x, event.clientY - start.y);
+    };
 
-  const swallow = useRef((event: Event) => event.preventDefault()).current;
+    const swallow = (event: Event) => event.preventDefault();
 
-  const wheeling = useRef((event: WheelEvent) => {
-    event.preventDefault();
-    live.current.onZoom(event.deltaY < 0 ? 1 : -1);
-  }).current;
+    function release(): void {
+      window.removeEventListener('pointermove', moving);
+      window.removeEventListener('pointerup', settle);
+      window.removeEventListener('pointercancel', settle);
+      window.removeEventListener('selectstart', swallow);
+      document.body.style.userSelect = '';
+    }
 
-  const detach = () => {
-    if (typeof window === 'undefined') return;
-    window.removeEventListener('pointermove', moving);
-    window.removeEventListener('pointerup', forward);
-    window.removeEventListener('pointercancel', forward);
-    window.removeEventListener('selectstart', swallow);
-    document.body.style.userSelect = '';
-  };
+    function settle(event: PointerEvent): void {
+      const start = from.current;
+      if (start === null) return;
 
-  useEffect(() => detach, []);
+      const dx = event.clientX - start.x;
+      const dy = event.clientY - start.y;
+      from.current = null;
+      release();
+
+      if (Math.hypot(dx, dy) <= TAP_SLOP) {
+        const box = node.getBoundingClientRect();
+        live.current.onTap?.(event.clientX - box.left, event.clientY - box.top);
+        live.current.onSettle(0, 0);
+        return;
+      }
+      live.current.onSettle(dx, dy);
+    }
+
+    const grab = (event: PointerEvent) => {
+      from.current = { x: event.clientX, y: event.clientY };
+      window.addEventListener('pointermove', moving);
+      window.addEventListener('pointerup', settle);
+      window.addEventListener('pointercancel', settle);
+      window.addEventListener('selectstart', swallow);
+      document.body.style.userSelect = 'none';
+    };
+
+    const wheeling = (event: WheelEvent) => {
+      event.preventDefault();
+      live.current.onZoom(event.deltaY < 0 ? 1 : -1);
+    };
+
+    const block = (event: Event) => event.preventDefault();
+
+    node.addEventListener('pointerdown', grab);
+    node.addEventListener('wheel', wheeling, { passive: false });
+    node.addEventListener('contextmenu', block);
+    node.addEventListener('dragstart', block);
+
+    return () => {
+      release();
+      node.removeEventListener('pointerdown', grab);
+      node.removeEventListener('wheel', wheeling);
+      node.removeEventListener('contextmenu', block);
+      node.removeEventListener('dragstart', block);
+    };
+  }, [surfaceRef]);
 
   return {
-    handlers: {
-      onPointerDown: (event: { clientX: number; clientY: number }) => {
-        from.current = { x: event.clientX, y: event.clientY };
-        if (typeof window !== 'undefined') {
-          window.addEventListener('pointermove', moving);
-          window.addEventListener('pointerup', forward);
-          window.addEventListener('pointercancel', forward);
-          window.addEventListener('selectstart', swallow);
-          document.body.style.userSelect = 'none';
-        }
-      },
-      onWheel: wheeling,
-      onContextMenu: (event: { preventDefault: () => void }) => event.preventDefault(),
-    },
+    handlers: {},
     surfaceStyle: webStyle({
       touchAction: 'none',
       userSelect: 'none',

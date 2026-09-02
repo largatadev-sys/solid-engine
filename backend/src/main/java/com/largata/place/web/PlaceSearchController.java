@@ -34,4 +34,12 @@ class PlaceSearchController {
                         .toList();
         return new PlaceSearchResponse(results);
     }
+
+    @GetMapping("/reverse")
+    PlaceCandidateResponse nameFor(
+            @CurrentTraveler Traveler traveler,
+            @RequestParam("lat") BigDecimal latitude,
+            @RequestParam("lng") BigDecimal longitude) {
+        return PlaceCandidateResponse.of(places.nameFor(traveler.id(), latitude, longitude));
+    }
 }

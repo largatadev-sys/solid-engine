@@ -7,4 +7,7 @@ import java.util.List;
 public interface PlaceSuggester {
 
     List<PlaceCandidate> suggest(String query, BigDecimal biasLatitude, BigDecimal biasLongitude);
+
+
+    PlaceCandidate nameFor(BigDecimal latitude, BigDecimal longitude);
 }

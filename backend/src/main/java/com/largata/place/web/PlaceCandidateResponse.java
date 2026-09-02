@@ -14,6 +14,9 @@ record PlaceCandidateResponse(
 
 
     static PlaceCandidateResponse of(PlaceCandidate candidate) {
+        if (candidate == null) {
+            return null;
+        }
         return new PlaceCandidateResponse(
                 candidate.name(),
                 candidate.context(),

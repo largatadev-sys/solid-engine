@@ -22,6 +22,8 @@ export const PLACE_LABEL = 'Place name';
 
 export const DROP_PIN_HERE = 'Drop the pin at the centre of the map';
 
+export const TAP_MAP_HINT = 'Tap the map to drop a pin';
+
 
 export function viewerLabel(place: string): string {
   return `${place.trim()} on a map`;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -16,6 +16,7 @@ import {
   MIN_ZOOM,
   clampZoom,
   panned,
+  pointAtScreen,
   screenOffsetOf,
   tilesCovering,
   type LatLng,
@@ -35,11 +36,13 @@ interface TileSurfaceProps {
   readonly zoom: number;
   readonly onMove: (centre: LatLng, zoom: number) => void;
   readonly pin?: LatLng | null;
+  readonly onTapPoint?: (point: LatLng) => void;
   readonly children?: React.ReactNode;
 }
 
 
-export function TileSurface({ config, centre, zoom, onMove, pin, children }: TileSurfaceProps) {
+export function TileSurface({ config, centre, zoom, onMove, pin, onTapPoint, children }: TileSurfaceProps) {
+  const surfaceRef = useRef<View | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [drag, setDrag] = useState<{ dx: number; dy: number } | null>(null);
 
@@ -54,6 +57,11 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
       if (dx !== 0 || dy !== 0) onMove(panned(centre, zoom, dx, dy), zoom);
     },
     onZoom: (by) => onMove(centre, clampZoom(zoom + by)),
+    surfaceRef,
+    onTap: (x, y) => {
+      if (onTapPoint === undefined) return;
+      onTapPoint(pointAtScreen({ x, y }, shownViewport));
+    },
     dragging: drag !== null,
   });
 
@@ -65,6 +73,7 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
       onLayout={(event: LayoutChangeEvent) => setSize(event.nativeEvent.layout)}
     >
       <View
+        ref={surfaceRef}
         {...(gesture.handlers as ViewProps)}
         style={StyleSheet.flatten([styles.field, gesture.surfaceStyle])}
       >
