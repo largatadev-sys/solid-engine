@@ -8,9 +8,6 @@ import {
 import { spanBetween } from './tileProjection';
 
 
-const TAP_SLOP = 5;
-
-
 export type MapGesture = {
   readonly handlers: object;
   readonly surfaceStyle: StyleProp<ViewStyle>;
@@ -21,17 +18,15 @@ export function useMapGesture({
   onPan,
   onSettle,
   onZoom,
-  onTap,
 }: {
   readonly onPan: (dx: number, dy: number) => void;
   readonly onSettle: (dx: number, dy: number) => void;
   readonly onZoom: (by: number) => void;
-  readonly onTap?: (x: number, y: number) => void;
   readonly surfaceRef?: { current: unknown };
   readonly dragging: boolean;
 }): MapGesture {
-  const live = useRef({ onPan, onSettle, onZoom, onTap });
-  live.current = { onPan, onSettle, onZoom, onTap };
+  const live = useRef({ onPan, onSettle, onZoom });
+  live.current = { onPan, onSettle, onZoom };
 
   const pinchFrom = useRef<number | null>(null);
   const zoomedBy = useRef(0);
@@ -64,16 +59,10 @@ export function useMapGesture({
           zoomedBy.current = levels;
         }
       },
-      onPanResponderRelease: (event, gesture) => {
+      onPanResponderRelease: (_event, gesture) => {
         const pinched = pinchFrom.current !== null;
         pinchFrom.current = null;
 
-        if (!pinched && Math.hypot(gesture.dx, gesture.dy) <= TAP_SLOP) {
-          const { locationX, locationY } = event.nativeEvent;
-          live.current.onTap?.(locationX, locationY);
-          live.current.onSettle(0, 0);
-          return;
-        }
         live.current.onSettle(pinched ? 0 : gesture.dx, pinched ? 0 : gesture.dy);
       },
       onPanResponderTerminate: () => {

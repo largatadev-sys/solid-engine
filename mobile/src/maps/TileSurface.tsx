@@ -16,7 +16,6 @@ import {
   MIN_ZOOM,
   clampZoom,
   panned,
-  pointAtScreen,
   screenOffsetOf,
   tilesCovering,
   type LatLng,
@@ -36,12 +35,11 @@ interface TileSurfaceProps {
   readonly zoom: number;
   readonly onMove: (centre: LatLng, zoom: number) => void;
   readonly pin?: LatLng | null;
-  readonly onTapPoint?: (point: LatLng) => void;
   readonly children?: React.ReactNode;
 }
 
 
-export function TileSurface({ config, centre, zoom, onMove, pin, onTapPoint, children }: TileSurfaceProps) {
+export function TileSurface({ config, centre, zoom, onMove, pin, children }: TileSurfaceProps) {
   const surfaceRef = useRef<View | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [drag, setDrag] = useState<{ dx: number; dy: number } | null>(null);
@@ -58,10 +56,6 @@ export function TileSurface({ config, centre, zoom, onMove, pin, onTapPoint, chi
     },
     onZoom: (by) => onMove(centre, clampZoom(zoom + by)),
     surfaceRef,
-    onTap: (x, y) => {
-      if (onTapPoint === undefined) return;
-      onTapPoint(pointAtScreen({ x, y }, shownViewport));
-    },
     dragging: drag !== null,
   });
 

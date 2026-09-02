@@ -3,9 +3,6 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { webStyle } from '../itineraries/webStyle';
 
 
-const TAP_SLOP = 5;
-
-
 export type MapGesture = {
   readonly handlers: object;
   readonly surfaceStyle: StyleProp<ViewStyle>;
@@ -16,19 +13,17 @@ export function useMapGesture({
   onPan,
   onSettle,
   onZoom,
-  onTap,
   surfaceRef,
   dragging,
 }: {
   readonly onPan: (dx: number, dy: number) => void;
   readonly onSettle: (dx: number, dy: number) => void;
   readonly onZoom: (by: number) => void;
-  readonly onTap?: (x: number, y: number) => void;
   readonly surfaceRef?: { current: unknown };
   readonly dragging: boolean;
 }): MapGesture {
-  const live = useRef({ onPan, onSettle, onZoom, onTap });
-  live.current = { onPan, onSettle, onZoom, onTap };
+  const live = useRef({ onPan, onSettle, onZoom });
+  live.current = { onPan, onSettle, onZoom };
 
   const from = useRef<{ x: number; y: number } | null>(null);
 
@@ -62,12 +57,6 @@ export function useMapGesture({
       from.current = null;
       release();
 
-      if (Math.hypot(dx, dy) <= TAP_SLOP) {
-        const box = node.getBoundingClientRect();
-        live.current.onTap?.(event.clientX - box.left, event.clientY - box.top);
-        live.current.onSettle(0, 0);
-        return;
-      }
       live.current.onSettle(dx, dy);
     }
 

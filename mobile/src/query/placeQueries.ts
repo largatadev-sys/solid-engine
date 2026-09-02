@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { MapConfig } from '../maps/tileUrl';
 import { placeRepository } from '../repositories/placeRepository';
-import type { PlaceSearchResponse } from '../types/api';
+import type { PlaceCandidateResponse, PlaceSearchResponse } from '../types/api';
 
 
 export const placeKeys = {
@@ -41,11 +41,13 @@ export function usePlaceSearch(
   });
 }
 
-export async function nameForPin(lat: number, lng: number): Promise<string | undefined> {
+export async function nameForPin(
+  lat: number,
+  lng: number,
+): Promise<PlaceCandidateResponse | null> {
   try {
-    const found = await placeRepository.nameFor(lat, lng);
-    return found?.name;
+    return (await placeRepository.nameFor(lat, lng)) ?? null;
   } catch {
-    return undefined;
+    return null;
   }
 }

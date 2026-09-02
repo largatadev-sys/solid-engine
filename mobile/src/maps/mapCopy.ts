@@ -4,9 +4,9 @@ export const MAP_UNAVAILABLE = 'The map could not be loaded. You can still open 
 
 export const SEARCH_PLACEHOLDER = 'Search for a place...';
 
-export const SEARCH_UNAVAILABLE = 'Search is unavailable right now. You can still drop a pin by hand.';
+export const SEARCH_UNAVAILABLE = 'Search is unavailable right now. You can still move the map to a place.';
 
-export const SEARCH_NO_RESULTS = 'No places found. Try a different name, or drop a pin by hand.';
+export const SEARCH_NO_RESULTS = 'No places found. Try a different name, or move the map to the spot.';
 
 export const PICKER_TITLE = 'Pick a location';
 
@@ -16,13 +16,17 @@ export const PICKER_CANCEL = 'Cancel';
 
 export const PICKER_REMOVE = 'Remove pin';
 
-export const PICKER_NEEDS_LABEL = 'Name this place before saving it.';
+export const PICKER_NEEDS_LABEL = 'Nothing is named here — give this spot a name.';
 
 export const PLACE_LABEL = 'Place name';
 
-export const DROP_PIN_HERE = 'Drop the pin at the centre of the map';
+export const MOVE_THE_MAP = 'Move the map to place the pin';
 
-export const TAP_MAP_HINT = 'Tap the map to drop a pin';
+export const RESOLVING_PLACE = 'Finding this place...';
+
+export const NOWHERE_NAMED = 'Dropped pin';
+
+export const PIN_AT_CENTRE = 'The pin sits at the centre of the map';
 
 
 export function viewerLabel(place: string): string {
@@ -53,3 +57,9 @@ export function placeFieldLabel(place: string): string {
 export const PICK_ON_MAP = 'Pick on map';
 
 export const PICKED_ON_MAP = 'Pinned — tap to change';
+
+
+export function placeDetailLine(name: string, kind: string | null): string {
+  const type = kind?.trim() ?? '';
+  return type === '' || type === 'yes' ? name.trim() : `${name.trim()} · ${type}`;
+}

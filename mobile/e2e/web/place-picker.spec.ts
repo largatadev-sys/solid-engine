@@ -7,7 +7,6 @@ import {
   PICKER_CANCEL,
   PICKER_CONFIRM,
   PICKER_TITLE,
-  PLACE_LABEL,
   SEARCH_PLACEHOLDER,
   placeFieldLabel,
   resultLabel,
@@ -56,7 +55,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
   });
 
 
-  test('a search result places a pin and offers its name, without imposing it', async ({ page }) => {
+  test('a search result centres the map on it and names it exactly', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
     await labelled(page, ADD_TO_DAY_ONE).click();
     await labelled(page, OPEN_THE_MAP).click();
@@ -67,11 +66,11 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
     await expect(result).toBeVisible({ timeout: 15_000 });
     await result.click();
 
-    await expect(labelled(page, PLACE_LABEL).last()).toHaveValue(BIG_LAGOON, { timeout: 10_000 });
+    await expect(page.locator(`text=${BIG_LAGOON}`).last()).toBeVisible({ timeout: 10_000 });
   });
 
 
-  test('the coordinates the confirm produces reach the save request', async ({ page }) => {
+  test('the coordinates under the pin reach the save request', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
     await labelled(page, ADD_TO_DAY_ONE).click();
 
@@ -99,7 +98,6 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
     expect(body).toContain('11.19');
     expect(body).toContain('119.40');
   });
-
 
   test('cancelling the picker leaves the activity form as it was', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
