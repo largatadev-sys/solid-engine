@@ -39,6 +39,15 @@ export function resultLabel(name: string, context: string | null): string {
 }
 
 
+
+export function placeFieldLabel(place: string): string {
+  const named = place.trim();
+  return named === ''
+    ? 'Set a location, opens a map'
+    : `Location: ${named}, tap to change`;
+}
+
+
 export const PICK_ON_MAP = 'Pick on map';
 
 export const PICKED_ON_MAP = 'Pinned — tap to change';

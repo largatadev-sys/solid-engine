@@ -24,7 +24,7 @@ import {
 import { colors, spacing, typography } from '../../../../../src/theme';
 import type { ActivityRequest } from '../../../../../src/types/api';
 import { PlacePickerModal } from '../../../../../src/maps/PlacePickerModal';
-import { PICKED_ON_MAP, PICK_ON_MAP, SEARCH_PLACEHOLDER } from '../../../../../src/maps/mapCopy';
+import { SEARCH_PLACEHOLDER, placeFieldLabel } from '../../../../../src/maps/mapCopy';
 import { pinAfterEdit, type Pin } from '../../../../../src/maps/pinRules';
 import { openingPinFor } from '../../../../../src/maps/openingPin';
 import { useItinerary } from '../../../../../src/query/itineraryQueries';
@@ -97,21 +97,21 @@ export default function ActivityFormScreen() {
         <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
 
         <Field label="Location / Venue">
-          <Input
-            icon="mapPin"
-            value={place}
-            onChangeText={setPlace}
-            placeholder={SEARCH_PLACEHOLDER}
-            accessibilityLabel="Location or venue"
-          />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={pin === null ? PICK_ON_MAP : PICKED_ON_MAP}
+            accessibilityLabel={placeFieldLabel(place)}
             onPress={() => setPicking(true)}
-            style={styles.pickOnMap}
           >
-            <Icon name="mapPin" size={PICK_ICON_SIZE} color={workspaceColors.accent} />
-            <Text style={styles.pickOnMapLabel}>{pin === null ? PICK_ON_MAP : PICKED_ON_MAP}</Text>
+            <View pointerEvents="none">
+              <Input
+                icon="mapPin"
+                value={place}
+                onChangeText={setPlace}
+                placeholder={SEARCH_PLACEHOLDER}
+                accessibilityLabel="Location or venue"
+                editable={false}
+              />
+            </View>
           </Pressable>
         </Field>
 
