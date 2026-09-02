@@ -37,6 +37,9 @@ public record ActivityRequest(
 
 
     public ActivityFields toFields() {
+        if (pin != null && (place == null || place.isBlank())) {
+            throw new InvalidPinException("A pinned location needs a place a traveler can read.");
+        }
         return new ActivityFields(
                 title, parseTime(timeOfDay), parseAmount(costAmount), costCurrency, place, description, notes,
                 externalUrl, bookingPurpose, bookingProvider, parseAmount(bookingPriceAmount), bookingPriceCurrency,

@@ -10,7 +10,13 @@ describe('where a tap on a place lands (PL-2 ticket 05)', () => {
       kind: 'viewer',
       place: 'Big Lagoon',
       pin: BIG_LAGOON,
+      label: 'Big Lagoon, show on a map',
     });
+  });
+
+  it('carries the label every surface announces, so the three of them cannot drift', () => {
+    expect(placeTapTarget('Big Lagoon', BIG_LAGOON, null)?.label).toBe('Big Lagoon, show on a map');
+    expect(placeTapTarget('Big Lagoon', null, null)?.label).toBe('Big Lagoon, open in Google Maps');
   });
 
   it('hands off to Google Maps when the place was only ever typed', () => {

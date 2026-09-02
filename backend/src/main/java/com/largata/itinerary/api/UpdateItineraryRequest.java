@@ -22,7 +22,7 @@ public record UpdateItineraryRequest(
         Patchable<String> bestTimeOfYear,
         Patchable<LocalDate> startDate,
         Patchable<LocalDate> endDate,
-        Patchable<@jakarta.validation.Valid PinPayload> pin)
+        Patchable<PinPayload> pin)
         implements HasDateRange {
 
 

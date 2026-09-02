@@ -20,7 +20,7 @@ export const PICKER_NEEDS_LABEL = 'Name this place before saving it.';
 
 export const PLACE_LABEL = 'Place name';
 
-export const DROP_PIN_HINT = 'Drag the map to move the pin';
+export const DROP_PIN_HERE = 'Drop the pin at the centre of the map';
 
 
 export function viewerLabel(place: string): string {
@@ -37,3 +37,8 @@ export function resultLabel(name: string, context: string | null): string {
   const where = context?.trim() ?? '';
   return where === '' ? name.trim() : `${name.trim()}, ${where}`;
 }
+
+
+export const PICK_ON_MAP = 'Pick on map';
+
+export const PICKED_ON_MAP = 'Pinned — tap to change';

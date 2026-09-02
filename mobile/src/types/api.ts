@@ -299,6 +299,7 @@ export type PublishedItineraryResponse = {
 export type CreateItineraryRequest = {
   title: string;
   destination: string;
+  pin?: Pin | null;
   description?: string;
   startDate?: string;
   endDate?: string;
@@ -311,6 +312,7 @@ export type CreateItineraryRequest = {
 export type UpdateItineraryRequest = {
   title: string;
   destination: string;
+  pin?: Pin | null;
   currency?: string;
   description?: string | null;
 

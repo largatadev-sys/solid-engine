@@ -1,10 +1,8 @@
 import { Pressable, StyleSheet, Text, type StyleProp, type TextStyle } from 'react-native';
-import { pinnedLinkLabel } from '../maps/mapCopy';
 import type { Pin } from '../maps/pinRules';
 import { placeTapTarget } from '../maps/placeTap';
 import { useOpenPlace } from '../maps/useOpenPlace';
 import { locationLinkColors, locationLinkTypography } from '../theme/workspaceTokens';
-import { mapsLinkLabel } from './mapsQuery';
 
 
 export function LocationLink({
@@ -25,7 +23,7 @@ export function LocationLink({
   return (
     <Pressable
       accessibilityRole="link"
-      accessibilityLabel={target.kind === 'viewer' ? pinnedLinkLabel(place) : mapsLinkLabel(place)}
+      accessibilityLabel={target.label}
       onPress={() => open(place, pin, destination)}
     >
       {({ pressed }) => (

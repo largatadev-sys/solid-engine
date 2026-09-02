@@ -304,3 +304,51 @@ describe('counting the money a currency change would relabel', () => {
     expect(pricedActivityCount({ days: [] })).toBe(0);
   });
 });
+
+
+describe('the trip’s destination carries a Pin, so every activity picker opens in the right region (PL-2)', () => {
+  const EL_NIDO = { lat: 11.18, lng: 119.39, zoom: 12 };
+
+  it('sends the destination pin on create', () => {
+    const request = createRequestFrom({ ...EMPTY_TRIP_FORM, title: 'T', destination: 'El Nido', pin: EL_NIDO });
+
+    expect(request.pin).toEqual(EL_NIDO);
+  });
+
+  it('omits the pin on create when the destination was only typed', () => {
+    const request = createRequestFrom({ ...EMPTY_TRIP_FORM, title: 'T', destination: 'El Nido' });
+
+    expect(request).not.toHaveProperty('pin');
+  });
+
+  it('patches the pin on edit, and clears it with an explicit null', () => {
+    expect(updateRequestFrom({ ...EMPTY_TRIP_FORM, title: 'T', destination: 'El Nido', pin: EL_NIDO }).pin)
+      .toEqual(EL_NIDO);
+    expect(updateRequestFrom({ ...EMPTY_TRIP_FORM, title: 'T', destination: 'El Nido', pin: null }).pin)
+      .toBeNull();
+  });
+
+  it('reads a stored destination pin back into the form', () => {
+    const form = tripFormValuesFrom({
+      title: 'Palawan',
+      destination: 'El Nido',
+      currency: 'PHP',
+      standouts: [],
+      pin: EL_NIDO,
+    } as never);
+
+    expect(form.pin).toEqual(EL_NIDO);
+  });
+
+  it('reads an unpinned destination back as no pin, never as half a pin', () => {
+    expect(
+      tripFormValuesFrom({
+        title: 'Palawan',
+        destination: 'El Nido',
+        currency: 'PHP',
+        standouts: [],
+        pin: null,
+      } as never).pin,
+    ).toBeNull();
+  });
+});

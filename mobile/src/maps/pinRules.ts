@@ -1,11 +1,8 @@
+import type { Pin } from '../types/api';
 import { MAX_ZOOM, MIN_ZOOM } from './tileProjection';
 
 
-export interface Pin {
-  readonly lat: number;
-  readonly lng: number;
-  readonly zoom: number;
-}
+export type { Pin };
 
 
 export function isValidPin(pin: Pin | null | undefined): pin is Pin {

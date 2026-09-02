@@ -25,7 +25,17 @@ public record PinPayload(
 
 
     public static Pin toPin(PinPayload payload) {
-        return payload == null ? null : new Pin(payload.lat(), payload.lng(), payload.zoom());
+        if (payload == null) {
+            return null;
+        }
+        if (payload.lat() == null || payload.lng() == null || payload.zoom() == null) {
+            throw new InvalidPinException("A pin needs a latitude, a longitude and the zoom it was dropped at.");
+        }
+        try {
+            return new Pin(payload.lat(), payload.lng(), payload.zoom());
+        } catch (IllegalArgumentException offTheMap) {
+            throw new InvalidPinException(offTheMap.getMessage() + ".");
+        }
     }
 
 

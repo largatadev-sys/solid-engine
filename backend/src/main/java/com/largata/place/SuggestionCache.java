@@ -2,6 +2,7 @@ package com.largata.place;
 
 import com.largata.place.api.PlaceCandidate;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -56,7 +57,7 @@ class SuggestionCache {
 
 
     private static String rounded(BigDecimal bias) {
-        return bias == null ? "" : bias.setScale(1, java.math.RoundingMode.HALF_UP).toPlainString();
+        return bias == null ? "" : bias.setScale(1, RoundingMode.HALF_UP).toPlainString();
     }
 
 

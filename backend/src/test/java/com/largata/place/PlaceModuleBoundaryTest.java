@@ -14,8 +14,6 @@ class PlaceModuleBoundaryTest {
 
     private static final String PLACE = "com.largata.place";
 
-    private static final String INTERNALS = PLACE + ".(*)..";
-
     private final JavaClasses largata =
             new ClassFileImporter()
                     .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)

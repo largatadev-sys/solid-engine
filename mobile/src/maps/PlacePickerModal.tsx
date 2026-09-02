@@ -20,7 +20,7 @@ import {
 import { useMapConfig, usePlaceSearch } from '../query/placeQueries';
 import type { PlaceCandidateResponse } from '../types/api';
 import {
-  DROP_PIN_HINT,
+  DROP_PIN_HERE,
   MAP_UNAVAILABLE,
   PICKER_CANCEL,
   PICKER_CONFIRM,
@@ -86,7 +86,7 @@ export function PlacePickerModal({
     setQuery('');
   }, [visible, place, pin, openNear]);
 
-  const bias = biasFrom(pin, openNear);
+  const bias = biasFrom(openNear, pin);
   const results = usePlaceSearch(query, bias);
 
   const accept = (candidate: PlaceCandidateResponse) => {
@@ -173,11 +173,11 @@ export function PlacePickerModal({
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={DROP_PIN_HINT}
+            accessibilityLabel={DROP_PIN_HERE}
             onPress={dropHere}
             style={styles.dropHere}
           >
-            <Text style={styles.dropHereText}>{DROP_PIN_HINT}</Text>
+            <Text style={styles.dropHereText}>{DROP_PIN_HERE}</Text>
           </Pressable>
 
           <TextInput
@@ -240,8 +240,8 @@ function openingView(pin: Pin | null, openNear: Pin | null): { centre: LatLng; z
 }
 
 
-function biasFrom(pin: Pin | null, openNear: Pin | null): { lat: number; lng: number } | null {
-  const near = pin ?? openNear;
+function biasFrom(region: Pin | null, fallback: Pin | null): { lat: number; lng: number } | null {
+  const near = region ?? fallback;
   return near === null ? null : { lat: near.lat, lng: near.lng };
 }
 

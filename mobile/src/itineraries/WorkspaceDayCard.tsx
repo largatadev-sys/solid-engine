@@ -18,8 +18,6 @@ import {
   workspaceRadii,
   workspaceTypography,
 } from '../theme/workspaceTokens';
-import { mapsLinkLabel } from '../places/mapsQuery';
-import { pinnedLinkLabel } from '../maps/mapCopy';
 import type { Pin } from '../maps/pinRules';
 import { placeTapTarget } from '../maps/placeTap';
 import { useOpenPlace } from '../maps/useOpenPlace';
@@ -238,7 +236,7 @@ function ActivityPlaceLink({
   return (
     <Text
       accessibilityRole="link"
-      accessibilityLabel={target.kind === 'viewer' ? pinnedLinkLabel(place) : mapsLinkLabel(place)}
+      accessibilityLabel={target.label}
       style={pressed ? styles.activityPlacePressed : styles.activityPlace}
       onPress={() => open(place, pin, destination)}
       onPressIn={() => setPressed(true)}

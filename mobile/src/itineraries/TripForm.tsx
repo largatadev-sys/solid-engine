@@ -15,6 +15,8 @@ import { CoverPicker } from '../media/CoverPicker';
 import { colors, controls, radii, spacing, typography } from '../theme';
 import { addRow, moveRow, removeRow, setRow } from './rowEditor';
 import { ClearableDateField } from './ClearableDateField';
+import { PlacePickerModal } from '../maps/PlacePickerModal';
+import { PICKED_ON_MAP, PICK_ON_MAP } from '../maps/mapCopy';
 import { currencyPickerLabel, SUPPORTED_CURRENCIES } from './currencies';
 import {
   DURATION_CHOICES,
@@ -67,6 +69,7 @@ export function TripForm({
 }: TripFormProps) {
   const fields = tripFormFields(mode);
   const chrome = tripFormChrome(mode);
+  const [picking, setPicking] = useState(false);
 
   const set = <K extends keyof TripFormValues>(key: K, value: TripFormValues[K]) =>
     onChange({ ...values, [key]: value });
@@ -103,6 +106,17 @@ export function TripForm({
               onChangeText={(text) => set('destination', text)}
               placeholder="Where to?"
             />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={values.pin == null ? PICK_ON_MAP : PICKED_ON_MAP}
+              onPress={() => setPicking(true)}
+              style={styles.pickOnMap}
+            >
+              <Icon name="mapPin" size={PICK_ICON_SIZE} color={colors.accent} />
+              <Text style={styles.pickOnMapLabel}>
+                {values.pin == null ? PICK_ON_MAP : PICKED_ON_MAP}
+              </Text>
+            </Pressable>
           </View>
 
           {fields.showsDuration ? (
@@ -224,6 +238,18 @@ export function TripForm({
           )}
         </Pressable>
       </View>
+
+      <PlacePickerModal
+        visible={picking}
+        place={values.destination}
+        pin={values.pin ?? null}
+        openNear={values.pin ?? null}
+        onConfirm={(picked) => {
+          onChange({ ...values, destination: picked.place, pin: picked.pin });
+          setPicking(false);
+        }}
+        onDismiss={() => setPicking(false)}
+      />
     </View>
   );
 }
@@ -389,7 +415,17 @@ const inputSurface = {
   paddingVertical: spacing.sm3,
 } as const;
 
+const PICK_ICON_SIZE = 16;
+
+
 const styles = StyleSheet.create({
+  pickOnMap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  pickOnMapLabel: { color: colors.accent },
   screen: { flex: 1, backgroundColor: colors.surface },
   container: {
     paddingHorizontal: spacing.md,

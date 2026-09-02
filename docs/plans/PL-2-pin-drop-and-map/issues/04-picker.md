@@ -19,6 +19,7 @@ discards the pin like everything else on that screen.
 **Status:** done
 
 - [x] Opens on the trip's destination pin; falls back to the last pin dropped in the trip
+- [x] The trip form captures the DESTINATION pin too — story 7's half of the picker, without which the fallback above is the only thing standing between an activity picker and a world view
 - [x] Typing shows ranked results; tapping one places a draggable pin and offers its name
 - [x] Accepting a result sets text and pin atomically — the stale-ref rule does not fire on it
 - [x] Confirm refused without a label; "Remove pin" clears an existing one

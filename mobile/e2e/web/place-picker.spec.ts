@@ -8,6 +8,7 @@ import {
   PICKER_CONFIRM,
   PICKER_TITLE,
   PLACE_LABEL,
+  PICK_ON_MAP,
   SEARCH_PLACEHOLDER,
   resultLabel,
 } from '../../src/maps/mapCopy';
@@ -41,7 +42,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
     await expect(labelled(page, 'Add Activity').first()).toBeVisible({ timeout: 20_000 });
     await labelled(page, 'Add Activity').first().click();
 
-    await labelled(page, SEARCH_PLACEHOLDER).last().click();
+    await labelled(page, PICK_ON_MAP).last().click();
 
     await expect(page.locator(`text=${PICKER_TITLE}`).last()).toBeVisible({ timeout: 15_000 });
   });
@@ -50,7 +51,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
   test('a search result places a pin and offers its name, without imposing it', async ({ page }) => {
     await page.goto(`/itineraries/${tripId}/edit-plan`);
     await labelled(page, 'Add Activity').first().click();
-    await labelled(page, SEARCH_PLACEHOLDER).last().click();
+    await labelled(page, PICK_ON_MAP).last().click();
 
     await labelled(page, SEARCH_PLACEHOLDER).last().fill(BIG_LAGOON);
 
@@ -67,7 +68,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
     await labelled(page, 'Add Activity').first().click();
 
     await labelled(page, 'Activity name').last().fill('Kayak the lagoon');
-    await labelled(page, SEARCH_PLACEHOLDER).last().click();
+    await labelled(page, PICK_ON_MAP).last().click();
     await labelled(page, SEARCH_PLACEHOLDER).last().fill(BIG_LAGOON);
     await labelled(page, resultLabel(BIG_LAGOON, 'El Nido, Palawan')).last().click();
     await labelled(page, PICKER_CONFIRM).last().click();
@@ -94,7 +95,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
     await labelled(page, 'Add Activity').first().click();
     await labelled(page, 'Activity name').last().fill('Unchanged');
 
-    await labelled(page, SEARCH_PLACEHOLDER).last().click();
+    await labelled(page, PICK_ON_MAP).last().click();
     await expect(page.locator(`text=${PICKER_TITLE}`).last()).toBeVisible({ timeout: 15_000 });
     await labelled(page, PICKER_CANCEL).last().click();
 

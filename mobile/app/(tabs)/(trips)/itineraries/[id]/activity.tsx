@@ -21,11 +21,12 @@ import {
   editActivity as stageEditActivity,
   type StagedPlan,
 } from '../../../../../src/itineraries/stagedPlan';
-import { colors, typography } from '../../../../../src/theme';
+import { colors, spacing, typography } from '../../../../../src/theme';
 import type { ActivityRequest } from '../../../../../src/types/api';
 import { PlacePickerModal } from '../../../../../src/maps/PlacePickerModal';
-import { SEARCH_PLACEHOLDER } from '../../../../../src/maps/mapCopy';
+import { PICKED_ON_MAP, PICK_ON_MAP, SEARCH_PLACEHOLDER } from '../../../../../src/maps/mapCopy';
 import { pinAfterEdit, type Pin } from '../../../../../src/maps/pinRules';
+import { openingPinFor } from '../../../../../src/maps/openingPin';
 import { useItinerary } from '../../../../../src/query/itineraryQueries';
 
 
@@ -96,19 +97,21 @@ export default function ActivityFormScreen() {
         <TimePicker label="Time" value={timeOfDay} onChange={setTimeOfDay} />
 
         <Field label="Location / Venue">
+          <Input
+            icon="mapPin"
+            value={place}
+            onChangeText={setPlace}
+            placeholder={SEARCH_PLACEHOLDER}
+            accessibilityLabel="Location or venue"
+          />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={place.trim() === '' ? SEARCH_PLACEHOLDER : `Location: ${place}`}
+            accessibilityLabel={pin === null ? PICK_ON_MAP : PICKED_ON_MAP}
             onPress={() => setPicking(true)}
+            style={styles.pickOnMap}
           >
-            <Input
-              icon="mapPin"
-              value={place}
-              onChangeText={setPlace}
-              placeholder={SEARCH_PLACEHOLDER}
-              accessibilityLabel="Location or venue"
-              editable={false}
-            />
+            <Icon name="mapPin" size={PICK_ICON_SIZE} color={workspaceColors.accent} />
+            <Text style={styles.pickOnMapLabel}>{pin === null ? PICK_ON_MAP : PICKED_ON_MAP}</Text>
           </Pressable>
         </Field>
 
@@ -142,7 +145,7 @@ export default function ActivityFormScreen() {
         visible={picking}
         place={place}
         pin={pin}
-        openNear={trip.data?.pin ?? null}
+        openNear={openingPinFor(trip.data?.pin, (draftOf(id) ?? emptyPlan).days)}
         onConfirm={(picked) => {
           setPlace(picked.place);
           setPin(picked.pin);
@@ -232,7 +235,17 @@ const HEADER_TOP_PADDING = 12;
 const emptyPlan: StagedPlan = { basePlanVersion: 0, days: [] };
 
 
+const PICK_ICON_SIZE = 16;
+
+
 const styles = StyleSheet.create({
+  pickOnMap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  pickOnMapLabel: { color: workspaceColors.accent },
   screen: {
     flex: 1,
     backgroundColor: colors.surface,

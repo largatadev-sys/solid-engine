@@ -119,3 +119,31 @@ describe('place text comparison is the stale-ref rule’s only judgement', () =>
     expect(samePlaceText(one, other)).toBe(expected);
   });
 });
+
+
+describe('re-opening a saved activity: the pin and the text it was saved with (PL-2 review)', () => {
+  it('a saved pin’s drop-text IS its saved place, so a re-open reconstructs it correctly', () => {
+    const saved = { place: 'Big Lagoon', pin: BIG_LAGOON };
+    const reopened = saved.pin == null ? '' : saved.place;
+
+    expect(pinAfterEdit(saved.pin, reopened, 'Big Lagoon')).toEqual(BIG_LAGOON);
+    expect(pinAfterEdit(saved.pin, reopened, 'Small Lagoon')).toBeNull();
+  });
+
+  it('a saved activity with no pin reconstructs an empty drop-text and can never self-clear', () => {
+    const saved: { place: string; pin: Pin | null } = { place: 'Typed only', pin: null };
+    const reopened = saved.pin == null ? '' : saved.place;
+
+    expect(pinAfterEdit(saved.pin, reopened, 'Renamed')).toBeNull();
+  });
+
+  it('renaming twice across two sessions still clears, because each save re-anchors the text', () => {
+    const first = pinAfterEdit(BIG_LAGOON, 'Big Lagoon', 'Big Lagoon Kayaking');
+    expect(first).toBeNull();
+
+    const afterSave: { place: string; pin: Pin | null } = { place: 'Big Lagoon Kayaking', pin: first };
+    const reopened = afterSave.pin == null ? '' : afterSave.place;
+
+    expect(pinAfterEdit(afterSave.pin, reopened, 'Something else')).toBeNull();
+  });
+});

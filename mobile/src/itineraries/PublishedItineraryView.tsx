@@ -11,10 +11,8 @@ import { MediaThumb } from '../media/MediaThumb';
 import { colors, radii, spacing, typography } from '../theme';
 import { locationLinkColors } from '../theme/workspaceTokens';
 import { LocationLink } from '../places/LocationLink';
-import { pinnedLinkLabel } from '../maps/mapCopy';
 import { placeTapTarget } from '../maps/placeTap';
 import { useOpenPlace } from '../maps/useOpenPlace';
-import { mapsLinkLabel } from '../places/mapsQuery';
 import type {
   PublishedActivityResponse,
   PublishedItineraryResponse,
@@ -157,11 +155,7 @@ function PublishedHeader({
         {pill !== undefined && destinationTap !== null && (
           <Pressable
             accessibilityRole="link"
-            accessibilityLabel={
-              destinationTap.kind === 'viewer'
-                ? pinnedLinkLabel(projection.destination)
-                : mapsLinkLabel(projection.destination)
-            }
+            accessibilityLabel={destinationTap.label}
             onPress={() => openPlace(projection.destination, projection.pin, null)}
           >
             {({ pressed }) => (
