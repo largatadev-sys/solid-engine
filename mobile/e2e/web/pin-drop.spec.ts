@@ -2,7 +2,7 @@ import { test, expect, lastOpenedUrl } from '../support/fixtures';
 import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
 import { climbTo, seedPlan, seedTrip, stamp } from '../support/seed';
-import { api } from '../support/pool';
+import { api, tokenFor } from '../support/pool';
 import { labelled } from '../support/screen';
 import { OPEN_IN_MAPS, pinnedLinkLabel, viewerLabel } from '../../src/maps/mapCopy';
 import { mapsLinkLabel } from '../../src/places/mapsQuery';
@@ -18,13 +18,11 @@ const PINNED = 'Big Lagoon';
 const TEXT_ONLY = 'Somewhere Nobody Pinned';
 
 let publishedId: string;
-let tripTitle: string;
 
 test.beforeAll(async () => {
-  tripTitle = `Pin drop ${stamp('PL-2')}`;
   const trip = await seedTrip({
     ownerTag: OWNER,
-    title: tripTitle,
+    title: `Pin drop ${stamp('PL-2')}`,
     destination: 'El Nido, Palawan',
     durationDays: 1,
   });
@@ -46,7 +44,7 @@ test.beforeAll(async () => {
 test.describe('a pinned place opens in-app; a text-only place still hands off (PL-2)', () => {
 
   test('the pin round-trips through the API exactly as it was dropped', async () => {
-    const projection = await api(`/v1/published/${publishedId}`, 'GET');
+    const projection = await api(`/v1/published-itineraries/${publishedId}`, 'GET', await tokenFor(OWNER));
 
     expect(projection.status).toBe(200);
     const activities = projection.body.days[0].activities;
