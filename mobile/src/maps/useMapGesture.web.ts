@@ -48,10 +48,8 @@ export function useMapGesture({
       gesture.current = moved.state;
 
       if (moved.pinch !== null) {
-        const { span, from, at } = moved.pinch;
-        const baseline = moved.state.baseline;
-        if (baseline === null) return;
-        live.current.onZoomTo(zoomAfterPinch(from, baseline.span, span), at);
+        const { span, fromSpan, fromZoom, at } = moved.pinch;
+        live.current.onZoomTo(zoomAfterPinch(fromZoom, fromSpan, span), at);
         return;
       }
 
@@ -90,7 +88,7 @@ export function useMapGesture({
         return;
       }
 
-      live.current.onSettle(lifted.pinched ? 0 : travel.dx, lifted.pinched ? 0 : travel.dy);
+      live.current.onSettle(travel.dx, travel.dy);
     }
 
     const grab = (event: PointerEvent) => {

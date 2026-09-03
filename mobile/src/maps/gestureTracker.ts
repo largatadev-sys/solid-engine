@@ -1,4 +1,4 @@
-import { MIN_PINCH_SPAN, midpoint, spanOf, type SurfacePoint } from './mapGesture';
+import { midpoint, pinchBaseline, spanOf, type SurfacePoint } from './mapGesture';
 
 
 export interface TrackedPointer {
@@ -28,7 +28,12 @@ export const NO_GESTURE: GestureState = {
 export interface Moved {
   readonly state: GestureState;
   readonly pan: { readonly dx: number; readonly dy: number } | null;
-  readonly pinch: { readonly span: number; readonly from: number; readonly at: SurfacePoint } | null;
+  readonly pinch: {
+    readonly span: number;
+    readonly fromSpan: number;
+    readonly fromZoom: number;
+    readonly at: SurfacePoint;
+  } | null;
 }
 
 
@@ -84,7 +89,8 @@ export function pointerMove(state: GestureState, id: number, at: SurfacePoint, z
       pan: null,
       pinch: {
         span: spanOf(first!.at, second!.at),
-        from: baseline.zoom,
+        fromSpan: baseline.span,
+        fromZoom: baseline.zoom,
         at: midpoint(first!.at, second!.at),
       },
     };
@@ -128,6 +134,5 @@ function baselineFor(
   const [first, second] = pointers;
   if (first === undefined || second === undefined) return null;
 
-  const span = spanOf(first.at, second.at);
-  return span >= MIN_PINCH_SPAN ? { span, zoom } : null;
+  return pinchBaseline(spanOf(first.at, second.at), zoom);
 }

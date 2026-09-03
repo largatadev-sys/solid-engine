@@ -4,6 +4,7 @@ import {
   TAP_SLOP,
   afterTap,
   endsAsTap,
+  nextWholeZoom,
   pinchBaseline,
   wasATap,
 } from '../src/maps/mapGesture';
@@ -94,5 +95,34 @@ describe('a pinch needs two fingers actually apart to measure from (PL-2)', () =
   it('a near-zero start span SATURATES the zoom on the first move, so it is refused', () => {
     expect(pinchBaseline(0.5, 14)).toBeNull();
     expect(zoomAfterPinch(14, 0.5, 200)).toBe(MAX_ZOOM);
+  });
+});
+
+
+describe('a whole-level step moves ONE level, in both directions (PL-2, review pass)', () => {
+  it('steps to the next level up and the next level down from a fraction', () => {
+    expect(nextWholeZoom(14.6, 1)).toBe(15);
+    expect(nextWholeZoom(14.6, -1)).toBe(14);
+  });
+
+  it('is SYMMETRIC — the S4.17 rounding trap, re-tripped one function over', () => {
+    for (const zoom of [12, 12.1, 12.5, 12.9, 13]) {
+      const up = nextWholeZoom(zoom, 1);
+      const down = nextWholeZoom(zoom, -1);
+
+      expect(up - zoom).toBeGreaterThan(0);
+      expect(zoom - down).toBeGreaterThan(0);
+      expect(up - down).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it('returns where it started when a whole level is stepped up then down', () => {
+    expect(nextWholeZoom(nextWholeZoom(15, 1), -1)).toBe(15);
+    expect(nextWholeZoom(nextWholeZoom(15, -1), 1)).toBe(15);
+  });
+
+  it('never jumps more than one level, which Math.round(zoom) + by did from 14.6', () => {
+    expect(Math.abs(nextWholeZoom(14.6, 1) - 14.6)).toBeLessThanOrEqual(1);
+    expect(Math.abs(nextWholeZoom(14.4, -1) - 14.4)).toBeLessThanOrEqual(1);
   });
 });

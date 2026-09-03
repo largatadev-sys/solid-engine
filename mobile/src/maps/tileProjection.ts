@@ -172,6 +172,11 @@ export function zoomAfterPinch(startZoom: number, startSpan: number, span: numbe
 }
 
 
+export function zoomByScale(startZoom: number, scale: number): number {
+  return zoomAfterPinch(startZoom, 1, scale);
+}
+
+
 export function zoomedAt(offset: WorldPoint, viewport: Viewport, zoom: number): LatLng {
   const anchor = pointAtScreen(offset, viewport);
   const world = latLngToWorld(anchor, zoom);

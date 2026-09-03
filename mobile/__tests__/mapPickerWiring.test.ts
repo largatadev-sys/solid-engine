@@ -111,9 +111,12 @@ describe('zoom is continuous and anchored, on both forks (PL-2 founder pass 2)',
     expect(read('mapGesture.ts')).toContain('DOUBLE_TAP_MS');
   });
 
-  it.each(['useMapGesture.web.ts', 'useMapGesture.native.ts'])('%s PINCHES to zoom', (fork) => {
-    expect(read(fork))
-      .toContain('zoomAfterPinch');
+  it('the web fork pinches from a measured span', () => {
+    expect(read('useMapGesture.web.ts')).toContain('zoomAfterPinch');
+  });
+
+  it('the native fork pinches from the scale gesture-handler reports', () => {
+    expect(read('useMapGesture.native.ts')).toContain('zoomByScale');
   });
 
   it('the native fork pinches with gesture-handler, never PanResponder', () => {

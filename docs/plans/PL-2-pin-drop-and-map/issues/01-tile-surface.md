@@ -5,8 +5,8 @@ viewer with no map SDK. Web Mercator conversion (`lat/lng ↔ tile x/y/z`, the p
 coordinate inside its tile, which tiles cover a viewport at a zoom) extracted as a pure module
 with a Jest table, in the `landingSlot.ts` precedent — the component that renders it is not the
 seam and must not be the thing under test. Then one `<TileSurface>` drawing that grid from
-OpenStreetMap standard tiles, panning by drag and zooming by double-tap, wheel and the +/−
-controls, shared by the picker and
+OpenStreetMap standard tiles, panning by drag and zooming by pinch, wheel, double-tap and the
++/− controls — continuously, and anchored on the point under the fingers — shared by the picker and
 the viewer that follow. **The tile URL is server-supplied configuration, never a constant** —
 OSM's policy makes access revocable and its own advice is to keep the source switchable.
 `© OpenStreetMap contributors` sits bottom-right, tappable to the copyright page: a licence

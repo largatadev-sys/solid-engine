@@ -75,7 +75,7 @@ describe('the pinch itself (PL-2)', () => {
 
     const moved = pointerMove(held, 2, at(400, 100), ZOOM);
 
-    expect(moved.pinch).toEqual({ span: 300, from: ZOOM, at: { x: 250, y: 100 } });
+    expect(moved.pinch).toEqual({ span: 300, fromSpan: 200, fromZoom: ZOOM, at: { x: 250, y: 100 } });
     expect(moved.pan).toBeNull();
   });
 
@@ -117,5 +117,30 @@ describe('the pinch itself (PL-2)', () => {
     const held = pointerDown(NO_GESTURE, 1, at(100, 100), ZOOM, PRIMARY);
 
     expect(pointerUp(held, 1, at(101, 100)).pinched).toBe(false);
+  });
+});
+
+
+describe('the pan that FOLLOWS a pinch is kept, not discarded (PL-2, review pass)', () => {
+  it('reports the travel since the finger that stayed down, not zero', () => {
+    let held = pointerDown(NO_GESTURE, 1, at(100, 100), ZOOM, PRIMARY);
+    held = pointerDown(held, 2, at(300, 100), ZOOM, SECOND_FINGER);
+    held = pointerUp(held, 1, at(100, 100)).state;
+
+    held = pointerMove(held, 2, at(380, 160), ZOOM).state;
+    const lifted = pointerUp(held, 2, at(380, 160));
+
+    expect(lifted.travel)
+      .toEqual({ dx: 80, dy: 60 });
+    expect(lifted.pinched)
+      .toBe(true);
+  });
+
+  it('still reports it pinched, so the lift is never read as a tap', () => {
+    let held = pointerDown(NO_GESTURE, 1, at(100, 100), ZOOM, PRIMARY);
+    held = pointerDown(held, 2, at(300, 100), ZOOM, SECOND_FINGER);
+    held = pointerUp(held, 1, at(100, 100)).state;
+
+    expect(pointerUp(held, 2, at(301, 100)).pinched).toBe(true);
   });
 });

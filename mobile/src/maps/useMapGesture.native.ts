@@ -4,11 +4,11 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
   afterTap,
   nextWholeZoom,
-  wasATap,
+  endsAsTap,
   type MapGesture,
   type MapGestureProps,
 } from './mapGesture';
-import { zoomAfterPinch } from './tileProjection';
+import { zoomByScale } from './tileProjection';
 
 
 export function useMapGesture({ onPan, onSettle, onZoomTo, zoom }: MapGestureProps): MapGesture {
@@ -17,6 +17,7 @@ export function useMapGesture({ onPan, onSettle, onZoomTo, zoom }: MapGesturePro
 
   const lastTapAt = useRef(0);
   const pinchedFrom = useRef(zoom);
+  const everPinched = useRef(false);
 
   const gesture = useMemo(() => {
     const pan = Gesture.Pan()
@@ -24,7 +25,7 @@ export function useMapGesture({ onPan, onSettle, onZoomTo, zoom }: MapGesturePro
       .maxPointers(1)
       .onChange((event) => live.current.onPan(event.translationX, event.translationY))
       .onEnd((event) => {
-        if (wasATap(event.translationX, event.translationY)) {
+        if (endsAsTap(everPinched.current, event.translationX, event.translationY)) {
           const tap = afterTap(lastTapAt.current, Date.now());
           lastTapAt.current = tap.lastTapAt;
           if (tap.zoomIn) {
@@ -43,14 +44,18 @@ export function useMapGesture({ onPan, onSettle, onZoomTo, zoom }: MapGesturePro
     const pinch = Gesture.Pinch()
       .onBegin(() => {
         pinchedFrom.current = live.current.zoom;
+        everPinched.current = true;
       })
       .onChange((event) => {
-        live.current.onZoomTo(zoomAfterPinch(pinchedFrom.current, 1, event.scale), {
+        live.current.onZoomTo(zoomByScale(pinchedFrom.current, event.scale), {
           x: event.focalX,
           y: event.focalY,
         });
       })
-      .onEnd(() => live.current.onSettle(0, 0));
+      .onEnd(() => live.current.onSettle(0, 0))
+      .onFinalize(() => {
+        everPinched.current = false;
+      });
 
     return Gesture.Simultaneous(pan, pinch);
   }, []);

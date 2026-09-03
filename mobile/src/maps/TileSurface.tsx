@@ -6,7 +6,6 @@ import {
   Text,
   View,
   type LayoutChangeEvent,
-  type ViewProps,
 } from 'react-native';
 import { openInMaps } from '../places/openInMaps';
 import { mapColors, mapMetrics } from '../theme/workspaceTokens';
@@ -15,7 +14,6 @@ import { spacing } from '../theme';
 import {
   MAX_ZOOM,
   MIN_ZOOM,
-  TILE_SIZE,
   liveZoom,
   zoomedAt,
   panned,
@@ -58,16 +56,16 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
       setDrag(null);
       if (dx !== 0 || dy !== 0) onMove(panned(centre, zoom, dx, dy), zoom);
     },
-    onZoomTo: (to, anchor) => zoomTo(to, anchor),
+    onZoomTo: zoomTo,
     zoom,
     surfaceRef,
     dragging: drag !== null,
   });
 
-  const zoomTo = (to: number, anchor: SurfacePoint) => {
+  function zoomTo(to: number, anchor: SurfacePoint) {
     const next = liveZoom(to);
     onMove(size.width === 0 ? centre : zoomedAt(anchor, viewport, next), next);
-  };
+  }
 
   const stepZoom = (by: number) =>
     zoomTo(nextWholeZoom(zoom, by), { x: size.width / 2, y: size.height / 2 });

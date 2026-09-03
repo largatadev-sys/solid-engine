@@ -80,5 +80,5 @@ export function spanOf(a: SurfacePoint, b: SurfacePoint): number {
 
 
 export function nextWholeZoom(zoom: number, by: number): number {
-  return Math.round(zoom) + by;
+  return by > 0 ? Math.floor(zoom) + by : Math.ceil(zoom) + by;
 }
