@@ -33,8 +33,24 @@ export interface MapGestureProps {
 }
 
 
+export const MIN_PINCH_SPAN = 24;
+
+
 export function wasATap(dx: number, dy: number): boolean {
   return Math.hypot(dx, dy) <= TAP_SLOP;
+}
+
+
+export function endsAsTap(everPinched: boolean, dx: number, dy: number): boolean {
+  return !everPinched && wasATap(dx, dy);
+}
+
+
+export function pinchBaseline(
+  span: number,
+  zoom: number,
+): { readonly span: number; readonly zoom: number } | null {
+  return span >= MIN_PINCH_SPAN ? { span, zoom } : null;
 }
 
 

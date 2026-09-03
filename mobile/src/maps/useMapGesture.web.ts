@@ -5,7 +5,8 @@ import {
   midpoint,
   nextWholeZoom,
   spanOf,
-  wasATap,
+  endsAsTap,
+  pinchBaseline,
   wheelZoomDelta,
   type MapGesture,
   type MapGestureProps,
@@ -28,6 +29,7 @@ export function useMapGesture({
   const down = useRef(new Map<number, SurfacePoint>());
   const from = useRef<SurfacePoint | null>(null);
   const pinch = useRef<{ span: number; zoom: number } | null>(null);
+  const everPinched = useRef(false);
   const lastTapAt = useRef(0);
 
   useEffect(() => {
@@ -51,10 +53,12 @@ export function useMapGesture({
 
       const fingers = twoDown();
       if (fingers !== null) {
-        const started = pinch.current;
+        const reach = spanOf(fingers[0], fingers[1]);
+        const started = pinch.current ?? pinchBaseline(reach, live.current.zoom);
+        pinch.current = started;
         if (started === null) return;
         live.current.onZoomTo(
-          zoomAfterPinch(started.zoom, started.span, spanOf(fingers[0], fingers[1])),
+          zoomAfterPinch(started.zoom, started.span, reach),
           midpoint(fingers[0], fingers[1]),
         );
         return;
@@ -87,12 +91,13 @@ export function useMapGesture({
       }
 
       const anchor = from.current;
-      const pinched = pinch.current !== null;
+      const pinched = everPinched.current;
       from.current = null;
       pinch.current = null;
+      everPinched.current = false;
       release();
 
-      if (anchor === null || pinched) {
+      if (anchor === null) {
         live.current.onSettle(0, 0);
         return;
       }
@@ -101,10 +106,15 @@ export function useMapGesture({
       const dx = here.x - anchor.x;
       const dy = here.y - anchor.y;
 
-      if (wasATap(dx, dy)) {
+      if (endsAsTap(pinched, dx, dy)) {
         const tap = afterTap(lastTapAt.current, Date.now());
         lastTapAt.current = tap.lastTapAt;
         if (tap.zoomIn) live.current.onZoomTo(nextWholeZoom(live.current.zoom, 1), here);
+        live.current.onSettle(0, 0);
+        return;
+      }
+
+      if (pinched) {
         live.current.onSettle(0, 0);
         return;
       }
@@ -117,7 +127,8 @@ export function useMapGesture({
 
       const fingers = twoDown();
       if (fingers !== null) {
-        pinch.current = { span: spanOf(fingers[0], fingers[1]), zoom: live.current.zoom };
+        everPinched.current = true;
+        pinch.current = pinchBaseline(spanOf(fingers[0], fingers[1]), live.current.zoom);
         return;
       }
 
@@ -148,6 +159,7 @@ export function useMapGesture({
       release();
       down.current.clear();
       pinch.current = null;
+      everPinched.current = false;
       node.removeEventListener('pointerdown', grab);
       node.removeEventListener('wheel', wheeling);
       node.removeEventListener('contextmenu', block);
