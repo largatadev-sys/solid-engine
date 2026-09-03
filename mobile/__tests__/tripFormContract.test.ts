@@ -352,3 +352,71 @@ describe('the trip’s destination carries a Pin, so every activity picker opens
     ).toBeNull();
   });
 });
+
+
+describe('the stale-ref rule fires on SAVE, never on keystroke (PL-2, founder ruling)', () => {
+  const BIG_LAGOON = { lat: 11.1949, lng: 119.4013, zoom: 16 };
+
+  const pinned = (destination: string, pinnedAs: string): TripFormValues => ({
+    ...EMPTY_TRIP_FORM,
+    title: 'Palawan',
+    destination,
+    pin: BIG_LAGOON,
+    pinnedAs,
+  });
+
+  it('keeps the pin while the text still matches what it was dropped with', () => {
+    expect(updateRequestFrom(pinned('Big Lagoon', 'Big Lagoon')).pin).toEqual(BIG_LAGOON);
+  });
+
+  it('drops the pin once the traveler has renamed the place to somewhere else', () => {
+    expect(updateRequestFrom(pinned('Small Lagoon', 'Big Lagoon')).pin).toBeNull();
+  });
+
+  it('SURVIVES A TYPO CORRECTED BEFORE SAVING — the whole reason the rule is not on keystroke', () => {
+    const midTypo = pinned('Big Lagon', 'Big Lagoon');
+    expect(midTypo.pin).toEqual(BIG_LAGOON);
+
+    const corrected = { ...midTypo, destination: 'Big Lagoon' };
+    expect(updateRequestFrom(corrected).pin).toEqual(BIG_LAGOON);
+  });
+
+  it('ignores case and surrounding space, so neither reads as a rename', () => {
+    expect(updateRequestFrom(pinned('  BIG LAGOON  ', 'Big Lagoon')).pin).toEqual(BIG_LAGOON);
+  });
+
+  it('sends no pin at creation when the text diverged from the drop', () => {
+    expect(createRequestFrom(pinned('Somewhere else', 'Big Lagoon')).pin).toBeUndefined();
+  });
+
+  it('a trip that never had a pin is unaffected by any amount of typing', () => {
+    expect(updateRequestFrom({ ...EMPTY_TRIP_FORM, title: 'P', destination: 'Anywhere' }).pin).toBeNull();
+  });
+
+  it('hydrating a pinned trip remembers the text the pin was dropped with', () => {
+    const values = tripFormValuesFrom({
+      title: 'Palawan',
+      destination: 'El Nido, Palawan',
+      currency: 'PHP',
+      standouts: [],
+      pin: BIG_LAGOON,
+    } as never);
+
+    expect(values.pinnedAs)
+      .toBe('El Nido, Palawan');
+    expect(updateRequestFrom(values).pin)
+      .toEqual(BIG_LAGOON);
+  });
+
+  it('a hydrated trip with no pin remembers no drop text', () => {
+    const values = tripFormValuesFrom({
+      title: 'Palawan',
+      destination: 'El Nido, Palawan',
+      currency: 'PHP',
+      standouts: [],
+      pin: null,
+    } as never);
+
+    expect(values.pinnedAs).toBe('');
+  });
+});

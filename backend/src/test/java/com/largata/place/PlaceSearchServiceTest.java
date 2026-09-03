@@ -97,13 +97,7 @@ class PlaceSearchServiceTest {
     void aCrowdOfTravelersCannotSPENDTheProvidersFreeQUOTA_evenWhileEachStaysUnderTheirOwnLimit() {
         PlaceSearchService service = serviceWith(new CountingSuggester());
 
-        int travelers = SearchRateLimiter.GLOBAL_PER_MINUTE / SearchRateLimiter.PER_TRAVELER_PER_MINUTE;
-        for (int who = 0; who < travelers; who++) {
-            UUID traveler = UUID.randomUUID();
-            for (int i = 0; i < SearchRateLimiter.PER_TRAVELER_PER_MINUTE; i++) {
-                service.search(traveler, "Lagoon " + who + " " + i, null, null);
-            }
-        }
+        spendTheGlobalAllowance(service);
 
         assertThatThrownBy(() -> service.search(UUID.randomUUID(), "One too many", null, null))
                 .as("Photon is a stranger free service, and a per-traveler cap alone lets ten of them"
@@ -117,13 +111,7 @@ class PlaceSearchServiceTest {
     void theGlobalAllowanceRefillsAsItsWindowPasses() {
         PlaceSearchService service = serviceWith(new CountingSuggester());
 
-        int travelers = SearchRateLimiter.GLOBAL_PER_MINUTE / SearchRateLimiter.PER_TRAVELER_PER_MINUTE;
-        for (int who = 0; who < travelers; who++) {
-            UUID traveler = UUID.randomUUID();
-            for (int i = 0; i < SearchRateLimiter.PER_TRAVELER_PER_MINUTE; i++) {
-                service.search(traveler, "Lagoon " + who + " " + i, null, null);
-            }
-        }
+        spendTheGlobalAllowance(service);
         clock.advance(Duration.ofMinutes(2));
 
         assertThat(service.search(UUID.randomUUID(), "Big Lagoon", null, null)).isNotNull();
@@ -185,6 +173,17 @@ class PlaceSearchServiceTest {
         assertThatThrownBy(() -> service.nameFor(ANA, EL_NIDO_LAT, EL_NIDO_LNG))
                 .as("the client swallows this and leaves the traveler to type a name")
                 .isInstanceOf(PlaceSearchUnavailableException.class);
+    }
+
+
+    private static void spendTheGlobalAllowance(PlaceSearchService service) {
+        int travelers = SearchRateLimiter.GLOBAL_PER_MINUTE / SearchRateLimiter.PER_TRAVELER_PER_MINUTE;
+        for (int who = 0; who < travelers; who++) {
+            UUID traveler = UUID.randomUUID();
+            for (int i = 0; i < SearchRateLimiter.PER_TRAVELER_PER_MINUTE; i++) {
+                service.search(traveler, "Lagoon " + who + " " + i, null, null);
+            }
+        }
     }
 
 

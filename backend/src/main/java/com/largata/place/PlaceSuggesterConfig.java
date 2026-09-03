@@ -21,8 +21,12 @@ class PlaceSuggesterConfig {
             @Value("${largata.place.photon-url}") String photonUrl,
             @Value("${largata.place.photon-reverse-url}") String photonReverseUrl,
             @Value("${largata.place.user-agent}") String userAgent) {
+        String reverseUrl =
+                photonReverseUrl.isBlank()
+                        ? PhotonPlaceSuggester.reverseBeside(photonUrl)
+                        : photonReverseUrl;
         return new PhotonPlaceSuggester(
-                PhotonPlaceSuggester.statedTransport(), photonUrl, photonReverseUrl, userAgent);
+                PhotonPlaceSuggester.statedTransport(), photonUrl, reverseUrl, userAgent);
     }
 
 

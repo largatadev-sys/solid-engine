@@ -45,6 +45,18 @@ class PhotonPlaceSuggester implements PlaceSuggester {
     }
 
 
+    static String reverseBeside(String searchUrl) {
+        URI search = URI.create(searchUrl);
+        return UriComponentsBuilder.newInstance()
+                .scheme(search.getScheme())
+                .host(search.getHost())
+                .port(search.getPort())
+                .path("/reverse")
+                .build()
+                .toUriString();
+    }
+
+
     static RestClient.Builder statedTransport() {
         JdkClientHttpRequestFactory factory =
                 new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build());

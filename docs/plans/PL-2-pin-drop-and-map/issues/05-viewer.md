@@ -17,7 +17,7 @@ whole. The viewer announces the **label**, never raw coordinates.
 **Status:** done
 
 - [x] Viewer route opens at the pin's stored zoom and pans and zooms from there
-- [x] Open in Google Maps hands off the destination-hinted query PL-1 already builds
+- [x] Open in Google Maps asks for the named place anchored at our point, falling back to bare coordinates and then to PL-1's destination-hinted query *(founder ruling, 2026-09-01: a coordinate query drops the traveler on a dot rather than the place)*
 - [x] A pinned place opens the viewer; a text-only place still opens Google Maps, on every surface PL-1 touched
 - [x] The published header destination pill opens the viewer when the destination is pinned
 - [x] Postcard and diary-entry tags are byte-for-byte unchanged in behaviour

@@ -18,7 +18,7 @@ unasked.
 
 - [x] Full Jest suite green (6020 tests, 172 suites); Playwright **826 passed, 0 failed**, counts read from the log
 - [x] CI green with `Tests run:` counts read from the log — 360 unit + **1163** backend ITs, zero failures
-- [ ] LAN-rung walk: search, drop, drag, confirm, and open a pinned place — on a real phone, with the pool tags named
+- [ ] LAN-rung walk: search, pan to place, confirm, and open a pinned place — on a real phone, with the pool tags named
 - [ ] Tile and search traffic during the walk stays inside what "please be fair" can mean; anything surprising is recorded
 - [ ] Native gesture parity recorded as an open AC with its reason, not quietly claimed
 - [x] Anything surfaced along the way is captured on the epic map, not left in conversation — three lines, each with its trigger

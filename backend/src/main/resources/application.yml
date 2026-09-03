@@ -109,10 +109,14 @@ largata:
     # machinery, and in an ordinary @Configuration it is decoration that lets BOTH beans register
     # (the WS-1 finding).
     photon-url: ${LARGATA_PHOTON_URL:}
-    # Photon splits forward and reverse across two paths. Both are configuration rather than one
-    # derived from the other: deriving meant string surgery on a URL, which mangles any host whose
-    # own name contains the forward path and silently reverses against the wrong one.
-    photon-reverse-url: ${LARGATA_PHOTON_REVERSE_URL:https://photon.komoot.io/reverse}
+    # Photon splits forward and reverse across two paths. UNSET means "/reverse beside whatever
+    # photon-url names", derived by REBUILDING the URI from its scheme, host and port — never by
+    # string-replacing "/api", which mangles any host whose own name contains that text.
+    #
+    # A hardcoded default here would be worse than none: point photon-url at a self-hosted instance,
+    # forget this one, and every traveler coordinate would go to Komoot with nothing red anywhere.
+    # Deriving keeps the pair together by construction, and an explicit value still wins.
+    photon-reverse-url: ${LARGATA_PHOTON_REVERSE_URL:}
     # The fixture is a DEFAULT, and a default that ships is a silent downgrade: a deployed rung with
     # no photon-url would serve eight hardcoded places and say nothing, so search would quietly know
     # only El Nido, Manila, Sapporo and Helsinki. This flag makes that state opt-in and its absence

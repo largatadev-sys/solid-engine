@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -17,7 +17,6 @@ import { addRow, moveRow, removeRow, setRow } from './rowEditor';
 import { ClearableDateField } from './ClearableDateField';
 import { PlacePickerModal } from '../maps/PlacePickerModal';
 import { PICKED_ON_MAP, PICK_ON_MAP } from '../maps/mapCopy';
-import { pinAfterEdit } from '../maps/pinRules';
 import { currencyPickerLabel, SUPPORTED_CURRENCIES } from './currencies';
 import {
   DURATION_CHOICES,
@@ -71,17 +70,8 @@ export function TripForm({
   const fields = tripFormFields(mode);
   const chrome = tripFormChrome(mode);
   const [picking, setPicking] = useState(false);
-  const pinnedAs = useRef(values.pin == null ? '' : values.destination);
-
   const set = <K extends keyof TripFormValues>(key: K, value: TripFormValues[K]) =>
     onChange({ ...values, [key]: value });
-
-  const setDestination = (text: string) =>
-    onChange({
-      ...values,
-      destination: text,
-      pin: pinAfterEdit(values.pin ?? null, pinnedAs.current, text),
-    });
 
   return (
     <View style={styles.screen}>
@@ -112,7 +102,7 @@ export function TripForm({
             <Field
               label="Destination"
               value={values.destination}
-              onChangeText={setDestination}
+              onChangeText={(text) => set('destination', text)}
               placeholder="Where to?"
             />
             <Pressable
@@ -254,8 +244,12 @@ export function TripForm({
         pin={values.pin ?? null}
         openNear={values.pin ?? null}
         onConfirm={(picked) => {
-          pinnedAs.current = picked.pin === null ? '' : picked.place;
-          onChange({ ...values, destination: picked.place, pin: picked.pin });
+          onChange({
+            ...values,
+            destination: picked.place,
+            pin: picked.pin,
+            pinnedAs: picked.pin === null ? '' : picked.place,
+          });
           setPicking(false);
         }}
         onDismiss={() => setPicking(false)}

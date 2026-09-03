@@ -14,7 +14,7 @@ An activity's location becomes a **Pin**: a point on a map the traveler chose, s
 
 1. As a trip planner, I want to drop a pin on a map for an activity, so that the app knows where the place actually is rather than guessing from its name.
 2. As a trip planner, I want to search for a place by name inside the picker, so that I do not have to pan the world to find El Nido.
-3. As a trip planner, I want a search result to place a pin I can then drag, so that I can correct a geocoder that landed near but not on the spot.
+3. As a trip planner, I want a search result to centre the map under the pin, so that I can correct a geocoder that landed near but not on the spot by moving the map. *(Originally "a pin I can then drag". The founder ruled the Uber/Grab pan-under-a-fixed-pin on the walk, 2026-09-01, after both tap-to-drop and drag-the-pin were built and each failed on a real finger: a pin the finger never has to hit is the one gesture a phone makes easy.)*
 4. As a trip planner, I want the search result's name offered rather than forced into my label, so that "Big Lagoon Kayaking" is not silently renamed to "Big Lagoon".
 5. As a trip planner, I want the picker to open near my trip's destination, so that the map starts where my trip is instead of at a world view.
 6. As a trip planner adding a second activity, I want the picker to open near the last pin I dropped, so that a day's stops are a nudge apart rather than a fresh search each time.
@@ -52,10 +52,14 @@ An activity's location becomes a **Pin**: a point on a map the traveler chose, s
 - **The stale-ref rule (founder ruling):** editing a Place's text **clears its Pin**. It fires on **save**, compared against the text the pin was dropped with — never on keystroke, or fixing a typo would destroy the pin. Accepting a search result sets text and pin **atomically**, so the acceptance cannot trigger the clear it just caused. Going from empty to filled never clears.
 
 **Search, and where it runs.**
+
+- **Panning reverse-geocodes what is under the pin**, after a settle rather than per frame, and **offers** the name it finds — filling the field only while the traveler has not typed over it. This is the other half of pan-under-the-pin: without it the traveler names every spot by hand. It rides the same proxy, the same cache and the same limiter as forward search, and Photon serves it on a second path (`photon-reverse-url`), derived beside the forward one so a self-hosted geocoder cannot leave reverse lookups pointing at somebody else's public service.
+- **Rate limits are per traveler AND global.** Per-traveler alone lets a handful of travelers spend a courtesy service's goodwill between them, which is the same shape as the report limiter's daily cap.
+- **A missing geocoder is fatal at startup, never a silent downgrade.** The fixture suggester is for tests and local runs; accepting it is an explicit opt-in, so a deployed rung that forgot its configuration refuses to boot instead of quietly serving eight hardcoded places.
 - **Photon** (`photon.komoot.io`), keyless, is the geocoder. **Nominatim is excluded by its own policy**, which states plainly that auto-complete *"is not yet supported by Nominatim and you must not implement such a service on the client side"*, and that applications whose primary function is geocoding must self-host.
 - Search runs **through a new backend `place` module**, never client-direct: the mobile layering guard forbids raw `fetch` outside two allowlisted files, the free services identify and rate-limit by caller, and a proxy is the only place a cache and a provider swap can live. This is the module whose structure prompted the original "how do we not build another `itinerary`" question, and it is born with the **ArchUnit boundary pilot** — referenced by ID and service interface only (ADR-002), internals reachable from nowhere else.
 - The module selects its suggester by configuration in the `InvitationMailConfig` shape: the Photon-backed one in a running stack, a **fixture suggester** in tests, so no integration test ever calls Komoot.
-- **Search is an accelerator, never a dependency.** Photon guarantees no availability; when it fails the search box says so and the map, the pan and the manual drop all keep working.
+- **Search is an accelerator, never a dependency.** Photon guarantees no availability; when it fails the search box says so and the map and the pan-to-place both keep working. The same holds for the reverse lookup below: an unreachable geocoder says so on the context line rather than reading as "nothing is named here", because those two are not the same answer.
 - **Cache results, and rate-limit per traveler.** A typeahead box is the easiest way to accidentally hammer a free service; the cache is what keeps us inside *"please be fair"*, the limit is what stops one client bug from costing everyone the provider.
 - Coverage was **measured, not assumed**: every El Nido fixture resolved — Big Lagoon, Shimizu Island, Las Cabañas, Nacpan, and a named sari-sari store — with correct OSM tags and sensible typeahead ranking under a lat/lng bias.
 
@@ -68,7 +72,8 @@ An activity's location becomes a **Pin**: a point on a map the traveler chose, s
 **Surfaces and shapes.**
 - **The picker is a modal overlay**, not a pushed route. expo-router unmounts the screen beneath a pushed route on web (the S4.18 finding) and the activity form holds its typed place in local state, so a full-screen picker would eat it on the founder's own verification rung. The `DumpPickerModal` shape is the precedent.
 - **The viewer is a pushed route** — nothing beneath it to lose, and it earns a URL.
-- **The viewer is interactive**: pans and zooms, opening at the pin's stored zoom. A map that cannot move reads as broken to anyone who has used a map.
+- **The viewer is interactive**: pans and zooms, opening at the pin's stored zoom. Its **Open in Google Maps** asks for the named place anchored at our point, falling back to bare coordinates and then to PL-1's text query — so the escape opens the place, not a dot.
+- **Confirming without moving the map saves TEXT ONLY.** A traveler who names a spot but never touches the map has expressed no point, and inventing one from wherever the picker happened to open would plant a confidently wrong pin — the failure the no-backfill ruling exists to avoid. A map that cannot move reads as broken to anyone who has used a map.
 - Confirming a pin **stages into the draft store** with every other field of the activity form and persists on Save Plan. Writing immediately would make it the only field on that screen that survives a cancel.
 - Capture lands on **Activity** and on the **Itinerary's destination** — the destination pin is not a nicety, it is what lets every activity picker open in the right region with no geocoding call at all.
 

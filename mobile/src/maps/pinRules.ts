@@ -22,13 +22,9 @@ export function samePlaceText(one: string, other: string): boolean {
 }
 
 
-export function pinConfirmable(pin: Pin | null, place: string): boolean {
-  return isValidPin(pin) && place.trim().length > 0;
-}
-
-
 export function pinAfterEdit(pin: Pin | null, placeAtDrop: string, placeNow: string): Pin | null {
   if (pin === null) return null;
+  if (placeAtDrop.trim() === '') return pin;
 
   return samePlaceText(placeAtDrop, placeNow) ? pin : null;
 }

@@ -53,6 +53,11 @@ export function mayAutoName(showing: string, lastOffered: string): boolean {
 }
 
 
+export function confirmable(resolving: boolean, typed: string): boolean {
+  return !resolving && typed.trim() !== '';
+}
+
+
 export function pinToCommit(
   placed: boolean,
   centre: { lat: number; lng: number },

@@ -514,6 +514,11 @@ JWKS refresh no longer blocks authentication (`JwtDecoderConfig`, owner-approved
 
 ---
 
+**2026-09-03**
+
+An unsupported HTTP method answers **405** rather than 500. `HttpRequestMethodNotSupportedException` was unmapped in `GlobalExceptionHandler`, so it fell through to the catch-all and every wrong-verb request to a real route reported a server fault — a client bug reported as ours, and the one status code a client can act on withheld. Found on PL-2's review pass and fixed there because it is three lines; recorded here because it is **cross-cutting and belongs to no story**: it changes the error contract of every route in `/v1` at once. Additive under ADR-008 — no shipped response shape changed, a 500 became the correct 405 — but worth knowing before reading an old log, since a request that used to surface as a server error now surfaces as a client one.
+
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.

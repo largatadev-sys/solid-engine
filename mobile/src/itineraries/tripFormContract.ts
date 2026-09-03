@@ -1,3 +1,4 @@
+import { pinAfterEdit } from '../maps/pinRules';
 import { cleanRows } from './rowEditor';
 import { DEFAULT_TRIP_CURRENCY } from './currencies';
 import type { CreateItineraryRequest, ItineraryResponse, Pin, UpdateItineraryRequest } from '../types/api';
@@ -17,6 +18,7 @@ export type TripFormValues = {
   startDate: string;
   endDate: string;
   pin?: Pin | null;
+  pinnedAs?: string;
 };
 
 
@@ -108,6 +110,11 @@ export function validateTripForm(mode: TripFormMode, form: TripFormValues): stri
 }
 
 
+function pinToSave(form: TripFormValues): Pin | null {
+  return pinAfterEdit(form.pin ?? null, form.pinnedAs ?? '', form.destination);
+}
+
+
 export function createRequestFrom(form: TripFormValues): CreateItineraryRequest {
   const standouts = cleanRows(form.standouts);
   const duration = form.duration.trim();
@@ -119,7 +126,7 @@ export function createRequestFrom(form: TripFormValues): CreateItineraryRequest 
     ...(duration !== '' ? { durationDays: Number(duration) } : {}),
     ...(form.bestTimeOfYear.trim() !== '' ? { bestTimeOfYear: form.bestTimeOfYear.trim() } : {}),
     ...(standouts.length > 0 ? { standouts } : {}),
-    ...(form.pin == null ? {} : { pin: form.pin }),
+    ...(pinToSave(form) === null ? {} : { pin: pinToSave(form) }),
   };
 }
 
@@ -132,7 +139,7 @@ export function updateRequestFrom(form: TripFormValues): UpdateItineraryRequest 
     description: blankToNull(form.description),
     standouts: cleanRows(form.standouts),
     bestTimeOfYear: blankToNull(form.bestTimeOfYear),
-    pin: form.pin ?? null,
+    pin: pinToSave(form),
     ...(DATE_FIELDS_ARE_LIVE
       ? { startDate: blankToNull(form.startDate), endDate: blankToNull(form.endDate) }
       : {}),
@@ -150,6 +157,7 @@ export function tripFormValuesFrom(itinerary: ItineraryResponse): TripFormValues
     bestTimeOfYear: itinerary.bestTimeOfYear ?? '',
     duration: '',
     pin: itinerary.pin ?? null,
+    pinnedAs: itinerary.pin == null ? '' : itinerary.destination,
     startDate: itinerary.startDate ?? '',
     endDate: itinerary.endDate ?? '',
   };
@@ -179,6 +187,7 @@ export const EMPTY_TRIP_FORM: TripFormValues = {
   startDate: '',
   endDate: '',
   pin: null,
+  pinnedAs: '',
 };
 
 

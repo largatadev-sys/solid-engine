@@ -21,7 +21,7 @@ interface MapViewerScreenProps {
 
 export function MapViewerScreen({ place, pin, destination }: MapViewerScreenProps) {
   const config = useMapConfig();
-  const [view, setView] = useState({ centre: pin as LatLng, zoom: pin.zoom });
+  const [view, setView] = useState<{ centre: LatLng; zoom: number }>({ centre: pin, zoom: pin.zoom });
 
   const handoff =
     mapsPlaceUrl(place, pin.lat, pin.lng, pin.zoom) ??

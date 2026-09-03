@@ -10,6 +10,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -55,6 +56,21 @@ class PinColumnsIT {
     }
 
 
+    @AfterEach
+    void putTheSeededRowsBackAsTheMigrationLeftThem() {
+        jdbc.update(
+                "UPDATE activity SET place = ?, latitude = NULL, longitude = NULL, zoom = NULL"
+                        + " WHERE id = ?",
+                "Big Lagoon",
+                A_LEGACY_ACTIVITY);
+        jdbc.update(
+                "UPDATE itinerary SET destination = ?, latitude = NULL, longitude = NULL, zoom = NULL"
+                        + " WHERE id = ?",
+                "El Nido, Palawan",
+                A_LEGACY_TRIP);
+    }
+
+
     @Test
     void aLegacyActivitySurvivesTheMigrationAndArrivesPinless() {
         assertThat(jdbc.queryForObject("SELECT place FROM activity WHERE id = ?", String.class, A_LEGACY_ACTIVITY))
@@ -86,8 +102,6 @@ class PinColumnsIT {
 
         assertThat(pinOf("activity", A_LEGACY_ACTIVITY)).isEqualByComparingTo("11.194900");
 
-        jdbc.update("UPDATE activity SET latitude = NULL, longitude = NULL, zoom = NULL WHERE id = ?",
-                A_LEGACY_ACTIVITY);
     }
 
 
@@ -117,7 +131,6 @@ class PinColumnsIT {
                 .isNotNull()
                 .hasMessageContaining("activity_pin_needs_a_place");
 
-        jdbc.update("UPDATE activity SET place = ? WHERE id = ?", "Big Lagoon", A_LEGACY_ACTIVITY);
     }
 
 
@@ -135,7 +148,6 @@ class PinColumnsIT {
                 .isNotNull()
                 .hasMessageContaining("activity_pin_needs_a_place");
 
-        jdbc.update("UPDATE activity SET place = ? WHERE id = ?", "Big Lagoon", A_LEGACY_ACTIVITY);
     }
 
 
@@ -153,7 +165,6 @@ class PinColumnsIT {
                 .isNotNull()
                 .hasMessageContaining("itinerary_pin_needs_a_destination");
 
-        jdbc.update("UPDATE itinerary SET destination = ? WHERE id = ?", "El Nido, Palawan", A_LEGACY_TRIP);
     }
 
 

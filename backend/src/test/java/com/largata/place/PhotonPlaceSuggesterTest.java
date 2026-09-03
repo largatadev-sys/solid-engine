@@ -249,6 +249,24 @@ class PhotonPlaceSuggesterTest {
 
 
     @Test
+    void theReverseEndpointIsDerivedBESIDETheSearchOne_soASelfHostedForwardGeocoderTakesItsReverseWithIt() {
+        assertThat(PhotonPlaceSuggester.reverseBeside("https://photon.komoot.io/api/"))
+                .isEqualTo("https://photon.komoot.io/reverse");
+        assertThat(PhotonPlaceSuggester.reverseBeside("http://geocoder.internal:2322/api"))
+                .as("a port is part of the host and must survive")
+                .isEqualTo("http://geocoder.internal:2322/reverse");
+    }
+
+
+    @Test
+    void derivingRebuildsTheUri_soAHostWhoseOwnNameContainsThePathIsNotMangled() {
+        assertThat(PhotonPlaceSuggester.reverseBeside("https://api.example.com/api"))
+                .as("string-replacing '/api' turned this into https://reverse.example.com/api")
+                .isEqualTo("https://api.example.com/reverse");
+    }
+
+
+    @Test
     void anUpstreamThatFailsBecomesADefinedOutcome_neverALeakedRestClientException() {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer.bindTo(builder)

@@ -39,6 +39,7 @@ import {
   detailFrom,
   headlineFor,
   movedAwayFrom,
+  confirmable,
   mayAutoName,
   pinToCommit,
   whereLine,
@@ -172,7 +173,7 @@ export function PlacePickerModal({
     nameField.current?.focus();
   }, [visible, resolving, named]);
 
-  const confirmable = !resolving && named.trim() !== '';
+  const canConfirm = confirmable(resolving, named);
 
   return (
     <Modal visible={mounted} transparent animationType="none" onRequestClose={onDismiss}>
@@ -245,15 +246,15 @@ export function PlacePickerModal({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={PICKER_CONFIRM}
-            accessibilityState={{ disabled: !confirmable }}
-            disabled={!confirmable}
+            accessibilityState={{ disabled: !canConfirm }}
+            disabled={!canConfirm}
             onPress={() =>
               onConfirm({
                 place: named.trim(),
                 pin: pinToCommit(placed, view.centre, clampZoom(view.zoom)),
               })
             }
-            style={StyleSheet.flatten([styles.primary, !confirmable && styles.primarySpent])}
+            style={StyleSheet.flatten([styles.primary, !canConfirm && styles.primarySpent])}
           >
             <Text style={styles.primaryText}>{PICKER_CONFIRM}</Text>
           </Pressable>

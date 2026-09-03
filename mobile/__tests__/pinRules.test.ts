@@ -2,7 +2,6 @@ import { MAX_ZOOM, MIN_ZOOM } from '../src/maps/tileProjection';
 import {
   isValidPin,
   pinAfterEdit,
-  pinConfirmable,
   samePlaceText,
   type Pin,
 } from '../src/maps/pinRules';
@@ -42,29 +41,6 @@ describe('a pin is valid only inside the world it can be drawn in', () => {
 });
 
 
-describe('a pin requires a place a traveler can read', () => {
-  it('refuses to confirm a pin with no label', () => {
-    expect(pinConfirmable(BIG_LAGOON, '')).toBe(false);
-  });
-
-  it('refuses to confirm a pin whose label is only whitespace', () => {
-    expect(pinConfirmable(BIG_LAGOON, '   ')).toBe(false);
-  });
-
-  it('confirms a pin that has both a point and a name', () => {
-    expect(pinConfirmable(BIG_LAGOON, 'Big Lagoon')).toBe(true);
-  });
-
-  it('refuses to confirm an invalid pin even with a label', () => {
-    expect(pinConfirmable({ lat: 999, lng: 0, zoom: 12 }, 'Nowhere')).toBe(false);
-  });
-
-  it('refuses to confirm when no pin was dropped', () => {
-    expect(pinConfirmable(null, 'Big Lagoon')).toBe(false);
-  });
-});
-
-
 describe('the stale-ref rule: editing a place clears its pin', () => {
   it('clears the pin when the place is genuinely renamed', () => {
     expect(pinAfterEdit(BIG_LAGOON, 'Big Lagoon', 'Small Lagoon')).toBeNull();
@@ -84,6 +60,11 @@ describe('the stale-ref rule: editing a place clears its pin', () => {
 
   it('clears the pin when a typo is corrected, because the text did change', () => {
     expect(pinAfterEdit(BIG_LAGOON, 'Big Lagon', 'Big Lagoon')).toBeNull();
+  });
+
+  it('going from empty to filled never clears — there is no earlier text to diverge from', () => {
+    expect(pinAfterEdit(BIG_LAGOON, '', 'El Nido')).toEqual(BIG_LAGOON);
+    expect(pinAfterEdit(BIG_LAGOON, '   ', 'El Nido')).toEqual(BIG_LAGOON);
   });
 
   it('clears the pin when the place is emptied', () => {

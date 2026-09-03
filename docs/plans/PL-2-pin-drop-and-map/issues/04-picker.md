@@ -12,7 +12,7 @@ phone makes easy — a search box over ticket 02's endpoint, and one confirm CTA
 rather than imposing it, applying text and pin **atomically** so acceptance cannot trip the
 stale-ref clear. **Confirm is refused without a label.** The map opens on the trip's destination pin,
 falling back to the last pin dropped in this trip. **Search is an accelerator, never a
-dependency**: when it fails the box says so and panning, dragging and dropping all still work.
+dependency**: when it fails the box says so and panning to place a pin still works.
 Confirming **stages into the draft store** with every other field, so cancelling the form
 discards the pin like everything else on that screen.
 
