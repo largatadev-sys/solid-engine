@@ -3,13 +3,16 @@ import {
   MIN_ZOOM,
   TILE_SIZE,
   clampLatitude,
-  clampZoom,
+  storedZoom,
   latLngToWorld,
+  liveZoom,
   normalizeLongitude,
+  pointAtScreen,
   tilesCovering,
   worldToLatLng,
   worldSize,
   zoomAfterPinch,
+  zoomedAt,
   spanBetween,
 } from '../src/maps/tileProjection';
 
@@ -115,11 +118,11 @@ describe('zoom is bounded by what the tile provider serves', () => {
     [MAX_ZOOM + 5, MAX_ZOOM],
     [12, 12],
   ])('clamps %p to %p', (given, expected) => {
-    expect(clampZoom(given)).toBe(expected);
+    expect(storedZoom(given)).toBe(expected);
   });
 
   it('rounds a fractional zoom rather than serving a tile level that does not exist', () => {
-    expect(Number.isInteger(clampZoom(12.4))).toBe(true);
+    expect(Number.isInteger(storedZoom(12.4))).toBe(true);
   });
 });
 
@@ -262,5 +265,160 @@ describe('pinching changes zoom by the ratio of the fingers’ span', () => {
   it('measures the span between two fingers', () => {
     expect(spanBetween({ x: 0, y: 0 }, { x: 3, y: 4 })).toBe(5);
     expect(spanBetween({ x: 10, y: 10 }, { x: 10, y: 10 })).toBe(0);
+  });
+});
+
+
+describe('zoom is CONTINUOUS while a gesture runs, and whole only when stored (PL-2, founder pass 2)', () => {
+  it('keeps the fraction a pinch or a wheel produced', () => {
+    expect(liveZoom(14.37)).toBeCloseTo(14.37, 5);
+  });
+
+  it('still refuses to leave the provider’s range', () => {
+    expect(liveZoom(MAX_ZOOM + 3)).toBe(MAX_ZOOM);
+    expect(liveZoom(MIN_ZOOM - 3)).toBe(MIN_ZOOM);
+  });
+
+  it('rounds only on the way to storage, because the column is a SMALLINT', () => {
+    expect(storedZoom(14.37)).toBe(14);
+    expect(storedZoom(14.63)).toBe(15);
+  });
+
+  it('a pinch reports the fraction it actually spanned — the rounding was the whole bug', () => {
+    expect(zoomAfterPinch(14, 100, 150)).toBeCloseTo(14 + Math.log2(1.5), 5);
+    expect(zoomAfterPinch(14, 100, 141.4)).toBeCloseTo(14.5, 2);
+  });
+
+  it('a pinch that spreads to double the span is exactly one zoom level', () => {
+    expect(zoomAfterPinch(12, 80, 160)).toBeCloseTo(13, 5);
+    expect(zoomAfterPinch(12, 160, 80)).toBeCloseTo(11, 5);
+  });
+
+  it('refuses a degenerate span rather than returning NaN or Infinity', () => {
+    expect(zoomAfterPinch(14, 0, 100)).toBe(14);
+    expect(zoomAfterPinch(14, 100, 0)).toBe(14);
+  });
+});
+
+
+describe('zooming keeps the point under the fingers still (PL-2, founder pass 2)', () => {
+  const viewport = { centre: { lat: 11.1949, lng: 119.4013 }, zoom: 14, width: 400, height: 600 };
+
+  it('holds the anchored coordinate at the same screen offset across a zoom', () => {
+    const offset = { x: 120, y: 200 };
+    const under = pointAtScreen(offset, viewport);
+
+    const moved = { ...viewport, zoom: 16, centre: zoomedAt(offset, viewport, 16) };
+    const stillUnder = pointAtScreen(offset, moved);
+
+    expect(stillUnder.lat).toBeCloseTo(under.lat, 6);
+    expect(stillUnder.lng).toBeCloseTo(under.lng, 6);
+  });
+
+  it('holds it zooming OUT as well as in', () => {
+    const offset = { x: 340, y: 80 };
+    const under = pointAtScreen(offset, viewport);
+
+    const moved = { ...viewport, zoom: 11.5, centre: zoomedAt(offset, viewport, 11.5) };
+
+    expect(pointAtScreen(offset, moved).lat).toBeCloseTo(under.lat, 6);
+    expect(pointAtScreen(offset, moved).lng).toBeCloseTo(under.lng, 6);
+  });
+
+  it('anchoring on the centre is the same as not anchoring at all', () => {
+    const centreOffset = { x: viewport.width / 2, y: viewport.height / 2 };
+
+    const moved = zoomedAt(centreOffset, viewport, 16);
+
+    expect(moved.lat).toBeCloseTo(viewport.centre.lat, 6);
+    expect(moved.lng).toBeCloseTo(viewport.centre.lng, 6);
+  });
+
+  it('a zoom that does not change the level does not move the map', () => {
+    const moved = zoomedAt({ x: 10, y: 590 }, viewport, viewport.zoom);
+
+    expect(moved.lat).toBeCloseTo(viewport.centre.lat, 9);
+    expect(moved.lng).toBeCloseTo(viewport.centre.lng, 9);
+  });
+
+  it('never pushes the centre past the pole, however hard the corner is pinched', () => {
+    const nearThePole = { ...viewport, centre: { lat: 84, lng: 0 }, zoom: 4 };
+
+    const moved = zoomedAt({ x: 200, y: 0 }, nearThePole, 2);
+
+    expect(Number.isFinite(moved.lat)).toBe(true);
+    expect(Math.abs(moved.lat)).toBeLessThanOrEqual(90);
+  });
+});
+
+
+describe('a fractional zoom still tiles the viewport (PL-2, founder pass 2)', () => {
+  const at = (zoom: number) =>
+    tilesCovering({ centre: { lat: 11.1949, lng: 119.4013 }, zoom, width: 400, height: 600 });
+
+  it('asks the provider for a WHOLE tile zoom — there is no z=14.4 tile', () => {
+    expect(at(14.4).every((tile) => Number.isInteger(tile.z))).toBe(true);
+    expect(at(14.4).map((tile) => tile.z)).toContain(14);
+  });
+
+  it('scales the tile pitch by the fraction, so the seams still meet', () => {
+    const tiles = at(14.5);
+    const columns = [...new Set(tiles.map((tile) => tile.x))].length;
+    const pitch = TILE_SIZE * Math.SQRT2;
+
+    const lefts = [...new Set(tiles.map((tile) => Math.round(tile.left)))].sort((a, b) => a - b);
+    expect(columns).toBeGreaterThan(1);
+    expect((lefts[1] ?? 0) - (lefts[0] ?? 0)).toBe(Math.round(pitch));
+  });
+
+  it('covers the whole viewport at every fraction, leaving no bare edge', () => {
+    for (const zoom of [12, 12.25, 12.5, 12.75, 13]) {
+      const tiles = at(zoom);
+      const pitch = TILE_SIZE * 2 ** (zoom - Math.floor(zoom));
+
+      expect(Math.min(...tiles.map((tile) => tile.left))).toBeLessThanOrEqual(0);
+      expect(Math.max(...tiles.map((tile) => tile.left)) + pitch).toBeGreaterThanOrEqual(400);
+      expect(Math.max(...tiles.map((tile) => tile.top)) + pitch).toBeGreaterThanOrEqual(600);
+    }
+  });
+
+  it('is unchanged at a whole zoom — the fractional path must not move the existing one', () => {
+    expect(at(14)).toEqual(
+      tilesCovering({ centre: { lat: 11.1949, lng: 119.4013 }, zoom: 14, width: 400, height: 600 }),
+    );
+    expect(at(14).every((tile) => tile.z === 14)).toBe(true);
+  });
+});
+
+
+describe('the tiles are drawn at the size they are placed at (PL-2, founder-found on the phone)', () => {
+  const at = (zoom: number) =>
+    tilesCovering({ centre: { lat: 11.1949, lng: 119.4013 }, zoom, width: 400, height: 600 });
+
+  it('carries the on-screen edge length, because placement alone leaves gaps', () => {
+    for (const zoom of [12, 12.3, 13.75, 14]) {
+      const pitch = TILE_SIZE * 2 ** (zoom - Math.floor(zoom));
+
+      expect(at(zoom).every((tile) => Math.abs(tile.size - pitch) < 1e-9)).toBe(true);
+    }
+  });
+
+  it('is exactly one tile wide at a whole zoom', () => {
+    expect(at(15).every((tile) => tile.size === TILE_SIZE)).toBe(true);
+  });
+
+  it('LEAVES NO SEAM — each tile ends exactly where its neighbour begins', () => {
+    for (const zoom of [12.25, 13.5, 14.9]) {
+      const tiles = at(zoom);
+      const column = tiles.filter((tile) => tile.x === tiles[0]?.x).sort((a, b) => a.top - b.top);
+      const row = tiles.filter((tile) => tile.y === tiles[0]?.y).sort((a, b) => a.left - b.left);
+
+      for (let i = 1; i < row.length; i += 1) {
+        expect(row[i]!.left).toBeCloseTo(row[i - 1]!.left + row[i - 1]!.size, 6);
+      }
+      for (let i = 1; i < column.length; i += 1) {
+        expect(column[i]!.top).toBeCloseTo(column[i - 1]!.top + column[i - 1]!.size, 6);
+      }
+    }
   });
 });

@@ -95,6 +95,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
     const body = JSON.stringify((await saved).postDataJSON());
 
+    expect(body).toContain('"pin"');
     expect(body).toContain('11.19');
     expect(body).toContain('119.40');
   });
@@ -106,7 +107,7 @@ test.describe('picking a place drops a pin the save carries (PL-2)', () => {
 
     await labelled(page, OPEN_THE_MAP).click();
     await expect(labelled(page, PICKER_CONFIRM).last()).toBeVisible({ timeout: 15_000 });
-    await labelled(page, PICKER_DISMISS).last().click();
+    await labelled(page, PICKER_DISMISS).last().click({ position: { x: 20, y: 20 } });
 
     await expect(labelled(page, 'Activity name').last()).toHaveValue('Unchanged');
   });

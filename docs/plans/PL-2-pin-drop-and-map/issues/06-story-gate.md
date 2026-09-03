@@ -14,10 +14,10 @@ unasked.
 
 **Blocked by:** 04, 05.
 
-**Status:** ready-for-agent
+**Status:** reopened — the zoom pass (2026-09-03) reruns the gate
 
-- [x] Full Jest suite green (6020 tests, 172 suites); Playwright **826 passed, 0 failed**, counts read from the log
-- [x] CI green with `Tests run:` counts read from the log — 360 unit + **1163** backend ITs, zero failures
+- [ ] Full Jest suite green; Playwright counts read from the log *(the zoom pass adds `gestureTracker` and grows three suites — 6020/172 was the pre-zoom count and no longer describes this branch)*
+- [ ] CI green with `Tests run:` counts read from the log *(360 unit + 1163 backend ITs was the pre-zoom count; the backend is untouched by the zoom pass but the count is re-read, not assumed)*
 - [ ] LAN-rung walk: search, pan to place, confirm, and open a pinned place — on a real phone, with the pool tags named
 - [ ] Tile and search traffic during the walk stays inside what "please be fair" can mean; anything surprising is recorded
 - [ ] Native gesture parity recorded as an open AC with its reason, not quietly claimed

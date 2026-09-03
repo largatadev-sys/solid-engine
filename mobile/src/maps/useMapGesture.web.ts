@@ -1,20 +1,36 @@
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import { webStyle } from '../itineraries/webStyle';
-import { afterTap, wasATap, type MapGesture, type MapGestureProps } from './mapGesture';
+import {
+  NO_GESTURE,
+  pointerDown,
+  pointerMove,
+  pointerUp,
+  type GestureState,
+} from './gestureTracker';
+import {
+  afterTap,
+  endsAsTap,
+  nextWholeZoom,
+  wheelZoomDelta,
+  type MapGesture,
+  type MapGestureProps,
+  type SurfacePoint,
+} from './mapGesture';
+import { zoomAfterPinch } from './tileProjection';
 
 
 export function useMapGesture({
   onPan,
   onSettle,
-  onZoom,
+  onZoomTo,
+  zoom,
   surfaceRef,
   dragging,
 }: MapGestureProps): MapGesture {
-  const live = useRef({ onPan, onSettle, onZoom });
-  live.current = { onPan, onSettle, onZoom };
+  const live = useRef({ onPan, onSettle, onZoomTo, zoom });
+  live.current = { onPan, onSettle, onZoomTo, zoom };
 
-  const down = useRef(new Map<number, { x: number; y: number }>());
-  const from = useRef<{ x: number; y: number } | null>(null);
+  const gesture = useRef<GestureState>(NO_GESTURE);
   const lastTapAt = useRef(0);
 
   useEffect(() => {
@@ -22,13 +38,22 @@ export function useMapGesture({
     if (found === null || found === undefined || typeof found.addEventListener !== 'function') return;
     const node: HTMLElement = found;
 
-    const moving = (event: PointerEvent) => {
-      if (!down.current.has(event.pointerId)) return;
-      down.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const localTo = (event: { clientX: number; clientY: number }): SurfacePoint => {
+      const box = node.getBoundingClientRect();
+      return { x: event.clientX - box.left, y: event.clientY - box.top };
+    };
 
-      const anchor = from.current;
-      if (anchor === null) return;
-      live.current.onPan(event.clientX - anchor.x, event.clientY - anchor.y);
+    const moving = (event: PointerEvent) => {
+      const moved = pointerMove(gesture.current, event.pointerId, localTo(event), live.current.zoom);
+      gesture.current = moved.state;
+
+      if (moved.pinch !== null) {
+        const { span, fromSpan, fromZoom, at } = moved.pinch;
+        live.current.onZoomTo(zoomAfterPinch(fromZoom, fromSpan, span), at);
+        return;
+      }
+
+      if (moved.pan !== null) live.current.onPan(moved.pan.dx, moved.pan.dy);
     };
 
     const swallow = (event: Event) => event.preventDefault();
@@ -42,43 +67,42 @@ export function useMapGesture({
     }
 
     function settle(event: PointerEvent): void {
-      down.current.delete(event.pointerId);
+      const here = localTo(event);
+      const lifted = pointerUp(gesture.current, event.pointerId, here);
+      gesture.current = lifted.state;
 
-      if (down.current.size >= 1) {
-        const [remaining] = [...down.current.values()];
-        from.current = remaining ?? null;
-        return;
-      }
-
-      const anchor = from.current;
-      from.current = null;
+      if (!lifted.done) return;
       release();
 
-      if (anchor === null) {
+      const travel = lifted.travel;
+      if (travel === null) {
         live.current.onSettle(0, 0);
         return;
       }
 
-      const dx = event.clientX - anchor.x;
-      const dy = event.clientY - anchor.y;
-
-      if (wasATap(dx, dy)) {
+      if (endsAsTap(lifted.pinched, travel.dx, travel.dy)) {
         const tap = afterTap(lastTapAt.current, Date.now());
         lastTapAt.current = tap.lastTapAt;
-        if (tap.zoomIn) live.current.onZoom(1);
+        if (tap.zoomIn) live.current.onZoomTo(nextWholeZoom(live.current.zoom, 1), here);
         live.current.onSettle(0, 0);
         return;
       }
 
-      live.current.onSettle(dx, dy);
+      live.current.onSettle(travel.dx, travel.dy);
     }
 
     const grab = (event: PointerEvent) => {
-      down.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      const wasTracking = gesture.current.tracking;
+      gesture.current = pointerDown(
+        gesture.current,
+        event.pointerId,
+        localTo(event),
+        live.current.zoom,
+        event.isPrimary,
+      );
 
-      if (down.current.size >= 2) return;
+      if (wasTracking && !event.isPrimary) return;
 
-      from.current = { x: event.clientX, y: event.clientY };
       window.addEventListener('pointermove', moving);
       window.addEventListener('pointerup', settle);
       window.addEventListener('pointercancel', settle);
@@ -88,7 +112,10 @@ export function useMapGesture({
 
     const wheeling = (event: WheelEvent) => {
       event.preventDefault();
-      live.current.onZoom(event.deltaY < 0 ? 1 : -1);
+      live.current.onZoomTo(
+        live.current.zoom + wheelZoomDelta(event.deltaY, event.ctrlKey),
+        localTo(event),
+      );
     };
 
     const block = (event: Event) => event.preventDefault();
@@ -100,7 +127,7 @@ export function useMapGesture({
 
     return () => {
       release();
-      down.current.clear();
+      gesture.current = NO_GESTURE;
       node.removeEventListener('pointerdown', grab);
       node.removeEventListener('wheel', wheeling);
       node.removeEventListener('contextmenu', block);
@@ -109,7 +136,7 @@ export function useMapGesture({
   }, [surfaceRef]);
 
   return {
-    handlers: {},
+    Wrap: Fragment,
     surfaceStyle: webStyle({
       touchAction: 'none',
       userSelect: 'none',
