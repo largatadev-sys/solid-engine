@@ -110,6 +110,10 @@ services:
       # its own variable. It was once derived by rewriting "/api" in the first, which mangles any
       # host whose own name contains that string and then reverses against the wrong service.
       LARGATA_PHOTON_REVERSE_URL: ${LARGATA_PHOTON_REVERSE_URL:-https://photon.komoot.io/reverse}
+      # Accepting the eight-place fixture is opt-in, and this is one of the two places that opts in
+      # (the other is the test classpath). A deployed rung sets neither, so a deployment that forgot
+      # its geocoder refuses to start rather than serving eight hardcoded places in silence.
+      LARGATA_PLACE_FIXTURE_ALLOWED: "true"
       # OSM/Photon policy wants an outbound identification naming the application; a browser cannot
       # set one, which is the second reason search is proxied rather than called from the app.
       LARGATA_PLACE_USER_AGENT: ${LARGATA_PLACE_USER_AGENT:-Largata/1.0 (+https://largata.com)}

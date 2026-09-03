@@ -10,6 +10,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 class PlaceSuggesterConfig {
 
+    static final String NO_GEOCODER =
+            "No place geocoder is configured. Set LARGATA_PHOTON_URL to a Photon endpoint, or set "
+                    + "LARGATA_PLACE_FIXTURE_ALLOWED=true to accept the eight-place fixture — which is "
+                    + "for tests and local runs, never for a rung a traveler can reach.";
+
     @Bean
     @ConditionalOnExpression(PhotonPlaceSuggester.ENDPOINT_CONFIGURED)
     PlaceSuggester photonPlaceSuggester(
@@ -23,7 +28,11 @@ class PlaceSuggesterConfig {
 
     @Bean
     @ConditionalOnExpression(PhotonPlaceSuggester.ENDPOINT_UNCONFIGURED)
-    PlaceSuggester fixturePlaceSuggester() {
+    PlaceSuggester fixturePlaceSuggester(
+            @Value("${largata.place.fixture-allowed}") boolean fixtureAllowed) {
+        if (!fixtureAllowed) {
+            throw new IllegalStateException(NO_GEOCODER);
+        }
         return new FixturePlaceSuggester();
     }
 }

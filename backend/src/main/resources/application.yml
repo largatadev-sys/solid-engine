@@ -113,6 +113,16 @@ largata:
     # derived from the other: deriving meant string surgery on a URL, which mangles any host whose
     # own name contains the forward path and silently reverses against the wrong one.
     photon-reverse-url: ${LARGATA_PHOTON_REVERSE_URL:https://photon.komoot.io/reverse}
+    # The fixture is a DEFAULT, and a default that ships is a silent downgrade: a deployed rung with
+    # no photon-url would serve eight hardcoded places and say nothing, so search would quietly know
+    # only El Nido, Manila, Sapporo and Helsinki. This flag makes that state opt-in and its absence
+    # fatal — docker-compose and the test classpath set it, nothing else does, so a deployment
+    # missing its geocoder REFUSES TO START instead of degrading where nobody is looking.
+    #
+    # Deliberately not keyed on the profile: tests run with NO profile, exactly as prod does, so a
+    # profile cannot tell them apart. Deliberately not keyed on a platform variable either — that
+    # guards only while we stay on that platform, and stops guarding silently when we leave.
+    fixture-allowed: ${LARGATA_PLACE_FIXTURE_ALLOWED:false}
     # OSM/Photon policy requires an outbound identification that names the application. A browser
     # cannot set one, which is a second reason search runs server-side rather than from the app.
     user-agent: ${LARGATA_PLACE_USER_AGENT:Largata/1.0 (+https://largata.com)}
