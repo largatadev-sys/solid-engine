@@ -146,6 +146,14 @@ describe('zoom is continuous and anchored, on both forks (PL-2 founder pass 2)',
     expect(read('PlacePickerModal.tsx')).toContain('storedZoom(view.zoom)');
   });
 
+  it('DRAWS each tile at the size it was placed at — a fixed 256 leaves visible seams', () => {
+    const surface = read('TileSurface.tsx');
+
+    expect(surface).toContain('width: tile.size, height: tile.size');
+    expect(surface)
+      .not.toContain('width: TILE_SIZE, height: TILE_SIZE');
+  });
+
   it('the +/- controls are still the deliberate zoom affordance', () => {
     const surface = read('TileSurface.tsx');
 

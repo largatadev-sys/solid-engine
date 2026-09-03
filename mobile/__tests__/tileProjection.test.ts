@@ -389,3 +389,36 @@ describe('a fractional zoom still tiles the viewport (PL-2, founder pass 2)', ()
     expect(at(14).every((tile) => tile.z === 14)).toBe(true);
   });
 });
+
+
+describe('the tiles are drawn at the size they are placed at (PL-2, founder-found on the phone)', () => {
+  const at = (zoom: number) =>
+    tilesCovering({ centre: { lat: 11.1949, lng: 119.4013 }, zoom, width: 400, height: 600 });
+
+  it('carries the on-screen edge length, because placement alone leaves gaps', () => {
+    for (const zoom of [12, 12.3, 13.75, 14]) {
+      const pitch = TILE_SIZE * 2 ** (zoom - Math.floor(zoom));
+
+      expect(at(zoom).every((tile) => Math.abs(tile.size - pitch) < 1e-9)).toBe(true);
+    }
+  });
+
+  it('is exactly one tile wide at a whole zoom', () => {
+    expect(at(15).every((tile) => tile.size === TILE_SIZE)).toBe(true);
+  });
+
+  it('LEAVES NO SEAM — each tile ends exactly where its neighbour begins', () => {
+    for (const zoom of [12.25, 13.5, 14.9]) {
+      const tiles = at(zoom);
+      const column = tiles.filter((tile) => tile.x === tiles[0]?.x).sort((a, b) => a.top - b.top);
+      const row = tiles.filter((tile) => tile.y === tiles[0]?.y).sort((a, b) => a.left - b.left);
+
+      for (let i = 1; i < row.length; i += 1) {
+        expect(row[i]!.left).toBeCloseTo(row[i - 1]!.left + row[i - 1]!.size, 6);
+      }
+      for (let i = 1; i < column.length; i += 1) {
+        expect(column[i]!.top).toBeCloseTo(column[i - 1]!.top + column[i - 1]!.size, 6);
+      }
+    }
+  });
+});

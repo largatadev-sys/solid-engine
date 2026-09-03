@@ -88,7 +88,10 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
           <Image
             key={tileKey(tile)}
             source={{ uri: tileHref(config.tileUrl, tile) }}
-            style={[styles.tile, { left: tile.left, top: tile.top }]}
+            style={[
+              styles.tile,
+              { left: tile.left, top: tile.top, width: tile.size, height: tile.size },
+            ]}
             accessibilityRole="none"
             accessible={false}
           />
@@ -163,7 +166,7 @@ function ZoomControl({
 const styles = StyleSheet.create({
   surface: { flex: 1, overflow: 'hidden', backgroundColor: mapColors.tileVoid },
   field: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
-  tile: { position: 'absolute', width: TILE_SIZE, height: TILE_SIZE },
+  tile: { position: 'absolute' },
   controls: {
     position: 'absolute',
     right: spacing.sm,

@@ -3,7 +3,7 @@ import { join } from 'path';
 import { tileHref, tileKey } from '../src/maps/tileUrl';
 
 
-const TILE = { x: 843, y: 493, z: 10, left: 0, top: 0 };
+const TILE = { x: 843, y: 493, z: 10, left: 0, top: 0, size: 256 };
 
 
 describe('a tile href is built from server-supplied configuration', () => {

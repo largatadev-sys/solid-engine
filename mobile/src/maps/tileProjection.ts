@@ -25,6 +25,7 @@ export interface TilePlacement {
   readonly z: number;
   readonly left: number;
   readonly top: number;
+  readonly size: number;
 }
 
 
@@ -118,6 +119,7 @@ export function tilesCovering(viewport: Viewport): TilePlacement[] {
         z: tileZoom,
         left: column * pitch - leftEdge,
         top: row * pitch - topEdge,
+        size: pitch,
       });
     }
   }
