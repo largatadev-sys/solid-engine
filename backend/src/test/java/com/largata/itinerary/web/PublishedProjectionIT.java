@@ -44,6 +44,7 @@ class PublishedProjectionIT extends PostgresTestBase {
                     "id",
                     "title",
                     "destination",
+                    "pin",
                     "description",
                     "standouts",
                     "bestTimeOfYear",
@@ -68,6 +69,7 @@ class PublishedProjectionIT extends PostgresTestBase {
                     "costAmount",
                     "costCurrency",
                     "place",
+                    "pin",
                     "description",
                     "notes",
                     "externalUrl",
@@ -102,6 +104,26 @@ class PublishedProjectionIT extends PostgresTestBase {
         JsonNode day = projection.get("days").get(0);
         assertThat(fieldsOf(day)).containsExactlyInAnyOrderElementsOf(DAY_FIELDS);
         assertThat(fieldsOf(day.get("activities").get(0))).containsExactlyInAnyOrderElementsOf(ACTIVITY_FIELDS);
+    }
+
+
+    @Test
+    void aPinReachesStrangersByFounderRuling_andCarriesNothingBesidesThePointItself() {
+        String owner = freshTraveler();
+        String tripId = datedTripWithAPlan(owner);
+        publish(owner, tripId);
+
+        JsonNode projection = JSON.readTree(rawBody(publicView(freshTraveler(), tripId).expectStatus().isOk()));
+        JsonNode activityPin = projection.get("days").get(0).get("activities").get(0).get("pin");
+
+        assertThat(activityPin)
+                .as("an unpinned activity publishes an explicit null, never half a pin")
+                .isNotNull();
+        if (!activityPin.isNull()) {
+            assertThat(fieldsOf(activityPin))
+                    .as("INV-11 as amended: a Pin is a point and a zoom — never a timestamp, never a traveler")
+                    .containsExactlyInAnyOrder("lat", "lng", "zoom");
+        }
     }
 
 

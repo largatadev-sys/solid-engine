@@ -1,0 +1,425 @@
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { spacing } from '../theme';
+import {
+  mapColors,
+  mapMetrics,
+  workspaceColors,
+  workspaceMetrics,
+  workspaceRadii,
+  workspaceTypography,
+} from '../theme/workspaceTokens';
+import { nameForPin, useMapConfig, usePlaceSearch } from '../query/placeQueries';
+import type { PlaceCandidateResponse } from '../types/api';
+import {
+  MAP_UNAVAILABLE,
+  PICKER_CONFIRM,
+  PICKER_DISMISS,
+  PICKER_REMOVE,
+  LOOKUP_UNAVAILABLE,
+  PLACE_LABEL,
+  PIN_AT_CENTRE,
+  RESOLVING_PLACE,
+  SEARCH_NO_RESULTS,
+  SEARCH_PLACEHOLDER,
+  SEARCH_UNAVAILABLE,
+  resultLabel,
+} from './mapCopy';
+import {
+  detailFrom,
+  headlineFor,
+  movedAwayFrom,
+  confirmable,
+  mayAutoName,
+  pinToCommit,
+  whereLine,
+  type PickedDetail,
+} from './pickedPlace';
+import type { Pin } from './pinRules';
+import { MapPin } from './MapPin';
+import { TileSurface } from './TileSurface';
+import { useDrawerSlide } from './useDrawerSlide';
+import { clampZoom, type LatLng } from './tileProjection';
+
+
+const SHEET_MAX_WIDTH = 420;
+
+const SHEET_HEIGHT = 620;
+
+const PICKED_ZOOM = 16;
+
+const REGION_ZOOM = 12;
+
+const SETTLE_MS = 450;
+
+const DETAIL_HEIGHT = 92;
+
+const PHILIPPINES_CENTRE: LatLng = { lat: 12.8797, lng: 121.774 };
+
+const COUNTRY_ZOOM = 6;
+
+
+export interface PickedPlace {
+  readonly place: string;
+  readonly pin: Pin | null;
+}
+
+
+interface PlacePickerModalProps {
+  readonly visible: boolean;
+  readonly place: string;
+  readonly pin: Pin | null;
+  readonly openNear: Pin | null;
+  readonly onConfirm: (picked: PickedPlace) => void;
+  readonly onDismiss: () => void;
+}
+
+
+export function PlacePickerModal({
+  visible,
+  place,
+  pin,
+  openNear,
+  onConfirm,
+  onDismiss,
+}: PlacePickerModalProps) {
+  const config = useMapConfig();
+  const { mounted, translateY, scrim } = useDrawerSlide(visible, SHEET_HEIGHT);
+
+  const [view, setView] = useState(() => openingView(pin, openNear));
+  const [detail, setDetail] = useState<PickedDetail | null>(null);
+  const [named, setNamed] = useState('');
+  const [resolving, setResolving] = useState(false);
+  const [query, setQuery] = useState('');
+  const [placed, setPlaced] = useState(pin !== null);
+  const [lookupFailed, setLookupFailed] = useState(false);
+
+  const exactAt = useRef<LatLng | null>(null);
+  const nameField = useRef<TextInput | null>(null);
+  const offered = useRef('');
+
+  useEffect(() => {
+    if (!visible) return;
+
+    setView(openingView(pin, openNear));
+    const seeded = place.trim();
+    setDetail(seeded === '' ? null : { name: seeded, nearby: false, kind: null, context: null, exact: true });
+    setNamed(seeded);
+    offered.current = seeded;
+    setPlaced(pin !== null);
+    exactAt.current = pin;
+    setResolving(false);
+    setLookupFailed(false);
+    setQuery('');
+  }, [visible, place, pin, openNear]);
+
+  useEffect(() => {
+    if (!visible) return;
+    if (!movedAwayFrom(exactAt.current, view.centre)) return;
+
+    let live = true;
+    setResolving(true);
+
+    const timer = setTimeout(() => {
+      void nameForPin(view.centre.lat, view.centre.lng).then((lookup) => {
+        if (!live) return;
+        exactAt.current = null;
+        setLookupFailed(!lookup.reachable);
+        const resolved = detailFrom(lookup.named, false);
+        setDetail(resolved);
+        setNamed((showing) => {
+          if (!mayAutoName(showing, offered.current)) return showing;
+          offered.current = headlineFor(resolved);
+          return offered.current;
+        });
+        setResolving(false);
+      });
+    }, SETTLE_MS);
+
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [visible, view.centre]);
+
+  const accept = (candidate: PlaceCandidateResponse) => {
+    const landed: LatLng = { lat: candidate.lat, lng: candidate.lng };
+    exactAt.current = landed;
+    const picked = detailFrom(candidate, true);
+    setDetail(picked);
+    offered.current = headlineFor(picked);
+    setNamed(offered.current);
+    setPlaced(true);
+    setView({ centre: landed, zoom: PICKED_ZOOM });
+    setLookupFailed(false);
+    setResolving(false);
+    setQuery('');
+  };
+
+  useEffect(() => {
+    if (!visible || resolving) return;
+    if (named.trim() !== '') return;
+
+    nameField.current?.focus();
+  }, [visible, resolving, named]);
+
+  const canConfirm = confirmable(resolving, named);
+
+  return (
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={onDismiss}>
+      <View style={styles.stack}>
+        <Animated.View style={[styles.scrim, { opacity: scrim }]}>
+          <Pressable
+            style={styles.scrimTarget}
+            accessibilityRole="button"
+            accessibilityLabel={PICKER_DISMISS}
+            onPress={onDismiss}
+          />
+        </Animated.View>
+
+        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+          <View style={styles.grabber} />
+
+          <TextInput
+            style={styles.search}
+            value={query}
+            onChangeText={setQuery}
+            placeholder={SEARCH_PLACEHOLDER}
+            placeholderTextColor={workspaceColors.placeholder}
+            accessibilityLabel={SEARCH_PLACEHOLDER}
+            autoCorrect={false}
+          />
+
+          <View style={styles.stage}>
+            {config.data === undefined ? (
+              <View style={styles.waiting}>
+                {config.isError ? (
+                  <Text style={styles.notice}>{MAP_UNAVAILABLE}</Text>
+                ) : (
+                  <ActivityIndicator color={workspaceColors.accent} />
+                )}
+              </View>
+            ) : (
+              <TileSurface
+                config={config.data}
+                centre={view.centre}
+                zoom={view.zoom}
+                onMove={(centre, zoom) => {
+                  setPlaced(true);
+                  setView({ centre, zoom });
+                }}
+              >
+                <MapPin style={styles.centrePin} label={PIN_AT_CENTRE} />
+              </TileSurface>
+            )}
+
+            <Results query={query} bias={view.centre} onAccept={accept} />
+          </View>
+
+          <View style={styles.detail}>
+            <TextInput
+              ref={nameField}
+              style={styles.headline}
+              value={resolving ? '' : named}
+              onChangeText={setNamed}
+              placeholder={resolving ? RESOLVING_PLACE : PLACE_LABEL}
+              placeholderTextColor={workspaceColors.accent}
+              accessibilityLabel={PLACE_LABEL}
+              editable={!resolving}
+              numberOfLines={1}
+            />
+            <Text style={styles.context} numberOfLines={1}>
+              {contextLine(resolving, lookupFailed, detail)}
+            </Text>
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={PICKER_CONFIRM}
+            accessibilityState={{ disabled: !canConfirm }}
+            disabled={!canConfirm}
+            onPress={() =>
+              onConfirm({
+                place: named.trim(),
+                pin: pinToCommit(placed, view.centre, clampZoom(view.zoom)),
+              })
+            }
+            style={StyleSheet.flatten([styles.primary, !canConfirm && styles.primarySpent])}
+          >
+            <Text style={styles.primaryText}>{PICKER_CONFIRM}</Text>
+          </Pressable>
+
+          <View style={styles.footer}>
+            {pin === null ? null : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={PICKER_REMOVE}
+                onPress={() => onConfirm({ place: named.trim(), pin: null })}
+              >
+                <Text style={styles.removeText}>{PICKER_REMOVE}</Text>
+              </Pressable>
+            )}
+          </View>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+
+function Results({
+  query,
+  bias,
+  onAccept,
+}: {
+  readonly query: string;
+  readonly bias: LatLng;
+  readonly onAccept: (candidate: PlaceCandidateResponse) => void;
+}) {
+  const results = usePlaceSearch(query, { lat: bias.lat, lng: bias.lng });
+
+  if (query.trim() === '') return null;
+
+  const body = () => {
+    if (results.isError) return <Text style={styles.overlayNotice}>{SEARCH_UNAVAILABLE}</Text>;
+    if (results.data === undefined) return <ActivityIndicator color={workspaceColors.accent} />;
+    if (results.data.results.length === 0) {
+      return <Text style={styles.overlayNotice}>{SEARCH_NO_RESULTS}</Text>;
+    }
+
+    return (
+      <ScrollView keyboardShouldPersistTaps="handled">
+        {results.data.results.map((candidate) => (
+          <Pressable
+            key={`${candidate.name}/${candidate.lat}/${candidate.lng}`}
+            accessibilityRole="button"
+            accessibilityLabel={resultLabel(candidate.name, candidate.context)}
+            onPress={() => onAccept(candidate)}
+            style={styles.result}
+          >
+            <Text style={styles.resultName} numberOfLines={1}>
+              {candidate.name}
+            </Text>
+            {candidate.context === null ? null : (
+              <Text style={styles.resultContext} numberOfLines={1}>
+                {candidate.context}
+              </Text>
+            )}
+          </Pressable>
+        ))}
+      </ScrollView>
+    );
+  };
+
+  return <View style={styles.overlay}>{body()}</View>;
+}
+
+
+function contextLine(resolving: boolean, lookupFailed: boolean, detail: PickedDetail | null): string {
+  if (resolving) return '';
+  if (lookupFailed) return LOOKUP_UNAVAILABLE;
+
+  return whereLine(detail);
+}
+
+
+function openingView(pin: Pin | null, openNear: Pin | null): { centre: LatLng; zoom: number } {
+  if (pin !== null) return { centre: pin, zoom: clampZoom(pin.zoom) };
+  if (openNear !== null) return { centre: openNear, zoom: REGION_ZOOM };
+
+  return { centre: PHILIPPINES_CENTRE, zoom: COUNTRY_ZOOM };
+}
+
+
+const styles = StyleSheet.create({
+  stack: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
+  scrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: workspaceColors.sheetScrim,
+  },
+  scrimTarget: { flex: 1 },
+  sheet: {
+    width: '100%',
+    maxWidth: SHEET_MAX_WIDTH,
+    height: SHEET_HEIGHT,
+    backgroundColor: workspaceColors.surface,
+    borderTopLeftRadius: workspaceRadii.sheet,
+    borderTopRightRadius: workspaceRadii.sheet,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: workspaceMetrics.grabberWidth,
+    height: workspaceMetrics.grabberHeight,
+    borderRadius: workspaceRadii.pill,
+    backgroundColor: workspaceColors.drawerHandle,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  search: {
+    height: mapMetrics.searchBoxHeight,
+    borderWidth: 1,
+    borderColor: workspaceColors.inputBorder,
+    borderRadius: workspaceRadii.control,
+    paddingHorizontal: spacing.sm,
+    color: workspaceColors.title,
+  },
+  stage: { flex: 1, borderRadius: workspaceRadii.card, overflow: 'hidden' },
+  waiting: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  overlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    maxHeight: mapMetrics.resultRowHeight * 4,
+    backgroundColor: workspaceColors.surface,
+    borderRadius: workspaceRadii.card,
+    paddingHorizontal: spacing.sm,
+  },
+  overlayNotice: { color: workspaceColors.muted, paddingVertical: spacing.sm },
+  result: {
+    minHeight: mapMetrics.resultRowHeight,
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: mapColors.resultDivider,
+  },
+  resultName: { color: workspaceColors.title },
+  resultContext: { color: workspaceColors.muted },
+  centrePin: {
+    left: '50%',
+    top: '50%',
+    marginLeft: -mapMetrics.pinWidth / 2,
+    marginTop: -mapMetrics.pinHeight,
+  },
+  detail: { height: DETAIL_HEIGHT, justifyContent: 'center', gap: spacing.xs },
+  headline: { ...workspaceTypography.dayTitle, color: workspaceColors.title },
+  context: { color: workspaceColors.muted, minHeight: mapMetrics.detailLineHeight },
+  notice: { color: workspaceColors.muted },
+  primary: {
+    height: workspaceMetrics.sheetCtaHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: workspaceRadii.control,
+    backgroundColor: workspaceColors.accent,
+  },
+  primarySpent: { opacity: 0.4 },
+  primaryText: { color: workspaceColors.onAccent },
+  footer: { height: mapMetrics.attributionHeight, alignItems: 'center', justifyContent: 'center' },
+  removeText: { color: workspaceColors.muted },
+});

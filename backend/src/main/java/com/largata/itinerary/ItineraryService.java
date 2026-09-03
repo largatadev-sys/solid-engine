@@ -255,7 +255,8 @@ public class ItineraryService {
                 itinerary.standouts(),
                 itinerary.bestTimeOfYear() == null ? "" : itinerary.bestTimeOfYear(),
                 itinerary.startDate(),
-                itinerary.endDate());
+                itinerary.endDate(),
+                itinerary.pin());
     }
 
 

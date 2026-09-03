@@ -218,7 +218,8 @@ class ItineraryTest {
                         List.of("Big Lagoon Kayaking"),
                         "Dec – Apr",
                         LocalDate.of(2027, 1, 10),
-                        LocalDate.of(2027, 1, 20)),
+                        LocalDate.of(2027, 1, 20),
+                        null),
                 editor,
                 editedAt);
 
@@ -258,7 +259,7 @@ class ItineraryTest {
         assertThatThrownBy(
                         () ->
                                 new ItineraryFields(
-                                        "Trip", "  ", "PHP", null, List.of(), null, null, null))
+                                        "Trip", "  ", "PHP", null, List.of(), null, null, null, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -266,12 +267,12 @@ class ItineraryTest {
     void anEditThatOmitsThePublishMetadataLeavesItAloneRatherThanErasingIt() {
         Itinerary itinerary = newTrip("Planned", "Cebu");
         itinerary.editFields(
-                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null),
+                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
         itinerary.editFields(
-                new ItineraryFields("Renamed by an older client", "Cebu", "PHP", null, null, null, null, null),
+                new ItineraryFields("Renamed by an older client", "Cebu", "PHP", null, null, null, null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
@@ -286,12 +287,12 @@ class ItineraryTest {
     void anEmptyValueClearsThePublishMetadataBecauseAbsenceAlreadyMeansSomethingElse() {
         Itinerary itinerary = newTrip("Planned", "Cebu");
         itinerary.editFields(
-                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null),
+                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
         itinerary.editFields(
-                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of(), "", null, null),
+                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of(), "", null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
@@ -303,7 +304,7 @@ class ItineraryTest {
     void theShippedFieldsKeepTheirReplaceSemanticsBecauseChangingThoseWouldBeTheAdditivityBreak() {
         Itinerary itinerary = newTrip("Planned", "Cebu");
         itinerary.editFields(
-                new ItineraryFields("Trip", "Cebu", "PHP", "A description.", null, null, null, null),
+                new ItineraryFields("Trip", "Cebu", "PHP", "A description.", null, null, null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
@@ -334,11 +335,11 @@ class ItineraryTest {
     }
 
     private static ItineraryFields renamedTo(String title) {
-        return new ItineraryFields(title, "Cebu", "PHP", null, List.of(), null, null, null);
+        return new ItineraryFields(title, "Cebu", "PHP", null, List.of(), null, null, null, null);
     }
 
     private static ItineraryFields withStandouts(List<String> standouts) {
-        return new ItineraryFields("Trip", "Cebu", "PHP", null, standouts, null, null, null);
+        return new ItineraryFields("Trip", "Cebu", "PHP", null, standouts, null, null, null, null);
     }
 
     @Test

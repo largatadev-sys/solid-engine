@@ -217,6 +217,7 @@ function serverPlan(): ItineraryResponse {
     id: 'trip-1',
     title: 'Palawan',
     destination: 'Palawan',
+    pin: null,
     currency: 'PHP',
     description: null,
     standouts: [],
@@ -250,6 +251,8 @@ function activity(id: string, title: string): ActivityResponse {
     costAmount: null,
     costCurrency: null,
     place: null,
+
+    pin: null,
     description: null,
     notes: null,
     externalUrl: null,

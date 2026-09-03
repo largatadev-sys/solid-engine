@@ -78,6 +78,7 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
                 .containsExactlyInAnyOrder(
                         "title",
                         "destination",
+                        "pin",
                         "currency",
                         "description",
                         "standouts",

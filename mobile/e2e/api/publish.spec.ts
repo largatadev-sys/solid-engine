@@ -13,7 +13,7 @@ requireStack(OWNER);
 test.describe.configure({ mode: 'serial' });
 
 const PROJECTION_FIELDS = [
-  'id', 'title', 'destination', 'description', 'standouts', 'bestTimeOfYear',
+  'id', 'title', 'destination', 'pin', 'description', 'standouts', 'bestTimeOfYear',
   'coverImageUrl', 'durationDays', 'creator', 'estimatedCost', 'days',
   'forkCount', 'forkedFrom',
 ].sort();

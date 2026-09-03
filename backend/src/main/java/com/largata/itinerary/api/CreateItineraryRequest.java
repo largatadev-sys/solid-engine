@@ -27,7 +27,8 @@ public record CreateItineraryRequest(
                 Integer durationDays,
         List<@NotBlank(message = "A standout cannot be blank.") String> standouts,
         @Size(max = Itinerary.MAX_BEST_TIME_LENGTH, message = "Best time of year is at most 60 characters.")
-                String bestTimeOfYear)
+                String bestTimeOfYear,
+        @jakarta.validation.Valid PinPayload pin)
         implements HasDateRange {
 
 
@@ -52,7 +53,8 @@ public record CreateItineraryRequest(
                 standouts == null ? List.of() : standouts,
                 bestTimeOfYear == null ? "" : bestTimeOfYear,
                 startDate,
-                endDate);
+                endDate,
+                PinPayload.toPin(pin));
     }
 
 

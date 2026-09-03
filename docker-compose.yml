@@ -99,6 +99,27 @@ services:
       # and on a phone `localhost` is the phone. That is the S4.31 trap: every screen renders, the
       # walk completes, and it reports a coherent story about the wrong host.
       LARGATA_WEB_BASE_URL: ${LARGATA_WEB_BASE_URL:-http://localhost:8081}
+      # Keyless place search (PL-2). UNSET is the deliberate default: no URL means the place module
+      # selects its FixturePlaceSuggester, so no local run and no IT ever spends a stranger free
+      # quota nor goes red when Komoot is down. Set it to walk REAL geocoding:
+      #   LARGATA_PHOTON_URL=https://photon.komoot.io/api/ docker compose up -d
+      # Without this mapping the variable is silently inert — the FB-2 trap, where an env var set on
+      # the command line reaches compose and stops there, and the app quietly serves the fallback.
+      LARGATA_PHOTON_URL: ${LARGATA_PHOTON_URL:-}
+      # Photon serves forward search and reverse lookup on two different paths. Left unset it is
+      # derived as "/reverse" beside whatever LARGATA_PHOTON_URL names, so a self-hosted forward
+      # geocoder cannot silently leave reverse lookups pointing at somebody else public service.
+      LARGATA_PHOTON_REVERSE_URL: ${LARGATA_PHOTON_REVERSE_URL:-}
+      # Accepting the eight-place fixture is opt-in, and this is one of the two places that opts in
+      # (the other is the test classpath). A deployed rung sets neither, so a deployment that forgot
+      # its geocoder refuses to start rather than serving eight hardcoded places in silence.
+      LARGATA_PLACE_FIXTURE_ALLOWED: "true"
+      # OSM/Photon policy wants an outbound identification naming the application; a browser cannot
+      # set one, which is the second reason search is proxied rather than called from the app.
+      LARGATA_PLACE_USER_AGENT: ${LARGATA_PLACE_USER_AGENT:-Largata/1.0 (+https://largata.com)}
+      # The raster tile source, server-supplied so a provider withdrawing access is a config change
+      # rather than an app release (OSM policy makes access revocable and advises exactly this).
+      LARGATA_TILE_URL: ${LARGATA_TILE_URL:-https://tile.openstreetmap.org/{z}/{x}/{y}.png}
       # Which Firebase project's tokens this environment trusts (ADR-006). Stated explicitly even
       # though application.yml defaults to the same value: an environment's identity should be
       # readable here, not inferred from a default that happens to match. At S0.4 prod points at

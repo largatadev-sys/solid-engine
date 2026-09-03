@@ -95,6 +95,50 @@ largata:
     secret-key: ${LARGATA_STORAGE_SECRET_KEY:}
     region: ${LARGATA_STORAGE_REGION:us-east-1}
 
+  place:
+    # Keyless place search, proxied (PL-2). Photon (photon.komoot.io) is the geocoder: Nominatim is
+    # excluded by its OWN policy, which states that auto-complete "is not yet supported by Nominatim
+    # and you must not implement such a service on the client side". Never called client-direct — the
+    # mobile layering guard forbids raw fetch, the free services identify and rate-limit by caller,
+    # and a proxy is the only place a cache and a provider swap can live.
+    #
+    # UNSET URL = no Photon bean = FixturePlaceSuggester, and that is the DELIBERATE local and CI
+    # posture: no integration test ever calls Komoot, so the suite never spends a stranger's free
+    # quota nor goes red when their service is down. The two beans are a mutually exclusive
+    # @ConditionalOnExpression pair, never @ConditionalOnMissingBean — that is autoconfiguration-only
+    # machinery, and in an ordinary @Configuration it is decoration that lets BOTH beans register
+    # (the WS-1 finding).
+    photon-url: ${LARGATA_PHOTON_URL:}
+    # Photon splits forward and reverse across two paths. UNSET means "/reverse beside whatever
+    # photon-url names", derived by REBUILDING the URI from its scheme, host and port — never by
+    # string-replacing "/api", which mangles any host whose own name contains that text.
+    #
+    # A hardcoded default here would be worse than none: point photon-url at a self-hosted instance,
+    # forget this one, and every traveler coordinate would go to Komoot with nothing red anywhere.
+    # Deriving keeps the pair together by construction, and an explicit value still wins.
+    photon-reverse-url: ${LARGATA_PHOTON_REVERSE_URL:}
+    # The fixture is a DEFAULT, and a default that ships is a silent downgrade: a deployed rung with
+    # no photon-url would serve eight hardcoded places and say nothing, so search would quietly know
+    # only El Nido, Manila, Sapporo and Helsinki. This flag makes that state opt-in and its absence
+    # fatal — docker-compose and the test classpath set it, nothing else does, so a deployment
+    # missing its geocoder REFUSES TO START instead of degrading where nobody is looking.
+    #
+    # Deliberately not keyed on the profile: tests run with NO profile, exactly as prod does, so a
+    # profile cannot tell them apart. Deliberately not keyed on a platform variable either — that
+    # guards only while we stay on that platform, and stops guarding silently when we leave.
+    fixture-allowed: ${LARGATA_PLACE_FIXTURE_ALLOWED:false}
+    # OSM/Photon policy requires an outbound identification that names the application. A browser
+    # cannot set one, which is a second reason search runs server-side rather than from the app.
+    user-agent: ${LARGATA_PLACE_USER_AGENT:Largata/1.0 (+https://largata.com)}
+    # The raster tile source, SERVER-SUPPLIED CONFIGURATION rather than a constant in the app.
+    # OSM's tile policy is explicit that access is best-effort and "may be withdrawn at any point",
+    # and its own advice is to keep the source switchable — so a provider withdrawing access is a
+    # config change, not an app release. Esri is the recorded fallback: keyed, but commercial use
+    # permitted. Attribution is a LICENCE OBLIGATION and travels with the URL for that reason.
+    tile-url: ${LARGATA_TILE_URL:https://tile.openstreetmap.org/{z}/{x}/{y}.png}
+    tile-attribution: ${LARGATA_TILE_ATTRIBUTION:© OpenStreetMap contributors}
+    tile-attribution-url: ${LARGATA_TILE_ATTRIBUTION_URL:https://www.openstreetmap.org/copyright}
+
 server:
   port: ${PORT:8080}
   error:

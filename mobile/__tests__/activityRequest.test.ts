@@ -11,6 +11,7 @@ function existing(over: Partial<ActivityResponse> = {}): ActivityResponse {
     costAmount: '1200.00',
     costCurrency: 'PHP',
     place: 'Big Lagoon, Miniloc Island',
+    pin: null,
     description: 'A long description written before the redesign',
     notes: 'Creator tips that the form no longer shows',
     externalUrl: 'https://klook.com/mamamo/1234',
@@ -132,5 +133,33 @@ describe('the prefilled currency is a hint, not data (S4.24)', () => {
 
     expect(request.costAmount).toBe('0');
     expect(request.costCurrency).toBe('PHP');
+  });
+});
+
+
+describe('a pin travels with the place that names it (PL-2)', () => {
+  const BIG_LAGOON = { lat: 11.1949, lng: 119.4013, zoom: 15 };
+
+  it('sends a dropped pin alongside its place', () => {
+    const request = buildActivityRequest({ ...FORM, place: 'Big Lagoon', pin: BIG_LAGOON }, undefined);
+
+    expect(request.pin).toEqual(BIG_LAGOON);
+    expect(request.place).toBe('Big Lagoon');
+  });
+
+  it('omits the pin entirely when none was dropped, rather than sending a null', () => {
+    expect(buildActivityRequest({ ...FORM, pin: undefined }, undefined)).not.toHaveProperty('pin');
+  });
+
+  it('clears a pin explicitly when the traveler removed it, because absence would carry it over', () => {
+    const request = buildActivityRequest({ ...FORM, pin: null }, undefined);
+
+    expect(request.pin).toBeNull();
+  });
+
+  it('never sends a pin without a place, because the server refuses one', () => {
+    const request = buildActivityRequest({ title: 'No place', pin: BIG_LAGOON }, undefined);
+
+    expect(request).not.toHaveProperty('pin');
   });
 });

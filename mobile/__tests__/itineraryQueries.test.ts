@@ -43,6 +43,7 @@ const trip = (id: string, title: string): ItineraryResponse => ({
   id,
   title,
   destination: 'Sapporo',
+  pin: null,
   currency: 'PHP',
   description: null,
   standouts: [],
@@ -262,6 +263,8 @@ describe('the optimistic reorder — the cache moves at the drop, not at the res
     costAmount: null,
     costCurrency: null,
     place: null,
+
+    pin: null,
     description: null,
     notes: null,
     externalUrl: null,
