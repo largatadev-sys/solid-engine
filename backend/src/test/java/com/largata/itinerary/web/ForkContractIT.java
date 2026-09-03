@@ -120,7 +120,7 @@ class ForkContractIT extends PostgresTestBase {
                 createItinerary(
                         author,
                         """
-                        {"title":"Pinned trip","destination":"El Nido, Palawan","durationDays":1}
+                        {"title":"Pinned trip","destination":"Palawan","durationDays":1}
                         """);
         holdLock(author, sourceId, "{\"subjectType\":\"header\"}");
         rest.patch()
@@ -128,7 +128,7 @@ class ForkContractIT extends PostgresTestBase {
                 .header(HttpHeaders.AUTHORIZATION, bearer(author))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"title":"Pinned trip","destination":"El Nido, Palawan",
+                        {"title":"Pinned trip","destination":"Palawan",
                          "pin":{"lat":11.194900,"lng":119.401300,"zoom":12}}
                         """)
                 .exchange()
