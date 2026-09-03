@@ -44,7 +44,7 @@ describe('the picker is pan-under-a-fixed-pin, with ONE way to place it (PL-2)',
   });
 
   it('confirm commits the point under the pin, never a separately dropped one', () => {
-    expect(picker).toContain('pinToCommit(placed, view.centre, clampZoom(view.zoom))');
+    expect(picker).toContain('pinToCommit(placed, view.centre, storedZoom(view.zoom))');
   });
 
   it('there is no second way to place a pin — no drop button, no tap-to-drop', () => {
@@ -102,27 +102,56 @@ describe('the picker is a drawer with one CTA (PL-2 founder pass)', () => {
 });
 
 
-describe('the map zooms by buttons and double tap only (PL-2 founder pass)', () => {
+describe('zoom is continuous and anchored, on both forks (PL-2 founder pass 2)', () => {
   it.each(['useMapGesture.web.ts', 'useMapGesture.native.ts'])('%s double taps to zoom', (fork) => {
     const source = read(fork);
 
     expect(source).toContain('afterTap(');
-    expect(source).toContain('onZoom(1)');
+    expect(source).toContain('nextWholeZoom(');
     expect(read('mapGesture.ts')).toContain('DOUBLE_TAP_MS');
   });
 
-  it.each(['useMapGesture.web.ts', 'useMapGesture.native.ts'])('%s carries NO pinch', (fork) => {
-    const source = read(fork);
-
-    expect(source).not.toContain('pinch');
-    expect(source).not.toContain('zoomAfterPinch');
+  it.each(['useMapGesture.web.ts', 'useMapGesture.native.ts'])('%s PINCHES to zoom', (fork) => {
+    expect(read(fork))
+      .toContain('zoomAfterPinch');
   });
 
-  it('the +/- controls are the deliberate zoom affordance', () => {
+  it('the native fork pinches with gesture-handler, never PanResponder', () => {
+    const native = read('useMapGesture.native.ts');
+
+    expect(native).toContain('Gesture.Pinch()');
+    expect(native).toContain('Gesture.Simultaneous(');
+    expect(native).toContain('focalX');
+    expect(native).not.toContain('PanResponder');
+  });
+
+  it('the web fork pinches on two pointers AND on a trackpad, which arrives as a ctrl-wheel', () => {
+    const web = read('useMapGesture.web.ts');
+
+    expect(web).toContain('event.ctrlKey');
+    expect(web).toContain('wheelZoomDelta(');
+    expect(web).toContain('spanOf(');
+    expect(web).toContain('midpoint(');
+  });
+
+  it('every zoom is ANCHORED — the point under the fingers stays put', () => {
+    const surface = read('TileSurface.tsx');
+
+    expect(surface).toContain('zoomedAt(anchor, viewport, next)');
+    expect(surface).toContain('liveZoom(to)');
+  });
+
+  it('the view keeps the fraction, and only the SAVE rounds it', () => {
+    expect(read('TileSurface.tsx')).not.toContain('storedZoom');
+    expect(read('PlacePickerModal.tsx')).toContain('storedZoom(view.zoom)');
+  });
+
+  it('the +/- controls are still the deliberate zoom affordance', () => {
     const surface = read('TileSurface.tsx');
 
     expect(surface).toContain('ZOOM_IN_LABEL');
     expect(surface).toContain('ZOOM_OUT_LABEL');
+    expect(surface).toContain('stepZoom(1)');
   });
 });
 

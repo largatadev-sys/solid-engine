@@ -16,13 +16,15 @@ import {
   MAX_ZOOM,
   MIN_ZOOM,
   TILE_SIZE,
-  clampZoom,
+  liveZoom,
+  zoomedAt,
   panned,
   screenOffsetOf,
   tilesCovering,
   type LatLng,
 } from './tileProjection';
 import { tileHref, tileKey, type MapConfig } from './tileUrl';
+import { nextWholeZoom, type SurfacePoint } from './mapGesture';
 import { useMapGesture } from './useMapGesture';
 
 
@@ -56,21 +58,30 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
       setDrag(null);
       if (dx !== 0 || dy !== 0) onMove(panned(centre, zoom, dx, dy), zoom);
     },
-    onZoom: (by) => onMove(centre, clampZoom(zoom + by)),
+    onZoomTo: (to, anchor) => zoomTo(to, anchor),
+    zoom,
     surfaceRef,
     dragging: drag !== null,
   });
 
+  const zoomTo = (to: number, anchor: SurfacePoint) => {
+    const next = liveZoom(to);
+    onMove(size.width === 0 ? centre : zoomedAt(anchor, viewport, next), next);
+  };
+
+  const stepZoom = (by: number) =>
+    zoomTo(nextWholeZoom(zoom, by), { x: size.width / 2, y: size.height / 2 });
+
   const pinAt = pin == null ? null : screenOffsetOf(pin, shownViewport);
 
   return (
-    <View
-      style={styles.surface}
-      onLayout={(event: LayoutChangeEvent) => setSize(event.nativeEvent.layout)}
-    >
+    <gesture.Wrap>
+      <View
+        style={styles.surface}
+        onLayout={(event: LayoutChangeEvent) => setSize(event.nativeEvent.layout)}
+      >
       <View
         ref={surfaceRef}
-        {...(gesture.handlers as ViewProps)}
         style={StyleSheet.flatten([styles.field, gesture.surfaceStyle])}
       >
         {tilesCovering(shownViewport).map((tile) => (
@@ -97,13 +108,13 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
           label={ZOOM_IN_LABEL}
           glyph="+"
           disabled={zoom >= MAX_ZOOM}
-          onPress={() => onMove(centre, clampZoom(zoom + 1))}
+          onPress={() => stepZoom(1)}
         />
         <ZoomControl
           label={ZOOM_OUT_LABEL}
           glyph="−"
           disabled={zoom <= MIN_ZOOM}
-          onPress={() => onMove(centre, clampZoom(zoom - 1))}
+          onPress={() => stepZoom(-1)}
         />
       </View>
 
@@ -117,7 +128,8 @@ export function TileSurface({ config, centre, zoom, onMove, pin, children }: Til
           {config.attribution}
         </Text>
       </Pressable>
-    </View>
+      </View>
+    </gesture.Wrap>
   );
 }
 

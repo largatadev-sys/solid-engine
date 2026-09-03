@@ -53,8 +53,13 @@ export function normalizeLongitude(lng: number): number {
 }
 
 
-export function clampZoom(zoom: number): number {
-  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(zoom)));
+export function liveZoom(zoom: number): number {
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+}
+
+
+export function storedZoom(zoom: number): number {
+  return Math.round(liveZoom(zoom));
 }
 
 
@@ -90,16 +95,18 @@ export function tilesCovering(viewport: Viewport): TilePlacement[] {
   const { centre, zoom, width, height } = viewport;
   if (width <= 0 || height <= 0) return [];
 
-  const span = 2 ** zoom;
+  const tileZoom = Math.floor(zoom);
+  const pitch = TILE_SIZE * 2 ** (zoom - tileZoom);
+  const span = 2 ** tileZoom;
   const origin = latLngToWorld(centre, zoom);
 
   const leftEdge = origin.x - width / 2;
   const topEdge = origin.y - height / 2;
 
-  const firstColumn = Math.floor(leftEdge / TILE_SIZE);
-  const lastColumn = Math.floor((leftEdge + width) / TILE_SIZE);
-  const firstRow = Math.max(0, Math.floor(topEdge / TILE_SIZE));
-  const lastRow = Math.min(span - 1, Math.floor((topEdge + height) / TILE_SIZE));
+  const firstColumn = Math.floor(leftEdge / pitch);
+  const lastColumn = Math.floor((leftEdge + width) / pitch);
+  const firstRow = Math.max(0, Math.floor(topEdge / pitch));
+  const lastRow = Math.min(span - 1, Math.floor((topEdge + height) / pitch));
 
   const placements: TilePlacement[] = [];
 
@@ -108,9 +115,9 @@ export function tilesCovering(viewport: Viewport): TilePlacement[] {
       placements.push({
         x: ((column % span) + span) % span,
         y: row,
-        z: zoom,
-        left: column * TILE_SIZE - leftEdge,
-        top: row * TILE_SIZE - topEdge,
+        z: tileZoom,
+        left: column * pitch - leftEdge,
+        top: row * pitch - topEdge,
       });
     }
   }
@@ -157,9 +164,24 @@ export function pointAtScreen(offset: WorldPoint, viewport: Viewport): LatLng {
 
 
 export function zoomAfterPinch(startZoom: number, startSpan: number, span: number): number {
-  if (startSpan <= 0 || span <= 0) return clampZoom(startZoom);
+  if (startSpan <= 0 || span <= 0) return liveZoom(startZoom);
 
-  return clampZoom(startZoom + Math.log2(span / startSpan));
+  return liveZoom(startZoom + Math.log2(span / startSpan));
+}
+
+
+export function zoomedAt(offset: WorldPoint, viewport: Viewport, zoom: number): LatLng {
+  const anchor = pointAtScreen(offset, viewport);
+  const world = latLngToWorld(anchor, zoom);
+  const size = worldSize(zoom);
+
+  return worldToLatLng(
+    {
+      x: world.x - (offset.x - viewport.width / 2),
+      y: Math.max(0, Math.min(size, world.y - (offset.y - viewport.height / 2))),
+    },
+    zoom,
+  );
 }
 
 

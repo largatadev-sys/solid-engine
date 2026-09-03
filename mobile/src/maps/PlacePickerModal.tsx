@@ -49,7 +49,7 @@ import type { Pin } from './pinRules';
 import { MapPin } from './MapPin';
 import { TileSurface } from './TileSurface';
 import { useDrawerSlide } from './useDrawerSlide';
-import { clampZoom, type LatLng } from './tileProjection';
+import { storedZoom, type LatLng } from './tileProjection';
 
 
 const SHEET_MAX_WIDTH = 420;
@@ -251,7 +251,7 @@ export function PlacePickerModal({
             onPress={() =>
               onConfirm({
                 place: named.trim(),
-                pin: pinToCommit(placed, view.centre, clampZoom(view.zoom)),
+                pin: pinToCommit(placed, view.centre, storedZoom(view.zoom)),
               })
             }
             style={StyleSheet.flatten([styles.primary, !canConfirm && styles.primarySpent])}
@@ -334,7 +334,7 @@ function contextLine(resolving: boolean, lookupFailed: boolean, detail: PickedDe
 
 
 function openingView(pin: Pin | null, openNear: Pin | null): { centre: LatLng; zoom: number } {
-  if (pin !== null) return { centre: pin, zoom: clampZoom(pin.zoom) };
+  if (pin !== null) return { centre: pin, zoom: storedZoom(pin.zoom) };
   if (openNear !== null) return { centre: openNear, zoom: REGION_ZOOM };
 
   return { centre: PHILIPPINES_CENTRE, zoom: COUNTRY_ZOOM };
