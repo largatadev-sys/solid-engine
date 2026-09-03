@@ -130,8 +130,9 @@ describe('zoom is continuous and anchored, on both forks (PL-2 founder pass 2)',
 
     expect(web).toContain('event.ctrlKey');
     expect(web).toContain('wheelZoomDelta(');
-    expect(web).toContain('spanOf(');
-    expect(web).toContain('midpoint(');
+    expect(web).toContain('pointerMove(');
+    expect(read('gestureTracker.ts')).toContain('spanOf(');
+    expect(read('gestureTracker.ts')).toContain('midpoint(');
   });
 
   it('every zoom is ANCHORED — the point under the fingers stays put', () => {

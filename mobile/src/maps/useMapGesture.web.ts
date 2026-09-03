@@ -1,12 +1,16 @@
 import { Fragment, useEffect, useRef } from 'react';
 import { webStyle } from '../itineraries/webStyle';
 import {
+  NO_GESTURE,
+  pointerDown,
+  pointerMove,
+  pointerUp,
+  type GestureState,
+} from './gestureTracker';
+import {
   afterTap,
-  midpoint,
-  nextWholeZoom,
-  spanOf,
   endsAsTap,
-  pinchBaseline,
+  nextWholeZoom,
   wheelZoomDelta,
   type MapGesture,
   type MapGestureProps,
@@ -26,10 +30,7 @@ export function useMapGesture({
   const live = useRef({ onPan, onSettle, onZoomTo, zoom });
   live.current = { onPan, onSettle, onZoomTo, zoom };
 
-  const down = useRef(new Map<number, SurfacePoint>());
-  const from = useRef<SurfacePoint | null>(null);
-  const pinch = useRef<{ span: number; zoom: number } | null>(null);
-  const everPinched = useRef(false);
+  const gesture = useRef<GestureState>(NO_GESTURE);
   const lastTapAt = useRef(0);
 
   useEffect(() => {
@@ -42,32 +43,19 @@ export function useMapGesture({
       return { x: event.clientX - box.left, y: event.clientY - box.top };
     };
 
-    const twoDown = (): [SurfacePoint, SurfacePoint] | null => {
-      const [first, second] = [...down.current.values()];
-      return first === undefined || second === undefined ? null : [first, second];
-    };
-
     const moving = (event: PointerEvent) => {
-      if (!down.current.has(event.pointerId)) return;
-      down.current.set(event.pointerId, localTo(event));
+      const moved = pointerMove(gesture.current, event.pointerId, localTo(event), live.current.zoom);
+      gesture.current = moved.state;
 
-      const fingers = twoDown();
-      if (fingers !== null) {
-        const reach = spanOf(fingers[0], fingers[1]);
-        const started = pinch.current ?? pinchBaseline(reach, live.current.zoom);
-        pinch.current = started;
-        if (started === null) return;
-        live.current.onZoomTo(
-          zoomAfterPinch(started.zoom, started.span, reach),
-          midpoint(fingers[0], fingers[1]),
-        );
+      if (moved.pinch !== null) {
+        const { span, from, at } = moved.pinch;
+        const baseline = moved.state.baseline;
+        if (baseline === null) return;
+        live.current.onZoomTo(zoomAfterPinch(from, baseline.span, span), at);
         return;
       }
 
-      const anchor = from.current;
-      if (anchor === null) return;
-      const here = localTo(event);
-      live.current.onPan(here.x - anchor.x, here.y - anchor.y);
+      if (moved.pan !== null) live.current.onPan(moved.pan.dx, moved.pan.dy);
     };
 
     const swallow = (event: Event) => event.preventDefault();
@@ -81,32 +69,20 @@ export function useMapGesture({
     }
 
     function settle(event: PointerEvent): void {
-      down.current.delete(event.pointerId);
+      const here = localTo(event);
+      const lifted = pointerUp(gesture.current, event.pointerId, here);
+      gesture.current = lifted.state;
 
-      if (down.current.size >= 1) {
-        const [remaining] = [...down.current.values()];
-        from.current = remaining ?? null;
-        pinch.current = null;
-        return;
-      }
-
-      const anchor = from.current;
-      const pinched = everPinched.current;
-      from.current = null;
-      pinch.current = null;
-      everPinched.current = false;
+      if (!lifted.done) return;
       release();
 
-      if (anchor === null) {
+      const travel = lifted.travel;
+      if (travel === null) {
         live.current.onSettle(0, 0);
         return;
       }
 
-      const here = localTo(event);
-      const dx = here.x - anchor.x;
-      const dy = here.y - anchor.y;
-
-      if (endsAsTap(pinched, dx, dy)) {
+      if (endsAsTap(lifted.pinched, travel.dx, travel.dy)) {
         const tap = afterTap(lastTapAt.current, Date.now());
         lastTapAt.current = tap.lastTapAt;
         if (tap.zoomIn) live.current.onZoomTo(nextWholeZoom(live.current.zoom, 1), here);
@@ -114,25 +90,21 @@ export function useMapGesture({
         return;
       }
 
-      if (pinched) {
-        live.current.onSettle(0, 0);
-        return;
-      }
-
-      live.current.onSettle(dx, dy);
+      live.current.onSettle(lifted.pinched ? 0 : travel.dx, lifted.pinched ? 0 : travel.dy);
     }
 
     const grab = (event: PointerEvent) => {
-      down.current.set(event.pointerId, localTo(event));
+      const wasTracking = gesture.current.tracking;
+      gesture.current = pointerDown(
+        gesture.current,
+        event.pointerId,
+        localTo(event),
+        live.current.zoom,
+        event.isPrimary,
+      );
 
-      const fingers = twoDown();
-      if (fingers !== null) {
-        everPinched.current = true;
-        pinch.current = pinchBaseline(spanOf(fingers[0], fingers[1]), live.current.zoom);
-        return;
-      }
+      if (wasTracking && !event.isPrimary) return;
 
-      from.current = localTo(event);
       window.addEventListener('pointermove', moving);
       window.addEventListener('pointerup', settle);
       window.addEventListener('pointercancel', settle);
@@ -157,9 +129,7 @@ export function useMapGesture({
 
     return () => {
       release();
-      down.current.clear();
-      pinch.current = null;
-      everPinched.current = false;
+      gesture.current = NO_GESTURE;
       node.removeEventListener('pointerdown', grab);
       node.removeEventListener('wheel', wheeling);
       node.removeEventListener('contextmenu', block);
