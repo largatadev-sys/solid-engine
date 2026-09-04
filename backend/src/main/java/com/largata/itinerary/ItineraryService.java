@@ -78,7 +78,6 @@ public class ItineraryService {
     }
 
 
-
     @Transactional
     public Itinerary create(
             UUID ownerId, String title, String destination, LocalDate startDate, LocalDate endDate) {
@@ -303,7 +302,6 @@ public class ItineraryService {
         itinerary.publishTo(Instant.now());
         return recordStatus(itinerary, owner, "itinerary_published");
     }
-
 
 
     @Transactional

@@ -2,11 +2,13 @@ import { test, expect } from '../support/fixtures';
 import { api, profileFor, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 
-const OWNER = 't1';
-const FOLLOWER = 't2';
-const STRANGER = 't3';
-const REQUESTER = 't4';
-const CO_TRAVELER = 't5';
+import type { PoolTag } from '../support/identities';
+
+const OWNER: PoolTag = 't1';
+const FOLLOWER: PoolTag = 't2';
+const STRANGER: PoolTag = 't3';
+const REQUESTER: PoolTag = 't4';
+const CO_TRAVELER: PoolTag = 't5';
 
 requireStack(OWNER);
 
@@ -14,7 +16,7 @@ const tokens: Record<string, string> = {};
 const ids: Record<string, string> = {};
 const handles: Record<string, string> = {};
 
-const EVERYONE = [OWNER, FOLLOWER, STRANGER, REQUESTER, CO_TRAVELER];
+const EVERYONE: PoolTag[] = [OWNER, FOLLOWER, STRANGER, REQUESTER, CO_TRAVELER];
 
 async function idOf(token: string): Promise<string> {
   return (await api('/v1/me', 'GET', token)).body.id;
@@ -72,8 +74,8 @@ test.describe.configure({ mode: 'serial' });
 
 test.beforeAll(async () => {
   for (const tag of EVERYONE) {
-    tokens[tag] = await tokenFor(tag as any);
-    handles[tag] = (await profileFor(tag as any)).handle;
+    tokens[tag] = await tokenFor(tag);
+    handles[tag] = (await profileFor(tag)).handle;
     ids[tag] = await idOf(tokens[tag]);
   }
 });
@@ -123,7 +125,7 @@ test('the lists and the diary tab refuse a stranger by name and admit a follower
 });
 
 
-test('a co-traveler who does not follow gains nothing from the shared trip', async () => {
+test('a fifth traveler who does not follow is refused like any other non-follower', async () => {
   await setVisibility(OWNER, 'private');
 
   await expectRefused(OWNER, CO_TRAVELER);
@@ -138,7 +140,7 @@ test('the published showcase is never fenced, whoever published it', async () =>
 });
 
 
-test("a private author's postcards leave a stranger's Home and stay on a follower's", async () => {
+test("a private owner authors nothing a stranger's Home will carry", async () => {
   await setVisibility(OWNER, 'private');
 
   const strangersFeed = await api('/v1/feed/postcards?limit=50', 'GET', tokens[STRANGER]);

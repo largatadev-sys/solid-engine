@@ -26,6 +26,10 @@ class ProfileFenceCoverageTest {
             Set.of("profile", "published");
 
 
+    private static final Set<String> KNOWN_FENCE_CONSUMERS =
+            Set.of("PublicProfileController.java", "PostcardFeedController.java");
+
+
     private static final Set<String> KNOWN_PROFILE_SUB_RESOURCE_GETS =
             Set.of(
                     "PublicProfileController.java#profile",
@@ -87,7 +91,7 @@ class ProfileFenceCoverageTest {
 
 
     @Test
-    void theAuthoredContentFenceIsReachedByEveryModuleThatServesAuthoredContent() throws IOException {
+    void exactlyTheNamedControllersConsultTheAuthoredContentFence() throws IOException {
         List<String> consulting = new ArrayList<>();
 
         for (Path source : controllerSources()) {
@@ -100,10 +104,13 @@ class ProfileFenceCoverageTest {
         assertThat(consulting)
                 .as(
                         "the read rule has ONE definition (ADR-002: identity owns the traveler and follow "
-                                + "tables, and nothing outside it may answer this question). These are the "
-                                + "doors that ask it; a new authored-content surface that answers the question "
-                                + "itself, or forgets to ask, will not appear in this list")
-                .contains("PublicProfileController.java", "PostcardFeedController.java");
+                                + "tables, and nothing outside it may answer this question). EXACTLY, in both "
+                                + "directions: dropping the fence from a named controller fails here, and a new "
+                                + "controller that starts consulting it fails until somebody adds it and says "
+                                + "which surface it fences. What this canNOT see is a new authored-content door "
+                                + "that never mentions the fence at all — no scan of this shape can, so the "
+                                + "handler scan above is what guards the profile surface itself")
+                .containsExactlyInAnyOrderElementsOf(KNOWN_FENCE_CONSUMERS);
     }
 
 

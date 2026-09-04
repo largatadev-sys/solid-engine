@@ -81,6 +81,28 @@ class PrivateAuthorFeedFilterIT extends ObjectStoreTestBase {
 
 
     @Test
+    void anEmptyHiddenSetWalksTheUnfilteredQueryOnBothPages() throws IOException {
+        Author first = authorWithAPostcard("Default path one");
+        postAnother(first, "Default path two");
+        String viewer = onboarded();
+
+        FeedPage page = pageFor(viewer, "?limit=1");
+        assertThat(page.items()).hasSize(1);
+        assertThat(page.nextCursor())
+                .as("a viewer whose world holds no private author takes the pre-story query, "
+                        + "and it must still hand back a cursor")
+                .isNotNull();
+
+        FeedPage after = pageFor(viewer, "?limit=1&cursor=" + page.nextCursor());
+        assertThat(after.items())
+                .as("the after-cursor branch of the unfiltered path — the default every viewer "
+                        + "takes today, and the one branch nothing else exercises")
+                .hasSize(1);
+        assertThat(captionsIn(after)).isNotEqualTo(captionsIn(page));
+    }
+
+
+    @Test
     void theFollowingScopeIsUnchangedByConstruction() throws IOException {
         Author author = authorWithAPostcard("Siargao at dawn");
         String follower = onboarded();

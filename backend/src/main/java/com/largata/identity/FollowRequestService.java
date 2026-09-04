@@ -60,7 +60,7 @@ public class FollowRequestService {
             return requests.findPending(requesterId, targetId).orElseThrow(NoSuchFollowRequestException::new);
         }
 
-        emitAfterCommit("follow_requested", requesterId, targetId);
+        emitRequestEvent("follow_requested", requesterId, targetId);
         return asked;
     }
 
@@ -79,7 +79,7 @@ public class FollowRequestService {
 
         pending.approve(now);
         grantTheEdge(requesterId, targetId, now);
-        emitAfterCommit("follow_request_approved", requesterId, targetId);
+        emitRequestEvent("follow_request_approved", requesterId, targetId);
     }
 
 
@@ -89,7 +89,7 @@ public class FollowRequestService {
                 requests.findPending(requesterId, targetId).orElseThrow(NoSuchFollowRequestException::new);
 
         pending.decline(Instant.now(clock));
-        emitAfterCommit("follow_request_declined", requesterId, targetId);
+        emitRequestEvent("follow_request_declined", requesterId, targetId);
     }
 
 
@@ -101,7 +101,7 @@ public class FollowRequestService {
             UUID requesterId = pending.requesterId();
             pending.approve(now);
             grantTheEdge(requesterId, targetId, now);
-            emitAfterCommit("follow_request_approved", requesterId, targetId);
+            emitRequestEvent("follow_request_approved", requesterId, targetId);
         }
     }
 
@@ -158,20 +158,29 @@ public class FollowRequestService {
 
     private void grantTheEdge(UUID followerId, UUID followeeId, Instant at) {
         if (follows.follow(followerId, followeeId, at) > 0) {
-            emitAfterCommit("follow_created", followerId, followeeId);
+            emitEdgeCreated(followerId, followeeId);
         }
     }
 
 
-    private void emitAfterCommit(String name, UUID requesterId, UUID targetId) {
-        String followerKey = "follow_created".equals(name) ? "followerId" : "requesterId";
-        String followeeKey = "follow_created".equals(name) ? "followeeId" : "targetId";
+    private void emitRequestEvent(String name, UUID requesterId, UUID targetId) {
         AfterCommit.run(
                 () ->
                         analytics.emit(
                                 AnalyticsEvent.named(name)
-                                        .with(followerKey, requesterId)
-                                        .with(followeeKey, targetId)
+                                        .with("requesterId", requesterId)
+                                        .with("targetId", targetId)
+                                        .build()));
+    }
+
+
+    private void emitEdgeCreated(UUID followerId, UUID followeeId) {
+        AfterCommit.run(
+                () ->
+                        analytics.emit(
+                                AnalyticsEvent.named("follow_created")
+                                        .with("followerId", followerId)
+                                        .with("followeeId", followeeId)
                                         .build()));
     }
 

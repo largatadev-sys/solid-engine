@@ -174,7 +174,7 @@ class ItineraryController {
             @PathVariable UUID id,
             @RequestBody(required = false) PublishRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        PublishRequest.audienceOf(request);
+        PublishRequest.requirePublicAudience(request);
         itineraries.publish(membership);
         return ItineraryResponse.of(itineraries.viewPlan(membership));
     }
@@ -186,7 +186,7 @@ class ItineraryController {
             @PathVariable UUID id,
             @RequestBody(required = false) PublishRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
-        PublishRequest.audienceOf(request);
+        PublishRequest.requirePublicAudience(request);
         return ItineraryResponse.of(itineraries.viewPlan(membership));
     }
 

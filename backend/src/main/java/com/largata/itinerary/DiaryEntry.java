@@ -108,7 +108,6 @@ class DiaryEntry {
     }
 
 
-
     static String normalizeCaption(String caption) {
         if (caption == null || caption.isBlank()) {
             return null;
