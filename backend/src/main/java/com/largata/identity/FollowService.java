@@ -28,6 +28,7 @@ public class FollowService {
     static final int DEFAULT_PAGE_SIZE = 20;
     static final int MAX_PAGE_SIZE = 50;
 
+    private final FollowTopic topic;
     private final FollowRepository follows;
     private final FollowRequestRepository requests;
     private final FollowRequestService asks;
@@ -43,7 +44,9 @@ public class FollowService {
             TravelerRepository travelers,
             TravelerService summaries,
             Analytics analytics,
-            Clock clock) {
+            Clock clock,
+            FollowTopic topic) {
+        this.topic = topic;
         this.follows = follows;
         this.requests = requests;
         this.asks = asks;
@@ -72,6 +75,7 @@ public class FollowService {
         int inserted = follows.follow(followerId, followeeId, Instant.now(clock));
         if (inserted > 0) {
             emitAfterCommit("follow_created", followerId, followeeId);
+            topic.broadcastFollowersChanged(followeeId);
         }
         return FollowStateResponse.following();
     }
@@ -85,6 +89,7 @@ public class FollowService {
         int removed = follows.unfollow(followerId, followeeId);
         if (removed > 0) {
             emitAfterCommit("follow_removed", followerId, followeeId);
+            topic.broadcastFollowersChanged(followeeId);
         }
     }
 
@@ -100,6 +105,7 @@ public class FollowService {
         int removed = follows.unfollow(followerId, travelerId);
         if (removed > 0) {
             emitAfterCommit("follow_removed", followerId, travelerId);
+            topic.broadcastFollowersChanged(travelerId);
             AfterCommit.run(
                     () ->
                             analytics.emit(

@@ -26,6 +26,7 @@ public class FollowRequestService {
     static final int DEFAULT_PAGE_SIZE = 20;
     static final int MAX_PAGE_SIZE = 50;
 
+    private final FollowTopic topic;
     private final FollowRequestRepository requests;
     private final FollowRepository follows;
     private final TravelerService summaries;
@@ -37,7 +38,9 @@ public class FollowRequestService {
             FollowRepository follows,
             TravelerService summaries,
             Analytics analytics,
-            Clock clock) {
+            Clock clock,
+            FollowTopic topic) {
+        this.topic = topic;
         this.requests = requests;
         this.follows = follows;
         this.summaries = summaries;
@@ -61,13 +64,20 @@ public class FollowRequestService {
         }
 
         emitRequestEvent("follow_requested", requesterId, targetId);
+        topic.broadcastRequestsChanged(targetId);
         return asked;
     }
 
 
     @Transactional
     public void cancel(UUID requesterId, UUID targetId) {
-        requests.findPending(requesterId, targetId).ifPresent(pending -> pending.cancel(Instant.now(clock)));
+        requests
+                .findPending(requesterId, targetId)
+                .ifPresent(
+                        pending -> {
+                            pending.cancel(Instant.now(clock));
+                            topic.broadcastRequestsChanged(targetId);
+                        });
     }
 
 
@@ -80,6 +90,7 @@ public class FollowRequestService {
         pending.approve(now);
         grantTheEdge(requesterId, targetId, now);
         emitRequestEvent("follow_request_approved", requesterId, targetId);
+        topic.broadcastRequestsChanged(targetId);
     }
 
 
@@ -90,6 +101,7 @@ public class FollowRequestService {
 
         pending.decline(Instant.now(clock));
         emitRequestEvent("follow_request_declined", requesterId, targetId);
+        topic.broadcastRequestsChanged(targetId);
     }
 
 
@@ -103,6 +115,7 @@ public class FollowRequestService {
             grantTheEdge(requesterId, targetId, now);
             emitRequestEvent("follow_request_approved", requesterId, targetId);
         }
+        topic.broadcastRequestsChanged(targetId);
     }
 
 
@@ -159,6 +172,7 @@ public class FollowRequestService {
     private void grantTheEdge(UUID followerId, UUID followeeId, Instant at) {
         if (follows.follow(followerId, followeeId, at) > 0) {
             emitEdgeCreated(followerId, followeeId);
+            topic.broadcastFollowersChanged(followeeId);
         }
     }
 
