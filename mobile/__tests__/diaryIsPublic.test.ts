@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DIARY_PRIVACY_NOTE } from '../src/diary/diaryCopy';
 import {
   stubCommentCountFor,
   stubLikeCountFor,
@@ -9,7 +8,6 @@ import {
 
 const MOBILE_ROOT = join(__dirname, '..');
 
-const NOTE = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'DiaryPrivacyNote.tsx'), 'utf8');
 const COMPOSER = readFileSync(
   join(MOBILE_ROOT, 'app', '(tabs)', '(trips)', 'itineraries', '[id]', 'diary', 'compose.tsx'),
   'utf8',
@@ -22,20 +20,11 @@ const REPOSITORY = readFileSync(
 );
 
 
-describe('the composer states the one audience a postcard has, because there is no choice to make', () => {
-  it('tells the traveler their postcards go to the feed, before they post one', () => {
-    expect(DIARY_PRIVACY_NOTE).toContain('Home feed');
-    expect(DIARY_PRIVACY_NOTE).toContain('any Largata traveler');
-  });
-
-  it('no longer claims the diary is private, which stopped being true', () => {
-    expect(DIARY_PRIVACY_NOTE.toLowerCase()).not.toContain('only you');
-  });
-
-  it('says one thing unconditionally — a note with a branch implies a choice', () => {
-    expect(NOTE).toContain('{DIARY_PRIVACY_NOTE}');
-    expect(NOTE).not.toContain('shared ?');
-    expect(COMPOSER).toContain('<DiaryPrivacyNote />');
+describe('the composer carries no audience statement at all (S4.40)', () => {
+  it('says nothing about who can see a postcard, since a private profile changes the answer', () => {
+    expect(COMPOSER).not.toContain('DiaryPrivacyNote');
+    expect(COMPOSER).not.toContain('Home feed');
+    expect(existsSync(join(MOBILE_ROOT, 'src', 'diary', 'DiaryPrivacyNote.tsx'))).toBe(false);
   });
 
   it('offers no toggle, so posting is the whole act', () => {

@@ -16,6 +16,7 @@ const ME: MeResponse = {
   homeCity: 'Puerto Princesa',
   onboardingCompleted: true,
   vanityNumber: '0',
+  profileVisibility: 'public',
 };
 
 const TYPED = { handle: 'ea', displayName: 'Founder', bio: 'Building Largata.' };

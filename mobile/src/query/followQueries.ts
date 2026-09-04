@@ -9,7 +9,7 @@ import {
 import { useAuth } from '../hooks/authContext';
 import { followRepository } from '../repositories/followRepository';
 import type { FollowIntent } from '../profile/followState';
-import type { Page, TravelerCardResponse } from '../types/api';
+import type { Page, TravelerCardResponse, ViewerRelation } from '../types/api';
 import { profileKeys } from './profileQueries';
 import { publicProfileKeys } from './publicProfileQueries';
 import { feedKeys } from './feedQueries';
@@ -30,13 +30,13 @@ export interface FollowMutation {
 }
 
 
-export function useFollowMutation(): UseMutationResult<void, Error, FollowMutation> {
+export function useFollowMutation(): UseMutationResult<ViewerRelation, Error, FollowMutation> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ travelerId, intent }: FollowMutation) =>
       intent === 'follow'
-        ? followRepository.follow(travelerId)
-        : followRepository.unfollow(travelerId),
+        ? followRepository.follow(travelerId).then((answer) => answer.state)
+        : followRepository.unfollow(travelerId).then<ViewerRelation>(() => 'none'),
     onSettled: () => {
       void client.invalidateQueries({ queryKey: publicProfileKeys.all });
       void client.invalidateQueries({ queryKey: profileKeys.stats() });

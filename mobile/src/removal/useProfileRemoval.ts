@@ -11,7 +11,7 @@ import {
   OPENING_PUBLISHED_PAGE_TOAST,
   POSTCARD_DELETED_TOAST,
 } from './removalCopy';
-import { PUBLISHED_AUDIENCE, removalActionFor } from './removalDestinations';
+import { removalActionFor } from './removalDestinations';
 import type { RemovalMenuKey } from './removalMenu';
 import { useRemovalQueue, type RemovalQueue } from './useRemovalQueue';
 
@@ -38,9 +38,7 @@ export function useProfileRemoval(announce: (message: string) => void): ProfileR
     useCallback(
       (ref) => {
         if (ref.kind === 'unpublish') {
-          commands.run(() =>
-            commands.republish(ref.subjectId, ref.audience ?? PUBLISHED_AUDIENCE),
-          );
+          commands.run(() => commands.republish(ref.subjectId));
         }
       },
       [commands],
@@ -69,7 +67,6 @@ export function useProfileRemoval(announce: (message: string) => void): ProfileR
           kind: 'unpublish',
           message: ITINERARY_UNPUBLISHED_TOAST,
           deferred: false,
-          audience: subject.audience ?? PUBLISHED_AUDIENCE,
         });
         return;
       }

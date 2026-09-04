@@ -72,9 +72,7 @@ async function everyItem(readToken: string, path: string): Promise<any[]> {
 async function publishedTrip(ownerTag: typeof TRAVELER, title: string, destination: string, days: number) {
   const trip = await seedTrip({ ownerTag, title, destination, durationDays: days });
   await climbTo(trip, 'completed');
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {
-    visibility: 'public',
-  });
+  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {  });
   if (published.status !== 200) throw new SeedFailure(`publishing "${title}"`, published.body);
   return trip;
 }
@@ -256,9 +254,7 @@ test.beforeAll(async () => {
   });
   await joinTrip(hosted, TRAVELER);
   await climbTo(hosted, 'completed');
-  const hostedPublished = await api(`/v1/itineraries/${hosted.id}/publish`, 'POST', hostToken, {
-    visibility: 'public',
-  });
+  const hostedPublished = await api(`/v1/itineraries/${hosted.id}/publish`, 'POST', hostToken, {  });
   if (hostedPublished.status !== 200) {
     throw new SeedFailure('publishing the hosted trip', hostedPublished.body);
   }

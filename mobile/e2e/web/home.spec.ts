@@ -837,9 +837,7 @@ test.describe('the trip line self-heals at publish', () => {
   test('the trip line gains its link the moment the trip publishes', async () => {
     const completed = await api(`/v1/itineraries/${trip.id}/complete`, 'POST', authorToken, {});
     expect(completed.status).toBe(200);
-    const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', authorToken, {
-      visibility: 'public',
-    });
+    const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', authorToken, {    });
     expect(published.status).toBe(200);
 
     await expect

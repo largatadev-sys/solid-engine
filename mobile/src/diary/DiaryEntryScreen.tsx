@@ -37,7 +37,6 @@ import {
   withoutTile,
   type StagedEntry,
 } from './stagedEntry';
-import { DiaryPrivacyNote } from './DiaryPrivacyNote';
 import { diaryEditorStyles } from './diaryEditorStyles';
 import { afterDeleteRoute, afterSaveRoute, type DiaryEntryExit } from './diaryEntryExit';
 import { snapshotEyebrow } from './postcardAnatomy';
@@ -200,7 +199,6 @@ export function DiaryEntryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntry
           />
         </View>
 
-        <DiaryPrivacyNote />
 
         {photoAction.failure !== undefined ? (
           <Text style={styles.failure}>{photoAction.failure}</Text>

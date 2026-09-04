@@ -2,7 +2,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { initialsFor } from '../onboarding/initials';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import { spacing } from '../theme';
 import {
   followColors,
@@ -14,14 +13,11 @@ import {
   workspaceColors,
   workspaceRadii,
 } from '../theme/workspaceTokens';
+import { FollowPill } from './FollowPill';
 import { profileMetaLine } from './profileMetaLine';
 import { StatCells } from './StatCells';
-import {
-  DESTINATIONS_STAT_LABEL,
-  FOLLOWS_YOU_LABEL,
-  FOLLOWING_LABEL,
-  FOLLOW_LABEL,
-} from './publicProfileCopy';
+import { DESTINATIONS_STAT_LABEL, FOLLOWS_YOU_LABEL } from './publicProfileCopy';
+import type { ViewerRelation } from '../types/api';
 import {
   FOLLOWERS_STAT_LABEL,
   FOLLOWING_STAT_LABEL,
@@ -39,7 +35,7 @@ interface PublicProfileHeaderProps {
   readonly destinationCount: number;
   readonly followersCount: number;
   readonly followingCount: number;
-  readonly following: boolean;
+  readonly relation: ViewerRelation;
   readonly followsViewer: boolean;
   readonly onFollow: () => void;
   readonly onOpenFollowers: () => void;
@@ -57,14 +53,13 @@ export function PublicProfileHeader({
   destinationCount,
   followersCount,
   followingCount,
-  following,
+  relation,
   followsViewer,
   onFollow,
   onOpenFollowers,
   onOpenFollowing,
 }: PublicProfileHeaderProps) {
   const meta = profileMetaLine(handle, vanityNumber);
-  const press = usePressFeedback();
 
   const cells = [
     { label: PUBLISHED_STAT_LABEL, value: publishedCount, open: null },
@@ -110,29 +105,7 @@ export function PublicProfileHeader({
 
       <StatCells cells={cells} />
 
-      <AnimatedPressable
-        style={StyleSheet.flatten([
-          styles.followPill,
-          following && styles.followingPill,
-          press.style,
-        ])}
-        onPress={onFollow}
-        onPressIn={press.onPressIn}
-        onPressOut={press.onPressOut}
-        accessibilityRole="button"
-        accessibilityLabel={`${following ? FOLLOWING_LABEL : FOLLOW_LABEL} ${displayName}`}
-      >
-        {following && (
-          <Icon
-            name="check"
-            size={followMetrics.checkGlyph}
-            color={followColors.followingInk}
-          />
-        )}
-        <Text style={[styles.followLabel, following && styles.followingLabel]}>
-          {following ? FOLLOWING_LABEL : FOLLOW_LABEL}
-        </Text>
-      </AnimatedPressable>
+      <FollowPill relation={relation} displayName={displayName} onPress={onFollow} />
     </View>
   );
 }

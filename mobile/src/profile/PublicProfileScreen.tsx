@@ -20,9 +20,8 @@ import { PublicDiaryTab } from './PublicDiaryTab';
 import { PublicItinerariesTab } from './PublicItinerariesTab';
 import { PublicProfileHeader } from './PublicProfileHeader';
 import { trackPublicProfileViewed } from './profileEvents';
+import { followToastFor } from './privateProfileCopy';
 import {
-  followFailedToast,
-  unfollowFailedToast,
   PROFILE_UNAVAILABLE,
   PROFILE_UNAVAILABLE_BODY,
   PUBLIC_PROFILE_BACK_LABEL,
@@ -76,7 +75,11 @@ export function PublicProfileScreen() {
   const served =
     profile.data === undefined
       ? null
-      : followStateFrom(profile.data.followedByViewer, profile.data.followersCount);
+      : followStateFrom(
+          profile.data.viewerRelation,
+          profile.data.followersCount,
+          profile.data.visibility,
+        );
   const shown = follow ?? served;
 
   function onFollow() {
@@ -85,20 +88,21 @@ export function PublicProfileScreen() {
     }
     const before = shown;
     const next = tapped(before);
-    if (next.intent === null) {
+    const intent = next.intent;
+    if (intent === null) {
       return;
     }
     setFollow(next.state);
 
     const handle = profile.data.traveler.handle;
     followMutation.mutate(
-      { travelerId: profile.data.traveler.id, intent: next.intent },
+      { travelerId: profile.data.traveler.id, intent },
       {
-        onSuccess: () => setFollow(settled(next.state)),
+        onSuccess: (served) => setFollow(settled(next.state, served)),
         onError: () => {
           setFollow(reverted(before));
           setToast(
-            next.intent === 'follow' ? followFailedToast(handle) : unfollowFailedToast(handle),
+            followToastFor(before, intent, handle),
           );
         },
       },
@@ -141,7 +145,7 @@ export function PublicProfileScreen() {
             destinationCount={profile.data.destinationCount}
             followersCount={shown?.followersCount ?? profile.data.followersCount}
             followingCount={profile.data.followingCount}
-            following={shown?.following ?? profile.data.followedByViewer}
+            relation={shown?.relation ?? profile.data.viewerRelation}
             followsViewer={profile.data.followsViewer}
             onFollow={onFollow}
             onOpenFollowers={() => router.push(followersRoute(subject))}

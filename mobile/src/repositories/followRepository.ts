@@ -1,5 +1,5 @@
 import { apiClient } from '../api/apiClient';
-import type { Page, TravelerCardResponse } from '../types/api';
+import type { FollowStateResponse, Page, TravelerCardResponse } from '../types/api';
 
 
 function followPath(travelerId: string): string {
@@ -15,8 +15,8 @@ function listPath(handle: string, which: 'followers' | 'following', cursor?: str
 
 export const followRepository = {
 
-  async follow(travelerId: string): Promise<void> {
-    return apiClient.post<void>(followPath(travelerId), undefined);
+  async follow(travelerId: string): Promise<FollowStateResponse> {
+    return apiClient.post<FollowStateResponse>(followPath(travelerId), undefined);
   },
 
 

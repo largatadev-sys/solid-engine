@@ -8,7 +8,6 @@ function trip(over: Partial<ItineraryResponse> = {}): ItineraryResponse {
     destination: 'Palawan',
     state: 'upcoming',
     published: false,
-    visibility: 'public',
     archived: false,
     startDate: null,
     endDate: null,
@@ -17,16 +16,14 @@ function trip(over: Partial<ItineraryResponse> = {}): ItineraryResponse {
 }
 
 describe('the publication badge (S4.15 decision 4 — publication is a card fact, not a section)', () => {
-  it('marks a publicly published trip', () => {
-    expect(publicationBadge(trip({ published: true, visibility: 'public' }))).toBe('Published');
+  it('marks a published trip, whatever the wire says about an audience (S4.40)', () => {
+    expect(publicationBadge(trip({ published: true }))).toBe('Published');
+    expect(
+      publicationBadge({ ...trip({ published: true }), visibility: 'private' } as ItineraryResponse),
+    ).toBe('Published');
   });
 
-  it('distinguishes a published trip that is private, so the two never read alike', () => {
-    expect(publicationBadge(trip({ published: true, visibility: 'private' }))).toBe('Private');
-  });
-
-  it('gives an unpublished trip no badge — visibility says nothing until it is published', () => {
-    expect(publicationBadge(trip({ published: false, visibility: 'public' }))).toBeNull();
-    expect(publicationBadge(trip({ published: false, visibility: 'private' }))).toBeNull();
+  it('gives an unpublished trip no badge — publication is the only fact the badge carries', () => {
+    expect(publicationBadge(trip({ published: false }))).toBeNull();
   });
 });
