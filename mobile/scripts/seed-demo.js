@@ -98,7 +98,7 @@ const TRIPS = [
     standouts: ['Otaru canal at night', 'Sapporo Snow Festival'],
     durationDays: 2,
     lifecycle: 'complete',
-    publish: 'private',
+    publish: 'public',
     withMember: false,
     days: [
       [

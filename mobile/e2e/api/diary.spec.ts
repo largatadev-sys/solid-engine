@@ -182,6 +182,24 @@ test('the photo of a public postcard serves any signed-in traveler, and nobody e
   expect(anonReads.status).toBe(401);
 });
 
+test("a private author's postcard bytes answer nothing to anyone who does not follow", async () => {
+  await api('/v1/me', 'PATCH', author, { profileVisibility: 'private' });
+  try {
+    const coTravelerReads = await fetchBytes(entry.photos[0].url, coTraveler);
+    const strangerReads = await fetchBytes(entry.photos[0].url, stranger);
+    const authorReads = await fetchBytes(entry.photos[0].url, author);
+
+    expect(
+      coTravelerReads.status,
+      'the twin of the public case above: membership is not the key, follow is',
+    ).toBe(404);
+    expect(strangerReads.status).toBe(404);
+    expect(authorReads.status, 'the author always reads their own').toBe(200);
+  } finally {
+    await api('/v1/me', 'PATCH', author, { profileVisibility: 'public' });
+  }
+});
+
 test('the mine-list serves each traveler only their own', async () => {
   const coTravelerSees = await api(diary, 'GET', coTraveler);
   expect(coTravelerSees.status).toBe(200);

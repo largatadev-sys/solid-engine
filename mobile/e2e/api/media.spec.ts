@@ -168,7 +168,7 @@ test.describe('the cover, and the audience ladder that governs it', () => {
     expect(coverBytes.bytes.includes(EXIF_MARKER)).toBe(false);
   });
 
-  test('a stranger cannot read a private trip cover', async () => {
+  test('a stranger cannot read an unpublished trip cover', async () => {
     const strangerOnPrivate = await fetchBytes(coverUrl, stranger);
     expect(strangerOnPrivate.status).toBe(404);
   });
@@ -284,7 +284,7 @@ test.describe('activity photos and the derived gallery', () => {
     expect(sixth.body?.code).toBe('TOO_MANY_ACTIVITY_PHOTOS');
   });
 
-  test('a stranger cannot read a private activity photo', async () => {
+  test('a stranger cannot read an unpublished activity photo', async () => {
     const strangerOnActivityPhoto = await fetchBytes(activityPhotoUrl, stranger);
     expect(strangerOnActivityPhoto.status).toBe(404);
   });

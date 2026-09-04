@@ -17,6 +17,7 @@ interface Fixture {
   hidden: string;
   archived: string;
   browserToken: string;
+  publisherToken: string;
 }
 
 let fixture: Fixture;
@@ -53,12 +54,12 @@ test.beforeAll(async () => {
   const lima = await publishedTrip(publisherToken, `Lima ceviche ${mark}`, `Lima ${mark}`, 12);
 
   const hidden = await publishedTrip(publisherToken, `Hidden trip ${mark}`, `Secretplace ${mark}`, 4);
-  await api(`/v1/itineraries/${hidden}/audience`, 'POST', publisherToken, { audience: 'private' });
+  await api(`/v1/itineraries/${hidden}/unpublish`, 'POST', publisherToken);
 
   const archived = await publishedTrip(publisherToken, `Archived trip ${mark}`, `Archivetown ${mark}`, 4);
   await api(`/v1/itineraries/${archived}/archive`, 'POST', publisherToken);
 
-  fixture = { mark, kyoto, osaka, lima, hidden, archived, browserToken };
+  fixture = { mark, kyoto, osaka, lima, hidden, archived, browserToken, publisherToken };
 });
 
 test('a published public trip reaches a stranger who shares no trip with its author', async () => {
@@ -67,9 +68,23 @@ test('a published public trip reaches a stranger who shares no trip with its aut
   expect(browsed.body.items.map((card: { id: string }) => card.id)).toContain(fixture.kyoto);
 });
 
-test('a published-but-private trip is absent from the strangers surface', async () => {
+test('an unpublished trip is absent from the strangers surface', async () => {
   const browsed = await api('/v1/discovery/itineraries?limit=50', 'GET', fixture.browserToken);
   expect(browsed.body.items.map((card: { id: string }) => card.id)).not.toContain(fixture.hidden);
+});
+
+test("a published trip is in Discover even when its author's profile is private", async () => {
+  await api('/v1/me', 'PATCH', fixture.publisherToken, { profileVisibility: 'private' });
+  try {
+    const browsed = await api('/v1/discovery/itineraries?limit=50', 'GET', fixture.browserToken);
+    expect(browsed.status).toBe(200);
+    expect(
+      browsed.body.items.map((card: { id: string }) => card.id),
+      'the profile fence governs what a traveler authors, never what they published',
+    ).toContain(fixture.kyoto);
+  } finally {
+    await api('/v1/me', 'PATCH', fixture.publisherToken, { profileVisibility: 'public' });
+  }
 });
 
 test('an archived trip is absent however it was published', async () => {
