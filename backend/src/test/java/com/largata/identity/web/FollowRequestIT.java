@@ -2,11 +2,17 @@ package com.largata.identity.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
+import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -22,6 +28,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 class FollowRequestIT extends PostgresTestBase {
 
     private RestTestClient rest;
+    private ListAppender<ILoggingEvent> events;
 
     @LocalServerPort private int port;
 
@@ -30,6 +37,15 @@ class FollowRequestIT extends PostgresTestBase {
     @BeforeEach
     void setUp() {
         rest = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+        events = new ListAppender<>();
+        events.start();
+        analyticsLogger().addAppender(events);
+    }
+
+
+    @AfterEach
+    void tearDown() {
+        analyticsLogger().detachAppender(events);
     }
 
 
@@ -354,10 +370,91 @@ class FollowRequestIT extends PostgresTestBase {
 
 
     @Test
+    void theFiveDemandEventsFireOnRealChangesOnly() {
+        Traveler owner = onboarded();
+        Traveler requester = onboarded();
+
+        goPrivate(owner);
+        assertThat(eventsNamed("profile_visibility_changed"))
+                .as("decision 18 grills S4.40 on these numbers, so they must exist")
+                .hasSize(1);
+
+        goPrivate(owner);
+        assertThat(eventsNamed("profile_visibility_changed"))
+                .as("setting private on a private profile changed nothing, so it measured nothing")
+                .hasSize(1);
+
+        follow(requester, owner).expectStatus().isOk();
+        follow(requester, owner).expectStatus().isOk();
+        assertThat(eventsNamed("follow_requested"))
+                .as("the second ask found the standing request rather than creating one")
+                .hasSize(1);
+
+        approve(owner, requester).expectStatus().isNoContent();
+        assertThat(eventsNamed("follow_request_approved")).hasSize(1);
+        assertThat(eventsNamed("follow_created"))
+                .as("an approval creates a real edge, so it fires the edge event too")
+                .hasSize(1);
+
+        removeFollower(owner, requester).expectStatus().isNoContent();
+        removeFollower(owner, requester).expectStatus().isNoContent();
+        assertThat(eventsNamed("follower_removed"))
+                .as("the second removal dropped no edge, so it measured nothing")
+                .hasSize(1);
+    }
+
+
+    @Test
+    void aDeclineIsMeasuredEvenThoughTheRequesterIsNeverTold() {
+        Traveler owner = onboarded();
+        Traveler requester = onboarded();
+        goPrivate(owner);
+        follow(requester, owner).expectStatus().isOk();
+
+        decline(owner, requester).expectStatus().isNoContent();
+
+        assertThat(eventsNamed("follow_request_declined")).hasSize(1);
+        assertThat(eventsNamed("follow_created"))
+                .as("a decline creates no edge")
+                .isEmpty();
+    }
+
+
+    @Test
+    void goingPublicMeasuresEveryApprovalItPerforms() {
+        Traveler owner = onboarded();
+        Traveler first = onboarded();
+        Traveler second = onboarded();
+        goPrivate(owner);
+        follow(first, owner).expectStatus().isOk();
+        follow(second, owner).expectStatus().isOk();
+
+        setVisibility(owner, "public");
+
+        assertThat(eventsNamed("follow_request_approved"))
+                .as("the flip approves each pending row individually, and each one counts")
+                .hasSize(2);
+        assertThat(eventsNamed("follow_created")).hasSize(2);
+    }
+
+
+    @Test
     void aTravelerCannotRemoveThemselves() {
         Traveler lonely = onboarded();
 
         removeFollower(lonely, lonely).expectStatus().isBadRequest();
+    }
+
+
+    private List<ILoggingEvent> eventsNamed(String name) {
+        return events.list.stream()
+                .filter(line -> line.getFormattedMessage().equals("event=" + name))
+                .toList();
+    }
+
+
+    private static Logger analyticsLogger() {
+        return (Logger) LoggerFactory.getLogger("com.largata.analytics");
     }
 
 

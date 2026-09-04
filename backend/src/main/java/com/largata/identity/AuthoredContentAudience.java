@@ -40,7 +40,6 @@ public class AuthoredContentAudience {
     }
 
 
-
     @Transactional(readOnly = true)
     public List<UUID> hiddenAuthorsFor(UUID viewerId) {
         List<UUID> allPrivate = travelers.allPrivateExcept(viewerId);
