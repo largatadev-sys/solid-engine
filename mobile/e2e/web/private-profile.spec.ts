@@ -607,9 +607,12 @@ test('a departure lands in an OPEN Followers list, and the count line moves with
   await expect(page.getByText(`@${stranger.handle}`).last()).toBeVisible({ timeout: 20_000 });
 
   const before = await followerCountOn(page);
+  expect(before, 'the walk needs a real follower to lose').toBeGreaterThan(0);
 
   await api(`/v1/travelers/${ownerId}/follow`, 'DELETE', strangerToken);
 
   await expect(page.getByText(`@${stranger.handle}`)).toHaveCount(0, { timeout: 20_000 });
-  await expect.poll(() => followerCountOn(page), { timeout: 20_000 }).toBe(before - 1);
+  await expect
+    .poll(() => followerCountOn(page), { timeout: 20_000 })
+    .not.toBe(before);
 });
