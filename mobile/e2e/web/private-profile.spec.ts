@@ -478,6 +478,7 @@ test('a follower is removed from the own list, with a sheet and a confirm and no
 test('removing works on a private owner too, where followers were approved one by one', async ({
   page,
   signIn,
+  signal,
 }) => {
   await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
   await api(`/v1/me/follow-requests/${strangerId}/approve`, 'POST', ownerToken);
@@ -489,8 +490,16 @@ test('removing works on a private owner too, where followers were approved one b
   const kebab = labelled(page, `More about @${stranger.handle}`);
   await expect(kebab).toBeVisible({ timeout: 20_000 });
   await kebab.click();
+  await expect(labelled(page, REMOVE_FOLLOWER_LABEL)).toBeVisible({ timeout: 10_000 });
   await labelled(page, REMOVE_FOLLOWER_LABEL).click();
 
+  await expect
+    .poll(() => signal.dialogs.filter((line) => line.startsWith('confirm:')).join(' '), {
+      timeout: 10_000,
+    })
+    .toContain(removeFollowerTitle(stranger.handle));
+
+  await expect(kebab).toHaveCount(0, { timeout: 10_000 });
   await expect.poll(relationOfStranger, { timeout: 15_000 }).toBe('none');
 });
 
