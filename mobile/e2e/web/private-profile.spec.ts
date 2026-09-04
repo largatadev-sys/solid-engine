@@ -72,6 +72,12 @@ async function relationOfStranger(): Promise<string> {
   return (await api(`/v1/travelers/${owner.handle}`, 'GET', strangerToken)).body.viewerRelation;
 }
 
+async function publishedTripOfOwner(): Promise<string | null> {
+  const showcase = await api(`/v1/travelers/${owner.handle}/published`, 'GET', strangerToken);
+  const first = (showcase.body.items ?? [])[0];
+  return first === undefined ? null : first.id;
+}
+
 async function clearEdge(): Promise<void> {
   await api(`/v1/travelers/${ownerId}/follow`, 'DELETE', strangerToken);
 }
@@ -476,4 +482,50 @@ test("another traveler's followers list carries no kebab either", async ({ page,
 
   await expect(page.getByText(`@${stranger.handle}`).last()).toBeVisible({ timeout: 20_000 });
   await expect(labelled(page, `More about @${stranger.handle}`)).toHaveCount(0);
+});
+
+
+test('the published page of a private creator offers Requested, from the same machine', async ({
+  page,
+}) => {
+  const trip = await publishedTripOfOwner();
+  test.skip(trip === null, 'the owner has no published trip on this stack');
+
+  await page.goto(`/published/${trip}`);
+
+  await expect(labelStarting(page, `${FOLLOW_LABEL} `)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Follow, coming soon')).toHaveCount(0);
+
+  await labelStarting(page, `${FOLLOW_LABEL} `).click();
+
+  await expect(labelStarting(page, `${REQUESTED_LABEL} `)).toBeVisible({ timeout: 10_000 });
+  await expect.poll(relationOfStranger, { timeout: 15_000 }).toBe('requested');
+});
+
+
+test('an approved follower reads Following on the published page', async ({ page }) => {
+  const trip = await publishedTripOfOwner();
+  test.skip(trip === null, 'the owner has no published trip on this stack');
+
+  await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+  await api(`/v1/me/follow-requests/${strangerId}/approve`, 'POST', ownerToken);
+
+  await page.goto(`/published/${trip}`);
+
+  await expect(labelStarting(page, `${FOLLOWING_LABEL} `)).toBeVisible({ timeout: 20_000 });
+});
+
+
+test('the creator own published page carries no pill at all', async ({ page, signIn }) => {
+  const trip = await publishedTripOfOwner();
+  test.skip(trip === null, 'the owner has no published trip on this stack');
+
+  await signIn(OWNER);
+  await page.goto(`/published/${trip}`);
+
+  await expect(page.getByText(owner.handle, { exact: false }).last()).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(labelStarting(page, `${FOLLOW_LABEL} `)).toHaveCount(0);
+  await expect(labelStarting(page, `${FOLLOWING_LABEL} `)).toHaveCount(0);
 });

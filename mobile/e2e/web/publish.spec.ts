@@ -4,7 +4,8 @@ import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { climbTo, seedCover, seedPlan, seedTrip, stamp, type SeededTrip } from '../support/seed';
-import { labelled } from '../support/screen';
+import { labelled, labelStarting } from '../support/screen';
+import { FOLLOWING_LABEL, FOLLOW_LABEL } from '../../src/profile/publicProfileCopy';
 import { PUBLISH_AUDIENCE_LINE } from '../../src/itineraries/publishControls';
 import { comingSoonMessage } from '../../src/components/comingSoonMessage';
 import { copyLinkFeedback } from '../../src/itineraries/shareLinkContract';
@@ -337,13 +338,19 @@ test.describe('the public projection, read by a stranger', () => {
     }
   });
 
-  test('Follow greys with a message too', async ({ page, signal }) => {
+  test('the creator row carries the real pill now, not a coming-soon stub (S4.40)', async ({
+    page,
+    signal,
+  }) => {
     await page.goto(`/published/${published.id}`);
-    await labelled(page, 'Follow, coming soon').click();
 
-    await expect
-      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
-      .toContain(comingSoonMessage('follow').title);
+    await expect(labelStarting(page, `${FOLLOW_LABEL} `)).toBeVisible({ timeout: 20_000 });
+    await expect(labelled(page, 'Follow, coming soon')).toHaveCount(0);
+
+    await labelStarting(page, `${FOLLOW_LABEL} `).click();
+
+    await expect(labelStarting(page, `${FOLLOWING_LABEL} `)).toBeVisible({ timeout: 15_000 });
+    expect(signal.dialogs.join(' ')).not.toContain('coming soon');
   });
 
   test('no console or page errors for the stranger reading the projection', async ({

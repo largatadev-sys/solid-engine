@@ -33,7 +33,7 @@ describe('comingSoonMessage — the wording both forks share', () => {
     expect(comingSoonMessage('chat').title).toBe('Trip chat — coming soon');
   });
 
-  it('covers every greyed affordance S4.9, S4.1, S4.13, S4.15, S4.17, S4.20, S3.4, S4.21, S4.22, S2.1, S4.36 and S4.38 ship', () => {
+  it('covers every greyed affordance S4.9, S4.1, S4.13, S4.15, S4.17, S4.20, S3.4, S4.21, S4.22, S2.1, S4.36, S4.38 and S4.40 ship', () => {
     expect(Object.keys(COMING_SOON_SURFACES).sort()).toEqual(
       [
         'booking',
@@ -42,7 +42,6 @@ describe('comingSoonMessage — the wording both forks share', () => {
         'diary',
         'diaryDetails',
         'diaryLink',
-        'follow',
         'notifications',
         'rating',
         'report',
@@ -57,6 +56,10 @@ describe('comingSoonMessage — the wording both forks share', () => {
 
   it('no longer greys traveler profiles — S4.36 built the page, so the refusal retires with the stub', () => {
     expect(Object.keys(COMING_SOON_SURFACES)).not.toContain('profile');
+  });
+
+  it('no longer greys following — S4.40 gave the published page the real pill', () => {
+    expect(Object.keys(COMING_SOON_SURFACES)).not.toContain('follow');
   });
 
   it('no longer greys polls — S2.1 built the board, so the refusal retires with the stub', () => {
