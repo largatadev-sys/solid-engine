@@ -268,6 +268,27 @@ class FollowRequestIT extends PostgresTestBase {
 
 
     @Test
+    void removingAlsoCancelsAPendingRequest_soRemovalAlwaysMeansNone() {
+        Traveler owner = onboarded();
+        Traveler asker = onboarded();
+        goPrivate(owner);
+        follow(asker, owner).expectStatus().isOk();
+
+        removeFollower(owner, asker).expectStatus().isNoContent();
+
+        assertThat(pendingRows(asker, owner))
+                .as("saying no is always available — a pending ask survives no removal")
+                .isZero();
+        profile(owner.handle(), asker)
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.viewerRelation")
+                .isEqualTo("none");
+    }
+
+
+    @Test
     void removingAFollowerWorksOnAPublicProfileAndIsIdempotent() {
         Traveler owner = onboarded();
         Traveler follower = onboarded();

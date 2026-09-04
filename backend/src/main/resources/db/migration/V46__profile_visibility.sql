@@ -17,10 +17,17 @@
 -- branches on this value, so a third spelling arriving from a future migration or a hand-run UPDATE
 -- would fail open — the traveler would read as public. The constraint makes that unreachable.
 --
--- No index. The column is read as part of the traveler row on every profile read (already fetched
--- by primary key), and the one set-shaped query — the hidden-author set — filters an id list the
--- caller already holds, so it is an index scan on the primary key with a filter, never a scan of
--- the private population.
+-- No index YET, and the reason is a measurement nobody has taken rather than a claim that none is
+-- needed. Two shapes read this column. The per-pair check rides the profile read's own primary-key
+-- fetch and costs nothing extra. The set shape — the hidden-author set the Home feed subtracts —
+-- DOES scan the private population: it asks for every private traveler except the viewer, then
+-- removes the ones the viewer follows, and hands the remainder to the feed query as a NOT IN list.
+-- That is deliberate and it is the only shape that keeps cursor pagination exact, because the
+-- filter has to be IN the query (a page must be `limit` VISIBLE rows, and you cannot know a page's
+-- authors before you have run it). It is also the shape that will need an index first: a partial
+-- index on the private rows is the obvious move, and the seq scan is cheap only while the private
+-- population is small. The epic map owns the trigger; do not add the index speculatively, and do
+-- not "optimise" this into a post-filter in Java, which would silently shorten pages.
 ALTER TABLE traveler
     ADD COLUMN profile_visibility TEXT NOT NULL DEFAULT 'PUBLIC';
 

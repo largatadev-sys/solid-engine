@@ -1,8 +1,6 @@
 package com.largata.identity;
 
 import com.largata.identity.IdentityExceptions.ProfilePrivateException;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -41,20 +39,6 @@ public class AuthoredContentAudience {
         }
     }
 
-
-    @Transactional(readOnly = true)
-    public Set<UUID> hiddenAmong(UUID viewerId, Collection<UUID> authorIds) {
-        if (authorIds.isEmpty()) {
-            return Set.of();
-        }
-        Set<UUID> hidden = new HashSet<>(travelers.privateAmong(authorIds));
-        hidden.remove(viewerId);
-        if (hidden.isEmpty()) {
-            return Set.of();
-        }
-        hidden.removeAll(follows.followedAmong(viewerId, List.copyOf(hidden)));
-        return hidden;
-    }
 
 
     @Transactional(readOnly = true)

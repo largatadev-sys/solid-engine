@@ -157,7 +157,7 @@ class ForkProvenanceIT extends PostgresTestBase {
 
 
     @Test
-    void anUnpublishedSourceIsVisibleToItsMembersAndNotToTheStrangerWhoForkedIt() {
+    void anUnpublishedSourceGoesInvisibleToEveryReader_collaboratorIncluded() {
         String author = travelerWithHandle("josetravels" + suffix());
         String sourceId = publishedTrip(author);
         String stranger = freshTraveler();
@@ -166,12 +166,17 @@ class ForkProvenanceIT extends PostgresTestBase {
         String member = admitMemberTo(sourceId);
         String forkByMember = forkOf(member, sourceId).get("id").asString();
 
+        assertThat(sourceVisibleOn(member, forkByMember))
+                .as("presence first: while published, every reader can reach the source")
+                .isTrue();
+
         unpublish(author, sourceId);
 
         assertThat(sourceVisibleOn(stranger, forkByStranger)).isFalse();
         assertThat(sourceVisibleOn(member, forkByMember))
-                .as("the fence answers per reader, so the same source is visible to a collaborator")
-                .isTrue();
+                .as("published is now the WHOLE exposure (ADR-034), so withdrawing it hides the "
+                        + "source from a collaborator too — the per-reader split was the retired axis")
+                .isFalse();
     }
 
 

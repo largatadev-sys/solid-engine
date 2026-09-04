@@ -95,6 +95,7 @@ public class FollowService {
         if (travelerId.equals(followerId)) {
             throw new SelfFollowException();
         }
+        asks.cancel(followerId, travelerId);
 
         int removed = follows.unfollow(followerId, travelerId);
         if (removed > 0) {

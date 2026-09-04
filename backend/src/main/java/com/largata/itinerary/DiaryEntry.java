@@ -108,10 +108,6 @@ class DiaryEntry {
     }
 
 
-    boolean isReadableBy(UUID candidate) {
-        return isShared() || isAuthoredBy(candidate);
-    }
-
 
     static String normalizeCaption(String caption) {
         if (caption == null || caption.isBlank()) {

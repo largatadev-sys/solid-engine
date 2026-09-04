@@ -187,7 +187,6 @@ class ItineraryController {
             @RequestBody(required = false) PublishRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
         PublishRequest.audienceOf(request);
-        itineraries.showTo(membership);
         return ItineraryResponse.of(itineraries.viewPlan(membership));
     }
 

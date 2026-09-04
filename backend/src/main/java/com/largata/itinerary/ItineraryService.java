@@ -305,12 +305,6 @@ public class ItineraryService {
     }
 
 
-    @Transactional
-    public Itinerary showTo(Membership owner) {
-        Itinerary itinerary = authorizeAndLoad(owner);
-        return recordStatus(itinerary, owner, "itinerary_audience_changed");
-    }
-
 
     @Transactional
     public Itinerary unpublish(Membership owner) {
