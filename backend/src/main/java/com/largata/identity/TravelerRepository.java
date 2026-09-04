@@ -1,5 +1,6 @@
 package com.largata.identity;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +20,30 @@ interface TravelerRepository extends JpaRepository<Traveler, UUID> {
 
     @Query("SELECT t FROM Traveler t WHERE lower(t.handle) = :handle")
     Optional<Traveler> findByHandle(@Param("handle") String handle);
+
+
+    @Query("""
+            SELECT t.id FROM Traveler t
+            WHERE t.profileVisibility = com.largata.identity.ProfileVisibility.PRIVATE
+              AND t.id IN :candidates
+            """)
+    List<UUID> privateAmong(@Param("candidates") Collection<UUID> candidates);
+
+
+    @Query("""
+            SELECT count(t) FROM Traveler t
+            WHERE t.id = :travelerId
+              AND t.profileVisibility = com.largata.identity.ProfileVisibility.PRIVATE
+            """)
+    long countPrivate(@Param("travelerId") UUID travelerId);
+
+
+    @Query("""
+            SELECT t.id FROM Traveler t
+            WHERE t.profileVisibility = com.largata.identity.ProfileVisibility.PRIVATE
+              AND t.id <> :viewerId
+            """)
+    List<UUID> allPrivateExcept(@Param("viewerId") UUID viewerId);
 
 
     @Query("SELECT count(t) FROM Traveler t WHERE lower(t.handle) = :handle")

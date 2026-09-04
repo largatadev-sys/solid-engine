@@ -81,7 +81,9 @@ public class PublicProfileService {
                 standing.followersCount(),
                 standing.followingCount(),
                 standing.followedByViewer(),
-                standing.followsViewer());
+                standing.followsViewer(),
+                subject.profileVisibility().wireName(),
+                standing.viewerRelation().wireName());
     }
 
 

@@ -4,4 +4,10 @@ import java.util.UUID;
 
 
 public record TravelerSummary(
-        UUID id, String displayName, String handle, String avatarUrl, String bio, String vanityNumber) {}
+        UUID id,
+        String displayName,
+        String handle,
+        String avatarUrl,
+        String bio,
+        String vanityNumber,
+        ProfileVisibility profileVisibility) {}

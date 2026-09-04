@@ -5,13 +5,7 @@ import java.util.Optional;
 
 
 public enum Visibility {
-    PUBLIC,
-    PRIVATE;
-
-
-    public boolean isVisibleToEveryone() {
-        return this == PUBLIC;
-    }
+    PUBLIC;
 
 
     public static Visibility audience(String wireName) {
@@ -23,11 +17,14 @@ public enum Visibility {
         if (wireName == null || wireName.isBlank()) {
             return Optional.empty();
         }
-        try {
-            return Optional.of(valueOf(wireName.strip().toUpperCase(Locale.ROOT)));
-        } catch (IllegalArgumentException unknown) {
-            throw new UnknownAudienceException(wireName);
+        String given = wireName.strip().toUpperCase(Locale.ROOT);
+        if (PUBLIC.name().equals(given)) {
+            return Optional.of(PUBLIC);
         }
+        if ("PRIVATE".equals(given)) {
+            throw new VisibilityRetiredException();
+        }
+        throw new UnknownAudienceException(wireName);
     }
 
 

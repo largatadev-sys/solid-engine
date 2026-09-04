@@ -269,16 +269,16 @@ class ForkContractIT extends PostgresTestBase {
 
 
     @Test
-    void aPrivatelyPublishedSourceForksForCollaboratorsAndRefusesEveryoneElse() {
+    void aPublishedSourceForksForEverySignedInTraveler_whateverItsAuthorsProfileSays() {
         String author = freshTraveler();
         String sourceId = publishedTripWithAPlan(author);
         String member = admitMemberTo(sourceId);
-        audienceOf(author, sourceId, "private");
+        goPrivate(author);
 
         fork(member, sourceId).expectStatus().isCreated();
-
-        String refusal = rawBody(fork(freshTraveler(), sourceId).expectStatus().isNotFound());
-        assertThat(codeIn(refusal)).isEqualTo("ITINERARY_NOT_FOUND");
+        fork(freshTraveler(), sourceId)
+                .expectStatus()
+                .isCreated();
     }
 
 
@@ -580,12 +580,12 @@ class ForkContractIT extends PostgresTestBase {
     }
 
 
-    private void audienceOf(String token, String itineraryId, String audience) {
-        rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/audience")
+    private void goPrivate(String token) {
+        rest.patch()
+                .uri("/v1/me")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"audience\":\"" + audience + "\"}")
+                .body("{\"profileVisibility\":\"private\"}")
                 .exchange()
                 .expectStatus()
                 .isOk();

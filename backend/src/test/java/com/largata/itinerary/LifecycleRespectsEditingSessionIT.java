@@ -50,7 +50,7 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
                 Arguments.of("reopen", (LifecycleAct) ItineraryService::reopen, 1),
                 Arguments.of(
                         "publish",
-                        (LifecycleAct) (service, owner) -> service.publish(owner, Visibility.PRIVATE),
+                        (LifecycleAct) (service, owner) -> service.publish(owner),
                         2));
     }
 
@@ -105,7 +105,7 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
     @Test
     void theSessionGuardDoesNotSwallowThePublishedRefusal() {
         Membership owner = ownerAtRung(2);
-        itineraries.publish(owner, Visibility.PRIVATE);
+        itineraries.publish(owner);
 
         assertThatExceptionOfType(IllegalStateTransitionException.class)
                 .isThrownBy(() -> itineraries.reopen(owner));

@@ -121,11 +121,11 @@ class PublicProfileIT extends ObjectStoreTestBase {
 
 
     @Test
-    void aSubjectWhosePrivateTripsAreTheirOnlyTripsReadsAsZeroAndZero() {
+    void aSubjectWhoseUnpublishedTripsAreTheirOnlyTripsReadsAsZeroAndZero() {
         String handle = handle();
         String subject = onboardedTraveler(handle);
-        publishPrivately(subject, createTrip(subject));
-        publishPrivately(subject, createTrip(subject));
+        completeWithoutPublishing(subject, createTrip(subject));
+        completeWithoutPublishing(subject, createTrip(subject));
         String viewer = onboardedTraveler(handle());
 
         byte[] body = read(profileUri(handle), viewer);
@@ -150,13 +150,13 @@ class PublicProfileIT extends ObjectStoreTestBase {
 
 
     @Test
-    void theShowcaseShowsThePublicTripAndProvesTheAbsenceOfThePrivateAndArchivedOnes() {
+    void theShowcaseShowsThePublishedTripAndProvesTheAbsenceOfTheUnpublishedAndArchivedOnes() {
         String handle = handle();
         String subject = onboardedTraveler(handle);
         String shown = createTrip(subject);
         publish(subject, shown);
-        String privately = createTrip(subject);
-        publishPrivately(subject, privately);
+        String unpublished = createTrip(subject);
+        completeWithoutPublishing(subject, unpublished);
         String archived = createTrip(subject);
         publish(subject, archived);
         archive(subject, archived);
@@ -168,8 +168,8 @@ class PublicProfileIT extends ObjectStoreTestBase {
                 .as("presence first: the published public trip is on the stranger's surface")
                 .contains(shown);
         assertThat(showcase)
-                .as("and only then absence: the private-published and the archived trips are not")
-                .doesNotContain(privately, archived);
+                .as("and only then absence: the unpublished and the archived trips are not")
+                .doesNotContain(unpublished, archived);
     }
 
 
@@ -189,11 +189,11 @@ class PublicProfileIT extends ObjectStoreTestBase {
 
 
     @Test
-    void aPrivateOrArchivedTripsDestinationIsNotCounted() {
+    void anUnpublishedOrArchivedTripsDestinationIsNotCounted() {
         String handle = handle();
         String subject = onboardedTraveler(handle);
         publish(subject, tripTo(subject, "Kyoto"));
-        publishPrivately(subject, tripTo(subject, "Reykjavik"));
+        completeWithoutPublishing(subject, tripTo(subject, "Reykjavik"));
         String archived = tripTo(subject, "Lisbon");
         publish(subject, archived);
         archive(subject, archived);
@@ -228,7 +228,7 @@ class PublicProfileIT extends ObjectStoreTestBase {
         String subject = onboardedTraveler(handle);
         publish(subject, createTrip(subject));
         publish(subject, createTrip(subject));
-        publishPrivately(subject, createTrip(subject));
+        completeWithoutPublishing(subject, createTrip(subject));
         String viewer = onboardedTraveler(handle());
 
         long counted = numberIn(read(profileUri(handle), viewer), "publishedCount");
@@ -440,12 +440,9 @@ class PublicProfileIT extends ObjectStoreTestBase {
     }
 
 
-    private void publishPrivately(String token, String tripId) {
+    private void completeWithoutPublishing(String token, String tripId) {
         act(token, tripId, "start");
         act(token, tripId, "complete");
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/publish", token, "{\"audience\":\"private\"}")
-                .expectStatus()
-                .isOk();
     }
 
 

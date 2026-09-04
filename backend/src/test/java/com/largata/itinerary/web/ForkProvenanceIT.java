@@ -157,7 +157,7 @@ class ForkProvenanceIT extends PostgresTestBase {
 
 
     @Test
-    void aPrivateSourceIsVisibleToItsMembersAndNotToTheStrangerWhoForkedIt() {
+    void anUnpublishedSourceIsVisibleToItsMembersAndNotToTheStrangerWhoForkedIt() {
         String author = travelerWithHandle("josetravels" + suffix());
         String sourceId = publishedTrip(author);
         String stranger = freshTraveler();
@@ -166,7 +166,7 @@ class ForkProvenanceIT extends PostgresTestBase {
         String member = admitMemberTo(sourceId);
         String forkByMember = forkOf(member, sourceId).get("id").asString();
 
-        audienceOf(author, sourceId, "private");
+        unpublish(author, sourceId);
 
         assertThat(sourceVisibleOn(stranger, forkByStranger)).isFalse();
         assertThat(sourceVisibleOn(member, forkByMember))
@@ -357,15 +357,8 @@ class ForkProvenanceIT extends PostgresTestBase {
     }
 
 
-    private void audienceOf(String token, String itineraryId, String audience) {
-        rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/audience")
-                .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"audience\":\"" + audience + "\"}")
-                .exchange()
-                .expectStatus()
-                .isOk();
+    private void unpublish(String token, String itineraryId) {
+        act(token, itineraryId, "unpublish");
     }
 
 

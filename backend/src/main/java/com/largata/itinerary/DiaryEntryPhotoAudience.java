@@ -1,5 +1,6 @@
 package com.largata.itinerary;
 
+import com.largata.identity.AuthoredContentAudience;
 import com.largata.media.PhotoAudience;
 import com.largata.media.PhotoSubject;
 import java.util.UUID;
@@ -11,9 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 class DiaryEntryPhotoAudience implements PhotoAudience {
 
     private final DiaryEntryRepository entries;
+    private final AuthoredContentAudience audience;
 
-    DiaryEntryPhotoAudience(DiaryEntryRepository entries) {
+    DiaryEntryPhotoAudience(DiaryEntryRepository entries, AuthoredContentAudience audience) {
         this.entries = entries;
+        this.audience = audience;
     }
 
 
@@ -26,8 +29,14 @@ class DiaryEntryPhotoAudience implements PhotoAudience {
     @Override
     @Transactional(readOnly = true)
     public boolean mayRead(UUID entryId, UUID travelerId) {
-        return entries.findById(entryId)
-                .map(entry -> entry.isReadableBy(travelerId))
-                .orElse(false);
+        return entries.findById(entryId).map(entry -> mayRead(entry, travelerId)).orElse(false);
+    }
+
+
+    private boolean mayRead(DiaryEntry entry, UUID travelerId) {
+        if (entry.isAuthoredBy(travelerId)) {
+            return true;
+        }
+        return entry.isShared() && audience.mayRead(travelerId, entry.travelerId());
     }
 }

@@ -62,7 +62,6 @@ interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
 
     String ON_THE_STRANGERS_SURFACE = """
             i.published = true
-              AND i.visibility = 'PUBLIC'
               AND i.id <> ALL (CAST(:archivedIds AS uuid[]))
             """;
 

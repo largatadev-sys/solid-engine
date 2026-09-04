@@ -1,6 +1,7 @@
 package com.largata.itinerary.web;
 
 import com.largata.common.api.Page;
+import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
@@ -23,10 +24,13 @@ class PostcardFeedController {
 
     private final PostcardFeedService feed;
     private final FollowService follows;
+    private final AuthoredContentAudience audience;
 
-    PostcardFeedController(PostcardFeedService feed, FollowService follows) {
+    PostcardFeedController(
+            PostcardFeedService feed, FollowService follows, AuthoredContentAudience audience) {
         this.feed = feed;
         this.follows = follows;
+        this.audience = audience;
     }
 
 
@@ -37,9 +41,9 @@ class PostcardFeedController {
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) String scope) {
         if (!FOLLOWING_SCOPE.equals(scope)) {
-            return feed.page(cursor, limit);
+            return feed.page(cursor, limit, audience.hiddenAuthorsFor(traveler.id()));
         }
-        return feed.page(cursor, limit, follows.followeeIdsOf(traveler.id()));
+        return feed.pageOfAuthors(cursor, limit, follows.followeeIdsOf(traveler.id()));
     }
 
 
@@ -48,6 +52,7 @@ class PostcardFeedController {
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID itineraryId,
             @PathVariable UUID authorId) {
+        audience.requireReadable(traveler.id(), authorId);
         return feed.tripDiary(itineraryId, authorId);
     }
 }

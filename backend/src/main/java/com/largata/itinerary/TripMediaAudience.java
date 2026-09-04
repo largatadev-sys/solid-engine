@@ -40,9 +40,7 @@ class TripMediaAudience {
         if (admitsToTheWorkspace(itinerary.id(), travelerId)) {
             return true;
         }
-        return !archivedNarrowsToTheOwner(itinerary.id())
-                && itinerary.isPublished()
-                && itinerary.visibility() == Visibility.PUBLIC;
+        return !archivedNarrowsToTheOwner(itinerary.id()) && itinerary.isPublished();
     }
 
 

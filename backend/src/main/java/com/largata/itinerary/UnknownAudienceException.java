@@ -8,6 +8,6 @@ class UnknownAudienceException extends ValidationException {
     UnknownAudienceException(String requested) {
         super(
                 "UNKNOWN_AUDIENCE",
-                "There is no audience \"" + requested + "\". Publish to \"public\" or \"private\".");
+                "There is no audience \"" + requested + "\". Publish to \"public\".");
     }
 }

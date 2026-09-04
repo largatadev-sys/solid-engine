@@ -73,8 +73,7 @@ class ForkRollbackIT extends PostgresTestBase {
     private UUID publishedSource(UUID author) {
         Itinerary source = itineraries.create(author, "Rollback fixture", "Palawan", null, null, null, 1);
         jdbc.update(
-                "UPDATE itinerary SET published = true, state = 'COMPLETED', visibility = 'PRIVATE', "
-                        + "published_at = now() "
+                "UPDATE itinerary SET published = true, state = 'COMPLETED', published_at = now() "
                         + "WHERE id = ?",
                 source.id());
         return source.id();

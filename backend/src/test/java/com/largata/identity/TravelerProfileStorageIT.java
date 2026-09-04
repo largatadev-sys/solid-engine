@@ -73,7 +73,7 @@ class TravelerProfileStorageIT extends PostgresTestBase {
 
         profiles.update(
                 traveler.id(),
-                new ProfileEdit(null, null, null, null, null, null, "PH", "PHP", "Puerto Princesa"));
+                new ProfileEdit(null, null, null, null, null, null, "PH", "PHP", "Puerto Princesa", null));
 
         Traveler reloaded = reload(traveler);
         assertThat(reloaded.country()).isEqualTo("PH");
@@ -117,6 +117,6 @@ class TravelerProfileStorageIT extends PostgresTestBase {
     }
 
     private static ProfileEdit edit(List<String> goals, List<String> interests) {
-        return new ProfileEdit(null, null, null, null, goals, interests, null, null, null);
+        return new ProfileEdit(null, null, null, null, goals, interests, null, null, null, null);
     }
 }

@@ -297,18 +297,17 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary publish(Membership owner, Visibility audience) {
+    public Itinerary publish(Membership owner) {
         Itinerary itinerary = authorizeAndLoad(owner);
         editLease.requireSessionFreeForLifecycle(owner);
-        itinerary.publishTo(audience, Instant.now());
+        itinerary.publishTo(Instant.now());
         return recordStatus(itinerary, owner, "itinerary_published");
     }
 
 
     @Transactional
-    public Itinerary showTo(Membership owner, Visibility audience) {
+    public Itinerary showTo(Membership owner) {
         Itinerary itinerary = authorizeAndLoad(owner);
-        itinerary.showTo(audience);
         return recordStatus(itinerary, owner, "itinerary_audience_changed");
     }
 
@@ -324,10 +323,9 @@ public class ItineraryService {
     private Itinerary recordStatus(Itinerary itinerary, Membership owner, String eventName) {
         itineraries.save(itinerary);
         log.info(
-                "Itinerary publication: id={} published={} visibility={} owner={}",
+                "Itinerary publication: id={} published={} owner={}",
                 itinerary.id(),
                 itinerary.isPublished(),
-                itinerary.visibility().wireName(),
                 owner.travelerId());
         AfterCommit.run(
                 () ->
