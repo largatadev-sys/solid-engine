@@ -36,6 +36,8 @@ import {
   followingCountLabel,
 } from './publicProfileCopy';
 import { fetchesMore } from '../discovery/resultsPaging';
+import { isProfilePrivate } from './gatedRead';
+import { LockedProfileNotice } from './LockedProfileNotice';
 import { publicProfileRoute, travelerDestination } from './travelerRoutes';
 import { DISCOVERY_SEARCH_ROUTE } from '../discovery/discoveryRoutes';
 
@@ -91,6 +93,12 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
 
       {list.isPending ? (
         <ActivityIndicator style={styles.loading} color={colors.accent} />
+      ) : list.isError && rows.length === 0 && isProfilePrivate(list.error) ? (
+        <LockedProfileNotice
+          displayName={publicProfile.data?.traveler.displayName ?? subject}
+          handle={subject}
+          linked
+        />
       ) : list.isError && rows.length === 0 ? (
         <Pressable
           style={styles.retry}

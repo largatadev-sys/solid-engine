@@ -18,13 +18,15 @@ import {
   workspaceColors,
 } from '../theme/workspaceTokens';
 import { diaryPaneState } from './diaryPaneState';
-import { PROFILE_DIARY_FAILED, PROFILE_DIARY_RETRY_LABEL } from './profileCopy';
+import { PROFILE_DIARY_RETRY_LABEL } from './profileCopy';
 import { PublicProfileEmptyState } from './PublicProfileHeader';
 import {
   PUBLIC_DIARY_EMPTY_TITLE,
   SHOW_MORE_LABEL,
   UNTITLED_TRIP,
   publicDiaryEmptyBody,
+
+  publicDiaryFailed,
 } from './publicProfileCopy';
 import { showcaseMetaLine } from './showcaseCard';
 import type { DiaryEntryResponse, DiaryTripResponse } from '../types/api';
@@ -65,7 +67,7 @@ export function PublicDiaryTab({ handle, subjectId, displayName }: PublicDiaryTa
           accessibilityRole="button"
           accessibilityLabel={PROFILE_DIARY_RETRY_LABEL}
         >
-          <Text style={styles.failed}>{PROFILE_DIARY_FAILED}</Text>
+          <Text style={styles.failed}>{publicDiaryFailed(displayName)}</Text>
         </Pressable>
       )}
       {state === 'rows' &&

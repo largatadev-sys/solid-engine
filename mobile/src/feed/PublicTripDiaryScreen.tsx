@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { itineraryLoadMessage, ScreenMessage } from '../components/ScreenMessage';
+import { isProfilePrivate } from '../profile/gatedRead';
+import { LockedProfileNotice } from '../profile/LockedProfileNotice';
 import { PostcardPreview } from '../diary/PostcardPreview';
 import { PostcardStreamEntry, STREAM_INSET } from '../diary/PostcardStreamEntry';
 import { snapshotEyebrow } from '../diary/postcardAnatomy';
@@ -27,6 +29,9 @@ export function PublicTripDiaryScreen() {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
   }
   if (diary.isError) {
+    if (isProfilePrivate(diary.error)) {
+      return <LockedProfileNotice displayName={author ?? null} handle={author ?? null} linked />;
+    }
     return <ScreenMessage {...itineraryLoadMessage(diary.error, 'This diary is not public')} />;
   }
 

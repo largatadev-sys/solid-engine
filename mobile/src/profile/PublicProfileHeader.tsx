@@ -38,8 +38,8 @@ interface PublicProfileHeaderProps {
   readonly relation: ViewerRelation;
   readonly followsViewer: boolean;
   readonly onFollow: () => void;
-  readonly onOpenFollowers: () => void;
-  readonly onOpenFollowing: () => void;
+  readonly onOpenFollowers: (() => void) | null;
+  readonly onOpenFollowing: (() => void) | null;
 }
 
 

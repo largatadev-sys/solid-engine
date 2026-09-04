@@ -15,6 +15,8 @@ import { profileTypography, workspaceColors } from '../theme/workspaceTokens';
 import { RowEntrance } from '../members/RowEntrance';
 import { publicProfileMotion } from '../theme/workspaceTokens';
 import { followStateFrom, reverted, settled, tapped, type FollowState } from './followState';
+import { LockedProfileNotice } from './LockedProfileNotice';
+import { profileProjection } from './lockedProfile';
 import { ProfileTabs } from './ProfileTabs';
 import { PublicDiaryTab } from './PublicDiaryTab';
 import { PublicItinerariesTab } from './PublicItinerariesTab';
@@ -82,6 +84,11 @@ export function PublicProfileScreen() {
         );
   const shown = follow ?? served;
 
+  const projection = profileProjection(
+    profile.data?.visibility ?? 'public',
+    shown?.relation ?? profile.data?.viewerRelation ?? 'none',
+  );
+
   function onFollow() {
     if (profile.data === undefined || shown === null) {
       return;
@@ -148,30 +155,40 @@ export function PublicProfileScreen() {
             relation={shown?.relation ?? profile.data.viewerRelation}
             followsViewer={profile.data.followsViewer}
             onFollow={onFollow}
-            onOpenFollowers={() => router.push(followersRoute(subject))}
-            onOpenFollowing={() => router.push(followingRoute(subject))}
+            onOpenFollowers={
+              projection.followCellsOpen ? () => router.push(followersRoute(subject)) : null
+            }
+            onOpenFollowing={
+              projection.followCellsOpen ? () => router.push(followingRoute(subject)) : null
+            }
           />
 
-          <ProfileTabs selected={tab} onSelect={setTab} />
-
-          <RowEntrance
-            replayKey={tab}
-            durationMs={publicProfileMotion.panelRiseMs}
-            risePx={publicProfileMotion.panelRisePx}
-          >
-          {tab === 'diary' ? (
-            <PublicDiaryTab
-              handle={subject}
-              subjectId={profile.data.traveler.id}
-              displayName={profile.data.traveler.displayName ?? subject}
-            />
+          {projection.showsNotice ? (
+            <LockedProfileNotice displayName={profile.data.traveler.displayName} />
           ) : (
-            <PublicItinerariesTab
-              handle={subject}
-              displayName={profile.data.traveler.displayName ?? subject}
-            />
+            <>
+            <ProfileTabs selected={tab} onSelect={setTab} />
+
+            <RowEntrance
+              replayKey={tab}
+              durationMs={publicProfileMotion.panelRiseMs}
+              risePx={publicProfileMotion.panelRisePx}
+            >
+            {tab === 'diary' ? (
+              <PublicDiaryTab
+                handle={subject}
+                subjectId={profile.data.traveler.id}
+                displayName={profile.data.traveler.displayName ?? subject}
+              />
+            ) : (
+              <PublicItinerariesTab
+                handle={subject}
+                displayName={profile.data.traveler.displayName ?? subject}
+              />
+            )}
+            </RowEntrance>
+            </>
           )}
-          </RowEntrance>
         </ScrollView>
       )}
 

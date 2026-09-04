@@ -95,6 +95,11 @@ export function firstNameOf(displayName: string | null): string {
 }
 
 
+export function publicDiaryFailed(displayName: string | null): string {
+  return `Could not load ${firstNameOf(displayName)}'s diary — tap to retry`;
+}
+
+
 export const PROFILE_UNAVAILABLE_BODY =
   'It may have been removed, or the handle may have changed.';
 
