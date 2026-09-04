@@ -2,7 +2,7 @@ import { test, expect } from '../support/fixtures';
 import { api, profileFor, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
-import { labelStarting } from '../support/screen';
+import { labelled, labelStarting } from '../support/screen';
 import {
   DESTINATIONS_STAT_LABEL,
   FOLLOWING_LABEL,
@@ -24,7 +24,23 @@ import {
   lockedProfileBody,
   lockedProfileTitle,
   requestFailedToast,
+  ACCOUNT_TITLE,
+  APPROVE_LABEL,
+  DECLINE_LABEL,
+  FOLLOW_REQUESTS_ROW_LABEL,
+  FOLLOW_REQUESTS_TITLE,
+  GO_PUBLIC_TITLE,
+  NO_REQUESTS_BODY,
+  NO_REQUESTS_TITLE,
+  PRIVATE_PROFILE_ROW_LABEL,
+  VISIBILITY_FAILED_TOAST,
+  approveFailedToast,
+  REMOVE_FOLLOWER_LABEL,
+  removeFollowerTitle,
 } from '../../src/profile/privateProfileCopy';
+import { FOLLOW_REQUESTS_ROUTE } from '../../src/profile/travelerRoutes';
+
+const ACCOUNT_ROUTE = '/account';
 
 const OWNER = ownerTagFor('web/private-profile');
 const STRANGER = 't3';
@@ -37,6 +53,7 @@ let owner: { handle: string; displayName?: string | null };
 let ownerId: string;
 let strangerId: string;
 let ownerFirstName: string;
+let stranger: { handle: string };
 
 async function idOf(token: string): Promise<string> {
   return (await api('/v1/me', 'GET', token)).body.id;
@@ -45,6 +62,10 @@ async function idOf(token: string): Promise<string> {
 async function setVisibility(visibility: 'public' | 'private'): Promise<void> {
   const patched = await api('/v1/me', 'PATCH', ownerToken, { profileVisibility: visibility });
   expect(patched.body.profileVisibility).toBe(visibility);
+}
+
+async function visibilityOnServer(): Promise<string> {
+  return (await api('/v1/me', 'GET', ownerToken)).body.profileVisibility;
 }
 
 async function relationOfStranger(): Promise<string> {
@@ -59,6 +80,7 @@ test.beforeAll(async () => {
   ownerToken = await tokenFor(OWNER);
   strangerToken = await tokenFor(STRANGER);
   owner = await profileFor(OWNER);
+  stranger = await profileFor(STRANGER);
   ownerId = await idOf(ownerToken);
   strangerId = await idOf(strangerToken);
   ownerFirstName = firstNameOf(
@@ -242,4 +264,216 @@ test('an approved follower sees the whole profile, tabs and all', async ({ page,
   await expect(labelStarting(page, `${FOLLOWING_LABEL} `)).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText(DIARY_TAB_LABEL, { exact: true }).last()).toBeVisible();
   await expect(page.getByText(lockedProfileTitle(ownerFirstName))).toHaveCount(0);
+});
+
+
+test('the Account switch saves on flip, both ways, and confirms only going public', async ({
+  page,
+  signIn,
+  signal,
+}) => {
+  await setVisibility('public');
+  await signIn(OWNER);
+  await page.goto(ACCOUNT_ROUTE);
+  await expect(page.getByText(ACCOUNT_TITLE).last()).toBeVisible({ timeout: 20_000 });
+
+  await labelled(page, PRIVATE_PROFILE_ROW_LABEL).click();
+
+  await expect.poll(visibilityOnServer, { timeout: 15_000 }).toBe('private');
+  expect(
+    signal.dialogs.filter((line) => line.startsWith('confirm:')),
+    'closing a door asks nothing',
+  ).toEqual([]);
+
+  await labelled(page, PRIVATE_PROFILE_ROW_LABEL).click();
+
+  await expect.poll(visibilityOnServer, { timeout: 15_000 }).toBe('public');
+  expect(
+    signal.dialogs.filter((line) => line.startsWith('confirm:')).join(' '),
+    'going public says what it approves',
+  ).toContain(GO_PUBLIC_TITLE);
+});
+
+
+test('a refused save slides the switch back and says so', async ({ page, signIn }) => {
+  await setVisibility('public');
+  await signIn(OWNER);
+  await page.goto(ACCOUNT_ROUTE);
+  await expect(page.getByText(ACCOUNT_TITLE).last()).toBeVisible({ timeout: 20_000 });
+
+  await page.route('**/v1/me', (route) =>
+    route.request().method() === 'PATCH'
+      ? route.fulfill({ status: 503, contentType: 'application/json', body: '{"code":"UNAVAILABLE"}' })
+      : route.continue(),
+  );
+
+  await labelled(page, PRIVATE_PROFILE_ROW_LABEL).click();
+
+  await expect(page.getByText(VISIBILITY_FAILED_TOAST).last()).toBeVisible({ timeout: 10_000 });
+  expect(await visibilityOnServer()).toBe('public');
+});
+
+
+test('the Follow requests row exists only while the profile is private', async ({
+  page,
+  signIn,
+}) => {
+  await setVisibility('public');
+  await signIn(OWNER);
+  await page.goto(ACCOUNT_ROUTE);
+  await expect(page.getByText(ACCOUNT_TITLE).last()).toBeVisible({ timeout: 20_000 });
+
+  await expect(page.getByText(FOLLOW_REQUESTS_ROW_LABEL)).toHaveCount(0);
+
+  await labelled(page, PRIVATE_PROFILE_ROW_LABEL).click();
+
+  await expect(labelled(page, FOLLOW_REQUESTS_ROW_LABEL)).toBeVisible({ timeout: 10_000 });
+});
+
+
+test('a request is approved from the list, and the requester gets the whole profile', async ({
+  page,
+  signIn,
+}) => {
+  await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+  await signIn(OWNER);
+  await page.goto(FOLLOW_REQUESTS_ROUTE);
+  await expect(page.getByText(FOLLOW_REQUESTS_TITLE).last()).toBeVisible({ timeout: 20_000 });
+
+  const row = labelled(page, `${APPROVE_LABEL} @${stranger.handle}`);
+  await expect(row).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/^Asked /).last()).toBeVisible();
+
+  await row.click();
+
+  await expect(row).toHaveCount(0, { timeout: 10_000 });
+  await expect.poll(relationOfStranger, { timeout: 15_000 }).toBe('following');
+});
+
+
+test('a declined request leaves the list and the requester may ask again', async ({
+  page,
+  signIn,
+}) => {
+  await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+  await signIn(OWNER);
+  await page.goto(FOLLOW_REQUESTS_ROUTE);
+
+  const decline = labelled(page, `${DECLINE_LABEL} @${stranger.handle}`);
+  await expect(decline).toBeVisible({ timeout: 20_000 });
+
+  await decline.click();
+
+  await expect(decline).toHaveCount(0, { timeout: 10_000 });
+  await expect.poll(relationOfStranger, { timeout: 15_000 }).toBe('none');
+
+  const asked = await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+  expect(asked.body.state, 'declining is not a block').toBe('requested');
+});
+
+
+test('an empty inbox says so rather than showing a bare list', async ({ page, signIn }) => {
+  await signIn(OWNER);
+  await page.goto(FOLLOW_REQUESTS_ROUTE);
+
+  await expect(page.getByText(NO_REQUESTS_TITLE).last()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(NO_REQUESTS_BODY).last()).toBeVisible();
+});
+
+
+test('a refused approve puts the row back and names the traveler', async ({ page, signIn }) => {
+  await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+  await signIn(OWNER);
+  await page.goto(FOLLOW_REQUESTS_ROUTE);
+
+  const approve = labelled(page, `${APPROVE_LABEL} @${stranger.handle}`);
+  await expect(approve).toBeVisible({ timeout: 20_000 });
+
+  await page.route('**/approve', (route) =>
+    route.fulfill({ status: 503, contentType: 'application/json', body: '{"code":"UNAVAILABLE"}' }),
+  );
+
+  await approve.click();
+
+  await expect(page.getByText(approveFailedToast(stranger.handle)).last()).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(approve).toBeVisible();
+});
+
+
+test('a follower is removed from the own list, with a sheet and a confirm and no undo', async ({
+  page,
+  signIn,
+  signal,
+}) => {
+  await setVisibility('public');
+  await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+  await signIn(OWNER);
+  await page.goto(`/travelers/${owner.handle}/followers`);
+
+  const kebab = labelled(page, `More about @${stranger.handle}`);
+  await expect(kebab).toBeVisible({ timeout: 20_000 });
+
+  await kebab.click();
+  await expect(labelled(page, REMOVE_FOLLOWER_LABEL)).toBeVisible({ timeout: 10_000 });
+
+  await labelled(page, REMOVE_FOLLOWER_LABEL).click();
+
+  await expect
+    .poll(() => signal.dialogs.filter((line) => line.startsWith('confirm:')).join(' '), {
+      timeout: 10_000,
+    })
+    .toContain(removeFollowerTitle(stranger.handle));
+
+  await expect(kebab).toHaveCount(0, { timeout: 10_000 });
+  await expect.poll(relationOfStranger, { timeout: 15_000 }).toBe('none');
+  await expect(page.getByText(/^Undo$/)).toHaveCount(0);
+});
+
+
+test('removing works on a private owner too, where followers were approved one by one', async ({
+  page,
+  signIn,
+}) => {
+  await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+  await api(`/v1/me/follow-requests/${strangerId}/approve`, 'POST', ownerToken);
+  expect(await relationOfStranger()).toBe('following');
+
+  await signIn(OWNER);
+  await page.goto(`/travelers/${owner.handle}/followers`);
+
+  const kebab = labelled(page, `More about @${stranger.handle}`);
+  await expect(kebab).toBeVisible({ timeout: 20_000 });
+  await kebab.click();
+  await labelled(page, REMOVE_FOLLOWER_LABEL).click();
+
+  await expect.poll(relationOfStranger, { timeout: 15_000 }).toBe('none');
+});
+
+
+test('the own Following list carries no kebab — leaving there is unfollowing', async ({
+  page,
+  signIn,
+}) => {
+  await setVisibility('public');
+  await api(`/v1/travelers/${strangerId}/follow`, 'POST', ownerToken);
+  await signIn(OWNER);
+  await page.goto(`/travelers/${owner.handle}/following`);
+
+  await expect(page.getByText(`@${stranger.handle}`).last()).toBeVisible({ timeout: 20_000 });
+  await expect(labelled(page, `More about @${stranger.handle}`)).toHaveCount(0);
+
+  await api(`/v1/travelers/${strangerId}/follow`, 'DELETE', ownerToken);
+});
+
+
+test("another traveler's followers list carries no kebab either", async ({ page, signIn }) => {
+  await setVisibility('public');
+  await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+  await signIn(STRANGER);
+  await page.goto(`/travelers/${owner.handle}/followers`);
+
+  await expect(page.getByText(`@${stranger.handle}`).last()).toBeVisible({ timeout: 20_000 });
+  await expect(labelled(page, `More about @${stranger.handle}`)).toHaveCount(0);
 });

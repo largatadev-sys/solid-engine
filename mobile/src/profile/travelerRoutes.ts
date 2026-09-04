@@ -8,6 +8,8 @@ export const FOLLOWERS_PATHNAME = '/travelers/[handle]/followers';
 
 export const FOLLOWING_PATHNAME = '/travelers/[handle]/following';
 
+export const FOLLOW_REQUESTS_ROUTE = '/follow-requests';
+
 
 export type TravelerDestination =
   | { readonly kind: 'own' }

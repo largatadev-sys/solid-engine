@@ -4,6 +4,7 @@ import { MediaThumb } from '../media/MediaThumb';
 import { initialsFor } from '../onboarding/initials';
 import { spacing } from '../theme';
 import {
+  followMetrics,
   profileColors,
   profileMetrics,
   profileTypography,
@@ -25,10 +26,12 @@ export function handleLabel(person: TravelerCardResponse): string {
 export function PersonRow({
   person,
   onPress,
+  onKebab,
   compact = false,
 }: {
   readonly person: TravelerCardResponse;
   readonly onPress: () => void;
+  readonly onKebab?: () => void;
   readonly compact?: boolean;
 }) {
   const size = compact ? profileMetrics.personSuggestion : profileMetrics.personRow;
@@ -62,13 +65,32 @@ export function PersonRow({
         </Text>
       </View>
 
-      {!compact && <Icon name="chevronRight" size={16} color={profileColors.rowChevron} />}
+      {!compact && onKebab !== undefined && (
+        <Pressable
+          style={styles.kebab}
+          onPress={onKebab}
+          accessibilityRole="button"
+          accessibilityLabel={`More about ${handleLabel(person)}`}
+        >
+          <Icon name="moreHorizontal" size={16} color={profileColors.kebab} />
+        </Pressable>
+      )}
+
+      {!compact && onKebab === undefined && (
+        <Icon name="chevronRight" size={16} color={profileColors.rowChevron} />
+      )}
     </Pressable>
   );
 }
 
 
 const styles = StyleSheet.create({
+  kebab: {
+    width: followMetrics.kebabTarget,
+    height: followMetrics.kebabTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
