@@ -7,6 +7,8 @@ import static org.mockito.Mockito.doThrow;
 
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
+import com.largata.identity.TravelerClaims;
+import com.largata.identity.TravelerService;
 import com.largata.support.PostgresTestBase;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,13 +25,14 @@ class ForkRollbackIT extends PostgresTestBase {
     @Autowired private ForkService forks;
     @Autowired private ItineraryService itineraries;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private TravelerService travelers;
 
     @MockitoSpyBean private ForkRelationshipRepository relationships;
 
 
     @Test
     void aFailureWritingTheRelationshipLeavesNoItineraryNoWorkspaceAndNoMembership() {
-        UUID author = UUID.randomUUID();
+        UUID author = provisionedTraveler();
         UUID forker = UUID.randomUUID();
         UUID sourceId = publishedSource(author);
 
@@ -47,7 +50,7 @@ class ForkRollbackIT extends PostgresTestBase {
 
     @Test
     void aFailureRollsBackTheCopiedPlanToo_notJustTheItineraryRow() {
-        UUID author = UUID.randomUUID();
+        UUID author = provisionedTraveler();
         UUID forker = UUID.randomUUID();
         UUID sourceId = publishedSource(author);
         long daysBefore = allDays();
@@ -67,6 +70,12 @@ class ForkRollbackIT extends PostgresTestBase {
 
     private Optional<Membership> forkerIsAMemberOfTheSource(UUID forkerId, UUID sourceId) {
         return Optional.of(new Membership(forkerId, sourceId, Role.MEMBER));
+    }
+
+
+    private UUID provisionedTraveler() {
+        String uid = "uid-" + UUID.randomUUID();
+        return travelers.getOrProvision(TravelerClaims.of(uid, uid + "@example.com", null)).id();
     }
 
 

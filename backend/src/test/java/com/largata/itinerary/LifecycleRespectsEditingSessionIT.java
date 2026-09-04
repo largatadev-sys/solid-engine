@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import com.largata.identity.TravelerClaims;
+import com.largata.identity.TravelerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -33,6 +35,7 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
     private static final Duration TTL = Duration.ofMinutes(3);
 
     @Autowired private ItineraryService itineraries;
+    @Autowired private TravelerService travelers;
     @Autowired private EditLeaseService leases;
     @Autowired private MutableClock clock;
 
@@ -113,13 +116,19 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
 
 
     private Membership ownerAtRung(int rungs) {
-        UUID ownerId = UUID.randomUUID();
+        UUID ownerId = provisionedTraveler();
         Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null, null, 1);
         Membership owner = new Membership(ownerId, trip.id(), Role.OWNER);
 
         if (rungs >= 1) itineraries.start(owner);
         if (rungs >= 2) itineraries.complete(owner);
         return owner;
+    }
+
+
+    private UUID provisionedTraveler() {
+        String uid = "uid-" + UUID.randomUUID();
+        return travelers.getOrProvision(TravelerClaims.of(uid, uid + "@example.com", null)).id();
     }
 
 
