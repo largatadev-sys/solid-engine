@@ -10,6 +10,7 @@ import {
   FOLLOW_LIST_RETRY_LABEL,
   PUBLIC_PROFILE_TITLE,
   firstNameOf,
+  followersCountLabel,
 } from '../../src/profile/publicProfileCopy';
 import {
   DIARY_TAB_LABEL,
@@ -46,6 +47,9 @@ const OWNER = ownerTagFor('web/private-profile');
 const STRANGER = 't3';
 
 requireStack(OWNER);
+requireStack(STRANGER);
+
+test.describe.configure({ mode: 'serial' });
 
 let ownerToken: string;
 let strangerToken: string;
@@ -72,9 +76,15 @@ async function relationOfStranger(): Promise<string> {
   return (await api(`/v1/travelers/${owner.handle}`, 'GET', strangerToken)).body.viewerRelation;
 }
 
+const COUNT_SEARCH_CEILING = 50;
+
 async function followerCountOn(page: import('@playwright/test').Page): Promise<number> {
-  const line = await page.getByText(/^d+ followers?$/).last().textContent();
-  return Number((line ?? '').split(' ')[0]);
+  for (let count = 0; count < COUNT_SEARCH_CEILING; count += 1) {
+    if (await page.getByText(followersCountLabel(count), { exact: true }).count()) {
+      return count;
+    }
+  }
+  return -1;
 }
 
 async function publishedTripOfOwner(): Promise<string | null> {
@@ -85,6 +95,8 @@ async function publishedTripOfOwner(): Promise<string | null> {
 
 async function clearEdge(): Promise<void> {
   await api(`/v1/travelers/${ownerId}/follow`, 'DELETE', strangerToken);
+  await api(`/v1/me/follow-requests/${strangerId}/decline`, 'POST', ownerToken);
+  await api(`/v1/me/followers/${strangerId}`, 'DELETE', ownerToken);
 }
 
 test.beforeAll(async () => {
@@ -102,6 +114,7 @@ test.beforeAll(async () => {
 test.beforeEach(async ({ signIn }) => {
   await clearEdge();
   await setVisibility('private');
+  await expect.poll(visibilityOnServer, { timeout: 15_000 }).toBe('private');
   await signIn(STRANGER);
 });
 
@@ -206,8 +219,13 @@ test('a stranger meets the header, four inert cells, the pill and the notice —
   await expect(page.getByText(lockedProfileTitle(ownerFirstName)).last()).toBeVisible();
   await expect(page.getByText(lockedProfileBody(ownerFirstName)).last()).toBeVisible();
 
-  for (const label of [PUBLISHED_STAT_LABEL, DESTINATIONS_STAT_LABEL, FOLLOWERS_STAT_LABEL, FOLLOWING_STAT_LABEL]) {
-    await expect(page.locator(`[aria-label$="${label}" i]`).locator('visible=true').last()).toBeVisible();
+  for (const label of [
+    PUBLISHED_STAT_LABEL,
+    DESTINATIONS_STAT_LABEL,
+    FOLLOWERS_STAT_LABEL,
+    FOLLOWING_STAT_LABEL,
+  ]) {
+    await expect(page.getByText(label, { exact: true }).last()).toBeVisible();
   }
 
   await expect(page.getByText(DIARY_TAB_LABEL, { exact: true })).toHaveCount(0);
@@ -215,17 +233,31 @@ test('a stranger meets the header, four inert cells, the pill and the notice —
 });
 
 
-test('the Followers and Following cells do nothing on a locked page', async ({ page }) => {
+test('every stat cell on a locked page is inert — not one of them is a control', async ({
+  page,
+}) => {
   await page.goto(`/travelers/${owner.handle}`);
   await expect(page.getByText(lockedProfileTitle(ownerFirstName)).last()).toBeVisible({
     timeout: 20_000,
   });
   const before = page.url();
 
-  await page.locator(`[aria-label$="${FOLLOWERS_STAT_LABEL}" i]`).locator('visible=true').last().click();
-  await page.locator(`[aria-label$="${FOLLOWING_STAT_LABEL}" i]`).locator('visible=true').last().click();
+  for (const label of [
+    PUBLISHED_STAT_LABEL,
+    DESTINATIONS_STAT_LABEL,
+    FOLLOWERS_STAT_LABEL,
+    FOLLOWING_STAT_LABEL,
+  ]) {
+    await expect(
+      page.locator(`[aria-label$="${label}" i]`),
+      'an inert cell renders no button label at all, which is what makes it inert',
+    ).toHaveCount(0);
+  }
 
-  expect(page.url(), 'an inert cell has no destination to go to').toBe(before);
+  await page.getByText(FOLLOWERS_STAT_LABEL, { exact: true }).last().click();
+  await page.getByText(FOLLOWING_STAT_LABEL, { exact: true }).last().click();
+
+  expect(page.url(), 'and tapping one goes nowhere').toBe(before);
   await expect(page.getByText(lockedProfileTitle(ownerFirstName)).last()).toBeVisible();
 });
 

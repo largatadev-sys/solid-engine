@@ -695,13 +695,20 @@ test.describe('the Itineraries tab — the showcase, and only the showcase', () 
 });
 
 test.describe('the cogwheel and the account page behind it', () => {
-  test('the cogwheel opens the account screen with its card and buttons', async ({ page }) => {
+  test('the cogwheel opens the account screen, which is rows now (S4.40)', async ({ page }) => {
     await page.goto(PROFILE_TAB_ROUTE);
     await labelled(page, ACCOUNT_LABEL).click();
 
     await expect(page).toHaveURL(/\/account/);
-    for (const label of [EDIT_PROFILE_LABEL.replace('Profile', 'profile'), 'Reload', 'Sign out']) {
+    for (const label of [
+      EDIT_PROFILE_LABEL.replace('Profile', 'profile'),
+      'Private profile',
+      'Sign out',
+    ]) {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+    }
+    for (const gone of ['Reload', 'My Trips']) {
+      await expect(page.getByText(gone, { exact: true })).toHaveCount(0);
     }
   });
 
