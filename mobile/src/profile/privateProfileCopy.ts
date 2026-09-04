@@ -1,3 +1,4 @@
+import type { ProfileVisibility, ViewerRelation } from '../types/api';
 import { followFailedToast, unfollowFailedToast } from './publicProfileCopy';
 
 
@@ -86,7 +87,7 @@ export function askedAgoLine(ago: string): string {
 
 
 export function followToastFor(
-  before: { readonly relation: string; readonly visibility: string },
+  before: { readonly relation: ViewerRelation; readonly visibility: ProfileVisibility },
   intent: 'follow' | 'unfollow',
   handle: string | null,
 ): string {

@@ -72,6 +72,11 @@ async function relationOfStranger(): Promise<string> {
   return (await api(`/v1/travelers/${owner.handle}`, 'GET', strangerToken)).body.viewerRelation;
 }
 
+async function followerCountOn(page: import('@playwright/test').Page): Promise<number> {
+  const line = await page.getByText(/^d+ followers?$/).last().textContent();
+  return Number((line ?? '').split(' ')[0]);
+}
+
 async function publishedTripOfOwner(): Promise<string | null> {
   const showcase = await api(`/v1/travelers/${owner.handle}/published`, 'GET', strangerToken);
   const first = (showcase.body.items ?? [])[0];
@@ -528,4 +533,42 @@ test('the creator own published page carries no pill at all', async ({ page, sig
   });
   await expect(labelStarting(page, `${FOLLOW_LABEL} `)).toHaveCount(0);
   await expect(labelStarting(page, `${FOLLOWING_LABEL} `)).toHaveCount(0);
+});
+
+
+test('a request arriving lands in an OPEN Follow requests list without a refresh', async ({
+  page,
+  signIn,
+}) => {
+  await signIn(OWNER);
+  await page.goto(FOLLOW_REQUESTS_ROUTE);
+  await expect(page.getByText(NO_REQUESTS_TITLE).last()).toBeVisible({ timeout: 20_000 });
+
+  await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+
+  await expect(labelled(page, `${APPROVE_LABEL} @${stranger.handle}`)).toBeVisible({
+    timeout: 20_000,
+  });
+  expect(page.url(), 'nothing navigated — the list refreshed where it stood').toContain(
+    'follow-requests',
+  );
+});
+
+
+test('a departure lands in an OPEN Followers list, and the count line moves with it', async ({
+  page,
+  signIn,
+}) => {
+  await setVisibility('public');
+  await api(`/v1/travelers/${ownerId}/follow`, 'POST', strangerToken);
+  await signIn(OWNER);
+  await page.goto(`/travelers/${owner.handle}/followers`);
+  await expect(page.getByText(`@${stranger.handle}`).last()).toBeVisible({ timeout: 20_000 });
+
+  const before = await followerCountOn(page);
+
+  await api(`/v1/travelers/${ownerId}/follow`, 'DELETE', strangerToken);
+
+  await expect(page.getByText(`@${stranger.handle}`)).toHaveCount(0, { timeout: 20_000 });
+  await expect.poll(() => followerCountOn(page), { timeout: 20_000 }).toBe(before - 1);
 });

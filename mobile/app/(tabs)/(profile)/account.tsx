@@ -22,6 +22,7 @@ import {
   SIGN_OUT_ROW_LABEL,
   VISIBILITY_FAILED_TOAST,
 } from '../../../src/profile/privateProfileCopy';
+import { RowEntrance } from '../../../src/members/RowEntrance';
 import { VisibilitySwitch } from '../../../src/profile/VisibilitySwitch';
 import { FOLLOW_REQUESTS_ROUTE } from '../../../src/profile/travelerRoutes';
 import { forgetPickedTab } from '../../../src/itineraries/tripTabStore';
@@ -133,8 +134,13 @@ export default function AccountScreen() {
 
           if (row === 'follow-requests') {
             return (
-              <Pressable
+              <RowEntrance
                 key={row}
+                replayKey={row}
+                durationMs={publicProfileMotion.resultRiseMs}
+                risePx={publicProfileMotion.resultRisePx}
+              >
+              <Pressable
                 style={styles.row}
                 accessibilityRole="button"
                 accessibilityLabel={FOLLOW_REQUESTS_ROW_LABEL}
@@ -143,6 +149,7 @@ export default function AccountScreen() {
                 <Text style={styles.rowLabel}>{FOLLOW_REQUESTS_ROW_LABEL}</Text>
                 <Icon name="chevronRight" size={16} color={profileColors.rowChevron} />
               </Pressable>
+              </RowEntrance>
             );
           }
 

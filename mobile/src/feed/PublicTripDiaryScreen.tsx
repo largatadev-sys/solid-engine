@@ -30,7 +30,27 @@ export function PublicTripDiaryScreen() {
   }
   if (diary.isError) {
     if (isProfilePrivate(diary.error)) {
-      return <LockedProfileNotice displayName={author ?? null} handle={author ?? null} linked />;
+      return (
+        <View style={styles.screen}>
+          <View style={styles.header}>
+            <View style={styles.titleRow}>
+              <Pressable
+                style={styles.back}
+                onPress={goBack}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+              >
+                <Icon
+                  name="back"
+                  size={diaryScreenMetrics.backGlyph}
+                  color={diaryScreenColors.title}
+                />
+              </Pressable>
+            </View>
+          </View>
+          <LockedProfileNotice displayName={null} handle={null} />
+        </View>
+      );
     }
     return <ScreenMessage {...itineraryLoadMessage(diary.error, 'This diary is not public')} />;
   }

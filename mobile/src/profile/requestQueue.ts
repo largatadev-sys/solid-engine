@@ -14,7 +14,7 @@ export function emptyRequestQueue(): RequestQueue {
 }
 
 
-export function decided(
+export function withDecision(
   queue: RequestQueue,
   travelerId: string,
   verdict: 'approve' | 'decline',
@@ -26,7 +26,7 @@ export function decided(
 }
 
 
-export function restored(queue: RequestQueue, travelerId: string): RequestQueue {
+export function withoutDecision(queue: RequestQueue, travelerId: string): RequestQueue {
   return { decided: queue.decided.filter((row) => row.travelerId !== travelerId) };
 }
 

@@ -7,14 +7,13 @@ import { ScreenMessage } from '../components/ScreenMessage';
 import { FeedToast } from '../feed/FeedToast';
 import { useMe } from '../hooks/useMe';
 import { useSafeBack } from '../navigation/safeBack';
-import { useFollowMutation } from '../query/followQueries';
 import { usePublicProfile } from '../query/publicProfileQueries';
 import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { colors, spacing } from '../theme';
 import { profileTypography, workspaceColors } from '../theme/workspaceTokens';
 import { RowEntrance } from '../members/RowEntrance';
 import { publicProfileMotion } from '../theme/workspaceTokens';
-import { followStateFrom, reverted, settled, tapped, type FollowState } from './followState';
+import { useFollowPill } from './useFollowPill';
 import { LockedProfileNotice } from './LockedProfileNotice';
 import { profileProjection } from './lockedProfile';
 import { ProfileTabs } from './ProfileTabs';
@@ -22,7 +21,6 @@ import { PublicDiaryTab } from './PublicDiaryTab';
 import { PublicItinerariesTab } from './PublicItinerariesTab';
 import { PublicProfileHeader } from './PublicProfileHeader';
 import { trackPublicProfileViewed } from './profileEvents';
-import { followToastFor } from './privateProfileCopy';
 import {
   PROFILE_UNAVAILABLE,
   PROFILE_UNAVAILABLE_BODY,
@@ -52,9 +50,7 @@ export function PublicProfileScreen() {
 
   const profile = usePublicProfile(isSelf ? '' : subject);
   const [tab, setTab] = useState<ProfileTab>('diary');
-  const [follow, setFollow] = useState<FollowState | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const followMutation = useFollowMutation();
+  const { shown, onPress: onFollow, toast, clearToast } = useFollowPill(profile.data, subject);
 
   useRevalidateOnFocus(profile, !isSelf);
 
@@ -70,51 +66,10 @@ export function PublicProfileScreen() {
     }
   }, [profile.data, subject]);
 
-  useEffect(() => {
-    setFollow(null);
-  }, [subject]);
-
-  const served =
-    profile.data === undefined
-      ? null
-      : followStateFrom(
-          profile.data.viewerRelation,
-          profile.data.followersCount,
-          profile.data.visibility,
-        );
-  const shown = follow ?? served;
-
   const projection = profileProjection(
     profile.data?.visibility ?? 'public',
     shown?.relation ?? profile.data?.viewerRelation ?? 'none',
   );
-
-  function onFollow() {
-    if (profile.data === undefined || shown === null) {
-      return;
-    }
-    const before = shown;
-    const next = tapped(before);
-    const intent = next.intent;
-    if (intent === null) {
-      return;
-    }
-    setFollow(next.state);
-
-    const handle = profile.data.traveler.handle;
-    followMutation.mutate(
-      { travelerId: profile.data.traveler.id, intent },
-      {
-        onSuccess: (served) => setFollow(settled(next.state, served)),
-        onError: () => {
-          setFollow(reverted(before));
-          setToast(
-            followToastFor(before, intent, handle),
-          );
-        },
-      },
-    );
-  }
 
   if (isSelf) {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
@@ -156,10 +111,10 @@ export function PublicProfileScreen() {
             followsViewer={profile.data.followsViewer}
             onFollow={onFollow}
             onOpenFollowers={
-              projection.followCellsOpen ? () => router.push(followersRoute(subject)) : null
+              projection.cellsOpen ? () => router.push(followersRoute(subject)) : null
             }
             onOpenFollowing={
-              projection.followCellsOpen ? () => router.push(followingRoute(subject)) : null
+              projection.cellsOpen ? () => router.push(followingRoute(subject)) : null
             }
           />
 
@@ -195,7 +150,7 @@ export function PublicProfileScreen() {
       <FeedToast
         message={toast}
         holdMs={publicProfileMotion.toastHoldMs}
-        onDone={() => setToast(null)}
+        onDone={clearToast}
       />
     </View>
   );

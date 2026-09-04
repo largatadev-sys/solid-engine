@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon';
 import { FeedToast } from '../feed/FeedToast';
 import { MediaThumb } from '../media/MediaThumb';
 import { RowEntrance } from '../members/RowEntrance';
+import { RowExit } from '../members/RowExit';
 import { invitedAgoLabel } from '../members/invitationCard';
 import { fetchesMore } from '../discovery/resultsPaging';
 import { initialsFor } from '../onboarding/initials';
@@ -36,7 +37,7 @@ import {
   askedAgoLine,
 } from './privateProfileCopy';
 import { PUBLIC_PROFILE_BACK_LABEL } from './publicProfileCopy';
-import { decided, emptyRequestQueue, restored, shownRows } from './requestQueue';
+import { emptyRequestQueue, shownRows, withDecision, withoutDecision } from './requestQueue';
 import { publicProfileRoute } from './travelerRoutes';
 
 
@@ -46,6 +47,7 @@ export function FollowRequestsScreen() {
   const inbox = useFollowRequests();
   const decide = useDecideFollowRequest();
   const [queue, setQueue] = useState(emptyRequestQueue());
+  const [leaving, setLeaving] = useState<Readonly<Record<string, 'approve' | 'decline'>>>({});
   const [toast, setToast] = useState<string | null>(null);
 
   useRevalidateOnFocus(inbox);
@@ -55,13 +57,14 @@ export function FollowRequestsScreen() {
 
   function onDecide(request: FollowRequestResponse, verdict: 'approve' | 'decline') {
     const travelerId = request.traveler.id;
-    setQueue((held) => decided(held, travelerId, verdict));
+    setLeaving((held) => (travelerId in held ? held : { ...held, [travelerId]: verdict }));
 
     decide.mutate(
       { travelerId, verdict },
       {
         onError: () => {
-          setQueue((held) => restored(held, travelerId));
+          setLeaving(({ [travelerId]: _left, ...rest }) => rest);
+          setQueue((held) => withoutDecision(held, travelerId));
           setToast(
             verdict === 'approve'
               ? approveFailedToast(request.traveler.handle)
@@ -122,6 +125,14 @@ export function FollowRequestsScreen() {
                   : 0
               }
             >
+              <RowExit
+                leaving={item.traveler.id in leaving}
+                onGone={() =>
+                  setQueue((held) =>
+                    withDecision(held, item.traveler.id, leaving[item.traveler.id] ?? 'approve'),
+                  )
+                }
+              >
               <RequestRow
                 request={item}
                 onOpen={() => {
@@ -132,6 +143,7 @@ export function FollowRequestsScreen() {
                 onApprove={() => onDecide(item, 'approve')}
                 onDecline={() => onDecide(item, 'decline')}
               />
+              </RowExit>
             </RowEntrance>
           )}
           onEndReachedThreshold={0.5}

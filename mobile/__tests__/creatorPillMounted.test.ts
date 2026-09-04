@@ -31,10 +31,13 @@ describe('the published page carries the real pill now (S4.40 decision 7, frame 
       'utf8',
     );
 
+    const hook = readFileSync(join(MOBILE_ROOT, 'src', 'profile', 'useFollowPill.ts'), 'utf8');
+
     expect(pill).toContain('size="compact"');
-    expect(pill).toContain('tapped(before)');
-    expect(pill).toContain('settled(next.state, state)');
-    expect(pill).toContain('followToastFor');
+    expect(pill).toContain('useFollowPill(');
+    expect(hook).toContain('tapped(before)');
+    expect(hook).toContain('settled(next.state, state)');
+    expect(hook).toContain('followToastFor');
   });
 
   it('reads the relation from the creator profile, adding no field to the published response', () => {

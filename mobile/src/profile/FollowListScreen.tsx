@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../components/Icon';
 import { RowEntrance } from '../members/RowEntrance';
+import { RowExit } from '../members/RowExit';
 import { useSafeBack } from '../navigation/safeBack';
 import { useMe } from '../hooks/useMe';
 import { useFollowers, useFollowing } from '../query/followQueries';
@@ -83,6 +84,7 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
   const [sheetFor, setSheetFor] = useState<TravelerCardResponse | null>(null);
   const [lastSheetFor, setLastSheetFor] = useState<TravelerCardResponse | null>(null);
   const [removed, setRemoved] = useState<readonly string[]>([]);
+  const [leaving, setLeaving] = useState<readonly string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
   const served = (list.data?.pages ?? []).flatMap((page) => page.items);
@@ -104,9 +106,10 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
         cancelLabel: REMOVE_FOLLOWER_CANCEL_LABEL,
       },
       () => {
-        setRemoved((held) => [...held, person.id]);
+        setLeaving((held) => (held.includes(person.id) ? held : [...held, person.id]));
         remove.mutate(person.id, {
           onError: (cause) => {
+            setLeaving((held) => held.filter((id) => id !== person.id));
             setRemoved((held) => held.filter((id) => id !== person.id));
             setToast(failureToast(cause));
           },
@@ -122,7 +125,7 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
     : side === 'followers'
       ? publicProfile.data?.followersCount
       : publicProfile.data?.followingCount;
-  const total = Math.max(0, (counted ?? served.length) - removed.length);
+  const total = Math.max(0, (counted ?? served.length) - leaving.length);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -144,7 +147,7 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
         <ActivityIndicator style={styles.loading} color={colors.accent} />
       ) : list.isError && rows.length === 0 && isProfilePrivate(list.error) ? (
         <LockedProfileNotice
-          displayName={publicProfile.data?.traveler.displayName ?? subject}
+          displayName={publicProfile.data?.traveler.displayName ?? null}
           handle={subject}
           linked
         />
@@ -203,6 +206,10 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
                     : 0
                 }
               >
+                <RowExit
+                  leaving={leaving.includes(item.id)}
+                  onGone={() => setRemoved((held) => (held.includes(item.id) ? held : [...held, item.id]))}
+                >
                 <PersonRow
                   person={item}
                   onPress={() => {
@@ -212,6 +219,7 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
                   }}
                   {...(kebabs ? { onKebab: () => openSheet(item) } : {})}
                 />
+                </RowExit>
               </RowEntrance>
             )}
             onEndReachedThreshold={0.5}

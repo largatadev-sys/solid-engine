@@ -25,10 +25,15 @@ describe('the notice stands at all three of its hosts (S4.40 decisions 3 and 11)
     expect(LISTS).toContain('linked');
   });
 
-  it('stands under the trip title on a gated per-trip diary, in link mode', () => {
+  it('stands on a gated per-trip diary, under a header that still goes back', () => {
     expect(TRIP_DIARY).toContain('<LockedProfileNotice');
     expect(TRIP_DIARY).toContain('isProfilePrivate(diary.error)');
-    expect(TRIP_DIARY).toContain('linked');
+    expect(TRIP_DIARY).toContain('onPress={goBack}');
+  });
+
+  it('names nobody there rather than naming a traveler id, which is all that route carries', () => {
+    expect(TRIP_DIARY).toContain('displayName={null}');
+    expect(TRIP_DIARY).not.toContain('displayName={author');
   });
 
   it('leaves every other failure to the posture that already handles it', () => {

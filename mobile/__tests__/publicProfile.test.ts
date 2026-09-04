@@ -16,6 +16,7 @@ function read(...parts: string[]): string {
 
 const HEADER = read('src', 'profile', 'PublicProfileHeader.tsx');
 const PILL = read('src', 'profile', 'FollowPill.tsx');
+const PILL_HOOK = read('src', 'profile', 'useFollowPill.ts');
 const SCREEN = read('src', 'profile', 'PublicProfileScreen.tsx');
 const DIARY = read('src', 'profile', 'PublicDiaryTab.tsx');
 const ITINERARIES = read('src', 'profile', 'PublicItinerariesTab.tsx');
@@ -116,21 +117,22 @@ describe('C1 and M1 — the pill now has three states (S4.40)', () => {
   });
 
   it('flips the screen before the server answers, and reverts with a toast on failure (C1)', () => {
-    expect(SCREEN).toContain('tapped(before)');
-    expect(SCREEN).toContain('setFollow(next.state)');
-    expect(SCREEN).toContain('setFollow(reverted(before))');
-    expect(SCREEN).toContain('followToastFor');
+    expect(PILL_HOOK).toContain('tapped(before)');
+    expect(PILL_HOOK).toContain('setFollow(next.state)');
+    expect(PILL_HOOK).toContain('setFollow(reverted(before))');
+    expect(PILL_HOOK).toContain('followToastFor');
     expect(SCREEN).not.toContain("comingSoon('follow')");
   });
 
   it('asks nobody to confirm an unfollow, and swallows taps already in flight', () => {
     expect(SCREEN).not.toContain('confirmDestructive');
-    expect(SCREEN).toContain('if (intent === null)');
+    expect(PILL_HOOK).toContain('if (intent === null)');
   });
 
   it('writes through the repository layer, never a raw call from the screen (ADR-001)', () => {
-    expect(SCREEN).toContain('useFollowMutation');
+    expect(PILL_HOOK).toContain('useFollowMutation');
     expect(SCREEN).not.toContain('apiClient');
+    expect(PILL_HOOK).not.toContain('apiClient');
   });
 });
 

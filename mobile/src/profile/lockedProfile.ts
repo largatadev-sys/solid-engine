@@ -6,7 +6,7 @@ export interface ProfileProjection {
   readonly showsTabs: boolean;
   readonly showsShowcase: boolean;
   readonly showsNotice: boolean;
-  readonly followCellsOpen: boolean;
+  readonly cellsOpen: boolean;
 }
 
 
@@ -15,7 +15,7 @@ const OPEN: ProfileProjection = {
   showsTabs: true,
   showsShowcase: true,
   showsNotice: false,
-  followCellsOpen: true,
+  cellsOpen: true,
 };
 
 
@@ -24,7 +24,7 @@ const LOCKED: ProfileProjection = {
   showsTabs: false,
   showsShowcase: false,
   showsNotice: true,
-  followCellsOpen: false,
+  cellsOpen: false,
 };
 
 

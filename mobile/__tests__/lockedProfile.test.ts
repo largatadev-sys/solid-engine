@@ -12,7 +12,7 @@ describe('what a private profile shows, and to whom (S4.40 decisions 3 and 4)', 
       showsTabs: false,
       showsShowcase: false,
       showsNotice: true,
-      followCellsOpen: false,
+      cellsOpen: false,
     });
   });
 
@@ -26,7 +26,7 @@ describe('what a private profile shows, and to whom (S4.40 decisions 3 and 4)', 
       showsTabs: true,
       showsShowcase: true,
       showsNotice: false,
-      followCellsOpen: true,
+      cellsOpen: true,
     });
   });
 
@@ -49,11 +49,11 @@ describe('what a private profile shows, and to whom (S4.40 decisions 3 and 4)', 
     }
   });
 
-  it('makes the Followers and Following cells inert exactly when locked', () => {
+  it('makes EVERY stat cell inert exactly when locked — all four, not the two with destinations today', () => {
     for (const visibility of VISIBILITIES) {
       for (const relation of RELATIONS) {
         const shown = profileProjection(visibility, relation);
-        expect(shown.followCellsOpen).toBe(!shown.locked);
+        expect(shown.cellsOpen).toBe(!shown.locked);
       }
     }
   });

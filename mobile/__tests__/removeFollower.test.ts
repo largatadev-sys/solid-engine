@@ -60,7 +60,7 @@ describe('removing a follower asks first, and says it is one-way (frames 5b, 5c)
     expect(LIST).toContain('failureToast(cause)');
   });
 
-  it('moves the count line with the list, not with the servers cached number', () => {
-    expect(LIST).toContain('- removed.length');
+  it('moves the count line the moment the row starts leaving, not when the server catches up', () => {
+    expect(LIST).toContain('- leaving.length');
   });
 });

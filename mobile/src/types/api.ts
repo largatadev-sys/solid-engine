@@ -453,8 +453,6 @@ export type FollowRequestResponse = {
 export const PROFILE_PRIVATE_CODE = 'PROFILE_PRIVATE';
 
 
-export const FOLLOW_REQUEST_NOT_FOUND_CODE = 'FOLLOW_REQUEST_NOT_FOUND';
-
 
 export type PublicProfileResponse = {
   traveler: TravelerCardResponse;
