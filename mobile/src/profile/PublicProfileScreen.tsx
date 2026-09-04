@@ -108,7 +108,6 @@ export function PublicProfileScreen() {
             followersCount={shown?.followersCount ?? profile.data.followersCount}
             followingCount={profile.data.followingCount}
             relation={shown?.relation ?? profile.data.viewerRelation}
-            followsViewer={profile.data.followsViewer}
             onFollow={onFollow}
             onOpenFollowers={
               projection.cellsOpen ? () => router.push(followersRoute(subject)) : null

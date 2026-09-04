@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,6 +51,7 @@ import {
   removeFollowerTitle,
 } from './privateProfileCopy';
 import type { TravelerCardResponse } from '../types/api';
+import { shownFollowCount } from './followListCount';
 import { isProfilePrivate } from './gatedRead';
 import { LockedProfileNotice } from './LockedProfileNotice';
 import { publicProfileRoute, travelerDestination } from './travelerRoutes';
@@ -125,7 +126,15 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
     : side === 'followers'
       ? publicProfile.data?.followersCount
       : publicProfile.data?.followingCount;
-  const total = Math.max(0, (counted ?? served.length) - leaving.length);
+  const servedKey = served.map((person) => person.id).join(',');
+
+  useEffect(() => {
+    const stillThere = new Set(servedKey.split(','));
+    setLeaving((held) => held.filter((id) => stillThere.has(id)));
+    setRemoved((held) => held.filter((id) => stillThere.has(id)));
+  }, [servedKey]);
+
+  const total = shownFollowCount(counted, servedKey === '' ? [] : servedKey.split(','), leaving);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>

@@ -58,6 +58,10 @@ describe('the two lists that lose rows both play it', () => {
 
   it('the followers list plays it too, and its count follows the leaving row', () => {
     expect(LISTS).toContain('<RowExit');
-    expect(LISTS).toContain('- leaving.length');
+    expect(LISTS).toContain('shownFollowCount(');
+  });
+
+  it('forgets a row once the server stops serving it, so nothing subtracts it twice', () => {
+    expect(LISTS).toContain('stillThere.has(id)');
   });
 });

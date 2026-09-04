@@ -16,7 +16,7 @@ import {
 import { FollowPill } from './FollowPill';
 import { profileMetaLine } from './profileMetaLine';
 import { StatCells } from './StatCells';
-import { DESTINATIONS_STAT_LABEL, FOLLOWS_YOU_LABEL } from './publicProfileCopy';
+import { DESTINATIONS_STAT_LABEL } from './publicProfileCopy';
 import type { ViewerRelation } from '../types/api';
 import {
   FOLLOWERS_STAT_LABEL,
@@ -36,7 +36,6 @@ interface PublicProfileHeaderProps {
   readonly followersCount: number;
   readonly followingCount: number;
   readonly relation: ViewerRelation;
-  readonly followsViewer: boolean;
   readonly onFollow: () => void;
   readonly onOpenFollowers: (() => void) | null;
   readonly onOpenFollowing: (() => void) | null;
@@ -54,7 +53,6 @@ export function PublicProfileHeader({
   followersCount,
   followingCount,
   relation,
-  followsViewer,
   onFollow,
   onOpenFollowers,
   onOpenFollowing,
@@ -88,11 +86,6 @@ export function PublicProfileHeader({
               <Text style={styles.meta} numberOfLines={1}>
                 {meta}
               </Text>
-            )}
-            {followsViewer && (
-              <View style={styles.followsYouChip}>
-                <Text style={styles.followsYouLabel}>{FOLLOWS_YOU_LABEL}</Text>
-              </View>
             )}
           </View>
           {bio !== null && bio.trim() !== '' && (
@@ -176,17 +169,6 @@ const styles = StyleSheet.create({
     ...profileTypography.meta,
     color: profileColors.meta,
     flexShrink: 1,
-  },
-  followsYouChip: {
-    backgroundColor: followColors.chipWell,
-    borderRadius: workspaceRadii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.hair,
-    flexShrink: 0,
-  },
-  followsYouLabel: {
-    ...followTypography.chip,
-    color: followColors.chipInk,
   },
   bio: {
     ...profileTypography.bio,

@@ -42,8 +42,6 @@ export const DECLINE_FAILED_TOAST = "Couldn't decline";
 
 export const REMOVE_FOLLOWER_LABEL = 'Remove follower';
 
-export const REMOVE_FOLLOWER_DISMISS_LABEL = 'Dismiss';
-
 export const REMOVE_FOLLOWER_BODY = "They won't be told, and they'll have to follow you again.";
 
 export const REMOVE_FOLLOWER_CANCEL_LABEL = 'Cancel';

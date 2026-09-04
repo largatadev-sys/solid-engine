@@ -6,8 +6,6 @@ export const FOLLOW_LABEL = 'Follow';
 
 export const FOLLOWING_LABEL = 'Following';
 
-export const FOLLOWS_YOU_LABEL = 'Follows you';
-
 export const DESTINATIONS_STAT_LABEL = 'Destinations';
 
 export const AWAITING_COUNT = '—';

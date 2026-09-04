@@ -42,6 +42,17 @@ describe('removing a follower asks first, and says it is one-way (frames 5b, 5c)
     expect(LIST).toContain('remove.mutate(person.id');
   });
 
+  it('offers ONE row, and names the traveler once — the sheet titles itself', () => {
+    expect(SHEET).toContain('title={handleLabel(shown)}');
+    expect(SHEET).not.toContain('personLabel');
+    expect(SHEET).not.toContain('MediaThumb');
+  });
+
+  it('offers no Dismiss row, because tapping off the sheet already dismisses it', () => {
+    expect(SHEET).not.toContain('DISMISS');
+    expect(SHEET.match(/<SheetRow/g) ?? []).toHaveLength(1);
+  });
+
   it('names the traveler in the confirm and tells the truth about what follows', () => {
     expect(removeFollowerTitle('maya')).toBe('Remove @maya?');
     expect(REMOVE_FOLLOWER_BODY).toBe(
@@ -60,7 +71,7 @@ describe('removing a follower asks first, and says it is one-way (frames 5b, 5c)
     expect(LIST).toContain('failureToast(cause)');
   });
 
-  it('moves the count line the moment the row starts leaving, not when the server catches up', () => {
-    expect(LIST).toContain('- leaving.length');
+  it('derives its count line from the one rule, which knows not to subtract twice', () => {
+    expect(LIST).toContain('shownFollowCount(');
   });
 });
