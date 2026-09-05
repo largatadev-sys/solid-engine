@@ -117,28 +117,6 @@ public class FollowService {
     }
 
 
-    @Transactional
-    public void removeFollower(UUID travelerId, UUID followerId) {
-        requireOnboarded(followerId);
-        if (travelerId.equals(followerId)) {
-            throw new SelfFollowException();
-        }
-        asks.cancel(followerId, travelerId);
-
-        int removed = follows.unfollow(followerId, travelerId);
-        if (removed > 0) {
-            emitAfterCommit("follow_removed", followerId, travelerId);
-            AfterCommit.run(
-                    () ->
-                            analytics.emit(
-                                    AnalyticsEvent.named("follower_removed")
-                                            .with("travelerId", travelerId)
-                                            .with("followerId", followerId)
-                                            .build()));
-        }
-    }
-
-
     @Transactional(readOnly = true)
     public FollowStanding standingOf(UUID subjectId, UUID viewerId) {
         boolean following = follows.edgeCount(viewerId, subjectId) > 0;
