@@ -269,9 +269,9 @@ test('the activity really was deleted', async () => {
   expect(killed.status).toBe(204);
 });
 
-test('deleting the activity clears provenance and leaves the postcard whole', async () => {
+test('deleting the activity leaves the provenance pointer dangling and the postcard whole', async () => {
   const afterDelete = (await entriesOf(author))[0];
-  expect(afterDelete.activityId).toBeNull();
+  expect(afterDelete.activityId).toBe(activityId);
   expect(afterDelete.activityTitle).toBe('Sunset at Las Cabanas');
   expect(afterDelete.photos).toHaveLength(3);
 });

@@ -27,7 +27,12 @@ class ProfileFenceCoverageTest {
 
 
     private static final Set<String> KNOWN_FENCE_CONSUMERS =
-            Set.of("PublicProfileController.java", "PostcardFeedController.java");
+            Set.of(
+                    "PublicProfileController.java",
+                    "PostcardFeedController.java",
+                    "PostcardController.java",
+                    "DiaryController.java",
+                    "PublicationController.java");
 
 
     private static final Set<String> KNOWN_PROFILE_SUB_RESOURCE_GETS =
