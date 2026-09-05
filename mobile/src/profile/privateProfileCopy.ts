@@ -79,11 +79,6 @@ export function lockedProfileBody(firstName: string): string {
 }
 
 
-export function requesterLine(handleLabel: string, ago: string): string {
-  return `${handleLabel} · ${ago}`;
-}
-
-
 export function followToastFor(
   before: { readonly relation: ViewerRelation; readonly visibility: ProfileVisibility },
   intent: 'follow' | 'unfollow',

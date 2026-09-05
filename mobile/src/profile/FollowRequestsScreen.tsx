@@ -33,7 +33,6 @@ import {
   NO_REQUESTS_BODY,
   NO_REQUESTS_TITLE,
   approveFailedToast,
-  requesterLine,
 } from './privateProfileCopy';
 import { PUBLIC_PROFILE_BACK_LABEL } from './publicProfileCopy';
 import { emptyRequestQueue, shownRows, withDecision, withoutDecision } from './requestQueue';
@@ -202,10 +201,10 @@ function RequestRow({
 
       <View style={styles.rowText}>
         <Text style={styles.name} numberOfLines={1}>
-          {name}
+          {who}
         </Text>
         <Text style={styles.handle} numberOfLines={1}>
-          {requesterLine(who, invitedAgoLabel(request.requestedAt, Date.now()))}
+          {invitedAgoLabel(request.requestedAt, Date.now())}
         </Text>
       </View>
 
@@ -256,14 +255,14 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm3,
+    gap: spacing.sm,
     paddingVertical: spacing.sm2,
     paddingHorizontal: spacing.sm3,
     borderRadius: profileMetrics.statsRadius,
   },
   avatarWell: { backgroundColor: profileColors.avatarWell },
   initials: { ...profileTypography.personInitials, color: profileColors.avatarInk },
-  rowText: { flex: 1, gap: spacing.hair },
+  rowText: { flex: 1, gap: spacing.hair, paddingRight: spacing.xs2 },
   name: { ...followTypography.listTitle, color: workspaceColors.title },
   handle: { ...profileTypography.meta, color: profileColors.meta },
   approve: {

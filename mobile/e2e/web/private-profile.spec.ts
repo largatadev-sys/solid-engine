@@ -41,6 +41,8 @@ import {
 } from '../../src/profile/privateProfileCopy';
 import { FOLLOW_REQUESTS_ROUTE } from '../../src/profile/travelerRoutes';
 
+const AGO_LINE = /^(just now|[0-9]+[mhdw] ago)$/;
+
 const ACCOUNT_ROUTE = '/account';
 
 const OWNER = ownerTagFor('web/private-profile');
@@ -386,8 +388,8 @@ test('a request is approved from the list, and the requester gets the whole prof
   const row = labelled(page, `${APPROVE_LABEL} @${stranger.handle}`);
   await expect(row).toBeVisible({ timeout: 10_000 });
   await expect(
-    page.getByText(new RegExp(`@${stranger.handle} .+ ago$`)).last(),
-    'the handle line carries when they asked',
+    page.getByText(AGO_LINE).last(),
+    'the row says when they asked, on its own line under the handle',
   ).toBeVisible();
 
   await row.click();
