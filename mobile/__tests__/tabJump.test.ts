@@ -17,8 +17,15 @@ describe('a tab press dismisses only within its own stack, and navigates across 
 });
 
 
-describe('which stack a route belongs to — the profile group owns four route families', () => {
-  it.each(['/profile', '/account', '/diary/abc', '/diary/abc/def', '/showcase/abc'])(
+describe('which stack a route belongs to — the profile group owns five route families', () => {
+  it.each([
+    '/profile',
+    '/account',
+    '/follow-requests',
+    '/diary/abc',
+    '/diary/abc/def',
+    '/showcase/abc',
+  ])(
     '%s is in the profile stack',
     (pathname) => {
       expect(inProfileStack(pathname)).toBe(true);

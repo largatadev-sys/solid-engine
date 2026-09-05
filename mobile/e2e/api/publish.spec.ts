@@ -13,7 +13,7 @@ requireStack(OWNER);
 test.describe.configure({ mode: 'serial' });
 
 const PROJECTION_FIELDS = [
-  'id', 'title', 'destination', 'description', 'standouts', 'bestTimeOfYear',
+  'id', 'title', 'destination', 'pin', 'description', 'standouts', 'bestTimeOfYear',
   'coverImageUrl', 'durationDays', 'creator', 'estimatedCost', 'days',
   'forkCount', 'forkedFrom',
 ].sort();
@@ -279,39 +279,35 @@ test('the projection is one page for every audience — the member reads it too'
   expect(memberSees.status).toBe(200);
 });
 
-test.describe('the audience axis', () => {
-  let madePrivate: { status: number; body: any };
-  let privateForMember: { status: number; body: any };
-  let privateForStranger: { status: number; body: any };
+test.describe('the retired audience axis', () => {
+  let refusedAtAudience: { status: number; body: any };
+  let refusedAtPublish: { status: number; body: any };
+  let strangerReads: { status: number; body: any };
 
   test.beforeAll(async () => {
-    madePrivate = await api(`/v1/itineraries/${trip}/audience`, 'POST', owner, { audience: 'private' });
-    privateForMember = await api(`/v1/published-itineraries/${trip}`, 'GET', member);
-    privateForStranger = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
+    refusedAtAudience = await api(`/v1/itineraries/${trip}/audience`, 'POST', owner, { audience: 'private' });
+    refusedAtPublish = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner, { audience: 'private' });
+    strangerReads = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   });
 
-  test('published plus private is legal — it stays in the feed while the audience narrows', () => {
-    expect(madePrivate.status).toBe(200);
-    expect(madePrivate.body.published).toBe(true);
-    expect(madePrivate.body.visibility).toBe('private');
+  test('a private audience is refused by name on both routes (ADR-034)', () => {
+    expect(refusedAtAudience.status).toBe(400);
+    expect(refusedAtAudience.body.code).toBe('VISIBILITY_RETIRED');
+    expect(refusedAtPublish.status).toBe(400);
+    expect(refusedAtPublish.body.code).toBe('VISIBILITY_RETIRED');
   });
 
-  test('the collaborator reads the overview', () => {
-    expect(privateForMember.status).toBe(200);
-  });
-
-  test('a stranger is masked, indistinguishably from never-existed', () => {
-    expect(privateForStranger.status).toBe(404);
-    expect(privateForStranger.body.code).toBe('ITINERARY_NOT_FOUND');
+  test('the refusal moves nothing — the trip is still published to everyone', () => {
+    expect(strangerReads.status).toBe(200);
   });
 });
 
-test('the audience toggles without touching the other two axes', async () => {
-  const backToPublic = await api(`/v1/itineraries/${trip}/audience`, 'POST', owner, { audience: 'public' });
-  expect(backToPublic.status).toBe(200);
-  expect(backToPublic.body.visibility).toBe('public');
-  expect(backToPublic.body.published).toBe(true);
-  expect(backToPublic.body.state).toBe('completed');
+test('the audience route survives and publishes nothing new', async () => {
+  const stillPublic = await api(`/v1/itineraries/${trip}/audience`, 'POST', owner, { audience: 'public' });
+  expect(stillPublic.status).toBe(200);
+  expect(stillPublic.body.visibility, 'the field stays, as the constant').toBe('public');
+  expect(stillPublic.body.published).toBe(true);
+  expect(stillPublic.body.state).toBe('completed');
 });
 
 test('unpublish masks the stranger again', async () => {

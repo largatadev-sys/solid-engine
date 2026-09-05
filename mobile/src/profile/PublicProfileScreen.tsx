@@ -7,22 +7,21 @@ import { ScreenMessage } from '../components/ScreenMessage';
 import { FeedToast } from '../feed/FeedToast';
 import { useMe } from '../hooks/useMe';
 import { useSafeBack } from '../navigation/safeBack';
-import { useFollowMutation } from '../query/followQueries';
 import { usePublicProfile } from '../query/publicProfileQueries';
 import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { colors, spacing } from '../theme';
 import { profileTypography, workspaceColors } from '../theme/workspaceTokens';
 import { RowEntrance } from '../members/RowEntrance';
 import { publicProfileMotion } from '../theme/workspaceTokens';
-import { followStateFrom, reverted, settled, tapped, type FollowState } from './followState';
+import { useFollowPill } from './useFollowPill';
+import { LockedProfileNotice } from './LockedProfileNotice';
+import { profileProjection } from './lockedProfile';
 import { ProfileTabs } from './ProfileTabs';
 import { PublicDiaryTab } from './PublicDiaryTab';
 import { PublicItinerariesTab } from './PublicItinerariesTab';
 import { PublicProfileHeader } from './PublicProfileHeader';
 import { trackPublicProfileViewed } from './profileEvents';
 import {
-  followFailedToast,
-  unfollowFailedToast,
   PROFILE_UNAVAILABLE,
   PROFILE_UNAVAILABLE_BODY,
   PUBLIC_PROFILE_BACK_LABEL,
@@ -51,9 +50,7 @@ export function PublicProfileScreen() {
 
   const profile = usePublicProfile(isSelf ? '' : subject);
   const [tab, setTab] = useState<ProfileTab>('diary');
-  const [follow, setFollow] = useState<FollowState | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const followMutation = useFollowMutation();
+  const { shown, onPress: onFollow, toast, clearToast } = useFollowPill(profile.data, subject);
 
   useRevalidateOnFocus(profile, !isSelf);
 
@@ -69,41 +66,10 @@ export function PublicProfileScreen() {
     }
   }, [profile.data, subject]);
 
-  useEffect(() => {
-    setFollow(null);
-  }, [subject]);
-
-  const served =
-    profile.data === undefined
-      ? null
-      : followStateFrom(profile.data.followedByViewer, profile.data.followersCount);
-  const shown = follow ?? served;
-
-  function onFollow() {
-    if (profile.data === undefined || shown === null) {
-      return;
-    }
-    const before = shown;
-    const next = tapped(before);
-    if (next.intent === null) {
-      return;
-    }
-    setFollow(next.state);
-
-    const handle = profile.data.traveler.handle;
-    followMutation.mutate(
-      { travelerId: profile.data.traveler.id, intent: next.intent },
-      {
-        onSuccess: () => setFollow(settled(next.state)),
-        onError: () => {
-          setFollow(reverted(before));
-          setToast(
-            next.intent === 'follow' ? followFailedToast(handle) : unfollowFailedToast(handle),
-          );
-        },
-      },
-    );
-  }
+  const projection = profileProjection(
+    profile.data?.visibility ?? 'public',
+    shown?.relation ?? profile.data?.viewerRelation ?? 'none',
+  );
 
   if (isSelf) {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
@@ -141,40 +107,49 @@ export function PublicProfileScreen() {
             destinationCount={profile.data.destinationCount}
             followersCount={shown?.followersCount ?? profile.data.followersCount}
             followingCount={profile.data.followingCount}
-            following={shown?.following ?? profile.data.followedByViewer}
-            followsViewer={profile.data.followsViewer}
+            relation={shown?.relation ?? profile.data.viewerRelation}
             onFollow={onFollow}
-            onOpenFollowers={() => router.push(followersRoute(subject))}
-            onOpenFollowing={() => router.push(followingRoute(subject))}
+            onOpenFollowers={
+              projection.cellsOpen ? () => router.push(followersRoute(subject)) : null
+            }
+            onOpenFollowing={
+              projection.cellsOpen ? () => router.push(followingRoute(subject)) : null
+            }
           />
 
-          <ProfileTabs selected={tab} onSelect={setTab} />
-
-          <RowEntrance
-            replayKey={tab}
-            durationMs={publicProfileMotion.panelRiseMs}
-            risePx={publicProfileMotion.panelRisePx}
-          >
-          {tab === 'diary' ? (
-            <PublicDiaryTab
-              handle={subject}
-              subjectId={profile.data.traveler.id}
-              displayName={profile.data.traveler.displayName ?? subject}
-            />
+          {projection.showsNotice ? (
+            <LockedProfileNotice displayName={profile.data.traveler.displayName} />
           ) : (
-            <PublicItinerariesTab
-              handle={subject}
-              displayName={profile.data.traveler.displayName ?? subject}
-            />
+            <>
+            <ProfileTabs selected={tab} onSelect={setTab} />
+
+            <RowEntrance
+              replayKey={tab}
+              durationMs={publicProfileMotion.panelRiseMs}
+              risePx={publicProfileMotion.panelRisePx}
+            >
+            {tab === 'diary' ? (
+              <PublicDiaryTab
+                handle={subject}
+                subjectId={profile.data.traveler.id}
+                displayName={profile.data.traveler.displayName ?? subject}
+              />
+            ) : (
+              <PublicItinerariesTab
+                handle={subject}
+                displayName={profile.data.traveler.displayName ?? subject}
+              />
+            )}
+            </RowEntrance>
+            </>
           )}
-          </RowEntrance>
         </ScrollView>
       )}
 
       <FeedToast
         message={toast}
         holdMs={publicProfileMotion.toastHoldMs}
-        onDone={() => setToast(null)}
+        onDone={clearToast}
       />
     </View>
   );

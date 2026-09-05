@@ -38,7 +38,7 @@ class ItineraryObjectSteppingIT {
         Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
-                .target("43")
+                .target("48")
                 .cleanDisabled(false)
                 .load()
                 .migrate();
@@ -54,7 +54,7 @@ class ItineraryObjectSteppingIT {
         Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
-                .target("44")
+                .target("49")
                 .cleanDisabled(false)
                 .load()
                 .migrate();
@@ -100,8 +100,8 @@ class ItineraryObjectSteppingIT {
     private static void insertObject(UUID id, UUID tripId) {
         jdbc.update(
                 "INSERT INTO itinerary_object"
-                        + " (id, trip_id, owner_id, audience, plan, published_at, created_at)"
-                        + " VALUES (?, ?, ?, 'PUBLIC', '{}', ?, ?)",
+                        + " (id, trip_id, owner_id, plan, published_at, created_at)"
+                        + " VALUES (?, ?, ?, '{}', ?, ?)",
                 id,
                 tripId,
                 OWNER,

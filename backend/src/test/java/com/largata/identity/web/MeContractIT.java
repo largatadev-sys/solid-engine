@@ -62,7 +62,7 @@ class MeContractIT extends PostgresTestBase {
                 .jsonPath("$.email")
                 .isEqualTo("ana@example.com")
                 .jsonPath("$.length()")
-                .isEqualTo(14);
+                .isEqualTo(15);
 
         assertThat(rowCountFor(uid)).isEqualTo(1);
     }

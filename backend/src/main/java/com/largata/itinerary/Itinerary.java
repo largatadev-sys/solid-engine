@@ -2,6 +2,7 @@ package com.largata.itinerary;
 
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -57,6 +58,9 @@ public class Itinerary {
     private String coverImageUrl;
 
 
+    @Embedded private PinColumns pin;
+
+
     @Column(name = "last_edited_by")
     private UUID lastEditedBy;
 
@@ -68,10 +72,6 @@ public class Itinerary {
     @Column(nullable = false)
     private ItineraryState state;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Visibility visibility;
-
     @Column(nullable = false)
     private boolean published;
 
@@ -81,7 +81,6 @@ public class Itinerary {
 
     @Column(name = "plan_version", nullable = false, insertable = false, updatable = false)
     private long planVersion;
-
 
 
     @Column(name = "started_at")
@@ -100,7 +99,7 @@ public class Itinerary {
         this.id = id;
         this.ownerId = ownerId;
         this.state = ItineraryState.UPCOMING;
-        this.visibility = Visibility.PUBLIC;
+
         this.published = false;
         this.createdAt = createdAt;
         apply(fields);
@@ -120,6 +119,8 @@ public class Itinerary {
         if (fields.standouts() != null) {
             this.standouts = fields.standouts();
         }
+        this.pin = PinColumns.holding(fields.pin());
+
         if (fields.bestTimeOfYear() != null) {
             this.bestTimeOfYear = fields.bestTimeOfYear().isEmpty() ? null : fields.bestTimeOfYear();
         }
@@ -195,7 +196,8 @@ public class Itinerary {
                                 source.standouts(),
                                 source.bestTimeOfYear == null ? "" : source.bestTimeOfYear,
                                 null,
-                                null),
+                                null,
+                                source.pin()),
                         at);
         copy.lastEditedBy = forkerId;
         copy.lastEditedAt = at;
@@ -260,18 +262,12 @@ public class Itinerary {
     }
 
 
-    void publishTo(Visibility audience, Instant at) {
+    void publishTo(Instant at) {
         if (!state.admitsPublishing()) {
             throw new NotCompleteException(state);
         }
-        this.visibility = audience;
         this.published = true;
         this.publishedAt = at;
-    }
-
-
-    void showTo(Visibility audience) {
-        this.visibility = audience;
     }
 
 
@@ -294,6 +290,11 @@ public class Itinerary {
 
     public String destination() {
         return destination;
+    }
+
+
+    public Pin pin() {
+        return PinColumns.readFrom(pin);
     }
 
 
@@ -348,7 +349,7 @@ public class Itinerary {
     }
 
     public Visibility visibility() {
-        return visibility;
+        return Visibility.PUBLIC;
     }
 
 

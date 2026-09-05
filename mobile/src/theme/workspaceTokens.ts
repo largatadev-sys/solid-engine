@@ -35,6 +35,19 @@ export const workspaceColors = {
 } as const;
 
 
+export const locationLinkColors = {
+  link: '#EA580C',
+  linkPressed: '#C2410C',
+  tagWell: '#FFF0EC',
+  tagWellPressed: '#FFE0D5',
+} as const;
+
+
+export const locationLinkTypography = {
+  link: { fontFamily: fonts.semiBold, fontWeight: '600' },
+} as const;
+
+
 export const diaryColors = {
   eyebrow: '#EA580C',
   check: '#EA580C',
@@ -213,6 +226,11 @@ export const profileTypography = {
   statValue: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, fontWeight: '700' },
   statLabel: { fontFamily: fonts.regular, fontSize: 11, lineHeight: 14, fontWeight: '400' },
   editPill: { fontFamily: fonts.bold, fontSize: 13.5, lineHeight: 17, fontWeight: '700' },
+  compactPill: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16, fontWeight: '700' },
+  accountRow: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 19, fontWeight: '600' },
+  accountHelper: { fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, fontWeight: '400' },
+  dialogTitle: { fontFamily: fonts.extraBold, fontSize: 17, lineHeight: 22, fontWeight: '800' },
+  dialogBody: { fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 19, fontWeight: '400' },
   sectionTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, fontWeight: '700' },
   sectionMeta: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 15, fontWeight: '400' },
   postcardTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, fontWeight: '700' },
@@ -793,6 +811,15 @@ export const publicProfileMotion = {
   resultStepMs: 40,
   resultCap: 8,
   pillCrossfadeMs: 160,
+  reducedSwapMs: 120,
+  switchTrackMs: 160,
+  sheetScrimMs: 160,
+  sheetSlideMs: 260,
+  sheetDismissMs: 200,
+  dialogInMs: 200,
+  dialogOutMs: 160,
+  rowExitMs: 200,
+  rowExitDropPx: 6,
   chipSwitchMs: 160,
   toastHoldMs: 2500,
 } as const;
@@ -829,6 +856,17 @@ export const followTypography = {
 
 export const followMetrics = {
   checkGlyph: 14,
+  compactCheckGlyph: 12,
+  compactPillHeight: 32,
+  approvePillHeight: 28,
+  requestActionSlop: 8,
+  kebabTarget: 36,
+  sheetRowHeight: 52,
+  sheetAvatar: 36,
+  switchWidth: 44,
+  switchHeight: 26,
+  switchKnob: 20,
+  accountRowHeight: 52,
   filterChipHeight: 32,
   listAvatar: 44,
   seeAllCircle: 36,
@@ -930,4 +968,30 @@ export const feedbackMetrics = {
   bannerGlyph: 18,
   dismissZone: 72,
   dismissGlyph: 28,
+} as const;
+
+
+export const mapColors = {
+  tileVoid: '#E8E6E1',
+  pinBody: '#EA580C',
+  pinStroke: '#FFFFFF',
+  attributionInk: '#44403C',
+  attributionBacking: 'rgba(255, 255, 255, 0.82)',
+  controlBacking: '#FFFFFF',
+  controlInk: '#1C1917',
+  resultDivider: '#F0EEEB',
+} as const;
+
+
+export const mapMetrics = {
+  pinWidth: 26,
+  pinHeight: 34,
+  pinTipInset: 2,
+  pinTipWidth: 4,
+  pinStrokeWidth: 3,
+  detailLineHeight: 18,
+  controlSize: 40,
+  attributionHeight: 18,
+  searchBoxHeight: 44,
+  resultRowHeight: 56,
 } as const;

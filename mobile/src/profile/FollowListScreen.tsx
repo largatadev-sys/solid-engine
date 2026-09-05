@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,6 +37,22 @@ import {
   followingCountLabel,
 } from './publicProfileCopy';
 import { fetchesMore } from '../discovery/resultsPaging';
+import { confirmWith } from '../components/confirmDestructive';
+import { FeedToast } from '../feed/FeedToast';
+import { failureToast } from '../removal/removalFailure';
+import { useRemoveFollower } from '../query/followQueries';
+import { FollowerSheet } from './FollowerSheet';
+import { rowAffordance } from './followerAffordance';
+import {
+  REMOVE_FOLLOWER_BODY,
+  REMOVE_FOLLOWER_CANCEL_LABEL,
+  REMOVE_FOLLOWER_CONFIRM_LABEL,
+  removeFollowerTitle,
+} from './privateProfileCopy';
+import type { TravelerCardResponse } from '../types/api';
+import { shownFollowCount } from './followListCount';
+import { isProfilePrivate } from './gatedRead';
+import { LockedProfileNotice } from './LockedProfileNotice';
 import { publicProfileRoute, travelerDestination } from './travelerRoutes';
 import { DISCOVERY_SEARCH_ROUTE } from '../discovery/discoveryRoutes';
 
@@ -63,7 +80,44 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
 
   useRevalidateOnFocus(list);
 
-  const rows = (list.data?.pages ?? []).flatMap((page) => page.items);
+  const remove = useRemoveFollower();
+  const [sheetFor, setSheetFor] = useState<TravelerCardResponse | null>(null);
+  const [lastSheetFor, setLastSheetFor] = useState<TravelerCardResponse | null>(null);
+  const [removed, setRemoved] = useState<readonly string[]>([]);
+  const [leaving, setLeaving] = useState<readonly string[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const served = (list.data?.pages ?? []).flatMap((page) => page.items);
+  const rows = served.filter((person) => !removed.includes(person.id));
+  const kebabs = rowAffordance(side, isSelf) === 'kebab';
+
+  function openSheet(person: TravelerCardResponse) {
+    setLastSheetFor(person);
+    setSheetFor(person);
+  }
+
+  function onRemove(person: TravelerCardResponse) {
+    setSheetFor(null);
+    confirmWith(
+      {
+        title: removeFollowerTitle(person.handle),
+        body: REMOVE_FOLLOWER_BODY,
+        confirmLabel: REMOVE_FOLLOWER_CONFIRM_LABEL,
+        cancelLabel: REMOVE_FOLLOWER_CANCEL_LABEL,
+      },
+      () => {
+        setLeaving((held) => (held.includes(person.id) ? held : [...held, person.id]));
+        remove.mutate(person.id, {
+          onError: (cause) => {
+            setLeaving((held) => held.filter((id) => id !== person.id));
+            setRemoved((held) => held.filter((id) => id !== person.id));
+            setToast(failureToast(cause));
+          },
+        });
+      },
+    );
+  }
+
   const counted = isSelf
     ? side === 'followers'
       ? ownStats.data?.followersCount
@@ -71,7 +125,15 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
     : side === 'followers'
       ? publicProfile.data?.followersCount
       : publicProfile.data?.followingCount;
-  const total = counted ?? rows.length;
+  const servedKey = served.map((person) => person.id).join(',');
+
+  useEffect(() => {
+    const stillThere = new Set(servedKey === '' ? [] : servedKey.split(','));
+    setLeaving((held) => held.filter((id) => stillThere.has(id)));
+    setRemoved((held) => held.filter((id) => stillThere.has(id)));
+  }, [servedKey]);
+
+  const total = shownFollowCount(counted, served, leaving);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -91,6 +153,12 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
 
       {list.isPending ? (
         <ActivityIndicator style={styles.loading} color={colors.accent} />
+      ) : list.isError && rows.length === 0 && isProfilePrivate(list.error) ? (
+        <LockedProfileNotice
+          displayName={publicProfile.data?.traveler.displayName ?? null}
+          handle={subject}
+          linked
+        />
       ) : list.isError && rows.length === 0 ? (
         <Pressable
           style={styles.retry}
@@ -145,6 +213,8 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
                     ? index * publicProfileMotion.resultStepMs
                     : 0
                 }
+                leaving={leaving.includes(item.id)}
+                onGone={() => setRemoved((held) => (held.includes(item.id) ? held : [...held, item.id]))}
               >
                 <PersonRow
                   person={item}
@@ -153,6 +223,7 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
                       router.push(publicProfileRoute(item.handle));
                     }
                   }}
+                  {...(kebabs ? { onKebab: () => openSheet(item) } : {})}
                 />
               </RowEntrance>
             )}
@@ -184,6 +255,19 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
           />
         </>
       )}
+
+      <FollowerSheet
+        follower={sheetFor}
+        lastFollower={lastSheetFor}
+        onRemove={onRemove}
+        onDismiss={() => setSheetFor(null)}
+      />
+
+      <FeedToast
+        message={toast}
+        holdMs={publicProfileMotion.toastHoldMs}
+        onDone={() => setToast(null)}
+      />
     </View>
   );
 }

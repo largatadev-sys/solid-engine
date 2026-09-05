@@ -1,4 +1,4 @@
-import { asDiaryEntry } from '../src/feed/publicDiaryPostcard';
+import { asDiaryEntry, tripDestinationOf } from '../src/feed/publicDiaryPostcard';
 import { snapshotEyebrow } from '../src/diary/postcardAnatomy';
 import type { FeedPostcardResponse } from '../src/types/api';
 
@@ -9,6 +9,7 @@ function card(overrides: Partial<FeedPostcardResponse> = {}): FeedPostcardRespon
     author: { id: 't1', handle: 'wanderer', displayName: null, avatarUrl: null },
     itineraryId: 'i1',
     tripTitle: 'Bali Temple Run',
+    destination: 'Bali',
     publishedItineraryId: null,
     dayLabel: 'Day 3',
     activityTitle: 'Sunrise gate photo',
@@ -46,5 +47,25 @@ describe('a shared postcard renders through the diary components a reader alread
 
   it('is shared by definition, so the preview never offers a reader an unshare', () => {
     expect(asDiaryEntry(card()).sharedAt).toBe('2026-08-12T10:00:00Z');
+  });
+});
+
+
+describe('the trip destination behind a public diary (PL-1)', () => {
+  it('is null when the diary holds no postcards at all', () => {
+    expect(tripDestinationOf([])).toBeNull();
+  });
+
+  it('reads the destination the cards agree on', () => {
+    expect(tripDestinationOf([card(), card()])).toBe('Bali');
+  });
+
+  it('skips a card whose destination is missing rather than giving up on the trip', () => {
+    expect(tripDestinationOf([card({ destination: null }), card()])).toBe('Bali');
+    expect(tripDestinationOf([card({ destination: '  ' }), card()])).toBe('Bali');
+  });
+
+  it('is null when no card names one', () => {
+    expect(tripDestinationOf([card({ destination: null })])).toBeNull();
   });
 });

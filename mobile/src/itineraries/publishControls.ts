@@ -1,4 +1,4 @@
-import type { ItineraryResponse, ItineraryState, PublishAudience } from '../types/api';
+import type { ItineraryResponse, ItineraryState } from '../types/api';
 
 
 export type PublishControl = 'publish' | 'unpublish';
@@ -28,26 +28,8 @@ export function canPublish(itinerary: Pick<ItineraryResponse, 'state'>): boolean
 }
 
 
-export function audienceOf(itinerary: Pick<ItineraryResponse, 'visibility'>): PublishAudience {
-  return itinerary.visibility;
-}
-
-
-export function otherAudience(audience: PublishAudience): PublishAudience {
-  return audience === 'public' ? 'private' : 'public';
-}
-
-
-export function audienceLabel(audience: PublishAudience): string {
-  return audience === 'public' ? 'Public' : 'Private';
-}
-
-
-export function audienceBlurb(audience: PublishAudience): string {
-  return audience === 'public'
-    ? 'Everyone on Largata can find and read this itinerary.'
-    : 'Only you and your collaborators can read it.';
-}
+export const PUBLISH_AUDIENCE_LINE =
+  'Everyone on Largata can find and read this itinerary.';
 
 
 export const PUBLISH_NEEDS_COMPLETE_TITLE = 'This trip is not finished yet';

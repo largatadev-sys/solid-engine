@@ -535,7 +535,7 @@ const TRAVELERS = [
         standouts: [],
         bestTimeOfYear: 'May – Sep',
         lifecycle: 'completed',
-        publish: 'private',
+        publish: 'public',
         days: [
           day('Cliffs of Moher, Ireland', 'The cliffs', [
             act('Cliffs of Moher coastal walk', '08:00', 'Doolin, Co. Clare', 'Walk from Doolin rather than driving to the visitor centre.', {
@@ -767,7 +767,7 @@ const TRAVELERS = [
         standouts: ['Two days acclimatising in Cusco. Not optional.'],
         bestTimeOfYear: 'May – Sep',
         lifecycle: 'completed',
-        publish: 'private',
+        publish: 'public',
         days: [
           day('Machu Picchu, Peru', 'Machu Picchu', [
             act('First entry, Circuit 2', '06:00', 'Machu Picchu, Cusco', 'Book sixty days out. Circuit decides what you see.', {

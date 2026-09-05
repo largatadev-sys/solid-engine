@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
+import { CreatorFollowPill } from '../profile/CreatorFollowPill';
 import { useOpenTravelerProfile } from '../profile/useOpenTravelerProfile';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
@@ -9,6 +10,10 @@ import { freeScroll } from '../components/stripSettle';
 import { galleryOf, galleryOverflow, GALLERY_VISIBLE_TILES } from '../media/galleryOf';
 import { MediaThumb } from '../media/MediaThumb';
 import { colors, radii, spacing, typography } from '../theme';
+import { locationLinkColors } from '../theme/workspaceTokens';
+import { LocationLink } from '../places/LocationLink';
+import { placeTapTarget } from '../maps/placeTap';
+import { useOpenPlace } from '../maps/useOpenPlace';
 import type {
   PublishedActivityResponse,
   PublishedItineraryResponse,
@@ -136,9 +141,11 @@ function PublishedHeader({
   audience: 'preview' | 'consumer';
 }) {
   const pill = destinationPillLabel(projection.destination);
+  const destinationTap = placeTapTarget(projection.destination, projection.pin, null);
   const duration = durationLabel(projection.durationDays);
   const total = estimatedTotalLabel(projection.estimatedCost);
   const openProfile = useOpenTravelerProfile();
+  const openPlace = useOpenPlace();
   const handle = bylineHandle(projection.creator.handle);
 
   return (
@@ -146,10 +153,23 @@ function PublishedHeader({
       <CoverSlot coverUrl={projection.coverImageUrl} />
 
       <View style={styles.pillRow}>
-        {pill !== undefined && (
-          <View style={styles.pill}>
-            <Text style={styles.pillText}>{pill}</Text>
-          </View>
+        {pill !== undefined && destinationTap !== null && (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={destinationTap.label}
+            onPress={() => openPlace(projection.destination, projection.pin, null)}
+          >
+            {({ pressed }) => (
+              <View style={StyleSheet.flatten([styles.pill, pressed && styles.pillPressed])}>
+                <Text
+                  style={StyleSheet.flatten([styles.pillText, pressed && styles.pillTextPressed])}
+                  numberOfLines={1}
+                >
+                  {pill}
+                </Text>
+              </View>
+            )}
+          </Pressable>
         )}
         {duration !== undefined && <Text style={styles.duration}>{duration}</Text>}
         {projection.bestTimeOfYear !== null && (
@@ -171,16 +191,10 @@ function PublishedHeader({
           </View>
         </Pressable>
         {audience === 'consumer' && (
-          <Pressable
-            style={styles.followButton}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-            accessibilityLabel="Follow, coming soon"
-            onPress={() => comingSoon('follow')}
-          >
-            <Icon name="plus" size={FOLLOW_ICON_SIZE} color={colors.textSecondary} />
-            <Text style={styles.followText}>Follow</Text>
-          </Pressable>
+          <CreatorFollowPill
+            handle={projection.creator.handle}
+            displayName={projection.creator.displayName}
+          />
         )}
       </View>
 
@@ -296,7 +310,13 @@ function DayByDay({ projection }: { projection: PublishedItineraryResponse }) {
           {day.activities.length === 0 ? (
             <Text style={styles.caption}>Nothing planned for this day.</Text>
           ) : (
-            day.activities.map((activity) => <ActivityCard key={activity.id} activity={activity} />)
+            day.activities.map((activity) => (
+              <ActivityCard
+                key={activity.id}
+                activity={activity}
+                destination={projection.destination}
+              />
+            ))
           )}
         </View>
       ))}
@@ -305,11 +325,24 @@ function DayByDay({ projection }: { projection: PublishedItineraryResponse }) {
 }
 
 
-function ActivityCard({ activity }: { activity: PublishedActivityResponse }) {
+function ActivityCard({
+  activity,
+  destination,
+}: {
+  activity: PublishedActivityResponse;
+  destination: string | null;
+}) {
   return (
     <View style={styles.activityCard}>
       <Text style={styles.activityTitle}>{activity.title}</Text>
-      {activity.place !== null && <Text style={styles.activityPlace}>{activity.place}</Text>}
+      {activity.place !== null && (
+        <LocationLink
+          place={activity.place}
+          destination={destination}
+          pin={activity.pin}
+          style={styles.activityPlace}
+        />
+      )}
       {activity.notes !== null && (
         <View style={styles.tips}>
           <Text style={styles.tipsLabel}>Creator tip</Text>
@@ -330,8 +363,6 @@ function ActivityCard({ activity }: { activity: PublishedActivityResponse }) {
   );
 }
 
-const FOLLOW_ICON_SIZE = 14;
-
 const CREATOR_AVATAR_SIZE = 36;
 
 const COVER_HEIGHT = 200;
@@ -350,9 +381,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: colors.textPrimary,
+    backgroundColor: locationLinkColors.tagWell,
   },
-  pillText: { ...typography.overline, color: colors.textOnAccent },
+  pillPressed: { backgroundColor: locationLinkColors.tagWellPressed },
+  pillText: { ...typography.overline, color: locationLinkColors.link },
+  pillTextPressed: { color: locationLinkColors.linkPressed },
   duration: { ...typography.label, color: colors.textSecondary },
   cover: {
     height: COVER_HEIGHT,
@@ -382,18 +415,6 @@ const styles = StyleSheet.create({
   creatorNames: { flex: 1 },
   creatorName: { ...typography.label, color: colors.textPrimary },
   creatorHandle: { ...typography.caption, color: colors.textSecondary },
-  followButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    opacity: 0.6,
-  },
-  followText: { ...typography.caption, color: colors.textSecondary },
   title: { ...typography.display, color: colors.textPrimary },
   stats: {
     flexDirection: 'row',
@@ -464,7 +485,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   activityTitle: { ...typography.bodyStrong, color: colors.textPrimary },
-  activityPlace: { ...typography.caption, color: colors.textSecondary },
+  activityPlace: { ...typography.caption },
   tips: {
     gap: spacing.xs,
     padding: spacing.sm,

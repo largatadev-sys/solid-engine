@@ -28,12 +28,14 @@ import {
   SNAP_STYLE,
 } from '../components/stripScroll';
 import { carouselCounter, pageOfOffset, showsCarouselChrome } from './postcardCarousel';
+import { LocationTag } from '../places/LocationTag';
 
 
 type StreamPostcard = {
   readonly id: string;
   readonly activityTitle: string;
   readonly caption: string | null;
+  readonly place?: string | null;
   readonly photos: readonly DiaryPhotoResponse[];
 };
 
@@ -42,11 +44,13 @@ export function PostcardStreamEntry({
   postcard,
   eyebrow,
   openLabel,
+  destination,
   onOpen,
 }: {
   readonly postcard: StreamPostcard;
   readonly eyebrow: string;
   readonly openLabel: string;
+  readonly destination?: string | null;
   readonly onOpen: () => void;
 }) {
   const [drag] = useState(dragToScroll);
@@ -72,6 +76,8 @@ export function PostcardStreamEntry({
         <Text style={styles.eyebrow}>{eyebrow}</Text>
         <Text style={styles.entryTitle}>{postcard.activityTitle}</Text>
       </Pressable>
+
+      <LocationTag place={postcard.place ?? null} destination={destination ?? null} />
 
       <View style={styles.stage}>
         <ScrollView

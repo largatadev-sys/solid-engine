@@ -304,3 +304,119 @@ describe('counting the money a currency change would relabel', () => {
     expect(pricedActivityCount({ days: [] })).toBe(0);
   });
 });
+
+
+describe('the trip’s destination carries a Pin, so every activity picker opens in the right region (PL-2)', () => {
+  const EL_NIDO = { lat: 11.18, lng: 119.39, zoom: 12 };
+
+  it('sends the destination pin on create', () => {
+    const request = createRequestFrom({ ...EMPTY_TRIP_FORM, title: 'T', destination: 'El Nido', pin: EL_NIDO });
+
+    expect(request.pin).toEqual(EL_NIDO);
+  });
+
+  it('omits the pin on create when the destination was only typed', () => {
+    const request = createRequestFrom({ ...EMPTY_TRIP_FORM, title: 'T', destination: 'El Nido' });
+
+    expect(request).not.toHaveProperty('pin');
+  });
+
+  it('patches the pin on edit, and clears it with an explicit null', () => {
+    expect(updateRequestFrom({ ...EMPTY_TRIP_FORM, title: 'T', destination: 'El Nido', pin: EL_NIDO }).pin)
+      .toEqual(EL_NIDO);
+    expect(updateRequestFrom({ ...EMPTY_TRIP_FORM, title: 'T', destination: 'El Nido', pin: null }).pin)
+      .toBeNull();
+  });
+
+  it('reads a stored destination pin back into the form', () => {
+    const form = tripFormValuesFrom({
+      title: 'Palawan',
+      destination: 'El Nido',
+      currency: 'PHP',
+      standouts: [],
+      pin: EL_NIDO,
+    } as never);
+
+    expect(form.pin).toEqual(EL_NIDO);
+  });
+
+  it('reads an unpinned destination back as no pin, never as half a pin', () => {
+    expect(
+      tripFormValuesFrom({
+        title: 'Palawan',
+        destination: 'El Nido',
+        currency: 'PHP',
+        standouts: [],
+        pin: null,
+      } as never).pin,
+    ).toBeNull();
+  });
+});
+
+
+describe('the stale-ref rule fires on SAVE, never on keystroke (PL-2, founder ruling)', () => {
+  const BIG_LAGOON = { lat: 11.1949, lng: 119.4013, zoom: 16 };
+
+  const pinned = (destination: string, pinnedAs: string): TripFormValues => ({
+    ...EMPTY_TRIP_FORM,
+    title: 'Palawan',
+    destination,
+    pin: BIG_LAGOON,
+    pinnedAs,
+  });
+
+  it('keeps the pin while the text still matches what it was dropped with', () => {
+    expect(updateRequestFrom(pinned('Big Lagoon', 'Big Lagoon')).pin).toEqual(BIG_LAGOON);
+  });
+
+  it('drops the pin once the traveler has renamed the place to somewhere else', () => {
+    expect(updateRequestFrom(pinned('Small Lagoon', 'Big Lagoon')).pin).toBeNull();
+  });
+
+  it('SURVIVES A TYPO CORRECTED BEFORE SAVING — the whole reason the rule is not on keystroke', () => {
+    const midTypo = pinned('Big Lagon', 'Big Lagoon');
+    expect(midTypo.pin).toEqual(BIG_LAGOON);
+
+    const corrected = { ...midTypo, destination: 'Big Lagoon' };
+    expect(updateRequestFrom(corrected).pin).toEqual(BIG_LAGOON);
+  });
+
+  it('ignores case and surrounding space, so neither reads as a rename', () => {
+    expect(updateRequestFrom(pinned('  BIG LAGOON  ', 'Big Lagoon')).pin).toEqual(BIG_LAGOON);
+  });
+
+  it('sends no pin at creation when the text diverged from the drop', () => {
+    expect(createRequestFrom(pinned('Somewhere else', 'Big Lagoon')).pin).toBeUndefined();
+  });
+
+  it('a trip that never had a pin is unaffected by any amount of typing', () => {
+    expect(updateRequestFrom({ ...EMPTY_TRIP_FORM, title: 'P', destination: 'Anywhere' }).pin).toBeNull();
+  });
+
+  it('hydrating a pinned trip remembers the text the pin was dropped with', () => {
+    const values = tripFormValuesFrom({
+      title: 'Palawan',
+      destination: 'El Nido, Palawan',
+      currency: 'PHP',
+      standouts: [],
+      pin: BIG_LAGOON,
+    } as never);
+
+    expect(values.pinnedAs)
+      .toBe('El Nido, Palawan');
+    expect(updateRequestFrom(values).pin)
+      .toEqual(BIG_LAGOON);
+  });
+
+  it('a hydrated trip with no pin remembers no drop text', () => {
+    const values = tripFormValuesFrom({
+      title: 'Palawan',
+      destination: 'El Nido, Palawan',
+      currency: 'PHP',
+      standouts: [],
+      pin: null,
+    } as never);
+
+    expect(values.pinnedAs).toBe('');
+  });
+});

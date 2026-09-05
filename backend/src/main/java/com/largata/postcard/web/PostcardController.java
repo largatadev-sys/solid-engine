@@ -1,8 +1,10 @@
 package com.largata.postcard.web;
 
+import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.postcard.PostcardService;
+import com.largata.postcard.PostcardView;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,10 +30,12 @@ class PostcardController {
 
     private final PostcardService postcards;
     private final ObjectMapper json;
+    private final AuthoredContentAudience audience;
 
-    PostcardController(PostcardService postcards, ObjectMapper json) {
+    PostcardController(PostcardService postcards, ObjectMapper json, AuthoredContentAudience audience) {
         this.postcards = postcards;
         this.json = json;
+        this.audience = audience;
     }
 
 
@@ -58,7 +62,9 @@ class PostcardController {
 
     @GetMapping("/{postcardId}")
     PostcardResponse read(@CurrentTraveler Traveler traveler, @PathVariable UUID postcardId) {
-        return PostcardResponse.of(postcards.read(postcardId));
+        PostcardView view = postcards.read(postcardId);
+        audience.requireReadable(traveler.id(), view.postcard().authorId());
+        return PostcardResponse.of(view);
     }
 
 

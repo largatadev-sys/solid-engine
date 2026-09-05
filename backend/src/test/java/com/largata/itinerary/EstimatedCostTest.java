@@ -143,6 +143,7 @@ class EstimatedCostTest {
                 null,
                 new BigDecimal("99999"),
                 "XXX",
+                null,
                 UuidV7.generate(),
                 null,
                 List.of());

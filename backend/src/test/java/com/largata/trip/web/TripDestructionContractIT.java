@@ -392,8 +392,6 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
                 rest.post()
                         .uri("/v1/trips/" + trip + "/publish")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"audience\":\"public\"}")
                         .exchange()
                         .expectStatus()
                         .isOk()

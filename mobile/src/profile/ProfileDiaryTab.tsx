@@ -179,6 +179,7 @@ function TripSection({
                   <Postcard
                     entry={entry}
                     likes={stubLikeCountFor(entry.id)}
+                    destination={trip.destination ?? null}
                     onPress={() => setPreviewing(entry)}
                     onOpenMenu={() =>
                       removal.openMenu({

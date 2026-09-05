@@ -15,4 +15,4 @@
 
 ## Comments
 
-- *2026-08-30:* "untouched" holds with one disclosed exception owned by this ticket's FK drops: the old world's `DiaryContractIT` pinned the SET NULL that V47 removes, and its one assertion is re-pinned to the ruled dangling behavior — see ticket 09's comment for the full account.
+- *2026-08-30:* "untouched" holds with one disclosed exception owned by this ticket's FK drops: the old world's `DiaryContractIT` pinned the SET NULL that V52 removes, and its one assertion is re-pinned to the ruled dangling behavior — see ticket 09's comment for the full account.

@@ -1,10 +1,11 @@
-import { test, expect } from '../support/fixtures';
+import { test, expect, lastOpenedUrl } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { seedTrip, seedPlan, stamp, type SeededTrip } from '../support/seed';
 import { labelled, dragStripBy } from '../support/screen';
 import { forwardConfirmWording, stateBadge } from '../../src/itineraries/workspaceControls';
+import { mapsUrl } from '../../src/places/mapsQuery';
 const DEAD_LABELS = ['Draft', 'Ready', 'Active'];
 
 const OWNER = ownerTagFor('web/workspace');
@@ -60,6 +61,31 @@ test.describe('the trip workspace as a viewer', () => {
     await expect(page.getByText('Day 1')).toBeVisible();
     await expect(page.getByText('Kayak the lagoon')).toBeVisible();
     await expect(page.getByText('Sunset dinner')).toBeVisible();
+  });
+
+  test('the window.open capture installs for a spec that never asks for the signal fixture', async ({
+    page,
+  }) => {
+    await page.goto(`/itineraries/${trip.id}`);
+
+    await page.evaluate(() => window.open('https://example.com/probe', '_blank'));
+
+    await expect.poll(() => lastOpenedUrl(page)).toBe('https://example.com/probe');
+  });
+
+  test('the day card place opens Maps hinted with the trip destination, and the clock does not', async ({
+    page,
+  }) => {
+    await page.goto(`/itineraries/${trip.id}`);
+    await expect(page.getByText('Kayak the lagoon')).toBeVisible();
+
+    await labelled(page, 'Big Lagoon, open in Google Maps').click();
+
+    await expect
+      .poll(() => lastOpenedUrl(page), { timeout: 15_000 })
+      .toBe(mapsUrl('Big Lagoon', 'Palawan'));
+
+    await expect(labelled(page, '9:00 AM, open in Google Maps')).toHaveCount(0);
   });
 
   test('the viewer is read-only: no Add Activity, no Add a Day', async ({ page }) => {

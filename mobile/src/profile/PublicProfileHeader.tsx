@@ -2,7 +2,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { initialsFor } from '../onboarding/initials';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import { spacing } from '../theme';
 import {
   followColors,
@@ -14,14 +13,11 @@ import {
   workspaceColors,
   workspaceRadii,
 } from '../theme/workspaceTokens';
+import { FollowPill } from './FollowPill';
 import { profileMetaLine } from './profileMetaLine';
 import { StatCells } from './StatCells';
-import {
-  DESTINATIONS_STAT_LABEL,
-  FOLLOWS_YOU_LABEL,
-  FOLLOWING_LABEL,
-  FOLLOW_LABEL,
-} from './publicProfileCopy';
+import { DESTINATIONS_STAT_LABEL } from './publicProfileCopy';
+import type { ViewerRelation } from '../types/api';
 import {
   FOLLOWERS_STAT_LABEL,
   FOLLOWING_STAT_LABEL,
@@ -39,11 +35,10 @@ interface PublicProfileHeaderProps {
   readonly destinationCount: number;
   readonly followersCount: number;
   readonly followingCount: number;
-  readonly following: boolean;
-  readonly followsViewer: boolean;
+  readonly relation: ViewerRelation;
   readonly onFollow: () => void;
-  readonly onOpenFollowers: () => void;
-  readonly onOpenFollowing: () => void;
+  readonly onOpenFollowers: (() => void) | null;
+  readonly onOpenFollowing: (() => void) | null;
 }
 
 
@@ -57,14 +52,12 @@ export function PublicProfileHeader({
   destinationCount,
   followersCount,
   followingCount,
-  following,
-  followsViewer,
+  relation,
   onFollow,
   onOpenFollowers,
   onOpenFollowing,
 }: PublicProfileHeaderProps) {
   const meta = profileMetaLine(handle, vanityNumber);
-  const press = usePressFeedback();
 
   const cells = [
     { label: PUBLISHED_STAT_LABEL, value: publishedCount, open: null },
@@ -94,11 +87,6 @@ export function PublicProfileHeader({
                 {meta}
               </Text>
             )}
-            {followsViewer && (
-              <View style={styles.followsYouChip}>
-                <Text style={styles.followsYouLabel}>{FOLLOWS_YOU_LABEL}</Text>
-              </View>
-            )}
           </View>
           {bio !== null && bio.trim() !== '' && (
             <Text style={styles.bio} numberOfLines={2}>
@@ -110,29 +98,7 @@ export function PublicProfileHeader({
 
       <StatCells cells={cells} />
 
-      <AnimatedPressable
-        style={StyleSheet.flatten([
-          styles.followPill,
-          following && styles.followingPill,
-          press.style,
-        ])}
-        onPress={onFollow}
-        onPressIn={press.onPressIn}
-        onPressOut={press.onPressOut}
-        accessibilityRole="button"
-        accessibilityLabel={`${following ? FOLLOWING_LABEL : FOLLOW_LABEL} ${displayName}`}
-      >
-        {following && (
-          <Icon
-            name="check"
-            size={followMetrics.checkGlyph}
-            color={followColors.followingInk}
-          />
-        )}
-        <Text style={[styles.followLabel, following && styles.followingLabel]}>
-          {following ? FOLLOWING_LABEL : FOLLOW_LABEL}
-        </Text>
-      </AnimatedPressable>
+      <FollowPill relation={relation} displayName={displayName} onPress={onFollow} />
     </View>
   );
 }
@@ -203,17 +169,6 @@ const styles = StyleSheet.create({
     ...profileTypography.meta,
     color: profileColors.meta,
     flexShrink: 1,
-  },
-  followsYouChip: {
-    backgroundColor: followColors.chipWell,
-    borderRadius: workspaceRadii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.hair,
-    flexShrink: 0,
-  },
-  followsYouLabel: {
-    ...followTypography.chip,
-    color: followColors.chipInk,
   },
   bio: {
     ...profileTypography.bio,

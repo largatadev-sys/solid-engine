@@ -1,4 +1,3 @@
-import type { PublishAudience } from '../types/api';
 import {
   BACK_IN_TRIP_TOAST,
   ITINERARY_REPUBLISHED_TOAST,
@@ -26,7 +25,6 @@ export interface Removal {
   readonly token: number;
   readonly deferred: boolean;
   readonly itineraryId: string | null;
-  readonly audience: PublishAudience | null;
 }
 
 
@@ -50,7 +48,6 @@ export interface RemovalRef {
   readonly subjectId: string;
   readonly kind: RemovalKind;
   readonly itineraryId: string | null;
-  readonly audience: PublishAudience | null;
 }
 
 
@@ -59,7 +56,6 @@ function refOf(removal: Removal): RemovalRef {
     subjectId: removal.subjectId,
     kind: removal.kind,
     itineraryId: removal.itineraryId,
-    audience: removal.audience,
   };
 }
 
@@ -79,7 +75,6 @@ export interface RemovalRequest {
   readonly undoable?: boolean;
   readonly undoLabel?: string;
   readonly itineraryId?: string;
-  readonly audience?: PublishAudience;
 }
 
 
@@ -129,7 +124,6 @@ export function requested(queue: UndoQueue, request: RemovalRequest): UndoStep {
             token,
             deferred,
             itineraryId: request.itineraryId ?? null,
-            audience: request.audience ?? null,
           }
         : null,
       toast,

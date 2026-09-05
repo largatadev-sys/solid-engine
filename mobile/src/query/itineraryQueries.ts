@@ -25,7 +25,6 @@ import type {
   ItineraryResponse,
   Page,
   PhotoDumpEntryResponse,
-  PublishAudience,
   PublishedItineraryResponse,
   SavePlanRequest,
   TripCategory,
@@ -217,10 +216,10 @@ export function useItineraryPreview(id: string): UseQueryResult<PublishedItinera
 
 export function usePublishTrip(
   id: string,
-): UseMutationResult<ItineraryResponse, Error, PublishAudience> {
+): UseMutationResult<ItineraryResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (audience: PublishAudience) => itineraryRepository.publishTrip(id, audience),
+    mutationFn: () => itineraryRepository.publishTrip(id),
     onSuccess: async (updated) => {
       await onItineraryUpdated(client, updated);
       await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
@@ -232,19 +231,6 @@ export function useUnpublishTrip(id: string): UseMutationResult<ItineraryRespons
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => itineraryRepository.unpublishTrip(id),
-    onSuccess: async (updated) => {
-      await onItineraryUpdated(client, updated);
-      await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
-    },
-  });
-}
-
-export function useShowTripTo(
-  id: string,
-): UseMutationResult<ItineraryResponse, Error, PublishAudience> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (audience: PublishAudience) => itineraryRepository.showTripTo(id, audience),
     onSuccess: async (updated) => {
       await onItineraryUpdated(client, updated);
       await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });

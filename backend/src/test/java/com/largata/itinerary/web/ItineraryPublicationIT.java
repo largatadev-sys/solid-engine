@@ -50,7 +50,7 @@ class ItineraryPublicationIT extends PostgresTestBase {
                 .isEqualTo(true)
                 .jsonPath("$.visibility")
                 .isEqualTo("public");
-        assertThat(visibilityOf(tripId)).as("the default audience is public").isEqualTo("PUBLIC");
+
 
         unpublish(owner, tripId)
                 .expectStatus()
@@ -104,37 +104,41 @@ class ItineraryPublicationIT extends PostgresTestBase {
 
 
     @Test
-    void theAudienceMovesWithoutLeavingTheFeed() {
+    void aPrivateAudienceIsRefusedByNameAndPublishesNothing() {
         String owner = freshTraveler();
         String tripId = completedTrip(owner);
 
         publishTo(owner, tripId, "private")
                 .expectStatus()
-                .isOk()
+                .isBadRequest()
                 .expectBody()
-                .jsonPath("$.visibility")
-                .isEqualTo("private")
-                .jsonPath("$.published")
-                .isEqualTo(true);
-        assertThat(visibilityOf(tripId)).isEqualTo("PRIVATE");
+                .jsonPath("$.code")
+                .isEqualTo("VISIBILITY_RETIRED");
 
-        audience(owner, tripId, "public").expectStatus().isOk();
-        assertThat(visibilityOf(tripId)).as("public ⇄ private is a toggle, not a republish").isEqualTo("PUBLIC");
-        assertThat(publishedFlagOf(tripId)).as("…and it never leaves the feed").isTrue();
+        assertThat(publishedFlagOf(tripId))
+                .as("a refused publish is not a publish — the dead-click pattern this repo refuses")
+                .isFalse();
     }
 
 
     @Test
-    void theAudienceIsSettableBeforePublishing_becauseItIsNotAPublicationFact() {
+    void theAudienceRouteSurvivesAndRefusesTheRetiredValue() {
         String owner = freshTraveler();
         String tripId = createItinerary(owner);
 
         audience(owner, tripId, "private")
                 .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("VISIBILITY_RETIRED");
+
+        audience(owner, tripId, "public")
+                .expectStatus()
                 .isOk()
                 .expectBody()
                 .jsonPath("$.visibility")
-                .isEqualTo("private")
+                .isEqualTo("public")
                 .jsonPath("$.published")
                 .isEqualTo(false);
     }
@@ -336,7 +340,7 @@ class ItineraryPublicationIT extends PostgresTestBase {
 
 
     @Test
-    void theThreeAxesAreIndependentFactsOnTheWire() {
+    void theTwoAxesAreIndependentFactsOnTheWire_andVisibilityIsAConstantBesideThem() {
         String owner = freshTraveler();
         String tripId = completedTrip(owner);
 
@@ -351,19 +355,19 @@ class ItineraryPublicationIT extends PostgresTestBase {
                 .jsonPath("$.visibility")
                 .isEqualTo("public");
 
-        audience(owner, tripId, "private")
+        unpublish(owner, tripId)
                 .expectStatus()
                 .isOk()
                 .expectBody()
                 .jsonPath("$.state")
                 .isEqualTo("completed")
                 .jsonPath("$.published")
-                .isEqualTo(true)
+                .isEqualTo(false)
                 .jsonPath("$.visibility")
-                .isEqualTo("private");
+                .isEqualTo("public");
 
-        assertThat(stateOf(tripId)).as("moving the audience touches neither of the other two axes").isEqualTo("COMPLETED");
-        assertThat(publishedFlagOf(tripId)).isTrue();
+        assertThat(stateOf(tripId)).as("leaving the feed touches the lifecycle not at all").isEqualTo("COMPLETED");
+        assertThat(publishedFlagOf(tripId)).isFalse();
     }
 
 
@@ -415,10 +419,6 @@ class ItineraryPublicationIT extends PostgresTestBase {
                         "SELECT published FROM itinerary WHERE id = ?", Boolean.class, UUID.fromString(itineraryId)));
     }
 
-    private String visibilityOf(String itineraryId) {
-        return jdbc.queryForObject(
-                "SELECT visibility FROM itinerary WHERE id = ?", String.class, UUID.fromString(itineraryId));
-    }
 
     private String stateOf(String itineraryId) {
         return jdbc.queryForObject(

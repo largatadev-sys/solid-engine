@@ -9,4 +9,6 @@ public record PublicProfileResponse(
         long followersCount,
         long followingCount,
         boolean followedByViewer,
-        boolean followsViewer) {}
+        boolean followsViewer,
+        String visibility,
+        String viewerRelation) {}

@@ -12,4 +12,5 @@ public record ProfileEdit(
         List<String> interests,
         String country,
         String preferredCurrency,
-        String homeCity) {}
+        String homeCity,
+        ProfileVisibility profileVisibility) {}

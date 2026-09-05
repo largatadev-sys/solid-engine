@@ -126,6 +126,9 @@ public class PostcardService {
                             activity.dayLabel(),
                             activity.timeOfDay(),
                             activity.place(),
+                            activity.latitude(),
+                            activity.longitude(),
+                            activity.zoom(),
                             caption,
                             Instant.now(clock)));
         } catch (DataIntegrityViolationException lostTheRace) {

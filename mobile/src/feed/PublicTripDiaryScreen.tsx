@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
 import { itineraryLoadMessage, ScreenMessage } from '../components/ScreenMessage';
+import { isProfilePrivate } from '../profile/gatedRead';
+import { LockedProfileNotice } from '../profile/LockedProfileNotice';
 import { PostcardPreview } from '../diary/PostcardPreview';
 import { PostcardStreamEntry, STREAM_INSET } from '../diary/PostcardStreamEntry';
 import { snapshotEyebrow } from '../diary/postcardAnatomy';
@@ -13,12 +15,17 @@ import { feedColors, feedTypography } from '../theme/feedTokens';
 import { diaryScreenColors, diaryScreenMetrics, diaryScreenTypography } from '../theme/workspaceTokens';
 import type { DiaryEntryResponse } from '../types/api';
 import { publicDiaryByline } from './feedCardAnatomy';
-import { asDiaryEntry } from './publicDiaryPostcard';
+import { asDiaryEntry, tripDestinationOf } from './publicDiaryPostcard';
 
 
 export function PublicTripDiaryScreen() {
   const goBack = useSafeBack();
-  const { id, author } = useLocalSearchParams<{ id: string; author: string }>();
+  const { id, author, handle, name } = useLocalSearchParams<{
+    id: string;
+    author: string;
+    handle?: string;
+    name?: string;
+  }>();
 
   const diary = usePublicTripDiary(id ?? '', author ?? '');
   const [previewing, setPreviewing] = useState<DiaryEntryResponse | null>(null);
@@ -27,10 +34,38 @@ export function PublicTripDiaryScreen() {
     return <ActivityIndicator style={styles.loading} color={colors.accent} />;
   }
   if (diary.isError) {
+    if (isProfilePrivate(diary.error)) {
+      return (
+        <View style={styles.screen}>
+          <View style={styles.header}>
+            <View style={styles.titleRow}>
+              <Pressable
+                style={styles.back}
+                onPress={goBack}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+              >
+                <Icon
+                  name="back"
+                  size={diaryScreenMetrics.backGlyph}
+                  color={diaryScreenColors.title}
+                />
+              </Pressable>
+            </View>
+          </View>
+          <LockedProfileNotice
+            displayName={name === undefined || name === '' ? null : name}
+            handle={handle === undefined || handle === '' ? null : handle}
+            linked={handle !== undefined && handle !== ''}
+          />
+        </View>
+      );
+    }
     return <ScreenMessage {...itineraryLoadMessage(diary.error, 'This diary is not public')} />;
   }
 
   const tripTitle = diary.data.tripTitle;
+  const destination = tripDestinationOf(diary.data.postcards);
   const postcards = diary.data.postcards.map(asDiaryEntry);
 
   return (
@@ -67,6 +102,7 @@ export function PublicTripDiaryScreen() {
             postcard={entry}
             eyebrow={snapshotEyebrow(entry)}
             openLabel={`Open this postcard from ${entry.activityTitle}`}
+            destination={destination}
             onOpen={() => setPreviewing(entry)}
           />
         ))}

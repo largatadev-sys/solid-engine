@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.UUID;
 import javax.imageio.ImageIO;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -356,5 +357,51 @@ class TripDerivedPostcardContractIT extends ObjectStoreTestBase {
 
     private static String handle() {
         return "t" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+    }
+
+
+    @Test
+    void aPinnedActivitysPostcardCarriesThePinInItsSnapshotAndAnUnpinnedOneCarriesNone() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip = rig.createTrip(owner, 1);
+        UUID pinned = rig.addActivity(owner, trip, rig.dayAt(trip, 1), "Lagoon");
+        UUID bare = rig.addActivity(owner, trip, rig.dayAt(trip, 1), "Nap");
+        jdbc.update(
+                "UPDATE activity SET place = 'Big Lagoon', latitude = 11.194900, longitude = 119.401300,"
+                        + " zoom = 15 WHERE id = ?",
+                pinned);
+        start(owner, trip);
+
+        rest.post()
+                .uri(postUri(trip, pinned))
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(parts("{\"caption\":\"Blue all the way down\"}", 1))
+                .exchange()
+                .expectStatus()
+                .isCreated()
+                .expectBody()
+                .jsonPath("$.pin.zoom")
+                .isEqualTo(15)
+                .jsonPath("$.pin.lat")
+                .exists()
+                .jsonPath("$.pin.lng")
+                .exists();
+        assertThat(jdbc.queryForObject("SELECT latitude FROM postcard WHERE activity_id = ?", BigDecimal.class, pinned))
+                .isEqualByComparingTo(new BigDecimal("11.1949"));
+        assertThat(jdbc.queryForObject("SELECT longitude FROM postcard WHERE activity_id = ?", BigDecimal.class, pinned))
+                .isEqualByComparingTo(new BigDecimal("119.4013"));
+
+        rest.post()
+                .uri(postUri(trip, bare))
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(parts("{\"caption\":\"Nothing to pin\"}", 1))
+                .exchange()
+                .expectStatus()
+                .isCreated()
+                .expectBody()
+                .jsonPath("$.pin")
+                .doesNotExist();
     }
 }

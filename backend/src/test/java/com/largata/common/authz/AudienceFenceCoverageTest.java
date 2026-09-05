@@ -127,7 +127,10 @@ class AudienceFenceCoverageTest {
                                 + "handler is fenced by the published audience (PublishedVisibility), never by "
                                 + "AudienceFence, so the scan above cannot see it. A NEW one fails here until "
                                 + "somebody names it and states which fence it passes; that is the whole guard, "
-                                + "because an unfenced fork-shaped POST would hand a stranger someone's plan")
+                                + "because an unfenced fork-shaped POST would hand a stranger someone's plan. "
+                                + "ADR-034 narrowed what that fence READS — published alone admits, so the "
+                                + "Optional no longer changes any answer — but the registry is the guard, and "
+                                + "the next optional-membership door may well fence on it again")
                 .containsExactlyInAnyOrderElementsOf(KNOWN_OPTIONAL_MEMBERSHIP_HANDLERS);
 
         for (ScannedHandler handler : serving) {

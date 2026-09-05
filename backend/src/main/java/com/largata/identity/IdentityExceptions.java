@@ -1,6 +1,7 @@
 package com.largata.identity;
 
 import com.largata.common.error.ConflictException;
+import com.largata.common.error.ForbiddenException;
 import com.largata.common.error.NotFoundException;
 import com.largata.common.error.UnavailableException;
 import com.largata.common.error.ValidationException;
@@ -55,6 +56,29 @@ public final class IdentityExceptions {
     public static final class SelfFollowException extends ValidationException {
         SelfFollowException() {
             super("FOLLOW_SELF", "You cannot follow yourself.");
+        }
+    }
+
+
+    public static final class UnknownProfileVisibilityException extends ValidationException {
+        UnknownProfileVisibilityException(String given) {
+            super(
+                    "PROFILE_VISIBILITY_UNKNOWN",
+                    "A profile is either public or private, not \"" + given + "\".");
+        }
+    }
+
+
+    public static final class ProfilePrivateException extends ForbiddenException {
+        public ProfilePrivateException() {
+            super("PROFILE_PRIVATE", "This profile is private. Follow to see what they share.");
+        }
+    }
+
+
+    public static final class NoSuchFollowRequestException extends NotFoundException {
+        public NoSuchFollowRequestException() {
+            super("FOLLOW_REQUEST_NOT_FOUND", "There is no pending follow request from that traveler.");
         }
     }
 }

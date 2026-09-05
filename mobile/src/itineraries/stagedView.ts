@@ -22,6 +22,7 @@ function shownActivity(activity: StagedActivity, sortOrder: number): ActivityRes
     costAmount: fields.costAmount ?? null,
     costCurrency: fields.costCurrency ?? null,
     place: fields.place ?? null,
+    pin: fields.pin ?? null,
     description: fields.description ?? null,
     notes: fields.notes ?? null,
     externalUrl: fields.externalUrl ?? null,

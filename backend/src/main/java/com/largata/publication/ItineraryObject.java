@@ -3,8 +3,6 @@ package com.largata.publication;
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -23,10 +21,6 @@ public class ItineraryObject {
     @Column(name = "owner_id", nullable = false, updatable = false)
     private UUID ownerId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Audience audience;
-
     @Column(nullable = false)
     private String plan;
 
@@ -44,11 +38,10 @@ public class ItineraryObject {
 
     protected ItineraryObject() {}
 
-    private ItineraryObject(UUID id, UUID tripId, UUID ownerId, Audience audience, String plan, Instant at) {
+    private ItineraryObject(UUID id, UUID tripId, UUID ownerId, String plan, Instant at) {
         this.id = id;
         this.tripId = tripId;
         this.ownerId = ownerId;
-        this.audience = audience;
         this.plan = plan;
         this.retired = false;
         this.publishedAt = at;
@@ -56,17 +49,16 @@ public class ItineraryObject {
     }
 
 
-    static ItineraryObject mintedFrom(UUID tripId, UUID ownerId, Audience audience, String plan, Instant at) {
-        if (tripId == null || ownerId == null || audience == null || plan == null || at == null) {
+    static ItineraryObject mintedFrom(UUID tripId, UUID ownerId, String plan, Instant at) {
+        if (tripId == null || ownerId == null || plan == null || at == null) {
             throw new IllegalArgumentException(
-                    "An itinerary object is minted from a trip, for an owner, to an audience, at an instant");
+                    "An itinerary object is minted from a trip, for an owner, at an instant");
         }
-        return new ItineraryObject(UuidV7.generate(), tripId, ownerId, audience, plan, at);
+        return new ItineraryObject(UuidV7.generate(), tripId, ownerId, plan, at);
     }
 
 
-    void refresh(Audience toAudience, String freshPlan, Instant at) {
-        this.audience = toAudience;
+    void refresh(String freshPlan, Instant at) {
         this.plan = freshPlan;
         this.retired = false;
         this.retiredAt = null;
@@ -94,10 +86,6 @@ public class ItineraryObject {
 
     public UUID ownerId() {
         return ownerId;
-    }
-
-    public Audience audience() {
-        return audience;
     }
 
     public String plan() {

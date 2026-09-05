@@ -1,7 +1,9 @@
 package com.largata.diary.web;
 
 import com.largata.common.api.Page;
+import com.largata.diary.Diary;
 import com.largata.diary.DiaryService;
+import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import java.util.UUID;
@@ -23,9 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 class DiaryController {
 
     private final DiaryService diaries;
+    private final AuthoredContentAudience audience;
 
-    DiaryController(DiaryService diaries) {
+    DiaryController(DiaryService diaries, AuthoredContentAudience audience) {
         this.diaries = diaries;
+        this.audience = audience;
     }
 
 
@@ -47,7 +51,9 @@ class DiaryController {
 
     @GetMapping("/{diaryId}")
     DiaryResponse read(@CurrentTraveler Traveler traveler, @PathVariable UUID diaryId) {
-        return DiaryResponse.of(diaries.read(diaryId));
+        Diary diary = diaries.read(diaryId);
+        audience.requireReadable(traveler.id(), diary.authorId());
+        return DiaryResponse.of(diary);
     }
 
 

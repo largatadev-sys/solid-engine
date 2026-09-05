@@ -15,6 +15,8 @@ function read(...parts: string[]): string {
 }
 
 const HEADER = read('src', 'profile', 'PublicProfileHeader.tsx');
+const PILL = read('src', 'profile', 'FollowPill.tsx');
+const PILL_HOOK = read('src', 'profile', 'useFollowPill.ts');
 const SCREEN = read('src', 'profile', 'PublicProfileScreen.tsx');
 const DIARY = read('src', 'profile', 'PublicDiaryTab.tsx');
 const ITINERARIES = read('src', 'profile', 'PublicItinerariesTab.tsx');
@@ -43,6 +45,7 @@ describe('the three deltas the canvas draws on someone else\'s profile', () => {
     expect(HEADER).toContain('{ label: FOLLOWERS_STAT_LABEL, value: followersCount');
     expect(HEADER).toContain('{ label: FOLLOWING_STAT_LABEL, value: followingCount');
     expect(HEADER).not.toContain('AWAITING_COUNT');
+    expect(SCREEN).toContain('followersCount={shown?.followersCount');
     expect(SCREEN).toContain('followersCount=');
     expect(SCREEN).toContain('followingCount={profile.data.followingCount}');
     expect(FOLLOWERS_STAT_LABEL).toBe('Followers');
@@ -94,36 +97,50 @@ describe('the own Profile tab is untouched by the projection', () => {
 });
 
 
-describe('C1 and M1 arrive with S4.37 — the pill now has both states', () => {
+describe('C1 and M1 — the pill now has three states (S4.40)', () => {
   it('renders the Following treatment with its leading check (C2)', () => {
-    expect(HEADER).toContain('FOLLOWING_LABEL');
-    expect(HEADER).toContain('following && styles.followingPill');
-    expect(HEADER).toContain("name=\"check\"");
+    expect(PILL).toContain('followPillTreatment(relation)');
+    expect(PILL).toContain('treatment.glyph &&');
+    expect(PILL).toContain('name="check"');
+  });
+
+  it('crossfades fill, border and label rather than swapping them (M1)', () => {
+    expect(PILL).toContain('pillCrossfadeMs');
+    expect(PILL).toContain('backgroundColor: fill.interpolate');
+    expect(PILL).toContain('borderColor: fill.interpolate');
+  });
+
+  it('drops the scale under Reduce Motion and shortens the crossfade', () => {
+    expect(PILL).toContain('useReducedMotion');
+    expect(PILL).toContain('reducedSwapMs');
+    expect(PILL).toContain('reducedMotion ? null : press.style');
   });
 
   it('flips the screen before the server answers, and reverts with a toast on failure (C1)', () => {
-    expect(SCREEN).toContain('tapped(before)');
-    expect(SCREEN).toContain('setFollow(next.state)');
-    expect(SCREEN).toContain('setFollow(reverted(before))');
-    expect(SCREEN).toContain('followFailedToast');
+    expect(PILL_HOOK).toContain('tapped(before)');
+    expect(PILL_HOOK).toContain('setFollow(next.state)');
+    expect(PILL_HOOK).toContain('setFollow(reverted(before))');
+    expect(PILL_HOOK).toContain('followToastFor');
     expect(SCREEN).not.toContain("comingSoon('follow')");
   });
 
   it('asks nobody to confirm an unfollow, and swallows taps already in flight', () => {
     expect(SCREEN).not.toContain('confirmDestructive');
-    expect(SCREEN).toContain('if (next.intent === null)');
+    expect(PILL_HOOK).toContain('if (intent === null)');
   });
 
   it('writes through the repository layer, never a raw call from the screen (ADR-001)', () => {
-    expect(SCREEN).toContain('useFollowMutation');
+    expect(PILL_HOOK).toContain('useFollowMutation');
     expect(SCREEN).not.toContain('apiClient');
+    expect(PILL_HOOK).not.toContain('apiClient');
   });
 });
 
 
 describe('the named deviation from the frame', () => {
   it('ships the postcard card without the likes row — no real count exists yet', () => {
-    expect(DIARY).toContain('<Postcard key={entry.id} entry={entry}');
+    expect(DIARY).toContain('<Postcard');
+    expect(DIARY).toContain('entry={entry}');
     expect(DIARY).not.toContain('likes=');
   });
 });

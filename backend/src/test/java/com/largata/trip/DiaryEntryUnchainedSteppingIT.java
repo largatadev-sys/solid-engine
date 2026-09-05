@@ -39,7 +39,7 @@ class DiaryEntryUnchainedSteppingIT {
         Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
-                .target("46")
+                .target("51")
                 .cleanDisabled(false)
                 .load()
                 .migrate();
@@ -53,8 +53,8 @@ class DiaryEntryUnchainedSteppingIT {
                 "Stepping Fixture");
         jdbc.update(
                 "INSERT INTO itinerary (id, owner_id, title, destination, standouts, state,"
-                        + " visibility, published, created_at)"
-                        + " VALUES (?, ?, 'Doomed trip', 'nowhere', '{}', 'ONGOING', 'PUBLIC', false, ?)",
+                        + " published, created_at)"
+                        + " VALUES (?, ?, 'Doomed trip', 'nowhere', '{}', 'ONGOING', false, ?)",
                 TRIP,
                 TRAVELER,
                 Timestamp.from(Instant.now()));
@@ -80,7 +80,7 @@ class DiaryEntryUnchainedSteppingIT {
         Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
-                .target("47")
+                .target("52")
                 .cleanDisabled(false)
                 .load()
                 .migrate();

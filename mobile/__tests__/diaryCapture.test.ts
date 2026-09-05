@@ -11,7 +11,6 @@ import {
   successMessage,
   togglePick,
 } from '../src/diary/diaryCapture';
-import { DIARY_PRIVACY_NOTE } from '../src/diary/diaryCopy';
 import {
   inTripDayOrder,
   snapshotEyebrow,
@@ -111,12 +110,6 @@ describe('picking from the dump', () => {
 
 
 describe('the copy the founder pinned', () => {
-  it('reads exactly as re-approved when diaries became public', () => {
-    expect(DIARY_PRIVACY_NOTE).toBe(
-      'Your postcards go to the Home feed, where any Largata traveler can see them.',
-    );
-  });
-
   it('names the activity on the success screen', () => {
     expect(successMessage('Sunset at Las Cabanas')).toBe(
       'Sunset at Las Cabanas is now part of your Diary.',

@@ -38,7 +38,7 @@ class DiarySteppingIT {
         Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
-                .target("44")
+                .target("49")
                 .cleanDisabled(false)
                 .load()
                 .migrate();
@@ -54,7 +54,7 @@ class DiarySteppingIT {
         Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
-                .target("45")
+                .target("50")
                 .cleanDisabled(false)
                 .load()
                 .migrate();

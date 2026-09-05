@@ -218,7 +218,8 @@ class ItineraryTest {
                         List.of("Big Lagoon Kayaking"),
                         "Dec – Apr",
                         LocalDate.of(2027, 1, 10),
-                        LocalDate.of(2027, 1, 20)),
+                        LocalDate.of(2027, 1, 20),
+                        null),
                 editor,
                 editedAt);
 
@@ -258,7 +259,7 @@ class ItineraryTest {
         assertThatThrownBy(
                         () ->
                                 new ItineraryFields(
-                                        "Trip", "  ", "PHP", null, List.of(), null, null, null))
+                                        "Trip", "  ", "PHP", null, List.of(), null, null, null, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -266,12 +267,12 @@ class ItineraryTest {
     void anEditThatOmitsThePublishMetadataLeavesItAloneRatherThanErasingIt() {
         Itinerary itinerary = newTrip("Planned", "Cebu");
         itinerary.editFields(
-                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null),
+                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
         itinerary.editFields(
-                new ItineraryFields("Renamed by an older client", "Cebu", "PHP", null, null, null, null, null),
+                new ItineraryFields("Renamed by an older client", "Cebu", "PHP", null, null, null, null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
@@ -286,12 +287,12 @@ class ItineraryTest {
     void anEmptyValueClearsThePublishMetadataBecauseAbsenceAlreadyMeansSomethingElse() {
         Itinerary itinerary = newTrip("Planned", "Cebu");
         itinerary.editFields(
-                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null),
+                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of("Kayaking"), "Dec – Apr", null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
         itinerary.editFields(
-                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of(), "", null, null),
+                new ItineraryFields("Trip", "Cebu", "PHP", null, List.of(), "", null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
@@ -303,7 +304,7 @@ class ItineraryTest {
     void theShippedFieldsKeepTheirReplaceSemanticsBecauseChangingThoseWouldBeTheAdditivityBreak() {
         Itinerary itinerary = newTrip("Planned", "Cebu");
         itinerary.editFields(
-                new ItineraryFields("Trip", "Cebu", "PHP", "A description.", null, null, null, null),
+                new ItineraryFields("Trip", "Cebu", "PHP", "A description.", null, null, null, null, null),
                 UuidV7.generate(),
                 Instant.now());
 
@@ -334,18 +335,18 @@ class ItineraryTest {
     }
 
     private static ItineraryFields renamedTo(String title) {
-        return new ItineraryFields(title, "Cebu", "PHP", null, List.of(), null, null, null);
+        return new ItineraryFields(title, "Cebu", "PHP", null, List.of(), null, null, null, null);
     }
 
     private static ItineraryFields withStandouts(List<String> standouts) {
-        return new ItineraryFields("Trip", "Cebu", "PHP", null, standouts, null, null, null);
+        return new ItineraryFields("Trip", "Cebu", "PHP", null, standouts, null, null, null, null);
     }
 
     @Test
     void publishingSetsTheAudienceAndUnpublishingLeavesTheLifecycleWhereItWas() {
         Itinerary itinerary = completed();
 
-        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
+        itinerary.publishTo(Instant.now());
         assertThat(itinerary.isPublished()).isTrue();
         assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLIC);
 
@@ -362,47 +363,38 @@ class ItineraryTest {
     @Test
     void onlyACompletedTripCanBePublished() {
         Itinerary neverStarted = newTrip("Planned", "Cebu");
-        assertThatThrownBy(() -> neverStarted.publishTo(Visibility.PUBLIC, Instant.now()))
+        assertThatThrownBy(() -> neverStarted.publishTo(Instant.now()))
                 .as("a plan nobody has travelled is not a record of anything")
                 .isInstanceOf(NotCompleteException.class);
 
         Itinerary travelling = newTrip("Planned", "Cebu");
         travelling.start(Instant.now());
-        assertThatThrownBy(() -> travelling.publishTo(Visibility.PUBLIC, Instant.now()))
+        assertThatThrownBy(() -> travelling.publishTo(Instant.now()))
                 .isInstanceOf(NotCompleteException.class);
 
         Itinerary travelled = completed();
-        travelled.publishTo(Visibility.PUBLIC, Instant.now());
+        travelled.publishTo(Instant.now());
         assertThat(travelled.isPublished()).isTrue();
     }
 
     @Test
-    void theAudienceMovesWhilePublishedWithoutLeavingTheFeed() {
+    void anItineraryIsPublicWhateverHappensToIt_becauseTheAudienceAxisRetired() {
         Itinerary itinerary = completed();
-        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
+        assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLIC);
 
-        itinerary.showTo(Visibility.PRIVATE);
+        itinerary.publishTo(Instant.now());
+        assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLIC);
 
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
-        assertThat(itinerary.isPublished())
-                .as("visibility and discovery are independent — narrowing the audience is not a withdrawal")
-                .isTrue();
-    }
-
-    @Test
-    void theAudienceIsSettableBeforePublishing_becauseItIsNotAPublicationFact() {
-        Itinerary itinerary = newTrip("Planned", "Cebu");
-
-        itinerary.showTo(Visibility.PRIVATE);
-
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PRIVATE);
-        assertThat(itinerary.isPublished()).isFalse();
+        itinerary.unpublish();
+        assertThat(itinerary.visibility())
+                .as("the field survives on the wire as a constant; nothing can move it (ADR-034)")
+                .isEqualTo(Visibility.PUBLIC);
     }
 
     @Test
     void aPublishedTripPinsItsLifecycle_soUnpublishIsTheOnlyWayToMoveIt() {
         Itinerary itinerary = completed();
-        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
+        itinerary.publishTo(Instant.now());
 
         assertThatThrownBy(itinerary::reopen)
                 .as("published means nothing about this trip changes — the lifecycle included")
@@ -444,15 +436,14 @@ class ItineraryTest {
         itinerary.unpublish();
         assertThat(itinerary.isPublished()).isFalse();
 
-        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
-        itinerary.publishTo(Visibility.PUBLIC, Instant.now());
+        itinerary.publishTo(Instant.now());
+        itinerary.publishTo(Instant.now());
         assertThat(itinerary.isPublished()).isTrue();
     }
 
     @Test
     void theWireNamesAreTheOnesCanonNames() {
         assertThat(Visibility.PUBLIC.wireName()).isEqualTo("public");
-        assertThat(Visibility.PRIVATE.wireName()).isEqualTo("private");
 
         assertThat(ItineraryState.UPCOMING.wireName()).isEqualTo("upcoming");
         assertThat(ItineraryState.ONGOING.wireName()).isEqualTo("ongoing");
@@ -467,20 +458,24 @@ class ItineraryTest {
     }
 
     @Test
-    void onlyPublicIsVisibleToEveryone() {
-        assertThat(Visibility.PUBLIC.isVisibleToEveryone()).isTrue();
-        assertThat(Visibility.PRIVATE.isVisibleToEveryone()).isFalse();
-    }
-
-    @Test
     void publishingDefaultsToPublicAndRefusesAnAudienceThatIsNotOne() {
         assertThat(Visibility.audience(null)).isEqualTo(Visibility.PUBLIC);
         assertThat(Visibility.audience("  ")).isEqualTo(Visibility.PUBLIC);
-        assertThat(Visibility.audience("PRIVATE")).isEqualTo(Visibility.PRIVATE);
+        assertThat(Visibility.audience("public")).isEqualTo(Visibility.PUBLIC);
 
         assertThatThrownBy(() -> Visibility.audience("draft"))
                 .as("draft is a lifecycle state, never an audience — the axes do not share a vocabulary")
                 .isInstanceOf(UnknownAudienceException.class);
+    }
+
+    @Test
+    void aPrivateAudienceIsRefusedByName_neverSilentlyAcceptedAsPublic() {
+        assertThatThrownBy(() -> Visibility.audience("private"))
+                .as("the retired axis answers with its own code, so a shipped client errors honestly")
+                .isInstanceOf(VisibilityRetiredException.class);
+
+        assertThatThrownBy(() -> Visibility.audience("PRIVATE"))
+                .isInstanceOf(VisibilityRetiredException.class);
     }
 
     private Itinerary newTrip(String title, String destination) {

@@ -6,6 +6,7 @@ import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
 import java.util.UUID;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,16 +49,12 @@ class PublicationContractIT extends PostgresTestBase {
                         rest.post()
                                 .uri("/v1/trips/" + trip + "/publish")
                                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .body("{\"audience\":\"public\"}")
                                 .exchange()
                                 .expectStatus()
                                 .isOk()
                                 .expectBody()
                                 .jsonPath("$.tripId")
                                 .isEqualTo(trip)
-                                .jsonPath("$.audience")
-                                .isEqualTo("public")
                                 .jsonPath("$.plan.title")
                                 .isEqualTo("Trip")
                                 .jsonPath("$.plan.destination")
@@ -79,9 +76,7 @@ class PublicationContractIT extends PostgresTestBase {
                 .isOk()
                 .expectBody()
                 .jsonPath("$.published")
-                .isEqualTo(true)
-                .jsonPath("$.visibility")
-                .isEqualTo("public");
+                .isEqualTo(true);
     }
 
 
@@ -210,26 +205,6 @@ class PublicationContractIT extends PostgresTestBase {
 
 
     @Test
-    void anUnknownAudienceIsRefusedByName() {
-        String owner = rig.travelerWithHandle(handle());
-        String trip = rig.createTrip(owner, 1);
-        walkToCompleted(owner, trip);
-
-        rest.post()
-                .uri("/v1/trips/" + trip + "/publish")
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"audience\":\"everyone\"}")
-                .exchange()
-                .expectStatus()
-                .isBadRequest()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("UNKNOWN_AUDIENCE");
-    }
-
-
-    @Test
     void hardDeleteByTheRecordedOwnerDestroysTheObjectEvenWhenTheTripIsGone() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);
@@ -275,8 +250,6 @@ class PublicationContractIT extends PostgresTestBase {
                 rest.post()
                         .uri("/v1/trips/" + trip + "/publish")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"audience\":\"public\"}")
                         .exchange()
                         .expectStatus()
                         .isOk()
@@ -301,5 +274,70 @@ class PublicationContractIT extends PostgresTestBase {
 
     private static String handle() {
         return "t" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+    }
+
+
+    @Test
+    void aPrivateOwnersPublishedItineraryAnswersAStrangerByTheProfileFenceAndAFollowerInFull() {
+        String owner = onboarded();
+        String follower = onboarded();
+        String stranger = onboarded();
+        follow(follower, rig.travelerIdOf(owner));
+        String trip = rig.createTrip(owner, 1);
+        walkToCompleted(owner, trip);
+        String objectId = publish(owner, trip);
+        goPrivate(owner);
+
+        rest.get()
+                .uri("/v1/publications/" + objectId)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isForbidden()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("PROFILE_PRIVATE");
+        for (String admitted : List.of(follower, owner)) {
+            rest.get()
+                    .uri("/v1/publications/" + objectId)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(admitted))
+                    .exchange()
+                    .expectStatus()
+                    .isOk();
+        }
+    }
+
+
+    private String onboarded() {
+        String token = rig.travelerWithHandle(handle());
+        rest.post()
+                .uri("/v1/me/onboarding-completion")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
+                .exchange()
+                .expectStatus()
+                .isOk();
+        return token;
+    }
+
+
+    private void follow(String follower, UUID followeeId) {
+        rest.post()
+                .uri("/v1/travelers/" + followeeId + "/follow")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(follower))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
+
+    private void goPrivate(String token) {
+        rest.patch()
+                .uri("/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"profileVisibility\":\"private\"}")
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 }

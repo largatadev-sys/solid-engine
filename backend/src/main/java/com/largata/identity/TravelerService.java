@@ -116,6 +116,12 @@ public class TravelerService {
 
     private static TravelerSummary summaryOf(Traveler t) {
         return new TravelerSummary(
-                t.id(), t.displayName(), t.handle(), t.avatarUrl(), t.bio(), t.vanityNumber());
+                t.id(),
+                t.displayName(),
+                t.handle(),
+                t.avatarUrl(),
+                t.bio(),
+                t.vanityNumber(),
+                t.profileVisibility());
     }
 }

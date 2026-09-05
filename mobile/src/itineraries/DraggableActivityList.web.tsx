@@ -29,6 +29,7 @@ interface DraggableActivityListProps {
   readonly onDelete: (activity: ActivityResponse) => void;
   readonly onDrop: (activityId: string, toIndex: number) => void;
   readonly onNudge: (activityId: string, direction: 'up' | 'down') => void;
+  readonly destination?: string | null;
 }
 
 
@@ -59,6 +60,7 @@ export function DraggableActivityList({
   onDelete,
   onDrop,
   onNudge,
+  destination = null,
 }: DraggableActivityListProps) {
   const [drag, setDrag] = useState<DragState>(null);
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
@@ -130,6 +132,7 @@ export function DraggableActivityList({
           onEdit={onEdit}
           onDelete={onDelete}
           onNudge={onNudge}
+          destination={destination}
           onElement={(element) => {
             if (element === null) rowElements.current.delete(activity.id);
             else rowElements.current.set(activity.id, element);
@@ -155,6 +158,7 @@ function DraggableRow({
   onEdit,
   onDelete,
   onNudge,
+  destination,
   onElement,
 }: {
   activity: ActivityResponse;
@@ -170,6 +174,7 @@ function DraggableRow({
   onEdit: (activity: ActivityResponse) => void;
   onDelete: (activity: ActivityResponse) => void;
   onNudge: (activityId: string, direction: 'up' | 'down') => void;
+  destination: string | null;
   onElement: (element: HTMLElement | null) => void;
 }) {
   const isHeld = drag !== null && drag.index === index;
@@ -217,6 +222,7 @@ function DraggableRow({
         affordances={affordances}
         onEdit={onEdit}
         onDelete={onDelete}
+        destination={destination}
         grabHandlers={affordances.showsDragHandles ? grabHandlers : undefined}
         accessibilityActions={reorderActionsFor(index, count)}
         onAccessibilityAction={(action) => {

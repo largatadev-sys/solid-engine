@@ -145,11 +145,8 @@ public class TripService {
 
 
     @Transactional
-    public void markPublished(UUID tripId, boolean visibleToEveryone, Instant at) {
-        db.sql(
-                        "UPDATE itinerary SET published = TRUE, visibility = ?, published_at = ?"
-                                + " WHERE id = ?")
-                .param(visibleToEveryone ? "PUBLIC" : "PRIVATE")
+    public void markPublished(UUID tripId, Instant at) {
+        db.sql("UPDATE itinerary SET published = TRUE, published_at = ? WHERE id = ?")
                 .param(java.sql.Timestamp.from(at))
                 .param(tripId)
                 .update();
@@ -168,7 +165,8 @@ public class TripService {
             return Optional.empty();
         }
         return db.sql(
-                        "SELECT a.id, a.title, a.time_of_day, a.place, d.ordinal, d.title AS day_title"
+                        "SELECT a.id, a.title, a.time_of_day, a.place, a.latitude, a.longitude, a.zoom,"
+                                + " d.ordinal, d.title AS day_title"
                                 + " FROM activity a JOIN day d ON d.id = a.day_id"
                                 + " WHERE a.id = ? AND d.itinerary_id = ?")
                 .param(activityId)
@@ -184,7 +182,10 @@ public class TripService {
                 row.getString("title"),
                 dayLabelOf(row.getInt("ordinal"), row.getString("day_title")),
                 row.getObject("time_of_day", LocalTime.class),
-                row.getString("place"));
+                row.getString("place"),
+                row.getBigDecimal("latitude"),
+                row.getBigDecimal("longitude"),
+                row.getObject("zoom", Short.class));
     }
 
 

@@ -27,8 +27,6 @@ import { DraggableActivityList } from '../../../../../src/itineraries/DraggableA
 import { applyDrop, applyMove } from '../../../../../src/itineraries/reorderActivityIds';
 import { WorkspaceDayCard } from '../../../../../src/itineraries/WorkspaceDayCard';
 import { WorkspaceHeader } from '../../../../../src/itineraries/WorkspaceHeader';
-import { WorkspaceTabRow, type WorkspaceTab } from '../../../../../src/itineraries/WorkspaceTabRow';
-import { WorkspaceTravelersTab } from '../../../../../src/itineraries/WorkspaceTravelersTab';
 import { stateBadge, workspaceAffordances } from '../../../../../src/itineraries/workspaceControls';
 import {
   workspaceColors,
@@ -78,7 +76,6 @@ export default function DraftWorkspaceScreen() {
   const savePlan = useSavePlan(id);
   const staged = useDraft(id);
 
-  const [active, setActive] = useState<WorkspaceTab>('day-by-day');
   const [openDayId, setOpenDayId] = useState<string | null | undefined>(undefined);
   const [editingTitleOf, setEditingTitleOf] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
@@ -229,16 +226,14 @@ export default function DraftWorkspaceScreen() {
           onEditTitle={() => router.push({ pathname: '/itineraries/[id]/edit', params: { id } })}
         />
 
-        <WorkspaceTabRow active={active} onSelect={setActive} />
-
-        {active === 'day-by-day' ? (
-          <View style={styles.tabBody}>
+        <View style={styles.tabBody}>
             {shownDays.map((d) => (
               <WorkspaceDayCard
                 key={d.id}
                 day={d}
                 expanded={d.id === expandedDayId}
                 affordances={affordances}
+                destination={data.destination}
                 onToggle={() => setOpenDayId(toggleOpenDay(expandedDayId, d.id))}
                 onAddActivity={() => openActivityForm(d.id)}
                 activitySlot={
@@ -253,6 +248,7 @@ export default function DraftWorkspaceScreen() {
                     }
                     onDrop={(activityId, toIndex) => dropActivity(d.id, activityId, toIndex)}
                     onNudge={(activityId, direction) => nudgeActivity(d.id, activityId, direction)}
+                    destination={data.destination}
                   />
                 }
                 onDeleteDay={() =>
@@ -300,19 +296,7 @@ export default function DraftWorkspaceScreen() {
                 <Icon name="calendarPlus" size={16} color={workspaceColors.accent} />
               </Pressable>
             ) : null}
-          </View>
-        ) : null}
-
-        {active === 'travelers' ? (
-          <WorkspaceTravelersTab
-            itineraryId={id}
-            tripTitle={data.title}
-            myId={myId}
-            published={data.published}
-            archived={data.archived ?? false}
-          />
-        ) : null}
-
+        </View>
       </ScrollView>
 
       <View style={styles.rail}>

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.UUID;
 import javax.imageio.ImageIO;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -333,5 +334,93 @@ class PostcardContractIT extends ObjectStoreTestBase {
 
     private static String handle() {
         return "t" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+    }
+
+
+    @Test
+    void aPrivateAuthorsPostcardAndItsPhotoAnswerAStrangerByTheProfileFenceAndAFollowerInFull() {
+        String author = onboarded();
+        String follower = onboarded();
+        String stranger = onboarded();
+        follow(follower, rig.travelerIdOf(author));
+        byte[] created =
+                rest.post()
+                        .uri("/v1/postcards")
+                        .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .body(postcardParts("{\"caption\":\"Just us\"}", 1))
+                        .exchange()
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent();
+        String postcardId = TripRig.fieldIn(created, "id");
+        String photoUrl = TripRig.fieldIn(created, "url");
+        goPrivate(author);
+
+        rest.get()
+                .uri("/v1/postcards/" + postcardId)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isForbidden()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("PROFILE_PRIVATE");
+        rest.get()
+                .uri(photoUrl)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+        for (String admitted : List.of(follower, author)) {
+            rest.get()
+                    .uri("/v1/postcards/" + postcardId)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(admitted))
+                    .exchange()
+                    .expectStatus()
+                    .isOk();
+            rest.get()
+                    .uri(photoUrl)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(admitted))
+                    .exchange()
+                    .expectStatus()
+                    .isOk();
+        }
+    }
+
+
+    private String onboarded() {
+        String token = rig.travelerWithHandle(handle());
+        rest.post()
+                .uri("/v1/me/onboarding-completion")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
+                .exchange()
+                .expectStatus()
+                .isOk();
+        return token;
+    }
+
+
+    private void follow(String follower, UUID followeeId) {
+        rest.post()
+                .uri("/v1/travelers/" + followeeId + "/follow")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(follower))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
+
+    private void goPrivate(String token) {
+        rest.patch()
+                .uri("/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"profileVisibility\":\"private\"}")
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 }

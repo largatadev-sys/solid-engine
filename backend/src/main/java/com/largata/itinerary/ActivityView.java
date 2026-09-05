@@ -22,6 +22,7 @@ public record ActivityView(
         String bookingProvider,
         BigDecimal bookingPriceAmount,
         String bookingPriceCurrency,
+        Pin pin,
         UUID lastEditedBy,
         Instant lastEditedAt,
         List<ActivityPhotoView> photos) {
@@ -47,6 +48,7 @@ public record ActivityView(
                 a.bookingProvider(),
                 a.bookingPriceAmount(),
                 a.bookingPriceCurrency(),
+                a.pin(),
                 a.lastEditedBy(),
                 a.lastEditedAt(),
                 photos);

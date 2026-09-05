@@ -10,7 +10,6 @@ import {
   travelerMetrics,
   travelerTypography,
 } from '../theme/workspaceTokens';
-import type { PublishAudience } from '../types/api';
 import {
   removalMenuEntries,
   type RemovalMenuKey,
@@ -24,7 +23,6 @@ export interface RemovalSubject {
   readonly kind: RemovalSubjectKind;
   readonly title: string;
   readonly itineraryId?: string;
-  readonly audience?: PublishAudience;
 }
 
 

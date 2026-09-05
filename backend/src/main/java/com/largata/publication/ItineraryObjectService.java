@@ -47,11 +47,10 @@ public class ItineraryObjectService {
 
 
     @Transactional
-    public ItineraryObject publish(Membership member, String audienceWire) {
+    public ItineraryObject publish(Membership member) {
         if (!member.isOwner()) {
             throw new NotTheTripOwnerException("Only the trip owner can publish this trip.");
         }
-        Audience audience = Audience.parse(audienceWire);
         TripPlan plan = trips.planOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
         if (!plan.lifecycle().admitsPublishing()) {
             throw new TripNotCompleteException(plan.lifecycle());
@@ -62,14 +61,14 @@ public class ItineraryObjectService {
         ItineraryObject object =
                 objects.findByTripId(member.itineraryId())
                         .map(existing -> {
-                            existing.refresh(audience, snapshot, at);
+                            existing.refresh(snapshot, at);
                             return existing;
                         })
                         .orElseGet(() ->
                                 ItineraryObject.mintedFrom(
-                                        member.itineraryId(), plan.ownerId(), audience, snapshot, at));
+                                        member.itineraryId(), plan.ownerId(), snapshot, at));
         ItineraryObject saved = objects.saveAndFlush(object);
-        trips.markPublished(member.itineraryId(), audience.isVisibleToEveryone(), at);
+        trips.markPublished(member.itineraryId(), at);
 
         log.info("Itinerary object published: id={} tripId={}", saved.id(), saved.tripId());
         emit(saved, "itinerary_object_published");

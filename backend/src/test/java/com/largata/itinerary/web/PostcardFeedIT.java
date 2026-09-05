@@ -99,6 +99,9 @@ class PostcardFeedIT extends ObjectStoreTestBase {
         Card card = feedFor(stranger).getFirst();
 
         assertThat(card.tripTitle()).isEqualTo("Trip");
+        assertThat(card.destination())
+                .as("the destination rides along live, so the client can scope its map search")
+                .isEqualTo("Palawan");
         assertThat(card.dayLabel()).isEqualTo("Day 1");
         assertThat(card.activityTitle()).isEqualTo(ACTIVITY_TITLE);
         assertThat(card.author().handle()).isNotBlank();
@@ -119,6 +122,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
                         "displayName",
                         "avatarUrl",
                         "tripTitle",
+                        "destination",
                         "publishedItineraryId",
                         "dayLabel",
                         "activityTitle",
@@ -683,6 +687,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
             Author author,
             UUID itineraryId,
             String tripTitle,
+            String destination,
             UUID publishedItineraryId,
             String dayLabel,
             String activityTitle,

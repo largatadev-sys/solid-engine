@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -10,16 +10,21 @@ import Animated, {
 import { Icon } from '../components/Icon';
 import {
   diaryTypography,
+  locationLinkColors,
+  locationLinkTypography,
   workspaceCardShadow,
   workspaceColors,
   workspaceMetrics,
   workspaceRadii,
   workspaceTypography,
 } from '../theme/workspaceTokens';
+import type { Pin } from '../maps/pinRules';
+import { placeTapTarget } from '../maps/placeTap';
+import { useOpenPlace } from '../maps/useOpenPlace';
 import type { ActivityResponse, DayResponse } from '../types/api';
 import { dayHeading } from './dayHeading';
 import { dayPrefix } from './dayTitle';
-import { activityMetaLine } from './formatActivityCost';
+import { activityMetaParts } from './formatActivityCost';
 import { webStyle } from './webStyle';
 import type { WorkspaceAffordances } from './workspaceControls';
 
@@ -37,6 +42,7 @@ interface WorkspaceDayCardProps {
   readonly titleSlot?: React.ReactNode;
   readonly activitySlot?: React.ReactNode;
   readonly diaryLinkFor?: (activity: ActivityResponse) => DiaryLink | null;
+  readonly destination?: string | null;
 }
 
 
@@ -53,6 +59,7 @@ export function WorkspaceDayCard({
   titleSlot,
   activitySlot,
   diaryLinkFor,
+  destination = null,
 }: WorkspaceDayCardProps) {
   const heading = dayHeading(day);
 
@@ -153,6 +160,7 @@ export function WorkspaceDayCard({
                   onEdit={onEditActivity}
                   onDelete={onDeleteActivity}
                   diaryLink={diaryLinkFor?.(activity) ?? null}
+                  destination={destination}
                 />
               </Animated.View>
             ))
@@ -207,6 +215,36 @@ interface ActivityRowProps {
   readonly grabHandlers?: Record<string, unknown>;
   readonly accessibilityActions?: ReadonlyArray<{ name: string; label: string }>;
   readonly onAccessibilityAction?: (actionName: string) => void;
+  readonly destination?: string | null;
+}
+
+
+function ActivityPlaceLink({
+  place,
+  pin,
+  destination,
+}: {
+  place: string;
+  pin: Pin | null | undefined;
+  destination: string | null;
+}) {
+  const [pressed, setPressed] = useState(false);
+  const open = useOpenPlace();
+  const target = placeTapTarget(place, pin, destination);
+  if (target === null) return null;
+
+  return (
+    <Text
+      accessibilityRole="link"
+      accessibilityLabel={target.label}
+      style={pressed ? styles.activityPlacePressed : styles.activityPlace}
+      onPress={() => open(place, pin, destination)}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+    >
+      {place}
+    </Text>
+  );
 }
 
 
@@ -219,8 +257,9 @@ export function ActivityRow({
   grabHandlers,
   accessibilityActions,
   onAccessibilityAction,
+  destination = null,
 }: ActivityRowProps) {
-  const meta = activityMetaLine(activity.timeOfDay, activity.place);
+  const meta = activityMetaParts(activity.timeOfDay, activity.place);
 
   return (
     <View
@@ -246,7 +285,17 @@ export function ActivityRow({
 
       <View style={styles.activityText}>
         <Text style={styles.activityName}>{activity.title}</Text>
-        {meta !== '' ? <Text style={styles.activityTime}>{meta}</Text> : null}
+        {meta.clock !== undefined || meta.place !== undefined ? (
+          <Text style={styles.activityTime} numberOfLines={1}>
+            {meta.clock}
+            {meta.clock !== undefined && meta.place !== undefined ? ' • ' : null}
+            {meta.place !== undefined ? (
+              <ActivityPlaceLink place={meta.place} pin={activity.pin} destination={destination ?? null} />
+            ) : (
+              meta.place
+            )}
+          </Text>
+        ) : null}
       </View>
 
       {affordances.showsActivityEditing ? (
@@ -376,6 +425,14 @@ const styles = StyleSheet.create({
   activityTime: {
     ...workspaceTypography.activityTime,
     color: workspaceColors.muted,
+  },
+  activityPlace: {
+    ...locationLinkTypography.link,
+    color: locationLinkColors.link,
+  },
+  activityPlacePressed: {
+    ...locationLinkTypography.link,
+    color: locationLinkColors.linkPressed,
   },
   activityActions: {
     flexDirection: 'row',

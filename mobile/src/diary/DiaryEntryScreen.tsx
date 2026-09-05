@@ -37,10 +37,10 @@ import {
   withoutTile,
   type StagedEntry,
 } from './stagedEntry';
-import { DiaryPrivacyNote } from './DiaryPrivacyNote';
 import { diaryEditorStyles } from './diaryEditorStyles';
 import { afterDeleteRoute, afterSaveRoute, type DiaryEntryExit } from './diaryEntryExit';
 import { snapshotEyebrow } from './postcardAnatomy';
+import { LocationTag } from '../places/LocationTag';
 import { DiaryAddRow } from './DiaryAddRow';
 import { DiaryPhotoTile } from './DiaryPhotoTile';
 import { DumpPickerModal } from './DumpPickerModal';
@@ -151,9 +151,10 @@ export function DiaryEntryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntry
       <ScreenHeader title={ENTRY_TITLE} size="heading" back />
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <View>
+        <View style={styles.snapshotHeader}>
           <Text style={styles.eyebrow}>{snapshotEyebrow(entry)}</Text>
           <Text style={styles.title}>{entry.activityTitle}</Text>
+          <LocationTag place={entry.place} destination={trip.data?.destination ?? null} />
         </View>
 
         <View style={styles.photoBlock}>
@@ -198,7 +199,6 @@ export function DiaryEntryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntry
           />
         </View>
 
-        <DiaryPrivacyNote />
 
         {photoAction.failure !== undefined ? (
           <Text style={styles.failure}>{photoAction.failure}</Text>
@@ -249,6 +249,10 @@ export function DiaryEntryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntry
 }
 const styles = StyleSheet.create({
   ...diaryEditorStyles,
+  snapshotHeader: {
+    gap: spacing.xs,
+    alignItems: 'flex-start',
+  },
   deleteEntry: {
     height: workspaceMetrics.inputHeight,
     borderRadius: workspaceRadii.control,

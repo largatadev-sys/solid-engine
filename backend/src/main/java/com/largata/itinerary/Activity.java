@@ -2,6 +2,7 @@ package com.largata.itinerary;
 
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -66,6 +67,9 @@ class Activity {
     private String bookingPriceCurrency;
 
 
+    @Embedded private PinColumns pin;
+
+
     @Column(name = "last_edited_by", nullable = false)
     private UUID lastEditedBy;
 
@@ -113,7 +117,8 @@ class Activity {
                 bookingPurpose,
                 bookingProvider,
                 bookingPriceAmount,
-                bookingPriceCurrency);
+                bookingPriceCurrency,
+                pin());
     }
 
 
@@ -145,6 +150,7 @@ class Activity {
         this.bookingProvider = fields.bookingProvider();
         this.bookingPriceAmount = fields.bookingPriceAmount();
         this.bookingPriceCurrency = fields.bookingPriceCurrency();
+        this.pin = PinColumns.holding(fields.pin());
         this.lastEditedBy = editor;
         this.lastEditedAt = at;
     }
@@ -207,6 +213,10 @@ class Activity {
 
     String bookingPriceCurrency() {
         return bookingPriceCurrency;
+    }
+
+    Pin pin() {
+        return PinColumns.readFrom(pin);
     }
 
     UUID lastEditedBy() {

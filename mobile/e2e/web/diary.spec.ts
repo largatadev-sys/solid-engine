@@ -1,4 +1,5 @@
-import { test, expect } from '../support/fixtures';
+import { test, expect, lastOpenedUrl } from '../support/fixtures';
+import { mapsUrl } from '../../src/places/mapsQuery';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, type PoolTag } from '../support/identities';
@@ -16,7 +17,6 @@ import { labelled } from '../support/screen';
 import {
   CAPTION_LABEL,
   COMPOSE_CTA,
-  DIARY_PRIVACY_NOTE,
   DUMP_PICKER_TITLE,
   ENTRY_TITLE,
   PHOTOS_LABEL,
@@ -32,6 +32,7 @@ const AUTHOR = ownerTagFor('web/diary');
 const CO_TRAVELER: PoolTag = 't2';
 
 const ACTIVITY = 'Sunset at Las Cabanas';
+const PLACE = 'Las Cabanas Beach';
 const CAMERA_ROLL_TILE = 'Add a photo from your camera roll';
 const DUMP_TILE = 'Add a photo from the Photo Dump';
 const BACK_TO_PLAN = 'Back to Day-by-Day';
@@ -82,7 +83,7 @@ async function pickFromCameraRoll(page: any, files: string[]): Promise<void> {
 test.beforeAll(async () => {
   token = await tokenFor(AUTHOR);
   trip = await seedTrip({ ownerTag: AUTHOR, title: stamp('Diary web'), durationDays: 2 });
-  activityId = (await seedPlan(trip, [{ title: ACTIVITY, timeOfDay: '17:30' }]))[0]!;
+  activityId = (await seedPlan(trip, [{ title: ACTIVITY, timeOfDay: '17:30', place: PLACE }]))[0]!;
   dayId = trip.days[0]!.id;
 });
 
@@ -121,12 +122,12 @@ test('the link opens the composer, which draws the mock — eyebrow, both photo 
   await expect(labelled(page, CAPTION_LABEL)).toBeVisible();
 });
 
-test('the composer states the audience before the first postcard, and offers no toggle pretending it is a choice', async ({
+test('the composer makes no claim about who can see a postcard (S4.40)', async ({
   page,
 }) => {
   await page.goto(composerRoute());
 
-  await expect(page.getByText(DIARY_PRIVACY_NOTE)).toBeVisible();
+  await expect(page.getByText('Home feed')).toHaveCount(0);
   await expect(page.getByText('Only you can see your diary')).toHaveCount(0);
   await expect(page.getByText('Share to feed')).toHaveCount(0);
 });
@@ -349,6 +350,20 @@ test('the per-trip stream renders the postcard with its snapshot header', async 
   await expect(postcard).toBeVisible();
   await expect(page.getByText('DAY 1 • 5:30 PM')).toBeVisible();
   await expect(visibleActivityTitle(page)).toBeVisible();
+});
+
+test('the stream postcard carries a place tag that opens Maps, leaving the card tap alone (PL-1)', async ({
+  page,
+}) => {
+  await page.goto(`/itineraries/${trip.id}/diary`);
+  await expect(labelled(page, `Open your entry for ${ACTIVITY}`)).toBeVisible();
+
+  await labelled(page, `${PLACE}, open in Google Maps`).first().click();
+
+  await expect
+    .poll(() => lastOpenedUrl(page), { timeout: 15_000 })
+    .toBe(mapsUrl(PLACE, 'Palawan'));
+  await expect(page).toHaveURL(new RegExp(`/itineraries/${trip.id}/diary$`));
 });
 
 test('every media read across the diary carries a bearer, with no page or console errors', async ({

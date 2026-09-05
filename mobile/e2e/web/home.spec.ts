@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
-import { test, expect } from '../support/fixtures';
+import { test, expect, lastOpenedUrl } from '../support/fixtures';
 import { API, api, request, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
@@ -20,6 +20,7 @@ import {
 } from '../../src/feed/feedCopy';
 import { POLL_MS } from '../../src/feed/freshPosts';
 import { HOME_TAB_ROUTE, TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
+import { mapsUrl } from '../../src/places/mapsQuery';
 
 const AUTHOR = ownerTagFor('web/home');
 const READER: PoolTag = IDENTITY_MAP['web/home'].tags[1]!;
@@ -27,6 +28,8 @@ const READER: PoolTag = IDENTITY_MAP['web/home'].tags[1]!;
 requireStack(AUTHOR);
 
 const POLL_WAIT_MS = POLL_MS + 8_000;
+
+const FEED_PLACE = 'Pura Lempuyang Gate';
 
 interface PostedEntry {
   id: string;
@@ -79,13 +82,19 @@ async function postcard(
   });
 }
 
-async function activity(token: string, itineraryId: string, day: number, title: string): Promise<string> {
+async function activity(
+  token: string,
+  itineraryId: string,
+  day: number,
+  title: string,
+  place?: string,
+): Promise<string> {
   const plan = (await api(`/v1/itineraries/${itineraryId}`, 'GET', token)).body;
   const made = await api(
     `/v1/itineraries/${itineraryId}/days/${plan.days[day - 1].id}/activities`,
     'POST',
     token,
-    { title },
+    place === undefined ? { title } : { title, place },
   );
   if (made.status !== 201) throw new SeedFailure(`an activity named ${title}`, made.body);
   return made.body.id;
@@ -411,7 +420,7 @@ test.beforeAll(async () => {
   trip = { id: seeded.id, title: seeded.title };
   await climbTo(seeded, 'ongoing');
 
-  const first = await activity(authorToken, trip.id, 1, `Lempuyang Gate ${mark}`);
+  const first = await activity(authorToken, trip.id, 1, `Lempuyang Gate ${mark}`, FEED_PLACE);
   const second = await activity(authorToken, trip.id, 2, `Rice terraces ${mark}`);
   const brief = await activity(authorToken, trip.id, 1, `A brief stop ${mark}`);
   pillActivityId = await activity(authorToken, trip.id, 3, `Fresh stop ${mark}`);
@@ -475,12 +484,33 @@ test.describe('the wire, read by a traveler who shares no trip with the author',
     expect(card.dayLabel).toBe('Day 1');
     expect(card.publishedItineraryId).toBeNull();
   });
+
+  test('the card carries the destination the map search needs (PL-1)', async () => {
+    const feed = (await api('/v1/feed/postcards?limit=50', 'GET', readerToken)).body;
+    const card = (feed.items ?? []).find((item: { caption: string }) => item.caption === longCaption);
+    expect(card.destination).toBe('Palawan');
+    expect(card.place).toBe(FEED_PLACE);
+  });
 });
 
 test.describe('the feed as another traveler cold-starts onto it', () => {
   test('the root path lands on the feed, not on Trips', async ({ page }) => {
     await page.goto(HOME_TAB_ROUTE);
     await expect(page.getByText(FEED_TITLE, { exact: true }).last()).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${HOME_TAB_ROUTE}$`));
+  });
+
+  test('the location tag opens Maps even though this trip is unpublished (PL-1)', async ({
+    page,
+  }) => {
+    await page.goto(HOME_TAB_ROUTE);
+    await expect(feedCards(page).first()).toBeVisible();
+
+    await labelled(page, `${FEED_PLACE}, open in Google Maps`).first().click();
+
+    await expect
+      .poll(() => lastOpenedUrl(page), { timeout: 15_000 })
+      .toBe(mapsUrl(FEED_PLACE, 'Palawan'));
     await expect(page).toHaveURL(new RegExp(`${HOME_TAB_ROUTE}$`));
   });
 
@@ -807,9 +837,7 @@ test.describe('the trip line self-heals at publish', () => {
   test('the trip line gains its link the moment the trip publishes', async () => {
     const completed = await api(`/v1/itineraries/${trip.id}/complete`, 'POST', authorToken, {});
     expect(completed.status).toBe(200);
-    const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', authorToken, {
-      visibility: 'public',
-    });
+    const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', authorToken, {    });
     expect(published.status).toBe(200);
 
     await expect

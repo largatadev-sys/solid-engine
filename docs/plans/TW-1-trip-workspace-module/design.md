@@ -2,7 +2,7 @@
 
 **Status: PARKED — designed, not pulled, nothing built.** No spec exists yet; this file is the design record, not immutable story intent. When TW-1 is pulled, a `spec.md` gets written beside this and this file becomes its background. **Trigger: founder pull.**
 
-**Why parked rather than built:** the design is settled but the work ends two guarantees CM-1 was built around (see *What it costs*), and CM-1 itself is sitting unmerged in PR #38. Both decisions are the founder's to time.
+**Why parked rather than built:** the design is settled but the work ends two guarantees CM-1 was built around (see *What it costs*). **Sequenced 2026-09-05 at CM-2's grilling: CM-1 lands first (rot-fixed), CM-2 second, TW-1 third — never in parallel with CM-2.** CM-2 removes the content half's 34 reach-ins into trip internals by cutting the readers over; TW-1 then moves a package with only the trip left in it. Record: `docs/plans/CM-2-diaries-and-postcards/grilling.md`.
 
 **Companion artifact** (the same design, visual): *Trip Workspace Module* — https://claude.ai/code/artifact/466bdede-0ca2-4afd-b6d9-28b8addaac97
 
@@ -110,7 +110,7 @@ One deployment, one Postgres, one schema per data-owning module:
 
 - **The legacy exemption.** The god module's content half reaches into trip internals **34 times** (`ItineraryRepository` ×16, `Itinerary` ×6, `DayRepository` ×6, `ActivityRepository` ×4, `ItineraryService` ×2) — sixteen of those are discovery's filtered queries, which cannot route through `api` without teaching the trip about discovery filters. So `com.largata.itinerary` alone is named a permitted legacy consumer, dissolution condition = the rewire deleting it. **Until then trip's internals stay `public` and the guard test carries the boundary alone**; package-private/javac enforcement arrives when the exemption dies.
 - **Media's callback cycle.** Six modules implement `PhotoAudience` (identity, four in the god module, postcard). Media asks the owner *"may this traveler read it?"* while the owner calls media to store it. In-process that is dependency inversion and fine; as real services it is a runtime cycle, and the standard exit is signed URLs. Worth knowing before media's api is designed.
-- **The FK drops lose a database guarantee.** Dropping `poll_vote → membership` means Postgres stops enforcing "votes die with the membership" and a service must. Same trade as CM-1's V47, and it earns the same treatment: a stepping IT proving the new mechanism works *before* the old one is removed.
+- **The FK drops lose a database guarantee.** Dropping `poll_vote → membership` means Postgres stops enforcing "votes die with the membership" and a service must. Same trade as CM-1's V52, and it earns the same treatment: a stepping IT proving the new mechanism works *before* the old one is removed.
 - **Cross-schema FK extraction trap** (measured): `pg_dump -n <schema>` is **not standalone** when a cross-schema FK exists — and without `ON_ERROR_STOP` the restore continues, the table lands with data, and **the foreign key is silently absent.** The `traveler` FK is kept as deliberate debt with a known payment at extraction; this must be recorded wherever extraction is eventually done.
 
 ## What it costs

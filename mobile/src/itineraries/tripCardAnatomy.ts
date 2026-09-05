@@ -1,14 +1,11 @@
-import type { ItineraryResponse, Visibility } from '../types/api';
+import type { ItineraryResponse } from '../types/api';
 
 
-const BADGES: Record<Visibility, string> = {
-  public: 'Published',
-  private: 'Private',
-};
+const PUBLISHED_BADGE = 'Published';
 
 
 export function publicationBadge(
-  itinerary: Pick<ItineraryResponse, 'published' | 'visibility'>,
+  itinerary: Pick<ItineraryResponse, 'published'>,
 ): string | null {
-  return itinerary.published ? BADGES[itinerary.visibility] : null;
+  return itinerary.published ? PUBLISHED_BADGE : null;
 }

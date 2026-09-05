@@ -1,139 +1,229 @@
-import { Link, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../../../src/components/Icon';
+import { confirmWith } from '../../../src/components/confirmDestructive';
+import { FeedToast } from '../../../src/feed/FeedToast';
 import { useMe } from '../../../src/hooks/useMe';
 import { ONBOARDING_ROUTES } from '../../../src/onboarding/onboardingGate';
+import { accountRows, confirmsFlip, flipped } from '../../../src/profile/accountRows';
 import { ACCOUNT_BACK_LABEL } from '../../../src/profile/profileCopy';
-import { ProfileCardView } from '../../../src/profile/ProfileCardView';
-import { profileCardOf } from '../../../src/profile/profileCard';
+import {
+  ACCOUNT_TITLE,
+  EDIT_PROFILE_ROW_LABEL,
+  FOLLOW_REQUESTS_ROW_LABEL,
+  GO_PUBLIC_BODY,
+  GO_PUBLIC_CANCEL_LABEL,
+  GO_PUBLIC_CONFIRM_LABEL,
+  GO_PUBLIC_TITLE,
+  PRIVATE_PROFILE_HELPER,
+  PRIVATE_PROFILE_ROW_LABEL,
+  SIGN_OUT_ROW_LABEL,
+  VISIBILITY_FAILED_TOAST,
+} from '../../../src/profile/privateProfileCopy';
+import { RowEntrance } from '../../../src/members/RowEntrance';
+import { VisibilitySwitch } from '../../../src/profile/VisibilitySwitch';
+import { FOLLOW_REQUESTS_ROUTE } from '../../../src/profile/travelerRoutes';
 import { forgetPickedTab } from '../../../src/itineraries/tripTabStore';
+import { useUpdateProfile } from '../../../src/query/travelerQueries';
 import { authRepository } from '../../../src/repositories/authRepository';
-import { colors, radii, spacing, typography } from '../../../src/theme';
-
+import { colors, spacing } from '../../../src/theme';
+import {
+  followColors,
+  followMetrics,
+  profileColors,
+  followTypography,
+  profileTypography,
+  publicProfileMotion,
+  travelerColors,
+  workspaceColors,
+} from '../../../src/theme/workspaceTokens';
+import type { ProfileVisibility } from '../../../src/types/api';
 
 
 export default function AccountScreen() {
-  const { state, refresh } = useMe();
+  const { state } = useMe();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const update = useUpdateProfile();
+  const [pending, setPending] = useState<ProfileVisibility | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const served = state.kind === 'ok' ? state.me.profileVisibility : 'public';
+  const visibility = pending ?? served;
+
+  function save(next: ProfileVisibility) {
+    setPending(next);
+    update.mutate(
+      { profileVisibility: next },
+      {
+        onSuccess: () => setPending(null),
+        onError: () => {
+          setPending(null);
+          setToast(VISIBILITY_FAILED_TOAST);
+        },
+      },
+    );
+  }
+
+  function onFlip() {
+    const next = flipped(visibility);
+    if (confirmsFlip(visibility)) {
+      confirmWith(
+        {
+          title: GO_PUBLIC_TITLE,
+          body: GO_PUBLIC_BODY,
+          confirmLabel: GO_PUBLIC_CONFIRM_LABEL,
+          cancelLabel: GO_PUBLIC_CANCEL_LABEL,
+          tone: 'accent',
+        },
+        () => save(next),
+      );
+      return;
+    }
+    save(next);
+  }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Pressable
-        style={styles.back}
-        onPress={() => router.back()}
-        accessibilityRole="button"
-        accessibilityLabel={ACCOUNT_BACK_LABEL}
-      >
-        <Icon name="back" size={24} color={colors.textPrimary} />
-      </Pressable>
-
-      <View style={styles.brand}>
-        <Text style={styles.wordmark}>Largata</Text>
-        <Text style={styles.tagline}>SIGNED IN</Text>
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={styles.headerRow}>
+        <Pressable
+          style={styles.back}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel={ACCOUNT_BACK_LABEL}
+        >
+          <Icon name="back" size={20} color={workspaceColors.title} />
+        </Pressable>
+        <Text style={styles.title}>{ACCOUNT_TITLE}</Text>
       </View>
 
-      {state.kind === 'ok' ? (
-        <ProfileCardView card={profileCardOf(state.me)} photoLabel="Your profile photo" />
-      ) : (
-        <View style={styles.card}>
-          {state.kind === 'loading' && <ActivityIndicator size="large" color={colors.accent} />}
+      <ScrollView contentContainerStyle={styles.rows}>
+        {accountRows(visibility).map((row) => {
+          if (row === 'edit-profile') {
+            return (
+              <Pressable
+                key={row}
+                style={styles.row}
+                accessibilityRole="button"
+                accessibilityLabel={EDIT_PROFILE_ROW_LABEL}
+                onPress={() => router.push(`${ONBOARDING_ROUTES.profile}?mode=edit`)}
+              >
+                <Text style={styles.rowLabel}>{EDIT_PROFILE_ROW_LABEL}</Text>
+                <Icon name="chevronRight" size={16} color={profileColors.rowChevron} />
+              </Pressable>
+            );
+          }
 
-          {state.kind === 'error' && (
-            <>
-              <Text style={styles.errorTitle}>Could not load your profile</Text>
-              <Text style={styles.errorCode}>{state.error.code}</Text>
-              <Text style={styles.caption}>{state.error.message}</Text>
-              {state.error.traceId !== undefined && (
-                <Text style={styles.trace}>traceId: {state.error.traceId}</Text>
-              )}
-            </>
-          )}
-        </View>
-      )}
+          if (row === 'private-profile') {
+            return (
+              <View key={row} style={styles.switchRow}>
+                <View style={styles.switchText}>
+                  <Text style={styles.rowLabel}>{PRIVATE_PROFILE_ROW_LABEL}</Text>
+                  <Text style={styles.helper}>{PRIVATE_PROFILE_HELPER}</Text>
+                </View>
+                <VisibilitySwitch
+                  on={visibility === 'private'}
+                  onFlip={onFlip}
+                  label={PRIVATE_PROFILE_ROW_LABEL}
+                />
+              </View>
+            );
+          }
 
-      <Link href={`${ONBOARDING_ROUTES.profile}?mode=edit`} asChild>
-        <Pressable style={styles.button} accessibilityRole="button">
-          <Text style={styles.buttonText}>Edit profile</Text>
-        </Pressable>
-      </Link>
+          if (row === 'follow-requests') {
+            return (
+              <RowEntrance
+                key={row}
+                replayKey={row}
+                durationMs={publicProfileMotion.resultRiseMs}
+                risePx={publicProfileMotion.resultRisePx}
+              >
+              <Pressable
+                style={styles.row}
+                accessibilityRole="button"
+                accessibilityLabel={FOLLOW_REQUESTS_ROW_LABEL}
+                onPress={() => router.push(FOLLOW_REQUESTS_ROUTE)}
+              >
+                <Text style={styles.rowLabel}>{FOLLOW_REQUESTS_ROW_LABEL}</Text>
+                <Icon name="chevronRight" size={16} color={profileColors.rowChevron} />
+              </Pressable>
+              </RowEntrance>
+            );
+          }
 
-      <Link href="/" asChild>
-        <Pressable style={styles.secondaryLinkButton} accessibilityRole="button">
-          <Text style={styles.secondaryButtonText}>My Trips</Text>
-        </Pressable>
-      </Link>
+          return (
+            <Pressable
+              key={row}
+              style={styles.row}
+              accessibilityRole="button"
+              accessibilityLabel={SIGN_OUT_ROW_LABEL}
+              onPress={() => {
+                forgetPickedTab();
+                void authRepository.signOut();
+              }}
+            >
+              <Text style={[styles.rowLabel, styles.destructive]}>{SIGN_OUT_ROW_LABEL}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
-      <Pressable style={[styles.button, styles.secondaryButton]} onPress={refresh} accessibilityRole="button">
-        <Text style={styles.secondaryButtonText}>Reload</Text>
-      </Pressable>
-
-      <Pressable
-        style={[styles.button, styles.secondaryButton]}
-        onPress={() => {
-          forgetPickedTab();
-          void authRepository.signOut();
-        }}
-        accessibilityRole="button"
-      >
-        <Text style={styles.secondaryButtonText}>Sign out</Text>
-      </Pressable>
-    </ScrollView>
+      <FeedToast
+        message={toast}
+        holdMs={publicProfileMotion.toastHoldMs}
+        onDone={() => setToast(null)}
+      />
+    </View>
   );
 }
 
 
-const CARD_MAX_WIDTH = 420;
+const ACCOUNT_HELPER_WIDTH = 300;
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
+  screen: { flex: 1, backgroundColor: colors.background },
+  headerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-    backgroundColor: colors.background,
-  },
-  back: { alignSelf: 'flex-start', padding: spacing.xs, marginBottom: spacing.md },
-  brand: { alignItems: 'center', marginBottom: spacing.xl },
-  wordmark: { ...typography.wordmark, color: colors.accent },
-  tagline: { ...typography.overline, color: colors.textSecondary, marginTop: spacing.xs },
-  card: {
-    width: '100%',
-    maxWidth: CARD_MAX_WIDTH,
-    minHeight: 96,
-    alignItems: 'center',
-    justifyContent: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.lg,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.accentMuted,
+    paddingHorizontal: spacing.md2,
+    paddingVertical: spacing.sm2,
   },
-  errorTitle: { ...typography.heading, color: colors.danger },
-  errorCode: { ...typography.mono, color: colors.textPrimary },
-  caption: { ...typography.caption, textAlign: 'center', color: colors.textSecondary },
-  trace: { ...typography.fine, color: colors.textSecondary, marginTop: spacing.xs },
-  button: {
-    width: '100%',
-    maxWidth: CARD_MAX_WIDTH,
-    marginTop: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: radii.pill,
+  back: {
+    width: followMetrics.kebabTarget,
+    height: followMetrics.kebabTarget,
     alignItems: 'center',
-    backgroundColor: colors.accent,
+    justifyContent: 'center',
   },
-  buttonText: { ...typography.action, color: colors.textOnAccent },
-  secondaryButton: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
-  secondaryButtonText: { ...typography.action, color: colors.textPrimary },
-  secondaryLinkButton: {
-    width: '100%',
-    maxWidth: CARD_MAX_WIDTH,
-    marginTop: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: radii.pill,
+  title: { ...followTypography.listTitle, color: workspaceColors.title },
+  rows: { paddingHorizontal: spacing.md2 },
+  row: {
+    minHeight: followMetrics.accountRowHeight,
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: followColors.followingBorder,
   },
+  switchRow: {
+    minHeight: followMetrics.accountRowHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingVertical: spacing.sm2,
+    borderBottomWidth: 1,
+    borderBottomColor: followColors.followingBorder,
+  },
+  switchText: { flex: 1, gap: spacing.hair },
+  rowLabel: { ...profileTypography.accountRow, color: workspaceColors.title },
+  helper: {
+    ...profileTypography.accountHelper,
+    color: profileColors.meta,
+    maxWidth: ACCOUNT_HELPER_WIDTH,
+  },
+  destructive: { color: travelerColors.destructive },
 });

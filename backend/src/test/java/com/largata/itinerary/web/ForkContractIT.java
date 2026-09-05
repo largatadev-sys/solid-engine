@@ -114,6 +114,57 @@ class ForkContractIT extends PostgresTestBase {
 
 
     @Test
+    void aForkCarriesTHEPINS_becauseAPlanWithoutThemIsAPlanYouMustGeocodeAgain() {
+        String author = freshTraveler();
+        String sourceId =
+                createItinerary(
+                        author,
+                        """
+                        {"title":"Pinned trip","destination":"Palawan","durationDays":1}
+                        """);
+        holdLock(author, sourceId, "{\"subjectType\":\"header\"}");
+        rest.patch()
+                .uri("/v1/itineraries/" + sourceId)
+                .header(HttpHeaders.AUTHORIZATION, bearer(author))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"title":"Pinned trip","destination":"Palawan",
+                         "pin":{"lat":11.194900,"lng":119.401300,"zoom":12}}
+                        """)
+                .exchange()
+                .expectStatus()
+                .isOk();
+        releaseLock(author, sourceId, "{\"subjectType\":\"header\"}");
+        addActivity(
+                author,
+                sourceId,
+                dayOf(sourceId, 1),
+                """
+                {"title":"Kayak the lagoon","place":"Big Lagoon",
+                 "pin":{"lat":11.178000,"lng":119.389000,"zoom":16}}
+                """);
+        publish(author, sourceId);
+
+        JsonNode fork = forkOf(freshTraveler(), sourceId);
+
+        JsonNode tripPin = fork.get("pin");
+        assertThat(tripPin.isNull())
+                .as("the destination pin is what opens every activity picker in the right region")
+                .isFalse();
+        assertThat(tripPin.get("lat").asDouble()).isEqualTo(11.1949);
+        assertThat(tripPin.get("zoom").asInt()).isEqualTo(12);
+
+        JsonNode activityPin = fork.get("days").get(0).get("activities").get(0).get("pin");
+        assertThat(activityPin.isNull())
+                .as("a forked plan whose pins were dropped is a plan the forker must geocode again")
+                .isFalse();
+        assertThat(activityPin.get("lat").asDouble()).isEqualTo(11.178);
+        assertThat(activityPin.get("lng").asDouble()).isEqualTo(119.389);
+        assertThat(activityPin.get("zoom").asInt()).isEqualTo(16);
+    }
+
+
+    @Test
     void theExclusionsAreAssertedRatherThanAssumed() {
         String author = freshTraveler();
         String sourceId = publishedTripWithAPlan(author);
@@ -218,16 +269,16 @@ class ForkContractIT extends PostgresTestBase {
 
 
     @Test
-    void aPrivatelyPublishedSourceForksForCollaboratorsAndRefusesEveryoneElse() {
+    void aPublishedSourceForksForEverySignedInTraveler_whateverItsAuthorsProfileSays() {
         String author = freshTraveler();
         String sourceId = publishedTripWithAPlan(author);
         String member = admitMemberTo(sourceId);
-        audienceOf(author, sourceId, "private");
+        goPrivate(author);
 
         fork(member, sourceId).expectStatus().isCreated();
-
-        String refusal = rawBody(fork(freshTraveler(), sourceId).expectStatus().isNotFound());
-        assertThat(codeIn(refusal)).isEqualTo("ITINERARY_NOT_FOUND");
+        fork(freshTraveler(), sourceId)
+                .expectStatus()
+                .isCreated();
     }
 
 
@@ -529,12 +580,12 @@ class ForkContractIT extends PostgresTestBase {
     }
 
 
-    private void audienceOf(String token, String itineraryId, String audience) {
-        rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/audience")
+    private void goPrivate(String token) {
+        rest.patch()
+                .uri("/v1/me")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"audience\":\"" + audience + "\"}")
+                .body("{\"profileVisibility\":\"private\"}")
                 .exchange()
                 .expectStatus()
                 .isOk();

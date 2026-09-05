@@ -7,6 +7,7 @@ import com.largata.common.api.Page;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
 import com.largata.identity.IdentityExceptions.SelfFollowException;
+import com.largata.identity.api.FollowStateResponse;
 import com.largata.identity.api.TravelerCardResponse;
 import java.time.Clock;
 import java.time.Instant;
@@ -27,7 +28,10 @@ public class FollowService {
     static final int DEFAULT_PAGE_SIZE = 20;
     static final int MAX_PAGE_SIZE = 50;
 
+    private final FollowTopic topic;
     private final FollowRepository follows;
+    private final FollowRequestRepository requests;
+    private final FollowRequestService asks;
     private final TravelerRepository travelers;
     private final TravelerService summaries;
     private final Analytics analytics;
@@ -35,11 +39,17 @@ public class FollowService {
 
     FollowService(
             FollowRepository follows,
+            FollowRequestRepository requests,
+            FollowRequestService asks,
             TravelerRepository travelers,
             TravelerService summaries,
             Analytics analytics,
-            Clock clock) {
+            Clock clock,
+            FollowTopic topic) {
+        this.topic = topic;
         this.follows = follows;
+        this.requests = requests;
+        this.asks = asks;
         this.travelers = travelers;
         this.summaries = summaries;
         this.analytics = analytics;
@@ -48,37 +58,84 @@ public class FollowService {
 
 
     @Transactional
-    public void follow(UUID followerId, UUID followeeId) {
-        requireOnboarded(followeeId);
+    public FollowStateResponse follow(UUID followerId, UUID followeeId) {
+        Traveler followee = requireOnboarded(followeeId);
         if (followerId.equals(followeeId)) {
             throw new SelfFollowException();
+        }
+
+        if (follows.edgeCount(followerId, followeeId) > 0) {
+            return FollowStateResponse.following();
+        }
+        if (!followee.profileVisibility().isOpenToEveryone()) {
+            asks.askOrFind(followerId, followeeId);
+            return FollowStateResponse.requested();
         }
 
         int inserted = follows.follow(followerId, followeeId, Instant.now(clock));
         if (inserted > 0) {
             emitAfterCommit("follow_created", followerId, followeeId);
+            topic.broadcastFollowersChanged(followeeId);
         }
+        return FollowStateResponse.following();
     }
 
 
     @Transactional
     public void unfollow(UUID followerId, UUID followeeId) {
         requireOnboarded(followeeId);
+        asks.cancel(followerId, followeeId);
 
         int removed = follows.unfollow(followerId, followeeId);
         if (removed > 0) {
             emitAfterCommit("follow_removed", followerId, followeeId);
+            topic.broadcastFollowersChanged(followeeId);
+        }
+    }
+
+
+    @Transactional
+    public void removeFollower(UUID travelerId, UUID followerId) {
+        requireOnboarded(followerId);
+        if (travelerId.equals(followerId)) {
+            throw new SelfFollowException();
+        }
+        asks.cancel(followerId, travelerId);
+
+        int removed = follows.unfollow(followerId, travelerId);
+        if (removed > 0) {
+            emitAfterCommit("follow_removed", followerId, travelerId);
+            topic.broadcastFollowersChanged(travelerId);
+            AfterCommit.run(
+                    () ->
+                            analytics.emit(
+                                    AnalyticsEvent.named("follower_removed")
+                                            .with("travelerId", travelerId)
+                                            .with("followerId", followerId)
+                                            .build()));
         }
     }
 
 
     @Transactional(readOnly = true)
     public FollowStanding standingOf(UUID subjectId, UUID viewerId) {
+        boolean following = follows.edgeCount(viewerId, subjectId) > 0;
         return new FollowStanding(
                 follows.countFollowers(subjectId),
                 follows.countFollowing(subjectId),
-                follows.edgeCount(viewerId, subjectId) > 0,
-                follows.edgeCount(subjectId, viewerId) > 0);
+                following,
+                follows.edgeCount(subjectId, viewerId) > 0,
+                relationOf(viewerId, subjectId, following));
+    }
+
+
+    private ViewerRelation relationOf(UUID viewerId, UUID subjectId, boolean following) {
+        if (following) {
+            return ViewerRelation.FOLLOWING;
+        }
+        return requests.findPending(viewerId, subjectId).isPresent()
+                ? ViewerRelation.REQUESTED
+                : ViewerRelation.NONE;
     }
 
 
@@ -171,8 +228,8 @@ public class FollowService {
     }
 
 
-    private void requireOnboarded(UUID travelerId) {
-        travelers
+    private Traveler requireOnboarded(UUID travelerId) {
+        return travelers
                 .findById(travelerId)
                 .filter(Traveler::onboardingCompleted)
                 .orElseThrow(NoSuchHandleException::new);

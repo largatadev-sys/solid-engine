@@ -1,6 +1,15 @@
 import type { DiaryEntryResponse, FeedPostcardResponse } from '../types/api';
 
 
+export function tripDestinationOf(cards: readonly FeedPostcardResponse[]): string | null {
+  for (const card of cards) {
+    const named = card.destination?.trim() ?? '';
+    if (named !== '') return named;
+  }
+  return null;
+}
+
+
 export function asDiaryEntry(card: FeedPostcardResponse): DiaryEntryResponse {
   return {
     id: card.id,

@@ -15,7 +15,8 @@ class DiscoveryScopeIsDefinedOnceTest {
     private static final Path REPOSITORY =
             Path.of("src/main/java/com/largata/itinerary/ItineraryRepository.java");
 
-    private static final Pattern PUBLIC_VISIBILITY = Pattern.compile("visibility = 'PUBLIC'");
+    private static final Pattern NOT_ARCHIVED =
+            Pattern.compile("i[.]id <> ALL [(]CAST[(]:archivedIds AS uuid\\[\\][)][)]");
 
 
     @Test
@@ -24,10 +25,10 @@ class DiscoveryScopeIsDefinedOnceTest {
 
         assertThat(occurrences(source))
                 .as(
-                        "Discovery's scope — published AND public AND not archived — decides whether a "
-                                + "private trip leaks to strangers. Every hand-written copy is a place it can "
-                                + "drift, and a drifted copy fails NOTHING: the query still runs, still returns "
-                                + "rows, and the wrong ones are simply present. It lives in "
+                        "Discovery's scope — published AND not archived (ADR-034 retired the third "
+                                + "clause) — decides what a stranger sees. Every hand-written copy is a place "
+                                + "it can drift, and a drifted copy fails NOTHING: the query still runs, still "
+                                + "returns rows, and the wrong ones are simply present. It lives in "
                                 + "ON_THE_STRANGERS_SURFACE; concatenate that, never retype it")
                 .isEqualTo(1);
     }
@@ -45,7 +46,7 @@ class DiscoveryScopeIsDefinedOnceTest {
 
 
     private static int occurrences(String source) {
-        Matcher found = PUBLIC_VISIBILITY.matcher(source);
+        Matcher found = NOT_ARCHIVED.matcher(source);
         int seen = 0;
         while (found.find()) {
             seen += 1;

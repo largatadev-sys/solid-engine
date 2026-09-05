@@ -4,6 +4,7 @@ import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
 import java.util.UUID;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -201,5 +202,81 @@ class DiaryContractIT extends PostgresTestBase {
 
     private static String handle() {
         return "t" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+    }
+
+
+    @Test
+    void aPrivateAuthorsDiaryAnswersAStrangerByTheProfileFenceAndAFollowerInFull() {
+        String author = onboarded();
+        String follower = onboarded();
+        String stranger = onboarded();
+        follow(follower, rig.travelerIdOf(author));
+        String diaryId =
+                TripRig.fieldIn(
+                        rest.post()
+                                .uri("/v1/diaries")
+                                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body("{\"title\":\"Ours alone\"}")
+                                .exchange()
+                                .expectStatus()
+                                .isCreated()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id");
+        goPrivate(author);
+
+        rest.get()
+                .uri("/v1/diaries/" + diaryId)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(stranger))
+                .exchange()
+                .expectStatus()
+                .isForbidden()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("PROFILE_PRIVATE");
+        for (String admitted : List.of(follower, author)) {
+            rest.get()
+                    .uri("/v1/diaries/" + diaryId)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(admitted))
+                    .exchange()
+                    .expectStatus()
+                    .isOk();
+        }
+    }
+
+
+    private String onboarded() {
+        String token = rig.travelerWithHandle(handle());
+        rest.post()
+                .uri("/v1/me/onboarding-completion")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
+                .exchange()
+                .expectStatus()
+                .isOk();
+        return token;
+    }
+
+
+    private void follow(String follower, UUID followeeId) {
+        rest.post()
+                .uri("/v1/travelers/" + followeeId + "/follow")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(follower))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
+
+    private void goPrivate(String token) {
+        rest.patch()
+                .uri("/v1/me")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"profileVisibility\":\"private\"}")
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 }

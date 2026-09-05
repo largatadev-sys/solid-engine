@@ -16,4 +16,4 @@
 
 ## Comments
 
-- *2026-08-30:* the media seam needed one additive constant — `PhotoSubject.POSTCARD` — in `media/PhotoSubject.java`, a pre-existing keeper-module file. Unreachable through every existing flow; recorded in ADR-034 and the contract doc as CM-1's one keeper-module change.
+- *2026-08-30:* the media seam needed one additive constant — `PhotoSubject.POSTCARD` — in `media/PhotoSubject.java`, a pre-existing keeper-module file. Unreachable through every existing flow; recorded in ADR-035 and the contract doc as CM-1's one keeper-module change.

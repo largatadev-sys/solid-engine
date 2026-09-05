@@ -7,6 +7,9 @@ import {
   tripLine,
   tripLineNavigates,
 } from '../src/feed/feedCardAnatomy';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { feedColors } from '../src/theme/feedTokens';
 import type { FeedPostcardResponse, PublicTripDiaryResponse } from '../src/types/api';
 
 const NOW = Date.parse('2026-08-12T12:00:00Z');
@@ -18,6 +21,7 @@ function card(overrides: Partial<FeedPostcardResponse> = {}): FeedPostcardRespon
     author: { id: 't1', handle: 'largata.dev+t1', displayName: 'largata.dev+t1', avatarUrl: null },
     itineraryId: 'i1',
     tripTitle: 'Bali Temple Run',
+    destination: 'Bali',
     publishedItineraryId: null,
     dayLabel: 'Day 3',
     activityTitle: 'Sunrise gate photo',
@@ -166,5 +170,36 @@ describe('the public diary header behind the card holds the same posture (S4.23)
     expect(
       publicDiaryByline(diary({ id: 't', handle: null, displayName: 'Maya Ocampo', avatarUrl: null }, 3)),
     ).toBe('A traveler · 3 postcards');
+  });
+});
+
+
+describe('variant C — two doors, cleanly split (PL-1)', () => {
+  const source = readFileSync(join(__dirname, '..', 'src', 'feed', 'FeedCard.tsx'), 'utf8');
+  const tag = readFileSync(join(__dirname, '..', 'src', 'places', 'LocationTag.tsx'), 'utf8');
+
+  it('the card draws no tag of its own — one definition serves every surface', () => {
+    expect(source).toMatch(/<LocationTag place=\{card\.place\} destination=\{card\.destination\} \/>/);
+    expect(source).not.toMatch(/name="mapPin"/);
+  });
+
+  it('the tag opens Maps and no longer routes to the trip', () => {
+    expect(tag).toMatch(/accessibilityLabel=\{mapsLinkLabel\(place\)\}/);
+    expect(tag).toMatch(/onPress=\{\(\) => openInMaps\(url\)\}/);
+    expect(source).not.toMatch(/open the published trip`\}\s*>\s*<Icon/);
+  });
+
+  it('the tag hints its search with the destination the wire now carries', () => {
+    expect(tag).toMatch(/mapsUrl\(place, destination\)/);
+  });
+
+  it('the trip line is the only thing that still opens the published trip', () => {
+    expect(source).toMatch(/onPress=\{\(\) => onOpenTrip\(card\)\}/);
+    expect(source.match(/onOpenTrip\(card\)/g) ?? []).toHaveLength(1);
+  });
+
+  it('a dead trip line renders untinted, so tint means tappable card-wide', () => {
+    expect(source).toMatch(/styles\.tripLineDead/);
+    expect(feedColors.tripLineDead).toBe(feedColors.badgeInk);
   });
 });

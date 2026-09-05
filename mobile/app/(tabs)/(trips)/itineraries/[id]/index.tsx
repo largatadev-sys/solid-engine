@@ -201,6 +201,7 @@ export default function TripWorkspaceScreen() {
                   day={d}
                   expanded={d.id === expandedDayId}
                   affordances={affordances}
+                  destination={data.destination}
                   onToggle={() => setOpenDayId(toggleOpenDay(expandedDayId, d.id))}
                   diaryLinkFor={(activity) => {
                     if (!capturing) return null;

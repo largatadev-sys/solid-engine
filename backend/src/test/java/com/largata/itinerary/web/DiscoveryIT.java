@@ -70,16 +70,39 @@ class DiscoveryIT extends PostgresTestBase {
 
 
     @Test
-    void aPublishedButPrivateTripIsAbsentForEveryoneIncludingItsOwner() {
+    void aPrivateAudienceIsRefusedSoNoTripCanBePublishedOutOfDiscover() {
         String owner = traveler();
         String trip = trip(owner);
         travel(owner, trip);
-        publishTo(owner, trip, "private");
+
+        rest.post()
+                .uri("/v1/itineraries/" + trip + "/publish")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"audience\":\"private\"}")
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("VISIBILITY_RETIRED");
 
         assertThat(browseIds(owner))
-                .as("Discover is not a my-trips surface: private means private, owner included")
+                .as("the refusal is the whole guard — published now means discoverable, always")
                 .doesNotContain(trip);
-        assertThat(recommendedIds(owner)).doesNotContain(trip);
+    }
+
+
+    @Test
+    void aPublishedTripIsInDiscoverWhoeverPublishedIt() {
+        String owner = traveler();
+        String trip = trip(owner);
+        travel(owner, trip);
+        publishTo(owner, trip, "public");
+
+        assertThat(browseIds(traveler()))
+                .as("published is the itinerary's whole exposure (ADR-034)")
+                .contains(trip);
     }
 
 

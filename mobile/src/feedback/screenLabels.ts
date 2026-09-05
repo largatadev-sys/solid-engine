@@ -31,6 +31,7 @@ export const SCREEN_LABELS: Readonly<Record<string, string>> = {
 
   '(tabs)/(profile)/profile': 'Profile',
   '(tabs)/(profile)/account': 'Account',
+  '(tabs)/(profile)/follow-requests': 'Follow requests',
   '(tabs)/(profile)/diary/[id]': 'My diary',
   '(tabs)/(profile)/diary/[id]/[entryId]': 'My diary entry',
   '(tabs)/(profile)/showcase/[id]': 'Showcase',
@@ -51,5 +52,6 @@ export const SCREEN_LABELS: Readonly<Record<string, string>> = {
   'verify-code': 'Verify code',
   'join/[token]': 'Invite',
   'health': 'Health',
+  'map': 'Map',
   '': 'Home feed',
 };

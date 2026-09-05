@@ -54,35 +54,53 @@ public class PostcardFeedService {
 
 
     @Transactional(readOnly = true)
-    public Page<FeedPostcardResponse> page(String cursor, Integer requestedLimit) {
-        return page(cursor, requestedLimit, null);
+    public Page<FeedPostcardResponse> page(
+            String cursor, Integer requestedLimit, List<UUID> hiddenAuthors) {
+        int limit = clamp(requestedLimit);
+        Limit probe = Limit.of(limit + 1);
+
+        List<DiaryEntry> found;
+        if (cursor == null) {
+            found =
+                    hiddenAuthors.isEmpty()
+                            ? entries.findFirstFeedPage(probe)
+                            : entries.findFirstFeedPageExcept(hiddenAuthors, probe);
+        } else {
+            InstantCursor from = InstantCursor.decode(cursor);
+            found =
+                    hiddenAuthors.isEmpty()
+                            ? entries.findFeedPageAfter(from.at(), from.id(), probe)
+                            : entries.findFeedPageExceptAfter(
+                                    hiddenAuthors, from.at(), from.id(), probe);
+        }
+
+        return pageOf(found, limit);
     }
 
 
     @Transactional(readOnly = true)
-    public Page<FeedPostcardResponse> page(
+    public Page<FeedPostcardResponse> pageOfAuthors(
             String cursor, Integer requestedLimit, List<UUID> onlyAuthors) {
         int limit = clamp(requestedLimit);
         Limit probe = Limit.of(limit + 1);
 
-        if (onlyAuthors != null && onlyAuthors.isEmpty()) {
+        if (onlyAuthors.isEmpty()) {
             return Page.exhausted(List.of());
         }
 
         List<DiaryEntry> found;
         if (cursor == null) {
-            found =
-                    onlyAuthors == null
-                            ? entries.findFirstFeedPage(probe)
-                            : entries.findFirstFeedPageBy(onlyAuthors, probe);
+            found = entries.findFirstFeedPageBy(onlyAuthors, probe);
         } else {
             InstantCursor from = InstantCursor.decode(cursor);
-            found =
-                    onlyAuthors == null
-                            ? entries.findFeedPageAfter(from.at(), from.id(), probe)
-                            : entries.findFeedPageByAfter(onlyAuthors, from.at(), from.id(), probe);
+            found = entries.findFeedPageByAfter(onlyAuthors, from.at(), from.id(), probe);
         }
 
+        return pageOf(found, limit);
+    }
+
+
+    private Page<FeedPostcardResponse> pageOf(List<DiaryEntry> found, int limit) {
         boolean more = found.size() > limit;
         List<DiaryEntry> rows = more ? found.subList(0, limit) : found;
         List<FeedPostcardResponse> cards = project(rows);
@@ -156,6 +174,7 @@ public class PostcardFeedService {
                 author,
                 entry.itineraryId(),
                 trip.title(),
+                trip.destination(),
                 navigableTripOf(trip),
                 entry.dayLabel(),
                 entry.activityTitle(),
@@ -169,7 +188,7 @@ public class PostcardFeedService {
 
 
     private UUID navigableTripOf(Itinerary trip) {
-        return trip.isPublished() && trip.visibility().isVisibleToEveryone() ? trip.id() : null;
+        return trip.isPublished() ? trip.id() : null;
     }
 
 

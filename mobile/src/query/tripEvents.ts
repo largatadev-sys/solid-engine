@@ -8,7 +8,9 @@ import type {
 } from '../types/api';
 import { invitationKeys } from './invitationQueries';
 import { itineraryKeys } from './itineraryQueries';
+import { followKeys } from './followQueries';
 import { joinKeys } from './joinKeys';
+import { profileKeys } from './profileQueries';
 
 export const EDITING_SESSION_ACQUIRED = 'editing-session.acquired';
 
@@ -23,6 +25,10 @@ export const INVITATION_RECEIVED = 'invitation.received';
 export const JOIN_REQUESTS_CHANGED = 'join-requests.changed';
 
 export const ROSTER_CHANGED = 'roster.changed';
+
+export const FOLLOW_REQUESTS_CHANGED = 'follow-requests.changed';
+
+export const FOLLOWERS_CHANGED = 'followers.changed';
 
 export type TripPages = InfiniteData<Page<ItineraryResponse>>;
 
@@ -116,6 +122,8 @@ const HANDLERS: Readonly<Record<string, TripEventHandler>> = {
   [INVITATION_RECEIVED]: absorbInvitationIntoInbox,
   [JOIN_REQUESTS_CHANGED]: refetchJoinRequests,
   [ROSTER_CHANGED]: refetchRoster,
+  [FOLLOW_REQUESTS_CHANGED]: refetchFollowRequests,
+  [FOLLOWERS_CHANGED]: refetchFollowers,
 };
 
 
@@ -159,6 +167,7 @@ export function markStaleOnReconnect(client: QueryClient): void {
   void client.invalidateQueries({ queryKey: itineraryKeys.lists(), ...stale });
   void client.invalidateQueries({ queryKey: invitationKeys.all, ...stale });
   void client.invalidateQueries({ queryKey: joinKeys.all, ...stale });
+  void client.invalidateQueries({ queryKey: followKeys.all, ...stale });
 }
 
 
@@ -167,6 +176,17 @@ function refetchJoinRequests(client: QueryClient, _payload: unknown, topic: stri
   if (itineraryId === null) return;
 
   void client.invalidateQueries({ queryKey: joinKeys.requests(itineraryId) });
+}
+
+
+function refetchFollowRequests(client: QueryClient): void {
+  void client.invalidateQueries({ queryKey: followKeys.requests() });
+}
+
+
+function refetchFollowers(client: QueryClient): void {
+  void client.invalidateQueries({ queryKey: followKeys.all });
+  void client.invalidateQueries({ queryKey: profileKeys.stats() });
 }
 
 

@@ -25,6 +25,8 @@ export type MeResponse = {
   onboardingCompleted: boolean;
 
   vanityNumber: string | null;
+
+  profileVisibility: ProfileVisibility;
 };
 
 
@@ -38,6 +40,7 @@ export type UpdateProfileRequest = {
   country?: string;
   preferredCurrency?: string;
   homeCity?: string;
+  profileVisibility?: ProfileVisibility;
 };
 
 
@@ -64,19 +67,40 @@ export type VerificationResultResponse = {
 export type ItineraryState = 'upcoming' | 'ongoing' | 'completed';
 
 
-export type Visibility = 'public' | 'private';
 
 
 export type TripCategory = 'draft' | 'upcoming' | 'ongoing' | 'complete';
 
 
-export type PublishAudience = Visibility;
+
+
+export type PlaceCandidateResponse = {
+  name: string;
+  context: string | null;
+  lat: number;
+  lng: number;
+  kind: string | null;
+  nearby?: boolean;
+};
+
+
+export type PlaceSearchResponse = {
+  results: PlaceCandidateResponse[];
+};
+
+
+export type Pin = {
+  lat: number;
+  lng: number;
+  zoom: number;
+};
 
 
 export type ItineraryResponse = {
   id: string;
   title: string;
   destination: string;
+  pin: Pin | null;
   currency: string | null;
 
   description: string | null;
@@ -91,7 +115,6 @@ export type ItineraryResponse = {
   endDate: string | null;
   state: ItineraryState;
   published: boolean;
-  visibility: Visibility;
 
   archived: boolean;
 
@@ -166,6 +189,7 @@ export type ActivityResponse = {
   costAmount: string | null;
   costCurrency: string | null;
   place: string | null;
+  pin: Pin | null;
   description: string | null;
   notes: string | null;
   externalUrl: string | null;
@@ -218,6 +242,7 @@ export type PublishedActivityResponse = {
   costAmount: string | null;
   costCurrency: string | null;
   place: string | null;
+  pin: Pin | null;
   description: string | null;
 
   notes: string | null;
@@ -252,6 +277,7 @@ export type PublishedItineraryResponse = {
   id: string;
   title: string;
   destination: string;
+  pin: Pin | null;
   description: string | null;
 
   standouts: string[];
@@ -274,6 +300,7 @@ export type PublishedItineraryResponse = {
 export type CreateItineraryRequest = {
   title: string;
   destination: string;
+  pin?: Pin | null;
   description?: string;
   startDate?: string;
   endDate?: string;
@@ -286,6 +313,7 @@ export type CreateItineraryRequest = {
 export type UpdateItineraryRequest = {
   title: string;
   destination: string;
+  pin?: Pin | null;
   currency?: string;
   description?: string | null;
 
@@ -308,6 +336,7 @@ export type ActivityRequest = {
   costAmount?: string;
   costCurrency?: string;
   place?: string;
+  pin?: Pin | null;
   description?: string;
   notes?: string;
   externalUrl?: string;
@@ -404,6 +433,27 @@ export type PeoplePageResponse = {
 };
 
 
+export type ProfileVisibility = 'public' | 'private';
+
+
+export type ViewerRelation = 'none' | 'requested' | 'following';
+
+
+export type FollowStateResponse = {
+  state: Extract<ViewerRelation, 'requested' | 'following'>;
+};
+
+
+export type FollowRequestResponse = {
+  traveler: TravelerCardResponse;
+  requestedAt: string;
+};
+
+
+export const PROFILE_PRIVATE_CODE = 'PROFILE_PRIVATE';
+
+
+
 export type PublicProfileResponse = {
   traveler: TravelerCardResponse;
   bio: string | null;
@@ -414,6 +464,8 @@ export type PublicProfileResponse = {
   followingCount: number;
   followedByViewer: boolean;
   followsViewer: boolean;
+  visibility: ProfileVisibility;
+  viewerRelation: ViewerRelation;
 };
 
 
@@ -469,6 +521,7 @@ export type FeedPostcardResponse = {
   author: TravelerCardResponse;
   itineraryId: string;
   tripTitle: string | null;
+  destination: string | null;
   publishedItineraryId: string | null;
   dayLabel: string;
   activityTitle: string;

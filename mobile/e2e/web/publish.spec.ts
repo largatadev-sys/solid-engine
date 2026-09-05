@@ -1,15 +1,17 @@
 import type { Locator } from '@playwright/test';
-import { test, expect } from '../support/fixtures';
+import { test, expect, lastOpenedUrl } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { climbTo, seedCover, seedPlan, seedTrip, stamp, type SeededTrip } from '../support/seed';
-import { labelled } from '../support/screen';
-import { audienceBlurb, audienceLabel } from '../../src/itineraries/publishControls';
+import { labelled, labelStarting } from '../support/screen';
+import { FOLLOWING_LABEL, FOLLOW_LABEL } from '../../src/profile/publicProfileCopy';
+import { PUBLISH_AUDIENCE_LINE } from '../../src/itineraries/publishControls';
 import { comingSoonMessage } from '../../src/components/comingSoonMessage';
 import { copyLinkFeedback } from '../../src/itineraries/shareLinkContract';
 import { tabLabel } from '../../src/itineraries/tripTabs';
 import { publicationBadge } from '../../src/itineraries/tripCardAnatomy';
+import { mapsUrl } from '../../src/places/mapsQuery';
 
 const OWNER = ownerTagFor('web/publish');
 const STRANGER = IDENTITY_MAP['web/publish'].tags[1]!;
@@ -157,34 +159,14 @@ test.describe('the publish act — dark since the walk was retired', () => {
     await expect(page.getByText('Continue Editing', { exact: true })).toBeVisible();
   });
 
-  test('the preview asks which audience, defaulting to Public', async ({ page }) => {
-    await page.goto(`/itineraries/${trip.id}/preview`);
-
-    const chosen = labelled(page, `Publish ${audienceLabel('public').toLowerCase()}`);
-    const other = labelled(page, `Publish ${audienceLabel('private').toLowerCase()}`);
-
-    await expect(chosen).toBeVisible();
-    await expect(other).toBeVisible();
-    await expect(page.getByText(audienceBlurb('public'), { exact: true })).toBeVisible();
-    await expect(page.getByText(audienceBlurb('private'), { exact: true })).toHaveCount(0);
-
-    expect(await accentBorderOf(chosen)).not.toBe(await accentBorderOf(other));
-  });
-
-  test('choosing Private swaps the blurb and the selection, so the question is a live control', async ({
+  test('the preview asks no audience — it states the one outcome publishing has', async ({
     page,
   }) => {
     await page.goto(`/itineraries/${trip.id}/preview`);
-    const publicChip = labelled(page, `Publish ${audienceLabel('public').toLowerCase()}`);
-    const privateChip = labelled(page, `Publish ${audienceLabel('private').toLowerCase()}`);
-    const wasSelected = await accentBorderOf(publicChip);
 
-    await privateChip.click();
-
-    await expect(page.getByText(audienceBlurb('private'), { exact: true })).toBeVisible();
-    await expect(page.getByText(audienceBlurb('public'), { exact: true })).toHaveCount(0);
-    expect(await accentBorderOf(privateChip)).toBe(wasSelected);
-    expect(await accentBorderOf(publicChip)).not.toBe(wasSelected);
+    await expect(page.getByText(PUBLISH_AUDIENCE_LINE, { exact: true })).toBeVisible();
+    await expect(labelled(page, 'Publish public')).toHaveCount(0);
+    await expect(labelled(page, 'Publish private')).toHaveCount(0);
   });
 
   test('Publish lands the success screen and publishes the trip on the server', async ({ page }) => {
@@ -196,7 +178,7 @@ test.describe('the publish act — dark since the walk was retired', () => {
     await expect
       .poll(async () => (await itineraryOf(trip.id)).published, { timeout: 15_000 })
       .toBe(true);
-    expect((await itineraryOf(trip.id)).visibility).toBe('public');
+    expect((await itineraryOf(trip.id)).visibility, 'the server keeps the field as its constant').toBe('public');
   });
 
   test('the success screen offers Copy Link and Share, and shows the route it copies', async ({
@@ -224,7 +206,7 @@ test.describe('the publish act — dark since the walk was retired', () => {
     await page.getByRole('tab', { name: tabLabel('completed') }).click();
     await expect(labelled(page, trip.title)).toBeVisible();
 
-    const badge = publicationBadge({ published: true, visibility: 'public' })!;
+    const badge = publicationBadge({ published: true })!;
     await expect(labelled(page, trip.title).getByText(badge, { exact: true })).toBeVisible();
   });
 
@@ -306,6 +288,25 @@ test.describe('the public projection, read by a stranger', () => {
     await expect(page.getByText('View Booking Options', { exact: true })).toBeVisible();
   });
 
+  test('the activity place opens a destination-hinted Google Maps search', async ({ page }) => {
+    await page.goto(`/published/${published.id}`);
+    await labelled(page, 'Day-by-Day').click();
+    await labelled(page, `${PLACE}, open in Google Maps`).click();
+
+    await expect
+      .poll(() => lastOpenedUrl(page), { timeout: 15_000 })
+      .toBe(mapsUrl(PLACE, DESTINATION));
+  });
+
+  test('the header destination pill opens Maps on the destination itself', async ({ page }) => {
+    await page.goto(`/published/${published.id}`);
+    await labelled(page, `${DESTINATION}, open in Google Maps`).click();
+
+    await expect
+      .poll(() => lastOpenedUrl(page), { timeout: 15_000 })
+      .toBe(mapsUrl(DESTINATION, null));
+  });
+
   test('View Booking Options greys with a message rather than opening a URL', async ({
     page,
     signal,
@@ -337,13 +338,19 @@ test.describe('the public projection, read by a stranger', () => {
     }
   });
 
-  test('Follow greys with a message too', async ({ page, signal }) => {
+  test('the creator row carries the real pill now, not a coming-soon stub (S4.40)', async ({
+    page,
+    signal,
+  }) => {
     await page.goto(`/published/${published.id}`);
-    await labelled(page, 'Follow, coming soon').click();
 
-    await expect
-      .poll(() => signal.dialogs.join(' '), { timeout: 15_000 })
-      .toContain(comingSoonMessage('follow').title);
+    await expect(labelStarting(page, `${FOLLOW_LABEL} `)).toBeVisible({ timeout: 20_000 });
+    await expect(labelled(page, 'Follow, coming soon')).toHaveCount(0);
+
+    await labelStarting(page, `${FOLLOW_LABEL} `).click();
+
+    await expect(labelStarting(page, `${FOLLOWING_LABEL} `)).toBeVisible({ timeout: 15_000 });
+    expect(signal.dialogs.join(' ')).not.toContain('coming soon');
   });
 
   test('no console or page errors for the stranger reading the projection', async ({

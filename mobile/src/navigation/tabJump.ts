@@ -4,7 +4,13 @@ import { HOME_TAB_ROUTE, PROFILE_TAB_ROUTE, TRIPS_TAB_ROUTE } from './authRoutes
 export type TabJump = 'dismissTo' | 'navigate';
 
 
-const PROFILE_STACK = [PROFILE_TAB_ROUTE, '/account', '/diary', '/showcase'];
+const PROFILE_STACK = [
+  PROFILE_TAB_ROUTE,
+  '/account',
+  '/follow-requests',
+  '/diary',
+  '/showcase',
+];
 
 
 const HOME_STACK = [HOME_TAB_ROUTE, '/feed'];

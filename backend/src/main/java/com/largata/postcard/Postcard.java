@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.UUID;
@@ -43,6 +44,15 @@ public class Postcard {
     @Column(updatable = false)
     private String place;
 
+    @Column(updatable = false)
+    private BigDecimal latitude;
+
+    @Column(updatable = false)
+    private BigDecimal longitude;
+
+    @Column(updatable = false)
+    private Short zoom;
+
     @Column private String caption;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -63,6 +73,9 @@ public class Postcard {
             String dayLabel,
             LocalTime timeOfDay,
             String place,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            Short zoom,
             String caption,
             Instant at) {
         this.id = id;
@@ -74,6 +87,9 @@ public class Postcard {
         this.dayLabel = dayLabel;
         this.timeOfDay = timeOfDay;
         this.place = normalize(place);
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.zoom = zoom;
         this.caption = normalizeCaption(caption);
         this.createdAt = at;
         this.updatedAt = at;
@@ -85,7 +101,7 @@ public class Postcard {
             throw new IllegalArgumentException("A postcard has an author and a moment");
         }
         return new Postcard(
-                UuidV7.generate(), authorId, diaryId, null, null, null, null, null, place, caption, at);
+                UuidV7.generate(), authorId, diaryId, null, null, null, null, null, place, null, null, null, caption, at);
     }
 
 
@@ -98,6 +114,9 @@ public class Postcard {
             String dayLabel,
             LocalTime timeOfDay,
             String place,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            Short zoom,
             String caption,
             Instant at) {
         if (authorId == null || diaryId == null || tripId == null || activityId == null || at == null) {
@@ -114,6 +133,9 @@ public class Postcard {
                 dayLabel,
                 timeOfDay,
                 place,
+                latitude,
+                longitude,
+                zoom,
                 caption,
                 at);
     }
@@ -178,6 +200,18 @@ public class Postcard {
 
     public String place() {
         return place;
+    }
+
+    public BigDecimal latitude() {
+        return latitude;
+    }
+
+    public BigDecimal longitude() {
+        return longitude;
+    }
+
+    public Short zoom() {
+        return zoom;
     }
 
     public String caption() {

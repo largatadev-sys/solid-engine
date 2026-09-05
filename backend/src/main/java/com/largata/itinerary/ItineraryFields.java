@@ -12,7 +12,8 @@ public record ItineraryFields(
         List<String> standouts,
         String bestTimeOfYear,
         LocalDate startDate,
-        LocalDate endDate) {
+        LocalDate endDate,
+        Pin pin) {
 
     public static final String DEFAULT_CURRENCY = "PHP";
 
@@ -37,7 +38,7 @@ public record ItineraryFields(
     static ItineraryFields withoutPublishMetadata(
             String title, String destination, String description, LocalDate startDate, LocalDate endDate) {
         return new ItineraryFields(
-                title, destination, DEFAULT_CURRENCY, description, List.of(), "", startDate, endDate);
+                title, destination, DEFAULT_CURRENCY, description, List.of(), "", startDate, endDate, null);
     }
 
 

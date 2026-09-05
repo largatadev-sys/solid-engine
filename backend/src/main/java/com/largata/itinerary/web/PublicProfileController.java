@@ -1,6 +1,7 @@
 package com.largata.itinerary.web;
 
 import com.largata.common.api.Page;
+import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
 import com.largata.identity.api.PublicProfileResponse;
@@ -22,10 +23,13 @@ class PublicProfileController {
 
     private final PublicProfileService profiles;
     private final FollowService follows;
+    private final AuthoredContentAudience audience;
 
-    PublicProfileController(PublicProfileService profiles, FollowService follows) {
+    PublicProfileController(
+            PublicProfileService profiles, FollowService follows, AuthoredContentAudience audience) {
         this.profiles = profiles;
         this.follows = follows;
+        this.audience = audience;
     }
 
 
@@ -51,6 +55,7 @@ class PublicProfileController {
             @PathVariable String handle,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
+        requireAudience(traveler, handle);
         return profiles.diaryTripsOf(handle, cursor, limit);
     }
 
@@ -61,6 +66,7 @@ class PublicProfileController {
             @PathVariable String handle,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
+        requireAudience(traveler, handle);
         return follows.followersOf(handle, cursor, limit);
     }
 
@@ -71,6 +77,12 @@ class PublicProfileController {
             @PathVariable String handle,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
+        requireAudience(traveler, handle);
         return follows.followingOf(handle, cursor, limit);
+    }
+
+
+    private void requireAudience(Traveler viewer, String handle) {
+        audience.requireReadable(viewer.id(), follows.onboardedIdByHandle(handle));
     }
 }

@@ -40,7 +40,7 @@ class PostcardSteppingIT {
         Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
-                .target("45")
+                .target("50")
                 .cleanDisabled(false)
                 .load()
                 .migrate();
@@ -61,7 +61,7 @@ class PostcardSteppingIT {
         Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
-                .target("46")
+                .target("51")
                 .cleanDisabled(false)
                 .load()
                 .migrate();

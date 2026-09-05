@@ -71,6 +71,7 @@ export function TripDiaryScreen({ exit = 'trip' }: { readonly exit?: DiaryEntryE
               postcard={entry}
               eyebrow={snapshotEyebrow(entry)}
               openLabel={`Open your entry for ${entry.activityTitle}`}
+              destination={trip.data?.destination ?? null}
               onOpen={() => setPreviewing(entry)}
             />
           ))

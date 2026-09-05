@@ -38,7 +38,9 @@ export function invitedAgoLabel(createdAt: string, now: number): string {
   if (hours < 24) return `${hours}h ago`;
 
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  if (days < 7) return `${days}d ago`;
+
+  return `${Math.floor(days / 7)}w ago`;
 }
 
 

@@ -44,7 +44,8 @@ test('following moves both counts and both viewer-relative flags', async () => {
   const before = await profile(followed.handle, followerToken);
 
   const followed_ = await api(`/v1/travelers/${followedId}/follow`, 'POST', followerToken);
-  expect(followed_.status).toBe(204);
+  expect(followed_.status).toBe(200);
+  expect(followed_.body.state, 'a public target is followed outright').toBe('following');
 
   const after = await profile(followed.handle, followerToken);
   expect(after.followersCount).toBe(before.followersCount + 1);
@@ -61,7 +62,8 @@ test('a second follow writes nothing — the count does not drift', async () => 
   const once = await profile(followed.handle, followerToken);
 
   const again = await api(`/v1/travelers/${followedId}/follow`, 'POST', followerToken);
-  expect(again.status).toBe(204);
+  expect(again.status).toBe(200);
+  expect(again.body.state).toBe('following');
 
   const twice = await profile(followed.handle, followerToken);
   expect(twice.followersCount).toBe(once.followersCount);
