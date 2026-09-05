@@ -96,12 +96,12 @@ describe('unarchiving (S1.9 — the archive control itself was removed from the 
 });
 
 describe('publishing (S4.1)', () => {
-  it('publishes with the chosen audience — public is the default the screen offers', async () => {
+  it('publishes with no audience, because there is no longer a choice to send (S4.40)', async () => {
     apiClient.post.mockResolvedValue({ id: 'abc', status: 'public' });
 
-    await itineraryRepository.publishTrip('abc', 'public');
+    await itineraryRepository.publishTrip('abc');
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/publish', { audience: 'public' });
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/publish', undefined);
   });
 
   it('unpublishes symmetrically, on the same itinerary id', async () => {

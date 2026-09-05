@@ -1,5 +1,5 @@
 import Svg, { Circle, Line, Path, Polygon, Polyline, Rect } from 'react-native-svg';
-import { workspaceColors } from '../theme/workspaceTokens';
+import { profileColors, workspaceColors } from '../theme/workspaceTokens';
 
 export type IconName =
 | 'back'
@@ -63,7 +63,9 @@ export type IconName =
   | 'postcard'
   | 'logOut'
   | 'personSearch'
-  | 'feedback';
+  | 'feedback'
+  | 'sealedPostcard'
+  | 'personPlus';
 
 interface IconProps {
   readonly name: IconName;
@@ -554,6 +556,26 @@ export function Icon({ name, size, color }: IconProps) {
             strokeLinecap="round"
             strokeLinejoin="round"
           />
+        </>
+      )}
+
+      {name === 'sealedPostcard' && (
+        <>
+          <Rect x="2.5" y="5.5" width="19" height="13" rx="2" {...shared} />
+          <Path d="M12.5 9.5h5.5" {...shared} />
+          <Path d="M12.5 12.5h5.5" {...shared} />
+          <Path d="M5.5 15h4" {...shared} />
+          <Circle cx="7.5" cy="10" r="2.6" {...shared} fill={profileColors.emptyWell} />
+          <Path d="M6.4 10l.8.8 1.4-1.6" {...shared} />
+        </>
+      )}
+
+      {name === 'personPlus' && (
+        <>
+          <Circle cx="9" cy="8" r="3.4" {...shared} />
+          <Path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" {...shared} />
+          <Path d="M16 8.5h5" {...shared} />
+          <Path d="M18.5 6v5" {...shared} />
         </>
       )}
 

@@ -6,8 +6,6 @@ export const FOLLOW_LABEL = 'Follow';
 
 export const FOLLOWING_LABEL = 'Following';
 
-export const FOLLOWS_YOU_LABEL = 'Follows you';
-
 export const DESTINATIONS_STAT_LABEL = 'Destinations';
 
 export const AWAITING_COUNT = '—';
@@ -92,6 +90,11 @@ export function firstNameOf(displayName: string | null): string {
     return 'this traveler';
   }
   return named.split(/\s+/)[0] ?? named;
+}
+
+
+export function publicDiaryFailed(displayName: string | null): string {
+  return `Could not load ${firstNameOf(displayName)}'s diary — tap to retry`;
 }
 
 

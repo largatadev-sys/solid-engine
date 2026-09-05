@@ -21,6 +21,7 @@ const ME: MeResponse = {
   homeCity: 'Puerto Princesa',
   onboardingCompleted: true,
   vanityNumber: '010042',
+  profileVisibility: 'public',
 };
 
 const MEMBER: MemberResponse = {

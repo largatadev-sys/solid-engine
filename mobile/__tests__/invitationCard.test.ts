@@ -73,6 +73,17 @@ describe('the inviter line', () => {
   it('reads fresh invitations as just now', () => {
     expect(invitedAgoLabel(inHours(-0.2), NOW)).toBe('just now');
   });
+
+  it('counts in days up to a week', () => {
+    expect(invitedAgoLabel(inHours(-24), NOW)).toBe('1d ago');
+    expect(invitedAgoLabel(inHours(-24 * 6), NOW)).toBe('6d ago');
+  });
+
+  it('counts in weeks past that, which the requests list draws', () => {
+    expect(invitedAgoLabel(inHours(-24 * 7), NOW)).toBe('1w ago');
+    expect(invitedAgoLabel(inHours(-24 * 13), NOW)).toBe('1w ago');
+    expect(invitedAgoLabel(inHours(-24 * 14), NOW)).toBe('2w ago');
+  });
 });
 
 describe('the trip meta line', () => {

@@ -25,6 +25,8 @@ export type MeResponse = {
   onboardingCompleted: boolean;
 
   vanityNumber: string | null;
+
+  profileVisibility: ProfileVisibility;
 };
 
 
@@ -38,6 +40,7 @@ export type UpdateProfileRequest = {
   country?: string;
   preferredCurrency?: string;
   homeCity?: string;
+  profileVisibility?: ProfileVisibility;
 };
 
 
@@ -64,13 +67,11 @@ export type VerificationResultResponse = {
 export type ItineraryState = 'upcoming' | 'ongoing' | 'completed';
 
 
-export type Visibility = 'public' | 'private';
 
 
 export type TripCategory = 'draft' | 'upcoming' | 'ongoing' | 'complete';
 
 
-export type PublishAudience = Visibility;
 
 
 export type PlaceCandidateResponse = {
@@ -114,7 +115,6 @@ export type ItineraryResponse = {
   endDate: string | null;
   state: ItineraryState;
   published: boolean;
-  visibility: Visibility;
 
   archived: boolean;
 
@@ -433,6 +433,27 @@ export type PeoplePageResponse = {
 };
 
 
+export type ProfileVisibility = 'public' | 'private';
+
+
+export type ViewerRelation = 'none' | 'requested' | 'following';
+
+
+export type FollowStateResponse = {
+  state: Extract<ViewerRelation, 'requested' | 'following'>;
+};
+
+
+export type FollowRequestResponse = {
+  traveler: TravelerCardResponse;
+  requestedAt: string;
+};
+
+
+export const PROFILE_PRIVATE_CODE = 'PROFILE_PRIVATE';
+
+
+
 export type PublicProfileResponse = {
   traveler: TravelerCardResponse;
   bio: string | null;
@@ -443,6 +464,8 @@ export type PublicProfileResponse = {
   followingCount: number;
   followedByViewer: boolean;
   followsViewer: boolean;
+  visibility: ProfileVisibility;
+  viewerRelation: ViewerRelation;
 };
 
 

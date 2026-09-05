@@ -12,7 +12,6 @@ import type {
   Page,
   PhotoDumpEntryResponse,
   PublishedItineraryResponse,
-  PublishAudience,
   ReorderActivitiesRequest,
   SavePlanRequest,
   TripCategory,
@@ -87,17 +86,14 @@ export const itineraryRepository = {
   },
 
 
-  async publishTrip(id: string, audience: PublishAudience): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/publish`, { audience });
+  async publishTrip(id: string): Promise<ItineraryResponse> {
+    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/publish`, undefined);
   },
 
   async unpublishTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unpublish`, undefined);
   },
 
-  async showTripTo(id: string, audience: PublishAudience): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/audience`, { audience });
-  },
 
   async startTrip(id: string): Promise<ItineraryResponse> {
     return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/start`, undefined);

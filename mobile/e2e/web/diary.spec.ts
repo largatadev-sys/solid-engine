@@ -17,7 +17,6 @@ import { labelled } from '../support/screen';
 import {
   CAPTION_LABEL,
   COMPOSE_CTA,
-  DIARY_PRIVACY_NOTE,
   DUMP_PICKER_TITLE,
   ENTRY_TITLE,
   PHOTOS_LABEL,
@@ -123,12 +122,12 @@ test('the link opens the composer, which draws the mock — eyebrow, both photo 
   await expect(labelled(page, CAPTION_LABEL)).toBeVisible();
 });
 
-test('the composer states the audience before the first postcard, and offers no toggle pretending it is a choice', async ({
+test('the composer makes no claim about who can see a postcard (S4.40)', async ({
   page,
 }) => {
   await page.goto(composerRoute());
 
-  await expect(page.getByText(DIARY_PRIVACY_NOTE)).toBeVisible();
+  await expect(page.getByText('Home feed')).toHaveCount(0);
   await expect(page.getByText('Only you can see your diary')).toHaveCount(0);
   await expect(page.getByText('Share to feed')).toHaveCount(0);
 });

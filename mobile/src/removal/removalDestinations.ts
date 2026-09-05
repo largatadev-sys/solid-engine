@@ -1,9 +1,6 @@
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
-import type { PublishAudience } from '../types/api';
 import type { RemovalMenuKey } from './removalMenu';
 
-
-export const PUBLISHED_AUDIENCE: PublishAudience = 'public';
 
 
 export type RemovalAction =

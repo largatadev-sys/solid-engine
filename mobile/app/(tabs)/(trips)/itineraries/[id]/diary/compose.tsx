@@ -30,7 +30,6 @@ import {
   MAX_DIARY_PHOTOS,
   roomLeft,
 } from '../../../../../../src/diary/diaryCapture';
-import { DiaryPrivacyNote } from '../../../../../../src/diary/DiaryPrivacyNote';
 import { snapshotEyebrow } from '../../../../../../src/diary/postcardAnatomy';
 import { DiaryAddRow } from '../../../../../../src/diary/DiaryAddRow';
 import { DiaryPhotoTile } from '../../../../../../src/diary/DiaryPhotoTile';
@@ -179,7 +178,6 @@ export default function ComposeDiaryEntryScreen() {
         </View>
 
 
-        <DiaryPrivacyNote />
 
         {photoAction.failure !== undefined ? (
           <Text style={styles.failure}>{photoAction.failure}</Text>

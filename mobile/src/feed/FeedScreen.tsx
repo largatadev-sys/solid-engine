@@ -170,7 +170,12 @@ export function FeedScreen() {
   const openTripDiary = (card: FeedPostcardResponse) => {
     router.push({
       pathname: '/feed/diary/[id]',
-      params: { id: card.itineraryId, author: card.author.id },
+      params: {
+        id: card.itineraryId,
+        author: card.author.id,
+        handle: card.author.handle ?? '',
+        name: card.author.displayName ?? '',
+      },
     });
   };
 

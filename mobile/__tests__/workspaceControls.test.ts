@@ -31,9 +31,7 @@ function trip(over: Partial<ItineraryResponse> = {}): ItineraryResponse {
     destination: 'El Nido, Palawan',
     days: [],
     state: 'upcoming',
-    published: false,
-    visibility: 'private',
-    archived: false,
+    published: false,    archived: false,
     createdAt: '2026-08-08T00:00:00Z',
     ...over,
   } as ItineraryResponse;

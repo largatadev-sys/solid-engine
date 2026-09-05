@@ -9,7 +9,12 @@ import {
 import { useAuth } from '../hooks/authContext';
 import { followRepository } from '../repositories/followRepository';
 import type { FollowIntent } from '../profile/followState';
-import type { Page, TravelerCardResponse } from '../types/api';
+import type {
+  FollowRequestResponse,
+  Page,
+  TravelerCardResponse,
+  ViewerRelation,
+} from '../types/api';
 import { profileKeys } from './profileQueries';
 import { publicProfileKeys } from './publicProfileQueries';
 import { feedKeys } from './feedQueries';
@@ -21,6 +26,8 @@ export const followKeys = {
   followers: (handle: string) => [...followKeys.all, 'followers', handle] as const,
 
   following: (handle: string) => [...followKeys.all, 'following', handle] as const,
+
+  requests: () => [...followKeys.all, 'requests'] as const,
 };
 
 
@@ -30,13 +37,13 @@ export interface FollowMutation {
 }
 
 
-export function useFollowMutation(): UseMutationResult<void, Error, FollowMutation> {
+export function useFollowMutation(): UseMutationResult<ViewerRelation, Error, FollowMutation> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ travelerId, intent }: FollowMutation) =>
       intent === 'follow'
-        ? followRepository.follow(travelerId)
-        : followRepository.unfollow(travelerId),
+        ? followRepository.follow(travelerId).then((answer) => answer.state)
+        : followRepository.unfollow(travelerId).then<ViewerRelation>(() => 'none'),
     onSettled: () => {
       void client.invalidateQueries({ queryKey: publicProfileKeys.all });
       void client.invalidateQueries({ queryKey: profileKeys.stats() });
@@ -73,5 +80,59 @@ export function useFollowing(
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: Page<TravelerCardResponse>) => lastPage.nextCursor ?? undefined,
     enabled: kind === 'signedIn' && handle.length > 0,
+  });
+}
+
+
+export function useFollowRequests(): UseInfiniteQueryResult<
+  InfiniteData<Page<FollowRequestResponse>>,
+  Error
+> {
+  const { kind } = useAuth();
+  return useInfiniteQuery({
+    queryKey: followKeys.requests(),
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+      followRepository.fetchFollowRequests(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: Page<FollowRequestResponse>) => lastPage.nextCursor ?? undefined,
+    enabled: kind === 'signedIn',
+  });
+}
+
+
+export type RequestVerdict = 'approve' | 'decline';
+
+
+export interface RequestDecision {
+  readonly travelerId: string;
+  readonly verdict: RequestVerdict;
+}
+
+
+export function useDecideFollowRequest(): UseMutationResult<void, Error, RequestDecision> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ travelerId, verdict }: RequestDecision) =>
+      verdict === 'approve'
+        ? followRepository.approveFollowRequest(travelerId)
+        : followRepository.declineFollowRequest(travelerId),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: followKeys.requests() });
+      void client.invalidateQueries({ queryKey: profileKeys.stats() });
+      void client.invalidateQueries({ queryKey: followKeys.all });
+    },
+  });
+}
+
+
+export function useRemoveFollower(): UseMutationResult<void, Error, string> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (travelerId: string) => followRepository.removeFollower(travelerId),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: profileKeys.stats() });
+      void client.invalidateQueries({ queryKey: followKeys.all });
+      void client.invalidateQueries({ queryKey: publicProfileKeys.all });
+    },
   });
 }

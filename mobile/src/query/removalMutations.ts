@@ -10,13 +10,12 @@ import { feedKeys } from './feedQueries';
 import { diaryKeys } from './diaryQueries';
 import { itineraryKeys } from './itineraryQueries';
 import { profileKeys } from './profileQueries';
-import type { PublishAudience } from '../types/api';
 
 
 export interface RemovalCommands {
   readonly deletePostcard: (itineraryId: string, entryId: string) => Promise<void>;
   readonly unpublish: (itineraryId: string) => Promise<void>;
-  readonly republish: (itineraryId: string, audience: PublishAudience) => Promise<void>;
+  readonly republish: (itineraryId: string) => Promise<void>;
   readonly leaveTrip: (itineraryId: string, travelerId: string) => Promise<void>;
   readonly archiveTrip: (itineraryId: string) => Promise<void>;
   readonly run: (command: () => Promise<void>) => void;
@@ -63,8 +62,8 @@ export function useRemovalCommands(announce: (message: string) => void): Removal
     ),
 
     republish: useCallback(
-      async (itineraryId: string, audience: PublishAudience) => {
-        await itineraryRepository.publishTrip(itineraryId, audience);
+      async (itineraryId: string) => {
+        await itineraryRepository.publishTrip(itineraryId);
         await refreshItineraries();
       },
       [refreshItineraries],

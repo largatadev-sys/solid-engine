@@ -144,25 +144,11 @@ describe('the removal carries what committing it needs, so nothing is looked up 
     expect(done.commits[0]?.itineraryId).toBe('trip-77');
   });
 
-  it('hands the audience back on undo, so republish restores what the trip had', () => {
-    const { queue } = requested(emptyUndoQueue(), {
-      subjectId: 'trip-1',
-      kind: 'unpublish',
-      message: 'Itinerary unpublished',
-      deferred: false,
-      audience: 'public',
-    });
-    const undone = cancelled(queue, queue.pending!.token);
-
-    expect(undone.reverts[0]?.audience).toBe('public');
-  });
-
   it('reports null rather than guessing when the request carried neither', () => {
     const { queue } = request(emptyUndoQueue(), 'card-1');
     const done = expired(queue, queue.pending!.token);
 
     expect(done.commits[0]?.itineraryId).toBeNull();
-    expect(done.commits[0]?.audience).toBeNull();
   });
 });
 

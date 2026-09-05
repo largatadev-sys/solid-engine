@@ -12,7 +12,6 @@ import {
   FOLLOWERS_TITLE,
   FOLLOWING_LABEL,
   FOLLOWING_TITLE,
-  FOLLOWS_YOU_LABEL,
   FOLLOW_LABEL,
   PUBLIC_PROFILE_TITLE,
   SEE_ALL_PEOPLE_LABEL,
@@ -118,12 +117,13 @@ test('a refused follow puts the pill back and names the traveler in a toast', as
 });
 
 
-test('the profile of someone who follows me carries the Follows-you chip', async ({ page }) => {
+test('no profile claims a traveler follows me — the chip retired at S4.40', async ({ page }) => {
   await api(`/v1/travelers/${followerId}/follow`, 'POST', followedToken);
 
   await page.goto(`/travelers/${followed.handle}`);
+  await expect(page.getByText(PUBLIC_PROFILE_TITLE).last()).toBeVisible({ timeout: 20_000 });
 
-  await expect(page.getByText(FOLLOWS_YOU_LABEL).last()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Follows you')).toHaveCount(0);
 });
 
 
@@ -131,7 +131,7 @@ test('my own profile never claims to follow me', async ({ page }) => {
   await page.goto(`/travelers/${follower.handle}`);
 
   await expect(labelled(page, 'Edit Profile')).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText(FOLLOWS_YOU_LABEL)).toHaveCount(0);
+  await expect(page.getByText('Follows you')).toHaveCount(0);
 });
 
 

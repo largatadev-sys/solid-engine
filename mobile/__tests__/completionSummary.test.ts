@@ -23,6 +23,7 @@ const ME: MeResponse = {
   homeCity: 'Puerto Princesa',
   onboardingCompleted: false,
   vanityNumber: '010042',
+  profileVisibility: 'public',
 };
 
 describe('the completion screen matches the design copy', () => {

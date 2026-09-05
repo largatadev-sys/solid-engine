@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { comingSoon } from '../components/comingSoon';
+import { CreatorFollowPill } from '../profile/CreatorFollowPill';
 import { useOpenTravelerProfile } from '../profile/useOpenTravelerProfile';
 import type { ComingSoonSurface } from '../components/comingSoonMessage';
 import { Icon } from '../components/Icon';
@@ -190,16 +191,10 @@ function PublishedHeader({
           </View>
         </Pressable>
         {audience === 'consumer' && (
-          <Pressable
-            style={styles.followButton}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-            accessibilityLabel="Follow, coming soon"
-            onPress={() => comingSoon('follow')}
-          >
-            <Icon name="plus" size={FOLLOW_ICON_SIZE} color={colors.textSecondary} />
-            <Text style={styles.followText}>Follow</Text>
-          </Pressable>
+          <CreatorFollowPill
+            handle={projection.creator.handle}
+            displayName={projection.creator.displayName}
+          />
         )}
       </View>
 
@@ -368,8 +363,6 @@ function ActivityCard({
   );
 }
 
-const FOLLOW_ICON_SIZE = 14;
-
 const CREATOR_AVATAR_SIZE = 36;
 
 const COVER_HEIGHT = 200;
@@ -422,18 +415,6 @@ const styles = StyleSheet.create({
   creatorNames: { flex: 1 },
   creatorName: { ...typography.label, color: colors.textPrimary },
   creatorHandle: { ...typography.caption, color: colors.textSecondary },
-  followButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    opacity: 0.6,
-  },
-  followText: { ...typography.caption, color: colors.textSecondary },
   title: { ...typography.display, color: colors.textPrimary },
   stats: {
     flexDirection: 'row',

@@ -77,6 +77,29 @@ largata/
 
 ---
 
+## Visual language — the cream ground *(founder ruling, 2026-09-05, walking S4.40's Follow requests screen on the LAN rung)*
+
+**A list screen sits on warm cream (`colors.background`, `#FAF9F6`) with nothing painted on top of it — no white row fills, no dividers, no cards.** The founder named this walking the Follow requests list — *"I really like the background"* — and asked it be written down so other screens can adopt it. Recorded as canon rather than left as one screen's accident.
+
+**What it actually is, checked against the code rather than assumed:**
+
+- **The ground** is the only paint. `colors.background` runs edge to edge, header included, so the screen reads as one sheet rather than a bar above a list.
+- **Rows are transparent.** They carry a radius (`profileMetrics.statsRadius`) that shows only on press, and no background of their own. Nothing separates them but space.
+- **Space does the separating.** Row padding plus the list's own inset is the whole separator system. There is no hairline between rows and none should be added.
+- **Ink carries the hierarchy**, not weight of fill: name at 15/700 in the title ink, secondary line at 13 in the muted ink.
+
+**Why it works, and the two ways to break it.** The cream is soft enough that unfilled rows still read as distinct objects, so the screen stays quiet — a list of people with nothing competing for attention. Painting rows white kills it: the contrast against cream is so slight that the rows read as a smudge, and dividers have to come back to rescue them. Adding dividers to the current form is the same mistake from the other end — it draws lines to solve a problem the spacing already solved.
+
+**Where it holds today, checked rather than assumed:** `FollowRequestsScreen` is the clean case — cream screen, transparent rows, no dividers. `DiscoveryLandingScreen` and `DiscoveryResultsScreen` share the cream *ground* and transparent result rows, but Results also paints a white **filter button** and a **group divider between sections**. Neither is a row fill or a row separator, so the pattern holds where it matters — but they are not the reference; the requests list is. **`FollowListScreen` is the counter-example and stays one for now:** its screen is white (`workspaceColors.surface`), which is why its rows need their own separation and why it reads differently from the requests list sitting one tap away.
+
+**A note on scope, because the first draft of this section got it wrong twice.** It described white cards floating on cream — no list paints a row background at all. It then named three screens as holding the pattern without checking two of them. Both errors were the same mistake: writing what the screen *looked like* rather than reading what it *does*. A section in canon that asserts a false code fact is worse than no section, because the next story trusts it. **Anything added here names the file it checked.**
+
+**Where it should go next:** any list screen a later story builds or revisits — the follow lists, the travelers tab, the invitation inbox. This is a **pointer for future stories, not a mandate to repaint what ships**: a screen adopts it when a story is already touching it, so the change arrives with a walk that can judge it.
+
+**Precedence, stated because it will come up:** where an archived mock and this section disagree, **the mock wins for the screen it draws** — CLAUDE.md's design-baseline rule is unchanged. This section is what a story reaches for when it has *no* frame, which is most of them.
+
+---
+
 ## Deployment & environments — two release trains, joined at the API
 
 **Backend train (the playbook default, adopted):**

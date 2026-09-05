@@ -22,9 +22,7 @@ function trip(over: Partial<ItineraryResponse> = {}): ItineraryResponse {
     title: over.title ?? 'A trip',
     destination: 'El Nido, Palawan',
     state: 'upcoming',
-    published: false,
-    visibility: 'public',
-    archived: false,
+    published: false,    archived: false,
     ...over,
   } as ItineraryResponse;
 }
@@ -47,7 +45,7 @@ describe('the Trips tabs (S4.26, canvas C1)', () => {
   });
 
   it('tabs a published trip by its lifecycle, because discovery is a different axis', () => {
-    expect(tabOf(trip({ state: 'completed', published: true, visibility: 'private' }))).toBe(
+    expect(tabOf(trip({ state: 'completed', published: true }))).toBe(
       'completed',
     );
   });

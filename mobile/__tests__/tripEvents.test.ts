@@ -1,6 +1,8 @@
 import {
   EDITING_SESSION_ACQUIRED,
   EDITING_SESSION_RELEASED,
+  FOLLOWERS_CHANGED,
+  FOLLOW_REQUESTS_CHANGED,
   INVITATION_RECEIVED,
   JOIN_REQUESTS_CHANGED,
   MEMBERSHIP_GRANTED,
@@ -253,5 +255,56 @@ describe('the event dispatch table', () => {
   it('ignores an unknown type silently, because old apps meet new servers (ADR-030)', () => {
     expect(tripEventHandlerFor('trip.teleported')).toBeUndefined();
     expect(tripEventHandlerFor('')).toBeUndefined();
+  });
+});
+
+
+describe('the two payload-less frames the identity module sends (S4.40 decision 12, C4)', () => {
+  function recorder(): { keys: string[]; client: QueryClient } {
+    const keys: string[] = [];
+    const client = {
+      invalidateQueries: (options: { queryKey: readonly unknown[] }) => {
+        keys.push(JSON.stringify(options.queryKey));
+      },
+    } as unknown as QueryClient;
+    return { keys, client };
+  }
+
+  it('refetches the requests inbox when a request arrives or is withdrawn', () => {
+    const { keys, client } = recorder();
+
+    tripEventHandlerFor(FOLLOW_REQUESTS_CHANGED)!(client, null, travelerTopicFor('t1'));
+
+    expect(keys.some((key) => key.includes('requests'))).toBe(true);
+  });
+
+  it('refetches the follow lists and the own stats when an edge comes or goes', () => {
+    const { keys, client } = recorder();
+
+    tripEventHandlerFor(FOLLOWERS_CHANGED)!(client, null, travelerTopicFor('t1'));
+
+    expect(keys.some((key) => key.includes('follow'))).toBe(true);
+    expect(keys.some((key) => key.includes('stats'))).toBe(true);
+  });
+
+  it('needs no payload, because the audience is one traveler and the ids are the topic', () => {
+    const { keys, client } = recorder();
+
+    tripEventHandlerFor(FOLLOW_REQUESTS_CHANGED)!(client, null, travelerTopicFor('t1'));
+    tripEventHandlerFor(FOLLOWERS_CHANGED)!(client, undefined, travelerTopicFor('t1'));
+
+    expect(keys.length).toBeGreaterThan(0);
+  });
+
+  it('still ignores a type nobody registered, so an unknown frame is inert', () => {
+    expect(tripEventHandlerFor('followers.exploded')).toBeUndefined();
+  });
+
+  it('marks the follow lists stale on reconnect, with the rest', () => {
+    const { keys, client } = recorder();
+
+    markStaleOnReconnect(client);
+
+    expect(keys.some((key) => key.includes('follow'))).toBe(true);
   });
 });

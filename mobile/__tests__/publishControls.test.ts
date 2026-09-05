@@ -1,13 +1,10 @@
 import {
-  audienceBlurb,
-  audienceLabel,
-  audienceOf,
   canPublish,
   isEditable,
   isPublished,
-  otherAudience,
   publishControl,
   publishNeedsCompleteBody,
+  PUBLISH_AUDIENCE_LINE,
 } from '../src/itineraries/publishControls';
 
 describe('publishControl (ADR-019)', () => {
@@ -62,20 +59,8 @@ describe('the publish gate', () => {
   });
 });
 
-describe('the audience', () => {
-  it('is a fact of its own, readable whether or not the trip is published', () => {
-    expect(audienceOf({ visibility: 'private' })).toBe('private');
-    expect(audienceOf({ visibility: 'public' })).toBe('public');
-  });
-
-  it('has exactly one alternative, so the toggle needs no menu', () => {
-    expect(otherAudience('public')).toBe('private');
-    expect(otherAudience('private')).toBe('public');
-  });
-
-  it('says who can read it, in words a traveler can act on', () => {
-    expect(audienceLabel('public')).toBe('Public');
-    expect(audienceBlurb('public')).toMatch(/Everyone/);
-    expect(audienceBlurb('private')).toMatch(/collaborators/);
+describe('the audience is no longer asked for (S4.40)', () => {
+  it('states the one outcome publishing has, since there is no longer a choice', () => {
+    expect(PUBLISH_AUDIENCE_LINE).toBe('Everyone on Largata can find and read this itinerary.');
   });
 });
