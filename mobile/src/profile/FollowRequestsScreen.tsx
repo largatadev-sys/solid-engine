@@ -33,7 +33,7 @@ import {
   NO_REQUESTS_BODY,
   NO_REQUESTS_TITLE,
   approveFailedToast,
-  askedAgoLine,
+  requesterLine,
 } from './privateProfileCopy';
 import { PUBLIC_PROFILE_BACK_LABEL } from './publicProfileCopy';
 import { emptyRequestQueue, shownRows, withDecision, withoutDecision } from './requestQueue';
@@ -205,16 +205,14 @@ function RequestRow({
           {name}
         </Text>
         <Text style={styles.handle} numberOfLines={1}>
-          {who}
-        </Text>
-        <Text style={styles.asked} numberOfLines={1}>
-          {askedAgoLine(invitedAgoLabel(request.requestedAt, Date.now()))}
+          {requesterLine(who, invitedAgoLabel(request.requestedAt, Date.now()))}
         </Text>
       </View>
 
       <Pressable
         style={styles.approve}
         onPress={onApprove}
+        hitSlop={ACTION_SLOP}
         accessibilityRole="button"
         accessibilityLabel={`${APPROVE_LABEL} ${who}`}
       >
@@ -224,6 +222,7 @@ function RequestRow({
       <Pressable
         style={styles.decline}
         onPress={onDecline}
+        hitSlop={ACTION_SLOP}
         accessibilityRole="button"
         accessibilityLabel={`${DECLINE_LABEL} ${who}`}
       >
@@ -233,6 +232,8 @@ function RequestRow({
   );
 }
 
+
+const ACTION_SLOP = followMetrics.requestActionSlop;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
@@ -265,23 +266,22 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: spacing.hair },
   name: { ...followTypography.listTitle, color: workspaceColors.title },
   handle: { ...profileTypography.meta, color: profileColors.meta },
-  asked: { ...profileTypography.accountHelper, color: profileColors.meta },
   approve: {
     height: followMetrics.approvePillHeight,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm2,
     borderRadius: workspaceRadii.pill,
     backgroundColor: workspaceColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  approveLabel: { ...profileTypography.compactPill, color: profileColors.onAccent },
+  approveLabel: { ...followTypography.chip, color: profileColors.onAccent },
   decline: {
     height: followMetrics.approvePillHeight,
-    paddingHorizontal: spacing.sm2,
+    paddingHorizontal: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  declineLabel: { ...profileTypography.compactPill, color: followColors.chipInk },
+  declineLabel: { ...followTypography.chip, color: followColors.chipInk },
   empty: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xxl,

@@ -385,7 +385,10 @@ test('a request is approved from the list, and the requester gets the whole prof
 
   const row = labelled(page, `${APPROVE_LABEL} @${stranger.handle}`);
   await expect(row).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText(/^Asked /).last()).toBeVisible();
+  await expect(
+    page.getByText(new RegExp(`@${stranger.handle} .+ ago$`)).last(),
+    'the handle line carries when they asked',
+  ).toBeVisible();
 
   await row.click();
 

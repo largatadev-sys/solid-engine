@@ -79,8 +79,8 @@ export function lockedProfileBody(firstName: string): string {
 }
 
 
-export function askedAgoLine(ago: string): string {
-  return `Asked ${ago}`;
+export function requesterLine(handleLabel: string, ago: string): string {
+  return `${handleLabel} · ${ago}`;
 }
 
 
