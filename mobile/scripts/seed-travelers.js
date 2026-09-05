@@ -23,7 +23,7 @@ const PARALLEL = PARALLEL_ARG !== undefined;
 const WIDTH = PARALLEL_ARG?.includes('=') ? Math.max(1, Number(PARALLEL_ARG.split('=')[1]) || 1) : Infinity;
 
 const lifecycleOf = (trip) => (ALL_PUBLIC ? 'completed' : trip.lifecycle);
-const audienceOf = (trip) => (ALL_PUBLIC ? 'public' : trip.publish);
+const publishes = (trip) => ALL_PUBLIC || trip.publish !== null;
 
 function isFullyPhotographed(trip) {
   return trip.days.every((day) => photosFor(day.at).length >= Math.max(day.activities.length, 1));
@@ -261,12 +261,12 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
       frameCount += frames.length;
     }
 
-    if (audienceOf(trip) !== null) {
-      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', token, { audience: audienceOf(trip) }), 'publish');
+    if (publishes(trip)) {
+      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', token), 'publish');
     }
 
     say(
-      `  ${lifecycleOf(trip).padEnd(9)} ${(audienceOf(trip) ?? '—').padEnd(7)} `
+      `  ${lifecycleOf(trip).padEnd(9)} ${(publishes(trip) ? 'published' : '—').padEnd(9)} `
         + `${String(trip.days.length).padStart(2)}d ${String(activities.length).padStart(2)}a `
         + `${String(attached).padStart(2)}ph ${posted > 0 ? `${posted} postcard(s)/${frameCount}f ` : '              '}`
         + `${withMember ? 'with ' + collaborator.tag + ' ' : ''}${trip.title}`,

@@ -212,10 +212,7 @@ async function main() {
     }
 
     if (spec.publish !== null) {
-      must(
-        await api(`/v1/itineraries/${created.id}/publish`, 'POST', owner, { audience: spec.publish }),
-        'publish',
-      );
+      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', owner), 'publish');
     }
 
     console.log(
