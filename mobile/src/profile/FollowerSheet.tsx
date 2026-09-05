@@ -2,7 +2,12 @@ import { StyleSheet, Text } from 'react-native';
 import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import { stillShowing } from '../components/stillShowing';
 import { BottomSheet } from '../members/BottomSheet';
-import { followMetrics, travelerColors, travelerTypography } from '../theme/workspaceTokens';
+import {
+  followMetrics,
+  travelerColors,
+  travelerMetrics,
+  travelerTypography,
+} from '../theme/workspaceTokens';
 import type { TravelerCardResponse } from '../types/api';
 import { handleLabel } from './PersonRow';
 import { REMOVE_FOLLOWER_LABEL } from './privateProfileCopy';
@@ -69,6 +74,7 @@ const styles = StyleSheet.create({
   row: {
     height: followMetrics.sheetRowHeight,
     justifyContent: 'center',
+    paddingHorizontal: travelerMetrics.menuEntryPaddingH,
   },
-  rowLabel: { ...travelerTypography.rowTitle },
+  rowLabel: { ...travelerTypography.menuEntry },
 });

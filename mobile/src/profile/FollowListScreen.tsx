@@ -4,7 +4,6 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../components/Icon';
 import { RowEntrance } from '../members/RowEntrance';
-import { RowExit } from '../members/RowExit';
 import { useSafeBack } from '../navigation/safeBack';
 import { useMe } from '../hooks/useMe';
 import { useFollowers, useFollowing } from '../query/followQueries';
@@ -214,11 +213,9 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
                     ? index * publicProfileMotion.resultStepMs
                     : 0
                 }
+                leaving={leaving.includes(item.id)}
+                onGone={() => setRemoved((held) => (held.includes(item.id) ? held : [...held, item.id]))}
               >
-                <RowExit
-                  leaving={leaving.includes(item.id)}
-                  onGone={() => setRemoved((held) => (held.includes(item.id) ? held : [...held, item.id]))}
-                >
                 <PersonRow
                   person={item}
                   onPress={() => {
@@ -228,7 +225,6 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
                   }}
                   {...(kebabs ? { onKebab: () => openSheet(item) } : {})}
                 />
-                </RowExit>
               </RowEntrance>
             )}
             onEndReachedThreshold={0.5}

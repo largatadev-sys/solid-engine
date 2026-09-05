@@ -6,7 +6,6 @@ import { Icon } from '../components/Icon';
 import { FeedToast } from '../feed/FeedToast';
 import { MediaThumb } from '../media/MediaThumb';
 import { RowEntrance } from '../members/RowEntrance';
-import { RowExit } from '../members/RowExit';
 import { invitedAgoLabel } from '../members/invitationCard';
 import { fetchesMore } from '../discovery/resultsPaging';
 import { initialsFor } from '../onboarding/initials';
@@ -124,15 +123,13 @@ export function FollowRequestsScreen() {
                   ? index * publicProfileMotion.resultStepMs
                   : 0
               }
+              leaving={item.traveler.id in leaving}
+              onGone={() =>
+                setQueue((held) =>
+                  withDecision(held, item.traveler.id, leaving[item.traveler.id] ?? 'approve'),
+                )
+              }
             >
-              <RowExit
-                leaving={item.traveler.id in leaving}
-                onGone={() =>
-                  setQueue((held) =>
-                    withDecision(held, item.traveler.id, leaving[item.traveler.id] ?? 'approve'),
-                  )
-                }
-              >
               <RequestRow
                 request={item}
                 onOpen={() => {
@@ -143,7 +140,6 @@ export function FollowRequestsScreen() {
                 onApprove={() => onDecide(item, 'approve')}
                 onDecline={() => onDecide(item, 'decline')}
               />
-              </RowExit>
             </RowEntrance>
           )}
           onEndReachedThreshold={0.5}
