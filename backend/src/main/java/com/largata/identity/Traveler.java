@@ -3,6 +3,8 @@ package com.largata.identity;
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -56,6 +58,10 @@ public class Traveler {
 
     @Column(name = "onboarding_completed_at")
     private Instant onboardingCompletedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "profile_visibility", nullable = false)
+    private ProfileVisibility profileVisibility = ProfileVisibility.PUBLIC;
 
     @Column(name = "vanity_cohort", updatable = false)
     private Short vanityCohort;
@@ -152,6 +158,11 @@ public class Traveler {
         return onboardingCompletedAt;
     }
 
+    public ProfileVisibility profileVisibility() {
+        return profileVisibility;
+    }
+
+
     public boolean onboardingCompleted() {
         return onboardingCompletedAt != null;
     }
@@ -193,6 +204,11 @@ public class Traveler {
         this.country = isoCountry;
         this.preferredCurrency = isoCurrency;
         this.homeCity = city;
+    }
+
+
+    void showProfileTo(ProfileVisibility audience) {
+        this.profileVisibility = audience;
     }
 
 

@@ -21,6 +21,23 @@ interface TravelerRepository extends JpaRepository<Traveler, UUID> {
     Optional<Traveler> findByHandle(@Param("handle") String handle);
 
 
+
+    @Query("""
+            SELECT count(t) FROM Traveler t
+            WHERE t.id = :travelerId
+              AND t.profileVisibility = com.largata.identity.ProfileVisibility.PRIVATE
+            """)
+    long countPrivate(@Param("travelerId") UUID travelerId);
+
+
+    @Query("""
+            SELECT t.id FROM Traveler t
+            WHERE t.profileVisibility = com.largata.identity.ProfileVisibility.PRIVATE
+              AND t.id <> :viewerId
+            """)
+    List<UUID> allPrivateExcept(@Param("viewerId") UUID viewerId);
+
+
     @Query("SELECT count(t) FROM Traveler t WHERE lower(t.handle) = :handle")
     long countByHandle(@Param("handle") String handle);
 

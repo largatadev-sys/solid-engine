@@ -19,6 +19,7 @@ public record MeResponse(
         String preferredCurrency,
         String homeCity,
         boolean onboardingCompleted,
+        String profileVisibility,
         String vanityNumber) {
 
     public static MeResponse of(Traveler traveler, String suggestedHandle) {
@@ -36,6 +37,7 @@ public record MeResponse(
                 traveler.preferredCurrency(),
                 traveler.homeCity(),
                 traveler.onboardingCompleted(),
+                traveler.profileVisibility().wireName(),
                 traveler.vanityNumber());
     }
 }

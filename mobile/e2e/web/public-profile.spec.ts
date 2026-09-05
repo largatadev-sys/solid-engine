@@ -29,7 +29,7 @@ requireStack(VIEWER);
 let subject: { handle: string };
 let viewer: { handle: string };
 let showcaseTitle: string;
-let privateTitle: string;
+let unpublishedTitle: string;
 
 test.beforeAll(async () => {
   subject = await profileFor(SUBJECT);
@@ -37,7 +37,7 @@ test.beforeAll(async () => {
 
   const run = stamp('S4.36');
   showcaseTitle = `Public showcase ${run}`;
-  privateTitle = `Private plan ${run}`;
+  unpublishedTitle = `Unpublished plan ${run}`;
 
   const shown = await seedTrip({
     ownerTag: SUBJECT,
@@ -53,15 +53,11 @@ test.beforeAll(async () => {
 
   const hidden = await seedTrip({
     ownerTag: SUBJECT,
-    title: privateTitle,
+    title: unpublishedTitle,
     destination: 'Siargao',
     durationDays: 2,
   });
   await climbTo(hidden, 'completed');
-  const kept = await api(`/v1/itineraries/${hidden.id}/publish`, 'POST', hidden.ownerToken, {
-    audience: 'private',
-  });
-  if (kept.status !== 200) throw new SeedFailure('publishing the private trip', kept.body);
 });
 
 test.beforeEach(async ({ signIn }) => {
@@ -89,14 +85,14 @@ test('the public profile shows the header the canvas draws, and no owner chrome'
 });
 
 
-test('the Itineraries tab shows the published trip and never the private one', async ({ page }) => {
+test('the Itineraries tab shows the published trip and never the unpublished one', async ({ page }) => {
   await page.goto(`/travelers/${subject.handle}`);
   await expect(page.getByText(PUBLIC_PROFILE_TITLE).last()).toBeVisible({ timeout: 20_000 });
 
   await labelled(page, ITINERARIES_TAB_LABEL).click();
 
   await expect(page.getByText(showcaseTitle).last()).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText(privateTitle)).toHaveCount(0);
+  await expect(page.getByText(unpublishedTitle)).toHaveCount(0);
 });
 
 

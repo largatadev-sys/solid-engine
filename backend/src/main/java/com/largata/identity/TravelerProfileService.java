@@ -27,13 +27,19 @@ public class TravelerProfileService {
     private static final Logger log = LoggerFactory.getLogger(TravelerProfileService.class);
 
     private final TravelerRepository travelers;
+    private final FollowRequestService requests;
     private final PhotoService photos;
     private final Analytics analytics;
     private final Clock clock;
 
     TravelerProfileService(
-            TravelerRepository travelers, PhotoService photos, Analytics analytics, Clock clock) {
+            TravelerRepository travelers,
+            FollowRequestService requests,
+            PhotoService photos,
+            Analytics analytics,
+            Clock clock) {
         this.travelers = travelers;
+        this.requests = requests;
         this.photos = photos;
         this.analytics = analytics;
         this.clock = clock;
@@ -91,9 +97,14 @@ public class TravelerProfileService {
                     orKeep(blankToNull(edit.homeCity()), traveler.homeCity()));
         }
 
+        boolean visibilityChanged = applyVisibility(traveler, edit.profileVisibility());
+
         Traveler saved = flush(traveler);
         log.info("Traveler profile updated: id={}", travelerId);
         emitPreferenceSignals(travelerId, edit);
+        if (visibilityChanged) {
+            emitVisibilityChange(travelerId, saved.profileVisibility());
+        }
         return saved;
     }
 
@@ -133,6 +144,29 @@ public class TravelerProfileService {
                             AnalyticsEvent.named("onboarding_completed").with("travelerId", travelerId).build()));
         }
         return saved;
+    }
+
+
+    private boolean applyVisibility(Traveler traveler, ProfileVisibility wanted) {
+        if (wanted == null || wanted == traveler.profileVisibility()) {
+            return false;
+        }
+        traveler.showProfileTo(wanted);
+        if (wanted.isOpenToEveryone()) {
+            requests.approveEveryPendingFor(traveler.id());
+        }
+        return true;
+    }
+
+
+    private void emitVisibilityChange(UUID travelerId, ProfileVisibility now) {
+        AfterCommit.run(
+                () ->
+                        analytics.emit(
+                                AnalyticsEvent.named("profile_visibility_changed")
+                                        .with("travelerId", travelerId)
+                                        .with("visibility", now.wireName())
+                                        .build()));
     }
 
 

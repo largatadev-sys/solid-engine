@@ -55,7 +55,7 @@ class FollowIT extends PostgresTestBase {
         Traveler follower = onboarded();
         Traveler followed = onboarded();
 
-        follow(follower, followed).expectStatus().isNoContent();
+        follow(follower, followed).expectStatus().isOk();
 
         assertThat(profileOf(followed.handle(), follower)).contains("\"followersCount\":1");
         assertThat(profileOf(followed.handle(), follower)).contains("\"followedByViewer\":true");
@@ -71,8 +71,8 @@ class FollowIT extends PostgresTestBase {
         Traveler follower = onboarded();
         Traveler followed = onboarded();
 
-        follow(follower, followed).expectStatus().isNoContent();
-        follow(follower, followed).expectStatus().isNoContent();
+        follow(follower, followed).expectStatus().isOk();
+        follow(follower, followed).expectStatus().isOk();
 
         assertThat(profileOf(followed.handle(), follower)).contains("\"followersCount\":1");
         assertThat(edgeRowsBetween(follower, followed)).isEqualTo(1);
@@ -85,7 +85,7 @@ class FollowIT extends PostgresTestBase {
         Traveler followed = onboarded();
 
         unfollow(follower, followed).expectStatus().isNoContent();
-        follow(follower, followed).expectStatus().isNoContent();
+        follow(follower, followed).expectStatus().isOk();
         unfollow(follower, followed).expectStatus().isNoContent();
         unfollow(follower, followed).expectStatus().isNoContent();
 
@@ -100,14 +100,14 @@ class FollowIT extends PostgresTestBase {
         Traveler one = onboarded();
         Traveler other = onboarded();
 
-        follow(one, other).expectStatus().isNoContent();
+        follow(one, other).expectStatus().isOk();
 
         assertThat(profileOf(other.handle(), one))
                 .as("one follows other, but other does not follow back yet")
                 .contains("\"followedByViewer\":true")
                 .contains("\"followsViewer\":false");
 
-        follow(other, one).expectStatus().isNoContent();
+        follow(other, one).expectStatus().isOk();
 
         assertThat(profileOf(other.handle(), one))
                 .contains("\"followedByViewer\":true")
@@ -148,7 +148,7 @@ class FollowIT extends PostgresTestBase {
     void theSamePairCannotBeStoredTwiceEvenBehindTheServicesBack() {
         Traveler follower = onboarded();
         Traveler followed = onboarded();
-        follow(follower, followed).expectStatus().isNoContent();
+        follow(follower, followed).expectStatus().isOk();
 
         assertThatThrownBy(
                         () ->
@@ -195,8 +195,8 @@ class FollowIT extends PostgresTestBase {
         Traveler follower = onboarded();
         Traveler followed = onboarded();
 
-        follow(follower, followed).expectStatus().isNoContent();
-        follow(follower, followed).expectStatus().isNoContent();
+        follow(follower, followed).expectStatus().isOk();
+        follow(follower, followed).expectStatus().isOk();
         unfollow(follower, followed).expectStatus().isNoContent();
         unfollow(follower, followed).expectStatus().isNoContent();
 
@@ -226,9 +226,9 @@ class FollowIT extends PostgresTestBase {
         Traveler followerOne = onboarded();
         Traveler followerTwo = onboarded();
 
-        follow(followerOne, subject).expectStatus().isNoContent();
-        follow(followerTwo, subject).expectStatus().isNoContent();
-        follow(subject, followerOne).expectStatus().isNoContent();
+        follow(followerOne, subject).expectStatus().isOk();
+        follow(followerTwo, subject).expectStatus().isOk();
+        follow(subject, followerOne).expectStatus().isOk();
 
         String stats =
                 new String(

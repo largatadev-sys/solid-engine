@@ -7,6 +7,8 @@ import static org.mockito.Mockito.doThrow;
 
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
+import com.largata.identity.TravelerClaims;
+import com.largata.identity.TravelerService;
 import com.largata.support.PostgresTestBase;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,13 +25,14 @@ class ForkRollbackIT extends PostgresTestBase {
     @Autowired private ForkService forks;
     @Autowired private ItineraryService itineraries;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private TravelerService travelers;
 
     @MockitoSpyBean private ForkRelationshipRepository relationships;
 
 
     @Test
     void aFailureWritingTheRelationshipLeavesNoItineraryNoWorkspaceAndNoMembership() {
-        UUID author = UUID.randomUUID();
+        UUID author = provisionedTraveler();
         UUID forker = UUID.randomUUID();
         UUID sourceId = publishedSource(author);
 
@@ -47,7 +50,7 @@ class ForkRollbackIT extends PostgresTestBase {
 
     @Test
     void aFailureRollsBackTheCopiedPlanToo_notJustTheItineraryRow() {
-        UUID author = UUID.randomUUID();
+        UUID author = provisionedTraveler();
         UUID forker = UUID.randomUUID();
         UUID sourceId = publishedSource(author);
         long daysBefore = allDays();
@@ -70,11 +73,16 @@ class ForkRollbackIT extends PostgresTestBase {
     }
 
 
+    private UUID provisionedTraveler() {
+        String uid = "uid-" + UUID.randomUUID();
+        return travelers.getOrProvision(TravelerClaims.of(uid, uid + "@example.com", null)).id();
+    }
+
+
     private UUID publishedSource(UUID author) {
         Itinerary source = itineraries.create(author, "Rollback fixture", "Palawan", null, null, null, 1);
         jdbc.update(
-                "UPDATE itinerary SET published = true, state = 'COMPLETED', visibility = 'PRIVATE', "
-                        + "published_at = now() "
+                "UPDATE itinerary SET published = true, state = 'COMPLETED', published_at = now() "
                         + "WHERE id = ?",
                 source.id());
         return source.id();

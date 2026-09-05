@@ -72,10 +72,6 @@ public class Itinerary {
     @Column(nullable = false)
     private ItineraryState state;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Visibility visibility;
-
     @Column(nullable = false)
     private boolean published;
 
@@ -85,7 +81,6 @@ public class Itinerary {
 
     @Column(name = "plan_version", nullable = false, insertable = false, updatable = false)
     private long planVersion;
-
 
 
     @Column(name = "started_at")
@@ -104,7 +99,7 @@ public class Itinerary {
         this.id = id;
         this.ownerId = ownerId;
         this.state = ItineraryState.UPCOMING;
-        this.visibility = Visibility.PUBLIC;
+
         this.published = false;
         this.createdAt = createdAt;
         apply(fields);
@@ -267,18 +262,12 @@ public class Itinerary {
     }
 
 
-    void publishTo(Visibility audience, Instant at) {
+    void publishTo(Instant at) {
         if (!state.admitsPublishing()) {
             throw new NotCompleteException(state);
         }
-        this.visibility = audience;
         this.published = true;
         this.publishedAt = at;
-    }
-
-
-    void showTo(Visibility audience) {
-        this.visibility = audience;
     }
 
 
@@ -360,7 +349,7 @@ public class Itinerary {
     }
 
     public Visibility visibility() {
-        return visibility;
+        return Visibility.PUBLIC;
     }
 
 

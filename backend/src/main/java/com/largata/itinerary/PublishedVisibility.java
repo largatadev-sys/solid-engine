@@ -37,17 +37,11 @@ public class PublishedVisibility {
         return itineraries
                 .findById(itineraryId)
                 .filter(itinerary -> !workspaces.isArchived(itineraryId))
-                .filter(itinerary -> visibleTo(itinerary, caller));
+                .filter(PublishedVisibility::visibleTo);
     }
 
 
-    private static boolean visibleTo(Itinerary itinerary, Optional<Membership> caller) {
-        if (!itinerary.isPublished()) {
-            return false;
-        }
-        return switch (itinerary.visibility()) {
-            case PUBLIC -> true;
-            case PRIVATE -> caller.isPresent();
-        };
+    private static boolean visibleTo(Itinerary itinerary) {
+        return itinerary.isPublished();
     }
 }

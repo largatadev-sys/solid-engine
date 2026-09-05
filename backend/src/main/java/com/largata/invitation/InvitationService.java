@@ -8,6 +8,7 @@ import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
+import com.largata.identity.ProfileVisibility;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.web.VerifiedContact;
 import com.largata.invitation.InvitationExceptions.AlreadyMemberException;
@@ -257,7 +258,9 @@ public class InvitationService {
 
     private static TravelerSummary profileOf(Map<UUID, TravelerSummary> profiles, UUID travelerId) {
         return profiles.getOrDefault(
-                travelerId, new TravelerSummary(travelerId, "", null, null, null, null));
+                travelerId,
+                new TravelerSummary(
+                        travelerId, "", null, null, null, null, ProfileVisibility.PUBLIC));
     }
 
 

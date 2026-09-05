@@ -57,6 +57,10 @@ export const IDENTITY_MAP = {
   'web/author-taps': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'web/follow': { tags: ['t1', 't2'], sharesWith: 'shared' },
   'api/follow': { tags: ['t4', 't5'], sharesWith: 'shared' },
+  'api/private-profile': {
+    tags: ['t1', 't2', 't3', 't4', 't5'],
+    sharesWith: 'wants-exclusive',
+  },
   'web/feedback-dock': { tags: ['t1'], sharesWith: 'shared' },
   'web/report-device-context': { tags: ['t1'], sharesWith: 'shared' },
   'web/pin-drop': { tags: ['t1'], sharesWith: 'shared' },

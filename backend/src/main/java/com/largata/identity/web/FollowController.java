@@ -2,6 +2,7 @@ package com.largata.identity.web;
 
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
+import com.largata.identity.api.FollowStateResponse;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,9 +25,8 @@ class FollowController {
 
 
     @PostMapping
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    void follow(@CurrentTraveler Traveler traveler, @PathVariable UUID travelerId) {
-        follows.follow(traveler.id(), travelerId);
+    FollowStateResponse follow(@CurrentTraveler Traveler traveler, @PathVariable UUID travelerId) {
+        return follows.follow(traveler.id(), travelerId);
     }
 
 
