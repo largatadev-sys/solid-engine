@@ -31,9 +31,13 @@ describe('the notice stands at all three of its hosts (S4.40 decisions 3 and 11)
     expect(TRIP_DIARY).toContain('onPress={goBack}');
   });
 
-  it('names nobody there rather than naming a traveler id, which is all that route carries', () => {
-    expect(TRIP_DIARY).toContain('displayName={null}');
+  it('names the traveler and links to them, because the route carries their handle', () => {
+    expect(TRIP_DIARY).toContain('linked={handle !== undefined');
     expect(TRIP_DIARY).not.toContain('displayName={author');
+  });
+
+  it('links nowhere rather than to a broken profile when no handle came with the route', () => {
+    expect(TRIP_DIARY).toContain("handle === undefined || handle === ''");
   });
 
   it('leaves every other failure to the posture that already handles it', () => {

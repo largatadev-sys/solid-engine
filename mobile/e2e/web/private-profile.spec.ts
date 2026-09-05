@@ -59,6 +59,7 @@ let owner: { handle: string; displayName?: string | null };
 let ownerId: string;
 let strangerId: string;
 let ownerFirstName: string;
+let ownerDisplayName: string;
 let stranger: { handle: string };
 
 async function idOf(token: string): Promise<string> {
@@ -108,9 +109,8 @@ test.beforeAll(async () => {
   stranger = await profileFor(STRANGER);
   ownerId = await idOf(ownerToken);
   strangerId = await idOf(strangerToken);
-  ownerFirstName = firstNameOf(
-    (await api('/v1/me', 'GET', ownerToken)).body.displayName ?? null,
-  );
+  ownerDisplayName = (await api('/v1/me', 'GET', ownerToken)).body.displayName ?? '';
+  ownerFirstName = firstNameOf(ownerDisplayName === '' ? null : ownerDisplayName);
 });
 
 test.beforeEach(async ({ signIn }) => {
@@ -620,4 +620,27 @@ test('a departure lands in an OPEN Followers list, and the count line moves with
   await expect
     .poll(() => followerCountOn(page), { timeout: 20_000 })
     .not.toBe(before);
+});
+
+
+test('a per-trip diary reached by address renders the notice, named and linked', async ({
+  page,
+}) => {
+  const trips = await api(`/v1/travelers/${owner.handle}/diary/trips`, 'GET', ownerToken);
+  const first = (trips.body.items ?? [])[0];
+  test.skip(first === undefined, 'the owner has published no diary on this stack');
+
+  await page.goto(
+    `/feed/diary/${first.itineraryId}?author=${ownerId}&handle=${owner.handle}&name=${encodeURIComponent(ownerDisplayName)}`,
+  );
+
+  await expect(page.getByText(lockedProfileTitle(ownerFirstName)).last()).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.getByText('this traveler'), 'it names them, not a placeholder').toHaveCount(0);
+
+  await page.getByText(ownerFirstName, { exact: true }).last().click();
+
+  await expect(page.getByText(PUBLIC_PROFILE_TITLE).last()).toBeVisible({ timeout: 10_000 });
+  expect(page.url(), 'the one way out leads to their profile').toContain(owner.handle);
 });

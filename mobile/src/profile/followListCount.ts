@@ -1,8 +1,8 @@
 export function shownFollowCount(
   servedCount: number | undefined,
-  servedIds: readonly string[],
+  served: readonly { readonly id: string }[],
   leaving: readonly string[],
 ): number {
-  const onTheirWayOut = servedIds.filter((id) => leaving.includes(id)).length;
-  return Math.max(0, (servedCount ?? servedIds.length) - onTheirWayOut);
+  const onTheirWayOut = served.filter((person) => leaving.includes(person.id)).length;
+  return Math.max(0, (servedCount ?? served.length) - onTheirWayOut);
 }

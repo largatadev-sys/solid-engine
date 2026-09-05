@@ -20,7 +20,12 @@ import { asDiaryEntry, tripDestinationOf } from './publicDiaryPostcard';
 
 export function PublicTripDiaryScreen() {
   const goBack = useSafeBack();
-  const { id, author } = useLocalSearchParams<{ id: string; author: string }>();
+  const { id, author, handle, name } = useLocalSearchParams<{
+    id: string;
+    author: string;
+    handle?: string;
+    name?: string;
+  }>();
 
   const diary = usePublicTripDiary(id ?? '', author ?? '');
   const [previewing, setPreviewing] = useState<DiaryEntryResponse | null>(null);
@@ -48,7 +53,11 @@ export function PublicTripDiaryScreen() {
               </Pressable>
             </View>
           </View>
-          <LockedProfileNotice displayName={null} handle={null} />
+          <LockedProfileNotice
+            displayName={name === undefined || name === '' ? null : name}
+            handle={handle === undefined || handle === '' ? null : handle}
+            linked={handle !== undefined && handle !== ''}
+          />
         </View>
       );
     }

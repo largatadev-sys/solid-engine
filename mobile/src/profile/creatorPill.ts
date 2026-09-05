@@ -17,10 +17,13 @@ export function creatorPill(args: {
   readonly failed: boolean;
   readonly relation: ViewerRelation | undefined;
 }): CreatorPillState {
-  if (args.isOwnProfile || args.handle === null || args.loading || args.failed) {
-    return HIDDEN;
-  }
-  if (args.relation === undefined) {
+  if (
+    args.isOwnProfile
+    || args.handle === null
+    || args.loading
+    || args.failed
+    || args.relation === undefined
+  ) {
     return HIDDEN;
   }
   return { shown: true, relation: args.relation };

@@ -128,12 +128,12 @@ export function FollowListScreen({ side }: { readonly side: FollowListSide }) {
   const servedKey = served.map((person) => person.id).join(',');
 
   useEffect(() => {
-    const stillThere = new Set(servedKey.split(','));
+    const stillThere = new Set(servedKey === '' ? [] : servedKey.split(','));
     setLeaving((held) => held.filter((id) => stillThere.has(id)));
     setRemoved((held) => held.filter((id) => stillThere.has(id)));
   }, [servedKey]);
 
-  const total = shownFollowCount(counted, servedKey === '' ? [] : servedKey.split(','), leaving);
+  const total = shownFollowCount(counted, served, leaving);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
