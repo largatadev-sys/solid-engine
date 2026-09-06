@@ -9,6 +9,7 @@ import com.largata.diary.Diary;
 import com.largata.diary.DiaryDay;
 import com.largata.diary.DiaryService;
 import com.largata.identity.TravelerService;
+import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
@@ -287,11 +288,50 @@ public class PostcardService {
 
 
     @Transactional
-    public PostcardView recaption(UUID authorId, UUID postcardId, String caption) {
+    public PostcardView addPhotos(UUID authorId, UUID postcardId, List<byte[]> devicePhotos) {
         Postcard postcard = requireMine(authorId, postcardId);
+        requireWritable(postcard);
+        if (devicePhotos.isEmpty()) {
+            throw new PostcardNeedsAPhotoException();
+        }
+        requirePhotoCountWithin(photos.countOf(PhotoSubject.POSTCARD, postcard.id()) + devicePhotos.size());
+        List<Photo> stored = storePhotos(postcard, authorId, devicePhotos);
+        log.info("Postcard photos added: id={} photos={}", postcard.id(), stored.size());
+        emit(postcard, "postcard_photos_added");
+        return viewOf(postcard);
+    }
+
+
+    @Transactional
+    public PostcardView removePhoto(UUID authorId, UUID postcardId, UUID photoId) {
+        Postcard postcard = requireMine(authorId, postcardId);
+        requireWritable(postcard);
+        Photo photo =
+                photos.find(photoId)
+                        .filter(found -> found.subjectKind() == PhotoSubject.POSTCARD)
+                        .filter(found -> postcard.id().equals(found.subjectId()))
+                        .orElseThrow(PhotoNotFoundException::new);
+        if (photos.countOf(PhotoSubject.POSTCARD, postcard.id()) <= 1) {
+            throw new PostcardNeedsAPhotoException();
+        }
+        photos.delete(photo.id());
+        log.info("Postcard photo removed: id={} photoId={}", postcard.id(), photoId);
+        emit(postcard, "postcard_photo_removed");
+        return viewOf(postcard);
+    }
+
+
+    private void requireWritable(Postcard postcard) {
         if (postcard.tripId() != null && trips.frozen(postcard.tripId())) {
             throw new TripArchivedException();
         }
+    }
+
+
+    @Transactional
+    public PostcardView recaption(UUID authorId, UUID postcardId, String caption) {
+        Postcard postcard = requireMine(authorId, postcardId);
+        requireWritable(postcard);
         postcard.recaption(caption, Instant.now(clock));
         Postcard saved = postcards.saveAndFlush(postcard);
         emit(saved, "postcard_recaptioned");

@@ -103,9 +103,9 @@ export const EDIT_DIARY_ACTION = 'Edit diary';
 
 export const DELETE_DIARY_ACTION = 'Delete diary';
 
-export const EDIT_CAPTION_ACTION = 'Edit caption';
+export const EDIT_POSTCARD_ACTION = 'Edit postcard';
 
-export const EDIT_CAPTION_TITLE = 'Edit Caption';
+export const EDIT_POSTCARD_TITLE = 'Edit Postcard';
 
 export const ADD_TO_DIARY_ACTION = 'Add to diary';
 

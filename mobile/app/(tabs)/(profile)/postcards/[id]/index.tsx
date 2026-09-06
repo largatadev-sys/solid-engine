@@ -11,7 +11,7 @@ import {
   CANCEL_ACTION,
   DELETE_ACTION,
   DELETE_FAILED_TOAST,
-  EDIT_CAPTION_ACTION,
+  EDIT_POSTCARD_ACTION,
   POSTCARD_CONTEXT_LABEL,
   POSTCARD_DELETED_TOAST,
   addedToDiaryToast,
@@ -131,7 +131,7 @@ export default function PostcardDetailRoute() {
         contextLabel={POSTCARD_CONTEXT_LABEL}
         actions={[
           {
-            label: EDIT_CAPTION_ACTION,
+            label: EDIT_POSTCARD_ACTION,
             icon: 'pencil',
             onPress: () => {
               setMenuOpen(false);

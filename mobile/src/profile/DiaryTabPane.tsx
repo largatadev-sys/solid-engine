@@ -12,7 +12,7 @@ import {
   DELETE_DIARY_ACTION,
   DELETE_FAILED_TOAST,
   DIARY_DELETED_TOAST,
-  EDIT_CAPTION_ACTION,
+  EDIT_POSTCARD_ACTION,
   EDIT_DIARY_ACTION,
   POSTCARD_CONTEXT_LABEL,
   POSTCARD_DELETED_TOAST,
@@ -143,7 +143,7 @@ export function DiaryTabPane({ handle, sections, exits }: DiaryTabPaneProps) {
           ]
         : [
             {
-              label: EDIT_CAPTION_ACTION,
+              label: EDIT_POSTCARD_ACTION,
               icon: 'pencil' as const,
               onPress: () => {
                 setMenu(null);

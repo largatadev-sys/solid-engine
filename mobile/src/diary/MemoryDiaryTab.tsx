@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useReducedMotion } from '../components/useReducedMotion';
 import { MediaThumb } from '../media/MediaThumb';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import type {
@@ -17,6 +18,7 @@ import {
   sectionMetaLine,
 } from './memoryCopy';
 import { MemoryIcon } from './MemoryIcon';
+import { profileRows } from './profileRows';
 
 
 interface MemoryDiaryTabProps {
@@ -59,43 +61,49 @@ export function MemoryDiaryTab({
 
   return (
     <View style={styles.pane}>
-      {sections.loosePostcards.map((postcard) => (
-        <MotionRow
-          key={postcard.id}
-          exiting={exiting.includes(postcard.id)}
-          entering={entering.includes(postcard.id)}
-        >
-          <LooseCard
-            postcard={postcard}
-            onPress={() => onOpenPostcard(postcard.id)}
-            onMenu={owned && onPostcardMenu !== undefined ? () => onPostcardMenu(postcard) : undefined}
-          />
-        </MotionRow>
-      ))}
-
-      {sections.diaries.map((section) => (
-        <MotionRow
-          key={section.id}
-          exiting={exiting.includes(section.id)}
-          entering={entering.includes(section.id)}
-        >
-          <Section
-            section={section}
-            collapsed={collapsed.includes(section.id)}
-            onToggle={() =>
-              setCollapsed((current) =>
-                current.includes(section.id)
-                  ? current.filter((id) => id !== section.id)
-                  : [...current, section.id],
-              )
-            }
-            onOpen={() => onOpenDiary(section.id)}
-            onOpenPostcard={onOpenPostcard}
-            onOpenItinerary={onOpenItinerary}
-            onMenu={owned && onDiaryMenu !== undefined ? () => onDiaryMenu(section) : undefined}
-          />
-        </MotionRow>
-      ))}
+      {profileRows(sections).map((row) =>
+        row.kind === 'postcard' ? (
+          <MotionRow
+            key={row.postcard.id}
+            exiting={exiting.includes(row.postcard.id)}
+            entering={entering.includes(row.postcard.id)}
+          >
+            <LooseCard
+              postcard={row.postcard}
+              onPress={() => onOpenPostcard(row.postcard.id)}
+              onMenu={
+                owned && onPostcardMenu !== undefined
+                  ? () => onPostcardMenu(row.postcard)
+                  : undefined
+              }
+            />
+          </MotionRow>
+        ) : (
+          <MotionRow
+            key={row.section.id}
+            exiting={exiting.includes(row.section.id)}
+            entering={entering.includes(row.section.id)}
+          >
+            <Section
+              section={row.section}
+              collapsed={collapsed.includes(row.section.id)}
+              onToggle={() =>
+                setCollapsed((current) =>
+                  current.includes(row.section.id)
+                    ? current.filter((id) => id !== row.section.id)
+                    : [...current, row.section.id],
+                )
+              }
+              onOpen={() => onOpenDiary(row.section.id)}
+              onOpenPostcard={onOpenPostcard}
+              onOpenItinerary={onOpenItinerary}
+              onMenu={
+                owned && onDiaryMenu !== undefined ? () => onDiaryMenu(row.section) : undefined
+              }
+            />
+          </MotionRow>
+        ),
+      )}
     </View>
   );
 }
@@ -174,16 +182,17 @@ function Section({
   readonly onOpenItinerary: (itineraryId: string) => void;
   readonly onMenu?: () => void;
 }) {
+  const reducedMotion = useReducedMotion();
   const turn = useRef(new Animated.Value(collapsed ? 1 : 0)).current;
 
   useEffect(() => {
     Animated.timing(turn, {
       toValue: collapsed ? 1 : 0,
-      duration: memoryMotion.chevronTurnMs,
+      duration: reducedMotion ? 0 : memoryMotion.chevronTurnMs,
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
     }).start();
-  }, [collapsed, turn]);
+  }, [collapsed, reducedMotion, turn]);
 
   const postcards = section.days.flatMap((day) =>
     day.postcards.map((postcard) => ({ postcard, ordinal: day.ordinal })),
@@ -216,6 +225,7 @@ function Section({
           </View>
         </Pressable>
 
+        <View style={styles.sectionControls}>
         {onMenu !== undefined && (
           <Pressable
             style={({ pressed }) => StyleSheet.flatten([styles.sectionControl, styles.sectionKebab, pressed ? styles.pressed : null])}
@@ -242,6 +252,7 @@ function Section({
             <MemoryIcon name="chevronUp" size={16} color={memoryColors.chevronIdle} strokeWidth={2} />
           </Animated.View>
         </Pressable>
+        </View>
       </View>
 
       {!collapsed && (
@@ -257,16 +268,17 @@ function Section({
 
 
 function EnterBlock({ children }: { readonly children: React.ReactNode }) {
+  const reducedMotion = useReducedMotion();
   const enter = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(enter, {
       toValue: 1,
-      duration: memoryMotion.rowEnterMs,
+      duration: reducedMotion ? 0 : memoryMotion.rowEnterMs,
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
     }).start();
-  }, [enter]);
+  }, [enter, reducedMotion]);
 
   return (
     <Animated.View
@@ -290,6 +302,7 @@ function MotionRow({
   readonly entering: boolean;
   readonly children: React.ReactNode;
 }) {
+  const reducedMotion = useReducedMotion();
   const presence = useRef(new Animated.Value(entering ? 0 : 1)).current;
   const lift = useRef(new Animated.Value(0)).current;
 
@@ -298,13 +311,13 @@ function MotionRow({
       Animated.parallel([
         Animated.timing(presence, {
           toValue: 0,
-          duration: memoryMotion.rowExitMs,
+          duration: reducedMotion ? 0 : memoryMotion.rowExitMs,
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(lift, {
-          toValue: memoryMotion.rowExitTravel,
-          duration: memoryMotion.rowExitMs,
+          toValue: reducedMotion ? 0 : memoryMotion.rowExitTravel,
+          duration: reducedMotion ? 0 : memoryMotion.rowExitMs,
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }),
@@ -314,11 +327,11 @@ function MotionRow({
     lift.setValue(0);
     Animated.timing(presence, {
       toValue: 1,
-      duration: memoryMotion.rowEnterMs,
+      duration: reducedMotion ? 0 : memoryMotion.rowEnterMs,
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
     }).start();
-  }, [exiting, lift, presence]);
+  }, [exiting, lift, presence, reducedMotion]);
 
   return (
     <Animated.View
@@ -506,20 +519,26 @@ const styles = StyleSheet.create({
     ...memoryTypography.cardMetaStrong,
     color: memoryColors.accent,
   },
+  sectionControls: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: -8,
+    marginRight: -8,
+    flexShrink: 0,
+  },
   sectionControl: {
     width: memoryMetrics.chevronHit,
     height: memoryMetrics.chevronHit,
     borderRadius: memoryMetrics.chevronHit / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: -7,
     flexShrink: 0,
   },
   sectionKebab: {
-    marginHorizontal: -4,
+    marginBottom: -6,
   },
   sectionChevron: {
-    marginRight: -8,
+    marginTop: -6,
   },
   sectionPostcard: {
     borderTopWidth: 1,

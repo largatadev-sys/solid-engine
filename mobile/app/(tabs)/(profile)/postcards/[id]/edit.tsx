@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator } from 'react-native';
-import { EditCaptionScreen } from '../../../../../src/diary/EditCaptionScreen';
+import { EditPostcardScreen } from '../../../../../src/diary/EditPostcardScreen';
 import { useMe } from '../../../../../src/hooks/useMe';
 import { useMemoryRefresh, usePostcard } from '../../../../../src/query/memoryQueries';
 import { colors } from '../../../../../src/theme';
 
 
-export default function EditCaptionRoute() {
+export default function EditPostcardRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { state } = useMe();
@@ -18,7 +18,7 @@ export default function EditCaptionRoute() {
   }
 
   return (
-    <EditCaptionScreen
+    <EditPostcardScreen
       postcard={postcard.data}
       onSaved={() => {
         refresh(state.kind === 'ok' ? state.me.handle : null);

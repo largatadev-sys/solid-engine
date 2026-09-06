@@ -1,12 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
-import { FOLLOW_LABEL, DESTINATIONS_STAT_LABEL } from '../src/profile/publicProfileCopy';
-import {
-  FOLLOWERS_STAT_LABEL,
-  FOLLOWING_STAT_LABEL,
-  PUBLISHED_STAT_LABEL,
-} from '../src/profile/profileCopy';
+import { DIARIES_STAT_LABEL, ITINERARIES_STAT_LABEL } from '../src/diary/memoryCopy';
+import { FOLLOW_LABEL } from '../src/profile/publicProfileCopy';
+import { FOLLOWERS_STAT_LABEL, FOLLOWING_STAT_LABEL } from '../src/profile/profileCopy';
 
 const MOBILE_ROOT = join(__dirname, '..');
 
@@ -18,7 +15,7 @@ const HEADER = read('src', 'profile', 'PublicProfileHeader.tsx');
 const PILL = read('src', 'profile', 'FollowPill.tsx');
 const PILL_HOOK = read('src', 'profile', 'useFollowPill.ts');
 const SCREEN = read('src', 'profile', 'PublicProfileScreen.tsx');
-const DIARY = read('src', 'profile', 'PublicDiaryTab.tsx');
+const DIARY = read('src', 'diary', 'MemoryDiaryTab.tsx');
 const ITINERARIES = read('src', 'profile', 'PublicItinerariesTab.tsx');
 const OWN_HEADER = read('src', 'profile', 'ProfileHeader.tsx');
 
@@ -28,11 +25,21 @@ describe('the three deltas the canvas draws on someone else\'s profile', () => {
     const cells = HEADER.slice(HEADER.indexOf('const cells = ['), HEADER.indexOf('];'));
     const at = (label: string) => cells.indexOf(label);
 
-    expect(at('PUBLISHED_STAT_LABEL')).toBeLessThan(at('DESTINATIONS_STAT_LABEL'));
-    expect(at('DESTINATIONS_STAT_LABEL')).toBeLessThan(at('FOLLOWERS_STAT_LABEL'));
+    expect(at('DIARIES_STAT_LABEL')).toBeGreaterThanOrEqual(0);
+    expect(at('DIARIES_STAT_LABEL')).toBeLessThan(at('ITINERARIES_STAT_LABEL'));
+    expect(at('ITINERARIES_STAT_LABEL')).toBeLessThan(at('FOLLOWERS_STAT_LABEL'));
     expect(at('FOLLOWERS_STAT_LABEL')).toBeLessThan(at('FOLLOWING_STAT_LABEL'));
-    expect(PUBLISHED_STAT_LABEL).toBe('Published');
-    expect(DESTINATIONS_STAT_LABEL).toBe('Destinations');
+    expect(DIARIES_STAT_LABEL).toBe('Diaries');
+    expect(ITINERARIES_STAT_LABEL).toBe('Itineraries');
+  });
+
+  it('reads the same Diary tab the owner does, without the owner acts (CM-2, founder ruling 2026-09-06)', () => {
+    expect(SCREEN).toContain('<MemoryDiaryTab');
+    expect(SCREEN).toContain('owned={false}');
+    expect(SCREEN).toContain('useDiarySections(isSelf ? null : subject)');
+    expect(SCREEN).not.toContain('PublicDiaryTab');
+    expect(DIARY).toContain('onMenu={');
+    expect(DIARY).toContain('owned && onDiaryMenu !== undefined');
   });
 
   it('never shows the private trip count, which includes trips a stranger cannot see', () => {
@@ -55,10 +62,8 @@ describe('the three deltas the canvas draws on someone else\'s profile', () => {
   it('opens the matching list from each follow cell, and leaves the other two inert (C4)', () => {
     expect(HEADER).toContain('open: onOpenFollowers');
     expect(HEADER).toContain('open: onOpenFollowing');
-    expect(HEADER).toContain('{ label: PUBLISHED_STAT_LABEL, value: publishedCount, open: null }');
-    expect(HEADER).toContain(
-      '{ label: DESTINATIONS_STAT_LABEL, value: destinationCount, open: null }',
-    );
+    expect(HEADER).toContain('{ label: DIARIES_STAT_LABEL, value: diaryCount, open: null }');
+    expect(HEADER).toContain('{ label: ITINERARIES_STAT_LABEL, value: itineraryCount, open: null }');
     expect(SCREEN).toContain('followersRoute(subject)');
     expect(SCREEN).toContain('followingRoute(subject)');
   });
@@ -82,8 +87,9 @@ describe('the three deltas the canvas draws on someone else\'s profile', () => {
   });
 
   it('puts the Follow pill in the slot the own profile gives Edit', () => {
-    expect(HEADER).toContain(FOLLOW_LABEL);
-    expect(HEADER).toContain('followPill');
+    expect(HEADER).toContain('<FollowPill');
+    expect(HEADER.indexOf('<FollowPill')).toBeGreaterThan(HEADER.indexOf('<StatCells'));
+    expect(read('src', 'profile', 'FollowPill.tsx')).toContain(FOLLOW_LABEL);
   });
 });
 
@@ -139,9 +145,9 @@ describe('C1 and M1 — the pill now has three states (S4.40)', () => {
 
 describe('the named deviation from the frame', () => {
   it('ships the postcard card without the likes row — no real count exists yet', () => {
-    expect(DIARY).toContain('<Postcard');
-    expect(DIARY).toContain('entry={entry}');
-    expect(DIARY).not.toContain('likes=');
+    expect(DIARY).toContain('<LooseCard');
+    expect(DIARY).not.toMatch(/\blikes?\b/i);
+    expect(DIARY).not.toContain('comment');
   });
 });
 
@@ -149,7 +155,7 @@ describe('the named deviation from the frame', () => {
 describe('the freshness lane (the 2026-08-25 rule): focus-fresh pull, never a socket', () => {
   it('revalidates each read on focus through the shared helper', () => {
     expect(SCREEN).toContain('useRevalidateOnFocus(profile');
-    expect(DIARY).toContain('useRevalidateOnFocus(trips)');
+    expect(SCREEN).toContain('useRevalidateOnFocus(sections');
     expect(ITINERARIES).toContain('useRevalidateOnFocus(published)');
   });
 
@@ -203,8 +209,8 @@ describe('the motion contract (M2-M4), with M5 normative', () => {
   });
 
   it('rotates the section chevron rather than flipping it (M2)', () => {
-    expect(DIARY).toContain('publicProfileMotion.sectionExpandMs');
-    expect(DIARY).toContain('spin.interpolate');
+    expect(DIARY).toContain('memoryMotion.chevronTurnMs');
+    expect(DIARY).toContain('turn.interpolate');
   });
 
   it('staggers the suggestion rows and caps the stagger at the group cap (M3)', () => {

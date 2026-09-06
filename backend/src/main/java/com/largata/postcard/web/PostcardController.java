@@ -82,6 +82,26 @@ class PostcardController {
     }
 
 
+    @PostMapping("/{postcardId}/photos")
+    PostcardResponse addPhotos(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID postcardId,
+            @RequestPart(name = "photos", required = false) List<MultipartFile> devicePhotos)
+            throws IOException {
+        return PostcardResponse.of(
+                postcards.addPhotos(traveler.id(), postcardId, bytesOf(devicePhotos)));
+    }
+
+
+    @DeleteMapping("/{postcardId}/photos/{photoId}")
+    PostcardResponse removePhoto(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID postcardId,
+            @PathVariable UUID photoId) {
+        return PostcardResponse.of(postcards.removePhoto(traveler.id(), postcardId, photoId));
+    }
+
+
     @DeleteMapping("/{postcardId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void delete(@CurrentTraveler Traveler traveler, @PathVariable UUID postcardId) {

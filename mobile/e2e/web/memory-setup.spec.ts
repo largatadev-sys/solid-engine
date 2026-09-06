@@ -92,6 +92,10 @@ test('a memory is created, two days are filled, one is skipped, and Post lands o
 
   await labelled(page, POST_CTA).click();
   await expect(page.getByText(DIARY_POSTED_TOAST).locator('visible=true').last()).toBeVisible();
+  await expect(
+    page.getByText(DIARY_POSTED_TOAST).locator('visible=true'),
+    'the toast holds two seconds and leaves on its own (M2)',
+  ).toHaveCount(0, { timeout: 4_000 });
 
   const sections = (await api(`/v1/travelers/${handle}/diaries`, 'GET', token)).body;
   const posted = sections.diaries.find((diary: any) => diary.title === TITLE);

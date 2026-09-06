@@ -115,6 +115,22 @@ export const memoryRepository = {
   },
 
 
+  async addPostcardPhotos(
+    postcardId: string,
+    devicePhotos: readonly PickedPhoto[],
+  ): Promise<PostcardResponse> {
+    const part = new FormData();
+    devicePhotos.forEach((photo) => appendPhoto(part, 'photos', photo));
+
+    return apiClient.upload<PostcardResponse>(`/v1/postcards/${postcardId}/photos`, part);
+  },
+
+
+  async removePostcardPhoto(postcardId: string, photoId: string): Promise<PostcardResponse> {
+    return apiClient.delete<PostcardResponse>(`/v1/postcards/${postcardId}/photos/${photoId}`);
+  },
+
+
   async fetchSections(handle: string): Promise<DiarySectionsResponse> {
     return apiClient.get<DiarySectionsResponse>(
       `/v1/travelers/${encodeURIComponent(handle)}/diaries`,

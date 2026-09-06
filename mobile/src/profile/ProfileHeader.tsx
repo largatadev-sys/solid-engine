@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { POST_SHEET_TITLE, PROFILE_TITLE } from '../diary/memoryCopy';
 import { MemoryIcon } from '../diary/MemoryIcon';
+import { Icon } from '../components/Icon';
 import { MediaThumb } from '../media/MediaThumb';
 import { initialsFor } from '../onboarding/initials';
 import { spacing } from '../theme';
@@ -39,7 +40,7 @@ export function ProfileHeader({
             <MemoryIcon name="plusCircle" size={memoryMetrics.navIcon} color={memoryColors.title} />
           </RoundButton>
           <RoundButton label={ACCOUNT_LABEL} onPress={onOpenAccount}>
-            <MemoryIcon name="menu" size={memoryMetrics.navIcon} color={memoryColors.title} />
+            <Icon name="settings" size={memoryMetrics.navIcon} color={memoryColors.title} />
           </RoundButton>
         </View>
       </View>

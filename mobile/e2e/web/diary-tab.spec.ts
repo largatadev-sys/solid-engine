@@ -1,7 +1,7 @@
 import { test, expect } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
-import { ownerTagFor } from '../support/identities';
+import { ownerTagFor, type PoolTag } from '../support/identities';
 import { FIXTURE_PHOTO } from '../support/seed';
 import { labelled } from '../support/screen';
 import {
@@ -18,6 +18,7 @@ import {
 import { DIARY_TAB_LABEL } from '../../src/profile/profileCopy';
 
 const AUTHOR = ownerTagFor('web/diary-tab');
+const STRANGER: PoolTag = 't3';
 
 requireStack(AUTHOR);
 
@@ -60,6 +61,10 @@ test('a loose postcard posts from nowhere and reads at the top of the Diary tab'
 
   await post.click();
   await expect(page.getByText(POSTCARD_POSTED_TOAST).locator('visible=true').last()).toBeVisible();
+  await expect(
+    page.getByText(POSTCARD_POSTED_TOAST).locator('visible=true'),
+    'the toast holds two seconds and leaves on its own (M2)',
+  ).toHaveCount(0, { timeout: 4_000 });
 
   await expect(page.getByText(CAPTION).locator('visible=true').last()).toBeVisible();
 
@@ -152,3 +157,37 @@ function aPastDay(day: number): string {
     .toISOString()
     .slice(0, 10);
 }
+
+
+test('a visitor reads the same tab the owner does; a stranger to a private author meets the notice', async ({
+  page,
+  signIn,
+}) => {
+  const mine = (await api(`/v1/travelers/${handle}/diaries`, 'GET', token)).body;
+  expect(
+    mine.diaries.some((diary: any) => diary.title === DIARY_TITLE),
+    'the section test above leaves its diary in place for the visitor to read',
+  ).toBe(true);
+
+  await api('/v1/me', 'PATCH', token, { profileVisibility: 'public' });
+  await signIn(STRANGER);
+  await page.goto(`/travelers/${handle}`);
+  await labelled(page, DIARY_TAB_LABEL).click();
+
+  await expect(page.getByText(DIARY_TITLE).locator('visible=true').last()).toBeVisible();
+  await expect(page.getByText(DIARIES_STAT_LABEL).locator('visible=true').last()).toBeVisible();
+  await expect(
+    page.getByLabel(`${DIARY_TITLE} menu`),
+    'a visitor gets no kebab — the owner acts stay the owner\'s',
+  ).toHaveCount(0);
+
+  await api('/v1/me', 'PATCH', token, { profileVisibility: 'private' });
+  try {
+    await page.reload();
+    await expect(page.getByText(`@${handle}`).locator('visible=true').last()).toBeVisible();
+    await expect(page.getByRole('tab', { name: DIARY_TAB_LABEL })).toHaveCount(0);
+    await expect(page.getByText(DIARY_TITLE)).toHaveCount(0);
+  } finally {
+    await api('/v1/me', 'PATCH', token, { profileVisibility: 'public' });
+  }
+});

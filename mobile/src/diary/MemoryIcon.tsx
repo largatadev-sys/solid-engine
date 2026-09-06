@@ -124,9 +124,9 @@ export function MemoryIcon({
       {name === 'menu' && <Path d="M4 6h16M4 12h16M4 18h16" {...stroke} />}
       {name === 'kebab' && (
         <>
-          <Circle cx="12" cy="5" r="2" fill={color} />
+          <Circle cx="5" cy="12" r="2" fill={color} />
           <Circle cx="12" cy="12" r="2" fill={color} />
-          <Circle cx="12" cy="19" r="2" fill={color} />
+          <Circle cx="19" cy="12" r="2" fill={color} />
         </>
       )}
       {name === 'pencil' && (
