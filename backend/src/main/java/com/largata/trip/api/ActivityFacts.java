@@ -1,9 +1,8 @@
-package com.largata.trip;
+package com.largata.trip.api;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.UUID;
-
 
 public record ActivityFacts(
         UUID activityId,

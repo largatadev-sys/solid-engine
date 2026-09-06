@@ -1,11 +1,12 @@
-package com.largata.trip.web;
+package com.largata.trip.controller;
 
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
-import com.largata.trip.TripExceptions.TripNotFoundException;
-import com.largata.trip.TripService;
+import com.largata.trip.dto.TripResponse;
+import com.largata.trip.exception.TripNotFoundException;
+import com.largata.trip.service.TripService;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
 
 @RestController
 @RequestMapping("/v1/trips")

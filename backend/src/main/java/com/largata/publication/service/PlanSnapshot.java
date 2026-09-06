@@ -1,6 +1,6 @@
 package com.largata.publication.service;
 
-import com.largata.trip.TripPlan;
+import com.largata.trip.api.TripPlan;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;

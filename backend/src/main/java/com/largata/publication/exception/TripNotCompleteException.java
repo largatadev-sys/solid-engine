@@ -1,7 +1,7 @@
 package com.largata.publication.exception;
 
 import com.largata.common.error.ConflictException;
-import com.largata.trip.TripLifecycle;
+import com.largata.trip.api.TripLifecycle;
 
 public final class TripNotCompleteException extends ConflictException {
 

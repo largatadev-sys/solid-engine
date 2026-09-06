@@ -1,10 +1,9 @@
-package com.largata.trip;
+package com.largata.trip.api;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-
 
 public record TripPlan(
         UUID id,

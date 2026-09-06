@@ -7,7 +7,7 @@ import com.largata.identity.web.CurrentTraveler;
 import com.largata.postcard.dto.PostOnDayRequest;
 import com.largata.postcard.dto.PostcardResponse;
 import com.largata.postcard.service.PostcardService;
-import com.largata.trip.TripExceptions.TripNotFoundException;
+import com.largata.trip.exception.TripNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;

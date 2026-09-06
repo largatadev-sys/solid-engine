@@ -1,8 +1,7 @@
-package com.largata.trip;
+package com.largata.trip.api;
 
 import java.util.Locale;
 import java.util.Optional;
-
 
 public enum TripLifecycle {
     UPCOMING,

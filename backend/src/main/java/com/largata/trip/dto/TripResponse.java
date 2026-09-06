@@ -1,12 +1,11 @@
-package com.largata.trip.web;
+package com.largata.trip.dto;
 
 import com.largata.common.authz.Role;
-import com.largata.trip.TripFacts;
+import com.largata.trip.api.TripFacts;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.UUID;
-
 
 public record TripResponse(
         UUID id,

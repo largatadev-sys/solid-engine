@@ -1,4 +1,4 @@
-package com.largata.trip.web;
+package com.largata.trip.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

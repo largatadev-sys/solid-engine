@@ -8,7 +8,7 @@ import com.largata.identity.web.CurrentTraveler;
 import com.largata.publication.dto.ItineraryObjectResponse;
 import com.largata.publication.entity.ItineraryObject;
 import com.largata.publication.service.ItineraryObjectService;
-import com.largata.trip.TripExceptions.TripNotFoundException;
+import com.largata.trip.exception.TripNotFoundException;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;

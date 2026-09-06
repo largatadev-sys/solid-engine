@@ -1,4 +1,4 @@
-package com.largata.trip;
+package com.largata.trip.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
@@ -6,8 +6,13 @@ import com.largata.common.authz.Membership;
 import com.largata.common.tx.AfterCommit;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
-import com.largata.trip.TripExceptions.NotTheTripOwnerException;
-import com.largata.trip.TripExceptions.TripNotFoundException;
+import com.largata.trip.api.ActivityFacts;
+import com.largata.trip.api.TripDayFacts;
+import com.largata.trip.api.TripFacts;
+import com.largata.trip.api.TripLifecycle;
+import com.largata.trip.api.TripPlan;
+import com.largata.trip.exception.NotTheTripOwnerException;
+import com.largata.trip.exception.TripNotFoundException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -23,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 @Service
 public class TripService {

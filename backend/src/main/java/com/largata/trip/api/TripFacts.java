@@ -1,9 +1,8 @@
-package com.largata.trip;
+package com.largata.trip.api;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
-
 
 public record TripFacts(
         UUID id,

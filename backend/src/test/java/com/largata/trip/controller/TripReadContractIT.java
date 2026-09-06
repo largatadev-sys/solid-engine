@@ -1,4 +1,4 @@
-package com.largata.trip.web;
+package com.largata.trip.controller;
 
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
