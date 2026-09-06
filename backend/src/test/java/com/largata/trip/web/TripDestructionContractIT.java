@@ -64,7 +64,8 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
         joinLink(owner, trip);
         offerOwnership(owner, trip, memberId);
         act(owner, trip, "start");
-        oldWorldDiaryEntry(member, trip, activity);
+        oldWorldDiaryEntry(
+                member, trip, rig.addActivity(owner, trip, rig.dayAt(trip, 2), "Told the old way"));
         byte[] postcardCreated = postcardFromActivity(member, trip, activity);
         String postcardId = TripRig.fieldIn(postcardCreated, "id");
         String diaryId = TripRig.fieldIn(postcardCreated, "diaryId");
@@ -156,11 +157,11 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
                 .isOk();
         assertThat(
                         jdbc.queryForObject(
-                                "SELECT count(*) FROM diary_entry WHERE itinerary_id = ?",
+                                "SELECT count(*) FROM postcard WHERE trip_id = ?",
                                 Integer.class,
                                 tripId))
-                .as("the old world's entries survive the destruction")
-                .isEqualTo(1);
+                .as("both tellings survive the destruction — the old world's door now writes here too")
+                .isEqualTo(2);
         assertThat(
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM itinerary WHERE id = ?",
