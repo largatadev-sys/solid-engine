@@ -764,6 +764,7 @@ export type DiaryResponse = {
   tripId: string | null;
   title: string;
   destination: string | null;
+  pin: Pin | null;
   startDate: string;
   endDate: string;
   cover: DiaryPhotoResponse | null;
@@ -781,6 +782,7 @@ export type DiaryDayResponse = {
   ordinal: number;
   date: string;
   place: string | null;
+  pin: Pin | null;
   tripDayId: string | null;
   postcardCount: number;
   postcards: DiaryPostcardResponse[];
@@ -820,6 +822,7 @@ export type DiarySectionsResponse = {
 export type CreateDiaryRequest = {
   title: string;
   destination: string | null;
+  pin: Pin | null;
   startDate: string;
   endDate: string;
 };
@@ -828,18 +831,21 @@ export type CreateDiaryRequest = {
 export type AddDiaryDayRequest = {
   date: string;
   place: string | null;
+  pin: Pin | null;
 };
 
 
 export type PostOnDayRequest = {
   caption: string | null;
   place: string | null;
+  pin: Pin | null;
 };
 
 
 export type CreatePostcardRequest = {
   caption: string | null;
   place: string | null;
+  pin: Pin | null;
   diaryId?: string | null;
 };
 

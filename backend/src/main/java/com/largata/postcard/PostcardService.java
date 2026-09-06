@@ -8,6 +8,7 @@ import com.largata.common.tx.AfterCommit;
 import com.largata.diary.Diary;
 import com.largata.diary.DiaryDay;
 import com.largata.diary.DiaryService;
+import com.largata.common.geo.Pin;
 import com.largata.identity.TravelerService;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
@@ -78,7 +79,12 @@ public class PostcardService {
 
     @Transactional
     public PostcardView createStandalone(
-            UUID authorId, UUID diaryId, String place, String caption, List<byte[]> devicePhotos) {
+            UUID authorId,
+            UUID diaryId,
+            String place,
+            Pin pin,
+            String caption,
+            List<byte[]> devicePhotos) {
         requirePhotoCountWithin(devicePhotos.size());
         if (diaryId != null) {
             diaries.requireOwn(authorId, diaryId);
@@ -86,7 +92,8 @@ public class PostcardService {
 
         Postcard postcard =
                 postcards.saveAndFlush(
-                        Postcard.standalone(authorId, diaryId, place, caption, Instant.now(clock)));
+                        Postcard.standalone(
+                                authorId, diaryId, place, pin, caption, Instant.now(clock)));
         List<Photo> stored = storePhotos(postcard, authorId, devicePhotos);
 
         log.info(
@@ -105,6 +112,7 @@ public class PostcardService {
             UUID diaryId,
             UUID dayId,
             String place,
+            Pin pin,
             String caption,
             List<byte[]> devicePhotos) {
         requirePhotoCountWithin(devicePhotos.size());
@@ -119,6 +127,7 @@ public class PostcardService {
                                 null,
                                 null,
                                 place,
+                                pin,
                                 caption,
                                 Instant.now(clock)));
         List<Photo> stored = storePhotos(postcard, authorId, devicePhotos);
@@ -156,6 +165,7 @@ public class PostcardService {
                                 day.tripDayTitle() == null
                                         ? "Day " + day.ordinal()
                                         : "Day " + day.ordinal() + ": " + day.tripDayTitle(),
+                                null,
                                 null,
                                 caption,
                                 Instant.now(clock)));

@@ -1,9 +1,11 @@
+import type { Pin } from '../maps/pinRules';
 import type { PickedPhoto } from '../media/pickedPhoto';
 
 
 export type DayDraft = {
   readonly date: string;
   readonly place: string;
+  readonly pin: Pin | null;
   readonly caption: string;
   readonly photos: readonly PickedPhoto[];
   readonly savedDayId: string | null;
@@ -14,6 +16,7 @@ export function draftsFor(candidateDates: readonly string[]): DayDraft[] {
   return candidateDates.map((date) => ({
     date,
     place: '',
+    pin: null,
     caption: '',
     photos: [],
     savedDayId: null,

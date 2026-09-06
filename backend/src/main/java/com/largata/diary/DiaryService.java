@@ -4,6 +4,7 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
+import com.largata.common.geo.Pin;
 import com.largata.common.tx.AfterCommit;
 import com.largata.diary.DiaryExceptions.DiaryDayAlreadyExistsException;
 import com.largata.diary.DiaryExceptions.DiaryDayNeedsADateException;
@@ -75,11 +76,22 @@ public class DiaryService {
 
     @Transactional
     public DiaryView create(
-            UUID authorId, String title, String destination, LocalDate startDate, LocalDate endDate) {
+            UUID authorId,
+            String title,
+            String destination,
+            Pin pin,
+            LocalDate startDate,
+            LocalDate endDate) {
         Diary saved =
                 diaries.saveAndFlush(
                         Diary.standalone(
-                                authorId, title, destination, startDate, endDate, Instant.now(clock)));
+                                authorId,
+                                title,
+                                destination,
+                                pin,
+                                startDate,
+                                endDate,
+                                Instant.now(clock)));
         log.info("Diary created: id={} authorId={}", saved.id(), authorId);
         emit(saved, "diary_created");
         return new DiaryView(
@@ -215,10 +227,11 @@ public class DiaryService {
             UUID diaryId,
             String title,
             String destination,
+            Pin pin,
             LocalDate startDate,
             LocalDate endDate) {
         Diary diary = requireOwn(authorId, diaryId);
-        diary.describe(title, destination, startDate, endDate, Instant.now(clock));
+        diary.describe(title, destination, pin, startDate, endDate, Instant.now(clock));
         Diary saved = diaries.saveAndFlush(diary);
         emit(saved, "diary_described");
         return viewOf(saved);
@@ -308,7 +321,8 @@ public class DiaryService {
 
 
     @Transactional
-    public DiaryView.Day addDay(UUID authorId, UUID diaryId, LocalDate date, String place) {
+    public DiaryView.Day addDay(
+            UUID authorId, UUID diaryId, LocalDate date, String place, Pin pin) {
         Diary diary = requireOwn(authorId, diaryId);
         if (date == null) {
             throw new DiaryDayNeedsADateException();
@@ -321,7 +335,7 @@ public class DiaryService {
         diaries.saveAndFlush(diary);
         try {
             return new DiaryView.Day(
-                    dayInserter.insert(diary.id(), diary.ordinalOf(date), date, place, at),
+                    dayInserter.insert(diary.id(), diary.ordinalOf(date), date, place, pin, at),
                     0,
                     List.of());
         } catch (DataIntegrityViolationException lostTheRace) {
@@ -336,7 +350,7 @@ public class DiaryService {
                         () -> {
                             try {
                                 return dayInserter.insert(
-                                        diary.id(), diary.ordinalOf(date), date, place, at);
+                                        diary.id(), diary.ordinalOf(date), date, place, null, at);
                             } catch (DataIntegrityViolationException lostTheRace) {
                                 return days.findByDiaryIdAndDate(diary.id(), date)
                                         .orElseThrow(DiaryDayAlreadyExistsException::new);
@@ -368,11 +382,12 @@ public class DiaryService {
 
 
     @Transactional
-    public DiaryView.Day placeDay(UUID authorId, UUID diaryId, UUID dayId, String place) {
+    public DiaryView.Day placeDay(
+            UUID authorId, UUID diaryId, UUID dayId, String place, Pin pin) {
         requireOwn(authorId, diaryId);
         DiaryDay day =
                 days.findByIdAndDiaryId(dayId, diaryId).orElseThrow(DiaryDayNotFoundException::new);
-        day.moveTo(place, Instant.now(clock));
+        day.moveTo(place, pin, Instant.now(clock));
         DiaryDay saved = days.saveAndFlush(day);
         List<DiaryContents.Card> onDay = contents.cardsOn(List.of(saved.id()));
         return new DiaryView.Day(saved, onDay.size(), onDay);

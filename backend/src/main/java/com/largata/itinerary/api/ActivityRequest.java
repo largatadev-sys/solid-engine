@@ -1,5 +1,7 @@
 package com.largata.itinerary.api;
 
+import com.largata.common.geo.InvalidPinException;
+import com.largata.common.geo.PinPayload;
 import com.largata.itinerary.ActivityFields;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

@@ -1,5 +1,6 @@
 package com.largata.itinerary;
 
+import com.largata.common.geo.Pin;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.Objects;

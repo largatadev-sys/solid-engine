@@ -1,9 +1,13 @@
 package com.largata.diary;
 
+import com.largata.common.geo.InvalidPinException;
+import com.largata.common.geo.Pin;
+import com.largata.common.geo.PinColumns;
 import com.largata.common.id.UuidV7;
 import com.largata.diary.DiaryExceptions.DiaryDayNeedsADateException;
 import com.largata.diary.DiaryExceptions.DiaryDayPlaceTooLongException;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -31,6 +35,8 @@ public class DiaryDay {
 
     @Column private String place;
 
+    @Embedded private PinColumns pin;
+
     @Column(name = "trip_day_id", updatable = false)
     private UUID tripDayId;
 
@@ -51,6 +57,7 @@ public class DiaryDay {
             int ordinal,
             LocalDate date,
             String place,
+            Pin pin,
             UUID tripDayId,
             String tripDayTitle,
             Instant at) {
@@ -59,6 +66,7 @@ public class DiaryDay {
         this.ordinal = ordinal;
         this.date = date;
         this.place = normalizePlace(place);
+        this.pin = PinColumns.holding(requirePlaceFor(pin, this.place));
         this.tripDayId = tripDayId;
         this.tripDayTitle = tripDayTitle;
         this.createdAt = at;
@@ -66,14 +74,15 @@ public class DiaryDay {
     }
 
 
-    static DiaryDay on(UUID diaryId, int ordinal, LocalDate date, String place, Instant at) {
+    static DiaryDay on(
+            UUID diaryId, int ordinal, LocalDate date, String place, Pin pin, Instant at) {
         if (diaryId == null || at == null) {
             throw new IllegalArgumentException("A day belongs to a diary and starts at an instant");
         }
         if (date == null) {
             throw new DiaryDayNeedsADateException();
         }
-        return new DiaryDay(UuidV7.generate(), diaryId, ordinal, date, place, null, null, at);
+        return new DiaryDay(UuidV7.generate(), diaryId, ordinal, date, place, pin, null, null, at);
     }
 
 
@@ -90,13 +99,27 @@ public class DiaryDay {
                     "A derived day belongs to a diary, snapshots a trip day, and has a date");
         }
         return new DiaryDay(
-                UuidV7.generate(), diaryId, ordinal, date, place, tripDayId, tripDayTitle, at);
+                UuidV7.generate(), diaryId, ordinal, date, place, null, tripDayId, tripDayTitle, at);
     }
 
 
-    void moveTo(String newPlace, Instant at) {
+    void moveTo(String newPlace, Pin newPin, Instant at) {
         this.place = normalizePlace(newPlace);
+        this.pin = PinColumns.holding(requirePlaceFor(newPin, this.place));
         this.updatedAt = at;
+    }
+
+
+    private static Pin requirePlaceFor(Pin pin, String place) {
+        if (pin != null && (place == null || place.isBlank())) {
+            throw new InvalidPinException("A pinned day needs a place a traveler can read.");
+        }
+        return pin;
+    }
+
+
+    public Pin pin() {
+        return PinColumns.readFrom(pin);
     }
 
 

@@ -8,6 +8,7 @@ import type {
   DiaryDayResponse,
   DiaryResponse,
   DiarySectionsResponse,
+  Pin,
   PostOnDayRequest,
   PostcardResponse,
 } from '../types/api';
@@ -53,8 +54,13 @@ export const memoryRepository = {
   },
 
 
-  async placeDay(diaryId: string, dayId: string, place: string | null): Promise<DiaryDayResponse> {
-    return apiClient.patch<DiaryDayResponse>(`/v1/diaries/${diaryId}/days/${dayId}`, { place });
+  async placeDay(
+    diaryId: string,
+    dayId: string,
+    place: string | null,
+    pin: Pin | null,
+  ): Promise<DiaryDayResponse> {
+    return apiClient.patch<DiaryDayResponse>(`/v1/diaries/${diaryId}/days/${dayId}`, { place, pin });
   },
 
 

@@ -91,6 +91,7 @@ export function DiaryDaysScreen({
       const day = await memoryRepository.addDay(diaryId, {
         date: draft.date,
         place: draft.place.trim() === '' ? null : draft.place.trim(),
+        pin: draft.pin,
       });
       stored.current.add(draft.date);
       const filled = latest.current[index] ?? draft;
@@ -98,7 +99,11 @@ export function DiaryDaysScreen({
         await memoryRepository.postOnDay(
           diaryId,
           day.id,
-          { caption: filled.caption.trim() === '' ? null : filled.caption.trim(), place: null },
+          {
+            caption: filled.caption.trim() === '' ? null : filled.caption.trim(),
+            place: null,
+            pin: null,
+          },
           filled.photos,
         );
       } catch (failure) {
@@ -143,10 +148,13 @@ export function DiaryDaysScreen({
             heading={dayHeading(index + 1, draft.date)}
             ordinal={index + 1}
             place={draft.place}
+            pin={draft.pin}
             caption={draft.caption}
             photos={draft.photos}
             editable={!posting}
-            onPlace={(place) => setDrafts((current) => updatedAt(current, index, (d) => ({ ...d, place })))}
+            onPlace={(place, pin) =>
+              setDrafts((current) => updatedAt(current, index, (d) => ({ ...d, place, pin })))
+            }
             onCaption={(caption) =>
               setDrafts((current) => updatedAt(current, index, (d) => ({ ...d, caption })))
             }

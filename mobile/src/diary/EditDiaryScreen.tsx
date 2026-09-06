@@ -4,6 +4,8 @@ import { useExitGuard } from '../navigation/useExitGuard';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhoto } from '../media/pickPhoto';
 import type { PickedPhoto } from '../media/pickedPhoto';
+import type { Pin } from '../maps/pinRules';
+import { pinAfterEdit } from '../maps/pinRules';
 import { memoryRepository } from '../repositories/memoryRepository';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import { DateChips } from './DateChips';
@@ -13,6 +15,7 @@ import type { DiaryResponse } from '../types/api';
 import { askMemoryConfirmation } from './MemoryConfirm';
 import { MemoryCta } from './MemoryCta';
 import { MemoryField } from './MemoryField';
+import { MemoryPlaceField } from './MemoryPlaceField';
 import { MemoryHeader } from './MemoryHeader';
 import { MemoryIcon } from './MemoryIcon';
 import {
@@ -42,6 +45,8 @@ interface EditDiaryScreenProps {
 export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
   const [title, setTitle] = useState(diary.title);
   const [destination, setDestination] = useState(diary.destination ?? '');
+  const [pin, setPin] = useState<Pin | null>(diary.pin);
+  const [pinnedAs, setPinnedAs] = useState(diary.pin === null ? '' : (diary.destination ?? ''));
   const [range, setRange] = useState<DateRange>({ start: diary.startDate, end: diary.endDate });
   const [cover, setCover] = useState<PickedPhoto | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -53,6 +58,7 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
     !saved &&
     (title !== diary.title ||
       destination !== (diary.destination ?? '') ||
+      pinAfterEdit(pin, pinnedAs, destination) !== diary.pin ||
       range.start !== diary.startDate ||
       range.end !== diary.endDate ||
       cover !== null);
@@ -81,6 +87,7 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
       let next = await memoryRepository.describeDiary(diary.id, {
         title: title.trim(),
         destination: destination.trim() === '' ? null : destination.trim(),
+        pin: pinAfterEdit(pin, pinnedAs, destination),
         startDate: range.start,
         endDate: range.end,
       });
@@ -107,12 +114,18 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
           editable={!saving}
         />
 
-        <MemoryField
+        <MemoryPlaceField
           label={DIARY_DESTINATION_LABEL}
           value={destination}
-          onChangeText={setDestination}
+          pin={pin}
+          openNear={pin}
           editable={!saving}
           placeholder={DIARY_DESTINATION_PLACEHOLDER}
+          onPicked={(place, picked) => {
+            setDestination(place);
+            setPin(picked);
+            setPinnedAs(picked === null ? '' : place);
+          }}
         />
 
         <View style={styles.field}>

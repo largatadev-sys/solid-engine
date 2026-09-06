@@ -4,10 +4,13 @@ import { dragToScroll } from '../components/stripScroll';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhotos } from '../media/pickPhoto';
 import type { PickedPhoto } from '../media/pickedPhoto';
+import type { Pin } from '../maps/pinRules';
+import { pinAfterEdit } from '../maps/pinRules';
 import { memoryRepository } from '../repositories/memoryRepository';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import { MemoryCta } from './MemoryCta';
 import { MemoryField } from './MemoryField';
+import { MemoryPlaceField } from './MemoryPlaceField';
 import { MemoryHeader } from './MemoryHeader';
 import { MemoryIcon } from './MemoryIcon';
 import { showMemoryToast } from './MemoryToast';
@@ -33,6 +36,8 @@ export function NewPostcardScreen({ onPosted }: NewPostcardScreenProps) {
   const [photos, setPhotos] = useState<readonly PickedPhoto[]>([]);
   const [caption, setCaption] = useState('');
   const [place, setPlace] = useState('');
+  const [pin, setPin] = useState<Pin | null>(null);
+  const [pinnedAs, setPinnedAs] = useState('');
   const [posting, setPosting] = useState(false);
 
   const ready = photos.length > 0 && (caption.trim() !== '' || place.trim() !== '');
@@ -45,6 +50,7 @@ export function NewPostcardScreen({ onPosted }: NewPostcardScreenProps) {
         {
           caption: caption.trim() === '' ? null : caption.trim(),
           place: place.trim() === '' ? null : place.trim(),
+          pin: pinAfterEdit(pin, pinnedAs, place),
         },
         photos,
       );
@@ -106,12 +112,17 @@ export function NewPostcardScreen({ onPosted }: NewPostcardScreenProps) {
           editable={!posting}
         />
 
-        <MemoryField
+        <MemoryPlaceField
           label={POSTCARD_PLACE_LABEL}
-          icon="pin"
           value={place}
-          onChangeText={setPlace}
+          pin={pin}
+          openNear={pin}
           editable={!posting}
+          onPicked={(picked, droppedPin) => {
+            setPlace(picked);
+            setPin(droppedPin);
+            setPinnedAs(droppedPin === null ? '' : picked);
+          }}
           placeholder={DAY_PLACE_PLACEHOLDER}
         />
       </ScrollView>

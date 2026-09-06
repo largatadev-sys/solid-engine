@@ -1,5 +1,7 @@
 package com.largata.itinerary;
 
+import com.largata.common.geo.Pin;
+import com.largata.common.geo.PinColumns;
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;

@@ -1,5 +1,6 @@
 package com.largata.itinerary;
 
+import com.largata.common.geo.Pin;
 import com.largata.identity.TravelerSummary;
 import java.util.List;
 import java.util.UUID;

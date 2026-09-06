@@ -1,6 +1,5 @@
-package com.largata.itinerary.api;
+package com.largata.common.geo;
 
-import com.largata.itinerary.Pin;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;

@@ -1,5 +1,6 @@
 package com.largata.diary.web;
 
+import com.largata.common.geo.PinPayload;
 import com.largata.diary.Diary;
 import com.largata.diary.DiaryView;
 import com.largata.identity.api.TravelerCardResponse;
@@ -16,6 +17,7 @@ public record DiaryResponse(
         UUID tripId,
         String title,
         String destination,
+        PinPayload pin,
         LocalDate startDate,
         LocalDate endDate,
         DiaryPhotoResponse cover,
@@ -36,6 +38,7 @@ public record DiaryResponse(
                 diary.tripId(),
                 diary.title(),
                 diary.destination(),
+                PinPayload.of(diary.pin()),
                 diary.startDate(),
                 diary.endDate(),
                 DiaryPhotoResponse.of(view.cover() == null ? view.fallbackCover() : view.cover()),

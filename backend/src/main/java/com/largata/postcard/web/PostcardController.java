@@ -1,6 +1,7 @@
 package com.largata.postcard.web;
 
 import com.largata.identity.AuthoredContentAudience;
+import com.largata.common.geo.PinPayload;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.postcard.PostcardService;
@@ -48,13 +49,14 @@ class PostcardController {
             throws IOException {
         CreatePostcardRequest request =
                 postcardJson == null
-                        ? new CreatePostcardRequest(null, null, null)
+                        ? new CreatePostcardRequest(null, null, null, null)
                         : json.readValue(postcardJson, CreatePostcardRequest.class);
         return PostcardResponse.of(
                 postcards.createStandalone(
                         traveler.id(),
                         request.diaryId(),
                         request.place(),
+                        PinPayload.toPin(request.pin()),
                         request.caption(),
                         bytesOf(devicePhotos)));
     }

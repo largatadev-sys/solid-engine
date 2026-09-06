@@ -1,4 +1,7 @@
 package com.largata.diary.web;
 
+import com.largata.common.geo.PinPayload;
+import jakarta.validation.Valid;
 
-public record PlaceDiaryDayRequest(String place) {}
+
+public record PlaceDiaryDayRequest(String place, @Valid PinPayload pin) {}

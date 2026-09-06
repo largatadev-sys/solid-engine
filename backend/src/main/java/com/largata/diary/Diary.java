@@ -1,5 +1,8 @@
 package com.largata.diary;
 
+import com.largata.common.geo.InvalidPinException;
+import com.largata.common.geo.Pin;
+import com.largata.common.geo.PinColumns;
 import com.largata.common.id.UuidV7;
 import com.largata.diary.DiaryExceptions.DiaryEndsBeforeItStartsException;
 import com.largata.diary.DiaryExceptions.DiaryNeedsATitleException;
@@ -8,6 +11,7 @@ import com.largata.diary.DiaryExceptions.DiaryTitleTooLongException;
 import com.largata.diary.DiaryExceptions.DiaryTooLongException;
 import com.largata.diary.DiaryExceptions.DiaryHasNotHappenedYetException;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -39,6 +43,8 @@ public class Diary {
 
     @Column private String destination;
 
+    @Embedded private PinColumns pin;
+
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
@@ -59,6 +65,7 @@ public class Diary {
             UUID tripId,
             String title,
             String destination,
+            Pin pin,
             LocalDate startDate,
             LocalDate endDate,
             Instant at) {
@@ -67,6 +74,7 @@ public class Diary {
         this.tripId = tripId;
         this.title = normalizeTitle(title);
         this.destination = normalize(destination);
+        this.pin = PinColumns.holding(requirePlaceFor(pin, this.destination));
         this.startDate = startDate;
         this.endDate = endDate;
         this.createdAt = at;
@@ -78,6 +86,7 @@ public class Diary {
             UUID authorId,
             String title,
             String destination,
+            Pin pin,
             LocalDate startDate,
             LocalDate endDate,
             Instant at) {
@@ -86,7 +95,7 @@ public class Diary {
         }
         requireSaneRange(startDate, endDate, at);
         return new Diary(
-                UuidV7.generate(), authorId, null, title, destination, startDate, endDate, at);
+                UuidV7.generate(), authorId, null, title, destination, pin, startDate, endDate, at);
     }
 
 
@@ -105,7 +114,8 @@ public class Diary {
         LocalDate start =
                 startDate == null ? LocalDate.ofInstant(at, java.time.ZoneOffset.UTC) : startDate;
         LocalDate end = endDate == null || endDate.isBefore(start) ? start : endDate;
-        return new Diary(UuidV7.generate(), authorId, tripId, title, destination, start, end, at);
+        return new Diary(
+                UuidV7.generate(), authorId, tripId, title, destination, null, start, end, at);
     }
 
 
@@ -121,12 +131,14 @@ public class Diary {
     void describe(
             String newTitle,
             String newDestination,
+            Pin newPin,
             LocalDate newStart,
             LocalDate newEnd,
             Instant at) {
         requireSaneRange(newStart, newEnd, at);
         this.title = normalizeTitle(newTitle);
         this.destination = normalize(newDestination);
+        this.pin = PinColumns.holding(requirePlaceFor(newPin, this.destination));
         this.startDate = newStart;
         this.endDate = newEnd;
         this.updatedAt = at;
@@ -217,6 +229,19 @@ public class Diary {
     public String title() {
         return title;
     }
+
+    public Pin pin() {
+        return PinColumns.readFrom(pin);
+    }
+
+
+    private static Pin requirePlaceFor(Pin pin, String destination) {
+        if (pin != null && (destination == null || destination.isBlank())) {
+            throw new InvalidPinException("A pinned diary needs a destination a traveler can read.");
+        }
+        return pin;
+    }
+
 
     public String destination() {
         return destination;

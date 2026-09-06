@@ -1,5 +1,6 @@
 package com.largata.diary;
 
+import com.largata.common.geo.Pin;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -19,8 +20,9 @@ class DiaryDayInserter {
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    DiaryDay insert(UUID diaryId, int ordinal, LocalDate date, String place, Instant at) {
-        return days.saveAndFlush(DiaryDay.on(diaryId, ordinal, date, place, at));
+    DiaryDay insert(
+            UUID diaryId, int ordinal, LocalDate date, String place, Pin pin, Instant at) {
+        return days.saveAndFlush(DiaryDay.on(diaryId, ordinal, date, place, pin, at));
     }
 
 

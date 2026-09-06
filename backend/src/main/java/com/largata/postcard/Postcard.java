@@ -1,5 +1,7 @@
 package com.largata.postcard;
 
+import com.largata.common.geo.InvalidPinException;
+import com.largata.common.geo.Pin;
 import com.largata.common.id.UuidV7;
 import com.largata.postcard.PostcardExceptions.PostcardCaptionTooLongException;
 import jakarta.persistence.Column;
@@ -101,13 +103,37 @@ public class Postcard {
     }
 
 
-    static Postcard standalone(UUID authorId, UUID diaryId, String place, String caption, Instant at) {
+    static Postcard standalone(
+            UUID authorId, UUID diaryId, String place, Pin pin, String caption, Instant at) {
         if (authorId == null || at == null) {
             throw new IllegalArgumentException("A postcard has an author and a moment");
         }
+        requirePlaceFor(pin, place);
         return new Postcard(
                 UuidV7.generate(), authorId, diaryId, null, null, null, null, null, null, place,
-                null, null, null, caption, at);
+                latitudeOf(pin), longitudeOf(pin), zoomOf(pin), caption, at);
+    }
+
+
+    private static void requirePlaceFor(Pin pin, String place) {
+        if (pin != null && (place == null || place.isBlank())) {
+            throw new InvalidPinException("A pinned postcard needs a place a traveler can read.");
+        }
+    }
+
+
+    private static java.math.BigDecimal latitudeOf(Pin pin) {
+        return pin == null ? null : pin.latitude();
+    }
+
+
+    private static java.math.BigDecimal longitudeOf(Pin pin) {
+        return pin == null ? null : pin.longitude();
+    }
+
+
+    private static Short zoomOf(Pin pin) {
+        return pin == null ? null : (short) pin.zoom();
     }
 
 
@@ -118,15 +144,17 @@ public class Postcard {
             UUID tripId,
             String dayLabel,
             String place,
+            Pin pin,
             String caption,
             Instant at) {
         if (authorId == null || diaryId == null || diaryDayId == null || at == null) {
             throw new IllegalArgumentException(
                     "A day-bound postcard has an author, a diary and the day it sits on");
         }
+        requirePlaceFor(pin, place);
         return new Postcard(
                 UuidV7.generate(), authorId, diaryId, diaryDayId, tripId, null, null, dayLabel,
-                null, place, null, null, null, caption, at);
+                null, place, latitudeOf(pin), longitudeOf(pin), zoomOf(pin), caption, at);
     }
 
 

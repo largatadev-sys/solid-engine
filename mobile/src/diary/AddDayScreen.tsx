@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../api/ApiError';
+import type { Pin } from '../maps/pinRules';
 import { memoryRepository } from '../repositories/memoryRepository';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import { DateRangeSheet } from './DateRangeSheet';
@@ -8,6 +9,7 @@ import type { DateRange } from './dateRange';
 import type { DiaryDayResponse } from '../types/api';
 import { MemoryCta } from './MemoryCta';
 import { MemoryField } from './MemoryField';
+import { MemoryPlaceField } from './MemoryPlaceField';
 import { MemoryHeader } from './MemoryHeader';
 import { MemoryIcon } from './MemoryIcon';
 import {
@@ -42,6 +44,7 @@ export function AddDayScreen({
 }: AddDayScreenProps) {
   const [range, setRange] = useState<DateRange>({ start: defaultDate, end: defaultDate });
   const [place, setPlace] = useState('');
+  const [pin, setPin] = useState<Pin | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -56,6 +59,7 @@ export function AddDayScreen({
         await memoryRepository.addDay(diaryId, {
           date: range.start,
           place: place.trim() === '' ? null : place.trim(),
+        pin,
         }),
       );
     } catch (refused) {
@@ -95,13 +99,17 @@ export function AddDayScreen({
           </Pressable>
         </View>
 
-        <MemoryField
+        <MemoryPlaceField
           label={DAY_PLACE_LABEL}
-          icon="pin"
           value={place}
-          onChangeText={setPlace}
+          pin={pin}
+          openNear={pin}
           editable={!saving}
           placeholder={DAY_PLACE_PLACEHOLDER}
+          onPicked={(picked, droppedPin) => {
+            setPlace(picked);
+            setPin(droppedPin);
+          }}
         />
       </ScrollView>
 

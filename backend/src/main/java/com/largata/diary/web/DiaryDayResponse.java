@@ -1,5 +1,6 @@
 package com.largata.diary.web;
 
+import com.largata.common.geo.PinPayload;
 import com.largata.diary.DiaryContents;
 import com.largata.diary.DiaryDay;
 import com.largata.diary.DiaryView;
@@ -14,6 +15,7 @@ public record DiaryDayResponse(
         int ordinal,
         LocalDate date,
         String place,
+        PinPayload pin,
         UUID tripDayId,
         int postcardCount,
         List<DiaryPostcardResponse> postcards,
@@ -33,6 +35,7 @@ public record DiaryDayResponse(
                 day.ordinal(),
                 day.date(),
                 day.place(),
+                PinPayload.of(day.pin()),
                 day.tripDayId(),
                 postcardCount,
                 postcards.stream().map(card -> DiaryPostcardResponse.of(card, day.place())).toList(),

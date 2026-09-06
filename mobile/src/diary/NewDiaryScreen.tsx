@@ -4,6 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhoto } from '../media/pickPhoto';
 import type { PickedPhoto } from '../media/pickedPhoto';
+import type { Pin } from '../maps/pinRules';
+import { pinAfterEdit } from '../maps/pinRules';
 import { memoryRepository } from '../repositories/memoryRepository';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import { DateChips } from './DateChips';
@@ -11,6 +13,7 @@ import { DateRangeSheet } from './DateRangeSheet';
 import { emptyRange, isComplete, type DateRange } from './dateRange';
 import { MemoryCta } from './MemoryCta';
 import { MemoryField } from './MemoryField';
+import { MemoryPlaceField } from './MemoryPlaceField';
 import { MemoryHeader } from './MemoryHeader';
 import { MemoryIcon } from './MemoryIcon';
 import {
@@ -30,6 +33,8 @@ export function NewDiaryScreen() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [destination, setDestination] = useState('');
+  const [pin, setPin] = useState<Pin | null>(null);
+  const [pinnedAs, setPinnedAs] = useState('');
   const [cover, setCover] = useState<PickedPhoto | null>(null);
   const [range, setRange] = useState<DateRange>(emptyRange);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -47,6 +52,7 @@ export function NewDiaryScreen() {
       const diary = await memoryRepository.createDiary({
         title: title.trim(),
         destination: destination.trim() === '' ? null : destination.trim(),
+        pin: pinAfterEdit(pin, pinnedAs, destination),
         startDate: range.start,
         endDate: range.end,
       });
@@ -72,12 +78,18 @@ export function NewDiaryScreen() {
           editable={!creating}
         />
 
-        <MemoryField
+        <MemoryPlaceField
           label={DIARY_DESTINATION_LABEL}
           value={destination}
-          onChangeText={setDestination}
+          pin={pin}
+          openNear={pin}
           editable={!creating}
           placeholder={DIARY_DESTINATION_PLACEHOLDER}
+          onPicked={(place, picked) => {
+            setDestination(place);
+            setPin(picked);
+            setPinnedAs(picked === null ? '' : place);
+          }}
         />
 
         <View style={styles.field}>

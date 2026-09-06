@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { pickPhotos } from '../media/pickPhoto';
+import type { Pin } from '../maps/pinRules';
+import { pinAfterEdit } from '../maps/pinRules';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { memoryRepository } from '../repositories/memoryRepository';
 import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
@@ -17,6 +19,7 @@ interface PostcardOnDayScreenProps {
   readonly ordinal: number;
   readonly date: string;
   readonly dayPlace: string | null;
+  readonly dayPin: Pin | null;
   readonly onPosted: () => void;
 }
 
@@ -28,11 +31,14 @@ export function PostcardOnDayScreen({
   ordinal,
   date,
   dayPlace,
+  dayPin,
   onPosted,
 }: PostcardOnDayScreenProps) {
   const [photos, setPhotos] = useState<readonly PickedPhoto[]>([]);
   const [caption, setCaption] = useState('');
   const [place, setPlace] = useState(dayPlace ?? '');
+  const [pin, setPin] = useState<Pin | null>(dayPin ?? null);
+  const [pinnedAs, setPinnedAs] = useState(dayPin == null ? '' : (dayPlace ?? ''));
   const [posting, setPosting] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -48,6 +54,7 @@ export function PostcardOnDayScreen({
         {
           caption: caption.trim() === '' ? null : caption.trim(),
           place: place.trim() === '' ? null : place.trim(),
+          pin: pinAfterEdit(pin, pinnedAs, place),
         },
         photos,
       );
@@ -69,7 +76,12 @@ export function PostcardOnDayScreen({
           caption={caption}
           photos={photos}
           editable={!posting}
-          onPlace={setPlace}
+          pin={pin}
+        onPlace={(picked, droppedPin) => {
+          setPlace(picked);
+          setPin(droppedPin);
+          setPinnedAs(droppedPin === null ? '' : picked);
+        }}
           onCaption={setCaption}
           onAddPhotos={() => {
             void pickPhotos(memoryMetrics.photosPerPostcard - photos.length).then((picked) => {

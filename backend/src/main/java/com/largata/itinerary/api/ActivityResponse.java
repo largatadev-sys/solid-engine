@@ -1,5 +1,6 @@
 package com.largata.itinerary.api;
 
+import com.largata.common.geo.PinPayload;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.largata.identity.TravelerSummary;
 import com.largata.itinerary.ActivityView;

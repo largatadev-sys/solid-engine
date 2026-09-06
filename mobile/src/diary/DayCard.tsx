@@ -1,7 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
+import type { Pin } from '../maps/pinRules';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
 import { MemoryField } from './MemoryField';
+import { MemoryPlaceField } from './MemoryPlaceField';
 import {
   DAY_ADD_PHOTO,
   DAY_CAPTION_LABEL,
@@ -17,10 +19,11 @@ interface DayCardProps {
   readonly heading?: string;
   readonly ordinal: number;
   readonly place: string;
+  readonly pin: Pin | null;
   readonly caption: string;
   readonly photos: readonly PickedPhoto[];
   readonly editable?: boolean;
-  readonly onPlace: (place: string) => void;
+  readonly onPlace: (place: string, pin: Pin | null) => void;
   readonly onCaption: (caption: string) => void;
   readonly onAddPhotos: () => void;
   readonly onRemovePhoto: (index: number) => void;
@@ -32,6 +35,7 @@ export function DayCard({
   heading,
   ordinal,
   place,
+  pin,
   caption,
   photos,
   editable = true,
@@ -45,16 +49,19 @@ export function DayCard({
     <View style={styles.card}>
       {heading !== undefined && <Text style={styles.heading}>{heading}</Text>}
 
-      <MemoryField
+      <MemoryPlaceField
         label={DAY_PLACE_LABEL}
-        icon="pin"
         height={memoryMetrics.placeFieldHeight}
         value={place}
-        onChangeText={onPlace}
-        onBlur={onLeave}
+        pin={pin}
+        openNear={pin}
         editable={editable}
         placeholder={DAY_PLACE_PLACEHOLDER}
         accessibilityLabel={`${DAY_PLACE_LABEL} ${ordinal}`}
+        onPicked={(picked, droppedPin) => {
+          onPlace(picked, droppedPin);
+          onLeave?.();
+        }}
       />
 
       <View style={styles.photos}>

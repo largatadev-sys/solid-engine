@@ -1,4 +1,4 @@
-package com.largata.itinerary;
+package com.largata.common.geo;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 
 @Embeddable
-class PinColumns {
+public class PinColumns {
 
     @Column private BigDecimal latitude;
 
@@ -23,12 +23,12 @@ class PinColumns {
     }
 
 
-    static PinColumns holding(Pin pin) {
+    public static PinColumns holding(Pin pin) {
         return new PinColumns(pin);
     }
 
 
-    static Pin readFrom(PinColumns columns) {
+    public static Pin readFrom(PinColumns columns) {
         return columns == null ? null : Pin.readFrom(columns.latitude, columns.longitude, columns.zoom);
     }
 }

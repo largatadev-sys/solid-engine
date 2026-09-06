@@ -1,6 +1,7 @@
 package com.largata.diary.web;
 
 import com.largata.common.api.Page;
+import com.largata.common.geo.PinPayload;
 import com.largata.diary.Diary;
 import com.largata.diary.DiaryService;
 import com.largata.identity.AuthoredContentAudience;
@@ -45,6 +46,7 @@ class DiaryController {
                         traveler.id(),
                         request.title(),
                         request.destination(),
+                        PinPayload.toPin(request.pin()),
                         request.startDate(),
                         request.endDate()));
     }
@@ -78,6 +80,7 @@ class DiaryController {
                         diaryId,
                         request.title(),
                         request.destination(),
+                        PinPayload.toPin(request.pin()),
                         request.startDate(),
                         request.endDate()));
     }
@@ -113,7 +116,12 @@ class DiaryController {
             @PathVariable UUID diaryId,
             @RequestBody AddDiaryDayRequest request) {
         return DiaryDayResponse.of(
-                diaries.addDay(traveler.id(), diaryId, request.date(), request.place()));
+                diaries.addDay(
+                        traveler.id(),
+                        diaryId,
+                        request.date(),
+                        request.place(),
+                        PinPayload.toPin(request.pin())));
     }
 
 
@@ -123,7 +131,13 @@ class DiaryController {
             @PathVariable UUID diaryId,
             @PathVariable UUID dayId,
             @RequestBody PlaceDiaryDayRequest request) {
-        return DiaryDayResponse.of(diaries.placeDay(traveler.id(), diaryId, dayId, request.place()));
+        return DiaryDayResponse.of(
+                diaries.placeDay(
+                        traveler.id(),
+                        diaryId,
+                        dayId,
+                        request.place(),
+                        PinPayload.toPin(request.pin())));
     }
 
 

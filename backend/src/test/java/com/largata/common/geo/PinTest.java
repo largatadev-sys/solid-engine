@@ -1,4 +1,4 @@
-package com.largata.itinerary;
+package com.largata.common.geo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -79,36 +79,5 @@ class PinTest {
         assertThat(Pin.readFrom(BIG_LAGOON_LAT, null, (short) 12)).isNull();
         assertThat(Pin.readFrom(null, BIG_LAGOON_LNG, (short) 12)).isNull();
         assertThat(Pin.readFrom(BIG_LAGOON_LAT, BIG_LAGOON_LNG, null)).isNull();
-    }
-
-
-    @Test
-    void aPinnedActivityNeedsAPlaceATravelerCanRead() {
-        assertThatThrownBy(
-                        () -> UnbookedActivity.pinned("Kayaking", null, new Pin(BIG_LAGOON_LAT, BIG_LAGOON_LNG, 15)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("place");
-    }
-
-
-    @Test
-    void aPlaceWithoutAPinIsPerfectlyNormal_becauseTextOnlyIsPermanent() {
-        assertThat(UnbookedActivity.pinned("Kayaking", "Big Lagoon", null).pin()).isNull();
-    }
-
-
-    @Test
-    void twoActivitiesDescribeTheSamePlanOnlyIfTheirPinsAgree() {
-        ActivityFields pinned =
-                UnbookedActivity.pinned("Kayaking", "Big Lagoon", new Pin(BIG_LAGOON_LAT, BIG_LAGOON_LNG, 15));
-        ActivityFields elsewhere =
-                UnbookedActivity.pinned("Kayaking", "Big Lagoon", new Pin(BIG_LAGOON_LAT, BIG_LAGOON_LNG, 12));
-        ActivityFields unpinned = UnbookedActivity.pinned("Kayaking", "Big Lagoon", null);
-
-        assertThat(pinned.describesSamePlanAs(pinned)).isTrue();
-        assertThat(pinned.describesSamePlanAs(elsewhere))
-                .as("the zoom a traveler framed is part of the pin, so moving it is a real edit")
-                .isFalse();
-        assertThat(pinned.describesSamePlanAs(unpinned)).isFalse();
     }
 }

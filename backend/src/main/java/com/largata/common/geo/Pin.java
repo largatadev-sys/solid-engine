@@ -1,4 +1,4 @@
-package com.largata.itinerary;
+package com.largata.common.geo;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -26,7 +26,7 @@ public record Pin(BigDecimal latitude, BigDecimal longitude, int zoom) {
     }
 
 
-    static Pin readFrom(BigDecimal latitude, BigDecimal longitude, Short zoom) {
+    public static Pin readFrom(BigDecimal latitude, BigDecimal longitude, Short zoom) {
         if (latitude == null || longitude == null || zoom == null) {
             return null;
         }

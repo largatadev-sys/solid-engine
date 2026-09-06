@@ -48,7 +48,7 @@ class TripDayPostcardController {
         Membership member = requireMember(traveler, tripId);
         PostOnDayRequest request =
                 postcardJson == null
-                        ? new PostOnDayRequest(null, null)
+                        ? new PostOnDayRequest(null, null, null)
                         : json.readValue(postcardJson, PostOnDayRequest.class);
         return PostcardResponse.of(
                 postcards.postOnTripDay(
