@@ -1,9 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator } from 'react-native';
-import { askForConfirmation } from '../../../../../src/components/ConfirmStation';
 import { DiaryActionsSheet } from '../../../../../src/diary/DiaryActionsSheet';
 import { DiaryDetailScreen } from '../../../../../src/diary/DiaryDetailScreen';
+import { askMemoryConfirmation } from '../../../../../src/diary/MemoryConfirm';
 import { showMemoryToast } from '../../../../../src/diary/MemoryToast';
 import {
   CANCEL_ACTION,
@@ -19,6 +19,7 @@ import { useMe } from '../../../../../src/hooks/useMe';
 import { memoryRepository } from '../../../../../src/repositories/memoryRepository';
 import { useDiary, useMemoryRefresh } from '../../../../../src/query/memoryQueries';
 import { PROFILE_TAB_ROUTE } from '../../../../../src/navigation/authRoutes';
+import { publicProfileRoute } from '../../../../../src/profile/travelerRoutes';
 import { colors } from '../../../../../src/theme';
 
 
@@ -36,6 +37,7 @@ export default function DiaryDetailRoute() {
 
   const me = state.kind === 'ok' ? state.me : null;
   const owned = me !== null && me.id === diary.data.authorId;
+  const author = diary.data.author;
   const handle = me?.handle ?? null;
 
   function askToDelete(): void {
@@ -43,13 +45,12 @@ export default function DiaryDetailRoute() {
     if (subject === undefined) return;
 
     setMenuOpen(false);
-    askForConfirmation(
+    askMemoryConfirmation(
       {
         title: deleteDiaryTitle(subject.postcardCount),
         body: deleteDiaryBody(subject.title),
         confirmLabel: DELETE_ACTION,
         cancelLabel: CANCEL_ACTION,
-        tone: 'destructive',
       },
       () => {
         router.replace(PROFILE_TAB_ROUTE);
@@ -61,7 +62,7 @@ export default function DiaryDetailRoute() {
           })
           .catch(() => {
             refresh(handle);
-            showMemoryToast(DELETE_FAILED_TOAST);
+            showMemoryToast(DELETE_FAILED_TOAST, 'failure');
           });
       },
     );
@@ -71,10 +72,14 @@ export default function DiaryDetailRoute() {
     <>
       <DiaryDetailScreen
         diary={diary.data}
-        authorName={me?.displayName ?? ''}
-        authorHandle={handle ?? ''}
+        authorName={author?.displayName ?? ''}
+        authorHandle={author?.handle ?? ''}
+        authorAvatarUrl={author?.avatarUrl ?? null}
         owned={owned}
-        onOpenAuthor={() => router.push(PROFILE_TAB_ROUTE)}
+        onOpenAuthor={() => {
+          if (owned) router.push(PROFILE_TAB_ROUTE);
+          else if (author?.handle) router.push(publicProfileRoute(author.handle));
+        }}
         onOpenPostcard={(postcardId) =>
           router.push({ pathname: '/postcards/[id]', params: { id: postcardId } })
         }
@@ -92,16 +97,17 @@ export default function DiaryDetailRoute() {
 
       <DiaryActionsSheet
         open={menuOpen}
-        title={diary.data.title}
+        contextLabel={diary.data.title}
         actions={[
           {
             label: EDIT_DIARY_ACTION,
+            icon: 'pencil',
             onPress: () => {
               setMenuOpen(false);
               router.push({ pathname: '/diaries/[id]/edit', params: { id: diary.data.id } });
             },
           },
-          { label: DELETE_DIARY_ACTION, destructive: true, onPress: askToDelete },
+          { label: DELETE_DIARY_ACTION, icon: 'trash', destructive: true, onPress: askToDelete },
         ]}
         onDismiss={() => setMenuOpen(false)}
       />

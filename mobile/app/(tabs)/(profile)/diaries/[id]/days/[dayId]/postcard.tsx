@@ -21,6 +21,7 @@ export default function PostcardOnDayRoute() {
   return (
     <PostcardOnDayScreen
       diaryId={diary.data.id}
+      diaryTitle={diary.data.title}
       dayId={day.id}
       ordinal={day.ordinal}
       date={day.date}

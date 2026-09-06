@@ -1,18 +1,30 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { dragToScroll, PAGING } from '../components/stripScroll';
 import { MediaThumb } from '../media/MediaThumb';
-import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
+import { useSafeBack } from '../navigation/safeBack';
+import { initialsFor } from '../onboarding/initials';
+import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import type { PostcardResponse } from '../types/api';
-import { dayOrdinalLabel } from './memoryCopy';
+import { BACK_LABEL, dayMetaLine, dayOrdinalLabel, photoIndexPill, postedOnLabel } from './memoryCopy';
+import { MemoryIcon } from './MemoryIcon';
+
+
+export interface DiaryRow {
+  readonly title: string;
+  readonly ordinal: number;
+  readonly date: string;
+}
 
 
 interface PostcardDetailScreenProps {
   readonly postcard: PostcardResponse;
-  readonly diaryTitle: string | null;
+  readonly diaryRow: DiaryRow | null;
   readonly authorName: string;
   readonly authorHandle: string;
+  readonly authorAvatarUrl: string | null;
   readonly owned: boolean;
-  readonly onOpenAuthor: () => void;
   readonly onOpenDiary?: () => void;
   readonly onMenu?: () => void;
 }
@@ -20,86 +32,134 @@ interface PostcardDetailScreenProps {
 
 export function PostcardDetailScreen({
   postcard,
-  diaryTitle,
+  diaryRow,
   authorName,
   authorHandle,
+  authorAvatarUrl,
   owned,
-  onOpenAuthor,
   onOpenDiary,
   onMenu,
 }: PostcardDetailScreenProps) {
+  const [drag] = useState(() => dragToScroll((viewport) => viewport));
+  const insets = useSafeAreaInsets();
+  const goBack = useSafeBack();
+  const [shownIndex, setShownIndex] = useState(0);
+
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.body}>
-      <View style={styles.head}>
-        <AnimatedPressable
-          style={styles.author}
+    <View style={styles.screen}>
+      <View style={[styles.topBar, { marginTop: insets.top }]}>
+        <Pressable
+          style={({ pressed }) => StyleSheet.flatten([styles.topButton, pressed ? styles.roundPressed : null])}
           accessibilityRole="button"
-          accessibilityLabel={authorName}
-          onPress={onOpenAuthor}
+          accessibilityLabel={BACK_LABEL}
+          onPress={goBack}
         >
-          <Text style={styles.authorInk}>
-            {authorName} · @{authorHandle}
-          </Text>
-        </AnimatedPressable>
-        {owned && onMenu !== undefined && (
-          <Control glyph="⋯" label="Postcard menu" onPress={onMenu} />
+          <MemoryIcon name="chevronLeft" size={20} color={memoryColors.title} />
+        </Pressable>
+        {owned && onMenu !== undefined ? (
+          <Pressable
+            style={({ pressed }) => StyleSheet.flatten([styles.topButton, pressed ? styles.roundPressed : null])}
+            accessibilityRole="button"
+            accessibilityLabel="Postcard menu"
+            onPress={onMenu}
+          >
+            <MemoryIcon name="kebab" size={18} color={memoryColors.title} />
+          </Pressable>
+        ) : (
+          <View style={styles.topButton} />
         )}
       </View>
 
-      {postcard.photos.map((photo, index) => (
-        <MediaThumb
-          key={photo.id}
-          url={photo.url}
-          style={styles.photo}
-          accessibilityLabel={`Photo ${index + 1}`}
-          fallback={<View style={styles.photoEmpty} />}
-        />
-      ))}
+      <ScrollView contentContainerStyle={styles.body}>
+        <View style={styles.carousel}>
+          <ScrollView
+            horizontal
+            {...PAGING}
+            {...drag}
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={(event) => {
+              const width = event.nativeEvent.layoutMeasurement.width;
+              if (width > 0) setShownIndex(Math.round(event.nativeEvent.contentOffset.x / width));
+            }}
+          >
+            {postcard.photos.map((photo, index) => (
+              <View key={photo.id} style={styles.slide}>
+                <MediaThumb
+                  url={photo.url}
+                  style={styles.fill}
+                  accessibilityLabel={`Photo ${index + 1}`}
+                  fallback={<View style={styles.fill} />}
+                />
+              </View>
+            ))}
+          </ScrollView>
 
-      {postcard.caption !== null && <Text style={styles.caption}>{postcard.caption}</Text>}
-
-      {postcard.place !== null && <Text style={styles.meta}>{postcard.place}</Text>}
-
-      {diaryTitle !== null && onOpenDiary !== undefined && (
-        <AnimatedPressable
-          style={styles.diaryRow}
-          accessibilityRole="button"
-          accessibilityLabel={diaryTitle}
-          onPress={onOpenDiary}
-        >
-          <Text style={styles.diaryTitle}>{diaryTitle}</Text>
-          {postcard.dayOrdinal !== null && (
-            <Text style={styles.diaryDay}>{dayOrdinalLabel(postcard.dayOrdinal)}</Text>
+          {postcard.photos.length > 1 && (
+            <>
+              <View style={styles.photoPill}>
+                <Text style={styles.photoPillInk}>
+                  {photoIndexPill(shownIndex + 1, postcard.photos.length)}
+                </Text>
+              </View>
+              <View style={styles.dots}>
+                {postcard.photos.map((photo, index) => (
+                  <View
+                    key={photo.id}
+                    style={[styles.dot, index === shownIndex ? styles.dotOn : styles.dotOff]}
+                  />
+                ))}
+              </View>
+            </>
           )}
-        </AnimatedPressable>
-      )}
-    </ScrollView>
-  );
-}
+        </View>
 
+        <View style={styles.text}>
+          {postcard.caption !== null && <Text style={styles.caption}>{postcard.caption}</Text>}
 
-function Control({
-  glyph,
-  label,
-  onPress,
-}: {
-  readonly glyph: string;
-  readonly label: string;
-  readonly onPress: () => void;
-}) {
-  const press = usePressFeedback();
+          {postcard.place !== null && (
+            <View style={styles.placeRow}>
+              <MemoryIcon name="pin" size={13} color={memoryColors.muted} strokeWidth={2.2} />
+              <Text style={styles.placeInk}>{postcard.place}</Text>
+            </View>
+          )}
 
-  return (
-    <AnimatedPressable
-      style={StyleSheet.flatten([styles.control, press.style])}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-    >
-      <Text style={styles.controlInk}>{glyph}</Text>
-    </AnimatedPressable>
+          <View style={styles.divider} />
+
+          {diaryRow !== null && onOpenDiary !== undefined && (
+            <Pressable
+              style={({ pressed }) => StyleSheet.flatten([styles.diaryRow, pressed ? styles.pressed : null])}
+              accessibilityRole="button"
+              accessibilityLabel={diaryRow.title}
+              onPress={onOpenDiary}
+            >
+              <MemoryIcon name="bookPlain" size={16} color={memoryColors.accent} />
+              <View style={styles.diaryRowText}>
+                <Text style={styles.diaryRowTitle} numberOfLines={1}>{diaryRow.title}</Text>
+                <Text style={styles.diaryRowMeta}>
+                  {dayOrdinalLabel(diaryRow.ordinal)} · {dayMetaLine(diaryRow.date, null)}
+                </Text>
+              </View>
+              <MemoryIcon name="chevronRight" size={14} color={memoryColors.faint} strokeWidth={2.4} />
+            </Pressable>
+          )}
+
+          <View style={styles.authorRow}>
+            <MediaThumb
+              url={authorAvatarUrl}
+              style={styles.avatar}
+              fallbackStyle={styles.avatarWell}
+              accessibilityLabel={authorName}
+              fallback={<Text style={styles.initials}>{initialsFor(authorName, null)}</Text>}
+            />
+            <View style={styles.authorText}>
+              <Text style={styles.authorName}>{authorName}</Text>
+              <Text style={styles.authorMeta}>{postedOnLabel(postcard.createdAt)}</Text>
+            </View>
+          </View>
+          <Text style={styles.handle}>@{authorHandle}</Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -109,67 +169,161 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: memoryColors.screen,
   },
-  body: {
-    padding: memoryMetrics.screenPadding,
-    gap: memoryMetrics.dayGap,
-  },
-  head: {
+  topBar: {
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
   },
-  author: {
-    flex: 1,
-  },
-  authorInk: {
-    ...memoryTypography.meta,
-    color: memoryColors.body,
-  },
-  control: {
-    width: memoryMetrics.kebab + 8,
-    height: memoryMetrics.kebab + 8,
+  topButton: {
+    width: memoryMetrics.headerButton,
+    height: memoryMetrics.headerButton,
+    borderRadius: memoryMetrics.headerButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
   },
-  controlInk: {
-    ...memoryTypography.chevron,
-    color: memoryColors.body,
+  roundPressed: {
+    transform: [{ scale: memoryMotion.roundPressScale }],
   },
-  photo: {
+  body: {
+    paddingBottom: 32,
+  },
+  carousel: {
+    marginTop: 6,
     width: '100%',
-    height: 260,
-    borderRadius: memoryMetrics.tileRadius,
-    backgroundColor: memoryColors.tileWell,
+    aspectRatio: 1,
+    backgroundColor: memoryColors.wellDivider,
   },
-  photoEmpty: {
+  slide: {
+    width: memoryMetrics.detailPhoto,
+    maxWidth: '100%',
+    aspectRatio: 1,
+  },
+  fill: {
     width: '100%',
     height: '100%',
-    backgroundColor: memoryColors.tileWell,
+    backgroundColor: memoryColors.wellDivider,
+  },
+  photoPill: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: memoryColors.photoPill,
+    borderRadius: 999,
+  },
+  photoPillInk: {
+    ...memoryTypography.cardMetaStrong,
+    color: memoryColors.white,
+  },
+  dots: {
+    position: 'absolute',
+    bottom: 12,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  dot: {
+    width: memoryMetrics.dot,
+    height: memoryMetrics.dot,
+    borderRadius: memoryMetrics.dot / 2,
+  },
+  dotOn: {
+    backgroundColor: memoryColors.white,
+  },
+  dotOff: {
+    backgroundColor: memoryColors.onCoverMuted,
+  },
+  text: {
+    paddingVertical: memoryMetrics.detailBodyPaddingV,
+    paddingHorizontal: memoryMetrics.detailBodyPaddingH,
+    gap: 10,
   },
   caption: {
-    ...memoryTypography.body,
+    ...memoryTypography.captionLarge,
     color: memoryColors.title,
   },
-  meta: {
-    ...memoryTypography.small,
+  placeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  placeInk: {
+    ...memoryTypography.placeRow,
     color: memoryColors.muted,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: memoryColors.divider,
   },
   diaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: memoryColors.card,
+    gap: 10,
+    backgroundColor: memoryColors.diaryRowWell,
     borderWidth: 1,
-    borderColor: memoryColors.hairline,
-    borderRadius: memoryMetrics.cardRadius,
-    padding: memoryMetrics.cardPadding,
+    borderColor: memoryColors.diaryRowBorder,
+    borderRadius: memoryMetrics.diaryRowRadius,
+    paddingVertical: memoryMetrics.diaryRowPaddingV,
+    paddingHorizontal: memoryMetrics.diaryRowPaddingH,
   },
-  diaryTitle: {
-    ...memoryTypography.label,
+  diaryRowText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  diaryRowTitle: {
+    ...memoryTypography.authorName,
     color: memoryColors.title,
   },
-  diaryDay: {
-    ...memoryTypography.small,
+  diaryRowMeta: {
+    ...memoryTypography.cardMeta,
     color: memoryColors.muted,
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  avatar: {
+    width: memoryMetrics.avatarSmall,
+    height: memoryMetrics.avatarSmall,
+    borderRadius: memoryMetrics.avatarSmall / 2,
+    flexShrink: 0,
+  },
+  avatarWell: {
+    backgroundColor: memoryColors.accentWash,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  initials: {
+    ...memoryTypography.eyebrow,
+    letterSpacing: 0,
+    color: memoryColors.accentDeep,
+  },
+  authorText: {
+    flex: 1,
+    gap: 1,
+  },
+  authorName: {
+    ...memoryTypography.authorName,
+    color: memoryColors.title,
+  },
+  authorMeta: {
+    ...memoryTypography.cardMeta,
+    color: memoryColors.muted,
+  },
+  handle: {
+    ...memoryTypography.cardMeta,
+    color: memoryColors.muted,
+    marginTop: -6,
+    marginLeft: memoryMetrics.avatarSmall + 10,
+  },
+  pressed: {
+    opacity: memoryMotion.pressOpacity,
   },
 });

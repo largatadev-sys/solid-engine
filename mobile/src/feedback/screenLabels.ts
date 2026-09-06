@@ -44,6 +44,7 @@ export const SCREEN_LABELS: Readonly<Record<string, string>> = {
   '(tabs)/(profile)/diaries/[id]/days/[dayId]/postcard': 'Postcard on a day',
   '(tabs)/(profile)/postcards/new': 'New postcard',
   '(tabs)/(profile)/postcards/[id]': 'Postcard',
+  '(tabs)/(profile)/postcards/[id]/edit': 'Edit caption',
 
   'travelers/[handle]': 'Traveler profile',
   'travelers/[handle]/followers': 'Followers',

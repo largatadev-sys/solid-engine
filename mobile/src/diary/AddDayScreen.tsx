@@ -1,18 +1,22 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../api/ApiError';
 import { memoryRepository } from '../repositories/memoryRepository';
-import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
+import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import { DateRangeSheet } from './DateRangeSheet';
 import type { DateRange } from './dateRange';
 import type { DiaryDayResponse } from '../types/api';
+import { MemoryCta } from './MemoryCta';
+import { MemoryField } from './MemoryField';
+import { MemoryHeader } from './MemoryHeader';
+import { MemoryIcon } from './MemoryIcon';
 import {
-  ADD_A_DAY_TITLE,
+  ADD_DAY_CTA,
+  DAY_DATE_LABEL,
   DAY_PLACE_LABEL,
   DAY_PLACE_PLACEHOLDER,
   DIARY_CREATE_FAILED,
-  SAVE_CTA,
+  addDaySubtitle,
   dayOrdinalLabel,
   shortDate,
 } from './memoryCopy';
@@ -20,7 +24,9 @@ import {
 
 interface AddDayScreenProps {
   readonly diaryId: string;
+  readonly diaryTitle: string;
   readonly nextOrdinal: number;
+  readonly lastDay: { readonly ordinal: number; readonly date: string } | null;
   readonly defaultDate: string;
   readonly onAdded: (day: DiaryDayResponse) => void;
 }
@@ -28,7 +34,9 @@ interface AddDayScreenProps {
 
 export function AddDayScreen({
   diaryId,
+  diaryTitle,
   nextOrdinal,
+  lastDay,
   defaultDate,
   onAdded,
 }: AddDayScreenProps) {
@@ -58,44 +66,60 @@ export function AddDayScreen({
 
   return (
     <View style={styles.screen}>
+      <MemoryHeader
+        pill="DIARY"
+        title={dayOrdinalLabel(nextOrdinal)}
+        subtitle={
+          lastDay === null ? diaryTitle : addDaySubtitle(diaryTitle, lastDay.ordinal, lastDay.date)
+        }
+      />
+
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <Text style={styles.heading}>{ADD_A_DAY_TITLE}</Text>
-        <Text style={styles.ordinal}>{dayOrdinalLabel(nextOrdinal)}</Text>
-
-        <AnimatedPressable
-          style={styles.dateChip}
-          accessibilityRole="button"
-          accessibilityLabel={ADD_A_DAY_TITLE}
-          onPress={() => setCalendarOpen(true)}
-        >
-          <Text style={styles.dateChipInk}>
-            {range.start === null ? defaultDate : shortDate(range.start)}
+        <View style={styles.field}>
+          <Text style={styles.label}>
+            {DAY_DATE_LABEL}
+            <Text style={styles.required}>*</Text>
           </Text>
-        </AnimatedPressable>
+          <Pressable
+            style={({ pressed }) =>
+              StyleSheet.flatten([styles.dateField, pressed ? styles.pressed : null])
+            }
+            accessibilityRole="button"
+            accessibilityLabel={DAY_DATE_LABEL}
+            onPress={() => setCalendarOpen(true)}
+          >
+            <MemoryIcon name="calendar" size={16} color={memoryColors.muted} />
+            <Text style={styles.dateValue}>
+              {range.start === null ? shortDate(defaultDate) : shortDate(range.start)}
+            </Text>
+          </Pressable>
+        </View>
 
-        <Text style={styles.label}>{DAY_PLACE_LABEL}</Text>
-        <TextInput
-          style={styles.input}
+        <MemoryField
+          label={DAY_PLACE_LABEL}
+          icon="pin"
           value={place}
           onChangeText={setPlace}
           editable={!saving}
           placeholder={DAY_PLACE_PLACEHOLDER}
-          placeholderTextColor={memoryColors.faint}
-          accessibilityLabel={DAY_PLACE_LABEL}
         />
-
-        {refusal !== null && <Text style={styles.failed}>{refusal}</Text>}
       </ScrollView>
 
       <View style={styles.rail}>
-        <SaveButton disabled={range.start === null || saving} onPress={() => void add()} />
+        <MemoryCta
+          label={ADD_DAY_CTA}
+          disabled={range.start === null}
+          busy={saving}
+          onPress={() => void add()}
+        />
+        {refusal !== null && <Text style={styles.failed}>{refusal}</Text>}
       </View>
 
       <DateRangeSheet
         open={calendarOpen}
         range={range}
         mode="single"
-        title={ADD_A_DAY_TITLE}
+        title={DAY_DATE_LABEL}
         onDone={(picked) => {
           setRange(picked);
           setCalendarOpen(false);
@@ -107,104 +131,54 @@ export function AddDayScreen({
 }
 
 
-function SaveButton({
-  disabled,
-  onPress,
-}: {
-  readonly disabled: boolean;
-  readonly onPress: () => void;
-}) {
-  const press = usePressFeedback();
-
-  return (
-    <AnimatedPressable
-      style={StyleSheet.flatten([styles.cta, disabled ? styles.ctaDisabled : press.style])}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={SAVE_CTA}
-      accessibilityState={{ disabled }}
-      onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-    >
-      <Text style={[styles.ctaInk, disabled ? styles.ctaInkDisabled : null]}>{SAVE_CTA}</Text>
-    </AnimatedPressable>
-  );
-}
-
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: memoryColors.screen,
   },
   body: {
-    padding: memoryMetrics.screenPadding,
+    paddingHorizontal: memoryMetrics.screenPadding,
+    paddingTop: 14,
+    paddingBottom: 24,
+    gap: 14,
+  },
+  field: {
     gap: 6,
   },
-  heading: {
-    ...memoryTypography.heading,
-    color: memoryColors.title,
-  },
-  ordinal: {
-    ...memoryTypography.small,
-    color: memoryColors.muted,
-    marginBottom: 6,
-  },
-  dateChip: {
-    height: memoryMetrics.fieldHeight,
-    borderWidth: 1,
-    borderColor: memoryColors.hairline,
-    borderRadius: memoryMetrics.fieldRadius,
-    backgroundColor: memoryColors.card,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-  },
-  dateChipInk: {
-    ...memoryTypography.input,
-    color: memoryColors.title,
-  },
   label: {
-    ...memoryTypography.label,
-    color: memoryColors.body,
-    marginTop: 6,
+    ...memoryTypography.fieldLabel,
+    color: memoryColors.label,
   },
-  input: {
-    ...memoryTypography.input,
+  required: {
+    color: memoryColors.accent,
+  },
+  dateField: {
     height: memoryMetrics.fieldHeight,
     borderWidth: 1,
     borderColor: memoryColors.hairline,
     borderRadius: memoryMetrics.fieldRadius,
-    paddingHorizontal: 12,
+    paddingHorizontal: memoryMetrics.fieldPaddingH,
     backgroundColor: memoryColors.card,
-    color: memoryColors.title,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  failed: {
-    ...memoryTypography.meta,
-    color: memoryColors.danger,
-    marginTop: 8,
+  dateValue: {
+    ...memoryTypography.input,
+    color: memoryColors.title,
   },
   rail: {
-    padding: memoryMetrics.screenPadding,
-    borderTopWidth: 1,
-    borderTopColor: memoryColors.hairline,
-    backgroundColor: memoryColors.card,
+    paddingTop: 8,
+    paddingBottom: 16,
+    gap: 8,
+    backgroundColor: memoryColors.screen,
   },
-  cta: {
-    height: memoryMetrics.ctaHeight,
-    borderRadius: memoryMetrics.ctaRadius,
-    backgroundColor: memoryColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+  failed: {
+    ...memoryTypography.meta13,
+    color: memoryColors.danger,
+    paddingHorizontal: memoryMetrics.screenPadding,
   },
-  ctaDisabled: {
-    backgroundColor: memoryColors.disabledWell,
-  },
-  ctaInk: {
-    ...memoryTypography.cta,
-    color: memoryColors.card,
-  },
-  ctaInkDisabled: {
-    color: memoryColors.disabledInk,
+  pressed: {
+    opacity: memoryMotion.pressOpacity,
   },
 });

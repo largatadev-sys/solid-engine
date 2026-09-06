@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { BottomSheet } from '../members/BottomSheet';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
-import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
+import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import {
   CALENDAR_DONE,
+  CALENDAR_NEXT_MONTH,
+  CALENDAR_PICK_END,
+  CALENDAR_PREVIOUS_MONTH,
   DIARY_END_LABEL,
-  DIARY_END_PLACEHOLDER,
   DIARY_START_LABEL,
   DIARY_WHEN_LABEL,
   rangeSummary,
   shortDate,
 } from './memoryCopy';
+import { MemoryCta } from './MemoryCta';
+import { MemoryIcon } from './MemoryIcon';
+import { MemorySheet } from './MemorySheet';
 import {
   dayCountOf,
   emptyRange,
   isComplete,
-  isEdgeOf,
   isInTheFuture,
   isWithin,
   monthGridOf,
@@ -68,31 +70,42 @@ export function DateRangeSheet({
   const today = todayIso();
 
   const grid = monthGridOf(shown.year, shown.monthIndex);
+  const settingEnd = draft.start !== null && draft.end === null;
   const ready = mode === 'single' ? draft.start !== null : isComplete(draft);
 
   return (
-    <BottomSheet open={open} title={title} onDismiss={onDismiss}>
+    <MemorySheet open={open} title={title} onDismiss={onDismiss}>
       {mode === 'range' && (
         <View style={styles.chips}>
           <Chip
-            label={DIARY_START_LABEL}
-            value={draft.start === null ? DIARY_START_LABEL : shortDate(draft.start)}
-            active={draft.start === null || draft.end !== null}
+            caption={DIARY_START_LABEL}
+            value={draft.start === null ? null : shortDate(draft.start)}
+            placeholder={DIARY_START_LABEL}
+            active={!settingEnd}
           />
           <Chip
-            label={DIARY_END_LABEL}
-            value={draft.end === null ? DIARY_END_PLACEHOLDER : shortDate(draft.end)}
-            active={draft.start !== null && draft.end === null}
+            caption={DIARY_END_LABEL}
+            value={draft.end === null ? null : shortDate(draft.end)}
+            placeholder="End date"
+            active={settingEnd}
           />
         </View>
       )}
 
       <View style={styles.monthRow}>
-        <MonthStep label="‹" onPress={() => setShown(steppedBy(shown, -1))} />
+        <MonthStep
+          direction="left"
+          label={CALENDAR_PREVIOUS_MONTH}
+          onPress={() => setShown(steppedBy(shown, -1))}
+        />
         <Text style={styles.monthName}>
           {MONTH_NAMES[shown.monthIndex]} {shown.year}
         </Text>
-        <MonthStep label="›" onPress={() => setShown(steppedBy(shown, 1))} />
+        <MonthStep
+          direction="right"
+          label={CALENDAR_NEXT_MONTH}
+          onPress={() => setShown(steppedBy(shown, 1))}
+        />
       </View>
 
       <View style={styles.weekdays}>
@@ -118,23 +131,22 @@ export function DateRangeSheet({
       <Text style={styles.summary}>
         {mode === 'single'
           ? draft.start === null
-            ? ''
+            ? ' '
             : shortDate(draft.start)
           : ready
             ? rangeSummary(dayCountOf(draft))
-            : ''}
+            : settingEnd
+              ? CALENDAR_PICK_END
+              : ' '}
       </Text>
 
-      <AnimatedPressable
-        style={StyleSheet.flatten([styles.done, ready ? null : styles.doneDisabled])}
+      <MemoryCta
+        label={CALENDAR_DONE}
+        inset={false}
         disabled={!ready}
-        accessibilityRole="button"
-        accessibilityLabel={CALENDAR_DONE}
         onPress={() => onDone(mode === 'single' ? { start: draft.start, end: draft.start } : draft)}
-      >
-        <Text style={[styles.doneInk, ready ? null : styles.doneInkDisabled]}>{CALENDAR_DONE}</Text>
-      </AnimatedPressable>
-    </BottomSheet>
+      />
+    </MemorySheet>
   );
 }
 
@@ -155,68 +167,88 @@ function DayCell({
   }
 
   const disabled = isInTheFuture(day, today);
-  const edge = isEdgeOf(range, day);
-  const within = isWithin(range, day);
+  const isStart = day === range.start;
+  const isEnd = day === range.end;
+  const edge = isStart || isEnd;
+  const within = isWithin(range, day) && !edge;
+  const spans = isComplete(range) && range.start !== range.end;
 
   return (
     <Pressable
-      style={StyleSheet.flatten([
-        styles.cell,
-        within && !edge ? styles.cellWithin : null,
-        edge ? styles.cellEdge : null,
-      ])}
+      style={styles.cell}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ disabled, selected: edge }}
       accessibilityLabel={shortDate(day)}
       onPress={() => onPress(day)}
     >
-      <Text
-        style={[
-          styles.cellInk,
-          disabled ? styles.cellInkDisabled : null,
-          edge ? styles.cellInkEdge : null,
-        ]}
-      >
-        {Number(day.slice(8))}
-      </Text>
+      {within && <View style={styles.band} />}
+      {spans && isStart && <View style={[styles.band, styles.bandRight]} />}
+      {spans && isEnd && <View style={[styles.band, styles.bandLeft]} />}
+      <View style={StyleSheet.flatten([styles.dot, edge ? styles.dotEdge : null])}>
+        <Text
+          style={[
+            styles.cellInk,
+            disabled ? styles.cellInkDisabled : null,
+            edge ? styles.cellInkEdge : null,
+          ]}
+        >
+          {Number(day.slice(8))}
+        </Text>
+      </View>
     </Pressable>
   );
 }
 
 
 function Chip({
-  label,
+  caption,
   value,
+  placeholder,
   active,
 }: {
-  readonly label: string;
-  readonly value: string;
+  readonly caption: string;
+  readonly value: string | null;
+  readonly placeholder: string;
   readonly active: boolean;
 }) {
   return (
     <View style={StyleSheet.flatten([styles.chip, active ? styles.chipActive : null])}>
-      <Text style={styles.chipLabel}>{label}</Text>
-      <Text style={styles.chipValue}>{value}</Text>
+      <Text style={[styles.chipValue, value === null ? styles.chipValueEmpty : null]}>
+        {value ?? placeholder}
+      </Text>
+      <Text style={[styles.chipCaption, active ? styles.chipCaptionActive : null]}>
+        {caption.toUpperCase()}
+      </Text>
     </View>
   );
 }
 
 
-function MonthStep({ label, onPress }: { readonly label: string; readonly onPress: () => void }) {
-  const press = usePressFeedback();
-
+function MonthStep({
+  direction,
+  label,
+  onPress,
+}: {
+  readonly direction: 'left' | 'right';
+  readonly label: string;
+  readonly onPress: () => void;
+}) {
   return (
-    <AnimatedPressable
-      style={StyleSheet.flatten([styles.monthStep, press.style])}
+    <Pressable
+      style={({ pressed }) =>
+        StyleSheet.flatten([styles.monthStep, pressed ? styles.monthStepPressed : null])
+      }
       accessibilityRole="button"
-      accessibilityLabel={label === '‹' ? 'Previous month' : 'Next month'}
+      accessibilityLabel={label}
       onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
     >
-      <Text style={styles.monthStepInk}>{label}</Text>
-    </AnimatedPressable>
+      <MemoryIcon
+        name={direction === 'left' ? 'chevronLeft' : 'chevronRightSmall'}
+        size={memoryMetrics.calendarChevron}
+        color={memoryColors.title}
+      />
+    </Pressable>
   );
 }
 
@@ -243,108 +275,117 @@ export { emptyRange };
 const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
-    gap: memoryMetrics.tileGap,
-    marginBottom: memoryMetrics.dayGap,
+    gap: 8,
+    marginBottom: 14,
   },
   chip: {
     flex: 1,
+    height: memoryMetrics.chipHeight,
     borderWidth: 1,
     borderColor: memoryColors.hairline,
-    borderRadius: memoryMetrics.fieldRadius,
-    paddingVertical: 8,
+    borderRadius: memoryMetrics.chipRadius,
     paddingHorizontal: 12,
+    justifyContent: 'center',
   },
   chipActive: {
+    borderWidth: memoryMetrics.chipActiveBorder,
     borderColor: memoryColors.accent,
   },
-  chipLabel: {
-    ...memoryTypography.tiny,
-    color: memoryColors.muted,
-  },
   chipValue: {
-    ...memoryTypography.cell,
+    ...memoryTypography.input,
     color: memoryColors.title,
+  },
+  chipValueEmpty: {
+    color: memoryColors.faint,
+  },
+  chipCaption: {
+    ...memoryTypography.chipCaption,
+    color: memoryColors.faint,
+  },
+  chipCaptionActive: {
+    color: memoryColors.accent,
   },
   monthRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   monthName: {
     ...memoryTypography.monthName,
     color: memoryColors.title,
   },
   monthStep: {
-    width: memoryMetrics.chevron + 12,
-    height: memoryMetrics.chevron + 12,
+    width: memoryMetrics.headerButton,
+    height: memoryMetrics.headerButton,
+    borderRadius: memoryMetrics.headerButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  monthStepInk: {
-    ...memoryTypography.chevron,
-    color: memoryColors.body,
+  monthStepPressed: {
+    transform: [{ scale: memoryMotion.roundPressScale }],
   },
   weekdays: {
     flexDirection: 'row',
+    marginBottom: 4,
   },
   weekday: {
-    flexBasis: '14.2857%',
+    ...memoryTypography.weekday,
+    flexBasis: `${100 / 7}%`,
     textAlign: 'center',
-    ...memoryTypography.tiny,
     color: memoryColors.faint,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    rowGap: memoryMetrics.calendarRowGap,
   },
   cell: {
-    flexBasis: '14.2857%',
+    flexBasis: `${100 / 7}%`,
     height: memoryMetrics.calendarCell,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cellWithin: {
-    backgroundColor: memoryColors.accentWash,
+  band: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: memoryColors.rangeBand,
   },
-  cellEdge: {
-    backgroundColor: memoryColors.accent,
+  bandRight: {
+    left: '50%',
+  },
+  bandLeft: {
+    right: '50%',
+  },
+  dot: {
+    width: memoryMetrics.calendarCell,
+    height: memoryMetrics.calendarCell,
     borderRadius: memoryMetrics.calendarCell / 2,
-  },
-  cellInk: {
-    ...memoryTypography.cell,
-    color: memoryColors.title,
-  },
-  cellInkDisabled: {
-    color: memoryColors.disabledInk,
-  },
-  cellInkEdge: {
-    ...memoryTypography.cellSelected,
-    color: memoryColors.card,
-  },
-  summary: {
-    marginTop: 8,
-    ...memoryTypography.meta,
-    color: memoryColors.muted,
-    textAlign: 'center',
-    minHeight: 18,
-  },
-  done: {
-    marginTop: memoryMetrics.dayGap,
-    height: memoryMetrics.ctaHeight,
-    borderRadius: memoryMetrics.ctaRadius,
-    backgroundColor: memoryColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  doneDisabled: {
-    backgroundColor: memoryColors.disabledWell,
+  dotEdge: {
+    backgroundColor: memoryColors.accent,
   },
-  doneInk: {
-    ...memoryTypography.cta,
-    color: memoryColors.card,
+  cellInk: {
+    ...memoryTypography.calendarCell,
+    color: memoryColors.title,
   },
-  doneInkDisabled: {
-    color: memoryColors.disabledInk,
+  cellInkDisabled: {
+    color: memoryColors.disabledDate,
+  },
+  cellInkEdge: {
+    ...memoryTypography.calendarEdge,
+    color: memoryColors.white,
+  },
+  summary: {
+    ...memoryTypography.meta13,
+    color: memoryColors.muted,
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 12,
   },
 });

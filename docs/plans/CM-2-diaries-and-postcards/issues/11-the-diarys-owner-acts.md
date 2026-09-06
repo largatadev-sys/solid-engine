@@ -18,3 +18,4 @@
 ## Comments
 
 - *2026-09-06:* the screens are built and typecheck clean; the Playwright walk waits on the routes (see ticket 08's comment), which nothing mounts yet.
+- *2026-09-06, fidelity pass:* frames D, E, F, K2 and L1 rebuilt to the handoff README — E's "Day N" title with the "after Day N, date" subtitle and the calendar-icon date field, F's Change pill on the cover and the dates helper, K2 as the M1 sheet with the context label and 20px row icons, L1 in the 300pt confirm anatomy through `MemoryConfirmStation`. C3's optimistic exit is now real on the Diary tab: `useMemoryExits` holds the exiting, hidden and re-entering ids, `sectionsShown` derives the rows and the decremented Diaries count from them, and `MotionRow` plays M4's 220ms exit and 200ms re-entry; a failed delete reverts the row and shows the dark toast. Deleting from the page still pops to the profile first. **L3 (delete a day) was not touched by this pass.**

@@ -1,3 +1,5 @@
+import { memoryFontNames } from './memoryFonts';
+
 const palette = {
   terracotta600: '#D96C4A',
   terracotta200: '#EFC9BA',
@@ -60,7 +62,7 @@ const fonts = {
   wordmark: 'Outfit_700Bold',
 } as const;
 
-export const fontAssetNames = Object.values(fonts);
+export const fontAssetNames = [...new Set([...Object.values(fonts), ...memoryFontNames])];
 
 
 export const typography = {

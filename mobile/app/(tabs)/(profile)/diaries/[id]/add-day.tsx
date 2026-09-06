@@ -17,13 +17,15 @@ export default function AddDayRoute() {
     return <ActivityIndicator color={colors.accent} />;
   }
 
-  const taken = diary.data.days.map((day) => day.ordinal);
-  const nextOrdinal = taken.length === 0 ? 1 : Math.max(...taken) + 1;
+  const last = diary.data.days.at(-1) ?? null;
+  const nextOrdinal = last === null ? 1 : last.ordinal + 1;
 
   return (
     <AddDayScreen
       diaryId={diary.data.id}
+      diaryTitle={diary.data.title}
       nextOrdinal={nextOrdinal}
+      lastDay={last === null ? null : { ordinal: last.ordinal, date: last.date }}
       defaultDate={diary.data.endDate}
       onAdded={() => {
         refresh(state.kind === 'ok' ? state.me.handle : null);

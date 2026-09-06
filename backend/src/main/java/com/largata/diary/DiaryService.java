@@ -9,6 +9,8 @@ import com.largata.diary.DiaryExceptions.DiaryDayAlreadyExistsException;
 import com.largata.diary.DiaryExceptions.DiaryDayNeedsADateException;
 import com.largata.diary.DiaryExceptions.DiaryDayNotFoundException;
 import com.largata.diary.DiaryExceptions.DiaryNotFoundException;
+import com.largata.identity.TravelerService;
+import com.largata.identity.TravelerSummary;
 import com.largata.media.Photo;
 import java.time.Clock;
 import java.time.Instant;
@@ -38,6 +40,7 @@ public class DiaryService {
     private final DiaryCoverService covers;
     private final TripDiaryInserter tripDiaries;
     private final DiaryDayInserter dayInserter;
+    private final TravelerService travelers;
     private final Analytics analytics;
     private final Clock clock;
 
@@ -48,6 +51,7 @@ public class DiaryService {
             DiaryCoverService covers,
             TripDiaryInserter tripDiaries,
             DiaryDayInserter dayInserter,
+            TravelerService travelers,
             Analytics analytics,
             Clock clock) {
         this.diaries = diaries;
@@ -56,8 +60,14 @@ public class DiaryService {
         this.covers = covers;
         this.tripDiaries = tripDiaries;
         this.dayInserter = dayInserter;
+        this.travelers = travelers;
         this.analytics = analytics;
         this.clock = clock;
+    }
+
+
+    private TravelerSummary authorOf(Diary diary) {
+        return travelers.summaryById(diary.authorId()).orElse(null);
     }
 
 
@@ -70,7 +80,8 @@ public class DiaryService {
                                 authorId, title, destination, startDate, endDate, Instant.now(clock)));
         log.info("Diary created: id={} authorId={}", saved.id(), authorId);
         emit(saved, "diary_created");
-        return new DiaryView(saved, 0, List.of(), saved.candidateDates(), null, null);
+        return new DiaryView(
+                saved, 0, List.of(), saved.candidateDates(), null, null, authorOf(saved));
     }
 
 
@@ -136,7 +147,8 @@ public class DiaryService {
                                                     daysOfIt.stream()
                                                             .flatMap(day -> day.postcards().stream())
                                                             .toList())
-                                            : null);
+                                            : null,
+                                    authorOf(diary));
                         })
                 .toList();
     }
@@ -174,7 +186,8 @@ public class DiaryService {
                         .toList(),
                 List.of(),
                 cover,
-                cover == null ? firstPhotoAmong(cards) : null);
+                cover == null ? firstPhotoAmong(cards) : null,
+                authorOf(diary));
     }
 
 

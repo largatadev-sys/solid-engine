@@ -760,6 +760,7 @@ export type SendChatMessageRequest = {
 export type DiaryResponse = {
   id: string;
   authorId: string;
+  author: TravelerCardResponse | null;
   tripId: string | null;
   title: string;
   destination: string | null;
@@ -845,6 +846,7 @@ export type CreatePostcardRequest = {
 
 export type PostcardResponse = {
   id: string;
+  author: TravelerCardResponse | null;
   diaryId: string | null;
   diaryDayId: string | null;
   dayOrdinal: number | null;

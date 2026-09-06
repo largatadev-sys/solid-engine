@@ -1,33 +1,35 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
-import { askForConfirmation } from '../components/ConfirmStation';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useExitGuard } from '../navigation/useExitGuard';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhoto } from '../media/pickPhoto';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { memoryRepository } from '../repositories/memoryRepository';
-import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
+import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
+import { DateChips } from './DateChips';
 import { DateRangeSheet } from './DateRangeSheet';
 import { isComplete, type DateRange } from './dateRange';
 import type { DiaryResponse } from '../types/api';
+import { askMemoryConfirmation } from './MemoryConfirm';
+import { MemoryCta } from './MemoryCta';
+import { MemoryField } from './MemoryField';
+import { MemoryHeader } from './MemoryHeader';
+import { MemoryIcon } from './MemoryIcon';
 import {
-  CANCEL_ACTION,
   DISCARD_ACTION,
+  DISCARD_CHANGES_BODY,
   DISCARD_CHANGES_TITLE,
+  DIARY_COVER_CHANGE,
   DIARY_COVER_EMPTY,
   DIARY_COVER_LABEL,
-  DIARY_CREATE_FAILED,
   DIARY_DESTINATION_LABEL,
   DIARY_DESTINATION_PLACEHOLDER,
-  DIARY_END_LABEL,
-  DIARY_START_LABEL,
   DIARY_TITLE_LABEL,
-  DIARY_WHEN_LABEL,
   EDIT_DIARY_DATES_HINT,
   EDIT_DIARY_TITLE,
+  KEEP_EDITING_ACTION,
   SAVE_CTA,
-  shortDate,
+  SAVE_FAILED,
 } from './memoryCopy';
 
 
@@ -40,10 +42,7 @@ interface EditDiaryScreenProps {
 export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
   const [title, setTitle] = useState(diary.title);
   const [destination, setDestination] = useState(diary.destination ?? '');
-  const [range, setRange] = useState<DateRange>({
-    start: diary.startDate,
-    end: diary.endDate,
-  });
+  const [range, setRange] = useState<DateRange>({ start: diary.startDate, end: diary.endDate });
   const [cover, setCover] = useState<PickedPhoto | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -59,19 +58,19 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
       cover !== null);
 
   useExitGuard(dirty, (proceed) => {
-    askForConfirmation(
+    askMemoryConfirmation(
       {
         title: DISCARD_CHANGES_TITLE,
-        body: '',
+        body: DISCARD_CHANGES_BODY,
         confirmLabel: DISCARD_ACTION,
-        cancelLabel: CANCEL_ACTION,
-        tone: 'destructive',
+        cancelLabel: KEEP_EDITING_ACTION,
       },
       proceed,
     );
   });
 
   const ready = title.trim() !== '' && isComplete(range);
+  const shownCover = cover !== null || diary.cover !== null;
 
   async function save(): Promise<void> {
     if (!ready || range.start === null || range.end === null) return;
@@ -97,84 +96,72 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <Text style={styles.heading}>{EDIT_DIARY_TITLE}</Text>
+      <MemoryHeader pill="DIARY" title={EDIT_DIARY_TITLE} />
 
-        <Text style={styles.label}>{DIARY_TITLE_LABEL}</Text>
-        <TextInput
-          style={styles.input}
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <MemoryField
+          label={DIARY_TITLE_LABEL}
+          required
           value={title}
           onChangeText={setTitle}
           editable={!saving}
-          accessibilityLabel={DIARY_TITLE_LABEL}
         />
 
-        <Text style={styles.label}>{DIARY_DESTINATION_LABEL}</Text>
-        <TextInput
-          style={styles.input}
+        <MemoryField
+          label={DIARY_DESTINATION_LABEL}
           value={destination}
           onChangeText={setDestination}
           editable={!saving}
           placeholder={DIARY_DESTINATION_PLACEHOLDER}
-          placeholderTextColor={memoryColors.faint}
-          accessibilityLabel={DIARY_DESTINATION_LABEL}
         />
 
-        <Text style={styles.label}>{DIARY_COVER_LABEL}</Text>
-        <Pressable
-          style={styles.cover}
-          disabled={saving}
-          accessibilityRole="button"
-          accessibilityLabel={DIARY_COVER_LABEL}
-          onPress={() => {
-            void pickPhoto().then((picked) => {
-              if (picked !== null) setCover(picked);
-            });
-          }}
-        >
-          {cover === null && diary.cover === null ? (
-            <Text style={styles.coverEmpty}>{DIARY_COVER_EMPTY}</Text>
-          ) : (
-            <MediaThumb
-              url={cover === null ? diary.cover?.url ?? null : null}
-              localPreview={cover?.uri ?? null}
-              style={styles.coverPhoto}
-              accessibilityLabel={DIARY_COVER_LABEL}
-            />
-          )}
-        </Pressable>
-
-        <Text style={styles.label}>{DIARY_WHEN_LABEL}</Text>
-        <View style={styles.dates}>
-          <DateChip
-            label={DIARY_START_LABEL}
-            value={range.start === null ? DIARY_START_LABEL : shortDate(range.start)}
-            onPress={() => setCalendarOpen(true)}
-          />
-          <DateChip
-            label={DIARY_END_LABEL}
-            value={range.end === null ? DIARY_END_LABEL : shortDate(range.end)}
-            onPress={() => setCalendarOpen(true)}
-          />
+        <View style={styles.field}>
+          <Text style={styles.label}>{DIARY_COVER_LABEL}</Text>
+          <Pressable
+            style={({ pressed }) =>
+              StyleSheet.flatten([
+                styles.cover,
+                shownCover ? styles.coverFilled : null,
+                pressed ? styles.pressed : null,
+              ])
+            }
+            disabled={saving}
+            accessibilityRole="button"
+            accessibilityLabel={shownCover ? DIARY_COVER_CHANGE : DIARY_COVER_EMPTY}
+            onPress={() => {
+              void pickPhoto().then((picked) => {
+                if (picked !== null) setCover(picked);
+              });
+            }}
+          >
+            {shownCover ? (
+              <>
+                <MediaThumb
+                  url={cover === null ? (diary.cover?.url ?? null) : null}
+                  localPreview={cover?.uri ?? null}
+                  style={styles.coverPhoto}
+                  accessibilityLabel={DIARY_COVER_LABEL}
+                />
+                <View style={styles.changePill}>
+                  <Text style={styles.changeInk}>{DIARY_COVER_CHANGE}</Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <MemoryIcon name="image" size={22} color={memoryColors.muted} />
+                <Text style={styles.coverEmpty}>{DIARY_COVER_EMPTY}</Text>
+              </>
+            )}
+          </Pressable>
         </View>
-        <Text style={styles.hint}>{EDIT_DIARY_DATES_HINT}</Text>
 
-        {failed && <Text style={styles.failed}>{DIARY_CREATE_FAILED}</Text>}
+        <DateChips range={range} onPress={() => setCalendarOpen(true)} />
+        <Text style={styles.hint}>{EDIT_DIARY_DATES_HINT}</Text>
       </ScrollView>
 
       <View style={styles.rail}>
-        <AnimatedPressable
-          style={StyleSheet.flatten([styles.cta, ready && !saving ? null : styles.ctaDisabled])}
-          disabled={!ready || saving}
-          accessibilityRole="button"
-          accessibilityLabel={SAVE_CTA}
-          accessibilityState={{ disabled: !ready || saving, busy: saving }}
-          onPress={() => void save()}
-        >
-          <Text style={[styles.ctaInk, ready && !saving ? null : styles.ctaInkDisabled]}>
-            {SAVE_CTA}
-          </Text>
-        </AnimatedPressable>
+        <MemoryCta label={SAVE_CTA} disabled={!ready} busy={saving} onPress={() => void save()} />
+        {failed && <Text style={styles.failed}>{SAVE_FAILED}</Text>}
       </View>
 
       <DateRangeSheet
@@ -191,129 +178,77 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
 }
 
 
-function DateChip({
-  label,
-  value,
-  onPress,
-}: {
-  readonly label: string;
-  readonly value: string;
-  readonly onPress: () => void;
-}) {
-  const press = usePressFeedback();
-
-  return (
-    <AnimatedPressable
-      style={StyleSheet.flatten([styles.dateChip, press.style])}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-    >
-      <Text style={styles.dateChipInk}>{value}</Text>
-    </AnimatedPressable>
-  );
-}
-
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: memoryColors.screen,
   },
   body: {
-    padding: memoryMetrics.screenPadding,
+    paddingHorizontal: memoryMetrics.screenPadding,
+    paddingTop: 14,
+    paddingBottom: 24,
+    gap: 14,
+  },
+  field: {
     gap: 6,
   },
-  heading: {
-    ...memoryTypography.heading,
-    color: memoryColors.title,
-    marginBottom: 6,
-  },
   label: {
-    ...memoryTypography.label,
-    color: memoryColors.body,
-    marginTop: 6,
-  },
-  input: {
-    ...memoryTypography.input,
-    height: memoryMetrics.fieldHeight,
-    borderWidth: 1,
-    borderColor: memoryColors.hairline,
-    borderRadius: memoryMetrics.fieldRadius,
-    paddingHorizontal: 12,
-    backgroundColor: memoryColors.card,
-    color: memoryColors.title,
+    ...memoryTypography.fieldLabel,
+    color: memoryColors.label,
   },
   cover: {
     height: memoryMetrics.coverHeight,
-    borderWidth: 1,
+    borderWidth: memoryMetrics.dashedWidth,
     borderStyle: 'dashed',
-    borderColor: memoryColors.hairline,
-    borderRadius: memoryMetrics.fieldRadius,
-    backgroundColor: memoryColors.tileWell,
+    borderColor: memoryColors.dashed,
+    borderRadius: memoryMetrics.coverRadius,
+    backgroundColor: memoryColors.paper,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
     overflow: 'hidden',
   },
+  coverFilled: {
+    borderWidth: 0,
+  },
   coverEmpty: {
-    ...memoryTypography.body,
+    ...memoryTypography.input,
     color: memoryColors.muted,
   },
   coverPhoto: {
     width: '100%',
     height: '100%',
   },
-  dates: {
-    flexDirection: 'row',
-    gap: memoryMetrics.tileGap,
+  changePill: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+    backgroundColor: memoryColors.changePill,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
-  dateChip: {
-    flex: 1,
-    height: memoryMetrics.fieldHeight,
-    borderWidth: 1,
-    borderColor: memoryColors.hairline,
-    borderRadius: memoryMetrics.fieldRadius,
-    backgroundColor: memoryColors.card,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-  },
-  dateChipInk: {
-    ...memoryTypography.input,
-    color: memoryColors.title,
+  changeInk: {
+    ...memoryTypography.cardMetaStrong,
+    color: memoryColors.white,
   },
   hint: {
-    ...memoryTypography.small,
+    ...memoryTypography.meta13,
     color: memoryColors.muted,
-    marginTop: 4,
-  },
-  failed: {
-    ...memoryTypography.meta,
-    color: memoryColors.danger,
-    marginTop: 8,
+    marginTop: -6,
   },
   rail: {
-    padding: memoryMetrics.screenPadding,
-    borderTopWidth: 1,
-    borderTopColor: memoryColors.hairline,
-    backgroundColor: memoryColors.card,
+    paddingTop: 8,
+    paddingBottom: 16,
+    gap: 8,
+    backgroundColor: memoryColors.screen,
   },
-  cta: {
-    height: memoryMetrics.ctaHeight,
-    borderRadius: memoryMetrics.ctaRadius,
-    backgroundColor: memoryColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+  failed: {
+    ...memoryTypography.meta13,
+    color: memoryColors.danger,
+    paddingHorizontal: memoryMetrics.screenPadding,
   },
-  ctaDisabled: {
-    backgroundColor: memoryColors.disabledWell,
-  },
-  ctaInk: {
-    ...memoryTypography.cta,
-    color: memoryColors.card,
-  },
-  ctaInkDisabled: {
-    color: memoryColors.disabledInk,
+  pressed: {
+    opacity: memoryMotion.pressOpacity,
   },
 });

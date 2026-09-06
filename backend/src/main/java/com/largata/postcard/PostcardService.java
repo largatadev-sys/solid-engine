@@ -8,6 +8,7 @@ import com.largata.common.tx.AfterCommit;
 import com.largata.diary.Diary;
 import com.largata.diary.DiaryDay;
 import com.largata.diary.DiaryService;
+import com.largata.identity.TravelerService;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
@@ -26,7 +27,6 @@ import com.largata.trip.TripFacts;
 import com.largata.trip.TripService;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -47,6 +47,7 @@ public class PostcardService {
     private final DiaryService diaries;
     private final TripService trips;
     private final PhotoService photos;
+    private final TravelerService travelers;
     private final Analytics analytics;
     private final Clock clock;
 
@@ -55,14 +56,22 @@ public class PostcardService {
             DiaryService diaries,
             TripService trips,
             PhotoService photos,
+            TravelerService travelers,
             Analytics analytics,
             Clock clock) {
         this.postcards = postcards;
         this.diaries = diaries;
         this.trips = trips;
         this.photos = photos;
+        this.travelers = travelers;
         this.analytics = analytics;
         this.clock = clock;
+    }
+
+
+    private PostcardView view(Postcard postcard, List<Photo> stored, DiaryDay day) {
+        return PostcardView.of(
+                postcard, stored, day, travelers.summaryById(postcard.authorId()).orElse(null));
     }
 
 
@@ -85,7 +94,7 @@ public class PostcardService {
                 authorId,
                 stored.size());
         emit(postcard, "postcard_created");
-        return PostcardView.of(postcard, stored);
+        return view(postcard, stored, null);
     }
 
 
@@ -119,7 +128,7 @@ public class PostcardService {
                 day.id(),
                 stored.size());
         emit(postcard, "postcard_created");
-        return PostcardView.of(postcard, stored, day);
+        return view(postcard, stored, day);
     }
 
 
@@ -157,7 +166,7 @@ public class PostcardService {
                 tripDayId,
                 stored.size());
         emit(postcard, "postcard_created");
-        return PostcardView.of(postcard, stored, day);
+        return view(postcard, stored, day);
     }
 
 
@@ -172,7 +181,7 @@ public class PostcardService {
         Postcard saved = postcards.saveAndFlush(postcard);
         log.info("Postcard filed: id={} dayId={}", saved.id(), day.id());
         emit(saved, "postcard_filed");
-        return PostcardView.of(saved, photos.allOf(PhotoSubject.POSTCARD, saved.id()), day);
+        return view(saved, photos.allOf(PhotoSubject.POSTCARD, saved.id()), day);
     }
 
 
@@ -202,7 +211,7 @@ public class PostcardService {
                 activityId,
                 stored.size());
         emit(postcard, "postcard_created");
-        return PostcardView.of(postcard, stored);
+        return view(postcard, stored, null);
     }
 
 
@@ -270,7 +279,7 @@ public class PostcardService {
 
 
     private PostcardView viewOf(Postcard postcard) {
-        return PostcardView.of(
+        return view(
                 postcard,
                 photos.allOf(PhotoSubject.POSTCARD, postcard.id()),
                 postcard.diaryDayId() == null ? null : diaries.dayOf(postcard.diaryDayId()));

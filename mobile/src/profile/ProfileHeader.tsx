@@ -1,16 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Icon } from '../components/Icon';
+import { POST_SHEET_TITLE, PROFILE_TITLE } from '../diary/memoryCopy';
+import { MemoryIcon } from '../diary/MemoryIcon';
 import { MediaThumb } from '../media/MediaThumb';
 import { initialsFor } from '../onboarding/initials';
 import { spacing } from '../theme';
-import {
-  profileColors,
-  profileMetrics,
-  profileTypography,
-  workspaceColors,
-  workspaceRadii,
-} from '../theme/workspaceTokens';
-import { POST_SHEET_TITLE } from '../diary/memoryCopy';
+import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
+import { profileTypography, workspaceRadii } from '../theme/workspaceTokens';
 import { ACCOUNT_LABEL, EDIT_PROFILE_LABEL } from './profileCopy';
 import type { ProfileCard } from './profileCard';
 import { profileMetaLine } from './profileMetaLine';
@@ -37,6 +32,18 @@ export function ProfileHeader({
 
   return (
     <View style={styles.header}>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{PROFILE_TITLE}</Text>
+        <View style={styles.titleActions}>
+          <RoundButton label={POST_SHEET_TITLE} onPress={onPost}>
+            <MemoryIcon name="plusCircle" size={memoryMetrics.navIcon} color={memoryColors.title} />
+          </RoundButton>
+          <RoundButton label={ACCOUNT_LABEL} onPress={onOpenAccount}>
+            <MemoryIcon name="menu" size={memoryMetrics.navIcon} color={memoryColors.title} />
+          </RoundButton>
+        </View>
+      </View>
+
       <View style={styles.identity}>
         <MediaThumb
           url={card.avatarUrl}
@@ -51,30 +58,12 @@ export function ProfileHeader({
             {card.displayName}
           </Text>
           {meta !== null && (
-            <Text style={styles.meta} numberOfLines={1}>
+            <Text style={styles.handle} numberOfLines={1}>
               {meta}
             </Text>
           )}
           {card.bio !== null && <Text style={styles.bio}>{card.bio}</Text>}
         </View>
-
-        <Pressable
-          style={styles.cog}
-          onPress={onPost}
-          accessibilityRole="button"
-          accessibilityLabel={POST_SHEET_TITLE}
-        >
-          <Icon name="plusCircle" size={profileMetrics.cogGlyph} color={workspaceColors.sheetBody} />
-        </Pressable>
-
-        <Pressable
-          style={styles.cog}
-          onPress={onOpenAccount}
-          accessibilityRole="button"
-          accessibilityLabel={ACCOUNT_LABEL}
-        >
-          <Icon name="settings" size={profileMetrics.cogGlyph} color={workspaceColors.sheetBody} />
-        </Pressable>
       </View>
 
       <ProfileStatsRow stats={stats} />
@@ -92,11 +81,60 @@ export function ProfileHeader({
 }
 
 
+function RoundButton({
+  label,
+  onPress,
+  children,
+}: {
+  readonly label: string;
+  readonly onPress: () => void;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) =>
+        StyleSheet.flatten([styles.roundButton, pressed && styles.roundButtonPressed])
+      }
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.md2,
-    paddingTop: spacing.sm3,
+    paddingTop: spacing.sm,
     gap: spacing.md,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  title: {
+    ...memoryTypography.profileTitle,
+    color: memoryColors.title,
+  },
+  titleActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  roundButton: {
+    width: memoryMetrics.headerButton,
+    height: memoryMetrics.headerButton,
+    borderRadius: memoryMetrics.headerButton / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roundButtonPressed: {
+    backgroundColor: memoryColors.hover,
+    transform: [{ scale: memoryMotion.roundPressScale }],
   },
   identity: {
     flexDirection: 'row',
@@ -104,56 +142,45 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   avatar: {
-    width: profileMetrics.avatarSize,
-    height: profileMetrics.avatarSize,
-    borderRadius: profileMetrics.avatarSize / 2,
+    width: memoryMetrics.avatar,
+    height: memoryMetrics.avatar,
+    borderRadius: memoryMetrics.avatar / 2,
     flexGrow: 0,
     flexShrink: 0,
   },
   avatarWell: {
-    backgroundColor: profileColors.avatarWell,
+    backgroundColor: memoryColors.accentWash,
   },
   initials: {
     ...profileTypography.initials,
-    color: profileColors.avatarInk,
+    color: memoryColors.accentDeep,
   },
   identityText: {
     flex: 1,
     gap: spacing.hair,
   },
   displayName: {
-    ...profileTypography.displayName,
-    color: workspaceColors.title,
+    ...memoryTypography.displayName,
+    color: memoryColors.title,
   },
-  meta: {
-    ...profileTypography.meta,
-    color: profileColors.meta,
+  handle: {
+    ...memoryTypography.handle,
+    color: memoryColors.muted,
   },
   bio: {
-    ...profileTypography.bio,
-    color: profileColors.bio,
-  },
-  cog: {
-    width: profileMetrics.cogSize,
-    height: profileMetrics.cogSize,
-    borderRadius: profileMetrics.cogSize / 2,
-    borderWidth: 1,
-    borderColor: workspaceColors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexGrow: 0,
-    flexShrink: 0,
+    ...memoryTypography.bio,
+    color: memoryColors.bio,
   },
   editPill: {
-    height: profileMetrics.editPillHeight,
+    height: memoryMetrics.addDayHeight,
     borderWidth: 1,
-    borderColor: workspaceColors.hairline,
+    borderColor: memoryColors.hairline,
     borderRadius: workspaceRadii.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   editLabel: {
-    ...profileTypography.editPill,
-    color: workspaceColors.title,
+    ...memoryTypography.outlinedButton,
+    color: memoryColors.title,
   },
 });

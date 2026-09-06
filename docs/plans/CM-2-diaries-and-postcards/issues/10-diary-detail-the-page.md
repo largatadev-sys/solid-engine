@@ -16,3 +16,4 @@
 ## Comments
 
 - *2026-09-06:* the screens are built and typecheck clean; the Playwright walk waits on the routes (see ticket 08's comment), which nothing mounts yet.
+- *2026-09-06, fidelity pass:* frames B and C rebuilt to the handoff README — the 260pt cover under a real gradient with the round overlay buttons, the white Outfit title and Geist meta over it, the author row with the 28pt avatar, Outfit 16 day headers with Geist 13 meta, the owner's dashed empty box against the visitor's plain line, and the outlined "Add a day". **Backend, additive:** `DiaryResponse` and `PostcardResponse` now carry an `author` traveler card beside `authorId`, resolved in the two services through the identity module's `TravelerService` — without it no visitor could draw the author row the frames put on B, C, G1 and G2, since the app has no traveler-by-id fetch.

@@ -16,7 +16,7 @@ import {
   EDIT_DIARY_ACTION,
   NO_POSTCARDS_ON_THIS_DAY,
   POSTCARD_CAPTION_LABEL,
-  POSTCARD_POST_CTA,
+  POST_CTA,
   SAVE_CTA,
   dayOrdinalLabel,
   deleteDiaryTitle,
@@ -106,7 +106,7 @@ test('the owner posts a postcard onto a day and it reads back there', async ({ p
 
   const caption = `On the first day ${Date.now().toString(36)}`;
   await labelled(page, DAY_CAPTION_LABEL).fill(caption);
-  await labelled(page, POSTCARD_POST_CTA).click();
+  await labelled(page, POST_CTA).click();
 
   await expect
     .poll(async () => {

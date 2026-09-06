@@ -1,31 +1,28 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhoto } from '../media/pickPhoto';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { memoryRepository } from '../repositories/memoryRepository';
-import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
+import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
+import { DateChips } from './DateChips';
 import { DateRangeSheet } from './DateRangeSheet';
 import { emptyRange, isComplete, type DateRange } from './dateRange';
+import { MemoryCta } from './MemoryCta';
+import { MemoryField } from './MemoryField';
+import { MemoryHeader } from './MemoryHeader';
+import { MemoryIcon } from './MemoryIcon';
 import {
   DIARY_COVER_EMPTY,
   DIARY_COVER_LABEL,
   DIARY_CREATE_FAILED,
   DIARY_DESTINATION_LABEL,
   DIARY_DESTINATION_PLACEHOLDER,
-  DIARY_END_LABEL,
-  DIARY_END_PLACEHOLDER,
   DIARY_NEXT_CTA,
-  DIARY_START_LABEL,
   DIARY_TITLE_LABEL,
-  DIARY_TITLE_PLACEHOLDER,
-  DIARY_WHEN_LABEL,
-  NEW_DIARY_BADGE,
   NEW_DIARY_SUBTITLE,
   NEW_DIARY_TITLE,
-  shortDate,
 } from './memoryCopy';
 
 
@@ -64,38 +61,31 @@ export function NewDiaryScreen() {
 
   return (
     <View style={styles.screen}>
+      <MemoryHeader pill="DIARY" title={NEW_DIARY_TITLE} subtitle={NEW_DIARY_SUBTITLE} />
+
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <Text style={styles.badge}>{NEW_DIARY_BADGE}</Text>
-        <Text style={styles.heading}>{NEW_DIARY_TITLE}</Text>
-        <Text style={styles.subtitle}>{NEW_DIARY_SUBTITLE}</Text>
+        <MemoryField
+          label={DIARY_TITLE_LABEL}
+          required
+          value={title}
+          onChangeText={setTitle}
+          editable={!creating}
+        />
 
-        <Field label={DIARY_TITLE_LABEL} required>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            editable={!creating}
-            placeholder={DIARY_TITLE_PLACEHOLDER}
-            placeholderTextColor={memoryColors.faint}
-            accessibilityLabel={DIARY_TITLE_LABEL}
-          />
-        </Field>
+        <MemoryField
+          label={DIARY_DESTINATION_LABEL}
+          value={destination}
+          onChangeText={setDestination}
+          editable={!creating}
+          placeholder={DIARY_DESTINATION_PLACEHOLDER}
+        />
 
-        <Field label={DIARY_DESTINATION_LABEL}>
-          <TextInput
-            style={styles.input}
-            value={destination}
-            onChangeText={setDestination}
-            editable={!creating}
-            placeholder={DIARY_DESTINATION_PLACEHOLDER}
-            placeholderTextColor={memoryColors.faint}
-            accessibilityLabel={DIARY_DESTINATION_LABEL}
-          />
-        </Field>
-
-        <Field label={DIARY_COVER_LABEL}>
+        <View style={styles.field}>
+          <Text style={styles.label}>{DIARY_COVER_LABEL}</Text>
           <Pressable
-            style={styles.cover}
+            style={({ pressed }) =>
+              StyleSheet.flatten([styles.cover, pressed ? styles.pressed : null])
+            }
             disabled={creating}
             accessibilityRole="button"
             accessibilityLabel={DIARY_COVER_EMPTY}
@@ -106,7 +96,10 @@ export function NewDiaryScreen() {
             }}
           >
             {cover === null ? (
-              <Text style={styles.coverEmpty}>{DIARY_COVER_EMPTY}</Text>
+              <>
+                <MemoryIcon name="image" size={22} color={memoryColors.muted} />
+                <Text style={styles.coverEmpty}>{DIARY_COVER_EMPTY}</Text>
+              </>
             ) : (
               <MediaThumb
                 url={null}
@@ -116,41 +109,19 @@ export function NewDiaryScreen() {
               />
             )}
           </Pressable>
-        </Field>
+        </View>
 
-        <Field label={DIARY_WHEN_LABEL} required>
-          <View style={styles.dates}>
-            <DateChip
-              label={DIARY_START_LABEL}
-              value={range.start === null ? DIARY_START_LABEL : shortDate(range.start)}
-              filled={range.start !== null}
-              onPress={() => setCalendarOpen(true)}
-            />
-            <DateChip
-              label={DIARY_END_LABEL}
-              value={range.end === null ? DIARY_END_PLACEHOLDER : shortDate(range.end)}
-              filled={range.end !== null}
-              onPress={() => setCalendarOpen(true)}
-            />
-          </View>
-        </Field>
-
-        {failed && <Text style={styles.failed}>{DIARY_CREATE_FAILED}</Text>}
+        <DateChips range={range} onPress={() => setCalendarOpen(true)} />
       </ScrollView>
 
       <View style={styles.rail}>
-        <AnimatedPressable
-          style={StyleSheet.flatten([styles.cta, ready && !creating ? null : styles.ctaDisabled])}
-          disabled={!ready || creating}
-          accessibilityRole="button"
-          accessibilityLabel={DIARY_NEXT_CTA}
-          accessibilityState={{ disabled: !ready || creating, busy: creating }}
+        <MemoryCta
+          label={DIARY_NEXT_CTA}
+          disabled={!ready}
+          busy={creating}
           onPress={() => void create()}
-        >
-          <Text style={[styles.ctaInk, ready && !creating ? null : styles.ctaInkDisabled]}>
-            {DIARY_NEXT_CTA}
-          </Text>
-        </AnimatedPressable>
+        />
+        {failed && <Text style={styles.failed}>{DIARY_CREATE_FAILED}</Text>}
       </View>
 
       <DateRangeSheet
@@ -167,162 +138,56 @@ export function NewDiaryScreen() {
 }
 
 
-function Field({
-  label,
-  required = false,
-  children,
-}: {
-  readonly label: string;
-  readonly required?: boolean;
-  readonly children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.label}>
-        {label}
-        {required ? <Text style={styles.required}> *</Text> : null}
-      </Text>
-      {children}
-    </View>
-  );
-}
-
-
-function DateChip({
-  label,
-  value,
-  filled,
-  onPress,
-}: {
-  readonly label: string;
-  readonly value: string;
-  readonly filled: boolean;
-  readonly onPress: () => void;
-}) {
-  const press = usePressFeedback();
-
-  return (
-    <AnimatedPressable
-      style={StyleSheet.flatten([styles.dateChip, press.style])}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-    >
-      <Text style={[styles.dateChipInk, filled ? null : styles.dateChipInkEmpty]}>{value}</Text>
-    </AnimatedPressable>
-  );
-}
-
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: memoryColors.screen,
   },
   body: {
-    padding: memoryMetrics.screenPadding,
-    gap: memoryMetrics.dayGap,
-  },
-  badge: {
-    ...memoryTypography.badge,
-    color: memoryColors.accent,
-  },
-  heading: {
-    ...memoryTypography.heading,
-    color: memoryColors.title,
-  },
-  subtitle: {
-    ...memoryTypography.subtitle,
-    color: memoryColors.muted,
-    marginBottom: 4,
+    paddingHorizontal: memoryMetrics.screenPadding,
+    paddingTop: 14,
+    paddingBottom: 24,
+    gap: 14,
   },
   field: {
     gap: 6,
   },
   label: {
-    ...memoryTypography.label,
-    color: memoryColors.body,
-  },
-  required: {
-    color: memoryColors.accent,
-  },
-  input: {
-    height: memoryMetrics.fieldHeight,
-    borderWidth: 1,
-    borderColor: memoryColors.hairline,
-    borderRadius: memoryMetrics.fieldRadius,
-    paddingHorizontal: 12,
-    backgroundColor: memoryColors.card,
-    ...memoryTypography.input,
-    color: memoryColors.title,
+    ...memoryTypography.fieldLabel,
+    color: memoryColors.label,
   },
   cover: {
     height: memoryMetrics.coverHeight,
-    borderWidth: 1,
+    borderWidth: memoryMetrics.dashedWidth,
     borderStyle: 'dashed',
-    borderColor: memoryColors.hairline,
-    borderRadius: memoryMetrics.fieldRadius,
-    backgroundColor: memoryColors.tileWell,
+    borderColor: memoryColors.dashed,
+    borderRadius: memoryMetrics.coverRadius,
+    backgroundColor: memoryColors.paper,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
     overflow: 'hidden',
   },
   coverEmpty: {
-    ...memoryTypography.body,
+    ...memoryTypography.input,
     color: memoryColors.muted,
   },
   coverPhoto: {
     width: '100%',
     height: '100%',
   },
-  dates: {
-    flexDirection: 'row',
-    gap: memoryMetrics.tileGap,
-  },
-  dateChip: {
-    flex: 1,
-    height: memoryMetrics.fieldHeight,
-    borderWidth: 1,
-    borderColor: memoryColors.hairline,
-    borderRadius: memoryMetrics.fieldRadius,
-    backgroundColor: memoryColors.card,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-  },
-  dateChipInk: {
-    ...memoryTypography.input,
-    color: memoryColors.title,
-  },
-  dateChipInkEmpty: {
-    color: memoryColors.faint,
+  rail: {
+    paddingTop: 8,
+    paddingBottom: 16,
+    gap: 8,
+    backgroundColor: memoryColors.screen,
   },
   failed: {
-    ...memoryTypography.meta,
+    ...memoryTypography.meta13,
     color: memoryColors.danger,
+    paddingHorizontal: memoryMetrics.screenPadding,
   },
-  rail: {
-    padding: memoryMetrics.screenPadding,
-    borderTopWidth: 1,
-    borderTopColor: memoryColors.hairline,
-    backgroundColor: memoryColors.card,
-  },
-  cta: {
-    height: memoryMetrics.ctaHeight,
-    borderRadius: memoryMetrics.ctaRadius,
-    backgroundColor: memoryColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaDisabled: {
-    backgroundColor: memoryColors.disabledWell,
-  },
-  ctaInk: {
-    ...memoryTypography.cta,
-    color: memoryColors.card,
-  },
-  ctaInkDisabled: {
-    color: memoryColors.disabledInk,
+  pressed: {
+    opacity: memoryMotion.pressOpacity,
   },
 });

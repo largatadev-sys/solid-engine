@@ -10,7 +10,7 @@ import {
   DAY_PLACE_LABEL,
   DIARY_DAYS_HINT,
   DIARY_NEXT_CTA,
-  DIARY_POST_CTA,
+  POST_CTA,
   DIARY_POSTED_TOAST,
   DIARY_TITLE_LABEL,
   DIARY_DESTINATION_LABEL,
@@ -89,7 +89,7 @@ test('a memory is created, two days are filled, one is skipped, and Post lands o
   await fillDay(page, 1, 'Alfama, Lisbon', 'Climbed up before the tour groups.');
   await fillDay(page, 3, 'Sintra', 'Pena Palace appeared for four minutes.');
 
-  await labelled(page, DIARY_POST_CTA).click();
+  await labelled(page, POST_CTA).click();
   await expect(page.getByText(DIARY_POSTED_TOAST).locator('visible=true').last()).toBeVisible();
 
   const sections = (await api(`/v1/travelers/${handle}/diaries`, 'GET', token)).body;

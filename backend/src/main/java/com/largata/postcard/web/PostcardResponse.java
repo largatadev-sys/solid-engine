@@ -1,5 +1,6 @@
 package com.largata.postcard.web;
 
+import com.largata.identity.api.TravelerCardResponse;
 import com.largata.postcard.Postcard;
 import com.largata.postcard.PostcardView;
 import java.time.Instant;
@@ -10,6 +11,7 @@ import java.util.UUID;
 
 public record PostcardResponse(
         UUID id,
+        TravelerCardResponse author,
         UUID diaryId,
         UUID diaryDayId,
         Integer dayOrdinal,
@@ -30,6 +32,7 @@ public record PostcardResponse(
         Postcard postcard = view.postcard();
         return new PostcardResponse(
                 postcard.id(),
+                view.author() == null ? null : TravelerCardResponse.of(view.author()),
                 postcard.diaryId(),
                 postcard.diaryDayId(),
                 view.dayOrdinal(),

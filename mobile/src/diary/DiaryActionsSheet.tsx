@@ -1,11 +1,12 @@
-import { StyleSheet, Text } from 'react-native';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
-import { BottomSheet } from '../members/BottomSheet';
-import { memoryColors, memoryTypography } from '../theme/memoryTokens';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
+import { MemoryIcon, type MemoryIconName } from './MemoryIcon';
+import { MemorySheet } from './MemorySheet';
 
 
 export type SheetAction = {
   readonly label: string;
+  readonly icon: MemoryIconName;
   readonly destructive?: boolean;
   readonly onPress: () => void;
 };
@@ -13,7 +14,7 @@ export type SheetAction = {
 
 interface DiaryActionsSheetProps {
   readonly open: boolean;
-  readonly title: string;
+  readonly contextLabel: string;
   readonly actions: readonly SheetAction[];
   readonly onDismiss: () => void;
 }
@@ -21,53 +22,59 @@ interface DiaryActionsSheetProps {
 
 export function DiaryActionsSheet({
   open,
-  title,
+  contextLabel,
   actions,
   onDismiss,
 }: DiaryActionsSheetProps) {
   return (
-    <BottomSheet open={open} title={title} onDismiss={onDismiss}>
-      {actions.map((action) => (
-        <ActionRow key={action.label} action={action} />
+    <MemorySheet open={open} contextLabel={contextLabel} cancel onDismiss={onDismiss}>
+      {actions.map((action, index) => (
+        <ActionRow key={action.label} action={action} last={index === actions.length - 1} />
       ))}
-    </BottomSheet>
+    </MemorySheet>
   );
 }
 
 
-function ActionRow({ action }: { readonly action: SheetAction }) {
-  const press = usePressFeedback();
+function ActionRow({ action, last }: { readonly action: SheetAction; readonly last: boolean }) {
+  const ink = action.destructive === true ? memoryColors.danger : memoryColors.title;
 
   return (
-    <AnimatedPressable
-      style={StyleSheet.flatten([styles.row, press.style])}
+    <Pressable
+      style={({ pressed }) =>
+        StyleSheet.flatten([
+          styles.row,
+          last ? styles.rowLast : null,
+          pressed ? styles.pressed : null,
+        ])
+      }
       accessibilityRole="button"
       accessibilityLabel={action.label}
       onPress={action.onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
     >
-      <Text
-        style={[styles.ink, action.destructive === true ? styles.destructive : null]}
-      >
-        {action.label}
-      </Text>
-    </AnimatedPressable>
+      <MemoryIcon name={action.icon} size={memoryMetrics.sheetRowIcon} color={ink} />
+      <Text style={[styles.ink, { color: ink }]}>{action.label}</Text>
+    </Pressable>
   );
 }
 
 
 const styles = StyleSheet.create({
   row: {
-    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: memoryMetrics.sheetRowPaddingV,
     borderBottomWidth: 1,
-    borderBottomColor: memoryColors.hairline,
+    borderBottomColor: memoryColors.divider,
+  },
+  rowLast: {
+    borderBottomWidth: 0,
   },
   ink: {
-    ...memoryTypography.input,
-    color: memoryColors.title,
+    ...memoryTypography.sheetRow,
   },
-  destructive: {
-    color: memoryColors.danger,
+  pressed: {
+    opacity: memoryMotion.pressOpacity,
   },
 });

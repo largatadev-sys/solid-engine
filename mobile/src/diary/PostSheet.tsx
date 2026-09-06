@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
-import { BottomSheet } from '../members/BottomSheet';
-import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
+import { MemoryIcon, type MemoryIconName } from './MemoryIcon';
+import { MemorySheet } from './MemorySheet';
 import {
   POST_SHEET_DIARY_BODY,
   POST_SHEET_DIARY_TITLE,
@@ -21,64 +21,105 @@ interface PostSheetProps {
 
 export function PostSheet({ open, onDiary, onPostcard, onDismiss }: PostSheetProps) {
   return (
-    <BottomSheet open={open} title={POST_SHEET_TITLE} onDismiss={onDismiss}>
+    <MemorySheet open={open} title={POST_SHEET_TITLE} onDismiss={onDismiss}>
       <SheetRow
+        icon="book"
+        iconColor={memoryColors.accent}
+        tileColor={memoryColors.highlightWash}
         title={POST_SHEET_DIARY_TITLE}
         body={POST_SHEET_DIARY_BODY}
         onPress={onDiary}
       />
       <SheetRow
+        icon="postcard"
+        iconColor={memoryColors.diaryPillInk}
+        tileColor={memoryColors.diaryPillWell}
         title={POST_SHEET_POSTCARD_TITLE}
         body={POST_SHEET_POSTCARD_BODY}
         onPress={onPostcard}
+        last
       />
-    </BottomSheet>
+    </MemorySheet>
   );
 }
 
 
 function SheetRow({
+  icon,
+  iconColor,
+  tileColor,
   title,
   body,
   onPress,
+  last = false,
 }: {
+  readonly icon: MemoryIconName;
+  readonly iconColor: string;
+  readonly tileColor: string;
   readonly title: string;
   readonly body: string;
   readonly onPress: () => void;
+  readonly last?: boolean;
 }) {
-  const press = usePressFeedback();
-
   return (
-    <AnimatedPressable
-      style={StyleSheet.flatten([styles.row, press.style])}
+    <Pressable
+      style={({ pressed }) =>
+        StyleSheet.flatten([
+          styles.row,
+          last ? styles.rowLast : null,
+          pressed ? styles.pressed : null,
+        ])
+      }
       accessibilityRole="button"
       accessibilityLabel={title}
       onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
     >
-      <View>
+      <View style={[styles.tile, { backgroundColor: tileColor }]}>
+        <MemoryIcon name={icon} size={22} color={iconColor} />
+      </View>
+      <View style={styles.text}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>{body}</Text>
       </View>
-    </AnimatedPressable>
+      <MemoryIcon name="chevronRight" size={16} color={memoryColors.faint} strokeWidth={2.2} />
+    </Pressable>
   );
 }
 
 
 const styles = StyleSheet.create({
   row: {
-    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: memoryMetrics.sheetRowPaddingV,
     borderBottomWidth: 1,
-    borderBottomColor: memoryColors.hairline,
+    borderBottomColor: memoryColors.divider,
+  },
+  rowLast: {
+    borderBottomWidth: 0,
+  },
+  tile: {
+    width: memoryMetrics.sheetIconTile,
+    height: memoryMetrics.sheetIconTile,
+    borderRadius: memoryMetrics.sheetIconTileRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  text: {
+    flex: 1,
+    gap: 2,
   },
   title: {
-    ...memoryTypography.dayHeading,
+    ...memoryTypography.sheetRow,
     color: memoryColors.title,
   },
   body: {
-    ...memoryTypography.meta,
+    ...memoryTypography.subtitle,
     color: memoryColors.muted,
-    marginTop: 2,
+  },
+  pressed: {
+    opacity: memoryMotion.pressOpacity,
   },
 });

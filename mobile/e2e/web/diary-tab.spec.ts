@@ -11,7 +11,7 @@ import {
   POSTCARD_CAPTION_LABEL,
   POSTCARD_PLACE_LABEL,
   POSTCARD_POSTED_TOAST,
-  POSTCARD_POST_CTA,
+  POST_CTA,
   VIEW_ITINERARY_LINK,
   sectionMetaLine,
 } from '../../src/diary/memoryCopy';
@@ -45,7 +45,7 @@ test('a loose postcard posts from nowhere and reads at the top of the Diary tab'
 }) => {
   await page.goto('/postcards/new');
 
-  const post = labelled(page, POSTCARD_POST_CTA);
+  const post = labelled(page, POST_CTA);
   await expect(post, 'Post waits for a photo').toBeDisabled();
 
   const chooser = page.waitForEvent('filechooser');

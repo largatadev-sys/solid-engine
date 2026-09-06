@@ -24,9 +24,8 @@ import {
   ITINERARIES_TAB_LABEL,
   PER_PERSON_SUFFIX,
   PUBLISHED_BADGE,
-  PUBLISHED_STAT_LABEL,
 } from '../../src/profile/profileCopy';
-import { DESTINATIONS_STAT_LABEL } from '../../src/profile/publicProfileCopy';
+import { DIARIES_STAT_LABEL, ITINERARIES_STAT_LABEL } from '../../src/diary/memoryCopy';
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 
 const TRAVELER = ownerTagFor('web/profile');
@@ -319,8 +318,8 @@ test.describe('the header the profile tab lands on', () => {
     await page.goto(PROFILE_TAB_ROUTE);
 
     for (const cell of [
-      PUBLISHED_STAT_LABEL,
-      DESTINATIONS_STAT_LABEL,
+      DIARIES_STAT_LABEL,
+      ITINERARIES_STAT_LABEL,
       FOLLOWERS_STAT_LABEL,
       FOLLOWING_STAT_LABEL,
     ]) {
@@ -372,7 +371,7 @@ test.describe('the header the profile tab lands on', () => {
   test('the row renders the true counts, never placeholders', async ({ page }) => {
     const stats = (await api('/v1/me/profile/stats', 'GET', token)).body;
     await page.goto(PROFILE_TAB_ROUTE);
-    await expect(page.getByText(PUBLISHED_STAT_LABEL, { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(ITINERARIES_STAT_LABEL, { exact: true }).first()).toBeVisible();
 
     await expect
       .poll(() => page.evaluate(() => document.body.innerText), { timeout: 20_000 })

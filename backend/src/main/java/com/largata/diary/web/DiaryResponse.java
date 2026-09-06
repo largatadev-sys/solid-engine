@@ -2,6 +2,7 @@ package com.largata.diary.web;
 
 import com.largata.diary.Diary;
 import com.largata.diary.DiaryView;
+import com.largata.identity.api.TravelerCardResponse;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.UUID;
 public record DiaryResponse(
         UUID id,
         UUID authorId,
+        TravelerCardResponse author,
         UUID tripId,
         String title,
         String destination,
@@ -30,6 +32,7 @@ public record DiaryResponse(
         return new DiaryResponse(
                 diary.id(),
                 diary.authorId(),
+                view.author() == null ? null : TravelerCardResponse.of(view.author()),
                 diary.tripId(),
                 diary.title(),
                 diary.destination(),
