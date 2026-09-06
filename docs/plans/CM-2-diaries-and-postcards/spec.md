@@ -93,6 +93,16 @@ The design pass is the founder's, and so was the grilling; where they differ the
 3. **Upload on pick** (the mock's C2) versus multipart at Post — proposed: the contract wins; no staging endpoint.
 4. **Back replaces Cancel, and each filled day saves on leave** (C1) — proposed: accept; both fit the two-act shape already recommended.
 
+## Amended in flight, by founder ruling
+
+*(2026-09-06/07 — recorded here because the code shipped these and this document did not say so. Found by the spec axis of CM-2’s code review.)*
+
+- **Geotagging reaches every memory surface.** PL-2’s pin is captured on all five memory capture points — new diary, edit diary, add day, new postcard, postcard on a day — and rendered as a tap target on four read surfaces, through `MemoryPlaceField` and `MemoryPlaceLink`. The `Pin` types moved from `com.largata.itinerary` to `com.largata.common.geo` so diary and postcard may name them without crossing a module line, and V55 puts the columns on `diary` and `diary_day`. A pinned place opens the in-app viewer; a text-only place keeps PL-1’s Google Maps fallback. The founder’s constraint was that the UI not change to accommodate it: the field is tapped and picked exactly as the activity form’s is.
+- **A postcard’s place is editable**, through `PATCH /v1/postcards/{id}/place` — its own additive route, for the reason the contract doc records. Edit Postcard therefore edits caption, photos **and** place, where ticket 12 asked only for the caption.
+- **Five analytics events are new**, against this document’s “Events: none new”: `postcard_filed`, `postcard_placed`, `postcard_photos_added`, `postcard_photo_removed`, `diary_described`. They follow the existing `emit` shape and carry ids only (P3).
+- **The profile’s rows are ordered on the client**, against “the client groups and sorts nothing” — `profileRows.ts` interleaves diary sections and loose postcards by latest activity, newest first, because the server returns the two as separate collections and the founder ruled the profile must read strictly by recency whatever the kind. The rest of the rule stands: every count, ordinal, date and heading still comes from the server.
+- **The four content modules are organized by layer** (`api · adapter · controller · dto · entity · exception · repository · service`), each with its own ArchUnit boundary guard replacing the package-private seal the split removed. No ticket asked for it; the epic map records it, and the content-module boundary story booked there replaces the per-module guards with one rule.
+
 ## Testing Decisions
 
 A good test here asserts **what an endpoint answers and what rows and stored objects exist afterward**, or what a screen shows a traveler, never a module's internals. No new seam is needed; the five below all exist.
