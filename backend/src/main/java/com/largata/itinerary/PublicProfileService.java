@@ -14,7 +14,7 @@ import com.largata.identity.api.PublicProfileResponse;
 import com.largata.identity.api.TravelerCardResponse;
 import com.largata.itinerary.api.DiaryTripResponse;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;
-import com.largata.postcard.LegacyEntries;
+import com.largata.postcard.api.LegacyEntries;
 import com.largata.workspace.WorkspaceService;
 import java.util.Collection;
 import java.util.List;
