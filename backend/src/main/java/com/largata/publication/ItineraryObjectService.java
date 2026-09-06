@@ -12,6 +12,9 @@ import com.largata.trip.TripPlan;
 import com.largata.trip.TripService;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,6 +99,15 @@ public class ItineraryObjectService {
 
 
     @Transactional(readOnly = true)
+    public Map<UUID, UUID> objectIdsByTrip(List<UUID> tripIds) {
+        Map<UUID, UUID> found = new HashMap<>();
+        for (UUID tripId : tripIds) {
+            objects.findByTripId(tripId).ifPresent(object -> found.put(tripId, object.id()));
+        }
+        return found;
+    }
+
+
     public ItineraryObject read(UUID objectId) {
         return objects.findById(objectId)
                 .filter(candidate -> !candidate.isRetired())
