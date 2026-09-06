@@ -13,7 +13,7 @@
 - [x] Add to diary opens the two-step picker: H1 lists the server's diaries most recently updated first, grows to about seventy percent of the screen then scrolls with Cancel pinned, adds a search field past eight diaries, skips to H2 with one diary, and offers "New Diary" with none; H2 lists that diary's stored days with their postcard counts and a selected check, and the CTA reads "Add to Day N"
 - [x] Filing succeeds with the sheet out, the loose card leaving the top of the tab, the section growing by one and the "Added to <diary>" toast; a failure keeps the sheet open with the inline copy
 - [x] The loose card's kebab (frame K3) offers Edit caption, Add to diary and Delete; a homed postcard's kebab omits Add to diary
-- [ ] The web-lane Playwright walk opens a postcard as owner and visitor, recaptions, files a loose one and deletes one; a Jest suite pins the meta-line helper
+- [x] The web-lane Playwright walk opens a postcard as owner and visitor, recaptions, files a loose one and deletes one; a Jest suite pins the meta-line helper
 
 ## Comments
 

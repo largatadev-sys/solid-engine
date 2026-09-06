@@ -144,6 +144,31 @@ export async function uploadPhoto(
   });
 }
 
+export async function postPostcard(
+  route: string,
+  token: string,
+  postcard: Record<string, unknown>,
+  file: string = FIXTURE_PHOTO,
+): Promise<{ status: number; body: any }> {
+  const boundary = `----largatae2e${process.hrtime.bigint().toString(36)}`;
+  const payload = Buffer.concat([
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="postcard"\r\n`
+        + `Content-Type: application/json\r\n\r\n${JSON.stringify(postcard)}\r\n`,
+    ),
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="photos"; `
+        + `filename="${basename(file)}"\r\nContent-Type: image/jpeg\r\n\r\n`,
+    ),
+    readFileSync(file),
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+  return request(API + route, 'POST', payload, {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': `multipart/form-data; boundary=${boundary}`,
+  });
+}
+
 export async function seedCover(trip: SeededTrip): Promise<void> {
   const header = { subjectType: 'header' };
   const lease = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', trip.ownerToken, header);

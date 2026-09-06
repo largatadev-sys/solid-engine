@@ -11,7 +11,7 @@
 - [x] A diary with no cover renders its first postcard photo in the header, from the server's fallback
 - [x] Opening a diary from a postcard's diary row lands scrolled to that day
 - [x] A stranger to a private author gets the profile-private refusal rendered as the app already renders it for a private profile; a follower gets the page
-- [ ] The web-lane Playwright walk opens a diary as owner and as visitor and asserts the owner controls present on one and absent on the other
+- [x] The web-lane Playwright walk opens a diary as owner and as visitor and asserts the owner controls present on one and absent on the other
 
 ## Comments
 

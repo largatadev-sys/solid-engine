@@ -13,7 +13,7 @@
 - [x] On confirm the diary exits optimistically and the Diaries stat decrements; deleting from the page pops to the profile first, then plays the exit there; a failed request brings the row back with the dark toast
 - [x] Deleting a day shows L3 with its count, exits the day optimistically, and leaves the other days' numbers alone
 - [x] Deleting the last of everything shows the empty Diary tab
-- [ ] The web-lane Playwright walk adds a day and a postcard, edits the title, deletes a day, and deletes the diary; a Jest suite pins the optimistic-delete revert
+- [x] The web-lane Playwright walk adds a day and a postcard, edits the title, deletes a day, and deletes the diary; a Jest suite pins the optimistic-delete revert
 
 ## Comments
 

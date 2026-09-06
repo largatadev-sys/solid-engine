@@ -12,7 +12,7 @@
 - [x] The empty Diary tab shows frame K1's icon and copy and no button
 - [x] No engagement row, heart, count or chat icon appears anywhere on this surface, and the word "entry" is gone from its copy
 - [x] Toasts drop in, hold two seconds and leave with the mock's timings; one at a time
-- [ ] The web-lane Playwright walk posts a loose postcard and reads it at the top of the tab, then reads a private author's tab as a stranger and as a follower; strings asserted live in a plain module both sides import
+- [x] The web-lane Playwright walk posts a loose postcard and reads it at the top of the tab, then reads a private author's tab as a stranger and as a follower; strings asserted live in a plain module both sides import
 
 ## Comments
 
