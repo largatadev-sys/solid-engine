@@ -4,14 +4,16 @@
 
 **Blocked by:** 03 (Postcards on days), 04 (The diary cover).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A traveler's profile sections read answers, in one call, the diaries most recently updated first — each with its four fields, cover or first-photo fallback, day count, days in ordinal order and postcards inside — plus loose postcards newest first, and the counts the stats row shows
-- [ ] A section carries the published-itinerary link only when its trip has a published itinerary, and nothing when the trip is gone or unpublished
-- [ ] The author's diaries list answers most recently updated first with a cursor page, for the filing picker
-- [ ] Home's postcard feed reads the new table: derived postcards render exactly as before, loose postcards appear with no trip fields, and a private author's postcards leave a stranger's feed and stay on a follower's, in the S4.39 pattern
-- [ ] Every read on this surface is fenced by the author's Profile Visibility — stranger 403 on the sections, follower 200 — and the fence-coverage scan names the doors
-- [ ] Postcard photos and diary covers serve through audiences that read the new rows
-- [ ] The contract doc records the sections read, the ordering rules and the count fields
+- [x] A traveler's profile sections read answers, in one call, the diaries most recently updated first — each with its four fields, cover or first-photo fallback, day count, days in ordinal order and postcards inside — plus loose postcards newest first, and the counts the stats row shows
+- [x] A section carries the published-itinerary link only when its trip has a published itinerary, and nothing when the trip is gone or unpublished
+- [x] The author's diaries list answers most recently updated first with a cursor page, for the filing picker
+- [x] Home's postcard feed reads the new table: derived postcards render exactly as before, loose postcards appear with no trip fields, and a private author's postcards leave a stranger's feed and stay on a follower's, in the S4.39 pattern
+- [x] Every read on this surface is fenced by the author's Profile Visibility — stranger 403 on the sections, follower 200 — and the fence-coverage scan names the doors
+- [x] Postcard photos and diary covers serve through audiences that read the new rows
+- [x] The contract doc records the sections read, the ordering rules and the count fields
 
 ## Comments
+
+- *2026-09-06, built:* the stats row's Itineraries, Followers and Following counts stay on the existing profile read (`GET /v1/travelers/{handle}`) rather than being duplicated into the sections read — a count in two places is a fact that rots. The sections read carries `diaryCount` alone, which is the number this story introduces.

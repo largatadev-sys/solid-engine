@@ -861,7 +861,7 @@ class DiaryContractIT extends ObjectStoreTestBase {
     private int entryCountOf(Fixture trip) {
         Integer count =
                 jdbc.queryForObject(
-                        "SELECT COUNT(*) FROM diary_entry WHERE itinerary_id = ?",
+                        "SELECT COUNT(*) FROM postcard WHERE trip_id = ?",
                         Integer.class,
                         UUID.fromString(trip.tripId()));
         return count == null ? 0 : count;

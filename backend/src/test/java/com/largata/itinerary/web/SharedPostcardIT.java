@@ -298,9 +298,9 @@ class SharedPostcardIT extends ObjectStoreTestBase {
     private Instant sharedAtOf(UUID entryId) {
         List<Instant> found =
                 jdbc.query(
-                        "SELECT shared_at FROM diary_entry WHERE id = ?",
+                        "SELECT created_at FROM postcard WHERE id = ?",
                         (row, index) -> {
-                            java.sql.Timestamp stamp = row.getTimestamp("shared_at");
+                            java.sql.Timestamp stamp = row.getTimestamp("created_at");
                             return stamp == null ? null : stamp.toInstant();
                         },
                         entryId);

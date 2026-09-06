@@ -14,6 +14,7 @@ import com.largata.identity.api.PublicProfileResponse;
 import com.largata.identity.api.TravelerCardResponse;
 import com.largata.itinerary.api.DiaryTripResponse;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;
+import com.largata.postcard.LegacyEntries;
 import com.largata.workspace.WorkspaceService;
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +32,7 @@ public class PublicProfileService {
 
 
     private final ItineraryRepository itineraries;
-    private final DiaryEntryRepository entries;
+    private final LegacyEntries entries;
     private final DayService days;
     private final WorkspaceService workspaces;
     private final TravelerService travelers;
@@ -41,7 +42,7 @@ public class PublicProfileService {
 
     PublicProfileService(
             ItineraryRepository itineraries,
-            DiaryEntryRepository entries,
+            LegacyEntries entries,
             DayService days,
             WorkspaceService workspaces,
             TravelerService travelers,
@@ -121,19 +122,16 @@ public class PublicProfileService {
         int limit = StrangersSurface.clamp(requestedLimit);
         UUID from = cursor == null ? null : Cursor.decode(cursor);
 
-        List<DiaryEntryRepository.DiaryTripRow> found =
-                from == null
-                        ? entries.findSharedTrips(subject.id(), Limit.of(limit + 1))
-                        : entries.findSharedTripsBefore(subject.id(), from, Limit.of(limit + 1));
+        List<LegacyEntries.TripRoll> found = entries.tripsOf(subject.id(), from, limit + 1);
 
         boolean more = found.size() > limit;
-        List<DiaryEntryRepository.DiaryTripRow> rows = more ? found.subList(0, limit) : found;
+        List<LegacyEntries.TripRoll> rows = more ? found.subList(0, limit) : found;
         List<DiaryTripResponse> sections = diarySectionsOf(rows);
 
         if (!more) {
             return Page.exhausted(sections);
         }
-        return Page.of(sections, Cursor.encode(rows.getLast().getLatestEntryId()));
+        return Page.of(sections, Cursor.encode(rows.getLast().latestEntryId()));
     }
 
 
@@ -156,17 +154,17 @@ public class PublicProfileService {
     }
 
 
-    private List<DiaryTripResponse> diarySectionsOf(List<DiaryEntryRepository.DiaryTripRow> rows) {
+    private List<DiaryTripResponse> diarySectionsOf(List<LegacyEntries.TripRoll> rows) {
         if (rows.isEmpty()) {
             return List.of();
         }
-        List<UUID> tripIds = rows.stream().map(DiaryEntryRepository.DiaryTripRow::getItineraryId).toList();
+        List<UUID> tripIds = rows.stream().map(LegacyEntries.TripRoll::tripId).toList();
         Set<UUID> archived = workspaces.archivedAmong(tripIds);
         Map<UUID, Itinerary> trips = tripsOf(tripIds);
         Map<UUID, Long> dayCounts = days.dayCountsOf(tripIds);
 
         return rows.stream()
-                .filter(row -> !archived.contains(row.getItineraryId()))
+                .filter(row -> !archived.contains(row.tripId()))
                 .map(row -> sectionOf(row, trips, dayCounts))
                 .filter(section -> section != null)
                 .toList();
@@ -174,15 +172,15 @@ public class PublicProfileService {
 
 
     private DiaryTripResponse sectionOf(
-            DiaryEntryRepository.DiaryTripRow row, Map<UUID, Itinerary> trips, Map<UUID, Long> dayCounts) {
-        Itinerary trip = trips.get(row.getItineraryId());
+            LegacyEntries.TripRoll row, Map<UUID, Itinerary> trips, Map<UUID, Long> dayCounts) {
+        Itinerary trip = trips.get(row.tripId());
         if (trip == null) {
             return null;
         }
         return new DiaryTripResponse(
                 trip.id(),
                 trip.title(),
-                row.getEntryCount(),
+                row.entryCount(),
                 trip.destination(),
                 dayCounts.getOrDefault(trip.id(), 0L).intValue(),
                 trip.coverImageUrl());

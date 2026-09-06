@@ -20,9 +20,9 @@ import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
+import com.largata.postcard.LegacyEntries;
+import com.largata.postcard.PostcardExceptions.ActivityAlreadyPostcardedException;
 import com.largata.workspace.WorkspaceService;
-import java.time.Clock;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +30,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +44,7 @@ public class DiaryService {
 
     private static final Logger log = LoggerFactory.getLogger(DiaryService.class);
 
-    private final DiaryEntryRepository entries;
+    private final LegacyEntries entries;
     private final ActivityRepository activities;
     private final DayRepository days;
     private final ItineraryRepository itineraries;
@@ -54,18 +52,16 @@ public class DiaryService {
     private final WriteFence writeFence;
     private final WorkspaceService workspaces;
     private final Analytics analytics;
-    private final Clock clock;
 
     DiaryService(
-            DiaryEntryRepository entries,
+            LegacyEntries entries,
             ActivityRepository activities,
             DayRepository days,
             ItineraryRepository itineraries,
             PhotoService photos,
             WriteFence writeFence,
             WorkspaceService workspaces,
-            Analytics analytics,
-            Clock clock) {
+            Analytics analytics) {
         this.entries = entries;
         this.activities = activities;
         this.days = days;
@@ -74,7 +70,6 @@ public class DiaryService {
         this.writeFence = writeFence;
         this.workspaces = workspaces;
         this.analytics = analytics;
-        this.clock = clock;
     }
 
 
@@ -86,7 +81,7 @@ public class DiaryService {
             List<UUID> fromDump,
             List<byte[]> devicePhotos) {
         writeFence.requireWritable(member);
-        requireStarted(member);
+        Itinerary trip = requireStarted(member);
 
         int total = fromDump.size() + devicePhotos.size();
         if (total < 1) {
@@ -100,23 +95,23 @@ public class DiaryService {
         Day day = days.findById(activity.dayId()).orElseThrow(ActivityNotFoundException::new);
         List<Photo> sources = fromDump.stream().map(id -> requireDumpPhotoOfTrip(member, id)).toList();
 
-        if (entries.existsByTravelerIdAndActivityId(member.travelerId(), activityId)) {
+        if (entries.alreadyPosted(member.travelerId(), activityId)) {
             throw new ActivityAlreadyInDiaryException();
         }
 
-        DiaryEntry entry = saveTheFirstPostFor(member, activityId, activity, day, caption);
+        LegacyEntries.Entry entry = saveTheFirstPostFor(member, trip, activityId, activity, day, caption);
 
         List<Photo> stored = new ArrayList<>();
         sources.forEach(
                 source ->
                         stored.add(
                                 photos.copyTo(
-                                        source, PhotoSubject.DIARY_ENTRY, entry.id(), member.travelerId())));
+                                        source, PhotoSubject.POSTCARD, entry.id(), member.travelerId())));
         devicePhotos.forEach(
                 bytes ->
                         stored.add(
                                 photos.add(
-                                        PhotoSubject.DIARY_ENTRY, entry.id(), bytes, member.travelerId())));
+                                        PhotoSubject.POSTCARD, entry.id(), bytes, member.travelerId())));
 
         log.info(
                 "Diary entry posted: entryId={} activityId={} photos={}",
@@ -131,9 +126,8 @@ public class DiaryService {
     @Transactional
     public DiaryEntryResponse recaption(Membership member, UUID entryId, String caption) {
         writeFence.requireWritable(member);
-        DiaryEntry entry = requireMyEntry(member, entryId);
-        entry.recaption(caption, Instant.now(clock));
-        DiaryEntry saved = entries.saveAndFlush(entry);
+        LegacyEntries.Entry entry = requireMyEntry(member, entryId);
+        LegacyEntries.Entry saved = entries.recaption(entry.id(), caption);
         emit(member, "diary_entry_edited", entryId);
         return viewOf(saved);
     }
@@ -141,8 +135,8 @@ public class DiaryService {
 
     @Transactional
     public DiaryEntryResponse addDevicePhoto(Membership member, UUID entryId, byte[] uploaded) {
-        DiaryEntry entry = requireRoomForAPhoto(member, entryId);
-        photos.add(PhotoSubject.DIARY_ENTRY, entry.id(), uploaded, member.travelerId());
+        LegacyEntries.Entry entry = requireRoomForAPhoto(member, entryId);
+        photos.add(PhotoSubject.POSTCARD, entry.id(), uploaded, member.travelerId());
         emit(member, "diary_entry_edited", entryId);
         return viewOf(entry);
     }
@@ -150,10 +144,10 @@ public class DiaryService {
 
     @Transactional
     public DiaryEntryResponse addPhotoFromDump(Membership member, UUID entryId, UUID dumpPhotoId) {
-        DiaryEntry entry = requireRoomForAPhoto(member, entryId);
+        LegacyEntries.Entry entry = requireRoomForAPhoto(member, entryId);
         photos.copyTo(
                 requireDumpPhotoOfTrip(member, dumpPhotoId),
-                PhotoSubject.DIARY_ENTRY,
+                PhotoSubject.POSTCARD,
                 entry.id(),
                 member.travelerId());
         emit(member, "diary_entry_edited", entryId);
@@ -164,15 +158,15 @@ public class DiaryService {
     @Transactional
     public DiaryEntryResponse removePhoto(Membership member, UUID entryId, UUID photoId) {
         writeFence.requireWritable(member);
-        DiaryEntry entry = requireMyEntry(member, entryId);
+        LegacyEntries.Entry entry = requireMyEntry(member, entryId);
 
         Photo photo =
                 photos.find(photoId)
-                        .filter(candidate -> candidate.subjectKind() == PhotoSubject.DIARY_ENTRY)
+                        .filter(candidate -> candidate.subjectKind() == PhotoSubject.POSTCARD)
                         .filter(candidate -> candidate.subjectId().equals(entry.id()))
                         .orElseThrow(PhotoNotFoundException::new);
 
-        if (photos.countOf(PhotoSubject.DIARY_ENTRY, entry.id()) <= 1) {
+        if (photos.countOf(PhotoSubject.POSTCARD, entry.id()) <= 1) {
             throw new DiaryEntryNeedsAPhotoException();
         }
 
@@ -185,12 +179,10 @@ public class DiaryService {
     @Transactional
     public void delete(Membership member, UUID entryId) {
         writeFence.requireWritable(member);
-        DiaryEntry entry = requireMyEntry(member, entryId);
+        LegacyEntries.Entry entry = requireMyEntry(member, entryId);
 
-        photos.allOf(PhotoSubject.DIARY_ENTRY, entry.id())
-                .forEach(photo -> photos.delete(photo.id()));
-        entries.delete(entry);
-        entries.flush();
+        photos.allOf(PhotoSubject.POSTCARD, entry.id()).forEach(photo -> photos.delete(photo.id()));
+        entries.delete(entry.id());
 
         log.info("Diary entry deleted: entryId={}", entryId);
         emit(member, "diary_entry_deleted", entryId);
@@ -201,18 +193,17 @@ public class DiaryService {
     public Page<DiaryEntryResponse> mine(InAudience audience, String cursor, Integer requestedLimit) {
         Membership member = audience.member();
         int limit = clamp(requestedLimit);
-        Limit probe = Limit.of(limit + 1);
-        List<DiaryEntry> found =
-                cursor == null
-                        ? entries.findByTravelerIdAndItineraryIdOrderById(
-                                member.travelerId(), member.itineraryId(), probe)
-                        : entries.findByTravelerIdAndItineraryIdAndIdGreaterThanOrderById(
-                                member.travelerId(), member.itineraryId(), Cursor.decode(cursor), probe);
+        List<LegacyEntries.Entry> found =
+                entries.pageOfMine(
+                        member.travelerId(),
+                        member.itineraryId(),
+                        cursor == null ? null : Cursor.decode(cursor),
+                        limit + 1);
 
         if (found.size() <= limit) {
             return Page.exhausted(withPhotos(found));
         }
-        List<DiaryEntry> page = found.subList(0, limit);
+        List<LegacyEntries.Entry> page = found.subList(0, limit);
         return Page.of(withPhotos(page), Cursor.encode(page.getLast().id()));
     }
 
@@ -231,27 +222,22 @@ public class DiaryService {
             return Page.exhausted(List.of());
         }
         int limit = clamp(requestedLimit);
-        Limit probe = Limit.of(limit + 1);
-        List<DiaryEntryRepository.DiaryTripRow> found =
-                after == null
-                        ? entries.findTripsWithEntries(travelerId, openable, probe)
-                        : entries.findTripsWithEntriesBefore(travelerId, openable, after, probe);
+        List<LegacyEntries.TripRoll> found = entries.tripsOf(travelerId, openable, after, limit + 1);
 
         boolean more = found.size() > limit;
-        List<DiaryEntryRepository.DiaryTripRow> rows = more ? found.subList(0, limit) : found;
+        List<LegacyEntries.TripRoll> rows = more ? found.subList(0, limit) : found;
         Map<UUID, Long> dayCounts = dayCountsFor(rows);
         List<DiaryTripResponse> page = rows.stream().map(row -> tripViewOf(row, dayCounts)).toList();
 
-        return more ? Page.of(page, Cursor.encode(rows.getLast().getLatestEntryId())) : Page.exhausted(page);
+        return more ? Page.of(page, Cursor.encode(rows.getLast().latestEntryId())) : Page.exhausted(page);
     }
 
 
-    private Map<UUID, Long> dayCountsFor(List<DiaryEntryRepository.DiaryTripRow> rows) {
+    private Map<UUID, Long> dayCountsFor(List<LegacyEntries.TripRoll> rows) {
         if (rows.isEmpty()) {
             return Map.of();
         }
-        List<UUID> itineraryIds =
-                rows.stream().map(DiaryEntryRepository.DiaryTripRow::getItineraryId).toList();
+        List<UUID> itineraryIds = rows.stream().map(LegacyEntries.TripRoll::tripId).toList();
         return days.countByItineraryIdIn(itineraryIds).stream()
                 .collect(
                         Collectors.toMap(
@@ -260,38 +246,38 @@ public class DiaryService {
     }
 
 
-    private DiaryTripResponse tripViewOf(
-            DiaryEntryRepository.DiaryTripRow row, Map<UUID, Long> dayCounts) {
-        Itinerary trip = itineraries.findById(row.getItineraryId()).orElse(null);
+    private DiaryTripResponse tripViewOf(LegacyEntries.TripRoll row, Map<UUID, Long> dayCounts) {
+        Itinerary trip = itineraries.findById(row.tripId()).orElse(null);
         return new DiaryTripResponse(
-                row.getItineraryId(),
+                row.tripId(),
                 trip == null ? null : trip.title(),
-                row.getEntryCount(),
+                row.entryCount(),
                 trip == null ? null : trip.destination(),
-                dayCounts.getOrDefault(row.getItineraryId(), 0L).intValue(),
+                dayCounts.getOrDefault(row.tripId(), 0L).intValue(),
                 trip == null ? null : trip.coverImageUrl());
     }
 
 
-    private DiaryEntryResponse viewOf(DiaryEntry entry) {
-        return viewOf(entry, photos.allOf(PhotoSubject.DIARY_ENTRY, entry.id()));
+    private DiaryEntryResponse viewOf(LegacyEntries.Entry entry) {
+        return viewOf(entry, photos.allOf(PhotoSubject.POSTCARD, entry.id()));
     }
 
 
-    private List<DiaryEntryResponse> withPhotos(List<DiaryEntry> ofEntries) {
+    private List<DiaryEntryResponse> withPhotos(List<LegacyEntries.Entry> ofEntries) {
         Map<UUID, List<Photo>> byEntry =
                 photos.allOfEach(
-                        PhotoSubject.DIARY_ENTRY, ofEntries.stream().map(DiaryEntry::id).toList());
+                        PhotoSubject.POSTCARD,
+                        ofEntries.stream().map(LegacyEntries.Entry::id).toList());
         return ofEntries.stream()
                 .map(entry -> viewOf(entry, byEntry.getOrDefault(entry.id(), List.of())))
                 .toList();
     }
 
 
-    static DiaryEntryResponse viewOf(DiaryEntry entry, List<Photo> entryPhotos) {
+    static DiaryEntryResponse viewOf(LegacyEntries.Entry entry, List<Photo> entryPhotos) {
         return new DiaryEntryResponse(
                 entry.id(),
-                entry.itineraryId(),
+                entry.tripId(),
                 entry.activityId(),
                 entry.activityTitle(),
                 entry.dayLabel(),
@@ -313,52 +299,61 @@ public class DiaryService {
     }
 
 
-    private DiaryEntry saveTheFirstPostFor(
-            Membership member, UUID activityId, Activity activity, Day day, String caption) {
-        Instant at = Instant.now(clock);
-        DiaryEntry entry =
-                DiaryEntry.postedFrom(
-                        member.travelerId(),
-                        member.itineraryId(),
-                        activityId,
-                        ActivitySnapshot.of(activity, day),
-                        caption,
-                        at);
+    private LegacyEntries.Entry saveTheFirstPostFor(
+            Membership member,
+            Itinerary trip,
+            UUID activityId,
+            Activity activity,
+            Day day,
+            String caption) {
+        ActivitySnapshot snapshot = ActivitySnapshot.of(activity, day);
         try {
-            return entries.saveAndFlush(entry);
-        } catch (DataIntegrityViolationException lostTheRace) {
+            return entries.post(
+                    member.travelerId(),
+                    member.itineraryId(),
+                    activityId,
+                    snapshot.activityTitle(),
+                    snapshot.dayLabel(),
+                    snapshot.timeOfDay(),
+                    snapshot.place(),
+                    day.id(),
+                    day.ordinal(),
+                    day.title(),
+                    trip.title(),
+                    trip.destination(),
+                    trip.startDate(),
+                    trip.endDate(),
+                    caption);
+        } catch (ActivityAlreadyPostcardedException lostTheRace) {
             throw new ActivityAlreadyInDiaryException();
         }
     }
 
 
-    private DiaryEntry requireRoomForAPhoto(Membership member, UUID entryId) {
+    private LegacyEntries.Entry requireRoomForAPhoto(Membership member, UUID entryId) {
         writeFence.requireWritable(member);
-        DiaryEntry entry = requireMyEntry(member, entryId);
-        if (photos.countOf(PhotoSubject.DIARY_ENTRY, entry.id()) >= MAX_PHOTOS_PER_ENTRY) {
+        LegacyEntries.Entry entry = requireMyEntry(member, entryId);
+        if (photos.countOf(PhotoSubject.POSTCARD, entry.id()) >= MAX_PHOTOS_PER_ENTRY) {
             throw new TooManyDiaryPhotosException(MAX_PHOTOS_PER_ENTRY);
         }
         return entry;
     }
 
 
-    private DiaryEntry requireMyEntry(Membership member, UUID entryId) {
+    private LegacyEntries.Entry requireMyEntry(Membership member, UUID entryId) {
         return entries
-                .findByIdAndTravelerId(entryId, member.travelerId())
-                .filter(entry -> entry.itineraryId().equals(member.itineraryId()))
+                .mine(entryId, member.travelerId(), member.itineraryId())
                 .orElseThrow(DiaryEntryNotFoundException::new);
     }
 
 
-    private void requireStarted(Membership member) {
-        ItineraryState state =
-                itineraries
-                        .findById(member.itineraryId())
-                        .orElseThrow(DiaryEntryNotFoundException::new)
-                        .state();
-        if (state != ItineraryState.ONGOING && state != ItineraryState.COMPLETED) {
+    private Itinerary requireStarted(Membership member) {
+        Itinerary trip =
+                itineraries.findById(member.itineraryId()).orElseThrow(DiaryEntryNotFoundException::new);
+        if (trip.state() != ItineraryState.ONGOING && trip.state() != ItineraryState.COMPLETED) {
             throw new TripNotStartedException();
         }
+        return trip;
     }
 
 
