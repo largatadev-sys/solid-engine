@@ -17,7 +17,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -140,7 +142,9 @@ public class DiaryService {
                                     diary,
                                     countsByDiary.getOrDefault(diary.id(), 0),
                                     daysOfIt,
-                                    List.of(),
+                                    candidatesAmong(
+                                            diary,
+                                            daysOfIt.stream().map(DiaryView.Day::day).toList()),
                                     cover,
                                     cover == null
                                             ? firstPhotoAmong(
@@ -184,10 +188,16 @@ public class DiaryService {
                                     return new DiaryView.Day(day, onDay.size(), onDay);
                                 })
                         .toList(),
-                List.of(),
+                candidatesAmong(diary, stored),
                 cover,
                 cover == null ? firstPhotoAmong(cards) : null,
                 authorOf(diary));
+    }
+
+
+    private static List<LocalDate> candidatesAmong(Diary diary, List<DiaryDay> stored) {
+        Set<LocalDate> taken = stored.stream().map(DiaryDay::date).collect(Collectors.toSet());
+        return diary.candidateDates().stream().filter(date -> !taken.contains(date)).toList();
     }
 
 

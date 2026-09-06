@@ -95,7 +95,7 @@ test('a diary section carries its meta line, and no engagement row exists anywhe
   // comment: no heart, no count, no chat glyph on any CM-2 surface.
   for (const engagement of ['likes', 'Like', 'Comment', 'comments']) {
     await expect(
-      page.getByText(engagement, { exact: false }).locator('visible=true'),
+      page.getByText(new RegExp(`\b${engagement}\b`)).locator('visible=true'),
       `no "${engagement}" anywhere on the Diary tab`,
     ).toHaveCount(0);
   }

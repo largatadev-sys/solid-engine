@@ -6,8 +6,10 @@ import { FIXTURE_PHOTO, postPostcard } from '../support/seed';
 import { labelled } from '../support/screen';
 import {
   ADD_A_DAY_CTA,
+  ADD_DAY_CTA,
   ADD_POSTCARD_CTA,
   ADD_TO_DIARY_ACTION,
+  addToDayCta,
   DAY_ADD_PHOTO,
   DAY_CAPTION_LABEL,
   DELETE_ACTION,
@@ -22,7 +24,7 @@ import {
   deleteDiaryTitle,
 } from '../../src/diary/memoryCopy';
 
-const [AUTHOR, VISITOR] = identitiesFor('web/diary-detail').tags;
+const [AUTHOR, VISITOR, STRANGER] = identitiesFor('web/diary-detail').tags;
 
 requireStack(AUTHOR!);
 
@@ -78,7 +80,7 @@ test('the owner adds a day, and the server numbers it from its date', async ({ p
   await page.goto(`/diaries/${diaryId}`);
   await labelled(page, ADD_A_DAY_CTA).click();
 
-  await labelled(page, SAVE_CTA).click();
+  await labelled(page, ADD_DAY_CTA).click();
 
   await expect
     .poll(async () => {
@@ -143,6 +145,7 @@ test('a loose postcard is filed onto a day through the two-step picker', async (
 
   await labelled(page, `${TITLE} edited`).click();
   await labelled(page, dayOrdinalLabel(1)).click();
+  await labelled(page, addToDayCta(1)).click();
 
   await expect
     .poll(async () => (await api(`/v1/postcards/${loose}`, 'GET', token)).body.diaryDayId, {
@@ -194,10 +197,14 @@ test('a visitor is refused a private author\'s diary by the profile fence', asyn
     endDate: aPastDay(6),
   });
 
+  const strangerToken = await tokenFor(STRANGER!);
   await api('/v1/me', 'PATCH', token, { profileVisibility: 'private' });
   try {
-    const refused = await api(`/v1/diaries/${mine.body.id}`, 'GET', visitorToken);
-    expect(refused.status).toBe(403);
+    const refused = await api(`/v1/diaries/${mine.body.id}`, 'GET', strangerToken);
+    expect(
+      refused.status,
+      `${STRANGER} must not follow the author — the seeded pool has ${VISITOR} following them, which admits them by design`,
+    ).toBe(403);
     expect(refused.body.code).toBe('PROFILE_PRIVATE');
   } finally {
     await api('/v1/me', 'PATCH', token, { profileVisibility: 'public' });

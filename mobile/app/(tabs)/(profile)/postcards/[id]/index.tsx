@@ -21,6 +21,7 @@ import {
 import { useMe } from '../../../../../src/hooks/useMe';
 import { memoryRepository } from '../../../../../src/repositories/memoryRepository';
 import {
+  useDiary,
   useDiarySections,
   useMemoryRefresh,
   usePostcard,
@@ -35,6 +36,7 @@ export default function PostcardDetailRoute() {
   const me = state.kind === 'ok' ? state.me : null;
   const postcard = usePostcard(id ?? null);
   const sections = useDiarySections(me?.handle ?? null);
+  const home = useDiary(postcard.data?.diaryId ?? null);
   const refresh = useMemoryRefresh();
   const [menuOpen, setMenuOpen] = useState(false);
   const [filing, setFiling] = useState(false);
@@ -49,8 +51,7 @@ export default function PostcardDetailRoute() {
   const owned = me !== null && author !== null && me.id === author.id;
   const loose = postcard.data.diaryDayId === null;
 
-  const homeDiary =
-    sections.data?.diaries.find((diary) => diary.id === postcard.data?.diaryId) ?? null;
+  const homeDiary = home.data ?? null;
   const homeDay =
     homeDiary?.days.find((day) => day.id === postcard.data?.diaryDayId) ?? null;
   const diaryRow: DiaryRow | null =

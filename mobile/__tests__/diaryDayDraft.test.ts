@@ -8,6 +8,7 @@ import {
   withPhotos,
   withoutPhotoAt,
   type DayDraft,
+  updatedAt,
 } from '../src/diary/diaryDayDraft';
 
 
@@ -94,5 +95,17 @@ describe('the diary days draft', () => {
       .toBe(true);
     expect(hasAnythingFilled(replacedAt(drafts, 0, { ...(drafts[0] as DayDraft), caption: 'x' })))
       .toBe(true);
+  });
+});
+
+
+describe('updatedAt reads the draft it changes from the list it is given, never from a snapshot', () => {
+  it('applies the change to the current draft at that index and leaves the others alone', () => {
+    const drafts = draftsFor(['2026-03-15', '2026-03-16']);
+    const typed = updatedAt(drafts, 0, (draft) => ({ ...draft, place: 'Coron' }));
+    const saved = updatedAt(typed, 0, (draft) => ({ ...draft, savedDayId: 'day-1' }));
+
+    expect(saved[0]).toEqual({ ...drafts[0], place: 'Coron', savedDayId: 'day-1' });
+    expect(saved[1]).toBe(drafts[1]);
   });
 });

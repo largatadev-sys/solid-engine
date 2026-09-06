@@ -64,3 +64,12 @@ export function hasAnythingFilled(drafts: readonly DayDraft[]): boolean {
     (draft) => draft.photos.length > 0 || draft.place.trim() !== '' || draft.caption.trim() !== '',
   );
 }
+
+
+export function updatedAt(
+  drafts: readonly DayDraft[],
+  index: number,
+  change: (draft: DayDraft) => DayDraft,
+): DayDraft[] {
+  return drafts.map((draft, at) => (at === index ? change(draft) : draft));
+}

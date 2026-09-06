@@ -34,7 +34,6 @@ export function PostcardDetailScreen({
   postcard,
   diaryRow,
   authorName,
-  authorHandle,
   authorAvatarUrl,
   owned,
   onOpenDiary,
@@ -86,6 +85,7 @@ export function PostcardDetailScreen({
               <View key={photo.id} style={styles.slide}>
                 <MediaThumb
                   url={photo.url}
+                  full
                   style={styles.fill}
                   accessibilityLabel={`Photo ${index + 1}`}
                   fallback={<View style={styles.fill} />}
@@ -156,7 +156,6 @@ export function PostcardDetailScreen({
               <Text style={styles.authorMeta}>{postedOnLabel(postcard.createdAt)}</Text>
             </View>
           </View>
-          <Text style={styles.handle}>@{authorHandle}</Text>
         </View>
       </ScrollView>
     </View>

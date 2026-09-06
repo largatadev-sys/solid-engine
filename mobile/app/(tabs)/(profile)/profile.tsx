@@ -5,8 +5,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { ScreenMessage } from '../../../src/components/ScreenMessage';
 import { useMe } from '../../../src/hooks/useMe';
 import { ONBOARDING_ROUTES } from '../../../src/onboarding/onboardingGate';
-import { MemoryConfirmStation } from '../../../src/diary/MemoryConfirm';
-import { MemoryToastStation } from '../../../src/diary/MemoryToast';
+import { PostSheet } from '../../../src/diary/PostSheet';
 import { sectionsShown, useMemoryExits } from '../../../src/diary/useMemoryExits';
 import { useDiarySections } from '../../../src/query/memoryQueries';
 import { DiaryTabPane } from '../../../src/profile/DiaryTabPane';
@@ -43,6 +42,7 @@ export default function ProfileScreen() {
   const myHandle = state.kind === 'ok' ? state.me.handle : null;
   const sections = useDiarySections(myHandle);
   const exits = useMemoryExits();
+  const [postOpen, setPostOpen] = useState(false);
 
   useRevalidateOnFocus(stats);
   useRevalidateOnFocus(sections);
@@ -108,7 +108,7 @@ export default function ProfileScreen() {
           }}
           onEditProfile={() => router.push(`${ONBOARDING_ROUTES.profile}?mode=edit`)}
           onOpenAccount={() => router.push('/account')}
-          onPost={() => router.push('/post')}
+          onPost={() => setPostOpen(true)}
         />
 
         <ProfileTabs selected={tab} onSelect={chooseTab} />
@@ -140,8 +140,18 @@ export default function ProfileScreen() {
         onDone={removal.settle}
       />
 
-      <MemoryToastStation />
-      <MemoryConfirmStation />
+      <PostSheet
+        open={postOpen}
+        onDiary={() => {
+          setPostOpen(false);
+          router.push('/diaries/new');
+        }}
+        onPostcard={() => {
+          setPostOpen(false);
+          router.push('/postcards/new');
+        }}
+        onDismiss={() => setPostOpen(false)}
+      />
     </View>
   );
 }

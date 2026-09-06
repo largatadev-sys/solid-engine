@@ -52,6 +52,7 @@ export function DiaryDetailScreen({
       <View style={styles.cover}>
         <MediaThumb
           url={diary.cover?.url ?? null}
+          full
           style={styles.fill}
           accessibilityLabel={diary.title}
           fallback={<View style={styles.fill} />}
@@ -226,6 +227,7 @@ function DayPostcard({
     >
       <MediaThumb
         url={postcard.photos[0]?.url ?? null}
+        full
         style={styles.postcardPhoto}
         accessibilityLabel="Postcard"
         fallback={<View style={styles.fill} />}

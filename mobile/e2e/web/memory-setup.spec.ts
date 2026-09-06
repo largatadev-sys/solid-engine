@@ -5,6 +5,7 @@ import { ownerTagFor } from '../support/identities';
 import { FIXTURE_PHOTO } from '../support/seed';
 import { labelled } from '../support/screen';
 import {
+  BACK_LABEL,
   DAY_ADD_PHOTO,
   DAY_CAPTION_LABEL,
   DAY_PLACE_LABEL,
@@ -51,7 +52,7 @@ test.beforeEach(async ({ signIn }) => {
 test('the profile plus opens the Post sheet, and A Diary reaches New Diary', async ({ page }) => {
   await page.goto('/profile');
 
-  await labelled(page, POST_SHEET_TITLE).click();
+  await page.getByRole('button', { name: POST_SHEET_TITLE, exact: true }).last().click();
   await expect(page.getByText(POST_SHEET_DIARY_TITLE).locator('visible=true').last()).toBeVisible();
 
   await labelled(page, POST_SHEET_DIARY_TITLE).click();
@@ -106,7 +107,10 @@ test('a memory is created, two days are filled, one is skipped, and Post lands o
 
 
 test('Back from the days screen discards the diary it created', async ({ page }) => {
-  await page.goto('/diaries/new');
+  await page.goto('/profile');
+  await page.getByRole('button', { name: POST_SHEET_TITLE, exact: true }).last().click();
+  await labelled(page, POST_SHEET_DIARY_TITLE).click();
+  await expect(labelled(page, DIARY_TITLE_LABEL)).toBeVisible();
 
   const discarded = `Discarded ${Date.now().toString(36)}`;
   await labelled(page, DIARY_TITLE_LABEL).fill(discarded);
@@ -120,7 +124,7 @@ test('Back from the days screen discards the diary it created', async ({ page })
     'the diary exists on the server the moment Next is tapped — that is why Back must delete it',
   ).toBe(true);
 
-  await page.goBack();
+  await labelled(page, BACK_LABEL).last().click();
   await labelled(page, 'Discard').click();
 
   await expect

@@ -116,6 +116,7 @@ function LooseCard({
         <View style={styles.loosePhoto}>
           <MediaThumb
             url={postcard.photos[0]?.url ?? null}
+            full
             style={styles.fill}
             accessibilityLabel="Postcard"
             fallback={<View style={styles.fill} />}
@@ -193,7 +194,7 @@ function Section({
       <View style={styles.sectionHead}>
         <Pressable style={styles.sectionIdentity} accessibilityRole="button" accessibilityLabel={section.title} onPress={onOpen}>
           <MediaThumb
-            url={section.cover?.thumbUrl ?? null}
+            url={section.cover?.url ?? null}
             style={styles.sectionThumb}
             accessibilityLabel={section.title}
             fallback={<View style={styles.fill} />}
@@ -355,6 +356,7 @@ function SectionPostcard({
       <Text style={styles.sectionPostcardDay}>{dayOrdinalLabel(ordinal)}</Text>
       <MediaThumb
         url={postcard.photos[0]?.url ?? null}
+        full
         style={styles.sectionPostcardPhoto}
         accessibilityLabel={dayOrdinalLabel(ordinal)}
         fallback={<View style={styles.fill} />}

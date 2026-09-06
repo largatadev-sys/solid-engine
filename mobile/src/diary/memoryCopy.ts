@@ -72,6 +72,8 @@ export const POSTCARD_POSTED_TOAST = 'Postcard posted!';
 
 export const POSTCARD_POST_FAILED = "Couldn't post. Your postcard is still here.";
 
+export const DIARY_POST_FAILED = "Couldn't post. Your days are still here.";
+
 export const POSTED_JUST_NOW = 'now';
 
 export const PROFILE_TITLE = 'Profile';

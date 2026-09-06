@@ -145,6 +145,30 @@ class DiaryContractIT extends PostgresTestBase {
 
 
     @Test
+    void aDiaryReadsBackTheDatesStillWithoutADayAsItsCandidates() {
+        String author = rig.travelerWithHandle(handle());
+        String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);
+        addDay(author, diary, START, "Coron");
+
+        rest.get()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.candidateDates.length()")
+                .isEqualTo(4)
+                .jsonPath("$.candidateDates[0]")
+                .isEqualTo("2026-03-16")
+                .jsonPath("$.candidateDates[3]")
+                .isEqualTo("2026-03-19")
+                .jsonPath("$.days.length()")
+                .isEqualTo(1);
+    }
+
+
+    @Test
     void editingTheDatesNeitherCreatesNorDeletesADay() {
         String author = rig.travelerWithHandle(handle());
         String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);

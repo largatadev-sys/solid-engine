@@ -68,7 +68,7 @@ export const IDENTITY_MAP = {
   'web/place-picker': { tags: ['t1'], sharesWith: 'shared' },
   'web/memory-setup': { tags: ['t4'], sharesWith: 'wants-exclusive' },
   'web/diary-tab': { tags: ['t5'], sharesWith: 'wants-exclusive' },
-  'web/diary-detail': { tags: ['t2', 't1'], sharesWith: 'shared' },
+  'web/diary-detail': { tags: ['t2', 't1', 't3'], sharesWith: 'shared' },
 } as const satisfies Record<string, SpecIdentities>;
 
 export type SpecKey = keyof typeof IDENTITY_MAP;

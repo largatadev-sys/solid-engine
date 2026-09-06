@@ -186,7 +186,7 @@ function DiaryRow({
       onPress={onPress}
     >
       <MediaThumb
-        url={diary.cover?.thumbUrl ?? null}
+        url={diary.cover?.url ?? null}
         style={styles.thumb}
         accessibilityLabel={diary.title}
         fallback={<View style={styles.thumbWell} />}

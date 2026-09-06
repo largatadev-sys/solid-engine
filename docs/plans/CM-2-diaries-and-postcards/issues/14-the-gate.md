@@ -14,3 +14,7 @@
 - [ ] The PR to dev is opened as the proposal, with the four owner rulings' outcomes recorded in its body, and never merged unasked
 
 ## Comments
+
+## Comments
+
+- *2026-09-06, partial — the walks have run once:* on the local stack (fresh DB, the backend rebuilt with the candidate-dates read), the three CM-2 web walks ran against the **Metro lane** with one worker — the container lane blows the 30s hook budget's twin, and one worker is what removed the false timeouts three parallel spec files produced on a cold bundle. **16 of 16 pass** (`memory-setup` 4, `diary-tab` 4, `diary-detail` 8), after four assertions were moved to the frames the fidelity pass built. A fourth spec, kept out of the tree, drove every frame and screenshotted it for the review artifact — 23 frames, all read against the handoff. **Still owed at this gate:** the preview-container lane (the documented one, `npm run smoke` shape), the API lane, the device walk, the BUILD_STATUS row, and the PR.

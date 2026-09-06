@@ -138,6 +138,7 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
               <>
                 <MediaThumb
                   url={cover === null ? (diary.cover?.url ?? null) : null}
+                  full
                   localPreview={cover?.uri ?? null}
                   style={styles.coverPhoto}
                   accessibilityLabel={DIARY_COVER_LABEL}

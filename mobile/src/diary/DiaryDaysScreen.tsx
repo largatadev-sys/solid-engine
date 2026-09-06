@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useExitGuard } from '../navigation/useExitGuard';
 import { pickPhotos } from '../media/pickPhoto';
@@ -8,8 +8,8 @@ import { DayCard } from './DayCard';
 import {
   draftsFor,
   isWorthSaving,
-  replacedAt,
   unsavedAmong,
+  updatedAt,
   withPhotos,
   withoutPhotoAt,
   type DayDraft,
@@ -17,9 +17,11 @@ import {
 import { askMemoryConfirmation } from './MemoryConfirm';
 import { MemoryCta } from './MemoryCta';
 import { MemoryHeader } from './MemoryHeader';
+import { showMemoryToast } from './MemoryToast';
 import {
   DIARY_DAYS_HINT,
   DIARY_DAYS_SUBTITLE,
+  DIARY_POST_FAILED,
   DISCARD_ACTION,
   DISCARD_DIARY_TITLE,
   KEEP_EDITING_ACTION,
@@ -67,32 +69,64 @@ export function DiaryDaysScreen({
     );
   });
 
-  async function saveDay(index: number): Promise<void> {
-    const draft = drafts[index];
-    if (draft === undefined || !isWorthSaving(draft) || draft.savedDayId !== null) return;
+  const latest = useRef(drafts);
+  latest.current = drafts;
+  const inFlight = useRef(new Map<string, Promise<void>>());
+  const stored = useRef(new Set<string>());
 
-    const day = await memoryRepository.addDay(diaryId, {
-      date: draft.date,
-      place: draft.place.trim() === '' ? null : draft.place.trim(),
-    });
-    await memoryRepository.postOnDay(
-      diaryId,
-      day.id,
-      { caption: draft.caption.trim() === '' ? null : draft.caption.trim(), place: null },
-      draft.photos,
-    );
+  function saveDay(index: number): Promise<void> {
+    const draft = latest.current[index];
+    if (
+      draft === undefined
+      || !isWorthSaving(draft)
+      || draft.savedDayId !== null
+      || stored.current.has(draft.date)
+    ) {
+      return Promise.resolve();
+    }
+    const running = inFlight.current.get(draft.date);
+    if (running !== undefined) return running;
 
-    setDrafts((current) => replacedAt(current, index, { ...draft, savedDayId: day.id }));
+    const save = (async () => {
+      const day = await memoryRepository.addDay(diaryId, {
+        date: draft.date,
+        place: draft.place.trim() === '' ? null : draft.place.trim(),
+      });
+      stored.current.add(draft.date);
+      const filled = latest.current[index] ?? draft;
+      try {
+        await memoryRepository.postOnDay(
+          diaryId,
+          day.id,
+          { caption: filled.caption.trim() === '' ? null : filled.caption.trim(), place: null },
+          filled.photos,
+        );
+      } catch (failure) {
+        stored.current.delete(draft.date);
+        await memoryRepository.deleteDay(diaryId, day.id).catch(() => undefined);
+        throw failure;
+      }
+      setDrafts((current) => updatedAt(current, index, (d) => ({ ...d, savedDayId: day.id })));
+    })().finally(() => inFlight.current.delete(draft.date));
+    inFlight.current.set(draft.date, save);
+    return save;
+  }
+
+  function leaveDay(index: number): void {
+    void saveDay(index).catch(() => showMemoryToast(DIARY_POST_FAILED, 'failure'));
   }
 
   async function post(): Promise<void> {
     setPosting(true);
     try {
-      for (const draft of unsavedAmong(drafts)) {
-        await saveDay(drafts.indexOf(draft));
+      await Promise.all(inFlight.current.values());
+      for (const draft of unsavedAmong(latest.current)) {
+        await saveDay(latest.current.indexOf(draft));
       }
       setPosted(true);
       onPosted();
+    } catch {
+      showMemoryToast(DIARY_POST_FAILED, 'failure');
     } finally {
       setPosting(false);
     }
@@ -112,19 +146,17 @@ export function DiaryDaysScreen({
             caption={draft.caption}
             photos={draft.photos}
             editable={!posting}
-            onPlace={(place) => setDrafts((current) => replacedAt(current, index, { ...draft, place }))}
+            onPlace={(place) => setDrafts((current) => updatedAt(current, index, (d) => ({ ...d, place })))}
             onCaption={(caption) =>
-              setDrafts((current) => replacedAt(current, index, { ...draft, caption }))
+              setDrafts((current) => updatedAt(current, index, (d) => ({ ...d, caption })))
             }
             onAddPhotos={() => {
               void pickPhotos(memoryMetrics.photosPerPostcard - draft.photos.length).then(
                 (picked) => {
                   if (picked.length > 0) {
                     setDrafts((current) =>
-                      replacedAt(
-                        current,
-                        index,
-                        withPhotos(draft, picked, memoryMetrics.photosPerPostcard),
+                      updatedAt(current, index, (d) =>
+                        withPhotos(d, picked, memoryMetrics.photosPerPostcard),
                       ),
                     );
                   }
@@ -132,9 +164,9 @@ export function DiaryDaysScreen({
               );
             }}
             onRemovePhoto={(at) =>
-              setDrafts((current) => replacedAt(current, index, withoutPhotoAt(draft, at)))
+              setDrafts((current) => updatedAt(current, index, (d) => withoutPhotoAt(d, at)))
             }
-            onLeave={() => void saveDay(index)}
+            onLeave={() => leaveDay(index)}
           />
         ))}
       </ScrollView>

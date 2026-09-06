@@ -181,12 +181,14 @@ const styles = StyleSheet.create({
     backgroundColor: memoryColors.screen,
   },
   body: {
+    paddingHorizontal: memoryMetrics.screenPadding,
     paddingTop: 14,
     paddingBottom: 24,
     gap: 14,
   },
   stripBleed: {
     flexGrow: 0,
+    marginHorizontal: -memoryMetrics.screenPadding,
   },
   strip: {
     paddingHorizontal: memoryMetrics.screenPadding,
