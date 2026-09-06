@@ -46,17 +46,13 @@ public class Postcard {
     @Column(name = "time_of_day", updatable = false)
     private LocalTime timeOfDay;
 
-    @Column(updatable = false)
-    private String place;
+    @Column private String place;
 
-    @Column(updatable = false)
-    private BigDecimal latitude;
+    @Column private BigDecimal latitude;
 
-    @Column(updatable = false)
-    private BigDecimal longitude;
+    @Column private BigDecimal longitude;
 
-    @Column(updatable = false)
-    private Short zoom;
+    @Column private Short zoom;
 
     @Column private String caption;
 
@@ -205,6 +201,16 @@ public class Postcard {
 
     void recaption(String newCaption, Instant at) {
         this.caption = normalizeCaption(newCaption);
+        this.updatedAt = at;
+    }
+
+
+    void moveTo(String newPlace, Pin newPin, Instant at) {
+        this.place = normalize(newPlace);
+        requirePlaceFor(newPin, this.place);
+        this.latitude = latitudeOf(newPin);
+        this.longitude = longitudeOf(newPin);
+        this.zoom = zoomOf(newPin);
         this.updatedAt = at;
     }
 

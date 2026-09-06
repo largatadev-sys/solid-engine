@@ -116,6 +116,15 @@ export const memoryRepository = {
   },
 
 
+  async placePostcard(
+    postcardId: string,
+    place: string | null,
+    pin: Pin | null,
+  ): Promise<PostcardResponse> {
+    return apiClient.patch<PostcardResponse>(`/v1/postcards/${postcardId}/place`, { place, pin });
+  },
+
+
   async deletePostcard(postcardId: string): Promise<void> {
     return apiClient.delete(`/v1/postcards/${postcardId}`);
   },

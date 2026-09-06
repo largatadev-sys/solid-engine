@@ -84,6 +84,20 @@ class PostcardController {
     }
 
 
+    @PatchMapping("/{postcardId}/place")
+    PostcardResponse place(
+            @CurrentTraveler Traveler traveler,
+            @PathVariable UUID postcardId,
+            @RequestBody PlacePostcardRequest request) {
+        return PostcardResponse.of(
+                postcards.place(
+                        traveler.id(),
+                        postcardId,
+                        request.place(),
+                        PinPayload.toPin(request.pin())));
+    }
+
+
     @PostMapping("/{postcardId}/photos")
     PostcardResponse addPhotos(
             @CurrentTraveler Traveler traveler,

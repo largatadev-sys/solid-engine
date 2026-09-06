@@ -4,6 +4,8 @@ import { dragToScroll } from '../components/stripScroll';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhotos } from '../media/pickPhoto';
 import type { PickedPhoto } from '../media/pickedPhoto';
+import type { Pin } from '../maps/pinRules';
+import { pinAfterEdit } from '../maps/pinRules';
 import { useExitGuard } from '../navigation/useExitGuard';
 import { memoryRepository } from '../repositories/memoryRepository';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
@@ -11,17 +13,20 @@ import type { DiaryPhotoResponse, PostcardResponse } from '../types/api';
 import { askMemoryConfirmation } from './MemoryConfirm';
 import { MemoryCta } from './MemoryCta';
 import { MemoryField } from './MemoryField';
+import { MemoryPlaceField } from './MemoryPlaceField';
 import { MemoryHeader } from './MemoryHeader';
 import { MemoryIcon } from './MemoryIcon';
 import { SelectedCheck, useTileEntrance } from './PhotoTiles';
 import {
   DAY_ADD_PHOTO,
+  DAY_PLACE_PLACEHOLDER,
   DISCARD_ACTION,
   DISCARD_CHANGES_BODY,
   DISCARD_CHANGES_TITLE,
   EDIT_POSTCARD_TITLE,
   KEEP_EDITING_ACTION,
   POSTCARD_CAPTION_LABEL,
+  POSTCARD_PLACE_LABEL,
   SAVE_CTA,
   SAVE_FAILED,
 } from './memoryCopy';
@@ -36,6 +41,9 @@ interface EditPostcardScreenProps {
 export function EditPostcardScreen({ postcard, onSaved }: EditPostcardScreenProps) {
   const [drag] = useState(() => dragToScroll(() => memoryMetrics.stripPhoto + memoryMetrics.tileGap));
   const [caption, setCaption] = useState(postcard.caption ?? '');
+  const [place, setPlace] = useState(postcard.place ?? '');
+  const [pin, setPin] = useState<Pin | null>(postcard.pin);
+  const [pinnedAs, setPinnedAs] = useState(postcard.pin === null ? '' : (postcard.place ?? ''));
   const [removed, setRemoved] = useState<readonly string[]>([]);
   const [picked, setPicked] = useState<readonly PickedPhoto[]>([]);
   const [saving, setSaving] = useState(false);
@@ -47,7 +55,11 @@ export function EditPostcardScreen({ postcard, onSaved }: EditPostcardScreenProp
   const full = total >= memoryMetrics.photosPerPostcard;
   const trimmed = caption.trim();
   const captionChanged = trimmed !== (postcard.caption ?? '');
-  const dirty = !saved && (captionChanged || removed.length > 0 || picked.length > 0);
+  const trimmedPlace = place.trim();
+  const nextPin = pinAfterEdit(pin, pinnedAs, place);
+  const placeChanged = trimmedPlace !== (postcard.place ?? '') || nextPin !== postcard.pin;
+  const dirty =
+    !saved && (captionChanged || placeChanged || removed.length > 0 || picked.length > 0);
   const ready = dirty && total > 0;
 
   useExitGuard(dirty, (proceed) => {
@@ -71,6 +83,13 @@ export function EditPostcardScreen({ postcard, onSaved }: EditPostcardScreenProp
       let next = postcard;
       if (captionChanged) {
         next = await memoryRepository.recaptionPostcard(postcard.id, trimmed === '' ? null : trimmed);
+      }
+      if (placeChanged) {
+        next = await memoryRepository.placePostcard(
+          postcard.id,
+          trimmedPlace === '' ? null : trimmedPlace,
+          nextPin,
+        );
       }
       if (picked.length > 0) {
         next = await memoryRepository.addPostcardPhotos(postcard.id, picked);
@@ -145,6 +164,21 @@ export function EditPostcardScreen({ postcard, onSaved }: EditPostcardScreenProp
           value={caption}
           onChangeText={setCaption}
           editable={!saving}
+        />
+
+        <MemoryPlaceField
+          label={POSTCARD_PLACE_LABEL}
+          glyph
+          value={place}
+          pin={pin}
+          openNear={pin}
+          editable={!saving}
+          onPicked={(pickedPlace, droppedPin) => {
+            setPlace(pickedPlace);
+            setPin(droppedPin);
+            setPinnedAs(droppedPin === null ? '' : pickedPlace);
+          }}
+          placeholder={DAY_PLACE_PLACEHOLDER}
         />
       </ScrollView>
 

@@ -350,6 +350,17 @@ public class PostcardService {
 
 
     @Transactional
+    public PostcardView place(UUID authorId, UUID postcardId, String place, Pin pin) {
+        Postcard postcard = requireMine(authorId, postcardId);
+        requireWritable(postcard);
+        postcard.moveTo(place, pin, Instant.now(clock));
+        Postcard saved = postcards.saveAndFlush(postcard);
+        emit(saved, "postcard_placed");
+        return viewOf(saved);
+    }
+
+
+    @Transactional
     public void delete(UUID authorId, UUID postcardId) {
         destroy(requireMine(authorId, postcardId));
         emitById(authorId, postcardId, "postcard_deleted");

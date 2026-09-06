@@ -231,6 +231,80 @@ class PostcardContractIT extends ObjectStoreTestBase {
 
 
     @Test
+    void theAuthorMovesAPostcardToAPinnedPlaceAndBackToNone() {
+        String author = rig.travelerWithHandle(handle());
+        String postcardId =
+                TripRig.fieldIn(post(author, "{\"caption\":\"Somewhere\"}", 1), "id");
+
+        placeBy(author, postcardId, "{\"place\":\"Big Lagoon\",\"pin\":{\"lat\":11.1949,\"lng\":119.4013,\"zoom\":15}}")
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.place")
+                .isEqualTo("Big Lagoon")
+                .jsonPath("$.pin.lat")
+                .isEqualTo(11.1949)
+                .jsonPath("$.pin.lng")
+                .isEqualTo(119.4013)
+                .jsonPath("$.pin.zoom")
+                .isEqualTo(15);
+
+        placeBy(author, postcardId, "{\"place\":null,\"pin\":null}")
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.place")
+                .doesNotExist()
+                .jsonPath("$.pin")
+                .doesNotExist();
+    }
+
+
+    @Test
+    void aPinWithoutAPlaceIsRefusedAndTheStoredPlaceIsUntouched() {
+        String author = rig.travelerWithHandle(handle());
+        String postcardId =
+                TripRig.fieldIn(post(author, "{\"caption\":\"Somewhere\"}", 1), "id");
+        placeBy(author, postcardId, "{\"place\":\"Big Lagoon\",\"pin\":{\"lat\":11.1949,\"lng\":119.4013,\"zoom\":15}}")
+                .expectStatus()
+                .isOk();
+
+        placeBy(author, postcardId, "{\"place\":null,\"pin\":{\"lat\":11.1949,\"lng\":119.4013,\"zoom\":15}}")
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("INVALID_PIN");
+
+        rest.get()
+                .uri("/v1/postcards/" + postcardId)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.place")
+                .isEqualTo("Big Lagoon");
+    }
+
+
+    @Test
+    void aStrangerCannotMoveAPostcardsPlace() {
+        String author = rig.travelerWithHandle(handle());
+        String stranger = rig.travelerWithHandle(handle());
+        String postcardId =
+                TripRig.fieldIn(post(author, "{\"caption\":\"Somewhere\"}", 1), "id");
+
+        placeBy(stranger, postcardId, "{\"place\":\"Big Lagoon\",\"pin\":null}")
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("POSTCARD_NOT_FOUND");
+    }
+
+
+    @Test
     void aNonAuthorsWriteAnswersTheMaskedNotFound() {
         String author = rig.travelerWithHandle(handle());
         String postcardId = TripRig.fieldIn(post(author, "{\"caption\":\"Untouchable\"}", 1), "id");
@@ -262,6 +336,17 @@ class PostcardContractIT extends ObjectStoreTestBase {
                 .expectBody()
                 .jsonPath("$.caption")
                 .isEqualTo("Untouchable");
+    }
+
+
+    private RestTestClient.ResponseSpec placeBy(
+            String traveler, String postcardId, String body) {
+        return rest.patch()
+                .uri("/v1/postcards/" + postcardId + "/place")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(traveler))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .exchange();
     }
 
 
