@@ -62,6 +62,24 @@ public final class PostcardExceptions {
     }
 
 
+    public static final class PostcardDayNotFoundException extends NotFoundException {
+
+        public PostcardDayNotFoundException() {
+            super("DAY_NOT_FOUND", "No such day.");
+        }
+    }
+
+
+    public static final class PostcardAlreadyFiledException extends ConflictException {
+
+        public PostcardAlreadyFiledException() {
+            super(
+                    "POSTCARD_ALREADY_FILED",
+                    "This postcard is already in a diary. Delete it to post it somewhere else.");
+        }
+    }
+
+
     public static final class ActivityAlreadyPostcardedException extends ConflictException {
 
         public ActivityAlreadyPostcardedException() {

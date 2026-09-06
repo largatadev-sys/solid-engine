@@ -7,6 +7,8 @@ import java.util.UUID;
 
 public record ActivityFacts(
         UUID activityId,
+        UUID tripDayId,
+        int dayOrdinal,
         String title,
         String dayLabel,
         LocalTime timeOfDay,

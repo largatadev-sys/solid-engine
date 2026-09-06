@@ -1,6 +1,6 @@
 # 08 · Object Contracts — the four-object wire reference  `[PRODUCTION DEPTH]`
 
-*Minted at CM-1 ticket 08 (2026-08-30). This is the single reference the rewire story and every later UI story wire against. The new world's endpoints below are **live but dark**: they ship in the backend, fully tested at the API seam, and nothing in the product calls them until the rewire cuts the client over. ADR-035 records the decisions; `docs/plans/CM-1-content-module/spec.md` records the story.*
+*Minted at CM-1 ticket 08 (2026-08-30); the Diary re-cut to the day grain at CM-2 (ADR-036). This is the single reference the rewire story and every later UI story wire against. The new world's endpoints below are **live but dark**: they ship in the backend, fully tested at the API seam, and nothing in the product calls them until the rewire cuts the client over. ADR-035 records the decisions; `docs/plans/CM-1-content-module/spec.md` records the story.*
 
 ---
 
@@ -12,8 +12,8 @@ The Trip Tree, as the founder ruled it across the CM-1 grilling:
 |---|---|---|---|---|
 | **Trip** | The journey-object and its workspace world: plan, chat, polls, dump, members. Dies whole when the owner destroys it. | `com.largata.trip` | the **existing** `itinerary` record — no new table, ever (B-fork rule 4: trip data never forks) | Membership, through the guard; destruction is the owner's alone |
 | **Itinerary** | The published page: a real object **minted from the frozen plan at publish**, with an identity that survives publish cycles and the trip's destruction. | `com.largata.publication` *(working name — `com.largata.itinerary` is the frozen old world; the rename is a free refactor after the rewire deletes it)* | `itinerary_object` | The recorded owner (snapshotted at mint) |
-| **Diary** | An album of postcards: a stored entity with a title, standalone or auto-minted for a trip. Deleting it deletes its postcards. | `com.largata.diary` | `diary` | Authorship |
-| **Postcard** | The atom: 1–5 photos + caption + optional place. Trip-derived (activity snapshot, one per activity per author) or standalone (unlimited). Lives in at most one diary, or loose. | `com.largata.postcard` | `postcard` | Authorship — the only authority over content, including delete across the archive freeze |
+| **Diary** | A trip that was taken: title, destination, the dates it spanned, a cover, made of **Diary Days** that hold postcards. Standalone, or derived one-per-author-per-trip. Deleting it takes everything under it. | `com.largata.diary` | `diary`, `diary_day` | Authorship |
+| **Postcard** | The atom: 1–5 photos + caption + optional place. Loose, or on exactly one **Diary Day**. Born three ways: from an activity (one per activity per author), on a trip day with no activity, or from nowhere. | `com.largata.postcard` | `postcard` | Authorship — the only authority over content, including delete across the archive freeze |
 
 ## Wire ↔ vocabulary mapping
 
@@ -54,31 +54,54 @@ Every endpoint requires a signed-in traveler (the standard `UNAUTHENTICATED` 401
 
 ### Diary — `/v1/diaries`
 
-| Act | Endpoint | Authority | Answer | Refusals |
-|---|---|---|---|---|
-| Create (standalone) | `POST /v1/diaries` body `{title}` | any traveler; many diaries each | `201` `{id, tripId: null, title, createdAt, updatedAt}` | blank title: `400 DIARY_NEEDS_A_TITLE` · >120 chars: `400 DIARY_TITLE_TOO_LONG` |
-| List mine | `GET /v1/diaries?cursor&limit` | author (own list only) | standard cursor page of diaries | — |
-| Read one | `GET /v1/diaries/{diaryId}` | any signed-in traveler the **author's** Profile Visibility admits (S4.39, ADR-034); a stranger to a private author: `403 PROFILE_PRIVATE` | `200` | absent: `404 DIARY_NOT_FOUND` |
-| Retitle | `PATCH /v1/diaries/{diaryId}` body `{title}` | author | `200` | non-author: `404 DIARY_NOT_FOUND` (masked) |
-| **Delete** | `DELETE /v1/diaries/{diaryId}` | author | `204`. **The diary and every postcard inside it are destroyed in one transaction** — photo rows and stored objects included (founder-ruled containment). Loose postcards and other diaries stand. | non-author: `404 DIARY_NOT_FOUND` (masked) · repeat: `404` |
-
-The trip diary auto-mints (below); deleting it is allowed, and the next add-to-diary re-mints a fresh one. One trip diary per traveler per trip is a partial unique index, race-safe.
-
-### Postcard — `/v1/postcards`, trip-derived creation under `/v1/trips`
+*Re-cut at CM-2 (ADR-036): a diary is a trip that was taken. It carries what a trip carries — a title, a destination, the dates it spanned, a cover — and its postcards hang off **Diary Days**, mirroring Trip → Day → Activity. CM-1's title-only create is gone from the contract.*
 
 | Act | Endpoint | Authority | Answer | Refusals |
 |---|---|---|---|---|
-| Create (standalone) | `POST /v1/postcards` — multipart: `postcard` JSON `{caption?, place?, diaryId?}` + `photos` (1–5 files) | any traveler; into one of **their own** diaries or loose | `201` `{id, diaryId?, tripId: null, activityId: null, place?, caption?, photos[], createdAt, updatedAt}` | no photo: `400 POSTCARD_NEEDS_A_PHOTO` · >5: `400 TOO_MANY_POSTCARD_PHOTOS` · caption >2000: `400 POSTCARD_CAPTION_TOO_LONG` · someone else's diary: `404 DIARY_NOT_FOUND` (masked) |
-| Create (trip-derived) | `POST /v1/trips/{tripId}/activities/{activityId}/postcards` — same multipart, minus `diaryId`/`place` | trip member; trip started; activity of this trip | `201` — the activity's facts are **read through the trip module's interface at post time and snapshotted** (`activityTitle`, `dayLabel`, `timeOfDay`, `place`); the author's **trip diary auto-mints** on first post and is reused after | stranger: `404 TRIP_NOT_FOUND` · archived trip: owner `409 TRIP_ARCHIVED`, member masked `404 TRIP_NOT_FOUND` (the house archive posture) · not started: `400 TRIP_NOT_STARTED` · foreign/absent activity: `404 ACTIVITY_NOT_FOUND` · same activity again: `409 ACTIVITY_ALREADY_POSTCARDED` (another member posts the same activity freely)  The snapshot also carries the activity's pin as `pin: {lat, lng, zoom}`, or `null` (PL-2's pin, carried in at the 2026-09-05 rot-fix). |
-| Read | `GET /v1/postcards/{postcardId}` | any signed-in traveler the **author's** Profile Visibility admits (S4.39, ADR-034); a stranger to a private author: `403 PROFILE_PRIVATE` | `200`; **reads tolerate a dangling `activityId`** — the snapshot is what renders, the id is only the trail back | absent: `404 POSTCARD_NOT_FOUND` |
+| Create (standalone) | `POST /v1/diaries` body `{title, startDate, endDate, destination?}` | any traveler; many diaries each | `201` the diary, plus **`candidateDates`** — one date per day in the range, **none of them stored**. The memory setup renders these as day cards; a day becomes a row only when it takes a place or a postcard. | blank title: `400 DIARY_NEEDS_A_TITLE` · >120 chars: `400 DIARY_TITLE_TOO_LONG` · missing either date: `400 DIARY_NEEDS_ITS_DATES` · end before start: `400 DIARY_ENDS_BEFORE_IT_STARTS` · a start in the future: `400 DIARY_HAS_NOT_HAPPENED_YET` · over 365 days: `400 DIARY_TOO_LONG` |
+| List mine | `GET /v1/diaries?cursor&limit` | author (own list only) | standard cursor page of diary summaries | — |
+| Read one | `GET /v1/diaries/{diaryId}` | any signed-in traveler the **author's** Profile Visibility admits (S4.39, ADR-034); a stranger to a private author: `403 PROFILE_PRIVATE` | `200` — the four fields, the **cover**, `postcardCount`, `dayCount`, and `days[]` **in ordinal order with their postcards inside**, each day carrying its own `place` and `postcardCount` (which is what the delete confirm shows) | absent: `404 DIARY_NOT_FOUND` |
+| Edit | `PATCH /v1/diaries/{diaryId}` body `{title, startDate, endDate, destination?}` | author | `200`. **Changing the dates never creates or deletes a day** — a day outside the new range keeps standing, with the ordinal it was born with. | non-author: `404 DIARY_NOT_FOUND` (masked) · the create's validation refusals, by the same names |
+| Set cover | `PUT /v1/diaries/{diaryId}/cover` — multipart `photo` | author | `200` the diary. Replaces any existing cover; a diary holds one. | non-author: `404 DIARY_NOT_FOUND` (masked) |
+| Remove cover | `DELETE /v1/diaries/{diaryId}/cover` | author | `200` the diary, whose `cover` then falls back to its **first postcard photo** | non-author: `404 DIARY_NOT_FOUND` (masked) |
+| **Delete** | `DELETE /v1/diaries/{diaryId}` | author | `204`. **The diary, its days, every postcard on them, their photo rows and stored objects, and its cover are destroyed in one transaction** (founder-ruled containment). Loose postcards and other diaries stand. | non-author: `404 DIARY_NOT_FOUND` (masked) · repeat: `404` |
+
+**The two births.** *Standalone*, from the memory setup above — no trip reference, unlimited per author. *Derived*, one per author per trip, minted at that author's first postcard on the trip, **snapshotting the trip's title, destination and dates**; it is the author's to edit afterwards, and a later edit to the trip does not rewrite it. A derived diary takes **no copy of the trip's cover**, for the same reason it takes no reference to it. One derived diary per traveler per trip is a partial unique index, race-safe; deleting it is allowed, and the next post re-mints a fresh one.
+
+A memory **never creates a trip row** (grilling ruling 1).
+
+### Diary Day — `/v1/diaries/{diaryId}/days`
+
+| Act | Endpoint | Authority | Answer | Refusals |
+|---|---|---|---|---|
+| Add a day | `POST /v1/diaries/{diaryId}/days` body `{date, place?}` | author | `201` the day. Its **ordinal is the date's distance from the diary's start, plus one** — so filling Mar 15, 16 and 19 of a Mar 15–19 diary reads **Day 1, Day 2, Day 5**: a skipped day leaves a gap rather than renumbering its neighbours. A date **outside the range extends the range** to include it. | no date: `400 DIARY_DAY_NEEDS_A_DATE` · a day already on that date: `409 DIARY_DAY_ALREADY_EXISTS` · place >200 chars: `400 DIARY_DAY_PLACE_TOO_LONG` · non-author: `404 DIARY_NOT_FOUND` (masked) |
+| Edit the place | `PATCH /v1/diaries/{diaryId}/days/{dayId}` body `{place}` | author | `200`. **A day's date and ordinal are immutable after birth**; days never reorder. | non-author: `404 DIARY_NOT_FOUND` (masked) · absent: `404 DIARY_DAY_NOT_FOUND` |
+| **Delete a day** | `DELETE /v1/diaries/{diaryId}/days/{dayId}` | author | `204`. Its postcards, photo rows and stored objects go with it; **the remaining days keep their ordinals**. | non-author: `404 DIARY_NOT_FOUND` (masked) · absent: `404 DIARY_DAY_NOT_FOUND` |
+
+**Candidates are not rows.** The create's `candidateDates` is the only place an unfilled day exists. **Derived days** mint per trip day at the author's first postcard there, snapshotting the trip day's ordinal and title; a second postcard on the same trip day reuses the day.
+
+### Postcard — `/v1/postcards`, day-bound creation under `/v1/diaries` and `/v1/trips`
+
+*CM-2 gives the postcard a **day reference**: loose, or on exactly one day. Many per day.*
+
+| Act | Endpoint | Authority | Answer | Refusals |
+|---|---|---|---|---|
+| Create (loose) | `POST /v1/postcards` — multipart: `postcard` JSON `{caption?, place?, diaryId?}` + `photos` (1–5 files) | any traveler; into one of **their own** diaries or loose | `201` the postcard | no photo: `400 POSTCARD_NEEDS_A_PHOTO` · >5: `400 TOO_MANY_POSTCARD_PHOTOS` · caption >2000: `400 POSTCARD_CAPTION_TOO_LONG` · someone else's diary: `404 DIARY_NOT_FOUND` (masked) |
+| Create (on a diary day) | `POST /v1/diaries/{diaryId}/days/{dayId}/postcards` — multipart `postcard` JSON `{caption?, place?}` + `photos` (1–5) | author of the diary | `201` carrying its `diaryId`, `diaryDayId` and `dayOrdinal` | the create refusals above · non-author: `404 DIARY_NOT_FOUND` (masked) · absent day: `404 DIARY_DAY_NOT_FOUND` |
+| Create (on a trip day, no activity) | `POST /v1/trips/{tripId}/days/{dayId}/postcards` — same multipart | trip member; trip started | `201` — **mints the author's derived diary and that day when absent**, carries no activity in the snapshot, and takes the trip day's label. Unlimited per day. | stranger: `404 TRIP_NOT_FOUND` · archived trip: owner `409 TRIP_ARCHIVED`, member masked `404 TRIP_NOT_FOUND` · not started: `400 TRIP_NOT_STARTED` · a day outside this trip: `404 DAY_NOT_FOUND` |
+| Create (trip-derived, from an activity) | `POST /v1/trips/{tripId}/activities/{activityId}/postcards` — same multipart, minus `diaryId`/`place` | trip member; trip started; activity of this trip | `201` — the activity's facts are **read through the trip module's interface at post time and snapshotted** (`activityTitle`, `dayLabel`, `timeOfDay`, `place`, `pin`); the author's derived diary auto-mints on first post and is reused after, **and the postcard lands on the diary day mirroring the activity's trip day** | as above, plus foreign/absent activity: `404 ACTIVITY_NOT_FOUND` · same activity again: `409 ACTIVITY_ALREADY_POSTCARDED` (another member posts the same activity freely) |
+| Read | `GET /v1/postcards/{postcardId}` | any signed-in traveler the **author's** Profile Visibility admits (S4.39, ADR-034); a stranger to a private author: `403 PROFILE_PRIVATE` | `200`; carries `diaryDayId` and `dayOrdinal`, and **when the postcard has no place of its own, its day's place is what renders**. **Reads tolerate a dangling `activityId`** — the snapshot is what renders, the id is only the trail back. | absent: `404 POSTCARD_NOT_FOUND` |
 | Recaption | `PATCH /v1/postcards/{postcardId}` body `{caption}` | author; **respects the archive freeze** (editing is not withdrawal) | `200` | non-author: `404 POSTCARD_NOT_FOUND` (masked) · trip archived: `409 TRIP_ARCHIVED` (named — the caller provably owns the postcard, so there is nothing left to mask) |
-| **Delete** | `DELETE /v1/postcards/{postcardId}` | author, **always** — withdrawal of one's own public content is a right: it crosses the archive freeze and consults no trip state, so a member who left (or was removed from) the trip still deletes by this address | `204`, permanent; photo rows and stored objects destroyed | non-author: `404 POSTCARD_NOT_FOUND` (masked) · repeat: `404` |
+| **File onto a day** | `PATCH /v1/postcards/{postcardId}` body `{diaryId, diaryDayId}` | author of both | `200` the postcard, now on that day. **Once only**: a postcard already on a day never moves between days or diaries in CM-2. | non-author of either: `404 DIARY_NOT_FOUND` / `404 POSTCARD_NOT_FOUND` (masked) · already homed: `409 POSTCARD_ALREADY_FILED` |
+| **Delete** | `DELETE /v1/postcards/{postcardId}` | author, **always** — withdrawal of one's own public content is a right: it crosses the archive freeze and consults no trip state, so a member who left (or was removed from) the trip still deletes by this address | `204`, permanent; photo rows and stored objects destroyed. **The day it sat on stands** — delete cascades downward and never upward. | non-author: `404 POSTCARD_NOT_FOUND` (masked) · repeat: `404` |
 
-Postcard photos serve through the standard media seam (`GET /v1/media/{photoId}` / `/thumb`) under the postcard module's own audience: the author's Profile Visibility (S4.39, ADR-034), same as reads — a stranger to a private author gets the media seam's masked not-found.
+Postcard photos and diary covers serve through the standard media seam (`GET /v1/media/{photoId}` / `/thumb`) under their module's own audience: the author's Profile Visibility (S4.39, ADR-034), same as reads — a stranger to a private author gets the media seam's masked not-found.
 
-### Error vocabulary minted at CM-1
+### Error vocabulary
 
-`TRIP_NOT_FOUND` · `PUBLICATION_NOT_FOUND` · `ITINERARY_NOT_COMPLETE` *(spelling shared with the old world's publish gate)* · `UNKNOWN_AUDIENCE` *(shared)* · `TRIP_ARCHIVED` *(shared, from common)* · `TRIP_NOT_STARTED` *(shared spelling)* · `ACTIVITY_NOT_FOUND` *(shared spelling)* · `DIARY_NOT_FOUND` · `DIARY_NEEDS_A_TITLE` · `DIARY_TITLE_TOO_LONG` · `POSTCARD_NOT_FOUND` · `POSTCARD_NEEDS_A_PHOTO` · `TOO_MANY_POSTCARD_PHOTOS` · `POSTCARD_CAPTION_TOO_LONG` · `ACTIVITY_ALREADY_POSTCARDED` · `NOT_PERMITTED` *(shared)*.
+Minted at CM-1: `TRIP_NOT_FOUND` · `PUBLICATION_NOT_FOUND` · `ITINERARY_NOT_COMPLETE` *(spelling shared with the old world's publish gate)* · `UNKNOWN_AUDIENCE` *(shared)* · `TRIP_ARCHIVED` *(shared, from common)* · `TRIP_NOT_STARTED` *(shared spelling)* · `ACTIVITY_NOT_FOUND` *(shared spelling)* · `DIARY_NOT_FOUND` · `DIARY_NEEDS_A_TITLE` · `DIARY_TITLE_TOO_LONG` · `POSTCARD_NOT_FOUND` · `POSTCARD_NEEDS_A_PHOTO` · `TOO_MANY_POSTCARD_PHOTOS` · `POSTCARD_CAPTION_TOO_LONG` · `ACTIVITY_ALREADY_POSTCARDED` · `NOT_PERMITTED` *(shared)*.
+
+Added at CM-2: `DIARY_NEEDS_ITS_DATES` · `DIARY_ENDS_BEFORE_IT_STARTS` · `DIARY_HAS_NOT_HAPPENED_YET` · `DIARY_TOO_LONG` · `DIARY_DAY_NOT_FOUND` · `DIARY_DAY_NEEDS_A_DATE` · `DIARY_DAY_ALREADY_EXISTS` · `DIARY_DAY_PLACE_TOO_LONG` · `POSTCARD_ALREADY_FILED` · `DAY_NOT_FOUND`.
 
 ## The existing wire, in Trip Tree vocabulary
 

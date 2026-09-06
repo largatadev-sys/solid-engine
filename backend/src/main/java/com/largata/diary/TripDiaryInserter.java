@@ -1,6 +1,7 @@
 package com.largata.diary;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -18,7 +19,15 @@ class TripDiaryInserter {
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    Diary insert(UUID authorId, UUID tripId, String title, Instant at) {
-        return diaries.saveAndFlush(Diary.mintedForTrip(authorId, tripId, title, at));
+    Diary insert(
+            UUID authorId,
+            UUID tripId,
+            String title,
+            String destination,
+            LocalDate startDate,
+            LocalDate endDate,
+            Instant at) {
+        return diaries.saveAndFlush(
+                Diary.mintedForTrip(authorId, tripId, title, destination, startDate, endDate, at));
     }
 }

@@ -13,7 +13,11 @@ interface DiaryRepository extends JpaRepository<Diary, UUID> {
 
     List<Diary> findByAuthorIdAndIdGreaterThanOrderById(UUID authorId, UUID after, Limit limit);
 
+    List<Diary> findByAuthorIdOrderByUpdatedAtDesc(UUID authorId);
+
     Optional<Diary> findByIdAndAuthorId(UUID id, UUID authorId);
 
     Optional<Diary> findByAuthorIdAndTripId(UUID authorId, UUID tripId);
+
+    int countByAuthorId(UUID authorId);
 }

@@ -23,8 +23,11 @@ public class Postcard {
     @Column(name = "author_id", nullable = false, updatable = false)
     private UUID authorId;
 
-    @Column(name = "diary_id", updatable = false)
+    @Column(name = "diary_id")
     private UUID diaryId;
+
+    @Column(name = "diary_day_id")
+    private UUID diaryDayId;
 
     @Column(name = "trip_id", updatable = false)
     private UUID tripId;
@@ -67,6 +70,7 @@ public class Postcard {
             UUID id,
             UUID authorId,
             UUID diaryId,
+            UUID diaryDayId,
             UUID tripId,
             UUID activityId,
             String activityTitle,
@@ -81,6 +85,7 @@ public class Postcard {
         this.id = id;
         this.authorId = authorId;
         this.diaryId = diaryId;
+        this.diaryDayId = diaryDayId;
         this.tripId = tripId;
         this.activityId = activityId;
         this.activityTitle = activityTitle;
@@ -101,13 +106,34 @@ public class Postcard {
             throw new IllegalArgumentException("A postcard has an author and a moment");
         }
         return new Postcard(
-                UuidV7.generate(), authorId, diaryId, null, null, null, null, null, place, null, null, null, caption, at);
+                UuidV7.generate(), authorId, diaryId, null, null, null, null, null, null, place,
+                null, null, null, caption, at);
+    }
+
+
+    static Postcard onDay(
+            UUID authorId,
+            UUID diaryId,
+            UUID diaryDayId,
+            UUID tripId,
+            String dayLabel,
+            String place,
+            String caption,
+            Instant at) {
+        if (authorId == null || diaryId == null || diaryDayId == null || at == null) {
+            throw new IllegalArgumentException(
+                    "A day-bound postcard has an author, a diary and the day it sits on");
+        }
+        return new Postcard(
+                UuidV7.generate(), authorId, diaryId, diaryDayId, tripId, null, null, dayLabel,
+                null, place, null, null, null, caption, at);
     }
 
 
     static Postcard postedFromActivity(
             UUID authorId,
             UUID diaryId,
+            UUID diaryDayId,
             UUID tripId,
             UUID activityId,
             String activityTitle,
@@ -127,6 +153,7 @@ public class Postcard {
                 UuidV7.generate(),
                 authorId,
                 diaryId,
+                diaryDayId,
                 tripId,
                 activityId,
                 activityTitle,
@@ -138,6 +165,13 @@ public class Postcard {
                 zoom,
                 caption,
                 at);
+    }
+
+
+    void fileOn(UUID newDiaryId, UUID newDiaryDayId, Instant at) {
+        this.diaryId = newDiaryId;
+        this.diaryDayId = newDiaryDayId;
+        this.updatedAt = at;
     }
 
 
@@ -176,6 +210,10 @@ public class Postcard {
 
     public UUID diaryId() {
         return diaryId;
+    }
+
+    public UUID diaryDayId() {
+        return diaryDayId;
     }
 
     public UUID tripId() {

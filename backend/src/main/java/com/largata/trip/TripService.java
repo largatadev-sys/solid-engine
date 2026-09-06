@@ -160,13 +160,34 @@ public class TripService {
 
 
     @Transactional(readOnly = true)
+    public Optional<TripDayFacts> dayFactsOf(UUID tripId, UUID dayId) {
+        if (dayId == null) {
+            return Optional.empty();
+        }
+        return db.sql("SELECT id, ordinal, title FROM day WHERE id = ? AND itinerary_id = ?")
+                .param(dayId)
+                .param(tripId)
+                .query(TripService::dayFactsRow)
+                .optional();
+    }
+
+
+    private static TripDayFacts dayFactsRow(ResultSet row, int rowNumber) throws SQLException {
+        int ordinal = row.getInt("ordinal");
+        String title = row.getString("title");
+        return new TripDayFacts(
+                row.getObject("id", UUID.class), ordinal, title, dayLabelOf(ordinal, title));
+    }
+
+
+    @Transactional(readOnly = true)
     public Optional<ActivityFacts> activityFactsOf(UUID tripId, UUID activityId) {
         if (activityId == null) {
             return Optional.empty();
         }
         return db.sql(
                         "SELECT a.id, a.title, a.time_of_day, a.place, a.latitude, a.longitude, a.zoom,"
-                                + " d.ordinal, d.title AS day_title"
+                                + " d.id AS day_id, d.ordinal, d.title AS day_title"
                                 + " FROM activity a JOIN day d ON d.id = a.day_id"
                                 + " WHERE a.id = ? AND d.itinerary_id = ?")
                 .param(activityId)
@@ -179,6 +200,8 @@ public class TripService {
     private static ActivityFacts activityFactsRow(ResultSet row, int rowNumber) throws SQLException {
         return new ActivityFacts(
                 row.getObject("id", UUID.class),
+                row.getObject("day_id", UUID.class),
+                row.getInt("ordinal"),
                 row.getString("title"),
                 dayLabelOf(row.getInt("ordinal"), row.getString("day_title")),
                 row.getObject("time_of_day", LocalTime.class),

@@ -69,10 +69,15 @@ class PostcardController {
 
 
     @PatchMapping("/{postcardId}")
-    PostcardResponse recaption(
+    PostcardResponse amend(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID postcardId,
-            @RequestBody RecaptionPostcardRequest request) {
+            @RequestBody FilePostcardRequest request) {
+        if (request.diaryDayId() != null) {
+            return PostcardResponse.of(
+                    postcards.file(
+                            traveler.id(), postcardId, request.diaryId(), request.diaryDayId()));
+        }
         return PostcardResponse.of(postcards.recaption(traveler.id(), postcardId, request.caption()));
     }
 

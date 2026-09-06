@@ -3,8 +3,9 @@ package com.largata.diary.web;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
-import java.util.UUID;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @Import(TestJwtSupport.Config.class)
 class DiaryContractIT extends PostgresTestBase {
 
+    private static final LocalDate START = LocalDate.of(2026, 3, 15);
+    private static final LocalDate END = LocalDate.of(2026, 3, 19);
+
     private RestTestClient rest;
     private TripRig rig;
 
@@ -36,14 +40,14 @@ class DiaryContractIT extends PostgresTestBase {
 
 
     @Test
-    void aTravelerCreatesADiaryWithNothingButATitle() {
+    void aMemoryIsCreatedFromATitleAndItsDatesAndAnswersOneCandidateDayPerDate() {
         String author = rig.travelerWithHandle(handle());
 
         rest.post()
                 .uri("/v1/diaries")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"title\":\"Street food finds\"}")
+                .body(memoryBody("Palawan by boat", "Palawan", START, END))
                 .exchange()
                 .expectStatus()
                 .isCreated()
@@ -51,107 +55,144 @@ class DiaryContractIT extends PostgresTestBase {
                 .jsonPath("$.id")
                 .exists()
                 .jsonPath("$.title")
-                .isEqualTo("Street food finds")
+                .isEqualTo("Palawan by boat")
+                .jsonPath("$.destination")
+                .isEqualTo("Palawan")
+                .jsonPath("$.startDate")
+                .isEqualTo("2026-03-15")
+                .jsonPath("$.endDate")
+                .isEqualTo("2026-03-19")
                 .jsonPath("$.tripId")
                 .doesNotExist()
-                .jsonPath("$.createdAt")
-                .exists();
+                .jsonPath("$.candidateDates.length()")
+                .isEqualTo(5)
+                .jsonPath("$.candidateDates[0]")
+                .isEqualTo("2026-03-15")
+                .jsonPath("$.candidateDates[4]")
+                .isEqualTo("2026-03-19")
+                .jsonPath("$.days.length()")
+                .isEqualTo(0)
+                .jsonPath("$.postcardCount")
+                .isEqualTo(0);
     }
 
 
     @Test
-    void aBlankTitleIsRefusedByName() {
+    void theDestinationIsOptional() {
         String author = rig.travelerWithHandle(handle());
 
         rest.post()
                 .uri("/v1/diaries")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"title\":\"   \"}")
+                .body(memoryBody("Somewhere", null, START, END))
                 .exchange()
                 .expectStatus()
-                .isBadRequest()
+                .isCreated()
                 .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("DIARY_NEEDS_A_TITLE");
+                .jsonPath("$.destination")
+                .doesNotExist();
     }
 
 
     @Test
-    void theAuthorListsTheirManyDiariesAndReadsOneById() {
+    void aBlankTitleMissingDatesAndAReversedRangeAreEachRefusedByName() {
         String author = rig.travelerWithHandle(handle());
-        String first = createDiary(author, "Coffee crawls");
-        String second = createDiary(author, "Night markets");
 
-        rest.get()
-                .uri("/v1/diaries")
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("$.items.length()")
-                .isEqualTo(2)
-                .jsonPath("$.items[0].id")
-                .isEqualTo(first)
-                .jsonPath("$.items[1].id")
-                .isEqualTo(second);
-        rest.get()
-                .uri("/v1/diaries/" + first)
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("$.title")
-                .isEqualTo("Coffee crawls");
+        refused(author, memoryBody("   ", null, START, END), "DIARY_NEEDS_A_TITLE");
+        refused(author, memoryBody("No dates", null, null, null), "DIARY_NEEDS_ITS_DATES");
+        refused(author, memoryBody("Backwards", null, END, START), "DIARY_ENDS_BEFORE_IT_STARTS");
+        refused(
+                author,
+                memoryBody("Not yet", null, LocalDate.now().plusDays(3), LocalDate.now().plusDays(4)),
+                "DIARY_HAS_NOT_HAPPENED_YET");
+        refused(
+                author,
+                memoryBody("x".repeat(121), null, START, END),
+                "DIARY_TITLE_TOO_LONG");
     }
 
 
     @Test
-    void theListingIsMineAloneButAReadIsPublicAtPosting() {
+    void aDiaryReadsBackItsFieldsItsDaysInOrderAndItsCounts() {
         String author = rig.travelerWithHandle(handle());
-        String diary = createDiary(author, "Coastal drives");
-        String other = rig.travelerWithHandle(handle());
+        String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);
+        addDay(author, diary, LocalDate.of(2026, 3, 16), "El Nido");
+        addDay(author, diary, LocalDate.of(2026, 3, 15), "Coron");
 
-        rest.get()
-                .uri("/v1/diaries")
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(other))
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("$.items.length()")
-                .isEqualTo(0);
         rest.get()
                 .uri("/v1/diaries/" + diary)
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(other))
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.days.length()")
+                .isEqualTo(2)
+                .jsonPath("$.days[0].ordinal")
+                .isEqualTo(1)
+                .jsonPath("$.days[0].place")
+                .isEqualTo("Coron")
+                .jsonPath("$.days[1].ordinal")
+                .isEqualTo(2)
+                .jsonPath("$.days[1].place")
+                .isEqualTo("El Nido")
+                .jsonPath("$.dayCount")
+                .isEqualTo(2)
+                .jsonPath("$.postcardCount")
+                .isEqualTo(0);
+    }
+
+
+    @Test
+    void editingTheDatesNeitherCreatesNorDeletesADay() {
+        String author = rig.travelerWithHandle(handle());
+        String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);
+        addDay(author, diary, LocalDate.of(2026, 3, 19), "Coron");
+
+        rest.patch()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(memoryBody("Palawan, shortened", "Palawan", START, LocalDate.of(2026, 3, 16)))
                 .exchange()
                 .expectStatus()
                 .isOk()
                 .expectBody()
                 .jsonPath("$.title")
-                .isEqualTo("Coastal drives");
+                .isEqualTo("Palawan, shortened")
+                .jsonPath("$.endDate")
+                .isEqualTo("2026-03-16")
+                .jsonPath("$.days.length()")
+                .isEqualTo(1)
+                .jsonPath("$.days[0].date")
+                .isEqualTo("2026-03-19");
     }
 
 
     @Test
     void anotherTravelersWriteAnswersAsIfTheDiaryDidNotExist() {
         String author = rig.travelerWithHandle(handle());
-        String diary = createDiary(author, "Original");
+        String diary = createMemory(author, "Original", null, START, END);
         String other = rig.travelerWithHandle(handle());
 
         rest.patch()
                 .uri("/v1/diaries/" + diary)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(other))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"title\":\"Hijacked\"}")
+                .body(memoryBody("Hijacked", null, START, END))
                 .exchange()
                 .expectStatus()
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
                 .isEqualTo("DIARY_NOT_FOUND");
+        rest.delete()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(other))
+                .exchange()
+                .expectStatus()
+                .isNotFound();
         rest.get()
                 .uri("/v1/diaries/" + diary)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
@@ -165,43 +206,49 @@ class DiaryContractIT extends PostgresTestBase {
 
 
     @Test
-    void theAuthorRetitlesTheirDiary() {
+    void theAuthorListsTheirDiaries() {
         String author = rig.travelerWithHandle(handle());
-        String diary = createDiary(author, "Working title");
+        createMemory(author, "Coffee crawls", null, START, END);
+        createMemory(author, "Night markets", null, START, END);
 
-        rest.patch()
-                .uri("/v1/diaries/" + diary)
+        rest.get()
+                .uri("/v1/diaries")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"title\":\"The real title\"}")
                 .exchange()
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("$.title")
-                .isEqualTo("The real title");
+                .jsonPath("$.items.length()")
+                .isEqualTo(2);
     }
 
 
-    private String createDiary(String author, String title) {
-        return TripRig.fieldIn(
-                rest.post()
-                        .uri("/v1/diaries")
-                        .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"title\":\"" + title + "\"}")
-                        .exchange()
-                        .expectStatus()
-                        .isCreated()
-                        .expectBody()
-                        .returnResult()
-                        .getResponseBodyContent(),
-                "id");
-    }
+    @Test
+    void deletingADiaryTakesItsDaysWithIt() {
+        String author = rig.travelerWithHandle(handle());
+        String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);
+        addDay(author, diary, START, "Coron");
 
+        rest.delete()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
 
-    private static String handle() {
-        return "t" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+        org.assertj.core.api.Assertions.assertThat(
+                        jdbc.queryForObject(
+                                "SELECT count(*) FROM diary_day WHERE diary_id = ?",
+                                Integer.class,
+                                UUID.fromString(diary)))
+                .as("the delete cascades downward at the storage seam, not only in the response")
+                .isZero();
+        rest.get()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .exchange()
+                .expectStatus()
+                .isNotFound();
     }
 
 
@@ -211,20 +258,7 @@ class DiaryContractIT extends PostgresTestBase {
         String follower = onboarded();
         String stranger = onboarded();
         follow(follower, rig.travelerIdOf(author));
-        String diaryId =
-                TripRig.fieldIn(
-                        rest.post()
-                                .uri("/v1/diaries")
-                                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .body("{\"title\":\"Ours alone\"}")
-                                .exchange()
-                                .expectStatus()
-                                .isCreated()
-                                .expectBody()
-                                .returnResult()
-                                .getResponseBodyContent(),
-                        "id");
+        String diaryId = createMemory(author, "Ours alone", null, START, END);
         goPrivate(author);
 
         rest.get()
@@ -244,6 +278,69 @@ class DiaryContractIT extends PostgresTestBase {
                     .expectStatus()
                     .isOk();
         }
+    }
+
+
+    private void refused(String author, String body, String code) {
+        rest.post()
+                .uri("/v1/diaries")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo(code);
+    }
+
+
+    private String createMemory(
+            String author, String title, String destination, LocalDate start, LocalDate end) {
+        return TripRig.fieldIn(
+                rest.post()
+                        .uri("/v1/diaries")
+                        .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(memoryBody(title, destination, start, end))
+                        .exchange()
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent(),
+                "id");
+    }
+
+
+    private void addDay(String author, String diaryId, LocalDate date, String place) {
+        rest.post()
+                .uri("/v1/diaries/" + diaryId + "/days")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"date\":\"" + date + "\",\"place\":\"" + place + "\"}")
+                .exchange()
+                .expectStatus()
+                .isCreated();
+    }
+
+
+    static String memoryBody(String title, String destination, LocalDate start, LocalDate end) {
+        return "{\"title\":"
+                + quoted(title)
+                + ",\"destination\":"
+                + quoted(destination)
+                + ",\"startDate\":"
+                + quoted(start == null ? null : start.toString())
+                + ",\"endDate\":"
+                + quoted(end == null ? null : end.toString())
+                + "}";
+    }
+
+
+    private static String quoted(String value) {
+        return value == null ? "null" : "\"" + value + "\"";
     }
 
 
@@ -278,5 +375,10 @@ class DiaryContractIT extends PostgresTestBase {
                 .exchange()
                 .expectStatus()
                 .isOk();
+    }
+
+
+    static String handle() {
+        return "t" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
     }
 }

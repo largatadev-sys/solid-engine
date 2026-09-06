@@ -5,10 +5,16 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
 import com.largata.common.tx.AfterCommit;
+import com.largata.diary.DiaryExceptions.DiaryDayAlreadyExistsException;
+import com.largata.diary.DiaryExceptions.DiaryDayNeedsADateException;
+import com.largata.diary.DiaryExceptions.DiaryDayNotFoundException;
 import com.largata.diary.DiaryExceptions.DiaryNotFoundException;
+import com.largata.media.Photo;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,31 +33,44 @@ public class DiaryService {
     private static final Logger log = LoggerFactory.getLogger(DiaryService.class);
 
     private final DiaryRepository diaries;
+    private final DiaryDayRepository days;
     private final DiaryContents contents;
+    private final DiaryCoverService covers;
     private final TripDiaryInserter tripDiaries;
+    private final DiaryDayInserter dayInserter;
     private final Analytics analytics;
     private final Clock clock;
 
     DiaryService(
             DiaryRepository diaries,
+            DiaryDayRepository days,
             DiaryContents contents,
+            DiaryCoverService covers,
             TripDiaryInserter tripDiaries,
+            DiaryDayInserter dayInserter,
             Analytics analytics,
             Clock clock) {
         this.diaries = diaries;
+        this.days = days;
         this.contents = contents;
+        this.covers = covers;
         this.tripDiaries = tripDiaries;
+        this.dayInserter = dayInserter;
         this.analytics = analytics;
         this.clock = clock;
     }
 
 
     @Transactional
-    public Diary create(UUID authorId, String title) {
-        Diary saved = diaries.saveAndFlush(Diary.standalone(authorId, title, Instant.now(clock)));
+    public DiaryView create(
+            UUID authorId, String title, String destination, LocalDate startDate, LocalDate endDate) {
+        Diary saved =
+                diaries.saveAndFlush(
+                        Diary.standalone(
+                                authorId, title, destination, startDate, endDate, Instant.now(clock)));
         log.info("Diary created: id={} authorId={}", saved.id(), authorId);
         emit(saved, "diary_created");
-        return saved;
+        return new DiaryView(saved, 0, List.of(), saved.candidateDates(), null, null);
     }
 
 
@@ -74,31 +93,145 @@ public class DiaryService {
 
 
     @Transactional(readOnly = true)
+    public List<DiaryView> allOf(UUID authorId) {
+        List<Diary> found = diaries.findByAuthorIdOrderByUpdatedAtDesc(authorId);
+        if (found.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> ids = found.stream().map(Diary::id).toList();
+        Map<UUID, Integer> countsByDiary = contents.countsByDiary(ids);
+        List<DiaryDay> allDays = days.findByDiaryIdInOrderByOrdinal(ids);
+        List<DiaryContents.Card> cards =
+                contents.cardsOn(allDays.stream().map(DiaryDay::id).toList());
+        return found.stream()
+                .map(
+                        diary -> {
+                            List<DiaryView.Day> daysOfIt =
+                                    allDays.stream()
+                                            .filter(day -> day.diaryId().equals(diary.id()))
+                                            .map(
+                                                    day -> {
+                                                        List<DiaryContents.Card> onDay =
+                                                                cards.stream()
+                                                                        .filter(
+                                                                                card ->
+                                                                                        day.id()
+                                                                                                .equals(
+                                                                                                        card
+                                                                                                                .diaryDayId()))
+                                                                        .toList();
+                                                        return new DiaryView.Day(
+                                                                day, onDay.size(), onDay);
+                                                    })
+                                            .toList();
+                            Photo cover = covers.coverOf(diary.id()).orElse(null);
+                            return new DiaryView(
+                                    diary,
+                                    countsByDiary.getOrDefault(diary.id(), 0),
+                                    daysOfIt,
+                                    List.of(),
+                                    cover,
+                                    cover == null
+                                            ? firstPhotoAmong(
+                                                    daysOfIt.stream()
+                                                            .flatMap(day -> day.postcards().stream())
+                                                            .toList())
+                                            : null);
+                        })
+                .toList();
+    }
+
+
+    @Transactional(readOnly = true)
     public Diary read(UUID diaryId) {
         return diaries.findById(diaryId).orElseThrow(DiaryNotFoundException::new);
     }
 
 
+    @Transactional(readOnly = true)
+    public DiaryView readWithDays(UUID diaryId) {
+        return viewOf(read(diaryId));
+    }
+
+
+    private DiaryView viewOf(Diary diary) {
+        List<DiaryDay> stored = days.findByDiaryIdOrderByOrdinal(diary.id());
+        List<UUID> dayIds = stored.stream().map(DiaryDay::id).toList();
+        List<DiaryContents.Card> cards = contents.cardsOn(dayIds);
+        Photo cover = covers.coverOf(diary.id()).orElse(null);
+        return new DiaryView(
+                diary,
+                contents.countIn(diary.id()),
+                stored.stream()
+                        .map(
+                                day -> {
+                                    List<DiaryContents.Card> onDay =
+                                            cards.stream()
+                                                    .filter(card -> day.id().equals(card.diaryDayId()))
+                                                    .toList();
+                                    return new DiaryView.Day(day, onDay.size(), onDay);
+                                })
+                        .toList(),
+                List.of(),
+                cover,
+                cover == null ? firstPhotoAmong(cards) : null);
+    }
+
+
+    private static Photo firstPhotoAmong(List<DiaryContents.Card> cards) {
+        return cards.stream()
+                .flatMap(card -> card.photos().stream())
+                .findFirst()
+                .orElse(null);
+    }
+
+
     @Transactional
-    public Diary retitle(UUID authorId, UUID diaryId, String title) {
+    public DiaryView describe(
+            UUID authorId,
+            UUID diaryId,
+            String title,
+            String destination,
+            LocalDate startDate,
+            LocalDate endDate) {
         Diary diary = requireOwn(authorId, diaryId);
-        diary.retitle(title, Instant.now(clock));
+        diary.describe(title, destination, startDate, endDate, Instant.now(clock));
         Diary saved = diaries.saveAndFlush(diary);
-        emit(saved, "diary_retitled");
-        return saved;
+        emit(saved, "diary_described");
+        return viewOf(saved);
     }
 
 
     @Transactional
-    public Diary mintTripDiary(UUID authorId, UUID tripId, String title) {
+    public Diary mintTripDiary(
+            UUID authorId,
+            UUID tripId,
+            String title,
+            String destination,
+            LocalDate startDate,
+            LocalDate endDate) {
         return diaries.findByAuthorIdAndTripId(authorId, tripId)
-                .orElseGet(() -> mint(authorId, tripId, title));
+                .orElseGet(() -> mint(authorId, tripId, title, destination, startDate, endDate));
     }
 
 
-    private Diary mint(UUID authorId, UUID tripId, String title) {
+    private Diary mint(
+            UUID authorId,
+            UUID tripId,
+            String title,
+            String destination,
+            LocalDate startDate,
+            LocalDate endDate) {
         try {
-            Diary minted = tripDiaries.insert(authorId, tripId, title, Instant.now(clock));
+            Diary minted =
+                    tripDiaries.insert(
+                            authorId,
+                            tripId,
+                            title,
+                            destination,
+                            startDate,
+                            endDate,
+                            Instant.now(clock));
             log.info("Trip diary minted: id={} authorId={}", minted.id(), authorId);
             emit(minted, "diary_created");
             return minted;
@@ -113,6 +246,9 @@ public class DiaryService {
     public void delete(UUID authorId, UUID diaryId) {
         Diary diary = requireOwn(authorId, diaryId);
         contents.destroyAllIn(diary.id());
+        covers.remove(diary.id());
+        days.deleteAll(days.findByDiaryIdOrderByOrdinal(diary.id()));
+        days.flush();
         diaries.delete(diary);
         diaries.flush();
         log.info("Diary deleted: id={} authorId={}", diaryId, authorId);
@@ -120,9 +256,140 @@ public class DiaryService {
     }
 
 
+    @Transactional
+    public DiaryView setCover(UUID authorId, UUID diaryId, byte[] uploaded) {
+        Diary diary = requireOwn(authorId, diaryId);
+        covers.replace(diary.id(), uploaded, authorId);
+        diary.touch(Instant.now(clock));
+        return viewOf(diaries.saveAndFlush(diary));
+    }
+
+
+    @Transactional
+    public DiaryView removeCover(UUID authorId, UUID diaryId) {
+        Diary diary = requireOwn(authorId, diaryId);
+        covers.remove(diary.id());
+        diary.touch(Instant.now(clock));
+        return viewOf(diaries.saveAndFlush(diary));
+    }
+
+
+    @Transactional(readOnly = true)
+    public Sections sectionsOf(UUID authorId) {
+        return new Sections(allOf(authorId), contents.looseCardsOf(authorId), countOwnedBy(authorId));
+    }
+
+
+    public record Sections(
+            List<DiaryView> diaries, List<DiaryContents.Card> loosePostcards, int diaryCount) {}
+
+
+    @Transactional
+    public DiaryView.Day addDay(UUID authorId, UUID diaryId, LocalDate date, String place) {
+        Diary diary = requireOwn(authorId, diaryId);
+        if (date == null) {
+            throw new DiaryDayNeedsADateException();
+        }
+        if (days.findByDiaryIdAndDate(diaryId, date).isPresent()) {
+            throw new DiaryDayAlreadyExistsException();
+        }
+        Instant at = Instant.now(clock);
+        diary.widenTo(date, at);
+        diaries.saveAndFlush(diary);
+        try {
+            return new DiaryView.Day(
+                    dayInserter.insert(diary.id(), diary.ordinalOf(date), date, place, at),
+                    0,
+                    List.of());
+        } catch (DataIntegrityViolationException lostTheRace) {
+            throw new DiaryDayAlreadyExistsException();
+        }
+    }
+
+
+    DiaryDay materialize(Diary diary, LocalDate date, String place, Instant at) {
+        return days.findByDiaryIdAndDate(diary.id(), date)
+                .orElseGet(
+                        () -> {
+                            try {
+                                return dayInserter.insert(
+                                        diary.id(), diary.ordinalOf(date), date, place, at);
+                            } catch (DataIntegrityViolationException lostTheRace) {
+                                return days.findByDiaryIdAndDate(diary.id(), date)
+                                        .orElseThrow(DiaryDayAlreadyExistsException::new);
+                            }
+                        });
+    }
+
+
+    @Transactional
+    public DiaryDay mintTripDay(UUID diaryId, UUID tripDayId, String tripDayTitle, int ordinal) {
+        Instant at = Instant.now(clock);
+        return days.findByDiaryIdAndTripDayId(diaryId, tripDayId)
+                .orElseGet(
+                        () -> {
+                            Diary diary =
+                                    diaries.findById(diaryId).orElseThrow(DiaryNotFoundException::new);
+                            diary.coverDay(ordinal, at);
+                            diaries.saveAndFlush(diary);
+                            LocalDate date = diary.startDate().plusDays(ordinal - 1L);
+                            try {
+                                return dayInserter.insertSnapshot(
+                                        diaryId, ordinal, date, null, tripDayId, tripDayTitle, at);
+                            } catch (DataIntegrityViolationException lostTheRace) {
+                                return days.findByDiaryIdAndTripDayId(diaryId, tripDayId)
+                                        .orElseThrow(DiaryDayNotFoundException::new);
+                            }
+                        });
+    }
+
+
+    @Transactional
+    public DiaryView.Day placeDay(UUID authorId, UUID diaryId, UUID dayId, String place) {
+        requireOwn(authorId, diaryId);
+        DiaryDay day =
+                days.findByIdAndDiaryId(dayId, diaryId).orElseThrow(DiaryDayNotFoundException::new);
+        day.moveTo(place, Instant.now(clock));
+        DiaryDay saved = days.saveAndFlush(day);
+        List<DiaryContents.Card> onDay = contents.cardsOn(List.of(saved.id()));
+        return new DiaryView.Day(saved, onDay.size(), onDay);
+    }
+
+
+    @Transactional
+    public void deleteDay(UUID authorId, UUID diaryId, UUID dayId) {
+        requireOwn(authorId, diaryId);
+        DiaryDay day =
+                days.findByIdAndDiaryId(dayId, diaryId).orElseThrow(DiaryDayNotFoundException::new);
+        contents.destroyAllOn(day.id());
+        days.delete(day);
+        days.flush();
+        log.info("Diary day deleted: id={} diaryId={}", dayId, diaryId);
+    }
+
+
+    @Transactional(readOnly = true)
+    public DiaryDay requireDayIn(UUID authorId, UUID diaryId, UUID dayId) {
+        requireOwn(authorId, diaryId);
+        return days.findByIdAndDiaryId(dayId, diaryId).orElseThrow(DiaryDayNotFoundException::new);
+    }
+
+
     @Transactional(readOnly = true)
     public Diary requireOwn(UUID authorId, UUID diaryId) {
         return diaries.findByIdAndAuthorId(diaryId, authorId).orElseThrow(DiaryNotFoundException::new);
+    }
+
+
+    @Transactional(readOnly = true)
+    public DiaryDay dayOf(UUID dayId) {
+        return days.findById(dayId).orElseThrow(DiaryDayNotFoundException::new);
+    }
+
+
+    @Transactional(readOnly = true)
+    public int countOwnedBy(UUID authorId) {
+        return diaries.countByAuthorId(authorId);
     }
 
 

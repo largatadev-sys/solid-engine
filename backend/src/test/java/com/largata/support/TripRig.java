@@ -144,7 +144,17 @@ public final class TripRig {
     }
 
 
-    private static byte[] jpeg() {
+    public static org.springframework.core.io.ByteArrayResource namedJpeg(String filename) {
+        return new ByteArrayResource(jpeg()) {
+            @Override
+            public String getFilename() {
+                return filename;
+            }
+        };
+    }
+
+
+    static byte[] jpeg() {
         BufferedImage photo = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
         for (int y = 0; y < photo.getHeight(); y++) {
             for (int x = 0; x < photo.getWidth(); x++) {

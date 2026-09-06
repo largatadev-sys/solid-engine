@@ -286,7 +286,11 @@ class PostcardContractIT extends ObjectStoreTestBase {
                         .uri("/v1/diaries")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"title\":\"" + title + "\"}")
+                        .body(
+                                "{\"title\":\""
+                                        + title
+                                        + "\",\"startDate\":\"2026-03-15\","
+                                        + "\"endDate\":\"2026-03-19\"}")
                         .exchange()
                         .expectStatus()
                         .isCreated()

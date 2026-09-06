@@ -167,7 +167,12 @@ class DiaryDeleteContractIT extends ObjectStoreTestBase {
                         .uri("/v1/diaries")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"title\":\"" + title + "\"}")
+                        .body(
+                                DiaryContractIT.memoryBody(
+                                        title,
+                                        null,
+                                        java.time.LocalDate.of(2026, 3, 15),
+                                        java.time.LocalDate.of(2026, 3, 19)))
                         .exchange()
                         .expectStatus()
                         .isCreated()
