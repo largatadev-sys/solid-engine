@@ -96,8 +96,6 @@ test('a diary section carries its meta line, and no engagement row exists anywhe
     page.getByText(sectionMetaLine('Portugal', 0)).locator('visible=true').last(),
   ).toBeVisible();
 
-  // The founder's ruling, and the reason this assertion is here rather than in a
-  // comment: no heart, no count, no chat glyph on any CM-2 surface.
   for (const engagement of ['likes', 'Like', 'Comment', 'comments']) {
     await expect(
       page.getByText(new RegExp(`\b${engagement}\b`)).locator('visible=true'),
@@ -135,9 +133,7 @@ test('a traveler with nothing posted sees the empty state and no button', async 
   const emptyHandle = `t${Date.now().toString(36)}`.slice(0, 12);
   const strangerSections = await api(`/v1/travelers/${emptyHandle}/diaries`, 'GET', token);
 
-  // A handle nobody holds answers not-found; the empty state belongs to a real
-  // traveler with nothing on it, which is what this page proves for our own.
-  expect(strangerSections.status).toBe(404);
+  expect(strangerSections.status, 'a handle nobody holds answers not-found').toBe(404);
 
   await page.goto('/profile');
   await labelled(page, DIARY_TAB_LABEL).click();

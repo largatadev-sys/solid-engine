@@ -21,6 +21,7 @@ import com.largata.media.Photo;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -335,8 +336,13 @@ public class DiaryService {
             throw new DiaryDayAlreadyExistsException();
         }
         Instant at = Instant.now(clock);
+        LocalDate origin = diary.startDate();
         diary.widenTo(date, at);
         diaries.saveAndFlush(diary);
+        if (diary.startDate().isBefore(origin)) {
+            days.shiftDatedOrdinals(
+                    diary.id(), (int) ChronoUnit.DAYS.between(diary.startDate(), origin));
+        }
         try {
             return new DiaryView.Day(
                     dayInserter.insert(diary.id(), diary.ordinalOf(date), date, place, pin, at),

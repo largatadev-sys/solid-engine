@@ -1,7 +1,6 @@
 package com.largata.itinerary.api;
 
 import com.largata.common.geo.Pin;
-import com.largata.common.geo.Pin;
 import com.largata.common.geo.PinPayload;
 import com.largata.itinerary.Itinerary;
 import com.largata.itinerary.ItineraryFields;

@@ -30,9 +30,6 @@ test.describe.configure({ mode: 'serial' });
 const TITLE = `Lisbon walk ${Date.now().toString(36)}`;
 const DESTINATION = 'Portugal';
 
-// The 5th to the 9th of a month safely behind us: past, so the "a diary is a
-// past trip" rule can never refuse the walk on the day it runs, and wholly
-// inside one month, so the calendar never has to be stepped mid-range.
 const START = dayOfAMonthWellBehind(5);
 const END = dayOfAMonthWellBehind(9);
 
@@ -82,8 +79,10 @@ test('a memory is created, two days are filled, one is skipped, and Post lands o
 
   await labelled(page, DIARY_NEXT_CTA).click();
 
-  // The server's candidate days, not the client's: five dates in, five cards out.
-  await expect(page.getByText(DIARY_DAYS_HINT).locator('visible=true').last()).toBeVisible();
+  await expect(
+    page.getByText(DIARY_DAYS_HINT).locator('visible=true').last(),
+    'the server supplies the candidate days: five dates in, five cards out',
+  ).toBeVisible();
   await expect(page.getByText(dayHeading(1, START)).locator('visible=true').last()).toBeVisible();
   await expect(page.getByText(dayHeading(5, END)).locator('visible=true').last()).toBeVisible();
 
@@ -143,8 +142,6 @@ test('Back from the days screen discards the diary it created', async ({ page })
 async function pickTheRange(page: any): Promise<void> {
   await labelled(page, 'Start').click();
 
-  // The sheet opens on the current month; the range is deliberately weeks back,
-  // so step until the start date's cell is on screen rather than assuming it is.
   const start = labelled(page, longDate(START));
   for (let step = 0; step < 6 && !(await start.isVisible()); step += 1) {
     await labelled(page, 'Previous month').click();
