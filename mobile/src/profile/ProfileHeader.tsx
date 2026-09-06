@@ -10,6 +10,7 @@ import {
   workspaceColors,
   workspaceRadii,
 } from '../theme/workspaceTokens';
+import { POST_SHEET_TITLE } from '../diary/memoryCopy';
 import { ACCOUNT_LABEL, EDIT_PROFILE_LABEL } from './profileCopy';
 import type { ProfileCard } from './profileCard';
 import { profileMetaLine } from './profileMetaLine';
@@ -21,10 +22,17 @@ interface ProfileHeaderProps {
   readonly stats: ProfileStats;
   readonly onEditProfile: () => void;
   readonly onOpenAccount: () => void;
+  readonly onPost: () => void;
 }
 
 
-export function ProfileHeader({ card, stats, onEditProfile, onOpenAccount }: ProfileHeaderProps) {
+export function ProfileHeader({
+  card,
+  stats,
+  onEditProfile,
+  onOpenAccount,
+  onPost,
+}: ProfileHeaderProps) {
   const meta = profileMetaLine(card.handle, card.vanityNumber);
 
   return (
@@ -49,6 +57,15 @@ export function ProfileHeader({ card, stats, onEditProfile, onOpenAccount }: Pro
           )}
           {card.bio !== null && <Text style={styles.bio}>{card.bio}</Text>}
         </View>
+
+        <Pressable
+          style={styles.cog}
+          onPress={onPost}
+          accessibilityRole="button"
+          accessibilityLabel={POST_SHEET_TITLE}
+        >
+          <Icon name="plusCircle" size={profileMetrics.cogGlyph} color={workspaceColors.sheetBody} />
+        </Pressable>
 
         <Pressable
           style={styles.cog}

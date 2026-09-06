@@ -5,7 +5,9 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { ScreenMessage } from '../../../src/components/ScreenMessage';
 import { useMe } from '../../../src/hooks/useMe';
 import { ONBOARDING_ROUTES } from '../../../src/onboarding/onboardingGate';
-import { ProfileDiaryTab } from '../../../src/profile/ProfileDiaryTab';
+import { MemoryDiaryTab } from '../../../src/diary/MemoryDiaryTab';
+import { MemoryToastStation } from '../../../src/diary/MemoryToast';
+import { useDiarySections } from '../../../src/query/memoryQueries';
 import { ProfileHeader } from '../../../src/profile/ProfileHeader';
 import { ProfileItinerariesTab } from '../../../src/profile/ProfileItinerariesTab';
 import { ProfileTabs } from '../../../src/profile/ProfileTabs';
@@ -99,12 +101,13 @@ export default function ProfileScreen() {
           }}
           onEditProfile={() => router.push(`${ONBOARDING_ROUTES.profile}?mode=edit`)}
           onOpenAccount={() => router.push('/account')}
+          onPost={() => router.push('/post')}
         />
 
         <ProfileTabs selected={tab} onSelect={chooseTab} />
 
         {tab === 'diary' ? (
-          <ProfileDiaryTab removal={removal} />
+          <MemoryDiaryTabPane handle={myHandle} />
         ) : (
           <ProfileItinerariesTab removal={removal} />
         )}
@@ -125,7 +128,35 @@ export default function ProfileScreen() {
         onUndo={removal.undo}
         onDone={removal.settle}
       />
+
+      <MemoryToastStation />
     </View>
+  );
+}
+
+
+function MemoryDiaryTabPane({ handle }: { readonly handle: string | null }) {
+  const router = useRouter();
+  const sections = useDiarySections(handle);
+
+  useRevalidateOnFocus(sections);
+
+  if (sections.data === undefined) {
+    return <ActivityIndicator style={styles.loading} color={colors.accent} />;
+  }
+
+  return (
+    <MemoryDiaryTab
+      sections={sections.data}
+      owned
+      onOpenDiary={(diaryId) => router.push({ pathname: '/diaries/[id]', params: { id: diaryId } })}
+      onOpenPostcard={(postcardId) =>
+        router.push({ pathname: '/postcards/[id]', params: { id: postcardId } })
+      }
+      onOpenItinerary={(itineraryId) =>
+        router.push({ pathname: '/showcase/[id]', params: { id: itineraryId } })
+      }
+    />
   );
 }
 
