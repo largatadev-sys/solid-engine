@@ -340,7 +340,10 @@ test('the diary shows on the profile, grouped by trip and counted', async ({ pag
   await page.goto('/profile');
 
   await expect(page.getByText(trip.title)).toBeVisible();
-  await expect(labelled(page, `Open the diary for ${trip.title}, 1 entry`)).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: trip.title }).last(),
+    'the trip reads as a diary section on the tab, opening by its own title',
+  ).toBeVisible();
 });
 
 test('the per-trip stream renders the postcard with its snapshot header', async ({ page }) => {

@@ -4,12 +4,13 @@ import { requireStack } from '../support/gate';
 import { ownerTagFor, type PoolTag } from '../support/identities';
 import { FIXTURE_PHOTO } from '../support/seed';
 import { labelled } from '../support/screen';
+import { pickPlace } from '../support/places';
+import { placeFieldLabel } from '../../src/maps/mapCopy';
 import {
   DAY_ADD_PHOTO,
   DIARIES_STAT_LABEL,
   DIARY_TAB_EMPTY_TITLE,
   POSTCARD_CAPTION_LABEL,
-  POSTCARD_PLACE_LABEL,
   POSTCARD_POSTED_TOAST,
   POST_CTA,
   VIEW_ITINERARY_LINK,
@@ -56,7 +57,7 @@ test('a loose postcard posts from nowhere and reads at the top of the Diary tab'
   await expect(post, 'a photo alone is not enough — a caption or a place is owed').toBeDisabled();
 
   await labelled(page, POSTCARD_CAPTION_LABEL).fill(CAPTION);
-  await labelled(page, POSTCARD_PLACE_LABEL).fill(PLACE);
+  await pickPlace(page, labelled(page, placeFieldLabel('')), PLACE);
   await expect(post).toBeEnabled();
 
   await post.click();

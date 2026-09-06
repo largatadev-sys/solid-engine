@@ -11,7 +11,7 @@ import {
   uploadPhoto,
   type SeededTrip,
 } from '../support/seed';
-import { labelStarting, labelled } from '../support/screen';
+import { labelled } from '../support/screen';
 import { DIARY_TAB_LABEL } from '../../src/profile/profileCopy';
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import {
@@ -67,11 +67,11 @@ async function entryCount(): Promise<number> {
 
 async function openDiaryTab(page: import('@playwright/test').Page): Promise<void> {
   await page.goto(PROFILE_TAB_ROUTE);
-  await page.getByText(DIARY_TAB_LABEL).first().click();
-  const section = labelStarting(page, `Open the diary for ${tripTitle}`);
-  await expect(section).toHaveCount(1, { timeout: 20_000 });
+  await labelled(page, DIARY_TAB_LABEL).click();
+  const section = page.getByRole('button', { name: tripTitle }).last();
+  await expect(section).toBeVisible({ timeout: 20_000 });
   await section.scrollIntoViewIfNeeded();
-  const expander = labelStarting(page, `Expand entries for ${tripTitle}`);
+  const expander = labelled(page, `Expand ${tripTitle}`);
   if ((await expander.count()) > 0) await expander.click();
 }
 

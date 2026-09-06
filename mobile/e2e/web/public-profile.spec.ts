@@ -9,17 +9,16 @@ import {
   FOLLOWERS_STAT_LABEL,
   FOLLOWING_STAT_LABEL,
   ITINERARIES_TAB_LABEL,
-  PUBLISHED_STAT_LABEL,
 } from '../../src/profile/profileCopy';
 import {
   FOLLOW_LABEL,
-  DESTINATIONS_STAT_LABEL,
   PROFILE_UNAVAILABLE,
   PUBLIC_DIARY_EMPTY_TITLE,
   PUBLIC_PROFILE_TITLE,
   publicDiaryEmptyBody,
 } from '../../src/profile/publicProfileCopy';
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
+import { DIARIES_STAT_LABEL, ITINERARIES_STAT_LABEL } from '../../src/diary/memoryCopy';
 
 const VIEWER = ownerTagFor('web/public-profile');
 const SUBJECT = 't2';
@@ -73,8 +72,8 @@ test('the public profile shows the header the canvas draws, and no owner chrome'
   await expect(page.getByText(PUBLIC_PROFILE_TITLE).last()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(`@${subject.handle}`, { exact: false }).last()).toBeVisible();
 
-  await expect(page.getByText(PUBLISHED_STAT_LABEL).last()).toBeVisible();
-  await expect(page.getByText(DESTINATIONS_STAT_LABEL).last()).toBeVisible();
+  await expect(page.getByText(DIARIES_STAT_LABEL).last()).toBeVisible();
+  await expect(page.getByText(ITINERARIES_STAT_LABEL).last()).toBeVisible();
   await expect(page.getByText(FOLLOWERS_STAT_LABEL).last()).toBeVisible();
   await expect(page.getByText(FOLLOWING_STAT_LABEL).last()).toBeVisible();
   await expect(page.getByText('Trips', { exact: true })).toHaveCount(0);

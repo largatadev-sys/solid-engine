@@ -4,6 +4,8 @@ import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
 import { FIXTURE_PHOTO } from '../support/seed';
 import { labelled } from '../support/screen';
+import { pickPlace } from '../support/places';
+import { placeFieldLabel } from '../../src/maps/mapCopy';
 import {
   BACK_LABEL,
   DAY_ADD_PHOTO,
@@ -14,7 +16,6 @@ import {
   POST_CTA,
   DIARY_POSTED_TOAST,
   DIARY_TITLE_LABEL,
-  DIARY_DESTINATION_LABEL,
   NEW_DIARY_TITLE,
   POST_SHEET_DIARY_TITLE,
   POST_SHEET_TITLE,
@@ -74,7 +75,7 @@ test('a memory is created, two days are filled, one is skipped, and Post lands o
   await page.goto('/diaries/new');
 
   await labelled(page, DIARY_TITLE_LABEL).fill(TITLE);
-  await labelled(page, DIARY_DESTINATION_LABEL).fill(DESTINATION);
+  await pickPlace(page, labelled(page, placeFieldLabel('')), DESTINATION);
   await pickTheRange(page);
 
   await labelled(page, DIARY_NEXT_CTA).click();
@@ -159,7 +160,7 @@ async function fillDay(
   place: string,
   caption: string,
 ): Promise<void> {
-  await labelled(page, `${DAY_PLACE_LABEL} ${ordinal}`).fill(place);
+  await pickPlace(page, labelled(page, `${DAY_PLACE_LABEL} ${ordinal}`), place);
 
   const chooser = page.waitForEvent('filechooser');
   await labelled(page, `${DAY_ADD_PHOTO} ${ordinal}`).click();
