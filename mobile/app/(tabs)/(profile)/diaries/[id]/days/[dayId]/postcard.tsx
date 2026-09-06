@@ -26,6 +26,7 @@ export default function PostcardOnDayRoute() {
       ordinal={day.ordinal}
       date={day.date}
       dayPlace={day.place}
+      dayPin={day.pin}
       onPosted={() => {
         refresh(state.kind === 'ok' ? state.me.handle : null);
         router.back();
