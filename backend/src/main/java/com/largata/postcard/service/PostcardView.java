@@ -1,6 +1,6 @@
 package com.largata.postcard.service;
 
-import com.largata.diary.DiaryDay;
+import com.largata.diary.entity.DiaryDay;
 import com.largata.identity.TravelerSummary;
 import com.largata.media.Photo;
 import com.largata.postcard.entity.Postcard;

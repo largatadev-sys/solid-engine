@@ -1,8 +1,8 @@
 package com.largata.postcard.adapter;
 
-import com.largata.diary.Diary;
-import com.largata.diary.DiaryDay;
-import com.largata.diary.DiaryService;
+import com.largata.diary.entity.Diary;
+import com.largata.diary.entity.DiaryDay;
+import com.largata.diary.service.DiaryService;
 import com.largata.postcard.api.LegacyEntries;
 import com.largata.postcard.entity.Postcard;
 import com.largata.postcard.exception.ActivityAlreadyPostcardedException;

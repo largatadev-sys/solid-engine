@@ -1,6 +1,6 @@
 package com.largata.postcard.adapter;
 
-import com.largata.diary.DiaryContents;
+import com.largata.diary.api.DiaryContents;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
