@@ -58,13 +58,17 @@ async function request<T>(path: string, init?: { method: string; body?: unknown 
   return body as T;
 }
 
-async function upload<T>(path: string, part: FormData): Promise<T> {
+async function upload<T>(
+  path: string,
+  part: FormData,
+  method: 'POST' | 'PUT' = 'POST',
+): Promise<T> {
   const token = await currentToken();
 
   let response: Response;
   try {
     response = await fetch(`${baseUrl()}${path}`, {
-      method: 'POST',
+      method,
       headers: {
         Accept: 'application/json',
         ...(token !== null ? { Authorization: `Bearer ${token}` } : {}),
@@ -121,7 +125,8 @@ function servesAnonymously(path: string): boolean {
 export const apiClient = {
   get: <T>(path: string): Promise<T> => request<T>(path),
 
-  upload: <T>(path: string, part: FormData): Promise<T> => upload<T>(path, part),
+  upload: <T>(path: string, part: FormData, method?: 'POST' | 'PUT'): Promise<T> =>
+    upload<T>(path, part, method),
 
   fetchBlob: (path: string): Promise<Blob | null> => fetchBlob(path),
 
@@ -131,5 +136,6 @@ export const apiClient = {
 
   put: <T>(path: string, body: unknown): Promise<T> => request<T>(path, { method: 'PUT', body }),
 
-  delete: (path: string, body?: unknown): Promise<void> => request<void>(path, { method: 'DELETE', body }),
+  delete: <T = void>(path: string, body?: unknown): Promise<T> =>
+    request<T>(path, { method: 'DELETE', body }),
 };

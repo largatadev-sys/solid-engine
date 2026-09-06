@@ -32,6 +32,7 @@ class ProfileFenceCoverageTest {
                     "PostcardFeedController.java",
                     "PostcardController.java",
                     "DiaryController.java",
+                    "ProfileDiariesController.java",
                     "PublicationController.java");
 
 

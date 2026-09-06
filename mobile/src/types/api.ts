@@ -755,3 +755,107 @@ export type ChatMessageResponse = {
 export type SendChatMessageRequest = {
   body: string;
 };
+
+
+export type DiaryResponse = {
+  id: string;
+  tripId: string | null;
+  title: string;
+  destination: string | null;
+  startDate: string;
+  endDate: string;
+  cover: DiaryPhotoResponse | null;
+  postcardCount: number;
+  dayCount: number;
+  days: DiaryDayResponse[];
+  candidateDates: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+
+export type DiaryDayResponse = {
+  id: string;
+  ordinal: number;
+  date: string;
+  place: string | null;
+  tripDayId: string | null;
+  postcardCount: number;
+  postcards: DiaryPostcardResponse[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+
+export type DiaryPostcardResponse = {
+  id: string;
+  diaryId: string | null;
+  diaryDayId: string | null;
+  tripId: string | null;
+  activityId: string | null;
+  activityTitle: string | null;
+  dayLabel: string | null;
+  caption: string | null;
+  place: string | null;
+  photos: DiaryPhotoResponse[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+
+export type DiarySectionResponse = DiaryResponse & {
+  itineraryId: string | null;
+};
+
+
+export type DiarySectionsResponse = {
+  diaries: DiarySectionResponse[];
+  loosePostcards: DiaryPostcardResponse[];
+  diaryCount: number;
+};
+
+
+export type CreateDiaryRequest = {
+  title: string;
+  destination: string | null;
+  startDate: string;
+  endDate: string;
+};
+
+
+export type AddDiaryDayRequest = {
+  date: string;
+  place: string | null;
+};
+
+
+export type PostOnDayRequest = {
+  caption: string | null;
+  place: string | null;
+};
+
+
+export type CreatePostcardRequest = {
+  caption: string | null;
+  place: string | null;
+  diaryId?: string | null;
+};
+
+
+export type PostcardResponse = {
+  id: string;
+  diaryId: string | null;
+  diaryDayId: string | null;
+  dayOrdinal: number | null;
+  tripId: string | null;
+  activityId: string | null;
+  activityTitle: string | null;
+  dayLabel: string | null;
+  timeOfDay: string | null;
+  place: string | null;
+  pin: Pin | null;
+  caption: string | null;
+  photos: DiaryPhotoResponse[];
+  createdAt: string;
+  updatedAt: string;
+};
