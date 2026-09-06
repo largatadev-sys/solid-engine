@@ -1,8 +1,8 @@
-# 11: Postcard detail, edit caption, delete, and filing a loose postcard into a diary
+# 12: Postcard detail, edit caption, delete, and filing a loose postcard into a diary
 
 **What to build:** a postcard has a page. The owner opens it, edits the caption, deletes it, or files a loose one into a diary and a day in two steps; a visitor reads it and, when it sits on a day, follows the diary row to that day. Frames G1, G2, H1, H2, K3, L2 and M of the mock set.
 
-**Blocked by:** 10 (Diary detail and its acts).
+**Blocked by:** 11 (The diary's owner acts).
 
 **Status:** ready-for-agent
 

@@ -1,8 +1,8 @@
-# 13: The gate
+# 14: The gate
 
 **What to build:** the proof that CM-2 is what it claims: a traveler can tell a past trip and post a moment from nowhere, everything posted before still reads the same, and the old app still works.
 
-**Blocked by:** 12 (ADR-036, the glossary re-cut, and the epic-map lines).
+**Blocked by:** 13 (ADR-036, the glossary re-cut, and the epic-map lines).
 
 **Status:** ready-for-agent
 

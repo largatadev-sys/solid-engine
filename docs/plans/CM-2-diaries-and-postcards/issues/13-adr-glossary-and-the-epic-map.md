@@ -1,8 +1,8 @@
-# 12: ADR-036, the glossary re-cut, and the epic-map lines
+# 13: ADR-036, the glossary re-cut, and the epic-map lines
 
 **What to build:** the docs say what the code now does. ADR-036 amends CM-1's ADR-035 with the diary as a collection of days, the memory that creates no trip row, the adapters kept over the old paths and the loose postcards on Home; the glossary defines Diary, Diary Day and Postcard and retires Diary Entry to a pointer; the epic map gains the parked deletion line and the deferred feed-and-workspace-screens line; the contract doc is consolidated.
 
-**Blocked by:** 07 (The backfill), 11 (Postcard detail and filing).
+**Blocked by:** 07 (The backfill), 12 (Postcard detail and filing).
 
 **Status:** ready-for-agent
 
