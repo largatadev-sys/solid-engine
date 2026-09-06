@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public record DiaryResponse(
         UUID id,
+        UUID authorId,
         UUID tripId,
         String title,
         String destination,
@@ -28,6 +29,7 @@ public record DiaryResponse(
         Diary diary = view.diary();
         return new DiaryResponse(
                 diary.id(),
+                diary.authorId(),
                 diary.tripId(),
                 diary.title(),
                 diary.destination(),

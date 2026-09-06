@@ -55,7 +55,7 @@ export function NewDiaryScreen() {
       });
       if (cover !== null) await memoryRepository.setCover(diary.id, cover);
 
-      router.replace({ pathname: '/diaries/[id]/days', params: { id: diary.id } });
+      router.replace({ pathname: '/diaries/[id]/setup', params: { id: diary.id } });
     } catch {
       setFailed(true);
       setCreating(false);

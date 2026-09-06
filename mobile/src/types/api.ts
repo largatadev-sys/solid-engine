@@ -759,6 +759,7 @@ export type SendChatMessageRequest = {
 
 export type DiaryResponse = {
   id: string;
+  authorId: string;
   tripId: string | null;
   title: string;
   destination: string | null;
