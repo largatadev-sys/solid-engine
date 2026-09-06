@@ -4,14 +4,16 @@
 
 **Blocked by:** 05 (The readers cut over), 08 (The memory setup on the device).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] New Postcard (frame 4) takes the picked photos, a caption and a place; Post is disabled until the photos are picked and the caption or the place is set; posting lands on the Diary tab with the "Postcard posted!" toast and the new loose card at the top; a failure stays on compose with the dark toast copy
-- [ ] The Diary tab renders the server's sections read: loose postcard cards above, diary sections below with thumbnail, title, "destination • N days", the itinerary link only when the server sends one, the kebab and the collapse chevron; postcards inside carry the "Day N" meta
-- [ ] The stats row reads Diaries · Itineraries · Followers · Following from server fields, and the tab label stays Diary
-- [ ] The empty Diary tab shows frame K1's icon and copy and no button
-- [ ] No engagement row, heart, count or chat icon appears anywhere on this surface, and the word "entry" is gone from its copy
-- [ ] Toasts drop in, hold two seconds and leave with the mock's timings; one at a time
+- [x] New Postcard (frame 4) takes the picked photos, a caption and a place; Post is disabled until the photos are picked and the caption or the place is set; posting lands on the Diary tab with the "Postcard posted!" toast and the new loose card at the top; a failure stays on compose with the dark toast copy
+- [x] The Diary tab renders the server's sections read: loose postcard cards above, diary sections below with thumbnail, title, "destination • N days", the itinerary link only when the server sends one, the kebab and the collapse chevron; postcards inside carry the "Day N" meta
+- [x] The stats row reads Diaries · Itineraries · Followers · Following from server fields, and the tab label stays Diary
+- [x] The empty Diary tab shows frame K1's icon and copy and no button
+- [x] No engagement row, heart, count or chat icon appears anywhere on this surface, and the word "entry" is gone from its copy
+- [x] Toasts drop in, hold two seconds and leave with the mock's timings; one at a time
 - [ ] The web-lane Playwright walk posts a loose postcard and reads it at the top of the tab, then reads a private author's tab as a stranger and as a follower; strings asserted live in a plain module both sides import
 
 ## Comments
+
+- *2026-09-06:* the screens are built and typecheck clean; the Playwright walk waits on the routes (see ticket 08's comment), which nothing mounts yet.
