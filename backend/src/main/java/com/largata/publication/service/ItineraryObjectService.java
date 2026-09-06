@@ -1,11 +1,13 @@
-package com.largata.publication;
+package com.largata.publication.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
 import com.largata.common.tx.AfterCommit;
-import com.largata.publication.PublicationExceptions.PublicationNotFoundException;
-import com.largata.publication.PublicationExceptions.TripNotCompleteException;
+import com.largata.publication.entity.ItineraryObject;
+import com.largata.publication.exception.PublicationNotFoundException;
+import com.largata.publication.exception.TripNotCompleteException;
+import com.largata.publication.repository.ItineraryObjectRepository;
 import com.largata.trip.TripExceptions.NotTheTripOwnerException;
 import com.largata.trip.TripExceptions.TripNotFoundException;
 import com.largata.trip.TripPlan;
@@ -22,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-
 
 @Service
 public class ItineraryObjectService {

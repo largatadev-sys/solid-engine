@@ -1,4 +1,4 @@
-package com.largata.publication;
+package com.largata.publication.entity;
 
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
@@ -7,7 +7,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-
 
 @Entity
 @Table(name = "itinerary_object")
@@ -49,7 +48,7 @@ public class ItineraryObject {
     }
 
 
-    static ItineraryObject mintedFrom(UUID tripId, UUID ownerId, String plan, Instant at) {
+    public static ItineraryObject mintedFrom(UUID tripId, UUID ownerId, String plan, Instant at) {
         if (tripId == null || ownerId == null || plan == null || at == null) {
             throw new IllegalArgumentException(
                     "An itinerary object is minted from a trip, for an owner, at an instant");
@@ -58,7 +57,7 @@ public class ItineraryObject {
     }
 
 
-    void refresh(String freshPlan, Instant at) {
+    public void refresh(String freshPlan, Instant at) {
         this.plan = freshPlan;
         this.retired = false;
         this.retiredAt = null;
@@ -66,13 +65,13 @@ public class ItineraryObject {
     }
 
 
-    void retire(Instant at) {
+    public void retire(Instant at) {
         this.retired = true;
         this.retiredAt = at;
     }
 
 
-    boolean isOwnedBy(UUID travelerId) {
+    public boolean isOwnedBy(UUID travelerId) {
         return ownerId.equals(travelerId);
     }
 

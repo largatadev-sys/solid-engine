@@ -1,10 +1,9 @@
-package com.largata.publication;
+package com.largata.publication.service;
 
 import com.largata.trip.TripPlan;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-
 
 record PlanSnapshot(
         String title,

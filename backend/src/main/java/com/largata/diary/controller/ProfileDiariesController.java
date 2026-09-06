@@ -8,7 +8,7 @@ import com.largata.identity.Traveler;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.web.CurrentTraveler;
-import com.largata.publication.ItineraryObjectService;
+import com.largata.publication.service.ItineraryObjectService;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;

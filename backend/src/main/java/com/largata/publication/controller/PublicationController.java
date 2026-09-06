@@ -1,12 +1,13 @@
-package com.largata.publication.web;
+package com.largata.publication.controller;
 
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
-import com.largata.publication.ItineraryObject;
-import com.largata.publication.ItineraryObjectService;
+import com.largata.publication.dto.ItineraryObjectResponse;
+import com.largata.publication.entity.ItineraryObject;
+import com.largata.publication.service.ItineraryObjectService;
 import com.largata.trip.TripExceptions.TripNotFoundException;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
 
 @RestController
 class PublicationController {

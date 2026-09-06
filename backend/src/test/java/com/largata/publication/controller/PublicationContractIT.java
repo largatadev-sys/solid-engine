@@ -1,4 +1,4 @@
-package com.largata.publication.web;
+package com.largata.publication.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
