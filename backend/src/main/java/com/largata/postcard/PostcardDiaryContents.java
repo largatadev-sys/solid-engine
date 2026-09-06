@@ -126,6 +126,7 @@ class PostcardDiaryContents implements DiaryContents {
                                         postcard.dayLabel(),
                                         postcard.caption(),
                                         postcard.place(),
+                                        postcard.pin(),
                                         postcard.createdAt(),
                                         postcard.updatedAt(),
                                         byPostcard.getOrDefault(postcard.id(), List.of())))

@@ -264,6 +264,11 @@ public class Postcard {
         return timeOfDay;
     }
 
+    public Pin pin() {
+        return Pin.readFrom(latitude, longitude, zoom);
+    }
+
+
     public String place() {
         return place;
     }

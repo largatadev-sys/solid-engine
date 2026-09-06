@@ -101,6 +101,7 @@ export function AddDayScreen({
 
         <MemoryPlaceField
           label={DAY_PLACE_LABEL}
+          glyph
           value={place}
           pin={pin}
           openNear={pin}

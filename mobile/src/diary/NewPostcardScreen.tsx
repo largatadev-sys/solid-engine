@@ -114,6 +114,7 @@ export function NewPostcardScreen({ onPosted }: NewPostcardScreenProps) {
 
         <MemoryPlaceField
           label={POSTCARD_PLACE_LABEL}
+          glyph
           value={place}
           pin={pin}
           openNear={pin}

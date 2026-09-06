@@ -14,10 +14,12 @@ import {
   VIEW_ITINERARY_LINK,
   dayOrdinalLabel,
   looseMetaLine,
+  looseMetaSuffix,
   photoIndexPill,
   sectionMetaLine,
 } from './memoryCopy';
 import { MemoryIcon } from './MemoryIcon';
+import { MemoryPlaceLink } from './MemoryPlaceLink';
 import { profileRows } from './profileRows';
 
 
@@ -155,9 +157,16 @@ function LooseCard({
         </View>
         <View style={styles.looseMeta}>
           {postcard.place !== null && (
-            <MemoryIcon name="pin" size={12} color={memoryColors.muted} strokeWidth={2.2} />
+            <MemoryPlaceLink
+              place={postcard.place}
+              pin={postcard.pin}
+              glyph={12}
+              style={styles.looseMetaInk}
+            />
           )}
-          <Text style={styles.looseMetaInk}>{looseMetaLine(postcard.place, postcard.createdAt)}</Text>
+          <Text style={styles.looseMetaInk}>
+            {looseMetaSuffix(postcard.place, postcard.createdAt)}
+          </Text>
         </View>
       </View>
     </View>

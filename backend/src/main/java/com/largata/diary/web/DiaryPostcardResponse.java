@@ -1,5 +1,6 @@
 package com.largata.diary.web;
 
+import com.largata.common.geo.PinPayload;
 import com.largata.diary.DiaryContents;
 import java.time.Instant;
 import java.util.List;
@@ -16,6 +17,7 @@ public record DiaryPostcardResponse(
         String dayLabel,
         String caption,
         String place,
+        PinPayload pin,
         List<DiaryPhotoResponse> photos,
         Instant createdAt,
         Instant updatedAt) {
@@ -32,6 +34,7 @@ public record DiaryPostcardResponse(
                 card.dayLabel(),
                 card.caption(),
                 card.place() == null ? dayPlace : card.place(),
+                PinPayload.of(card.pin()),
                 card.photos().stream().map(DiaryPhotoResponse::of).toList(),
                 card.createdAt(),
                 card.updatedAt());

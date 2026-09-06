@@ -51,6 +51,7 @@ export function DayCard({
 
       <MemoryPlaceField
         label={DAY_PLACE_LABEL}
+        glyph
         height={memoryMetrics.placeFieldHeight}
         value={place}
         pin={pin}

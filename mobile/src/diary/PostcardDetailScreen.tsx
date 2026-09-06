@@ -9,6 +9,7 @@ import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../
 import type { PostcardResponse } from '../types/api';
 import { BACK_LABEL, dayMetaLine, dayOrdinalLabel, photoIndexPill, postedOnLabel } from './memoryCopy';
 import { MemoryIcon } from './MemoryIcon';
+import { MemoryPlaceLink } from './MemoryPlaceLink';
 
 
 export interface DiaryRow {
@@ -118,8 +119,12 @@ export function PostcardDetailScreen({
 
           {postcard.place !== null && (
             <View style={styles.placeRow}>
-              <MemoryIcon name="pin" size={13} color={memoryColors.muted} strokeWidth={2.2} />
-              <Text style={styles.placeInk}>{postcard.place}</Text>
+              <MemoryPlaceLink
+                place={postcard.place}
+                pin={postcard.pin}
+                glyph={13}
+                style={styles.placeInk}
+              />
             </View>
           )}
 

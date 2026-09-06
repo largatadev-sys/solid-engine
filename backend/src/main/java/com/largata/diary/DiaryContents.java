@@ -1,5 +1,6 @@
 package com.largata.diary;
 
+import com.largata.common.geo.Pin;
 import com.largata.media.Photo;
 import java.time.Instant;
 import java.util.List;
@@ -34,6 +35,7 @@ public interface DiaryContents {
             String dayLabel,
             String caption,
             String place,
+            Pin pin,
             Instant createdAt,
             Instant updatedAt,
             List<Photo> photos) {}

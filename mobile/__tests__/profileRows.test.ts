@@ -16,6 +16,7 @@ function postcard(id: string, createdAt: string): DiaryPostcardResponse {
     dayLabel: null,
     caption: null,
     place: null,
+    pin: null,
     photos: [],
     createdAt,
     updatedAt: createdAt,

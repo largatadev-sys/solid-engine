@@ -12,10 +12,13 @@ import {
   BACK_LABEL,
   NO_POSTCARDS_ON_THIS_DAY,
   dayMetaLine,
+  dayMetaPrefix,
   dayOrdinalLabel,
   detailMetaLine,
+  detailMetaSuffix,
 } from './memoryCopy';
 import { MemoryIcon } from './MemoryIcon';
+import { MemoryPlaceLink } from './MemoryPlaceLink';
 
 
 interface DiaryDetailScreenProps {
@@ -81,9 +84,20 @@ export function DiaryDetailScreen({
 
         <View style={styles.coverText}>
           <Text style={styles.coverTitle}>{diary.title}</Text>
-          <Text style={styles.coverMeta}>
-            {detailMetaLine(diary.destination, diary.dayCount, diary.startDate, diary.endDate)}
-          </Text>
+          <View style={styles.coverMetaRow}>
+            {diary.destination !== null && diary.destination.trim() !== '' && (
+              <MemoryPlaceLink
+                place={diary.destination}
+                pin={diary.pin}
+                glyph={13}
+                tint={memoryColors.onCoverMuted}
+                style={styles.coverMeta}
+              />
+            )}
+            <Text style={styles.coverMeta}>
+              {detailMetaSuffix(diary.destination, diary.dayCount, diary.startDate, diary.endDate)}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -114,6 +128,7 @@ export function DiaryDetailScreen({
           <DayBlock
             key={day.id}
             day={day}
+            destination={diary.destination}
             owned={owned}
             onOpenPostcard={onOpenPostcard}
             onAddPostcard={onAddPostcard}
@@ -163,11 +178,13 @@ function OverlayButton({
 
 function DayBlock({
   day,
+  destination,
   owned,
   onOpenPostcard,
   onAddPostcard,
 }: {
   readonly day: DiaryDayResponse;
+  readonly destination: string | null;
   readonly owned: boolean;
   readonly onOpenPostcard: (postcardId: string) => void;
   readonly onAddPostcard?: (dayId: string) => void;
@@ -177,7 +194,16 @@ function DayBlock({
       <View style={styles.dayHead}>
         <View style={styles.dayTitleRow}>
           <Text style={styles.dayTitle}>{dayOrdinalLabel(day.ordinal)}</Text>
-          <Text style={styles.dayMeta}>{dayMetaLine(day.date, day.place)}</Text>
+          <Text style={styles.dayMeta}>{dayMetaPrefix(day.date, day.place)}</Text>
+          {day.place !== null && (
+            <MemoryPlaceLink
+              place={day.place}
+              pin={day.pin}
+              destination={destination}
+              glyph={12}
+              style={styles.dayMeta}
+            />
+          )}
         </View>
         {owned && onAddPostcard !== undefined && (
           <Pressable
@@ -291,6 +317,11 @@ const styles = StyleSheet.create({
   coverTitle: {
     ...memoryTypography.screenTitle,
     color: memoryColors.onCover,
+  },
+  coverMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
   coverMeta: {
     ...memoryTypography.meta13,

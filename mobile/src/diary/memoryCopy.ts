@@ -240,6 +240,12 @@ export function detailMetaLine(destination: string | null, dayCount: number, sta
 }
 
 
+export function detailMetaSuffix(destination: string | null, dayCount: number, start: string, end: string): string {
+  const rest = `${dayCount} ${plural(dayCount, 'day')} · ${dateSpanLabel(start, end)}`;
+  return destination === null || destination.trim() === '' ? rest : ` • ${rest}`;
+}
+
+
 export function dayHeading(ordinal: number, date: string): string {
   return `Day ${ordinal}: ${dayDateLabel(date)}`;
 }
@@ -252,6 +258,11 @@ export function dayOrdinalLabel(ordinal: number): string {
 
 export function dayMetaLine(date: string, place: string | null): string {
   return place === null ? dayDateLabel(date) : `${dayDateLabel(date)} · ${place}`;
+}
+
+
+export function dayMetaPrefix(date: string, place: string | null): string {
+  return place === null ? dayDateLabel(date) : `${dayDateLabel(date)} · `;
 }
 
 
@@ -286,6 +297,12 @@ export function postedAgo(iso: string, now: number = Date.now()): string {
 export function looseMetaLine(place: string | null, iso: string, now: number = Date.now()): string {
   const when = postedAgo(iso, now);
   return place === null ? when : `${place} · ${when}`;
+}
+
+
+export function looseMetaSuffix(place: string | null, iso: string, now: number = Date.now()): string {
+  const when = postedAgo(iso, now);
+  return place === null ? when : ` · ${when}`;
 }
 
 

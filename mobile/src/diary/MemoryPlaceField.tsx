@@ -13,6 +13,7 @@ interface MemoryPlaceFieldProps {
   readonly openNear: Pin | null;
   readonly placeholder?: string;
   readonly required?: boolean;
+  readonly glyph?: boolean;
   readonly height?: number;
   readonly editable?: boolean;
   readonly accessibilityLabel?: string;
@@ -27,6 +28,7 @@ export function MemoryPlaceField({
   openNear,
   placeholder,
   required,
+  glyph = false,
   height,
   editable = true,
   accessibilityLabel,
@@ -47,7 +49,7 @@ export function MemoryPlaceField({
             label={label}
             required={required}
             height={height}
-            icon="pin"
+            icon={glyph ? 'pin' : undefined}
             value={value}
             placeholder={placeholder}
             editable={false}

@@ -801,6 +801,7 @@ export type DiaryPostcardResponse = {
   dayLabel: string | null;
   caption: string | null;
   place: string | null;
+  pin: Pin | null;
   photos: DiaryPhotoResponse[];
   createdAt: string;
   updatedAt: string;
