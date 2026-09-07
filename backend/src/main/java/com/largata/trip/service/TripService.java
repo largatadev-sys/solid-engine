@@ -112,16 +112,6 @@ public class TripService {
 
 
     @Transactional(readOnly = true)
-    public TripFacts read(Membership member) {
-        TripFacts facts = factsOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
-        if (facts.archived() && !member.isOwner()) {
-            throw new TripNotFoundException();
-        }
-        return facts;
-    }
-
-
-    @Transactional(readOnly = true)
     public Optional<TripFacts> factsOf(UUID tripId) {
         return db.sql(
                         "SELECT i.id, i.owner_id, i.title, i.destination, i.start_date, i.end_date,"

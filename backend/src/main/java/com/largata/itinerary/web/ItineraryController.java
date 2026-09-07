@@ -12,7 +12,6 @@ import com.largata.itinerary.PublishedItineraryService;
 import com.largata.itinerary.TripCategory;
 import com.largata.itinerary.api.CreateItineraryRequest;
 import com.largata.itinerary.api.ItineraryResponse;
-import com.largata.itinerary.api.PublishRequest;
 import com.largata.itinerary.api.PublishedItineraryResponse;
 import com.largata.itinerary.api.UpdateItineraryRequest;
 import com.largata.membership.MembershipService;
@@ -40,7 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/v1/itineraries")
+@RequestMapping({"/v1/itineraries", "/v1/trips"})
 class ItineraryController {
 
     private final ItineraryService itineraries;
@@ -98,15 +97,6 @@ class ItineraryController {
     }
 
 
-    @PostMapping("/{id}/fork")
-    @ResponseStatus(HttpStatus.CREATED)
-    ItineraryResponse fork(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        var forked = forks.fork(id, traveler.id(), guard.membershipOf(traveler.id(), id));
-        UUID forkedId = forked.itinerary().id();
-        return ItineraryResponse.of(forked, forks.provenanceOf(forkedId, traveler.id()).orElse(null));
-    }
-
-
     @GetMapping("/{id}")
     ItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
@@ -125,12 +115,6 @@ class ItineraryController {
         itineraries.editFields(membership, request::mergeOnto);
         var plan = itineraries.viewPlan(membership);
         return ItineraryResponse.of(plan);
-    }
-
-
-    @PostMapping("/{id}/finish-planning")
-    void finishPlanningIsRetired(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        itineraries.refuseFinishPlanning(guard.requireMember(traveler.id(), id));
     }
 
 
@@ -165,37 +149,6 @@ class ItineraryController {
     PublishedItineraryResponse preview(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         return PublishedItineraryResponse.of(published.preview(membership));
-    }
-
-
-    @PostMapping("/{id}/publish")
-    ItineraryResponse publish(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID id,
-            @RequestBody(required = false) PublishRequest request) {
-        Membership membership = guard.requireMember(traveler.id(), id);
-        PublishRequest.requirePublicAudience(request);
-        itineraries.publish(membership);
-        return ItineraryResponse.of(itineraries.viewPlan(membership));
-    }
-
-
-    @PostMapping("/{id}/audience")
-    ItineraryResponse audience(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID id,
-            @RequestBody(required = false) PublishRequest request) {
-        Membership membership = guard.requireMember(traveler.id(), id);
-        PublishRequest.requirePublicAudience(request);
-        return ItineraryResponse.of(itineraries.viewPlan(membership));
-    }
-
-
-    @PostMapping("/{id}/unpublish")
-    ItineraryResponse unpublish(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        Membership membership = guard.requireMember(traveler.id(), id);
-        itineraries.unpublish(membership);
-        return ItineraryResponse.of(itineraries.viewPlan(membership));
     }
 
 

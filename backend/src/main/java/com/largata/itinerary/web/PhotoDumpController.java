@@ -24,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
-@RequestMapping("/v1/itineraries/{itineraryId}/photo-dump")
+@RequestMapping({"/v1/itineraries/{itineraryId}/photo-dump", "/v1/trips/{itineraryId}/photo-dump"})
 class PhotoDumpController {
 
     private final PhotoDumpService dump;
