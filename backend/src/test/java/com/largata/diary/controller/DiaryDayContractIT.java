@@ -83,16 +83,16 @@ class DiaryDayContractIT extends PostgresTestBase {
 
 
     @Test
-    void aDayOutsideTheRangeExtendsTheRange() {
+    void aDayOutsideTheRangeIsRefusedRatherThanWideningTheDiary() {
         String author = rig.travelerWithHandle(handle());
         String diary = memory(author);
 
         addDay(author, diary, LocalDate.of(2026, 3, 12), "Early")
                 .expectStatus()
-                .isCreated()
+                .isBadRequest()
                 .expectBody()
-                .jsonPath("$.ordinal")
-                .isEqualTo(1);
+                .jsonPath("$.code")
+                .isEqualTo("DIARY_DAY_OUTSIDE_RANGE");
 
         rest.get()
                 .uri("/v1/diaries/" + diary)
@@ -102,46 +102,11 @@ class DiaryDayContractIT extends PostgresTestBase {
                 .isOk()
                 .expectBody()
                 .jsonPath("$.startDate")
-                .isEqualTo("2026-03-12")
-                .jsonPath("$.endDate")
-                .isEqualTo("2026-03-19");
-    }
-
-
-    @Test
-    void extendingTheRangeBackwardsRenumbersTheDaysAlreadyThere() {
-        String author = rig.travelerWithHandle(handle());
-        String diary = memory(author);
-        addDay(author, diary, LocalDate.of(2026, 3, 15), "Coron").expectStatus().isCreated();
-        addDay(author, diary, LocalDate.of(2026, 3, 17), "Sintra").expectStatus().isCreated();
-
-        addDay(author, diary, LocalDate.of(2026, 3, 13), "Early")
-                .expectStatus()
-                .isCreated()
-                .expectBody()
-                .jsonPath("$.ordinal")
-                .isEqualTo(1);
-
-        rest.get()
-                .uri("/v1/diaries/" + diary)
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("$.days[0].date")
-                .isEqualTo("2026-03-13")
-                .jsonPath("$.days[0].ordinal")
-                .isEqualTo(1)
-                .jsonPath("$.days[1].date")
                 .isEqualTo("2026-03-15")
-                .jsonPath("$.days[1].ordinal")
-                .isEqualTo(3)
-                .jsonPath("$.days[2].date")
-                .isEqualTo("2026-03-17")
-                .jsonPath("$.days[2].ordinal")
-                .isEqualTo(5);
+                .jsonPath("$.days.length()")
+                .isEqualTo(0);
     }
+
 
     @Test
     void theAuthorEditsADaysPlace() {

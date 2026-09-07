@@ -144,15 +144,8 @@ public class Diary {
     }
 
 
-    public void widenTo(LocalDate date, Instant at) {
-        if (date.isBefore(startDate)) {
-            this.startDate = date;
-            this.updatedAt = at;
-        }
-        if (date.isAfter(endDate)) {
-            this.endDate = date;
-            this.updatedAt = at;
-        }
+    public boolean holds(LocalDate date) {
+        return !date.isBefore(startDate) && !date.isAfter(endDate);
     }
 
 

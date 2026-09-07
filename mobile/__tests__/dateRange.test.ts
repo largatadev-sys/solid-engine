@@ -4,6 +4,7 @@ import {
   isComplete,
   isEdgeOf,
   isInTheFuture,
+  isOutsideBounds,
   isWithin,
   monthGridOf,
   tapped,
@@ -104,5 +105,25 @@ describe('the diary date range', () => {
 
     expect(february.filter((day) => day !== null)).toHaveLength(29);
     expect(february.at(-1)).toBe('2028-02-29');
+  });
+});
+
+describe('a day can only be added inside the diary it belongs to', () => {
+  const diary = { start: '2026-03-15', end: '2026-03-19' };
+
+  it('admits the first and last day of the diary', () => {
+    expect(isOutsideBounds('2026-03-15', diary)).toBe(false);
+    expect(isOutsideBounds('2026-03-19', diary)).toBe(false);
+  });
+
+  it('refuses a day before it and a day after it', () => {
+    expect(isOutsideBounds('2026-03-14', diary)).toBe(true);
+    expect(isOutsideBounds('2026-03-20', diary)).toBe(true);
+  });
+
+  it('bounds nothing when there are none, so every other calendar is unchanged', () => {
+    expect(isOutsideBounds('2026-03-14', undefined)).toBe(false);
+    expect(isOutsideBounds('2026-03-14', { start: null, end: null })).toBe(false);
+    expect(isOutsideBounds('2026-03-14', { start: '2026-03-15', end: null })).toBe(false);
   });
 });

@@ -29,6 +29,7 @@ interface AddDayScreenProps {
   readonly diaryTitle: string;
   readonly nextOrdinal: number;
   readonly lastDay: { readonly ordinal: number; readonly date: string } | null;
+  readonly diaryRange: DateRange;
   readonly defaultDate: string;
   readonly onAdded: (day: DiaryDayResponse) => void;
 }
@@ -39,6 +40,7 @@ export function AddDayScreen({
   diaryTitle,
   nextOrdinal,
   lastDay,
+  diaryRange,
   defaultDate,
   onAdded,
 }: AddDayScreenProps) {
@@ -127,6 +129,7 @@ export function AddDayScreen({
       <DateRangeSheet
         open={calendarOpen}
         range={range}
+        bounds={diaryRange}
         mode="single"
         title={DAY_DATE_LABEL}
         onDone={(picked) => {

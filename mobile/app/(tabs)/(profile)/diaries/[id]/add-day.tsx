@@ -26,6 +26,7 @@ export default function AddDayRoute() {
       diaryTitle={diary.data.title}
       nextOrdinal={nextOrdinal}
       lastDay={last === null ? null : { ordinal: last.ordinal, date: last.date }}
+      diaryRange={{ start: diary.data.startDate, end: diary.data.endDate }}
       defaultDate={diary.data.endDate}
       onAdded={() => {
         refresh(state.kind === 'ok' ? state.me.handle : null);

@@ -6,6 +6,7 @@ import { pickPhoto } from '../media/pickPhoto';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import type { Pin } from '../maps/pinRules';
 import { pinAfterEdit } from '../maps/pinRules';
+import { ApiError } from '../api/ApiError';
 import { memoryRepository } from '../repositories/memoryRepository';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import { DateChips } from './DateChips';
@@ -51,7 +52,7 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
   const [cover, setCover] = useState<PickedPhoto | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   const dirty =
@@ -82,7 +83,7 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
     if (!ready || range.start === null || range.end === null) return;
 
     setSaving(true);
-    setFailed(false);
+    setFailed(null);
     try {
       let next = await memoryRepository.describeDiary(diary.id, {
         title: title.trim(),
@@ -95,8 +96,8 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
 
       setSaved(true);
       onSaved(next);
-    } catch {
-      setFailed(true);
+    } catch (refused) {
+      setFailed(refused instanceof ApiError ? refused.message : SAVE_FAILED);
       setSaving(false);
     }
   }
@@ -175,7 +176,7 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
 
       <View style={styles.rail}>
         <MemoryCta label={SAVE_CTA} disabled={!ready} busy={saving} onPress={() => void save()} />
-        {failed && <Text style={styles.failed}>{SAVE_FAILED}</Text>}
+        {failed !== null && <Text style={styles.failed}>{failed}</Text>}
       </View>
 
       <DateRangeSheet
