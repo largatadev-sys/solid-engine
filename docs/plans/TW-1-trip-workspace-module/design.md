@@ -1,6 +1,6 @@
 # TW-1 — The Trip Workspace module: a design, parked
 
-**Status: PARKED — designed, not pulled, nothing built.** No spec exists yet; this file is the design record, not immutable story intent. When TW-1 is pulled, a `spec.md` gets written beside this and this file becomes its background. **Trigger: founder pull.**
+**Status: PULLED 2026-09-07 — `spec.md` beside this file is the story's intent; this file is its background.** Nine rulings taken at the planning pass amend what is below and are listed first in the spec's *Implementation Decisions*: the whole workspace gets a `/v1/trips/**` grammar served by the same handlers; the content half is served through trip's api rather than the legacy exemption recorded here; publish is merged; the move is sliced behind branch-local guard windows; the schema move and the FK drops are deferred with triggers; and the content-module boundaries story lands first. Where the two differ, the spec wins. **Trigger was: founder pull.**
 
 **Why parked rather than built:** the design is settled but the work ends two guarantees CM-1 was built around (see *What it costs*). **Sequenced 2026-09-05 at CM-2's grilling: CM-1 lands first (rot-fixed), CM-2 second, TW-1 third — never in parallel with CM-2.** CM-2 removes the content half's 34 reach-ins into trip internals by cutting the readers over; TW-1 then moves a package with only the trip left in it. Record: `docs/plans/CM-2-diaries-and-postcards/grilling.md`.
 
