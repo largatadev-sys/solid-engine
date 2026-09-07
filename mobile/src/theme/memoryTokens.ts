@@ -147,6 +147,7 @@ export const memoryMetrics = {
   confirmButton: 44,
   confirmButtonRadius: 4,
   confirmButtonGap: 10,
+  railFloor: 16,
   navIcon: 22,
   navStroke: 1.8,
   iconStroke: 1.8,

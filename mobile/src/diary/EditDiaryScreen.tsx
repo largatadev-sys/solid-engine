@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useExitGuard } from '../navigation/useExitGuard';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhoto } from '../media/pickPhoto';
@@ -44,6 +45,7 @@ interface EditDiaryScreenProps {
 
 
 export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
+  const insets = useSafeAreaInsets();
   const [title, setTitle] = useState(diary.title);
   const [destination, setDestination] = useState(diary.destination ?? '');
   const [pin, setPin] = useState<Pin | null>(diary.pin);
@@ -174,7 +176,7 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
         <Text style={styles.hint}>{EDIT_DIARY_DATES_HINT}</Text>
       </ScrollView>
 
-      <View style={styles.rail}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + memoryMetrics.railFloor }]}>
         <MemoryCta label={SAVE_CTA} disabled={!ready} busy={saving} onPress={() => void save()} />
         {failed !== null && <Text style={styles.failed}>{failed}</Text>}
       </View>

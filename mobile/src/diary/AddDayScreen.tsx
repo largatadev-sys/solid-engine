@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '../api/ApiError';
 import type { Pin } from '../maps/pinRules';
 import { memoryRepository } from '../repositories/memoryRepository';
@@ -44,6 +45,7 @@ export function AddDayScreen({
   defaultDate,
   onAdded,
 }: AddDayScreenProps) {
+  const insets = useSafeAreaInsets();
   const [range, setRange] = useState<DateRange>({ start: defaultDate, end: defaultDate });
   const [place, setPlace] = useState('');
   const [pin, setPin] = useState<Pin | null>(null);
@@ -116,7 +118,7 @@ export function AddDayScreen({
         />
       </ScrollView>
 
-      <View style={styles.rail}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + memoryMetrics.railFloor }]}>
         <MemoryCta
           label={ADD_DAY_CTA}
           disabled={range.start === null}
