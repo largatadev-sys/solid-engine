@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MediaThumb } from '../media/MediaThumb';
 import type { PickedPhoto } from '../media/pickedPhoto';
+import { useReducedMotion } from '../components/useReducedMotion';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import { DAY_ADD_PHOTO } from './memoryCopy';
 import { MemoryIcon } from './MemoryIcon';
@@ -79,22 +80,24 @@ export function useTileEntrance(): { enter: Animated.Value; pop: Animated.Value 
   const pop = useRef(new Animated.Value(0.5)).current;
   const enter = useRef(new Animated.Value(0)).current;
 
+  const reducedMotion = useReducedMotion();
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(enter, {
         toValue: 1,
-        duration: memoryMotion.rowEnterMs,
+        duration: reducedMotion ? 0 : memoryMotion.rowEnterMs,
         easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }),
       Animated.timing(pop, {
         toValue: 1,
-        duration: memoryMotion.checkPopMs,
+        duration: reducedMotion ? 0 : memoryMotion.checkPopMs,
         easing: Easing.bezier(...memoryMotion.checkPopBezier),
         useNativeDriver: true,
       }),
     ]).start();
-  }, [enter, pop]);
+  }, [enter, pop, reducedMotion]);
 
   return { enter, pop };
 }

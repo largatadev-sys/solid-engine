@@ -10,6 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useReducedMotion } from '../components/useReducedMotion';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import { CANCEL_ACTION } from './memoryCopy';
 
@@ -43,24 +44,26 @@ export function MemorySheet({
   const scrim = useRef(new Animated.Value(0)).current;
   const [mounted, setMounted] = useState(open);
 
+  const reducedMotion = useReducedMotion();
+
   useEffect(() => {
     if (open) setMounted(true);
     Animated.parallel([
       Animated.timing(scrim, {
         toValue: open ? 1 : 0,
-        duration: memoryMotion.scrimMs,
+        duration: reducedMotion ? 0 : memoryMotion.scrimMs,
         useNativeDriver: true,
       }),
       Animated.timing(travel, {
         toValue: open ? 0 : 1,
-        duration: open ? memoryMotion.sheetInMs : memoryMotion.sheetOutMs,
+        duration: reducedMotion ? 0 : open ? memoryMotion.sheetInMs : memoryMotion.sheetOutMs,
         easing: open ? Easing.bezier(...memoryMotion.sheetBezier) : Easing.in(Easing.ease),
         useNativeDriver: true,
       }),
     ]).start(({ finished }) => {
       if (finished && !open) setMounted(false);
     });
-  }, [open, scrim, travel]);
+  }, [open, reducedMotion, scrim, travel]);
 
   if (!mounted) return null;
 

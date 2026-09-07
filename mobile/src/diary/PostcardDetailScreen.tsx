@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { dragToScroll, PAGING } from '../components/stripScroll';
+import { dragToScroll, PAGING, SNAP_CHILD_STYLE, SNAP_STYLE } from '../components/stripScroll';
 import { MediaThumb } from '../media/MediaThumb';
 import { useSafeBack } from '../navigation/safeBack';
 import { initialsFor } from '../onboarding/initials';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import type { PostcardResponse } from '../types/api';
 import { BACK_LABEL, dayMetaLine, dayOrdinalLabel, photoIndexPill, postedOnLabel } from './memoryCopy';
+import { pageOfOffset } from './postcardCarousel';
 import { MemoryIcon } from './MemoryIcon';
 import { MemoryPlaceLink } from './MemoryPlaceLink';
 
@@ -45,6 +47,15 @@ export function PostcardDetailScreen({
   const goBack = useSafeBack();
   const [shownIndex, setShownIndex] = useState(0);
 
+  const settle = (event: NativeSyntheticEvent<NativeScrollEvent>) =>
+    setShownIndex(
+      pageOfOffset(
+        event.nativeEvent.contentOffset.x,
+        event.nativeEvent.layoutMeasurement.width,
+        postcard.photos.length,
+      ),
+    );
+
   return (
     <View style={styles.screen}>
       <View style={[styles.topBar, { marginTop: insets.top }]}>
@@ -75,15 +86,15 @@ export function PostcardDetailScreen({
           <ScrollView
             horizontal
             {...PAGING}
+            style={SNAP_STYLE}
             {...drag}
             showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(event) => {
-              const width = event.nativeEvent.layoutMeasurement.width;
-              if (width > 0) setShownIndex(Math.round(event.nativeEvent.contentOffset.x / width));
-            }}
+            onScroll={settle}
+            onMomentumScrollEnd={settle}
+            scrollEventThrottle={16}
           >
             {postcard.photos.map((photo, index) => (
-              <View key={photo.id} style={styles.slide}>
+              <View key={photo.id} style={{ ...styles.slide, ...SNAP_CHILD_STYLE }}>
                 <MediaThumb
                   url={photo.url}
                   full
