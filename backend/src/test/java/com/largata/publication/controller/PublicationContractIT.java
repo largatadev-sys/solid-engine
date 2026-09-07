@@ -103,6 +103,38 @@ class PublicationContractIT extends PostgresTestBase {
 
 
     @Test
+    void unpublishClearsTheFlagOfATripPublishedBeforeAnyObjectExisted() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip = rig.createTrip(owner, 1);
+        walkToCompleted(owner, trip);
+
+        rest.post()
+                .uri("/v1/itineraries/" + trip + "/publish")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        rest.post()
+                .uri("/v1/trips/" + trip + "/unpublish")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+
+        rest.get()
+                .uri("/v1/trips/" + trip)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.published")
+                .isEqualTo(false);
+    }
+
+
+    @Test
     void unpublishRetiresButTheIdentitySurvivesTheCycle() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);

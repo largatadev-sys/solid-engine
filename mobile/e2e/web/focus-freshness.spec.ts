@@ -259,7 +259,7 @@ test('Home revalidates on return (AC 2)', async ({ page, signal }) => {
 });
 
 function isATripsRead(entry: { url: string }): boolean {
-  return /\/v1\/itineraries(\?|$)/.test(entry.url);
+  return /\/v1\/trips(\?|$)/.test(entry.url);
 }
 
 function isADiscoveryRead(entry: { url: string }): boolean {

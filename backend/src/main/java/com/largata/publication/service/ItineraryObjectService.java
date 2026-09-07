@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,17 +86,25 @@ public class ItineraryObjectService {
         if (!member.isOwner()) {
             throw new NotTheTripOwnerException("Only the trip owner can unpublish this trip.");
         }
-        ItineraryObject object =
+        Optional<ItineraryObject> live =
                 objects.findByTripId(member.itineraryId())
-                        .filter(candidate -> !candidate.isRetired())
-                        .orElseThrow(PublicationNotFoundException::new);
+                        .filter(candidate -> !candidate.isRetired());
 
-        object.retire(Instant.now(clock));
-        objects.saveAndFlush(object);
+        live.ifPresent(object -> {
+            object.retire(Instant.now(clock));
+            objects.saveAndFlush(object);
+        });
         trips.markUnpublished(member.itineraryId());
 
-        log.info("Itinerary object retired: id={} tripId={}", object.id(), object.tripId());
-        emit(object, "itinerary_object_retired");
+        live.ifPresentOrElse(
+                object -> {
+                    log.info("Itinerary object retired: id={} tripId={}", object.id(), object.tripId());
+                    emit(object, "itinerary_object_retired");
+                },
+                () ->
+                        log.info(
+                                "Trip unpublished with no itinerary object to retire: tripId={}",
+                                member.itineraryId()));
     }
 
 
