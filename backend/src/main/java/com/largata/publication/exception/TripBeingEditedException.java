@@ -4,7 +4,7 @@ import com.largata.common.error.ConflictException;
 
 public final class TripBeingEditedException extends ConflictException {
 
-    public TripBeingEditedException() {
-        super("EDIT_LOCKED", "Somebody is editing this itinerary right now.");
+    public TripBeingEditedException(String holderLabel) {
+        super("EDIT_LOCKED", holderLabel + " is editing this itinerary right now.");
     }
 }

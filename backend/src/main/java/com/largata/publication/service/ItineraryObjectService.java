@@ -3,6 +3,7 @@ package com.largata.publication.service;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.TripEditingSession;
 import com.largata.common.tx.AfterCommit;
 import com.largata.publication.entity.ItineraryObject;
 import com.largata.publication.exception.PublicationNotFoundException;
@@ -34,6 +35,7 @@ public class ItineraryObjectService {
 
     private final ItineraryObjectRepository objects;
     private final TripService trips;
+    private final TripEditingSession editingSession;
     private final ObjectMapper json;
     private final Analytics analytics;
     private final Clock clock;
@@ -41,11 +43,13 @@ public class ItineraryObjectService {
     ItineraryObjectService(
             ItineraryObjectRepository objects,
             TripService trips,
+            TripEditingSession editingSession,
             ObjectMapper json,
             Analytics analytics,
             Clock clock) {
         this.objects = objects;
         this.trips = trips;
+        this.editingSession = editingSession;
         this.json = json;
         this.analytics = analytics;
         this.clock = clock;
@@ -62,12 +66,11 @@ public class ItineraryObjectService {
             throw new TripNotCompleteException(plan.lifecycle());
         }
 
+        editingSession.heldByAnotherTraveler(member).ifPresent(holder -> {
+            throw new TripBeingEditedException(holder);
+        });
+
         Instant at = Instant.now(clock);
-        trips.liveSessionHolder(member.itineraryId(), at)
-                .filter(holder -> !holder.equals(member.travelerId()))
-                .ifPresent(holder -> {
-                    throw new TripBeingEditedException();
-                });
         String snapshot = json.writeValueAsString(PlanSnapshot.of(plan));
         ItineraryObject object =
                 objects.findByTripId(member.itineraryId())

@@ -13,3 +13,9 @@
 - [ ] The pull request is opened against `dev` as the proposal, with the PR body carrying no agent attribution
 
 ## Comments
+
+**Amended before merge (2026-09-07):** AC4's *"a publish through the app leaves one itinerary object"* no longer applies — the client's publish deferred to CM-5 (see ticket 03's amendment), so a publish through the app flips the flag and mints nothing. The invariant itself is unchanged and still proven, by `PublicationContractIT` and by a live walk, on the route the app will call at CM-5.
+
+**Gate evidence (2026-09-07).** CI green on every check: **414 unit + 1,367 integration**, every pre-existing old-root test passing with no edited assertion; **202 Jest suites / 6,857 tests**; Playwright's api and web lanes green in CI against a fresh stack. Locally: API lane 366/366, publish and unpublish web specs 31/31 on a fresh database. Discriminating check on the shipping artifact: the preview bundle names `/v1/trips` 49 times, the old root 10 (seven diary paths, fork, and the two publish acts), and zero trips-rooted publish calls.
+
+**Left open:** the device/LAN walk — the recorded Gradle fault still blocks device builds. No screens changed, so the surface it would cover is unaltered. Several web walks fail only under full-lane contention or against accumulated fixtures and pass in isolation on a fresh stack; CLAUDE.md's seeding entry gained that lane.

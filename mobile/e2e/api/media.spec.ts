@@ -174,9 +174,10 @@ test.describe('the cover, and the audience ladder that governs it', () => {
   });
 
   test('publishing opens the cover to every traveler', async () => {
-    for (const step of ['start', 'complete', 'publish']) {
-      await api(`/v1/itineraries/${trip}/${step}`, 'POST', owner);
+    for (const step of ['start', 'complete']) {
+      await api(`/v1/trips/${trip}/${step}`, 'POST', owner);
     }
+    await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
     const strangerOnPublished = await fetchBytes(coverUrl, stranger);
     expect(strangerOnPublished.status).toBe(200);
   });
@@ -291,9 +292,10 @@ test.describe('activity photos and the derived gallery', () => {
 
   test('activity photos cross to the published projection — the gallery source', async () => {
     await api(`/v1/trips/${trip}/edit-lock`, 'DELETE', owner);
-    for (const step of ['start', 'complete', 'publish']) {
-      await api(`/v1/itineraries/${trip}/${step}`, 'POST', owner);
+    for (const step of ['start', 'complete']) {
+      await api(`/v1/trips/${trip}/${step}`, 'POST', owner);
     }
+    await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
     const publicView = await api(`/v1/published-itineraries/${trip}`, 'GET', stranger);
     expect(publicView.body?.days?.[0]?.activities?.[0]?.photos ?? []).toHaveLength(5);
   });

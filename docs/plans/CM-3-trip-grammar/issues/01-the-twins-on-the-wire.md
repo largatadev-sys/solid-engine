@@ -14,3 +14,12 @@
 - [ ] The path-variable name is the same on both patterns of every pair, so no handler resolves differently by root
 
 ## Comments
+
+**Amended at the build (2026-09-07): AC4 did not hold, deliberately.**
+
+It read *"The itinerary module's `POST /v1/trips/{id}/publish` and `/unpublish` are untouched"*. Both were changed, and both changes are the story's most valuable findings — each a difference between two **acts** wearing one verb, which the twin and equivalence proofs are blind to by construction because they compare two **addresses** of one handler.
+
+- **Unpublish** required a live itinerary object and answered `404 PUBLICATION_NOT_FOUND` without one, so no trip published by the old flag-flip could be unpublished (locally: 295 published trips, 5 live objects). Founder ruling, taken as a publish/visibility stop rule: clear the flag either way. Recorded as ADR-037's first amendment.
+- **Publish** was missing the editing-session guard the old route has always enforced, so it would have let an owner freeze a plan another member was editing. Found by code review, closed with the same `409 EDIT_LOCKED` and holder-naming message the old route answers.
+
+**The route census also moved:** 62 old-root mappings and 49 twins, not the spec's 60 and 47. The excluded set is unchanged and is the one the grilling agreed.

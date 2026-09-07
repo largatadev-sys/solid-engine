@@ -8,14 +8,9 @@ const REPOSITORIES = join(MOBILE_ROOT, 'src', 'repositories');
 
 const OLD_ROOT = '/v1/itineraries';
 
-const STILL_ON_THE_OLD_ROOT: Record<string, string[]> = {
-  'diaryRepository.ts': ['the diary entries are content and move with the itinerary story'],
-  'tripRepository.ts': [
-    'forking answers from the old package and has no twin until the itinerary story',
-    'publishing and unpublishing stay on the act the shipped app already calls, so this story'
-      + ' changes no behaviour a traveler can reach; the itinerary story moves them with the readers',
-  ],
-};
+const STILL_ON_THE_OLD_ROOT = new Set(['diaryRepository.ts', 'tripRepository.ts']);
+
+const UNTWINNED_SUFFIXES = ['/fork', '/publish', '/unpublish'];
 
 function repositoryFiles(): string[] {
   return readdirSync(REPOSITORIES).filter((entry) => entry.endsWith('.ts'));
@@ -32,20 +27,30 @@ describe('the client speaks the trip grammar (CM-3)', () => {
     expect(repositoryFiles().length).toBeGreaterThan(3);
   });
 
-  it.each(repositoryFiles().filter((file) => !(file in STILL_ON_THE_OLD_ROOT)))(
+  it.each(repositoryFiles().filter((file) => !STILL_ON_THE_OLD_ROOT.has(file)))(
     '%s names no old-grammar path',
     (file) => {
       expect(linesNamingTheOldRoot(file)).toEqual([]);
     },
   );
 
-  it('the repositories still on the old root name only the routes that have no twin', () => {
-    const lines = linesNamingTheOldRoot('tripRepository.ts');
+  it('every old-root path the trip repository keeps is a route with no twin', () => {
+    const kept = linesNamingTheOldRoot('tripRepository.ts');
 
-    expect(lines).toHaveLength(3);
-    expect(lines.filter((line) => line.includes('/fork'))).toHaveLength(1);
-    expect(lines.filter((line) => line.includes('/publish'))).toHaveLength(1);
-    expect(lines.filter((line) => line.includes('/unpublish'))).toHaveLength(1);
+    expect(kept.length).toBeGreaterThan(0);
+    for (const line of kept) {
+      expect(UNTWINNED_SUFFIXES.some((suffix) => line.includes(suffix))).toBe(true);
+    }
+    for (const suffix of UNTWINNED_SUFFIXES) {
+      expect(kept.filter((line) => line.includes(suffix))).toHaveLength(1);
+    }
+  });
+
+  it('would fire if a twinned path were left on the old root', () => {
+    const twinnedOnTheOldRoot = `apiClient.get(\`${OLD_ROOT}/\${id}/days\`)`;
+
+    expect(twinnedOnTheOldRoot).toContain(OLD_ROOT);
+    expect(UNTWINNED_SUFFIXES.some((suffix) => twinnedOnTheOldRoot.includes(suffix))).toBe(false);
   });
 
   it('publishing stays on the act the shipped app already calls, so no behaviour moves', () => {

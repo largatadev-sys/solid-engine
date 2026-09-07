@@ -77,6 +77,40 @@ class TripGrammarEquivalenceIT extends PostgresTestBase {
 
 
     @Test
+    void theTripListAnswersIdenticallyOnBothRoots() {
+        String owner = rig.travelerWithHandle(handle());
+        rig.createTrip(owner, 1);
+        rig.createTrip(owner, 2);
+
+        assertThat(statusAndBodyOf(owner, "/v1/trips"))
+                .as("the list is the one read whose path is the root itself, not a trip under it")
+                .isEqualTo(statusAndBodyOf(owner, "/v1/itineraries"));
+    }
+
+
+    @Test
+    void oneWritePerResourceLeavesTheSameRecordWhicheverRootTookIt() {
+        String owner = rig.travelerWithHandle(handle());
+        String throughOld = rig.createTrip(owner, 1);
+        String throughNew = rig.createTrip(owner, 1);
+        UUID oldDay = rig.dayAt(throughOld, 1);
+        UUID newDay = rig.dayAt(throughNew, 1);
+
+        for (Write write : WRITES) {
+            String old =
+                    withoutIdentity(
+                            send(write, "/v1/itineraries/" + throughOld, owner, oldDay));
+            String recent =
+                    withoutIdentity(send(write, "/v1/trips/" + throughNew, owner, newDay));
+
+            assertThat(recent)
+                    .as("a write to %s must leave the same record whichever root took it", write.suffix())
+                    .isEqualTo(old);
+        }
+    }
+
+
+    @Test
     void theDetailOfTwoTripsWrittenThroughEitherRootMatchesFieldForField() {
         String owner = rig.travelerWithHandle(handle());
         String throughOld = rig.createTrip(owner, 1);
@@ -169,7 +203,31 @@ class TripGrammarEquivalenceIT extends PostgresTestBase {
 
     private static String withoutIdentity(String body) {
         return body.replaceAll("\"(id|itineraryId|dayId|tripId)\":\"[0-9a-f-]{36}\"", "\"$1\":\"{}\"")
-                .replaceAll("\"(createdAt|updatedAt|lastEditedAt)\":\"[^\"]*\"", "\"$1\":\"{}\"");
+                .replaceAll("\"(at|createdAt|updatedAt|lastEditedAt)\":\"[^\"]*\"", "\"$1\":\"{}\"");
+    }
+
+
+    private record Write(String suffix, String body) {}
+
+    private static final List<Write> WRITES =
+            List.of(
+                    new Write("/days", "{\"title\":\"A day\"}"),
+                    new Write("/polls", "{\"question\":\"Where?\",\"options\":[\"North\",\"South\"]}"),
+                    new Write("/chat/messages", "{\"body\":\"Morning\"}"),
+                    new Write("/days/{day}/activities", "{\"title\":\"Snorkelling\"}"));
+
+    private String send(Write write, String tripRoot, String token, UUID dayId) {
+        String uri = tripRoot + write.suffix().replace("{day}", dayId.toString());
+        var result =
+                rest.post()
+                        .uri(uri)
+                        .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .body(write.body())
+                        .exchange()
+                        .expectBody()
+                        .returnResult();
+        return result.getStatus().value() + " " + withoutPerRequestNoise(result.getResponseBodyContent());
     }
 
 

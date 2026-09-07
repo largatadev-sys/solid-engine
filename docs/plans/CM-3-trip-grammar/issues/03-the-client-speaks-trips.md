@@ -14,3 +14,11 @@
 - [ ] Type-check clean; no screen imports a repository it did not import before
 
 ## Comments
+
+**Amended before merge (founder decision, 2026-09-07): the publish half of this ticket defers to CM-5.**
+
+AC2 as written — *"Publish from the app creates the itinerary object and the workspace refetches"* — was built, walked live and then reverted. `preprod` and `prod` are deferred (epic-map line 227), so `dev` is the only running environment and the founders' preview is wired to it; a story whose one traveler-visible change is the publish act would have carried that risk on the live rung for the length of the arc. The client therefore stays on `POST /v1/itineraries/{id}/publish|unpublish` and this story changes nothing a traveler can reach.
+
+**What was proven before deferring**, on the live stack with the database read after each act: the editing-session guard refuses with `409 EDIT_LOCKED`; publish mints the object and sets the flag; unpublish retires it and clears the flag; republish reuses the same object id; a trip published the old way unpublishes cleanly through the new route.
+
+The server keeps both fixes and the routes stay dark, so CM-5 inherits a correct pair. Commit `0861f564` is the shape to copy back.

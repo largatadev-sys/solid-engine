@@ -147,9 +147,10 @@ test("the owner takes out another member's photo — owner authority, not upload
 });
 
 test('a published trip still takes photos — the freeze is the plan, not the pool', async () => {
-  for (const step of ['start', 'complete', 'publish']) {
-    await api(`/v1/itineraries/${trip}/${step}`, 'POST', owner);
+  for (const step of ['start', 'complete']) {
+    await api(`/v1/trips/${trip}/${step}`, 'POST', owner);
   }
+  await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
   afterPublish = await uploadBytes(dump, member, solidJpeg(), 'dump.jpg');
   expect(afterPublish.status).toBe(201);
 });

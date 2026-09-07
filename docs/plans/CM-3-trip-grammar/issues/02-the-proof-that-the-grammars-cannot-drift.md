@@ -14,3 +14,12 @@
 - [ ] Neither test introduces a new Spring context signature
 
 ## Comments
+
+**Sabotage checks run, and their failure lines (2026-09-07):**
+
+- A root removed from `DayController` → the twin test names its three routes: `["DELETE /v1/itineraries/{itineraryId}/days/{dayId}", "PATCH …", "POST /v1/itineraries/{itineraryId}/days"]`.
+- A real `@DeleteMapping("/{id}")` minted under the old root → the pinned absence fires: `Expecting empty but was: ["DELETE /v1/itineraries/{id}"]`.
+- A rival handler on a twinned path → **the first draft did NOT catch this.** It mapped each route shape to ONE handler, so the rival silently overwrote the real twin and the check passed. Fixed by mapping a shape to the SET of handlers serving it, plus a second assertion that the path variable is spelt the same on both patterns — a rival at `{tripId}` beside a twin at `{itineraryId}` is otherwise invisible. Now reads: `PUT /v1/itineraries/{itineraryId}/plan -> PlanController#save but PUT /v1/trips/{itineraryId}/plan -> [PlanController#save, TripController#sabotageRivalTwin]`.
+- The photo-dump twin removed → the equivalence test names the suffix: `[the two grammars must answer the same bytes for /photo-dump] expected "200 {…}" but was "404 NOT_FOUND"`.
+
+The third is the one worth keeping: a structural test that maps a key to a single value can be unfalsifiable, and only a sabotage that landed shows it. Prove the sabotage is in the file before believing what it tells you — one attempt here silently did not apply and reported green.
