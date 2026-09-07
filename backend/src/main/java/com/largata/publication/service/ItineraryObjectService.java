@@ -6,6 +6,7 @@ import com.largata.common.authz.Membership;
 import com.largata.common.tx.AfterCommit;
 import com.largata.publication.entity.ItineraryObject;
 import com.largata.publication.exception.PublicationNotFoundException;
+import com.largata.publication.exception.TripBeingEditedException;
 import com.largata.publication.exception.TripNotCompleteException;
 import com.largata.publication.repository.ItineraryObjectRepository;
 import com.largata.trip.exception.NotTheTripOwnerException;
@@ -62,6 +63,11 @@ public class ItineraryObjectService {
         }
 
         Instant at = Instant.now(clock);
+        trips.liveSessionHolder(member.itineraryId(), at)
+                .filter(holder -> !holder.equals(member.travelerId()))
+                .ifPresent(holder -> {
+                    throw new TripBeingEditedException();
+                });
         String snapshot = json.writeValueAsString(PlanSnapshot.of(plan));
         ItineraryObject object =
                 objects.findByTripId(member.itineraryId())

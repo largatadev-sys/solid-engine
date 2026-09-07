@@ -103,6 +103,42 @@ class PublicationContractIT extends PostgresTestBase {
 
 
     @Test
+    void publishingIsRefusedWhileAnotherMemberHoldsTheEditingSession() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip = rig.createTrip(owner, 1);
+        String member = rig.joinAsMember(owner, trip, handle());
+        walkToCompleted(owner, trip);
+        rig.hold(member, trip, "session", UUID.fromString(trip));
+
+        rest.post()
+                .uri("/v1/trips/" + trip + "/publish")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("EDIT_LOCKED");
+    }
+
+
+    @Test
+    void theOwnerPublishesThroughTheirOwnEditingSession() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip = rig.createTrip(owner, 1);
+        walkToCompleted(owner, trip);
+        rig.hold(owner, trip, "session", UUID.fromString(trip));
+
+        rest.post()
+                .uri("/v1/trips/" + trip + "/publish")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
+
+    @Test
     void unpublishClearsTheFlagOfATripPublishedBeforeAnyObjectExisted() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);

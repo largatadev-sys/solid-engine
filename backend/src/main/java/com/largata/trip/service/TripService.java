@@ -213,6 +213,18 @@ public class TripService {
 
 
     @Transactional(readOnly = true)
+    public Optional<UUID> liveSessionHolder(UUID tripId, Instant now) {
+        return db.sql(
+                        "SELECT holder_id FROM edit_lease"
+                                + " WHERE subject_type = 'SESSION' AND subject_id = ? AND expires_at > ?")
+                .param(tripId)
+                .param(java.sql.Timestamp.from(now))
+                .query(UUID.class)
+                .optional();
+    }
+
+
+    @Transactional(readOnly = true)
     public boolean frozen(UUID tripId) {
         return db.sql("SELECT state FROM workspace WHERE itinerary_id = ?")
                 .param(tripId)
