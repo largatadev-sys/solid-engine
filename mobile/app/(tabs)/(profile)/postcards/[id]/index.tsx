@@ -120,7 +120,12 @@ export default function PostcardDetailRoute() {
             : () =>
                 router.push({
                   pathname: '/diaries/[id]',
-                  params: { id: postcard.data?.diaryId as string },
+                  params: {
+                    id: postcard.data?.diaryId as string,
+                    ...(postcard.data?.diaryDayId === null
+                      ? {}
+                      : { day: postcard.data?.diaryDayId as string }),
+                  },
                 })
         }
         onMenu={() => setMenuOpen(true)}

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -23,6 +24,7 @@ import { MemoryPlaceLink } from './MemoryPlaceLink';
 
 interface DiaryDetailScreenProps {
   readonly diary: DiaryResponse;
+  readonly landOnDayId?: string | null;
   readonly authorName: string;
   readonly authorHandle: string;
   readonly authorAvatarUrl: string | null;
@@ -37,6 +39,7 @@ interface DiaryDetailScreenProps {
 
 export function DiaryDetailScreen({
   diary,
+  landOnDayId = null,
   authorName,
   authorHandle,
   authorAvatarUrl,
@@ -47,11 +50,27 @@ export function DiaryDetailScreen({
   onAddDay,
   onDiaryMenu,
 }: DiaryDetailScreenProps) {
+  const scroller = useRef<ScrollView>(null);
+  const tops = useRef<Record<string, number>>({});
+  const [landed, setLanded] = useState(false);
+
+  useEffect(() => {
+    if (landed || landOnDayId === null) return undefined;
+
+    const top = tops.current[landOnDayId];
+    if (top === undefined) return undefined;
+
+    const settle = setTimeout(() => {
+      scroller.current?.scrollTo({ y: top, animated: true });
+      setLanded(true);
+    }, 0);
+    return () => clearTimeout(settle);
+  });
   const insets = useSafeAreaInsets();
   const goBack = useSafeBack();
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.body}>
+    <ScrollView ref={scroller} style={styles.screen} contentContainerStyle={styles.body}>
       <View style={styles.cover}>
         <MediaThumb
           url={diary.cover?.url ?? null}
@@ -128,6 +147,9 @@ export function DiaryDetailScreen({
           <DayBlock
             key={day.id}
             day={day}
+            onMeasured={(top) => {
+              tops.current[day.id] = top;
+            }}
             destination={diary.destination}
             owned={owned}
             onOpenPostcard={onOpenPostcard}
@@ -182,15 +204,17 @@ function DayBlock({
   owned,
   onOpenPostcard,
   onAddPostcard,
+  onMeasured,
 }: {
   readonly day: DiaryDayResponse;
   readonly destination: string | null;
   readonly owned: boolean;
   readonly onOpenPostcard: (postcardId: string) => void;
   readonly onAddPostcard?: (dayId: string) => void;
+  readonly onMeasured: (top: number) => void;
 }) {
   return (
-    <View>
+    <View onLayout={(event) => onMeasured(event.nativeEvent.layout.y)}>
       <View style={styles.dayHead}>
         <View style={styles.dayTitleRow}>
           <Text style={styles.dayTitle}>{dayOrdinalLabel(day.ordinal)}</Text>

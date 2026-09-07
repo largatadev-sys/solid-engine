@@ -24,7 +24,7 @@ import { colors } from '../../../../../src/theme';
 
 
 export default function DiaryDetailRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, day } = useLocalSearchParams<{ id: string; day?: string }>();
   const router = useRouter();
   const diary = useDiary(id ?? null);
   const refresh = useMemoryRefresh();
@@ -72,6 +72,7 @@ export default function DiaryDetailRoute() {
     <>
       <DiaryDetailScreen
         diary={diary.data}
+      landOnDayId={day ?? null}
         authorName={author?.displayName ?? ''}
         authorHandle={author?.handle ?? ''}
         authorAvatarUrl={author?.avatarUrl ?? null}
