@@ -52,8 +52,8 @@ test('the bar leaves the traveler alone inside a trip (founder, 2026-09-07)', as
   for (const name of ['Home', DISCOVER_TAB_LABEL, 'Trips', 'Profile']) {
     await expect(
       tab(page, name),
-      'a trip is not a main screen, so it carries no bar to tap',
-    ).toHaveCount(0);
+      'a trip is not a main screen, so its bar is not there to tap',
+    ).toBeHidden();
   }
 });
 
