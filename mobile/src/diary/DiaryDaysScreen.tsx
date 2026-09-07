@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { spacing } from '../theme';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useExitGuard } from '../navigation/useExitGuard';
@@ -181,7 +182,7 @@ export function DiaryDaysScreen({
         ))}
       </ScrollView>
 
-      <View style={[styles.rail, { paddingBottom: insets.bottom + memoryMetrics.railFloor }]}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <Text style={styles.hint}>{DIARY_DAYS_HINT}</Text>
         <MemoryCta label={POST_CTA} busy={posting} onPress={() => void post()} />
       </View>

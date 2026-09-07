@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { spacing } from '../theme';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pickPhotos } from '../media/pickPhoto';
@@ -96,7 +97,7 @@ export function PostcardOnDayScreen({
         />
       </ScrollView>
 
-      <View style={[styles.rail, { paddingBottom: insets.bottom + memoryMetrics.railFloor }]}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <MemoryCta
           label={POST_CTA}
           disabled={!ready}

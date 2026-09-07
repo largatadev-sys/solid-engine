@@ -201,6 +201,39 @@ class DiaryContractIT extends PostgresTestBase {
 
 
     @Test
+    void movingTheStartLaterRenumbersToo_soTheOrdinalsCannotCollide() {
+        String author = rig.travelerWithHandle(handle());
+        String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);
+        addDay(author, diary, LocalDate.of(2026, 3, 17), "Sintra");
+
+        rest.patch()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(memoryBody("Palawan by boat", "Palawan", LocalDate.of(2026, 3, 16), END))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.days[0].ordinal")
+                .isEqualTo(2);
+
+        addDay(author, diary, LocalDate.of(2026, 3, 18), "Coron");
+
+        rest.get()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.days[0].ordinal")
+                .isEqualTo(2)
+                .jsonPath("$.days[1].ordinal")
+                .isEqualTo(3);
+    }
+
+    @Test
     void movingTheStartEarlierRenumbersTheDaysAlreadyThere() {
         String author = rig.travelerWithHandle(handle());
         String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);

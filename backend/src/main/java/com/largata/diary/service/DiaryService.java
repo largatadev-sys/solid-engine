@@ -242,9 +242,9 @@ public class DiaryService {
         LocalDate origin = diary.startDate();
         diary.describe(title, destination, pin, startDate, endDate, Instant.now(clock));
         Diary saved = diaries.saveAndFlush(diary);
-        if (saved.startDate().isBefore(origin)) {
-            days.shiftDatedOrdinals(
-                    saved.id(), (int) ChronoUnit.DAYS.between(saved.startDate(), origin));
+        int moved = (int) ChronoUnit.DAYS.between(saved.startDate(), origin);
+        if (moved != 0) {
+            days.shiftDatedOrdinals(saved.id(), moved);
         }
         emit(saved, "diary_described");
         return viewOf(saved);
@@ -359,9 +359,6 @@ public class DiaryService {
 
 
     private void requireTheseDatesHoldEveryDay(UUID diaryId, LocalDate from, LocalDate to) {
-        if (from == null || to == null) {
-            return;
-        }
         boolean stranded =
                 days.findByDiaryIdOrderByOrdinal(diaryId).stream()
                         .anyMatch(day -> day.date().isBefore(from) || day.date().isAfter(to));

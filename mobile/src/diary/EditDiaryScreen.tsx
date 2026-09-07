@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { spacing } from '../theme';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useExitGuard } from '../navigation/useExitGuard';
@@ -176,7 +177,7 @@ export function EditDiaryScreen({ diary, onSaved }: EditDiaryScreenProps) {
         <Text style={styles.hint}>{EDIT_DIARY_DATES_HINT}</Text>
       </ScrollView>
 
-      <View style={[styles.rail, { paddingBottom: insets.bottom + memoryMetrics.railFloor }]}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <MemoryCta label={SAVE_CTA} disabled={!ready} busy={saving} onPress={() => void save()} />
         {failed !== null && <Text style={styles.failed}>{failed}</Text>}
       </View>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
   Modal,
@@ -67,6 +68,7 @@ export function TripForm({
   error,
   backTo,
 }: TripFormProps) {
+  const insets = useSafeAreaInsets();
   const fields = tripFormFields(mode);
   const chrome = tripFormChrome(mode);
   const [picking, setPicking] = useState(false);
@@ -223,7 +225,7 @@ export function TripForm({
         {error !== undefined ? <Text style={styles.error}>{error}</Text> : null}
       </ScrollView>
 
-      <View style={styles.dock}>
+      <View style={[styles.dock, { paddingBottom: insets.bottom + spacing.md }]}>
         <Pressable
           style={[styles.cta, (submitting || submitDisabled) && styles.ctaBusy]}
           onPress={onSubmit}

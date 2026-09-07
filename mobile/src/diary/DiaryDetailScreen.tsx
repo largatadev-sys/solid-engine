@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from '../components/useReducedMotion';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -19,6 +20,7 @@ import {
   detailMetaSuffix,
 } from './memoryCopy';
 import { MemoryIcon } from './MemoryIcon';
+import { landingOffsetOf } from './dayLanding';
 import { MemoryPlaceLink } from './MemoryPlaceLink';
 
 
@@ -51,21 +53,19 @@ export function DiaryDetailScreen({
   onDiaryMenu,
 }: DiaryDetailScreenProps) {
   const scroller = useRef<ScrollView>(null);
-  const tops = useRef<Record<string, number>>({});
+  const reducedMotion = useReducedMotion();
+  const [dayTops, setDayTops] = useState<Record<string, number>>({});
+  const [daysTop, setDaysTop] = useState<number | null>(null);
   const [landed, setLanded] = useState(false);
 
+  const landingOffset = landingOffsetOf(landOnDayId, dayTops, daysTop);
+
   useEffect(() => {
-    if (landed || landOnDayId === null) return undefined;
+    if (landed || landingOffset === null) return;
 
-    const top = tops.current[landOnDayId];
-    if (top === undefined) return undefined;
-
-    const settle = setTimeout(() => {
-      scroller.current?.scrollTo({ y: top, animated: true });
-      setLanded(true);
-    }, 0);
-    return () => clearTimeout(settle);
-  });
+    scroller.current?.scrollTo({ y: landingOffset, animated: !reducedMotion });
+    setLanded(true);
+  }, [landed, landingOffset, reducedMotion]);
   const insets = useSafeAreaInsets();
   const goBack = useSafeBack();
 
@@ -142,13 +142,16 @@ export function DiaryDetailScreen({
         )}
       </Pressable>
 
-      <View style={styles.days}>
+      <View
+        style={styles.days}
+        onLayout={(event) => setDaysTop(event.nativeEvent.layout.y)}
+      >
         {diary.days.map((day) => (
           <DayBlock
             key={day.id}
             day={day}
             onMeasured={(top) => {
-              tops.current[day.id] = top;
+              setDayTops((known) => (known[day.id] === top ? known : { ...known, [day.id]: top }));
             }}
             destination={diary.destination}
             owned={owned}

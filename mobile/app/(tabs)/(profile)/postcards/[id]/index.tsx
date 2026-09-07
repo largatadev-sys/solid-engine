@@ -122,7 +122,7 @@ export default function PostcardDetailRoute() {
                   pathname: '/diaries/[id]',
                   params: {
                     id: postcard.data?.diaryId as string,
-                    ...(postcard.data?.diaryDayId === null
+                    ...(postcard.data?.diaryDayId == null
                       ? {}
                       : { day: postcard.data?.diaryDayId as string }),
                   },

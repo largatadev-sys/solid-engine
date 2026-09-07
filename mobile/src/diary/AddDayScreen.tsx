@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { spacing } from '../theme';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '../api/ApiError';
@@ -118,7 +119,7 @@ export function AddDayScreen({
         />
       </ScrollView>
 
-      <View style={[styles.rail, { paddingBottom: insets.bottom + memoryMetrics.railFloor }]}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <MemoryCta
           label={ADD_DAY_CTA}
           disabled={range.start === null}

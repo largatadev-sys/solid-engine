@@ -12,7 +12,7 @@ function source(...parts: string[]): string {
   return readFileSync(join(SRC, ...parts), 'utf8');
 }
 
-describe('the three tab roots wear the same header', () => {
+describe('Home, Discover and Profile wear the same header (Trips is not aligned - see the epic map)', () => {
   it('titles them all at the same size and weight', () => {
     [
       feedTypography.wordmark,
