@@ -21,9 +21,9 @@ The wire's nouns predate the Trip/Itinerary split (S4.15, register #3) and are f
 
 | Wire root | What it actually is | Since |
 |---|---|---|
-| `/v1/itineraries/**` | **The Trip** — its record, plan, lifecycle, workspace surfaces. The noun is historical (ADR-013) and never moves. | S1.x, frozen |
+| `/v1/itineraries/**` | **The Trip** — its record, plan, lifecycle, workspace surfaces. The noun is historical (ADR-013). *Amended 2026-09-07, ADR-037: `/v1/trips/**` becomes the workspace's grammar at CM-3, served by the same handlers as this root; this root is served unchanged until CM-5 decommissions the old package, then sunsets — a knowing ADR-008 exception taken while nothing is in a store.* | S1.x, frozen until CM-5 |
 | `/v1/published-itineraries/{id}` | The old world's published page — a live projection over the trip's rows. Superseded by the minted object at the rewire; stays on the wire per ADR-008. | S4.1 |
-| `/v1/trips/**` | **The Trip, in its own vocabulary** — the new world's grammar (CM-1, dark). | CM-1 |
+| `/v1/trips/**` | **The Trip, in its own vocabulary** — the new world's grammar (CM-1, dark). *From CM-3 (ADR-037): the whole workspace's grammar — 47 twins of the old root on the same handlers, beside the acts that were always here (destruction, publish, the trip-day postcards).* | CM-1 · CM-3 |
 | `/v1/publications/{id}` | **The Itinerary object** — the minted published page. The root says "publications" because every itinerary-flavored spelling is squatted on by the frozen old world; the *entity and every traveler-facing word stay "Itinerary"*. | CM-1 |
 | `/v1/diaries/**` | **The Diary** entity. | CM-1 |
 | `/v1/postcards/**` | **The Postcard** entity. The old world's postcard is `/v1/itineraries/{id}/diary/entries/**` (a Diary Entry — same concept, trip-rooted shape). | CM-1 |
