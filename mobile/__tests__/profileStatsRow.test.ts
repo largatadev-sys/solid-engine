@@ -1,11 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  FOLLOWERS_STAT_LABEL,
-  FOLLOWING_STAT_LABEL,
-  PUBLISHED_STAT_LABEL,
-} from '../src/profile/profileCopy';
-import { AWAITING_COUNT, DESTINATIONS_STAT_LABEL } from '../src/profile/publicProfileCopy';
+import { DIARIES_STAT_LABEL, ITINERARIES_STAT_LABEL } from '../src/diary/memoryCopy';
+import { FOLLOWERS_STAT_LABEL, FOLLOWING_STAT_LABEL } from '../src/profile/profileCopy';
+import { AWAITING_COUNT } from '../src/profile/publicProfileCopy';
 
 const MOBILE_ROOT = join(__dirname, '..');
 
@@ -18,27 +15,28 @@ const SCREEN = readFileSync(
 
 
 describe('the stats row: every cell is real or honestly empty', () => {
-  it('draws the four cells in the mock order', () => {
+  it('draws the four cells in the mock order (CM-2 frame 5)', () => {
     const cells = ROW.slice(ROW.indexOf('const cells = ['), ROW.indexOf('];'));
     const at = (label: string) => cells.indexOf(label);
 
-    expect(at('PUBLISHED_STAT_LABEL')).toBeLessThan(at('DESTINATIONS_STAT_LABEL'));
-    expect(at('DESTINATIONS_STAT_LABEL')).toBeLessThan(at('FOLLOWERS_STAT_LABEL'));
+    expect(at('DIARIES_STAT_LABEL')).toBeGreaterThanOrEqual(0);
+    expect(at('DIARIES_STAT_LABEL')).toBeLessThan(at('ITINERARIES_STAT_LABEL'));
+    expect(at('ITINERARIES_STAT_LABEL')).toBeLessThan(at('FOLLOWERS_STAT_LABEL'));
     expect(at('FOLLOWERS_STAT_LABEL')).toBeLessThan(at('FOLLOWING_STAT_LABEL'));
   });
 
   it('labels them the way the mock does', () => {
     expect([
-      PUBLISHED_STAT_LABEL,
-      DESTINATIONS_STAT_LABEL,
+      DIARIES_STAT_LABEL,
+      ITINERARIES_STAT_LABEL,
       FOLLOWERS_STAT_LABEL,
       FOLLOWING_STAT_LABEL,
-    ]).toEqual(['Published', 'Destinations', 'Followers', 'Following']);
+    ]).toEqual(['Diaries', 'Itineraries', 'Followers', 'Following']);
   });
 
   it('takes the two backed counts from the server and never invents them', () => {
+    expect(SCREEN).toContain('diaryCount');
     expect(SCREEN).toContain('publishedCount');
-    expect(SCREEN).toContain('destinationCount');
     expect(ROW).not.toContain('Math.random');
   });
 
@@ -60,9 +58,14 @@ describe('the stats row: every cell is real or honestly empty', () => {
   it('makes the two follow cells tappable and leaves the other two inert (S4.37, C4)', () => {
     expect(ROW).toContain('{ label: FOLLOWERS_STAT_LABEL, value: stats.followers, open: stats.openFollowers }');
     expect(ROW).toContain('{ label: FOLLOWING_STAT_LABEL, value: stats.following, open: stats.openFollowing }');
-    expect(ROW).toContain('{ label: PUBLISHED_STAT_LABEL, value: stats.published, open: null }');
-    expect(ROW).toContain('{ label: DESTINATIONS_STAT_LABEL, value: stats.destinations, open: null }');
+    expect(ROW).toContain('{ label: DIARIES_STAT_LABEL, value: stats.diaries, open: null }');
+    expect(ROW).toContain('{ label: ITINERARIES_STAT_LABEL, value: stats.itineraries, open: null }');
     expect(CELLS).toContain('if (cell.open === null)');
+  });
+
+  it('decrements the Diaries count with the optimistic exit, never ahead of it (CM-2, C3)', () => {
+    expect(SCREEN).toContain('sectionsShown(sections.data, exits.hidden)');
+    expect(SCREEN).toContain('diaries: shown?.diaryCount ?? null');
   });
 
   it('draws both rows from ONE cell component, so the two can never drift apart', () => {

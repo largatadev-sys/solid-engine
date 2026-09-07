@@ -17,7 +17,8 @@ import { useFollowPill } from './useFollowPill';
 import { LockedProfileNotice } from './LockedProfileNotice';
 import { profileProjection } from './lockedProfile';
 import { ProfileTabs } from './ProfileTabs';
-import { PublicDiaryTab } from './PublicDiaryTab';
+import { MemoryDiaryTab } from '../diary/MemoryDiaryTab';
+import { useDiarySections } from '../query/memoryQueries';
 import { PublicItinerariesTab } from './PublicItinerariesTab';
 import { PublicProfileHeader } from './PublicProfileHeader';
 import { trackPublicProfileViewed } from './profileEvents';
@@ -49,10 +50,12 @@ export function PublicProfileScreen() {
   const isSelf = destination.kind === 'own';
 
   const profile = usePublicProfile(isSelf ? '' : subject);
+  const sections = useDiarySections(isSelf ? null : subject);
   const [tab, setTab] = useState<ProfileTab>('diary');
   const { shown, onPress: onFollow, toast, clearToast } = useFollowPill(profile.data, subject);
 
   useRevalidateOnFocus(profile, !isSelf);
+  useRevalidateOnFocus(sections, !isSelf);
 
   useEffect(() => {
     if (isSelf) {
@@ -103,8 +106,8 @@ export function PublicProfileScreen() {
             avatarUrl={profile.data.traveler.avatarUrl}
             bio={profile.data.bio}
             vanityNumber={profile.data.vanityNumber}
-            publishedCount={profile.data.publishedCount}
-            destinationCount={profile.data.destinationCount}
+            diaryCount={sections.data?.diaryCount ?? null}
+            itineraryCount={profile.data.publishedCount}
             followersCount={shown?.followersCount ?? profile.data.followersCount}
             followingCount={profile.data.followingCount}
             relation={shown?.relation ?? profile.data.viewerRelation}
@@ -129,11 +132,23 @@ export function PublicProfileScreen() {
               risePx={publicProfileMotion.panelRisePx}
             >
             {tab === 'diary' ? (
-              <PublicDiaryTab
-                handle={subject}
-                subjectId={profile.data.traveler.id}
-                displayName={profile.data.traveler.displayName ?? subject}
-              />
+              sections.data === undefined ? (
+                <ActivityIndicator style={styles.loading} color={colors.accent} />
+              ) : (
+                <MemoryDiaryTab
+                  sections={sections.data}
+                  owned={false}
+                  onOpenDiary={(diaryId) =>
+                    router.push({ pathname: '/diaries/[id]', params: { id: diaryId } })
+                  }
+                  onOpenPostcard={(postcardId) =>
+                    router.push({ pathname: '/postcards/[id]', params: { id: postcardId } })
+                  }
+                  onOpenItinerary={(itineraryId) =>
+                    router.push({ pathname: '/showcase/[id]', params: { id: itineraryId } })
+                  }
+                />
+              )
             ) : (
               <PublicItinerariesTab
                 handle={subject}

@@ -1,11 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { spacing } from '../theme';
-import {
-  profileColors,
-  workspaceColors,
-  workspaceMetrics,
-  workspaceTypography,
-} from '../theme/workspaceTokens';
+import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
 import { DIARY_TAB_LABEL, ITINERARIES_TAB_LABEL } from './profileCopy';
 import type { ProfileTab } from './profileViewState';
 
@@ -36,7 +31,7 @@ export function ProfileTabs({ selected, onSelect }: ProfileTabsProps) {
             accessibilityLabel={label}
           >
             <Text style={active ? styles.labelActive : styles.label}>{label}</Text>
-            <View style={active ? styles.underlineActive : styles.underline} />
+            <View style={active ? styles.barActive : styles.bar} />
           </Pressable>
         );
       })}
@@ -49,7 +44,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: workspaceColors.hairline,
+    borderBottomColor: memoryColors.hairline,
     marginTop: spacing.xs2,
   },
   tab: {
@@ -59,21 +54,21 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm2,
   },
   label: {
-    ...workspaceTypography.tabLabel,
-    color: profileColors.meta,
+    ...memoryTypography.tabIdle,
+    color: memoryColors.muted,
   },
   labelActive: {
-    ...workspaceTypography.tabLabelActive,
-    color: workspaceColors.accent,
+    ...memoryTypography.tabActive,
+    color: memoryColors.accent,
   },
-  underline: {
+  bar: {
     width: '100%',
-    height: workspaceMetrics.tabUnderlineHeight,
+    height: memoryMetrics.tabBar,
   },
-  underlineActive: {
+  barActive: {
     width: '100%',
-    height: workspaceMetrics.tabUnderlineHeight,
-    backgroundColor: workspaceColors.accent,
+    height: memoryMetrics.tabBar,
+    backgroundColor: memoryColors.accent,
     borderTopLeftRadius: 100,
     borderTopRightRadius: 100,
   },

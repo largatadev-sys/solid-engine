@@ -7,5 +7,6 @@ public enum PhotoSubject {
     ACTIVITY,
     ITINERARY_PHOTO_DUMP,
     DIARY_ENTRY,
+    DIARY_COVER,
     POSTCARD
 }

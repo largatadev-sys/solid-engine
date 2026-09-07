@@ -4,7 +4,7 @@ import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
 import { labelled, labelStarting } from '../support/screen';
 import {
-  DESTINATIONS_STAT_LABEL,
+
   FOLLOWING_LABEL,
   FOLLOW_LABEL,
   FOLLOW_LIST_RETRY_LABEL,
@@ -17,8 +17,9 @@ import {
   FOLLOWERS_STAT_LABEL,
   FOLLOWING_STAT_LABEL,
   ITINERARIES_TAB_LABEL,
-  PUBLISHED_STAT_LABEL,
+
 } from '../../src/profile/profileCopy';
+import { DIARIES_STAT_LABEL, ITINERARIES_STAT_LABEL } from '../../src/diary/memoryCopy';
 import {
   CANCEL_REQUEST_FAILED_TOAST,
   REQUESTED_LABEL,
@@ -222,16 +223,16 @@ test('a stranger meets the header, four inert cells, the pill and the notice —
   await expect(page.getByText(lockedProfileBody(ownerFirstName)).last()).toBeVisible();
 
   for (const label of [
-    PUBLISHED_STAT_LABEL,
-    DESTINATIONS_STAT_LABEL,
+    ITINERARIES_STAT_LABEL,
+    DIARIES_STAT_LABEL,
     FOLLOWERS_STAT_LABEL,
     FOLLOWING_STAT_LABEL,
   ]) {
     await expect(page.getByText(label, { exact: true }).last()).toBeVisible();
   }
 
-  await expect(page.getByText(DIARY_TAB_LABEL, { exact: true })).toHaveCount(0);
-  await expect(page.getByText(ITINERARIES_TAB_LABEL, { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: DIARY_TAB_LABEL })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: ITINERARIES_TAB_LABEL })).toHaveCount(0);
 });
 
 
@@ -245,8 +246,8 @@ test('every stat cell on a locked page is inert — not one of them is a control
   const before = page.url();
 
   for (const label of [
-    PUBLISHED_STAT_LABEL,
-    DESTINATIONS_STAT_LABEL,
+    ITINERARIES_STAT_LABEL,
+    DIARIES_STAT_LABEL,
     FOLLOWERS_STAT_LABEL,
     FOLLOWING_STAT_LABEL,
   ]) {

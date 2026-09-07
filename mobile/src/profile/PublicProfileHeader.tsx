@@ -1,28 +1,21 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../components/Icon';
+import { DIARIES_STAT_LABEL, ITINERARIES_STAT_LABEL } from '../diary/memoryCopy';
 import { MediaThumb } from '../media/MediaThumb';
 import { initialsFor } from '../onboarding/initials';
 import { spacing } from '../theme';
+import { memoryColors, memoryMetrics, memoryTypography } from '../theme/memoryTokens';
 import {
-  followColors,
-  followMetrics,
-  followTypography,
   profileColors,
   profileMetrics,
   profileTypography,
   workspaceColors,
-  workspaceRadii,
 } from '../theme/workspaceTokens';
 import { FollowPill } from './FollowPill';
 import { profileMetaLine } from './profileMetaLine';
 import { StatCells } from './StatCells';
-import { DESTINATIONS_STAT_LABEL } from './publicProfileCopy';
 import type { ViewerRelation } from '../types/api';
-import {
-  FOLLOWERS_STAT_LABEL,
-  FOLLOWING_STAT_LABEL,
-  PUBLISHED_STAT_LABEL,
-} from './profileCopy';
+import { FOLLOWERS_STAT_LABEL, FOLLOWING_STAT_LABEL } from './profileCopy';
 
 
 interface PublicProfileHeaderProps {
@@ -31,8 +24,8 @@ interface PublicProfileHeaderProps {
   readonly avatarUrl: string | null;
   readonly bio: string | null;
   readonly vanityNumber: string | null;
-  readonly publishedCount: number;
-  readonly destinationCount: number;
+  readonly diaryCount: number | null;
+  readonly itineraryCount: number;
   readonly followersCount: number;
   readonly followingCount: number;
   readonly relation: ViewerRelation;
@@ -48,8 +41,8 @@ export function PublicProfileHeader({
   avatarUrl,
   bio,
   vanityNumber,
-  publishedCount,
-  destinationCount,
+  diaryCount,
+  itineraryCount,
   followersCount,
   followingCount,
   relation,
@@ -60,8 +53,8 @@ export function PublicProfileHeader({
   const meta = profileMetaLine(handle, vanityNumber);
 
   const cells = [
-    { label: PUBLISHED_STAT_LABEL, value: publishedCount, open: null },
-    { label: DESTINATIONS_STAT_LABEL, value: destinationCount, open: null },
+    { label: DIARIES_STAT_LABEL, value: diaryCount, open: null },
+    { label: ITINERARIES_STAT_LABEL, value: itineraryCount, open: null },
     { label: FOLLOWERS_STAT_LABEL, value: followersCount, open: onOpenFollowers },
     { label: FOLLOWING_STAT_LABEL, value: followingCount, open: onOpenFollowing },
   ];
@@ -81,13 +74,11 @@ export function PublicProfileHeader({
           <Text style={styles.displayName} numberOfLines={1}>
             {displayName}
           </Text>
-          <View style={styles.metaRow}>
-            {meta !== null && (
-              <Text style={styles.meta} numberOfLines={1}>
-                {meta}
-              </Text>
-            )}
-          </View>
+          {meta !== null && (
+            <Text style={styles.handle} numberOfLines={1}>
+              {meta}
+            </Text>
+          )}
           {bio !== null && bio.trim() !== '' && (
             <Text style={styles.bio} numberOfLines={2}>
               {bio}
@@ -130,7 +121,7 @@ export function PublicProfileEmptyState({
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.md2,
-    paddingTop: spacing.sm3,
+    paddingTop: spacing.sm,
     gap: spacing.md,
   },
   identity: {
@@ -139,62 +130,34 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   avatar: {
-    width: profileMetrics.avatarSize,
-    height: profileMetrics.avatarSize,
-    borderRadius: profileMetrics.avatarSize / 2,
+    width: memoryMetrics.avatar,
+    height: memoryMetrics.avatar,
+    borderRadius: memoryMetrics.avatar / 2,
     flexGrow: 0,
     flexShrink: 0,
   },
   avatarWell: {
-    backgroundColor: profileColors.avatarWell,
+    backgroundColor: memoryColors.accentWash,
   },
   initials: {
     ...profileTypography.initials,
-    color: profileColors.avatarInk,
+    color: memoryColors.accentDeep,
   },
   identityText: {
     flex: 1,
     gap: spacing.hair,
   },
   displayName: {
-    ...profileTypography.displayName,
-    color: workspaceColors.title,
+    ...memoryTypography.displayName,
+    color: memoryColors.title,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  meta: {
-    ...profileTypography.meta,
-    color: profileColors.meta,
-    flexShrink: 1,
+  handle: {
+    ...memoryTypography.handle,
+    color: memoryColors.muted,
   },
   bio: {
-    ...profileTypography.bio,
-    color: profileColors.bio,
-  },
-  followPill: {
-    height: profileMetrics.editPillHeight,
-    borderWidth: 1,
-    borderColor: workspaceColors.accent,
-    backgroundColor: workspaceColors.accent,
-    borderRadius: workspaceRadii.pill,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs2,
-  },
-  followingPill: {
-    borderColor: followColors.followingBorder,
-    backgroundColor: followColors.followingWell,
-  },
-  followLabel: {
-    ...profileTypography.editPill,
-    color: profileColors.onAccent,
-  },
-  followingLabel: {
-    color: followColors.followingInk,
+    ...memoryTypography.bio,
+    color: memoryColors.bio,
   },
   empty: {
     paddingHorizontal: spacing.lg,

@@ -5,7 +5,10 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { ScreenMessage } from '../../../src/components/ScreenMessage';
 import { useMe } from '../../../src/hooks/useMe';
 import { ONBOARDING_ROUTES } from '../../../src/onboarding/onboardingGate';
-import { ProfileDiaryTab } from '../../../src/profile/ProfileDiaryTab';
+import { PostSheet } from '../../../src/diary/PostSheet';
+import { sectionsShown, useMemoryExits } from '../../../src/diary/useMemoryExits';
+import { useDiarySections } from '../../../src/query/memoryQueries';
+import { DiaryTabPane } from '../../../src/profile/DiaryTabPane';
 import { ProfileHeader } from '../../../src/profile/ProfileHeader';
 import { ProfileItinerariesTab } from '../../../src/profile/ProfileItinerariesTab';
 import { ProfileTabs } from '../../../src/profile/ProfileTabs';
@@ -27,7 +30,7 @@ import { UndoToast } from '../../../src/removal/UndoToast';
 import { useProfileRemoval } from '../../../src/removal/useProfileRemoval';
 import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { colors, spacing } from '../../../src/theme';
-import { workspaceColors } from '../../../src/theme/workspaceTokens';
+import { memoryColors } from '../../../src/theme/memoryTokens';
 
 
 export default function ProfileScreen() {
@@ -37,8 +40,12 @@ export default function ProfileScreen() {
   const stats = useProfileStats();
   const [tab, setTab] = useState<ProfileTab>(selectedTab);
   const myHandle = state.kind === 'ok' ? state.me.handle : null;
+  const sections = useDiarySections(myHandle);
+  const exits = useMemoryExits();
+  const [postOpen, setPostOpen] = useState(false);
 
   useRevalidateOnFocus(stats);
+  useRevalidateOnFocus(sections);
 
   const scroll = useRef<ScrollView | null>(null);
   const offset = useRef(0);
@@ -71,6 +78,8 @@ export default function ProfileScreen() {
     setTab(next);
   };
 
+  const shown = sections.data === undefined ? null : sectionsShown(sections.data, exits.hidden);
+
   return (
     <View style={styles.screen}>
       <ScrollView
@@ -84,8 +93,8 @@ export default function ProfileScreen() {
         <ProfileHeader
           card={profileCardOf(state.me)}
           stats={{
-            published: stats.data?.publishedCount ?? null,
-            destinations: stats.data?.destinationCount ?? null,
+            diaries: shown?.diaryCount ?? null,
+            itineraries: stats.data?.publishedCount ?? null,
             followers: stats.data?.followersCount ?? null,
             following: stats.data?.followingCount ?? null,
             failed: stats.isError,
@@ -99,12 +108,17 @@ export default function ProfileScreen() {
           }}
           onEditProfile={() => router.push(`${ONBOARDING_ROUTES.profile}?mode=edit`)}
           onOpenAccount={() => router.push('/account')}
+          onPost={() => setPostOpen(true)}
         />
 
         <ProfileTabs selected={tab} onSelect={chooseTab} />
 
         {tab === 'diary' ? (
-          <ProfileDiaryTab removal={removal} />
+          shown === null ? (
+            <ActivityIndicator style={styles.loading} color={colors.accent} />
+          ) : (
+            <DiaryTabPane handle={myHandle} sections={shown} exits={exits} />
+          )
         ) : (
           <ProfileItinerariesTab removal={removal} />
         )}
@@ -125,17 +139,28 @@ export default function ProfileScreen() {
         onUndo={removal.undo}
         onDone={removal.settle}
       />
+
+      <PostSheet
+        open={postOpen}
+        onDiary={() => {
+          setPostOpen(false);
+          router.push('/diaries/new');
+        }}
+        onPostcard={() => {
+          setPostOpen(false);
+          router.push('/postcards/new');
+        }}
+        onDismiss={() => setPostOpen(false)}
+      />
     </View>
   );
 }
 
 
-
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: workspaceColors.surface,
+    backgroundColor: memoryColors.screen,
   },
   loading: {
     marginTop: spacing.xl,

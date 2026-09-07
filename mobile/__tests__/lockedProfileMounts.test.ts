@@ -57,9 +57,9 @@ describe('the notice stands at all three of its hosts (S4.40 decisions 3 and 11)
   });
 
   it('asks for no diary or showcase on a locked page, so no fence is ever fetched', () => {
-    expect(SCREEN).toContain('<PublicDiaryTab');
+    expect(SCREEN).toContain('<MemoryDiaryTab');
     const noticeAt = SCREEN.indexOf('<LockedProfileNotice');
-    const diaryAt = SCREEN.indexOf('<PublicDiaryTab');
+    const diaryAt = SCREEN.indexOf('<MemoryDiaryTab');
     expect(noticeAt).toBeLessThan(diaryAt);
   });
 });

@@ -1,5 +1,7 @@
 package com.largata.itinerary.api;
 
+import com.largata.common.geo.Pin;
+import com.largata.common.geo.PinPayload;
 import com.largata.itinerary.Itinerary;
 import com.largata.itinerary.ItineraryFields;
 import jakarta.validation.constraints.NotBlank;
@@ -52,7 +54,7 @@ public record UpdateItineraryRequest(
     }
 
 
-    private com.largata.itinerary.Pin pinOnto(com.largata.itinerary.Pin current) {
+    private Pin pinOnto(Pin current) {
         if (Patchable.isAbsent(pin)) {
             return current;
         }

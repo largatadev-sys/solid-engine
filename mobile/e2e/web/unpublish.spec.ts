@@ -40,7 +40,7 @@ async function isPublished(): Promise<boolean> {
 
 async function openItinerariesTab(page: import('@playwright/test').Page): Promise<void> {
   await page.goto(PROFILE_TAB_ROUTE);
-  await page.getByText(ITINERARIES_TAB_LABEL).first().click();
+  await labelled(page, ITINERARIES_TAB_LABEL).click();
 }
 
 test.beforeAll(async () => {
