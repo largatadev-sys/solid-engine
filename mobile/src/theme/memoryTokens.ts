@@ -227,7 +227,6 @@ export const memoryTypography = {
   placeRow: { fontFamily: figtree.regular, fontSize: 13, lineHeight: 17 },
   bold16: { fontFamily: figtree.bold, fontSize: 16, lineHeight: 21 },
 
-  profileTitle: { fontFamily: inter.bold, fontSize: 15, lineHeight: 20 },
   displayName: { fontFamily: inter.extraBold, fontSize: 22, lineHeight: 27 },
   handle: { fontFamily: inter.regular, fontSize: 13, lineHeight: 17 },
   bio: { fontFamily: inter.regular, fontSize: 13.5, lineHeight: 18 },
