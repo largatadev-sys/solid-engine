@@ -221,6 +221,14 @@ public class EditLeaseService {
     }
 
 
+    @Transactional(readOnly = true)
+    Optional<String> foreignSessionHolderLabel(Membership member) {
+        return liveSession(member.itineraryId(), clock.instant())
+                .filter(held -> !held.isHeldBy(member.travelerId()))
+                .map(held -> labelOf(held.holderId()));
+    }
+
+
     private boolean subsumedBySession(Membership member, Instant now) {
         Optional<EditLease> session = liveSession(member.itineraryId(), now);
         if (session.isEmpty()) {

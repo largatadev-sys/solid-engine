@@ -3,9 +3,11 @@ package com.largata.publication.service;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.TripEditingSession;
 import com.largata.common.tx.AfterCommit;
 import com.largata.publication.entity.ItineraryObject;
 import com.largata.publication.exception.PublicationNotFoundException;
+import com.largata.publication.exception.TripBeingEditedException;
 import com.largata.publication.exception.TripNotCompleteException;
 import com.largata.publication.repository.ItineraryObjectRepository;
 import com.largata.trip.exception.NotTheTripOwnerException;
@@ -17,6 +19,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +35,7 @@ public class ItineraryObjectService {
 
     private final ItineraryObjectRepository objects;
     private final TripService trips;
+    private final TripEditingSession editingSession;
     private final ObjectMapper json;
     private final Analytics analytics;
     private final Clock clock;
@@ -39,11 +43,13 @@ public class ItineraryObjectService {
     ItineraryObjectService(
             ItineraryObjectRepository objects,
             TripService trips,
+            TripEditingSession editingSession,
             ObjectMapper json,
             Analytics analytics,
             Clock clock) {
         this.objects = objects;
         this.trips = trips;
+        this.editingSession = editingSession;
         this.json = json;
         this.analytics = analytics;
         this.clock = clock;
@@ -59,6 +65,10 @@ public class ItineraryObjectService {
         if (!plan.lifecycle().admitsPublishing()) {
             throw new TripNotCompleteException(plan.lifecycle());
         }
+
+        editingSession.heldByAnotherTraveler(member).ifPresent(holder -> {
+            throw new TripBeingEditedException(holder);
+        });
 
         Instant at = Instant.now(clock);
         String snapshot = json.writeValueAsString(PlanSnapshot.of(plan));
@@ -85,17 +95,25 @@ public class ItineraryObjectService {
         if (!member.isOwner()) {
             throw new NotTheTripOwnerException("Only the trip owner can unpublish this trip.");
         }
-        ItineraryObject object =
+        Optional<ItineraryObject> live =
                 objects.findByTripId(member.itineraryId())
-                        .filter(candidate -> !candidate.isRetired())
-                        .orElseThrow(PublicationNotFoundException::new);
+                        .filter(candidate -> !candidate.isRetired());
 
-        object.retire(Instant.now(clock));
-        objects.saveAndFlush(object);
+        live.ifPresent(object -> {
+            object.retire(Instant.now(clock));
+            objects.saveAndFlush(object);
+        });
         trips.markUnpublished(member.itineraryId());
 
-        log.info("Itinerary object retired: id={} tripId={}", object.id(), object.tripId());
-        emit(object, "itinerary_object_retired");
+        live.ifPresentOrElse(
+                object -> {
+                    log.info("Itinerary object retired: id={} tripId={}", object.id(), object.tripId());
+                    emit(object, "itinerary_object_retired");
+                },
+                () ->
+                        log.info(
+                                "Trip unpublished with no itinerary object to retire: tripId={}",
+                                member.itineraryId()));
     }
 
 

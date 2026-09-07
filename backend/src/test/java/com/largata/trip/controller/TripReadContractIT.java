@@ -34,7 +34,7 @@ class TripReadContractIT extends PostgresTestBase {
 
 
     @Test
-    void aMemberReadsTheTripThroughTheNewGrammarAndGetsTheOldWorldsTruth() {
+    void theTripsGrammarAnswersTheFullRecordTheOldDetailAnswers() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 3);
         String member = rig.joinAsMember(owner, trip, handle());
@@ -58,93 +58,109 @@ class TripReadContractIT extends PostgresTestBase {
                 .isEqualTo(false)
                 .jsonPath("$.archived")
                 .isEqualTo(false)
-                .jsonPath("$.viewerRole")
-                .isEqualTo("member")
                 .jsonPath("$.createdAt")
+                .exists()
+                .jsonPath("$.days")
+                .isArray()
+                .jsonPath("$.days.length()")
+                .isEqualTo(3)
+                .jsonPath("$.planVersion")
                 .exists();
     }
 
 
     @Test
-    void theOwnerReadsTheirOwnRole() {
+    void theDetailCarriesNoViewerRoleOnEitherRoot() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);
 
-        rest.get()
-                .uri("/v1/trips/" + trip)
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("$.viewerRole")
-                .isEqualTo("owner");
+        for (String root : ROOTS) {
+            rest.get()
+                    .uri(root + trip)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectBody()
+                    .jsonPath("$.viewerRole")
+                    .doesNotExist();
+        }
     }
 
 
     @Test
-    void aNonMemberIsMaskedWithTheTripsOwnNotFound() {
+    void aNonMemberIsMaskedWithOneRefusalOnBothRoots() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);
         String stranger = rig.travelerWithHandle(handle());
 
-        rest.get()
-                .uri("/v1/trips/" + trip)
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(stranger))
-                .exchange()
-                .expectStatus()
-                .isNotFound()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("TRIP_NOT_FOUND");
+        for (String root : ROOTS) {
+            rest.get()
+                    .uri(root + trip)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(stranger))
+                    .exchange()
+                    .expectStatus()
+                    .isNotFound()
+                    .expectBody()
+                    .jsonPath("$.code")
+                    .isEqualTo("ITINERARY_NOT_FOUND");
+        }
     }
 
 
     @Test
-    void anUnauthenticatedReadAnswersTheStandardRefusal() {
-        rest.get()
-                .uri("/v1/trips/" + UUID.randomUUID())
-                .exchange()
-                .expectStatus()
-                .isUnauthorized()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("UNAUTHENTICATED");
+    void anUnauthenticatedReadAnswersTheStandardRefusalOnBothRoots() {
+        String id = UUID.randomUUID().toString();
+
+        for (String root : ROOTS) {
+            rest.get()
+                    .uri(root + id)
+                    .exchange()
+                    .expectStatus()
+                    .isUnauthorized()
+                    .expectBody()
+                    .jsonPath("$.code")
+                    .isEqualTo("UNAUTHENTICATED");
+        }
     }
 
 
     @Test
-    void anArchivedTripVanishesForTheMemberButNotTheOwner() {
+    void anArchivedTripVanishesForTheMemberButNotTheOwnerOnBothRoots() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);
         String member = rig.joinAsMember(owner, trip, handle());
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/archive")
+                .uri("/v1/trips/" + trip + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
                 .isOk();
 
-        rest.get()
-                .uri("/v1/trips/" + trip)
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(member))
-                .exchange()
-                .expectStatus()
-                .isNotFound()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("TRIP_NOT_FOUND");
-        rest.get()
-                .uri("/v1/trips/" + trip)
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("$.archived")
-                .isEqualTo(true);
+        for (String root : ROOTS) {
+            rest.get()
+                    .uri(root + trip)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(member))
+                    .exchange()
+                    .expectStatus()
+                    .isNotFound()
+                    .expectBody()
+                    .jsonPath("$.code")
+                    .isEqualTo("ITINERARY_NOT_FOUND");
+            rest.get()
+                    .uri(root + trip)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectBody()
+                    .jsonPath("$.archived")
+                    .isEqualTo(true);
+        }
     }
 
+
+    private static final String[] ROOTS = {"/v1/itineraries/", "/v1/trips/"};
 
     private static String handle() {
         return "t" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);

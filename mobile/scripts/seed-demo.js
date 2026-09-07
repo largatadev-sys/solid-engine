@@ -161,7 +161,7 @@ async function main() {
   console.log(`seeding ${API} — t1 = owner, t2 = collaborator, t3 = a stranger who joins nothing\n`);
 
   for (const spec of TRIPS) {
-    const created = must(await api('/v1/itineraries', 'POST', owner, {
+    const created = must(await api('/v1/trips', 'POST', owner, {
       title: spec.title,
       destination: spec.destination,
       ...(spec.description === null ? {} : { description: spec.description }),
@@ -176,16 +176,16 @@ async function main() {
       for (const activity of activities) {
         const pin = activity.place === undefined ? undefined : await pinFor(owner, activity.place, region);
         must(
-          await api(`/v1/itineraries/${created.id}/days/${dayId}/activities`, 'POST', owner,
+          await api(`/v1/trips/${created.id}/days/${dayId}/activities`, 'POST', owner,
             pin === undefined ? activity : { ...activity, pin }),
           `activity ${activity.title}`);
       }
     }
 
     if (spec.standouts.length > 0 || spec.bestTimeOfYear !== null || region !== undefined) {
-      must(await api(`/v1/itineraries/${created.id}/edit-lock`, 'POST', owner, { subjectType: 'header' }),
+      must(await api(`/v1/trips/${created.id}/edit-lock`, 'POST', owner, { subjectType: 'header' }),
         'header lease');
-      must(await api(`/v1/itineraries/${created.id}`, 'PATCH', owner, {
+      must(await api(`/v1/trips/${created.id}`, 'PATCH', owner, {
         title: spec.title,
         destination: spec.destination,
         ...(spec.description === null ? {} : { description: spec.description }),
@@ -193,11 +193,11 @@ async function main() {
         bestTimeOfYear: spec.bestTimeOfYear ?? '',
         ...(region === undefined ? {} : { pin: region }),
       }), 'dress the header');
-      await api(`/v1/itineraries/${created.id}/edit-lock`, 'DELETE', owner, { subjectType: 'header' });
+      await api(`/v1/trips/${created.id}/edit-lock`, 'DELETE', owner, { subjectType: 'header' });
     }
 
     if (spec.withMember) {
-      must(await api(`/v1/itineraries/${created.id}/invitations/by-handle`, 'POST', owner,
+      must(await api(`/v1/trips/${created.id}/invitations/by-handle`, 'POST', owner,
         { handle: memberProfile.handle }), 'invite t2');
       const inbox = must(await api('/v1/invitations', 'GET', member), 'inbox');
       const invite = (inbox.items ?? []).find((i) => i.itineraryId === created.id);
@@ -205,10 +205,10 @@ async function main() {
     }
 
     if (spec.lifecycle === 'active' || spec.lifecycle === 'complete') {
-      must(await api(`/v1/itineraries/${created.id}/start`, 'POST', owner), 'start');
+      must(await api(`/v1/trips/${created.id}/start`, 'POST', owner), 'start');
     }
     if (spec.lifecycle === 'complete') {
-      must(await api(`/v1/itineraries/${created.id}/complete`, 'POST', owner), 'complete');
+      must(await api(`/v1/trips/${created.id}/complete`, 'POST', owner), 'complete');
     }
 
     if (spec.publish !== null) {

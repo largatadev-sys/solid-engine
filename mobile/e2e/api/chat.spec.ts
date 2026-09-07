@@ -17,15 +17,18 @@ let owner: string;
 let member: string;
 let trip: string;
 
-const messagesUri = (): string => `/v1/itineraries/${trip}/chat/messages`;
+const messagesUri = (): string => `/v1/trips/${trip}/chat/messages`;
 
 const send = async (as: string, body: string) => api(messagesUri(), 'POST', as, { body });
 
 const thread = async (as: string): Promise<Page<ChatMessageResponse>> =>
   (await api(messagesUri(), 'GET', as)).body;
 
+const TWINNED_ACTS = ['start', 'complete'];
+
 const act = async (action: string, as: string = owner) => {
-  const moved = await api(`/v1/itineraries/${trip}/${action}`, 'POST', as, {});
+  const root = TWINNED_ACTS.includes(action) ? '/v1/trips' : '/v1/itineraries';
+  const moved = await api(`${root}/${trip}/${action}`, 'POST', as, {});
   if (moved.status !== 200) throw new SeedFailure(`the ${action}`, moved.body);
 };
 
@@ -36,7 +39,7 @@ test.beforeAll(async () => {
   await profileFor(OWNER);
   await profileFor(MEMBER);
 
-  const created = await api('/v1/itineraries', 'POST', owner, {
+  const created = await api('/v1/trips', 'POST', owner, {
     title: stamp('Chat Trip'),
     destination: 'El Nido',
     durationDays: 2,
@@ -45,7 +48,7 @@ test.beforeAll(async () => {
   trip = created.body.id;
 
   const memberHandle = (await api('/v1/me', 'GET', member)).body.handle;
-  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner, {
+  const invited = await api(`/v1/trips/${trip}/invitations/by-handle`, 'POST', owner, {
     handle: memberHandle,
   });
   if (invited.status !== 201) throw new SeedFailure('the invitation', invited.body);
@@ -167,10 +170,10 @@ test('paging walks older messages and terminates', async () => {
 
 
 test('sending writes no history entry and takes no lease', async () => {
-  const before = (await api(`/v1/itineraries/${trip}`, 'GET', owner)).body.planVersion;
+  const before = (await api(`/v1/trips/${trip}`, 'GET', owner)).body.planVersion;
 
   await send(owner, 'Chat is not a plan edit.');
 
-  const after = (await api(`/v1/itineraries/${trip}`, 'GET', owner)).body.planVersion;
+  const after = (await api(`/v1/trips/${trip}`, 'GET', owner)).body.planVersion;
   expect(after).toBe(before);
 });

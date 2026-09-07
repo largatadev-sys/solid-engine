@@ -7,6 +7,7 @@ const BY_CODE: Record<string, string> = {
     'Offer ownership to another member and have them accept before leaving this trip.',
   NOT_PERMITTED: 'Only the trip owner can do that.',
   ITINERARY_NOT_FOUND: 'This trip is no longer available to you.',
+  TRIP_NOT_FOUND: 'This trip is no longer available to you.',
   ALREADY_A_MEMBER: 'They are already on this trip.',
   TRAVELER_NOT_FOUND: 'No traveler with that handle.',
   TARGET_NOT_A_MEMBER: 'Invite them to the trip before offering them ownership.',

@@ -104,17 +104,17 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
   const stamp = Date.now().toString().slice(-6);
   const photo = path.join(__dirname, 'fixtures', 'photo.jpg');
 
-  const created = await api('/v1/itineraries', 'POST', author.idToken, {
+  const created = await api('/v1/trips', 'POST', author.idToken, {
     title: `Device walk ${stamp}`,
     destination: 'Palawan',
     durationDays: 3,
   });
   const trip = created.body.id;
-  await api(`/v1/itineraries/${trip}/start`, 'POST', author.idToken);
+  await api(`/v1/trips/${trip}/start`, 'POST', author.idToken);
 
-  const plan = (await api(`/v1/itineraries/${trip}`, 'GET', author.idToken)).body;
+  const plan = (await api(`/v1/trips/${trip}`, 'GET', author.idToken)).body;
   const made = await api(
-    `/v1/itineraries/${trip}/days/${plan.days[0].id}/activities`,
+    `/v1/trips/${trip}/days/${plan.days[0].id}/activities`,
     'POST',
     author.idToken,
     { title: `Sunrise gate photo ${stamp}`, place: `Pura Lempuyang Gate ${stamp}` },
@@ -136,7 +136,7 @@ function postDiaryEntry(token, itineraryId, entry, photos) {
   // Also the SHORT-caption case: "more" must not appear on a caption that already fits, which is
   // only observable beside a long one on the same screen.
   const placeless = await api(
-    `/v1/itineraries/${trip}/days/${plan.days[1].id}/activities`,
+    `/v1/trips/${trip}/days/${plan.days[1].id}/activities`,
     'POST',
     author.idToken,
     { title: `Nowhere in particular ${stamp}` },

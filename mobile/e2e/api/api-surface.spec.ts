@@ -90,12 +90,12 @@ async function claimHandle(token: string, tag: string): Promise<string> {
 }
 
 test('checklist #1: an anonymous request is 401, not 404', async () => {
-  const anon = await api('/v1/itineraries');
+  const anon = await api('/v1/trips');
   expect(anon.status).toBe(401);
 });
 
 test('checklist #2: the 401 carries a non-null traceId', async () => {
-  const anon = await api('/v1/itineraries');
+  const anon = await api('/v1/trips');
   expect(anon.body?.traceId).toBeTruthy();
 });
 
@@ -113,7 +113,7 @@ test('checklist #1: an authenticated unknown route is 404 + envelope', async () 
 });
 
 test('S0.3 create an itinerary', async () => {
-  const created = await api('/v1/itineraries', 'POST', owner, {
+  const created = await api('/v1/trips', 'POST', owner, {
     title: 'Smoke trip',
     destination: 'Palawan',
     startDate: '2027-03-01',
@@ -122,23 +122,23 @@ test('S0.3 create an itinerary', async () => {
   expect(created.status).toBe(201);
   trip = created.body.id;
   activities = '';
-  lease = `/v1/itineraries/${trip}/edit-lock`;
+  lease = `/v1/trips/${trip}/edit-lock`;
 });
 
 test('S0.3 My Trips lists it', async () => {
-  const list = await api('/v1/itineraries', 'GET', owner);
+  const list = await api('/v1/trips', 'GET', owner);
   expect(list.status).toBe(200);
   expect(list.body.items.some((row: { id: string }) => row.id === trip)).toBe(true);
 });
 
 test('S0.3 read one itinerary', async () => {
-  const one = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+  const one = await api(`/v1/trips/${trip}`, 'GET', owner);
   expect(one.status).toBe(200);
   expect(one.body.title).toBe('Smoke trip');
 });
 
 test('checklist #6: an unset optional field is null, not absent', async () => {
-  const one = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+  const one = await api(`/v1/trips/${trip}`, 'GET', owner);
   expect(one.body.description).toBeNull();
 });
 
@@ -149,7 +149,7 @@ test('S4.9 acquire the HEADER lease, and the lease names its subject back', asyn
 });
 
 test('S1.3 edit itinerary fields', async () => {
-  const edited = await api(`/v1/itineraries/${trip}`, 'PATCH', owner, {
+  const edited = await api(`/v1/trips/${trip}`, 'PATCH', owner, {
     title: 'Smoke trip (edited)',
     destination: 'Palawan',
   });
@@ -158,10 +158,10 @@ test('S1.3 edit itinerary fields', async () => {
 });
 
 test('S1.3 append a day', async () => {
-  const day = await api(`/v1/itineraries/${trip}/days`, 'POST', owner, { title: 'Arrival' });
+  const day = await api(`/v1/trips/${trip}/days`, 'POST', owner, { title: 'Arrival' });
   expect(day.status).toBe(201);
   dayId = day.body.id;
-  activities = `/v1/itineraries/${trip}/days/${dayId}/activities`;
+  activities = `/v1/trips/${trip}/days/${dayId}/activities`;
 });
 
 test('S1.3 add an activity', async () => {
@@ -173,18 +173,18 @@ test('S1.3 add an activity', async () => {
 });
 
 test('S1.3 the plan is embedded on the itinerary', async () => {
-  const planned = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+  const planned = await api(`/v1/trips/${trip}`, 'GET', owner);
   expect(planned.body.days?.length).toBe(1);
   expect(planned.body.days[0].activities?.length).toBe(1);
 });
 
 test('S1.3 last-edited attribution is written', async () => {
-  const planned = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+  const planned = await api(`/v1/trips/${trip}`, 'GET', owner);
   expect(planned.body.lastEditedBy).toBe(ownerId);
 });
 
 test('S0.3 guard: a non-member write is 404-masked', async () => {
-  const strangerWrite = await api(`/v1/itineraries/${trip}`, 'PATCH', member, {
+  const strangerWrite = await api(`/v1/trips/${trip}`, 'PATCH', member, {
     title: 'hijack',
     destination: 'X',
   });
@@ -195,7 +195,7 @@ test.describe('S1.2 the verification gate sits at accept, not at invite', () => 
   let inviteId: string;
 
   test('S1.2 invite an unverified address (allowed — the gate is at accept)', async () => {
-    const inviteUnverified = await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, {
+    const inviteUnverified = await api(`/v1/trips/${trip}/invitations`, 'POST', owner, {
       email: address('u1'),
     });
     expect(inviteUnverified.status).toBe(201);
@@ -219,7 +219,7 @@ test.describe('S1.2 the real invite to accept path', () => {
   let inviteId: string;
 
   test('S1.2 owner invites a verified address', async () => {
-    const invite = await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, {
+    const invite = await api(`/v1/trips/${trip}/invitations`, 'POST', owner, {
       email: address(MEMBER),
     });
     expect(invite.status).toBe(201);
@@ -238,12 +238,12 @@ test.describe('S1.2 the real invite to accept path', () => {
   });
 
   test('S1.2 the walls open for the new member', async () => {
-    const memberReads = await api(`/v1/itineraries/${trip}`, 'GET', member);
+    const memberReads = await api(`/v1/trips/${trip}`, 'GET', member);
     expect(memberReads.status).toBe(200);
   });
 
   test('S1.2 roster is owner then member', async () => {
-    const roster = await api(`/v1/itineraries/${trip}/members`, 'GET', owner);
+    const roster = await api(`/v1/trips/${trip}/members`, 'GET', owner);
     expect(roster.body.items.length).toBe(2);
     expect(roster.body.items[0].role).toBe('owner');
     expect(roster.body.items[1].role).toBe('member');
@@ -301,26 +301,26 @@ test.describe('S4.9 per-subject leases', () => {
   });
 
   test('S4.9 AC8 the plan read carries the holder per subject, with their handle', async () => {
-    const read = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+    const read = await api(`/v1/trips/${trip}`, 'GET', owner);
     const readDay = read.body.days.find((day: { id: string }) => day.id === dayId);
     const heldCard = readDay?.activities.find((row: { id: string }) => row.id === theirsActivity);
     expect(Boolean(heldCard?.lease?.handle)).toBe(true);
   });
 
   test("S4.9 AC14 the plan read carries the last editor's handle for the attribution chip", async () => {
-    const read = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+    const read = await api(`/v1/trips/${trip}`, 'GET', owner);
     const readDay = read.body.days.find((day: { id: string }) => day.id === dayId);
     const heldCard = readDay?.activities.find((row: { id: string }) => row.id === theirsActivity);
     expect(Boolean(heldCard?.lastEditedByHandle)).toBe(true);
   });
 
   test('S4.9 the workspace state is on the payload (the chip reads it, not archived)', async () => {
-    const read = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+    const read = await api(`/v1/trips/${trip}`, 'GET', owner);
     expect(read.body.workspaceState).toBe('active');
   });
 
   test('S4.9 AC7 a reorder carrying the order it believes current is applied, and the replay on a stale ordering is refused', async () => {
-    const read = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+    const read = await api(`/v1/trips/${trip}`, 'GET', owner);
     const readDay = read.body.days.find((day: { id: string }) => day.id === dayId);
     const asFetched = readDay.activities.map((row: { id: string }) => row.id);
     const swapped = [...asFetched].reverse();
@@ -340,14 +340,14 @@ test.describe('S4.9 per-subject leases', () => {
   });
 
   test('S4.9 AC5 a member cannot add a day (403, interim ruling)', async () => {
-    const memberAddsDay = await api(`/v1/itineraries/${trip}/days`, 'POST', member, { title: 'Nope' });
+    const memberAddsDay = await api(`/v1/trips/${trip}/days`, 'POST', member, { title: 'Nope' });
     expect(memberAddsDay.status).toBe(403);
     expect(memberAddsDay.body.code).toBe('NOT_PERMITTED');
   });
 
   test('S4.9 AC4 a day cannot be deleted while a member edits an activity inside it', async () => {
     await api(lease, 'POST', owner, onDay(dayId));
-    const yanked = await api(`/v1/itineraries/${trip}/days/${dayId}`, 'DELETE', owner);
+    const yanked = await api(`/v1/trips/${trip}/days/${dayId}`, 'DELETE', owner);
     expect(yanked.status).toBe(409);
     expect(yanked.body.code).toBe('DAY_HAS_LEASED_ACTIVITY');
   });
@@ -392,7 +392,7 @@ test.describe('S4.9 AC13 handle lookup and invitation by handle', () => {
   });
 
   test('S4.9 AC13 the owner invites by handle, and an id-addressed invitation carries no email', async () => {
-    const byHandle = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner, {
+    const byHandle = await api(`/v1/trips/${trip}/invitations/by-handle`, 'POST', owner, {
       handle: strangerHandle,
     });
     expect(byHandle.status).toBe(201);
@@ -416,7 +416,7 @@ test.describe('S4.9 AC13 handle lookup and invitation by handle', () => {
   });
 
   test('the by-handle invitee is removed and every lease released', async () => {
-    const removed = await api(`/v1/itineraries/${trip}/members/${strangerId}`, 'DELETE', owner);
+    const removed = await api(`/v1/trips/${trip}/members/${strangerId}`, 'DELETE', owner);
     expect(removed.status).toBe(204);
     await api(lease, 'DELETE', owner, onDay(dayId));
     await api(lease, 'DELETE', owner, onActivity(mineActivity));
@@ -424,34 +424,34 @@ test.describe('S4.9 AC13 handle lookup and invitation by handle', () => {
 });
 
 test('S1.5 a member cannot remove the owner (403)', async () => {
-  const memberRemovesOwner = await api(`/v1/itineraries/${trip}/members/${ownerId}`, 'DELETE', member);
+  const memberRemovesOwner = await api(`/v1/trips/${trip}/members/${ownerId}`, 'DELETE', member);
   expect(memberRemovesOwner.status).toBe(403);
   expect(memberRemovesOwner.body.code).toBe('NOT_PERMITTED');
 });
 
 test('S1.5 the owner cannot leave (409 OWNER_CANNOT_LEAVE) — INV-4', async () => {
-  const ownerLeaves = await api(`/v1/itineraries/${trip}/members/${ownerId}`, 'DELETE', owner);
+  const ownerLeaves = await api(`/v1/trips/${trip}/members/${ownerId}`, 'DELETE', owner);
   expect(ownerLeaves.status).toBe(409);
   expect(ownerLeaves.body.code).toBe('OWNER_CANNOT_LEAVE');
 });
 
 test('S1.5 the owner removes the member (204)', async () => {
-  const removed = await api(`/v1/itineraries/${trip}/members/${memberId}`, 'DELETE', owner);
+  const removed = await api(`/v1/trips/${trip}/members/${memberId}`, 'DELETE', owner);
   expect(removed.status).toBe(204);
 });
 
 test('S1.5 the removed member is evicted (404)', async () => {
-  const evicted = await api(`/v1/itineraries/${trip}`, 'GET', member);
+  const evicted = await api(`/v1/trips/${trip}`, 'GET', member);
   expect(evicted.status).toBe(404);
 });
 
 test('S1.5 removing the already-removed is idempotent (204)', async () => {
-  const again = await api(`/v1/itineraries/${trip}/members/${memberId}`, 'DELETE', owner);
+  const again = await api(`/v1/trips/${trip}/members/${memberId}`, 'DELETE', owner);
   expect(again.status).toBe(204);
 });
 
 test('S1.5 a removed member can be re-invited (no ALREADY_A_MEMBER), and rejoins for real', async () => {
-  const reinvite = await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, {
+  const reinvite = await api(`/v1/trips/${trip}/invitations`, 'POST', owner, {
     email: address(MEMBER),
   });
   expect(reinvite.status).toBe(201);
@@ -461,7 +461,7 @@ test('S1.5 a removed member can be re-invited (no ALREADY_A_MEMBER), and rejoins
 });
 
 test('the plan survived every membership change', async () => {
-  const intact = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+  const intact = await api(`/v1/trips/${trip}`, 'GET', owner);
   expect(intact.status).toBe(200);
   expect(
     intact.body.days[0].activities.some((row: { title: string }) => row.title === 'Airport transfer'),
@@ -474,61 +474,61 @@ test('S1.4 release the lock', async () => {
 });
 
 test('S1.9 a member cannot archive (403 NOT_PERMITTED)', async () => {
-  const memberArchives = await api(`/v1/itineraries/${trip}/archive`, 'POST', member);
+  const memberArchives = await api(`/v1/trips/${trip}/archive`, 'POST', member);
   expect(memberArchives.status).toBe(403);
   expect(memberArchives.body.code).toBe('NOT_PERMITTED');
 });
 
 test('S1.9 a pending invitation exists before the archive', async () => {
-  const pendingInvite = await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, {
+  const pendingInvite = await api(`/v1/trips/${trip}/invitations`, 'POST', owner, {
     email: address(STRANGER),
   });
   expect(pendingInvite.status).toBe(201);
 });
 
 test('S1.9 the owner archives (200, archived=true)', async () => {
-  const archived = await api(`/v1/itineraries/${trip}/archive`, 'POST', owner);
+  const archived = await api(`/v1/trips/${trip}/archive`, 'POST', owner);
   expect(archived.status).toBe(200);
   expect(archived.body.archived).toBe(true);
 });
 
 test('S4.23 a member writing an archived trip gets the MASK, not the freeze (404 ITINERARY_NOT_FOUND)', async () => {
-  const memberWrites = await api(`/v1/itineraries/${trip}/days`, 'POST', member, { title: 'While frozen' });
+  const memberWrites = await api(`/v1/trips/${trip}/days`, 'POST', member, { title: 'While frozen' });
   expect(memberWrites.status).toBe(404);
   expect(memberWrites.body.code).toBe('ITINERARY_NOT_FOUND');
 });
 
 test('S1.9 even the owner cannot move the lifecycle (409 TRIP_ARCHIVED)', async () => {
-  const ownerStarts = await api(`/v1/itineraries/${trip}/start`, 'POST', owner);
+  const ownerStarts = await api(`/v1/trips/${trip}/start`, 'POST', owner);
   expect(ownerStarts.status).toBe(409);
   expect(ownerStarts.body.code).toBe('TRIP_ARCHIVED');
 });
 
 test('S1.9 the archived trip leaves the default list', async () => {
-  const liveList = await api('/v1/itineraries', 'GET', owner);
+  const liveList = await api('/v1/trips', 'GET', owner);
   expect(liveList.status).toBe(200);
   expect(liveList.body.items.some((row: { id: string }) => row.id === trip)).toBe(false);
 });
 
 test('S1.9 the archived trip appears in the archived view', async () => {
-  const archivedList = await api('/v1/itineraries?archived=true', 'GET', owner);
+  const archivedList = await api('/v1/trips?archived=true', 'GET', owner);
   expect(archivedList.status).toBe(200);
   expect(archivedList.body.items.some((row: { id: string }) => row.id === trip)).toBe(true);
 });
 
 test('S1.9 a member can still leave an archived trip (204)', async () => {
-  const leaves = await api(`/v1/itineraries/${trip}/members/${memberId}`, 'DELETE', member);
+  const leaves = await api(`/v1/trips/${trip}/members/${memberId}`, 'DELETE', member);
   expect(leaves.status).toBe(204);
 });
 
 test('S1.9 the owner unarchives (200, archived=false)', async () => {
-  const unarchived = await api(`/v1/itineraries/${trip}/unarchive`, 'POST', owner);
+  const unarchived = await api(`/v1/trips/${trip}/unarchive`, 'POST', owner);
   expect(unarchived.status).toBe(200);
   expect(unarchived.body.archived).toBe(false);
 });
 
 test('S1.9 writes work again after unarchive', async () => {
-  const writableAgain = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner);
+  const writableAgain = await api(`/v1/trips/${trip}/edit-lock`, 'POST', owner);
   expect(writableAgain.status).toBe(200);
-  await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner);
+  await api(`/v1/trips/${trip}/edit-lock`, 'DELETE', owner);
 });

@@ -15,7 +15,7 @@ import { track } from '../analytics/track';
 import { useAuth } from '../hooks/authContext';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { PHOTO_DUMP_PHOTO_ADDED, PHOTO_DUMP_PHOTO_REMOVED } from '../media/photoDumpEvents';
-import { itineraryRepository } from '../repositories/itineraryRepository';
+import { tripRepository } from '../repositories/tripRepository';
 import { joinKeys } from './joinKeys';
 import type {
   ActivityRequest,
@@ -54,7 +54,7 @@ export function myItinerariesOptionsFor(category?: TripCategory) {
   return infiniteQueryOptions({
     queryKey: itineraryKeys.list(false, category),
     queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-      itineraryRepository.fetchMine(pageParam, false, category),
+      tripRepository.fetchMine(pageParam, false, category),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
   });
@@ -67,7 +67,7 @@ export const myItinerariesOptions = myItinerariesOptionsFor(undefined);
 export const archivedItinerariesOptions = infiniteQueryOptions({
   queryKey: itineraryKeys.list(true),
   queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-    itineraryRepository.fetchMine(pageParam, true),
+    tripRepository.fetchMine(pageParam, true),
   initialPageParam: undefined as string | undefined,
   getNextPageParam: (lastPage: Page<ItineraryResponse>) => lastPage.nextCursor,
 });
@@ -76,7 +76,7 @@ export const archivedItinerariesOptions = infiniteQueryOptions({
 export function itineraryOptions(id: string, client: QueryClient) {
   return queryOptions({
     queryKey: itineraryKeys.one(id),
-    queryFn: () => itineraryRepository.fetchOne(id),
+    queryFn: () => tripRepository.fetchOne(id),
     placeholderData: () => findInListCache(client, id),
   });
 }
@@ -125,7 +125,7 @@ export function useCreateItinerary(): UseMutationResult<ItineraryResponse, Error
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: CreateItineraryRequest) => itineraryRepository.create(request),
+    mutationFn: (request: CreateItineraryRequest) => tripRepository.create(request),
     onSuccess: (created) => onItineraryCreated(client, created),
   });
 }
@@ -136,12 +136,13 @@ export async function onItineraryUpdated(client: QueryClient, updated: Itinerary
   await client.invalidateQueries({ queryKey: itineraryKeys.lists() });
 }
 
+
 export function useUpdateItinerary(
   id: string,
 ): UseMutationResult<ItineraryResponse, Error, UpdateItineraryRequest> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (request: UpdateItineraryRequest) => itineraryRepository.update(id, request),
+    mutationFn: (request: UpdateItineraryRequest) => tripRepository.update(id, request),
     onSuccess: async (updated) => {
       await Promise.all([onItineraryUpdated(client, updated), invalidateShareLink(client, id)]);
     },
@@ -153,7 +154,7 @@ export function useUpdateItinerary(
 export function useUploadCover(id: string): UseMutationResult<ItineraryResponse, Error, PickedPhoto> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (photo: PickedPhoto) => itineraryRepository.uploadCover(id, photo),
+    mutationFn: (photo: PickedPhoto) => tripRepository.uploadCover(id, photo),
     onSuccess: async (updated) => {
       await Promise.all([onItineraryUpdated(client, updated), invalidateShareLink(client, id)]);
     },
@@ -164,7 +165,7 @@ export function useUploadCover(id: string): UseMutationResult<ItineraryResponse,
 export function useRemoveCover(id: string): UseMutationResult<void, Error, void> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => itineraryRepository.removeCover(id),
+    mutationFn: () => tripRepository.removeCover(id),
     onSuccess: async () => {
       await Promise.all([onPlanChanged(client, id), invalidateShareLink(client, id)]);
     },
@@ -175,7 +176,7 @@ export function useRemoveCover(id: string): UseMutationResult<void, Error, void>
 export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => itineraryRepository.unarchiveTrip(id),
+    mutationFn: () => tripRepository.unarchiveTrip(id),
     onSuccess: (updated) => onItineraryUpdated(client, updated),
   });
 }
@@ -183,7 +184,7 @@ export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryRespons
 export function useForkItinerary(sourceId: string): UseMutationResult<ItineraryResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => itineraryRepository.forkItinerary(sourceId),
+    mutationFn: () => tripRepository.forkItinerary(sourceId),
     onSuccess: async (forked) => {
       await onItineraryCreated(client, forked);
       await client.invalidateQueries({ queryKey: itineraryKeys.published(sourceId) });
@@ -196,7 +197,7 @@ export function usePublishedItinerary(id: string): UseQueryResult<PublishedItine
   const { kind } = useAuth();
   return useQuery({
     queryKey: itineraryKeys.published(id),
-    queryFn: () => itineraryRepository.fetchPublished(id),
+    queryFn: () => tripRepository.fetchPublished(id),
     enabled: kind === 'signedIn',
     retry: false,
   });
@@ -207,7 +208,7 @@ export function useItineraryPreview(id: string): UseQueryResult<PublishedItinera
   const { kind } = useAuth();
   return useQuery({
     queryKey: itineraryKeys.preview(id),
-    queryFn: () => itineraryRepository.fetchPreview(id),
+    queryFn: () => tripRepository.fetchPreview(id),
     enabled: kind === 'signedIn',
     retry: false,
   });
@@ -219,7 +220,7 @@ export function usePublishTrip(
 ): UseMutationResult<ItineraryResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => itineraryRepository.publishTrip(id),
+    mutationFn: () => tripRepository.publishTrip(id),
     onSuccess: async (updated) => {
       await onItineraryUpdated(client, updated);
       await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
@@ -230,7 +231,7 @@ export function usePublishTrip(
 export function useUnpublishTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => itineraryRepository.unpublishTrip(id),
+    mutationFn: () => tripRepository.unpublishTrip(id),
     onSuccess: async (updated) => {
       await onItineraryUpdated(client, updated);
       await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
@@ -244,9 +245,9 @@ export function useTripLifecycle(id: string): UseMutationResult<ItineraryRespons
   const client = useQueryClient();
   return useMutation({
     mutationFn: (act: LifecycleAct) => {
-      if (act === 'start') return itineraryRepository.startTrip(id);
-      if (act === 'complete') return itineraryRepository.completeTrip(id);
-      return itineraryRepository.reopenTrip(id);
+      if (act === 'start') return tripRepository.startTrip(id);
+      if (act === 'complete') return tripRepository.completeTrip(id);
+      return tripRepository.reopenTrip(id);
     },
     onSuccess: async (updated) => {
       await onItineraryUpdated(client, updated);
@@ -263,7 +264,7 @@ export function useArchivedItineraries(): UseInfiniteQueryResult<InfiniteData<Pa
 export function useAppendDay(itineraryId: string): UseMutationResult<DayResponse, Error, { title?: string }> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (request: { title?: string }) => itineraryRepository.appendDay(itineraryId, request),
+    mutationFn: (request: { title?: string }) => tripRepository.appendDay(itineraryId, request),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }
@@ -275,7 +276,7 @@ export function useRenameDay(
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ dayId, title }: { dayId: string; title?: string }) =>
-      itineraryRepository.renameDay(itineraryId, dayId, { title }),
+      tripRepository.renameDay(itineraryId, dayId, { title }),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }
@@ -284,7 +285,7 @@ export function useRenameDay(
 export function useDeleteDay(itineraryId: string): UseMutationResult<void, Error, { dayId: string }> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ dayId }: { dayId: string }) => itineraryRepository.deleteDay(itineraryId, dayId),
+    mutationFn: ({ dayId }: { dayId: string }) => tripRepository.deleteDay(itineraryId, dayId),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }
@@ -296,7 +297,7 @@ export function useCreateActivity(
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ dayId, request }: { dayId: string; request: ActivityRequest }) =>
-      itineraryRepository.createActivity(itineraryId, dayId, request),
+      tripRepository.createActivity(itineraryId, dayId, request),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }
@@ -308,7 +309,7 @@ export function useAddActivityPhoto(
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ dayId, activityId, photo }: { dayId: string; activityId: string; photo: PickedPhoto }) =>
-      itineraryRepository.addActivityPhoto(itineraryId, dayId, activityId, photo),
+      tripRepository.addActivityPhoto(itineraryId, dayId, activityId, photo),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }
@@ -320,7 +321,7 @@ export function useRemoveActivityPhoto(
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ dayId, activityId, photoId }: { dayId: string; activityId: string; photoId: string }) =>
-      itineraryRepository.removeActivityPhoto(itineraryId, dayId, activityId, photoId),
+      tripRepository.removeActivityPhoto(itineraryId, dayId, activityId, photoId),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }
@@ -333,7 +334,7 @@ export function usePhotoDump(
   return useInfiniteQuery({
     queryKey: itineraryKeys.photoDump(itineraryId),
     queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-      itineraryRepository.photoDump(itineraryId, pageParam),
+      tripRepository.photoDump(itineraryId, pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: Page<PhotoDumpEntryResponse>) => lastPage.nextCursor,
     enabled: kind === 'signedIn',
@@ -349,7 +350,7 @@ export function useAddPhotoDumpEntries(
     mutationFn: async (photos: readonly PickedPhoto[]) => {
       let latest: PhotoDumpEntryResponse | undefined;
       for (const photo of photos) {
-        latest = await itineraryRepository.addPhotoDumpEntry(itineraryId, photo);
+        latest = await tripRepository.addPhotoDumpEntry(itineraryId, photo);
       }
       return latest;
     },
@@ -366,7 +367,7 @@ export function useRemovePhotoDumpEntry(
 ): UseMutationResult<void, Error, string> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (photoId: string) => itineraryRepository.removePhotoDumpEntry(itineraryId, photoId),
+    mutationFn: (photoId: string) => tripRepository.removePhotoDumpEntry(itineraryId, photoId),
     onSuccess: () => {
       track(PHOTO_DUMP_PHOTO_REMOVED, { itineraryId });
       return client.invalidateQueries({ queryKey: itineraryKeys.photoDump(itineraryId) });
@@ -381,7 +382,7 @@ export function useEditActivity(
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ dayId, activityId, request }: { dayId: string; activityId: string; request: ActivityRequest }) =>
-      itineraryRepository.editActivity(itineraryId, dayId, activityId, request),
+      tripRepository.editActivity(itineraryId, dayId, activityId, request),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }
@@ -393,7 +394,7 @@ export function useDeleteActivity(
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ dayId, activityId }: { dayId: string; activityId: string }) =>
-      itineraryRepository.deleteActivity(itineraryId, dayId, activityId),
+      tripRepository.deleteActivity(itineraryId, dayId, activityId),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }
@@ -404,7 +405,7 @@ export function useSavePlan(
 ): UseMutationResult<ItineraryResponse, Error, SavePlanRequest> {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (request: SavePlanRequest) => itineraryRepository.savePlan(itineraryId, request),
+    mutationFn: (request: SavePlanRequest) => tripRepository.savePlan(itineraryId, request),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }
@@ -448,7 +449,7 @@ export function useReorderActivities(
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ dayId, activityIds, expectedActivityIds }: ReorderIntent) =>
-      itineraryRepository.reorderActivities(itineraryId, dayId, { activityIds, expectedActivityIds }),
+      tripRepository.reorderActivities(itineraryId, dayId, { activityIds, expectedActivityIds }),
     onMutate: async ({ dayId, activityIds }: ReorderIntent) => {
       await client.cancelQueries({ queryKey: itineraryKeys.one(itineraryId) });
       return { previous: reorderInPlanCache(client, itineraryId, dayId, activityIds) };
@@ -469,7 +470,7 @@ export function useMoveActivity(
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ dayId, activityId, targetDayId }: { dayId: string; activityId: string; targetDayId: string }) =>
-      itineraryRepository.moveActivity(itineraryId, dayId, activityId, { targetDayId }),
+      tripRepository.moveActivity(itineraryId, dayId, activityId, { targetDayId }),
     onSuccess: () => onPlanChanged(client, itineraryId),
   });
 }

@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/v1/itineraries/{itineraryId}")
+@RequestMapping({"/v1/itineraries/{itineraryId}", "/v1/trips/{itineraryId}"})
 class TripMembershipController {
 
     private final InvitationService invitations;

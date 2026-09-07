@@ -23,12 +23,12 @@ let ownerToken: string;
 let memberToken: string;
 
 async function archived(id: string): Promise<boolean> {
-  return (await api(`/v1/itineraries/${id}`, 'GET', ownerToken)).body.archived === true;
+  return (await api(`/v1/trips/${id}`, 'GET', ownerToken)).body.archived === true;
 }
 
 async function setArchived(id: string, to: boolean): Promise<void> {
   if ((await archived(id)) === to) return;
-  const moved = await api(`/v1/itineraries/${id}/${to ? 'archive' : 'unarchive'}`, 'POST', ownerToken, {});
+  const moved = await api(`/v1/trips/${id}/${to ? 'archive' : 'unarchive'}`, 'POST', ownerToken, {});
   if (moved.status !== 200) throw new SeedFailure(`the trip's move to archived=${to}`, moved.body);
 }
 
@@ -188,14 +188,14 @@ test.describe('the mask has two faces', () => {
   });
 
   test('the owner reads the honest state — archived, and named as such', async () => {
-    const seen = await api(`/v1/itineraries/${trip.id}`, 'GET', ownerToken);
+    const seen = await api(`/v1/trips/${trip.id}`, 'GET', ownerToken);
     expect(seen.status).toBe(200);
     expect(seen.body.archived).toBe(true);
     expect(seen.body.title).toBe(trip.title);
   });
 
   test('a non-owner member reads not-found — the guard masks rather than refusing', async () => {
-    const seen = await api(`/v1/itineraries/${trip.id}`, 'GET', memberToken);
+    const seen = await api(`/v1/trips/${trip.id}`, 'GET', memberToken);
     expect(seen.status).toBe(404);
   });
 
@@ -280,7 +280,7 @@ test.describe('unarchive restores the trip, which is what lets this spec repeat'
   test('the member can reach the trip again, so the mask lifted with the archive', async () => {
     await expect
       .poll(
-        async () => (await api(`/v1/itineraries/${trip.id}`, 'GET', memberToken)).status,
+        async () => (await api(`/v1/trips/${trip.id}`, 'GET', memberToken)).status,
         { timeout: 15_000 },
       )
       .toBe(200);

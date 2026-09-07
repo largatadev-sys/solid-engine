@@ -34,11 +34,11 @@ let memberHandle: string;
 const travelersTab = (tripId: string) => `/itineraries/${tripId}?tab=travelers`;
 
 async function pendingInvitations(tripId: string): Promise<Array<{ id: string }>> {
-  return (await api(`/v1/itineraries/${tripId}/invitations`, 'GET', ownerToken)).body.items ?? [];
+  return (await api(`/v1/trips/${tripId}/invitations`, 'GET', ownerToken)).body.items ?? [];
 }
 
 async function rosterIds(tripId: string, token: string): Promise<string[]> {
-  return ((await api(`/v1/itineraries/${tripId}/members`, 'GET', token)).body.items ?? []).map(
+  return ((await api(`/v1/trips/${tripId}/members`, 'GET', token)).body.items ?? []).map(
     (row: { travelerId: string }) => row.travelerId,
   );
 }
@@ -208,7 +208,7 @@ test.describe('any member may revoke, which is the C1 widening on the surface', 
       members: [MEMBER],
     });
     strangerHandle = (await profileFor(STRANGER)).handle;
-    await api(`/v1/itineraries/${trip.id}/invitations/by-handle`, 'POST', ownerToken, {
+    await api(`/v1/trips/${trip.id}/invitations/by-handle`, 'POST', ownerToken, {
       handle: strangerHandle,
     });
   });
@@ -274,7 +274,7 @@ test.describe('the owner answers the requests queue', () => {
     await profileFor(asker);
     askerId = (await api('/v1/me', 'GET', askerToken)).body.id;
 
-    const token = (await api(`/v1/itineraries/${trip.id}/join-link`, 'GET', ownerToken)).body.token;
+    const token = (await api(`/v1/trips/${trip.id}/join-link`, 'GET', ownerToken)).body.token;
     await api(`/v1/join/${token}/request`, 'POST', askerToken, {});
   });
 
@@ -300,7 +300,7 @@ test.describe('the owner answers the requests queue', () => {
 
   test('a second request, declined, disappears silently', async ({ page, signIn }) => {
     const other = await seedTrip({ ownerTag: OWNER, title: stamp('travelers decline') });
-    const token = (await api(`/v1/itineraries/${other.id}/join-link`, 'GET', ownerToken)).body.token;
+    const token = (await api(`/v1/trips/${other.id}/join-link`, 'GET', ownerToken)).body.token;
     await api(`/v1/join/${token}/request`, 'POST', askerToken, {});
 
     await signIn(OWNER);
@@ -371,10 +371,10 @@ test.describe('the frozen surface, walked on an archived trip', () => {
       title: stamp('travelers frozen'),
       members: [MEMBER],
     });
-    await api(`/v1/itineraries/${trip.id}/invitations/by-handle`, 'POST', ownerToken, {
+    await api(`/v1/trips/${trip.id}/invitations/by-handle`, 'POST', ownerToken, {
       handle: (await profileFor(STRANGER)).handle,
     });
-    await api(`/v1/itineraries/${trip.id}/archive`, 'POST', ownerToken, {});
+    await api(`/v1/trips/${trip.id}/archive`, 'POST', ownerToken, {});
   });
 
   test('a frozen trip shows the roster and nothing that would change it', async ({

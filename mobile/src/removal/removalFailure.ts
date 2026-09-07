@@ -2,7 +2,7 @@ import { ApiError } from '../api/ApiError';
 import { REMOVAL_FAILED_TOAST } from './removalCopy';
 
 
-const ALREADY_DONE = ['ILLEGAL_STATE_TRANSITION', 'ITINERARY_NOT_FOUND', 'NOT_FOUND'];
+const ALREADY_DONE = ['ILLEGAL_STATE_TRANSITION', 'ITINERARY_NOT_FOUND', 'TRIP_NOT_FOUND', 'NOT_FOUND'];
 
 
 export function failureToast(cause: unknown): string | null {

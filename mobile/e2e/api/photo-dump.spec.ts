@@ -32,18 +32,18 @@ test.beforeAll(async () => {
   await profileFor(MEMBER);
   await profileFor(STRANGER);
 
-  const created = await api('/v1/itineraries', 'POST', owner, {
+  const created = await api('/v1/trips', 'POST', owner, {
     title: stamp('Photo Dump Trip'),
     destination: 'Siargao',
     durationDays: 2,
   });
   if (created.status !== 201) throw new SeedFailure('the photo-dump trip', created.body);
   trip = created.body.id;
-  dump = `/v1/itineraries/${trip}/photo-dump`;
+  dump = `/v1/trips/${trip}/photo-dump`;
 });
 
 test('a member joins the trip through the real invite then accept', async () => {
-  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner, {
+  const invited = await api(`/v1/trips/${trip}/invitations/by-handle`, 'POST', owner, {
     handle: (await profileFor(MEMBER)).handle,
   });
   const inbox = await api('/v1/invitations', 'GET', member);
@@ -147,9 +147,10 @@ test("the owner takes out another member's photo — owner authority, not upload
 });
 
 test('a published trip still takes photos — the freeze is the plan, not the pool', async () => {
-  for (const step of ['start', 'complete', 'publish']) {
-    await api(`/v1/itineraries/${trip}/${step}`, 'POST', owner);
+  for (const step of ['start', 'complete']) {
+    await api(`/v1/trips/${trip}/${step}`, 'POST', owner);
   }
+  await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
   afterPublish = await uploadBytes(dump, member, solidJpeg(), 'dump.jpg');
   expect(afterPublish.status).toBe(201);
 });
@@ -160,7 +161,7 @@ test('publishing never opens the pool to travelers outside the trip', async () =
 });
 
 test('an archived trip refuses upload and delete — the fence', async () => {
-  await api(`/v1/itineraries/${trip}/archive`, 'POST', owner);
+  await api(`/v1/trips/${trip}/archive`, 'POST', owner);
   const archivedUpload = await uploadBytes(dump, owner, solidJpeg(), 'dump.jpg');
   const archivedDelete = await api(`${dump}/${afterPublish.body.id}`, 'DELETE', owner);
   expect(archivedUpload.status).toBe(409);

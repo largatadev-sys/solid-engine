@@ -38,7 +38,7 @@ interface RosterEntry {
 }
 
 async function roster(tripId: string, token: string): Promise<RosterEntry[]> {
-  const read = await api(`/v1/itineraries/${tripId}/members`, 'GET', token);
+  const read = await api(`/v1/trips/${tripId}/members`, 'GET', token);
   return read.body.items ?? [];
 }
 
@@ -61,7 +61,7 @@ async function tripHeldByHolder(what: string): Promise<SeededTrip> {
 }
 
 async function offerOwnership(trip: SeededTrip, from = holderToken, to = offereeId): Promise<void> {
-  const offered = await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', from, {
+  const offered = await api(`/v1/trips/${trip.id}/ownership-offer`, 'POST', from, {
     travelerId: to,
   });
   if (offered.status !== 201) throw new SeedFailure('the ownership offer', offered.body);
@@ -310,7 +310,7 @@ test.describe('the offer, declined by the traveler it was made to', () => {
     await offerOwnership(trip);
 
     expect(await offeredTo(trip.id, holderToken)).toBe(offereeId);
-    await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'DELETE', holderToken, {});
+    await api(`/v1/trips/${trip.id}/ownership-offer`, 'DELETE', holderToken, {});
   });
 });
 
@@ -325,7 +325,7 @@ test.describe('the transfer flips back, so repeated runs leave the pool where th
     holderHandle = await handleOf(holderToken);
     await offerOwnership(trip);
     const accepted = await api(
-      `/v1/itineraries/${trip.id}/ownership-offer/accept`,
+      `/v1/trips/${trip.id}/ownership-offer/accept`,
       'POST',
       offereeToken,
       {},

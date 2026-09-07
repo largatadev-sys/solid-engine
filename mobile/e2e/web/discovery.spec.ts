@@ -36,7 +36,7 @@ async function publishedTrip(
   destination: string,
   durationDays: number,
 ): Promise<string> {
-  const created = await api('/v1/itineraries', 'POST', token, {
+  const created = await api('/v1/trips', 'POST', token, {
     title,
     destination,
     durationDays,
@@ -45,7 +45,7 @@ async function publishedTrip(
   const id = created.body.id;
   await seedCover({ id, title, ownerTag: PUBLISHER, ownerToken: token, days: created.body.days ?? [] });
   for (const rung of ['start', 'complete']) {
-    const moved = await api(`/v1/itineraries/${id}/${rung}`, 'POST', token);
+    const moved = await api(`/v1/trips/${id}/${rung}`, 'POST', token);
     if (moved.status !== 200) throw new SeedFailure(`the climb through ${rung}`, moved.body);
   }
   const published = await api(`/v1/itineraries/${id}/publish`, 'POST', token, { audience: 'public' });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../api/ApiError';
 import { editLockedAlert } from '../components/editLockedAlert';
-import { itineraryRepository } from '../repositories/itineraryRepository';
+import { tripRepository } from '../repositories/tripRepository';
 import type { LeaseSubject } from '../types/api';
 
 
@@ -33,7 +33,7 @@ export function useEditLock(itineraryId: string): {
     async (subject: LeaseSubject): Promise<boolean> => {
       setState({ kind: 'acquiring' });
       try {
-        await itineraryRepository.acquireEditLock(itineraryId, subject);
+        await tripRepository.acquireEditLock(itineraryId, subject);
         held.current = subject;
         setState({ kind: 'held', subject });
         return true;
@@ -53,14 +53,14 @@ export function useEditLock(itineraryId: string): {
     if (subject === null) return;
     held.current = null;
     setState({ kind: 'idle' });
-    void itineraryRepository.releaseEditLock(itineraryId, subject).catch(() => {});
+    void tripRepository.releaseEditLock(itineraryId, subject).catch(() => {});
   }, [itineraryId]);
 
   useEffect(() => {
     if (state.kind !== 'held') return;
     const subject = state.subject;
     const timer = setInterval(() => {
-      void itineraryRepository.renewEditLock(itineraryId, subject).catch((error: unknown) => {
+      void tripRepository.renewEditLock(itineraryId, subject).catch((error: unknown) => {
         held.current = null;
         const apiError = toApiError(error);
         setState({ kind: 'denied', error: apiError });
@@ -75,7 +75,7 @@ export function useEditLock(itineraryId: string): {
       const subject = held.current;
       if (subject !== null) {
         held.current = null;
-        void itineraryRepository.releaseEditLock(itineraryId, subject).catch(() => {});
+        void tripRepository.releaseEditLock(itineraryId, subject).catch(() => {});
       }
     };
   }, [itineraryId]);

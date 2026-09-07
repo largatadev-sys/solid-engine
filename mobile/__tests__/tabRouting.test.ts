@@ -342,7 +342,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   it('TELLS THE CACHE the cover landed — the upload bypasses the mutation hook, so nothing else will', () => {
     const create = read(TRIPS, 'new.tsx');
 
-    expect(create).toMatch(/const withCover = await itineraryRepository\.uploadCover\(/);
+    expect(create).toMatch(/const withCover = await tripRepository\.uploadCover\(/);
     expect(create).toContain('await onItineraryUpdated(client, withCover)');
   });
 
@@ -385,7 +385,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
 
     expect(form).not.toMatch(/useUploadCover|acquireEditLock|pickPhoto/);
     expect(form).toContain('uploading={cover.uploading ?? false}');
-    expect(create).toContain('await itineraryRepository.acquireEditLock(itineraryId');
+    expect(create).toContain('await tripRepository.acquireEditLock(itineraryId');
   });
 
   it('binds the uploading label to a real upload, never to whatever else is pending', () => {

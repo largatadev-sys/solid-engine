@@ -61,7 +61,7 @@ test.beforeAll(async () => {
   member = await tokenFor(MEMBER);
   memberId = (await api('/v1/me', 'GET', member)).body.id;
 
-  const created = await api('/v1/itineraries', 'POST', owner, {
+  const created = await api('/v1/trips', 'POST', owner, {
     title: stamp('Archive walk'),
     destination: 'Cebu',
     durationDays: 2,
@@ -71,7 +71,7 @@ test.beforeAll(async () => {
 });
 
 test('the member is invited', async () => {
-  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner, {
+  const invited = await api(`/v1/trips/${trip}/invitations/by-handle`, 'POST', owner, {
     handle: (await profileFor(MEMBER)).handle,
   });
   expect(invited.status).toBe(201);
@@ -81,21 +81,21 @@ test('the member is invited', async () => {
 });
 
 test('the roster genuinely holds two travelers — the probes below run as a MEMBER, not a stranger', async () => {
-  const roster = await api(`/v1/itineraries/${trip}/members`, 'GET', owner);
+  const roster = await api(`/v1/trips/${trip}/members`, 'GET', owner);
   expect((roster.body?.items ?? []).length).toBe(2);
 });
 
 test('both travelers hold a postcard on the trip', async () => {
-  await api(`/v1/itineraries/${trip}/start`, 'POST', owner);
+  await api(`/v1/trips/${trip}/start`, 'POST', owner);
 
-  const plan = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+  const plan = await api(`/v1/trips/${trip}`, 'GET', owner);
   dayId = plan.body.days[0].id;
 
-  await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner);
-  const activity = await api(`/v1/itineraries/${trip}/days/${dayId}/activities`, 'POST', owner, {
+  await api(`/v1/trips/${trip}/edit-lock`, 'POST', owner);
+  const activity = await api(`/v1/trips/${trip}/days/${dayId}/activities`, 'POST', owner, {
     title: stamp('Sunset'),
   });
-  await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner);
+  await api(`/v1/trips/${trip}/edit-lock`, 'DELETE', owner);
   activityId = activity.body.id;
 
   const ownerCard = await postcard(owner, stamp('owner memory'));
@@ -111,7 +111,7 @@ test('before the archive, BOTH see the trip in their diary list', async () => {
 });
 
 test('the owner archives the trip', async () => {
-  const archived = await api(`/v1/itineraries/${trip}/archive`, 'POST', owner);
+  const archived = await api(`/v1/trips/${trip}/archive`, 'POST', owner);
   expect(archived.status).toBe(200);
 });
 
@@ -124,15 +124,15 @@ test('AC 5: the owner diary list still holds it — they legitimately still see 
 });
 
 test('AC 1/2: a day write answers the member with the not-found mask', async () => {
-  masked(await api(`/v1/itineraries/${trip}/days`, 'POST', member, { title: 'While frozen' }));
+  masked(await api(`/v1/trips/${trip}/days`, 'POST', member, { title: 'While frozen' }));
 });
 
 test('AC 1/2: an activity write answers the member with the not-found mask', async () => {
-  masked(await api(`/v1/itineraries/${trip}/days/${dayId}/activities`, 'POST', member, { title: 'x' }));
+  masked(await api(`/v1/trips/${trip}/days/${dayId}/activities`, 'POST', member, { title: 'x' }));
 });
 
 test('AC 1/2: acquiring the editing session answers the member with the not-found mask', async () => {
-  masked(await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', member));
+  masked(await api(`/v1/trips/${trip}/edit-lock`, 'POST', member));
 });
 
 test('AC 1/2: recaptioning their own postcard answers the member with the not-found mask', async () => {
@@ -149,37 +149,37 @@ test('AC 1/2: deleting their own postcard answers the member with the not-found 
 
 test('AC 1/2: issuing an invitation — a PERMISSION refusal on a live trip — is masked here', async () => {
   masked(
-    await api(`/v1/itineraries/${trip}/invitations`, 'POST', member, { email: 'x@example.com' }),
+    await api(`/v1/trips/${trip}/invitations`, 'POST', member, { email: 'x@example.com' }),
   );
 });
 
 test('AC 1/2: offering ownership — likewise a 403 on a live trip — is masked here', async () => {
   masked(
-    await api(`/v1/itineraries/${trip}/ownership-offer`, 'POST', member, { travelerId: memberId }),
+    await api(`/v1/trips/${trip}/ownership-offer`, 'POST', member, { travelerId: memberId }),
   );
 });
 
 test('AC 3: a day write still answers 409 TRIP_ARCHIVED for the owner', async () => {
   archivedRefusal(
-    await api(`/v1/itineraries/${trip}/days`, 'POST', owner, { title: 'While frozen' }),
+    await api(`/v1/trips/${trip}/days`, 'POST', owner, { title: 'While frozen' }),
   );
 });
 
 test('AC 3: acquiring the editing session still answers 409 TRIP_ARCHIVED for the owner', async () => {
-  archivedRefusal(await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner));
+  archivedRefusal(await api(`/v1/trips/${trip}/edit-lock`, 'POST', owner));
 });
 
 test('AC 3: issuing an invitation still answers 409 TRIP_ARCHIVED for the owner', async () => {
   archivedRefusal(
-    await api(`/v1/itineraries/${trip}/invitations`, 'POST', owner, { email: 'x@example.com' }),
+    await api(`/v1/trips/${trip}/invitations`, 'POST', owner, { email: 'x@example.com' }),
   );
 });
 
 test('AC 4: the member can still leave a trip archived under them', async () => {
-  const left = await api(`/v1/itineraries/${trip}/members/${memberId}`, 'DELETE', member);
+  const left = await api(`/v1/trips/${trip}/members/${memberId}`, 'DELETE', member);
   expect(left.status).toBe(204);
 });
 
 test('AC 4: and the trip stays masked from them afterwards', async () => {
-  expect((await api(`/v1/itineraries/${trip}`, 'GET', member)).status).toBe(404);
+  expect((await api(`/v1/trips/${trip}`, 'GET', member)).status).toBe(404);
 });

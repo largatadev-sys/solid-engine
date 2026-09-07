@@ -21,7 +21,7 @@ import { photoPart } from '../media/photoPart';
 import type { PickedPhoto } from '../media/pickedPhoto';
 
 
-export const itineraryRepository = {
+export const tripRepository = {
 
   async fetchMine(
     cursor?: string,
@@ -34,40 +34,40 @@ export const itineraryRepository = {
       ...(category !== undefined ? [`category=${encodeURIComponent(category)}`] : []),
     ];
     return apiClient.get<Page<ItineraryResponse>>(
-      `/v1/itineraries${params.length > 0 ? `?${params.join('&')}` : ''}`,
+      `/v1/trips${params.length > 0 ? `?${params.join('&')}` : ''}`,
     );
   },
 
   async fetchOne(id: string): Promise<ItineraryResponse> {
-    return apiClient.get<ItineraryResponse>(`/v1/itineraries/${id}`);
+    return apiClient.get<ItineraryResponse>(`/v1/trips/${id}`);
   },
 
   async create(request: CreateItineraryRequest): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>('/v1/itineraries', request);
+    return apiClient.post<ItineraryResponse>('/v1/trips', request);
   },
 
   async uploadCover(id: string, photo: PickedPhoto): Promise<ItineraryResponse> {
-    return apiClient.upload<ItineraryResponse>(`/v1/itineraries/${id}/cover`, await photoPart(photo));
+    return apiClient.upload<ItineraryResponse>(`/v1/trips/${id}/cover`, await photoPart(photo));
   },
 
   async removeCover(id: string): Promise<void> {
-    return apiClient.delete(`/v1/itineraries/${id}/cover`);
+    return apiClient.delete(`/v1/trips/${id}/cover`);
   },
 
 
   async update(id: string, request: UpdateItineraryRequest): Promise<ItineraryResponse> {
-    return apiClient.patch<ItineraryResponse>(`/v1/itineraries/${id}`, request);
+    return apiClient.patch<ItineraryResponse>(`/v1/trips/${id}`, request);
   },
 
 
 
   async archiveTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/archive`, undefined);
+    return apiClient.post<ItineraryResponse>(`/v1/trips/${id}/archive`, undefined);
   },
 
 
   async unarchiveTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unarchive`, undefined);
+    return apiClient.post<ItineraryResponse>(`/v1/trips/${id}/unarchive`, undefined);
   },
 
 
@@ -82,7 +82,7 @@ export const itineraryRepository = {
 
 
   async fetchPreview(id: string): Promise<PublishedItineraryResponse> {
-    return apiClient.get<PublishedItineraryResponse>(`/v1/itineraries/${id}/preview`);
+    return apiClient.get<PublishedItineraryResponse>(`/v1/trips/${id}/preview`);
   },
 
 
@@ -96,33 +96,33 @@ export const itineraryRepository = {
 
 
   async startTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/start`, undefined);
+    return apiClient.post<ItineraryResponse>(`/v1/trips/${id}/start`, undefined);
   },
 
   async completeTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/complete`, undefined);
+    return apiClient.post<ItineraryResponse>(`/v1/trips/${id}/complete`, undefined);
   },
 
   async reopenTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/reopen`, undefined);
+    return apiClient.post<ItineraryResponse>(`/v1/trips/${id}/reopen`, undefined);
   },
 
 
   async appendDay(itineraryId: string, request: DayRequest): Promise<DayResponse> {
-    return apiClient.post<DayResponse>(`/v1/itineraries/${itineraryId}/days`, request);
+    return apiClient.post<DayResponse>(`/v1/trips/${itineraryId}/days`, request);
   },
 
   async renameDay(itineraryId: string, dayId: string, request: DayRequest): Promise<DayResponse> {
-    return apiClient.patch<DayResponse>(`/v1/itineraries/${itineraryId}/days/${dayId}`, request);
+    return apiClient.patch<DayResponse>(`/v1/trips/${itineraryId}/days/${dayId}`, request);
   },
 
   async deleteDay(itineraryId: string, dayId: string): Promise<void> {
-    return apiClient.delete(`/v1/itineraries/${itineraryId}/days/${dayId}`);
+    return apiClient.delete(`/v1/trips/${itineraryId}/days/${dayId}`);
   },
 
 
   async createActivity(itineraryId: string, dayId: string, request: ActivityRequest): Promise<ActivityResponse> {
-    return apiClient.post<ActivityResponse>(`/v1/itineraries/${itineraryId}/days/${dayId}/activities`, request);
+    return apiClient.post<ActivityResponse>(`/v1/trips/${itineraryId}/days/${dayId}/activities`, request);
   },
 
   async editActivity(
@@ -132,13 +132,13 @@ export const itineraryRepository = {
     request: ActivityRequest,
   ): Promise<ActivityResponse> {
     return apiClient.patch<ActivityResponse>(
-      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`,
+      `/v1/trips/${itineraryId}/days/${dayId}/activities/${activityId}`,
       request,
     );
   },
 
   async deleteActivity(itineraryId: string, dayId: string, activityId: string): Promise<void> {
-    return apiClient.delete(`/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}`);
+    return apiClient.delete(`/v1/trips/${itineraryId}/days/${dayId}/activities/${activityId}`);
   },
 
   async addActivityPhoto(
@@ -148,7 +148,7 @@ export const itineraryRepository = {
     photo: PickedPhoto,
   ): Promise<ActivityResponse> {
     return apiClient.upload<ActivityResponse>(
-      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/photos`,
+      `/v1/trips/${itineraryId}/days/${dayId}/activities/${activityId}/photos`,
       await photoPart(photo),
     );
   },
@@ -160,7 +160,7 @@ export const itineraryRepository = {
     photoId: string,
   ): Promise<void> {
     return apiClient.delete(
-      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/photos/${photoId}`,
+      `/v1/trips/${itineraryId}/days/${dayId}/activities/${activityId}/photos/${photoId}`,
     );
   },
 
@@ -168,21 +168,21 @@ export const itineraryRepository = {
   async photoDump(itineraryId: string, cursor?: string): Promise<Page<PhotoDumpEntryResponse>> {
     const query = cursor === undefined ? '' : `?cursor=${encodeURIComponent(cursor)}`;
     return apiClient.get<Page<PhotoDumpEntryResponse>>(
-      `/v1/itineraries/${itineraryId}/photo-dump${query}`,
+      `/v1/trips/${itineraryId}/photo-dump${query}`,
     );
   },
 
 
   async addPhotoDumpEntry(itineraryId: string, photo: PickedPhoto): Promise<PhotoDumpEntryResponse> {
     return apiClient.upload<PhotoDumpEntryResponse>(
-      `/v1/itineraries/${itineraryId}/photo-dump`,
+      `/v1/trips/${itineraryId}/photo-dump`,
       await photoPart(photo),
     );
   },
 
 
   async removePhotoDumpEntry(itineraryId: string, photoId: string): Promise<void> {
-    return apiClient.delete(`/v1/itineraries/${itineraryId}/photo-dump/${photoId}`);
+    return apiClient.delete(`/v1/trips/${itineraryId}/photo-dump/${photoId}`);
   },
 
 
@@ -191,7 +191,7 @@ export const itineraryRepository = {
     dayId: string,
     request: ReorderActivitiesRequest,
   ): Promise<DayResponse> {
-    return apiClient.put<DayResponse>(`/v1/itineraries/${itineraryId}/days/${dayId}/activities/order`, request);
+    return apiClient.put<DayResponse>(`/v1/trips/${itineraryId}/days/${dayId}/activities/order`, request);
   },
 
 
@@ -202,26 +202,26 @@ export const itineraryRepository = {
     request: MoveActivityRequest,
   ): Promise<ActivityResponse> {
     return apiClient.post<ActivityResponse>(
-      `/v1/itineraries/${itineraryId}/days/${dayId}/activities/${activityId}/move`,
+      `/v1/trips/${itineraryId}/days/${dayId}/activities/${activityId}/move`,
       request,
     );
   },
 
 
   async savePlan(itineraryId: string, request: SavePlanRequest): Promise<ItineraryResponse> {
-    return apiClient.put<ItineraryResponse>(`/v1/itineraries/${itineraryId}/plan`, request);
+    return apiClient.put<ItineraryResponse>(`/v1/trips/${itineraryId}/plan`, request);
   },
 
 
   async acquireEditLock(itineraryId: string, subject: LeaseSubject): Promise<EditLeaseResponse> {
-    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock`, subject);
+    return apiClient.post<EditLeaseResponse>(`/v1/trips/${itineraryId}/edit-lock`, subject);
   },
 
   async renewEditLock(itineraryId: string, subject: LeaseSubject): Promise<EditLeaseResponse> {
-    return apiClient.post<EditLeaseResponse>(`/v1/itineraries/${itineraryId}/edit-lock/renew`, subject);
+    return apiClient.post<EditLeaseResponse>(`/v1/trips/${itineraryId}/edit-lock/renew`, subject);
   },
 
   async releaseEditLock(itineraryId: string, subject: LeaseSubject): Promise<void> {
-    return apiClient.delete(`/v1/itineraries/${itineraryId}/edit-lock`, subject);
+    return apiClient.delete(`/v1/trips/${itineraryId}/edit-lock`, subject);
   },
 };

@@ -37,7 +37,7 @@ export async function seedTrip(options: {
   const ownerToken = await tokenFor(options.ownerTag);
   await profileFor(options.ownerTag);
 
-  const created = await api('/v1/itineraries', 'POST', ownerToken, {
+  const created = await api('/v1/trips', 'POST', ownerToken, {
     title: options.title,
     destination: options.destination ?? 'Palawan',
     ...(options.durationDays === undefined ? {} : { durationDays: options.durationDays }),
@@ -65,7 +65,7 @@ export async function joinTrip(trip: SeededTrip, tag: PoolTag): Promise<void> {
   const memberProfile = await profileFor(tag);
 
   const invited = await api(
-    `/v1/itineraries/${trip.id}/invitations/by-handle`,
+    `/v1/trips/${trip.id}/invitations/by-handle`,
     'POST',
     trip.ownerToken,
     { handle: memberProfile.handle },
@@ -77,7 +77,7 @@ export async function joinTrip(trip: SeededTrip, tag: PoolTag): Promise<void> {
 }
 
 export async function seedDay(trip: SeededTrip, position: number): Promise<string> {
-  const created = await api(`/v1/itineraries/${trip.id}/days`, 'POST', trip.ownerToken, { position });
+  const created = await api(`/v1/trips/${trip.id}/days`, 'POST', trip.ownerToken, { position });
   if (created.status !== 201) throw new SeedFailure('a day', created.body);
   return created.body.id;
 }
@@ -88,7 +88,7 @@ export async function seedActivity(
   fields: Record<string, unknown>,
 ): Promise<string> {
   const created = await api(
-    `/v1/itineraries/${trip.id}/days/${dayId}/activities`,
+    `/v1/trips/${trip.id}/days/${dayId}/activities`,
     'POST',
     trip.ownerToken,
     fields,
@@ -105,13 +105,13 @@ export async function seedPlan(
   if (dayId === undefined) throw new SeedFailure('a plan', 'the trip was created with no days');
 
   const lease = { subjectType: 'day', subjectId: dayId };
-  const held = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', trip.ownerToken, lease);
+  const held = await api(`/v1/trips/${trip.id}/edit-lock`, 'POST', trip.ownerToken, lease);
   if (held.status !== 200) throw new SeedFailure('the day lease a plan needs', held.body);
 
   const ids: string[] = [];
   for (const fields of activities) {
     const created = await api(
-      `/v1/itineraries/${trip.id}/days/${dayId}/activities`,
+      `/v1/trips/${trip.id}/days/${dayId}/activities`,
       'POST',
       trip.ownerToken,
       fields,
@@ -120,7 +120,7 @@ export async function seedPlan(
     ids.push(created.body.id);
   }
 
-  await api(`/v1/itineraries/${trip.id}/edit-lock`, 'DELETE', trip.ownerToken, lease);
+  await api(`/v1/trips/${trip.id}/edit-lock`, 'DELETE', trip.ownerToken, lease);
   return ids;
 }
 
@@ -171,12 +171,12 @@ export async function postPostcard(
 
 export async function seedCover(trip: SeededTrip): Promise<void> {
   const header = { subjectType: 'header' };
-  const lease = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', trip.ownerToken, header);
+  const lease = await api(`/v1/trips/${trip.id}/edit-lock`, 'POST', trip.ownerToken, header);
   if (lease.status !== 200 && lease.status !== 201) {
     throw new SeedFailure('the header lease a cover upload requires', lease.body);
   }
-  const uploaded = await uploadPhoto(`/v1/itineraries/${trip.id}/cover`, trip.ownerToken);
-  await api(`/v1/itineraries/${trip.id}/edit-lock`, 'DELETE', trip.ownerToken, header);
+  const uploaded = await uploadPhoto(`/v1/trips/${trip.id}/cover`, trip.ownerToken);
+  await api(`/v1/trips/${trip.id}/edit-lock`, 'DELETE', trip.ownerToken, header);
   if (uploaded.status !== 200 && uploaded.status !== 201) {
     throw new SeedFailure('the cover image', uploaded.body);
   }
@@ -194,7 +194,7 @@ export async function climbTo(
   };
   const rungs: Array<'ongoing' | 'completed'> = ['ongoing', 'completed'];
   for (const rung of rungs) {
-    const moved = await api(`/v1/itineraries/${trip.id}${ladder[rung]}`, 'POST', trip.ownerToken, {});
+    const moved = await api(`/v1/trips/${trip.id}${ladder[rung]}`, 'POST', trip.ownerToken, {});
     if (moved.status !== 200) throw new SeedFailure(`the climb to ${rung}`, moved.body);
     if (rung === state) return;
   }

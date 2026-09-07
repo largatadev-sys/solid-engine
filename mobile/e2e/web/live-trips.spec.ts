@@ -23,7 +23,7 @@ let editorToken: string;
 let trip: string;
 let title: string;
 
-const lockUri = (): string => `/v1/itineraries/${trip}/edit-lock`;
+const lockUri = (): string => `/v1/trips/${trip}/edit-lock`;
 
 const sessionBody = () => ({ subjectType: 'SESSION', subjectId: trip });
 
@@ -133,7 +133,7 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
     await waitForTheTravelerSubscription(page);
 
     const invitedTitle = stamp('Inbox Walk');
-    const invited = await api('/v1/itineraries', 'POST', editorToken, {
+    const invited = await api('/v1/trips', 'POST', editorToken, {
       title: invitedTitle,
       destination: 'Siargao',
       durationDays: 2,
@@ -141,7 +141,7 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
     expect(invited.status, 'the inviter needs a trip to invite into').toBe(201);
     const watcherHandle = (await api('/v1/me', 'GET', watcherToken)).body.handle;
     const sent = await api(
-      `/v1/itineraries/${invited.body.id}/invitations/by-handle`,
+      `/v1/trips/${invited.body.id}/invitations/by-handle`,
       'POST',
       editorToken,
       { handle: watcherHandle },
@@ -166,8 +166,8 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
     await waitForTheTravelerSubscription(page);
 
     await api(lockUri(), 'POST', editorToken, sessionBody());
-    const base = (await api(`/v1/itineraries/${trip}`, 'GET', editorToken)).body.planVersion;
-    const saved = await api(`/v1/itineraries/${trip}/plan`, 'PUT', editorToken, {
+    const base = (await api(`/v1/trips/${trip}`, 'GET', editorToken)).body.planVersion;
+    const saved = await api(`/v1/trips/${trip}/plan`, 'PUT', editorToken, {
       basePlanVersion: base,
       days: [],
     });
@@ -192,14 +192,14 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
     await waitForTheTravelerSubscription(page);
 
     const hostTitle = stamp('Approval Walk');
-    const host = await api('/v1/itineraries', 'POST', editorToken, {
+    const host = await api('/v1/trips', 'POST', editorToken, {
       title: hostTitle,
       destination: 'Bantayan',
       durationDays: 2,
     });
     expect(host.status, 'the owner needs a trip to approve into').toBe(201);
 
-    const link = await api(`/v1/itineraries/${host.body.id}/join-link`, 'GET', editorToken);
+    const link = await api(`/v1/trips/${host.body.id}/join-link`, 'GET', editorToken);
     expect(link.status).toBe(200);
     const asked = await api(`/v1/join/${link.body.token}/request`, 'POST', watcherToken, {});
     expect([200, 201], 'the watcher must actually ask to join').toContain(asked.status);
@@ -225,13 +225,13 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
       .toBeGreaterThan(0);
     const pendingBefore = await pendingRows.count();
 
-    const queue = await api(`/v1/itineraries/${host.body.id}/join-requests`, 'GET', editorToken);
+    const queue = await api(`/v1/trips/${host.body.id}/join-requests`, 'GET', editorToken);
     expect(queue.status, 'the owner must be able to see the queue').toBe(200);
     const mine = (queue.body.items ?? [])[0];
     expect(mine, 'the request must be in the queue to approve').toBeDefined();
 
     const approved = await api(
-      `/v1/itineraries/${host.body.id}/join-requests/${mine.id}/approve`,
+      `/v1/trips/${host.body.id}/join-requests/${mine.id}/approve`,
       'POST',
       editorToken,
       {},

@@ -29,10 +29,10 @@ const teaserFor = async (bearer?: string) =>
     : api(`/v1/join/${token}`, 'GET', bearer);
 
 const queue = async (): Promise<Array<{ id: string; travelerId: string }>> =>
-  (await api(`/v1/itineraries/${trip.id}/join-requests`, 'GET', owner)).body.items;
+  (await api(`/v1/trips/${trip.id}/join-requests`, 'GET', owner)).body.items;
 
 const rosterIds = async (): Promise<string[]> =>
-  (await api(`/v1/itineraries/${trip.id}/members`, 'GET', owner)).body.items.map(
+  (await api(`/v1/trips/${trip.id}/members`, 'GET', owner)).body.items.map(
     (row: { travelerId: string }) => row.travelerId,
   );
 
@@ -45,11 +45,11 @@ test.beforeAll(async () => {
   askerId = await idOf(asker);
 
   trip = await seedTrip({ ownerTag: OWNER, title: stamp('join link'), destination: 'El Nido' });
-  token = (await api(`/v1/itineraries/${trip.id}/join-link`, 'GET', owner)).body.token;
+  token = (await api(`/v1/trips/${trip.id}/join-link`, 'GET', owner)).body.token;
 });
 
 test('the link is minted once and reused forever', async () => {
-  const again = await api(`/v1/itineraries/${trip.id}/join-link`, 'GET', owner);
+  const again = await api(`/v1/trips/${trip.id}/join-link`, 'GET', owner);
 
   expect(again.status).toBe(200);
   expect(again.body.token).toBe(token);
@@ -57,7 +57,7 @@ test('the link is minted once and reused forever', async () => {
 });
 
 test('the shared URL carries the card version, so a re-share unfurls fresh', async () => {
-  const link = await api(`/v1/itineraries/${trip.id}/join-link`, 'GET', owner);
+  const link = await api(`/v1/trips/${trip.id}/join-link`, 'GET', owner);
 
   expect(link.body.shareUrl).toMatch(new RegExp(`/join/${token}\\?v=\\d+$`));
 });
@@ -116,13 +116,13 @@ test('a member cannot see the queue: 403 NOT_PERMITTED', async () => {
   await api(`/v1/join/${token}/request`, 'POST', bystander, {});
   const approved = (await queue()).find((row) => row.travelerId !== askerId);
   await api(
-    `/v1/itineraries/${trip.id}/join-requests/${approved!.id}/approve`,
+    `/v1/trips/${trip.id}/join-requests/${approved!.id}/approve`,
     'POST',
     owner,
     {},
   );
 
-  const asMember = await api(`/v1/itineraries/${trip.id}/join-requests`, 'GET', secondAsker);
+  const asMember = await api(`/v1/trips/${trip.id}/join-requests`, 'GET', secondAsker);
   expect(asMember.status).toBe(403);
   expect(asMember.body?.code).toBe('NOT_PERMITTED');
 });
@@ -130,7 +130,7 @@ test('a member cannot see the queue: 403 NOT_PERMITTED', async () => {
 test('approval admits the traveler immediately — no second handshake', async () => {
   const waiting = (await queue()).find((row) => row.travelerId === askerId);
   const approved = await api(
-    `/v1/itineraries/${trip.id}/join-requests/${waiting!.id}/approve`,
+    `/v1/trips/${trip.id}/join-requests/${waiting!.id}/approve`,
     'POST',
     owner,
     {},
@@ -142,24 +142,24 @@ test('approval admits the traveler immediately — no second handshake', async (
 });
 
 test('the approved traveler now sees the trip in their own list', async () => {
-  const mine = await api('/v1/itineraries', 'GET', asker);
+  const mine = await api('/v1/trips', 'GET', asker);
 
   expect(mine.body.items.map((row: { id: string }) => row.id)).toContain(trip.id);
 });
 
 test('answering the same request twice is refused by name', async () => {
-  const spent = await api('/v1/itineraries', 'POST', owner, {
+  const spent = await api('/v1/trips', 'POST', owner, {
     title: stamp('join link double answer'),
     destination: 'Palawan',
   });
   const other = spent.body.id;
-  const otherToken = (await api(`/v1/itineraries/${other}/join-link`, 'GET', owner)).body.token;
+  const otherToken = (await api(`/v1/trips/${other}/join-link`, 'GET', owner)).body.token;
   await api(`/v1/join/${otherToken}/request`, 'POST', asker, {});
-  const waiting = (await api(`/v1/itineraries/${other}/join-requests`, 'GET', owner)).body.items[0];
+  const waiting = (await api(`/v1/trips/${other}/join-requests`, 'GET', owner)).body.items[0];
 
-  await api(`/v1/itineraries/${other}/join-requests/${waiting.id}/decline`, 'POST', owner, {});
+  await api(`/v1/trips/${other}/join-requests/${waiting.id}/decline`, 'POST', owner, {});
   const again = await api(
-    `/v1/itineraries/${other}/join-requests/${waiting.id}/decline`,
+    `/v1/trips/${other}/join-requests/${waiting.id}/decline`,
     'POST',
     owner,
     {},
@@ -170,27 +170,27 @@ test('answering the same request twice is refused by name', async () => {
 });
 
 test('a declined traveler may ask again, and the new ask is a new row', async () => {
-  const fresh = await api('/v1/itineraries', 'POST', owner, {
+  const fresh = await api('/v1/trips', 'POST', owner, {
     title: stamp('join link retry'),
     destination: 'Palawan',
   });
   const retryTrip = fresh.body.id;
-  const retryToken = (await api(`/v1/itineraries/${retryTrip}/join-link`, 'GET', owner)).body.token;
+  const retryToken = (await api(`/v1/trips/${retryTrip}/join-link`, 'GET', owner)).body.token;
 
   await api(`/v1/join/${retryToken}/request`, 'POST', asker, {});
-  const first = (await api(`/v1/itineraries/${retryTrip}/join-requests`, 'GET', owner)).body.items[0];
-  await api(`/v1/itineraries/${retryTrip}/join-requests/${first.id}/decline`, 'POST', owner, {});
+  const first = (await api(`/v1/trips/${retryTrip}/join-requests`, 'GET', owner)).body.items[0];
+  await api(`/v1/trips/${retryTrip}/join-requests/${first.id}/decline`, 'POST', owner, {});
 
   const asked = await api(`/v1/join/${retryToken}/request`, 'POST', asker, {});
   expect(asked.body.viewerState).toBe('pending');
 
-  const second = (await api(`/v1/itineraries/${retryTrip}/join-requests`, 'GET', owner)).body.items[0];
+  const second = (await api(`/v1/trips/${retryTrip}/join-requests`, 'GET', owner)).body.items[0];
   expect(second.id).not.toBe(first.id);
 });
 
 test('a published trip kills the link and refuses new asks', async () => {
   const frozen = await seedTrip({ ownerTag: OWNER, title: stamp('join link frozen') });
-  const frozenToken = (await api(`/v1/itineraries/${frozen.id}/join-link`, 'GET', owner)).body.token;
+  const frozenToken = (await api(`/v1/trips/${frozen.id}/join-link`, 'GET', owner)).body.token;
   await climbTo(frozen, 'completed');
   await api(`/v1/itineraries/${frozen.id}/publish`, 'POST', owner, {});
 
@@ -208,19 +208,19 @@ test('a published trip refuses to hand out its link at all', async () => {
   await climbTo(frozen, 'completed');
   await api(`/v1/itineraries/${frozen.id}/publish`, 'POST', owner, {});
 
-  const refused = await api(`/v1/itineraries/${frozen.id}/join-link`, 'GET', owner);
+  const refused = await api(`/v1/trips/${frozen.id}/join-link`, 'GET', owner);
   expect(refused.status).toBe(409);
   expect(refused.body?.code).toBe('MEMBERSHIP_FROZEN');
 });
 
 test('a non-member is masked rather than told the trip exists', async () => {
-  const someoneElsesTrip = await api('/v1/itineraries', 'POST', owner, {
+  const someoneElsesTrip = await api('/v1/trips', 'POST', owner, {
     title: stamp('join link masked'),
     destination: 'Palawan',
   });
 
   const shut = await api(
-    `/v1/itineraries/${someoneElsesTrip.body.id}/join-link`,
+    `/v1/trips/${someoneElsesTrip.body.id}/join-link`,
     'GET',
     secondAsker,
   );
@@ -231,7 +231,7 @@ test('a non-member is masked rather than told the trip exists', async () => {
 
 
 test('any member may read the link, not just the owner — the C1 widening', async () => {
-  const shared = await api(`/v1/itineraries/${trip.id}/join-link`, 'GET', asker);
+  const shared = await api(`/v1/trips/${trip.id}/join-link`, 'GET', asker);
 
   expect(shared.status).toBe(200);
   expect(shared.body.token).toBe(token);

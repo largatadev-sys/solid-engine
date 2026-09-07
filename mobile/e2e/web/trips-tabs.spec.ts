@@ -27,14 +27,14 @@ test.beforeEach(async ({ signIn }) => {
 });
 
 const myTrips = async (): Promise<Array<{ id: string; state: string; title: string }>> => {
-  const page = await api('/v1/itineraries?limit=100', 'GET', token);
+  const page = await api('/v1/trips?limit=100', 'GET', token);
   return page.body.items;
 };
 
 const parkEveryOngoingTrip = async (): Promise<void> => {
   for (const row of await myTrips()) {
     if (row.state === 'ongoing') {
-      await api(`/v1/itineraries/${row.id}/archive`, 'POST', token, {});
+      await api(`/v1/trips/${row.id}/archive`, 'POST', token, {});
     }
   }
 };
@@ -179,7 +179,7 @@ test.describe('the create bar and the archived link (canvas C4, C6)', () => {
 
   test('an archived trip never appears inside the three tabs', async ({ page }) => {
     const filed = await seedTrip({ ownerTag: TRAVELER, title: stamp('filed away') });
-    await api(`/v1/itineraries/${filed.id}/archive`, 'POST', token, {});
+    await api(`/v1/trips/${filed.id}/archive`, 'POST', token, {});
 
     await page.goto('/trips');
     for (const tab of ['upcoming', 'ongoing', 'completed'] as TripTab[]) {

@@ -144,7 +144,7 @@ test.describe('the header the profile tab lands on', () => {
   });
 
   test('Destinations counts places they OWN, so a hosted trip contributes none', async () => {
-    const trips = await everyItem(token, '/v1/itineraries');
+    const trips = await everyItem(token, '/v1/trips');
     const hosted = trips.find((trip) => trip.id === hostedId);
     expect(hosted, 'the hosted trip is in sight but not owned').toBeDefined();
 

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/v1/itineraries/{itineraryId}/edit-lock")
+@RequestMapping({"/v1/itineraries/{itineraryId}/edit-lock", "/v1/trips/{itineraryId}/edit-lock"})
 class EditLeaseController {
 
     private final EditLeaseService leases;

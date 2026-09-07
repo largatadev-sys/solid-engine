@@ -12,7 +12,7 @@ import type {
 export const joinRepository = {
 
   async fetchLink(itineraryId: string): Promise<JoinLinkResponse> {
-    return apiClient.get<JoinLinkResponse>(`/v1/itineraries/${itineraryId}/join-link`);
+    return apiClient.get<JoinLinkResponse>(`/v1/trips/${itineraryId}/join-link`);
   },
 
 
@@ -31,14 +31,14 @@ export const joinRepository = {
 
   async fetchRequests(itineraryId: string): Promise<Page<JoinRequestSummaryResponse>> {
     return apiClient.get<Page<JoinRequestSummaryResponse>>(
-      `/v1/itineraries/${itineraryId}/join-requests`,
+      `/v1/trips/${itineraryId}/join-requests`,
     );
   },
 
 
   async approve(itineraryId: string, requestId: string): Promise<void> {
     await apiClient.post<void>(
-      `/v1/itineraries/${itineraryId}/join-requests/${requestId}/approve`,
+      `/v1/trips/${itineraryId}/join-requests/${requestId}/approve`,
       undefined,
     );
   },
@@ -46,7 +46,7 @@ export const joinRepository = {
 
   async decline(itineraryId: string, requestId: string): Promise<void> {
     await apiClient.post<void>(
-      `/v1/itineraries/${itineraryId}/join-requests/${requestId}/decline`,
+      `/v1/trips/${itineraryId}/join-requests/${requestId}/decline`,
       undefined,
     );
   },

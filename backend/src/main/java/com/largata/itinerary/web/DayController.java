@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/v1/itineraries/{itineraryId}/days")
+@RequestMapping({"/v1/itineraries/{itineraryId}/days", "/v1/trips/{itineraryId}/days"})
 class DayController {
 
     private final DayService days;

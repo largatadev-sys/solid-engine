@@ -22,7 +22,7 @@ test.beforeEach(async ({ signIn }) => {
 });
 
 const stateOf = async (id: string): Promise<string> =>
-  (await api(`/v1/itineraries/${id}`, 'GET', token)).body.state;
+  (await api(`/v1/trips/${id}`, 'GET', token)).body.state;
 
 test('Plan a Trip opens the create form, which says Standouts and never Highlights', async ({ page }) => {
   await page.goto('/trips');

@@ -93,6 +93,7 @@ export function pollErrorMessage(error: Error): string {
       case 'TRIP_ARCHIVED':
         return 'This trip is archived, so its polls are read-only.';
       case 'ITINERARY_NOT_FOUND':
+      case 'TRIP_NOT_FOUND':
         return 'This trip is no longer available to you.';
       default:
         return error.message;

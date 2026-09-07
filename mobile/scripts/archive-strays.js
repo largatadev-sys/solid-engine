@@ -34,7 +34,7 @@ async function main() {
     const strays = mine.filter((trip) => !fixture.has(trip.title) && trip.archived !== true);
     let ok = 0;
     for (const trip of strays) {
-      const res = await api(`/v1/itineraries/${trip.id}/archive`, 'POST', token);
+      const res = await api(`/v1/trips/${trip.id}/archive`, 'POST', token);
       if (res.status < 300) {
         ok += 1;
         console.log(`  ${traveler.tag}  archived  ${trip.title}`);

@@ -5,7 +5,7 @@ import { DIARY_ENTRY_DELETED } from '../diary/diaryEvents';
 import { failureToast } from '../removal/removalFailure';
 import { diaryRepository } from '../repositories/diaryRepository';
 import { invitationRepository } from '../repositories/invitationRepository';
-import { itineraryRepository } from '../repositories/itineraryRepository';
+import { tripRepository } from '../repositories/tripRepository';
 import { feedKeys } from './feedQueries';
 import { diaryKeys } from './diaryQueries';
 import { itineraryKeys } from './itineraryQueries';
@@ -55,7 +55,7 @@ export function useRemovalCommands(announce: (message: string) => void): Removal
 
     unpublish: useCallback(
       async (itineraryId: string) => {
-        await itineraryRepository.unpublishTrip(itineraryId);
+        await tripRepository.unpublishTrip(itineraryId);
         await refreshItineraries();
       },
       [refreshItineraries],
@@ -63,7 +63,7 @@ export function useRemovalCommands(announce: (message: string) => void): Removal
 
     republish: useCallback(
       async (itineraryId: string) => {
-        await itineraryRepository.publishTrip(itineraryId);
+        await tripRepository.publishTrip(itineraryId);
         await refreshItineraries();
       },
       [refreshItineraries],
@@ -79,7 +79,7 @@ export function useRemovalCommands(announce: (message: string) => void): Removal
 
     archiveTrip: useCallback(
       async (itineraryId: string) => {
-        await itineraryRepository.archiveTrip(itineraryId);
+        await tripRepository.archiveTrip(itineraryId);
         await refreshItineraries();
       },
       [refreshItineraries],

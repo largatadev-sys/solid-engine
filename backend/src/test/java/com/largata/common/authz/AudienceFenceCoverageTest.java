@@ -57,7 +57,7 @@ class AudienceFenceCoverageTest {
     private static final Set<String> KNOWN_OPTIONAL_MEMBERSHIP_HANDLERS =
             Set.of(
                     "PublishedItineraryController.java#view",
-                    "ItineraryController.java#fork");
+                    "ItineraryLifecycleController.java#fork");
 
 
     private static final Pattern ANY_HANDLER =

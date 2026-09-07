@@ -101,7 +101,7 @@ test('a draft trip draws no capture link at all — the diary of a trip that has
 
 test('an ongoing trip draws the capture link on the activity row', async ({ page }) => {
   await climbTo(trip, 'ongoing');
-  await uploadPhoto(`/v1/itineraries/${trip.id}/photo-dump`, token);
+  await uploadPhoto(`/v1/trips/${trip.id}/photo-dump`, token);
 
   await page.goto(`/itineraries/${trip.id}`);
   await expect(labelled(page, captureLink)).toBeVisible();

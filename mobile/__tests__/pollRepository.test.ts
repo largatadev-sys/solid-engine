@@ -31,7 +31,7 @@ describe('pollRepository — every poll act is one workspace-scoped path', () =>
 
     await pollRepository.board('trip-1');
 
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries/trip-1/polls');
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips/trip-1/polls');
   });
 
   it('creates a poll by POSTing the question, options and deadline together', async () => {
@@ -40,7 +40,7 @@ describe('pollRepository — every poll act is one workspace-scoped path', () =>
 
     await pollRepository.create('trip-1', request);
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/polls', request);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/trip-1/polls', request);
   });
 
   it('votes with PUT, because re-voting is the same call as voting — the INV-10 upsert', async () => {
@@ -48,7 +48,7 @@ describe('pollRepository — every poll act is one workspace-scoped path', () =>
 
     await pollRepository.vote('trip-1', 'p1', { optionId: 'o2' });
 
-    expect(apiClient.put).toHaveBeenCalledWith('/v1/itineraries/trip-1/polls/p1/vote', {
+    expect(apiClient.put).toHaveBeenCalledWith('/v1/trips/trip-1/polls/p1/vote', {
       optionId: 'o2',
     });
   });
@@ -58,7 +58,7 @@ describe('pollRepository — every poll act is one workspace-scoped path', () =>
 
     await pollRepository.close('trip-1', 'p1');
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/polls/p1/close', undefined);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/trip-1/polls/p1/close', undefined);
   });
 
   it('deletes the poll itself, never the board', async () => {
@@ -66,6 +66,6 @@ describe('pollRepository — every poll act is one workspace-scoped path', () =>
 
     await pollRepository.remove('trip-1', 'p1');
 
-    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/polls/p1');
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/trips/trip-1/polls/p1');
   });
 });

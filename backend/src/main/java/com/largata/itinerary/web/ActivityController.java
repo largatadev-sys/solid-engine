@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/v1/itineraries/{itineraryId}/days/{dayId}/activities")
+@RequestMapping({"/v1/itineraries/{itineraryId}/days/{dayId}/activities", "/v1/trips/{itineraryId}/days/{dayId}/activities"})
 class ActivityController {
 
     private final ActivityService activities;

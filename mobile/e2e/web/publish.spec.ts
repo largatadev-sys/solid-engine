@@ -60,7 +60,7 @@ async function seedCompletedTrip(title: string): Promise<SeededTrip> {
   return trip;
 }
 
-const itineraryOf = async (id: string) => (await api(`/v1/itineraries/${id}`, 'GET', token)).body;
+const itineraryOf = async (id: string) => (await api(`/v1/trips/${id}`, 'GET', token)).body;
 
 const accentBorderOf = async (chip: Locator): Promise<string> =>
   chip.evaluate((node) => getComputedStyle(node as HTMLElement).borderColor);

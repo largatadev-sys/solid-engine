@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/v1/itineraries/{itineraryId}/plan")
+@RequestMapping({"/v1/itineraries/{itineraryId}/plan", "/v1/trips/{itineraryId}/plan"})
 class PlanController {
 
     private final PlanSaveService plans;
