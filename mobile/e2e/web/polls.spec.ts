@@ -39,7 +39,7 @@ let secondToken: string;
 const pollsRoute = (id: string): string => `/itineraries/${id}?tab=polls`;
 
 const boardOf = async (id: string, as: string = ownerToken): Promise<PollBoardResponse> =>
-  (await api(`/v1/itineraries/${id}/polls`, 'GET', as)).body;
+  (await api(`/v1/trips/${id}/polls`, 'GET', as)).body;
 
 const activeOf = async (id: string, as?: string): Promise<PollResponse[]> =>
   (await boardOf(id, as)).active;
@@ -50,7 +50,7 @@ async function askViaApi(
   question: string,
   options: string[] = ['Ramen', 'Tacos'],
 ): Promise<PollResponse> {
-  const created = await api(`/v1/itineraries/${id}/polls`, 'POST', as, {
+  const created = await api(`/v1/trips/${id}/polls`, 'POST', as, {
     question,
     options,
     closesAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -254,7 +254,7 @@ test.describe('the board, from empty to a closed winner', () => {
   test('voting on the closed poll is refused with its NAMED code, not a bare 4xx', async () => {
     const closed = (await boardOf(trip.id)).completed[0] as PollResponse;
     const refused = await api(
-      `/v1/itineraries/${trip.id}/polls/${closed.id}/vote`,
+      `/v1/trips/${trip.id}/polls/${closed.id}/vote`,
       'PUT',
       secondToken,
       { optionId: closed.options[0]?.id },
@@ -283,7 +283,7 @@ test.describe('deleting a poll', () => {
     await joinTrip(trip, SECOND);
     ownerToken = await tokenFor(OWNER);
     doomed = await askViaApi(trip.id, ownerToken, 'Karaoke Night?');
-    await api(`/v1/itineraries/${trip.id}/polls/${doomed.id}/vote`, 'PUT', secondToken, {
+    await api(`/v1/trips/${trip.id}/polls/${doomed.id}/vote`, 'PUT', secondToken, {
       optionId: doomed.options[0]?.id,
     });
   });
@@ -341,7 +341,7 @@ test.describe('deleting a poll', () => {
     const theirs = await askViaApi(trip.id, ownerToken, stamp('Owners poll'));
 
     const poaching = await api(
-      `/v1/itineraries/${trip.id}/polls/${theirs.id}`,
+      `/v1/trips/${trip.id}/polls/${theirs.id}`,
       'DELETE',
       secondToken,
     );
@@ -361,7 +361,7 @@ test.describe('the refusals a discriminating probe can tell apart', () => {
 
   test('a non-member is MASKED on the board read — not-found, by code', async () => {
     const stranger = await tokenFor(SECOND);
-    const masked = await api(`/v1/itineraries/${trip.id}/polls`, 'GET', stranger);
+    const masked = await api(`/v1/trips/${trip.id}/polls`, 'GET', stranger);
 
     expect(masked.status).toBe(404);
     expect(masked.body?.code).toBe('ITINERARY_NOT_FOUND');
@@ -369,7 +369,7 @@ test.describe('the refusals a discriminating probe can tell apart', () => {
 
   test('the eleventh option is refused by its own name', async () => {
     const eleven = Array.from({ length: 11 }, (_unused, index) => `Option ${index}`);
-    const refused = await api(`/v1/itineraries/${trip.id}/polls`, 'POST', ownerToken, {
+    const refused = await api(`/v1/trips/${trip.id}/polls`, 'POST', ownerToken, {
       question: 'Too many',
       options: eleven,
       closesAt: new Date(Date.now() + 3_600_000).toISOString(),
@@ -380,7 +380,7 @@ test.describe('the refusals a discriminating probe can tell apart', () => {
   });
 
   test('a deadline in the past is refused by its own name', async () => {
-    const refused = await api(`/v1/itineraries/${trip.id}/polls`, 'POST', ownerToken, {
+    const refused = await api(`/v1/trips/${trip.id}/polls`, 'POST', ownerToken, {
       question: 'Yesterday',
       options: ['A', 'B'],
       closesAt: new Date(Date.now() - 60_000).toISOString(),
@@ -397,7 +397,7 @@ test.describe('the refusals a discriminating probe can tell apart', () => {
       await askViaApi(capped.id, ownerToken, `Poll ${index}`);
     }
 
-    const refused = await api(`/v1/itineraries/${capped.id}/polls`, 'POST', ownerToken, {
+    const refused = await api(`/v1/trips/${capped.id}/polls`, 'POST', ownerToken, {
       question: 'One too many',
       options: ['A', 'B'],
       closesAt: new Date(Date.now() + 3_600_000).toISOString(),
@@ -416,7 +416,7 @@ test('an archived trip renders the board read-only for the owner', async ({ page
     durationDays: 2,
   });
   await askViaApi(archived.id, ownerToken, 'Before the archive');
-  await api(`/v1/itineraries/${archived.id}/archive`, 'POST', ownerToken, {});
+  await api(`/v1/trips/${archived.id}/archive`, 'POST', ownerToken, {});
 
   await page.goto(pollsRoute(archived.id));
 

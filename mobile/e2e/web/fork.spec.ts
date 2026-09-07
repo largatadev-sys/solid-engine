@@ -80,7 +80,7 @@ async function seedPublishedTrip(title: string): Promise<SeededTrip> {
 const projectionOf = async (id: string) =>
   (await api(`/v1/published-itineraries/${id}`, 'GET', forkerToken)).body;
 
-const itineraryOf = async (id: string) => (await api(`/v1/itineraries/${id}`, 'GET', forkerToken)).body;
+const itineraryOf = async (id: string) => (await api(`/v1/trips/${id}`, 'GET', forkerToken)).body;
 
 test.beforeAll(async () => {
   forkerToken = await tokenFor(FORKER);
@@ -156,7 +156,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   });
 
   test('the copy the server made is a photo-less, date-less upcoming trip the forker owns', async () => {
-    const mine = (await api('/v1/itineraries', 'GET', forkerToken)).body.items as Array<{
+    const mine = (await api('/v1/trips', 'GET', forkerToken)).body.items as Array<{
       id: string;
       title: string;
     }>;

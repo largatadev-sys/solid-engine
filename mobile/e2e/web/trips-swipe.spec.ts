@@ -43,12 +43,12 @@ let ownedTitle: string;
 let joinedTitle: string;
 
 async function isArchived(id: string, token: string): Promise<boolean> {
-  const read = await api(`/v1/itineraries/${id}`, 'GET', token);
+  const read = await api(`/v1/trips/${id}`, 'GET', token);
   return read.body?.archived === true;
 }
 
 async function amMember(id: string): Promise<boolean> {
-  const read = await api(`/v1/itineraries/${id}`, 'GET', memberToken);
+  const read = await api(`/v1/trips/${id}`, 'GET', memberToken);
   return read.status === 200;
 }
 

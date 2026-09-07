@@ -100,7 +100,7 @@ async function archivePreviousRuns(traveler, token) {
   const mine = await allMyTrips(token);
   const stale = mine.filter((trip) => titles.has(trip.title) && trip.archived !== true);
   for (const trip of stale) {
-    await api(`/v1/itineraries/${trip.id}/archive`, 'POST', token);
+    await api(`/v1/trips/${trip.id}/archive`, 'POST', token);
   }
   return stale.length;
 }
@@ -136,7 +136,7 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
   const seeded = [];
   for (const trip of chosenTrips) {
     const created = must(
-      await api('/v1/itineraries', 'POST', token, {
+      await api('/v1/trips', 'POST', token, {
         title: trip.title,
         destination: trip.destination,
         ...(trip.description === null ? {} : { description: trip.description }),
@@ -146,9 +146,9 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
     );
 
     if (trip.standouts.length > 0 || trip.bestTimeOfYear !== null || trip.description !== null) {
-      must(await api(`/v1/itineraries/${created.id}/edit-lock`, 'POST', token, { subjectType: 'header' }), 'header lease');
+      must(await api(`/v1/trips/${created.id}/edit-lock`, 'POST', token, { subjectType: 'header' }), 'header lease');
       must(
-        await api(`/v1/itineraries/${created.id}`, 'PATCH', token, {
+        await api(`/v1/trips/${created.id}`, 'PATCH', token, {
           title: trip.title,
           destination: trip.destination,
           ...(trip.description === null ? {} : { description: trip.description }),
@@ -157,7 +157,7 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
         }),
         'dress the header',
       );
-      await api(`/v1/itineraries/${created.id}/edit-lock`, 'DELETE', token, { subjectType: 'header' });
+      await api(`/v1/trips/${created.id}/edit-lock`, 'DELETE', token, { subjectType: 'header' });
     }
 
     const activities = [];
@@ -167,16 +167,16 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
       if (dayId === undefined) continue;
       if (day.title !== undefined && day.title !== null) {
         const lease = { subjectType: 'day', subjectId: dayId };
-        must(await api(`/v1/itineraries/${created.id}/edit-lock`, 'POST', token, lease), 'day lease');
-        must(await api(`/v1/itineraries/${created.id}/days/${dayId}`, 'PATCH', token, { title: day.title }), 'day title');
-        await api(`/v1/itineraries/${created.id}/edit-lock`, 'DELETE', token, lease);
+        must(await api(`/v1/trips/${created.id}/edit-lock`, 'POST', token, lease), 'day lease');
+        must(await api(`/v1/trips/${created.id}/days/${dayId}`, 'PATCH', token, { title: day.title }), 'day title');
+        await api(`/v1/trips/${created.id}/edit-lock`, 'DELETE', token, lease);
       }
       const pool = photosFor(day.at);
       for (const [slot, spec] of day.activities.entries()) {
         const file = photoForSlot(PHOTOS, day.at, slot);
         const description = file === undefined ? null : altFor(file, credits);
         const activity = must(
-          await api(`/v1/itineraries/${created.id}/days/${dayId}/activities`, 'POST', token, {
+          await api(`/v1/trips/${created.id}/days/${dayId}/activities`, 'POST', token, {
             title: spec.title,
             ...(spec.timeOfDay === undefined ? {} : { timeOfDay: spec.timeOfDay }),
             ...(spec.place === undefined || spec.place === null ? {} : { place: spec.place }),
@@ -188,16 +188,16 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
         );
         if (file !== undefined) {
           const lease = { subjectType: 'activity', subjectId: activity.id };
-          must(await api(`/v1/itineraries/${created.id}/edit-lock`, 'POST', token, lease), 'activity lease');
+          must(await api(`/v1/trips/${created.id}/edit-lock`, 'POST', token, lease), 'activity lease');
           must(
             await uploadPhoto(
-              `/v1/itineraries/${created.id}/days/${dayId}/activities/${activity.id}/photos`,
+              `/v1/trips/${created.id}/days/${dayId}/activities/${activity.id}/photos`,
               token,
               file,
             ),
             `photo for "${spec.title}"`,
           );
-          await api(`/v1/itineraries/${created.id}/edit-lock`, 'DELETE', token, lease);
+          await api(`/v1/trips/${created.id}/edit-lock`, 'DELETE', token, lease);
           attached += 1;
         }
         activities.push({ id: activity.id, title: spec.title, file, pool, post: spec.post });
@@ -207,15 +207,15 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
     const cover = photosFor(trip.days[0].at)[0];
     if (cover !== undefined) {
       const header = { subjectType: 'header' };
-      must(await api(`/v1/itineraries/${created.id}/edit-lock`, 'POST', token, header), 'header lease for cover');
-      must(await uploadPhoto(`/v1/itineraries/${created.id}/cover`, token, cover), 'cover');
-      await api(`/v1/itineraries/${created.id}/edit-lock`, 'DELETE', token, header);
+      must(await api(`/v1/trips/${created.id}/edit-lock`, 'POST', token, header), 'header lease for cover');
+      must(await uploadPhoto(`/v1/trips/${created.id}/cover`, token, cover), 'cover');
+      await api(`/v1/trips/${created.id}/edit-lock`, 'DELETE', token, header);
     }
 
     let withMember = false;
     if (collaborator !== null && trip.days.length >= 4) {
       must(
-        await api(`/v1/itineraries/${created.id}/invitations/by-handle`, 'POST', token,
+        await api(`/v1/trips/${created.id}/invitations/by-handle`, 'POST', token,
           { handle: collaborator.handle }),
         'invite',
       );
@@ -228,17 +228,17 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
     }
 
     if (lifecycleOf(trip) === 'ongoing' || lifecycleOf(trip) === 'completed') {
-      must(await api(`/v1/itineraries/${created.id}/start`, 'POST', token), 'start');
+      must(await api(`/v1/trips/${created.id}/start`, 'POST', token), 'start');
     }
     if (lifecycleOf(trip) === 'completed') {
-      must(await api(`/v1/itineraries/${created.id}/complete`, 'POST', token), 'complete');
+      must(await api(`/v1/trips/${created.id}/complete`, 'POST', token), 'complete');
     }
 
     if (withMember) {
       for (const query of DUMP_QUERIES) {
         const file = photosFor(query)[0];
         if (file === undefined) continue;
-        must(await uploadPhoto(`/v1/itineraries/${created.id}/photo-dump`, collaborator.token, file), 'dump');
+        must(await uploadPhoto(`/v1/trips/${created.id}/photo-dump`, collaborator.token, file), 'dump');
       }
     }
 

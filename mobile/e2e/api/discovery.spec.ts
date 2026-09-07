@@ -28,7 +28,7 @@ async function publishedTrip(
   destination: string,
   durationDays: number,
 ): Promise<string> {
-  const created = await api('/v1/itineraries', 'POST', token, {
+  const created = await api('/v1/trips', 'POST', token, {
     title,
     destination,
     durationDays,
@@ -36,7 +36,7 @@ async function publishedTrip(
   if (created.status !== 201) throw new SeedFailure(`the trip "${title}"`, created.body);
   const id = created.body.id;
   for (const rung of ['start', 'complete']) {
-    const moved = await api(`/v1/itineraries/${id}/${rung}`, 'POST', token);
+    const moved = await api(`/v1/trips/${id}/${rung}`, 'POST', token);
     if (moved.status !== 200) throw new SeedFailure(`the climb through ${rung}`, moved.body);
   }
   const published = await api(`/v1/itineraries/${id}/publish`, 'POST', token, { audience: 'public' });
@@ -57,7 +57,7 @@ test.beforeAll(async () => {
   await api(`/v1/itineraries/${hidden}/unpublish`, 'POST', publisherToken);
 
   const archived = await publishedTrip(publisherToken, `Archived trip ${mark}`, `Archivetown ${mark}`, 4);
-  await api(`/v1/itineraries/${archived}/archive`, 'POST', publisherToken);
+  await api(`/v1/trips/${archived}/archive`, 'POST', publisherToken);
 
   fixture = { mark, kyoto, osaka, lima, hidden, archived, browserToken, publisherToken };
 });

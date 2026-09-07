@@ -43,7 +43,7 @@ const LOOSE = 'Posted from nowhere at all';
 const LOOSE_MENU = 'Postcard menu';
 
 async function postEntry(activityId: string, caption: string): Promise<void> {
-  const uploaded = await uploadPhoto(`/v1/itineraries/${trip.id}/photo-dump`, token);
+  const uploaded = await uploadPhoto(`/v1/trips/${trip.id}/photo-dump`, token);
   if (uploaded.status !== 201) throw new SeedFailure('a photo-dump photo', uploaded.body);
 
   const boundary = `----largatadelete${process.hrtime.bigint().toString(36)}`;

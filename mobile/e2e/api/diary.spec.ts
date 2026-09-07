@@ -45,7 +45,7 @@ test.beforeAll(async () => {
   await profileFor(CO_TRAVELER);
   await profileFor(STRANGER);
 
-  const created = await api('/v1/itineraries', 'POST', author, {
+  const created = await api('/v1/trips', 'POST', author, {
     title: TITLE,
     destination: 'El Nido',
     durationDays: 2,
@@ -56,7 +56,7 @@ test.beforeAll(async () => {
 });
 
 test('a co-traveler joins the trip through the real invite then accept', async () => {
-  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', author, {
+  const invited = await api(`/v1/trips/${trip}/invitations/by-handle`, 'POST', author, {
     handle: (await profileFor(CO_TRAVELER)).handle,
   });
   const accepted = await api(`/v1/invitations/${invited.body?.id}/accept`, 'POST', coTraveler, {});
@@ -65,11 +65,11 @@ test('a co-traveler joins the trip through the real invite then accept', async (
 });
 
 test('a draft trip refuses the whole act with the named code', async () => {
-  const plan = (await api(`/v1/itineraries/${trip}`, 'GET', author)).body;
+  const plan = (await api(`/v1/trips/${trip}`, 'GET', author)).body;
   dayOneId = plan.days[0].id;
   dayTwoId = plan.days[1].id;
 
-  const activity = await api(`/v1/itineraries/${trip}/days/${dayOneId}/activities`, 'POST', author, {
+  const activity = await api(`/v1/trips/${trip}/days/${dayOneId}/activities`, 'POST', author, {
     title: 'Sunset at Las Cabanas',
     timeOfDay: '17:30',
   });
@@ -88,9 +88,9 @@ test('an upcoming trip refuses too — a diary of a trip that has not happened i
 });
 
 test('a co-traveler puts a photo in the trip pool for the author to draw from', async () => {
-  await api(`/v1/itineraries/${trip}/start`, 'POST', author);
+  await api(`/v1/trips/${trip}/start`, 'POST', author);
   const uploaded = await uploadBytes(
-    `/v1/itineraries/${trip}/photo-dump`,
+    `/v1/trips/${trip}/photo-dump`,
     coTraveler,
     solidJpeg(),
     'pool.jpg',
@@ -131,11 +131,11 @@ test('the dump photo was copied, never referenced', () => {
 });
 
 test('the plan is corrected mid-trip and the trip never leaves ongoing', async () => {
-  const held = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', author, {
+  const held = await api(`/v1/trips/${trip}/edit-lock`, 'POST', author, {
     subjectType: 'session',
   });
-  const basePlan = (await api(`/v1/itineraries/${trip}`, 'GET', author)).body;
-  const midTripSave = await api(`/v1/itineraries/${trip}/plan`, 'PUT', author, {
+  const basePlan = (await api(`/v1/trips/${trip}`, 'GET', author)).body;
+  const midTripSave = await api(`/v1/trips/${trip}/plan`, 'PUT', author, {
     basePlanVersion: basePlan.planVersion,
     days: basePlan.days.map((day: any) => ({
       id: day.id,
@@ -146,16 +146,16 @@ test('the plan is corrected mid-trip and the trip never leaves ongoing', async (
       })),
     })),
   });
-  await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', author, { subjectType: 'session' });
+  await api(`/v1/trips/${trip}/edit-lock`, 'DELETE', author, { subjectType: 'session' });
 
   expect(held.status).toBe(200);
   expect(midTripSave.status).toBe(200);
-  expect((await api(`/v1/itineraries/${trip}`, 'GET', author)).body?.state).toBe('ongoing');
+  expect((await api(`/v1/trips/${trip}`, 'GET', author)).body?.state).toBe('ongoing');
 });
 
 test('a postcard posts immediately after a mid-trip plan edit — the blackout is gone', async () => {
   const afterEditActivity = await api(
-    `/v1/itineraries/${trip}/days/${dayOneId}/activities`,
+    `/v1/trips/${trip}/days/${dayOneId}/activities`,
     'POST',
     author,
     { title: 'Late dinner, decided on the road' },
@@ -229,12 +229,12 @@ test('every traveler owns their own diary — a co-traveler posts from the same 
 });
 
 test('the plan edits below actually ran — a 409 here would make every snapshot check pass vacuously', async () => {
-  const lock = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', author, {
+  const lock = await api(`/v1/trips/${trip}/edit-lock`, 'POST', author, {
     subjectType: 'activity',
     subjectId: activityId,
   });
   const renamed = await api(
-    `/v1/itineraries/${trip}/days/${dayOneId}/activities/${activityId}`,
+    `/v1/trips/${trip}/days/${dayOneId}/activities/${activityId}`,
     'PATCH',
     author,
     { title: 'Renamed after the fact' },
@@ -250,7 +250,7 @@ test('renaming the activity never rewrites a memory already posted', async () =>
 
 test('moving it to another day does not move the postcard', async () => {
   const moved = await api(
-    `/v1/itineraries/${trip}/days/${dayOneId}/activities/${activityId}/move`,
+    `/v1/trips/${trip}/days/${dayOneId}/activities/${activityId}/move`,
     'POST',
     author,
     { targetDayId: dayTwoId },
@@ -262,7 +262,7 @@ test('moving it to another day does not move the postcard', async () => {
 
 test('the activity really was deleted', async () => {
   const killed = await api(
-    `/v1/itineraries/${trip}/days/${dayTwoId}/activities/${activityId}`,
+    `/v1/trips/${trip}/days/${dayTwoId}/activities/${activityId}`,
     'DELETE',
     author,
   );
@@ -279,7 +279,7 @@ test('deleting the activity leaves the provenance pointer dangling and the postc
 test('deleting the pool photo never reaches the diary that copied it', async () => {
   const afterDelete = (await entriesOf(author))[0];
   const copied = afterDelete.photos.find((photo: { id?: string }) => photo.id !== undefined);
-  await api(`/v1/itineraries/${trip}/photo-dump/${poolPhoto.id}`, 'DELETE', coTraveler);
+  await api(`/v1/trips/${trip}/photo-dump/${poolPhoto.id}`, 'DELETE', coTraveler);
 
   const stillServes = await fetchBytes(copied.url, author);
   const poolGone = await fetchBytes(poolPhoto.url, author);
@@ -324,13 +324,13 @@ test("each traveler's My Diary counts only their own entries on the shared trip"
 
 test('a completed trip accepts a retrospective postcard', async () => {
   const retroActivity = await api(
-    `/v1/itineraries/${trip}/days/${dayTwoId}/activities`,
+    `/v1/trips/${trip}/days/${dayTwoId}/activities`,
     'POST',
     author,
     { title: 'Looking back' },
   );
   retroActivityId = retroActivity.body.id;
-  await api(`/v1/itineraries/${trip}/complete`, 'POST', author);
+  await api(`/v1/trips/${trip}/complete`, 'POST', author);
   retro = await postDiary(
     author,
     { activityId: retroActivityId, caption: 'Posted after the fact', fromDump: [] },
@@ -354,7 +354,7 @@ test('deleting an entry removes its bytes and frees the activity', async () => {
 });
 
 test('an archived trip refuses new writes while its entries stay readable', async () => {
-  await api(`/v1/itineraries/${trip}/archive`, 'POST', author);
+  await api(`/v1/trips/${trip}/archive`, 'POST', author);
   const archivedEdit = await api(`${diary}/${entry.id}`, 'PATCH', author, {
     caption: 'after the fence',
   });

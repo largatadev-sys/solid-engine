@@ -68,7 +68,7 @@ function arg(name, fallback) {
   if (ownerMe.status !== 200) throw new Error(`backend unreachable or rejecting: /v1/me → ${ownerMe.status}`);
   const ownerProfile = await precompleteProfile(api, owner.token, ownerTag);
 
-  const trip = await api('/v1/itineraries', 'POST', owner.token,
+  const trip = await api('/v1/trips', 'POST', owner.token,
     { title: arg('title', 'Seeded trip'), destination: 'Palawan' });
   if (trip.status !== 201) throw new Error(`create failed: ${trip.status} ${JSON.stringify(trip.body)}`);
 
@@ -78,7 +78,7 @@ function arg(name, fallback) {
     await api('/v1/me', 'GET', member.token);
     const memberProfile = await precompleteProfile(api, member.token, tag);
 
-    const invite = await api(`/v1/itineraries/${trip.body.id}/invitations/by-handle`, 'POST', owner.token,
+    const invite = await api(`/v1/trips/${trip.body.id}/invitations/by-handle`, 'POST', owner.token,
       { handle: memberProfile.handle });
     if (invite.status !== 201) throw new Error(`invite failed for ${tag}: ${JSON.stringify(invite.body)}`);
 
@@ -91,7 +91,7 @@ function arg(name, fallback) {
     joined.push({ tag, email: member.email, handle: memberProfile.handle });
   }
 
-  const roster = await api(`/v1/itineraries/${trip.body.id}/members`, 'GET', owner.token);
+  const roster = await api(`/v1/trips/${trip.body.id}/members`, 'GET', owner.token);
   console.log(JSON.stringify({
     tripId: trip.body.id,
     api: API,

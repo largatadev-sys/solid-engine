@@ -43,7 +43,7 @@ test.beforeAll(async () => {
 
   ownerId = (await api('/v1/me', 'GET', owner)).body.id;
 
-  created = await api('/v1/itineraries', 'POST', owner, {
+  created = await api('/v1/trips', 'POST', owner, {
     title: 'Island Hopping in El Nido',
     destination: 'Palawan',
     description: "Discover the breathtaking beauty of El Nido's lagoons.",
@@ -56,7 +56,7 @@ test.beforeAll(async () => {
   dayOne = created.body.days[0].id;
   dayTwo = created.body.days[1].id;
 
-  await api(`/v1/itineraries/${trip}/days/${dayOne}/activities`, 'POST', owner, {
+  await api(`/v1/trips/${trip}/days/${dayOne}/activities`, 'POST', owner, {
     title: 'Airport Transfer',
     timeOfDay: '14:00',
     costAmount: '500',
@@ -66,7 +66,7 @@ test.beforeAll(async () => {
     notes: 'Book the earliest slot at 8:00 AM to avoid the large tour groups!',
     externalUrl: 'https://example.test/transfer',
   });
-  await api(`/v1/itineraries/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
+  await api(`/v1/trips/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
     title: 'Sunset at Las Cabanas',
     costAmount: '300',
     costCurrency: 'PHP',
@@ -81,7 +81,7 @@ test('a never-started trip is created (lifecycle draft)', () => {
 });
 
 test('a member joins through the real invite then accept', async () => {
-  await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner, {
+  await api(`/v1/trips/${trip}/invitations/by-handle`, 'POST', owner, {
     handle: (await profileFor(MEMBER)).handle,
   });
   const inbox = await api('/v1/invitations', 'GET', member);
@@ -91,8 +91,8 @@ test('a member joins through the real invite then accept', async () => {
 });
 
 test('standouts and best time save under the header lease', async () => {
-  await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner, { subjectType: 'header' });
-  const dressed = await api(`/v1/itineraries/${trip}`, 'PATCH', owner, {
+  await api(`/v1/trips/${trip}/edit-lock`, 'POST', owner, { subjectType: 'header' });
+  const dressed = await api(`/v1/trips/${trip}`, 'PATCH', owner, {
     title: 'Island Hopping in El Nido',
     destination: 'Palawan',
     description: "Discover the breathtaking beauty of El Nido's lagoons.",
@@ -101,7 +101,7 @@ test('standouts and best time save under the header lease', async () => {
     startDate: '2027-03-04',
     endDate: '2027-03-08',
   });
-  await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner, { subjectType: 'header' });
+  await api(`/v1/trips/${trip}/edit-lock`, 'DELETE', owner, { subjectType: 'header' });
 
   expect(dressed.status).toBe(200);
   expect(dressed.body.standouts).toHaveLength(2);
@@ -115,8 +115,8 @@ test('a stranger cannot see a draft itinerary', async () => {
 });
 
 test('the owner previews before publishing; a member cannot', async () => {
-  const previewed = await api(`/v1/itineraries/${trip}/preview`, 'GET', owner);
-  const memberPreview = await api(`/v1/itineraries/${trip}/preview`, 'GET', member);
+  const previewed = await api(`/v1/trips/${trip}/preview`, 'GET', owner);
+  const memberPreview = await api(`/v1/trips/${trip}/preview`, 'GET', member);
   expect(previewed.status).toBe(200);
   expect(memberPreview.status).toBe(403);
 });
@@ -140,14 +140,14 @@ test('publishing an upcoming trip is refused — planning finished is not the tr
 });
 
 test('publishing an ongoing trip is refused too', async () => {
-  await api(`/v1/itineraries/${trip}/start`, 'POST', owner);
+  await api(`/v1/trips/${trip}/start`, 'POST', owner);
   const stillTooEarly = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
   expect(stillTooEarly.status).toBe(409);
   expect(stillTooEarly.body.code).toBe('ITINERARY_NOT_COMPLETE');
 });
 
 test("the lifecycle walks draft to completed on the traveler's act", async () => {
-  const completed = await api(`/v1/itineraries/${trip}/complete`, 'POST', owner);
+  const completed = await api(`/v1/trips/${trip}/complete`, 'POST', owner);
   expect(completed.status).toBe(200);
   expect(completed.body.state).toBe('completed');
 });
@@ -160,7 +160,7 @@ test('publish by the owner on a completed trip lands, public by default', async 
 });
 
 test('a published trip pins its lifecycle — reopen is refused', async () => {
-  const pinned = await api(`/v1/itineraries/${trip}/reopen`, 'POST', owner);
+  const pinned = await api(`/v1/trips/${trip}/reopen`, 'POST', owner);
   expect(pinned.status).toBe(409);
   expect(pinned.body.code).toBe('ILLEGAL_STATE_TRANSITION');
 });
@@ -211,7 +211,7 @@ test.describe('the published projection', () => {
 });
 
 test('a published plan is frozen — the edit is refused, naming why', async () => {
-  const frozen = await api(`/v1/itineraries/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
+  const frozen = await api(`/v1/trips/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
     title: 'Ferry',
     costAmount: '40',
     costCurrency: 'USD',
@@ -228,7 +228,7 @@ test('unpublishing leaves the trip completed — it does not un-travel it', asyn
 });
 
 test('and the plan is editable again', async () => {
-  const thawed = await api(`/v1/itineraries/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
+  const thawed = await api(`/v1/trips/${trip}/days/${dayTwo}/activities`, 'POST', owner, {
     title: 'Ferry',
     costAmount: '40',
     costCurrency: 'USD',
@@ -237,7 +237,7 @@ test('and the plan is editable again', async () => {
 });
 
 test('the one-step undo works once unpublished', async () => {
-  const reopened = await api(`/v1/itineraries/${trip}/reopen`, 'POST', owner);
+  const reopened = await api(`/v1/trips/${trip}/reopen`, 'POST', owner);
   expect(reopened.status).toBe(200);
   expect(reopened.body.state).toBe('ongoing');
 });
@@ -246,7 +246,7 @@ test.describe('a plan whose activities were saved in different currencies, repub
   let mixed: { status: number; body: any };
 
   test.beforeAll(async () => {
-    await api(`/v1/itineraries/${trip}/complete`, 'POST', owner);
+    await api(`/v1/trips/${trip}/complete`, 'POST', owner);
     await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
     mixed = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   });
@@ -337,11 +337,11 @@ test.describe('the archive fence', () => {
   let fencedPublish: { status: number; body: any };
 
   test.beforeAll(async () => {
-    await api(`/v1/itineraries/${trip}/archive`, 'POST', owner);
+    await api(`/v1/trips/${trip}/archive`, 'POST', owner);
     archivedPublic = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
-    archivedMember = await api(`/v1/itineraries/${trip}`, 'GET', member);
-    archivedMemberList = await api('/v1/itineraries?archived=true', 'GET', member);
-    archivedOwner = await api(`/v1/itineraries/${trip}`, 'GET', owner);
+    archivedMember = await api(`/v1/trips/${trip}`, 'GET', member);
+    archivedMemberList = await api('/v1/trips?archived=true', 'GET', member);
+    archivedOwner = await api(`/v1/trips/${trip}`, 'GET', owner);
     fencedPublish = await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
   });
 
@@ -368,20 +368,20 @@ test.describe('the archive fence', () => {
 });
 
 test('unarchive restores the public page and the member’s sight', async () => {
-  await api(`/v1/itineraries/${trip}/unarchive`, 'POST', owner);
+  await api(`/v1/trips/${trip}/unarchive`, 'POST', owner);
   const restoredPublic = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
-  const restoredMember = await api(`/v1/itineraries/${trip}`, 'GET', member);
+  const restoredMember = await api(`/v1/trips/${trip}`, 'GET', member);
   expect(restoredPublic.status).toBe(200);
   expect(restoredMember.status).toBe(200);
 });
 
 test('an empty itinerary publishes and projects cleanly', async () => {
-  const empty = await api('/v1/itineraries', 'POST', owner, {
+  const empty = await api('/v1/trips', 'POST', owner, {
     title: stamp('Someday, Japan'),
     destination: 'Japan',
   });
-  await api(`/v1/itineraries/${empty.body.id}/start`, 'POST', owner);
-  await api(`/v1/itineraries/${empty.body.id}/complete`, 'POST', owner);
+  await api(`/v1/trips/${empty.body.id}/start`, 'POST', owner);
+  await api(`/v1/trips/${empty.body.id}/complete`, 'POST', owner);
   const emptyPublish = await api(`/v1/itineraries/${empty.body.id}/publish`, 'POST', owner);
   const emptySeen = await api(`/v1/published-itineraries/${empty.body.id}`, 'GET', consumer);
 
@@ -393,18 +393,18 @@ test('an empty itinerary publishes and projects cleanly', async () => {
 });
 
 test('a client that cannot send the new fields does not erase them', async () => {
-  const stillADraft = await api('/v1/itineraries', 'POST', owner, {
+  const stillADraft = await api('/v1/trips', 'POST', owner, {
     title: stamp('Someday, Japan'),
     destination: 'Japan',
   });
-  await api(`/v1/itineraries/${stillADraft.body.id}/edit-lock`, 'POST', owner, { subjectType: 'header' });
-  await api(`/v1/itineraries/${stillADraft.body.id}`, 'PATCH', owner, {
+  await api(`/v1/trips/${stillADraft.body.id}/edit-lock`, 'POST', owner, { subjectType: 'header' });
+  await api(`/v1/trips/${stillADraft.body.id}`, 'PATCH', owner, {
     title: 'Someday, Japan',
     destination: 'Japan',
     standouts: ['Cherry blossoms'],
     bestTimeOfYear: 'Mar – Apr',
   });
-  const olderClient = await api(`/v1/itineraries/${stillADraft.body.id}`, 'PATCH', owner, {
+  const olderClient = await api(`/v1/trips/${stillADraft.body.id}`, 'PATCH', owner, {
     title: 'Renamed by a client that predates the fields',
     destination: 'Japan',
   });

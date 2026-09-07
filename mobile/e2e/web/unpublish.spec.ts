@@ -34,7 +34,7 @@ async function publish(): Promise<void> {
 }
 
 async function isPublished(): Promise<boolean> {
-  const read = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
+  const read = await api(`/v1/trips/${trip.id}`, 'GET', token);
   return read.body?.published === true;
 }
 

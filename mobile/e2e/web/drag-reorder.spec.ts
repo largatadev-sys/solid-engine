@@ -16,7 +16,7 @@ const THIRD = 'Night market';
 let token: string;
 
 const plannedOrder = async (trip: SeededTrip): Promise<string[]> => {
-  const read = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
+  const read = await api(`/v1/trips/${trip.id}`, 'GET', token);
   return read.body.days[0].activities.map((activity: { title: string }) => activity.title);
 };
 

@@ -21,7 +21,7 @@ let poll: PollResponse;
 
 const inADay = (): string => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-const pollsUri = (): string => `/v1/itineraries/${trip}/polls`;
+const pollsUri = (): string => `/v1/trips/${trip}/polls`;
 
 const board = async (as: string): Promise<PollBoardResponse> =>
   (await api(pollsUri(), 'GET', as)).body;
@@ -41,7 +41,7 @@ test.beforeAll(async () => {
   await profileFor(MEMBER);
   await profileFor(STRANGER);
 
-  const created = await api('/v1/itineraries', 'POST', owner, {
+  const created = await api('/v1/trips', 'POST', owner, {
     title: stamp('Polls Trip'),
     destination: 'El Nido',
     durationDays: 2,
@@ -50,7 +50,7 @@ test.beforeAll(async () => {
   trip = created.body.id;
 
   const memberHandle = (await api('/v1/me', 'GET', member)).body.handle;
-  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', owner, {
+  const invited = await api(`/v1/trips/${trip}/invitations/by-handle`, 'POST', owner, {
     handle: memberHandle,
   });
   if (invited.status !== 201) throw new SeedFailure('the invitation', invited.body);
@@ -250,7 +250,7 @@ test('a departing member takes their votes with them, and the denominator drops'
   await api(`${pollsUri()}/${shared.id}/vote`, 'PUT', owner, { optionId: shared.options[1]!.id });
 
   const memberId = (await api('/v1/me', 'GET', member)).body.id;
-  const removed = await api(`/v1/itineraries/${trip}/members/${memberId}`, 'DELETE', owner);
+  const removed = await api(`/v1/trips/${trip}/members/${memberId}`, 'DELETE', owner);
   expect(removed.status).toBe(204);
 
   const after = (await board(owner)).active.find((one) => one.id === shared.id)!;
@@ -262,26 +262,26 @@ test('a departing member takes their votes with them, and the denominator drops'
 
 
 test('an archived trip freezes poll writes for the owner and hides the board from a member', async () => {
-  const archivable = await api('/v1/itineraries', 'POST', owner, {
+  const archivable = await api('/v1/trips', 'POST', owner, {
     title: stamp('Polls archived'),
     destination: 'Coron',
     durationDays: 2,
   });
   const archivedTrip = archivable.body.id;
-  const before = await api(`/v1/itineraries/${archivedTrip}/polls`, 'POST', owner, {
+  const before = await api(`/v1/trips/${archivedTrip}/polls`, 'POST', owner, {
     question: 'Before the archive',
     options: ['A', 'B'],
     closesAt: inADay(),
   });
   expect(before.status).toBe(201);
 
-  await api(`/v1/itineraries/${archivedTrip}/archive`, 'POST', owner, {});
+  await api(`/v1/trips/${archivedTrip}/archive`, 'POST', owner, {});
 
-  const ownerReads = await api(`/v1/itineraries/${archivedTrip}/polls`, 'GET', owner);
+  const ownerReads = await api(`/v1/trips/${archivedTrip}/polls`, 'GET', owner);
   expect(ownerReads.status).toBe(200);
   expect(ownerReads.body.active).toHaveLength(1);
 
-  const ownerWrites = await api(`/v1/itineraries/${archivedTrip}/polls`, 'POST', owner, {
+  const ownerWrites = await api(`/v1/trips/${archivedTrip}/polls`, 'POST', owner, {
     question: 'After',
     options: ['A', 'B'],
     closesAt: inADay(),
@@ -289,6 +289,6 @@ test('an archived trip freezes poll writes for the owner and hides the board fro
   expect(ownerWrites.status).toBe(409);
   expect(ownerWrites.body?.code).toBe('TRIP_ARCHIVED');
 
-  const strangerReads = await api(`/v1/itineraries/${archivedTrip}/polls`, 'GET', member);
+  const strangerReads = await api(`/v1/trips/${archivedTrip}/polls`, 'GET', member);
   expect(strangerReads.status).toBe(404);
 });

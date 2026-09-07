@@ -41,7 +41,7 @@ async function seedSharedTrip(): Promise<void> {
   requesterToken = await tokenFor(REQUESTER);
   await profileFor(REQUESTER);
 
-  const link = await api(`/v1/itineraries/${trip}/join-link`, 'GET', ownerToken);
+  const link = await api(`/v1/trips/${trip}/join-link`, 'GET', ownerToken);
   if (link.status !== 200) throw new SeedFailure('the join link', link.body);
   joinToken = link.body.token;
 }
@@ -106,7 +106,7 @@ test.describe('the Travelers tab, and the audience rule proved (S4.35 AC 7, 8)',
     const memberHandle = (await api('/v1/me', 'GET', memberToken)).body.handle;
     await expect(page.getByText(memberHandle)).toBeVisible({ timeout: ARRIVAL_TIMEOUT_MS });
 
-    const removed = await api(`/v1/itineraries/${trip}/members/${memberId}`, 'DELETE', ownerToken);
+    const removed = await api(`/v1/trips/${trip}/members/${memberId}`, 'DELETE', ownerToken);
     expect(removed.status, 'the member must actually be removed').toBe(204);
 
     await expect(

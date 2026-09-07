@@ -28,7 +28,7 @@ let ownerToken: string;
 let visitorToken: string;
 
 async function linkFor(tripId: string): Promise<string> {
-  return (await api(`/v1/itineraries/${tripId}/join-link`, 'GET', ownerToken)).body.token;
+  return (await api(`/v1/trips/${tripId}/join-link`, 'GET', ownerToken)).body.token;
 }
 
 const landing = (token: string) => `/join/${token}`;
@@ -131,7 +131,7 @@ test.describe('7b → 7c · a signed-in visitor asks, in place', () => {
   });
 
   test('the owner sees the ask waiting on their tab', async () => {
-    const queue = await api(`/v1/itineraries/${trip.id}/join-requests`, 'GET', ownerToken);
+    const queue = await api(`/v1/trips/${trip.id}/join-requests`, 'GET', ownerToken);
 
     expect(queue.body.items.length).toBe(1);
   });
@@ -254,7 +254,7 @@ test.describe('7e · the dead link', () => {
   test('an archived trip is dead to the link too', async ({ page, signIn }) => {
     const trip = await seedTrip({ ownerTag: OWNER, title: stamp('join landing archived') });
     const token = await linkFor(trip.id);
-    await api(`/v1/itineraries/${trip.id}/archive`, 'POST', ownerToken, {});
+    await api(`/v1/trips/${trip.id}/archive`, 'POST', ownerToken, {});
 
     await signIn(VISITOR);
     await page.goto(landing(token));
@@ -346,7 +346,7 @@ test.describe('the hand-off lands on the build under test, and not some other on
   test('the share url the owner hands out points at the origin the suite drives', async ({
     baseURL,
   }) => {
-    const link = await api(`/v1/itineraries/${trip.id}/join-link`, 'GET', ownerToken);
+    const link = await api(`/v1/trips/${trip.id}/join-link`, 'GET', ownerToken);
 
     expect(originOf(link.body.shareUrl)).toBe(originOf(baseURL as string));
   });

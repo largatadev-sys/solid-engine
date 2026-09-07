@@ -36,7 +36,7 @@ let token: string;
 const dumpRoute = (id: string): string => `/itineraries/${id}?tab=photo-dump`;
 
 const poolOf = async (id: string, as: string = token): Promise<any[]> =>
-  (await api(`/v1/itineraries/${id}/photo-dump`, 'GET', as)).body?.items ?? [];
+  (await api(`/v1/trips/${id}/photo-dump`, 'GET', as)).body?.items ?? [];
 
 const tileCount = (page: any): Promise<number> =>
   page.evaluate(
@@ -170,7 +170,7 @@ test.describe('paging through the tab\'s own control', () => {
     paged = await seedTrip({ ownerTag: OWNER, title: stamp('Photo dump paging'), durationDays: 2 });
     const ownerToken = await tokenFor(OWNER);
     for (let index = 0; index <= SERVER_PAGE_SIZE; index += 1) {
-      await uploadPhoto(`/v1/itineraries/${paged.id}/photo-dump`, ownerToken);
+      await uploadPhoto(`/v1/trips/${paged.id}/photo-dump`, ownerToken);
     }
   });
 
@@ -201,8 +201,8 @@ test('an archived trip tells the owner the pool is read-only and hides the add t
     title: stamp('Photo dump archived'),
     durationDays: 2,
   });
-  await uploadPhoto(`/v1/itineraries/${archived.id}/photo-dump`, token);
-  await api(`/v1/itineraries/${archived.id}/archive`, 'POST', token, {});
+  await uploadPhoto(`/v1/trips/${archived.id}/photo-dump`, token);
+  await api(`/v1/trips/${archived.id}/archive`, 'POST', token, {});
 
   await page.goto(dumpRoute(archived.id));
 
@@ -221,7 +221,7 @@ test('a published trip still takes photos on the wire, though the workspace redi
   await climbTo(published, 'completed');
   await api(`/v1/itineraries/${published.id}/publish`, 'POST', token, { audience: 'public' });
 
-  const uploaded = await uploadPhoto(`/v1/itineraries/${published.id}/photo-dump`, token);
+  const uploaded = await uploadPhoto(`/v1/trips/${published.id}/photo-dump`, token);
   expect(uploaded.status).toBe(201);
   expect((await poolOf(published.id)).length).toBe(1);
 
@@ -235,7 +235,7 @@ test('a non-member sees no photos and no crash on the tab', async ({ page, signI
     title: stamp('Photo dump masked'),
     durationDays: 2,
   });
-  await uploadPhoto(`/v1/itineraries/${theirs.id}/photo-dump`, token);
+  await uploadPhoto(`/v1/trips/${theirs.id}/photo-dump`, token);
 
   await signIn(MEMBER);
   await page.goto(dumpRoute(theirs.id));
@@ -258,7 +258,7 @@ test.describe('two travelers in one pool', () => {
   });
 
   test('a member uploads into the same shared pool through the tab', async ({ page, signIn }) => {
-    await uploadPhoto(`/v1/itineraries/${shared.id}/photo-dump`, token);
+    await uploadPhoto(`/v1/trips/${shared.id}/photo-dump`, token);
 
     await signIn(MEMBER);
     await page.goto(dumpRoute(shared.id));
@@ -273,7 +273,7 @@ test.describe('two travelers in one pool', () => {
   test('a member cannot delete the owner\'s photo — a named refusal, not a mask', async () => {
     const owners = (await poolOf(shared.id))[0];
     const poaching = await api(
-      `/v1/itineraries/${shared.id}/photo-dump/${owners.id}`,
+      `/v1/trips/${shared.id}/photo-dump/${owners.id}`,
       'DELETE',
       memberToken,
     );

@@ -19,10 +19,10 @@ const ACTIVITIES = [
 ];
 
 const stateOf = async (token: string, id: string): Promise<string> =>
-  (await api(`/v1/itineraries/${id}`, 'GET', token)).body.state;
+  (await api(`/v1/trips/${id}`, 'GET', token)).body.state;
 
 const sessionHeld = async (token: string, id: string): Promise<boolean> =>
-  (await api(`/v1/itineraries/${id}`, 'GET', token)).body.beingEdited === true;
+  (await api(`/v1/trips/${id}`, 'GET', token)).body.beingEdited === true;
 
 test.describe('the trip workspace as a viewer', () => {
   let trip: SeededTrip;
@@ -232,7 +232,7 @@ test.describe('the editor, the Editing Session, and the acts', () => {
   });
 
   test('the second identity is refused the session while the first holds it', async () => {
-    const refused = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', member, {
+    const refused = await api(`/v1/trips/${trip.id}/edit-lock`, 'POST', member, {
       subjectType: 'session',
     });
     expect(refused.status).toBe(409);
@@ -306,18 +306,18 @@ test.describe('the editor, the Editing Session, and the acts', () => {
     await page.goto(`/itineraries/${trip.id}/edit-plan`);
     await expect(labelled(page, 'Day 1, collapse')).toBeVisible();
 
-    const before = (await api(`/v1/itineraries/${trip.id}`, 'GET', owner)).body.planVersion;
+    const before = (await api(`/v1/trips/${trip.id}`, 'GET', owner)).body.planVersion;
 
     await page.getByText('Add a Day').click();
     await expect(page.getByText('Day 3')).toBeVisible();
 
-    const staged = (await api(`/v1/itineraries/${trip.id}`, 'GET', owner)).body.planVersion;
+    const staged = (await api(`/v1/trips/${trip.id}`, 'GET', owner)).body.planVersion;
     expect(staged, 'the plan must not persist before Save Changes').toBe(before);
 
     await page.getByText('Save Changes').click();
     await expect
       .poll(
-        async () => (await api(`/v1/itineraries/${trip.id}`, 'GET', owner)).body.days.length,
+        async () => (await api(`/v1/trips/${trip.id}`, 'GET', owner)).body.days.length,
         { timeout: 20_000 },
       )
       .toBe(3);

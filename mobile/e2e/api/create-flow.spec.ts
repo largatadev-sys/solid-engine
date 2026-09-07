@@ -16,7 +16,7 @@ let activity: { status: number; body: any };
 
 test.beforeAll(async () => {
   token = await tokenFor(OWNER);
-  created = await api('/v1/itineraries', 'POST', token, {
+  created = await api('/v1/trips', 'POST', token, {
     title: 'Island Hopping in El Nido',
     destination: 'Palawan',
     durationDays: 5,
@@ -27,7 +27,7 @@ test.beforeAll(async () => {
   trip = created.body.id;
   day1 = created.body.days[0].id;
 
-  activity = await api(`/v1/itineraries/${trip}/days/${day1}/activities`, 'POST', token, {
+  activity = await api(`/v1/trips/${trip}/days/${day1}/activities`, 'POST', token, {
     title: 'Airport Transfer',
     timeOfDay: '14:00',
     costAmount: '500',
@@ -63,7 +63,7 @@ test('the booking price does not disturb the activity cost', () => {
 });
 
 test('a booking price with no currency is refused', async () => {
-  const refused = await api(`/v1/itineraries/${trip}/days/${day1}/activities`, 'POST', token, {
+  const refused = await api(`/v1/trips/${trip}/days/${day1}/activities`, 'POST', token, {
     title: 'X',
     bookingPriceAmount: '1800',
   });
@@ -71,29 +71,29 @@ test('a booking price with no currency is refused', async () => {
 });
 
 test('the upcoming section filter finds a finished trip', async () => {
-  const listed = await api('/v1/itineraries?category=upcoming', 'GET', token);
+  const listed = await api('/v1/trips?category=upcoming', 'GET', token);
   expect(listed.body.items.map((row: { id: string }) => row.id)).toContain(trip);
 });
 
 test('the retired word is refused, not silently understood', async () => {
-  const legacy = await api('/v1/itineraries?category=active', 'GET', token);
+  const legacy = await api('/v1/trips?category=active', 'GET', token);
   expect(legacy.status).toBe(400);
   expect(legacy.body.code).toBe('UNKNOWN_TRIP_CATEGORY');
 });
 
 test('every row carries beingEdited for the card status slot', async () => {
-  const all = await api('/v1/itineraries', 'GET', token);
+  const all = await api('/v1/trips', 'GET', token);
   expect(all.body.items.every((row: { beingEdited: unknown }) => typeof row.beingEdited === 'boolean')).toBe(true);
 });
 
 test('a held trip reports beingEdited true', async () => {
-  await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', token, {
+  await api(`/v1/trips/${trip}/edit-lock`, 'POST', token, {
     subjectType: 'day',
     subjectId: day1,
   });
-  const held = await api('/v1/itineraries', 'GET', token);
+  const held = await api('/v1/trips', 'GET', token);
   expect(held.body.items.find((row: { id: string }) => row.id === trip)?.beingEdited).toBe(true);
-  await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', token, {
+  await api(`/v1/trips/${trip}/edit-lock`, 'DELETE', token, {
     subjectType: 'day',
     subjectId: day1,
   });

@@ -29,7 +29,7 @@ let bystanderId: string;
 let trip: SeededTrip;
 
 const rosterSeenBy = async (token: string): Promise<Member[]> =>
-  (await api(`/v1/itineraries/${trip.id}/members`, 'GET', token)).body.items;
+  (await api(`/v1/trips/${trip.id}/members`, 'GET', token)).body.items;
 
 const roleOf = (roster: Member[], travelerId: string): string | undefined =>
   roster.find((row) => row.travelerId === travelerId)?.role;
@@ -38,7 +38,7 @@ const offeredOn = (roster: Member[]): string | undefined =>
   roster.find((row) => row.ownershipOffered === true)?.travelerId;
 
 const tripsOf = async (token: string): Promise<string[]> =>
-  (await api('/v1/itineraries', 'GET', token)).body.items.map((row: { id: string }) => row.id);
+  (await api('/v1/trips', 'GET', token)).body.items.map((row: { id: string }) => row.id);
 
 const idOf = async (token: string): Promise<string> => (await api('/v1/me', 'GET', token)).body.id;
 
@@ -71,20 +71,20 @@ test('a joined member sees the trip in My Trips — the S1.5 bug, fixed', async 
 });
 
 test('the founder cannot leave while owner: 409 OWNER_CANNOT_LEAVE', async () => {
-  const blocked = await api(`/v1/itineraries/${trip.id}/members/${founderId}`, 'DELETE', founder);
+  const blocked = await api(`/v1/trips/${trip.id}/members/${founderId}`, 'DELETE', founder);
   expect(blocked.status).toBe(409);
   expect(blocked.body?.code).toBe('OWNER_CANNOT_LEAVE');
 });
 
 test('a member cannot offer ownership: 403', async () => {
-  const byMember = await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', bystander, {
+  const byMember = await api(`/v1/trips/${trip.id}/ownership-offer`, 'POST', bystander, {
     travelerId: offereeId,
   });
   expect(byMember.status).toBe(403);
 });
 
 test('the founder offers ownership to the offeree: 201', async () => {
-  const offered = await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', founder, {
+  const offered = await api(`/v1/trips/${trip.id}/ownership-offer`, 'POST', founder, {
     travelerId: offereeId,
   });
   expect(offered.status).toBe(201);
@@ -95,7 +95,7 @@ test("the bystander sees the offer on the offeree's row — governance state is 
 });
 
 test('a second offer is refused: 409 OFFER_ALREADY_PENDING', async () => {
-  const second = await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', founder, {
+  const second = await api(`/v1/trips/${trip.id}/ownership-offer`, 'POST', founder, {
     travelerId: bystanderId,
   });
   expect(second.status).toBe(409);
@@ -103,12 +103,12 @@ test('a second offer is refused: 409 OFFER_ALREADY_PENDING', async () => {
 });
 
 test('a stale accept after revoke-and-reoffer is refused: 403 NOT_OFFER_TARGET, and nothing moves', async () => {
-  await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'DELETE', founder);
-  await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', founder, {
+  await api(`/v1/trips/${trip.id}/ownership-offer`, 'DELETE', founder);
+  await api(`/v1/trips/${trip.id}/ownership-offer`, 'POST', founder, {
     travelerId: bystanderId,
   });
 
-  const staleAccept = await api(`/v1/itineraries/${trip.id}/ownership-offer/accept`, 'POST', offeree);
+  const staleAccept = await api(`/v1/trips/${trip.id}/ownership-offer/accept`, 'POST', offeree);
   expect(staleAccept.status).toBe(403);
   expect(staleAccept.body?.code).toBe('NOT_OFFER_TARGET');
 
@@ -116,10 +116,10 @@ test('a stale accept after revoke-and-reoffer is refused: 403 NOT_OFFER_TARGET, 
 });
 
 test('the offeree accepts: 204', async () => {
-  await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'DELETE', founder);
-  await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', founder, { travelerId: offereeId });
+  await api(`/v1/trips/${trip.id}/ownership-offer`, 'DELETE', founder);
+  await api(`/v1/trips/${trip.id}/ownership-offer`, 'POST', founder, { travelerId: offereeId });
 
-  const accepted = await api(`/v1/itineraries/${trip.id}/ownership-offer/accept`, 'POST', offeree);
+  const accepted = await api(`/v1/trips/${trip.id}/ownership-offer/accept`, 'POST', offeree);
   expect(accepted.status).toBe(204);
 });
 
@@ -139,18 +139,18 @@ test('the offer is resolved: no pending flag left on the roster', async () => {
 });
 
 test('the former owner can no longer offer ownership: 403', async () => {
-  const exOwnerOffers = await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', founder, {
+  const exOwnerOffers = await api(`/v1/trips/${trip.id}/ownership-offer`, 'POST', founder, {
     travelerId: bystanderId,
   });
   expect(exOwnerOffers.status).toBe(403);
 });
 
 test('the new owner can: 201', async () => {
-  const newOwnerOffers = await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', offeree, {
+  const newOwnerOffers = await api(`/v1/trips/${trip.id}/ownership-offer`, 'POST', offeree, {
     travelerId: bystanderId,
   });
   expect(newOwnerOffers.status).toBe(201);
-  await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'DELETE', offeree);
+  await api(`/v1/trips/${trip.id}/ownership-offer`, 'DELETE', offeree);
 });
 
 test('the former owner still has the trip in My Trips — they are still on it', async () => {
@@ -162,7 +162,7 @@ test('the new owner has it too', async () => {
 });
 
 test('the former owner can now leave — the S1.5 dead end is open', async () => {
-  const left = await api(`/v1/itineraries/${trip.id}/members/${founderId}`, 'DELETE', founder);
+  const left = await api(`/v1/trips/${trip.id}/members/${founderId}`, 'DELETE', founder);
   expect(left.status).toBe(204);
 });
 
@@ -171,15 +171,15 @@ test('the trip drops off the former owner\'s My Trips', async () => {
 });
 
 test('the walls close behind the former owner: 404', async () => {
-  const evicted = await api(`/v1/itineraries/${trip.id}`, 'GET', founder);
+  const evicted = await api(`/v1/trips/${trip.id}`, 'GET', founder);
   expect(evicted.status).toBe(404);
 });
 
 test('a leaving member voids their pending offer — no ghost flag on the roster', async () => {
-  await api(`/v1/itineraries/${trip.id}/ownership-offer`, 'POST', offeree, {
+  await api(`/v1/trips/${trip.id}/ownership-offer`, 'POST', offeree, {
     travelerId: bystanderId,
   });
-  await api(`/v1/itineraries/${trip.id}/members/${bystanderId}`, 'DELETE', bystander);
+  await api(`/v1/trips/${trip.id}/members/${bystanderId}`, 'DELETE', bystander);
 
   expect(offeredOn(await rosterSeenBy(offeree))).toBeUndefined();
 });
@@ -191,12 +191,12 @@ test('the trip is down to its one owner', async () => {
 });
 
 test('the pool converges: the founder tag owns a fresh trip again, so repeated runs never drift', async () => {
-  const fresh = await api('/v1/itineraries', 'POST', founder, {
+  const fresh = await api('/v1/trips', 'POST', founder, {
     title: stamp('ownership transfer convergence'),
     destination: 'Palawan',
   });
   expect(fresh.status).toBe(201);
 
-  const roster = await api(`/v1/itineraries/${fresh.body.id}/members`, 'GET', founder);
+  const roster = await api(`/v1/trips/${fresh.body.id}/members`, 'GET', founder);
   expect(roleOf(roster.body.items, founderId)).toBe('owner');
 });

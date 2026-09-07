@@ -67,7 +67,7 @@ async function poolToken(tag) {
   }
 
   const token = await poolToken(TAG);
-  const created = await api('/v1/itineraries', 'POST', token, {
+  const created = await api('/v1/trips', 'POST', token, {
     title: 'deploy currency probe',
     destination: 'Probe',
   });
@@ -77,13 +77,13 @@ async function poolToken(tag) {
   }
   const id = created.body.id;
 
-  const archived = await api(`/v1/itineraries/${id}/archive`, 'POST', token);
+  const archived = await api(`/v1/trips/${id}/archive`, 'POST', token);
   if (archived.status !== 200) {
     console.log(`STALE: /archive answered ${archived.status} - S1.9 is not deployed at all`);
     process.exit(1);
   }
 
-  const refused = await api(`/v1/itineraries/${id}`, 'PATCH', token, {
+  const refused = await api(`/v1/trips/${id}`, 'PATCH', token, {
     title: 'nope',
     destination: 'Probe',
   });

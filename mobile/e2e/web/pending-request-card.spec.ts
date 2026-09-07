@@ -17,7 +17,7 @@ let ownerToken: string;
 let askerToken: string;
 
 async function joinTokenFor(tripId: string): Promise<string> {
-  const link = await api(`/v1/itineraries/${tripId}/join-link`, 'GET', ownerToken);
+  const link = await api(`/v1/trips/${tripId}/join-link`, 'GET', ownerToken);
   return link.body.token;
 }
 
@@ -108,7 +108,7 @@ test.describe('when the traveler both asked and was asked about one trip', () =>
     await askToJoin(trip.id);
 
     const handle = (await api('/v1/me', 'GET', askerToken)).body.handle;
-    const invited = await api(`/v1/itineraries/${trip.id}/invitations/by-handle`, 'POST', ownerToken, {
+    const invited = await api(`/v1/trips/${trip.id}/invitations/by-handle`, 'POST', ownerToken, {
       handle,
     });
     expect(invited.status).toBe(201);
@@ -162,7 +162,7 @@ test.describe('withdrawing, behind its confirm', () => {
   });
 
   test('takes the ask off the owner queue too', async () => {
-    const queue = await api(`/v1/itineraries/${trip.id}/join-requests`, 'GET', ownerToken);
+    const queue = await api(`/v1/trips/${trip.id}/join-requests`, 'GET', ownerToken);
 
     expect(queue.body.items ?? []).toHaveLength(0);
   });

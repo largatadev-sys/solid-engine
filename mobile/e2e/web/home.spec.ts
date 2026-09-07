@@ -89,9 +89,9 @@ async function activity(
   title: string,
   place?: string,
 ): Promise<string> {
-  const plan = (await api(`/v1/itineraries/${itineraryId}`, 'GET', token)).body;
+  const plan = (await api(`/v1/trips/${itineraryId}`, 'GET', token)).body;
   const made = await api(
-    `/v1/itineraries/${itineraryId}/days/${plan.days[day - 1].id}/activities`,
+    `/v1/trips/${itineraryId}/days/${plan.days[day - 1].id}/activities`,
     'POST',
     token,
     place === undefined ? { title } : { title, place },
@@ -835,7 +835,7 @@ test.describe('the trip line self-heals at publish', () => {
   test.describe.configure({ mode: 'serial' });
 
   test('the trip line gains its link the moment the trip publishes', async () => {
-    const completed = await api(`/v1/itineraries/${trip.id}/complete`, 'POST', authorToken, {});
+    const completed = await api(`/v1/trips/${trip.id}/complete`, 'POST', authorToken, {});
     expect(completed.status).toBe(200);
     const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', authorToken, {    });
     expect(published.status).toBe(200);

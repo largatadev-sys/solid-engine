@@ -56,13 +56,13 @@ let afterRebase: PlanShape;
 let afterEmptied: PlanShape;
 
 const planSeenBy = async (token: string): Promise<PlanShape> =>
-  (await api(`/v1/itineraries/${trip}`, 'GET', token)).body;
+  (await api(`/v1/trips/${trip}`, 'GET', token)).body;
 
 test.beforeAll(async () => {
   holder = await tokenFor(HOLDER);
   intervener = await tokenFor(INTERVENER);
 
-  const created = await api('/v1/itineraries', 'POST', holder, {
+  const created = await api('/v1/trips', 'POST', holder, {
     title: stamp('buffered editing'),
     destination: 'Palawan',
     durationDays: 2,
@@ -70,7 +70,7 @@ test.beforeAll(async () => {
   if (created.status !== 201) throw new SeedFailure('the buffered-plan trip', created.body);
   trip = created.body.id;
 
-  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', holder, {
+  const invited = await api(`/v1/trips/${trip}/invitations/by-handle`, 'POST', holder, {
     handle: (await profileFor(INTERVENER)).handle,
   });
   if (invited.status !== 201) throw new SeedFailure(`an invitation for ${INTERVENER}`, invited.body);
@@ -84,7 +84,7 @@ test('a fresh trip reports a plan version', async () => {
 });
 
 test('a per-action write still answers and bumps the version — old clients coexist', async () => {
-  const perAction = await api(`/v1/itineraries/${trip}/days`, 'POST', holder, {});
+  const perAction = await api(`/v1/trips/${trip}/days`, 'POST', holder, {});
   expect(perAction.status).toBe(201);
 
   const afterPerAction = await planSeenBy(holder);
@@ -94,7 +94,7 @@ test('a per-action write still answers and bumps the version — old clients coe
 test('the bulk save is holder-only — no session held is refused EDIT_LOCKED', async () => {
   const current = await planSeenBy(holder);
   const noSession = await api(
-    `/v1/itineraries/${trip}/plan`,
+    `/v1/trips/${trip}/plan`,
     'PUT',
     holder,
     stagedFrom(current, (days) => days.push({ id: null, title: 'No session', activities: [] })),
@@ -104,7 +104,7 @@ test('the bulk save is holder-only — no session held is refused EDIT_LOCKED', 
 });
 
 test('the holder opens the Editing Session', async () => {
-  const held = await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', holder, session());
+  const held = await api(`/v1/trips/${trip}/edit-lock`, 'POST', holder, session());
   expect(held.status).toBe(200);
   staleBase = (await planSeenBy(holder)).planVersion;
 });
@@ -112,7 +112,7 @@ test('the holder opens the Editing Session', async () => {
 test('a member who does not hold the session cannot save into it, and the refusal names the holder', async () => {
   const beforeStaging = await planSeenBy(holder);
   const intruder = await api(
-    `/v1/itineraries/${trip}/plan`,
+    `/v1/trips/${trip}/plan`,
     'PUT',
     intervener,
     stagedFrom(beforeStaging, (days) => days.push({ id: null, title: 'From t2', activities: [] })),
@@ -125,7 +125,7 @@ test('a member who does not hold the session cannot save into it, and the refusa
 test('one bulk save lands a mixed session of edits', async () => {
   const beforeStaging = await planSeenBy(holder);
   const mixed = await api(
-    `/v1/itineraries/${trip}/plan`,
+    `/v1/trips/${trip}/plan`,
     'PUT',
     holder,
     stagedFrom(beforeStaging, (days) => {
@@ -153,7 +153,7 @@ test('the staged plan lands for exactly one version bump, however many ops the b
 
 test('a stale base is refused by name rather than overwriting, and carries the version to re-base on', async () => {
   const stale = await api(
-    `/v1/itineraries/${trip}/plan`,
+    `/v1/trips/${trip}/plan`,
     'PUT',
     holder,
     stagedFrom({ ...afterMixed, planVersion: staleBase }, (days) =>
@@ -167,7 +167,7 @@ test('a stale base is refused by name rather than overwriting, and carries the v
 
 test('re-submitting against that version is the whole Save-anyway path', async () => {
   const rebased = await api(
-    `/v1/itineraries/${trip}/plan`,
+    `/v1/trips/${trip}/plan`,
     'PUT',
     holder,
     stagedFrom(afterMixed, (days) => days.push({ id: null, title: 'Saved anyway', activities: [] })),
@@ -179,7 +179,7 @@ test('re-submitting against that version is the whole Save-anyway path', async (
 });
 
 test('an activity absent from the submitted plan is deleted, days and all', async () => {
-  const emptied = await api(`/v1/itineraries/${trip}/plan`, 'PUT', holder, {
+  const emptied = await api(`/v1/trips/${trip}/plan`, 'PUT', holder, {
     basePlanVersion: afterRebase.planVersion,
     days: afterRebase.days.map((day) => ({ id: day.id, title: day.title, activities: [] })),
   });
@@ -191,7 +191,7 @@ test('an activity absent from the submitted plan is deleted, days and all', asyn
 
 test('a save is still one write even when the plan did not change', async () => {
   const noOp = await api(
-    `/v1/itineraries/${trip}/plan`,
+    `/v1/trips/${trip}/plan`,
     'PUT',
     holder,
     stagedFrom(afterEmptied, () => {}),
@@ -203,7 +203,7 @@ test('a save is still one write even when the plan did not change', async () => 
 });
 
 test('Save Changes ends by releasing the session', async () => {
-  await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', holder, session());
-  const released = await api(`/v1/itineraries/${trip}`, 'GET', holder);
+  await api(`/v1/trips/${trip}/edit-lock`, 'DELETE', holder, session());
+  const released = await api(`/v1/trips/${trip}`, 'GET', holder);
   expect(released.body.editingSession ?? null).toBeNull();
 });

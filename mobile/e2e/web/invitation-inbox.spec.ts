@@ -19,7 +19,7 @@ let inviteeHandle: string;
 let ownerHandle: string;
 
 async function inviteThem(tripId: string): Promise<string> {
-  const invited = await api(`/v1/itineraries/${tripId}/invitations/by-handle`, 'POST', ownerToken, {
+  const invited = await api(`/v1/trips/${tripId}/invitations/by-handle`, 'POST', ownerToken, {
     handle: inviteeHandle,
   });
   expect(invited.status).toBe(201);
@@ -163,7 +163,7 @@ test.describe('declining, behind its confirm', () => {
   });
 
   test('leaves the traveler off the trip', async () => {
-    const mine = await api('/v1/itineraries', 'GET', inviteeToken);
+    const mine = await api('/v1/trips', 'GET', inviteeToken);
 
     expect(mine.body.items.map((row: { id: string }) => row.id)).not.toContain(trip.id);
   });

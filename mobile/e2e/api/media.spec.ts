@@ -140,7 +140,7 @@ test.describe('the cover, and the audience ladder that governs it', () => {
   let coverUrl: string;
 
   test.beforeAll(async () => {
-    const created = await api('/v1/itineraries', 'POST', owner, {
+    const created = await api('/v1/trips', 'POST', owner, {
       title: stamp('Cover Trip'),
       destination: 'Palawan',
       durationDays: 2,
@@ -150,13 +150,13 @@ test.describe('the cover, and the audience ladder that governs it', () => {
   });
 
   test('a cover upload without the header lease is refused', async () => {
-    const noLease = await uploadBytes(`/v1/itineraries/${trip}/cover`, owner, solidJpeg());
+    const noLease = await uploadBytes(`/v1/trips/${trip}/cover`, owner, solidJpeg());
     expect(noLease.status).toBe(409);
   });
 
   test('the owner sets a cover under the header lease, and the url is ours', async () => {
-    await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner, { subjectType: 'header' });
-    const cover = await uploadBytes(`/v1/itineraries/${trip}/cover`, owner, jpegWithExif(GPS_SENTINEL));
+    await api(`/v1/trips/${trip}/edit-lock`, 'POST', owner, { subjectType: 'header' });
+    const cover = await uploadBytes(`/v1/trips/${trip}/cover`, owner, jpegWithExif(GPS_SENTINEL));
     expect(cover.status).toBe(200);
     expect(typeof cover.body.coverImageUrl).toBe('string');
     expect(cover.body.coverImageUrl.startsWith('/v1/media/')).toBe(true);
@@ -182,7 +182,7 @@ test.describe('the cover, and the audience ladder that governs it', () => {
   });
 
   test('a published trip refuses a cover change — the freeze covers media', async () => {
-    const frozen = await uploadBytes(`/v1/itineraries/${trip}/cover`, owner, solidJpeg());
+    const frozen = await uploadBytes(`/v1/trips/${trip}/cover`, owner, solidJpeg());
     expect(frozen.status).toBe(409);
   });
 
@@ -193,7 +193,7 @@ test.describe('the cover, and the audience ladder that governs it', () => {
   });
 
   test('the published projection carries the cover', async () => {
-    const projection = await api(`/v1/itineraries/${trip}/preview`, 'GET', owner);
+    const projection = await api(`/v1/trips/${trip}/preview`, 'GET', owner);
     expect(projection.body?.coverImageUrl).toBe(coverUrl);
   });
 });
@@ -203,7 +203,7 @@ test.describe('the create-flow cover, which takes a different path', () => {
   let landedUrl: string;
 
   test.beforeAll(async () => {
-    const created = await api('/v1/itineraries', 'POST', owner, {
+    const created = await api('/v1/trips', 'POST', owner, {
       title: stamp('Created With Cover'),
       destination: 'Palawan',
       durationDays: 2,
@@ -213,20 +213,20 @@ test.describe('the create-flow cover, which takes a different path', () => {
   });
 
   test('a cover straight after create is refused without the lease', async () => {
-    const noLeaseYet = await uploadBytes(`/v1/itineraries/${fresh}/cover`, owner, solidJpeg());
+    const noLeaseYet = await uploadBytes(`/v1/trips/${fresh}/cover`, owner, solidJpeg());
     expect(noLeaseYet.status).toBe(409);
   });
 
   test('taking the header lease first makes the create-flow cover land', async () => {
-    await api(`/v1/itineraries/${fresh}/edit-lock`, 'POST', owner, { subjectType: 'header' });
-    const withLease = await uploadBytes(`/v1/itineraries/${fresh}/cover`, owner, solidJpeg());
+    await api(`/v1/trips/${fresh}/edit-lock`, 'POST', owner, { subjectType: 'header' });
+    const withLease = await uploadBytes(`/v1/trips/${fresh}/cover`, owner, solidJpeg());
     expect(withLease.status).toBe(200);
     expect(typeof withLease.body.coverImageUrl).toBe('string');
     landedUrl = withLease.body.coverImageUrl;
   });
 
   test('and the preview carries it', async () => {
-    const previewed = await api(`/v1/itineraries/${fresh}/preview`, 'GET', owner);
+    const previewed = await api(`/v1/trips/${fresh}/preview`, 'GET', owner);
     expect(previewed.body?.coverImageUrl).toBe(landedUrl);
   });
 });
@@ -239,7 +239,7 @@ test.describe('activity photos and the derived gallery', () => {
   let unleased: { status: number; body: any };
 
   test.beforeAll(async () => {
-    const created = await api('/v1/itineraries', 'POST', owner, {
+    const created = await api('/v1/trips', 'POST', owner, {
       title: stamp('Photo Trip'),
       destination: 'Palawan',
       durationDays: 2,
@@ -247,14 +247,14 @@ test.describe('activity photos and the derived gallery', () => {
     if (created.status !== 201) throw new SeedFailure('the activity-photo trip', created.body);
     trip = created.body.id;
     const dayOne = created.body.days[0].id;
-    const activity = await api(`/v1/itineraries/${trip}/days/${dayOne}/activities`, 'POST', owner, {
+    const activity = await api(`/v1/trips/${trip}/days/${dayOne}/activities`, 'POST', owner, {
       title: 'Kayaking',
     });
     if (activity.status !== 201) throw new SeedFailure('the kayaking activity', activity.body);
-    photosUri = `/v1/itineraries/${trip}/days/${dayOne}/activities/${activity.body.id}/photos`;
+    photosUri = `/v1/trips/${trip}/days/${dayOne}/activities/${activity.body.id}/photos`;
 
     const noActivityLease = await uploadBytes(photosUri, owner, solidJpeg());
-    await api(`/v1/itineraries/${trip}/edit-lock`, 'POST', owner, {
+    await api(`/v1/trips/${trip}/edit-lock`, 'POST', owner, {
       subjectType: 'activity',
       subjectId: activity.body.id,
     });
@@ -290,7 +290,7 @@ test.describe('activity photos and the derived gallery', () => {
   });
 
   test('activity photos cross to the published projection — the gallery source', async () => {
-    await api(`/v1/itineraries/${trip}/edit-lock`, 'DELETE', owner);
+    await api(`/v1/trips/${trip}/edit-lock`, 'DELETE', owner);
     for (const step of ['start', 'complete', 'publish']) {
       await api(`/v1/itineraries/${trip}/${step}`, 'POST', owner);
     }

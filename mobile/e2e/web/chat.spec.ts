@@ -35,7 +35,7 @@ declare global {
 
 const chatRoute = (id: string): string => `/itineraries/${id}?tab=chat`;
 
-const messagesUri = (): string => `/v1/itineraries/${trip}/chat/messages`;
+const messagesUri = (): string => `/v1/trips/${trip}/chat/messages`;
 
 const sendViaApi = async (as: string, body: string) =>
   api(messagesUri(), 'POST', as, { body });
@@ -45,7 +45,7 @@ async function seedChatTrip(): Promise<void> {
   ownerToken = await tokenFor(OWNER);
   memberToken = await tokenFor(MEMBER);
 
-  const created = await api('/v1/itineraries', 'POST', ownerToken, {
+  const created = await api('/v1/trips', 'POST', ownerToken, {
     title: stamp('Chat Walk'),
     destination: 'El Nido',
     durationDays: 2,
@@ -54,7 +54,7 @@ async function seedChatTrip(): Promise<void> {
   trip = created.body.id;
 
   const memberHandle = (await api('/v1/me', 'GET', memberToken)).body.handle;
-  const invited = await api(`/v1/itineraries/${trip}/invitations/by-handle`, 'POST', ownerToken, {
+  const invited = await api(`/v1/trips/${trip}/invitations/by-handle`, 'POST', ownerToken, {
     handle: memberHandle,
   });
   if (invited.status !== 201) throw new SeedFailure('the invitation', invited.body);
@@ -326,7 +326,7 @@ test('Discard removes the failed bubble and leaves the composer usable', async (
 
 
 test('an archived trip renders the notice bar and no composer at all', async ({ page, signIn }) => {
-  const archived = await api(`/v1/itineraries/${trip}/archive`, 'POST', ownerToken, {});
+  const archived = await api(`/v1/trips/${trip}/archive`, 'POST', ownerToken, {});
   expect(archived.status).toBe(200);
 
   try {
@@ -339,7 +339,7 @@ test('an archived trip renders the notice bar and no composer at all', async ({ 
     await expect(labelled(page, 'Send')).toHaveCount(0);
     await expect(labelled(page, 'Message')).toHaveCount(0);
   } finally {
-    await api(`/v1/itineraries/${trip}/unarchive`, 'POST', ownerToken, {});
+    await api(`/v1/trips/${trip}/unarchive`, 'POST', ownerToken, {});
   }
 });
 
@@ -348,7 +348,7 @@ test('a fresh trip shows the empty state, exactly as the canvas words it', async
   page,
   signIn,
 }) => {
-  const created = await api('/v1/itineraries', 'POST', ownerToken, {
+  const created = await api('/v1/trips', 'POST', ownerToken, {
     title: stamp('Empty Chat'),
     destination: 'Coron',
     durationDays: 2,
@@ -365,8 +365,8 @@ test('a fresh trip shows the empty state, exactly as the canvas words it', async
 
 
 test('a published trip has no chat door, and its API send answers CHAT_CLOSED', async () => {
-  await api(`/v1/itineraries/${trip}/start`, 'POST', ownerToken, {});
-  await api(`/v1/itineraries/${trip}/complete`, 'POST', ownerToken, {});
+  await api(`/v1/trips/${trip}/start`, 'POST', ownerToken, {});
+  await api(`/v1/trips/${trip}/complete`, 'POST', ownerToken, {});
   const published = await api(`/v1/itineraries/${trip}/publish`, 'POST', ownerToken, {});
   expect(published.status).toBe(200);
 

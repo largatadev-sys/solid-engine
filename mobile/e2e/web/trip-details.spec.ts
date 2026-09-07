@@ -100,11 +100,11 @@ test.describe('the owner edits the trip-s details', () => {
 
     const token = await tokenFor(OWNER);
     await expect(async () => {
-      const settled = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
+      const settled = await api(`/v1/trips/${trip.id}`, 'GET', token);
       expect(settled.body.currency).toBe('USD');
     }).toPass({ timeout: 15_000 });
 
-    const after = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
+    const after = await api(`/v1/trips/${trip.id}`, 'GET', token);
     expect(after.body.currency).toBe('USD');
     expect(
       after.body.days.flatMap((day: { activities: Array<{ costCurrency: string | null }> }) =>
@@ -147,9 +147,9 @@ test.describe('a collaborator plans but does not rename', () => {
 
   test('is refused a details edit by the server, with the owner-act code', async () => {
     const token = await tokenFor(MEMBER);
-    await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', token);
+    await api(`/v1/trips/${trip.id}/edit-lock`, 'POST', token);
 
-    const refused = await api(`/v1/itineraries/${trip.id}`, 'PATCH', token, {
+    const refused = await api(`/v1/trips/${trip.id}`, 'PATCH', token, {
       title: 'Hijacked',
       destination: 'Boracay',
     });

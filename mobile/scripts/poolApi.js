@@ -73,7 +73,7 @@ async function allMyTrips(token) {
   let previous = null;
   for (;;) {
     const page = await api(
-      `/v1/itineraries?limit=100${cursor === undefined ? '' : `&cursor=${encodeURIComponent(cursor)}`}`,
+      `/v1/trips?limit=100${cursor === undefined ? '' : `&cursor=${encodeURIComponent(cursor)}`}`,
       'GET', token,
     );
     rows.push(...(page.body?.items ?? []));

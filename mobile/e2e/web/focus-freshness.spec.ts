@@ -48,7 +48,7 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   for (const id of seeded) {
-    await api(`/v1/itineraries/${id}/archive`, 'POST', token, {});
+    await api(`/v1/trips/${id}/archive`, 'POST', token, {});
   }
 });
 
@@ -103,7 +103,7 @@ function trackApiTraffic(page: Page): () => Promise<void> {
 }
 
 async function currentTitle(): Promise<string> {
-  const read = await api(`/v1/itineraries/${trip.id}`, 'GET', token);
+  const read = await api(`/v1/trips/${trip.id}`, 'GET', token);
   expect(read.status).toBe(200);
   return read.body.title;
 }
@@ -111,14 +111,14 @@ async function currentTitle(): Promise<string> {
 const HEADER_LEASE = { subjectType: 'header' };
 
 async function renameTheTrip(title: string): Promise<void> {
-  const lease = await api(`/v1/itineraries/${trip.id}/edit-lock`, 'POST', token, HEADER_LEASE);
+  const lease = await api(`/v1/trips/${trip.id}/edit-lock`, 'POST', token, HEADER_LEASE);
   expect([200, 201]).toContain(lease.status);
 
-  const edited = await api(`/v1/itineraries/${trip.id}`, 'PATCH', token, {
+  const edited = await api(`/v1/trips/${trip.id}`, 'PATCH', token, {
     title,
     destination: DESTINATION,
   });
-  await api(`/v1/itineraries/${trip.id}/edit-lock`, 'DELETE', token, HEADER_LEASE);
+  await api(`/v1/trips/${trip.id}/edit-lock`, 'DELETE', token, HEADER_LEASE);
 
   expect(edited.status).toBe(200);
 }
