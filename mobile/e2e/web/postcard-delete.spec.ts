@@ -5,6 +5,7 @@ import { ownerTagFor } from '../support/identities';
 import {
   SeedFailure,
   climbTo,
+  postPostcard,
   seedPlan,
   seedTrip,
   stamp,
@@ -15,14 +16,14 @@ import { labelled } from '../support/screen';
 import { DIARY_TAB_LABEL } from '../../src/profile/profileCopy';
 import { PROFILE_TAB_ROUTE } from '../../src/navigation/authRoutes';
 import {
-  DELETE_POSTCARD_LABEL,
-  EDIT_POSTCARD_LABEL,
+  ADD_TO_DIARY_ACTION,
+  CANCEL_ACTION,
+  DELETE_ACTION,
+  DELETE_DIARY_ACTION,
+  EDIT_POSTCARD_ACTION,
   POSTCARD_DELETED_TOAST,
-  POSTCARD_RESTORED_TOAST,
-  UNDO_LABEL,
-  diaryMenuLabel,
-  postcardMenuLabel,
-} from '../../src/removal/removalCopy';
+  deletePostcardTitle,
+} from '../../src/diary/memoryCopy';
 
 const AUTHOR = ownerTagFor('web/postcard-delete');
 
@@ -31,11 +32,15 @@ requireStack(AUTHOR);
 test.describe.configure({ mode: 'serial' });
 
 let token: string;
+let handle: string;
 let trip: SeededTrip;
 let tripTitle: string;
 
 const FIRST = 'Sunrise over the caldera';
 const SECOND = 'Night market noodles';
+const LOOSE = 'Posted from nowhere at all';
+
+const LOOSE_MENU = 'Postcard menu';
 
 async function postEntry(activityId: string, caption: string): Promise<void> {
   const uploaded = await uploadPhoto(`/v1/itineraries/${trip.id}/photo-dump`, token);
@@ -60,28 +65,27 @@ async function postEntry(activityId: string, caption: string): Promise<void> {
   if (posted.status !== 201) throw new SeedFailure(`the postcard "${caption}"`, posted.body);
 }
 
-async function entryCount(): Promise<number> {
-  const listed = await api(`/v1/itineraries/${trip.id}/diary/entries`, 'GET', token);
-  return (listed.body?.items ?? []).length;
+async function looseCount(): Promise<number> {
+  const sections = await api(`/v1/travelers/${handle}/diaries`, 'GET', token);
+  return (sections.body?.loosePostcards ?? []).length;
 }
 
 async function openDiaryTab(page: import('@playwright/test').Page): Promise<void> {
   await page.goto(PROFILE_TAB_ROUTE);
   await labelled(page, DIARY_TAB_LABEL).click();
-  const section = page.getByRole('button', { name: tripTitle }).last();
-  await expect(section).toBeVisible({ timeout: 20_000 });
-  await section.scrollIntoViewIfNeeded();
-  const expander = labelled(page, `Expand ${tripTitle}`);
-  if ((await expander.count()) > 0) await expander.click();
+  await expect(page.getByRole('button', { name: tripTitle }).last()).toBeVisible({
+    timeout: 20_000,
+  });
 }
 
 function deleteCalls(signal: { apiRequests: Array<{ url: string }> }): number {
-  return signal.apiRequests.filter((request) => /\/diary\/entries\/[0-9a-f-]{36}$/.test(request.url))
+  return signal.apiRequests.filter((sent) => /\/v1\/postcards\/[0-9a-f-]{36}$/.test(sent.url))
     .length;
 }
 
 test.beforeAll(async () => {
   token = await tokenFor(AUTHOR);
+  handle = (await api('/v1/me', 'GET', token)).body.handle;
   tripTitle = stamp('Postcard delete');
   trip = await seedTrip({ ownerTag: AUTHOR, title: tripTitle, durationDays: 2 });
   const activities = await seedPlan(trip, [
@@ -91,6 +95,9 @@ test.beforeAll(async () => {
   await climbTo(trip, 'ongoing');
   await postEntry(activities[0]!, FIRST);
   await postEntry(activities[1]!, SECOND);
+
+  const loose = await postPostcard('/v1/postcards', token, { caption: LOOSE });
+  if (loose.status !== 201) throw new SeedFailure(`the loose postcard "${LOOSE}"`, loose.body);
 });
 
 test.beforeEach(async ({ signIn, page }) => {
@@ -98,79 +105,56 @@ test.beforeEach(async ({ signIn, page }) => {
   await openDiaryTab(page);
 });
 
-test('the postcard carries a kebab, and it opens the house sheet with Edit and Delete', async ({
+test('a loose postcard carries the kebab, and its menu offers Edit, Add to diary and Delete', async ({
   page,
 }) => {
-  await labelled(page, postcardMenuLabel(FIRST)).click();
+  await labelled(page, LOOSE_MENU).click();
 
-  await expect(labelled(page, EDIT_POSTCARD_LABEL)).toBeVisible();
-  await expect(labelled(page, DELETE_POSTCARD_LABEL)).toBeVisible();
+  await expect(labelled(page, EDIT_POSTCARD_ACTION)).toBeVisible();
+  await expect(labelled(page, ADD_TO_DIARY_ACTION)).toBeVisible();
+  await expect(labelled(page, DELETE_ACTION)).toBeVisible();
 });
 
-test('the diary card carries its own kebab, and its menu offers no delete at all', async ({
+test('a diary section carries its own kebab, whose delete is the diary and never a postcard', async ({
   page,
 }) => {
-  await labelled(page, diaryMenuLabel(tripTitle)).click();
+  await labelled(page, `${tripTitle} menu`).click();
 
-  await expect(labelled(page, DELETE_POSTCARD_LABEL)).toHaveCount(0);
+  await expect(labelled(page, DELETE_DIARY_ACTION)).toBeVisible();
+  await expect(
+    labelled(page, ADD_TO_DIARY_ACTION),
+    'a diary is not something that gets filed into a diary',
+  ).toHaveCount(0);
 });
 
-test('deleting collapses the postcard out of the list and offers Undo', async ({ page }) => {
-  await labelled(page, postcardMenuLabel(SECOND)).click();
-  await labelled(page, DELETE_POSTCARD_LABEL).click();
+test('deleting a postcard asks first, and Cancel sends nothing at all', async ({ page, signal }) => {
+  const before = await looseCount();
 
-  await expect(page.getByText(POSTCARD_DELETED_TOAST)).toBeVisible();
-  await expect(labelled(page, UNDO_LABEL)).toBeVisible();
-  await expect(labelled(page, postcardMenuLabel(SECOND))).toHaveCount(0);
+  await labelled(page, LOOSE_MENU).click();
+  await labelled(page, DELETE_ACTION).click();
+  await expect(page.getByText(deletePostcardTitle()).last()).toBeVisible();
+  await labelled(page, CANCEL_ACTION).click();
+
+  expect(deleteCalls(signal), 'Cancel reaches no wire').toBe(0);
+  expect(await looseCount()).toBe(before);
+  await expect(labelled(page, LOOSE_MENU)).toBeVisible();
 });
 
-test('Undo restores the row in place and NO delete ever reaches the wire', async ({
-  page,
-  signal,
-}) => {
-  const before = await entryCount();
-
-  await labelled(page, postcardMenuLabel(SECOND)).click();
-  await labelled(page, DELETE_POSTCARD_LABEL).click();
-  await expect(page.getByText(POSTCARD_DELETED_TOAST)).toBeVisible();
-  await labelled(page, UNDO_LABEL).click();
-
-  await expect(page.getByText(POSTCARD_RESTORED_TOAST)).toBeVisible();
-  await expect(labelled(page, postcardMenuLabel(SECOND))).toBeVisible();
-  expect(deleteCalls(signal)).toBe(0);
-  expect(await entryCount()).toBe(before);
-});
-
-test('letting the toast expire sends exactly one delete, and the postcard is gone for good', async ({
+test('confirming takes the postcard off the tab and off the server, for good', async ({
   page,
   signal,
 }) => {
-  const before = await entryCount();
+  const before = await looseCount();
 
-  await labelled(page, postcardMenuLabel(SECOND)).click();
-  await labelled(page, DELETE_POSTCARD_LABEL).click();
-  await expect(page.getByText(POSTCARD_DELETED_TOAST)).toBeVisible();
+  await labelled(page, LOOSE_MENU).click();
+  await labelled(page, DELETE_ACTION).click();
+  await expect(page.getByText(deletePostcardTitle()).last()).toBeVisible();
+  await labelled(page, DELETE_ACTION).click();
 
-  await expect.poll(entryCount, { timeout: 20_000 }).toBe(before - 1);
-  expect(deleteCalls(signal)).toBe(1);
+  await expect(page.getByText(POSTCARD_DELETED_TOAST).locator('visible=true').last()).toBeVisible();
+  await expect.poll(looseCount, { timeout: 20_000 }).toBe(before - 1);
+  expect(deleteCalls(signal), 'exactly one delete leaves the client').toBe(1);
 
   await openDiaryTab(page);
-  await expect(labelled(page, postcardMenuLabel(SECOND))).toHaveCount(0);
-});
-
-test('deleting the last postcard collapses the diary card behind it, and undo restores both', async ({
-  page,
-}) => {
-  await expect(labelled(page, diaryMenuLabel(tripTitle))).toBeVisible();
-
-  await labelled(page, postcardMenuLabel(FIRST)).click();
-  await labelled(page, DELETE_POSTCARD_LABEL).click();
-
-  await expect(page.getByText(POSTCARD_DELETED_TOAST)).toBeVisible();
-  await expect(labelled(page, diaryMenuLabel(tripTitle))).toHaveCount(0);
-
-  await labelled(page, UNDO_LABEL).click();
-
-  await expect(labelled(page, diaryMenuLabel(tripTitle))).toBeVisible();
-  await expect(labelled(page, postcardMenuLabel(FIRST))).toBeVisible();
+  await expect(page.getByText(LOOSE)).toHaveCount(0);
 });
