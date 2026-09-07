@@ -14,7 +14,7 @@ const COMPOSER = readFileSync(
 const ENTRY_SCREEN = readFileSync(join(MOBILE_ROOT, 'src', 'diary', 'DiaryEntryScreen.tsx'), 'utf8');
 const TYPES = readFileSync(join(MOBILE_ROOT, 'src', 'types', 'api.ts'), 'utf8');
 const REPOSITORY = readFileSync(
-  join(MOBILE_ROOT, 'src', 'repositories', 'itineraryRepository.ts'),
+  join(MOBILE_ROOT, 'src', 'repositories', 'tripRepository.ts'),
   'utf8',
 );
 

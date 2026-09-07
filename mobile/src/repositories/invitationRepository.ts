@@ -37,50 +37,50 @@ export const invitationRepository = {
 
 
   async fetchMembers(itineraryId: string): Promise<Page<MemberResponse>> {
-    return apiClient.get<Page<MemberResponse>>(`/v1/itineraries/${itineraryId}/members`);
+    return apiClient.get<Page<MemberResponse>>(`/v1/trips/${itineraryId}/members`);
   },
 
 
   async fetchPendingInvitations(itineraryId: string): Promise<Page<InvitationResponse>> {
-    return apiClient.get<Page<InvitationResponse>>(`/v1/itineraries/${itineraryId}/invitations`);
+    return apiClient.get<Page<InvitationResponse>>(`/v1/trips/${itineraryId}/invitations`);
   },
 
 
   async invite(itineraryId: string, request: CreateInvitationRequest): Promise<InvitationResponse> {
-    return apiClient.post<InvitationResponse>(`/v1/itineraries/${itineraryId}/invitations`, request);
+    return apiClient.post<InvitationResponse>(`/v1/trips/${itineraryId}/invitations`, request);
   },
 
 
   async inviteByHandle(itineraryId: string, request: InviteByHandleRequest): Promise<InvitationResponse> {
     return apiClient.post<InvitationResponse>(
-      `/v1/itineraries/${itineraryId}/invitations/by-handle`,
+      `/v1/trips/${itineraryId}/invitations/by-handle`,
       request,
     );
   },
 
 
   async endMembership(itineraryId: string, travelerId: string): Promise<void> {
-    await apiClient.delete(`/v1/itineraries/${itineraryId}/members/${travelerId}`);
+    await apiClient.delete(`/v1/trips/${itineraryId}/members/${travelerId}`);
   },
 
 
 
   async offerOwnership(itineraryId: string, request: OwnershipOfferRequest): Promise<void> {
-    await apiClient.post<void>(`/v1/itineraries/${itineraryId}/ownership-offer`, request);
+    await apiClient.post<void>(`/v1/trips/${itineraryId}/ownership-offer`, request);
   },
 
 
   async revokeOwnershipOffer(itineraryId: string): Promise<void> {
-    await apiClient.delete(`/v1/itineraries/${itineraryId}/ownership-offer`);
+    await apiClient.delete(`/v1/trips/${itineraryId}/ownership-offer`);
   },
 
 
   async acceptOwnershipOffer(itineraryId: string): Promise<void> {
-    await apiClient.post<void>(`/v1/itineraries/${itineraryId}/ownership-offer/accept`, undefined);
+    await apiClient.post<void>(`/v1/trips/${itineraryId}/ownership-offer/accept`, undefined);
   },
 
 
   async declineOwnershipOffer(itineraryId: string): Promise<void> {
-    await apiClient.post<void>(`/v1/itineraries/${itineraryId}/ownership-offer/decline`, undefined);
+    await apiClient.post<void>(`/v1/trips/${itineraryId}/ownership-offer/decline`, undefined);
   },
 };

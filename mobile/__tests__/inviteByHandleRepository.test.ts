@@ -47,7 +47,7 @@ describe('inviting by handle', () => {
   it('posts the handle to the by-handle route, leaving the email route untouched', async () => {
     await invitationRepository.inviteByHandle(TRIP, { handle: 'largata_dev_t2' });
 
-    expect(apiClient.post).toHaveBeenCalledWith(`/v1/itineraries/${TRIP}/invitations/by-handle`, {
+    expect(apiClient.post).toHaveBeenCalledWith(`/v1/trips/${TRIP}/invitations/by-handle`, {
       handle: 'largata_dev_t2',
     });
   });
@@ -55,7 +55,7 @@ describe('inviting by handle', () => {
   it('still sends an email invitation the way S1.2 shipped it', async () => {
     await invitationRepository.invite(TRIP, { email: 'friend@example.com' });
 
-    expect(apiClient.post).toHaveBeenCalledWith(`/v1/itineraries/${TRIP}/invitations`, {
+    expect(apiClient.post).toHaveBeenCalledWith(`/v1/trips/${TRIP}/invitations`, {
       email: 'friend@example.com',
     });
   });

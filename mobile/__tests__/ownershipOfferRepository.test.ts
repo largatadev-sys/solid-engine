@@ -22,7 +22,7 @@ describe('offering ownership', () => {
 
     await invitationRepository.offerOwnership(TRIP, { travelerId: 'traveler-2' });
 
-    expect(apiClient.post).toHaveBeenCalledWith(`/v1/itineraries/${TRIP}/ownership-offer`, {
+    expect(apiClient.post).toHaveBeenCalledWith(`/v1/trips/${TRIP}/ownership-offer`, {
       travelerId: 'traveler-2',
     });
   });
@@ -34,7 +34,7 @@ describe('resolving an offer', () => {
 
     await invitationRepository.revokeOwnershipOffer(TRIP);
 
-    expect(apiClient.delete).toHaveBeenCalledWith(`/v1/itineraries/${TRIP}/ownership-offer`);
+    expect(apiClient.delete).toHaveBeenCalledWith(`/v1/trips/${TRIP}/ownership-offer`);
   });
 
   it('accepts with a bodyless POST — the path names the trip, the token names the caller', async () => {
@@ -43,7 +43,7 @@ describe('resolving an offer', () => {
     await invitationRepository.acceptOwnershipOffer(TRIP);
 
     expect(apiClient.post).toHaveBeenCalledWith(
-      `/v1/itineraries/${TRIP}/ownership-offer/accept`,
+      `/v1/trips/${TRIP}/ownership-offer/accept`,
       undefined,
     );
   });
@@ -54,7 +54,7 @@ describe('resolving an offer', () => {
     await invitationRepository.declineOwnershipOffer(TRIP);
 
     expect(apiClient.post).toHaveBeenCalledWith(
-      `/v1/itineraries/${TRIP}/ownership-offer/decline`,
+      `/v1/trips/${TRIP}/ownership-offer/decline`,
       undefined,
     );
   });

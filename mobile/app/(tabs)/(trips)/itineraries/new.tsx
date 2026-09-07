@@ -7,7 +7,7 @@ import { COVER_NOT_ATTACHED } from '../../../../src/media/photoMessages';
 import { pickPhoto } from '../../../../src/media/pickPhoto';
 import type { PickedPhoto } from '../../../../src/media/pickedPhoto';
 import { forgetCoverPreview, rememberCoverPreview } from '../../../../src/media/coverInFlight';
-import { itineraryRepository } from '../../../../src/repositories/itineraryRepository';
+import { tripRepository } from '../../../../src/repositories/tripRepository';
 import { TripForm } from '../../../../src/itineraries/TripForm';
 import {
   createRequestFrom,
@@ -55,9 +55,9 @@ export default function NewItineraryScreen() {
   async function attachChosenCover(itineraryId: string) {
     if (chosenCover === null) return;
     try {
-      await itineraryRepository.acquireEditLock(itineraryId, { subjectType: 'header' });
-      const withCover = await itineraryRepository.uploadCover(itineraryId, chosenCover);
-      await itineraryRepository.releaseEditLock(itineraryId, { subjectType: 'header' });
+      await tripRepository.acquireEditLock(itineraryId, { subjectType: 'header' });
+      const withCover = await tripRepository.uploadCover(itineraryId, chosenCover);
+      await tripRepository.releaseEditLock(itineraryId, { subjectType: 'header' });
       await onItineraryUpdated(client, withCover);
       await invalidateShareLink(client, itineraryId);
     } catch {

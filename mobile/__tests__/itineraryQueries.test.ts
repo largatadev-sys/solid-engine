@@ -14,8 +14,8 @@ import type { ItineraryResponse, Page } from '../src/types/api';
 
 
 
-jest.mock('../src/repositories/itineraryRepository', () => ({
-  itineraryRepository: {
+jest.mock('../src/repositories/tripRepository', () => ({
+  tripRepository: {
     fetchMine: jest.fn(),
     fetchOne: jest.fn(),
     create: jest.fn(),
@@ -26,8 +26,8 @@ jest.mock('../src/repositories/itineraryRepository', () => ({
   },
 }));
 
-const { itineraryRepository } = jest.requireMock('../src/repositories/itineraryRepository') as {
-  itineraryRepository: {
+const { tripRepository } = jest.requireMock('../src/repositories/tripRepository') as {
+  tripRepository: {
     fetchMine: jest.Mock;
     fetchOne: jest.Mock;
     create: jest.Mock;
@@ -69,23 +69,23 @@ beforeEach(() => {
 
 describe('the list', () => {
   it('asks for the first page with no cursor', async () => {
-    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('1', 'Lisbon')] });
+    tripRepository.fetchMine.mockResolvedValue({ items: [trip('1', 'Lisbon')] });
 
     const data = await freshClient().fetchInfiniteQuery(myItinerariesOptions);
 
-    expect(itineraryRepository.fetchMine).toHaveBeenCalledWith(undefined, false, undefined);
+    expect(tripRepository.fetchMine).toHaveBeenCalledWith(undefined, false, undefined);
     expect(data.pages[0]?.items[0]?.title).toBe('Lisbon');
   });
 
   it('threads the server-s cursor into the next page, untouched', async () => {
-    itineraryRepository.fetchMine
+    tripRepository.fetchMine
       .mockResolvedValueOnce({ items: [trip('2', 'second')], nextCursor: 'opaque-cursor' })
       .mockResolvedValueOnce({ items: [trip('1', 'first')] });
 
     const data = await freshClient().fetchInfiniteQuery({ ...myItinerariesOptions, pages: 2 });
 
-    expect(itineraryRepository.fetchMine).toHaveBeenNthCalledWith(1, undefined, false, undefined);
-    expect(itineraryRepository.fetchMine).toHaveBeenNthCalledWith(2, 'opaque-cursor', false, undefined);
+    expect(tripRepository.fetchMine).toHaveBeenNthCalledWith(1, undefined, false, undefined);
+    expect(tripRepository.fetchMine).toHaveBeenNthCalledWith(2, 'opaque-cursor', false, undefined);
     expect(data.pages).toHaveLength(2);
   });
 
@@ -100,17 +100,17 @@ describe('the list', () => {
 
 describe('the archived view (S1.9)', () => {
   it('asks the repository for the archived half', async () => {
-    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('1', 'Old Lisbon')] });
+    tripRepository.fetchMine.mockResolvedValue({ items: [trip('1', 'Old Lisbon')] });
 
     await freshClient().fetchInfiniteQuery(archivedItinerariesOptions);
 
-    expect(itineraryRepository.fetchMine).toHaveBeenCalledWith(undefined, true);
+    expect(tripRepository.fetchMine).toHaveBeenCalledWith(undefined, true);
   });
 
 
   it('keeps the two lists in separate cache entries', async () => {
     const client = freshClient();
-    itineraryRepository.fetchMine
+    tripRepository.fetchMine
       .mockResolvedValueOnce({ items: [trip('live', 'A live trip')] })
       .mockResolvedValueOnce({ items: [trip('gone', 'An archived trip')] });
 
@@ -127,7 +127,7 @@ describe('the archived view (S1.9)', () => {
 
   it('invalidates both views when a trip is archived', async () => {
     const client = freshClient();
-    itineraryRepository.fetchMine.mockResolvedValue({ items: [] });
+    tripRepository.fetchMine.mockResolvedValue({ items: [] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
     await client.fetchInfiniteQuery(archivedItinerariesOptions);
 
@@ -141,7 +141,7 @@ describe('the archived view (S1.9)', () => {
 describe('one itinerary', () => {
   it('is seeded from the list-s cache — the point of the store', async () => {
     const client = freshClient();
-    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('abc', 'Lisbon')] });
+    tripRepository.fetchMine.mockResolvedValue({ items: [trip('abc', 'Lisbon')] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
 
     expect(findInListCache(client, 'abc')?.title).toBe('Lisbon');
@@ -154,11 +154,11 @@ describe('one itinerary', () => {
 
   it('fetches when the cache has never seen the trip', async () => {
     const client = freshClient();
-    itineraryRepository.fetchOne.mockResolvedValue(trip('abc', 'Kyoto'));
+    tripRepository.fetchOne.mockResolvedValue(trip('abc', 'Kyoto'));
 
     const itinerary = await client.fetchQuery(itineraryOptions('abc', client));
 
-    expect(itineraryRepository.fetchOne).toHaveBeenCalledWith('abc');
+    expect(tripRepository.fetchOne).toHaveBeenCalledWith('abc');
     expect(itinerary.title).toBe('Kyoto');
   });
 
@@ -166,19 +166,19 @@ describe('one itinerary', () => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
     });
-    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('abc', 'Osaka')] });
+    tripRepository.fetchMine.mockResolvedValue({ items: [trip('abc', 'Osaka')] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
-    itineraryRepository.fetchOne.mockResolvedValue({ ...trip('abc', 'Osaka'), archived: true });
+    tripRepository.fetchOne.mockResolvedValue({ ...trip('abc', 'Osaka'), archived: true });
 
     const detail = await client.fetchQuery(itineraryOptions('abc', client));
 
-    expect(itineraryRepository.fetchOne).toHaveBeenCalledWith('abc');
+    expect(tripRepository.fetchOne).toHaveBeenCalledWith('abc');
     expect(detail.archived).toBe(true);
   });
 
   it('finds a trip on any page of the cached list, not just the first', async () => {
     const client = freshClient();
-    itineraryRepository.fetchMine
+    tripRepository.fetchMine
       .mockResolvedValueOnce({ items: [trip('1', 'page one')], nextCursor: 'c' })
       .mockResolvedValueOnce({ items: [trip('2', 'page two')] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
@@ -191,7 +191,7 @@ describe('one itinerary', () => {
 describe('after creating', () => {
   it('marks the list stale so a new trip cannot be missing from it', async () => {
     const client = freshClient();
-    itineraryRepository.fetchMine.mockResolvedValue({ items: [] });
+    tripRepository.fetchMine.mockResolvedValue({ items: [] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
     expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(false);
 
@@ -208,14 +208,14 @@ describe('after creating', () => {
     expect(client.getQueryData(itineraryKeys.one('new'))).toEqual(
       expect.objectContaining({ title: 'Oslo' }),
     );
-    expect(itineraryRepository.fetchOne).not.toHaveBeenCalled();
+    expect(tripRepository.fetchOne).not.toHaveBeenCalled();
   });
 });
 
 describe('after a field edit (S1.3, ticket 04)', () => {
   it('seeds the detail cache from the response and invalidates the list (title may have changed)', async () => {
     const client = freshClient();
-    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('trip-1', 'Old name')] });
+    tripRepository.fetchMine.mockResolvedValue({ items: [trip('trip-1', 'Old name')] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
     expect(client.getQueryState(itineraryKeys.list())?.isInvalidated).toBe(false);
 
@@ -231,7 +231,7 @@ describe('after a field edit (S1.3, ticket 04)', () => {
 describe('after a day changes', () => {
   it('marks the single trip stale so the embedded plan refetches (S1.3)', async () => {
     const client = freshClient();
-    itineraryRepository.fetchOne.mockResolvedValue(trip('trip-1', 'Palawan'));
+    tripRepository.fetchOne.mockResolvedValue(trip('trip-1', 'Palawan'));
     await client.fetchQuery(itineraryOptions('trip-1', client));
     expect(client.getQueryState(itineraryKeys.one('trip-1'))?.isInvalidated).toBe(false);
 
@@ -242,7 +242,7 @@ describe('after a day changes', () => {
 
   it('leaves the list cache untouched — a day change does not alter the trip card', async () => {
     const client = freshClient();
-    itineraryRepository.fetchMine.mockResolvedValue({ items: [trip('trip-1', 'Palawan')] });
+    tripRepository.fetchMine.mockResolvedValue({ items: [trip('trip-1', 'Palawan')] });
     await client.fetchInfiniteQuery(myItinerariesOptions);
 
     await onPlanChanged(client, 'trip-1');

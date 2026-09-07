@@ -5,7 +5,7 @@ import { colors, spacing, typography } from '../theme';
 
 
 export function itineraryLoadMessage(error: Error, fallbackTitle: string): { title: string; body: string } {
-  if (error instanceof ApiError && error.code === 'ITINERARY_NOT_FOUND') {
+  if (error instanceof ApiError && (error.code === 'ITINERARY_NOT_FOUND' || error.code === 'TRIP_NOT_FOUND')) {
     return missingItineraryMessage;
   }
   return { title: fallbackTitle, body: error.message };

@@ -1,4 +1,4 @@
-import { itineraryRepository } from '../src/repositories/itineraryRepository';
+import { tripRepository } from '../src/repositories/tripRepository';
 
 
 
@@ -36,51 +36,51 @@ describe('reading the list', () => {
   it('asks for the first page with no cursor at all', async () => {
     apiClient.get.mockResolvedValue({ items: [] });
 
-    await itineraryRepository.fetchMine();
+    await tripRepository.fetchMine();
 
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries');
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips');
   });
 
   it('passes a cursor back exactly as it was handed one', async () => {
     apiClient.get.mockResolvedValue({ items: [] });
 
-    await itineraryRepository.fetchMine('MDE5-abc');
+    await tripRepository.fetchMine('MDE5-abc');
 
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?cursor=MDE5-abc');
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips?cursor=MDE5-abc');
   });
 
   it('escapes a cursor rather than trusting its characters', async () => {
     apiClient.get.mockResolvedValue({ items: [] });
 
-    await itineraryRepository.fetchMine('a+b/c=');
+    await tripRepository.fetchMine('a+b/c=');
 
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?cursor=a%2Bb%2Fc%3D');
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips?cursor=a%2Bb%2Fc%3D');
   });
 
   it('asks for the archived view only when asked to (S1.9)', async () => {
     apiClient.get.mockResolvedValue({ items: [] });
 
-    await itineraryRepository.fetchMine(undefined, true);
+    await tripRepository.fetchMine(undefined, true);
 
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?archived=true');
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips?archived=true');
   });
 
   it('leaves the default list’s URL byte-identical to the pre-S1.9 one', async () => {
     apiClient.get.mockResolvedValue({ items: [] });
 
-    await itineraryRepository.fetchMine(undefined, false);
-    await itineraryRepository.fetchMine('MDE5-abc', false);
+    await tripRepository.fetchMine(undefined, false);
+    await tripRepository.fetchMine('MDE5-abc', false);
 
-    expect(apiClient.get).toHaveBeenNthCalledWith(1, '/v1/itineraries');
-    expect(apiClient.get).toHaveBeenNthCalledWith(2, '/v1/itineraries?cursor=MDE5-abc');
+    expect(apiClient.get).toHaveBeenNthCalledWith(1, '/v1/trips');
+    expect(apiClient.get).toHaveBeenNthCalledWith(2, '/v1/trips?cursor=MDE5-abc');
   });
 
   it('threads a cursor through the archived view too', async () => {
     apiClient.get.mockResolvedValue({ items: [] });
 
-    await itineraryRepository.fetchMine('MDE5-abc', true);
+    await tripRepository.fetchMine('MDE5-abc', true);
 
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries?cursor=MDE5-abc&archived=true');
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips?cursor=MDE5-abc&archived=true');
   });
 });
 
@@ -89,9 +89,9 @@ describe('unarchiving (S1.9 — the archive control itself was removed from the 
   it('unarchives the same way', async () => {
     apiClient.post.mockResolvedValue({ id: 'abc', archived: false });
 
-    await itineraryRepository.unarchiveTrip('abc');
+    await tripRepository.unarchiveTrip('abc');
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/unarchive', undefined);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/abc/unarchive', undefined);
   });
 });
 
@@ -99,17 +99,17 @@ describe('publishing (S4.1)', () => {
   it('publishes with no audience, because there is no longer a choice to send (S4.40)', async () => {
     apiClient.post.mockResolvedValue({ id: 'abc', status: 'public' });
 
-    await itineraryRepository.publishTrip('abc');
+    await tripRepository.publishTrip('abc');
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/publish', undefined);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/abc/publish', undefined);
   });
 
   it('unpublishes symmetrically, on the same itinerary id', async () => {
     apiClient.post.mockResolvedValue({ id: 'abc', status: 'draft' });
 
-    await itineraryRepository.unpublishTrip('abc');
+    await tripRepository.unpublishTrip('abc');
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/unpublish', undefined);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/abc/unpublish', undefined);
   });
 });
 
@@ -117,27 +117,27 @@ describe('reading one and creating', () => {
   it('fetches a single itinerary by id', async () => {
     apiClient.get.mockResolvedValue({ id: 'abc' });
 
-    await itineraryRepository.fetchOne('abc');
+    await tripRepository.fetchOne('abc');
 
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries/abc');
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips/abc');
   });
 
   it('posts the create request as the API contract spells it', async () => {
     apiClient.post.mockResolvedValue({ id: 'abc' });
     const request = { title: 'Lisbon', destination: 'Lisbon' };
 
-    await itineraryRepository.create(request);
+    await tripRepository.create(request);
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries', request);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips', request);
   });
 
   it('edits the fields by PATCHing the itinerary (S1.3, ticket 04)', async () => {
     apiClient.patch.mockResolvedValue({ id: 'abc' });
     const request = { title: 'Renamed', destination: 'Palawan', startDate: '2027-01-10' };
 
-    await itineraryRepository.update('abc', request);
+    await tripRepository.update('abc', request);
 
-    expect(apiClient.patch).toHaveBeenCalledWith('/v1/itineraries/abc', request);
+    expect(apiClient.patch).toHaveBeenCalledWith('/v1/trips/abc', request);
   });
 });
 
@@ -146,25 +146,25 @@ describe('the day operations (S1.3)', () => {
   it('appends a day under the itinerary, itinerary-addressed (no workspace id on the wire)', async () => {
     apiClient.post.mockResolvedValue({ id: 'day-1' });
 
-    await itineraryRepository.appendDay('trip-1', { title: 'Arrival' });
+    await tripRepository.appendDay('trip-1', { title: 'Arrival' });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/days', { title: 'Arrival' });
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/trip-1/days', { title: 'Arrival' });
   });
 
   it('renames a day by patching it under its itinerary', async () => {
     apiClient.patch.mockResolvedValue({ id: 'day-1' });
 
-    await itineraryRepository.renameDay('trip-1', 'day-1', { title: 'Arrival Day' });
+    await tripRepository.renameDay('trip-1', 'day-1', { title: 'Arrival Day' });
 
-    expect(apiClient.patch).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1', { title: 'Arrival Day' });
+    expect(apiClient.patch).toHaveBeenCalledWith('/v1/trips/trip-1/days/day-1', { title: 'Arrival Day' });
   });
 
   it('deletes a day by id under its itinerary', async () => {
     apiClient.delete.mockResolvedValue(undefined);
 
-    await itineraryRepository.deleteDay('trip-1', 'day-1');
+    await tripRepository.deleteDay('trip-1', 'day-1');
 
-    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1');
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/trips/trip-1/days/day-1');
   });
 });
 
@@ -174,25 +174,25 @@ describe('the activity operations (S1.3, ticket 02)', () => {
   it('creates an activity under its day, itinerary- and day-addressed', async () => {
     apiClient.post.mockResolvedValue({ id: 'a-1' });
 
-    await itineraryRepository.createActivity('trip-1', 'day-1', request);
+    await tripRepository.createActivity('trip-1', 'day-1', request);
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities', request);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/trip-1/days/day-1/activities', request);
   });
 
   it('edits an activity by patching it under its day', async () => {
     apiClient.patch.mockResolvedValue({ id: 'a-1' });
 
-    await itineraryRepository.editActivity('trip-1', 'day-1', 'a-1', request);
+    await tripRepository.editActivity('trip-1', 'day-1', 'a-1', request);
 
-    expect(apiClient.patch).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/a-1', request);
+    expect(apiClient.patch).toHaveBeenCalledWith('/v1/trips/trip-1/days/day-1/activities/a-1', request);
   });
 
   it('deletes an activity by id under its day', async () => {
     apiClient.delete.mockResolvedValue(undefined);
 
-    await itineraryRepository.deleteActivity('trip-1', 'day-1', 'a-1');
+    await tripRepository.deleteActivity('trip-1', 'day-1', 'a-1');
 
-    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/a-1');
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/trips/trip-1/days/day-1/activities/a-1');
   });
 });
 
@@ -200,12 +200,12 @@ describe('reorder and move (S1.3, ticket 03)', () => {
   it('reorders a day by PUTting the whole ordered list', async () => {
     apiClient.put.mockResolvedValue(undefined);
 
-    await itineraryRepository.reorderActivities('trip-1', 'day-1', {
+    await tripRepository.reorderActivities('trip-1', 'day-1', {
       activityIds: ['c', 'a', 'b'],
       expectedActivityIds: ['a', 'b', 'c'],
     });
 
-    expect(apiClient.put).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/order', {
+    expect(apiClient.put).toHaveBeenCalledWith('/v1/trips/trip-1/days/day-1/activities/order', {
       activityIds: ['c', 'a', 'b'],
       expectedActivityIds: ['a', 'b', 'c'],
     });
@@ -214,9 +214,9 @@ describe('reorder and move (S1.3, ticket 03)', () => {
   it('moves an activity to another day', async () => {
     apiClient.post.mockResolvedValue({ id: 'a-1' });
 
-    await itineraryRepository.moveActivity('trip-1', 'day-1', 'a-1', { targetDayId: 'day-2' });
+    await tripRepository.moveActivity('trip-1', 'day-1', 'a-1', { targetDayId: 'day-2' });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/days/day-1/activities/a-1/move', {
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/trip-1/days/day-1/activities/a-1/move', {
       targetDayId: 'day-2',
     });
   });
@@ -232,9 +232,9 @@ describe('edit lease (S1.4 / ADR-014 as amended at S4.9 — every call names its
       expiresAt: '2026-07-24T10:03:00Z',
     });
 
-    await itineraryRepository.acquireEditLock('trip-1', { subjectType: 'header' });
+    await tripRepository.acquireEditLock('trip-1', { subjectType: 'header' });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', {
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/trip-1/edit-lock', {
       subjectType: 'header',
     });
   });
@@ -248,9 +248,9 @@ describe('edit lease (S1.4 / ADR-014 as amended at S4.9 — every call names its
       expiresAt: '2026-07-24T10:03:00Z',
     });
 
-    await itineraryRepository.acquireEditLock('trip-1', { subjectType: 'activity', subjectId: 'a-1' });
+    await tripRepository.acquireEditLock('trip-1', { subjectType: 'activity', subjectId: 'a-1' });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', {
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/trip-1/edit-lock', {
       subjectType: 'activity',
       subjectId: 'a-1',
     });
@@ -265,9 +265,9 @@ describe('edit lease (S1.4 / ADR-014 as amended at S4.9 — every call names its
       expiresAt: '2026-07-24T10:04:00Z',
     });
 
-    await itineraryRepository.renewEditLock('trip-1', { subjectType: 'day', subjectId: 'day-1' });
+    await tripRepository.renewEditLock('trip-1', { subjectType: 'day', subjectId: 'day-1' });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock/renew', {
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/trip-1/edit-lock/renew', {
       subjectType: 'day',
       subjectId: 'day-1',
     });
@@ -276,9 +276,9 @@ describe('edit lease (S1.4 / ADR-014 as amended at S4.9 — every call names its
   it('releases with a DELETE carrying the subject — a release must not free somebody else', async () => {
     apiClient.delete.mockResolvedValue(undefined);
 
-    await itineraryRepository.releaseEditLock('trip-1', { subjectType: 'activity', subjectId: 'a-1' });
+    await tripRepository.releaseEditLock('trip-1', { subjectType: 'activity', subjectId: 'a-1' });
 
-    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/edit-lock', {
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/trips/trip-1/edit-lock', {
       subjectType: 'activity',
       subjectId: 'a-1',
     });
@@ -290,32 +290,32 @@ describe('the photo dump (S3.4)', () => {
   it('asks for the first page of the pool with no cursor at all', async () => {
     apiClient.get.mockResolvedValue({ items: [] });
 
-    await itineraryRepository.photoDump('trip-1');
+    await tripRepository.photoDump('trip-1');
 
-    expect(apiClient.get).toHaveBeenCalledWith('/v1/itineraries/trip-1/photo-dump');
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/trips/trip-1/photo-dump');
   });
 
   it('encodes the cursor it was handed, since base64url can carry padding', async () => {
     apiClient.get.mockResolvedValue({ items: [] });
 
-    await itineraryRepository.photoDump('trip-1', 'MDE5-abc=');
+    await tripRepository.photoDump('trip-1', 'MDE5-abc=');
 
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/v1/itineraries/trip-1/photo-dump?cursor=MDE5-abc%3D',
+      '/v1/trips/trip-1/photo-dump?cursor=MDE5-abc%3D',
     );
   });
 
   it('uploads one photo per request as multipart, never as JSON', async () => {
     apiClient.upload.mockResolvedValue({ id: 'p1' });
 
-    await itineraryRepository.addPhotoDumpEntry('trip-1', {
+    await tripRepository.addPhotoDumpEntry('trip-1', {
       uri: 'file:///tmp/a.jpg',
       name: 'a.jpg',
       mimeType: 'image/jpeg',
     });
 
     expect(apiClient.upload).toHaveBeenCalledWith(
-      '/v1/itineraries/trip-1/photo-dump',
+      '/v1/trips/trip-1/photo-dump',
       'the-multipart-body',
     );
     expect(apiClient.post).not.toHaveBeenCalled();
@@ -324,8 +324,8 @@ describe('the photo dump (S3.4)', () => {
   it('deletes a photo by id under the trip that owns the pool', async () => {
     apiClient.delete.mockResolvedValue(undefined);
 
-    await itineraryRepository.removePhotoDumpEntry('trip-1', 'p1');
+    await tripRepository.removePhotoDumpEntry('trip-1', 'p1');
 
-    expect(apiClient.delete).toHaveBeenCalledWith('/v1/itineraries/trip-1/photo-dump/p1');
+    expect(apiClient.delete).toHaveBeenCalledWith('/v1/trips/trip-1/photo-dump/p1');
   });
 });
