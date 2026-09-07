@@ -12,6 +12,8 @@ const STILL_ON_THE_OLD_ROOT: Record<string, string[]> = {
   'diaryRepository.ts': ['the diary entries are content and move with the itinerary story'],
   'tripRepository.ts': [
     'forking answers from the old package and has no twin until the itinerary story',
+    'publishing and unpublishing stay on the act the shipped app already calls, so this story'
+      + ' changes no behaviour a traveler can reach; the itinerary story moves them with the readers',
   ],
 };
 
@@ -38,16 +40,21 @@ describe('the client speaks the trip grammar (CM-3)', () => {
   );
 
   it('the repositories still on the old root name only the routes that have no twin', () => {
-    expect(linesNamingTheOldRoot('tripRepository.ts')).toHaveLength(1);
-    expect(linesNamingTheOldRoot('tripRepository.ts')[0]).toContain('/fork');
+    const lines = linesNamingTheOldRoot('tripRepository.ts');
+
+    expect(lines).toHaveLength(3);
+    expect(lines.filter((line) => line.includes('/fork'))).toHaveLength(1);
+    expect(lines.filter((line) => line.includes('/publish'))).toHaveLength(1);
+    expect(lines.filter((line) => line.includes('/unpublish'))).toHaveLength(1);
   });
 
-  it('publishing goes through the itinerary module, which answers the object', () => {
+  it('publishing stays on the act the shipped app already calls, so no behaviour moves', () => {
     const source = readFileSync(join(REPOSITORIES, 'tripRepository.ts'), 'utf8');
 
-    expect(source).toContain('`/v1/trips/${id}/publish`');
-    expect(source).toContain('`/v1/trips/${id}/unpublish`');
-    expect(source).not.toContain('`/v1/itineraries/${id}/publish`');
+    expect(source).toContain('`/v1/itineraries/${id}/publish`');
+    expect(source).toContain('`/v1/itineraries/${id}/unpublish`');
+    expect(source).not.toContain('`/v1/trips/${id}/publish`');
+    expect(source).not.toContain('`/v1/trips/${id}/unpublish`');
   });
 
   it('the published page still reads the old projection until the itinerary story', () => {

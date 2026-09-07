@@ -297,14 +297,6 @@ export type PublishedItineraryResponse = {
 };
 
 
-export type ItineraryObjectResponse = {
-  id: string;
-  tripId: string;
-  publishedAt: string;
-  plan: unknown;
-};
-
-
 export type CreateItineraryRequest = {
   title: string;
   destination: string;
