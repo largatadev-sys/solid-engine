@@ -169,7 +169,7 @@ class DiaryContractIT extends PostgresTestBase {
 
 
     @Test
-    void editingTheDatesNeitherCreatesNorDeletesADay() {
+    void narrowingTheDatesPastADayIsRefusedRatherThanStrandingIt() {
         String author = rig.travelerWithHandle(handle());
         String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);
         addDay(author, diary, LocalDate.of(2026, 3, 19), "Coron");
@@ -181,16 +181,96 @@ class DiaryContractIT extends PostgresTestBase {
                 .body(memoryBody("Palawan, shortened", "Palawan", START, LocalDate.of(2026, 3, 16)))
                 .exchange()
                 .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("DIARY_RANGE_STRANDS_A_DAY");
+
+        rest.get()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .exchange()
+                .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("$.title")
-                .isEqualTo("Palawan, shortened")
                 .jsonPath("$.endDate")
-                .isEqualTo("2026-03-16")
+                .isEqualTo("2026-03-19")
                 .jsonPath("$.days.length()")
-                .isEqualTo(1)
+                .isEqualTo(1);
+    }
+
+
+    @Test
+    void movingTheStartLaterRenumbersToo_soTheOrdinalsCannotCollide() {
+        String author = rig.travelerWithHandle(handle());
+        String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);
+        addDay(author, diary, LocalDate.of(2026, 3, 17), "Sintra");
+
+        rest.patch()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(memoryBody("Palawan by boat", "Palawan", LocalDate.of(2026, 3, 16), END))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.days[0].ordinal")
+                .isEqualTo(2);
+
+        addDay(author, diary, LocalDate.of(2026, 3, 18), "Coron");
+
+        rest.get()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.days[0].ordinal")
+                .isEqualTo(2)
+                .jsonPath("$.days[1].ordinal")
+                .isEqualTo(3);
+    }
+
+    @Test
+    void movingTheStartEarlierRenumbersTheDaysAlreadyThere() {
+        String author = rig.travelerWithHandle(handle());
+        String diary = createMemory(author, "Palawan by boat", "Palawan", START, END);
+        addDay(author, diary, LocalDate.of(2026, 3, 15), "Coron");
+        addDay(author, diary, LocalDate.of(2026, 3, 17), "Sintra");
+
+        rest.patch()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(memoryBody("Palawan by boat", "Palawan", LocalDate.of(2026, 3, 13), END))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
                 .jsonPath("$.days[0].date")
-                .isEqualTo("2026-03-19");
+                .isEqualTo("2026-03-15")
+                .jsonPath("$.days[0].ordinal")
+                .isEqualTo(3)
+                .jsonPath("$.days[1].date")
+                .isEqualTo("2026-03-17")
+                .jsonPath("$.days[1].ordinal")
+                .isEqualTo(5);
+
+        addDay(author, diary, LocalDate.of(2026, 3, 13), "Early");
+
+        rest.get()
+                .uri("/v1/diaries/" + diary)
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(author))
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.days[0].date")
+                .isEqualTo("2026-03-13")
+                .jsonPath("$.days[0].ordinal")
+                .isEqualTo(1);
     }
 
 

@@ -46,6 +46,13 @@ export function isEdgeOf(range: DateRange, day: string): boolean {
 }
 
 
+export function isOutsideBounds(day: string, bounds: DateRange | undefined): boolean {
+  if (bounds === undefined || bounds.start === null || bounds.end === null) return false;
+
+  return day < bounds.start || day > bounds.end;
+}
+
+
 export function isInTheFuture(day: string, today: string): boolean {
   return day > today;
 }

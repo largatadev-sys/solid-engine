@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { spacing } from '../theme';
 import { Animated, Easing, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';
 import { useReducedMotion } from '../components/useReducedMotion';
@@ -28,6 +30,7 @@ interface ComposerProps {
 
 
 export function Composer({ draft, onDraftChange, onSend, autoFocus }: ComposerProps) {
+  const insets = useSafeAreaInsets();
   const press = usePressFeedback();
   const reducedMotion = useReducedMotion();
   const [lines, setLines] = useState(1);
@@ -59,7 +62,7 @@ export function Composer({ draft, onDraftChange, onSend, autoFocus }: ComposerPr
   }, [draft]);
 
   return (
-    <View style={styles.dock}>
+    <View style={[styles.dock, { paddingBottom: insets.bottom + spacing.md }]}>
       <View style={styles.row}>
         <TextInput
           ref={field}

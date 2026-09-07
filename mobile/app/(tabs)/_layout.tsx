@@ -9,6 +9,7 @@ import {
   PROFILE_TAB_ROUTE,
   TRIPS_TAB_ROUTE,
 } from '../../src/navigation/authRoutes';
+import { showsTabBar } from '../../src/navigation/tabBar';
 import { tabRetapped } from '../../src/navigation/tabRetap';
 import {
   inDiscoverStack,
@@ -40,6 +41,7 @@ function bareScene(top: number) {
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const onAMainScreen = showsTabBar(pathname);
 
   return (
     <Tabs
@@ -47,12 +49,14 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: colors.background },
-        tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
-          height: TAB_BAR_HEIGHT + insets.bottom,
-          paddingBottom: insets.bottom,
-        },
+        tabBarStyle: onAMainScreen
+          ? {
+              backgroundColor: colors.background,
+              borderTopColor: colors.border,
+              height: TAB_BAR_HEIGHT + insets.bottom,
+              paddingBottom: insets.bottom,
+            }
+          : { display: 'none' },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: typography.caption,

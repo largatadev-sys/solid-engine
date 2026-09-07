@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
+import { spacing } from '../theme';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dragToScroll } from '../components/stripScroll';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhotos } from '../media/pickPhoto';
@@ -39,6 +41,7 @@ interface EditPostcardScreenProps {
 
 
 export function EditPostcardScreen({ postcard, onSaved }: EditPostcardScreenProps) {
+  const insets = useSafeAreaInsets();
   const [drag] = useState(() => dragToScroll(() => memoryMetrics.stripPhoto + memoryMetrics.tileGap));
   const [caption, setCaption] = useState(postcard.caption ?? '');
   const [place, setPlace] = useState(postcard.place ?? '');
@@ -182,7 +185,7 @@ export function EditPostcardScreen({ postcard, onSaved }: EditPostcardScreenProp
         />
       </ScrollView>
 
-      <View style={styles.rail}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <MemoryCta label={SAVE_CTA} disabled={!ready} busy={saving} onPress={() => void save()} />
         {failed && <Text style={styles.failed}>{SAVE_FAILED}</Text>}
       </View>

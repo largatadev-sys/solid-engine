@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { useReducedMotion } from '../components/useReducedMotion';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 import { MemoryIcon } from './MemoryIcon';
 
@@ -29,6 +30,7 @@ export function showMemoryToast(message: string, tone: ToastTone = 'success'): b
 export function MemoryToastStation() {
   const [toast, setToast] = useState<Toast | null>(null);
   const travel = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     present = (next) => setToast(next);
@@ -44,14 +46,14 @@ export function MemoryToastStation() {
     const played = Animated.sequence([
       Animated.timing(travel, {
         toValue: 1,
-        duration: memoryMotion.toastInMs,
+        duration: reducedMotion ? 0 : memoryMotion.toastInMs,
         easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }),
       Animated.delay(memoryMotion.toastHoldMs),
       Animated.timing(travel, {
         toValue: 2,
-        duration: memoryMotion.toastOutMs,
+        duration: reducedMotion ? 0 : memoryMotion.toastOutMs,
         easing: Easing.in(Easing.ease),
         useNativeDriver: true,
       }),
@@ -61,7 +63,7 @@ export function MemoryToastStation() {
       if (finished) setToast((current) => (current?.key === toast.key ? null : current));
     });
     return () => played.stop();
-  }, [toast, travel]);
+  }, [reducedMotion, toast, travel]);
 
   if (toast === null) return null;
 

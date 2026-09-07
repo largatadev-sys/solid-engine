@@ -109,7 +109,7 @@ function RoundButton({
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.md2,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.sm3,
     gap: spacing.md,
   },
   titleRow: {
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    ...memoryTypography.profileTitle,
+    ...memoryTypography.displayName,
     color: memoryColors.title,
   },
   titleActions: {

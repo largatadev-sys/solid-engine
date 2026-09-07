@@ -20,6 +20,7 @@ import {
   emptyRange,
   isComplete,
   isInTheFuture,
+  isOutsideBounds,
   isWithin,
   monthGridOf,
   tapped,
@@ -50,6 +51,7 @@ const MONTH_NAMES = [
 interface DateRangeSheetProps {
   readonly open: boolean;
   readonly range: DateRange;
+  readonly bounds?: DateRange;
   readonly mode?: RangeMode;
   readonly title?: string;
   readonly onDone: (range: DateRange) => void;
@@ -60,6 +62,7 @@ interface DateRangeSheetProps {
 export function DateRangeSheet({
   open,
   range,
+  bounds,
   mode = 'range',
   title = DIARY_WHEN_LABEL,
   onDone,
@@ -123,7 +126,8 @@ export function DateRangeSheet({
             day={day}
             range={draft}
             today={today}
-            onPress={(picked) => setDraft(tapped(draft, picked, mode))}
+            bounds={bounds}
+          onPress={(picked) => setDraft(tapped(draft, picked, mode))}
           />
         ))}
       </View>
@@ -155,18 +159,20 @@ function DayCell({
   day,
   range,
   today,
+  bounds,
   onPress,
 }: {
   readonly day: string | null;
   readonly range: DateRange;
   readonly today: string;
+  readonly bounds?: DateRange;
   readonly onPress: (day: string) => void;
 }) {
   if (day === null) {
     return <View style={styles.cell} />;
   }
 
-  const disabled = isInTheFuture(day, today);
+  const disabled = isInTheFuture(day, today) || isOutsideBounds(day, bounds);
   const isStart = day === range.start;
   const isEnd = day === range.end;
   const edge = isStart || isEnd;

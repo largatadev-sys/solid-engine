@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { stillShowing } from '../components/stillShowing';
+import { useReducedMotion } from '../components/useReducedMotion';
 import { memoryColors, memoryMetrics, memoryMotion, memoryTypography } from '../theme/memoryTokens';
 
 
@@ -45,13 +46,19 @@ export function MemoryConfirmStation() {
     };
   }, []);
 
+  const reducedMotion = useReducedMotion();
+
   const shown = stillShowing(pending, last);
   if (shown === null) return null;
 
   const { title, body, confirmLabel, cancelLabel } = shown.wording;
 
   return (
-    <Modal visible={pending !== null} transparent animationType="fade">
+    <Modal
+      visible={pending !== null}
+      transparent
+      animationType={reducedMotion ? 'none' : 'fade'}
+    >
       <View style={styles.scrim}>
         <View style={styles.dialog} testID={MEMORY_CONFIRM_TESTID}>
           <Text style={styles.title}>{title}</Text>

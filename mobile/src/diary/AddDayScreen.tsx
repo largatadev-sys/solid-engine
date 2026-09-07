@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { spacing } from '../theme';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '../api/ApiError';
 import type { Pin } from '../maps/pinRules';
 import { memoryRepository } from '../repositories/memoryRepository';
@@ -29,6 +31,7 @@ interface AddDayScreenProps {
   readonly diaryTitle: string;
   readonly nextOrdinal: number;
   readonly lastDay: { readonly ordinal: number; readonly date: string } | null;
+  readonly diaryRange: DateRange;
   readonly defaultDate: string;
   readonly onAdded: (day: DiaryDayResponse) => void;
 }
@@ -39,9 +42,11 @@ export function AddDayScreen({
   diaryTitle,
   nextOrdinal,
   lastDay,
+  diaryRange,
   defaultDate,
   onAdded,
 }: AddDayScreenProps) {
+  const insets = useSafeAreaInsets();
   const [range, setRange] = useState<DateRange>({ start: defaultDate, end: defaultDate });
   const [place, setPlace] = useState('');
   const [pin, setPin] = useState<Pin | null>(null);
@@ -114,7 +119,7 @@ export function AddDayScreen({
         />
       </ScrollView>
 
-      <View style={styles.rail}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <MemoryCta
           label={ADD_DAY_CTA}
           disabled={range.start === null}
@@ -127,6 +132,7 @@ export function AddDayScreen({
       <DateRangeSheet
         open={calendarOpen}
         range={range}
+        bounds={diaryRange}
         mode="single"
         title={DAY_DATE_LABEL}
         onDone={(picked) => {

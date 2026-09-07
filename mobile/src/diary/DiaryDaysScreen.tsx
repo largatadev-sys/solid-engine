@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
+import { spacing } from '../theme';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useExitGuard } from '../navigation/useExitGuard';
 import { pickPhotos } from '../media/pickPhoto';
 import { memoryRepository } from '../repositories/memoryRepository';
@@ -47,6 +49,7 @@ export function DiaryDaysScreen({
   onPosted,
   onDiscarded,
 }: DiaryDaysScreenProps) {
+  const insets = useSafeAreaInsets();
   const [drafts, setDrafts] = useState<DayDraft[]>(() => draftsFor(candidateDates));
   const [posting, setPosting] = useState(false);
   const [posted, setPosted] = useState(false);
@@ -179,7 +182,7 @@ export function DiaryDaysScreen({
         ))}
       </ScrollView>
 
-      <View style={styles.rail}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <Text style={styles.hint}>{DIARY_DAYS_HINT}</Text>
         <MemoryCta label={POST_CTA} busy={posting} onPress={() => void post()} />
       </View>

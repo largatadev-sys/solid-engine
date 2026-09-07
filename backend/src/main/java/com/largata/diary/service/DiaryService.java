@@ -12,7 +12,9 @@ import com.largata.diary.entity.DiaryDay;
 import com.largata.diary.exception.DiaryDayAlreadyExistsException;
 import com.largata.diary.exception.DiaryDayNeedsADateException;
 import com.largata.diary.exception.DiaryDayNotFoundException;
+import com.largata.diary.exception.DiaryDayOutsideRangeException;
 import com.largata.diary.exception.DiaryNotFoundException;
+import com.largata.diary.exception.DiaryRangeStrandsADayException;
 import com.largata.diary.repository.DiaryDayRepository;
 import com.largata.diary.repository.DiaryRepository;
 import com.largata.identity.TravelerService;
@@ -236,8 +238,14 @@ public class DiaryService {
             LocalDate startDate,
             LocalDate endDate) {
         Diary diary = requireOwn(authorId, diaryId);
+        requireTheseDatesHoldEveryDay(diaryId, startDate, endDate);
+        LocalDate origin = diary.startDate();
         diary.describe(title, destination, pin, startDate, endDate, Instant.now(clock));
         Diary saved = diaries.saveAndFlush(diary);
+        int moved = (int) ChronoUnit.DAYS.between(saved.startDate(), origin);
+        if (moved != 0) {
+            days.shiftDatedOrdinals(saved.id(), moved);
+        }
         emit(saved, "diary_described");
         return viewOf(saved);
     }
@@ -332,17 +340,13 @@ public class DiaryService {
         if (date == null) {
             throw new DiaryDayNeedsADateException();
         }
+        if (!diary.holds(date)) {
+            throw new DiaryDayOutsideRangeException();
+        }
         if (days.findByDiaryIdAndDate(diaryId, date).isPresent()) {
             throw new DiaryDayAlreadyExistsException();
         }
         Instant at = Instant.now(clock);
-        LocalDate origin = diary.startDate();
-        diary.widenTo(date, at);
-        diaries.saveAndFlush(diary);
-        if (diary.startDate().isBefore(origin)) {
-            days.shiftDatedOrdinals(
-                    diary.id(), (int) ChronoUnit.DAYS.between(diary.startDate(), origin));
-        }
         try {
             return new DiaryView.Day(
                     dayInserter.insert(diary.id(), diary.ordinalOf(date), date, place, pin, at),
@@ -350,6 +354,16 @@ public class DiaryService {
                     List.of());
         } catch (DataIntegrityViolationException lostTheRace) {
             throw new DiaryDayAlreadyExistsException();
+        }
+    }
+
+
+    private void requireTheseDatesHoldEveryDay(UUID diaryId, LocalDate from, LocalDate to) {
+        boolean stranded =
+                days.findByDiaryIdOrderByOrdinal(diaryId).stream()
+                        .anyMatch(day -> day.date().isBefore(from) || day.date().isAfter(to));
+        if (stranded) {
+            throw new DiaryRangeStrandsADayException();
         }
     }
 

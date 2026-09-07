@@ -24,7 +24,7 @@ class DiaryModuleBoundaryTest {
     private static final Map<Class<?>, List<String>> SEALED =
             Map.of(
                     Diary.class,
-                    List.of("standalone", "mintedForTrip", "coverDay", "describe", "widenTo", "touch"),
+                    List.of("standalone", "mintedForTrip", "coverDay", "describe", "touch"),
                     DiaryDay.class,
                     List.of("on", "snapshotOfTripDay", "moveTo"));
 

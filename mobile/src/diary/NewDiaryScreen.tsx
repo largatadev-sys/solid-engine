@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
+import { spacing } from '../theme';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhoto } from '../media/pickPhoto';
 import type { PickedPhoto } from '../media/pickedPhoto';
@@ -30,6 +32,7 @@ import {
 
 
 export function NewDiaryScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [destination, setDestination] = useState('');
@@ -126,7 +129,7 @@ export function NewDiaryScreen() {
         <DateChips range={range} onPress={() => setCalendarOpen(true)} />
       </ScrollView>
 
-      <View style={styles.rail}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <MemoryCta
           label={DIARY_NEXT_CTA}
           disabled={!ready}

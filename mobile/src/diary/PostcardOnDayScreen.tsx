@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { spacing } from '../theme';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pickPhotos } from '../media/pickPhoto';
 import type { Pin } from '../maps/pinRules';
 import { pinAfterEdit } from '../maps/pinRules';
@@ -34,6 +36,7 @@ export function PostcardOnDayScreen({
   dayPin,
   onPosted,
 }: PostcardOnDayScreenProps) {
+  const insets = useSafeAreaInsets();
   const [photos, setPhotos] = useState<readonly PickedPhoto[]>([]);
   const [caption, setCaption] = useState('');
   const [place, setPlace] = useState(dayPlace ?? '');
@@ -94,7 +97,7 @@ export function PostcardOnDayScreen({
         />
       </ScrollView>
 
-      <View style={styles.rail}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <MemoryCta
           label={POST_CTA}
           disabled={!ready}

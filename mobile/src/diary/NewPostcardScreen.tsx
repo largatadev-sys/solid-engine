@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { spacing } from '../theme';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dragToScroll } from '../components/stripScroll';
 import { MediaThumb } from '../media/MediaThumb';
 import { pickPhotos } from '../media/pickPhoto';
@@ -32,6 +34,7 @@ interface NewPostcardScreenProps {
 
 
 export function NewPostcardScreen({ onPosted }: NewPostcardScreenProps) {
+  const insets = useSafeAreaInsets();
   const [drag] = useState(() => dragToScroll(() => memoryMetrics.stripPhoto + memoryMetrics.tileGap));
   const [photos, setPhotos] = useState<readonly PickedPhoto[]>([]);
   const [caption, setCaption] = useState('');
@@ -128,7 +131,7 @@ export function NewPostcardScreen({ onPosted }: NewPostcardScreenProps) {
         />
       </ScrollView>
 
-      <View style={styles.rail}>
+      <View style={[styles.rail, { paddingBottom: insets.bottom + spacing.md }]}>
         <MemoryCta
           label={POST_CTA}
           disabled={!ready}

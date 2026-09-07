@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from '../components/useReducedMotion';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -18,11 +20,13 @@ import {
   detailMetaSuffix,
 } from './memoryCopy';
 import { MemoryIcon } from './MemoryIcon';
+import { landingOffsetOf } from './dayLanding';
 import { MemoryPlaceLink } from './MemoryPlaceLink';
 
 
 interface DiaryDetailScreenProps {
   readonly diary: DiaryResponse;
+  readonly landOnDayId?: string | null;
   readonly authorName: string;
   readonly authorHandle: string;
   readonly authorAvatarUrl: string | null;
@@ -37,6 +41,7 @@ interface DiaryDetailScreenProps {
 
 export function DiaryDetailScreen({
   diary,
+  landOnDayId = null,
   authorName,
   authorHandle,
   authorAvatarUrl,
@@ -47,11 +52,25 @@ export function DiaryDetailScreen({
   onAddDay,
   onDiaryMenu,
 }: DiaryDetailScreenProps) {
+  const scroller = useRef<ScrollView>(null);
+  const reducedMotion = useReducedMotion();
+  const [dayTops, setDayTops] = useState<Record<string, number>>({});
+  const [daysTop, setDaysTop] = useState<number | null>(null);
+  const [landed, setLanded] = useState(false);
+
+  const landingOffset = landingOffsetOf(landOnDayId, dayTops, daysTop);
+
+  useEffect(() => {
+    if (landed || landingOffset === null) return;
+
+    scroller.current?.scrollTo({ y: landingOffset, animated: !reducedMotion });
+    setLanded(true);
+  }, [landed, landingOffset, reducedMotion]);
   const insets = useSafeAreaInsets();
   const goBack = useSafeBack();
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.body}>
+    <ScrollView ref={scroller} style={styles.screen} contentContainerStyle={styles.body}>
       <View style={styles.cover}>
         <MediaThumb
           url={diary.cover?.url ?? null}
@@ -123,11 +142,17 @@ export function DiaryDetailScreen({
         )}
       </Pressable>
 
-      <View style={styles.days}>
+      <View
+        style={styles.days}
+        onLayout={(event) => setDaysTop(event.nativeEvent.layout.y)}
+      >
         {diary.days.map((day) => (
           <DayBlock
             key={day.id}
             day={day}
+            onMeasured={(top) => {
+              setDayTops((known) => (known[day.id] === top ? known : { ...known, [day.id]: top }));
+            }}
             destination={diary.destination}
             owned={owned}
             onOpenPostcard={onOpenPostcard}
@@ -182,15 +207,17 @@ function DayBlock({
   owned,
   onOpenPostcard,
   onAddPostcard,
+  onMeasured,
 }: {
   readonly day: DiaryDayResponse;
   readonly destination: string | null;
   readonly owned: boolean;
   readonly onOpenPostcard: (postcardId: string) => void;
   readonly onAddPostcard?: (dayId: string) => void;
+  readonly onMeasured: (top: number) => void;
 }) {
   return (
-    <View>
+    <View onLayout={(event) => onMeasured(event.nativeEvent.layout.y)}>
       <View style={styles.dayHead}>
         <View style={styles.dayTitleRow}>
           <Text style={styles.dayTitle}>{dayOrdinalLabel(day.ordinal)}</Text>

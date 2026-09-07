@@ -45,15 +45,18 @@ test('the bar marks the tab the traveler is standing on, and only that one', asy
   await expect(tab(page, 'Profile')).toHaveAttribute('aria-selected', 'false');
 });
 
-test('the bar follows the traveler into a trip, where the founder found Profile dead', async ({
-  page,
-}) => {
+test('the bar leaves the traveler alone inside a trip (founder, 2026-09-07)', async ({ page }) => {
   await page.goto(`/itineraries/${trip.id}`);
   await expect(page.getByText(trip.title)).toBeVisible();
 
-  await expect(tab(page, 'Profile')).toBeVisible();
-  await expect(tab(page, 'Trips')).toHaveAttribute('aria-selected', 'true');
+  for (const name of ['Home', DISCOVER_TAB_LABEL, 'Trips', 'Profile']) {
+    await expect(
+      tab(page, name),
+      'a trip is not a main screen, so its bar is not there to tap',
+    ).toBeHidden();
+  }
 });
+
 
 test('the profile is not already showing beneath the trip — the mounted-underneath trap', async ({
   page,
@@ -64,19 +67,8 @@ test('the profile is not already showing beneath the trip — the mounted-undern
   await expect(profileIsShowing(page)).toHaveCount(0);
 });
 
-test('tapping Profile from inside a trip shows the profile, not a dead click (founder, 08/12)', async ({
-  page,
-}) => {
-  await page.goto(`/itineraries/${trip.id}`);
-  await expect(page.getByText(trip.title)).toBeVisible();
 
-  await tab(page, 'Profile').click();
-
-  await expect(profileIsShowing(page)).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(`${PROFILE_TAB_ROUTE}$`));
-});
-
-test('every tab lands on its own route from inside a trip, with no dead clicks', async ({
+test('every tab lands on its own route, with no dead clicks (founder, 08/12)', async ({
   page,
   signal,
 }) => {
@@ -88,8 +80,7 @@ test('every tab lands on its own route from inside a trip, with no dead clicks',
   ];
 
   for (const [name, route] of landings) {
-    await page.goto(`/itineraries/${trip.id}`);
-    await expect(page.getByText(trip.title)).toBeVisible();
+    await page.goto(TRIPS_TAB_ROUTE);
 
     await tab(page, name).click();
     await expect(page).toHaveURL(route);
