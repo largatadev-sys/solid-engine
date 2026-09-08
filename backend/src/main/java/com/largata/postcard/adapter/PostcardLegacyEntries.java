@@ -1,8 +1,7 @@
 package com.largata.postcard.adapter;
 
-import com.largata.diary.entity.Diary;
-import com.largata.diary.entity.DiaryDay;
-import com.largata.diary.service.DiaryService;
+import com.largata.diary.api.DiaryApi;
+import com.largata.diary.api.DiaryDayView;
 import com.largata.postcard.api.LegacyEntries;
 import com.largata.postcard.entity.Postcard;
 import com.largata.postcard.exception.ActivityAlreadyPostcardedException;
@@ -24,10 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 class PostcardLegacyEntries implements LegacyEntries {
 
     private final PostcardRepository postcards;
-    private final DiaryService diaries;
+    private final DiaryApi diaries;
     private final Clock clock;
 
-    PostcardLegacyEntries(PostcardRepository postcards, DiaryService diaries, Clock clock) {
+    PostcardLegacyEntries(PostcardRepository postcards, DiaryApi diaries, Clock clock) {
         this.postcards = postcards;
         this.diaries = diaries;
         this.clock = clock;
@@ -52,16 +51,16 @@ class PostcardLegacyEntries implements LegacyEntries {
             LocalDate tripStart,
             LocalDate tripEnd,
             String caption) {
-        Diary diary =
+        UUID diaryId =
                 diaries.mintTripDiary(
                         authorId, tripId, tripTitle, tripDestination, tripStart, tripEnd);
-        DiaryDay day = diaries.mintTripDay(diary.id(), tripDayId, tripDayTitle, tripDayOrdinal);
+        DiaryDayView day = diaries.mintTripDay(diaryId, tripDayId, tripDayTitle, tripDayOrdinal);
         try {
             return entryOf(
                     postcards.saveAndFlush(
                             Postcard.postedFromActivity(
                                     authorId,
-                                    diary.id(),
+                                    diaryId,
                                     day.id(),
                                     tripId,
                                     activityId,

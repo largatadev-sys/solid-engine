@@ -7,6 +7,7 @@ import com.largata.common.tx.AfterCommit;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.trip.api.ActivityFacts;
+import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripDayFacts;
 import com.largata.trip.api.TripFacts;
 import com.largata.trip.api.TripLifecycle;
@@ -30,7 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class TripService {
+public class TripService implements TripApi {
 
     private static final Logger log = LoggerFactory.getLogger(TripService.class);
 

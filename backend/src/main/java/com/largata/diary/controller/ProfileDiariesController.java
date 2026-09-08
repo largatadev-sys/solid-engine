@@ -8,7 +8,7 @@ import com.largata.identity.Traveler;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.web.CurrentTraveler;
-import com.largata.publication.service.ItineraryObjectService;
+import com.largata.publication.api.PublicationApi;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,13 +23,13 @@ class ProfileDiariesController {
 
     private final DiaryService diaries;
     private final TravelerService travelers;
-    private final ItineraryObjectService publications;
+    private final PublicationApi publications;
     private final AuthoredContentAudience audience;
 
     ProfileDiariesController(
             DiaryService diaries,
             TravelerService travelers,
-            ItineraryObjectService publications,
+            PublicationApi publications,
             AuthoredContentAudience audience) {
         this.diaries = diaries;
         this.travelers = travelers;
