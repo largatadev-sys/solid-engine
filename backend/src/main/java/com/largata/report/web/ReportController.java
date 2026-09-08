@@ -3,7 +3,7 @@ package com.largata.report.web;
 import com.largata.report.AcceptedReport;
 import com.largata.report.DeviceContext;
 import com.largata.report.ReportId;
-import com.largata.report.ReportPaths;
+import com.largata.report.api.ReportPaths;
 import com.largata.report.ReportRateLimiter;
 import com.largata.report.ReportService;
 import com.largata.report.ReportSubmission;

@@ -1,4 +1,4 @@
-package com.largata.report;
+package com.largata.report.api;
 
 
 public final class ReportPaths {

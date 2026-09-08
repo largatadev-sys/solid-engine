@@ -1,4 +1,4 @@
-package com.largata.join;
+package com.largata.join.api;
 
 
 public final class JoinPaths {

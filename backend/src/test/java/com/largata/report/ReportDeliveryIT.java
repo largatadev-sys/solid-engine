@@ -2,6 +2,7 @@ package com.largata.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.largata.report.api.ReportPaths;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import java.awt.Color;
