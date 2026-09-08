@@ -3,9 +3,13 @@ const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const BASE = process.argv[2] || 'e249976d';
 const REPO = path.resolve(__dirname, '..', '..');
 const SCOPE = 'backend/src/test';
+
+// The comparison point is where this branch left its base, derived rather than pinned: a hardcoded
+// SHA is right for exactly one branch and silently wrong on the next one, which is the failure mode
+// this script exists to prevent in the tests it reads.
+const BASE = process.argv[2] || mergeBaseWith(process.env.ASSERTION_DIFF_BASE || 'origin/dev');
 
 // The guards ARE this branch's apparatus — the two windows, the legacy exemption and the
 // meta-test's lists are asserted INTO existence here, so counting their churn as drift would make
@@ -41,6 +45,16 @@ const RENAMED_SYMBOLS = [
 
 function git(...args) {
   return execFileSync('git', args, { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 28 });
+}
+
+function mergeBaseWith(branch) {
+  try {
+    return git('merge-base', branch, 'HEAD').trim();
+  } catch {
+    throw new Error(
+      'cannot derive a comparison point: no merge-base with ' + branch +
+      '. Pass one explicitly: node backend/scripts/assertion-diff.js <ref>');
+  }
 }
 
 function show(rev, file) {
@@ -84,7 +98,7 @@ for (const line of git('diff', '--name-status', '-M', BASE, '--', SCOPE).split('
 // so the comparison still happens; each is a rename the tickets record.
 const RENAMED_FILES = new Map([
   [
-    'backend/src/test/java/com/largata/trip/record/TripLifecycleTest.java',
+    'backend/src/test/java/com/largata/trip/trip/TripLifecycleTest.java',
     'backend/src/test/java/com/largata/itinerary/ItineraryStateTest.java',
   ],
 ]);

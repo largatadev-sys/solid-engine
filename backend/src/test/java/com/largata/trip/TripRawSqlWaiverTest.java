@@ -30,7 +30,7 @@ class TripRawSqlWaiverTest {
     private static final String THE_ONE_CLASS_THAT_MAY_HOLD_SQL = "ForeignWorkspaceRows.java";
 
     private static final Pattern A_TABLE_NAME =
-            Pattern.compile("(?:DELETE FROM|INSERT INTO|UPDATE|JOIN|FROM)\s+([a-z_][a-z_0-9]*)");
+            Pattern.compile("(?:DELETE FROM|INSERT INTO|UPDATE|JOIN|FROM)\\s+([a-z_][a-z_0-9]*)");
 
     private static final Pattern A_QUOTED_TABLE = Pattern.compile("\"([a-z_][a-z_0-9]*)\"");
 

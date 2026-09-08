@@ -1,8 +1,6 @@
 package com.largata.trip.trip;
 
-import com.largata.trip.api.TripLifecycle;
 import com.largata.trip.api.TripPlan;
-import com.largata.trip.exception.TripNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,7 +37,7 @@ public class TripPlanHeaders {
                 trip.coverImageUrl(),
                 trip.startDate(),
                 trip.endDate(),
-                TripLifecycle.parse(trip.state().name()).orElseThrow(TripNotFoundException::new),
+                trip.state(),
                 trip.isPublished(),
                 List.of());
     }

@@ -26,17 +26,17 @@ public class MembershipEvictionListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void evictDepartedMember(MembershipEnded ended) {
-        var held = registry.subscriptionsOf(ended.travelerId(), ended.itineraryId());
+        var held = registry.subscriptionsOf(ended.travelerId(), ended.tripId());
         held.forEach(subscription -> registry.unsubscribe(subscription.session(), subscription.topic()));
         if (!held.isEmpty()) {
             log.info(
                     "WS subscriptions evicted: itineraryId={} travelerId={} subscriptions={}",
-                    ended.itineraryId(),
+                    ended.tripId(),
                     ended.travelerId(),
                     held.size());
         }
         fanout.broadcast(
-                Topic.ofItinerary(ended.itineraryId(), TopicSubscriptions.TRIPS_CHANNEL),
+                Topic.ofItinerary(ended.tripId(), TopicSubscriptions.TRIPS_CHANNEL),
                 TripEventTypes.ROSTER_CHANGED,
                 null);
     }

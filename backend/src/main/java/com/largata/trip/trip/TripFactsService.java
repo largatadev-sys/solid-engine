@@ -2,7 +2,6 @@ package com.largata.trip.trip;
 
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripFacts;
-import com.largata.trip.api.TripLifecycle;
 import com.largata.trip.api.TripTeaser;
 import com.largata.trip.exception.TripNotFoundException;
 import com.largata.trip.workspace.WorkspaceService;
@@ -42,7 +41,7 @@ class TripFactsService implements TripApi {
                 trip.destination(),
                 trip.startDate(),
                 trip.endDate(),
-                lifecycleOf(trip),
+                trip.state(),
                 trip.isPublished(),
                 workspaces.isArchived(trip.id()),
                 trip.createdAt());
@@ -104,8 +103,4 @@ class TripFactsService implements TripApi {
         trips.findById(tripId).ifPresent(Trip::unpublish);
     }
 
-
-    private static TripLifecycle lifecycleOf(Trip trip) {
-        return TripLifecycle.parse(trip.state().name()).orElseThrow(TripNotFoundException::new);
-    }
 }

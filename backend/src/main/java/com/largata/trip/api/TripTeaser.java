@@ -5,7 +5,7 @@ import java.util.UUID;
 
 
 public record TripTeaser(
-        UUID itineraryId,
+        UUID tripId,
         String title,
         String destination,
         LocalDate startDate,

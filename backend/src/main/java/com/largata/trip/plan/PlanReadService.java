@@ -5,9 +5,12 @@ import com.largata.trip.api.PlanApi;
 import com.largata.trip.api.TripDayFacts;
 import com.largata.trip.api.TripPlan;
 import com.largata.trip.trip.TripPlanHeaders;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,33 +36,40 @@ class PlanReadService implements PlanApi {
 
 
     private List<TripPlan.PlanDay> daysOf(UUID tripId) {
+        Map<UUID, List<TripPlan.PlanActivity>> byDay =
+                activities.allUnder(tripId).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        Activity::dayId,
+                                        LinkedHashMap::new,
+                                        Collectors.mapping(
+                                                PlanReadService::planActivityOf, Collectors.toList())));
         return days.findByItineraryIdOrderByOrdinalAsc(tripId).stream()
-                .map(day -> new TripPlan.PlanDay(day.ordinal(), day.title(), activitiesOf(day.id())))
+                .map(
+                        day ->
+                                new TripPlan.PlanDay(
+                                        day.ordinal(),
+                                        day.title(),
+                                        byDay.getOrDefault(day.id(), List.of())))
                 .toList();
     }
 
 
-    private List<TripPlan.PlanActivity> activitiesOf(UUID dayId) {
-        return activities.findByDayIdOrderBySortOrderAscIdAsc(dayId).stream()
-                .map(
-                        activity ->
-                                new TripPlan.PlanActivity(
-                                        activity.sortOrder(),
-                                        activity.title(),
-                                        activity.timeOfDay() == null
-                                                ? null
-                                                : activity.timeOfDay().toString(),
-                                        activity.costAmount(),
-                                        activity.costCurrency(),
-                                        activity.place(),
-                                        activity.description(),
-                                        activity.notes(),
-                                        activity.externalUrl(),
-                                        activity.bookingPurpose(),
-                                        activity.bookingProvider(),
-                                        activity.bookingPriceAmount(),
-                                        activity.bookingPriceCurrency()))
-                .toList();
+    private static TripPlan.PlanActivity planActivityOf(Activity activity) {
+        return new TripPlan.PlanActivity(
+                activity.sortOrder(),
+                activity.title(),
+                activity.timeOfDay() == null ? null : activity.timeOfDay().toString(),
+                activity.costAmount(),
+                activity.costCurrency(),
+                activity.place(),
+                activity.description(),
+                activity.notes(),
+                activity.externalUrl(),
+                activity.bookingPurpose(),
+                activity.bookingProvider(),
+                activity.bookingPriceAmount(),
+                activity.bookingPriceCurrency());
     }
 
 
