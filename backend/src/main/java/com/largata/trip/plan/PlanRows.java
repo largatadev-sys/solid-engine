@@ -3,6 +3,7 @@ package com.largata.trip.plan;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -16,7 +17,7 @@ public class PlanRows {
     }
 
 
-    @Transactional(readOnly = true)
+    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public List<UUID> activityIdsUnder(UUID tripId) {
         return activities.idsUnder(tripId);
     }
