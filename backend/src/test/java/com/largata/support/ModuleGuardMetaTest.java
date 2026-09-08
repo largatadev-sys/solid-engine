@@ -43,7 +43,7 @@ class ModuleGuardMetaTest {
             List.of("itinerary", "workspace", "membership");
 
     private static final Pattern A_BY_NAME_EXEMPTION =
-            Pattern.compile("simpleName\\s*\\(|EXEMPTION|exempt", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("simpleName\\s*\\(|\\bhaveSimpleName\\s*\\(|\\bbelongToAnyOf\\s*\\(");
 
     @Test
     void everyModuleUnderTheRuleHasAGuard() {
@@ -136,11 +136,19 @@ class ModuleGuardMetaTest {
     }
 
     @Test
-    void theExemptionRuleWouldFireOnAReintroducedExemption() {
-        assertThat(A_BY_NAME_EXEMPTION.matcher("resideInAPackage(TRIP).and(simpleName(\"X\"))").find())
+    void theExemptionRuleMatchesTheCONSTRUCTAndNotTheProse() {
+        assertThat(A_BY_NAME_EXEMPTION.matcher("and(simpleName(\"TripService\"))").find())
+                .as("naming one class to let it through is the construct, whatever it is called")
                 .isTrue();
-        assertThat(A_BY_NAME_EXEMPTION.matcher("THE_ONE_NAMED_EXEMPTION").find()).isTrue();
-        assertThat(A_BY_NAME_EXEMPTION.matcher("resideInAPackage(TRIP + \"..\")").find()).isFalse();
+        assertThat(A_BY_NAME_EXEMPTION.matcher(".and(haveSimpleName(\"X\"))").find()).isTrue();
+        assertThat(A_BY_NAME_EXEMPTION.matcher("belongToAnyOf(TripService.class)").find()).isTrue();
+        assertThat(A_BY_NAME_EXEMPTION.matcher("resideInAPackage(TRIP + \"..\")").find())
+                .as("the allowlist itself is not an exemption")
+                .isFalse();
+        assertThat(A_BY_NAME_EXEMPTION.matcher(".as(\"the legacy exemption dissolves at CM-5\")").find())
+                .as("PROSE describing an exemption is not one - a guard may explain itself freely,"
+                        + " and matching the word would fail a guard that has none")
+                .isFalse();
     }
 
     private static List<Path> guardsOf(String module) {
@@ -148,8 +156,9 @@ class ModuleGuardMetaTest {
         if (!Files.isDirectory(dir)) {
             return List.of();
         }
-        try (Stream<Path> found = Files.list(dir)) {
-            return found.filter(p -> p.getFileName().toString().endsWith("BoundaryTest.java"))
+        try (Stream<Path> found = Files.walk(dir)) {
+            return found.filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().endsWith("BoundaryTest.java"))
                     .toList();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -157,7 +166,15 @@ class ModuleGuardMetaTest {
     }
 
     private static Stream<Path> allGuards() {
-        return UNDER_THE_RULE.stream().flatMap(module -> guardsOf(module).stream());
+        try {
+            return Files.walk(GUARDS)
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().endsWith("BoundaryTest.java"))
+                    .toList()
+                    .stream();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static List<String> modulesInTheTree() {
