@@ -8,11 +8,9 @@ import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.Itinerary;
 import com.largata.itinerary.ItineraryService;
-import com.largata.itinerary.PublishedItineraryService;
 import com.largata.itinerary.TripCategory;
 import com.largata.itinerary.api.CreateItineraryRequest;
 import com.largata.itinerary.api.ItineraryResponse;
-import com.largata.itinerary.api.PublishedItineraryResponse;
 import com.largata.itinerary.api.UpdateItineraryRequest;
 import com.largata.membership.MembershipService;
 import com.largata.itinerary.ForkService;
@@ -45,7 +43,6 @@ class ItineraryController {
     private final ItineraryService itineraries;
     private final ForkService forks;
     private final ItineraryCoverService covers;
-    private final PublishedItineraryService published;
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
     private final AudienceFence audience;
@@ -54,14 +51,12 @@ class ItineraryController {
             ItineraryService itineraries,
             ForkService forks,
             ItineraryCoverService covers,
-            PublishedItineraryService published,
             MembershipService memberships,
             AuthorizationGuard guard,
             AudienceFence audience) {
         this.itineraries = itineraries;
         this.forks = forks;
         this.covers = covers;
-        this.published = published;
         this.memberships = memberships;
         this.guard = guard;
         this.audience = audience;
@@ -142,13 +137,6 @@ class ItineraryController {
         itineraries.reopen(membership);
         var plan = itineraries.viewPlan(membership);
         return ItineraryResponse.of(plan);
-    }
-
-
-    @GetMapping("/{id}/preview")
-    PublishedItineraryResponse preview(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        Membership membership = guard.requireMember(traveler.id(), id);
-        return PublishedItineraryResponse.of(published.preview(membership));
     }
 
 

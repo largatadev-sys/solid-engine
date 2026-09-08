@@ -1,4 +1,4 @@
-package com.largata.invitation.web;
+package com.largata.membership.web;
 
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;

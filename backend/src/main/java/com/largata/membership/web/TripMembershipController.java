@@ -1,12 +1,11 @@
-package com.largata.invitation.web;
+package com.largata.membership.web;
 
 import com.largata.common.api.Page;
+import com.largata.common.authz.AudienceFence;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
-import com.largata.common.authz.AudienceFence;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
-import com.largata.invitation.InvitationService;
 import com.largata.membership.MembershipService;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -25,47 +24,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping({"/v1/itineraries/{itineraryId}", "/v1/trips/{itineraryId}"})
 class TripMembershipController {
 
-    private final InvitationService invitations;
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
     private final AudienceFence audience;
 
     TripMembershipController(
-            InvitationService invitations,
-            MembershipService memberships,
-            AuthorizationGuard guard,
-            AudienceFence audience) {
-        this.invitations = invitations;
+            MembershipService memberships, AuthorizationGuard guard, AudienceFence audience) {
         this.memberships = memberships;
         this.guard = guard;
         this.audience = audience;
-    }
-
-    @PostMapping("/invitations")
-    @ResponseStatus(HttpStatus.CREATED)
-    InvitationResponse invite(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @Valid @RequestBody CreateInvitationRequest request) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        return InvitationResponse.of(invitations.invite(membership, request.email()));
-    }
-
-    @PostMapping("/invitations/by-handle")
-    @ResponseStatus(HttpStatus.CREATED)
-    InvitationResponse inviteByHandle(
-            @CurrentTraveler Traveler traveler,
-            @PathVariable UUID itineraryId,
-            @Valid @RequestBody InviteByHandleRequest request) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        return InvitationResponse.of(invitations.inviteByHandle(membership, request.handle()));
-    }
-
-    @GetMapping("/invitations")
-    Page<InvitationResponse> pendingInvitations(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
-        Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        audience.requireInAudience(membership);
-        return Page.exhausted(invitations.pendingInvitations(membership).stream().map(InvitationResponse::of).toList());
     }
 
 
@@ -75,7 +42,7 @@ class TripMembershipController {
         audience.requireInAudience(membership);
         UUID offeredTo = memberships.pendingOfferTargetIn(membership).orElse(null);
         return Page.exhausted(
-                invitations.members(membership).stream()
+                memberships.members(membership).stream()
                         .map(m -> MemberResponse.of(m, m.travelerId().equals(offeredTo)))
                         .toList());
     }

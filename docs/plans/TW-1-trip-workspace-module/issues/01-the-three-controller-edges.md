@@ -16,3 +16,13 @@ First, the owner's preview of the itinerary a publish would create leaves the tr
 - [ ] No file has moved between packages
 
 ## Comments
+
+**2026-09-08 — built.** The three edges are cut with **zero test files touched** — the whole ticket is main-source only, which is the strongest form of the "no edited assertion" criterion.
+
+*Preview.* A `PublishPreviewController` in the old package carries `GET /{id}/preview` on both roots; `ItineraryController` loses the route, the `PublishedItineraryService` field and both imports. It could not join the existing `PublishedItineraryController`, which is mapped at `/v1/published-itineraries` — a different root.
+
+*The split.* `TripMembershipController` was one class in `invitation.web` driving two services. It is now `invitation/web/TripInvitationController` (the three invitation routes, naming no membership type) and `membership/web/TripMembershipController` (the roster, the four ownership-offer routes and the departure, naming no invitation type). **The roster read had to move with it:** `members()` lived on `InvitationService` but is a pure read over `workspaces.membersOf` plus traveler profiles — no invitation row in it — so it moved to `MembershipService` along with `MemberSummary`, and `MemberResponse` and `OwnershipOfferRequest` moved to `membership/web`. `InvitationService` lost `members`, `memberSummaryOf` and the now-orphaned `profileOf` with its `ProfileVisibility` import. `MemberResponse.of(m)`'s single-argument overload had no caller and went with the move. This is what ticket 03's `MembershipApi.membersOf` will be built over.
+
+*The rename.* `trip/controller/TripController` → `TripDestructionController`, leaving the name free for ticket 09.
+
+*Verified:* `TripGrammarTwinIT` + `TripGrammarEquivalenceIT` **12/12 unedited** — the twin test compares handler *identity*, so a split controller passes only because each twin pair is still one Java method. Membership + invitation ITs **171/171**, publish/preview ITs **38/38**, all with no edited assertion.

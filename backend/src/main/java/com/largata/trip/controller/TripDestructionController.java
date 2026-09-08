@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/v1/trips")
-class TripController {
+class TripDestructionController {
 
     private final TripService trips;
     private final AuthorizationGuard guard;
 
-    TripController(TripService trips, AuthorizationGuard guard) {
+    TripDestructionController(TripService trips, AuthorizationGuard guard) {
         this.trips = trips;
         this.guard = guard;
     }

@@ -1,4 +1,4 @@
-package com.largata.invitation;
+package com.largata.membership;
 
 import com.largata.common.authz.Role;
 import java.time.Instant;

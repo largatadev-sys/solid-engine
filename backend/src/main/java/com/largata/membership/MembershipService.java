@@ -6,6 +6,9 @@ import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
+import com.largata.identity.ProfileVisibility;
+import com.largata.identity.TravelerService;
+import com.largata.identity.TravelerSummary;
 import com.largata.itinerary.EditLeaseService;
 import com.largata.itinerary.ItineraryService;
 import com.largata.invitation.InvitationService;
@@ -17,11 +20,15 @@ import com.largata.membership.MembershipExceptions.NotTripOwnerException;
 import com.largata.membership.MembershipExceptions.OfferAlreadyPendingException;
 import com.largata.membership.MembershipExceptions.OwnerCannotLeaveException;
 import com.largata.membership.MembershipExceptions.TargetNotAMemberException;
+import com.largata.workspace.MembershipView;
 import com.largata.workspace.WorkspaceService;
 import com.largata.workspace.WorkspaceState;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -35,6 +42,7 @@ public class MembershipService {
     private static final Logger log = LoggerFactory.getLogger(MembershipService.class);
 
     private final WorkspaceService workspaces;
+    private final TravelerService travelers;
     private final ItineraryService itineraries;
     private final EditLeaseService leases;
     private final InvitationService invitations;
@@ -46,6 +54,7 @@ public class MembershipService {
 
     MembershipService(
             WorkspaceService workspaces,
+            TravelerService travelers,
             ItineraryService itineraries,
             EditLeaseService leases,
             InvitationService invitations,
@@ -55,6 +64,7 @@ public class MembershipService {
             Analytics analytics,
             ApplicationEventPublisher events) {
         this.workspaces = workspaces;
+        this.travelers = travelers;
         this.itineraries = itineraries;
         this.leases = leases;
         this.invitations = invitations;
@@ -338,6 +348,37 @@ public class MembershipService {
                                     "ownership_offer_voided", itineraryId, departingTravelerId, byTravelerId);
                         });
     }
+
+    @Transactional(readOnly = true)
+    public List<MemberSummary> members(Membership member) {
+        List<MembershipView> rows = workspaces.membersOf(member.itineraryId());
+        Map<UUID, TravelerSummary> profiles =
+                travelers.summariesByIds(rows.stream().map(MembershipView::travelerId).toList()).stream()
+                        .collect(Collectors.toMap(TravelerSummary::id, summary -> summary));
+        return rows.stream().map(m -> memberSummaryOf(m, profileOf(profiles, m.travelerId()))).toList();
+    }
+
+
+    private static MemberSummary memberSummaryOf(MembershipView m, TravelerSummary profile) {
+        return new MemberSummary(
+                m.travelerId(),
+                profile.displayName(),
+                profile.avatarUrl(),
+                m.role(),
+                m.joinedAt(),
+                profile.handle(),
+                profile.bio(),
+                profile.vanityNumber());
+    }
+
+
+    private static TravelerSummary profileOf(Map<UUID, TravelerSummary> profiles, UUID travelerId) {
+        return profiles.getOrDefault(
+                travelerId,
+                new TravelerSummary(
+                        travelerId, "", null, null, null, null, ProfileVisibility.PUBLIC));
+    }
+
 
     private UUID workspaceIdOf(UUID itineraryId) {
         return workspaces

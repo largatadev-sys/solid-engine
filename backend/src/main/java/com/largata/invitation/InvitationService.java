@@ -8,7 +8,6 @@ import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
-import com.largata.identity.ProfileVisibility;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.web.VerifiedContact;
 import com.largata.invitation.InvitationExceptions.AlreadyMemberException;
@@ -230,37 +229,6 @@ public class InvitationService {
                                         i.isAddressedByEmail() ? null : handles.get(i.inviteeTravelerId()),
                                         handles.get(i.invitedBy())))
                 .toList();
-    }
-
-
-    @Transactional(readOnly = true)
-    public List<MemberSummary> members(Membership member) {
-        List<MembershipView> rows = workspaces.membersOf(member.itineraryId());
-        Map<UUID, TravelerSummary> profiles =
-                travelers.summariesByIds(rows.stream().map(MembershipView::travelerId).toList()).stream()
-                        .collect(Collectors.toMap(TravelerSummary::id, summary -> summary));
-        return rows.stream().map(m -> memberSummaryOf(m, profileOf(profiles, m.travelerId()))).toList();
-    }
-
-
-    private static MemberSummary memberSummaryOf(MembershipView m, TravelerSummary profile) {
-        return new MemberSummary(
-                m.travelerId(),
-                profile.displayName(),
-                profile.avatarUrl(),
-                m.role(),
-                m.joinedAt(),
-                profile.handle(),
-                profile.bio(),
-                profile.vanityNumber());
-    }
-
-
-    private static TravelerSummary profileOf(Map<UUID, TravelerSummary> profiles, UUID travelerId) {
-        return profiles.getOrDefault(
-                travelerId,
-                new TravelerSummary(
-                        travelerId, "", null, null, null, null, ProfileVisibility.PUBLIC));
     }
 
 

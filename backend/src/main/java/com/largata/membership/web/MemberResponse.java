@@ -1,6 +1,6 @@
-package com.largata.invitation.web;
+package com.largata.membership.web;
 
-import com.largata.invitation.MemberSummary;
+import com.largata.membership.MemberSummary;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -16,10 +16,6 @@ public record MemberResponse(
         String bio,
         String vanityNumber) {
 
-
-    public static MemberResponse of(MemberSummary m) {
-        return of(m, false);
-    }
 
     public static MemberResponse of(MemberSummary m, boolean ownershipOffered) {
         return new MemberResponse(
