@@ -129,6 +129,11 @@ Deferred to post-validation: full mobile-UI E2E coverage, load tests, chaos anyt
 - **`@ConditionalOnMissingBean` is autoconfiguration-only and is not a tiebreaker in ordinary `@Configuration`.** Two beans both register and the context fails at startup — *in the profile where both exist*, which is the last place anyone looks. **Use a complete, mutually-exclusive profile pair** (`@Profile("dev")` / `@Profile("!dev")`) so exactly one bean always wins, and run at least one integration test in **each** profile before believing a profile-conditional bean works.
 - **A dependency can change the HTTP transport under the whole application**, because Spring picks its `ClientHttpRequestFactory` by classpath detection. State the transport explicitly where you own the client rather than inheriting whatever a transitive dependency installed.
 
+### Time
+
+- **An instant is UTC, always** *(founder, 2026-08-11, at S3.1)*: `TIMESTAMPTZ` in Postgres, `Instant.now(clock)` in Java, never a naive local timestamp. Timezone drift is a silent corruption — a value written in local time reads correctly on the machine that wrote it and wrongly everywhere else, so nothing fails until a traveler in another zone sees it; one default removes the class of bug rather than each instance.
+- **A wall-clock value is not an instant and stays zoneless, deliberately.** An activity's `time_of_day` is "9:00 AM where the traveler is standing" — `TIME` in Postgres, `LocalTime` in Java — and shifting it by zone would be the bug. When adding a time column, decide first which of the two it is, and say so in the migration's name or the spec.
+
 **Dial. Floor.** None of this is a rigor setting — it is the shape all code takes at any dial. The two Full-rigor subsystems earn their rigor through more tests, not different conventions.
 
 *Adopted 2026-09-08 (off-epic, at CM-4's close). Every quantified claim above was measured against the tree on that date; the counts are evidence the conventions were already real, and are worth re-measuring rather than trusting if one ever seems wrong.*
