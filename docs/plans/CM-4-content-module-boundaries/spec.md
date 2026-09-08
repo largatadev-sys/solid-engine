@@ -60,7 +60,17 @@ So the decision is to keep the foreign key and keep the single transaction. The 
 
 **Diary's seal is replaced, not supplemented (rule 3).** The `SEALED` map naming eight methods is deleted and an ADR-038 allowlist guard takes its place. Keeping both was rejected: a name-list that goes stale silently is worse than nothing once a structural rule makes it redundant, and its stated reason — that postcard holds the entities — stops being true in this story.
 
-**The meta-test is the story's keystone.** One test asserts that every module under `com.largata` with an `api` package has a boundary guard, and that **no guard carries a by-name exemption**. The second half is only assertable because this story removes the last two exemptions; it is what stops the pattern eroding one convenience at a time.
+**The rule is general and forward-binding, not a content-module rule** *(founder ruling, 2026-09-08, after the spec was first written)*: **every module talks to every other module through an `api` call or an event — always, and for every module added from here.** ADR-038 rule 1 is amended from a convention each story applies to a standing rule each story must already satisfy. What follows from that is a rollout, because the tree is not there yet.
+
+**Measured: 19 modules, 5 guarded, 11 publishing an `api`.** Three groups, and only the first is this story's:
+
+- **Under the rule now** — `diary`, `postcard`, `publication`, `trip`, `place`. This story finishes them and removes the last two exemptions.
+- **Deliberately outside it** — `common` and `identity` (shared kernel), `media` (shared infrastructure), `ws` (transport). ADR-038's classification already says these are meant to be reachable; they are not unguarded by omission and the meta-test must not demand guards of them.
+- **Owed, with a named story each** — `chat`, `poll`, `invitation`, `join`, `health`, `report`, `verification` survive and must come under the rule; `itinerary`, `workspace` and `membership` are the god module TW-1 and CM-5 dismantle, so guarding them would be guarding something being deleted.
+
+**Why the owed seven are not guarded here**, though it is mechanical work: they reach into `itinerary`, `workspace` and `membership` today, so a guard written now would need immediate by-name exemptions — destroying the very property this story exists to establish. **Their trigger is TW-1's merge**, when the code they reach for has moved behind `TripApi`/`PlanApi`/`MembershipApi` and their guards can be written clean.
+
+**The meta-test is the story's keystone, and it carries that classification.** It asserts three things: every module in the first group has a guard; **no guard anywhere carries a by-name exemption**; and the second and third groups are named lists that the test itself pins, so a module cannot drift out of the rule silently and the owed list can only ever shrink. The exemption half is only assertable because this story removes the last two, and it is what stops the pattern eroding one convenience at a time. **A module added from here with an `api` package and no guard fails this test on its first build** — which is the whole of what "forward-binding" means in practice.
 
 **The raw-SQL waiver gains a table list.** ADR-035 waives raw SQL for the trip facade but names no tables, so its surface can grow unnoticed — CM-3 widened it from five tables to six and back with no signal either way. The waiver is amended to name the five tables it covers. **The general source-text SQL guard is NOT built here**: the three modules this story touches contain no raw SQL, so it would guard nothing this story changes while carrying false-positive cost immediately. It goes to TW-1, whose schema-per-module decision supplies the table→module map it needs.
 
