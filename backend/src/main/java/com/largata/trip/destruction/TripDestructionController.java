@@ -1,11 +1,10 @@
-package com.largata.trip.controller;
+package com.largata.trip.destruction;
 
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.trip.exception.TripNotFoundException;
-import com.largata.trip.destruction.TripDestructionService;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;

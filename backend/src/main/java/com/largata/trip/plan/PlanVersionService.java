@@ -11,29 +11,29 @@ import com.largata.trip.record.TripRepository;
 @Service
 public class PlanVersionService {
 
-    private final TripRepository itineraries;
+    private final TripRepository trips;
 
-    PlanVersionService(TripRepository itineraries) {
-        this.itineraries = itineraries;
+    PlanVersionService(TripRepository trips) {
+        this.trips = trips;
     }
 
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void bump(UUID itineraryId) {
-        itineraries.bumpPlanVersion(itineraryId);
+        trips.bumpPlanVersion(itineraryId);
     }
 
 
     @Transactional(propagation = Propagation.MANDATORY)
     public long bumpTo(UUID itineraryId, long committed) {
-        itineraries.bumpPlanVersion(itineraryId);
+        trips.bumpPlanVersion(itineraryId);
         return committed + 1;
     }
 
 
     @Transactional(propagation = Propagation.MANDATORY)
     public long currentVersion(UUID itineraryId) {
-        Long version = itineraries.lockedPlanVersion(itineraryId);
+        Long version = trips.lockedPlanVersion(itineraryId);
         if (version == null) {
             throw new ItineraryNotFoundException();
         }

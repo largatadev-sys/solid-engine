@@ -33,7 +33,7 @@ public class ForkService {
 
     private static final Logger log = LoggerFactory.getLogger(ForkService.class);
 
-    private final TripRepository itineraries;
+    private final TripRepository trips;
     private final DayRepository days;
     private final ActivityRepository activities;
     private final DayService plans;
@@ -45,7 +45,7 @@ public class ForkService {
     private final Analytics analytics;
 
     ForkService(
-            TripRepository itineraries,
+            TripRepository trips,
             DayRepository days,
             ActivityRepository activities,
             DayService plans,
@@ -55,7 +55,7 @@ public class ForkService {
             PublishedVisibility visibility,
             TravelerService travelers,
             Analytics analytics) {
-        this.itineraries = itineraries;
+        this.trips = trips;
         this.days = days;
         this.activities = activities;
         this.plans = plans;
@@ -73,7 +73,7 @@ public class ForkService {
         Trip source = visibility.require(sourceId, caller);
         Instant at = Instant.now();
 
-        Trip copy = itineraries.save(Trip.forkedFrom(source, forkerId, at));
+        Trip copy = trips.save(Trip.forkedFrom(source, forkerId, at));
         workspaces.formAround(copy.id(), forkerId, at);
         copyPlanInto(copy.id(), source.id(), forkerId, at);
         relationships.save(ForkRelationship.recording(source.id(), copy.id(), at));

@@ -13,16 +13,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TripPlanHeaders {
 
-    private final TripRepository itineraries;
+    private final TripRepository trips;
 
-    TripPlanHeaders(TripRepository itineraries) {
-        this.itineraries = itineraries;
+    TripPlanHeaders(TripRepository trips) {
+        this.trips = trips;
     }
 
 
     @Transactional(readOnly = true)
     public Optional<TripPlan> headerOf(UUID tripId) {
-        return itineraries.findById(tripId).map(TripPlanHeaders::headerFrom);
+        return trips.findById(tripId).map(TripPlanHeaders::headerFrom);
     }
 
 

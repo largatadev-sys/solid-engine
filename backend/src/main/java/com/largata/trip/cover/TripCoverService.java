@@ -24,19 +24,19 @@ public class TripCoverService {
 
     private static final Logger log = LoggerFactory.getLogger(TripCoverService.class);
 
-    private final TripRepository itineraries;
+    private final TripRepository trips;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PhotoService photos;
     private final ShareCardVersionService shareCardVersions;
 
     TripCoverService(
-            TripRepository itineraries,
+            TripRepository trips,
             EditLeaseService editLease,
             ActivityHistoryService history,
             PhotoService photos,
             ShareCardVersionService shareCardVersions) {
-        this.itineraries = itineraries;
+        this.trips = trips;
         this.editLease = editLease;
         this.history = history;
         this.photos = photos;
@@ -51,7 +51,7 @@ public class TripCoverService {
                 photos.replaceSingle(
                         PhotoSubject.ITINERARY_COVER, member.itineraryId(), uploaded, member.travelerId());
         itinerary.showCover(MediaUrls.of(stored), member.travelerId(), Instant.now());
-        itineraries.save(itinerary);
+        trips.save(itinerary);
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(member.itineraryId()));
         log.info(
                 "Trip cover set: id={} photoId={} editor={}",
@@ -68,7 +68,7 @@ public class TripCoverService {
         boolean hadCover = itinerary.coverImageUrl() != null;
         photos.deleteSingle(PhotoSubject.ITINERARY_COVER, member.itineraryId());
         itinerary.showCover(null, member.travelerId(), Instant.now());
-        itineraries.save(itinerary);
+        trips.save(itinerary);
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(member.itineraryId()));
         log.info("Trip cover removed: id={} editor={}", member.itineraryId(), member.travelerId());
         return hadCover ? bumpedAndReloaded(member) : itinerary;
@@ -82,7 +82,7 @@ public class TripCoverService {
 
     private Trip editableHeaderOf(Membership member) {
         editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
-        return itineraries
+        return trips
                 .findById(member.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(
                         "The guard authorized a membership for an itinerary that does not exist"));

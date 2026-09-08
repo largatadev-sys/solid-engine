@@ -41,7 +41,6 @@ import com.largata.trip.plan.Activity;
 import com.largata.trip.plan.Day;
 import com.largata.trip.plan.ActivityNotFoundException;
 import com.largata.trip.plan.ActivitySnapshot;
-import com.largata.trip.api.TripLifecycle;
 
 
 @Service

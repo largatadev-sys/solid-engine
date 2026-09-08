@@ -373,7 +373,7 @@ public class InvitationService {
     }
 
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.MANDATORY)
     public int voidPendingInvitations(UUID workspaceId) {
         List<Invitation> pending = invitations.findByWorkspaceIdAndStatus(workspaceId, InvitationStatus.PENDING);
         if (pending.isEmpty()) {

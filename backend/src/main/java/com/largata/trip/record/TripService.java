@@ -54,7 +54,7 @@ public class TripService {
 
     private static final int MAX_PAGE_SIZE = 100;
 
-    private final TripRepository itineraries;
+    private final TripRepository trips;
     private final ActivityRepository activities;
     private final WorkspaceService workspaces;
     private final DayService days;
@@ -66,7 +66,7 @@ public class TripService {
     private final ShareCardVersionService shareCardVersions;
 
     TripService(
-            TripRepository itineraries,
+            TripRepository trips,
             ActivityRepository activities,
             WorkspaceService workspaces,
             DayService days,
@@ -76,7 +76,7 @@ public class TripService {
             WriteFence fence,
             Analytics analytics,
             ShareCardVersionService shareCardVersions) {
-        this.itineraries = itineraries;
+        this.trips = trips;
         this.activities = activities;
         this.workspaces = workspaces;
         this.days = days;
@@ -115,7 +115,7 @@ public class TripService {
 
     @Transactional
     public TripPlanTree createWithPlan(UUID ownerId, TripFields fields, int durationDays) {
-        Trip itinerary = itineraries.save(Trip.newTrip(ownerId, fields, Instant.now()));
+        Trip itinerary = trips.save(Trip.newTrip(ownerId, fields, Instant.now()));
         workspaces.formAround(itinerary.id(), itinerary.ownerId(), itinerary.createdAt());
         days.seedDays(itinerary.id(), durationDays, itinerary.createdAt());
         log.info("Trip created: id={} ownerId={}", itinerary.id(), itinerary.ownerId());
@@ -126,7 +126,7 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public Trip view(Membership membership) {
-        return itineraries
+        return trips
                 .findById(membership.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(
                         "The guard authorized a membership for an itinerary that does not exist"));
@@ -136,20 +136,20 @@ public class TripService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void reassignOwner(UUID itineraryId, UUID newOwnerId) {
         Trip itinerary =
-                itineraries
+                trips
                         .findById(itineraryId)
                         .orElseThrow(
                                 () ->
                                         new IllegalStateException(
                                                 "No itinerary " + itineraryId + " to reassign — invariant breach"));
         itinerary.reassignOwner(newOwnerId);
-        itineraries.saveAndFlush(itinerary);
+        trips.saveAndFlush(itinerary);
     }
 
 
     @Transactional(readOnly = true)
     public boolean isCompleted(UUID itineraryId) {
-        return itineraries
+        return trips
                 .findById(itineraryId)
                 .map(itinerary -> itinerary.state() == TripLifecycle.COMPLETED)
                 .orElse(false);
@@ -212,7 +212,7 @@ public class TripService {
         ShareCardVersionService.CardInputs cardBefore =
                 ShareCardVersionService.CardInputs.of(itinerary);
         itinerary.editFields(fields, member.travelerId(), Instant.now());
-        itineraries.save(itinerary);
+        trips.save(itinerary);
 
         if (!Objects.equals(currencyBefore, itinerary.currency())) {
             int relabelled = activities.relabelPricedActivities(itinerary.id(), itinerary.currency());
@@ -249,7 +249,7 @@ public class TripService {
         if (!member.isOwner()) {
             throw new NotTripOwnerException("Only the trip owner can edit the trip's details.");
         }
-        return itineraries
+        return trips
                 .findById(member.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(
                         "The guard authorized a membership for an itinerary that does not exist"));
@@ -324,7 +324,7 @@ public class TripService {
 
 
     private Trip recordStatus(Trip itinerary, Membership owner, String eventName) {
-        itineraries.save(itinerary);
+        trips.save(itinerary);
         log.info(
                 "Trip publication: id={} published={} owner={}",
                 itinerary.id(),
@@ -346,7 +346,7 @@ public class TripService {
         if (!owner.isOwner()) {
             throw new NotTripOwnerException();
         }
-        return itineraries
+        return trips
                 .findById(owner.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(
                         "The guard authorized a membership for an itinerary that does not exist"));
@@ -354,7 +354,7 @@ public class TripService {
 
 
     private Trip record(Trip itinerary, Membership owner, String eventName) {
-        itineraries.save(itinerary);
+        trips.save(itinerary);
         log.info(
                 "Trip lifecycle: id={} state={} owner={}",
                 itinerary.id(),
@@ -400,8 +400,8 @@ public class TripService {
         Limit probe = Limit.of(limit + 1);
         List<Trip> found =
                 decodedCursor == null
-                        ? itineraries.findFirstPage(itineraryIds, state, probe)
-                        : itineraries.findPageAfter(itineraryIds, decodedCursor, state, probe);
+                        ? trips.findFirstPage(itineraryIds, state, probe)
+                        : trips.findPageAfter(itineraryIds, decodedCursor, state, probe);
 
         if (found.size() <= limit) {
             return Page.exhausted(found);
@@ -424,8 +424,8 @@ public class TripService {
         Limit probe = Limit.of(limit + 1);
         List<Trip> found =
                 decodedCursor == null
-                        ? itineraries.findFirstPublishedPage(ownedIds, probe)
-                        : itineraries.findPublishedPageAfter(ownedIds, decodedCursor, probe);
+                        ? trips.findFirstPublishedPage(ownedIds, probe)
+                        : trips.findPublishedPageAfter(ownedIds, decodedCursor, probe);
 
         boolean more = found.size() > limit;
         List<Trip> rows = more ? found.subList(0, limit) : found;
@@ -446,22 +446,22 @@ public class TripService {
     @Transactional(readOnly = true)
     public TripStats tripStatsFor(UUID travelerId) {
         List<UUID> ownedIds = workspaces.ownedItineraryIdsFor(travelerId);
-        long publishedCount = ownedIds.isEmpty() ? 0 : itineraries.countPublishedAmong(ownedIds);
-        long destinationCount = ownedIds.isEmpty() ? 0 : itineraries.countDestinationsAmong(ownedIds);
+        long publishedCount = ownedIds.isEmpty() ? 0 : trips.countPublishedAmong(ownedIds);
+        long destinationCount = ownedIds.isEmpty() ? 0 : trips.countDestinationsAmong(ownedIds);
         return new TripStats(publishedCount, destinationCount);
     }
 
 
     @Transactional(readOnly = true)
     public Map<UUID, String> titlesByIds(Collection<UUID> itineraryIds) {
-        return itineraries.findAllById(itineraryIds).stream()
+        return trips.findAllById(itineraryIds).stream()
                 .collect(Collectors.toMap(Trip::id, Trip::title));
     }
 
 
     @Transactional(readOnly = true)
     public Optional<TripTeaser> teaserOf(UUID itineraryId) {
-        return itineraries.findById(itineraryId).map(TripService::teaserFrom);
+        return trips.findById(itineraryId).map(TripService::teaserFrom);
     }
 
 

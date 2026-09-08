@@ -10,18 +10,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class TripMediaAudience {
 
-    private final TripRepository itineraries;
+    private final TripRepository trips;
     private final WorkspaceService workspaces;
 
-    TripMediaAudience(TripRepository itineraries, WorkspaceService workspaces) {
-        this.itineraries = itineraries;
+    TripMediaAudience(TripRepository trips, WorkspaceService workspaces) {
+        this.trips = trips;
         this.workspaces = workspaces;
     }
 
 
     @Transactional(readOnly = true)
     public boolean admits(UUID itineraryId, UUID travelerId) {
-        return itineraries
+        return trips
                 .findById(itineraryId)
                 .map(itinerary -> admits(itinerary, travelerId))
                 .orElse(false);

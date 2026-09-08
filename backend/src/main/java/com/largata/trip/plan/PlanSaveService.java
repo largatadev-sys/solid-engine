@@ -42,7 +42,7 @@ public class PlanSaveService {
 
     private final DayRepository days;
     private final ActivityRepository activities;
-    private final TripRepository itineraries;
+    private final TripRepository trips;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
@@ -56,7 +56,7 @@ public class PlanSaveService {
     PlanSaveService(
             DayRepository days,
             ActivityRepository activities,
-            TripRepository itineraries,
+            TripRepository trips,
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,
@@ -66,7 +66,7 @@ public class PlanSaveService {
             Clock clock) {
         this.days = days;
         this.activities = activities;
-        this.itineraries = itineraries;
+        this.trips = trips;
         this.editLease = editLease;
         this.history = history;
         this.planVersion = planVersion;
@@ -196,7 +196,7 @@ public class PlanSaveService {
             Membership member,
             Instant at) {
         ActivityFields fields =
-                staged.fields().toFields().pricedIn(itineraries.findCurrency(member.itineraryId()));
+                staged.fields().toFields().pricedIn(trips.findCurrency(member.itineraryId()));
         if (staged.id() == null) {
             Activity created = activities.save(Activity.create(dayId, sortOrder, fields, member.travelerId(), at));
             entries.add(new HistoryEntry(HistoryAct.ACTIVITY_ADDED, LeaseSubject.activity(created.id())));

@@ -37,7 +37,7 @@ public class ActivityService {
 
     private final DayRepository days;
     private final ActivityRepository activities;
-    private final TripRepository itineraries;
+    private final TripRepository trips;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
@@ -48,7 +48,7 @@ public class ActivityService {
     ActivityService(
             DayRepository days,
             ActivityRepository activities,
-            TripRepository itineraries,
+            TripRepository trips,
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,
@@ -57,7 +57,7 @@ public class ActivityService {
             PhotoService photos) {
         this.days = days;
         this.activities = activities;
-        this.itineraries = itineraries;
+        this.trips = trips;
         this.editLease = editLease;
         this.history = history;
         this.planVersion = planVersion;
@@ -197,7 +197,7 @@ public class ActivityService {
 
 
     private ActivityFields pricedInTripCurrency(UUID itineraryId, ActivityFields fields) {
-        return fields.pricedIn(itineraries.findCurrency(itineraryId));
+        return fields.pricedIn(trips.findCurrency(itineraryId));
     }
 
 

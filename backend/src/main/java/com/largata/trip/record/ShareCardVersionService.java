@@ -11,23 +11,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ShareCardVersionService {
 
-    private final TripRepository itineraries;
+    private final TripRepository trips;
 
-    ShareCardVersionService(TripRepository itineraries) {
-        this.itineraries = itineraries;
+    ShareCardVersionService(TripRepository trips) {
+        this.trips = trips;
     }
 
 
     @Transactional(propagation = Propagation.MANDATORY)
     public Trip bumpAndReload(UUID itineraryId) {
-        itineraries.bumpShareCardVersion(itineraryId);
-        return itineraries.findById(itineraryId).orElseThrow(ItineraryNotFoundException::new);
+        trips.bumpShareCardVersion(itineraryId);
+        return trips.findById(itineraryId).orElseThrow(ItineraryNotFoundException::new);
     }
 
 
     @Transactional(readOnly = true)
     public long currentVersion(UUID itineraryId) {
-        Long version = itineraries.shareCardVersionOf(itineraryId);
+        Long version = trips.shareCardVersionOf(itineraryId);
         if (version == null) {
             throw new ItineraryNotFoundException();
         }

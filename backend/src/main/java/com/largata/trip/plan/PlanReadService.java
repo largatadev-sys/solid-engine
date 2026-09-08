@@ -28,33 +28,14 @@ class PlanReadService implements PlanApi {
 
     @Transactional(readOnly = true)
     public Optional<TripPlan> planOf(UUID tripId) {
-        return headers.headerOf(tripId).map(header -> withDays(header, tripId));
+        return headers.headerOf(tripId).map(header -> header.withDays(daysOf(tripId)));
     }
 
 
-    private TripPlan withDays(TripPlan header, UUID tripId) {
-        List<TripPlan.PlanDay> planDays =
-                days.findByItineraryIdOrderByOrdinalAsc(tripId).stream()
-                        .map(
-                                day ->
-                                        new TripPlan.PlanDay(
-                                                day.ordinal(), day.title(), activitiesOf(day.id())))
-                        .toList();
-        return new TripPlan(
-                header.id(),
-                header.ownerId(),
-                header.title(),
-                header.destination(),
-                header.description(),
-                header.currency(),
-                header.standouts(),
-                header.bestTimeOfYear(),
-                header.coverImageUrl(),
-                header.startDate(),
-                header.endDate(),
-                header.lifecycle(),
-                header.published(),
-                planDays);
+    private List<TripPlan.PlanDay> daysOf(UUID tripId) {
+        return days.findByItineraryIdOrderByOrdinalAsc(tripId).stream()
+                .map(day -> new TripPlan.PlanDay(day.ordinal(), day.title(), activitiesOf(day.id())))
+                .toList();
     }
 
 

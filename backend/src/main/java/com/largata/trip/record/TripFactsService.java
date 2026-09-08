@@ -19,18 +19,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class TripFactsService implements TripApi {
 
-    private final TripRepository itineraries;
+    private final TripRepository trips;
     private final WorkspaceService workspaces;
 
-    TripFactsService(TripRepository itineraries, WorkspaceService workspaces) {
-        this.itineraries = itineraries;
+    TripFactsService(TripRepository trips, WorkspaceService workspaces) {
+        this.trips = trips;
         this.workspaces = workspaces;
     }
 
 
     @Transactional(readOnly = true)
     public Optional<TripFacts> factsOf(UUID tripId) {
-        return itineraries.findById(tripId).map(this::factsFrom);
+        return trips.findById(tripId).map(this::factsFrom);
     }
 
 
@@ -51,7 +51,7 @@ class TripFactsService implements TripApi {
 
     @Transactional(readOnly = true)
     public Optional<TripTeaser> teaserOf(UUID tripId) {
-        return itineraries.findById(tripId).map(TripFactsService::teaserFrom);
+        return trips.findById(tripId).map(TripFactsService::teaserFrom);
     }
 
 
@@ -72,14 +72,14 @@ class TripFactsService implements TripApi {
         if (tripIds.isEmpty()) {
             return Map.of();
         }
-        return itineraries.findAllById(tripIds).stream()
+        return trips.findAllById(tripIds).stream()
                 .collect(Collectors.toMap(Trip::id, Trip::title));
     }
 
 
     @Transactional(readOnly = true)
     public long shareCardVersionOf(UUID tripId) {
-        Long version = itineraries.shareCardVersionOf(tripId);
+        Long version = trips.shareCardVersionOf(tripId);
         if (version == null) {
             throw new TripNotFoundException();
         }
@@ -95,13 +95,13 @@ class TripFactsService implements TripApi {
 
     @Transactional
     public void markPublished(UUID tripId, Instant at) {
-        itineraries.findById(tripId).ifPresent(trip -> trip.markPublishedAt(at));
+        trips.findById(tripId).ifPresent(trip -> trip.markPublishedAt(at));
     }
 
 
     @Transactional
     public void markUnpublished(UUID tripId) {
-        itineraries.findById(tripId).ifPresent(Trip::unpublish);
+        trips.findById(tripId).ifPresent(Trip::unpublish);
     }
 
 

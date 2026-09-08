@@ -22,6 +22,25 @@ public record TripPlan(
         List<PlanDay> days) {
 
 
+    public TripPlan withDays(List<PlanDay> days) {
+        return new TripPlan(
+                id,
+                ownerId,
+                title,
+                destination,
+                description,
+                currency,
+                standouts,
+                bestTimeOfYear,
+                coverImageUrl,
+                startDate,
+                endDate,
+                lifecycle,
+                published,
+                days);
+    }
+
+
     public record PlanDay(int ordinal, String title, List<PlanActivity> activities) {}
 
 
