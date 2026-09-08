@@ -6,7 +6,7 @@ Then every consumer outside the god module and its two satellites — the invita
 
 **Blocked by:** 02 (The events, and three cycles broken in place).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Each interface declares only methods a caller outside the trip module invokes, checked against the call sites rather than against the services
 - [x] No file outside the old package, workspace and membership names the itinerary service, the workspace service, the membership service or the share-card service — checked by a search

@@ -22,7 +22,7 @@ public class WorkspaceRows {
     }
 
 
-    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    @Transactional(propagation = Propagation.MANDATORY)
     public Optional<UUID> idOf(UUID tripId) {
         return workspaces.findByItineraryId(tripId).map(Workspace::id);
     }

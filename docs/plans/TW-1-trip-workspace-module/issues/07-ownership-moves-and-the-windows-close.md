@@ -6,7 +6,7 @@ With nothing left outside the module that the windows were holding open, both ar
 
 **Blocked by:** 06 (Plan, editing and history move).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The membership package no longer exists; its files and the ownership controller live in the trip module's ownership slice; membership's eleven integration tests pass with package and import edits only
 - [x] No window predicate exists in either guard, asserted by a test; sabotage recorded in this ticket's comments — a reintroduced window fails that test, with the failure line read

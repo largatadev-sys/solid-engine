@@ -6,7 +6,7 @@ Three things are born with it. The trip guard gains its **permanent legacy exemp
 
 **Blocked by:** 03 (The three interfaces, implemented in place, and eight consumers cut over).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The workspace package no longer exists; its files live in the trip module's workspace slice; the seven workspace integration tests pass with package and import edits only
 - [x] The legacy exemption names the old package alone, selects more than thirty classes, and carries a message naming the decommissioning story

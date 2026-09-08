@@ -6,7 +6,7 @@ The four event publishes ticket 02 introduced now live inside the trip module, w
 
 **Blocked by:** 05 (The trip's own slices move — trip, cover, dump, fork, validation).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The three slices exist under the trip module and hold the files named above; none remains in the old package
 - [x] The two websocket frame tests pass unedited from ticket 02's state, and the frames are byte-identical

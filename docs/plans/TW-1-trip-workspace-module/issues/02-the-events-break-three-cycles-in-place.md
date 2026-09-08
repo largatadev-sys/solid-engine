@@ -6,7 +6,7 @@ Three cycles break. Archiving a trip stops calling the invitation service direct
 
 **Blocked by:** None (can start immediately — parallel with 01).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Five event records exist in the trip module's api, each a past-tense fact carrying ids only; trip unarchived is recorded in the spec's comments with its trigger and does not exist in code
 - [x] The membership service no longer names the invitation service; the archive contract test passes with no edited assertion

@@ -8,7 +8,7 @@ Postcard and publication take the two-line change the boundaries story accepted 
 
 **Blocked by:** 07 (Ownership moves, and the windows close).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The facade class is gone, and the trip module contains no raw SQL outside the destruction service
 - [x] Every method of the trip and plan interfaces is implemented by the slice that owns its answer, over that slice's repositories

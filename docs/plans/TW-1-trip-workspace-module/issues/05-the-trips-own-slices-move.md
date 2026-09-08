@@ -6,7 +6,7 @@ Nothing a traveler reaches changes. Every route keeps both roots and every path 
 
 **Blocked by:** 01 (The three controller edges are cut before anything moves), 04 (Workspace moves; the exemption, the two windows and the script are born).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The five slices exist under the trip module and hold the files named above; none of those files remains in the old package
 - [x] Every controller that moved carries both roots, and the twin and equivalence tests pass unedited

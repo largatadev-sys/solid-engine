@@ -6,7 +6,7 @@ First, the owner's preview of the itinerary a publish would create leaves the tr
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The preview route is served by a controller that stays in the old package, and the trip controller no longer names the published-itinerary service or its response
 - [x] The membership and ownership routes are served by a controller that names no invitation type; the invitation routes are served by a controller that names no membership type; both carry both roots

@@ -18,7 +18,7 @@ public class PlanRows {
     }
 
 
-    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    @Transactional(propagation = Propagation.MANDATORY)
     public List<UUID> activityIdsUnder(UUID tripId) {
         return activities.idsUnder(tripId);
     }

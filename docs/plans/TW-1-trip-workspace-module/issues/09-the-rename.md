@@ -6,7 +6,7 @@ What does not rename, deliberately and on the record: the table, every path unde
 
 **Blocked by:** 08 (The facade retires).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The five renames above are applied, and no type in the trip module carries the old noun in its name except where the old package's staying half still names it through the legacy exemption
 - [x] The lifecycle's wire names and the state column's storage spelling are unchanged, each pinned by a test that fails if it moves
