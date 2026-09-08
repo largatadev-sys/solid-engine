@@ -1,9 +1,8 @@
 package com.largata.itinerary.api;
 
 import com.largata.identity.api.TravelerCardResponse;
-import com.largata.itinerary.Itinerary;
+import com.largata.trip.trip.entity.Trip;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 
@@ -18,7 +17,7 @@ public record DiscoveryCardResponse(
 
 
     public static DiscoveryCardResponse of(
-            Itinerary itinerary, int durationDays, TravelerCardResponse author) {
+            Trip itinerary, int durationDays, TravelerCardResponse author) {
         return new DiscoveryCardResponse(
                 itinerary.id(),
                 itinerary.title(),

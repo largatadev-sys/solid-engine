@@ -22,7 +22,6 @@ import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.postcard.api.LegacyEntries;
 import com.largata.postcard.exception.ActivityAlreadyPostcardedException;
-import com.largata.workspace.WorkspaceService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.api.TripLifecycle;
+import com.largata.trip.plan.entity.Activity;
+import com.largata.trip.plan.entity.Day;
+import com.largata.trip.plan.entity.ActivitySnapshot;
+import com.largata.trip.workspace.service.WorkspaceService;
+import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.plan.repository.ActivityRepository;
+import com.largata.trip.plan.repository.DayRepository;
+import com.largata.trip.plan.exception.ActivityNotFoundException;
 
 
 @Service
@@ -47,7 +56,7 @@ public class DiaryService {
     private final LegacyEntries entries;
     private final ActivityRepository activities;
     private final DayRepository days;
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final PhotoService photos;
     private final WriteFence writeFence;
     private final WorkspaceService workspaces;
@@ -57,7 +66,7 @@ public class DiaryService {
             LegacyEntries entries,
             ActivityRepository activities,
             DayRepository days,
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             PhotoService photos,
             WriteFence writeFence,
             WorkspaceService workspaces,
@@ -81,7 +90,7 @@ public class DiaryService {
             List<UUID> fromDump,
             List<byte[]> devicePhotos) {
         writeFence.requireWritable(member);
-        Itinerary trip = requireStarted(member);
+        Trip trip = requireStarted(member);
 
         int total = fromDump.size() + devicePhotos.size();
         if (total < 1) {
@@ -217,7 +226,7 @@ public class DiaryService {
     @Transactional(readOnly = true)
     public Page<DiaryTripResponse> myTrips(UUID travelerId, String cursor, Integer requestedLimit) {
         UUID after = cursor == null ? null : Cursor.decode(cursor);
-        List<UUID> openable = workspaces.itineraryIdsInSightOf(travelerId);
+        List<UUID> openable = workspaces.tripIdsInSightOf(travelerId);
         if (openable.isEmpty()) {
             return Page.exhausted(List.of());
         }
@@ -247,7 +256,7 @@ public class DiaryService {
 
 
     private DiaryTripResponse tripViewOf(LegacyEntries.TripRoll row, Map<UUID, Long> dayCounts) {
-        Itinerary trip = itineraries.findById(row.tripId()).orElse(null);
+        Trip trip = itineraries.findById(row.tripId()).orElse(null);
         return new DiaryTripResponse(
                 row.tripId(),
                 trip == null ? null : trip.title(),
@@ -301,7 +310,7 @@ public class DiaryService {
 
     private LegacyEntries.Entry saveTheFirstPostFor(
             Membership member,
-            Itinerary trip,
+            Trip trip,
             UUID activityId,
             Activity activity,
             Day day,
@@ -347,10 +356,10 @@ public class DiaryService {
     }
 
 
-    private Itinerary requireStarted(Membership member) {
-        Itinerary trip =
+    private Trip requireStarted(Membership member) {
+        Trip trip =
                 itineraries.findById(member.itineraryId()).orElseThrow(DiaryEntryNotFoundException::new);
-        if (trip.state() != ItineraryState.ONGOING && trip.state() != ItineraryState.COMPLETED) {
+        if (trip.state() != TripLifecycle.ONGOING && trip.state() != TripLifecycle.COMPLETED) {
             throw new TripNotStartedException();
         }
         return trip;

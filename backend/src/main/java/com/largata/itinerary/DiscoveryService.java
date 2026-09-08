@@ -23,6 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.plan.service.DayService;
 
 
 @Service
@@ -37,13 +40,13 @@ public class DiscoveryService {
 
     private static final Logger log = LoggerFactory.getLogger(DiscoveryService.class);
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final DayService days;
     private final TravelerService travelers;
     private final StrangersSurface surface;
 
     DiscoveryService(
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             DayService days,
             TravelerService travelers,
             StrangersSurface surface) {
@@ -60,7 +63,7 @@ public class DiscoveryService {
         int limit = StrangersSurface.clamp(requestedLimit);
         InstantCursor from = cursor == null ? null : InstantCursor.decode(cursor);
 
-        List<Itinerary> found =
+        List<Trip> found =
                 itineraries.findDiscoveryPage(
                         surface.archivedArray(),
                         filters.query(),
@@ -72,13 +75,13 @@ public class DiscoveryService {
                         limit + 1);
 
         boolean more = found.size() > limit;
-        List<Itinerary> rows = more ? found.subList(0, limit) : found;
+        List<Trip> rows = more ? found.subList(0, limit) : found;
         List<DiscoveryCardResponse> cards = project(rows);
 
         if (!more) {
             return Page.exhausted(cards);
         }
-        Itinerary last = rows.getLast();
+        Trip last = rows.getLast();
         return Page.of(cards, InstantCursor.encode(last.publishedAt(), last.id()));
     }
 
@@ -97,10 +100,10 @@ public class DiscoveryService {
 
     @Transactional(readOnly = true)
     public List<DiscoveryCardResponse> recommended() {
-        List<Itinerary> candidates = itineraries.findRecommendable(surface.archivedArray(), RECOMMENDED_PROBE);
+        List<Trip> candidates = itineraries.findRecommendable(surface.archivedArray(), RECOMMENDED_PROBE);
 
         Set<UUID> authorsSeen = new HashSet<>();
-        List<Itinerary> distinct =
+        List<Trip> distinct =
                 candidates.stream()
                         .filter(itinerary -> authorsSeen.add(itinerary.ownerId()))
                         .limit(RECOMMENDED_CAP)
@@ -167,11 +170,11 @@ public class DiscoveryService {
     }
 
 
-    private List<DiscoveryCardResponse> project(List<Itinerary> rows) {
+    private List<DiscoveryCardResponse> project(List<Trip> rows) {
         if (rows.isEmpty()) {
             return List.of();
         }
-        Map<UUID, Long> dayCounts = days.dayCountsOf(rows.stream().map(Itinerary::id).toList());
+        Map<UUID, Long> dayCounts = days.dayCountsOf(rows.stream().map(Trip::id).toList());
         Map<UUID, TravelerCardResponse> authors = authorsOf(rows);
 
         return rows.stream()
@@ -182,7 +185,7 @@ public class DiscoveryService {
 
 
     private DiscoveryCardResponse cardOf(
-            Itinerary itinerary,
+            Trip itinerary,
             Map<UUID, Long> dayCounts,
             Map<UUID, TravelerCardResponse> authors) {
         TravelerCardResponse author = authors.get(itinerary.ownerId());
@@ -195,8 +198,8 @@ public class DiscoveryService {
     }
 
 
-    private Map<UUID, TravelerCardResponse> authorsOf(List<Itinerary> rows) {
-        List<UUID> ids = rows.stream().map(Itinerary::ownerId).distinct().toList();
+    private Map<UUID, TravelerCardResponse> authorsOf(List<Trip> rows) {
+        List<UUID> ids = rows.stream().map(Trip::ownerId).distinct().toList();
         return travelers.summariesByIds(ids).stream()
                 .collect(Collectors.toMap(TravelerSummary::id, TravelerCardResponse::of));
     }

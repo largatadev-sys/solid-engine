@@ -4,8 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.itinerary.Itinerary;
-import com.largata.itinerary.ItineraryService;
+import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.time.Duration;
 import java.time.Instant;
@@ -20,13 +19,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import com.largata.trip.trip.service.TripService;
 
 
 @SpringBootTest
 class PollVoteRaceIT extends PostgresTestBase {
 
     @Autowired private PollService polls;
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private JdbcTemplate jdbc;
 
     @Test
@@ -108,7 +108,7 @@ class PollVoteRaceIT extends PostgresTestBase {
 
     private Membership ownerOfAFreshTrip() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
+        Trip trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
         return new Membership(ownerId, trip.id(), Role.OWNER);
     }
 }

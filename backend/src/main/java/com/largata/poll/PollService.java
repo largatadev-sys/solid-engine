@@ -14,8 +14,8 @@ import com.largata.poll.PollExceptions.PollClosedException;
 import com.largata.poll.PollExceptions.PollNotFoundException;
 import com.largata.poll.PollExceptions.PollOptionNotFoundException;
 import com.largata.poll.PollExceptions.TooManyOpenPollsException;
-import com.largata.workspace.MembershipView;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.api.MembershipView;
+import com.largata.trip.api.MembershipApi;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ public class PollService {
     private final PollRepository polls;
     private final PollVoteRepository votes;
     private final PollVoteInserter inserter;
-    private final WorkspaceService workspaces;
+    private final MembershipApi workspaces;
     private final TravelerService travelers;
     private final WriteFence writeFence;
     private final Analytics analytics;
@@ -49,7 +49,7 @@ public class PollService {
             PollRepository polls,
             PollVoteRepository votes,
             PollVoteInserter inserter,
-            WorkspaceService workspaces,
+            MembershipApi workspaces,
             TravelerService travelers,
             WriteFence writeFence,
             Analytics analytics,

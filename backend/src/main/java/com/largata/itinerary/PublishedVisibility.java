@@ -2,27 +2,29 @@ package com.largata.itinerary;
 
 import com.largata.common.authz.ItineraryNotFoundException;
 import com.largata.common.authz.Membership;
-import com.largata.workspace.WorkspaceService;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.workspace.service.WorkspaceService;
+import com.largata.trip.trip.repository.TripRepository;
 
 
 @Component
 public class PublishedVisibility {
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final WorkspaceService workspaces;
 
-    PublishedVisibility(ItineraryRepository itineraries, WorkspaceService workspaces) {
+    PublishedVisibility(TripRepository itineraries, WorkspaceService workspaces) {
         this.itineraries = itineraries;
         this.workspaces = workspaces;
     }
 
 
     @Transactional(readOnly = true)
-    public Itinerary require(UUID itineraryId, Optional<Membership> caller) {
+    public Trip require(UUID itineraryId, Optional<Membership> caller) {
         return admitted(itineraryId, caller).orElseThrow(ItineraryNotFoundException::new);
     }
 
@@ -33,7 +35,7 @@ public class PublishedVisibility {
     }
 
 
-    private Optional<Itinerary> admitted(UUID itineraryId, Optional<Membership> caller) {
+    private Optional<Trip> admitted(UUID itineraryId, Optional<Membership> caller) {
         return itineraries
                 .findById(itineraryId)
                 .filter(itinerary -> !workspaces.isArchived(itineraryId))
@@ -41,7 +43,7 @@ public class PublishedVisibility {
     }
 
 
-    private static boolean visibleTo(Itinerary itinerary) {
+    private static boolean visibleTo(Trip itinerary) {
         return itinerary.isPublished();
     }
 }

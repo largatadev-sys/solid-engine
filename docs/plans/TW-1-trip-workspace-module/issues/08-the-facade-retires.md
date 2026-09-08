@@ -1,0 +1,52 @@
+# 08: The facade retires
+
+**What to build:** the raw-SQL trip facade the content story built as scaffolding is replaced by the real thing, now that every table it read over belongs to the module it lives in. Its seven interface reads become implementations in the slices that own each answer, over those slices' own repositories — the trip's facts from the trip slice, a day's and an activity's facts and the plan from the plan slice, the frozen check and the published-flag pair from where the workspace state and the trip row live. The strangler waiver dissolves with it, which was the waiver's recorded condition.
+
+One thing keeps its raw SQL and its reach. Destruction moves verbatim into a service of its own and keeps its deletes on the tables invitation, poll, join and chat own: an event-driven destruction is impossible while those tables carry foreign keys that the workspace must satisfy, and the one-transaction contract is pinned by test. It is the only place the trip module names another module's table after this story, and the boundaries story's twelve-table waiver list narrows to exactly those foreign tables, recorded as debt with the foreign-key-drop story as its trigger. Publication's flag write stays as the bridge the decommissioning story dissolves; it is recorded, not rewired.
+
+Postcard and publication take the two-line change the boundaries story accepted knowingly: the plan and day and activity reads now come from the plan interface.
+
+**Blocked by:** 07 (Ownership moves, and the windows close).
+
+**Status:** done
+
+- [x] The facade class is gone, and the trip module contains no raw SQL outside the destruction service
+- [x] Every method of the trip and plan interfaces is implemented by the slice that owns its answer, over that slice's repositories
+- [x] The destruction service carries the destroy act unchanged, and the test pinning that the workspace world and its media die in one transaction passes unedited
+- [x] The waiver's table list names only the foreign tables destruction deletes from, and the trigger is recorded beside it
+- [x] Postcard and publication compile against the plan interface with no other change, and their guards pass
+- [x] The assertion-diff script reports zero differences; every integration test passes with no edited assertion
+
+## Comments
+
+**2026-09-08 — built.** `trip/service/TripService` — the raw-SQL facade CM-1 built as scaffolding — is **deleted**, and its ten interface reads are now repository-backed implementations in the slices that own each answer.
+
+*Where each answer went, and why there.* `TripApi` → `record/TripFactsService` over `ItineraryRepository` (`factsOf`, `teaserOf`, `titlesByIds`, `shareCardVersionOf`, `markPublished`, `markUnpublished`) with `frozen` and the archived flag delegated to `workspace/WorkspaceService`, which owns workspace state. `PlanApi` → `plan/PlanReadService` over `DayRepository` and `ActivityRepository`. The **plan's implementation had to live inside `trip.plan`**, not in a neutral place: `Activity`'s and `Day`'s accessors are package-private, and the alternative — widening twenty accessors to public so a service elsewhere could read them — would have undone exactly the sealing this story exists to create. The trip-level half of a plan comes from `record/TripPlanHeaders`, a small published seam, so `PlanReadService` never touches the `Itinerary` entity.
+
+*One behaviour was preserved deliberately rather than improved.* The facade's `markPublished` was an unconditional `UPDATE`; the entity's existing `publishTo` refuses when the trip is not COMPLETED. Routing the api through `publishTo` would have added a refusal to a path publication already gates, changing observable behaviour in a story whose whole claim is that nothing moved. The entity gained `markPublishedAt`, which mirrors the SQL exactly.
+
+*Destruction keeps its reach, and now the build says so.* `destruction/TripDestructionService` carries `destroy` verbatim. **The waiver narrowed from CM-4's twelve tables to five**, because seven of the twelve are now trip's own: `itinerary`, `day`, `activity`, `workspace`, `membership`, `ownership_offer`, `ownership_transfer`. What remains foreign is `poll`, `invitation`, `join_request`, `join_link`, `chat_message` — each `NOT NULL REFERENCES workspace`, so an event-driven destruction is impossible before the FK drops. Trigger: the foreign-key-drop story.
+
+**This is also ADR-038's deferred general SQL guard, delivered.** CM-4 recorded that the source-text guard "is TW-1's, deliberately", and `TripRawSqlWaiverTest` is it — three rules: raw SQL exists nowhere under `trip/` but the destruction service; the foreign tables destruction names are **exactly** those five; and the scan reads what it claims to (>8 tables, >100 files), so it cannot pass vacuously. Sabotage-checked by adding `"diary_entry"` to the workspace-children loop — the build goes red naming it. One trap in writing it: the first version scanned every quoted lowercase string in the file and caught the analytics event name `"trip_destroyed"` as a table, so the quoted scan is now scoped to the `for (String workspaceTable` loop and **throws** if that loop is ever renamed away, rather than silently reading nothing.
+
+*Postcard and publication needed no change here* — they took their `PlanApi` field at ticket 03, when splitting the interface is what made their calls stop typechecking. Publication's `markPublished` write stays as CM-5's bridge, recorded and not rewired.
+
+*Verified:* raw-SQL waiver guard **3/3** with its sabotage red, clean build first pass, full suite below.
+
+**2026-09-08 — one regression, found by CI, and it is the exact class this story's claim exists to catch.** `PublicationContractIT.hardDeleteByTheRecordedOwnerDestroysTheObjectEvenWhenTheTripIsGone` failed with `204 expected, 404 received`.
+
+The facade's `markUnpublished` was `UPDATE itinerary SET published = FALSE WHERE id = ?` — which, against a trip row that no longer exists, **matches zero rows and succeeds silently**. The repository-backed replacement read `findById(...).orElseThrow(TripNotFoundException::new)`, which is the obvious translation and looks *more* correct in isolation. It is not: publication's `destroy` calls `markUnpublished` after deleting the object, and CM-1's canon is that **the recorded owner hard-deletes a published object even when it is orphaned**. Throwing there turned a deliberate capability into a 404.
+
+Both writes now use `ifPresent`, preserving the SQL's semantics exactly. Same family as `markPublished` keeping its unconditional form rather than adopting the entity's COMPLETED refusal — **when replacing raw SQL with a repository call, the question is not "what is correct" but "what did the statement do, including on the rows it did not match"**. A `WHERE` that matches nothing is a behaviour, and an `orElseThrow` is not the same behaviour. Publication ITs **13/13** after.
+
+**2026-09-08 — the destruction service holds no SQL at all, at the founder's ruling.** Reading the finished file, the founder asked *"are we permitting direct sql statements in this service?"* and then ruled: *"we should be strict about implementing these. i would just have a repo class for these instead of directly calling db statements in the service."* Both halves were right, and the second is a convention this tree did not have.
+
+**What was wrong.** The waiver covers five **foreign** tables. The service held eleven statements, and six of them named tables the trip module **owns** — `itinerary`, `activity`/`day`, `workspace`, `membership`, `ownership_offer`, `ownership_transfer` — every one with a repository sitting in the same module. That SQL was inherited verbatim from the facade, where it was justified (the facade had no repositories, only a `JdbcClient`); ticket 08 said *"moves verbatim"* and I read it as covering the whole method rather than the part the waiver is about. The guard passed because it measured the waiver's **edge** — is the foreign set exactly five — and said nothing about whether raw SQL was necessary at all.
+
+**What it is now.** The six own-table statements are repository calls, through four thin accessors in the slices that own each table: `trip/TripRows`, `plan/PlanRows`, `workspace/WorkspaceRows`, `ownership/OwnershipRows`. Each is `@Transactional(MANDATORY)` for the writes, so none can accidentally run outside destruction's transaction. The deletes are `@Modifying @Query` bulk JPQL rather than `deleteAll(findAll())` — deliberately, because that is what matches the raw `DELETE`'s semantics: no entity loading, no cascade replay, no persistence-context surprises. The `SELECT a.id … JOIN day` became `ActivityRepository.idsUnder`, one query as before.
+
+**And the SQL that must stay is no longer a service's.** `destruction/ForeignWorkspaceRows` is a repository in everything but the annotation — queries only, zero decisions — holding `chat_message` and the four workspace children. It is `@Component`, **not** `@Repository`, because 06b §11 reserves that stereotype for Spring Data interfaces; and Spring Data genuinely cannot reach here, since trip has no entities for other modules' tables and ADR-038 rule 1 forbids it having any. **That is the case §11 did not anticipate**, and it is worth a sentence there rather than being re-derived: *when a module must read a table it owns no entity for, the SQL lives in a queries-only `@Component` named for what distinguishes it — never in a service.*
+
+**The guard grew the rule the old one only implied.** `rawSqlLivesInOneRepositoryClassAndNoService` allows a `JdbcClient` in exactly one named file, and `theRawSqlNeverNamesATableTheTripModuleOwns` fails if any trip table appears in it — which is what would have caught this in the first place. Both sabotage-checked: adding `"membership"` to the foreign list turns it red naming the table, and giving `TripRows` a `JdbcClient` turns it red naming the file.
+
+*Verified:* trip + publication + postcard ITs **342/342**, `TripDestructionContractIT` **3/3** with `theOwnerDestroysTheWorkspaceWorldAndEveryContentObjectStands` green, unit suite **433/433**, waiver guard **4/4** with both sabotages red, assertion-diff **0**. The one thing to hold onto if this is ever touched again: **the delete order is load-bearing** — memberships and the ownership rows before the workspace, and the activity photo sweep before anything is deleted.

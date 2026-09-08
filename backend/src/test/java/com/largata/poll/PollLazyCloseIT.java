@@ -6,11 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import com.largata.common.authz.AudienceFence;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.itinerary.Itinerary;
-import com.largata.itinerary.ItineraryService;
+import com.largata.trip.trip.entity.Trip;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
-import com.largata.workspace.WorkspaceService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -24,6 +22,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
+import com.largata.trip.trip.service.TripService;
+import com.largata.trip.workspace.service.WorkspaceService;
 
 
 @SpringBootTest
@@ -36,7 +36,7 @@ class PollLazyCloseIT extends PostgresTestBase {
 
     @Autowired private PollService polls;
     @Autowired private MutableClock clock;
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private WorkspaceService workspaces;
     @Autowired private AudienceFence audience;
     @Autowired private JdbcTemplate jdbc;
@@ -178,7 +178,7 @@ class PollLazyCloseIT extends PostgresTestBase {
 
     private Membership ownerOfAFreshTrip() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
+        Trip trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
         return new Membership(ownerId, trip.id(), Role.OWNER);
     }
 
@@ -186,7 +186,7 @@ class PollLazyCloseIT extends PostgresTestBase {
     private UUID admitAMember(Membership owner) {
         UUID travelerId = UUID.randomUUID();
         transactions.executeWithoutResult(
-                status -> workspaces.admitMember(owner.itineraryId(), travelerId, Instant.now(clock)));
+                status -> workspaces.admit(owner.itineraryId(), travelerId, Instant.now(clock)));
         return travelerId;
     }
 

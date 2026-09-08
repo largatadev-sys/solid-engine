@@ -2,7 +2,6 @@ package com.largata.itinerary.web;
 
 import com.largata.common.api.Page;
 import com.largata.identity.Traveler;
-import com.largata.identity.api.TravelerCardResponse;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.itinerary.DiscoveryFilters;
 import com.largata.itinerary.DiscoveryService;

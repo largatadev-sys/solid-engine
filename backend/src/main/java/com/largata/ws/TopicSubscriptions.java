@@ -1,7 +1,7 @@
 package com.largata.ws;
 
 import com.largata.common.authz.AuthorizationGuard;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.api.MembershipApi;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.ObjectProvider;
@@ -15,13 +15,13 @@ public class TopicSubscriptions {
 
     private final SessionRegistry registry;
     private final AuthorizationGuard guard;
-    private final WorkspaceService workspaces;
+    private final MembershipApi workspaces;
     private final ObjectProvider<DebugEchoTopic> debugEcho;
 
     TopicSubscriptions(
             SessionRegistry registry,
             AuthorizationGuard guard,
-            WorkspaceService workspaces,
+            MembershipApi workspaces,
             ObjectProvider<DebugEchoTopic> debugEcho) {
         this.registry = registry;
         this.guard = guard;
@@ -46,7 +46,7 @@ public class TopicSubscriptions {
 
 
     public void registerUnderEveryTrip(Session session, UUID travelerId) {
-        workspaces.itineraryIdsInSightOf(travelerId).forEach(itineraryId -> registerTrip(session, itineraryId));
+        workspaces.tripIdsInSightOf(travelerId).forEach(itineraryId -> registerTrip(session, itineraryId));
     }
 
 

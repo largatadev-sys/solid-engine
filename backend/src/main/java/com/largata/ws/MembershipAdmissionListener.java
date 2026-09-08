@@ -1,7 +1,7 @@
 package com.largata.ws;
 
-import com.largata.invitation.MembershipArrived;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.api.MembershipArrived;
+import com.largata.trip.api.MembershipApi;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -18,13 +18,13 @@ public class MembershipAdmissionListener {
 
     private final SessionRegistry registry;
     private final TopicSubscriptions subscriptions;
-    private final WorkspaceService workspaces;
+    private final MembershipApi workspaces;
     private final EventFanout fanout;
 
     MembershipAdmissionListener(
             SessionRegistry registry,
             TopicSubscriptions subscriptions,
-            WorkspaceService workspaces,
+            MembershipApi workspaces,
             EventFanout fanout) {
         this.registry = registry;
         this.subscriptions = subscriptions;
@@ -35,7 +35,7 @@ public class MembershipAdmissionListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void admitArrivedMember(MembershipArrived arrival) {
         UUID itineraryId =
-                workspaces.itineraryIdsByWorkspace(List.of(arrival.workspaceId())).get(arrival.workspaceId());
+                workspaces.tripIdsByWorkspace(List.of(arrival.workspaceId())).get(arrival.workspaceId());
         if (itineraryId == null) {
             log.warn(
                     "WS admission skipped: no itinerary behind workspaceId={} travelerId={}",

@@ -2,7 +2,6 @@ package com.largata.join;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.invitation.MembershipArrived;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
@@ -10,9 +9,8 @@ import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.web.VerifiedContact;
 import com.largata.invitation.InvitationService;
-import com.largata.itinerary.ItineraryService;
-import com.largata.itinerary.ShareCardVersionService;
-import com.largata.itinerary.TripTeaser;
+import com.largata.trip.api.TripApi;
+import com.largata.trip.api.TripTeaser;
 import com.largata.join.JoinExceptions.AlreadyMemberException;
 import com.largata.join.JoinExceptions.EmailNotVerifiedException;
 import com.largata.join.JoinExceptions.JoinRequestNotFoundException;
@@ -20,8 +18,8 @@ import com.largata.join.JoinExceptions.JoinRequestNotPendingException;
 import com.largata.join.JoinExceptions.LinkClosedException;
 import com.largata.join.JoinExceptions.NotTripOwnerException;
 import com.largata.join.JoinExceptions.UnknownJoinTokenException;
-import com.largata.workspace.MembershipView;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.api.MembershipView;
+import com.largata.trip.api.MembershipApi;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
@@ -52,8 +50,8 @@ public class JoinService {
 
     private final JoinLinkRepository links;
     private final JoinRequestRepository requests;
-    private final WorkspaceService workspaces;
-    private final ItineraryService itineraries;
+    private final MembershipApi workspaces;
+    private final TripApi itineraries;
     private final TravelerService travelers;
     private final InvitationService invitations;
     private final WriteFence fence;
@@ -61,15 +59,14 @@ public class JoinService {
     private final JoinQueueTopic joinQueue;
     private final ApplicationEventPublisher events;
     private final Clock clock;
-    private final ShareCardVersionService shareCardVersions;
     private final SecureRandom random = new SecureRandom();
     private final String webBaseUrl;
 
     JoinService(
             JoinLinkRepository links,
             JoinRequestRepository requests,
-            WorkspaceService workspaces,
-            ItineraryService itineraries,
+            MembershipApi workspaces,
+            TripApi itineraries,
             TravelerService travelers,
             InvitationService invitations,
             WriteFence fence,
@@ -77,7 +74,6 @@ public class JoinService {
             JoinQueueTopic joinQueue,
             ApplicationEventPublisher events,
             Clock clock,
-            ShareCardVersionService shareCardVersions,
             @Value("${largata.web.base-url:http://localhost:8081}") String webBaseUrl) {
         this.joinQueue = joinQueue;
         this.events = events;
@@ -90,7 +86,6 @@ public class JoinService {
         this.fence = fence;
         this.analytics = analytics;
         this.clock = clock;
-        this.shareCardVersions = shareCardVersions;
         this.webBaseUrl = webBaseUrl;
     }
 
@@ -103,7 +98,7 @@ public class JoinService {
         return new JoinLinkView(
                 link.token(),
                 versionedShareUrlOf(
-                        link.token(), shareCardVersions.currentVersion(member.itineraryId())));
+                        link.token(), itineraries.shareCardVersionOf(member.itineraryId())));
     }
 
 
@@ -348,7 +343,7 @@ public class JoinService {
         UUID itineraryId = owner.itineraryId();
         Instant now = Instant.now(clock);
 
-        workspaces.admitMember(itineraryId, asked.travelerId(), now);
+        workspaces.admit(itineraryId, asked.travelerId(), now);
         asked.approve(owner.travelerId(), now);
         requests.saveAndFlush(asked);
         invitations.supersedePendingInvitationsFor(asked.workspaceId(), asked.travelerId());
@@ -359,7 +354,6 @@ public class JoinService {
                 itineraryId,
                 asked.travelerId(),
                 owner.travelerId());
-        events.publishEvent(new MembershipArrived(asked.workspaceId(), asked.travelerId()));
         joinQueue.broadcastQueueChanged(itineraryId);
         emitDecision("join_request_approved", requestId, itineraryId, asked.travelerId(), owner.travelerId());
     }
@@ -454,7 +448,7 @@ public class JoinService {
 
 
     private UUID itineraryIdOf(UUID workspaceId) {
-        UUID itineraryId = workspaces.itineraryIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
+        UUID itineraryId = workspaces.tripIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
         if (itineraryId == null) {
             throw new UnknownJoinTokenException();
         }

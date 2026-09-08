@@ -14,6 +14,7 @@ import com.largata.publication.repository.ItineraryObjectRepository;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.exception.TripNotFoundException;
 import com.largata.trip.api.TripPlan;
+import com.largata.trip.api.PlanApi;
 import com.largata.trip.api.TripApi;
 import java.time.Clock;
 import java.time.Instant;
@@ -36,6 +37,7 @@ public class ItineraryObjectService implements PublicationApi {
 
     private final ItineraryObjectRepository objects;
     private final TripApi trips;
+    private final PlanApi plans;
     private final TripEditingSession editingSession;
     private final ObjectMapper json;
     private final Analytics analytics;
@@ -44,12 +46,14 @@ public class ItineraryObjectService implements PublicationApi {
     ItineraryObjectService(
             ItineraryObjectRepository objects,
             TripApi trips,
+            PlanApi plans,
             TripEditingSession editingSession,
             ObjectMapper json,
             Analytics analytics,
             Clock clock) {
         this.objects = objects;
         this.trips = trips;
+        this.plans = plans;
         this.editingSession = editingSession;
         this.json = json;
         this.analytics = analytics;
@@ -62,7 +66,7 @@ public class ItineraryObjectService implements PublicationApi {
         if (!member.isOwner()) {
             throw new NotTheTripOwnerException("Only the trip owner can publish this trip.");
         }
-        TripPlan plan = trips.planOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
+        TripPlan plan = plans.planOf(member.itineraryId()).orElseThrow(TripNotFoundException::new);
         if (!plan.lifecycle().admitsPublishing()) {
             throw new TripNotCompleteException(plan.lifecycle());
         }
@@ -85,7 +89,7 @@ public class ItineraryObjectService implements PublicationApi {
         ItineraryObject saved = objects.saveAndFlush(object);
         trips.markPublished(member.itineraryId(), at);
 
-        log.info("Itinerary object published: id={} tripId={}", saved.id(), saved.tripId());
+        log.info("Trip object published: id={} tripId={}", saved.id(), saved.tripId());
         emit(saved, "itinerary_object_published");
         return saved;
     }
@@ -108,7 +112,7 @@ public class ItineraryObjectService implements PublicationApi {
 
         live.ifPresentOrElse(
                 object -> {
-                    log.info("Itinerary object retired: id={} tripId={}", object.id(), object.tripId());
+                    log.info("Trip object retired: id={} tripId={}", object.id(), object.tripId());
                     emit(object, "itinerary_object_retired");
                 },
                 () ->
@@ -146,7 +150,7 @@ public class ItineraryObjectService implements PublicationApi {
         objects.flush();
         trips.markUnpublished(object.tripId());
 
-        log.info("Itinerary object destroyed: id={} tripId={}", objectId, object.tripId());
+        log.info("Trip object destroyed: id={} tripId={}", objectId, object.tripId());
         emit(object, "itinerary_object_destroyed");
     }
 

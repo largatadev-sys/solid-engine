@@ -7,13 +7,11 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
 import com.largata.identity.web.VerifiedContact;
-import com.largata.itinerary.Itinerary;
-import com.largata.itinerary.ItineraryService;
+import com.largata.trip.trip.entity.Trip;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +20,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import com.largata.trip.trip.service.TripService;
 
 
 @SpringBootTest
@@ -32,7 +31,7 @@ class InvitationExpiryIT extends PostgresTestBase {
 
     @Autowired private InvitationService invitations;
     @Autowired private MutableClock clock;
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
 
     @Test
     void acceptingAnInvitationThatOutlivedItsValidityIsRefused() {
@@ -103,7 +102,7 @@ class InvitationExpiryIT extends PostgresTestBase {
 
     private Membership ownerOfAFreshTrip() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
+        Trip trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
         return new Membership(ownerId, trip.id(), Role.OWNER);
     }
 

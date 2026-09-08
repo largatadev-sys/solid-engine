@@ -2,7 +2,6 @@ package com.largata.ws;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.itinerary.TripsTopic;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
@@ -62,7 +61,7 @@ class EditingSessionEventsIT extends PostgresTestBase {
             tripRig.hold(owner, trip, SESSION, UUID.fromString(trip));
 
             JsonNode envelope = json.readTree(theirs.awaitFrame());
-            assertThat(envelope.path("type").asString()).isEqualTo(TripsTopic.EDITING_SESSION_ACQUIRED);
+            assertThat(envelope.path("type").asString()).isEqualTo(TripEventTypes.EDITING_SESSION_ACQUIRED);
             assertThat(envelope.path("payload").path("itineraryId").asString()).isEqualTo(trip);
             assertThat(envelope.path("payload").path("editingSession").path("travelerId").asString())
                     .as("The frame carries a payload so the client absorbs it into the cached trip"
@@ -83,12 +82,12 @@ class EditingSessionEventsIT extends PostgresTestBase {
         try (WsTestClient theirs = rig.connectAs(watcher)) {
             subscribeAsTraveler(theirs, watcherId);
             tripRig.hold(owner, trip, SESSION, UUID.fromString(trip));
-            theirs.awaitFrameContaining(TripsTopic.EDITING_SESSION_ACQUIRED);
+            theirs.awaitFrameContaining(TripEventTypes.EDITING_SESSION_ACQUIRED);
 
             tripRig.releaseLease(owner, trip, SESSION, UUID.fromString(trip)).expectStatus().isNoContent();
 
-            JsonNode envelope = json.readTree(theirs.awaitFrameContaining(TripsTopic.EDITING_SESSION_RELEASED));
-            assertThat(envelope.path("type").asString()).isEqualTo(TripsTopic.EDITING_SESSION_RELEASED);
+            JsonNode envelope = json.readTree(theirs.awaitFrameContaining(TripEventTypes.EDITING_SESSION_RELEASED));
+            assertThat(envelope.path("type").asString()).isEqualTo(TripEventTypes.EDITING_SESSION_RELEASED);
             assertThat(envelope.path("payload").path("editingSession").isNull())
                     .as("A released session names nobody. The client writes this straight over the"
                             + " cached trip's editingSession, so a stale holder here would leave the"

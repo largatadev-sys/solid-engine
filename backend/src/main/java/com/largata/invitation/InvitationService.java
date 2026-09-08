@@ -8,7 +8,6 @@ import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
-import com.largata.identity.ProfileVisibility;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.web.VerifiedContact;
 import com.largata.invitation.InvitationExceptions.AlreadyMemberException;
@@ -18,10 +17,10 @@ import com.largata.invitation.InvitationExceptions.InvitationExpiredException;
 import com.largata.invitation.InvitationExceptions.InvitationNotFoundException;
 import com.largata.invitation.InvitationExceptions.InvitationNotPendingException;
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
-import com.largata.itinerary.ItineraryService;
-import com.largata.itinerary.TripTeaser;
-import com.largata.workspace.MembershipView;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.api.TripApi;
+import com.largata.trip.api.TripTeaser;
+import com.largata.trip.api.MembershipView;
+import com.largata.trip.api.MembershipApi;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,8 +49,8 @@ public class InvitationService {
     private static final int GOING_PREVIEW_SIZE = 3;
 
     private final InvitationRepository invitations;
-    private final WorkspaceService workspaces;
-    private final ItineraryService itineraries;
+    private final MembershipApi workspaces;
+    private final TripApi itineraries;
     private final TravelerService travelers;
     private final AuthorizationGuard guard;
     private final WriteFence fence;
@@ -64,8 +63,8 @@ public class InvitationService {
 
     InvitationService(
             InvitationRepository invitations,
-            WorkspaceService workspaces,
-            ItineraryService itineraries,
+            MembershipApi workspaces,
+            TripApi itineraries,
             TravelerService travelers,
             AuthorizationGuard guard,
             WriteFence fence,
@@ -187,7 +186,7 @@ public class InvitationService {
         Invitation invitation =
                 invitations.findById(invitationId).orElseThrow(InvitationNotFoundException::new);
         UUID itineraryId =
-                workspaces.itineraryIdsByWorkspace(List.of(invitation.workspaceId())).get(invitation.workspaceId());
+                workspaces.tripIdsByWorkspace(List.of(invitation.workspaceId())).get(invitation.workspaceId());
         Membership caller = guard.requireMember(travelerId, itineraryId);
         fence.requireMembershipMutable(caller);
         if (invitation.status() != InvitationStatus.PENDING) {
@@ -233,37 +232,6 @@ public class InvitationService {
     }
 
 
-    @Transactional(readOnly = true)
-    public List<MemberSummary> members(Membership member) {
-        List<MembershipView> rows = workspaces.membersOf(member.itineraryId());
-        Map<UUID, TravelerSummary> profiles =
-                travelers.summariesByIds(rows.stream().map(MembershipView::travelerId).toList()).stream()
-                        .collect(Collectors.toMap(TravelerSummary::id, summary -> summary));
-        return rows.stream().map(m -> memberSummaryOf(m, profileOf(profiles, m.travelerId()))).toList();
-    }
-
-
-    private static MemberSummary memberSummaryOf(MembershipView m, TravelerSummary profile) {
-        return new MemberSummary(
-                m.travelerId(),
-                profile.displayName(),
-                profile.avatarUrl(),
-                m.role(),
-                m.joinedAt(),
-                profile.handle(),
-                profile.bio(),
-                profile.vanityNumber());
-    }
-
-
-    private static TravelerSummary profileOf(Map<UUID, TravelerSummary> profiles, UUID travelerId) {
-        return profiles.getOrDefault(
-                travelerId,
-                new TravelerSummary(
-                        travelerId, "", null, null, null, null, ProfileVisibility.PUBLIC));
-    }
-
-
 
     @Transactional(readOnly = true)
     public List<InboxInvitation> inbox(VerifiedContact contact, UUID travelerId) {
@@ -281,7 +249,7 @@ public class InvitationService {
             return List.of();
         }
         Map<UUID, UUID> itineraryIds =
-                workspaces.itineraryIdsByWorkspace(rows.stream().map(Invitation::workspaceId).toList());
+                workspaces.tripIdsByWorkspace(rows.stream().map(Invitation::workspaceId).toList());
         Set<UUID> frozen = publication.publishedAmong(itineraryIds.values());
         List<Invitation> live =
                 rows.stream().filter(i -> !frozen.contains(itineraryIds.get(i.workspaceId()))).toList();
@@ -339,7 +307,7 @@ public class InvitationService {
     public UUID itineraryOfInvitationTo(UUID invitationId, VerifiedContact contact, UUID travelerId) {
         Invitation invitation = liveInvitationFor(invitationId, contact, travelerId);
         UUID workspaceId = invitation.workspaceId();
-        UUID itineraryId = workspaces.itineraryIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
+        UUID itineraryId = workspaces.tripIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
         if (itineraryId == null) {
             throw new InvitationNotFoundException();
         }
@@ -352,7 +320,7 @@ public class InvitationService {
         Invitation invitation = liveInvitationFor(invitationId, contact, travelerId);
         UUID workspaceId = invitation.workspaceId();
         UUID itineraryId =
-                workspaces.itineraryIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
+                workspaces.tripIdsByWorkspace(List.of(workspaceId)).get(workspaceId);
         if (workspaces.isMember(itineraryId, travelerId)) {
             throw new AlreadyMemberException("You are already a member of this trip.");
         }
@@ -361,8 +329,7 @@ public class InvitationService {
         Instant now = Instant.now(clock);
         invitation.accept(travelerId, now);
         invitations.saveAndFlush(invitation);
-        workspaces.admitMember(itineraryId, travelerId, now);
-        events.publishEvent(new MembershipArrived(workspaceId, travelerId));
+        workspaces.admit(itineraryId, travelerId, now);
         log.info("Invitation accepted: id={} itineraryId={} travelerId={}", invitationId, itineraryId, travelerId);
         afterCommit(
                 () ->

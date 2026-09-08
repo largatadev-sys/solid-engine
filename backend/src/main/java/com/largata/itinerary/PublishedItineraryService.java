@@ -3,17 +3,22 @@ package com.largata.itinerary;
 import com.largata.common.authz.Membership;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.workspace.WorkspaceService;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.largata.trip.fork.ForkService;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.exception.NotTheTripOwnerException;
+import com.largata.trip.workspace.service.WorkspaceService;
+import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.plan.service.DayService;
 
 
 @Service
 public class PublishedItineraryService {
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final DayService days;
     private final WorkspaceService workspaces;
     private final TravelerService travelers;
@@ -21,7 +26,7 @@ public class PublishedItineraryService {
     private final ForkService forks;
 
     PublishedItineraryService(
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             DayService days,
             WorkspaceService workspaces,
             TravelerService travelers,
@@ -45,7 +50,7 @@ public class PublishedItineraryService {
     @Transactional(readOnly = true)
     public PublishedItinerary preview(Membership owner) {
         if (!owner.isOwner()) {
-            throw new NotTripOwnerException("Only the trip owner can preview the published page.");
+            throw new NotTheTripOwnerException("Only the trip owner can preview the published page.");
         }
         return project(
                 itineraries
@@ -56,7 +61,7 @@ public class PublishedItineraryService {
     }
 
 
-    private PublishedItinerary project(Itinerary itinerary, UUID readerId) {
+    private PublishedItinerary project(Trip itinerary, UUID readerId) {
         return PublishedItinerary.of(
                 itinerary,
                 days.plan(itinerary.id()),

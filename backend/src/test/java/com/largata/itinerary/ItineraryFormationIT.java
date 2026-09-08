@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.largata.support.PostgresTestBase;
-import com.largata.workspace.WorkspaceService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -14,12 +13,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.trip.service.TripService;
+import com.largata.trip.workspace.service.WorkspaceService;
 
 
 @SpringBootTest
-class ItineraryFormationIT extends PostgresTestBase {
+class TripFormationIT extends PostgresTestBase {
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
 
@@ -30,7 +32,7 @@ class ItineraryFormationIT extends PostgresTestBase {
     void creatingAnItineraryFormsItsWorkspaceWithTheCreatorAsOwner() {
         UUID owner = UUID.randomUUID();
 
-        Itinerary itinerary = itineraries.create(owner, "Osaka", "Osaka", null, null);
+        Trip itinerary = itineraries.create(owner, "Osaka", "Osaka", null, null);
 
         assertThat(workspaceIdFor(itinerary.id())).as("a workspace formed around the itinerary").isNotNull();
         assertThat(roleOf(itinerary.id(), owner)).isEqualTo("OWNER");
@@ -41,7 +43,7 @@ class ItineraryFormationIT extends PostgresTestBase {
     void theWorkspaceAndTheOwnerMembershipInheritTheItinerarysInstant() {
         UUID owner = UUID.randomUUID();
 
-        Itinerary itinerary = itineraries.create(owner, "Kyoto", "Kyoto", null, null);
+        Trip itinerary = itineraries.create(owner, "Kyoto", "Kyoto", null, null);
 
         Instant itineraryCreatedAt = instantOf("SELECT created_at FROM itinerary WHERE id = ?", itinerary.id());
         Instant workspaceCreatedAt =
@@ -60,7 +62,7 @@ class ItineraryFormationIT extends PostgresTestBase {
     @Test
     void aSecondWorkspaceForTheSameItineraryIsImpossible() {
         UUID owner = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(owner, "Tokyo", "Tokyo", null, null);
+        Trip itinerary = itineraries.create(owner, "Tokyo", "Tokyo", null, null);
 
         assertThatThrownBy(
                         () ->

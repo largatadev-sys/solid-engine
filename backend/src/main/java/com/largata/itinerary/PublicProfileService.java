@@ -15,23 +15,25 @@ import com.largata.identity.api.TravelerCardResponse;
 import com.largata.itinerary.api.DiaryTripResponse;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;
 import com.largata.postcard.api.LegacyEntries;
-import com.largata.workspace.WorkspaceService;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.workspace.service.WorkspaceService;
+import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.plan.service.DayService;
 
 
 @Service
 public class PublicProfileService {
 
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final LegacyEntries entries;
     private final DayService days;
     private final WorkspaceService workspaces;
@@ -41,7 +43,7 @@ public class PublicProfileService {
     private final FollowService follows;
 
     PublicProfileService(
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             LegacyEntries entries,
             DayService days,
             WorkspaceService workspaces,
@@ -95,7 +97,7 @@ public class PublicProfileService {
         int limit = StrangersSurface.clamp(requestedLimit);
         InstantCursor from = cursor == null ? null : InstantCursor.decode(cursor);
 
-        List<Itinerary> found =
+        List<Trip> found =
                 itineraries.findStrangersSurfacePage(
                         subject.id(),
                         surface.archivedArray(),
@@ -104,13 +106,13 @@ public class PublicProfileService {
                         limit + 1);
 
         boolean more = found.size() > limit;
-        List<Itinerary> rows = more ? found.subList(0, limit) : found;
+        List<Trip> rows = more ? found.subList(0, limit) : found;
         List<ShowcaseItineraryResponse> cards = showcaseCardsOf(rows);
 
         if (!more) {
             return Page.exhausted(cards);
         }
-        Itinerary last = rows.getLast();
+        Trip last = rows.getLast();
         return Page.of(cards, InstantCursor.encode(last.publishedAt(), last.id()));
     }
 
@@ -140,11 +142,11 @@ public class PublicProfileService {
     }
 
 
-    private List<ShowcaseItineraryResponse> showcaseCardsOf(List<Itinerary> rows) {
+    private List<ShowcaseItineraryResponse> showcaseCardsOf(List<Trip> rows) {
         if (rows.isEmpty()) {
             return List.of();
         }
-        Map<UUID, Long> dayCounts = days.dayCountsOf(rows.stream().map(Itinerary::id).toList());
+        Map<UUID, Long> dayCounts = days.dayCountsOf(rows.stream().map(Trip::id).toList());
         return rows.stream()
                 .map(
                         itinerary ->
@@ -160,7 +162,7 @@ public class PublicProfileService {
         }
         List<UUID> tripIds = rows.stream().map(LegacyEntries.TripRoll::tripId).toList();
         Set<UUID> archived = workspaces.archivedAmong(tripIds);
-        Map<UUID, Itinerary> trips = tripsOf(tripIds);
+        Map<UUID, Trip> trips = tripsOf(tripIds);
         Map<UUID, Long> dayCounts = days.dayCountsOf(tripIds);
 
         return rows.stream()
@@ -172,8 +174,8 @@ public class PublicProfileService {
 
 
     private DiaryTripResponse sectionOf(
-            LegacyEntries.TripRoll row, Map<UUID, Itinerary> trips, Map<UUID, Long> dayCounts) {
-        Itinerary trip = trips.get(row.tripId());
+            LegacyEntries.TripRoll row, Map<UUID, Trip> trips, Map<UUID, Long> dayCounts) {
+        Trip trip = trips.get(row.tripId());
         if (trip == null) {
             return null;
         }
@@ -187,9 +189,9 @@ public class PublicProfileService {
     }
 
 
-    private Map<UUID, Itinerary> tripsOf(Collection<UUID> ids) {
+    private Map<UUID, Trip> tripsOf(Collection<UUID> ids) {
         return itineraries.findAllById(ids).stream()
-                .collect(Collectors.toMap(Itinerary::id, itinerary -> itinerary));
+                .collect(Collectors.toMap(Trip::id, itinerary -> itinerary));
     }
 
 }

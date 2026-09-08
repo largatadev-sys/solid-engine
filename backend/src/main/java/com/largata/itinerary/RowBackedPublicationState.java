@@ -7,14 +7,16 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.springframework.stereotype.Component;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.trip.repository.TripRepository;
 
 
 @Component
 class RowBackedPublicationState implements PublicationState {
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
 
-    RowBackedPublicationState(ItineraryRepository itineraries) {
+    RowBackedPublicationState(TripRepository itineraries) {
         this.itineraries = itineraries;
     }
 
@@ -22,7 +24,7 @@ class RowBackedPublicationState implements PublicationState {
     public boolean isPublished(UUID itineraryId) {
         return itineraries
                 .findById(itineraryId)
-                .map(Itinerary::isPublished)
+                .map(Trip::isPublished)
                 .orElseThrow(() -> new IllegalStateException(
                         "No itinerary " + itineraryId + " to read publication status from"));
     }
@@ -33,8 +35,8 @@ class RowBackedPublicationState implements PublicationState {
             return Set.of();
         }
         return StreamSupport.stream(itineraries.findAllById(itineraryIds).spliterator(), false)
-                .filter(Itinerary::isPublished)
-                .map(Itinerary::id)
+                .filter(Trip::isPublished)
+                .map(Trip::id)
                 .collect(Collectors.toUnmodifiableSet());
     }
 }

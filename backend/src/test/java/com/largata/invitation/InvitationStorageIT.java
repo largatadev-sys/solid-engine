@@ -3,23 +3,22 @@ package com.largata.invitation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.itinerary.Itinerary;
-import com.largata.itinerary.ItineraryService;
+import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import com.largata.trip.trip.service.TripService;
 
 
 @SpringBootTest
 class InvitationStorageIT extends PostgresTestBase {
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private InvitationRepository invitations;
     @Autowired private JdbcTemplate jdbc;
 
@@ -129,7 +128,7 @@ class InvitationStorageIT extends PostgresTestBase {
     }
 
     private UUID aWorkspace() {
-        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Lisbon", "Lisbon", null, null);
+        Trip itinerary = itineraries.create(UUID.randomUUID(), "Lisbon", "Lisbon", null, null);
         return jdbc.queryForObject("SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());
     }
 }
