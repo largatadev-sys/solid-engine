@@ -89,7 +89,7 @@ public class ItineraryObjectService implements PublicationApi {
         ItineraryObject saved = objects.saveAndFlush(object);
         trips.markPublished(member.itineraryId(), at);
 
-        log.info("Itinerary object published: id={} tripId={}", saved.id(), saved.tripId());
+        log.info("Trip object published: id={} tripId={}", saved.id(), saved.tripId());
         emit(saved, "itinerary_object_published");
         return saved;
     }
@@ -112,7 +112,7 @@ public class ItineraryObjectService implements PublicationApi {
 
         live.ifPresentOrElse(
                 object -> {
-                    log.info("Itinerary object retired: id={} tripId={}", object.id(), object.tripId());
+                    log.info("Trip object retired: id={} tripId={}", object.id(), object.tripId());
                     emit(object, "itinerary_object_retired");
                 },
                 () ->
@@ -150,7 +150,7 @@ public class ItineraryObjectService implements PublicationApi {
         objects.flush();
         trips.markUnpublished(object.tripId());
 
-        log.info("Itinerary object destroyed: id={} tripId={}", objectId, object.tripId());
+        log.info("Trip object destroyed: id={} tripId={}", objectId, object.tripId());
         emit(object, "itinerary_object_destroyed");
     }
 

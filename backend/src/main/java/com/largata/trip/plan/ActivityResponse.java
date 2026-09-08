@@ -4,7 +4,7 @@ import com.largata.common.geo.PinPayload;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.largata.identity.TravelerSummary;
 import com.largata.trip.plan.ActivityView;
-import com.largata.trip.plan.ItineraryPlan;
+import com.largata.trip.plan.TripPlanTree;
 import com.largata.trip.editing.LeaseHolder;
 import com.largata.trip.editing.LeaseSubject;
 import java.math.BigDecimal;
@@ -43,7 +43,7 @@ public record ActivityResponse(
     }
 
 
-    static ActivityResponse annotated(ActivityView a, ItineraryPlan plan) {
+    static ActivityResponse annotated(ActivityView a, TripPlanTree plan) {
         return build(a, plan.editor(a.lastEditedBy()), plan.holderOf(LeaseSubject.activity(a.id())));
     }
 

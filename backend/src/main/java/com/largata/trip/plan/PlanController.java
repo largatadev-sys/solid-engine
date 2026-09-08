@@ -4,9 +4,9 @@ import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.TripService;
 import com.largata.trip.plan.PlanSaveService;
-import com.largata.trip.record.ItineraryResponse;
+import com.largata.trip.record.TripResponse;
 import com.largata.trip.plan.SavePlanRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -22,22 +22,22 @@ import org.springframework.web.bind.annotation.RestController;
 class PlanController {
 
     private final PlanSaveService plans;
-    private final ItineraryService itineraries;
+    private final TripService itineraries;
     private final AuthorizationGuard guard;
 
-    PlanController(PlanSaveService plans, ItineraryService itineraries, AuthorizationGuard guard) {
+    PlanController(PlanSaveService plans, TripService itineraries, AuthorizationGuard guard) {
         this.plans = plans;
         this.itineraries = itineraries;
         this.guard = guard;
     }
 
     @PutMapping
-    ItineraryResponse save(
+    TripResponse save(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID itineraryId,
             @Valid @RequestBody SavePlanRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
         plans.save(member, request);
-        return ItineraryResponse.of(itineraries.viewPlan(member));
+        return TripResponse.of(itineraries.viewPlan(member));
     }
 }

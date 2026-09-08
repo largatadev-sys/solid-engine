@@ -6,8 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import com.largata.common.authz.AudienceFence;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.Trip;
+import com.largata.trip.record.TripService;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
 import com.largata.trip.workspace.WorkspaceService;
@@ -36,7 +36,7 @@ class PollLazyCloseIT extends PostgresTestBase {
 
     @Autowired private PollService polls;
     @Autowired private MutableClock clock;
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private WorkspaceService workspaces;
     @Autowired private AudienceFence audience;
     @Autowired private JdbcTemplate jdbc;
@@ -178,7 +178,7 @@ class PollLazyCloseIT extends PostgresTestBase {
 
     private Membership ownerOfAFreshTrip() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
+        Trip trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
         return new Membership(ownerId, trip.id(), Role.OWNER);
     }
 

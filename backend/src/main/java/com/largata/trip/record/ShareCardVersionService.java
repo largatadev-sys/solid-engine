@@ -11,15 +11,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ShareCardVersionService {
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
 
-    ShareCardVersionService(ItineraryRepository itineraries) {
+    ShareCardVersionService(TripRepository itineraries) {
         this.itineraries = itineraries;
     }
 
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public Itinerary bumpAndReload(UUID itineraryId) {
+    public Trip bumpAndReload(UUID itineraryId) {
         itineraries.bumpShareCardVersion(itineraryId);
         return itineraries.findById(itineraryId).orElseThrow(ItineraryNotFoundException::new);
     }
@@ -37,7 +37,7 @@ public class ShareCardVersionService {
 
     public record CardInputs(String title, String destination, LocalDate startDate, LocalDate endDate) {
 
-        public static CardInputs of(Itinerary itinerary) {
+        public static CardInputs of(Trip itinerary) {
             return new CardInputs(
                     itinerary.title(),
                     itinerary.destination(),

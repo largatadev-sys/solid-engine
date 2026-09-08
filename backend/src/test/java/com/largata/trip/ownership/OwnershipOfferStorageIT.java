@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.Trip;
+import com.largata.trip.record.TripService;
 import com.largata.support.PostgresTestBase;
 import com.largata.trip.workspace.WorkspaceService;
 import java.time.Instant;
@@ -23,7 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @SpringBootTest
 class OwnershipOfferStorageIT extends PostgresTestBase {
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private MembershipService memberships;
     @Autowired private WorkspaceService workspaces;
     @Autowired private JdbcTemplate jdbc;
@@ -90,7 +90,7 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
 
 
     private UUID newTrip(UUID ownerId) {
-        Itinerary itinerary = itineraries.create(ownerId, "Kanazawa", "Kanazawa", null, null);
+        Trip itinerary = itineraries.create(ownerId, "Kanazawa", "Kanazawa", null, null);
         return itinerary.id();
     }
 

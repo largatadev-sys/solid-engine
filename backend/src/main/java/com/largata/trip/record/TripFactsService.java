@@ -19,10 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class TripFactsService implements TripApi {
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final WorkspaceService workspaces;
 
-    TripFactsService(ItineraryRepository itineraries, WorkspaceService workspaces) {
+    TripFactsService(TripRepository itineraries, WorkspaceService workspaces) {
         this.itineraries = itineraries;
         this.workspaces = workspaces;
     }
@@ -34,7 +34,7 @@ class TripFactsService implements TripApi {
     }
 
 
-    private TripFacts factsFrom(Itinerary trip) {
+    private TripFacts factsFrom(Trip trip) {
         return new TripFacts(
                 trip.id(),
                 trip.ownerId(),
@@ -55,7 +55,7 @@ class TripFactsService implements TripApi {
     }
 
 
-    private static TripTeaser teaserFrom(Itinerary trip) {
+    private static TripTeaser teaserFrom(Trip trip) {
         return new TripTeaser(
                 trip.id(),
                 trip.title(),
@@ -73,7 +73,7 @@ class TripFactsService implements TripApi {
             return Map.of();
         }
         return itineraries.findAllById(tripIds).stream()
-                .collect(Collectors.toMap(Itinerary::id, Itinerary::title));
+                .collect(Collectors.toMap(Trip::id, Trip::title));
     }
 
 
@@ -105,7 +105,7 @@ class TripFactsService implements TripApi {
     }
 
 
-    private static TripLifecycle lifecycleOf(Itinerary trip) {
+    private static TripLifecycle lifecycleOf(Trip trip) {
         return TripLifecycle.parse(trip.state().name()).orElseThrow(TripNotFoundException::new);
     }
 }

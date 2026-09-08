@@ -6,15 +6,15 @@ import com.largata.common.authz.Membership;
 import com.largata.common.authz.AudienceFence;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.Trip;
+import com.largata.trip.record.TripService;
 import com.largata.trip.record.TripCategory;
-import com.largata.trip.record.CreateItineraryRequest;
-import com.largata.trip.record.ItineraryResponse;
-import com.largata.trip.record.UpdateItineraryRequest;
+import com.largata.trip.record.CreateTripRequest;
+import com.largata.trip.record.TripResponse;
+import com.largata.trip.record.UpdateTripRequest;
 import com.largata.trip.ownership.MembershipService;
 import com.largata.trip.fork.ForkService;
-import com.largata.trip.cover.ItineraryCoverService;
+import com.largata.trip.cover.TripCoverService;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.List;
@@ -38,19 +38,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping({"/v1/itineraries", "/v1/trips"})
-class ItineraryController {
+class TripController {
 
-    private final ItineraryService itineraries;
+    private final TripService itineraries;
     private final ForkService forks;
-    private final ItineraryCoverService covers;
+    private final TripCoverService covers;
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
     private final AudienceFence audience;
 
-    ItineraryController(
-            ItineraryService itineraries,
+    TripController(
+            TripService itineraries,
             ForkService forks,
-            ItineraryCoverService covers,
+            TripCoverService covers,
             MembershipService memberships,
             AuthorizationGuard guard,
             AudienceFence audience) {
@@ -64,14 +64,14 @@ class ItineraryController {
 
 
     @PostMapping("/{id}/cover")
-    ItineraryResponse uploadCover(
+    TripResponse uploadCover(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID id,
             @RequestPart("photo") MultipartFile photo)
             throws IOException {
         Membership membership = guard.requireMember(traveler.id(), id);
         covers.replaceCover(membership, photo.getBytes());
-        return ItineraryResponse.of(itineraries.viewPlan(membership));
+        return TripResponse.of(itineraries.viewPlan(membership));
     }
 
 
@@ -84,79 +84,79 @@ class ItineraryController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    ItineraryResponse create(@CurrentTraveler Traveler traveler, @Valid @RequestBody CreateItineraryRequest request) {
+    TripResponse create(@CurrentTraveler Traveler traveler, @Valid @RequestBody CreateTripRequest request) {
         var created =
                 itineraries.createWithPlan(
                         traveler.id(), request.toFields(), request.durationDaysOrZero());
-        return ItineraryResponse.of(created);
+        return TripResponse.of(created);
     }
 
 
     @GetMapping("/{id}")
-    ItineraryResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+    TripResponse view(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         audience.requireInAudience(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan, forks.provenanceOf(id, traveler.id()).orElse(null));
+        return TripResponse.of(plan, forks.provenanceOf(id, traveler.id()).orElse(null));
     }
 
 
     @PatchMapping("/{id}")
-    ItineraryResponse update(
+    TripResponse update(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID id,
-            @Valid @RequestBody UpdateItineraryRequest request) {
+            @Valid @RequestBody UpdateTripRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.editFields(membership, request::mergeOnto);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan);
+        return TripResponse.of(plan);
     }
 
 
     @PostMapping("/{id}/start")
-    ItineraryResponse start(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+    TripResponse start(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.start(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan);
+        return TripResponse.of(plan);
     }
 
 
     @PostMapping("/{id}/complete")
-    ItineraryResponse complete(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+    TripResponse complete(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.complete(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan);
+        return TripResponse.of(plan);
     }
 
 
     @PostMapping("/{id}/reopen")
-    ItineraryResponse reopen(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+    TripResponse reopen(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.reopen(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan);
+        return TripResponse.of(plan);
     }
 
 
     @GetMapping
-    Page<ItineraryResponse> listMine(
+    Page<TripResponse> listMine(
             @CurrentTraveler Traveler traveler,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit,
             @RequestParam(defaultValue = "false") boolean archived,
             @RequestParam(required = false) String category) {
-        Page<Itinerary> page =
+        Page<Trip> page =
                 itineraries.listMine(
                         traveler.id(), cursor, limit, archived, TripCategory.parse(category).orElse(null));
-        List<UUID> ids = page.items().stream().map(Itinerary::id).toList();
+        List<UUID> ids = page.items().stream().map(Trip::id).toList();
         Set<UUID> beingEdited = itineraries.beingEditedAmong(ids);
         Map<UUID, Long> dayCounts = itineraries.dayCountsAmong(ids);
         Set<UUID> owned = itineraries.ownedAmong(traveler.id(), ids);
         Map<UUID, Integer> memberCounts = itineraries.memberCountsAmong(ids);
         return page.map(itinerary ->
-                ItineraryResponse.summaryOf(
+                TripResponse.summaryOf(
                         itinerary,
                         itineraries.stateOf(itinerary.id()),
                         beingEdited.contains(itinerary.id()),
@@ -167,19 +167,19 @@ class ItineraryController {
 
 
     @PostMapping("/{id}/archive")
-    ItineraryResponse archive(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+    TripResponse archive(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         memberships.archive(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan);
+        return TripResponse.of(plan);
     }
 
 
     @PostMapping("/{id}/unarchive")
-    ItineraryResponse unarchive(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+    TripResponse unarchive(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         memberships.unarchive(membership);
         var plan = itineraries.viewPlan(membership);
-        return ItineraryResponse.of(plan);
+        return TripResponse.of(plan);
     }
 }

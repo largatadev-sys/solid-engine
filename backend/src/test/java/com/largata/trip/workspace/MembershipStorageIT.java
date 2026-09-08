@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.largata.common.authz.Role;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.Trip;
+import com.largata.trip.record.TripService;
 import com.largata.support.PostgresTestBase;
 import java.time.Instant;
 import java.util.List;
@@ -19,7 +19,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @SpringBootTest
 class MembershipStorageIT extends PostgresTestBase {
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private WorkspaceService workspaces;
 
@@ -28,7 +28,7 @@ class MembershipStorageIT extends PostgresTestBase {
 
     @Test
     void theRoleColumnHoldsTheEnumsName() {
-        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Sapporo", "Sapporo", null, null);
+        Trip itinerary = itineraries.create(UUID.randomUUID(), "Sapporo", "Sapporo", null, null);
 
         String stored =
                 jdbc.queryForObject(
@@ -46,7 +46,7 @@ class MembershipStorageIT extends PostgresTestBase {
 
     @Test
     void aWorkspaceCannotHaveTwoOwners() {
-        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Hakone", "Hakone", null, null);
+        Trip itinerary = itineraries.create(UUID.randomUUID(), "Hakone", "Hakone", null, null);
         UUID workspaceId =
                 jdbc.queryForObject(
                         "SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());
@@ -67,7 +67,7 @@ class MembershipStorageIT extends PostgresTestBase {
     @Test
     void theOwnersMembershipCannotBeDestroyed() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(ownerId, "Nikko", "Nikko", null, null);
+        Trip itinerary = itineraries.create(ownerId, "Nikko", "Nikko", null, null);
 
         assertThatThrownBy(() -> transactions.executeWithoutResult(tx -> workspaces.removeMember(itinerary.id(), ownerId)))
                 .as("the last owner's row is not deletable — ownership transfers, it is never deleted")
@@ -88,7 +88,7 @@ class MembershipStorageIT extends PostgresTestBase {
     void aMembersMembershipIsDestroyedByTheSameCall() {
         UUID ownerId = UUID.randomUUID();
         UUID memberId = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(ownerId, "Kamakura", "Kamakura", null, null);
+        Trip itinerary = itineraries.create(ownerId, "Kamakura", "Kamakura", null, null);
         UUID workspaceId =
                 jdbc.queryForObject("SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());
         jdbc.update(
@@ -109,7 +109,7 @@ class MembershipStorageIT extends PostgresTestBase {
 
     @Test
     void aWorkspaceCanHaveManyMembers() {
-        Itinerary itinerary = itineraries.create(UUID.randomUUID(), "Otaru", "Otaru", null, null);
+        Trip itinerary = itineraries.create(UUID.randomUUID(), "Otaru", "Otaru", null, null);
         UUID workspaceId =
                 jdbc.queryForObject(
                         "SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());

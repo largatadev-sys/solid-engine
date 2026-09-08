@@ -7,7 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.Trip;
 
 
 @Entity
@@ -41,7 +41,7 @@ public class Day {
     }
 
 
-    static final int MAX_TITLE_LENGTH = Itinerary.MAX_DAY_TITLE_LENGTH;
+    static final int MAX_TITLE_LENGTH = Trip.MAX_DAY_TITLE_LENGTH;
 
 
     static Day at(UUID itineraryId, int ordinal, String title, Instant createdAt) {

@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.ItineraryRepository;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.TripRepository;
+import com.largata.trip.record.Trip;
 import com.largata.trip.record.PlanLimitExceededException;
 import com.largata.trip.editing.EditLeaseService;
 import com.largata.trip.history.ActivityHistoryService;
@@ -42,7 +42,7 @@ public class PlanSaveService {
 
     private final DayRepository days;
     private final ActivityRepository activities;
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
@@ -56,7 +56,7 @@ public class PlanSaveService {
     PlanSaveService(
             DayRepository days,
             ActivityRepository activities,
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,
@@ -151,7 +151,7 @@ public class PlanSaveService {
 
 
     private void parkExistingOrdinalsOutOfTheWay(List<Day> existingDays) {
-        int parked = Itinerary.MAX_DAYS;
+        int parked = Trip.MAX_DAYS;
         for (Day day : existingDays) {
             day.renumberTo(++parked);
             days.save(day);
@@ -262,8 +262,8 @@ public class PlanSaveService {
                 }
             }
         }
-        if (request.days().size() > Itinerary.MAX_DAYS) {
-            throw new PlanLimitExceededException("An itinerary has at most " + Itinerary.MAX_DAYS + " days");
+        if (request.days().size() > Trip.MAX_DAYS) {
+            throw new PlanLimitExceededException("An itinerary has at most " + Trip.MAX_DAYS + " days");
         }
         for (SavePlanRequest.StagedDay day : request.days()) {
             if (day.activities().size() > ActivityService.MAX_ACTIVITIES_PER_DAY) {

@@ -5,7 +5,7 @@ import com.largata.identity.FollowCounts;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.TripService;
 import com.largata.trip.record.TripStats;
 import com.largata.itinerary.api.ProfileStatsResponse;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;
@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/me/profile")
 class MyProfileController {
 
-    private final ItineraryService itineraries;
+    private final TripService itineraries;
     private final FollowService follows;
 
-    MyProfileController(ItineraryService itineraries, FollowService follows) {
+    MyProfileController(TripService itineraries, FollowService follows) {
         this.itineraries = itineraries;
         this.follows = follows;
     }

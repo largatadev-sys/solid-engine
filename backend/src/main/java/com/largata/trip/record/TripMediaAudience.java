@@ -10,10 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class TripMediaAudience {
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final WorkspaceService workspaces;
 
-    TripMediaAudience(ItineraryRepository itineraries, WorkspaceService workspaces) {
+    TripMediaAudience(TripRepository itineraries, WorkspaceService workspaces) {
         this.itineraries = itineraries;
         this.workspaces = workspaces;
     }
@@ -36,7 +36,7 @@ public class TripMediaAudience {
     }
 
 
-    private boolean admits(Itinerary itinerary, UUID travelerId) {
+    private boolean admits(Trip itinerary, UUID travelerId) {
         if (admitsToTheWorkspace(itinerary.id(), travelerId)) {
             return true;
         }

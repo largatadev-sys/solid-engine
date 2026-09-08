@@ -7,8 +7,8 @@ import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.ItineraryNotFoundException;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.Trip;
+import com.largata.trip.record.TripService;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -24,13 +24,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class RowBackedMembershipResolverIT extends PostgresTestBase {
 
     @Autowired private AuthorizationGuard guard;
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private JdbcTemplate jdbc;
 
     @Test
     void theCreatorResolvesToOwnerFromTheirMembershipRow() {
         UUID ana = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ana, "Osaka", "Osaka", null, null);
+        Trip trip = itineraries.create(ana, "Osaka", "Osaka", null, null);
 
         Membership membership = guard.requireMember(ana, trip.id());
 
@@ -47,7 +47,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
     void aSeededMemberRowResolvesToMember() {
         UUID ana = UUID.randomUUID();
         UUID ben = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ana, "Kyoto", "Kyoto", null, null);
+        Trip trip = itineraries.create(ana, "Kyoto", "Kyoto", null, null);
         joinAsMember(trip.id(), ben);
 
         Membership membership = guard.requireMember(ben, trip.id());
@@ -61,7 +61,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
     @Test
     void aStrangerHasNoStanding() {
         UUID ana = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ana, "Nara", "Nara", null, null);
+        Trip trip = itineraries.create(ana, "Nara", "Nara", null, null);
 
         assertThatThrownBy(() -> guard.requireMember(UUID.randomUUID(), trip.id()))
                 .isInstanceOf(ItineraryNotFoundException.class);
@@ -72,7 +72,7 @@ class RowBackedMembershipResolverIT extends PostgresTestBase {
     void aNonexistentItineraryRejectsIdenticallyToSomeoneElses() {
         UUID ana = UUID.randomUUID();
         UUID ben = UUID.randomUUID();
-        Itinerary anasTrip = itineraries.create(ana, "Sapporo", "Sapporo", null, null);
+        Trip anasTrip = itineraries.create(ana, "Sapporo", "Sapporo", null, null);
 
         Throwable someoneElses =
                 org.assertj.core.api.Assertions.catchThrowable(() -> guard.requireMember(ben, anasTrip.id()));

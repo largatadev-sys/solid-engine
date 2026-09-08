@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.ItineraryRepository;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.TripRepository;
+import com.largata.trip.record.Trip;
 
 
 @Service
@@ -36,14 +36,14 @@ public class PostcardFeedService {
     private static final Logger log = LoggerFactory.getLogger(PostcardFeedService.class);
 
     private final LegacyEntries entries;
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final WorkspaceService workspaces;
     private final TravelerService travelers;
     private final PhotoService photos;
 
     PostcardFeedService(
             LegacyEntries entries,
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             WorkspaceService workspaces,
             TravelerService travelers,
             PhotoService photos) {
@@ -135,7 +135,7 @@ public class PostcardFeedService {
                 photos.allOfEach(
                         PhotoSubject.POSTCARD, rows.stream().map(LegacyEntries.Entry::id).toList());
         Map<UUID, TravelerCardResponse> authors = authorsOf(rows);
-        Map<UUID, Itinerary> trips = tripsOf(rows);
+        Map<UUID, Trip> trips = tripsOf(rows);
 
         Set<UUID> archived = workspaces.archivedAmong(trips.keySet());
 
@@ -150,10 +150,10 @@ public class PostcardFeedService {
     private FeedPostcardResponse cardOf(
             LegacyEntries.Entry entry,
             Map<UUID, TravelerCardResponse> authors,
-            Map<UUID, Itinerary> trips,
+            Map<UUID, Trip> trips,
             Map<UUID, List<Photo>> photosByEntry) {
         TravelerCardResponse author = authors.get(entry.authorId());
-        Itinerary trip = entry.tripId() == null ? null : trips.get(entry.tripId());
+        Trip trip = entry.tripId() == null ? null : trips.get(entry.tripId());
         if (author == null || (entry.tripId() != null && trip == null)) {
             log.warn(
                     "Shared postcard withheld from the feed: entryId={} authorFound={} tripFound={}",
@@ -180,7 +180,7 @@ public class PostcardFeedService {
     }
 
 
-    private UUID navigableTripOf(Itinerary trip) {
+    private UUID navigableTripOf(Trip trip) {
         return trip.isPublished() ? trip.id() : null;
     }
 
@@ -192,7 +192,7 @@ public class PostcardFeedService {
     }
 
 
-    private Map<UUID, Itinerary> tripsOf(List<LegacyEntries.Entry> rows) {
+    private Map<UUID, Trip> tripsOf(List<LegacyEntries.Entry> rows) {
         List<UUID> ids =
                 rows.stream()
                         .map(LegacyEntries.Entry::tripId)
@@ -200,7 +200,7 @@ public class PostcardFeedService {
                         .distinct()
                         .toList();
         return itineraries.findAllById(ids).stream()
-                .collect(Collectors.toMap(Itinerary::id, Function.identity()));
+                .collect(Collectors.toMap(Trip::id, Function.identity()));
     }
 
 

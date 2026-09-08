@@ -21,8 +21,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
-import com.largata.trip.record.ItineraryService;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.TripService;
+import com.largata.trip.record.Trip;
 import com.largata.trip.editing.EditLeaseService;
 import com.largata.trip.plan.UnbookedActivity;
 import com.largata.trip.plan.ActivityService;
@@ -41,7 +41,7 @@ class EditLeaseExpiryIT extends PostgresTestBase {
 
     @Autowired private EditLeaseService leases;
     @Autowired private MutableClock clock;
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private ActivityService activities;
     @Autowired private JdbcTemplate jdbc;
 
@@ -157,13 +157,13 @@ class EditLeaseExpiryIT extends PostgresTestBase {
 
     private Membership ownerOfAFreshTrip() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
+        Trip trip = itineraries.create(ownerId, "Trip", "Palawan", null, null);
         return new Membership(ownerId, trip.id(), Role.OWNER);
     }
 
     private Membership ownerOfAPlannedTrip() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null, null, 1);
+        Trip trip = itineraries.create(ownerId, "Trip", "Palawan", null, null, null, 1);
         return new Membership(ownerId, trip.id(), Role.OWNER);
     }
 

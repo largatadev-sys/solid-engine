@@ -18,16 +18,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import com.largata.trip.fork.ForkService;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.TripService;
 import com.largata.trip.fork.ForkRelationshipRepository;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.Trip;
 
 
 @SpringBootTest
 class ForkRollbackIT extends PostgresTestBase {
 
     @Autowired private ForkService forks;
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private TravelerService travelers;
 
@@ -84,7 +84,7 @@ class ForkRollbackIT extends PostgresTestBase {
 
 
     private UUID publishedSource(UUID author) {
-        Itinerary source = itineraries.create(author, "Rollback fixture", "Palawan", null, null, null, 1);
+        Trip source = itineraries.create(author, "Rollback fixture", "Palawan", null, null, null, 1);
         jdbc.update(
                 "UPDATE itinerary SET published = true, state = 'COMPLETED', published_at = now() "
                         + "WHERE id = ?",

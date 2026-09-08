@@ -46,7 +46,7 @@ class AudienceFenceCoverageTest {
 
     private static final Set<String> KNOWN_WORKSPACE_SCOPED_GETS =
             Set.of(
-                    "ItineraryController.java#view",
+                    "TripController.java#view",
                     "DiaryController.java#mine",
                     "DiaryController.java#one",
                     "PhotoDumpController.java#list",
@@ -57,7 +57,7 @@ class AudienceFenceCoverageTest {
     private static final Set<String> KNOWN_OPTIONAL_MEMBERSHIP_HANDLERS =
             Set.of(
                     "PublishedItineraryController.java#view",
-                    "ItineraryLifecycleController.java#fork");
+                    "TripLifecycleController.java#fork");
 
 
     private static final Pattern ANY_HANDLER =

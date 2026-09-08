@@ -5,8 +5,8 @@ import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
 import com.largata.trip.fork.ForkService;
-import com.largata.trip.record.ItineraryService;
-import com.largata.trip.record.ItineraryResponse;
+import com.largata.trip.record.TripService;
+import com.largata.trip.record.TripResponse;
 import com.largata.itinerary.api.PublishRequest;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -20,14 +20,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/v1/itineraries")
-class ItineraryLifecycleController {
+class TripLifecycleController {
 
-    private final ItineraryService itineraries;
+    private final TripService itineraries;
     private final ForkService forks;
     private final AuthorizationGuard guard;
 
-    ItineraryLifecycleController(
-            ItineraryService itineraries, ForkService forks, AuthorizationGuard guard) {
+    TripLifecycleController(
+            TripService itineraries, ForkService forks, AuthorizationGuard guard) {
         this.itineraries = itineraries;
         this.forks = forks;
         this.guard = guard;
@@ -36,10 +36,10 @@ class ItineraryLifecycleController {
 
     @PostMapping("/{id}/fork")
     @ResponseStatus(HttpStatus.CREATED)
-    ItineraryResponse fork(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+    TripResponse fork(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         var forked = forks.fork(id, traveler.id(), guard.membershipOf(traveler.id(), id));
         UUID forkedId = forked.itinerary().id();
-        return ItineraryResponse.of(forked, forks.provenanceOf(forkedId, traveler.id()).orElse(null));
+        return TripResponse.of(forked, forks.provenanceOf(forkedId, traveler.id()).orElse(null));
     }
 
 
@@ -50,32 +50,32 @@ class ItineraryLifecycleController {
 
 
     @PostMapping("/{id}/publish")
-    ItineraryResponse publish(
+    TripResponse publish(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID id,
             @RequestBody(required = false) PublishRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
         PublishRequest.requirePublicAudience(request);
         itineraries.publish(membership);
-        return ItineraryResponse.of(itineraries.viewPlan(membership));
+        return TripResponse.of(itineraries.viewPlan(membership));
     }
 
 
     @PostMapping("/{id}/audience")
-    ItineraryResponse audience(
+    TripResponse audience(
             @CurrentTraveler Traveler traveler,
             @PathVariable UUID id,
             @RequestBody(required = false) PublishRequest request) {
         Membership membership = guard.requireMember(traveler.id(), id);
         PublishRequest.requirePublicAudience(request);
-        return ItineraryResponse.of(itineraries.viewPlan(membership));
+        return TripResponse.of(itineraries.viewPlan(membership));
     }
 
 
     @PostMapping("/{id}/unpublish")
-    ItineraryResponse unpublish(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+    TripResponse unpublish(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
         Membership membership = guard.requireMember(traveler.id(), id);
         itineraries.unpublish(membership);
-        return ItineraryResponse.of(itineraries.viewPlan(membership));
+        return TripResponse.of(itineraries.viewPlan(membership));
     }
 }

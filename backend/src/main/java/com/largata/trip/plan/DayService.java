@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.Trip;
 import com.largata.trip.record.PlanLimitExceededException;
 import com.largata.trip.record.NotTripOwnerException;
 import com.largata.trip.editing.EditLeaseService;
@@ -73,8 +73,8 @@ public class DayService {
         if (count < 0) {
             throw new IllegalArgumentException("An itinerary cannot have a negative number of days");
         }
-        if (count > Itinerary.MAX_DAYS) {
-            throw new IllegalArgumentException("An itinerary has at most " + Itinerary.MAX_DAYS + " days");
+        if (count > Trip.MAX_DAYS) {
+            throw new IllegalArgumentException("An itinerary has at most " + Trip.MAX_DAYS + " days");
         }
         for (int ordinal = 1; ordinal <= count; ordinal++) {
             days.save(Day.at(itineraryId, ordinal, null, createdAt));
@@ -120,8 +120,8 @@ public class DayService {
         editLease.requireNoForeignSession(member);
         UUID itineraryId = member.itineraryId();
         long existing = days.countByItineraryId(itineraryId);
-        if (existing >= Itinerary.MAX_DAYS) {
-            throw new PlanLimitExceededException("An itinerary has at most " + Itinerary.MAX_DAYS + " days");
+        if (existing >= Trip.MAX_DAYS) {
+            throw new PlanLimitExceededException("An itinerary has at most " + Trip.MAX_DAYS + " days");
         }
         int ordinal = (int) existing + 1;
         Day day = days.save(Day.at(itineraryId, ordinal, title, Instant.now()));

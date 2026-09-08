@@ -5,7 +5,7 @@ import com.largata.trip.fork.ForkService;
 import com.largata.identity.TravelerSummary;
 import java.util.List;
 import java.util.UUID;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.Trip;
 import com.largata.trip.plan.EstimatedCost;
 import com.largata.trip.plan.DayView;
 
@@ -28,7 +28,7 @@ public record PublishedItinerary(
 
 
     static PublishedItinerary of(
-            Itinerary itinerary,
+            Trip itinerary,
             List<DayView> plan,
             TravelerSummary creator,
             long forkCount,

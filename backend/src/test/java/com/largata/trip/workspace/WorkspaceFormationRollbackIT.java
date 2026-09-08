@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.TripService;
 import com.largata.support.PostgresTestBase;
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +19,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 @SpringBootTest
 class WorkspaceFormationRollbackIT extends PostgresTestBase {
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private JdbcTemplate jdbc;
 
     @MockitoSpyBean private WorkspaceRepository workspaces;

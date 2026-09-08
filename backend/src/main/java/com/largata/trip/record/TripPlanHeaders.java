@@ -13,9 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TripPlanHeaders {
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
 
-    TripPlanHeaders(ItineraryRepository itineraries) {
+    TripPlanHeaders(TripRepository itineraries) {
         this.itineraries = itineraries;
     }
 
@@ -26,7 +26,7 @@ public class TripPlanHeaders {
     }
 
 
-    private static TripPlan headerFrom(Itinerary trip) {
+    private static TripPlan headerFrom(Trip trip) {
         return new TripPlan(
                 trip.id(),
                 trip.ownerId(),

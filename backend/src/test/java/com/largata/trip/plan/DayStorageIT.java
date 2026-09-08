@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import com.largata.trip.record.ItineraryService;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.TripService;
+import com.largata.trip.record.Trip;
 import com.largata.trip.plan.DayService;
 import com.largata.trip.editing.EditLeaseService;
 import com.largata.trip.editing.LeaseSubject;
@@ -24,14 +24,14 @@ import com.largata.trip.editing.LeaseSubject;
 @SpringBootTest
 class DayStorageIT extends PostgresTestBase {
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private DayService days;
     @Autowired private EditLeaseService editLease;
     @Autowired private JdbcTemplate jdbc;
 
     @Test
     void creatingWithADurationMintsThatManyContiguousDays() {
-        Itinerary trip = itineraries.create(UUID.randomUUID(), "El Nido", "Palawan", null, null, null, 5);
+        Trip trip = itineraries.create(UUID.randomUUID(), "El Nido", "Palawan", null, null, null, 5);
 
         assertThat(ordinalsOf(trip.id()))
                 .as("durationDays: 5 mints ordinals 1..5, contiguous")
@@ -40,7 +40,7 @@ class DayStorageIT extends PostgresTestBase {
 
     @Test
     void creatingWithoutADurationIsAValidZeroDayPlan() {
-        Itinerary trip = itineraries.create(UUID.randomUUID(), "Japan, someday", "Japan", null, null, null, 0);
+        Trip trip = itineraries.create(UUID.randomUUID(), "Japan, someday", "Japan", null, null, null, 0);
 
         assertThat(ordinalsOf(trip.id())).as("no duration → no days, and that is legitimate").isEmpty();
     }
@@ -57,7 +57,7 @@ class DayStorageIT extends PostgresTestBase {
 
     @Test
     void deletingADayRenumbersTheRestToStayContiguous() {
-        Itinerary trip = itineraries.create(UUID.randomUUID(), "Palawan", "Palawan", null, null, null, 5);
+        Trip trip = itineraries.create(UUID.randomUUID(), "Palawan", "Palawan", null, null, null, 5);
         Membership member = ownerOf(trip);
         UUID thirdDay = dayIdAtOrdinal(trip.id(), 3);
         editLease.acquire(member, LeaseSubject.day(thirdDay));
@@ -74,7 +74,7 @@ class DayStorageIT extends PostgresTestBase {
 
     @Test
     void twoDaysCannotShareAnOrdinal() {
-        Itinerary trip = itineraries.create(UUID.randomUUID(), "Bohol", "Bohol", null, null, null, 1);
+        Trip trip = itineraries.create(UUID.randomUUID(), "Bohol", "Bohol", null, null, null, 1);
 
         assertThatThrownBy(
                         () ->
@@ -108,7 +108,7 @@ class DayStorageIT extends PostgresTestBase {
     }
 
 
-    private Membership ownerOf(Itinerary itinerary) {
+    private Membership ownerOf(Trip itinerary) {
         return new Membership(itinerary.ownerId(), itinerary.id(), Role.OWNER);
     }
 }

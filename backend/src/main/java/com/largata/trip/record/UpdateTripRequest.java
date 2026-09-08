@@ -2,8 +2,8 @@ package com.largata.trip.record;
 
 import com.largata.common.geo.Pin;
 import com.largata.common.geo.PinPayload;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryFields;
+import com.largata.trip.record.Trip;
+import com.largata.trip.record.TripFields;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
@@ -15,12 +15,12 @@ import com.largata.trip.validation.ClearingWhatCannotBeClearedException;
 
 
 @ChronologicalDates
-public record UpdateItineraryRequest(
+public record UpdateTripRequest(
         @NotBlank(message = "A title is required.")
-                @Size(max = Itinerary.MAX_TITLE_LENGTH, message = "A title may be at most 120 characters.")
+                @Size(max = Trip.MAX_TITLE_LENGTH, message = "A title may be at most 120 characters.")
                 String title,
         @NotBlank(message = "A destination is required.")
-                @Size(max = Itinerary.MAX_DESTINATION_LENGTH, message = "A destination may be at most 120 characters.")
+                @Size(max = Trip.MAX_DESTINATION_LENGTH, message = "A destination may be at most 120 characters.")
                 String destination,
         Patchable<String> currency,
         Patchable<String> description,
@@ -44,8 +44,8 @@ public record UpdateItineraryRequest(
     }
 
 
-    public ItineraryFields mergeOnto(ItineraryFields current) {
-        return new ItineraryFields(
+    public TripFields mergeOnto(TripFields current) {
+        return new TripFields(
                 title,
                 destination,
                 requirePresent(currency, current.currency(), "A currency cannot be cleared."),

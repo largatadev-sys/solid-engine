@@ -1,8 +1,8 @@
 package com.largata.trip.record;
 
 import com.largata.common.geo.PinPayload;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryFields;
+import com.largata.trip.record.Trip;
+import com.largata.trip.record.TripFields;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -14,22 +14,22 @@ import com.largata.trip.validation.ChronologicalDates;
 
 
 @ChronologicalDates
-public record CreateItineraryRequest(
+public record CreateTripRequest(
         @NotBlank(message = "A title is required.")
-                @Size(max = Itinerary.MAX_TITLE_LENGTH, message = "A title may be at most 120 characters.")
+                @Size(max = Trip.MAX_TITLE_LENGTH, message = "A title may be at most 120 characters.")
                 String title,
         @NotBlank(message = "A destination is required.")
-                @Size(max = Itinerary.MAX_DESTINATION_LENGTH, message = "A destination may be at most 120 characters.")
+                @Size(max = Trip.MAX_DESTINATION_LENGTH, message = "A destination may be at most 120 characters.")
                 String destination,
-        @Size(max = Itinerary.MAX_DESCRIPTION_LENGTH, message = "A description may be at most 4000 characters.")
+        @Size(max = Trip.MAX_DESCRIPTION_LENGTH, message = "A description may be at most 4000 characters.")
                 String description,
         LocalDate startDate,
         LocalDate endDate,
         @PositiveOrZero(message = "Duration cannot be negative.")
-                @Max(value = Itinerary.MAX_DAYS, message = "An itinerary has at most 366 days.")
+                @Max(value = Trip.MAX_DAYS, message = "An itinerary has at most 366 days.")
                 Integer durationDays,
         List<@NotBlank(message = "A standout cannot be blank.") String> standouts,
-        @Size(max = Itinerary.MAX_BEST_TIME_LENGTH, message = "Best time of year is at most 60 characters.")
+        @Size(max = Trip.MAX_BEST_TIME_LENGTH, message = "Best time of year is at most 60 characters.")
                 String bestTimeOfYear,
         @jakarta.validation.Valid PinPayload pin)
         implements HasDateRange {
@@ -47,11 +47,11 @@ public record CreateItineraryRequest(
     }
 
 
-    public ItineraryFields toFields() {
-        return new ItineraryFields(
+    public TripFields toFields() {
+        return new TripFields(
                 title,
                 destination,
-                ItineraryFields.DEFAULT_CURRENCY,
+                TripFields.DEFAULT_CURRENCY,
                 description,
                 standouts == null ? List.of() : standouts,
                 bestTimeOfYear == null ? "" : bestTimeOfYear,

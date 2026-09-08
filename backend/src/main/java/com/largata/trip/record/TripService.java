@@ -36,24 +36,25 @@ import com.largata.trip.plan.ActivityRepository;
 import com.largata.trip.plan.DayService;
 import com.largata.trip.editing.EditLeaseService;
 import com.largata.trip.history.ActivityHistoryService;
-import com.largata.trip.plan.ItineraryPlan;
+import com.largata.trip.plan.TripPlanTree;
 import com.largata.trip.plan.DayView;
 import com.largata.trip.plan.ActivityView;
 import com.largata.trip.editing.LeaseSubject;
 import com.largata.trip.history.HistoryAct;
+import com.largata.trip.api.TripLifecycle;
 
 
 @Service
-public class ItineraryService {
+public class TripService {
 
-    private static final Logger log = LoggerFactory.getLogger(ItineraryService.class);
+    private static final Logger log = LoggerFactory.getLogger(TripService.class);
 
 
     private static final int DEFAULT_PAGE_SIZE = 20;
 
     private static final int MAX_PAGE_SIZE = 100;
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final ActivityRepository activities;
     private final WorkspaceService workspaces;
     private final DayService days;
@@ -64,8 +65,8 @@ public class ItineraryService {
     private final Analytics analytics;
     private final ShareCardVersionService shareCardVersions;
 
-    ItineraryService(
-            ItineraryRepository itineraries,
+    TripService(
+            TripRepository itineraries,
             ActivityRepository activities,
             WorkspaceService workspaces,
             DayService days,
@@ -89,13 +90,13 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary create(
+    public Trip create(
             UUID ownerId, String title, String destination, LocalDate startDate, LocalDate endDate) {
         return create(ownerId, title, destination, null, startDate, endDate, 0);
     }
 
     @Transactional
-    public Itinerary create(
+    public Trip create(
             UUID ownerId,
             String title,
             String destination,
@@ -105,7 +106,7 @@ public class ItineraryService {
             int durationDays) {
         return createWithPlan(
                         ownerId,
-                        ItineraryFields.withoutPublishMetadata(
+                        TripFields.withoutPublishMetadata(
                                 title, destination, description, startDate, endDate),
                         durationDays)
                 .itinerary();
@@ -113,18 +114,18 @@ public class ItineraryService {
 
 
     @Transactional
-    public ItineraryPlan createWithPlan(UUID ownerId, ItineraryFields fields, int durationDays) {
-        Itinerary itinerary = itineraries.save(Itinerary.newTrip(ownerId, fields, Instant.now()));
+    public TripPlanTree createWithPlan(UUID ownerId, TripFields fields, int durationDays) {
+        Trip itinerary = itineraries.save(Trip.newTrip(ownerId, fields, Instant.now()));
         workspaces.formAround(itinerary.id(), itinerary.ownerId(), itinerary.createdAt());
         days.seedDays(itinerary.id(), durationDays, itinerary.createdAt());
-        log.info("Itinerary created: id={} ownerId={}", itinerary.id(), itinerary.ownerId());
+        log.info("Trip created: id={} ownerId={}", itinerary.id(), itinerary.ownerId());
         emitAfterCommit(itinerary);
         return assemble(itinerary, days.plan(itinerary.id()));
     }
 
 
     @Transactional(readOnly = true)
-    public Itinerary view(Membership membership) {
+    public Trip view(Membership membership) {
         return itineraries
                 .findById(membership.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(
@@ -134,7 +135,7 @@ public class ItineraryService {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void reassignOwner(UUID itineraryId, UUID newOwnerId) {
-        Itinerary itinerary =
+        Trip itinerary =
                 itineraries
                         .findById(itineraryId)
                         .orElseThrow(
@@ -150,13 +151,13 @@ public class ItineraryService {
     public boolean isCompleted(UUID itineraryId) {
         return itineraries
                 .findById(itineraryId)
-                .map(itinerary -> itinerary.state() == ItineraryState.COMPLETED)
+                .map(itinerary -> itinerary.state() == TripLifecycle.COMPLETED)
                 .orElse(false);
     }
 
 
     @Transactional(readOnly = true)
-    public ItineraryPlan viewPlan(Membership membership) {
+    public TripPlanTree viewPlan(Membership membership) {
         return assemble(view(membership), days.plan(membership.itineraryId()));
     }
 
@@ -179,7 +180,7 @@ public class ItineraryService {
     }
 
 
-    private ItineraryPlan assemble(Itinerary itinerary, List<DayView> plan) {
+    private TripPlanTree assemble(Trip itinerary, List<DayView> plan) {
         Set<UUID> editorIds = new LinkedHashSet<>();
         if (itinerary.lastEditedBy() != null) {
             editorIds.add(itinerary.lastEditedBy());
@@ -195,17 +196,17 @@ public class ItineraryService {
                         ? Map.of()
                         : travelers.summariesByIds(editorIds).stream()
                                 .collect(Collectors.toMap(TravelerSummary::id, Function.identity()));
-        return new ItineraryPlan(
+        return new TripPlanTree(
                 itinerary, plan, stateOf(itinerary.id()), editLease.liveHoldersFor(itinerary.id()), editors);
     }
 
 
     @Transactional
-    public Itinerary editFields(Membership member, UnaryOperator<ItineraryFields> merge) {
+    public Trip editFields(Membership member, UnaryOperator<TripFields> merge) {
         editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
-        Itinerary itinerary = loadForDetailsEdit(member);
+        Trip itinerary = loadForDetailsEdit(member);
 
-        ItineraryFields fields = merge.apply(fieldsOf(itinerary));
+        TripFields fields = merge.apply(fieldsOf(itinerary));
 
         String currencyBefore = itinerary.currency();
         ShareCardVersionService.CardInputs cardBefore =
@@ -223,7 +224,7 @@ public class ItineraryService {
                     relabelled);
         }
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(itinerary.id()));
-        log.info("Itinerary edited: id={} editor={}", itinerary.id(), member.travelerId());
+        log.info("Trip edited: id={} editor={}", itinerary.id(), member.travelerId());
         AfterCommit.run(
                 () ->
                         analytics.emit(
@@ -243,7 +244,7 @@ public class ItineraryService {
     }
 
 
-    private Itinerary loadForDetailsEdit(Membership member) {
+    private Trip loadForDetailsEdit(Membership member) {
         fence.requireEditable(member);
         if (!member.isOwner()) {
             throw new NotTripOwnerException("Only the trip owner can edit the trip's details.");
@@ -255,8 +256,8 @@ public class ItineraryService {
     }
 
 
-    private static ItineraryFields fieldsOf(Itinerary itinerary) {
-        return new ItineraryFields(
+    private static TripFields fieldsOf(Trip itinerary) {
+        return new TripFields(
                 itinerary.title(),
                 itinerary.destination(),
                 itinerary.currency(),
@@ -277,8 +278,8 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary start(Membership owner) {
-        Itinerary itinerary = authorizeAndLoad(owner);
+    public Trip start(Membership owner) {
+        Trip itinerary = authorizeAndLoad(owner);
         editLease.requireSessionFreeForLifecycle(owner);
         itinerary.start(Instant.now());
         return record(itinerary, owner, "itinerary_started");
@@ -286,8 +287,8 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary complete(Membership owner) {
-        Itinerary itinerary = authorizeAndLoad(owner);
+    public Trip complete(Membership owner) {
+        Trip itinerary = authorizeAndLoad(owner);
         editLease.requireSessionFreeForLifecycle(owner);
         itinerary.complete(Instant.now());
         workspaces.markCompleted(itinerary.id());
@@ -296,8 +297,8 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary reopen(Membership owner) {
-        Itinerary itinerary = authorizeAndLoad(owner);
+    public Trip reopen(Membership owner) {
+        Trip itinerary = authorizeAndLoad(owner);
         editLease.requireSessionFreeForLifecycle(owner);
         itinerary.reopen();
         workspaces.markActive(itinerary.id());
@@ -306,8 +307,8 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary publish(Membership owner) {
-        Itinerary itinerary = authorizeAndLoad(owner);
+    public Trip publish(Membership owner) {
+        Trip itinerary = authorizeAndLoad(owner);
         editLease.requireSessionFreeForLifecycle(owner);
         itinerary.publishTo(Instant.now());
         return recordStatus(itinerary, owner, "itinerary_published");
@@ -315,17 +316,17 @@ public class ItineraryService {
 
 
     @Transactional
-    public Itinerary unpublish(Membership owner) {
-        Itinerary itinerary = authorizeAndLoad(owner);
+    public Trip unpublish(Membership owner) {
+        Trip itinerary = authorizeAndLoad(owner);
         itinerary.unpublish();
         return recordStatus(itinerary, owner, "itinerary_unpublished");
     }
 
 
-    private Itinerary recordStatus(Itinerary itinerary, Membership owner, String eventName) {
+    private Trip recordStatus(Trip itinerary, Membership owner, String eventName) {
         itineraries.save(itinerary);
         log.info(
-                "Itinerary publication: id={} published={} owner={}",
+                "Trip publication: id={} published={} owner={}",
                 itinerary.id(),
                 itinerary.isPublished(),
                 owner.travelerId());
@@ -340,7 +341,7 @@ public class ItineraryService {
     }
 
 
-    private Itinerary authorizeAndLoad(Membership owner) {
+    private Trip authorizeAndLoad(Membership owner) {
         fence.requireWritable(owner);
         if (!owner.isOwner()) {
             throw new NotTripOwnerException();
@@ -352,10 +353,10 @@ public class ItineraryService {
     }
 
 
-    private Itinerary record(Itinerary itinerary, Membership owner, String eventName) {
+    private Trip record(Trip itinerary, Membership owner, String eventName) {
         itineraries.save(itinerary);
         log.info(
-                "Itinerary lifecycle: id={} state={} owner={}",
+                "Trip lifecycle: id={} state={} owner={}",
                 itinerary.id(),
                 itinerary.state().wireName(),
                 owner.travelerId());
@@ -383,7 +384,7 @@ public class ItineraryService {
 
 
     @Transactional(readOnly = true)
-    public Page<Itinerary> listMine(
+    public Page<Trip> listMine(
             UUID travelerId, String cursor, Integer requestedLimit, boolean archived, TripCategory category) {
         int limit = clamp(requestedLimit);
         UUID decodedCursor = cursor == null ? null : Cursor.decode(cursor);
@@ -395,9 +396,9 @@ public class ItineraryService {
         if (itineraryIds.isEmpty()) {
             return Page.exhausted(List.of());
         }
-        ItineraryState state = category == null ? null : category.state().orElse(null);
+        TripLifecycle state = category == null ? null : category.state().orElse(null);
         Limit probe = Limit.of(limit + 1);
-        List<Itinerary> found =
+        List<Trip> found =
                 decodedCursor == null
                         ? itineraries.findFirstPage(itineraryIds, state, probe)
                         : itineraries.findPageAfter(itineraryIds, decodedCursor, state, probe);
@@ -405,7 +406,7 @@ public class ItineraryService {
         if (found.size() <= limit) {
             return Page.exhausted(found);
         }
-        List<Itinerary> page = found.subList(0, limit);
+        List<Trip> page = found.subList(0, limit);
         return Page.of(page, Cursor.encode(page.getLast().id()));
     }
 
@@ -421,14 +422,14 @@ public class ItineraryService {
             return Page.exhausted(List.of());
         }
         Limit probe = Limit.of(limit + 1);
-        List<Itinerary> found =
+        List<Trip> found =
                 decodedCursor == null
                         ? itineraries.findFirstPublishedPage(ownedIds, probe)
                         : itineraries.findPublishedPageAfter(ownedIds, decodedCursor, probe);
 
         boolean more = found.size() > limit;
-        List<Itinerary> rows = more ? found.subList(0, limit) : found;
-        Map<UUID, Long> dayCounts = days.dayCountsOf(rows.stream().map(Itinerary::id).toList());
+        List<Trip> rows = more ? found.subList(0, limit) : found;
+        Map<UUID, Long> dayCounts = days.dayCountsOf(rows.stream().map(Trip::id).toList());
         List<ShowcaseItineraryResponse> page =
                 rows.stream()
                         .map(
@@ -454,17 +455,17 @@ public class ItineraryService {
     @Transactional(readOnly = true)
     public Map<UUID, String> titlesByIds(Collection<UUID> itineraryIds) {
         return itineraries.findAllById(itineraryIds).stream()
-                .collect(Collectors.toMap(Itinerary::id, Itinerary::title));
+                .collect(Collectors.toMap(Trip::id, Trip::title));
     }
 
 
     @Transactional(readOnly = true)
     public Optional<TripTeaser> teaserOf(UUID itineraryId) {
-        return itineraries.findById(itineraryId).map(ItineraryService::teaserFrom);
+        return itineraries.findById(itineraryId).map(TripService::teaserFrom);
     }
 
 
-    private static TripTeaser teaserFrom(Itinerary itinerary) {
+    private static TripTeaser teaserFrom(Trip itinerary) {
         return new TripTeaser(
                 itinerary.id(),
                 itinerary.title(),
@@ -483,7 +484,7 @@ public class ItineraryService {
     }
 
 
-    private void emitAfterCommit(Itinerary itinerary) {
+    private void emitAfterCommit(Trip itinerary) {
         AnalyticsEvent event =
                 AnalyticsEvent.named("itinerary_created")
                         .with("travelerId", itinerary.ownerId())

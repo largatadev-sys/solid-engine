@@ -17,13 +17,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.ItineraryRepository;
+import com.largata.trip.record.TripRepository;
 import com.largata.trip.plan.DayRepository;
 import com.largata.trip.plan.ActivityRepository;
 import com.largata.trip.plan.DayService;
 import com.largata.itinerary.PublishedVisibility;
-import com.largata.trip.plan.ItineraryPlan;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.plan.TripPlanTree;
+import com.largata.trip.record.Trip;
 import com.largata.trip.plan.Day;
 import com.largata.trip.plan.Activity;
 
@@ -33,7 +33,7 @@ public class ForkService {
 
     private static final Logger log = LoggerFactory.getLogger(ForkService.class);
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final DayRepository days;
     private final ActivityRepository activities;
     private final DayService plans;
@@ -45,7 +45,7 @@ public class ForkService {
     private final Analytics analytics;
 
     ForkService(
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             DayRepository days,
             ActivityRepository activities,
             DayService plans,
@@ -69,16 +69,16 @@ public class ForkService {
 
 
     @Transactional
-    public ItineraryPlan fork(UUID sourceId, UUID forkerId, Optional<Membership> caller) {
-        Itinerary source = visibility.require(sourceId, caller);
+    public TripPlanTree fork(UUID sourceId, UUID forkerId, Optional<Membership> caller) {
+        Trip source = visibility.require(sourceId, caller);
         Instant at = Instant.now();
 
-        Itinerary copy = itineraries.save(Itinerary.forkedFrom(source, forkerId, at));
+        Trip copy = itineraries.save(Trip.forkedFrom(source, forkerId, at));
         workspaces.formAround(copy.id(), forkerId, at);
         copyPlanInto(copy.id(), source.id(), forkerId, at);
         relationships.save(ForkRelationship.recording(source.id(), copy.id(), at));
 
-        log.info("Itinerary forked: sourceId={} forkedId={} forkerId={}", source.id(), copy.id(), forkerId);
+        log.info("Trip forked: sourceId={} forkedId={} forkerId={}", source.id(), copy.id(), forkerId);
         AfterCommit.run(
                 () ->
                         analytics.emit(
@@ -88,7 +88,7 @@ public class ForkService {
                                         .with("travelerId", forkerId)
                                         .build()));
 
-        return new ItineraryPlan(
+        return new TripPlanTree(
                 copy,
                 plans.plan(copy.id()),
                 workspaces.stateOf(copy.id()).orElse(WorkspaceState.ACTIVE),

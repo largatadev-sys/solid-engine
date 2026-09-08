@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.Trip;
+import com.largata.trip.record.TripService;
 import com.largata.support.PostgresTestBase;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -17,14 +17,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @SpringBootTest
 class WorkspaceStateStorageIT extends PostgresTestBase {
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private WorkspaceService workspaces;
     @Autowired private JdbcTemplate jdbc;
 
 
     @Test
     void aNewWorkspaceStoresTheEnumNameNotItsWireForm() {
-        Itinerary trip = createTrip();
+        Trip trip = createTrip();
 
         assertThat(storedState(trip.id()))
                 .as("@Enumerated(STRING) writes the name; V13's backfill and any future SQL depend on it")
@@ -34,7 +34,7 @@ class WorkspaceStateStorageIT extends PostgresTestBase {
 
     @Test
     void aCompletedTripsWorkspaceStoresCOMPLETED() {
-        Itinerary trip = createTrip();
+        Trip trip = createTrip();
         UUID owner = trip.ownerId();
 
         itineraries.start(ownerOf(trip, owner));
@@ -68,12 +68,12 @@ class WorkspaceStateStorageIT extends PostgresTestBase {
                 .isEqualTo("NO");
     }
 
-    private Itinerary createTrip() {
+    private Trip createTrip() {
         return itineraries.create(UUID.randomUUID(), "Osaka in spring", "Osaka", null, null);
     }
 
 
-    private Membership ownerOf(Itinerary trip, UUID travelerId) {
+    private Membership ownerOf(Trip trip, UUID travelerId) {
         return new Membership(travelerId, trip.id(), Role.OWNER);
     }
 

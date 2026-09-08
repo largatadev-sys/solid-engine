@@ -17,7 +17,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 
-class ItineraryLifecycleRenameIT {
+class TripLifecycleRenameIT {
 
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:18-alpine");
 

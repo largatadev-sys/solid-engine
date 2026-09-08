@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 
-public record ItineraryFields(
+public record TripFields(
         String title,
         String destination,
         String currency,
@@ -22,13 +22,13 @@ public record ItineraryFields(
     public static final int MAX_CURRENCY_LENGTH = 8;
 
 
-    public ItineraryFields {
+    public TripFields {
         title = requireTitle(title);
         destination = requireDestination(destination);
         currency = currency == null ? null : requireCurrency(currency);
-        description = boundedOrNull(description, Itinerary.MAX_DESCRIPTION_LENGTH, "description");
+        description = boundedOrNull(description, Trip.MAX_DESCRIPTION_LENGTH, "description");
         standouts = standouts == null ? null : cleanStandouts(standouts);
-        bestTimeOfYear = bestTimeOfYear == null ? null : bounded(bestTimeOfYear, Itinerary.MAX_BEST_TIME_LENGTH);
+        bestTimeOfYear = bestTimeOfYear == null ? null : bounded(bestTimeOfYear, Trip.MAX_BEST_TIME_LENGTH);
 
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new IllegalArgumentException("An itinerary cannot end before it starts");
@@ -36,9 +36,9 @@ public record ItineraryFields(
     }
 
 
-    static ItineraryFields withoutPublishMetadata(
+    static TripFields withoutPublishMetadata(
             String title, String destination, String description, LocalDate startDate, LocalDate endDate) {
-        return new ItineraryFields(
+        return new TripFields(
                 title, destination, DEFAULT_CURRENCY, description, List.of(), "", startDate, endDate, null);
     }
 
@@ -48,9 +48,9 @@ public record ItineraryFields(
             throw new IllegalArgumentException("An itinerary needs a title");
         }
         String stripped = title.strip();
-        if (stripped.length() > Itinerary.MAX_TITLE_LENGTH) {
+        if (stripped.length() > Trip.MAX_TITLE_LENGTH) {
             throw new IllegalArgumentException(
-                    "An itinerary's title is at most " + Itinerary.MAX_TITLE_LENGTH + " characters");
+                    "An itinerary's title is at most " + Trip.MAX_TITLE_LENGTH + " characters");
         }
         return stripped;
     }
@@ -61,9 +61,9 @@ public record ItineraryFields(
             throw new IllegalArgumentException("An itinerary needs a destination");
         }
         String stripped = destination.strip();
-        if (stripped.length() > Itinerary.MAX_DESTINATION_LENGTH) {
+        if (stripped.length() > Trip.MAX_DESTINATION_LENGTH) {
             throw new IllegalArgumentException(
-                    "An itinerary's destination is at most " + Itinerary.MAX_DESTINATION_LENGTH + " characters");
+                    "An itinerary's destination is at most " + Trip.MAX_DESTINATION_LENGTH + " characters");
         }
         return stripped;
     }
@@ -91,13 +91,13 @@ public record ItineraryFields(
                         .filter(standout -> standout != null && !standout.isBlank())
                         .map(String::strip)
                         .toList();
-        if (kept.size() > Itinerary.MAX_STANDOUTS) {
+        if (kept.size() > Trip.MAX_STANDOUTS) {
             throw new IllegalArgumentException(
-                    "An itinerary has at most " + Itinerary.MAX_STANDOUTS + " standouts");
+                    "An itinerary has at most " + Trip.MAX_STANDOUTS + " standouts");
         }
-        if (kept.stream().anyMatch(standout -> standout.length() > Itinerary.MAX_STANDOUT_LENGTH)) {
+        if (kept.stream().anyMatch(standout -> standout.length() > Trip.MAX_STANDOUT_LENGTH)) {
             throw new IllegalArgumentException(
-                    "A standout is at most " + Itinerary.MAX_STANDOUT_LENGTH + " characters");
+                    "A standout is at most " + Trip.MAX_STANDOUT_LENGTH + " characters");
         }
         return kept;
     }

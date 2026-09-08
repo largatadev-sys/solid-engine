@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
-class ItineraryAnalyticsIT extends PostgresTestBase {
+class TripAnalyticsIT extends PostgresTestBase {
 
     private RestTestClient rest;
     private ListAppender<ILoggingEvent> events;
@@ -112,7 +112,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
         ListAppender<ILoggingEvent> appLog = new ListAppender<>();
         appLog.start();
         ch.qos.logback.classic.Logger serviceLogger =
-                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.largata.trip.record.ItineraryService");
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.largata.trip.record.TripService");
         serviceLogger.addAppender(appLog);
         try {
             create(freshTraveler(), """
@@ -120,7 +120,7 @@ class ItineraryAnalyticsIT extends PostgresTestBase {
                     """);
 
             assertThat(appLog.list)
-                    .filteredOn(line -> line.getFormattedMessage().startsWith("Itinerary created"))
+                    .filteredOn(line -> line.getFormattedMessage().startsWith("Trip created"))
                     .singleElement()
                     .satisfies(line -> assertThat(line.getFormattedMessage()).doesNotContain("Honeymoon", "Ubud"));
         } finally {

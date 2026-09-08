@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
 import com.largata.support.PostgresTestBase;
+import com.largata.trip.api.TripLifecycle;
 import java.lang.reflect.RecordComponent;
 import java.time.Instant;
 import java.util.Arrays;
@@ -15,15 +16,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.TripService;
 import com.largata.trip.record.IllegalStateTransitionException;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.Trip;
 
 
 @SpringBootTest
-class ItineraryLifecycleStorageIT extends PostgresTestBase {
+class TripLifecycleStorageIT extends PostgresTestBase {
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private JdbcTemplate jdbc;
 
 
@@ -34,15 +35,15 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
         assertThat(storedState(owner.itineraryId()))
                 .as("S4.26 — a trip is born upcoming, so the storage spelling is pinned from creation")
                 .isEqualTo("UPCOMING");
-        assertThat(ItineraryState.UPCOMING.wireName()).isEqualTo("upcoming");
+        assertThat(TripLifecycle.UPCOMING.wireName()).isEqualTo("upcoming");
 
         itineraries.start(owner);
         assertThat(storedState(owner.itineraryId())).isEqualTo("ONGOING");
-        assertThat(ItineraryState.ONGOING.wireName()).isEqualTo("ongoing");
+        assertThat(TripLifecycle.ONGOING.wireName()).isEqualTo("ongoing");
 
         itineraries.complete(owner);
         assertThat(storedState(owner.itineraryId())).isEqualTo("COMPLETED");
-        assertThat(ItineraryState.COMPLETED.wireName()).isEqualTo("completed");
+        assertThat(TripLifecycle.COMPLETED.wireName()).isEqualTo("completed");
     }
 
 
@@ -72,7 +73,7 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
     @Test
     void theFieldEditRequestCannotCarryLifecycleState() {
         List<String> editableFields =
-                Arrays.stream(com.largata.trip.record.UpdateItineraryRequest.class.getRecordComponents())
+                Arrays.stream(com.largata.trip.record.UpdateTripRequest.class.getRecordComponents())
                         .map(RecordComponent::getName)
                         .toList();
 
@@ -114,7 +115,7 @@ class ItineraryLifecycleStorageIT extends PostgresTestBase {
 
     private Membership tripOwnedByFreshTraveler() {
         UUID ownerId = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(ownerId, "Planned trip", "Cebu", null, null);
+        Trip itinerary = itineraries.create(ownerId, "Planned trip", "Cebu", null, null);
         return new Membership(ownerId, itinerary.id(), Role.OWNER);
     }
 }

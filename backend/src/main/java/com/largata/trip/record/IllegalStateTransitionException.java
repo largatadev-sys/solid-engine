@@ -1,11 +1,12 @@
 package com.largata.trip.record;
 
 import com.largata.common.error.ConflictException;
+import com.largata.trip.api.TripLifecycle;
 
 
 public class IllegalStateTransitionException extends ConflictException {
 
-    IllegalStateTransitionException(ItineraryState from, ItineraryState to) {
+    IllegalStateTransitionException(TripLifecycle from, TripLifecycle to) {
         super(
                 "ILLEGAL_STATE_TRANSITION",
                 "This trip is " + from.wireName() + " and cannot become " + to.wireName() + ".");
@@ -16,7 +17,7 @@ public class IllegalStateTransitionException extends ConflictException {
     }
 
 
-    static IllegalStateTransitionException atTheFloor(ItineraryState floor) {
+    static IllegalStateTransitionException atTheFloor(TripLifecycle floor) {
         return new IllegalStateTransitionException(
                 "This trip is " + floor.wireName() + ", which is where a trip starts — there is nothing before it.");
     }

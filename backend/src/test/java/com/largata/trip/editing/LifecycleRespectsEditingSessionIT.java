@@ -25,9 +25,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.TestPropertySource;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.TripService;
 import com.largata.trip.record.IllegalStateTransitionException;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.Trip;
 import com.largata.trip.editing.EditLeaseService;
 import com.largata.trip.editing.LeaseSubject;
 import com.largata.trip.editing.EditLockedException;
@@ -40,7 +40,7 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
 
     private static final Duration TTL = Duration.ofMinutes(3);
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private TravelerService travelers;
     @Autowired private EditLeaseService leases;
     @Autowired private MutableClock clock;
@@ -48,15 +48,15 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
 
     @FunctionalInterface
     interface LifecycleAct {
-        void run(ItineraryService service, Membership owner);
+        void run(TripService service, Membership owner);
     }
 
 
     static Stream<Arguments> everyLifecycleAct() {
         return Stream.of(
-                Arguments.of("start", (LifecycleAct) ItineraryService::start, 0),
-                Arguments.of("complete", (LifecycleAct) ItineraryService::complete, 1),
-                Arguments.of("reopen", (LifecycleAct) ItineraryService::reopen, 1),
+                Arguments.of("start", (LifecycleAct) TripService::start, 0),
+                Arguments.of("complete", (LifecycleAct) TripService::complete, 1),
+                Arguments.of("reopen", (LifecycleAct) TripService::reopen, 1),
                 Arguments.of(
                         "publish",
                         (LifecycleAct) (service, owner) -> service.publish(owner),
@@ -123,7 +123,7 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
 
     private Membership ownerAtRung(int rungs) {
         UUID ownerId = provisionedTraveler();
-        Itinerary trip = itineraries.create(ownerId, "Trip", "Palawan", null, null, null, 1);
+        Trip trip = itineraries.create(ownerId, "Trip", "Palawan", null, null, null, 1);
         Membership owner = new Membership(ownerId, trip.id(), Role.OWNER);
 
         if (rungs >= 1) itineraries.start(owner);

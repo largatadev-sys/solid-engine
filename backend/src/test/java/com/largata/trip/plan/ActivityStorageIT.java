@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import com.largata.trip.record.ItineraryService;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.TripService;
+import com.largata.trip.record.Trip;
 import com.largata.trip.plan.DayService;
 import com.largata.trip.plan.ActivityService;
 import com.largata.trip.editing.EditLeaseService;
@@ -28,7 +28,7 @@ import com.largata.trip.plan.ActivityNotFoundException;
 @SpringBootTest
 class ActivityStorageIT extends PostgresTestBase {
 
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private DayService days;
     @Autowired private ActivityService activities;
     @Autowired private EditLeaseService editLease;
@@ -183,7 +183,7 @@ class ActivityStorageIT extends PostgresTestBase {
 
     private Membership tripWithOneDay() {
         UUID owner = UUID.randomUUID();
-        Itinerary trip = itineraries.create(owner, "Palawan", "Palawan", null, null, null, 1);
+        Trip trip = itineraries.create(owner, "Palawan", "Palawan", null, null, null, 1);
         return new Membership(owner, trip.id(), Role.OWNER);
     }
 

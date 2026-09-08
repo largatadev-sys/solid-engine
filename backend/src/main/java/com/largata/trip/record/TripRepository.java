@@ -10,53 +10,54 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.largata.itinerary.TrendingDestinationRow;
+import com.largata.trip.api.TripLifecycle;
 
 
-public interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
+public interface TripRepository extends JpaRepository<Trip, UUID> {
 
 
-    @Query("SELECT i.currency FROM Itinerary i WHERE i.id = :itineraryId")
+    @Query("SELECT i.currency FROM Trip i WHERE i.id = :itineraryId")
     String findCurrency(@Param("itineraryId") UUID itineraryId);
 
 
-    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds "
+    @Query("SELECT i FROM Trip i WHERE i.id IN :itineraryIds "
             + "AND (:state IS NULL OR i.state = :state) "
             + "ORDER BY i.id DESC")
-    List<Itinerary> findFirstPage(
+    List<Trip> findFirstPage(
             @Param("itineraryIds") Collection<UUID> itineraryIds,
-            @Param("state") ItineraryState state,
+            @Param("state") TripLifecycle state,
             Limit limit);
 
 
-    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds AND i.id < :cursor "
+    @Query("SELECT i FROM Trip i WHERE i.id IN :itineraryIds AND i.id < :cursor "
             + "AND (:state IS NULL OR i.state = :state) "
             + "ORDER BY i.id DESC")
-    List<Itinerary> findPageAfter(
+    List<Trip> findPageAfter(
             @Param("itineraryIds") Collection<UUID> itineraryIds,
             @Param("cursor") UUID cursor,
-            @Param("state") ItineraryState state,
+            @Param("state") TripLifecycle state,
             Limit limit);
 
 
-    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds AND i.published = true "
+    @Query("SELECT i FROM Trip i WHERE i.id IN :itineraryIds AND i.published = true "
             + "ORDER BY i.id DESC")
-    List<Itinerary> findFirstPublishedPage(
+    List<Trip> findFirstPublishedPage(
             @Param("itineraryIds") Collection<UUID> itineraryIds, Limit limit);
 
 
-    @Query("SELECT i FROM Itinerary i WHERE i.id IN :itineraryIds AND i.published = true "
+    @Query("SELECT i FROM Trip i WHERE i.id IN :itineraryIds AND i.published = true "
             + "AND i.id < :cursor ORDER BY i.id DESC")
-    List<Itinerary> findPublishedPageAfter(
+    List<Trip> findPublishedPageAfter(
             @Param("itineraryIds") Collection<UUID> itineraryIds,
             @Param("cursor") UUID cursor,
             Limit limit);
 
 
-    @Query("SELECT COUNT(i) FROM Itinerary i WHERE i.id IN :itineraryIds AND i.published = true")
+    @Query("SELECT COUNT(i) FROM Trip i WHERE i.id IN :itineraryIds AND i.published = true")
     long countPublishedAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
 
 
-    @Query("SELECT COUNT(DISTINCT lower(trim(i.destination))) FROM Itinerary i "
+    @Query("SELECT COUNT(DISTINCT lower(trim(i.destination))) FROM Trip i "
             + "WHERE i.id IN :itineraryIds AND trim(i.destination) <> ''")
     long countDestinationsAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
 
@@ -91,7 +92,7 @@ public interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
             ORDER BY i.published_at DESC, i.id DESC
             LIMIT :pageSize
             """, nativeQuery = true)
-    List<Itinerary> findDiscoveryPage(
+    List<Trip> findDiscoveryPage(
             @Param("archivedIds") String archivedIds,
             @Param("query") String query,
             @Param("destination") String destination,
@@ -125,7 +126,7 @@ public interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
             ORDER BY i.published_at DESC, i.id DESC
             LIMIT :probe
             """, nativeQuery = true)
-    List<Itinerary> findRecommendable(
+    List<Trip> findRecommendable(
             @Param("archivedIds") String archivedIds, @Param("probe") int probe);
 
 
@@ -257,7 +258,7 @@ public interface ItineraryRepository extends JpaRepository<Itinerary, UUID> {
             ORDER BY i.published_at DESC, i.id DESC
             LIMIT :pageSize
             """, nativeQuery = true)
-    List<Itinerary> findStrangersSurfacePage(
+    List<Trip> findStrangersSurfacePage(
             @Param("ownerId") UUID ownerId,
             @Param("archivedIds") String archivedIds,
             @Param("cursorAt") Instant cursorAt,

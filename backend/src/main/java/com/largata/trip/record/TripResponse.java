@@ -3,8 +3,8 @@ package com.largata.trip.record;
 import com.largata.common.geo.PinPayload;
 import com.largata.identity.TravelerSummary;
 import com.largata.trip.fork.ForkService;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.plan.ItineraryPlan;
+import com.largata.trip.record.Trip;
+import com.largata.trip.plan.TripPlanTree;
 import com.largata.trip.editing.LeaseSubject;
 import com.largata.trip.workspace.WorkspaceState;
 import java.time.Instant;
@@ -16,7 +16,7 @@ import com.largata.trip.editing.LeaseHolderResponse;
 import com.largata.trip.fork.ForkedFromResponse;
 
 
-public record ItineraryResponse(
+public record TripResponse(
         UUID id,
         String title,
         String destination,
@@ -49,14 +49,14 @@ public record ItineraryResponse(
         Integer memberCount) {
 
 
-    public static ItineraryResponse summaryOf(
-            Itinerary itinerary,
+    public static TripResponse summaryOf(
+            Trip itinerary,
             WorkspaceState workspaceState,
             boolean beingEdited,
             int dayCount,
             String viewerRole,
             Integer memberCount) {
-        return new ItineraryResponse(
+        return new TripResponse(
                 itinerary.id(),
                 itinerary.title(),
                 itinerary.destination(),
@@ -90,15 +90,15 @@ public record ItineraryResponse(
     }
 
 
-    public static ItineraryResponse of(ItineraryPlan plan) {
+    public static TripResponse of(TripPlanTree plan) {
         return of(plan, null);
     }
 
 
-    public static ItineraryResponse of(ItineraryPlan plan, ForkService.ForkProvenance provenance) {
-        Itinerary itinerary = plan.itinerary();
+    public static TripResponse of(TripPlanTree plan, ForkService.ForkProvenance provenance) {
+        Trip itinerary = plan.itinerary();
         TravelerSummary editor = plan.editor(itinerary.lastEditedBy());
-        return new ItineraryResponse(
+        return new TripResponse(
                 itinerary.id(),
                 itinerary.title(),
                 itinerary.destination(),

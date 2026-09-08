@@ -2,17 +2,18 @@ package com.largata.trip.record;
 
 import java.util.Locale;
 import java.util.Optional;
+import com.largata.trip.api.TripLifecycle;
 
 
 public enum TripCategory {
     DRAFT(null),
-    UPCOMING(ItineraryState.UPCOMING),
-    ONGOING(ItineraryState.ONGOING),
-    COMPLETE(ItineraryState.COMPLETED);
+    UPCOMING(TripLifecycle.UPCOMING),
+    ONGOING(TripLifecycle.ONGOING),
+    COMPLETE(TripLifecycle.COMPLETED);
 
-    private final ItineraryState state;
+    private final TripLifecycle state;
 
-    TripCategory(ItineraryState state) {
+    TripCategory(TripLifecycle state) {
         this.state = state;
     }
 
@@ -29,7 +30,7 @@ public enum TripCategory {
     }
 
 
-    Optional<ItineraryState> state() {
+    Optional<TripLifecycle> state() {
         return Optional.ofNullable(state);
     }
 

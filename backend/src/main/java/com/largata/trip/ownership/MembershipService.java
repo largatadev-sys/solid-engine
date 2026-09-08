@@ -12,7 +12,7 @@ import com.largata.identity.TravelerSummary;
 import com.largata.trip.api.MembershipEnded;
 import com.largata.trip.api.TripArchived;
 import com.largata.trip.editing.EditLeaseService;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.TripService;
 import com.largata.trip.ownership.MembershipExceptions.CannotOfferToSelfException;
 import com.largata.trip.ownership.MembershipExceptions.IllegalWorkspaceTransitionException;
 import com.largata.trip.ownership.MembershipExceptions.NoPendingOfferException;
@@ -44,7 +44,7 @@ public class MembershipService {
 
     private final WorkspaceService workspaces;
     private final TravelerService travelers;
-    private final ItineraryService itineraries;
+    private final TripService itineraries;
     private final EditLeaseService leases;
     private final WriteFence fence;
     private final OwnershipOfferRepository offers;
@@ -55,7 +55,7 @@ public class MembershipService {
     MembershipService(
             WorkspaceService workspaces,
             TravelerService travelers,
-            ItineraryService itineraries,
+            TripService itineraries,
             EditLeaseService leases,
             WriteFence fence,
             OwnershipOfferRepository offers,

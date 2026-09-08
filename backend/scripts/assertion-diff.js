@@ -15,11 +15,28 @@ const THIS_BRANCHS_OWN_APPARATUS = /BoundaryTest\.java$|ModuleGuardMetaTest\.jav
 
 const ASSERTION = /^\s*(assertThat|assertEquals|assertTrue|assertFalse|assertNull|assertNotNull|assertThrows|assertAll|assertArrayEquals|assertSame|assertIterableEquals|verify|\.as\(|\.isEqualTo\(|\.contains|\.hasSize|\.isEmpty\(|\.isNotEmpty\(|\.expectStatus\(|\.expectBody|\.jsonPath\()/;
 
+// Seam 1 permits package, import and RENAMED-SYMBOL edits and nothing else, so the comparison
+// normalises exactly the symbols this branch renamed. Every entry is a rename the tickets record;
+// anything not listed here is a real assertion change and is what the headline counts.
 const RENAMED_SYMBOLS = [
+  // ticket 02 — the topic's constants moved to the transport module's event-type home
   ['TripsTopic.', 'TripEventTypes.'],
+  // ticket 03 — MembershipApi took the Trip noun at the boundary
   ['.admitMember(', '.admit('],
   ['.itineraryIdsByWorkspace(', '.tripIdsByWorkspace('],
   ['.itineraryIdsInSightOf(', '.tripIdsInSightOf('],
+  // ticket 09 — the rename. Longest first, so no shorter name eats a longer one.
+  ['CreateItineraryRequest', 'CreateTripRequest'],
+  ['UpdateItineraryRequest', 'UpdateTripRequest'],
+  ['ItineraryCoverService', 'TripCoverService'],
+  ['ItineraryRepository', 'TripRepository'],
+  ['ItineraryController', 'TripController'],
+  ['ItineraryResponse', 'TripResponse'],
+  ['ItineraryService', 'TripService'],
+  ['ItineraryFields', 'TripFields'],
+  ['ItineraryState', 'TripLifecycle'],
+  ['ItineraryPlan', 'TripPlanTree'],
+  ['Itinerary', 'Trip'],
 ];
 
 function git(...args) {
@@ -51,6 +68,9 @@ function assertionsIn(text) {
   return text.split('\n').map(l => l.trim()).filter(l => ASSERTION.test(l)).map(normalise);
 }
 
+// A file can be renamed twice on one branch — moved by a relocation ticket, then renamed by the
+// rename ticket — and git pairs each hop separately. Follow the chain to the branch point, or the
+// second hop reports as a DELETE of a file that is very much still there.
 const renamedFrom = new Map();
 for (const line of git('diff', '--name-status', '-M', BASE, '--', SCOPE).split('\n')) {
   const parts = line.split('\t');
@@ -59,18 +79,52 @@ for (const line of git('diff', '--name-status', '-M', BASE, '--', SCOPE).split('
   }
 }
 
+// A file that is BOTH moved and renamed changes too much for git's similarity detector, so it
+// reports a delete plus an add and the comparison silently loses a test. These pairs are declared
+// so the comparison still happens; each is a rename the tickets record.
+const RENAMED_FILES = new Map([
+  [
+    'backend/src/test/java/com/largata/trip/record/TripLifecycleTest.java',
+    'backend/src/test/java/com/largata/itinerary/ItineraryStateTest.java',
+  ],
+]);
+
+function atBranchPoint(file) {
+  if (RENAMED_FILES.has(file)) {
+    return RENAMED_FILES.get(file);
+  }
+  let source = file;
+  for (let hop = 0; hop < 8 && renamedFrom.has(source); hop += 1) {
+    const next = renamedFrom.get(source);
+    if (next === source) {
+      break;
+    }
+    source = next;
+  }
+  if (show(BASE, source) !== null) {
+    return source;
+  }
+  const basename = source.slice(source.lastIndexOf('/') + 1);
+  const found = git('ls-tree', '-r', '--name-only', BASE, '--', SCOPE)
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.endsWith('/' + basename));
+  return found.length === 1 ? found[0] : source;
+}
+
 const files = git('diff', '--name-only', BASE, '--', SCOPE)
   .split('\n')
   .map(l => l.trim())
   .filter(l => l.endsWith('.java'))
-  .filter(l => !THIS_BRANCHS_OWN_APPARATUS.test(l));
+  .filter(l => !THIS_BRANCHS_OWN_APPARATUS.test(l))
+  .filter(l => ![...RENAMED_FILES.values()].includes(l));
 
 const differences = [];
 let compared = 0;
 let born = 0;
 
 for (const file of files) {
-  const before = show(BASE, renamedFrom.get(file) || file);
+  const before = show(BASE, atBranchPoint(file));
   const after = readWorking(file);
   if (before === null) { born += 1; continue; }
   if (after === null) {

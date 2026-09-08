@@ -5,15 +5,15 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.ItineraryRepository;
+import com.largata.trip.record.TripRepository;
 
 
 @Service
 public class PlanVersionService {
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
 
-    PlanVersionService(ItineraryRepository itineraries) {
+    PlanVersionService(TripRepository itineraries) {
         this.itineraries = itineraries;
     }
 

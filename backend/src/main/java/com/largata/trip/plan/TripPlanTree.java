@@ -5,13 +5,13 @@ import com.largata.trip.workspace.WorkspaceState;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.Trip;
 import com.largata.trip.editing.LeaseSubject;
 import com.largata.trip.editing.LeaseHolder;
 
 
-public record ItineraryPlan(
-        Itinerary itinerary,
+public record TripPlanTree(
+        Trip itinerary,
         List<DayView> days,
         WorkspaceState workspaceState,
         Map<LeaseSubject, LeaseHolder> leaseHolders,

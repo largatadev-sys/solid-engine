@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.ItineraryRepository;
+import com.largata.trip.record.TripRepository;
 import com.largata.trip.record.PlanLimitExceededException;
 import com.largata.trip.editing.EditLeaseService;
 import com.largata.trip.history.ActivityHistoryService;
@@ -37,7 +37,7 @@ public class ActivityService {
 
     private final DayRepository days;
     private final ActivityRepository activities;
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
@@ -48,7 +48,7 @@ public class ActivityService {
     ActivityService(
             DayRepository days,
             ActivityRepository activities,
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,

@@ -7,8 +7,8 @@ import com.largata.identity.Traveler;
 import com.largata.identity.TravelerClaims;
 import com.largata.identity.TravelerService;
 import com.largata.identity.web.VerifiedContact;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.Trip;
+import com.largata.trip.record.TripService;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -24,7 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class InvitationAcceptTransactionIT extends PostgresTestBase {
 
     @Autowired private InvitationService invitationService;
-    @Autowired private ItineraryService itineraries;
+    @Autowired private TripService itineraries;
     @Autowired private TravelerService travelers;
     @Autowired private InvitationRepository invitations;
     @Autowired private JdbcTemplate jdbc;
@@ -32,7 +32,7 @@ class InvitationAcceptTransactionIT extends PostgresTestBase {
     @Test
     void aFailedMembershipWriteRollsBackTheInvitationStatus() {
         UUID owner = UUID.randomUUID();
-        Itinerary itinerary = itineraries.create(owner, "Lisbon", "Lisbon", null, null);
+        Trip itinerary = itineraries.create(owner, "Lisbon", "Lisbon", null, null);
         UUID workspaceId =
                 jdbc.queryForObject("SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());
 

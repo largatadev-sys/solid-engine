@@ -16,11 +16,12 @@ import java.util.List;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import com.largata.trip.api.TripLifecycle;
 
 
 @Entity
 @Table(name = "itinerary")
-public class Itinerary {
+public class Trip {
 
     @Id private UUID id;
 
@@ -72,7 +73,7 @@ public class Itinerary {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ItineraryState state;
+    private TripLifecycle state;
 
     @Column(nullable = false)
     private boolean published;
@@ -94,13 +95,13 @@ public class Itinerary {
     @Column(name = "published_at")
     private Instant publishedAt;
 
-    protected Itinerary() {
+    protected Trip() {
     }
 
-    private Itinerary(UUID id, UUID ownerId, ItineraryFields fields, Instant createdAt) {
+    private Trip(UUID id, UUID ownerId, TripFields fields, Instant createdAt) {
         this.id = id;
         this.ownerId = ownerId;
-        this.state = ItineraryState.UPCOMING;
+        this.state = TripLifecycle.UPCOMING;
 
         this.published = false;
         this.createdAt = createdAt;
@@ -108,7 +109,7 @@ public class Itinerary {
     }
 
 
-    private void apply(ItineraryFields fields) {
+    private void apply(TripFields fields) {
         this.title = fields.title();
         this.destination = fields.destination();
         this.description = fields.description();
@@ -153,7 +154,7 @@ public class Itinerary {
     public static final int MAX_BEST_TIME_LENGTH = 60;
 
 
-    static Itinerary newTrip(
+    static Trip newTrip(
             UUID ownerId,
             String title,
             String destination,
@@ -164,12 +165,12 @@ public class Itinerary {
     }
 
 
-    static Itinerary newTrip(UUID ownerId, ItineraryFields fields, Instant createdAt) {
-        return new Itinerary(UuidV7.generate(), ownerId, fields, createdAt);
+    static Trip newTrip(UUID ownerId, TripFields fields, Instant createdAt) {
+        return new Trip(UuidV7.generate(), ownerId, fields, createdAt);
     }
 
 
-    static Itinerary newTrip(
+    static Trip newTrip(
             UUID ownerId,
             String title,
             String destination,
@@ -177,20 +178,20 @@ public class Itinerary {
             LocalDate startDate,
             LocalDate endDate,
             Instant createdAt) {
-        return new Itinerary(
+        return new Trip(
                 UuidV7.generate(),
                 ownerId,
-                ItineraryFields.withoutPublishMetadata(title, destination, description, startDate, endDate),
+                TripFields.withoutPublishMetadata(title, destination, description, startDate, endDate),
                 createdAt);
     }
 
 
-    public static Itinerary forkedFrom(Itinerary source, UUID forkerId, Instant at) {
-        Itinerary copy =
-                new Itinerary(
+    public static Trip forkedFrom(Trip source, UUID forkerId, Instant at) {
+        Trip copy =
+                new Trip(
                         UuidV7.generate(),
                         forkerId,
-                        new ItineraryFields(
+                        new TripFields(
                                 source.title,
                                 source.destination,
                                 source.currency,
@@ -207,7 +208,7 @@ public class Itinerary {
     }
 
 
-    void editFields(ItineraryFields fields, UUID editor, Instant at) {
+    void editFields(TripFields fields, UUID editor, Instant at) {
         apply(fields);
         this.lastEditedBy = editor;
         this.lastEditedAt = at;
@@ -223,21 +224,21 @@ public class Itinerary {
 
 
     void start(Instant at) {
-        requireState(ItineraryState.UPCOMING, ItineraryState.ONGOING);
-        this.state = ItineraryState.ONGOING;
+        requireState(TripLifecycle.UPCOMING, TripLifecycle.ONGOING);
+        this.state = TripLifecycle.ONGOING;
         this.startedAt = at;
     }
 
 
     void complete(Instant at) {
-        requireState(ItineraryState.ONGOING, ItineraryState.COMPLETED);
-        this.state = ItineraryState.COMPLETED;
+        requireState(TripLifecycle.ONGOING, TripLifecycle.COMPLETED);
+        this.state = TripLifecycle.COMPLETED;
         this.completedAt = at;
     }
 
 
     void reopen() {
-        ItineraryState target =
+        TripLifecycle target =
                 state.previous().orElseThrow(() -> IllegalStateTransitionException.atTheFloor(state));
         requireUnpublished(target);
         switch (target) {
@@ -249,7 +250,7 @@ public class Itinerary {
     }
 
 
-    private void requireState(ItineraryState required, ItineraryState target) {
+    private void requireState(TripLifecycle required, TripLifecycle target) {
         requireUnpublished(target);
         if (this.state != required) {
             throw new IllegalStateTransitionException(this.state, target);
@@ -257,7 +258,7 @@ public class Itinerary {
     }
 
 
-    private void requireUnpublished(ItineraryState target) {
+    private void requireUnpublished(TripLifecycle target) {
         if (published) {
             throw new IllegalStateTransitionException(state, target);
         }
@@ -352,7 +353,7 @@ public class Itinerary {
         return lastEditedAt;
     }
 
-    public ItineraryState state() {
+    public TripLifecycle state() {
         return state;
     }
 

@@ -1,7 +1,7 @@
 package com.largata.trip.plan;
 
 import com.largata.trip.plan.DayView;
-import com.largata.trip.plan.ItineraryPlan;
+import com.largata.trip.plan.TripPlanTree;
 import com.largata.trip.editing.LeaseSubject;
 import java.util.List;
 import java.util.UUID;
@@ -21,7 +21,7 @@ public record DayResponse(
     }
 
 
-    public static DayResponse annotated(DayView day, ItineraryPlan plan) {
+    public static DayResponse annotated(DayView day, TripPlanTree plan) {
         return new DayResponse(
                 day.id(),
                 day.ordinal(),

@@ -1,11 +1,12 @@
 package com.largata.trip.record;
 
 import com.largata.common.error.ConflictException;
+import com.largata.trip.api.TripLifecycle;
 
 
 public class NotCompleteException extends ConflictException {
 
-    NotCompleteException(ItineraryState state) {
+    NotCompleteException(TripLifecycle state) {
         super(
                 "ITINERARY_NOT_COMPLETE",
                 "Only a completed trip can be published. Mark this trip complete first. It is "

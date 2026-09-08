@@ -8,9 +8,9 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.ItineraryRepository;
+import com.largata.trip.record.TripRepository;
 import com.largata.trip.fork.ForkService;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.Trip;
 import com.largata.trip.record.NotTripOwnerException;
 import com.largata.trip.plan.DayService;
 
@@ -18,7 +18,7 @@ import com.largata.trip.plan.DayService;
 @Service
 public class PublishedItineraryService {
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final DayService days;
     private final WorkspaceService workspaces;
     private final TravelerService travelers;
@@ -26,7 +26,7 @@ public class PublishedItineraryService {
     private final ForkService forks;
 
     PublishedItineraryService(
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             DayService days,
             WorkspaceService workspaces,
             TravelerService travelers,
@@ -61,7 +61,7 @@ public class PublishedItineraryService {
     }
 
 
-    private PublishedItinerary project(Itinerary itinerary, UUID readerId) {
+    private PublishedItinerary project(Trip itinerary, UUID readerId) {
         return PublishedItinerary.of(
                 itinerary,
                 days.plan(itinerary.id()),

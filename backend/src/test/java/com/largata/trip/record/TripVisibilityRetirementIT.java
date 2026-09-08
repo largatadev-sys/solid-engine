@@ -14,7 +14,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 
-class ItineraryVisibilityRetirementIT {
+class TripVisibilityRetirementIT {
 
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:18-alpine");
 

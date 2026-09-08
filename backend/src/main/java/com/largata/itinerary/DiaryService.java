@@ -32,15 +32,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.ItineraryRepository;
-import com.largata.trip.record.Itinerary;
-import com.largata.trip.record.ItineraryState;
+import com.largata.trip.record.TripRepository;
+import com.largata.trip.record.Trip;
+import com.largata.trip.api.TripLifecycle;
 import com.largata.trip.plan.ActivityRepository;
 import com.largata.trip.plan.DayRepository;
 import com.largata.trip.plan.Activity;
 import com.largata.trip.plan.Day;
 import com.largata.trip.plan.ActivityNotFoundException;
 import com.largata.trip.plan.ActivitySnapshot;
+import com.largata.trip.api.TripLifecycle;
 
 
 @Service
@@ -56,7 +57,7 @@ public class DiaryService {
     private final LegacyEntries entries;
     private final ActivityRepository activities;
     private final DayRepository days;
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final PhotoService photos;
     private final WriteFence writeFence;
     private final WorkspaceService workspaces;
@@ -66,7 +67,7 @@ public class DiaryService {
             LegacyEntries entries,
             ActivityRepository activities,
             DayRepository days,
-            ItineraryRepository itineraries,
+            TripRepository itineraries,
             PhotoService photos,
             WriteFence writeFence,
             WorkspaceService workspaces,
@@ -90,7 +91,7 @@ public class DiaryService {
             List<UUID> fromDump,
             List<byte[]> devicePhotos) {
         writeFence.requireWritable(member);
-        Itinerary trip = requireStarted(member);
+        Trip trip = requireStarted(member);
 
         int total = fromDump.size() + devicePhotos.size();
         if (total < 1) {
@@ -256,7 +257,7 @@ public class DiaryService {
 
 
     private DiaryTripResponse tripViewOf(LegacyEntries.TripRoll row, Map<UUID, Long> dayCounts) {
-        Itinerary trip = itineraries.findById(row.tripId()).orElse(null);
+        Trip trip = itineraries.findById(row.tripId()).orElse(null);
         return new DiaryTripResponse(
                 row.tripId(),
                 trip == null ? null : trip.title(),
@@ -310,7 +311,7 @@ public class DiaryService {
 
     private LegacyEntries.Entry saveTheFirstPostFor(
             Membership member,
-            Itinerary trip,
+            Trip trip,
             UUID activityId,
             Activity activity,
             Day day,
@@ -356,10 +357,10 @@ public class DiaryService {
     }
 
 
-    private Itinerary requireStarted(Membership member) {
-        Itinerary trip =
+    private Trip requireStarted(Membership member) {
+        Trip trip =
                 itineraries.findById(member.itineraryId()).orElseThrow(DiaryEntryNotFoundException::new);
-        if (trip.state() != ItineraryState.ONGOING && trip.state() != ItineraryState.COMPLETED) {
+        if (trip.state() != TripLifecycle.ONGOING && trip.state() != TripLifecycle.COMPLETED) {
             throw new TripNotStartedException();
         }
         return trip;

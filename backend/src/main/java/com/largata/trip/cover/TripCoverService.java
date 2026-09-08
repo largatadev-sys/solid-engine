@@ -10,28 +10,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.ItineraryRepository;
+import com.largata.trip.record.TripRepository;
 import com.largata.trip.editing.EditLeaseService;
 import com.largata.trip.history.ActivityHistoryService;
 import com.largata.trip.record.ShareCardVersionService;
-import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.Trip;
 import com.largata.trip.history.HistoryAct;
 import com.largata.trip.editing.LeaseSubject;
 
 
 @Service
-public class ItineraryCoverService {
+public class TripCoverService {
 
-    private static final Logger log = LoggerFactory.getLogger(ItineraryCoverService.class);
+    private static final Logger log = LoggerFactory.getLogger(TripCoverService.class);
 
-    private final ItineraryRepository itineraries;
+    private final TripRepository itineraries;
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PhotoService photos;
     private final ShareCardVersionService shareCardVersions;
 
-    ItineraryCoverService(
-            ItineraryRepository itineraries,
+    TripCoverService(
+            TripRepository itineraries,
             EditLeaseService editLease,
             ActivityHistoryService history,
             PhotoService photos,
@@ -45,8 +45,8 @@ public class ItineraryCoverService {
 
 
     @Transactional
-    public Itinerary replaceCover(Membership member, byte[] uploaded) {
-        Itinerary itinerary = editableHeaderOf(member);
+    public Trip replaceCover(Membership member, byte[] uploaded) {
+        Trip itinerary = editableHeaderOf(member);
         Photo stored =
                 photos.replaceSingle(
                         PhotoSubject.ITINERARY_COVER, member.itineraryId(), uploaded, member.travelerId());
@@ -54,7 +54,7 @@ public class ItineraryCoverService {
         itineraries.save(itinerary);
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(member.itineraryId()));
         log.info(
-                "Itinerary cover set: id={} photoId={} editor={}",
+                "Trip cover set: id={} photoId={} editor={}",
                 member.itineraryId(),
                 stored.id(),
                 member.travelerId());
@@ -63,24 +63,24 @@ public class ItineraryCoverService {
 
 
     @Transactional
-    public Itinerary removeCover(Membership member) {
-        Itinerary itinerary = editableHeaderOf(member);
+    public Trip removeCover(Membership member) {
+        Trip itinerary = editableHeaderOf(member);
         boolean hadCover = itinerary.coverImageUrl() != null;
         photos.deleteSingle(PhotoSubject.ITINERARY_COVER, member.itineraryId());
         itinerary.showCover(null, member.travelerId(), Instant.now());
         itineraries.save(itinerary);
         history.record(member, HistoryAct.HEADER_EDITED, LeaseSubject.header(member.itineraryId()));
-        log.info("Itinerary cover removed: id={} editor={}", member.itineraryId(), member.travelerId());
+        log.info("Trip cover removed: id={} editor={}", member.itineraryId(), member.travelerId());
         return hadCover ? bumpedAndReloaded(member) : itinerary;
     }
 
 
-    private Itinerary bumpedAndReloaded(Membership member) {
+    private Trip bumpedAndReloaded(Membership member) {
         return shareCardVersions.bumpAndReload(member.itineraryId());
     }
 
 
-    private Itinerary editableHeaderOf(Membership member) {
+    private Trip editableHeaderOf(Membership member) {
         editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
         return itineraries
                 .findById(member.itineraryId())

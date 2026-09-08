@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class DiscoveryScopeIsDefinedOnceTest {
 
     private static final Path REPOSITORY =
-            Path.of("src/main/java/com/largata/trip/record/ItineraryRepository.java");
+            Path.of("src/main/java/com/largata/trip/record/TripRepository.java");
 
     private static final Pattern NOT_ARCHIVED =
             Pattern.compile("i[.]id <> ALL [(]CAST[(]:archivedIds AS uuid\\[\\][)][)]");
