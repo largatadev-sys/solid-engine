@@ -4,7 +4,6 @@ import com.largata.common.api.Page;
 import com.largata.common.authz.InAudience;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
-import com.largata.trip.dump.PhotoDumpExceptions.NotThePhotosUploaderException;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
@@ -12,6 +11,7 @@ import com.largata.media.PhotoSubject;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.largata.trip.dump.PhotoDumpExceptions.NotThePhotosUploaderException;
 
 
 @Service

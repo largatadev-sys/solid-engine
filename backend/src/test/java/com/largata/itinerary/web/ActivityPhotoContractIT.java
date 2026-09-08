@@ -2,7 +2,6 @@ package com.largata.itinerary.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.trip.plan.ActivityPhotoService;
 import com.largata.support.ObjectStoreTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
@@ -28,6 +27,7 @@ import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.util.MultiValueMap;
+import com.largata.trip.plan.service.ActivityPhotoService;
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import com.largata.trip.trip.TripService;
-import com.largata.trip.trip.IllegalStateTransitionException;
-import com.largata.trip.trip.Trip;
+import com.largata.trip.trip.exception.IllegalStateTransitionException;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.trip.service.TripService;
 
 
 @SpringBootTest
@@ -73,7 +73,7 @@ class TripLifecycleStorageIT extends PostgresTestBase {
     @Test
     void theFieldEditRequestCannotCarryLifecycleState() {
         List<String> editableFields =
-                Arrays.stream(com.largata.trip.trip.UpdateTripRequest.class.getRecordComponents())
+                Arrays.stream(com.largata.trip.trip.dto.UpdateTripRequest.class.getRecordComponents())
                         .map(RecordComponent::getName)
                         .toList();
 

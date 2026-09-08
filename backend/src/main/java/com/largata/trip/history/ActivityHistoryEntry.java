@@ -9,8 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import com.largata.trip.editing.LeaseSubjectType;
-import com.largata.trip.editing.LeaseSubject;
+import com.largata.trip.editing.entity.LeaseSubjectType;
+import com.largata.trip.editing.entity.LeaseSubject;
 
 
 @Entity

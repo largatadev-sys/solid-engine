@@ -5,7 +5,7 @@ import java.time.Clock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.editing.LeaseSubject;
+import com.largata.trip.editing.entity.LeaseSubject;
 
 
 @Service

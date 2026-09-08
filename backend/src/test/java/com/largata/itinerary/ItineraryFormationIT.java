@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.largata.support.PostgresTestBase;
-import com.largata.trip.workspace.WorkspaceService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -14,8 +13,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import com.largata.trip.trip.TripService;
-import com.largata.trip.trip.Trip;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.trip.service.TripService;
+import com.largata.trip.workspace.service.WorkspaceService;
 
 
 @SpringBootTest

@@ -15,7 +15,6 @@ import com.largata.identity.api.TravelerCardResponse;
 import com.largata.itinerary.api.DiaryTripResponse;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;
 import com.largata.postcard.api.LegacyEntries;
-import com.largata.trip.workspace.WorkspaceService;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +24,10 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.trip.TripRepository;
-import com.largata.trip.trip.Trip;
-import com.largata.trip.plan.DayService;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.workspace.service.WorkspaceService;
+import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.plan.service.DayService;
 
 
 @Service

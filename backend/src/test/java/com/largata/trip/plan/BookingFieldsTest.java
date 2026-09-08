@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
-import com.largata.trip.plan.ActivityFields;
+import com.largata.trip.plan.entity.ActivityFields;
 
 
 class BookingFieldsTest {

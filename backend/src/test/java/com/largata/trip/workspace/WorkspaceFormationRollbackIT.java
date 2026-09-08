@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
-import com.largata.trip.trip.TripService;
 import com.largata.support.PostgresTestBase;
 import java.util.List;
 import java.util.UUID;
@@ -14,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import com.largata.trip.trip.service.TripService;
+import com.largata.trip.workspace.repository.WorkspaceRepository;
 
 
 @SpringBootTest

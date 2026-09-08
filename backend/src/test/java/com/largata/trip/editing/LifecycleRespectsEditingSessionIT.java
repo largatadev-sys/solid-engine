@@ -25,12 +25,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.TestPropertySource;
-import com.largata.trip.trip.TripService;
-import com.largata.trip.trip.IllegalStateTransitionException;
-import com.largata.trip.trip.Trip;
-import com.largata.trip.editing.EditLeaseService;
-import com.largata.trip.editing.LeaseSubject;
-import com.largata.trip.editing.EditLockedException;
+import com.largata.trip.trip.exception.IllegalStateTransitionException;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.editing.entity.LeaseSubject;
+import com.largata.trip.editing.exception.EditLockedException;
+import com.largata.trip.trip.service.TripService;
+import com.largata.trip.editing.service.EditLeaseService;
 
 
 @SpringBootTest

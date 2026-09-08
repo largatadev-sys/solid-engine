@@ -3,16 +3,16 @@ package com.largata.itinerary;
 import com.largata.common.authz.Membership;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.trip.workspace.WorkspaceService;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.trip.TripRepository;
 import com.largata.trip.fork.ForkService;
-import com.largata.trip.trip.Trip;
-import com.largata.trip.trip.NotTripOwnerException;
-import com.largata.trip.plan.DayService;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.trip.exception.NotTripOwnerException;
+import com.largata.trip.workspace.service.WorkspaceService;
+import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.plan.service.DayService;
 
 
 @Service

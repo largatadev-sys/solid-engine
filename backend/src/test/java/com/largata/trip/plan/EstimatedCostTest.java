@@ -6,9 +6,9 @@ import com.largata.common.id.UuidV7;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import com.largata.trip.plan.ActivityView;
-import com.largata.trip.plan.DayView;
-import com.largata.trip.plan.EstimatedCost;
+import com.largata.trip.plan.entity.EstimatedCost;
+import com.largata.trip.plan.service.ActivityView;
+import com.largata.trip.plan.service.DayView;
 
 
 class EstimatedCostTest {

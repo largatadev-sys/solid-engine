@@ -1,10 +1,10 @@
 package com.largata.itinerary;
 
-import com.largata.trip.workspace.WorkspaceService;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
+import com.largata.trip.workspace.service.WorkspaceService;
 
 
 @Component

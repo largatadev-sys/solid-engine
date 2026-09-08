@@ -9,15 +9,15 @@ import com.largata.media.PhotoSubject;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.exception.TripNotFoundException;
-import com.largata.trip.ownership.OwnershipRows;
-import com.largata.trip.plan.PlanRows;
-import com.largata.trip.trip.TripRows;
-import com.largata.trip.workspace.WorkspaceRows;
+import com.largata.trip.ownership.service.OwnershipRows;
+import com.largata.trip.plan.service.PlanRows;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.largata.trip.trip.service.TripRows;
+import com.largata.trip.workspace.service.WorkspaceRows;
 
 
 @Service

@@ -13,16 +13,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import com.largata.trip.trip.TripService;
-import com.largata.trip.trip.Trip;
-import com.largata.trip.plan.DayService;
-import com.largata.trip.plan.ActivityService;
-import com.largata.trip.editing.EditLeaseService;
-import com.largata.trip.plan.ActivityFields;
-import com.largata.trip.plan.ActivityView;
-import com.largata.trip.editing.LeaseSubject;
-import com.largata.trip.plan.DayView;
-import com.largata.trip.plan.ActivityNotFoundException;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.plan.entity.ActivityFields;
+import com.largata.trip.editing.entity.LeaseSubject;
+import com.largata.trip.trip.service.TripService;
+import com.largata.trip.plan.service.DayService;
+import com.largata.trip.plan.service.ActivityService;
+import com.largata.trip.editing.service.EditLeaseService;
+import com.largata.trip.plan.service.ActivityView;
+import com.largata.trip.plan.service.DayView;
+import com.largata.trip.plan.exception.ActivityNotFoundException;
 
 
 @SpringBootTest

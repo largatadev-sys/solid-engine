@@ -3,7 +3,7 @@ package com.largata.trip.plan;
 import com.largata.common.geo.Pin;
 import java.math.BigDecimal;
 import java.time.LocalTime;
-import com.largata.trip.plan.ActivityFields;
+import com.largata.trip.plan.entity.ActivityFields;
 
 
 public final class UnbookedActivity {

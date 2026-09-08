@@ -5,14 +5,14 @@ import com.largata.identity.FollowCounts;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
 import com.largata.identity.web.CurrentTraveler;
-import com.largata.trip.trip.TripService;
-import com.largata.trip.trip.TripStats;
+import com.largata.trip.trip.entity.TripStats;
 import com.largata.itinerary.api.ProfileStatsResponse;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.largata.trip.trip.service.TripService;
 
 
 @RestController

@@ -2,13 +2,13 @@ package com.largata.itinerary;
 
 import com.largata.common.authz.ItineraryNotFoundException;
 import com.largata.common.authz.Membership;
-import com.largata.trip.workspace.WorkspaceService;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.trip.TripRepository;
-import com.largata.trip.trip.Trip;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.workspace.service.WorkspaceService;
+import com.largata.trip.trip.repository.TripRepository;
 
 
 @Component

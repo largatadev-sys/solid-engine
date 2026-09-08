@@ -10,13 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.trip.TripRepository;
-import com.largata.trip.editing.EditLeaseService;
 import com.largata.trip.history.ActivityHistoryService;
-import com.largata.trip.trip.ShareCardVersionService;
-import com.largata.trip.trip.Trip;
+import com.largata.trip.trip.service.ShareCardVersionService;
+import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.history.HistoryAct;
-import com.largata.trip.editing.LeaseSubject;
+import com.largata.trip.editing.entity.LeaseSubject;
+import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.editing.service.EditLeaseService;
 
 
 @Service

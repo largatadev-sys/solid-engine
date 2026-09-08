@@ -7,8 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
 import com.largata.identity.web.VerifiedContact;
-import com.largata.trip.trip.Trip;
-import com.largata.trip.trip.TripService;
+import com.largata.trip.trip.entity.Trip;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
 import java.time.Duration;
@@ -22,6 +21,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import com.largata.trip.trip.service.TripService;
 
 
 @SpringBootTest

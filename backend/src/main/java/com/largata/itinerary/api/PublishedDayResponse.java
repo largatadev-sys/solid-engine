@@ -1,8 +1,8 @@
 package com.largata.itinerary.api;
 
-import com.largata.trip.plan.DayView;
 import java.util.List;
 import java.util.UUID;
+import com.largata.trip.plan.service.DayView;
 
 
 public record PublishedDayResponse(UUID id, int ordinal, String title, List<PublishedActivityResponse> activities) {

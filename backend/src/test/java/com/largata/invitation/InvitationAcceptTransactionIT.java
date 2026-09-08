@@ -7,8 +7,7 @@ import com.largata.identity.Traveler;
 import com.largata.identity.TravelerClaims;
 import com.largata.identity.TravelerService;
 import com.largata.identity.web.VerifiedContact;
-import com.largata.trip.trip.Trip;
-import com.largata.trip.trip.TripService;
+import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -18,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import com.largata.trip.trip.service.TripService;
 
 
 @SpringBootTest

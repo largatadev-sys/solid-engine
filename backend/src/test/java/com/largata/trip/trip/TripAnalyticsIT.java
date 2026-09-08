@@ -112,7 +112,7 @@ class TripAnalyticsIT extends PostgresTestBase {
         ListAppender<ILoggingEvent> appLog = new ListAppender<>();
         appLog.start();
         ch.qos.logback.classic.Logger serviceLogger =
-                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.largata.trip.trip.TripService");
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.largata.trip.trip.service.TripService");
         serviceLogger.addAppender(appLog);
         try {
             create(freshTraveler(), """

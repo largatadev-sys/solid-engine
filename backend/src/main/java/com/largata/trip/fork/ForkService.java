@@ -7,8 +7,7 @@ import com.largata.common.authz.Membership;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.trip.workspace.WorkspaceService;
-import com.largata.trip.workspace.WorkspaceState;
+import com.largata.trip.workspace.entity.WorkspaceState;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -17,15 +16,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.trip.TripRepository;
-import com.largata.trip.plan.DayRepository;
-import com.largata.trip.plan.ActivityRepository;
-import com.largata.trip.plan.DayService;
 import com.largata.itinerary.PublishedVisibility;
-import com.largata.trip.plan.TripPlanTree;
-import com.largata.trip.trip.Trip;
-import com.largata.trip.plan.Day;
-import com.largata.trip.plan.Activity;
+import com.largata.trip.plan.entity.TripPlanTree;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.plan.entity.Day;
+import com.largata.trip.plan.entity.Activity;
+import com.largata.trip.workspace.service.WorkspaceService;
+import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.plan.repository.DayRepository;
+import com.largata.trip.plan.repository.ActivityRepository;
+import com.largata.trip.plan.service.DayService;
 
 
 @Service

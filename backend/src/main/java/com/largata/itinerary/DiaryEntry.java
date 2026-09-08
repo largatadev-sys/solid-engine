@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.UUID;
-import com.largata.trip.plan.ActivitySnapshot;
+import com.largata.trip.plan.entity.ActivitySnapshot;
 
 
 @Entity

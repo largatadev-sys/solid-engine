@@ -3,7 +3,7 @@ package com.largata.itinerary.api;
 import com.largata.common.geo.PinPayload;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.largata.identity.api.TravelerCardResponse;
-import com.largata.trip.plan.EstimatedCost;
+import com.largata.trip.plan.entity.EstimatedCost;
 import com.largata.itinerary.PublishedItinerary;
 import java.math.BigDecimal;
 import java.util.List;

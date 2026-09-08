@@ -2,11 +2,11 @@ package com.largata.itinerary.api;
 
 import com.largata.common.geo.PinPayload;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.largata.trip.plan.ActivityView;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-import com.largata.trip.plan.ActivityPhotoResponse;
+import com.largata.trip.plan.dto.ActivityPhotoResponse;
+import com.largata.trip.plan.service.ActivityView;
 
 
 public record PublishedActivityResponse(

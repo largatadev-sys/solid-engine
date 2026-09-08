@@ -65,3 +65,25 @@ What no test reaches is closed by hand on the LAN rung, with the first pool trav
 *And **ADR-038 rule 5 is amended**, which was the one thing recorded as owed.* Rule 5 says its exceptions live in the ADR *"and nowhere else"*, and archive→invitation had been argued only in the tickets. It is now the **fifth**, with the reasoning that matters: the reaction was first written AFTER_COMMIT with its failure logged, which is ADR-030's transport and which silently ended the act's atomicity — an archived trip still recruiting is the state user story 4 exists to prevent, and the same trade the rule already refused for admission. `BEFORE_COMMIT` + `MANDATORY` keeps the cycle broken and the act whole, and the propagation is what makes it hard to lose. Trigger: the FK-drop story, same as destruction.
 
 *Unused imports, swept across all 802 Java files at the founder's ask:* **25 found, and zero introduced or orphaned by this branch** — every one predates the merge-base, checked by resolving each file through its rename chain and diffing the import line against the base. Fourteen are `java.util.List` in test classes, the rest scattered across `common`, `itinerary`, `chat` and `ws`. They are **left alone deliberately**: they are pre-existing dead lines in files this story only moved, and deleting them would add unrelated churn to a PR whose whole claim is that nothing observable moved. Worth a tidy-up commit of its own, or a backlog line — recorded here so the sweep does not have to be repeated to learn the same thing.
+
+**2026-09-08 — the slices take layer folders, at the founder's push.** *"there are internal modules here that has a lot of classes. i understand that suffixes will suffice on the readability, but separation also contributes a lot so it is easy for me where to look at."*
+
+This is **not a departure from ADR-038 — it is rule 2 at a third size.** The rule folds by layer while every layer folder stays scannable and folds into slices when one outgrows that; trip folded module→slices when the module outgrew scanning, and `plan` at 37 files had outgrown its own slice the same way. **101 files moved**, and the vocabulary is diary's exactly — `adapter · controller · dto · entity · exception · repository · service` — so `plan/service/` and `diary/service/` mean the same thing to a reader.
+
+| slice | before | after |
+|---|---|---|
+| `plan` | 37 flat | adapter 1 · controller 3 · dto 8 · entity 6 · exception 7 · repository 2 · service 10 |
+| `trip` | 26 flat | adapter 1 · controller 2 · dto 4 · entity 6 · exception 7 · repository 1 · service 5 |
+| `editing` | 15 flat | adapter 1 · controller 1 · dto 3 · entity 4 · exception 2 · repository 1 · service 3 |
+| `ownership` | 12 flat | controller 1 · dto 2 · entity 3 · exception 1 · repository 2 · service 3 |
+| `workspace` | 11 flat | adapter 2 · entity 4 · repository 2 · service 3 |
+
+The largest folder in the module is now **10**. **`api` stays flat at 15, deliberately** — it *is* the front door, and folding it would mean answering "which layer is the api?"; the other seven slices are already under the threshold.
+
+**The cost is the documented one.** A layer split forces types public across layer lines — 06b §11 already records it: *"`@Service` classes are public today only because the layer split at CM-2 cost them their seal; the boundary guards are what replaced it."* Same trade here: ~50 members and a dozen types widened, with the ArchUnit allowlist still sealing the module from outside, which is what makes the widening affordable.
+
+**A latent defect the flat packages had been hiding.** There are two `NotTripOwnerException` types — one in `trip/trip/exception`, one nested in `MembershipExceptions` — and the layer split turned that into a hard `reference to NotTripOwnerException is ambiguous`. The first code review flagged it as a Mysterious Name trap and it was right; resolved by import here, but **consolidating the two is worth doing before CM-5 rather than at it.**
+
+**Two of my own tools bit, and both are the same lesson.** A plain string-replace turned `plan.ActivityRepository` into `plan.entity.ActivityRepository`, because `Activity` is a prefix of `ActivityRepository` — 118 ghost imports, and the same bug corrupted a logger name inside a *string literal*, which no import fix would ever have reached. And the member-widener injected `public` into a **call site** rather than a declaration, then re-injected it every pass so the build never converged. The replacement only touches declarations at exactly four spaces of indent, which no call site ever is. **Both were caught by clean compiles, not by reading** — and a sweep now proves every string-literal FQN under `com.largata.trip` resolves, since the compiler cannot check those.
+
+*Verified:* clean build · unit suite **433/433** · full ITs **1369, one failure, then green** — `TripAnalyticsIT` attaches its appender to a logger **by name string**, which the prefix bug had mangled; 8/8 after · assertion-diff **0 across 53 files**, so 101 files moved without touching one assertion.

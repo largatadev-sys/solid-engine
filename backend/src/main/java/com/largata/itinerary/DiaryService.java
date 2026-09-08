@@ -22,7 +22,6 @@ import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.postcard.api.LegacyEntries;
 import com.largata.postcard.exception.ActivityAlreadyPostcardedException;
-import com.largata.trip.workspace.WorkspaceService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,15 +31,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.trip.TripRepository;
-import com.largata.trip.trip.Trip;
+import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.api.TripLifecycle;
-import com.largata.trip.plan.ActivityRepository;
-import com.largata.trip.plan.DayRepository;
-import com.largata.trip.plan.Activity;
-import com.largata.trip.plan.Day;
-import com.largata.trip.plan.ActivityNotFoundException;
-import com.largata.trip.plan.ActivitySnapshot;
+import com.largata.trip.plan.entity.Activity;
+import com.largata.trip.plan.entity.Day;
+import com.largata.trip.plan.entity.ActivitySnapshot;
+import com.largata.trip.workspace.service.WorkspaceService;
+import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.plan.repository.ActivityRepository;
+import com.largata.trip.plan.repository.DayRepository;
+import com.largata.trip.plan.exception.ActivityNotFoundException;
 
 
 @Service

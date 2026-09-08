@@ -9,14 +9,14 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import com.largata.trip.trip.TripFields;
-import com.largata.trip.trip.Trip;
+import com.largata.trip.trip.entity.TripFields;
+import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.api.TripLifecycle;
-import com.largata.trip.trip.Visibility;
-import com.largata.trip.trip.IllegalStateTransitionException;
-import com.largata.trip.trip.NotCompleteException;
-import com.largata.trip.trip.UnknownAudienceException;
-import com.largata.trip.trip.VisibilityRetiredException;
+import com.largata.trip.trip.entity.Visibility;
+import com.largata.trip.trip.exception.IllegalStateTransitionException;
+import com.largata.trip.trip.exception.NotCompleteException;
+import com.largata.trip.trip.exception.UnknownAudienceException;
+import com.largata.trip.trip.exception.VisibilityRetiredException;
 
 
 class TripTest {
