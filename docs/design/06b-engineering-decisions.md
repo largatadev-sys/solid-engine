@@ -90,3 +90,47 @@ Deferred to post-validation: full mobile-UI E2E coverage, load tests, chaos anyt
 *Adopted 2026-07-29 (off-epic). At adoption the tree carried 8,272 comment lines across 285 of 286 source and test files — 43% of backend production source, 29% of mobile — accreted with no rule ever requiring them. Flyway migrations are out of scope permanently: their content is checksummed, so editing an applied migration fails validation on every environment that has run it.*
 
 **Resolution: ☑ Agreed** *(proposed solo — pending founder ratification; 06a ratified unamended)*
+
+## 11. Spring and Java conventions — *instantiates P1/P6*
+
+**Why this section exists.** Every rule below was already true of the tree when it was written — measured, not proposed. They were being enforced in review, one flag at a time, which is the expensive way: the founder catches what the agent could not have known, and the same conversation happens again on the next story. This section is that knowledge moved from a reviewer's head into a file an agent reads first. **A convention that only exists in review comments is not a convention; it is a tax.**
+
+**Where the house differs from a Spring default, it says so and why.** The rest is ordinary Spring Boot practice and needs no defence.
+
+### Injection and visibility
+
+- **Constructor injection only. `@Autowired` appears nowhere** (measured: 0 occurrences, 163 classes on constructor injection). Fields are `private final`, set once. A missing collaborator is then a compile error rather than a `NullPointerException` on the first request, and the class is constructible in a test without a container.
+- **Constructors on `@Service` classes are package-private** (measured: 42 of 42). The bean is Spring's to build and the module's to construct; nothing outside the package should be calling `new` on a service.
+- **Classes are package-private unless something outside the package must name them.** Controllers are the clearest case — 40 of 42 are package-private, because nothing calls a controller in-process (§2: the boundary is REST; the in-process boundary is `api`). `@Service` classes are public today only because the layer split at CM-2 cost them their seal; the boundary guards are what replaced it (ADR-038), and a service that gains an `api` adapter should lose `public` with it.
+- **`@Repository` is a Spring Data interface, never a hand-written class** — queries only, zero business decisions (§2).
+
+### Naming
+
+- **No `Impl` suffix, anywhere** (measured: 0). An implementation is named for **what distinguishes it from the others that could exist** — `RowBackedMembershipResolver`, `PostcardDiaryContents`, `LoggingInvitationMailer`, `DiaryCoverAudience`. `Impl` asserts there is only one, so the day a second arrives the first must be renamed; this tree has already lived that swap once (`OwnerMembershipResolver` → `RowBackedMembershipResolver` at S1.1), and both names stayed meaningful side by side because neither claimed to be *the* one. **This is a deliberate deviation from the most common Java convention**, taken because the alternative degrades exactly when it matters.
+- **Exceptions are `{Entity}{Condition}`** (§3), and they are published surface — a module's `exception..` package is part of its front door (ADR-038).
+- **A component and its helper must not differ only by case.** `LifecycleBanner.tsx` beside `lifecycleBanner.ts` resolves arbitrarily on a case-insensitive filesystem; distinguish by more than a capital. This is the one rule in the tree no test can enforce — it is a property of the filesystem, not of any program — so it lives here and in CLAUDE.md's Gotchas.
+
+### Transactions
+
+- **`@Transactional` goes on methods, never on classes** (measured: 283 method-level, 0 class-level). A class-level annotation silently enrolls every method added later, including reads that should be `readOnly` and helpers that should not have a transaction at all.
+- **Reads carry `readOnly = true`.** It is a real hint to the provider, not decoration.
+- **Self-invocation does not go through the proxy**, so a `@Transactional` method called from inside the same bean is not transactional. Insert-on-conflict recovery therefore needs the insert in a **separate bean** with `REQUIRES_NEW` plus `saveAndFlush` — `TripDiaryInserter` and `DiaryDayInserter` are the worked examples.
+- **No single transaction writes across a module line**, with the exceptions recorded in ADR-038 rule 5 and nowhere else.
+
+### Types at the boundary
+
+- **Wire records are `record`s** (measured: 20 of 20 DTOs). They are immutable, they carry no behaviour, and Jackson needs no help with them.
+- **A JPA entity never crosses a module line** (ADR-038 rule 1). It may not appear in an `api` package, in a record an `api` hands out, or as a parameter of one.
+- **`Optional` is a return type and never a field** (measured: 0 fields). A method that may find nothing returns `Optional`.
+  - **As a parameter it is allowed where absence is a domain fact rather than a missing argument**, and the tree uses it that way deliberately: `Optional<Membership> caller` on the published-itinerary surfaces means *the viewer may be an anonymous stranger*, which is a case the reader must handle, not an omission they might forget. A nullable parameter says "you may leave this out"; `Optional<Membership>` says "anonymous is a real caller". Reach for it only when that distinction is the point.
+
+### Configuration
+
+- **`@ConditionalOnMissingBean` is autoconfiguration-only and is not a tiebreaker in ordinary `@Configuration`.** Two beans both register and the context fails at startup — *in the profile where both exist*, which is the last place anyone looks. **Use a complete, mutually-exclusive profile pair** (`@Profile("dev")` / `@Profile("!dev")`) so exactly one bean always wins, and run at least one integration test in **each** profile before believing a profile-conditional bean works.
+- **A dependency can change the HTTP transport under the whole application**, because Spring picks its `ClientHttpRequestFactory` by classpath detection. State the transport explicitly where you own the client rather than inheriting whatever a transitive dependency installed.
+
+**Dial. Floor.** None of this is a rigor setting — it is the shape all code takes at any dial. The two Full-rigor subsystems earn their rigor through more tests, not different conventions.
+
+*Adopted 2026-09-08 (off-epic, at CM-4's close). Every quantified claim above was measured against the tree on that date; the counts are evidence the conventions were already real, and are worth re-measuring rather than trusting if one ever seems wrong.*
+
+**Resolution: ☐ Pending founder ratification**

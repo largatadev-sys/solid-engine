@@ -528,6 +528,10 @@ An unsupported HTTP method answers **405** rather than 500. `HttpRequestMethodNo
 
 
 
+**2026-09-08**
+
+The Spring and Java conventions are written down — `06b` §11, off-epic, at CM-4's close and at the founder's call. Nothing about the tree changed: every rule in it was **measured** first and every one was already true (0 `@Autowired`, 163 classes on constructor injection, 42 of 42 service constructors package-private, 40 of 42 controllers package-private, 283 method-level `@Transactional` and 0 class-level, 20 of 20 DTOs records, 0 `Impl` classes, 0 `Optional` fields). The reason it is worth a commit is what the counts prove: the conventions were real and enforced **only in review**, one founder flag at a time, so an agent could not have known them before being corrected. **One rule was drafted wrong and corrected by the measurement rather than shipped** — `Optional` as a parameter is not forbidden, it is used deliberately where absence is a domain fact (`Optional<Membership> caller` means *the viewer may be an anonymous stranger*), which the first draft would have outlawed. The section also records where the house deviates from the most common Java convention and why: no `Impl` suffix, because an implementation is named for what distinguishes it and `Impl` asserts there is only one — a claim this tree has already falsified once, at S1.1's resolver swap.
+
 **2026-09-07**
 
 CM-2.1 — the diary and postcard follow-ups, off-epic because CM-2 had already merged and these came out of the founder walking the shipped screens. Six things. The postcard page’s carousel was the only one in the tree spreading `PAGING` without the snap styles that carry the whole behaviour on web, and its 1/3 pill read from `onMomentumScrollEnd` alone, which a snap-scroll frequently never fires. The memory primitives now honour Reduce Motion, which ticket 14 had owed. A diary opened from a postcard lands on that day — ticket 10’s criterion, which a previous review found ticked and unbuilt. The Profile header matches Home and Discover. The tab bar became a standing rule: the four tab roots carry it and nothing else does, recorded in CLAUDE.md.
