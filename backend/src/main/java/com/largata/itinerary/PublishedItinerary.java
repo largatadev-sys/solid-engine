@@ -6,6 +6,8 @@ import com.largata.identity.TravelerSummary;
 import java.util.List;
 import java.util.UUID;
 import com.largata.trip.record.Itinerary;
+import com.largata.trip.plan.EstimatedCost;
+import com.largata.trip.plan.DayView;
 
 
 public record PublishedItinerary(

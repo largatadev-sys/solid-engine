@@ -19,6 +19,24 @@ public enum TripLifecycle {
     }
 
 
+    public Optional<TripLifecycle> next() {
+        return switch (this) {
+            case UPCOMING -> Optional.of(ONGOING);
+            case ONGOING -> Optional.of(COMPLETED);
+            case COMPLETED -> Optional.empty();
+        };
+    }
+
+
+    public Optional<TripLifecycle> previous() {
+        return switch (this) {
+            case UPCOMING -> Optional.empty();
+            case ONGOING -> Optional.of(UPCOMING);
+            case COMPLETED -> Optional.of(ONGOING);
+        };
+    }
+
+
     public static Optional<TripLifecycle> parse(String storedName) {
         if (storedName == null || storedName.isBlank()) {
             return Optional.empty();

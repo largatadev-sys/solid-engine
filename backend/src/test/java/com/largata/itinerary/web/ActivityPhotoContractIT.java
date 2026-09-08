@@ -2,7 +2,7 @@ package com.largata.itinerary.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.itinerary.ActivityPhotoService;
+import com.largata.trip.plan.ActivityPhotoService;
 import com.largata.support.ObjectStoreTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;

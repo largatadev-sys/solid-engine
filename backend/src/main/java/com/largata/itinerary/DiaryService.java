@@ -35,6 +35,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.largata.trip.record.ItineraryRepository;
 import com.largata.trip.record.Itinerary;
 import com.largata.trip.record.ItineraryState;
+import com.largata.trip.plan.ActivityRepository;
+import com.largata.trip.plan.DayRepository;
+import com.largata.trip.plan.Activity;
+import com.largata.trip.plan.Day;
+import com.largata.trip.plan.ActivityNotFoundException;
+import com.largata.trip.plan.ActivitySnapshot;
 
 
 @Service

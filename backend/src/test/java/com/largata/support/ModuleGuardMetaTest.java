@@ -40,7 +40,7 @@ class ModuleGuardMetaTest {
                     "verification", "TW-1");
 
     private static final List<String> BEING_DISMANTLED =
-            List.of("itinerary", "membership");
+            List.of("itinerary");
 
     private static final Pattern A_BY_NAME_EXEMPTION =
             Pattern.compile("simpleName\\s*\\(|\\bhaveSimpleName\\s*\\(|\\bbelongToAnyOf\\s*\\(");

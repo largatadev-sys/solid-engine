@@ -1,6 +1,6 @@
 package com.largata.itinerary.api;
 
-import com.largata.itinerary.DayView;
+import com.largata.trip.plan.DayView;
 import java.util.List;
 import java.util.UUID;
 

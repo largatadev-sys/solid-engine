@@ -18,3 +18,17 @@ Postcard and publication take the two-line change the boundaries story accepted 
 - [ ] The assertion-diff script reports zero differences; every integration test passes with no edited assertion
 
 ## Comments
+
+**2026-09-08 — built.** `trip/service/TripService` — the raw-SQL facade CM-1 built as scaffolding — is **deleted**, and its ten interface reads are now repository-backed implementations in the slices that own each answer.
+
+*Where each answer went, and why there.* `TripApi` → `record/TripFactsService` over `ItineraryRepository` (`factsOf`, `teaserOf`, `titlesByIds`, `shareCardVersionOf`, `markPublished`, `markUnpublished`) with `frozen` and the archived flag delegated to `workspace/WorkspaceService`, which owns workspace state. `PlanApi` → `plan/PlanReadService` over `DayRepository` and `ActivityRepository`. The **plan's implementation had to live inside `trip.plan`**, not in a neutral place: `Activity`'s and `Day`'s accessors are package-private, and the alternative — widening twenty accessors to public so a service elsewhere could read them — would have undone exactly the sealing this story exists to create. The trip-level half of a plan comes from `record/TripPlanHeaders`, a small published seam, so `PlanReadService` never touches the `Itinerary` entity.
+
+*One behaviour was preserved deliberately rather than improved.* The facade's `markPublished` was an unconditional `UPDATE`; the entity's existing `publishTo` refuses when the trip is not COMPLETED. Routing the api through `publishTo` would have added a refusal to a path publication already gates, changing observable behaviour in a story whose whole claim is that nothing moved. The entity gained `markPublishedAt`, which mirrors the SQL exactly.
+
+*Destruction keeps its reach, and now the build says so.* `destruction/TripDestructionService` carries `destroy` verbatim. **The waiver narrowed from CM-4's twelve tables to five**, because seven of the twelve are now trip's own: `itinerary`, `day`, `activity`, `workspace`, `membership`, `ownership_offer`, `ownership_transfer`. What remains foreign is `poll`, `invitation`, `join_request`, `join_link`, `chat_message` — each `NOT NULL REFERENCES workspace`, so an event-driven destruction is impossible before the FK drops. Trigger: the foreign-key-drop story.
+
+**This is also ADR-038's deferred general SQL guard, delivered.** CM-4 recorded that the source-text guard "is TW-1's, deliberately", and `TripRawSqlWaiverTest` is it — three rules: raw SQL exists nowhere under `trip/` but the destruction service; the foreign tables destruction names are **exactly** those five; and the scan reads what it claims to (>8 tables, >100 files), so it cannot pass vacuously. Sabotage-checked by adding `"diary_entry"` to the workspace-children loop — the build goes red naming it. One trap in writing it: the first version scanned every quoted lowercase string in the file and caught the analytics event name `"trip_destroyed"` as a table, so the quoted scan is now scoped to the `for (String workspaceTable` loop and **throws** if that loop is ever renamed away, rather than silently reading nothing.
+
+*Postcard and publication needed no change here* — they took their `PlanApi` field at ticket 03, when splitting the interface is what made their calls stop typechecking. Publication's `markPublished` write stays as CM-5's bridge, recorded and not rewired.
+
+*Verified:* raw-SQL waiver guard **3/3** with its sabotage red, clean build first pass, full suite below.

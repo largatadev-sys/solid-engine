@@ -7,7 +7,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -19,15 +18,20 @@ class NewWorldBoundaryTest {
 
     private static final Pattern OLD_WORLD =
             Pattern.compile(
-                    "com\\.largata\\.(itinerary|workspace|membership|invitation|join|chat|poll|ws"
+                    "com\\.largata\\.(itinerary|invitation|join|chat|poll|ws"
                             + "|verification|report|health)\\.");
+
+    private static final Pattern THE_CONTENT_HALF_TW1_LEFT_STANDING =
+            Pattern.compile(
+                    "com\\.largata\\.itinerary\\.(PublishedVisibility|TrendingDestinationRow"
+                            + "|api\\.PublishRequest|api\\.ShowcaseItineraryResponse)\\b");
 
     @Test
     void newWorldSourcesNeverNameAnOldWorldPackage() {
         List<String> offenders =
                 newWorldFiles()
-                        .filter(file -> !THE_MIGRATION_WINDOW.test(file))
                         .flatMap(NewWorldBoundaryTest::offendingLines)
+                        .filter(line -> !THE_CONTENT_HALF_TW1_LEFT_STANDING.matcher(line).find())
                         .toList();
 
         assertThat(offenders)
@@ -39,15 +43,23 @@ class NewWorldBoundaryTest {
     }
 
     @Test
-    void theMigrationWindowIsBranchLocalAndSelectsTheSlicesStillInFlight() {
-        assertThat(newWorldFiles().filter(THE_MIGRATION_WINDOW).findAny())
-                .as("the one branch-local window: a MOVED trip file may still name an UNMOVED"
-                        + " old-world class while the relocation is in pieces. Ticket 07 finishes"
-                        + " the move and DELETES this window; a window selecting no file has"
-                        + " already outlived its purpose and must go")
-                .isPresent();
-    }
+    void theContentHalfExemptionIsFourNamedTypesAndDissolvesAtCM5() {
+        List<String> reaches =
+                newWorldFiles()
+                        .flatMap(NewWorldBoundaryTest::offendingLines)
+                        .filter(line -> THE_CONTENT_HALF_TW1_LEFT_STANDING.matcher(line).find())
+                        .toList();
 
+        assertThat(reaches)
+                .as(
+                        "TW-1 moved the trip half and left the content half standing, so four trip"
+                                + " files still name it — the fork's published-visibility check, the"
+                                + " trending destinations row, the publish request and the showcase"
+                                + " response. This is NOT a migration window: it is the shape of the"
+                                + " tree until CM-5 deletes the old package. Counted, so a fifth is"
+                                + " a red build")
+                .hasSize(4);
+    }
 
     @Test
     void theScanReachesRealFiles() {
@@ -56,28 +68,30 @@ class NewWorldBoundaryTest {
 
     @Test
     void theRuleWouldFireOnABadImport() {
-        assertThat(OLD_WORLD.matcher("import com.largata.itinerary.Itinerary;").find()).isTrue();
-        assertThat(OLD_WORLD.matcher("import com.largata.workspace.WorkspaceService;").find()).isTrue();
-        assertThat(OLD_WORLD.matcher("import com.largata.common.authz.Membership;").find()).isFalse();
-        assertThat(OLD_WORLD.matcher("import com.largata.media.PhotoService;").find()).isFalse();
-        assertThat(OLD_WORLD.matcher("import com.largata.identity.Traveler;").find()).isFalse();
-        assertThat(OLD_WORLD.matcher("import com.largata.diary.DiaryService;").find()).isFalse();
+        assertThat(OLD_WORLD.matcher(anImportOf("itinerary", "Itinerary")).find()).isTrue();
+        assertThat(OLD_WORLD.matcher(anImportOf("invitation", "InvitationService")).find()).isTrue();
+        assertThat(OLD_WORLD.matcher(anImportOf("common.authz", "Membership")).find()).isFalse();
+        assertThat(OLD_WORLD.matcher(anImportOf("media", "PhotoService")).find()).isFalse();
+        assertThat(OLD_WORLD.matcher(anImportOf("identity", "Traveler")).find()).isFalse();
+        assertThat(OLD_WORLD.matcher(anImportOf("diary", "DiaryService")).find()).isFalse();
     }
 
-    private static final List<String> SLICES_IN_FLIGHT =
-            List.of("workspace", "record", "cover", "dump", "fork", "validation");
+    @Test
+    void theRetiredPackagesAreNoLongerNamedBecauseTheyNoLongerExist() {
+        assertThat(OLD_WORLD.matcher(anImportOf("workspace", "WorkspaceService")).find())
+                .as("workspace moved into the trip module at ticket 04, so naming it here would"
+                        + " forbid an import nothing can write")
+                .isFalse();
+        assertThat(OLD_WORLD.matcher(anImportOf("membership", "MembershipService")).find())
+                .as("and membership moved at ticket 07")
+                .isFalse();
+        assertThat(Path.of("src/main/java/com/largata/workspace")).doesNotExist();
+        assertThat(Path.of("src/main/java/com/largata/membership")).doesNotExist();
+    }
 
-
-    private static final Predicate<Path> THE_MIGRATION_WINDOW =
-            file -> {
-                Path parent = file.getParent();
-                if (parent == null) {
-                    return false;
-                }
-                return SLICES_IN_FLIGHT.stream()
-                        .anyMatch(slice -> parent.endsWith(Path.of("trip", slice)));
-            };
-
+    private static String anImportOf(String pkg, String type) {
+        return "import com.largata." + pkg + "." + type + ";";
+    }
 
     private static Stream<Path> newWorldFiles() {
         return NEW_WORLD.stream()

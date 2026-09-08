@@ -32,15 +32,15 @@ import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.itinerary.ActivityRepository;
-import com.largata.itinerary.DayService;
-import com.largata.itinerary.EditLeaseService;
-import com.largata.itinerary.ActivityHistoryService;
-import com.largata.itinerary.ItineraryPlan;
-import com.largata.itinerary.DayView;
-import com.largata.itinerary.ActivityView;
-import com.largata.itinerary.LeaseSubject;
-import com.largata.itinerary.HistoryAct;
+import com.largata.trip.plan.ActivityRepository;
+import com.largata.trip.plan.DayService;
+import com.largata.trip.editing.EditLeaseService;
+import com.largata.trip.history.ActivityHistoryService;
+import com.largata.trip.plan.ItineraryPlan;
+import com.largata.trip.plan.DayView;
+import com.largata.trip.plan.ActivityView;
+import com.largata.trip.editing.LeaseSubject;
+import com.largata.trip.history.HistoryAct;
 
 
 @Service

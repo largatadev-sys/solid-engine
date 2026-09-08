@@ -11,12 +11,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.largata.trip.record.ItineraryRepository;
-import com.largata.itinerary.EditLeaseService;
-import com.largata.itinerary.ActivityHistoryService;
+import com.largata.trip.editing.EditLeaseService;
+import com.largata.trip.history.ActivityHistoryService;
 import com.largata.trip.record.ShareCardVersionService;
 import com.largata.trip.record.Itinerary;
-import com.largata.itinerary.HistoryAct;
-import com.largata.itinerary.LeaseSubject;
+import com.largata.trip.history.HistoryAct;
+import com.largata.trip.editing.LeaseSubject;
 
 
 @Service

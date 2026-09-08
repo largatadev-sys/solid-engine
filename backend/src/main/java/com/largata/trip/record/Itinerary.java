@@ -277,6 +277,12 @@ public class Itinerary {
         this.published = false;
     }
 
+
+    void markPublishedAt(Instant at) {
+        this.published = true;
+        this.publishedAt = at;
+    }
+
     public UUID id() {
         return id;
     }

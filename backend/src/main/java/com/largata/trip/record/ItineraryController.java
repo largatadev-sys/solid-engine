@@ -12,7 +12,7 @@ import com.largata.trip.record.TripCategory;
 import com.largata.trip.record.CreateItineraryRequest;
 import com.largata.trip.record.ItineraryResponse;
 import com.largata.trip.record.UpdateItineraryRequest;
-import com.largata.membership.MembershipService;
+import com.largata.trip.ownership.MembershipService;
 import com.largata.trip.fork.ForkService;
 import com.largata.trip.cover.ItineraryCoverService;
 import jakarta.validation.Valid;

@@ -18,14 +18,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.largata.trip.record.ItineraryRepository;
-import com.largata.itinerary.DayRepository;
-import com.largata.itinerary.ActivityRepository;
-import com.largata.itinerary.DayService;
+import com.largata.trip.plan.DayRepository;
+import com.largata.trip.plan.ActivityRepository;
+import com.largata.trip.plan.DayService;
 import com.largata.itinerary.PublishedVisibility;
-import com.largata.itinerary.ItineraryPlan;
+import com.largata.trip.plan.ItineraryPlan;
 import com.largata.trip.record.Itinerary;
-import com.largata.itinerary.Day;
-import com.largata.itinerary.Activity;
+import com.largata.trip.plan.Day;
+import com.largata.trip.plan.Activity;
 
 
 @Service

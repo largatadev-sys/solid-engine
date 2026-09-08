@@ -4,15 +4,15 @@ import com.largata.common.geo.PinPayload;
 import com.largata.identity.TravelerSummary;
 import com.largata.trip.fork.ForkService;
 import com.largata.trip.record.Itinerary;
-import com.largata.itinerary.ItineraryPlan;
-import com.largata.itinerary.LeaseSubject;
+import com.largata.trip.plan.ItineraryPlan;
+import com.largata.trip.editing.LeaseSubject;
 import com.largata.trip.workspace.WorkspaceState;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-import com.largata.itinerary.api.DayResponse;
-import com.largata.itinerary.api.LeaseHolderResponse;
+import com.largata.trip.plan.DayResponse;
+import com.largata.trip.editing.LeaseHolderResponse;
 import com.largata.trip.fork.ForkedFromResponse;
 
 
