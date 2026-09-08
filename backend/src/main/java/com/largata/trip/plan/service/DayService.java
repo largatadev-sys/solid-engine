@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.trip.exception.PlanLimitExceededException;
-import com.largata.trip.trip.exception.NotTripOwnerException;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.history.ActivityHistoryService;
 import com.largata.trip.history.HistoryAct;
 import com.largata.trip.editing.entity.LeaseSubject;
@@ -195,7 +195,7 @@ public class DayService {
     private void requireOwnerOfWritableTrip(Membership member) {
         fence.requireEditable(member);
         if (!member.isOwner()) {
-            throw new NotTripOwnerException("Only the trip owner can add or remove days.");
+            throw new NotTheTripOwnerException("Only the trip owner can add or remove days.");
         }
     }
 

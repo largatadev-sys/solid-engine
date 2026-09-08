@@ -10,29 +10,6 @@ public final class MembershipExceptions {
     private MembershipExceptions() {}
 
 
-    public static final class NotTripOwnerException extends ForbiddenException {
-        private NotTripOwnerException(String message) {
-            super("NOT_PERMITTED", message);
-        }
-
-        public static NotTripOwnerException toRemoveAMember() {
-            return new NotTripOwnerException("Only the trip owner can remove a member.");
-        }
-
-        public static NotTripOwnerException toChangeArchiveState() {
-            return new NotTripOwnerException("Only the trip owner can archive or unarchive this trip.");
-        }
-
-        public static NotTripOwnerException toOfferOwnership() {
-            return new NotTripOwnerException("Only the trip owner can offer ownership of this trip.");
-        }
-
-        public static NotTripOwnerException toRevokeAnOffer() {
-            return new NotTripOwnerException("Only the trip owner can revoke an ownership offer.");
-        }
-    }
-
-
     public static final class OwnerCannotLeaveException extends ConflictException {
         public OwnerCannotLeaveException() {
             super("OWNER_CANNOT_LEAVE", "Offer ownership to another member and have them accept before leaving this trip.");

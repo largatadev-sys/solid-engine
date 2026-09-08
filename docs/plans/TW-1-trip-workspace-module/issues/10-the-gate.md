@@ -87,3 +87,27 @@ The largest folder in the module is now **10**. **`api` stays flat at 15, delibe
 **Two of my own tools bit, and both are the same lesson.** A plain string-replace turned `plan.ActivityRepository` into `plan.entity.ActivityRepository`, because `Activity` is a prefix of `ActivityRepository` — 118 ghost imports, and the same bug corrupted a logger name inside a *string literal*, which no import fix would ever have reached. And the member-widener injected `public` into a **call site** rather than a declaration, then re-injected it every pass so the build never converged. The replacement only touches declarations at exactly four spaces of indent, which no call site ever is. **Both were caught by clean compiles, not by reading** — and a sweep now proves every string-literal FQN under `com.largata.trip` resolves, since the compiler cannot check those.
 
 *Verified:* clean build · unit suite **433/433** · full ITs **1369, one failure, then green** — `TripAnalyticsIT` attaches its appender to a logger **by name string**, which the prefix bug had mangled; 8/8 after · assertion-diff **0 across 53 files**, so 101 files moved without touching one assertion.
+
+**2026-09-08 — the walk, on the rung this session can actually reach, and what it proved.**
+
+**The half that ran.** The stack was rebuilt on TW-1's code (`docker compose up -d --build`; it had been serving a 22-hour-old pre-TW-1 image, so reading its log before that would have proved nothing), then the workspace walk ran as the five Playwright specs that carry it — `create-flow`, `buffered-plan`, `lifecycle`, `archive-posture`, `ownership-transfer`: **86 passed**, `t1 = owner, t2 = member` from the verified pool.
+
+**The first run reported `86 skipped`, and that is the H1 gate working rather than a pass.** Shell state does not survive between tool calls, so `mobile/.env` had not been exported into the Playwright process and `requireStack` skipped every spec with *"pool environment absent"*. A suite that reports 86 skipped and exits **0** is indistinguishable from 86 green to anything reading the exit code — which is exactly the check-with-no-failure-mode this repo keeps paying for, closed here by the gate naming its reason. Re-run with the env in the same command: 86 passed in 9.8s.
+
+**What the walk was for, and it answers cleanly.** Every logger that fired during it, at its layered address:
+
+```
+com.largata.trip.trip.service.TripService          Trip archived · Ownership …
+com.largata.trip.plan.service.PlanSaveService      Plan saved: itineraryId=… days=4
+com.largata.trip.plan.service.DayService           Days seeded · Day appended
+com.largata.trip.plan.service.ActivityService      Activity created: dayId=…
+com.largata.trip.editing.service.EditLeaseService  Edit lease acquired · released
+com.largata.trip.ownership.service.MembershipService  Ownership offered · accepted · revoked
+com.largata.trip.workspace.service.WorkspaceService
+```
+
+Before this story every one of those read `com.largata.itinerary.*`. Each line carries **ids only** — no title, no destination, no traveler name — so P3 holds through the move.
+
+**The half that did NOT run, stated rather than implied.** Ticket 10 asks for the walk *"from two phones"*. That did not happen: the emulator rung is blocked by the recorded Gradle fault (four stories now), and a real device is the founder's. **Still unproven by anything in this story: native 1:1 gesture handling, keyboard avoidance, hardware back, Reduce Motion, and safe-area insets.** TW-1 changed no client file, so the risk is low — but low is not zero, and this is recorded as *not done* rather than folded into the 86.
+
+**And the three follow-ups the founder queued, all done here.** (1) The duplicate owner refusal is consolidated: three variants inside the trip module — `trip/exception/NotTheTripOwnerException`, `trip/trip/exception/NotTripOwnerException`, and `MembershipExceptions.NotTripOwnerException` — became **one**, the published one at the module root, carrying all five named factories. All three were `ForbiddenException("NOT_PERMITTED", …)`, so the wire is untouched; `join` keeps its own, being a different module. (2) The event-loss gap is an epic-map backlog line, **ranked**: `MembershipEnded` is the one that matters, because a departed member keeps a live subscription; `TripArchived` is not exposed at all, being BEFORE_COMMIT. (3) All **25** pre-existing unused imports are gone — a sweep now reports zero across 801 files.

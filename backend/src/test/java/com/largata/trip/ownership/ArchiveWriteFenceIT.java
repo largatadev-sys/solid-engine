@@ -6,7 +6,6 @@ import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

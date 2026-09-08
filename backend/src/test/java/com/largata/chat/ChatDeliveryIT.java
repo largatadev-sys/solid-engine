@@ -8,7 +8,6 @@ import com.largata.support.TripRig;
 import com.largata.support.WsRig;
 import com.largata.support.WsTestClient;
 import java.time.Duration;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

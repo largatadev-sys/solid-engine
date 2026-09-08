@@ -11,7 +11,6 @@ import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

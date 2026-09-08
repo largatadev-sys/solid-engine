@@ -36,7 +36,7 @@ import com.largata.trip.ownership.exception.MembershipExceptions.CannotOfferToSe
 import com.largata.trip.ownership.exception.MembershipExceptions.IllegalWorkspaceTransitionException;
 import com.largata.trip.ownership.exception.MembershipExceptions.NoPendingOfferException;
 import com.largata.trip.ownership.exception.MembershipExceptions.NotOfferTargetException;
-import com.largata.trip.ownership.exception.MembershipExceptions.NotTripOwnerException;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.ownership.exception.MembershipExceptions.OfferAlreadyPendingException;
 import com.largata.trip.ownership.exception.MembershipExceptions.OwnerCannotLeaveException;
 import com.largata.trip.ownership.exception.MembershipExceptions.TargetNotAMemberException;
@@ -87,7 +87,7 @@ public class MembershipService {
         if (!leaving) {
             fence.requireMembershipMutable(caller);
             if (!caller.isOwner()) {
-                throw NotTripOwnerException.toRemoveAMember();
+                throw NotTheTripOwnerException.toRemoveAMember();
             }
         }
         if (leaving && caller.isOwner()) {
@@ -161,7 +161,7 @@ public class MembershipService {
 
     private UUID requireOwnerToChangeArchiveState(Membership caller) {
         if (!caller.isOwner()) {
-            throw NotTripOwnerException.toChangeArchiveState();
+            throw NotTheTripOwnerException.toChangeArchiveState();
         }
         return caller.itineraryId();
     }
@@ -208,7 +208,7 @@ public class MembershipService {
         UUID itineraryId = owner.itineraryId();
         fence.requireMembershipMutable(owner);
         if (!owner.isOwner()) {
-            throw NotTripOwnerException.toOfferOwnership();
+            throw NotTheTripOwnerException.toOfferOwnership();
         }
         if (owner.travelerId().equals(targetTravelerId)) {
             throw new CannotOfferToSelfException();
@@ -239,7 +239,7 @@ public class MembershipService {
         UUID itineraryId = owner.itineraryId();
         fence.requireMembershipMutable(owner);
         if (!owner.isOwner()) {
-            throw NotTripOwnerException.toRevokeAnOffer();
+            throw NotTheTripOwnerException.toRevokeAnOffer();
         }
         Optional<OwnershipOffer> pending =
                 offers.findByWorkspaceIdAndStatus(workspaceIdOf(itineraryId), OwnershipOfferStatus.PENDING);

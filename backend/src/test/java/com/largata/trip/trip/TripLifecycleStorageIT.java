@@ -8,7 +8,6 @@ import com.largata.common.authz.Role;
 import com.largata.support.PostgresTestBase;
 import com.largata.trip.api.TripLifecycle;
 import java.lang.reflect.RecordComponent;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;

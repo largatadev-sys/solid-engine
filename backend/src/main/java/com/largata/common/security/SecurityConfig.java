@@ -1,6 +1,5 @@
 package com.largata.common.security;
 
-import com.largata.common.logging.LogContextFilter;
 import com.largata.common.logging.UserContextFilter;
 import com.largata.join.JoinPaths;
 import com.largata.report.ReportPaths;
@@ -11,7 +10,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 

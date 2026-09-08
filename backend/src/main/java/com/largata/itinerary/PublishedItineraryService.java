@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.largata.trip.fork.ForkService;
 import com.largata.trip.trip.entity.Trip;
-import com.largata.trip.trip.exception.NotTripOwnerException;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.workspace.service.WorkspaceService;
 import com.largata.trip.trip.repository.TripRepository;
 import com.largata.trip.plan.service.DayService;
@@ -50,7 +50,7 @@ public class PublishedItineraryService {
     @Transactional(readOnly = true)
     public PublishedItinerary preview(Membership owner) {
         if (!owner.isOwner()) {
-            throw new NotTripOwnerException("Only the trip owner can preview the published page.");
+            throw new NotTheTripOwnerException("Only the trip owner can preview the published page.");
         }
         return project(
                 itineraries

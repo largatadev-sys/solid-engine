@@ -47,7 +47,7 @@ import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.trip.entity.TripFields;
 import com.largata.trip.trip.entity.TripCategory;
 import com.largata.trip.trip.entity.TripStats;
-import com.largata.trip.trip.exception.NotTripOwnerException;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.trip.exception.IllegalStateTransitionException;
 
 
@@ -254,7 +254,7 @@ public class TripService {
     private Trip loadForDetailsEdit(Membership member) {
         fence.requireEditable(member);
         if (!member.isOwner()) {
-            throw new NotTripOwnerException("Only the trip owner can edit the trip's details.");
+            throw new NotTheTripOwnerException("Only the trip owner can edit the trip's details.");
         }
         return trips
                 .findById(member.itineraryId())
@@ -351,7 +351,7 @@ public class TripService {
     private Trip authorizeAndLoad(Membership owner) {
         fence.requireWritable(owner);
         if (!owner.isOwner()) {
-            throw new NotTripOwnerException();
+            throw NotTheTripOwnerException.toStartOrCompleteTheTrip();
         }
         return trips
                 .findById(owner.itineraryId())
