@@ -45,7 +45,7 @@ test.beforeAll(async () => {
     durationDays: 3,
   });
   await climbTo(shown, 'completed');
-  const published = await api(`/v1/itineraries/${shown.id}/publish`, 'POST', shown.ownerToken, {
+  const published = await api(`/v1/trips/${shown.id}/publish`, 'POST', shown.ownerToken, {
     audience: 'public',
   });
   if (published.status !== 200) throw new SeedFailure('publishing the showcase trip', published.body);

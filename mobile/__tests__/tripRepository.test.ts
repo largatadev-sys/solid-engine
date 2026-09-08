@@ -101,7 +101,7 @@ describe('publishing (S4.1)', () => {
 
     await tripRepository.publishTrip('abc');
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/publish', undefined);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/abc/publish', undefined);
   });
 
   it('unpublishes symmetrically, on the same itinerary id', async () => {
@@ -109,7 +109,7 @@ describe('publishing (S4.1)', () => {
 
     await tripRepository.unpublishTrip('abc');
 
-    expect(apiClient.post).toHaveBeenCalledWith('/v1/itineraries/abc/unpublish', undefined);
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/trips/abc/unpublish', undefined);
   });
 });
 

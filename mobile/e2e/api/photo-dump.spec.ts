@@ -150,7 +150,7 @@ test('a published trip still takes photos — the freeze is the plan, not the po
   for (const step of ['start', 'complete']) {
     await api(`/v1/trips/${trip}/${step}`, 'POST', owner);
   }
-  await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   afterPublish = await uploadBytes(dump, member, solidJpeg(), 'dump.jpg');
   expect(afterPublish.status).toBe(201);
 });

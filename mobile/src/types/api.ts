@@ -273,6 +273,13 @@ export type ForkedFromResponse = {
 };
 
 
+export type ItineraryObjectResponse = {
+  id: string;
+  tripId: string;
+  publishedAt: string;
+};
+
+
 export type PublishedItineraryResponse = {
   id: string;
   title: string;

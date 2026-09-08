@@ -48,7 +48,7 @@ async function publishedTrip(
     const moved = await api(`/v1/trips/${id}/${rung}`, 'POST', token);
     if (moved.status !== 200) throw new SeedFailure(`the climb through ${rung}`, moved.body);
   }
-  const published = await api(`/v1/itineraries/${id}/publish`, 'POST', token, { audience: 'public' });
+  const published = await api(`/v1/trips/${id}/publish`, 'POST', token, { audience: 'public' });
   if (published.status !== 200) throw new SeedFailure(`publishing "${title}"`, published.body);
   return id;
 }

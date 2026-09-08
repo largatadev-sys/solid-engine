@@ -122,26 +122,26 @@ test('the owner previews before publishing; a member cannot', async () => {
 });
 
 test('publish by a member is refused by name', async () => {
-  const refused = await api(`/v1/itineraries/${trip}/publish`, 'POST', member);
+  const refused = await api(`/v1/trips/${trip}/publish`, 'POST', member);
   expect(refused.status).toBe(403);
   expect(refused.body.code).toBe('NOT_PERMITTED');
 });
 
 test('publishing a draft is refused, naming the precondition', async () => {
-  const tooEarly = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  const tooEarly = await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   expect(tooEarly.status).toBe(409);
   expect(tooEarly.body.code).toBe('ITINERARY_NOT_COMPLETE');
 });
 
 test('publishing an upcoming trip is refused — planning finished is not the trip happening', async () => {
-  const plannedTooEarly = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  const plannedTooEarly = await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   expect(plannedTooEarly.status).toBe(409);
   expect(plannedTooEarly.body.code).toBe('ITINERARY_NOT_COMPLETE');
 });
 
 test('publishing an ongoing trip is refused too', async () => {
   await api(`/v1/trips/${trip}/start`, 'POST', owner);
-  const stillTooEarly = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  const stillTooEarly = await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   expect(stillTooEarly.status).toBe(409);
   expect(stillTooEarly.body.code).toBe('ITINERARY_NOT_COMPLETE');
 });
@@ -153,7 +153,7 @@ test("the lifecycle walks draft to completed on the traveler's act", async () =>
 });
 
 test('publish by the owner on a completed trip lands, public by default', async () => {
-  const published = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  const published = await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   expect(published.status).toBe(200);
   expect(published.body.published).toBe(true);
   expect(published.body.visibility).toBe('public');
@@ -221,7 +221,7 @@ test('a published plan is frozen — the edit is refused, naming why', async () 
 });
 
 test('unpublishing leaves the trip completed — it does not un-travel it', async () => {
-  const unpublished = await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
+  const unpublished = await api(`/v1/trips/${trip}/unpublish`, 'POST', owner);
   expect(unpublished.status).toBe(200);
   expect(unpublished.body.state).toBe('completed');
   expect(unpublished.body.published).toBe(false);
@@ -247,7 +247,7 @@ test.describe('a plan whose activities were saved in different currencies, repub
 
   test.beforeAll(async () => {
     await api(`/v1/trips/${trip}/complete`, 'POST', owner);
-    await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+    await api(`/v1/trips/${trip}/publish`, 'POST', owner);
     mixed = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   });
 
@@ -286,7 +286,7 @@ test.describe('the retired audience axis', () => {
 
   test.beforeAll(async () => {
     refusedAtAudience = await api(`/v1/itineraries/${trip}/audience`, 'POST', owner, { audience: 'private' });
-    refusedAtPublish = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner, { audience: 'private' });
+    refusedAtPublish = await api(`/v1/trips/${trip}/publish`, 'POST', owner, { audience: 'private' });
     strangerReads = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   });
 
@@ -311,7 +311,7 @@ test('the audience route survives and publishes nothing new', async () => {
 });
 
 test('unpublish masks the stranger again', async () => {
-  const withdrawn = await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
+  const withdrawn = await api(`/v1/trips/${trip}/unpublish`, 'POST', owner);
   const goneAgain = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   expect(withdrawn.status).toBe(200);
   expect(goneAgain.status).toBe(404);
@@ -323,7 +323,7 @@ test('a complete and public but unpublished trip still has no page — discovery
 });
 
 test('republish serves the same itinerary id — no new identity', async () => {
-  const republished = await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  const republished = await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   const backAgain = await api(`/v1/published-itineraries/${trip}`, 'GET', consumer);
   expect(republished.body.id).toBe(trip);
   expect(backAgain.body.id).toBe(trip);
@@ -342,7 +342,7 @@ test.describe('the archive fence', () => {
     archivedMember = await api(`/v1/trips/${trip}`, 'GET', member);
     archivedMemberList = await api('/v1/trips?archived=true', 'GET', member);
     archivedOwner = await api(`/v1/trips/${trip}`, 'GET', owner);
-    fencedPublish = await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
+    fencedPublish = await api(`/v1/trips/${trip}/unpublish`, 'POST', owner);
   });
 
   test('archived masks the stranger on the public page', () => {
@@ -382,7 +382,7 @@ test('an empty itinerary publishes and projects cleanly', async () => {
   });
   await api(`/v1/trips/${empty.body.id}/start`, 'POST', owner);
   await api(`/v1/trips/${empty.body.id}/complete`, 'POST', owner);
-  const emptyPublish = await api(`/v1/itineraries/${empty.body.id}/publish`, 'POST', owner);
+  const emptyPublish = await api(`/v1/trips/${empty.body.id}/publish`, 'POST', owner);
   const emptySeen = await api(`/v1/published-itineraries/${empty.body.id}`, 'GET', consumer);
 
   expect(emptyPublish.status).toBe(200);

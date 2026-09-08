@@ -419,7 +419,7 @@ test.describe('the frozen surface, walked on an archived trip', () => {
       durationDays: 2,
     });
     await climbTo(shipped, 'completed');
-    await api(`/v1/itineraries/${shipped.id}/publish`, 'POST', ownerToken, {});
+    await api(`/v1/trips/${shipped.id}/publish`, 'POST', ownerToken, {});
 
     await signIn(MEMBER);
     await page.goto(travelersTab(shipped.id));

@@ -35,7 +35,7 @@ test.beforeAll(async () => {
   ]);
 
   await climbTo(trip, 'completed');
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {
+  const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', trip.ownerToken, {
     audience: 'public',
   });
   expect(published.status).toBe(200);

@@ -6,6 +6,7 @@ import type {
   DayRequest,
   DayResponse,
   EditLeaseResponse,
+  ItineraryObjectResponse,
   ItineraryResponse,
   LeaseSubject,
   MoveActivityRequest,
@@ -86,12 +87,12 @@ export const tripRepository = {
   },
 
 
-  async publishTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/publish`, undefined);
+  async publishTrip(id: string): Promise<ItineraryObjectResponse> {
+    return apiClient.post<ItineraryObjectResponse>(`/v1/trips/${id}/publish`, undefined);
   },
 
-  async unpublishTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unpublish`, undefined);
+  async unpublishTrip(id: string): Promise<void> {
+    return apiClient.post<void>(`/v1/trips/${id}/unpublish`, undefined);
   },
 
 

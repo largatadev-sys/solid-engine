@@ -70,7 +70,7 @@ async function seedPublishedTrip(title: string): Promise<SeededTrip> {
   await seedCover(trip);
   await climbTo(trip, 'completed');
 
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {
+  const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', trip.ownerToken, {
     audience: 'public',
   });
   if (published.status !== 200) throw new Error(`could not publish the source: ${published.status}`);
@@ -271,7 +271,7 @@ test.describe('attribution when the source stops being visible', () => {
   test('the credit survives an unpublish, and stops linking', async ({ page }) => {
     expect((await itineraryOf(forkId)).forkedFrom.sourceVisible).toBe(true);
 
-    const hidden = await api(`/v1/itineraries/${source.id}/unpublish`, 'POST', source.ownerToken);
+    const hidden = await api(`/v1/trips/${source.id}/unpublish`, 'POST', source.ownerToken);
     expect(hidden.status).toBe(200);
 
     await expect

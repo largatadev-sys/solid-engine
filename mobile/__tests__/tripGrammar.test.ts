@@ -10,7 +10,7 @@ const OLD_ROOT = '/v1/itineraries';
 
 const STILL_ON_THE_OLD_ROOT = new Set(['diaryRepository.ts', 'tripRepository.ts']);
 
-const UNTWINNED_SUFFIXES = ['/fork', '/publish', '/unpublish'];
+const UNTWINNED_SUFFIXES = ['/fork'];
 
 function repositoryFiles(): string[] {
   return readdirSync(REPOSITORIES).filter((entry) => entry.endsWith('.ts'));
@@ -53,13 +53,24 @@ describe('the client speaks the trip grammar (CM-3)', () => {
     expect(UNTWINNED_SUFFIXES.some((suffix) => twinnedOnTheOldRoot.includes(suffix))).toBe(false);
   });
 
-  it('publishing stays on the act the shipped app already calls, so no behaviour moves', () => {
+  it('publishing acts on the trip grammar, because published now means a live Itinerary exists', () => {
     const source = readFileSync(join(REPOSITORIES, 'tripRepository.ts'), 'utf8');
 
-    expect(source).toContain('`/v1/itineraries/${id}/publish`');
-    expect(source).toContain('`/v1/itineraries/${id}/unpublish`');
-    expect(source).not.toContain('`/v1/trips/${id}/publish`');
-    expect(source).not.toContain('`/v1/trips/${id}/unpublish`');
+    expect(source).toContain('`/v1/trips/${id}/publish`');
+    expect(source).toContain('`/v1/trips/${id}/unpublish`');
+    expect(source).not.toContain('`/v1/itineraries/${id}/publish`');
+    expect(source).not.toContain('`/v1/itineraries/${id}/unpublish`');
+  });
+
+  it('the publish mutations refetch the trip rather than writing a response into its cache', () => {
+    const source = readFileSync(join(MOBILE_ROOT, 'src', 'query', 'itineraryQueries.ts'), 'utf8');
+    const publishing = source.slice(
+      source.indexOf('export function usePublishTrip'),
+      source.indexOf('export type LifecycleAct'),
+    );
+
+    expect(publishing).not.toContain('onItineraryUpdated');
+    expect(publishing.match(/invalidateQueries/g) ?? []).not.toHaveLength(0);
   });
 
   it('the published page still reads the old projection until the itinerary story', () => {

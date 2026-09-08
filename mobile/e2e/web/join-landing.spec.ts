@@ -235,7 +235,7 @@ test.describe('7e · the dead link', () => {
     });
     const token = await linkFor(trip.id);
     await climbTo(trip, 'completed');
-    await api(`/v1/itineraries/${trip.id}/publish`, 'POST', ownerToken, {});
+    await api(`/v1/trips/${trip.id}/publish`, 'POST', ownerToken, {});
 
     await signIn(VISITOR);
     await page.goto(landing(token));

@@ -211,7 +211,7 @@ test.describe('the publish act — dark since the walk was retired', () => {
   });
 
   test('unpublishing leaves the trip COMPLETE and returns the Publish CTA', async ({ page }) => {
-    const unpublished = await api(`/v1/itineraries/${trip.id}/unpublish`, 'POST', token, {});
+    const unpublished = await api(`/v1/trips/${trip.id}/unpublish`, 'POST', token, {});
     expect(unpublished.status).toBe(200);
 
     await expect
@@ -231,7 +231,7 @@ test.describe('the public projection, read by a stranger', () => {
 
   test.beforeAll(async () => {
     published = await seedCompletedTrip(stamp('the projection'));
-    const act = await api(`/v1/itineraries/${published.id}/publish`, 'POST', token, {
+    const act = await api(`/v1/trips/${published.id}/publish`, 'POST', token, {
       audience: 'public',
     });
     expect(act.status).toBe(200);

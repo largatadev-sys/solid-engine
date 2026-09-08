@@ -27,7 +27,7 @@ let trip: SeededTrip;
 let title: string;
 
 async function publish(): Promise<void> {
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', token, {
+  const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', token, {
     audience: 'public',
   });
   if (published.status !== 200) throw new SeedFailure('publishing the trip', published.body);

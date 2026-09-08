@@ -262,7 +262,7 @@ async function seedTraveler(traveler, credits, collaborator, say = console.log) 
     }
 
     if (publishes(trip)) {
-      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', token), 'publish');
+      must(await api(`/v1/trips/${created.id}/publish`, 'POST', token), 'publish');
     }
 
     say(
