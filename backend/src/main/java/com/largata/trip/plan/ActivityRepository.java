@@ -14,6 +14,9 @@ public interface ActivityRepository extends JpaRepository<Activity, UUID> {
 
     List<Activity> findByDayIdOrderBySortOrderAscIdAsc(UUID dayId);
 
+    @Query("SELECT a.id FROM Activity a, Day d WHERE d.id = a.dayId AND d.itineraryId = :itineraryId")
+    List<UUID> idsUnder(@Param("itineraryId") UUID itineraryId);
+
 
     Optional<Activity> findByIdAndDayId(UUID id, UUID dayId);
 

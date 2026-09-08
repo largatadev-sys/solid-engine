@@ -81,4 +81,9 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
             @Param("itineraryId") UUID itineraryId,
             @Param("expectedRole") Role expectedRole,
             @Param("newRole") Role newRole);
+
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM Membership m WHERE m.workspace.id = :workspaceId")
+    int deleteByWorkspaceId(@Param("workspaceId") UUID workspaceId);
 }
