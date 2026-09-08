@@ -1,9 +1,9 @@
 package com.largata.common.security;
 
 import com.largata.common.logging.UserContextFilter;
-import com.largata.join.JoinPaths;
-import com.largata.report.ReportPaths;
-import com.largata.ws.WebSocketPaths;
+import com.largata.join.api.JoinPaths;
+import com.largata.report.api.ReportPaths;
+import com.largata.ws.api.WebSocketPaths;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;

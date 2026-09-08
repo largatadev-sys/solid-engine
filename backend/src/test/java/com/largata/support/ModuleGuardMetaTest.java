@@ -20,7 +20,19 @@ class ModuleGuardMetaTest {
     private static final Path GUARDS = Path.of("src/test/java/com/largata");
 
     private static final List<String> UNDER_THE_RULE =
-            List.of("diary", "place", "postcard", "publication", "trip");
+            List.of(
+                    "chat",
+                    "diary",
+                    "health",
+                    "invitation",
+                    "join",
+                    "place",
+                    "poll",
+                    "postcard",
+                    "publication",
+                    "report",
+                    "trip",
+                    "verification");
 
     private static final Map<String, String> DELIBERATELY_OUTSIDE =
             Map.of(
@@ -29,15 +41,7 @@ class ModuleGuardMetaTest {
                     "media", "shared infrastructure - photos are reached by every content module",
                     "ws", "transport - it carries other modules' events and names their topics");
 
-    private static final Map<String, String> OWED =
-            Map.of(
-                    "chat", "TW-1",
-                    "poll", "TW-1",
-                    "invitation", "TW-1",
-                    "join", "TW-1",
-                    "health", "TW-1",
-                    "report", "TW-1",
-                    "verification", "TW-1");
+    private static final Map<String, String> OWED = Map.of();
 
     private static final List<String> BEING_DISMANTLED =
             List.of("itinerary");

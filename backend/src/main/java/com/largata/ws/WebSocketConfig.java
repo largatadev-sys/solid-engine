@@ -1,5 +1,6 @@
 package com.largata.ws;
 
+import com.largata.ws.api.WebSocketPaths;
 import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

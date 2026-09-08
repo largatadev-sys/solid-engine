@@ -1,4 +1,4 @@
-package com.largata.ws;
+package com.largata.ws.api;
 
 
 public final class WebSocketPaths {

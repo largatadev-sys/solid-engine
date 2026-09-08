@@ -6,21 +6,22 @@ import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.WriteFence;
+import com.largata.common.security.VerifiedContact;
 import com.largata.common.tx.AfterCommit;
+import com.largata.identity.IdentityExceptions.NoSuchHandleException;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.common.security.VerifiedContact;
 import com.largata.invitation.InvitationExceptions.AlreadyMemberException;
 import com.largata.invitation.InvitationExceptions.EmailNotVerifiedException;
 import com.largata.invitation.InvitationExceptions.InvitationAlreadyPendingException;
 import com.largata.invitation.InvitationExceptions.InvitationExpiredException;
 import com.largata.invitation.InvitationExceptions.InvitationNotFoundException;
 import com.largata.invitation.InvitationExceptions.InvitationNotPendingException;
-import com.largata.identity.IdentityExceptions.NoSuchHandleException;
+import com.largata.invitation.api.InvitationApi;
+import com.largata.trip.api.MembershipApi;
+import com.largata.trip.api.MembershipView;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripTeaser;
-import com.largata.trip.api.MembershipView;
-import com.largata.trip.api.MembershipApi;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
-public class InvitationService {
+public class InvitationService implements InvitationApi {
 
     private static final Logger log = LoggerFactory.getLogger(InvitationService.class);
 
@@ -357,6 +358,7 @@ public class InvitationService {
 
 
     @Transactional(propagation = Propagation.MANDATORY)
+    @Override
     public void supersedePendingInvitationsFor(UUID workspaceId, UUID inviteeTravelerId) {
         invitations
                 .findByWorkspaceIdAndInviteeTravelerIdAndStatus(
