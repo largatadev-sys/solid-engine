@@ -249,7 +249,7 @@ class CoverContractIT extends ObjectStoreTestBase {
                 .expectStatus()
                 .isOk();
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/publish")
+                .uri("/v1/trips/" + trip + "/publish")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -259,11 +259,11 @@ class CoverContractIT extends ObjectStoreTestBase {
 
     private void unpublish(String owner, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/unpublish")
+                .uri("/v1/trips/" + trip + "/unpublish")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
-                .isOk();
+                .isNoContent();
     }
 
 

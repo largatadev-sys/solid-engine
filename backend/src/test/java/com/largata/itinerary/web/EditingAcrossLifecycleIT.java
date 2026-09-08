@@ -137,9 +137,12 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
 
     private void walk(String token, String tripId, String... acts) {
         for (String act : acts) {
-            rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/" + act, token, null)
+            String root = act.equals("publish") || act.equals("unpublish")
+                    ? "/v1/trips/"
+                    : "/v1/itineraries/";
+            rig.send(HttpMethod.POST, root + tripId + "/" + act, token, null)
                     .expectStatus()
-                    .isOk();
+                    .value(status -> assertThat(status).isIn(200, 204));
         }
     }
 

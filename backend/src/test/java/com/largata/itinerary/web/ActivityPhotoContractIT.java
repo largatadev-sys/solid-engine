@@ -363,7 +363,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
                 .exchange();
         for (String step : List.of("start", "complete", "publish")) {
             rest.post()
-                    .uri("/v1/itineraries/" + trip.tripId() + "/" + step)
+                    .uri((step.equals("publish") ? "/v1/trips/" : "/v1/itineraries/") + trip.tripId() + "/" + step)
                     .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                     .exchange()
                     .expectStatus()

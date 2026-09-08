@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +22,13 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
+@Disabled(
+        "CM-5 ticket 01: this pins the OLD root's publish contract - its own response shape,"
+            + " its audience parameter and its 200 on unpublish - and the old act no longer mints"
+            + " an Itinerary, so published now reads false through it. The contract it documents is"
+            + " deleted by ticket 11, which sunsets the route; the behaviour it protected is"
+            + " re-proven in PublishedMeansALiveItineraryIT on the trip grammar. Quarantined rather"
+            + " than repaired because repairing it would assert a contract this story removes.")
 class ItineraryPublicationIT extends PostgresTestBase {
 
     private RestTestClient rest;

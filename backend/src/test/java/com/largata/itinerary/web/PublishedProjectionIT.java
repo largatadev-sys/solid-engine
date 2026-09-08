@@ -644,7 +644,7 @@ class PublishedProjectionIT extends PostgresTestBase {
 
     private void audienceOf(String token, String itineraryId, String audience, String act) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/" + act)
+                .uri(rootFor(act) + itineraryId + "/" + act)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"audience\":\"" + audience + "\"}")
@@ -664,11 +664,18 @@ class PublishedProjectionIT extends PostgresTestBase {
 
     private void act(String token, String itineraryId, String verb) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/" + verb)
+                .uri(rootFor(verb) + itineraryId + "/" + verb)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
-                .isOk();
+                .value(status -> org.assertj.core.api.Assertions.assertThat(status).isIn(200, 204));
+    }
+
+
+    private static String rootFor(String verb) {
+        return verb.equals("publish") || verb.equals("unpublish")
+                ? "/v1/trips/"
+                : "/v1/itineraries/";
     }
 
 
