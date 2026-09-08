@@ -4,7 +4,7 @@ import com.largata.common.api.Page;
 import com.largata.identity.FollowCounts;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.trip.entity.TripStats;
 import com.largata.itinerary.api.ProfileStatsResponse;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;

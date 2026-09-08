@@ -4,7 +4,7 @@ import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.publication.dto.ItineraryObjectResponse;
 import com.largata.publication.entity.ItineraryObject;
 import com.largata.publication.service.ItineraryObjectService;

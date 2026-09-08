@@ -4,7 +4,7 @@ import com.largata.common.api.Page;
 import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.itinerary.PostcardFeedService;
 import com.largata.itinerary.api.FeedPostcardResponse;
 import com.largata.itinerary.api.PublicTripDiaryResponse;

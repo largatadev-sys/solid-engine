@@ -13,7 +13,7 @@ import com.largata.diary.entity.Diary;
 import com.largata.diary.service.DiaryService;
 import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import java.io.IOException;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;

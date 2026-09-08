@@ -2,7 +2,7 @@ package com.largata.itinerary.web;
 
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.itinerary.PublishedItineraryService;
 import com.largata.itinerary.api.PublishedItineraryResponse;
 import java.util.UUID;

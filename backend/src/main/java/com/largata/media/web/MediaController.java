@@ -2,7 +2,7 @@ package com.largata.media.web;
 
 import com.largata.common.storage.ObjectStore;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoAudience;

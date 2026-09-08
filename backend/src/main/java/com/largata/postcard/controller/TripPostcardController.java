@@ -3,7 +3,7 @@ package com.largata.postcard.controller;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.postcard.dto.PostFromActivityRequest;
 import com.largata.postcard.dto.PostcardResponse;
 import com.largata.postcard.service.PostcardService;

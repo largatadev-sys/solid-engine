@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.identity.web.VerifiedContact;
+import com.largata.common.security.VerifiedContact;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
