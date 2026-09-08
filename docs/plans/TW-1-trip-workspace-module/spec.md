@@ -77,3 +77,19 @@ The grammar and the client (CM-3, before) · the content-module boundaries (CM-4
 - **`design.md` is background.** Where the record and the design differ, the record wins; where the record is silent, the design's reasoning stands.
 
 ## Comments
+
+**2026-09-08 — sliced into ten tickets (`issues/`), and what the measurement corrected.** Every count below was taken on the tree as it stood after CM-4 merged its branch work, not from this spec's figures.
+
+*Corrections to the spec, none blocking, each shaping a ticket:*
+
+1. **Eight external consumers, not four.** The spec counted files importing the old package alone; with workspace and membership inside the unit, the consumers are the invitation service and its trip-membership controller, the join service and its card service, the poll service, and the transport module's two listeners and subscription resolver. Their calls size **MembershipApi at seven** — admit, isMember, membersOf, workspaceIdOf, itineraryIdsByWorkspace, isArchived, itineraryIdsInSightOf — and add **three to TripApi**: teaserOf, titlesByIds and the share card's currentVersion. The spec's `owner` has no outside caller and is not published.
+2. **The websocket frame tests are not unedited.** Both import the topic class for its three type-string constants; when that class dies they take a **renamed-symbol edit** to the transport module's event-type home. Seam 1 permits exactly this; seam 3's "unedited" overstated. The frames themselves stay byte-identical, and those tests remain the proof.
+3. **The trip controller reaches into the content half.** Its `preview` route calls the published-itinerary service, which stays — so a moved controller would name the old world. Preview lifts out to the staying controller **before** any move (ticket 01), which round 2 Q8 already implied.
+4. **The trip-membership controller straddles the boundary.** It lives in the invitation package, carries both roots, and drives the membership service for the roster and the four ownership-offer routes; neither api list in this spec carried the ownership acts. **Founder ruling at slicing: split the controller** — those five routes travel with the ownership slice; MembershipApi stays reads plus admit.
+5. **`TripUnarchived` has no consumer** — unarchive calls nothing in any other module. **Founder ruling at slicing: recorded, not built**, per ADR-038's rule that an event is built where a consumer exists; trigger, the first consumer. Five events ship.
+6. **Today's trip controller is destruction-only** and collides with the rename target — renamed at ticket 01.
+7. **`MembershipArrived` has three publishers**, each immediately after admission; the publish folds into `admit` (ticket 03), leaving one.
+8. **The expand phase needs no window.** Old-world classes may implement `trip.api` (the permitted direction), so the interfaces and events land and every consumer cuts over while nothing has moved (tickets 01–03); the two windows live only from ticket 04 to ticket 07.
+9. **"The client repository is renamed now"** (grilling round 3 Q2) was done at CM-3 — the client holds `tripRepository` and no `itineraryRepository` — so *Mobile: nothing* holds.
+
+*Owner rulings owed at review — both confirmed at slicing:* the order (events → workspace → the trip's own slices → plan, editing, history → ownership and the windows close → the facade retires → the rename → the gate), and the rename inside this PR as ticket 09.
