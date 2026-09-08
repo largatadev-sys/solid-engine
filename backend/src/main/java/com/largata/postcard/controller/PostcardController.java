@@ -3,7 +3,7 @@ package com.largata.postcard.controller;
 import com.largata.common.geo.PinPayload;
 import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.postcard.dto.CreatePostcardRequest;
 import com.largata.postcard.dto.FilePostcardRequest;
 import com.largata.postcard.dto.PlacePostcardRequest;

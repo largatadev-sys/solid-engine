@@ -6,7 +6,7 @@ import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
 import com.largata.identity.api.PublicProfileResponse;
 import com.largata.identity.api.TravelerCardResponse;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.itinerary.PublicProfileService;
 import com.largata.itinerary.api.DiaryTripResponse;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;

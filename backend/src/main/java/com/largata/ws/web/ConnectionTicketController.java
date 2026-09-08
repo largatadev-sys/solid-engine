@@ -1,7 +1,7 @@
 package com.largata.ws.web;
 
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.ws.ConnectionTickets;
 import com.largata.ws.api.ConnectionTicketResponse;
 import org.springframework.http.HttpStatus;

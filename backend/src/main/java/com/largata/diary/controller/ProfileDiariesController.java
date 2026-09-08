@@ -7,7 +7,7 @@ import com.largata.identity.IdentityExceptions.NoSuchHandleException;
 import com.largata.identity.Traveler;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.publication.api.PublicationApi;
 import java.util.List;
 import java.util.Map;

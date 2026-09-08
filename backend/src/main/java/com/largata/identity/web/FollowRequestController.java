@@ -1,6 +1,7 @@
 package com.largata.identity.web;
 
 import com.largata.common.api.Page;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.identity.FollowRequestService;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;

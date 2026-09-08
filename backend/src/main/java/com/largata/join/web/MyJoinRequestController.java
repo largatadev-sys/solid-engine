@@ -2,7 +2,7 @@ package com.largata.join.web;
 
 import com.largata.common.api.Page;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.join.JoinService;
 import com.largata.media.web.PhotoBytes;
 import java.util.UUID;

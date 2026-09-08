@@ -2,9 +2,9 @@ package com.largata.invitation.web;
 
 import com.largata.common.api.Page;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.AuthEmail;
-import com.largata.identity.web.CurrentTraveler;
-import com.largata.identity.web.VerifiedContact;
+import com.largata.common.security.AuthEmail;
+import com.largata.common.security.CurrentTraveler;
+import com.largata.common.security.VerifiedContact;
 import com.largata.invitation.InvitationService;
 import com.largata.media.web.PhotoBytes;
 import java.util.UUID;

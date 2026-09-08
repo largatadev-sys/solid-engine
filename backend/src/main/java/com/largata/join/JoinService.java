@@ -4,13 +4,11 @@ import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
+import com.largata.common.security.VerifiedContact;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.identity.web.VerifiedContact;
-import com.largata.invitation.InvitationService;
-import com.largata.trip.api.TripApi;
-import com.largata.trip.api.TripTeaser;
+import com.largata.invitation.api.InvitationApi;
 import com.largata.join.JoinExceptions.AlreadyMemberException;
 import com.largata.join.JoinExceptions.EmailNotVerifiedException;
 import com.largata.join.JoinExceptions.JoinRequestNotFoundException;
@@ -18,8 +16,10 @@ import com.largata.join.JoinExceptions.JoinRequestNotPendingException;
 import com.largata.join.JoinExceptions.LinkClosedException;
 import com.largata.join.JoinExceptions.NotTripOwnerException;
 import com.largata.join.JoinExceptions.UnknownJoinTokenException;
-import com.largata.trip.api.MembershipView;
 import com.largata.trip.api.MembershipApi;
+import com.largata.trip.api.MembershipView;
+import com.largata.trip.api.TripApi;
+import com.largata.trip.api.TripTeaser;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
@@ -53,7 +53,7 @@ public class JoinService {
     private final MembershipApi workspaces;
     private final TripApi itineraries;
     private final TravelerService travelers;
-    private final InvitationService invitations;
+    private final InvitationApi invitations;
     private final WriteFence fence;
     private final Analytics analytics;
     private final JoinQueueTopic joinQueue;
@@ -68,7 +68,7 @@ public class JoinService {
             MembershipApi workspaces,
             TripApi itineraries,
             TravelerService travelers,
-            InvitationService invitations,
+            InvitationApi invitations,
             WriteFence fence,
             Analytics analytics,
             JoinQueueTopic joinQueue,

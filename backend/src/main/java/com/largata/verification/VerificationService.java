@@ -3,7 +3,7 @@ package com.largata.verification;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.tx.AfterCommit;
-import com.largata.identity.web.VerifiedContact;
+import com.largata.common.security.VerifiedContact;
 import com.largata.verification.VerificationExceptions.AlreadyVerifiedException;
 import com.largata.verification.VerificationExceptions.AttemptsExhaustedException;
 import com.largata.verification.VerificationExceptions.CodeExpiredException;

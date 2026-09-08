@@ -1,9 +1,9 @@
 package com.largata.verification.web;
 
 import com.largata.identity.Traveler;
-import com.largata.identity.web.AuthEmail;
-import com.largata.identity.web.CurrentTraveler;
-import com.largata.identity.web.VerifiedContact;
+import com.largata.common.security.AuthEmail;
+import com.largata.common.security.CurrentTraveler;
+import com.largata.common.security.VerifiedContact;
 import com.largata.verification.VerificationService;
 import com.largata.verification.api.ConfirmCodeRequest;
 import com.largata.verification.api.VerificationCodeResponse;

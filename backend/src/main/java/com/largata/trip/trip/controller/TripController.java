@@ -5,7 +5,7 @@ import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.AudienceFence;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.trip.entity.TripCategory;
 import com.largata.trip.trip.dto.CreateTripRequest;

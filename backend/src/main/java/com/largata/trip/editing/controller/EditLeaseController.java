@@ -3,7 +3,7 @@ package com.largata.trip.editing.controller;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.editing.dto.EditLeaseResponse;
 import com.largata.trip.editing.dto.LeaseSubjectRequest;
 import java.util.UUID;
