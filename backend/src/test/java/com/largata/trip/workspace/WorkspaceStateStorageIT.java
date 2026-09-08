@@ -1,4 +1,4 @@
-package com.largata.workspace;
+package com.largata.trip.workspace;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

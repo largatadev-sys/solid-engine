@@ -1,4 +1,4 @@
-package com.largata.workspace;
+package com.largata.trip.workspace;
 
 
 public enum WorkspaceState {

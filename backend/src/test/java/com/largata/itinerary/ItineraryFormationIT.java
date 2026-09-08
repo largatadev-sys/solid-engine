@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.largata.support.PostgresTestBase;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.workspace.WorkspaceService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

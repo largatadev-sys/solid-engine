@@ -8,7 +8,7 @@ import com.largata.common.authz.Role;
 import com.largata.itinerary.Itinerary;
 import com.largata.itinerary.ItineraryService;
 import com.largata.support.PostgresTestBase;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.workspace.WorkspaceService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

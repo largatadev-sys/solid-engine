@@ -12,7 +12,7 @@ import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.postcard.api.LegacyEntries;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.workspace.WorkspaceService;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

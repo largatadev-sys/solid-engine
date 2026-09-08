@@ -3,7 +3,7 @@ package com.largata.itinerary;
 import com.largata.common.authz.Membership;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.workspace.WorkspaceService;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;

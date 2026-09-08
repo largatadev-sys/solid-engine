@@ -7,6 +7,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ class NewWorldBoundaryTest {
     void newWorldSourcesNeverNameAnOldWorldPackage() {
         List<String> offenders =
                 newWorldFiles()
+                        .filter(file -> !THE_MIGRATION_WINDOW.test(file))
                         .flatMap(NewWorldBoundaryTest::offendingLines)
                         .toList();
 
@@ -35,6 +37,17 @@ class NewWorldBoundaryTest {
                                 + " and this guard with it")
                 .isEmpty();
     }
+
+    @Test
+    void theMigrationWindowIsBranchLocalAndSelectsTheSlicesStillInFlight() {
+        assertThat(newWorldFiles().filter(THE_MIGRATION_WINDOW).findAny())
+                .as("the one branch-local window: a MOVED trip file may still name an UNMOVED"
+                        + " old-world class while the relocation is in pieces. Ticket 07 finishes"
+                        + " the move and DELETES this window; a window selecting no file has"
+                        + " already outlived its purpose and must go")
+                .isPresent();
+    }
+
 
     @Test
     void theScanReachesRealFiles() {
@@ -50,6 +63,10 @@ class NewWorldBoundaryTest {
         assertThat(OLD_WORLD.matcher("import com.largata.identity.Traveler;").find()).isFalse();
         assertThat(OLD_WORLD.matcher("import com.largata.diary.DiaryService;").find()).isFalse();
     }
+
+    private static final Predicate<Path> THE_MIGRATION_WINDOW =
+            file -> file.getParent() != null && file.getParent().endsWith(Path.of("trip", "workspace"));
+
 
     private static Stream<Path> newWorldFiles() {
         return NEW_WORLD.stream()

@@ -6,7 +6,7 @@ import com.largata.itinerary.ForkService;
 import com.largata.itinerary.Itinerary;
 import com.largata.itinerary.ItineraryPlan;
 import com.largata.itinerary.LeaseSubject;
-import com.largata.workspace.WorkspaceState;
+import com.largata.trip.workspace.WorkspaceState;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;

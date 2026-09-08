@@ -1,4 +1,4 @@
-package com.largata.workspace;
+package com.largata.trip.workspace;
 
 import java.util.Collection;
 import java.util.List;
@@ -21,7 +21,7 @@ interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
             """
             SELECT w.itineraryId FROM Workspace w
             WHERE w.itineraryId IN :itineraryIds
-              AND w.state = com.largata.workspace.WorkspaceState.ARCHIVED
+              AND w.state = com.largata.trip.workspace.WorkspaceState.ARCHIVED
             """)
     List<UUID> archivedAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
 
@@ -29,7 +29,7 @@ interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
     @Query(
             """
             SELECT w.itineraryId FROM Workspace w
-            WHERE w.state = com.largata.workspace.WorkspaceState.ARCHIVED
+            WHERE w.state = com.largata.trip.workspace.WorkspaceState.ARCHIVED
             """)
     List<UUID> allArchivedItineraryIds();
 }

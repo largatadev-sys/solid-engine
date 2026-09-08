@@ -1,4 +1,4 @@
-package com.largata.workspace;
+package com.largata.trip.workspace;
 
 import com.largata.common.authz.TripWritability;
 import java.util.UUID;

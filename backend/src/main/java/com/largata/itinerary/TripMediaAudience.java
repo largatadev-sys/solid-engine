@@ -1,7 +1,7 @@
 package com.largata.itinerary;
 
 import com.largata.common.authz.Role;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.workspace.WorkspaceService;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

@@ -10,7 +10,7 @@ import com.largata.itinerary.Itinerary;
 import com.largata.itinerary.ItineraryService;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
-import com.largata.workspace.WorkspaceService;
+import com.largata.trip.workspace.WorkspaceService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;

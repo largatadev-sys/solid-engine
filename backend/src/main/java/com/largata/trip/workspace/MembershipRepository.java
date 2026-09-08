@@ -1,4 +1,4 @@
-package com.largata.workspace;
+package com.largata.trip.workspace;
 
 import com.largata.common.authz.Role;
 import com.largata.trip.api.MembershipView;
@@ -55,7 +55,7 @@ interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
             @Param("travelerId") UUID travelerId, @Param("itineraryIds") Collection<UUID> itineraryIds);
 
 
-    @Query("SELECT new com.largata.workspace.MemberCountRow(m.workspace.itineraryId, COUNT(m)) "
+    @Query("SELECT new com.largata.trip.workspace.MemberCountRow(m.workspace.itineraryId, COUNT(m)) "
             + "FROM Membership m WHERE m.workspace.itineraryId IN :itineraryIds "
             + "GROUP BY m.workspace.itineraryId")
     List<MemberCountRow> countMembersAmong(@Param("itineraryIds") Collection<UUID> itineraryIds);
