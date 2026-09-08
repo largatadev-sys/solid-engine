@@ -13,7 +13,7 @@
 - Architecture & ADRs → `docs/design/04-architecture.md`
 - API conventions → `docs/design/05-api-conventions.md`
 - Engineering principles → `docs/design/06a-engineering-principles.md` *(ratified as-is)*
-- Engineering decisions → `docs/design/06b-engineering-decisions.md`
+- Engineering decisions → `docs/design/06b-engineering-decisions.md` *(§11 holds the Spring and Java conventions — injection, visibility, naming, transactions, boundary types — measured from the tree at CM-4's close; read it before writing a class)*
 - Epic map (the living backlog) → `docs/design/07-epic-map.md`
 - Object contracts (the four-object wire reference; CM-1, dark until the rewire) → `docs/design/08-object-contracts.md`
 
