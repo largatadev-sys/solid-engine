@@ -394,11 +394,14 @@ class JoinCardIT extends ObjectStoreTestBase {
 
 
     private void close(Trip trip) {
-        for (String rung : new String[] {"/start", "/complete", "/publish"}) {
+        for (String rung : new String[] {"/start", "/complete"}) {
             rig.send(HttpMethod.POST, "/v1/itineraries/" + trip.id() + rung, trip.owner(), null)
                     .expectStatus()
                     .isOk();
         }
+        rig.send(HttpMethod.POST, "/v1/trips/" + trip.id() + "/publish", trip.owner(), null)
+                .expectStatus()
+                .isOk();
     }
 
 

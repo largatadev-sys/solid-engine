@@ -158,7 +158,12 @@ class ForkAnalyticsIT extends PostgresTestBase {
             act(token, itineraryId, "start");
             act(token, itineraryId, "complete");
         }
-        act(token, itineraryId, "publish");
+        rest.post()
+                .uri("/v1/trips/" + itineraryId + "/publish")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 
 

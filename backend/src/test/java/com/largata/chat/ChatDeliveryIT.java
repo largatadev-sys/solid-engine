@@ -184,7 +184,7 @@ class ChatDeliveryIT extends PostgresTestBase {
                 .expectStatus()
                 .isOk();
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/publish")
+                .uri("/v1/trips/" + trip + "/publish")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()

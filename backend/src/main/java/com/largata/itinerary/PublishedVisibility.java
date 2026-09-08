@@ -2,6 +2,7 @@ package com.largata.itinerary;
 
 import com.largata.common.authz.ItineraryNotFoundException;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.PublicationState;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -16,10 +17,15 @@ public class PublishedVisibility {
 
     private final TripRepository itineraries;
     private final WorkspaceService workspaces;
+    private final PublicationState publication;
 
-    PublishedVisibility(TripRepository itineraries, WorkspaceService workspaces) {
+    PublishedVisibility(
+            TripRepository itineraries,
+            WorkspaceService workspaces,
+            PublicationState publication) {
         this.itineraries = itineraries;
         this.workspaces = workspaces;
+        this.publication = publication;
     }
 
 
@@ -39,11 +45,7 @@ public class PublishedVisibility {
         return itineraries
                 .findById(itineraryId)
                 .filter(itinerary -> !workspaces.isArchived(itineraryId))
-                .filter(PublishedVisibility::visibleTo);
+                .filter(itinerary -> publication.isPublished(itinerary.id()));
     }
 
-
-    private static boolean visibleTo(Trip itinerary) {
-        return itinerary.isPublished();
-    }
 }

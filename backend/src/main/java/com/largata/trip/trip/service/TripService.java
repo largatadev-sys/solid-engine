@@ -5,6 +5,7 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
 import com.largata.common.api.Page;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
@@ -71,6 +72,7 @@ public class TripService {
     private final WriteFence fence;
     private final Analytics analytics;
     private final ShareCardVersionService shareCardVersions;
+    private final PublicationState publication;
 
     TripService(
             TripRepository trips,
@@ -82,7 +84,8 @@ public class TripService {
             TravelerService travelers,
             WriteFence fence,
             Analytics analytics,
-            ShareCardVersionService shareCardVersions) {
+            ShareCardVersionService shareCardVersions,
+            PublicationState publication) {
         this.trips = trips;
         this.activities = activities;
         this.workspaces = workspaces;
@@ -93,6 +96,7 @@ public class TripService {
         this.fence = fence;
         this.analytics = analytics;
         this.shareCardVersions = shareCardVersions;
+        this.publication = publication;
     }
 
 
@@ -204,7 +208,12 @@ public class TripService {
                         : travelers.summariesByIds(editorIds).stream()
                                 .collect(Collectors.toMap(TravelerSummary::id, Function.identity()));
         return new TripPlanTree(
-                itinerary, plan, stateOf(itinerary.id()), editLease.liveHoldersFor(itinerary.id()), editors);
+                itinerary,
+                plan,
+                stateOf(itinerary.id()),
+                editLease.liveHoldersFor(itinerary.id()),
+                editors,
+                publication.liveFor(itinerary.id()));
     }
 
 

@@ -299,11 +299,21 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
     }
 
     private void publish(Trip trip) {
-        climb(trip, "/publish");
+        rest.post()
+                .uri("/v1/trips/" + trip.id + "/publish")
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 
     private void unpublish(Trip trip) {
-        climb(trip, "/unpublish");
+        rest.post()
+                .uri("/v1/trips/" + trip.id + "/unpublish")
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
     }
 
     private RestTestClient.BodyContentSpec pendingCount(Trip trip) {

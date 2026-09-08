@@ -513,7 +513,7 @@ class JoinLifecycleIT extends PostgresTestBase {
 
     private void climb(Trip trip, String rung) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + rung)
+                .uri((rung.equals("/publish") ? "/v1/trips/" : "/v1/itineraries/") + trip.id + rung)
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()

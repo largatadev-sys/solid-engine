@@ -3,6 +3,7 @@ package com.largata.join;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.security.VerifiedContact;
 import com.largata.common.tx.AfterCommit;
@@ -55,6 +56,7 @@ public class JoinService {
     private final TravelerService travelers;
     private final InvitationApi invitations;
     private final WriteFence fence;
+    private final PublicationState publication;
     private final Analytics analytics;
     private final JoinQueueTopic joinQueue;
     private final ApplicationEventPublisher events;
@@ -70,6 +72,7 @@ public class JoinService {
             TravelerService travelers,
             InvitationApi invitations,
             WriteFence fence,
+            PublicationState publication,
             Analytics analytics,
             JoinQueueTopic joinQueue,
             ApplicationEventPublisher events,
@@ -84,6 +87,7 @@ public class JoinService {
         this.travelers = travelers;
         this.invitations = invitations;
         this.fence = fence;
+        this.publication = publication;
         this.analytics = analytics;
         this.clock = clock;
         this.webBaseUrl = webBaseUrl;
@@ -178,7 +182,7 @@ public class JoinService {
 
 
     private boolean isClosed(UUID itineraryId, TripTeaser trip) {
-        return trip.published() || workspaces.isArchived(itineraryId);
+        return publication.isPublished(itineraryId) || workspaces.isArchived(itineraryId);
     }
 
 

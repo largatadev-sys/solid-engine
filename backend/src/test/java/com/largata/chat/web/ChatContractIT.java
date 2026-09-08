@@ -336,7 +336,7 @@ class ChatContractIT extends PostgresTestBase {
                 .expectStatus()
                 .isOk();
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/publish")
+                .uri("/v1/trips/" + trip.tripId() + "/publish")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -346,11 +346,11 @@ class ChatContractIT extends PostgresTestBase {
 
     private void unpublish(Fixture trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/unpublish")
+                .uri("/v1/trips/" + trip.tripId() + "/unpublish")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
-                .isOk();
+                .isNoContent();
     }
 
 

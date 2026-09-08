@@ -93,7 +93,8 @@ public class ForkService {
                 plans.plan(copy.id()),
                 workspaces.stateOf(copy.id()).orElse(WorkspaceState.ACTIVE),
                 Map.of(),
-                Map.of());
+                Map.of(),
+                Optional.empty());
     }
 
 

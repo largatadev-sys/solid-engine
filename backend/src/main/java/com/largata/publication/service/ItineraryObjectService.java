@@ -15,7 +15,6 @@ import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.exception.TripNotFoundException;
 import com.largata.trip.api.TripPlan;
 import com.largata.trip.api.PlanApi;
-import com.largata.trip.api.TripApi;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ public class ItineraryObjectService implements PublicationApi {
     private static final Logger log = LoggerFactory.getLogger(ItineraryObjectService.class);
 
     private final ItineraryObjectRepository objects;
-    private final TripApi trips;
     private final PlanApi plans;
     private final TripEditingSession editingSession;
     private final ObjectMapper json;
@@ -45,14 +43,12 @@ public class ItineraryObjectService implements PublicationApi {
 
     ItineraryObjectService(
             ItineraryObjectRepository objects,
-            TripApi trips,
             PlanApi plans,
             TripEditingSession editingSession,
             ObjectMapper json,
             Analytics analytics,
             Clock clock) {
         this.objects = objects;
-        this.trips = trips;
         this.plans = plans;
         this.editingSession = editingSession;
         this.json = json;
@@ -87,7 +83,6 @@ public class ItineraryObjectService implements PublicationApi {
                                 ItineraryObject.mintedFrom(
                                         member.itineraryId(), plan.ownerId(), snapshot, at));
         ItineraryObject saved = objects.saveAndFlush(object);
-        trips.markPublished(member.itineraryId(), at);
 
         log.info("Trip object published: id={} tripId={}", saved.id(), saved.tripId());
         emit(saved, "itinerary_object_published");
@@ -108,7 +103,6 @@ public class ItineraryObjectService implements PublicationApi {
             object.retire(Instant.now(clock));
             objects.saveAndFlush(object);
         });
-        trips.markUnpublished(member.itineraryId());
 
         live.ifPresentOrElse(
                 object -> {
@@ -148,7 +142,6 @@ public class ItineraryObjectService implements PublicationApi {
 
         objects.delete(object);
         objects.flush();
-        trips.markUnpublished(object.tripId());
 
         log.info("Trip object destroyed: id={} tripId={}", objectId, object.tripId());
         emit(object, "itinerary_object_destroyed");
