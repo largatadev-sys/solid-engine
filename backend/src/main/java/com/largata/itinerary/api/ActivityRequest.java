@@ -9,6 +9,8 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import com.largata.trip.validation.HasPairedMoney;
+import com.largata.trip.validation.PairedMoney;
 
 
 @PairedMoney

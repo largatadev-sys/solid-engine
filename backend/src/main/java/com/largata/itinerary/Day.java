@@ -7,11 +7,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import com.largata.trip.record.Itinerary;
 
 
 @Entity
 @Table(name = "day")
-class Day {
+public class Day {
 
     @Id private UUID id;
 
@@ -54,7 +55,7 @@ class Day {
     }
 
 
-    static Day copiedInto(UUID itineraryId, Day source, Instant createdAt) {
+    public static Day copiedInto(UUID itineraryId, Day source, Instant createdAt) {
         return new Day(UuidV7.generate(), itineraryId, source.ordinal, source.title, createdAt);
     }
 
@@ -86,7 +87,7 @@ class Day {
         return stripped;
     }
 
-    UUID id() {
+    public UUID id() {
         return id;
     }
 

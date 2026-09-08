@@ -1,6 +1,6 @@
 package com.largata.itinerary.api;
 
-import com.largata.itinerary.Itinerary;
+import com.largata.trip.record.Itinerary;
 import jakarta.validation.constraints.Size;
 
 

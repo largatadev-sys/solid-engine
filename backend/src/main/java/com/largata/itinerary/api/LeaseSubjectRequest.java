@@ -3,6 +3,7 @@ package com.largata.itinerary.api;
 import com.largata.itinerary.LeaseSubject;
 import com.largata.itinerary.LeaseSubjectType;
 import java.util.UUID;
+import com.largata.trip.validation.MissingLeaseSubjectIdException;
 
 
 public record LeaseSubjectRequest(String subjectType, UUID subjectId) {

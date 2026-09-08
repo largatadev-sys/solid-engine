@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.itinerary.Itinerary;
-import com.largata.itinerary.ItineraryService;
+import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.ItineraryService;
 import com.largata.support.PostgresTestBase;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;

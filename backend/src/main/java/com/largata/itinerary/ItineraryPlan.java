@@ -5,6 +5,7 @@ import com.largata.trip.workspace.WorkspaceState;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.largata.trip.record.Itinerary;
 
 
 public record ItineraryPlan(

@@ -8,6 +8,7 @@ import com.largata.itinerary.PublishedItinerary;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import com.largata.trip.fork.ForkedFromResponse;
 
 
 public record PublishedItineraryResponse(

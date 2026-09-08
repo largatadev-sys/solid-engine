@@ -25,6 +25,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.TestPropertySource;
+import com.largata.trip.record.ItineraryService;
+import com.largata.trip.record.IllegalStateTransitionException;
+import com.largata.trip.record.Itinerary;
 
 
 @SpringBootTest

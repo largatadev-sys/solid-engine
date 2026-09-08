@@ -1,7 +1,7 @@
 package com.largata.itinerary.api;
 
 import com.largata.identity.api.TravelerCardResponse;
-import com.largata.itinerary.Itinerary;
+import com.largata.trip.record.Itinerary;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

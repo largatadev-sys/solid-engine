@@ -5,6 +5,7 @@ import com.largata.media.PhotoSubject;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import com.largata.trip.record.TripMediaAudience;
 
 
 @Component

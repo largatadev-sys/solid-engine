@@ -12,7 +12,7 @@ import com.largata.identity.TravelerSummary;
 import com.largata.trip.api.MembershipEnded;
 import com.largata.trip.api.TripArchived;
 import com.largata.itinerary.EditLeaseService;
-import com.largata.itinerary.ItineraryService;
+import com.largata.trip.record.ItineraryService;
 import com.largata.membership.MembershipExceptions.CannotOfferToSelfException;
 import com.largata.membership.MembershipExceptions.IllegalWorkspaceTransitionException;
 import com.largata.membership.MembershipExceptions.NoPendingOfferException;

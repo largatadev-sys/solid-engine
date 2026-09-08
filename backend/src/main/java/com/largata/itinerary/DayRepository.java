@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 
-interface DayRepository extends JpaRepository<Day, UUID> {
+public interface DayRepository extends JpaRepository<Day, UUID> {
 
 
     @Query("SELECT d.itineraryId AS itineraryId, COUNT(d) AS dayCount FROM Day d "

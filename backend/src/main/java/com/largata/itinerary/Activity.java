@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "activity")
-class Activity {
+public class Activity {
 
     @Id private UUID id;
 
@@ -101,7 +101,7 @@ class Activity {
     }
 
 
-    static Activity copiedInto(UUID dayId, Activity source, UUID forkerId, Instant at) {
+    public static Activity copiedInto(UUID dayId, Activity source, UUID forkerId, Instant at) {
         return new Activity(UuidV7.generate(), dayId, source.sortOrder, source.fields(), forkerId, at);
     }
 

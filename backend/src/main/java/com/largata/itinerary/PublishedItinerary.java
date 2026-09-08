@@ -1,9 +1,11 @@
 package com.largata.itinerary;
 
 import com.largata.common.geo.Pin;
+import com.largata.trip.fork.ForkService;
 import com.largata.identity.TravelerSummary;
 import java.util.List;
 import java.util.UUID;
+import com.largata.trip.record.Itinerary;
 
 
 public record PublishedItinerary(

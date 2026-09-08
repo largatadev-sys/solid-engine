@@ -1,7 +1,7 @@
 package com.largata.itinerary;
 
 
-interface TrendingDestinationRow {
+public interface TrendingDestinationRow {
 
     String getDestination();
 

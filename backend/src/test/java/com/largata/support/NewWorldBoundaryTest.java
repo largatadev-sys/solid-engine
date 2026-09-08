@@ -64,8 +64,19 @@ class NewWorldBoundaryTest {
         assertThat(OLD_WORLD.matcher("import com.largata.diary.DiaryService;").find()).isFalse();
     }
 
+    private static final List<String> SLICES_IN_FLIGHT =
+            List.of("workspace", "record", "cover", "dump", "fork", "validation");
+
+
     private static final Predicate<Path> THE_MIGRATION_WINDOW =
-            file -> file.getParent() != null && file.getParent().endsWith(Path.of("trip", "workspace"));
+            file -> {
+                Path parent = file.getParent();
+                if (parent == null) {
+                    return false;
+                }
+                return SLICES_IN_FLIGHT.stream()
+                        .anyMatch(slice -> parent.endsWith(Path.of("trip", slice)));
+            };
 
 
     private static Stream<Path> newWorldFiles() {

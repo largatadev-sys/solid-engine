@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.largata.trip.record.ItineraryRepository;
+import com.largata.trip.record.Itinerary;
 
 
 @Service

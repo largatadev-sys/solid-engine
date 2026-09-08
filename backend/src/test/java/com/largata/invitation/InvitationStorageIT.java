@@ -3,8 +3,8 @@ package com.largata.invitation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.itinerary.Itinerary;
-import com.largata.itinerary.ItineraryService;
+import com.largata.trip.record.Itinerary;
+import com.largata.trip.record.ItineraryService;
 import com.largata.support.PostgresTestBase;
 import java.time.Instant;
 import java.util.List;

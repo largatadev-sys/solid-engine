@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 
-interface ActivityRepository extends JpaRepository<Activity, UUID> {
+public interface ActivityRepository extends JpaRepository<Activity, UUID> {
 
 
     List<Activity> findByDayIdOrderBySortOrderAscIdAsc(UUID dayId);

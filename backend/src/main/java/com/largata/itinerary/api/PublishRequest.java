@@ -1,6 +1,6 @@
 package com.largata.itinerary.api;
 
-import com.largata.itinerary.Visibility;
+import com.largata.trip.record.Visibility;
 
 
 public record PublishRequest(String audience) {

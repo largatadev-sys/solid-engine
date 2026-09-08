@@ -20,7 +20,7 @@ public record DayResponse(
     }
 
 
-    static DayResponse annotated(DayView day, ItineraryPlan plan) {
+    public static DayResponse annotated(DayView day, ItineraryPlan plan) {
         return new DayResponse(
                 day.id(),
                 day.ordinal(),
