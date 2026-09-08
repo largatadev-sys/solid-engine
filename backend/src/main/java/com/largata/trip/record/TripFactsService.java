@@ -95,13 +95,13 @@ class TripFactsService implements TripApi {
 
     @Transactional
     public void markPublished(UUID tripId, Instant at) {
-        itineraries.findById(tripId).orElseThrow(TripNotFoundException::new).markPublishedAt(at);
+        itineraries.findById(tripId).ifPresent(trip -> trip.markPublishedAt(at));
     }
 
 
     @Transactional
     public void markUnpublished(UUID tripId) {
-        itineraries.findById(tripId).orElseThrow(TripNotFoundException::new).unpublish();
+        itineraries.findById(tripId).ifPresent(Trip::unpublish);
     }
 
 

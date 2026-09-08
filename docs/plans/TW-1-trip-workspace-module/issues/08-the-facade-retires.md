@@ -32,3 +32,9 @@ Postcard and publication take the two-line change the boundaries story accepted 
 *Postcard and publication needed no change here* — they took their `PlanApi` field at ticket 03, when splitting the interface is what made their calls stop typechecking. Publication's `markPublished` write stays as CM-5's bridge, recorded and not rewired.
 
 *Verified:* raw-SQL waiver guard **3/3** with its sabotage red, clean build first pass, full suite below.
+
+**2026-09-08 — one regression, found by CI, and it is the exact class this story's claim exists to catch.** `PublicationContractIT.hardDeleteByTheRecordedOwnerDestroysTheObjectEvenWhenTheTripIsGone` failed with `204 expected, 404 received`.
+
+The facade's `markUnpublished` was `UPDATE itinerary SET published = FALSE WHERE id = ?` — which, against a trip row that no longer exists, **matches zero rows and succeeds silently**. The repository-backed replacement read `findById(...).orElseThrow(TripNotFoundException::new)`, which is the obvious translation and looks *more* correct in isolation. It is not: publication's `destroy` calls `markUnpublished` after deleting the object, and CM-1's canon is that **the recorded owner hard-deletes a published object even when it is orphaned**. Throwing there turned a deliberate capability into a 404.
+
+Both writes now use `ifPresent`, preserving the SQL's semantics exactly. Same family as `markPublished` keeping its unconditional form rather than adopting the entity's COMPLETED refusal — **when replacing raw SQL with a repository call, the question is not "what is correct" but "what did the statement do, including on the rows it did not match"**. A `WHERE` that matches nothing is a behaviour, and an `orElseThrow` is not the same behaviour. Publication ITs **13/13** after.
