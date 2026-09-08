@@ -1,6 +1,6 @@
 package com.largata.trip.plan;
 
-import com.largata.trip.record.Trip;
+import com.largata.trip.trip.Trip;
 import jakarta.validation.constraints.Size;
 
 

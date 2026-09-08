@@ -7,8 +7,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.springframework.stereotype.Component;
-import com.largata.trip.record.TripRepository;
-import com.largata.trip.record.Trip;
+import com.largata.trip.trip.TripRepository;
+import com.largata.trip.trip.Trip;
 
 
 @Component

@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.TripRepository;
-import com.largata.trip.record.Trip;
+import com.largata.trip.trip.TripRepository;
+import com.largata.trip.trip.Trip;
 import com.largata.trip.plan.DayService;
 
 

@@ -8,10 +8,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.TripRepository;
+import com.largata.trip.trip.TripRepository;
 import com.largata.trip.fork.ForkService;
-import com.largata.trip.record.Trip;
-import com.largata.trip.record.NotTripOwnerException;
+import com.largata.trip.trip.Trip;
+import com.largata.trip.trip.NotTripOwnerException;
 import com.largata.trip.plan.DayService;
 
 

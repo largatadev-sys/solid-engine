@@ -31,14 +31,18 @@ Expecting empty but was: ["src\test\java\com\largata\support\NewWorldBoundaryTes
 
 The test throws rather than passing vacuously if either guard file is missing, so deleting a guard cannot silence it.
 
-**Divergence from the ticket, and it is a real one: the regex guard did not simply lose its window — it gained a counted exemption in its place.** The ticket assumed nothing under `trip/` would name the old world once the move finished. Four files still do, and they are not migration state:
+**Divergence from the ticket, and it is a real one: the regex guard did not simply lose its window — it gained a counted exemption in its place.** The ticket assumed nothing under `trip/` would name the old world once the move finished. Some files still do, and they are not migration state; they reach into the **content half**, which this story deliberately leaves standing until CM-5 — so a window (branch-local, deleted at ticket 07) is the wrong shape and would have to be re-opened on the next branch. `THE_CONTENT_HALF_TW1_LEFT_STANDING` names them, **asserted to be exactly two**, with CM-5 as the dissolution trigger — the same shape as the ArchUnit guard's legacy exemption, and a third reach is a red build. Naming it a window would have been the convenient lie the no-window test exists to prevent.
 
-- `fork/ForkService` → `itinerary.PublishedVisibility`
-- `record/ItineraryRepository` → `itinerary.TrendingDestinationRow`
-- `record/ItineraryLifecycleController` → `itinerary.api.PublishRequest`
-- `record/ItineraryService` → `itinerary.api.ShowcaseItineraryResponse`
+**Corrected 2026-09-08, at the founder's question "why did we not move those?" — and the answer was that two of them had no reason to stay.** The exemption first counted **four**, and the record called all four content-half reaches. That was true of two and false of two, which is worse than a wrong number: it made a fixable thing look structural. Measured against the call sites rather than the labels:
 
-Every one reaches into the **content half**, which this story deliberately leaves standing until CM-5 — so a window (branch-local, deleted at ticket 07) is the wrong shape and would have to be re-opened on the next branch. They are now `THE_CONTENT_HALF_TW1_LEFT_STANDING`: four named types, **asserted to be exactly four**, with CM-5 as the dissolution trigger — the same shape as the ArchUnit guard's legacy exemption, and a fifth reach is a red build. Naming it a window would have been the convenient lie the no-window test exists to prevent.
+| type | every user in the tree | verdict |
+|---|---|---|
+| `PublishedVisibility` | `itinerary/PublishedItineraryService` **and** `trip/fork/ForkService` | **stays** — the published page's audience gate, a content question with a content caller; trip is a *second* consumer |
+| `api.ShowcaseItineraryResponse` | `itinerary/PublicProfileService`, two profile controllers, **and** `trip/…/TripService` | **stays** — a profile-surface DTO, same shape |
+| `TrendingDestinationRow` | `trip/…/TripRepository` **only** | **moved** — an 11-line Spring Data projection for a query in trip's own repository; nothing in `itinerary/` touches it |
+| `api.PublishRequest` | `trip/…/TripLifecycleController` **only** | **moved** — the publish route's request DTO, and the route is trip's; it already imported `trip`'s `Visibility` to do its job |
+
+Both moved types are trip-only and would have gone under **ticket 05's own rule** — the one that took the seven validators into `trip/validation` on exactly the measurement *"used only by trip's DTOs"*. I applied that rule to the validators and never re-measured these. They now live in the `trip` slice, the exemption is two, and the guard's message says *why* each of the two stays rather than only how many there are.
 
 **The old-world regex lost `workspace` and `membership`**, and its test cases now assert the *absence* of those two by both halves: the regex no longer fires on them, **and** `src/main/java/com/largata/{workspace,membership}` do not exist — so the two facts cannot drift apart. `theRuleWouldFireOnABadImport` swapped its retired `workspace` positive case for `invitation`, which is still a real old-world package.
 

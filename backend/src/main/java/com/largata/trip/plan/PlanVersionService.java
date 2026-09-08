@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.TripRepository;
+import com.largata.trip.trip.TripRepository;
 
 
 @Service

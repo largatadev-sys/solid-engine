@@ -4,7 +4,7 @@ import com.largata.trip.api.ActivityFacts;
 import com.largata.trip.api.PlanApi;
 import com.largata.trip.api.TripDayFacts;
 import com.largata.trip.api.TripPlan;
-import com.largata.trip.record.TripPlanHeaders;
+import com.largata.trip.trip.TripPlanHeaders;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

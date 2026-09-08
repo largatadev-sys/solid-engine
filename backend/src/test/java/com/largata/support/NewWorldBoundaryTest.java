@@ -23,8 +23,8 @@ class NewWorldBoundaryTest {
 
     private static final Pattern THE_CONTENT_HALF_TW1_LEFT_STANDING =
             Pattern.compile(
-                    "com\\.largata\\.itinerary\\.(PublishedVisibility|TrendingDestinationRow"
-                            + "|api\\.PublishRequest|api\\.ShowcaseItineraryResponse)\\b");
+                    "com\\.largata\\.itinerary\\.(PublishedVisibility"
+                            + "|api\\.ShowcaseItineraryResponse)\\b");
 
     @Test
     void newWorldSourcesNeverNameAnOldWorldPackage() {
@@ -43,7 +43,7 @@ class NewWorldBoundaryTest {
     }
 
     @Test
-    void theContentHalfExemptionIsFourNamedTypesAndDissolvesAtCM5() {
+    void theContentHalfExemptionIsTwoNamedTypesAndDissolvesAtCM5() {
         List<String> reaches =
                 newWorldFiles()
                         .flatMap(NewWorldBoundaryTest::offendingLines)
@@ -52,13 +52,15 @@ class NewWorldBoundaryTest {
 
         assertThat(reaches)
                 .as(
-                        "TW-1 moved the trip half and left the content half standing, so four trip"
-                                + " files still name it — the fork's published-visibility check, the"
-                                + " trending destinations row, the publish request and the showcase"
-                                + " response. This is NOT a migration window: it is the shape of the"
-                                + " tree until CM-5 deletes the old package. Counted, so a fifth is"
-                                + " a red build")
-                .hasSize(4);
+                        "TW-1 moved the trip half and left the content half standing, so two trip"
+                                + " files still name it: the fork's published-visibility check and"
+                                + " the profile showcase response. Both are types the CONTENT half"
+                                + " owns and has its own callers for, which the trip module merely"
+                                + " reads as a second consumer — CM-5 moves them onto the itinerary"
+                                + " object. This is NOT a migration window and NOT a leftover: it is"
+                                + " the shape of the tree until CM-5 deletes the old package."
+                                + " Counted, so a third is a red build")
+                .hasSize(2);
     }
 
     @Test

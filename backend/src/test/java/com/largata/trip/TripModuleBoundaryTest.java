@@ -31,7 +31,7 @@ class TripModuleBoundaryTest {
 
     private static final List<String> THE_SLICES =
             List.of(
-                    "record", "plan", "editing", "history", "cover", "dump", "fork", "workspace",
+                    "trip", "plan", "editing", "history", "cover", "dump", "fork", "workspace",
                     "ownership", "validation", "destruction");
 
     private static final DescribedPredicate<JavaClass> THE_LEGACY_EXEMPTION =

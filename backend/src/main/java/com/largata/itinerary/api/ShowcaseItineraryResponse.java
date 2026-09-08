@@ -1,6 +1,6 @@
 package com.largata.itinerary.api;
 
-import com.largata.trip.record.Trip;
+import com.largata.trip.trip.Trip;
 import java.util.List;
 import java.util.UUID;
 

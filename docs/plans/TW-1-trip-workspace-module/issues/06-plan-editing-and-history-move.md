@@ -17,7 +17,7 @@ The four event publishes ticket 02 introduced now live inside the trip module, w
 
 ## Comments
 
-**2026-09-08 — built.** The welded triple relocated as one batch: `plan` 35 · `editing` 15 · `history` 4, matching the spec's 34/15/4. The old package is down from 137 files to **42** — its content half, which stays until CM-5.
+**2026-09-08 — built.** The welded triple relocated as one batch: `plan` 35 · `editing` 15 · `history` 4, matching the spec's 34/15/4. The old package is down from 137 files to **42** — its content half, which stays until CM-5. *(Later 40: ticket 07's correction moved two more trip-only types out on 2026-09-08.)*
 
 *The frames are what prove nothing moved, and they pass unedited.* `EditingSessionEventsIT` **4/4** and `TripListEventsIT` **4/4**, with no edit at all from their ticket-02 state — which is the point of ticket 02 having done the renamed-symbol edit then: the publishers moved into the trip module here, and the frames the transport broadcasts are byte-identical because the listener never changed.
 

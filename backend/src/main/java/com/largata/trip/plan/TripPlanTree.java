@@ -5,7 +5,7 @@ import com.largata.trip.workspace.WorkspaceState;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import com.largata.trip.record.Trip;
+import com.largata.trip.trip.Trip;
 import com.largata.trip.editing.LeaseSubject;
 import com.largata.trip.editing.LeaseHolder;
 

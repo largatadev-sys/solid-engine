@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.TripRepository;
-import com.largata.trip.record.Trip;
+import com.largata.trip.trip.TripRepository;
+import com.largata.trip.trip.Trip;
 
 
 @Component

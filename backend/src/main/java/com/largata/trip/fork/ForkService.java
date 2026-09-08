@@ -17,13 +17,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.record.TripRepository;
+import com.largata.trip.trip.TripRepository;
 import com.largata.trip.plan.DayRepository;
 import com.largata.trip.plan.ActivityRepository;
 import com.largata.trip.plan.DayService;
 import com.largata.itinerary.PublishedVisibility;
 import com.largata.trip.plan.TripPlanTree;
-import com.largata.trip.record.Trip;
+import com.largata.trip.trip.Trip;
 import com.largata.trip.plan.Day;
 import com.largata.trip.plan.Activity;
 

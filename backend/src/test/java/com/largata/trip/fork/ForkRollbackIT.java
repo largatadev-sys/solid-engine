@@ -18,9 +18,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import com.largata.trip.fork.ForkService;
-import com.largata.trip.record.TripService;
+import com.largata.trip.trip.TripService;
 import com.largata.trip.fork.ForkRelationshipRepository;
-import com.largata.trip.record.Trip;
+import com.largata.trip.trip.Trip;
 
 
 @SpringBootTest

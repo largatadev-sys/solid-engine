@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.trip.record.Trip;
-import com.largata.trip.record.TripService;
+import com.largata.trip.trip.Trip;
+import com.largata.trip.trip.TripService;
 import com.largata.support.PostgresTestBase;
 import com.largata.trip.workspace.WorkspaceService;
 import java.time.Instant;

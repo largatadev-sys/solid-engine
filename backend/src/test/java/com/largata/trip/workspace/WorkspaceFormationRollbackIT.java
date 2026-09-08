@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
-import com.largata.trip.record.TripService;
+import com.largata.trip.trip.TripService;
 import com.largata.support.PostgresTestBase;
 import java.util.List;
 import java.util.UUID;
