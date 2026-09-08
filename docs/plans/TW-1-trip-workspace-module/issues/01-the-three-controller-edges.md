@@ -8,12 +8,12 @@ First, the owner's preview of the itinerary a publish would create leaves the tr
 
 **Status:** ready-for-agent
 
-- [ ] The preview route is served by a controller that stays in the old package, and the trip controller no longer names the published-itinerary service or its response
-- [ ] The membership and ownership routes are served by a controller that names no invitation type; the invitation routes are served by a controller that names no membership type; both carry both roots
-- [ ] The destruction controller has a name that does not collide with the rename's target
-- [ ] The twin test and the equivalence test from the grammar story pass with no edit
-- [ ] Every route on both grammars answers exactly as before, proven by the existing integration tests passing with no edited assertion and both Playwright lanes untouched
-- [ ] No file has moved between packages
+- [x] The preview route is served by a controller that stays in the old package, and the trip controller no longer names the published-itinerary service or its response
+- [x] The membership and ownership routes are served by a controller that names no invitation type; the invitation routes are served by a controller that names no membership type; both carry both roots
+- [x] The destruction controller has a name that does not collide with the rename's target
+- [x] The twin test and the equivalence test from the grammar story pass with no edit
+- [x] Every route on both grammars answers exactly as before, proven by the existing integration tests passing with no edited assertion and both Playwright lanes untouched
+- [x] No file has moved between packages
 
 ## Comments
 

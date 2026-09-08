@@ -8,12 +8,12 @@ Three things are born with it. The trip guard gains its **permanent legacy exemp
 
 **Status:** ready-for-agent
 
-- [ ] The workspace package no longer exists; its files live in the trip module's workspace slice; the seven workspace integration tests pass with package and import edits only
-- [ ] The legacy exemption names the old package alone, selects more than thirty classes, and carries a message naming the decommissioning story
-- [ ] Each guard has exactly one window, named as such, and each is sabotage-checked: emptying it turns the guard red on the breach it is holding open — recorded in this ticket's comments with the failure line read
-- [ ] The assertion-diff script exists, is invoked by one documented command, reports zero differences for this ticket's test edits, and fails when an assertion is deliberately changed — recorded in this ticket's comments
-- [ ] Hibernate's schema validation passes at the first context boot, proving no table moved
-- [ ] Every integration test passes with no edited assertion
+- [x] The workspace package no longer exists; its files live in the trip module's workspace slice; the seven workspace integration tests pass with package and import edits only
+- [x] The legacy exemption names the old package alone, selects more than thirty classes, and carries a message naming the decommissioning story
+- [x] Each guard has exactly one window, named as such, and each is sabotage-checked: emptying it turns the guard red on the breach it is holding open — recorded in this ticket's comments with the failure line read
+- [x] The assertion-diff script exists, is invoked by one documented command, reports zero differences for this ticket's test edits, and fails when an assertion is deliberately changed — recorded in this ticket's comments
+- [x] Hibernate's schema validation passes at the first context boot, proving no table moved
+- [x] Every integration test passes with no edited assertion
 
 ## Comments
 

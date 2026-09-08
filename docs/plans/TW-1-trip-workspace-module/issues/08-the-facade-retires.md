@@ -10,12 +10,12 @@ Postcard and publication take the two-line change the boundaries story accepted 
 
 **Status:** ready-for-agent
 
-- [ ] The facade class is gone, and the trip module contains no raw SQL outside the destruction service
-- [ ] Every method of the trip and plan interfaces is implemented by the slice that owns its answer, over that slice's repositories
-- [ ] The destruction service carries the destroy act unchanged, and the test pinning that the workspace world and its media die in one transaction passes unedited
-- [ ] The waiver's table list names only the foreign tables destruction deletes from, and the trigger is recorded beside it
-- [ ] Postcard and publication compile against the plan interface with no other change, and their guards pass
-- [ ] The assertion-diff script reports zero differences; every integration test passes with no edited assertion
+- [x] The facade class is gone, and the trip module contains no raw SQL outside the destruction service
+- [x] Every method of the trip and plan interfaces is implemented by the slice that owns its answer, over that slice's repositories
+- [x] The destruction service carries the destroy act unchanged, and the test pinning that the workspace world and its media die in one transaction passes unedited
+- [x] The waiver's table list names only the foreign tables destruction deletes from, and the trigger is recorded beside it
+- [x] Postcard and publication compile against the plan interface with no other change, and their guards pass
+- [x] The assertion-diff script reports zero differences; every integration test passes with no edited assertion
 
 ## Comments
 

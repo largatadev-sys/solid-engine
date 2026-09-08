@@ -8,12 +8,12 @@ With nothing left outside the module that the windows were holding open, both ar
 
 **Status:** ready-for-agent
 
-- [ ] The membership package no longer exists; its files and the ownership controller live in the trip module's ownership slice; membership's eleven integration tests pass with package and import edits only
-- [ ] No window predicate exists in either guard, asserted by a test; sabotage recorded in this ticket's comments — a reintroduced window fails that test, with the failure line read
-- [ ] The old-world regex no longer names workspace or membership, and its positive and negative cases are updated to match
-- [ ] The meta-test's being-dismantled list names the old package alone, and every module in the tree is still classified
-- [ ] The legacy exemption still stands, still counts more than thirty classes, and is the only exemption in the trip guard
-- [ ] The assertion-diff script reports zero differences; every integration test passes with no edited assertion
+- [x] The membership package no longer exists; its files and the ownership controller live in the trip module's ownership slice; membership's eleven integration tests pass with package and import edits only
+- [x] No window predicate exists in either guard, asserted by a test; sabotage recorded in this ticket's comments — a reintroduced window fails that test, with the failure line read
+- [x] The old-world regex no longer names workspace or membership, and its positive and negative cases are updated to match — **with a divergence recorded below**: it also gained a counted four-type exemption, because four trip files still name the content half and that is the shape of the tree until CM-5, not migration state.
+- [x] The meta-test's being-dismantled list names the old package alone, and every module in the tree is still classified
+- [x] The legacy exemption still stands, still counts more than thirty classes, and is the only exemption in the trip guard
+- [x] The assertion-diff script reports zero differences; every integration test passes with no edited assertion
 
 ## Comments
 

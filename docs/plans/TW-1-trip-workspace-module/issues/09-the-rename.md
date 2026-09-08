@@ -8,12 +8,12 @@ What does not rename, deliberately and on the record: the table, every path unde
 
 **Status:** ready-for-agent
 
-- [ ] The five renames above are applied, and no type in the trip module carries the old noun in its name except where the old package's staying half still names it through the legacy exemption
-- [ ] The lifecycle's wire names and the state column's storage spelling are unchanged, each pinned by a test that fails if it moves
-- [ ] The itinerary table, every old-root path, and every client file are untouched — checked by a search, not assumed
-- [ ] The rename is one commit, separate from every move commit, so `git log` reads relocation then rename
-- [ ] The assertion-diff script reports zero differences across the renamed-symbol edits in the test tree
-- [ ] Every integration test passes with no edited assertion; both Playwright lanes untouched
+- [x] The five renames above are applied, and no type in the trip module carries the old noun in its name except where the old package's staying half still names it through the legacy exemption
+- [x] The lifecycle's wire names and the state column's storage spelling are unchanged, each pinned by a test that fails if it moves
+- [x] The itinerary table, every old-root path, and every client file are untouched — checked by a search, not assumed
+- [x] The rename is one commit, separate from every move commit, so `git log` reads relocation then rename
+- [x] The assertion-diff script reports zero differences across the renamed-symbol edits in the test tree
+- [x] Every integration test passes with no edited assertion; both Playwright lanes untouched
 
 ## Comments
 

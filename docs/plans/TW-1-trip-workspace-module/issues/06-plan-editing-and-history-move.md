@@ -8,12 +8,12 @@ The four event publishes ticket 02 introduced now live inside the trip module, w
 
 **Status:** ready-for-agent
 
-- [ ] The three slices exist under the trip module and hold the files named above; none remains in the old package
-- [ ] The two websocket frame tests pass unedited from ticket 02's state, and the frames are byte-identical
-- [ ] The insert-on-conflict recovery for the editing lease still runs in its own bean with its own transaction, and the test that pins it passes unedited
-- [ ] The assertion-diff script reports zero differences across every test file this ticket touched
-- [ ] Both windows are still present, still named, still sabotage-checked
-- [ ] Every integration test passes with no edited assertion; both Playwright lanes untouched
+- [x] The three slices exist under the trip module and hold the files named above; none remains in the old package
+- [x] The two websocket frame tests pass unedited from ticket 02's state, and the frames are byte-identical
+- [x] The insert-on-conflict recovery for the editing lease still runs in its own bean with its own transaction, and the test that pins it passes unedited
+- [x] The assertion-diff script reports zero differences across every test file this ticket touched
+- [x] Both windows are still present, still named, still sabotage-checked
+- [x] Every integration test passes with no edited assertion; both Playwright lanes untouched
 
 ## Comments
 

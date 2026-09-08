@@ -8,12 +8,12 @@ Then every consumer outside the god module and its two satellites — the invita
 
 **Status:** ready-for-agent
 
-- [ ] Each interface declares only methods a caller outside the trip module invokes, checked against the call sites rather than against the services
-- [ ] No file outside the old package, workspace and membership names the itinerary service, the workspace service, the membership service or the share-card service — checked by a search
-- [ ] Admission publishes membership arrived exactly once, and neither invitation nor join publishes it any more
-- [ ] The join module's supersede listener and the transport module's admission listener consume the trip module's record; the invitation package's record is gone
-- [ ] Every integration test passes with no edited assertion; import lines may move
-- [ ] No migration window predicate exists in either guard
+- [x] Each interface declares only methods a caller outside the trip module invokes, checked against the call sites rather than against the services
+- [x] No file outside the old package, workspace and membership names the itinerary service, the workspace service, the membership service or the share-card service — checked by a search
+- [~] Admission publishes membership arrived exactly once, and neither invitation nor join publishes it any more — **half met, and the divergence is recorded below**: invitation and join no longer publish, but there are TWO publishers, not one. `formAround` publishes for the owner, who is admitted by workspace formation and never passes through `admit`. Both are now in one class, one per act.
+- [x] The join module's supersede listener and the transport module's admission listener consume the trip module's record; the invitation package's record is gone
+- [x] Every integration test passes with no edited assertion; import lines may move
+- [x] No migration window predicate exists in either guard
 
 ## Comments
 

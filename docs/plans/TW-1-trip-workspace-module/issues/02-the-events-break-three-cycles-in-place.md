@@ -8,12 +8,12 @@ Three cycles break. Archiving a trip stops calling the invitation service direct
 
 **Status:** ready-for-agent
 
-- [ ] Five event records exist in the trip module's api, each a past-tense fact carrying ids only; trip unarchived is recorded in the spec's comments with its trigger and does not exist in code
-- [ ] The membership service no longer names the invitation service; the archive contract test passes with no edited assertion
-- [ ] The listener in invitation runs after commit with fallback execution, and a failed reaction is logged at WARN with ids and not retried
-- [ ] The old topic class is gone; the transport module's listener broadcasts the editing-session and plan-saved frames on the same topic with the same type strings and field order
-- [ ] The two websocket frame tests pass with a renamed-symbol edit only, and no other integration test is edited at all
-- [ ] The trip module's regex guard still passes: no file under it names the transport module
+- [x] Five event records exist in the trip module's api, each a past-tense fact carrying ids only; trip unarchived is recorded in the spec's comments with its trigger and does not exist in code
+- [x] The membership service no longer names the invitation service; the archive contract test passes with no edited assertion
+- [x] The listener in invitation runs after commit with fallback execution, and a failed reaction is logged at WARN with ids and not retried
+- [x] The old topic class is gone; the transport module's listener broadcasts the editing-session and plan-saved frames on the same topic with the same type strings and field order
+- [x] The two websocket frame tests pass with a renamed-symbol edit only, and no other integration test is edited at all
+- [x] The trip module's regex guard still passes: no file under it names the transport module
 
 ## Comments
 

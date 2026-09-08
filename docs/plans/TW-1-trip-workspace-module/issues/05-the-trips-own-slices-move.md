@@ -8,18 +8,18 @@ Nothing a traveler reaches changes. Every route keeps both roots and every path 
 
 **Status:** ready-for-agent
 
-- [ ] The five slices exist under the trip module and hold the files named above; none of those files remains in the old package
-- [ ] Every controller that moved carries both roots, and the twin and equivalence tests pass unedited
-- [ ] The assertion-diff script reports zero differences across every test file this ticket touched
-- [ ] Both windows are still present, still named, and still sabotage-checked; no third exemption has appeared
-- [ ] No file under the trip module names the content half of the old package outside the window predicate
-- [ ] Every integration test passes with no edited assertion; both Playwright lanes untouched
+- [x] The five slices exist under the trip module and hold the files named above; none of those files remains in the old package
+- [x] Every controller that moved carries both roots, and the twin and equivalence tests pass unedited
+- [x] The assertion-diff script reports zero differences across every test file this ticket touched
+- [x] Both windows are still present, still named, and still sabotage-checked; no third exemption has appeared
+- [x] No file under the trip module names the content half of the old package outside the window predicate
+- [x] Every integration test passes with no edited assertion; both Playwright lanes untouched
 
 ## Comments
 
 **2026-09-08 — built.** The root of the module and four slices hanging off it are relocated, behind the windows ticket 04 opened. On disk now: `record` 22 · `validation` 7 · `dump` 5 · `fork` 4 · `cover` 2, beside ticket 04's `workspace` 10 and the `api` 15. Ninety-six files remain in the old package — its content half, staying until CM-5.
 
-**Founder ruling taken at build: the root slice's package is `com.largata.trip.record`, not `trip`.** The spec's slice list names the folder `trip/`, which under `com.largata.trip` gives `com.largata.trip.trip` — legal, and awkward in every import. `record` says what the folder holds (the trip record, its repository, service, lifecycle, categories, visibility, teaser, share-card version, media audience, DTOs and the two controllers) and reads correctly after ticket 09 renames the type: `com.largata.trip.record.Trip`. The design's older `internal/` marker was **not** restored — the spec dropped it and ticket 04's allowlist guard already seals `trip..`, so it would buy nothing and re-nest all nine slices.
+**Decision taken at build, asked of the founder and answered: the root slice's package is `com.largata.trip.record`, not `trip`.** The spec's slice list names the folder `trip/`, which under `com.largata.trip` gives `com.largata.trip.trip` — legal, and awkward in every import. `record` says what the folder holds (the trip record, its repository, service, lifecycle, categories, visibility, teaser, share-card version, media audience, DTOs and the two controllers) and reads correctly after ticket 09 renames the type: `com.largata.trip.record.Trip`. The design's older `internal/` marker was **not** restored — the spec dropped it and ticket 04's allowlist guard already seals `trip..`, so it would buy nothing and re-nest all nine slices.
 
 **Visibility widened only where a slice line is crossed**, exactly as the spec priced it — six types (`ItineraryRepository`, `TripMediaAudience`, `HasDateRange`, and the old package's `ActivityRepository`, `DayRepository`, `TrendingDestinationRow`) and eleven members (`Itinerary.forkedFrom`, `Day.copiedInto`/`id`, `Activity.copiedInto`, `DayResponse.annotated`, `TripMediaAudience.admits`/`admitsToTheWorkspace`, and four exception constructors). Each was named by the compiler rather than guessed; the guard is what replaces the seal.
 
