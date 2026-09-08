@@ -99,8 +99,8 @@ class ModuleGuardMetaTest {
                     .isNotBlank();
         }
         assertThat(DELIBERATELY_OUTSIDE.keySet())
-            .as("the shared kernel, the shared infrastructure and the transport - and nothing else")
-            .doesNotContainAnyElementsOf(UNDER_THE_RULE);
+                .as("the shared kernel, the shared infrastructure and the transport - nothing else")
+                .doesNotContainAnyElementsOf(UNDER_THE_RULE);
     }
 
     @Test
