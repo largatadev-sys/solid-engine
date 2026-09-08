@@ -1,4 +1,4 @@
-package com.largata.membership;
+package com.largata.trip.api;
 
 import java.util.UUID;
 

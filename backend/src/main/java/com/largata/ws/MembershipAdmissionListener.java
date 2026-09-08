@@ -1,6 +1,6 @@
 package com.largata.ws;
 
-import com.largata.invitation.MembershipArrived;
+import com.largata.trip.api.MembershipArrived;
 import com.largata.workspace.WorkspaceService;
 import java.util.List;
 import java.util.UUID;

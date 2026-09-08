@@ -1,6 +1,6 @@
 package com.largata.join;
 
-import com.largata.invitation.MembershipArrived;
+import com.largata.trip.api.MembershipArrived;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 

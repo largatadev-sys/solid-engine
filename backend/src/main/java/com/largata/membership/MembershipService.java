@@ -9,9 +9,10 @@ import com.largata.common.tx.AfterCommit;
 import com.largata.identity.ProfileVisibility;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
+import com.largata.trip.api.MembershipEnded;
+import com.largata.trip.api.TripArchived;
 import com.largata.itinerary.EditLeaseService;
 import com.largata.itinerary.ItineraryService;
-import com.largata.invitation.InvitationService;
 import com.largata.membership.MembershipExceptions.CannotOfferToSelfException;
 import com.largata.membership.MembershipExceptions.IllegalWorkspaceTransitionException;
 import com.largata.membership.MembershipExceptions.NoPendingOfferException;
@@ -45,7 +46,6 @@ public class MembershipService {
     private final TravelerService travelers;
     private final ItineraryService itineraries;
     private final EditLeaseService leases;
-    private final InvitationService invitations;
     private final WriteFence fence;
     private final OwnershipOfferRepository offers;
     private final OwnershipTransferRepository transfers;
@@ -57,7 +57,6 @@ public class MembershipService {
             TravelerService travelers,
             ItineraryService itineraries,
             EditLeaseService leases,
-            InvitationService invitations,
             WriteFence fence,
             OwnershipOfferRepository offers,
             OwnershipTransferRepository transfers,
@@ -67,7 +66,6 @@ public class MembershipService {
         this.travelers = travelers;
         this.itineraries = itineraries;
         this.leases = leases;
-        this.invitations = invitations;
         this.fence = fence;
         this.offers = offers;
         this.transfers = transfers;
@@ -133,8 +131,9 @@ public class MembershipService {
 
         workspaces.archive(itineraryId);
         leases.releaseAnyHold(itineraryId);
-        invitations.voidPendingInvitations(workspaceIdOf(itineraryId));
         voidAnyPendingOffer(itineraryId, owner.travelerId());
+        events.publishEvent(
+                new TripArchived(itineraryId, workspaceIdOf(itineraryId), owner.travelerId()));
 
         log.info("Trip archived: itineraryId={} by={}", itineraryId, owner.travelerId());
         emitArchiveEvent("itinerary_archived", itineraryId, owner.travelerId());

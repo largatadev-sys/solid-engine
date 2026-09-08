@@ -19,6 +19,7 @@ import com.largata.invitation.InvitationExceptions.InvitationNotPendingException
 import com.largata.identity.IdentityExceptions.NoSuchHandleException;
 import com.largata.itinerary.ItineraryService;
 import com.largata.itinerary.TripTeaser;
+import com.largata.trip.api.MembershipArrived;
 import com.largata.workspace.MembershipView;
 import com.largata.workspace.WorkspaceService;
 import java.time.Clock;
@@ -330,7 +331,7 @@ public class InvitationService {
         invitation.accept(travelerId, now);
         invitations.saveAndFlush(invitation);
         workspaces.admitMember(itineraryId, travelerId, now);
-        events.publishEvent(new MembershipArrived(workspaceId, travelerId));
+        events.publishEvent(new MembershipArrived(workspaceId, itineraryId, travelerId));
         log.info("Invitation accepted: id={} itineraryId={} travelerId={}", invitationId, itineraryId, travelerId);
         afterCommit(
                 () ->
@@ -374,7 +375,7 @@ public class InvitationService {
     }
 
 
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public int voidPendingInvitations(UUID workspaceId) {
         List<Invitation> pending = invitations.findByWorkspaceIdAndStatus(workspaceId, InvitationStatus.PENDING);
         if (pending.isEmpty()) {

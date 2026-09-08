@@ -2,7 +2,6 @@ package com.largata.ws;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.itinerary.TripsTopic;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
@@ -64,11 +63,11 @@ class TripListEventsIT extends PostgresTestBase {
             subscribeAsTraveler(theirs, watcherId);
 
             tripRig.hold(owner, trip, SESSION, UUID.fromString(trip));
-            theirs.awaitFrameContaining(TripsTopic.EDITING_SESSION_ACQUIRED);
+            theirs.awaitFrameContaining(TripEventTypes.EDITING_SESSION_ACQUIRED);
             savePlan(owner, trip, before);
 
-            JsonNode envelope = json.readTree(theirs.awaitFrameContaining(TripsTopic.PLAN_SAVED));
-            assertThat(envelope.path("type").asString()).isEqualTo(TripsTopic.PLAN_SAVED);
+            JsonNode envelope = json.readTree(theirs.awaitFrameContaining(TripEventTypes.PLAN_SAVED));
+            assertThat(envelope.path("type").asString()).isEqualTo(TripEventTypes.PLAN_SAVED);
             assertThat(envelope.path("payload").path("itineraryId").asString()).isEqualTo(trip);
             assertThat(envelope.path("payload").path("planVersion").asLong())
                     .as("The client writes this straight over the cached trip, so a stale version"
@@ -138,7 +137,7 @@ class TripListEventsIT extends PostgresTestBase {
         try (WsTestClient theirs = rig.connectAs(watcher)) {
             subscribeAsTraveler(theirs, watcherId);
             tripRig.hold(owner, trip, SESSION, UUID.fromString(trip));
-            theirs.awaitFrameContaining(TripsTopic.EDITING_SESSION_ACQUIRED);
+            theirs.awaitFrameContaining(TripEventTypes.EDITING_SESSION_ACQUIRED);
 
             tripRig
                     .send(HttpMethod.PUT, planUri(trip), owner, stalePlanBody())

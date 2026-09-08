@@ -2,7 +2,7 @@ package com.largata.join;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.invitation.MembershipArrived;
+import com.largata.trip.api.MembershipArrived;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
@@ -359,7 +359,7 @@ public class JoinService {
                 itineraryId,
                 asked.travelerId(),
                 owner.travelerId());
-        events.publishEvent(new MembershipArrived(asked.workspaceId(), asked.travelerId()));
+        events.publishEvent(new MembershipArrived(asked.workspaceId(), itineraryId, asked.travelerId()));
         joinQueue.broadcastQueueChanged(itineraryId);
         emitDecision("join_request_approved", requestId, itineraryId, asked.travelerId(), owner.travelerId());
     }

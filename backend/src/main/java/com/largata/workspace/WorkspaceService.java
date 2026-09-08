@@ -1,7 +1,7 @@
 package com.largata.workspace;
 
 import com.largata.common.authz.Role;
-import com.largata.invitation.MembershipArrived;
+import com.largata.trip.api.MembershipArrived;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
@@ -49,7 +49,7 @@ public class WorkspaceService {
                 workspace.id(),
                 itineraryId,
                 ownerTravelerId);
-        events.publishEvent(new MembershipArrived(workspace.id(), ownerTravelerId));
+        events.publishEvent(new MembershipArrived(workspace.id(), itineraryId, ownerTravelerId));
     }
 
 

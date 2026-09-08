@@ -6,6 +6,7 @@ import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.itinerary.api.SavePlanRequest;
+import com.largata.trip.api.PlanSaved;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Clock;
@@ -21,6 +22,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +40,7 @@ public class PlanSaveService {
     private final PlanVersionService planVersion;
     private final WriteFence fence;
     private final Analytics analytics;
-    private final TripsTopic trips;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     @PersistenceContext private EntityManager entityManager;
@@ -52,7 +54,7 @@ public class PlanSaveService {
             PlanVersionService planVersion,
             WriteFence fence,
             Analytics analytics,
-            TripsTopic trips,
+            ApplicationEventPublisher events,
             Clock clock) {
         this.days = days;
         this.activities = activities;
@@ -62,7 +64,7 @@ public class PlanSaveService {
         this.planVersion = planVersion;
         this.fence = fence;
         this.analytics = analytics;
-        this.trips = trips;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -135,7 +137,7 @@ public class PlanSaveService {
                 entries.size(),
                 saved);
         emit(member, itineraryId, entries.size());
-        trips.broadcastPlanSaved(itineraryId, saved, request.days().size(), at);
+        events.publishEvent(new PlanSaved(itineraryId, saved, request.days().size(), at));
         return saved;
     }
 

@@ -7,6 +7,7 @@ import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
+import com.largata.trip.api.EditingSessionChanged;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -42,7 +44,7 @@ public class EditLeaseService {
     private final TravelerService travelers;
     private final Analytics analytics;
     private final WriteFence fence;
-    private final TripsTopic trips;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
     private final Duration ttl;
 
@@ -54,7 +56,7 @@ public class EditLeaseService {
             TravelerService travelers,
             Analytics analytics,
             WriteFence fence,
-            TripsTopic trips,
+            ApplicationEventPublisher events,
             Clock clock,
             @Value("${largata.edit-lock.ttl:PT3M}") Duration ttl) {
         this.leases = leases;
@@ -64,7 +66,7 @@ public class EditLeaseService {
         this.travelers = travelers;
         this.analytics = analytics;
         this.fence = fence;
-        this.trips = trips;
+        this.events = events;
         this.clock = clock;
         this.ttl = ttl;
     }
@@ -321,20 +323,22 @@ public class EditLeaseService {
             return;
         }
         TravelerSummary summary = summariesOf(List.of(lease.holderId())).get(lease.holderId());
-        trips.broadcastEditingSessionAcquired(member.itineraryId(), holderOf(lease, summary));
+        events.publishEvent(
+                new EditingSessionChanged(
+                        member.itineraryId(), sessionHolderFrom(holderOf(lease, summary))));
     }
 
 
     private void announceSessionReleased(UUID itineraryId, LeaseSubjectType type) {
         if (type == LeaseSubjectType.SESSION) {
-            trips.broadcastEditingSessionReleased(itineraryId);
+            events.publishEvent(EditingSessionChanged.released(itineraryId));
         }
     }
 
 
     private void announceSessionReleasedIfAmong(UUID itineraryId, Collection<EditLease> released) {
         if (released.stream().anyMatch(lease -> lease.subject().type() == LeaseSubjectType.SESSION)) {
-            trips.broadcastEditingSessionReleased(itineraryId);
+            events.publishEvent(EditingSessionChanged.released(itineraryId));
         }
     }
 
@@ -418,6 +422,16 @@ public class EditLeaseService {
     private Map<UUID, TravelerSummary> summariesOf(Collection<UUID> travelerIds) {
         return travelers.summariesByIds(travelerIds).stream()
                 .collect(Collectors.toMap(TravelerSummary::id, Function.identity()));
+    }
+
+
+    private static EditingSessionChanged.Holder sessionHolderFrom(LeaseHolder holder) {
+        return new EditingSessionChanged.Holder(
+                holder.travelerId(),
+                holder.handle(),
+                holder.displayName(),
+                holder.avatarUrl(),
+                holder.expiresAt());
     }
 
 

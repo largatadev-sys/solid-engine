@@ -1,6 +1,6 @@
 package com.largata.ws;
 
-import com.largata.membership.MembershipEnded;
+import com.largata.trip.api.MembershipEnded;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
