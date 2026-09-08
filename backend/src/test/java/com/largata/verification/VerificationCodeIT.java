@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.verify;
 
-import com.largata.identity.web.VerifiedContact;
+import com.largata.common.security.VerifiedContact;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
 import java.time.Instant;

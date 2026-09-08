@@ -3,7 +3,7 @@ package com.largata.join.web;
 import com.largata.identity.Traveler;
 import com.largata.identity.TravelerClaims;
 import com.largata.identity.TravelerService;
-import com.largata.identity.web.VerifiedContact;
+import com.largata.common.security.VerifiedContact;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.security.core.Authentication;

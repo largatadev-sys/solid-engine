@@ -3,7 +3,7 @@ package com.largata.trip.plan.controller;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.plan.dto.DayRequest;
 import com.largata.trip.plan.dto.DayResponse;
 import jakarta.validation.Valid;

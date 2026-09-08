@@ -1,7 +1,7 @@
 package com.largata.place.web;
 
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

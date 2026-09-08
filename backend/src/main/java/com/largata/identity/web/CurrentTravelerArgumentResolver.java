@@ -1,5 +1,6 @@
 package com.largata.identity.web;
 
+import com.largata.common.security.CurrentTraveler;
 import com.largata.identity.Traveler;
 import com.largata.identity.TravelerClaims;
 import com.largata.identity.TravelerService;

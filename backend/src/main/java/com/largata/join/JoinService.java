@@ -7,7 +7,7 @@ import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.identity.web.VerifiedContact;
+import com.largata.common.security.VerifiedContact;
 import com.largata.invitation.InvitationService;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripTeaser;

@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.largata.identity.Traveler;
 import com.largata.identity.TravelerClaims;
 import com.largata.identity.TravelerService;
-import com.largata.identity.web.VerifiedContact;
+import com.largata.common.security.VerifiedContact;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.sql.Timestamp;

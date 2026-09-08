@@ -1,7 +1,7 @@
 package com.largata.place.web;
 
 import com.largata.identity.Traveler;
-import com.largata.identity.web.CurrentTraveler;
+import com.largata.common.security.CurrentTraveler;
 import com.largata.place.PlaceSearchService;
 import java.math.BigDecimal;
 import java.util.List;

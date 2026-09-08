@@ -1,5 +1,7 @@
 package com.largata.identity.web;
 
+import com.largata.common.security.AuthEmail;
+import com.largata.common.security.VerifiedContact;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
