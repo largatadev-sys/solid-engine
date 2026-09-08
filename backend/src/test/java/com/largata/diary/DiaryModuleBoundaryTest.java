@@ -1,19 +1,16 @@
 package com.largata.diary;
 
+import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.diary.entity.Diary;
-import com.largata.diary.entity.DiaryDay;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 
@@ -21,26 +18,12 @@ class DiaryModuleBoundaryTest {
 
     private static final String DIARY = "com.largata.diary";
 
-    private static final Map<Class<?>, List<String>> SEALED =
-            Map.of(
-                    Diary.class,
-                    List.of("standalone", "mintedForTrip", "coverDay", "describe", "touch"),
-                    DiaryDay.class,
-                    List.of("on", "snapshotOfTripDay", "moveTo"));
+    private static final String PUBLISHED_CONTRACT = DIARY + ".api..";
 
-    private static final DescribedPredicate<JavaMethodCall> A_SEALED_MEMBER =
-            new DescribedPredicate<>("a factory or mutator of Diary or DiaryDay") {
-                @Override
-                public boolean test(JavaMethodCall call) {
-                    for (Map.Entry<Class<?>, List<String>> entry : SEALED.entrySet()) {
-                        if (call.getTargetOwner().isEquivalentTo(entry.getKey())
-                                && entry.getValue().contains(call.getTarget().getName())) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-            };
+    private static final String[] FRONT_DOOR = {PUBLISHED_CONTRACT, DIARY + ".exception.."};
+
+    private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
+            resideInAPackage(DIARY + "..").and(not(resideInAnyPackage(FRONT_DOOR)));
 
     private final JavaClasses largata =
             new ClassFileImporter()
@@ -48,28 +31,28 @@ class DiaryModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void onlyTheDiaryModuleCreatesOrChangesADiaryOrADay() {
+    void theOnlyWayIntoTheDiaryModuleIsItsApiAndItsRefusals() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(DIARY + "..")
                 .should()
-                .callMethodWhere(A_SEALED_MEMBER)
-                .as("the layer split made these public; postcard already holds Diary and DiaryDay,"
-                        + " so this is the seal that keeps that a read. Scaffolding until the"
-                        + " content-module boundary story hands postcard a view instead of the entity")
+                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
+                .as("this replaces the eight-name mutator seal, which forbade the calls it happened"
+                        + " to list and let a ninth mutator through in silence. An ALLOWLIST forbids"
+                        + " the dependency itself, so Diary and DiaryDay are unreachable whatever"
+                        + " their methods are called")
                 .check(largata);
     }
 
     @Test
-    void everySealedNameStillExistsOnItsClass() {
-        for (Map.Entry<Class<?>, List<String>> entry : SEALED.entrySet()) {
-            JavaClass owner = largata.get(entry.getKey());
-            for (String name : entry.getValue()) {
-                assertThat(owner.getMethods().stream().anyMatch(m -> m.getName().equals(name)))
-                        .as("a rename would silently un-guard %s.%s", owner.getSimpleName(), name)
-                        .isTrue();
-            }
-        }
+    void theModulesOwnApiPackageDependsOnNothingBehindIt() {
+        noClasses()
+                .that()
+                .resideInAPackage(PUBLISHED_CONTRACT)
+                .should()
+                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
+                .as("the published contract cannot hand out the entity it is there to hide")
+                .check(largata);
     }
 
     @Test
@@ -80,14 +63,12 @@ class DiaryModuleBoundaryTest {
     }
 
     @Test
-    void theSealedPredicateActuallySelectsSomething() {
-        long sealedCallsInsideTheModule =
-                largata.that(resideInAPackage(DIARY + "..")).stream()
-                        .flatMap(c -> c.getMethodCallsFromSelf().stream())
-                        .filter(A_SEALED_MEMBER)
-                        .count();
-        assertThat(sealedCallsInsideTheModule)
-                .as("the module itself must exercise the sealed members, or the predicate matches nothing")
-                .isGreaterThan(5);
+    void theAllowlistPredicateActuallySelectsSomething() {
+        assertThat(largata.that(BEHIND_THE_MODULES_FRONT_DOOR))
+                .as("a predicate matching nothing would pass every rule above while guarding nothing")
+                .isNotEmpty();
+        assertThat(largata.that(resideInAnyPackage(FRONT_DOOR)))
+                .as("and a front door matching nothing would make the rules unfalsifiable")
+                .isNotEmpty();
     }
 }

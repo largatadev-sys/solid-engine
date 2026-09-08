@@ -1,15 +1,17 @@
 package com.largata.postcard.service;
 
-import com.largata.diary.entity.DiaryDay;
+import com.largata.diary.api.DiaryDayView;
 import com.largata.identity.TravelerSummary;
 import com.largata.media.Photo;
 import com.largata.postcard.entity.Postcard;
 import java.util.List;
 
-public record PostcardView(Postcard postcard, List<Photo> photos, DiaryDay day, TravelerSummary author) {
+public record PostcardView(
+        Postcard postcard, List<Photo> photos, DiaryDayView day, TravelerSummary author) {
 
 
-    static PostcardView of(Postcard postcard, List<Photo> photos, DiaryDay day, TravelerSummary author) {
+    static PostcardView of(
+            Postcard postcard, List<Photo> photos, DiaryDayView day, TravelerSummary author) {
         return new PostcardView(postcard, photos, day, author);
     }
 

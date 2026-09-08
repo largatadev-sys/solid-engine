@@ -5,6 +5,7 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.TripEditingSession;
 import com.largata.common.tx.AfterCommit;
+import com.largata.publication.api.PublicationApi;
 import com.largata.publication.entity.ItineraryObject;
 import com.largata.publication.exception.PublicationNotFoundException;
 import com.largata.publication.exception.TripBeingEditedException;
@@ -13,7 +14,7 @@ import com.largata.publication.repository.ItineraryObjectRepository;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.exception.TripNotFoundException;
 import com.largata.trip.api.TripPlan;
-import com.largata.trip.service.TripService;
+import com.largata.trip.api.TripApi;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
@@ -29,12 +30,12 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @Service
-public class ItineraryObjectService {
+public class ItineraryObjectService implements PublicationApi {
 
     private static final Logger log = LoggerFactory.getLogger(ItineraryObjectService.class);
 
     private final ItineraryObjectRepository objects;
-    private final TripService trips;
+    private final TripApi trips;
     private final TripEditingSession editingSession;
     private final ObjectMapper json;
     private final Analytics analytics;
@@ -42,7 +43,7 @@ public class ItineraryObjectService {
 
     ItineraryObjectService(
             ItineraryObjectRepository objects,
-            TripService trips,
+            TripApi trips,
             TripEditingSession editingSession,
             ObjectMapper json,
             Analytics analytics,

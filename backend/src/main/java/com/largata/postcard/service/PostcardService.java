@@ -6,9 +6,8 @@ import com.largata.common.authz.Membership;
 import com.largata.common.authz.TripArchivedException;
 import com.largata.common.geo.Pin;
 import com.largata.common.tx.AfterCommit;
-import com.largata.diary.entity.Diary;
-import com.largata.diary.entity.DiaryDay;
-import com.largata.diary.service.DiaryService;
+import com.largata.diary.api.DiaryApi;
+import com.largata.diary.api.DiaryDayView;
 import com.largata.identity.TravelerService;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
@@ -25,10 +24,10 @@ import com.largata.postcard.exception.TooManyPostcardPhotosException;
 import com.largata.postcard.exception.TripNotStartedException;
 import com.largata.postcard.repository.PostcardRepository;
 import com.largata.trip.api.ActivityFacts;
+import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripDayFacts;
-import com.largata.trip.exception.TripNotFoundException;
 import com.largata.trip.api.TripFacts;
-import com.largata.trip.service.TripService;
+import com.largata.trip.exception.TripNotFoundException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -47,8 +46,8 @@ public class PostcardService {
     private static final Logger log = LoggerFactory.getLogger(PostcardService.class);
 
     private final PostcardRepository postcards;
-    private final DiaryService diaries;
-    private final TripService trips;
+    private final DiaryApi diaries;
+    private final TripApi trips;
     private final PhotoService photos;
     private final TravelerService travelers;
     private final Analytics analytics;
@@ -56,8 +55,8 @@ public class PostcardService {
 
     PostcardService(
             PostcardRepository postcards,
-            DiaryService diaries,
-            TripService trips,
+            DiaryApi diaries,
+            TripApi trips,
             PhotoService photos,
             TravelerService travelers,
             Analytics analytics,
@@ -72,7 +71,7 @@ public class PostcardService {
     }
 
 
-    private PostcardView view(Postcard postcard, List<Photo> stored, DiaryDay day) {
+    private PostcardView view(Postcard postcard, List<Photo> stored, DiaryDayView day) {
         return PostcardView.of(
                 postcard, stored, day, travelers.summaryById(postcard.authorId()).orElse(null));
     }
@@ -117,7 +116,7 @@ public class PostcardService {
             String caption,
             List<byte[]> devicePhotos) {
         requirePhotoCountWithin(devicePhotos.size());
-        DiaryDay day = diaries.requireDayIn(authorId, diaryId, dayId);
+        DiaryDayView day = diaries.requireDayIn(authorId, diaryId, dayId);
 
         Postcard postcard =
                 postcards.saveAndFlush(
@@ -154,13 +153,13 @@ public class PostcardService {
         trips.dayFactsOf(member.itineraryId(), tripDayId)
                 .orElseThrow(PostcardDayNotFoundException::new);
 
-        Diary diary = mintDiaryOf(member, trip);
-        DiaryDay day = mintDayOf(diary, trip, tripDayId);
+        UUID diaryId = mintDiaryOf(member, trip);
+        DiaryDayView day = mintDayOf(diaryId, trip, tripDayId);
         Postcard postcard =
                 postcards.saveAndFlush(
                         Postcard.onDay(
                                 member.travelerId(),
-                                diary.id(),
+                                diaryId,
                                 day.id(),
                                 member.itineraryId(),
                                 day.tripDayTitle() == null
@@ -188,7 +187,7 @@ public class PostcardService {
         if (postcard.diaryDayId() != null) {
             throw new PostcardAlreadyFiledException();
         }
-        DiaryDay day = diaries.requireDayIn(authorId, diaryId, dayId);
+        DiaryDayView day = diaries.requireDayIn(authorId, diaryId, dayId);
         postcard.fileOn(diaryId, day.id(), Instant.now(clock));
         Postcard saved = postcards.saveAndFlush(postcard);
         log.info("Postcard filed: id={} dayId={}", saved.id(), day.id());
@@ -212,9 +211,9 @@ public class PostcardService {
             throw new ActivityAlreadyPostcardedException();
         }
 
-        Diary diary = mintDiaryOf(member, trip);
-        DiaryDay day = mintDayOf(diary, trip, activity.tripDayId());
-        Postcard postcard = savePostedFrom(member, diary, day, activity, caption);
+        UUID diaryId = mintDiaryOf(member, trip);
+        DiaryDayView day = mintDayOf(diaryId, trip, activity.tripDayId());
+        Postcard postcard = savePostedFrom(member, diaryId, day, activity, caption);
         List<Photo> stored = storePhotos(postcard, member.travelerId(), devicePhotos);
 
         log.info(
@@ -227,7 +226,7 @@ public class PostcardService {
     }
 
 
-    private Diary mintDiaryOf(Membership member, TripFacts trip) {
+    private UUID mintDiaryOf(Membership member, TripFacts trip) {
         return diaries.mintTripDiary(
                 member.travelerId(),
                 member.itineraryId(),
@@ -238,20 +237,24 @@ public class PostcardService {
     }
 
 
-    private DiaryDay mintDayOf(Diary diary, TripFacts trip, UUID tripDayId) {
+    private DiaryDayView mintDayOf(UUID diaryId, TripFacts trip, UUID tripDayId) {
         TripDayFacts day =
                 trips.dayFactsOf(trip.id(), tripDayId).orElseThrow(PostcardDayNotFoundException::new);
-        return diaries.mintTripDay(diary.id(), day.dayId(), day.title(), day.ordinal());
+        return diaries.mintTripDay(diaryId, day.dayId(), day.title(), day.ordinal());
     }
 
 
     private Postcard savePostedFrom(
-            Membership member, Diary diary, DiaryDay day, ActivityFacts activity, String caption) {
+            Membership member,
+            UUID diaryId,
+            DiaryDayView day,
+            ActivityFacts activity,
+            String caption) {
         try {
             return postcards.saveAndFlush(
                     Postcard.postedFromActivity(
                             member.travelerId(),
-                            diary.id(),
+                            diaryId,
                             day.id(),
                             member.itineraryId(),
                             activity.activityId(),
