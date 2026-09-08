@@ -36,7 +36,7 @@ _Status: **proposed — pending founder ratification.** The bones below are fixe
         └──────────────┘
 ```
 
-**Module boundary rule (the line the review gate checks):** modules reference each other **by ID and through service interfaces only** — never each other's tables, never each other's internals. The modules are the aggregate boundaries from Artifact 02; this rule is what keeps any of them extractable into a service later *by addition* (ADR-002's escape hatch).
+**Module boundary rule (the line the review gate checks):** modules reference each other **by ID and through service interfaces only** — never each other's tables, never each other's internals. The modules are the aggregate boundaries from Artifact 02; this rule is what keeps any of them extractable into a service later *by addition* (ADR-002's escape hatch). *Widened 2026-09-09, ADR-039: the whole modular-monolith standard — in-process `api` only, DTOs not entities, events through a publication registry for fan-out, each module owning its data with no cross-module key, the graph acyclic and enforced by the build — is the rule every module is held to; the ADR carries the measured state of the tree and the three deferrals with their triggers.*
 
 **The ledger is a bounded submodule inside workspace:** own tables, own service interface, touched only through it. Promotion path to its own aggregate/service in the payments phase is designed, not improvised.
 
