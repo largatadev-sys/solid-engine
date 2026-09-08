@@ -217,7 +217,7 @@ public class DiaryService {
     @Transactional(readOnly = true)
     public Page<DiaryTripResponse> myTrips(UUID travelerId, String cursor, Integer requestedLimit) {
         UUID after = cursor == null ? null : Cursor.decode(cursor);
-        List<UUID> openable = workspaces.itineraryIdsInSightOf(travelerId);
+        List<UUID> openable = workspaces.tripIdsInSightOf(travelerId);
         if (openable.isEmpty()) {
             return Page.exhausted(List.of());
         }

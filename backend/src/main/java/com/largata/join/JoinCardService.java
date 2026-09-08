@@ -1,6 +1,6 @@
 package com.largata.join;
 
-import com.largata.itinerary.ShareCardVersionService;
+import com.largata.trip.api.TripApi;
 import com.largata.join.card.CardSubject;
 import com.largata.join.card.TripMetaLine;
 import com.largata.media.web.PhotoBytes;
@@ -13,19 +13,19 @@ public class JoinCardService {
 
     private final JoinService join;
     private final PhotoBytes covers;
-    private final ShareCardVersionService shareCardVersions;
+    private final TripApi trips;
 
-    JoinCardService(JoinService join, PhotoBytes covers, ShareCardVersionService shareCardVersions) {
+    JoinCardService(JoinService join, PhotoBytes covers, TripApi trips) {
         this.join = join;
         this.covers = covers;
-        this.shareCardVersions = shareCardVersions;
+        this.trips = trips;
     }
 
 
     @Transactional(readOnly = true)
     public JoinCard cardFor(String token) {
         JoinTeaser teaser = join.cardTeaserFor(token);
-        long version = shareCardVersions.currentVersion(teaser.itineraryId());
+        long version = trips.shareCardVersionOf(teaser.itineraryId());
         if (teaser.viewerState() == ViewerJoinState.DEAD) {
             return JoinCard.dead(version);
         }

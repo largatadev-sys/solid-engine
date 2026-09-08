@@ -21,7 +21,7 @@ import com.largata.membership.MembershipExceptions.NotTripOwnerException;
 import com.largata.membership.MembershipExceptions.OfferAlreadyPendingException;
 import com.largata.membership.MembershipExceptions.OwnerCannotLeaveException;
 import com.largata.membership.MembershipExceptions.TargetNotAMemberException;
-import com.largata.workspace.MembershipView;
+import com.largata.trip.api.MembershipView;
 import com.largata.workspace.WorkspaceService;
 import com.largata.workspace.WorkspaceState;
 import java.time.Instant;

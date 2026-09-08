@@ -7,11 +7,13 @@ import com.largata.common.tx.AfterCommit;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.trip.api.ActivityFacts;
+import com.largata.trip.api.PlanApi;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripDayFacts;
 import com.largata.trip.api.TripFacts;
 import com.largata.trip.api.TripLifecycle;
 import com.largata.trip.api.TripPlan;
+import com.largata.trip.api.TripTeaser;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.exception.TripNotFoundException;
 import java.sql.ResultSet;
@@ -19,6 +21,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,7 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class TripService implements TripApi {
+public class TripService implements TripApi, PlanApi {
 
     private static final Logger log = LoggerFactory.getLogger(TripService.class);
 
@@ -210,6 +213,53 @@ public class TripService implements TripApi {
     private static String dayLabelOf(int ordinal, String dayTitle) {
         String prefix = "Day " + ordinal;
         return dayTitle == null || dayTitle.isBlank() ? prefix : prefix + ": " + dayTitle.strip();
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<TripTeaser> teaserOf(UUID tripId) {
+        return db.sql(
+                        "SELECT id, title, destination, start_date, end_date, cover_image_url,"
+                                + " published FROM itinerary WHERE id = ?")
+                .param(tripId)
+                .query(TripService::teaserRow)
+                .optional();
+    }
+
+
+    private static TripTeaser teaserRow(ResultSet row, int rowNumber) throws SQLException {
+        return new TripTeaser(
+                row.getObject("id", UUID.class),
+                row.getString("title"),
+                row.getString("destination"),
+                row.getObject("start_date", java.time.LocalDate.class),
+                row.getObject("end_date", java.time.LocalDate.class),
+                row.getString("cover_image_url"),
+                row.getBoolean("published"));
+    }
+
+
+    @Transactional(readOnly = true)
+    public Map<UUID, String> titlesByIds(Collection<UUID> tripIds) {
+        if (tripIds.isEmpty()) {
+            return Map.of();
+        }
+        return db.sql("SELECT id, title FROM itinerary WHERE id = ANY(?)")
+                .param(tripIds.toArray(UUID[]::new))
+                .query((row, rowNumber) -> Map.entry(row.getObject("id", UUID.class), row.getString("title")))
+                .list()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+
+    @Transactional(readOnly = true)
+    public long shareCardVersionOf(UUID tripId) {
+        return db.sql("SELECT share_card_version FROM itinerary WHERE id = ?")
+                .param(tripId)
+                .query(Long.class)
+                .optional()
+                .orElseThrow(TripNotFoundException::new);
     }
 
 

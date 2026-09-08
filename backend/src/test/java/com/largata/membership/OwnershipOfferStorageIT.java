@@ -98,7 +98,7 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
     private UUID admittedMemberOn(UUID itineraryId, UUID ownerId) {
         UUID memberId = UUID.randomUUID();
         transactions.executeWithoutResult(
-                status -> workspaces.admitMember(itineraryId, memberId, Instant.now()));
+                status -> workspaces.admit(itineraryId, memberId, Instant.now()));
         return memberId;
     }
 

@@ -9,6 +9,7 @@ import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
+import com.largata.trip.api.TripTeaser;
 import com.largata.itinerary.api.ShowcaseItineraryResponse;
 import com.largata.workspace.WorkspaceService;
 import com.largata.workspace.WorkspaceState;

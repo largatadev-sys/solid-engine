@@ -101,7 +101,7 @@ class OwnershipSwapStorageIT extends PostgresTestBase {
         Itinerary itinerary = itineraries.create(ownerId, "Nagano", "Nagano", null, null);
         for (UUID memberId : memberIds) {
             transactions.executeWithoutResult(
-                    tx -> workspaces.admitMember(itinerary.id(), memberId, Instant.now()));
+                    tx -> workspaces.admit(itinerary.id(), memberId, Instant.now()));
         }
         return itinerary.id();
     }

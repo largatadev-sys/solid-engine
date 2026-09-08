@@ -1,7 +1,9 @@
 package com.largata.workspace;
 
 import com.largata.common.authz.Role;
+import com.largata.trip.api.MembershipApi;
 import com.largata.trip.api.MembershipArrived;
+import com.largata.trip.api.MembershipView;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
@@ -21,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
-public class WorkspaceService {
+public class WorkspaceService implements MembershipApi {
 
     private static final Logger log = LoggerFactory.getLogger(WorkspaceService.class);
 
@@ -54,7 +56,7 @@ public class WorkspaceService {
 
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void admitMember(UUID itineraryId, UUID travelerId, Instant joinedAt) {
+    public void admit(UUID itineraryId, UUID travelerId, Instant joinedAt) {
         Workspace workspace =
                 workspaces
                         .findByItineraryId(itineraryId)
@@ -65,6 +67,7 @@ public class WorkspaceService {
         entityManager.persist(new Membership(workspace, travelerId, Role.MEMBER, joinedAt));
         entityManager.flush();
         log.info("Member admitted: itineraryId={} travelerId={}", itineraryId, travelerId);
+        events.publishEvent(new MembershipArrived(workspace.id(), itineraryId, travelerId));
     }
 
 
@@ -183,7 +186,7 @@ public class WorkspaceService {
 
 
     @Transactional(readOnly = true)
-    public List<UUID> itineraryIdsInSightOf(UUID travelerId) {
+    public List<UUID> tripIdsInSightOf(UUID travelerId) {
         return memberships.findItineraryIdsInSightOf(travelerId, WorkspaceState.ARCHIVED);
     }
 
@@ -243,7 +246,7 @@ public class WorkspaceService {
 
 
     @Transactional(readOnly = true)
-    public Map<UUID, UUID> itineraryIdsByWorkspace(Collection<UUID> workspaceIds) {
+    public Map<UUID, UUID> tripIdsByWorkspace(Collection<UUID> workspaceIds) {
         return workspaces.findAllById(workspaceIds).stream()
                 .collect(Collectors.toMap(Workspace::id, Workspace::itineraryId));
     }

@@ -186,7 +186,7 @@ class PollLazyCloseIT extends PostgresTestBase {
     private UUID admitAMember(Membership owner) {
         UUID travelerId = UUID.randomUUID();
         transactions.executeWithoutResult(
-                status -> workspaces.admitMember(owner.itineraryId(), travelerId, Instant.now(clock)));
+                status -> workspaces.admit(owner.itineraryId(), travelerId, Instant.now(clock)));
         return travelerId;
     }
 

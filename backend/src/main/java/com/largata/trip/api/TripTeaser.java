@@ -1,4 +1,4 @@
-package com.largata.itinerary;
+package com.largata.trip.api;
 
 import java.time.LocalDate;
 import java.util.UUID;

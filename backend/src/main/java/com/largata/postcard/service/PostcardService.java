@@ -24,6 +24,7 @@ import com.largata.postcard.exception.TooManyPostcardPhotosException;
 import com.largata.postcard.exception.TripNotStartedException;
 import com.largata.postcard.repository.PostcardRepository;
 import com.largata.trip.api.ActivityFacts;
+import com.largata.trip.api.PlanApi;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripDayFacts;
 import com.largata.trip.api.TripFacts;
@@ -48,6 +49,7 @@ public class PostcardService {
     private final PostcardRepository postcards;
     private final DiaryApi diaries;
     private final TripApi trips;
+    private final PlanApi plans;
     private final PhotoService photos;
     private final TravelerService travelers;
     private final Analytics analytics;
@@ -57,6 +59,7 @@ public class PostcardService {
             PostcardRepository postcards,
             DiaryApi diaries,
             TripApi trips,
+            PlanApi plans,
             PhotoService photos,
             TravelerService travelers,
             Analytics analytics,
@@ -64,6 +67,7 @@ public class PostcardService {
         this.postcards = postcards;
         this.diaries = diaries;
         this.trips = trips;
+        this.plans = plans;
         this.photos = photos;
         this.travelers = travelers;
         this.analytics = analytics;
@@ -150,7 +154,7 @@ public class PostcardService {
             throw new TripNotStartedException();
         }
         requirePhotoCountWithin(devicePhotos.size());
-        trips.dayFactsOf(member.itineraryId(), tripDayId)
+        plans.dayFactsOf(member.itineraryId(), tripDayId)
                 .orElseThrow(PostcardDayNotFoundException::new);
 
         UUID diaryId = mintDiaryOf(member, trip);
@@ -205,7 +209,7 @@ public class PostcardService {
         }
         requirePhotoCountWithin(devicePhotos.size());
         ActivityFacts activity =
-                trips.activityFactsOf(member.itineraryId(), activityId)
+                plans.activityFactsOf(member.itineraryId(), activityId)
                         .orElseThrow(PostcardActivityNotFoundException::new);
         if (postcards.existsByAuthorIdAndActivityId(member.travelerId(), activityId)) {
             throw new ActivityAlreadyPostcardedException();
@@ -239,7 +243,7 @@ public class PostcardService {
 
     private DiaryDayView mintDayOf(UUID diaryId, TripFacts trip, UUID tripDayId) {
         TripDayFacts day =
-                trips.dayFactsOf(trip.id(), tripDayId).orElseThrow(PostcardDayNotFoundException::new);
+                plans.dayFactsOf(trip.id(), tripDayId).orElseThrow(PostcardDayNotFoundException::new);
         return diaries.mintTripDay(diaryId, day.dayId(), day.title(), day.ordinal());
     }
 
