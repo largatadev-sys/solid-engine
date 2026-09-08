@@ -15,3 +15,16 @@ The replacement is a strictly stronger rule, so the name list is deleted rather 
 - [ ] Adding a mutator to a diary stored type changes nothing about whether the guard holds, which is the property the old list could not give
 
 ## Comments
+
+**Sabotage run (2026-09-08).** `PostcardView` was given back an import of `com.largata.diary.entity.DiaryDay` and a method returning one. The guard failed, naming the offending class and where it entered:
+
+```
+Architecture Violation [Priority: MEDIUM] - Rule 'this replaces the eight-name mutator seal,
+which forbade the calls it happened to list and let a ninth mutator through in silence. An
+ALLOWLIST forbids the dependency itself, so Diary and DiaryDay are unreachable whatever their
+methods are called' was violated (1 times):
+Method <com.largata.postcard.service.PostcardView.sabotage()> has return type
+<com.largata.diary.entity.DiaryDay> in (PostcardView.java:0)
+```
+
+Note what the failure names: the **dependency**, not a method call. That is the property the eight-name list could not give — the sabotage adds no call to any sealed method, so the old rule would have stayed green on it.
