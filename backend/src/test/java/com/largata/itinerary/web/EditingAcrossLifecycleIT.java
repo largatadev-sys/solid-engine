@@ -139,7 +139,7 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
         for (String act : acts) {
             String root = act.equals("publish") || act.equals("unpublish")
                     ? "/v1/trips/"
-                    : "/v1/itineraries/";
+                    : "/v1/trips/";
             rig.send(HttpMethod.POST, root + tripId + "/" + act, token, null)
                     .expectStatus()
                     .value(status -> assertThat(status).isIn(200, 204));
@@ -153,7 +153,7 @@ class EditingAcrossLifecycleIT extends PostgresTestBase {
 
 
     private RestTestClient.ResponseSpec savePlan(String token, String tripId, String body) {
-        return rig.send(HttpMethod.PUT, "/v1/itineraries/" + tripId + "/plan", token, body);
+        return rig.send(HttpMethod.PUT, "/v1/trips/" + tripId + "/plan", token, body);
     }
 
 

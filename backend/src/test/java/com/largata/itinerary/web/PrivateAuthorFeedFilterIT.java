@@ -292,7 +292,7 @@ class PrivateAuthorFeedFilterIT extends ObjectStoreTestBase {
 
     private void advance(String token, String tripId, String step) {
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/" + step)
+                .uri("/v1/trips/" + tripId + "/" + step)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()

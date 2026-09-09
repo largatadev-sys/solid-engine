@@ -162,7 +162,7 @@ class SlowConsumerIsolationIT extends PostgresTestBase {
         tripRig
                 .send(
                         HttpMethod.POST,
-                        "/v1/itineraries/" + trip + "/chat/messages",
+                        "/v1/trips/" + trip + "/chat/messages",
                         token,
                         "{\"body\":\"" + text + "\"}")
                 .expectStatus()

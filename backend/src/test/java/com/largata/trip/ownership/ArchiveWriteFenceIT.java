@@ -51,28 +51,28 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        refused(patch(trip.owner, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH));
-        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/days", """
+        refused(patch(trip.owner, "/v1/trips/" + trip.id, VALID_ITINERARY_PATCH));
+        refused(post(trip.owner, "/v1/trips/" + trip.id + "/days", """
                 {"title":"A new day"}
                 """));
-        refused(patch(trip.owner, "/v1/itineraries/" + trip.id + "/days/" + dayId, """
+        refused(patch(trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId, """
                 {"title":"Renamed day"}
                 """));
-        refused(delete(trip.owner, "/v1/itineraries/" + trip.id + "/days/" + dayId));
-        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities", """
+        refused(delete(trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId));
+        refused(post(trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId + "/activities", """
                 {"title":"A new activity"}
                 """));
         refused(patch(
                 trip.owner,
-                "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId,
+                "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId,
                 """
                 {"title":"Renamed activity"}
                 """));
         refused(delete(
-                trip.owner, "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId));
+                trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId));
         refused(put(
                 trip.owner,
-                "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/order",
+                "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/order",
                 "{\"expectedActivityIds\":[\""
                         + activityId
                         + "\"],\"activityIds\":[\""
@@ -80,27 +80,27 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                         + "\"]}"));
         refused(post(
                 trip.owner,
-                "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId + "/move",
+                "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId + "/move",
                 "{\"targetDayId\":\"" + dayId + "\"}"));
 
-        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/finish-planning", null));
-        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/start", null));
-        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/complete", null));
+        refused(post(trip.owner, "/v1/trips/" + trip.id + "/finish-planning", null));
+        refused(post(trip.owner, "/v1/trips/" + trip.id + "/start", null));
+        refused(post(trip.owner, "/v1/trips/" + trip.id + "/complete", null));
 
-        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/edit-lock", null));
-        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/edit-lock/renew", null));
+        refused(post(trip.owner, "/v1/trips/" + trip.id + "/edit-lock", null));
+        refused(post(trip.owner, "/v1/trips/" + trip.id + "/edit-lock/renew", null));
 
-        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/invitations", """
+        refused(post(trip.owner, "/v1/trips/" + trip.id + "/invitations", """
                 {"email":"someone@example.com"}
                 """));
         refused(post(trip.owner, "/v1/invitations/" + trip.pendingInvitationId + "/revoke", null));
         refused(post(
                 trip.owner,
-                "/v1/itineraries/" + trip.id + "/ownership-offer",
+                "/v1/trips/" + trip.id + "/ownership-offer",
                 "{\"travelerId\":\"" + trip.memberId + "\"}"));
-        refused(delete(trip.owner, "/v1/itineraries/" + trip.id + "/ownership-offer"));
+        refused(delete(trip.owner, "/v1/trips/" + trip.id + "/ownership-offer"));
 
-        refused(delete(trip.owner, "/v1/itineraries/" + trip.id + "/members/" + trip.memberId));
+        refused(delete(trip.owner, "/v1/trips/" + trip.id + "/members/" + trip.memberId));
     }
 
 
@@ -111,10 +111,10 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         UUID dayId = firstDayOf(trip.id);
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/days", """
+        masked(post(trip.member, "/v1/trips/" + trip.id + "/days", """
                 {"title":"While frozen"}
                 """));
-        masked(delete(trip.member, "/v1/itineraries/" + trip.id + "/days/" + dayId));
+        masked(delete(trip.member, "/v1/trips/" + trip.id + "/days/" + dayId));
     }
 
 
@@ -126,41 +126,41 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        masked(patch(trip.member, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH));
-        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities", """
+        masked(patch(trip.member, "/v1/trips/" + trip.id, VALID_ITINERARY_PATCH));
+        masked(post(trip.member, "/v1/trips/" + trip.id + "/days/" + dayId + "/activities", """
                 {"title":"A new activity"}
                 """));
         masked(patch(
                 trip.member,
-                "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId,
+                "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId,
                 """
                 {"title":"Renamed activity"}
                 """));
         masked(delete(
-                trip.member, "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId));
+                trip.member, "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId));
         masked(put(
                 trip.member,
-                "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/order",
+                "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/order",
                 "{\"expectedActivityIds\":[\"" + activityId + "\"],\"activityIds\":[\"" + activityId + "\"]}"));
         masked(post(
                 trip.member,
-                "/v1/itineraries/" + trip.id + "/days/" + dayId + "/activities/" + activityId + "/move",
+                "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId + "/move",
                 "{\"targetDayId\":\"" + dayId + "\"}"));
 
-        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/edit-lock", null));
-        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/edit-lock/renew", null));
+        masked(post(trip.member, "/v1/trips/" + trip.id + "/edit-lock", null));
+        masked(post(trip.member, "/v1/trips/" + trip.id + "/edit-lock/renew", null));
 
-        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/invitations", """
+        masked(post(trip.member, "/v1/trips/" + trip.id + "/invitations", """
                 {"email":"someone@example.com"}
                 """));
         masked(post(trip.member, "/v1/invitations/" + trip.pendingInvitationId + "/revoke", null));
         masked(post(
                 trip.member,
-                "/v1/itineraries/" + trip.id + "/ownership-offer",
+                "/v1/trips/" + trip.id + "/ownership-offer",
                 "{\"travelerId\":\"" + trip.memberId + "\"}"));
-        masked(delete(trip.member, "/v1/itineraries/" + trip.id + "/ownership-offer"));
+        masked(delete(trip.member, "/v1/trips/" + trip.id + "/ownership-offer"));
 
-        masked(delete(trip.member, "/v1/itineraries/" + trip.id + "/members/" + trip.ownerId));
+        masked(delete(trip.member, "/v1/trips/" + trip.id + "/members/" + trip.ownerId));
     }
 
     @Test
@@ -168,8 +168,8 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         Trip trip = liveTripWithTwoMembers();
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        refused(post(trip.owner, "/v1/itineraries/" + trip.id + "/edit-lock", null));
-        delete(trip.owner, "/v1/itineraries/" + trip.id + "/edit-lock").expectStatus().isNoContent();
+        refused(post(trip.owner, "/v1/trips/" + trip.id + "/edit-lock", null));
+        delete(trip.owner, "/v1/trips/" + trip.id + "/edit-lock").expectStatus().isNoContent();
     }
 
     @Test
@@ -177,7 +177,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         Trip trip = liveTripWithTwoMembers();
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        delete(trip.member, "/v1/itineraries/" + trip.id + "/members/" + trip.memberId)
+        delete(trip.member, "/v1/trips/" + trip.id + "/members/" + trip.memberId)
                 .expectStatus()
                 .isNoContent();
 
@@ -188,19 +188,19 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
     @Test
     void acceptAndDeclineAreClosedByVoidingRatherThanByTheFence() {
         Trip trip = liveTripWithTwoMembers();
-        post(trip.owner, "/v1/itineraries/" + trip.id + "/ownership-offer", "{\"travelerId\":\"" + trip.memberId + "\"}")
+        post(trip.owner, "/v1/trips/" + trip.id + "/ownership-offer", "{\"travelerId\":\"" + trip.memberId + "\"}")
                 .expectStatus()
                 .isCreated();
 
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        post(trip.member, "/v1/itineraries/" + trip.id + "/ownership-offer/accept", null)
+        post(trip.member, "/v1/trips/" + trip.id + "/ownership-offer/accept", null)
                 .expectStatus()
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.code")
                 .isEqualTo("OFFER_NOT_FOUND");
-        post(trip.member, "/v1/itineraries/" + trip.id + "/ownership-offer/decline", null)
+        post(trip.member, "/v1/trips/" + trip.id + "/ownership-offer/decline", null)
                 .expectStatus()
                 .isNotFound()
                 .expectBody()
@@ -241,7 +241,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         Trip trip = liveTripWithTwoMembers();
         String stranger = freshTraveler();
 
-        post(trip.member, "/v1/itineraries/" + trip.id + "/invitations", """
+        post(trip.member, "/v1/trips/" + trip.id + "/invitations", """
                 {"email":"someone@example.com"}
                 """)
                 .expectStatus()
@@ -249,11 +249,11 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        patch(stranger, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH)
+        patch(stranger, "/v1/trips/" + trip.id, VALID_ITINERARY_PATCH)
                 .expectStatus()
                 .isNotFound();
 
-        masked(post(trip.member, "/v1/itineraries/" + trip.id + "/invitations", """
+        masked(post(trip.member, "/v1/trips/" + trip.id + "/invitations", """
                 {"email":"someone@example.com"}
                 """));
     }
@@ -265,14 +265,14 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         archive(trip.owner, trip.id).expectStatus().isOk();
         unarchive(trip.owner, trip.id).expectStatus().isOk();
 
-        post(trip.member, "/v1/itineraries/" + trip.id + "/days/" + firstDayOf(trip.id) + "/activities", """
+        post(trip.member, "/v1/trips/" + trip.id + "/days/" + firstDayOf(trip.id) + "/activities", """
                 {"title":"A new activity"}
                 """)
                 .expectStatus()
                 .isCreated();
 
         acquireLease(trip.owner, trip.id).expectStatus().isOk();
-        patch(trip.owner, "/v1/itineraries/" + trip.id, VALID_ITINERARY_PATCH).expectStatus().isOk();
+        patch(trip.owner, "/v1/trips/" + trip.id, VALID_ITINERARY_PATCH).expectStatus().isOk();
     }
 
 
@@ -301,7 +301,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         String member = admitMemberTo(tripId);
         String invitedEmail = "pending-" + UUID.randomUUID() + "@example.com";
         byte[] invitation =
-                post(owner, "/v1/itineraries/" + tripId + "/invitations", "{\"email\":\"" + invitedEmail + "\"}")
+                post(owner, "/v1/trips/" + tripId + "/invitations", "{\"email\":\"" + invitedEmail + "\"}")
                         .expectStatus()
                         .isCreated()
                         .expectBody()
@@ -318,15 +318,15 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
     }
 
     private RestTestClient.ResponseSpec archive(String token, String itineraryId) {
-        return post(token, "/v1/itineraries/" + itineraryId + "/archive", null);
+        return post(token, "/v1/trips/" + itineraryId + "/archive", null);
     }
 
     private RestTestClient.ResponseSpec unarchive(String token, String itineraryId) {
-        return post(token, "/v1/itineraries/" + itineraryId + "/unarchive", null);
+        return post(token, "/v1/trips/" + itineraryId + "/unarchive", null);
     }
 
     private RestTestClient.ResponseSpec acquireLease(String token, String itineraryId) {
-        return post(token, "/v1/itineraries/" + itineraryId + "/edit-lock", null);
+        return post(token, "/v1/trips/" + itineraryId + "/edit-lock", null);
     }
 
     private RestTestClient.ResponseSpec post(String token, String uri, String body) {
@@ -374,7 +374,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         byte[] created =
                 post(
                                 token,
-                                "/v1/itineraries/" + itineraryId + "/days/" + dayId + "/activities",
+                                "/v1/trips/" + itineraryId + "/days/" + dayId + "/activities",
                                 """
                                 {"title":"Something to do"}
                                 """)
@@ -427,7 +427,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
     private String createItinerary(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

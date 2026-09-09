@@ -167,7 +167,7 @@ class EditLeaseContractIT extends PostgresTestBase {
     @Test
     void aVisitorWithNoTokenIsRejectedAtTheSecurityChain() {
         rest.post()
-                .uri("/v1/itineraries/" + UUID.randomUUID() + "/edit-lock")
+                .uri("/v1/trips/" + UUID.randomUUID() + "/edit-lock")
                 .exchange()
                 .expectStatus()
                 .isUnauthorized();
@@ -175,7 +175,7 @@ class EditLeaseContractIT extends PostgresTestBase {
 
 
     private static String lockUri(String tripId) {
-        return "/v1/itineraries/" + tripId + "/edit-lock";
+        return "/v1/trips/" + tripId + "/edit-lock";
     }
 
     private void acquire(String token, String tripId) {
@@ -190,7 +190,7 @@ class EditLeaseContractIT extends PostgresTestBase {
     private String createTrip(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

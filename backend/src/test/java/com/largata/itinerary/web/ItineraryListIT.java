@@ -33,7 +33,7 @@ class ItineraryListIT extends PostgresTestBase {
     @Test
     void anEmptyListIsAResultNotAnAbsence() {
         rest.get()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .exchange()
                 .expectStatus()
@@ -55,7 +55,7 @@ class ItineraryListIT extends PostgresTestBase {
         create(token, "third");
 
         rest.get()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -130,7 +130,7 @@ class ItineraryListIT extends PostgresTestBase {
 
         byte[] page =
                 rest.get()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .exchange()
                         .expectStatus()
@@ -156,7 +156,7 @@ class ItineraryListIT extends PostgresTestBase {
     @Test
     void aCursorThisApiDidNotIssueIsABadRequestNotAServerError() {
         rest.get()
-                .uri("/v1/itineraries?cursor=not-a-real-cursor")
+                .uri("/v1/trips?cursor=not-a-real-cursor")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .exchange()
                 .expectStatus()
@@ -167,7 +167,7 @@ class ItineraryListIT extends PostgresTestBase {
     }
 
     private byte[] fetchPage(String token, String cursor, int limit) {
-        String uri = "/v1/itineraries?limit=" + limit + (cursor == null ? "" : "&cursor=" + cursor);
+        String uri = "/v1/trips?limit=" + limit + (cursor == null ? "" : "&cursor=" + cursor);
         return rest.get()
                 .uri(uri)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -181,7 +181,7 @@ class ItineraryListIT extends PostgresTestBase {
 
     private void create(String token, String title) {
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""

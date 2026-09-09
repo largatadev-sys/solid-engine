@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.itinerary.PublishedVisibility;
 import com.largata.trip.plan.entity.TripPlanTree;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.plan.entity.Day;
@@ -41,8 +40,8 @@ public class ForkService implements ForkApi {
     private final DayService plans;
     private final ForkRelationshipRepository relationships;
     private final AuthorizationGuard guard;
+    private final ForkApi.SourceVisibility sourceVisibility;
     private final WorkspaceService workspaces;
-    private final PublishedVisibility visibility;
     private final TravelerService travelers;
     private final Analytics analytics;
 
@@ -53,8 +52,8 @@ public class ForkService implements ForkApi {
             DayService plans,
             ForkRelationshipRepository relationships,
             AuthorizationGuard guard,
+            ForkApi.SourceVisibility sourceVisibility,
             WorkspaceService workspaces,
-            PublishedVisibility visibility,
             TravelerService travelers,
             Analytics analytics) {
         this.trips = trips;
@@ -63,41 +62,13 @@ public class ForkService implements ForkApi {
         this.plans = plans;
         this.relationships = relationships;
         this.guard = guard;
+        this.sourceVisibility = sourceVisibility;
         this.workspaces = workspaces;
-        this.visibility = visibility;
         this.travelers = travelers;
         this.analytics = analytics;
     }
 
 
-    @Transactional
-    public TripPlanTree fork(UUID sourceId, UUID forkerId, Optional<Membership> caller) {
-        Trip source = visibility.require(sourceId, caller);
-        Instant at = Instant.now();
-
-        Trip copy = trips.save(Trip.forkedFrom(source, forkerId, at));
-        workspaces.formAround(copy.id(), forkerId, at);
-        copyPlanInto(copy.id(), source.id(), forkerId, at);
-        relationships.save(ForkRelationship.recording(source.id(), copy.id(), at));
-
-        log.info("Trip forked: sourceId={} forkedId={} forkerId={}", source.id(), copy.id(), forkerId);
-        AfterCommit.run(
-                () ->
-                        analytics.emit(
-                                AnalyticsEvent.named("itinerary_forked")
-                                        .with("itineraryId", copy.id())
-                                        .with("sourceItineraryId", source.id())
-                                        .with("travelerId", forkerId)
-                                        .build()));
-
-        return new TripPlanTree(
-                copy,
-                plans.plan(copy.id()),
-                workspaces.stateOf(copy.id()).orElse(WorkspaceState.ACTIVE),
-                Map.of(),
-                Map.of(),
-                Optional.empty());
-    }
 
 
     private void copyPlanInto(UUID copyId, UUID sourceId, UUID forkerId, Instant at) {
@@ -121,7 +92,7 @@ public class ForkService implements ForkApi {
                                 new ForkProvenanceView(
                                         sourceId,
                                         handleOfOwnerOf(sourceId),
-                                        visibility.admits(sourceId, guard.membershipOf(readerId, sourceId))));
+                                        sourceVisibility.stillLive(sourceId)));
     }
 
 

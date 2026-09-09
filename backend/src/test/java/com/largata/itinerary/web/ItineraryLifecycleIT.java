@@ -209,13 +209,13 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String tripId = createItinerary(owner);
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
                 .isOk();
         rest.patch()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -245,7 +245,7 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String member = admitMemberTo(tripId);
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .exchange()
                 .expectStatus()
@@ -312,8 +312,8 @@ class ItineraryLifecycleIT extends PostgresTestBase {
     void aVisitorIsRejectedBeforeAnythingElse() {
         String tripId = createItinerary(freshTraveler());
 
-        rest.post().uri("/v1/itineraries/" + tripId + "/start").exchange().expectStatus().isUnauthorized();
-        rest.post().uri("/v1/itineraries/" + tripId + "/complete").exchange().expectStatus().isUnauthorized();
+        rest.post().uri("/v1/trips/" + tripId + "/start").exchange().expectStatus().isUnauthorized();
+        rest.post().uri("/v1/trips/" + tripId + "/complete").exchange().expectStatus().isUnauthorized();
     }
 
 
@@ -328,28 +328,28 @@ class ItineraryLifecycleIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec finishPlanning(String token, String itineraryId) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/finish-planning")
+                .uri("/v1/trips/" + itineraryId + "/finish-planning")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec start(String token, String itineraryId) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/start")
+                .uri("/v1/trips/" + itineraryId + "/start")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec complete(String token, String itineraryId) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/complete")
+                .uri("/v1/trips/" + itineraryId + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec reopen(String token, String itineraryId) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/reopen")
+                .uri("/v1/trips/" + itineraryId + "/reopen")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -430,7 +430,7 @@ class ItineraryLifecycleIT extends PostgresTestBase {
                                 .formatted(durationDays);
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(body)

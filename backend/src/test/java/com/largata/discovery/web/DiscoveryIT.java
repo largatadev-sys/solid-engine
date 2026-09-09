@@ -76,7 +76,7 @@ class DiscoveryIT extends PostgresTestBase {
         travel(owner, trip);
 
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/publish")
+                .uri("/v1/trips/" + trip + "/publish")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"audience\":\"private\"}")
@@ -377,7 +377,7 @@ class DiscoveryIT extends PostgresTestBase {
     private static String rootFor(String action) {
         return action.equals("publish") || action.equals("unpublish")
                 ? "/v1/trips/"
-                : "/v1/itineraries/";
+                : "/v1/trips/";
     }
 
 
@@ -393,7 +393,7 @@ class DiscoveryIT extends PostgresTestBase {
 
     private void publishTo(String token, String itineraryId, String audience) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/publish")
+                .uri("/v1/trips/" + itineraryId + "/publish")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"audience\":\"" + audience + "\"}")

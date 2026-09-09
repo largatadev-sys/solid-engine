@@ -542,7 +542,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
     private void archive(Fixture trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/archive")
+                .uri("/v1/trips/" + trip.tripId() + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -552,7 +552,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
     private void unarchive(Fixture trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/unarchive")
+                .uri("/v1/trips/" + trip.tripId() + "/unarchive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -562,7 +562,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
     private String publish(Fixture trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/complete")
+                .uri("/v1/trips/" + trip.tripId() + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -624,7 +624,7 @@ class PostcardFeedIT extends ObjectStoreTestBase {
 
     private void advance(Fixture trip, String step) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/" + step)
+                .uri("/v1/trips/" + trip.tripId() + "/" + step)
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()

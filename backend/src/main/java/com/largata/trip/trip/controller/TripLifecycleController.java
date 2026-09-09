@@ -19,7 +19,7 @@ import com.largata.trip.trip.dto.PublishRequest;
 
 
 @RestController
-@RequestMapping("/v1/itineraries")
+@RequestMapping("/v1/trips")
 class TripLifecycleController {
 
     private final TripService itineraries;
@@ -31,15 +31,6 @@ class TripLifecycleController {
         this.itineraries = itineraries;
         this.forks = forks;
         this.guard = guard;
-    }
-
-
-    @PostMapping("/{id}/fork")
-    @ResponseStatus(HttpStatus.CREATED)
-    TripResponse fork(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
-        var forked = forks.fork(id, traveler.id(), guard.membershipOf(traveler.id(), id));
-        UUID forkedId = forked.itinerary().id();
-        return TripResponse.of(forked, forks.provenanceOf(forkedId, traveler.id()).orElse(null));
     }
 
 

@@ -52,7 +52,7 @@ class PlanVersionBumpIT extends PostgresTestBase {
         UUID dayTwo = rig.dayAt(tripId, 2);
 
         long afterAppend = bumpedBy(owner, tripId, () ->
-                rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/days", owner, "{}")
+                rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/days", owner, "{}")
                         .expectStatus()
                         .isCreated());
         assertThat(afterAppend).as("append day").isEqualTo(1);
@@ -61,7 +61,7 @@ class PlanVersionBumpIT extends PostgresTestBase {
         assertThat(bumpedBy(owner, tripId, () ->
                         rig.send(
                                         HttpMethod.PATCH,
-                                        "/v1/itineraries/" + tripId + "/days/" + dayOne,
+                                        "/v1/trips/" + tripId + "/days/" + dayOne,
                                         owner,
                                         "{\"title\":\"Arrival\"}")
                                 .expectStatus()
@@ -123,7 +123,7 @@ class PlanVersionBumpIT extends PostgresTestBase {
 
         rig.hold(owner, tripId, "day", dayOne);
         assertThat(bumpedBy(owner, tripId, () ->
-                        rig.send(HttpMethod.DELETE, "/v1/itineraries/" + tripId + "/days/" + dayOne, owner, null)
+                        rig.send(HttpMethod.DELETE, "/v1/trips/" + tripId + "/days/" + dayOne, owner, null)
                                 .expectStatus()
                                 .isNoContent()))
                 .as("delete day, activities and all")
@@ -143,7 +143,7 @@ class PlanVersionBumpIT extends PostgresTestBase {
         assertThat(bumpedBy(owner, tripId, () ->
                         rig.send(
                                         HttpMethod.PATCH,
-                                        "/v1/itineraries/" + tripId,
+                                        "/v1/trips/" + tripId,
                                         owner,
                                         "{\"title\":\"Renamed\",\"destination\":\"Cebu\"}")
                                 .expectStatus()
@@ -152,7 +152,7 @@ class PlanVersionBumpIT extends PostgresTestBase {
                 .isZero();
 
         assertThat(bumpedBy(owner, tripId, () ->
-                        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/start", owner, null)
+                        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/start", owner, null)
                                 .expectStatus()
                                 .isOk()))
                 .as("a lifecycle transition moves the trip, not the plan")

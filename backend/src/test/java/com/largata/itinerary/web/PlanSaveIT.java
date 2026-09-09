@@ -151,7 +151,7 @@ class PlanSaveIT extends PostgresTestBase {
         UUID archivedDay = rig.dayAt(archived, 1);
         long archivedBase = rig.planVersionOf(archivedOwner, archived);
         rig.hold(archivedOwner, archived, "session", null);
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + archived + "/archive", archivedOwner, null)
+        rig.send(HttpMethod.POST, "/v1/trips/" + archived + "/archive", archivedOwner, null)
                 .expectStatus()
                 .isOk();
 
@@ -287,7 +287,7 @@ class PlanSaveIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec savePlan(String token, String tripId, long base, String body) {
         assertThat(base).isNotNegative();
-        return rig.send(HttpMethod.PUT, "/v1/itineraries/" + tripId + "/plan", token, body);
+        return rig.send(HttpMethod.PUT, "/v1/trips/" + tripId + "/plan", token, body);
     }
 
     private static String planWithOneDayTitled(long base, UUID dayId, String title) {
@@ -297,8 +297,8 @@ class PlanSaveIT extends PostgresTestBase {
     }
 
     private void publish(String token, String tripId) {
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/start", token, null).expectStatus().isOk();
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/complete", token, null).expectStatus().isOk();
+        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/start", token, null).expectStatus().isOk();
+        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/complete", token, null).expectStatus().isOk();
         rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/publish", token, "{\"visibility\":\"public\"}")
                 .expectStatus()
                 .isOk();

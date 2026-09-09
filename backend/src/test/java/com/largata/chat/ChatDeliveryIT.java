@@ -172,13 +172,13 @@ class ChatDeliveryIT extends PostgresTestBase {
 
     private void publish(String owner, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/start")
+                .uri("/v1/trips/" + trip + "/start")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
                 .isOk();
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/complete")
+                .uri("/v1/trips/" + trip + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -193,7 +193,7 @@ class ChatDeliveryIT extends PostgresTestBase {
 
 
     private static String messagesUri(String trip) {
-        return "/v1/itineraries/" + trip + "/chat/messages";
+        return "/v1/trips/" + trip + "/chat/messages";
     }
 
 

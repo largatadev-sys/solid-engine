@@ -107,7 +107,7 @@ class ActivityPinContractIT extends PostgresTestBase {
         String tripId =
                 idIn(
                         rest.post()
-                                .uri("/v1/itineraries")
+                                .uri("/v1/trips")
                                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body("{\"title\":\"Pinned trip\",\"destination\":\"El Nido\",\"durationDays\":1,"
@@ -124,7 +124,7 @@ class ActivityPinContractIT extends PostgresTestBase {
         lock(owner, tripId);
 
         rest.method(org.springframework.http.HttpMethod.PATCH)
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"title\":\"Pinned trip\",\"destination\":\"El Nido\",\"pin\":null}")
@@ -144,7 +144,7 @@ class ActivityPinContractIT extends PostgresTestBase {
         String tripId =
                 idIn(
                         rest.post()
-                                .uri("/v1/itineraries")
+                                .uri("/v1/trips")
                                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body("{\"title\":\"Trip\",\"destination\":\"El Nido\",\"durationDays\":1}")
@@ -158,7 +158,7 @@ class ActivityPinContractIT extends PostgresTestBase {
         lock(owner, tripId);
 
         rest.method(org.springframework.http.HttpMethod.PATCH)
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"title\":\"Trip\",\"destination\":\"El Nido\","
@@ -171,7 +171,7 @@ class ActivityPinContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec create(Trip trip, String body) {
         return rest.post()
-                .uri("/v1/itineraries/" + trip.id() + "/days/" + trip.dayId() + "/activities")
+                .uri("/v1/trips/" + trip.id() + "/days/" + trip.dayId() + "/activities")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.ownerToken()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
@@ -185,7 +185,7 @@ class ActivityPinContractIT extends PostgresTestBase {
         String created =
                 new String(
                         rest.post()
-                                .uri("/v1/itineraries")
+                                .uri("/v1/trips")
                                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body("{\"title\":\"Pins\",\"destination\":\"El Nido\",\"durationDays\":1}")
@@ -205,7 +205,7 @@ class ActivityPinContractIT extends PostgresTestBase {
 
     private void lock(String token, String tripId) {
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()

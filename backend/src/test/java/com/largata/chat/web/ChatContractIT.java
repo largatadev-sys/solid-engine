@@ -279,7 +279,7 @@ class ChatContractIT extends PostgresTestBase {
 
 
     private static String messagesUri(Fixture trip) {
-        return "/v1/itineraries/" + trip.tripId() + "/chat/messages";
+        return "/v1/trips/" + trip.tripId() + "/chat/messages";
     }
 
 
@@ -324,13 +324,13 @@ class ChatContractIT extends PostgresTestBase {
 
     private void publish(Fixture trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/start")
+                .uri("/v1/trips/" + trip.tripId() + "/start")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
                 .isOk();
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/complete")
+                .uri("/v1/trips/" + trip.tripId() + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -356,7 +356,7 @@ class ChatContractIT extends PostgresTestBase {
 
     private void archive(Fixture trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/archive")
+                .uri("/v1/trips/" + trip.tripId() + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -367,7 +367,7 @@ class ChatContractIT extends PostgresTestBase {
     private void removeMember(Fixture trip) {
         rest.method(HttpMethod.DELETE)
                 .uri(
-                        "/v1/itineraries/"
+                        "/v1/trips/"
                                 + trip.tripId()
                                 + "/members/"
                                 + rig.travelerIdOf(trip.member()))

@@ -464,7 +464,7 @@ class DiscoveryFiltersIT extends PostgresTestBase {
     private static String rootFor(String action) {
         return action.equals("publish") || action.equals("unpublish")
                 ? "/v1/trips/"
-                : "/v1/itineraries/";
+                : "/v1/trips/";
     }
 
 

@@ -69,7 +69,7 @@ class PublicationContractIT extends PostgresTestBase {
 
         assertThat(objectId).isNotEqualTo(trip);
         rest.get()
-                .uri("/v1/itineraries/" + trip)
+                .uri("/v1/trips/" + trip)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -145,7 +145,7 @@ class PublicationContractIT extends PostgresTestBase {
         walkToCompleted(owner, trip);
 
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/publish")
+                .uri("/v1/trips/" + trip + "/publish")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -194,7 +194,7 @@ class PublicationContractIT extends PostgresTestBase {
                 .jsonPath("$.code")
                 .isEqualTo("PUBLICATION_NOT_FOUND");
         rest.get()
-                .uri("/v1/itineraries/" + trip)
+                .uri("/v1/trips/" + trip)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -331,7 +331,7 @@ class PublicationContractIT extends PostgresTestBase {
     private void walkToCompleted(String owner, String trip) {
         for (String act : new String[] {"start", "complete"}) {
             rest.post()
-                    .uri("/v1/itineraries/" + trip + "/" + act)
+                    .uri("/v1/trips/" + trip + "/" + act)
                     .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                     .exchange()
                     .expectStatus()

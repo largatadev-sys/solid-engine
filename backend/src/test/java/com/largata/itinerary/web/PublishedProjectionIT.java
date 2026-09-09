@@ -602,7 +602,7 @@ class PublishedProjectionIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec preview(String token, String itineraryId) {
         return rest.get()
-                .uri("/v1/itineraries/" + itineraryId + "/preview")
+                .uri("/v1/trips/" + itineraryId + "/preview")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -675,7 +675,7 @@ class PublishedProjectionIT extends PostgresTestBase {
     private static String rootFor(String verb) {
         return verb.equals("publish") || verb.equals("unpublish")
                 ? "/v1/trips/"
-                : "/v1/itineraries/";
+                : "/v1/trips/";
     }
 
 
@@ -708,7 +708,7 @@ class PublishedProjectionIT extends PostgresTestBase {
 
     private void addActivity(String token, String itineraryId, UUID dayId, String body) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/days/" + dayId + "/activities")
+                .uri("/v1/trips/" + itineraryId + "/days/" + dayId + "/activities")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
@@ -736,7 +736,7 @@ class PublishedProjectionIT extends PostgresTestBase {
 
     private void transferOwnership(String ownerToken, String itineraryId, String successorToken) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/ownership-offer")
+                .uri("/v1/trips/" + itineraryId + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"travelerId\":\"" + travelerIdOf(successorToken) + "\"}")
@@ -744,7 +744,7 @@ class PublishedProjectionIT extends PostgresTestBase {
                 .expectStatus()
                 .isCreated();
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/ownership-offer/accept")
+                .uri("/v1/trips/" + itineraryId + "/ownership-offer/accept")
                 .header(HttpHeaders.AUTHORIZATION, bearer(successorToken))
                 .exchange()
                 .expectStatus()
@@ -787,7 +787,7 @@ class PublishedProjectionIT extends PostgresTestBase {
         return JSON.readTree(
                         new String(
                                 rest.post()
-                                        .uri("/v1/itineraries")
+                                        .uri("/v1/trips")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(body)

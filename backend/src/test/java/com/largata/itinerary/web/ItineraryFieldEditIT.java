@@ -44,7 +44,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
         lock(ownerToken, tripId);
 
         rest.patch()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(
@@ -114,7 +114,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
         lock(token, tripId);
 
         rest.patch()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -136,7 +136,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 """);
 
         rest.patch()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(
@@ -159,7 +159,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 """);
 
         rest.patch()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -178,7 +178,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
                 """);
 
         rest.patch()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -198,7 +198,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
         String stranger = freshTraveler();
 
         rest.patch()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -215,7 +215,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
     @Test
     void aVisitorWithNoTokenIsRejected() {
         rest.patch()
-                .uri("/v1/itineraries/" + UUID.randomUUID())
+                .uri("/v1/trips/" + UUID.randomUUID())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
                         {"title":"x","destination":"y"}
@@ -229,7 +229,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec patch(String token, String itineraryId, String body) {
         return rest.patch()
-                .uri("/v1/itineraries/" + itineraryId)
+                .uri("/v1/trips/" + itineraryId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
@@ -238,7 +238,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
 
     private void lock(String token, String itineraryId) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/edit-lock")
+                .uri("/v1/trips/" + itineraryId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -277,7 +277,7 @@ class ItineraryFieldEditIT extends PostgresTestBase {
     private String createItinerary(String token, String body) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(body)

@@ -37,7 +37,7 @@ class DayContractIT extends PostgresTestBase {
     @Test
     void theCreateResponseItselfCarriesTheSeededDays() {
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -67,7 +67,7 @@ class DayContractIT extends PostgresTestBase {
                         """);
 
         rest.get()
-                .uri("/v1/itineraries/" + id)
+                .uri("/v1/trips/" + id)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -96,7 +96,7 @@ class DayContractIT extends PostgresTestBase {
                         """);
 
         rest.get()
-                .uri("/v1/itineraries/" + id)
+                .uri("/v1/trips/" + id)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -114,7 +114,7 @@ class DayContractIT extends PostgresTestBase {
                 """);
 
         rest.get()
-                .uri("/v1/itineraries/" + id)
+                .uri("/v1/trips/" + id)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -133,7 +133,7 @@ class DayContractIT extends PostgresTestBase {
         String memberToken = admitMemberTo(tripId);
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/days")
+                .uri("/v1/trips/" + tripId + "/days")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -151,7 +151,7 @@ class DayContractIT extends PostgresTestBase {
         UUID firstDayId = dayIdAtOrdinal(tripId, 1);
         lock(memberToken, tripId, firstDayId);
         rest.patch()
-                .uri("/v1/itineraries/" + tripId + "/days/" + firstDayId)
+                .uri("/v1/trips/" + tripId + "/days/" + firstDayId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -165,7 +165,7 @@ class DayContractIT extends PostgresTestBase {
                 .isEqualTo("Arrival Day");
 
         rest.method(org.springframework.http.HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/days/" + firstDayId)
+                .uri("/v1/trips/" + tripId + "/days/" + firstDayId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .exchange()
                 .expectStatus()
@@ -189,14 +189,14 @@ class DayContractIT extends PostgresTestBase {
         lock(token, tripId, thirdDay);
 
         rest.method(org.springframework.http.HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/days/" + thirdDay)
+                .uri("/v1/trips/" + tripId + "/days/" + thirdDay)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
                 .isNoContent();
 
         rest.get()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectBody()
@@ -216,7 +216,7 @@ class DayContractIT extends PostgresTestBase {
         String stranger = freshTraveler();
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/days")
+                .uri("/v1/trips/" + tripId + "/days")
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{}")
@@ -224,7 +224,7 @@ class DayContractIT extends PostgresTestBase {
                 .expectStatus()
                 .isNotFound();
         rest.patch()
-                .uri("/v1/itineraries/" + tripId + "/days/" + dayId)
+                .uri("/v1/trips/" + tripId + "/days/" + dayId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{}")
@@ -232,7 +232,7 @@ class DayContractIT extends PostgresTestBase {
                 .expectStatus()
                 .isNotFound();
         rest.method(org.springframework.http.HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/days/" + dayId)
+                .uri("/v1/trips/" + tripId + "/days/" + dayId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
                 .exchange()
                 .expectStatus()
@@ -242,7 +242,7 @@ class DayContractIT extends PostgresTestBase {
     @Test
     void aVisitorWithNoTokenIsRejectedAtTheSecurityChain() {
         rest.post()
-                .uri("/v1/itineraries/" + UUID.randomUUID() + "/days")
+                .uri("/v1/trips/" + UUID.randomUUID() + "/days")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{}")
                 .exchange()
@@ -263,7 +263,7 @@ class DayContractIT extends PostgresTestBase {
         lock(token, tripA, dayIdAtOrdinal(tripA, 1));
 
         rest.patch()
-                .uri("/v1/itineraries/" + tripA + "/days/" + dayOfB)
+                .uri("/v1/trips/" + tripA + "/days/" + dayOfB)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -281,7 +281,7 @@ class DayContractIT extends PostgresTestBase {
 
     private void lock(String token, String itineraryId, UUID dayId) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/edit-lock")
+                .uri("/v1/trips/" + itineraryId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"subjectType\":\"day\",\"subjectId\":\"" + dayId + "\"}")
@@ -333,7 +333,7 @@ class DayContractIT extends PostgresTestBase {
     private String createItinerary(String token, String body) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(body)

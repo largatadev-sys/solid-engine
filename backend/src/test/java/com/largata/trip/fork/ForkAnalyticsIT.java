@@ -104,7 +104,7 @@ class ForkAnalyticsIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec fork(String token, String sourceId) {
         return rest.post()
-                .uri("/v1/itineraries/" + sourceId + "/fork")
+                .uri("/v1/trips/" + sourceId + "/fork")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -131,7 +131,7 @@ class ForkAnalyticsIT extends PostgresTestBase {
         return JSON.readTree(
                         new String(
                                 rest.post()
-                                        .uri("/v1/itineraries")
+                                        .uri("/v1/trips")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(
@@ -169,7 +169,7 @@ class ForkAnalyticsIT extends PostgresTestBase {
 
     private void act(String token, String itineraryId, String verb) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/" + verb)
+                .uri("/v1/trips/" + itineraryId + "/" + verb)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()

@@ -71,6 +71,38 @@ public class ItineraryPageService {
     }
 
 
+    @Transactional(readOnly = true)
+    public ItineraryPageResponse previewOf(
+            java.util.UUID tripId, java.util.UUID ownerId, java.util.UUID readerId, String snapshotJson) {
+        PlanSnapshot snapshot = json.readValue(snapshotJson, PlanSnapshot.class);
+        return new ItineraryPageResponse(
+                tripId,
+                tripId,
+                null,
+                snapshot.title(),
+                snapshot.destination(),
+                PinPayload.of(snapshot.pin()),
+                snapshot.description(),
+                snapshot.standouts(),
+                snapshot.bestTimeOfYear(),
+                snapshot.coverImageUrl(),
+                snapshot.days().size(),
+                travelers.summaryById(ownerId).map(TravelerCardResponse::of).orElse(null),
+                costOf(snapshot).orElse(null),
+                snapshot.days().stream().map(ItineraryPageService::dayOf).toList(),
+                forks.forkCountOf(tripId),
+                forks.provenanceOf(tripId, readerId)
+                        .map(
+                                source ->
+                                        new ForkedFromResponse(
+                                                source.sourceTripId(),
+                                                source.ownerHandle(),
+                                                source.sourceVisible()))
+                        .orElse(null),
+                json.readTree(snapshotJson));
+    }
+
+
     private TravelerCardResponse creatorOf(ItineraryObject object) {
         return travelers
                 .summaryById(object.ownerId())

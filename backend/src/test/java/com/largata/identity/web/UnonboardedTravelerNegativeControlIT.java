@@ -47,28 +47,28 @@ class UnonboardedTravelerNegativeControlIT extends PostgresTestBase {
         String itineraryId = createItinerary();
 
         rest.get()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer())
                 .exchange()
                 .expectStatus()
                 .isOk();
 
         rest.get()
-                .uri("/v1/itineraries/" + itineraryId)
+                .uri("/v1/trips/" + itineraryId)
                 .header(HttpHeaders.AUTHORIZATION, bearer())
                 .exchange()
                 .expectStatus()
                 .isOk();
 
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/edit-lock")
+                .uri("/v1/trips/" + itineraryId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer())
                 .exchange()
                 .expectStatus()
                 .isOk();
 
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/days")
+                .uri("/v1/trips/" + itineraryId + "/days")
                 .header(HttpHeaders.AUTHORIZATION, bearer())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"title\":\"Arrival\"}")
@@ -84,7 +84,7 @@ class UnonboardedTravelerNegativeControlIT extends PostgresTestBase {
                 .isOk();
 
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/invitations")
+                .uri("/v1/trips/" + itineraryId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"email\":\"guest-" + UUID.randomUUID() + "@example.com\"}")
@@ -101,7 +101,7 @@ class UnonboardedTravelerNegativeControlIT extends PostgresTestBase {
     private String createItinerary() {
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"title\":\"Unonboarded trip\",\"destination\":\"Lisbon\"}")

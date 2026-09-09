@@ -154,7 +154,7 @@ class AudienceLadderIT extends PostgresTestBase {
         view(member, tripId).expectStatus().isNotFound();
 
         rest.delete()
-                .uri("/v1/itineraries/" + tripId + "/members/" + memberId)
+                .uri("/v1/trips/" + tripId + "/members/" + memberId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .exchange()
                 .expectStatus()
@@ -191,21 +191,21 @@ class AudienceLadderIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec view(String token, String itineraryId) {
         return rest.get()
-                .uri("/v1/itineraries/" + itineraryId)
+                .uri("/v1/trips/" + itineraryId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec members(String token, String itineraryId) {
         return rest.get()
-                .uri("/v1/itineraries/" + itineraryId + "/members")
+                .uri("/v1/trips/" + itineraryId + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec invitations(String token, String itineraryId) {
         return rest.get()
-                .uri("/v1/itineraries/" + itineraryId + "/invitations")
+                .uri("/v1/trips/" + itineraryId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -226,11 +226,11 @@ class AudienceLadderIT extends PostgresTestBase {
     }
 
     private RestTestClient.ResponseSpec activeList(String token) {
-        return list(token, "/v1/itineraries");
+        return list(token, "/v1/trips");
     }
 
     private RestTestClient.ResponseSpec archivedList(String token) {
-        return list(token, "/v1/itineraries?archived=true");
+        return list(token, "/v1/trips?archived=true");
     }
 
     private RestTestClient.ResponseSpec list(String token, String uri) {
@@ -258,7 +258,7 @@ class AudienceLadderIT extends PostgresTestBase {
     private static String rootFor(String verb) {
         return verb.equals("publish") || verb.equals("unpublish")
                 ? "/v1/trips/"
-                : "/v1/itineraries/";
+                : "/v1/trips/";
     }
 
     private int membershipRowsFor(String itineraryId, UUID travelerId) {
@@ -306,7 +306,7 @@ class AudienceLadderIT extends PostgresTestBase {
         return JSON.readTree(
                         new String(
                                 rest.post()
-                                        .uri("/v1/itineraries")
+                                        .uri("/v1/trips")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body("""

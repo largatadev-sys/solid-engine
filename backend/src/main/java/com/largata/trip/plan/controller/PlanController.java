@@ -18,7 +18,7 @@ import com.largata.trip.trip.service.TripService;
 
 
 @RestController
-@RequestMapping({"/v1/itineraries/{itineraryId}/plan", "/v1/trips/{itineraryId}/plan"})
+@RequestMapping("/v1/trips/{itineraryId}/plan")
 class PlanController {
 
     private final PlanSaveService plans;

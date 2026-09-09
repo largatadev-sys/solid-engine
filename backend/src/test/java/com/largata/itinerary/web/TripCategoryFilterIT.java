@@ -203,7 +203,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
 
 
     private RestTestClient.ResponseSpec list(String token, String category) {
-        String uri = "/v1/itineraries" + (category == null ? "" : "?category=" + encode(category));
+        String uri = "/v1/trips" + (category == null ? "" : "?category=" + encode(category));
         return rest.get().uri(uri).header(HttpHeaders.AUTHORIZATION, bearer(token)).exchange();
     }
 
@@ -230,7 +230,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec pageRequest(String token, String category, int limit, String cursor) {
         String uri =
-                "/v1/itineraries?limit=" + limit
+                "/v1/trips?limit=" + limit
                         + (category == null ? "" : "&category=" + encode(category))
                         + (cursor == null ? "" : "&cursor=" + encode(cursor));
         return rest.get().uri(uri).header(HttpHeaders.AUTHORIZATION, bearer(token)).exchange();
@@ -248,7 +248,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
 
     private void act(String token, String itineraryId, String verb) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/" + verb)
+                .uri("/v1/trips/" + itineraryId + "/" + verb)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -268,7 +268,7 @@ class TripCategoryFilterIT extends PostgresTestBase {
         return JSON.readTree(
                         new String(
                                 rest.post()
-                                        .uri("/v1/itineraries")
+                                        .uri("/v1/trips")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(body)

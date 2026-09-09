@@ -170,7 +170,7 @@ class TopicSubscriptionIT extends PostgresTestBase {
 
     private void remove(String ownerToken, String trip, String memberToken) {
         rest.delete()
-                .uri("/v1/itineraries/" + trip + "/members/" + tripRig.travelerIdOf(memberToken))
+                .uri("/v1/trips/" + trip + "/members/" + tripRig.travelerIdOf(memberToken))
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(ownerToken))
                 .exchange()
                 .expectStatus()

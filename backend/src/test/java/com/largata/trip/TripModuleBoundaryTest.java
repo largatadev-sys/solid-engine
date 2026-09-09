@@ -35,8 +35,7 @@ class TripModuleBoundaryTest {
                     "ownership", "validation", "destruction");
 
     private static final DescribedPredicate<JavaClass> THE_LEGACY_EXEMPTION =
-            resideInAPackage("com.largata.itinerary..")
-                    .or(resideInAPackage("com.largata.postcard.legacy.."));
+            resideInAPackage("com.largata.postcard.legacy..");
 
     private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
             resideInAPackage(TRIP + "..").and(not(resideInAnyPackage(FRONT_DOOR)));
@@ -99,16 +98,17 @@ class TripModuleBoundaryTest {
     }
 
     @Test
-    void theLegacyExemptionSelectsTheWholeLegacyWorldAndDissolvesWhenItGoes() {
+    void theLegacyExemptionIsTheDiaryAdaptersAloneAndDissolvesWhenTheyGo() {
         assertThat(largata.that(THE_LEGACY_EXEMPTION))
-                .as("the legacy content world reaches into the trip half today and is DELETED rather"
-                        + " than rewritten - an exemption selecting a handful of classes would mean"
-                        + " the predicate had stopped naming what it describes. CM-5 ticket 09 moved"
-                        + " the diary half into postcard.legacy WITHOUT rewriting its reach, so the"
-                        + " predicate follows it there: the five old Trip Diary screens still call"
-                        + " these paths, and the epic-map line that cuts them over is what finally"
-                        + " deletes both halves")
-                .hasSizeGreaterThan(20);
+                .as("CM-5 ticket 10 deleted the old god package, so ONE legacy world is left: the"
+                        + " diary adapters ticket 09 moved into postcard.legacy without rewriting"
+                        + " their reach into trip's plan entities. The five old Trip Diary screens"
+                        + " still call those paths; the epic-map line that cuts them over is what"
+                        + " finally deletes the adapters and this exemption together")
+                .hasSizeGreaterThan(5);
+        assertThat(java.nio.file.Path.of("src/main/java/com/largata/itinerary"))
+                .as("and the package the exemption used to name is gone for good")
+                .doesNotExist();
     }
 
     @Test

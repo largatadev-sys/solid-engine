@@ -438,7 +438,7 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
 
 
     private String dumpUri(Fixture trip) {
-        return "/v1/itineraries/" + trip.tripId() + "/photo-dump";
+        return "/v1/trips/" + trip.tripId() + "/photo-dump";
     }
 
 
@@ -543,7 +543,7 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
         UUID activityId = rig.addActivity(trip.owner(), trip.tripId(), dayId, "Kayaking");
         rig.hold(trip.owner(), trip.tripId(), "activity", activityId);
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/days/" + dayId + "/activities/" + activityId
+                .uri("/v1/trips/" + trip.tripId() + "/days/" + dayId + "/activities/" + activityId
                         + "/photos")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
@@ -557,7 +557,7 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
     private void addACover(Fixture trip) throws IOException {
         rig.hold(trip.owner(), trip.tripId(), "header", UUID.fromString(trip.tripId()));
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/cover")
+                .uri("/v1/trips/" + trip.tripId() + "/cover")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(multipart(photo()))
@@ -569,7 +569,7 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
 
     private void archive(Fixture trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/archive")
+                .uri("/v1/trips/" + trip.tripId() + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -580,7 +580,7 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
     private void publish(Fixture trip) {
         for (String step : List.of("start", "complete", "publish")) {
             rest.post()
-                    .uri("/v1/itineraries/" + trip.tripId() + "/" + step)
+                    .uri("/v1/trips/" + trip.tripId() + "/" + step)
                     .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                     .exchange()
                     .expectStatus()

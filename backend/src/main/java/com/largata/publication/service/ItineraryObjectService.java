@@ -96,6 +96,16 @@ public class ItineraryObjectService implements PublicationApi {
     }
 
 
+    @Transactional(readOnly = true)
+    public String snapshotOfLivePlan(Membership owner) {
+        if (!owner.isOwner()) {
+            throw new NotTheTripOwnerException("Only the trip owner can preview the published page.");
+        }
+        TripPlan plan = plans.planOf(owner.itineraryId()).orElseThrow(TripNotFoundException::new);
+        return json.writeValueAsString(PlanSnapshot.of(plan));
+    }
+
+
     @Transactional
     public void unpublish(Membership member) {
         if (!member.isOwner()) {

@@ -18,19 +18,15 @@ class NewWorldBoundaryTest {
 
     private static final Pattern OLD_WORLD =
             Pattern.compile(
-                    "com\\.largata\\.(itinerary|invitation|join|chat|poll|ws"
+                    "com\\.largata\\.(invitation|join|chat|poll|ws"
                             + "|verification|report|health)\\.");
 
-    private static final Pattern THE_CONTENT_HALF_TW1_LEFT_STANDING =
-            Pattern.compile(
-                    "com\\.largata\\.itinerary\\.(PublishedVisibility)\\b");
 
     @Test
     void newWorldSourcesNeverNameAnOldWorldPackage() {
         List<String> offenders =
                 newWorldFiles()
                         .flatMap(NewWorldBoundaryTest::offendingLines)
-                        .filter(line -> !THE_CONTENT_HALF_TW1_LEFT_STANDING.matcher(line).find())
                         .toList();
 
         assertThat(offenders)
@@ -41,24 +37,6 @@ class NewWorldBoundaryTest {
                 .isEmpty();
     }
 
-    @Test
-    void theContentHalfExemptionIsTwoNamedTypesAndDissolvesAtCM5() {
-        List<String> reaches =
-                newWorldFiles()
-                        .flatMap(NewWorldBoundaryTest::offendingLines)
-                        .filter(line -> THE_CONTENT_HALF_TW1_LEFT_STANDING.matcher(line).find())
-                        .toList();
-
-        assertThat(reaches)
-                .as(
-                        "TW-1 left the content half standing and CM-5 is dismantling it. ONE trip"
-                                + " file still names the old package: the fork's published-visibility"
-                                + " check, which ticket 11 retires with the old fork route. The"
-                                + " showcase response left at ticket 07, when the profile module took"
-                                + " it. Counted and SHRINKING — a second is a red build, and the"
-                                + " exemption reaches zero when the old package does")
-                .hasSize(1);
-    }
 
     @Test
     void theScanReachesRealFiles() {
@@ -67,7 +45,6 @@ class NewWorldBoundaryTest {
 
     @Test
     void theRuleWouldFireOnABadImport() {
-        assertThat(OLD_WORLD.matcher(anImportOf("itinerary", "Trip")).find()).isTrue();
         assertThat(OLD_WORLD.matcher(anImportOf("invitation", "InvitationService")).find()).isTrue();
         assertThat(OLD_WORLD.matcher(anImportOf("common.authz", "Membership")).find()).isFalse();
         assertThat(OLD_WORLD.matcher(anImportOf("media", "PhotoService")).find()).isFalse();
@@ -84,8 +61,13 @@ class NewWorldBoundaryTest {
         assertThat(OLD_WORLD.matcher(anImportOf("membership", "MembershipService")).find())
                 .as("and membership moved at ticket 07")
                 .isFalse();
+        assertThat(OLD_WORLD.matcher(anImportOf("itinerary", "PublishedVisibility")).find())
+                .as("and the old god package itself went at CM-5 ticket 10 — naming it here would"
+                        + " forbid an import nothing can write, which is how a guard starts lying")
+                .isFalse();
         assertThat(Path.of("src/main/java/com/largata/workspace")).doesNotExist();
         assertThat(Path.of("src/main/java/com/largata/membership")).doesNotExist();
+        assertThat(Path.of("src/main/java/com/largata/itinerary")).doesNotExist();
     }
 
     private static String anImportOf(String pkg, String type) {

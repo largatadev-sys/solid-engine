@@ -45,7 +45,7 @@ public final class TripRig {
     public String createTrip(String ownerToken, int durationDays) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(
@@ -67,7 +67,7 @@ public final class TripRig {
         String email = uid + "@example.com";
         byte[] invitation =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/invitations")
+                        .uri("/v1/trips/" + tripId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + email + "\"}")
@@ -99,7 +99,7 @@ public final class TripRig {
     public void editHeader(String ownerToken, String tripId, String body) {
         hold(ownerToken, tripId, "HEADER", UUID.fromString(tripId));
         rest.patch()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
@@ -121,7 +121,7 @@ public final class TripRig {
                 })
                 .contentType(MediaType.IMAGE_JPEG);
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/cover")
+                .uri("/v1/trips/" + tripId + "/cover")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(photo.build())
@@ -135,7 +135,7 @@ public final class TripRig {
     public void removeCover(String ownerToken, String tripId) {
         hold(ownerToken, tripId, "HEADER", UUID.fromString(tripId));
         rest.delete()
-                .uri("/v1/itineraries/" + tripId + "/cover")
+                .uri("/v1/trips/" + tripId + "/cover")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .exchange()
                 .expectStatus()
@@ -257,7 +257,7 @@ public final class TripRig {
 
     public byte[] readTrip(String token, String tripId) {
         return rest.get()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -274,12 +274,12 @@ public final class TripRig {
 
 
     public static String activitiesUri(String tripId, UUID dayId) {
-        return "/v1/itineraries/" + tripId + "/days/" + dayId + "/activities";
+        return "/v1/trips/" + tripId + "/days/" + dayId + "/activities";
     }
 
 
     public static String lockUri(String tripId) {
-        return "/v1/itineraries/" + tripId + "/edit-lock";
+        return "/v1/trips/" + tripId + "/edit-lock";
     }
 
 

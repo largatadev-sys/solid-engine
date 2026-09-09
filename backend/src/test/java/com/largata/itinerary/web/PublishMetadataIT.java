@@ -46,7 +46,7 @@ class PublishMetadataIT extends PostgresTestBase {
         String tripId = JSON.readTree(
                         new String(
                                 rest.post()
-                                        .uri("/v1/itineraries")
+                                        .uri("/v1/trips")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(
@@ -232,7 +232,7 @@ class PublishMetadataIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec editHeader(String token, String itineraryId, String body) {
         return rest.patch()
-                .uri("/v1/itineraries/" + itineraryId)
+                .uri("/v1/trips/" + itineraryId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
@@ -241,7 +241,7 @@ class PublishMetadataIT extends PostgresTestBase {
 
     private void acquireHeaderLease(String token, String itineraryId) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/edit-lock")
+                .uri("/v1/trips/" + itineraryId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -250,7 +250,7 @@ class PublishMetadataIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec view(String token, String itineraryId) {
         return rest.get()
-                .uri("/v1/itineraries/" + itineraryId)
+                .uri("/v1/trips/" + itineraryId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -281,7 +281,7 @@ class PublishMetadataIT extends PostgresTestBase {
     private static String rootFor(String verb) {
         return verb.equals("publish") || verb.equals("unpublish")
                 ? "/v1/trips/"
-                : "/v1/itineraries/";
+                : "/v1/trips/";
     }
 
 
@@ -334,7 +334,7 @@ class PublishMetadataIT extends PostgresTestBase {
         return JSON.readTree(
                         new String(
                                 rest.post()
-                                        .uri("/v1/itineraries")
+                                        .uri("/v1/trips")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body("""

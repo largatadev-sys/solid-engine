@@ -295,7 +295,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
     private String createTrip(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
@@ -313,7 +313,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
     private static String rootFor(String verb) {
         return verb.equals("publish") || verb.equals("unpublish")
                 ? "/v1/trips/"
-                : "/v1/itineraries/";
+                : "/v1/trips/";
     }
 
 
@@ -326,7 +326,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec offer(String callerToken, String tripId, UUID targetId) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/ownership-offer")
+                .uri("/v1/trips/" + tripId + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"travelerId\":\"" + targetId + "\"}")
@@ -335,7 +335,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec accept(String callerToken, String tripId) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/ownership-offer/accept")
+                .uri("/v1/trips/" + tripId + "/ownership-offer/accept")
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }
@@ -354,7 +354,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
     private String invite(String ownerToken, String tripId, String email) {
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/invitations")
+                        .uri("/v1/trips/" + tripId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + email + "\"}")

@@ -64,7 +64,7 @@ class CoverContractIT extends ObjectStoreTestBase {
         String trip = rig.createTrip(owner, 2);
 
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/cover")
+                .uri("/v1/trips/" + trip + "/cover")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(multipart(photo()))
@@ -127,7 +127,7 @@ class CoverContractIT extends ObjectStoreTestBase {
         publish(owner, trip);
 
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/cover")
+                .uri("/v1/trips/" + trip + "/cover")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(multipart(photo()))
@@ -146,7 +146,7 @@ class CoverContractIT extends ObjectStoreTestBase {
         String cover = uploadCover(owner, trip);
 
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/archive")
+                .uri("/v1/trips/" + trip + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -165,14 +165,14 @@ class CoverContractIT extends ObjectStoreTestBase {
         String cover = uploadCover(owner, trip);
 
         rest.delete()
-                .uri("/v1/itineraries/" + trip + "/cover")
+                .uri("/v1/trips/" + trip + "/cover")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
                 .isNoContent();
 
         rest.get()
-                .uri("/v1/itineraries/" + trip)
+                .uri("/v1/trips/" + trip)
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -206,7 +206,7 @@ class CoverContractIT extends ObjectStoreTestBase {
 
     private void holdHeaderLease(String token, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/edit-lock")
+                .uri("/v1/trips/" + trip + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"subjectType\":\"header\"}")
@@ -219,7 +219,7 @@ class CoverContractIT extends ObjectStoreTestBase {
     private String uploadCover(String token, String trip) throws IOException {
         CoverBody body =
                 rest.post()
-                        .uri("/v1/itineraries/" + trip + "/cover")
+                        .uri("/v1/trips/" + trip + "/cover")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.MULTIPART_FORM_DATA)
                         .body(multipart(photo()))
@@ -237,13 +237,13 @@ class CoverContractIT extends ObjectStoreTestBase {
 
     private void publish(String owner, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/start")
+                .uri("/v1/trips/" + trip + "/start")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
                 .isOk();
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/complete")
+                .uri("/v1/trips/" + trip + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()

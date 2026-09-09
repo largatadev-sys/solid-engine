@@ -167,13 +167,13 @@ class TripListEventsIT extends PostgresTestBase {
     }
 
     private static String planUri(String trip) {
-        return "/v1/itineraries/" + trip + "/plan";
+        return "/v1/trips/" + trip + "/plan";
     }
 
     private void admit(String ownerToken, String trip, String joinerToken) {
         byte[] invitation =
                 rest.post()
-                        .uri("/v1/itineraries/" + trip + "/invitations/by-handle")
+                        .uri("/v1/trips/" + trip + "/invitations/by-handle")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"handle\":\"" + handleOf(joinerToken) + "\"}")

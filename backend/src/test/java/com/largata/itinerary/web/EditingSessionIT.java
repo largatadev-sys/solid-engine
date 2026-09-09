@@ -118,12 +118,12 @@ class EditingSessionIT extends PostgresTestBase {
                         "{\"title\":\"Edited inside the session\"}")
                 .expectStatus()
                 .isOk();
-        rig.send(HttpMethod.PATCH, "/v1/itineraries/" + tripId + "/days/" + dayOne, owner, "{\"title\":\"Renamed\"}")
+        rig.send(HttpMethod.PATCH, "/v1/trips/" + tripId + "/days/" + dayOne, owner, "{\"title\":\"Renamed\"}")
                 .expectStatus()
                 .isOk();
         rig.send(
                         HttpMethod.PATCH,
-                        "/v1/itineraries/" + tripId,
+                        "/v1/trips/" + tripId,
                         owner,
                         "{\"title\":\"Header inside the session\",\"destination\":\"Cebu\"}")
                 .expectStatus()
@@ -152,7 +152,7 @@ class EditingSessionIT extends PostgresTestBase {
                 .isEqualTo("EDIT_LOCKED")
                 .jsonPath("$.message")
                 .value(message -> assertThat((String) message).contains("@" + holderHandle));
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/days", owner, "{}")
+        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/days", owner, "{}")
                 .expectStatus()
                 .isEqualTo(409);
         rig.send(
@@ -162,10 +162,10 @@ class EditingSessionIT extends PostgresTestBase {
                         "{\"title\":\"Blocked edit\"}")
                 .expectStatus()
                 .isEqualTo(409);
-        rig.send(HttpMethod.PATCH, "/v1/itineraries/" + tripId + "/days/" + dayOne, owner, "{\"title\":\"x\"}")
+        rig.send(HttpMethod.PATCH, "/v1/trips/" + tripId + "/days/" + dayOne, owner, "{\"title\":\"x\"}")
                 .expectStatus()
                 .isEqualTo(409);
-        rig.send(HttpMethod.DELETE, "/v1/itineraries/" + tripId + "/days/" + dayOne, owner, null)
+        rig.send(HttpMethod.DELETE, "/v1/trips/" + tripId + "/days/" + dayOne, owner, null)
                 .expectStatus()
                 .isEqualTo(409);
     }
@@ -180,7 +180,7 @@ class EditingSessionIT extends PostgresTestBase {
 
         rig.send(
                         HttpMethod.POST,
-                        "/v1/itineraries/" + tripId + "/invitations",
+                        "/v1/trips/" + tripId + "/invitations",
                         owner,
                         "{\"email\":\"invitee-" + suffix() + "@example.com\"}")
                 .expectStatus()
@@ -196,7 +196,7 @@ class EditingSessionIT extends PostgresTestBase {
 
         rig.hold(holder, tripId, "session", null);
 
-        rig.send(HttpMethod.GET, "/v1/itineraries/" + tripId, owner, null)
+        rig.send(HttpMethod.GET, "/v1/trips/" + tripId, owner, null)
                 .expectStatus()
                 .isOk()
                 .expectBody()
@@ -209,7 +209,7 @@ class EditingSessionIT extends PostgresTestBase {
         String owner = rig.travelerWithHandle("owner" + suffix());
         String tripId = rig.createTrip(owner, 1);
 
-        rig.send(HttpMethod.GET, "/v1/itineraries/" + tripId, owner, null)
+        rig.send(HttpMethod.GET, "/v1/trips/" + tripId, owner, null)
                 .expectStatus()
                 .isOk()
                 .expectBody()
@@ -234,7 +234,7 @@ class EditingSessionIT extends PostgresTestBase {
         String owner = rig.travelerWithHandle("owner" + suffix());
         String tripId = rig.createTrip(owner, 1);
 
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/archive", owner, null)
+        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/archive", owner, null)
                 .expectStatus()
                 .isOk();
 

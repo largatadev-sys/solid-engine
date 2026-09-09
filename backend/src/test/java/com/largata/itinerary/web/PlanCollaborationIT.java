@@ -71,7 +71,7 @@ class PlanCollaborationIT extends PostgresTestBase {
         String member = rig.joinAsMember(owner, tripId, "member" + suffix());
         UUID dayTwo = rig.dayAt(tripId, 2);
 
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/days", member, "{}")
+        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/days", member, "{}")
                 .expectStatus()
                 .isForbidden()
                 .expectBody()
@@ -79,16 +79,16 @@ class PlanCollaborationIT extends PostgresTestBase {
                 .isEqualTo("NOT_PERMITTED");
 
         rig.hold(member, tripId, "day", dayTwo);
-        rig.send(HttpMethod.DELETE, "/v1/itineraries/" + tripId + "/days/" + dayTwo, member, null)
+        rig.send(HttpMethod.DELETE, "/v1/trips/" + tripId + "/days/" + dayTwo, member, null)
                 .expectStatus()
                 .isForbidden();
         rig.releaseLease(member, tripId, "day", dayTwo).expectStatus().isNoContent();
 
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/days", owner, "{}")
+        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/days", owner, "{}")
                 .expectStatus()
                 .isCreated();
         rig.hold(owner, tripId, "day", dayTwo);
-        rig.send(HttpMethod.DELETE, "/v1/itineraries/" + tripId + "/days/" + dayTwo, owner, null)
+        rig.send(HttpMethod.DELETE, "/v1/trips/" + tripId + "/days/" + dayTwo, owner, null)
                 .expectStatus()
                 .isNoContent();
     }
@@ -105,7 +105,7 @@ class PlanCollaborationIT extends PostgresTestBase {
         rig.hold(editor, tripId, "activity", inside);
         rig.hold(owner, tripId, "day", dayTwo);
 
-        rig.send(HttpMethod.DELETE, "/v1/itineraries/" + tripId + "/days/" + dayTwo, owner, null)
+        rig.send(HttpMethod.DELETE, "/v1/trips/" + tripId + "/days/" + dayTwo, owner, null)
                 .expectStatus()
                 .isEqualTo(409)
                 .expectBody()
@@ -115,7 +115,7 @@ class PlanCollaborationIT extends PostgresTestBase {
                 .value(message -> assertThat((String) message).contains("@" + editorHandle));
 
         rig.releaseLease(editor, tripId, "activity", inside).expectStatus().isNoContent();
-        rig.send(HttpMethod.DELETE, "/v1/itineraries/" + tripId + "/days/" + dayTwo, owner, null)
+        rig.send(HttpMethod.DELETE, "/v1/trips/" + tripId + "/days/" + dayTwo, owner, null)
                 .expectStatus()
                 .isNoContent();
     }
@@ -133,7 +133,7 @@ class PlanCollaborationIT extends PostgresTestBase {
         rig.hold(holder, tripId, "activity", activityId);
         rig.hold(holder, tripId, "day", dayOne);
 
-        rig.send(HttpMethod.GET, "/v1/itineraries/" + tripId, owner, null)
+        rig.send(HttpMethod.GET, "/v1/trips/" + tripId, owner, null)
                 .expectStatus()
                 .isOk()
                 .expectBody()
@@ -190,7 +190,7 @@ class PlanCollaborationIT extends PostgresTestBase {
         rig.hold(owner, tripId, "day", dayOne);
         rig.releaseLease(owner, tripId, "day", dayOne).expectStatus().isNoContent();
 
-        rig.send(HttpMethod.GET, "/v1/itineraries/" + tripId, owner, null)
+        rig.send(HttpMethod.GET, "/v1/trips/" + tripId, owner, null)
                 .expectStatus()
                 .isOk()
                 .expectBody()
@@ -232,7 +232,7 @@ class PlanCollaborationIT extends PostgresTestBase {
 
 
     private java.util.List<String> beingEditedIn(String token) {
-        byte[] body = rig.send(HttpMethod.GET, "/v1/itineraries", token, null)
+        byte[] body = rig.send(HttpMethod.GET, "/v1/trips", token, null)
                 .expectStatus()
                 .isOk()
                 .expectBody()

@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping({"/v1/itineraries/{itineraryId}/chat/messages", "/v1/trips/{itineraryId}/chat/messages"})
+@RequestMapping("/v1/trips/{itineraryId}/chat/messages")
 class ChatController {
 
     private final ChatService chat;

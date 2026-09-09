@@ -132,7 +132,7 @@ class ActivityContractIT extends PostgresTestBase {
     @Test
     void aVisitorWithNoTokenIsRejectedAtTheSecurityChain() {
         rest.post()
-                .uri("/v1/itineraries/" + UUID.randomUUID() + "/days/" + UUID.randomUUID() + "/activities")
+                .uri("/v1/trips/" + UUID.randomUUID() + "/days/" + UUID.randomUUID() + "/activities")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
                         {"title":"x"}
@@ -275,7 +275,7 @@ class ActivityContractIT extends PostgresTestBase {
                 .isEqualTo(b);
 
         rest.get()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .exchange()
                 .expectBody()
@@ -334,7 +334,7 @@ class ActivityContractIT extends PostgresTestBase {
                 .isOk();
 
         rest.get()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectBody()
@@ -378,7 +378,7 @@ class ActivityContractIT extends PostgresTestBase {
 
 
     private static String activitiesUri(String tripId, UUID dayId) {
-        return "/v1/itineraries/" + tripId + "/days/" + dayId + "/activities";
+        return "/v1/trips/" + tripId + "/days/" + dayId + "/activities";
     }
 
     private String createActivity(String token, String tripId, UUID dayId, String title) {
@@ -400,7 +400,7 @@ class ActivityContractIT extends PostgresTestBase {
 
     private void holdActivity(String token, String tripId, String activityId) {
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"subjectType\":\"activity\",\"subjectId\":\"" + activityId + "\"}")
@@ -412,7 +412,7 @@ class ActivityContractIT extends PostgresTestBase {
     private String createTripWithADay(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
@@ -430,7 +430,7 @@ class ActivityContractIT extends PostgresTestBase {
     private String appendDay(String token, String tripId) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/days")
+                        .uri("/v1/trips/" + tripId + "/days")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{}")

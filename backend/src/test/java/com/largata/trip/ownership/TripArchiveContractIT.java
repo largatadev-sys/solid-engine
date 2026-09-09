@@ -153,8 +153,8 @@ class TripArchiveContractIT extends PostgresTestBase {
         archive(stranger, tripId).expectStatus().isNotFound();
         unarchive(stranger, tripId).expectStatus().isNotFound();
 
-        rest.post().uri("/v1/itineraries/" + tripId + "/archive").exchange().expectStatus().isUnauthorized();
-        rest.post().uri("/v1/itineraries/" + tripId + "/unarchive").exchange().expectStatus().isUnauthorized();
+        rest.post().uri("/v1/trips/" + tripId + "/archive").exchange().expectStatus().isUnauthorized();
+        rest.post().uri("/v1/trips/" + tripId + "/unarchive").exchange().expectStatus().isUnauthorized();
     }
 
 
@@ -218,23 +218,23 @@ class TripArchiveContractIT extends PostgresTestBase {
 
 
     private RestTestClient.ResponseSpec archive(String token, String itineraryId) {
-        return post(token, "/v1/itineraries/" + itineraryId + "/archive");
+        return post(token, "/v1/trips/" + itineraryId + "/archive");
     }
 
     private RestTestClient.ResponseSpec unarchive(String token, String itineraryId) {
-        return post(token, "/v1/itineraries/" + itineraryId + "/unarchive");
+        return post(token, "/v1/trips/" + itineraryId + "/unarchive");
     }
 
     private RestTestClient.ResponseSpec start(String token, String itineraryId) {
-        return post(token, "/v1/itineraries/" + itineraryId + "/start");
+        return post(token, "/v1/trips/" + itineraryId + "/start");
     }
 
     private RestTestClient.ResponseSpec complete(String token, String itineraryId) {
-        return post(token, "/v1/itineraries/" + itineraryId + "/complete");
+        return post(token, "/v1/trips/" + itineraryId + "/complete");
     }
 
     private RestTestClient.ResponseSpec acquireLease(String token, String itineraryId) {
-        return post(token, "/v1/itineraries/" + itineraryId + "/edit-lock");
+        return post(token, "/v1/trips/" + itineraryId + "/edit-lock");
     }
 
     private RestTestClient.ResponseSpec post(String token, String uri) {
@@ -243,7 +243,7 @@ class TripArchiveContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec invite(String token, String itineraryId, String email) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/invitations")
+                .uri("/v1/trips/" + itineraryId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"email\":\"" + email + "\"}")
@@ -252,7 +252,7 @@ class TripArchiveContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec offerOwnership(String token, String itineraryId, UUID targetTravelerId) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/ownership-offer")
+                .uri("/v1/trips/" + itineraryId + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"travelerId\":\"" + targetTravelerId + "\"}")
@@ -328,7 +328,7 @@ class TripArchiveContractIT extends PostgresTestBase {
     private String createItinerary(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

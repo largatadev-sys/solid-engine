@@ -60,6 +60,17 @@ class PublicationController {
     }
 
 
+    @GetMapping("/v1/trips/{tripId}/preview")
+    ItineraryPageResponse preview(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
+        Membership owner = requireMember(traveler, tripId);
+        return pages.previewOf(
+                tripId,
+                traveler.id(),
+                traveler.id(),
+                publications.snapshotOfLivePlan(owner));
+    }
+
+
     @GetMapping("/v1/trips/{tripId}/itinerary")
     ItineraryPageResponse readByTrip(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
         return pages.pageOf(publications.liveOfTripFor(traveler.id(), tripId), traveler.id());

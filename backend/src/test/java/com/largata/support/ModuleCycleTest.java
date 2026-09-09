@@ -29,8 +29,7 @@ class ModuleCycleTest {
                     "common <-> report", "SecurityConfig names ReportPaths - CM-5 ticket 12",
                     "common <-> ws", "SecurityConfig names WebSocketPaths - CM-5 ticket 12",
                     "identity <-> media", "the avatar is a photo - CM-5 ticket 12",
-                    "identity <-> ws", "FollowTopic fans out over the transport - CM-5 ticket 12",
-                    "itinerary <-> trip", "the old world is being dismantled - CM-5 ticket 10");
+                    "identity <-> ws", "FollowTopic fans out over the transport - CM-5 ticket 12");
 
     private final JavaClasses largata =
             new ClassFileImporter()

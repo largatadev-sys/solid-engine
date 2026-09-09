@@ -75,7 +75,7 @@ class DiaryContractIT extends ObjectStoreTestBase {
         UUID copy = idsOf(posted).getFirst();
 
         rest.delete()
-                .uri("/v1/itineraries/" + trip.tripId() + "/photo-dump/" + dumpPhoto)
+                .uri("/v1/trips/" + trip.tripId() + "/photo-dump/" + dumpPhoto)
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -505,7 +505,7 @@ class DiaryContractIT extends ObjectStoreTestBase {
         UUID departingId = rig.travelerIdOf(departed.member());
         rig.send(
                         HttpMethod.DELETE,
-                        "/v1/itineraries/" + departed.tripId() + "/members/" + departingId,
+                        "/v1/trips/" + departed.tripId() + "/members/" + departingId,
                         departed.member(),
                         null)
                 .expectStatus()
@@ -742,7 +742,7 @@ class DiaryContractIT extends ObjectStoreTestBase {
     private UUID uploadToDump(String token, Fixture trip) throws IOException {
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries/" + trip.tripId() + "/photo-dump")
+                        .uri("/v1/trips/" + trip.tripId() + "/photo-dump")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.MULTIPART_FORM_DATA)
                         .body(onePhotoPart())
@@ -785,7 +785,7 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
     private void advance(Fixture trip, String step) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/" + step)
+                .uri("/v1/trips/" + trip.tripId() + "/" + step)
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -795,7 +795,7 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
     private void archive(Fixture trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/archive")
+                .uri("/v1/trips/" + trip.tripId() + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()

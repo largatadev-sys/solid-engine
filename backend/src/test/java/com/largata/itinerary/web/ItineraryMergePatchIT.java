@@ -182,7 +182,7 @@ class ItineraryMergePatchIT extends PostgresTestBase {
         String owner = freshTraveler();
 
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -225,7 +225,7 @@ class ItineraryMergePatchIT extends PostgresTestBase {
                         UUID.fromString(tripId));
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/days/" + dayId + "/activities")
+                .uri("/v1/trips/" + tripId + "/days/" + dayId + "/activities")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -442,7 +442,7 @@ class ItineraryMergePatchIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec patch(String token, String itineraryId, String body) {
         return rest.patch()
-                .uri("/v1/itineraries/" + itineraryId)
+                .uri("/v1/trips/" + itineraryId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
@@ -457,7 +457,7 @@ class ItineraryMergePatchIT extends PostgresTestBase {
                         ? ""
                         : ",\"costAmount\":\"" + amount + "\",\"costCurrency\":\"" + currency + "\"";
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/days/" + dayId + "/activities")
+                .uri("/v1/trips/" + tripId + "/days/" + dayId + "/activities")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"title\":\"" + title + "\"" + money + "}")
@@ -469,7 +469,7 @@ class ItineraryMergePatchIT extends PostgresTestBase {
 
     private void lock(String token, String itineraryId) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/edit-lock")
+                .uri("/v1/trips/" + itineraryId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -513,7 +513,7 @@ class ItineraryMergePatchIT extends PostgresTestBase {
     private String createDressedTrip(String token) {
         return fieldIn(
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(FULLY_DRESSED)

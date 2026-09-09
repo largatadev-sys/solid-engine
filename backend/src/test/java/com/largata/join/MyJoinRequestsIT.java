@@ -255,7 +255,7 @@ class MyJoinRequestsIT extends PostgresTestBase {
 
     private void approve(Trip trip, String requestId) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + "/join-requests/" + requestId + "/approve")
+                .uri("/v1/trips/" + trip.id + "/join-requests/" + requestId + "/approve")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -265,7 +265,7 @@ class MyJoinRequestsIT extends PostgresTestBase {
 
     private void decline(Trip trip, String requestId) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + "/join-requests/" + requestId + "/decline")
+                .uri("/v1/trips/" + trip.id + "/join-requests/" + requestId + "/decline")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -276,7 +276,7 @@ class MyJoinRequestsIT extends PostgresTestBase {
     private String tokenOf(Trip trip) {
         return fieldIn(
                 rest.get()
-                        .uri("/v1/itineraries/" + trip.id + "/join-link")
+                        .uri("/v1/trips/" + trip.id + "/join-link")
                         .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                         .exchange()
                         .expectStatus()
@@ -290,7 +290,7 @@ class MyJoinRequestsIT extends PostgresTestBase {
 
     private byte[] queueBody(Trip trip) {
         return rest.get()
-                .uri("/v1/itineraries/" + trip.id + "/join-requests")
+                .uri("/v1/trips/" + trip.id + "/join-requests")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()

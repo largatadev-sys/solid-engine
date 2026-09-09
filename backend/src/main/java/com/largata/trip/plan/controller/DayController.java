@@ -21,7 +21,7 @@ import com.largata.trip.plan.service.DayService;
 
 
 @RestController
-@RequestMapping({"/v1/itineraries/{itineraryId}/days", "/v1/trips/{itineraryId}/days"})
+@RequestMapping("/v1/trips/{itineraryId}/days")
 class DayController {
 
     private final DayService days;

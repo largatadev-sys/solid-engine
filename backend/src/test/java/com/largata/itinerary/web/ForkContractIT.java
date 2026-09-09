@@ -124,7 +124,7 @@ class ForkContractIT extends PostgresTestBase {
                         """);
         holdLock(author, sourceId, "{\"subjectType\":\"header\"}");
         rest.patch()
-                .uri("/v1/itineraries/" + sourceId)
+                .uri("/v1/trips/" + sourceId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(author))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -335,7 +335,7 @@ class ForkContractIT extends PostgresTestBase {
         String sourceId = publishedTripWithAPlan(author);
 
         rest.post()
-                .uri("/v1/itineraries/" + sourceId + "/fork")
+                .uri("/v1/trips/" + sourceId + "/fork")
                 .exchange()
                 .expectStatus()
                 .isUnauthorized();
@@ -415,7 +415,7 @@ class ForkContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec fork(String token, String sourceId) {
         return rest.post()
-                .uri("/v1/itineraries/" + sourceId + "/fork")
+                .uri("/v1/trips/" + sourceId + "/fork")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -425,7 +425,7 @@ class ForkContractIT extends PostgresTestBase {
         return JSON.readTree(
                 rawBody(
                         rest.get()
-                                .uri("/v1/itineraries/" + itineraryId)
+                                .uri("/v1/trips/" + itineraryId)
                                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                 .exchange()
                                 .expectStatus()
@@ -482,7 +482,7 @@ class ForkContractIT extends PostgresTestBase {
 
     private void holdLock(String token, String tripId, String subject) {
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(subject)
@@ -494,7 +494,7 @@ class ForkContractIT extends PostgresTestBase {
 
     private void releaseLock(String token, String tripId, String subject) {
         rest.method(org.springframework.http.HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(subject)
@@ -506,7 +506,7 @@ class ForkContractIT extends PostgresTestBase {
 
     private void patchDetails(String token, String tripId) {
         rest.patch()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(
@@ -523,7 +523,7 @@ class ForkContractIT extends PostgresTestBase {
 
     private void renameDay(String token, String tripId, UUID dayId, String title) {
         rest.patch()
-                .uri("/v1/itineraries/" + tripId + "/days/" + dayId)
+                .uri("/v1/trips/" + tripId + "/days/" + dayId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"title\":\"" + title + "\"}")
@@ -535,7 +535,7 @@ class ForkContractIT extends PostgresTestBase {
 
     private void addActivity(String token, String itineraryId, UUID dayId, String body) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/days/" + dayId + "/activities")
+                .uri("/v1/trips/" + itineraryId + "/days/" + dayId + "/activities")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
@@ -605,7 +605,7 @@ class ForkContractIT extends PostgresTestBase {
     private static String rootFor(String verb) {
         return verb.equals("publish") || verb.equals("unpublish")
                 ? "/v1/trips/"
-                : "/v1/itineraries/";
+                : "/v1/trips/";
     }
 
 
@@ -613,7 +613,7 @@ class ForkContractIT extends PostgresTestBase {
         return JSON.readTree(
                         new String(
                                 rest.post()
-                                        .uri("/v1/itineraries")
+                                        .uri("/v1/trips")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(body)

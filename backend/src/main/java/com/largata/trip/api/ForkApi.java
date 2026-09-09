@@ -11,6 +11,11 @@ public interface ForkApi {
 
     void recordFork(UUID sourceId, UUID forkedTripId);
 
+    interface SourceVisibility {
+
+        boolean stillLive(UUID sourceId);
+    }
+
 
     record ForkProvenanceView(UUID sourceTripId, String ownerHandle, boolean sourceVisible) {}
 }

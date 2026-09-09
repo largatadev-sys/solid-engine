@@ -54,10 +54,7 @@ class AudienceFenceCoverageTest {
                     "ChatController.java#thread");
 
 
-    private static final Set<String> KNOWN_OPTIONAL_MEMBERSHIP_HANDLERS =
-            Set.of(
-                    "PublishedItineraryController.java#view",
-                    "TripLifecycleController.java#fork");
+    private static final Set<String> KNOWN_OPTIONAL_MEMBERSHIP_HANDLERS = Set.of();
 
 
     private static final Pattern ANY_HANDLER =
@@ -144,12 +141,25 @@ class AudienceFenceCoverageTest {
 
 
     @Test
-    void theOptionalMembershipScanReachesTheHandlersItIsSupposedToGuard() throws IOException {
-        assertThat(optionalMembershipHandlers()).as(
-                        "the same anti-vacuity guard the GET scan carries: an empty list and a broken "
-                                + "regex are indistinguishable, and this pattern has to match a POST "
-                                + "carrying @ResponseStatus between the mapping and the return type")
-                .isNotEmpty();
+    void theOptionalMembershipPatternStillMatchesTheShapeItGuards() {
+        String aDoorThatWouldOpenToStrangers =
+                """
+                @PostMapping("/{id}/fork")
+                @ResponseStatus(HttpStatus.CREATED)
+                TripResponse fork(@CurrentTraveler Traveler traveler, @PathVariable UUID id) {
+                    return forks.fork(id, traveler.id(), guard.membershipOf(traveler.id(), id));
+                }
+                """;
+
+        assertThat(
+                        ANY_HANDLER.matcher(aDoorThatWouldOpenToStrangers).results().anyMatch(
+                                match -> match.group(3).contains("guard.membershipOf")))
+                .as("CM-5 ticket 11 closed the last optional-membership door — the old fork route —"
+                        + " so the registry above is EMPTY and the live scan finds nothing. An empty"
+                        + " list and a broken regex are indistinguishable, so the pattern is proved"
+                        + " against the shape it exists to catch instead: the day someone writes a"
+                        + " door like this one, the scan sees it and the registry refuses it")
+                .isTrue();
     }
 
 

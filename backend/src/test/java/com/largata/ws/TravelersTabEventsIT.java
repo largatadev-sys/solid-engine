@@ -136,7 +136,7 @@ class TravelersTabEventsIT extends PostgresTestBase {
     private void requestToJoin(String ownerToken, String trip, String requesterToken) {
         byte[] link =
                 rest.get()
-                        .uri("/v1/itineraries/" + trip + "/join-link")
+                        .uri("/v1/trips/" + trip + "/join-link")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(ownerToken))
                         .exchange()
                         .expectStatus()
@@ -155,7 +155,7 @@ class TravelersTabEventsIT extends PostgresTestBase {
     private void admit(String ownerToken, String trip, String joinerToken) {
         byte[] invitation =
                 rest.post()
-                        .uri("/v1/itineraries/" + trip + "/invitations/by-handle")
+                        .uri("/v1/trips/" + trip + "/invitations/by-handle")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(ownerToken))
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .body("{\"handle\":\"" + handleOf(joinerToken) + "\"}")
@@ -189,7 +189,7 @@ class TravelersTabEventsIT extends PostgresTestBase {
 
     private void remove(String ownerToken, String trip, String memberToken) {
         rest.delete()
-                .uri("/v1/itineraries/" + trip + "/members/" + tripRig.travelerIdOf(memberToken))
+                .uri("/v1/trips/" + trip + "/members/" + tripRig.travelerIdOf(memberToken))
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(ownerToken))
                 .exchange()
                 .expectStatus()

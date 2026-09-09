@@ -159,7 +159,7 @@ class PlanSaveHistoryIT extends PostgresTestBase {
         rig.hold(owner, perAction, "day", perActionDay);
         rig.send(
                         HttpMethod.PATCH,
-                        "/v1/itineraries/" + perAction + "/days/" + perActionDay,
+                        "/v1/trips/" + perAction + "/days/" + perActionDay,
                         owner,
                         "{\"title\":\"Arrival\"}")
                 .expectStatus()
@@ -203,7 +203,7 @@ class PlanSaveHistoryIT extends PostgresTestBase {
 
 
     private RestTestClient.ResponseSpec save(String token, String tripId, String body) {
-        return rig.send(HttpMethod.PUT, "/v1/itineraries/" + tripId + "/plan", token, body);
+        return rig.send(HttpMethod.PUT, "/v1/trips/" + tripId + "/plan", token, body);
     }
 
     private static String twoActivityDay(

@@ -53,7 +53,7 @@ class InviteByHandleIT extends PostgresTestBase {
                 .isEqualTo(twoCharacters);
 
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/invitations/by-handle")
+                .uri("/v1/trips/" + trip + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"" + twoCharacters + "\"}")
@@ -213,7 +213,7 @@ class InviteByHandleIT extends PostgresTestBase {
                 .isEqualTo(tripId);
 
         rest.get()
-                .uri("/v1/itineraries/" + tripId)
+                .uri("/v1/trips/" + tripId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(inviteeToken))
                 .exchange()
                 .expectStatus()
@@ -230,7 +230,7 @@ class InviteByHandleIT extends PostgresTestBase {
         inviteByHandle(ownerToken, tripId, inviteeHandle);
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"" + inviteeHandle + "\"}")
@@ -242,7 +242,7 @@ class InviteByHandleIT extends PostgresTestBase {
                 .isEqualTo("INVITATION_ALREADY_PENDING");
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations")
+                .uri("/v1/trips/" + tripId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"email\":\"" + inviteeEmail + "\"}")
@@ -262,7 +262,7 @@ class InviteByHandleIT extends PostgresTestBase {
         String inviteeEmail = emailOf(travelerWithHandle(inviteeHandle));
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations")
+                .uri("/v1/trips/" + tripId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"email\":\"" + inviteeEmail + "\"}")
@@ -271,7 +271,7 @@ class InviteByHandleIT extends PostgresTestBase {
                 .isCreated();
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"" + inviteeHandle + "\"}")
@@ -290,7 +290,7 @@ class InviteByHandleIT extends PostgresTestBase {
 
         byte[] byEmail =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/invitations")
+                        .uri("/v1/trips/" + tripId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + inviteeEmail + "\"}")
@@ -324,7 +324,7 @@ class InviteByHandleIT extends PostgresTestBase {
         acceptInvitation(inviteeToken, inviteByHandle(ownerToken, tripId, inviteeHandle));
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"" + inviteeHandle + "\"}")
@@ -342,7 +342,7 @@ class InviteByHandleIT extends PostgresTestBase {
         String tripId = createTrip(ownerToken);
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"nobodyhome" + suffix() + "\"}")
@@ -365,7 +365,7 @@ class InviteByHandleIT extends PostgresTestBase {
         String outsiderHandle = handleOf(outsider);
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"" + outsiderHandle + "\"}")
@@ -384,7 +384,7 @@ class InviteByHandleIT extends PostgresTestBase {
         inviteByHandle(ownerToken, tripId, inviteeHandle);
 
         rest.get()
-                .uri("/v1/itineraries/" + tripId + "/invitations")
+                .uri("/v1/trips/" + tripId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .exchange()
                 .expectStatus()
@@ -400,7 +400,7 @@ class InviteByHandleIT extends PostgresTestBase {
     private String inviteByHandle(String ownerToken, String tripId, String handle) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                        .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"handle\":\"" + handle + "\"}")
@@ -446,7 +446,7 @@ class InviteByHandleIT extends PostgresTestBase {
     private String createTrip(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
@@ -511,7 +511,7 @@ class InviteByHandleIT extends PostgresTestBase {
 
         inviteByHandle(ownerToken, tripA, inviteeHandle);
         rest.post()
-                .uri("/v1/itineraries/" + tripB + "/invitations")
+                .uri("/v1/trips/" + tripB + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"email\":\"" + inviteeEmail + "\"}")

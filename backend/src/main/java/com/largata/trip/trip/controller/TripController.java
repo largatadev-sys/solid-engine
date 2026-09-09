@@ -38,7 +38,7 @@ import com.largata.trip.trip.service.TripService;
 
 
 @RestController
-@RequestMapping({"/v1/itineraries", "/v1/trips"})
+@RequestMapping("/v1/trips")
 class TripController {
 
     private final TripService itineraries;

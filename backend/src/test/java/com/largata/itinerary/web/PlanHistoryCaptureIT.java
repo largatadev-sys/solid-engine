@@ -48,14 +48,14 @@ class PlanHistoryCaptureIT extends PostgresTestBase {
         rig.hold(owner, tripId, "header", null);
         rig.send(
                         HttpMethod.PATCH,
-                        "/v1/itineraries/" + tripId,
+                        "/v1/trips/" + tripId,
                         owner,
                         "{\"title\":\"Renamed\",\"destination\":\"Cebu\"}")
                 .expectStatus()
                 .isOk();
 
         rig.hold(owner, tripId, "day", dayOne);
-        rig.send(HttpMethod.PATCH, "/v1/itineraries/" + tripId + "/days/" + dayOne, owner, "{\"title\":\"Arrival\"}")
+        rig.send(HttpMethod.PATCH, "/v1/trips/" + tripId + "/days/" + dayOne, owner, "{\"title\":\"Arrival\"}")
                 .expectStatus()
                 .isOk();
 
@@ -88,11 +88,11 @@ class PlanHistoryCaptureIT extends PostgresTestBase {
                 .expectStatus()
                 .isNoContent();
 
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/days", owner, "{}")
+        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/days", owner, "{}")
                 .expectStatus()
                 .isCreated();
         rig.hold(owner, tripId, "day", dayOne);
-        rig.send(HttpMethod.DELETE, "/v1/itineraries/" + tripId + "/days/" + dayOne, owner, null)
+        rig.send(HttpMethod.DELETE, "/v1/trips/" + tripId + "/days/" + dayOne, owner, null)
                 .expectStatus()
                 .isNoContent();
 

@@ -71,7 +71,7 @@ class ForkProvenanceIT extends PostgresTestBase {
                 JSON.readTree(
                                 rawBody(
                                         rest.get()
-                                                .uri("/v1/itineraries")
+                                                .uri("/v1/trips")
                                                 .header(HttpHeaders.AUTHORIZATION, bearer(forker))
                                                 .exchange()
                                                 .expectStatus()
@@ -282,7 +282,7 @@ class ForkProvenanceIT extends PostgresTestBase {
         return JSON.readTree(
                 rawBody(
                         rest.post()
-                                .uri("/v1/itineraries/" + sourceId + "/fork")
+                                .uri("/v1/trips/" + sourceId + "/fork")
                                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                 .exchange()
                                 .expectStatus()
@@ -298,7 +298,7 @@ class ForkProvenanceIT extends PostgresTestBase {
     private String rawItinerary(String token, String itineraryId) {
         return rawBody(
                 rest.get()
-                        .uri("/v1/itineraries/" + itineraryId)
+                        .uri("/v1/trips/" + itineraryId)
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .exchange()
                         .expectStatus()
@@ -317,7 +317,7 @@ class ForkProvenanceIT extends PostgresTestBase {
         return JSON.readTree(
                         new String(
                                 rest.post()
-                                        .uri("/v1/itineraries")
+                                        .uri("/v1/trips")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(
@@ -380,7 +380,7 @@ class ForkProvenanceIT extends PostgresTestBase {
     private static String rootFor(String verb) {
         return verb.equals("publish") || verb.equals("unpublish")
                 ? "/v1/trips/"
-                : "/v1/itineraries/";
+                : "/v1/trips/";
     }
 
 

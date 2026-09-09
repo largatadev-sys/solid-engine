@@ -93,7 +93,7 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
     private RestTestClient.ResponseSpec acquireOn(
             String token, String tripId, String subjectType, UUID subjectId) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"subjectType\":\"" + subjectType + "\",\"subjectId\":\"" + subjectId + "\"}")
@@ -103,7 +103,7 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
     private String createTripWithADay(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""
@@ -128,7 +128,7 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
     private UUID createActivity(String token, String tripId, UUID dayId) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/days/" + dayId + "/activities")
+                        .uri("/v1/trips/" + tripId + "/days/" + dayId + "/activities")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"title\":\"Mid-edit\"}")
@@ -143,14 +143,14 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec acquire(String token, String tripId) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec remove(String callerToken, String tripId, UUID targetId) {
         return rest.method(HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/members/" + targetId)
+                .uri("/v1/trips/" + tripId + "/members/" + targetId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }
@@ -159,7 +159,7 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
         String email = "traveler-" + UUID.randomUUID() + "@example.com";
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/invitations")
+                        .uri("/v1/trips/" + tripId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + email + "\"}")
@@ -182,7 +182,7 @@ class DepartureFreesEditLockIT extends PostgresTestBase {
     private String createTrip(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

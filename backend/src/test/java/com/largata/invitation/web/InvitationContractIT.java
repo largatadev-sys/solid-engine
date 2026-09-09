@@ -33,7 +33,7 @@ class InvitationContractIT extends PostgresTestBase {
         String itinerary = createItinerary(owner);
 
         rest.post()
-                .uri("/v1/itineraries/" + itinerary + "/invitations")
+                .uri("/v1/trips/" + itinerary + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -57,7 +57,7 @@ class InvitationContractIT extends PostgresTestBase {
         String itinerary = createItinerary(owner);
 
         rest.post()
-                .uri("/v1/itineraries/" + itinerary + "/invitations")
+                .uri("/v1/trips/" + itinerary + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -78,7 +78,7 @@ class InvitationContractIT extends PostgresTestBase {
         String stranger = verified("stranger@example.com");
 
         rest.post()
-                .uri("/v1/itineraries/" + itinerary + "/invitations")
+                .uri("/v1/trips/" + itinerary + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -99,7 +99,7 @@ class InvitationContractIT extends PostgresTestBase {
         invite(owner, itinerary, "guest@example.com");
 
         rest.post()
-                .uri("/v1/itineraries/" + itinerary + "/invitations")
+                .uri("/v1/trips/" + itinerary + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -119,7 +119,7 @@ class InvitationContractIT extends PostgresTestBase {
         String itinerary = createItinerary(owner);
 
         rest.post()
-                .uri("/v1/itineraries/" + itinerary + "/invitations")
+                .uri("/v1/trips/" + itinerary + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -142,7 +142,7 @@ class InvitationContractIT extends PostgresTestBase {
         accept(memberToken, invite(owner, itinerary, memberEmail));
 
         rest.post()
-                .uri("/v1/itineraries/" + itinerary + "/invitations")
+                .uri("/v1/trips/" + itinerary + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -222,7 +222,7 @@ class InvitationContractIT extends PostgresTestBase {
         String guest = verified("guest@example.com");
 
         rest.get()
-                .uri("/v1/itineraries/" + itinerary)
+                .uri("/v1/trips/" + itinerary)
                 .header(HttpHeaders.AUTHORIZATION, bearer(guest))
                 .exchange()
                 .expectStatus()
@@ -239,7 +239,7 @@ class InvitationContractIT extends PostgresTestBase {
                 .isEqualTo(itinerary);
 
         rest.get()
-                .uri("/v1/itineraries/" + itinerary)
+                .uri("/v1/trips/" + itinerary)
                 .header(HttpHeaders.AUTHORIZATION, bearer(guest))
                 .exchange()
                 .expectStatus()
@@ -309,7 +309,7 @@ class InvitationContractIT extends PostgresTestBase {
         accept(verified("guest@example.com"), invitationId);
 
         rest.post()
-                .uri("/v1/itineraries/" + itinerary + "/invitations")
+                .uri("/v1/trips/" + itinerary + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -345,7 +345,7 @@ class InvitationContractIT extends PostgresTestBase {
                 .expectStatus()
                 .isEqualTo(409);
         rest.get()
-                .uri("/v1/itineraries/" + itinerary)
+                .uri("/v1/trips/" + itinerary)
                 .header(HttpHeaders.AUTHORIZATION, bearer(guest))
                 .exchange()
                 .expectStatus()
@@ -400,7 +400,7 @@ class InvitationContractIT extends PostgresTestBase {
         accept(verifiedNamed("guest@example.com", "Beto Cruz"), invitationId);
 
         rest.get()
-                .uri("/v1/itineraries/" + itinerary + "/members")
+                .uri("/v1/trips/" + itinerary + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -422,7 +422,7 @@ class InvitationContractIT extends PostgresTestBase {
         String itinerary = createItinerary(owner);
 
         rest.get()
-                .uri("/v1/itineraries/" + itinerary + "/members")
+                .uri("/v1/trips/" + itinerary + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(verified("stranger@example.com")))
                 .exchange()
                 .expectStatus()
@@ -433,7 +433,7 @@ class InvitationContractIT extends PostgresTestBase {
     private String invite(String ownerToken, String itineraryId, String email) {
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries/" + itineraryId + "/invitations")
+                        .uri("/v1/trips/" + itineraryId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + email + "\"}")
@@ -462,7 +462,7 @@ class InvitationContractIT extends PostgresTestBase {
     private String createItinerary(String token, String title) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"title\":\"" + title + "\",\"destination\":\"Lisbon\"}")

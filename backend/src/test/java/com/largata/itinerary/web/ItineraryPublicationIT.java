@@ -220,7 +220,7 @@ class ItineraryPublicationIT extends PostgresTestBase {
         publish(owner, tripId).expectStatus().isOk();
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -244,7 +244,7 @@ class ItineraryPublicationIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec addDay(String token, String itineraryId) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/days")
+                .uri("/v1/trips/" + itineraryId + "/days")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{}")
@@ -306,8 +306,8 @@ class ItineraryPublicationIT extends PostgresTestBase {
     void aVisitorIsRejectedBeforeAnythingElse() {
         String tripId = createItinerary(freshTraveler());
 
-        rest.post().uri("/v1/itineraries/" + tripId + "/publish").exchange().expectStatus().isUnauthorized();
-        rest.post().uri("/v1/itineraries/" + tripId + "/unpublish").exchange().expectStatus().isUnauthorized();
+        rest.post().uri("/v1/trips/" + tripId + "/publish").exchange().expectStatus().isUnauthorized();
+        rest.post().uri("/v1/trips/" + tripId + "/unpublish").exchange().expectStatus().isUnauthorized();
     }
 
 
@@ -385,7 +385,7 @@ class ItineraryPublicationIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec publishTo(String token, String itineraryId, String audience) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/publish")
+                .uri("/v1/trips/" + itineraryId + "/publish")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"audience\":\"" + audience + "\"}")
@@ -394,7 +394,7 @@ class ItineraryPublicationIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec audience(String token, String itineraryId, String audience) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/audience")
+                .uri("/v1/trips/" + itineraryId + "/audience")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"audience\":\"" + audience + "\"}")
@@ -415,7 +415,7 @@ class ItineraryPublicationIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec post(String token, String itineraryId, String act) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/" + act)
+                .uri("/v1/trips/" + itineraryId + "/" + act)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -471,7 +471,7 @@ class ItineraryPublicationIT extends PostgresTestBase {
     private String createItinerary(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

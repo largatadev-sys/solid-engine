@@ -31,7 +31,7 @@ class ItineraryContractIT extends PostgresTestBase {
     @Test
     void creatingAnItineraryReturnsItAsAnUpcomingPrivateResource() {
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(
@@ -73,7 +73,7 @@ class ItineraryContractIT extends PostgresTestBase {
                 """);
 
         rest.get()
-                .uri("/v1/itineraries/" + id)
+                .uri("/v1/trips/" + id)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -102,10 +102,10 @@ class ItineraryContractIT extends PostgresTestBase {
 
     @Test
     void aVisitorWithNoTokenIsRejectedAtTheSecurityChain() {
-        rest.get().uri("/v1/itineraries").exchange().expectStatus().isUnauthorized();
-        rest.get().uri("/v1/itineraries/" + UUID.randomUUID()).exchange().expectStatus().isUnauthorized();
+        rest.get().uri("/v1/trips").exchange().expectStatus().isUnauthorized();
+        rest.get().uri("/v1/trips/" + UUID.randomUUID()).exchange().expectStatus().isUnauthorized();
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
                         {"title":"x","destination":"y"}
@@ -118,7 +118,7 @@ class ItineraryContractIT extends PostgresTestBase {
     @Test
     void anItineraryWithNoDatesIsALegitimatePlan() {
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -137,7 +137,7 @@ class ItineraryContractIT extends PostgresTestBase {
     @Test
     void aStartDateWithoutAnEndDateIsALegitimatePlan() {
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -156,7 +156,7 @@ class ItineraryContractIT extends PostgresTestBase {
     @Test
     void anEndDateWithoutAStartDateIsAccepted() {
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -222,7 +222,7 @@ class ItineraryContractIT extends PostgresTestBase {
     @Test
     void aMalformedItineraryIdIsABadRequestNotAServerError() {
         rest.get()
-                .uri("/v1/itineraries/not-a-uuid")
+                .uri("/v1/trips/not-a-uuid")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .exchange()
                 .expectStatus()
@@ -234,7 +234,7 @@ class ItineraryContractIT extends PostgresTestBase {
 
     private void expectBadRequest(String body) {
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
@@ -252,7 +252,7 @@ class ItineraryContractIT extends PostgresTestBase {
 
     private byte[] fetchRejection(String token, String itineraryId) {
         return rest.get()
-                .uri("/v1/itineraries/" + itineraryId)
+                .uri("/v1/trips/" + itineraryId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -265,7 +265,7 @@ class ItineraryContractIT extends PostgresTestBase {
     private String createItinerary(String token, String body) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(body)

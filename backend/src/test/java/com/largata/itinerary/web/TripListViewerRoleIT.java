@@ -108,7 +108,7 @@ class TripListViewerRoleIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec list(String token) {
         return rest.get()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -116,7 +116,7 @@ class TripListViewerRoleIT extends PostgresTestBase {
     private String createItinerary(String token, String title) {
         return fieldIn(
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

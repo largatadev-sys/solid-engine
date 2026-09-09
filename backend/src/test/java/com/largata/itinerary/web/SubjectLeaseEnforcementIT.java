@@ -47,7 +47,7 @@ class SubjectLeaseEnforcementIT extends PostgresTestBase {
         rig.send(HttpMethod.POST, TripRig.activitiesUri(tripId, dayOne), owner, "{\"title\":\"Added anyway\"}")
                 .expectStatus()
                 .isCreated();
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/days", owner, "{}")
+        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/days", owner, "{}")
                 .expectStatus()
                 .isCreated();
     }
@@ -135,10 +135,10 @@ class SubjectLeaseEnforcementIT extends PostgresTestBase {
 
         rig.hold(owner, tripId, "day", dayTwo);
 
-        rig.send(HttpMethod.PATCH, "/v1/itineraries/" + tripId + "/days/" + dayOne, owner, "{\"title\":\"x\"}")
+        rig.send(HttpMethod.PATCH, "/v1/trips/" + tripId + "/days/" + dayOne, owner, "{\"title\":\"x\"}")
                 .expectStatus()
                 .isEqualTo(409);
-        rig.send(HttpMethod.PATCH, "/v1/itineraries/" + tripId + "/days/" + dayTwo, owner, "{\"title\":\"x\"}")
+        rig.send(HttpMethod.PATCH, "/v1/trips/" + tripId + "/days/" + dayTwo, owner, "{\"title\":\"x\"}")
                 .expectStatus()
                 .isOk();
     }
@@ -153,7 +153,7 @@ class SubjectLeaseEnforcementIT extends PostgresTestBase {
 
         rig.send(
                         HttpMethod.PATCH,
-                        "/v1/itineraries/" + tripId,
+                        "/v1/trips/" + tripId,
                         owner,
                         "{\"title\":\"Renamed\",\"destination\":\"Cebu\"}")
                 .expectStatus()
@@ -166,7 +166,7 @@ class SubjectLeaseEnforcementIT extends PostgresTestBase {
         rig.hold(owner, tripId, "header", null);
         rig.send(
                         HttpMethod.PATCH,
-                        "/v1/itineraries/" + tripId,
+                        "/v1/trips/" + tripId,
                         owner,
                         "{\"title\":\"Renamed\",\"destination\":\"Cebu\"}")
                 .expectStatus()

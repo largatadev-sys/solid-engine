@@ -418,7 +418,7 @@ class PublicProfileIT extends ObjectStoreTestBase {
     private String tripTo(String token, String destination) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"title\":\"Trip\",\"destination\":\"" + destination + "\",\"durationDays\":3}")
@@ -480,7 +480,7 @@ class PublicProfileIT extends ObjectStoreTestBase {
     private static String rootFor(String verb) {
         return verb.equals("publish") || verb.equals("unpublish")
                 ? "/v1/trips/"
-                : "/v1/itineraries/";
+                : "/v1/trips/";
     }
 
 

@@ -234,7 +234,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
         holdActivityLease(trip);
 
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/archive")
+                .uri("/v1/trips/" + trip.tripId() + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
@@ -263,7 +263,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
 
         rest.delete()
                 .uri(
-                        "/v1/itineraries/" + trip.tripId() + "/days/" + trip.dayId() + "/activities/"
+                        "/v1/trips/" + trip.tripId() + "/days/" + trip.dayId() + "/activities/"
                                 + otherActivity + "/photos/" + photoId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
@@ -285,7 +285,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
 
 
     private String photosUri(Fixture trip) {
-        return "/v1/itineraries/" + trip.tripId() + "/days/" + trip.dayId() + "/activities/"
+        return "/v1/trips/" + trip.tripId() + "/days/" + trip.dayId() + "/activities/"
                 + trip.activityId() + "/photos";
     }
 
@@ -302,7 +302,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
 
     private void acquireLeaseOn(String token, String tripId, UUID activityId) {
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"subjectType\":\"activity\",\"subjectId\":\"" + activityId + "\"}")
@@ -338,7 +338,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
     private List<String> photoUrlsOf(Fixture trip) {
         TripBody body =
                 rest.get()
-                        .uri("/v1/itineraries/" + trip.tripId())
+                        .uri("/v1/trips/" + trip.tripId())
                         .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                         .exchange()
                         .expectStatus()
@@ -358,12 +358,12 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
 
     private void releaseAndPublish(Fixture trip) {
         rest.delete()
-                .uri("/v1/itineraries/" + trip.tripId() + "/edit-lock")
+                .uri("/v1/trips/" + trip.tripId() + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange();
         for (String step : List.of("start", "complete", "publish")) {
             rest.post()
-                    .uri((step.equals("publish") ? "/v1/trips/" : "/v1/itineraries/") + trip.tripId() + "/" + step)
+                    .uri((step.equals("publish") ? "/v1/trips/" : "/v1/trips/") + trip.tripId() + "/" + step)
                     .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                     .exchange()
                     .expectStatus()
