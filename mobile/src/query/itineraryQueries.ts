@@ -22,6 +22,7 @@ import type {
   ActivityResponse,
   CreateItineraryRequest,
   DayResponse,
+  ForkedTripResponse,
   ItineraryObjectResponse,
   ItineraryResponse,
   Page,
@@ -182,12 +183,12 @@ export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryRespons
   });
 }
 
-export function useForkItinerary(sourceId: string): UseMutationResult<ItineraryResponse, Error, void> {
+export function useForkItinerary(sourceId: string): UseMutationResult<ForkedTripResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => tripRepository.forkItinerary(sourceId),
-    onSuccess: async (forked) => {
-      await onItineraryCreated(client, forked);
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: itineraryKeys.lists() });
       await client.invalidateQueries({ queryKey: itineraryKeys.published(sourceId) });
     },
   });

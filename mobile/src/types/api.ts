@@ -275,6 +275,11 @@ export type ForkedFromResponse = {
 };
 
 
+export type ForkedTripResponse = {
+  id: string;
+};
+
+
 export type ItineraryObjectResponse = {
   id: string;
   tripId: string;

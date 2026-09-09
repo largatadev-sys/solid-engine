@@ -141,5 +141,12 @@ public class ForkService implements ForkApi {
     }
 
 
+    @Override
+    @Transactional
+    public void recordFork(UUID sourceId, UUID forkedTripId) {
+        relationships.save(ForkRelationship.recording(sourceId, forkedTripId, Instant.now()));
+    }
+
+
     public record ForkProvenance(UUID sourceItineraryId, String ownerHandle, boolean sourceVisible) {}
 }

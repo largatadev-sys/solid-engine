@@ -58,7 +58,7 @@ public class ItineraryPageService {
                 creatorOf(object),
                 costOf(snapshot).orElse(null),
                 days,
-                forks.forkCountOf(object.tripId()),
+                forks.forkCountOf(object.id()),
                 forks.provenanceOf(object.tripId(), readerId)
                         .map(
                                 source ->

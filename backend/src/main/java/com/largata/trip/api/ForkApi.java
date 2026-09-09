@@ -9,6 +9,8 @@ public interface ForkApi {
 
     long forkCountOf(UUID sourceTripId);
 
+    void recordFork(UUID sourceId, UUID forkedTripId);
+
 
     record ForkProvenanceView(UUID sourceTripId, String ownerHandle, boolean sourceVisible) {}
 }

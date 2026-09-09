@@ -8,9 +8,7 @@ const REPOSITORIES = join(MOBILE_ROOT, 'src', 'repositories');
 
 const OLD_ROOT = '/v1/itineraries';
 
-const STILL_ON_THE_OLD_ROOT = new Set(['diaryRepository.ts', 'tripRepository.ts']);
-
-const UNTWINNED_SUFFIXES = ['/fork'];
+const STILL_ON_THE_OLD_ROOT = new Set(['diaryRepository.ts']);
 
 function repositoryFiles(): string[] {
   return readdirSync(REPOSITORIES).filter((entry) => entry.endsWith('.ts'));
@@ -34,23 +32,14 @@ describe('the client speaks the trip grammar (CM-3)', () => {
     },
   );
 
-  it('every old-root path the trip repository keeps is a route with no twin', () => {
-    const kept = linesNamingTheOldRoot('tripRepository.ts');
-
-    expect(kept.length).toBeGreaterThan(0);
-    for (const line of kept) {
-      expect(UNTWINNED_SUFFIXES.some((suffix) => line.includes(suffix))).toBe(true);
-    }
-    for (const suffix of UNTWINNED_SUFFIXES) {
-      expect(kept.filter((line) => line.includes(suffix))).toHaveLength(1);
-    }
+  it('the trip repository names no old-grammar path at all, now that fork has moved', () => {
+    expect(linesNamingTheOldRoot('tripRepository.ts')).toEqual([]);
   });
 
-  it('would fire if a twinned path were left on the old root', () => {
-    const twinnedOnTheOldRoot = `apiClient.get(\`${OLD_ROOT}/\${id}/days\`)`;
+  it('would fire if any old-root path were left in a repository', () => {
+    const leftBehind = [`apiClient.get(\`${OLD_ROOT}/\${id}/days\`)`];
 
-    expect(twinnedOnTheOldRoot).toContain(OLD_ROOT);
-    expect(UNTWINNED_SUFFIXES.some((suffix) => twinnedOnTheOldRoot.includes(suffix))).toBe(false);
+    expect(leftBehind.filter((line) => line.includes(OLD_ROOT))).not.toEqual([]);
   });
 
   it('publishing acts on the trip grammar, because published now means a live Itinerary exists', () => {

@@ -6,6 +6,7 @@ import type {
   DayRequest,
   DayResponse,
   EditLeaseResponse,
+  ForkedTripResponse,
   ItineraryObjectResponse,
   ItineraryResponse,
   LeaseSubject,
@@ -72,8 +73,8 @@ export const tripRepository = {
   },
 
 
-  async forkItinerary(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/fork`, undefined);
+  async forkItinerary(id: string): Promise<ForkedTripResponse> {
+    return apiClient.post<ForkedTripResponse>(`/v1/publications/${id}/fork`, undefined);
   },
 
 

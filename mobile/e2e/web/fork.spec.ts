@@ -53,11 +53,14 @@ let authorHandle: string;
 let CREDIT: string;
 
 
+type PublishedSource = SeededTrip & { itineraryId: string };
+
+
 function visible(locator: Locator): Locator {
   return locator.locator('visible=true').last();
 }
 
-async function seedPublishedTrip(title: string): Promise<SeededTrip> {
+async function seedPublishedTrip(title: string): Promise<PublishedSource> {
   const trip = await seedTrip({
     ownerTag: AUTHOR,
     title,
@@ -74,7 +77,7 @@ async function seedPublishedTrip(title: string): Promise<SeededTrip> {
     audience: 'public',
   });
   if (published.status !== 200) throw new Error(`could not publish the source: ${published.status}`);
-  return trip;
+  return { ...trip, itineraryId: published.body.id as string };
 }
 
 const projectionOf = async (id: string) =>
@@ -92,7 +95,7 @@ test.beforeAll(async () => {
 test.describe('the fork loop — reading someone else\'s plan to standing in your own copy', () => {
   test.describe.configure({ mode: 'serial' });
 
-  let source: SeededTrip;
+  let source: PublishedSource;
   let forkId: string;
 
   test.beforeAll(async () => {
@@ -254,12 +257,12 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
 test.describe('attribution when the source stops being visible', () => {
   test.describe.configure({ mode: 'serial' });
 
-  let source: SeededTrip;
+  let source: PublishedSource;
   let forkId: string;
 
   test.beforeAll(async () => {
     source = await seedPublishedTrip(stamp('the vanishing source'));
-    const forked = await api(`/v1/itineraries/${source.id}/fork`, 'POST', forkerToken);
+    const forked = await api(`/v1/publications/${source.itineraryId}/fork`, 'POST', forkerToken);
     if (forked.status !== 201) throw new Error(`could not fork: ${forked.status}`);
     forkId = forked.body.id;
   });

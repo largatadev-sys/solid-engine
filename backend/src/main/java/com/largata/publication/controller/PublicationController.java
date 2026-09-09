@@ -8,6 +8,7 @@ import com.largata.publication.dto.ItineraryObjectResponse;
 import com.largata.publication.entity.ItineraryObject;
 import com.largata.publication.dto.ItineraryPageResponse;
 import com.largata.publication.service.ItineraryObjectService;
+import com.largata.publication.service.ItineraryForkService;
 import com.largata.publication.service.ItineraryPageService;
 import com.largata.trip.exception.TripNotFoundException;
 import java.util.UUID;
@@ -25,14 +26,17 @@ class PublicationController {
     private final ItineraryObjectService publications;
     private final AuthorizationGuard guard;
     private final ItineraryPageService pages;
+    private final ItineraryForkService forks;
 
     PublicationController(
             ItineraryObjectService publications,
             AuthorizationGuard guard,
-            ItineraryPageService pages) {
+            ItineraryPageService pages,
+            ItineraryForkService forks) {
         this.publications = publications;
         this.guard = guard;
         this.pages = pages;
+        this.forks = forks;
     }
 
 
@@ -60,6 +64,16 @@ class PublicationController {
     ItineraryPageResponse readByTrip(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
         return pages.pageOf(publications.liveOfTripFor(traveler.id(), tripId), traveler.id());
     }
+
+
+    @PostMapping("/v1/publications/{objectId}/fork")
+    @ResponseStatus(HttpStatus.CREATED)
+    ForkedTripResponse fork(@CurrentTraveler Traveler traveler, @PathVariable UUID objectId) {
+        return new ForkedTripResponse(forks.fork(objectId, traveler.id()));
+    }
+
+
+    record ForkedTripResponse(UUID id) {}
 
 
     @DeleteMapping("/v1/publications/{objectId}")
