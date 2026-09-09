@@ -195,6 +195,7 @@ public class PublicProfileService {
                         itinerary ->
                                 new ShowcaseItineraryResponse(
                                         itinerary.id(),
+                                        itinerary.tripId(),
                                         itinerary.title(),
                                         itinerary.destination(),
                                         itinerary.durationDays() == null ? 0 : itinerary.durationDays(),

@@ -23,6 +23,7 @@ export interface RemovalSubject {
   readonly kind: RemovalSubjectKind;
   readonly title: string;
   readonly itineraryId?: string;
+  readonly tripId?: string;
 }
 
 

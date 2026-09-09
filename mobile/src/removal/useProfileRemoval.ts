@@ -87,7 +87,10 @@ export function useProfileRemoval(announce: (message: string) => void): ProfileR
 
       if (action.kind === 'editItineraryDetails') {
         announce(OPENING_EDITOR_TOAST);
-        router.push({ pathname: '/itineraries/[id]/edit', params: { id: subject.id } });
+        router.push({
+          pathname: '/itineraries/[id]/edit',
+          params: { id: subject.tripId ?? subject.id },
+        });
         return;
       }
 

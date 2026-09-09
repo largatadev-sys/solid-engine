@@ -487,6 +487,7 @@ export type PublicProfileResponse = {
 
 export type ShowcaseItineraryResponse = {
   id: string;
+  tripId: string;
   title: string;
   destination: string;
   durationDays: number;

@@ -107,13 +107,13 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   });
 
   test('the published page carries the docked Fork This Trip CTA', async ({ page }) => {
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await expect(visible(page.getByText(source.title, { exact: true }))).toBeVisible();
     await expect(labelled(page, FORK_CTA_LABEL)).toBeVisible();
   });
 
   test('the CTA opens a sheet that says what forking does and collects nothing', async ({ page }) => {
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await labelled(page, FORK_CTA_LABEL).click();
 
     await expect(visible(page.getByText(FORK_SHEET_BODY))).toBeVisible();
@@ -130,7 +130,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   test('Cancel leaves the published page standing and mints nothing', async ({ page }) => {
     const before = (await projectionOf(source.id)).forkCount;
 
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await labelled(page, FORK_CTA_LABEL).click();
     await labelled(page, FORK_CANCEL_LABEL).click();
 
@@ -141,7 +141,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   test('Fork It lands on the success screen with the attribution pill and a placeholder thumb', async ({
     page,
   }) => {
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await labelled(page, FORK_CTA_LABEL).click();
     await labelled(page, FORK_CONFIRM_LABEL).click();
 
@@ -193,7 +193,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   test('back from the success screen lands on Trips, never the spent published page', async ({ page }) => {
     await page.goto('/trips');
     await expect(visible(page.getByText('Plan a Trip', { exact: true }))).toBeVisible();
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
 
     await labelled(page, FORK_CTA_LABEL).click();
     await labelled(page, FORK_CONFIRM_LABEL).click();
@@ -217,7 +217,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
     const counted = (await projectionOf(source.id)).forkCount;
     expect(counted).toBeGreaterThanOrEqual(2);
 
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await expect(visible(page.getByText(FORKED_STAT_LABEL, { exact: true }))).toBeVisible();
     await expect(visible(page.getByText(String(counted), { exact: true }))).toBeVisible();
 
@@ -228,7 +228,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   test('forking from the Home feed lands the same way — it is the landing route, so it is the common path', async ({
     page,
   }) => {
-    await page.goto(`/feed/published/${source.id}`);
+    await page.goto(`/feed/published/${source.itineraryId}`);
     await expect(labelled(page, FORK_CTA_LABEL)).toBeVisible();
 
     await labelled(page, FORK_CTA_LABEL).click();
@@ -243,7 +243,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
 
 
   test('no console or page errors across the whole fork loop', async ({ page, signal }) => {
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await labelled(page, FORK_CTA_LABEL).click();
     await labelled(page, FORK_CANCEL_LABEL).click();
     await page.goto(`/itineraries/${forkId}`);
