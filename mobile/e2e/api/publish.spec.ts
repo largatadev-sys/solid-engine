@@ -33,6 +33,7 @@ let trip: string;
 let dayOne: string;
 let dayTwo: string;
 let created: { status: number; body: any };
+let itineraryId: string;
 
 test.beforeAll(async () => {
   owner = await tokenFor(OWNER);
@@ -158,6 +159,7 @@ test('publish by the owner on a completed trip lands, public by default', async 
   expect(published.status).toBe(200);
   expect(published.body.id).toBeTruthy();
   expect(published.body.tripId).toBe(trip);
+  itineraryId = published.body.id;
 });
 
 test('a published trip pins its lifecycle — reopen is refused', async () => {
@@ -303,8 +305,8 @@ test('a complete and public but unpublished trip still has no page — discovery
 test('republish serves the same itinerary id — no new identity', async () => {
   const republished = await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   const backAgain = await api(`/v1/trips/${trip}/itinerary`, 'GET', consumer);
-  expect(republished.body.id).toBe(trip);
-  expect(backAgain.body.id).toBe(trip);
+  expect(republished.body.id).toBe(itineraryId);
+  expect(backAgain.body.id).toBe(itineraryId);
 });
 
 test.describe('the archive fence', () => {
