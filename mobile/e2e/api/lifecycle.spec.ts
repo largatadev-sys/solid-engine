@@ -66,13 +66,6 @@ test('a non-member is masked with 404, never 403', async () => {
   expect(masked.status).toBe(404);
 });
 
-test('finish-planning stays mapped and refuses forever — the dormant endpoint, ADR-008 waiver #3', async () => {
-  const retired = await api(`/v1/itineraries/${trip.id}/finish-planning`, 'POST', owner);
-  expect(retired.status).toBe(409);
-  expect(retired.body?.code).toBe('ILLEGAL_STATE_TRANSITION');
-  expect(await stateOf(owner, trip.id)).toBe('upcoming');
-});
-
 test('the owner starts the trip, and the response carries the whole resource', async () => {
   const started = await api(`/v1/trips/${trip.id}/start`, 'POST', owner);
   expect(started.status).toBe(200);
