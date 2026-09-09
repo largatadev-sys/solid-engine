@@ -16,6 +16,7 @@ const PROJECTION_FIELDS = [
   'id', 'title', 'destination', 'pin', 'description', 'standouts', 'bestTimeOfYear',
   'coverImageUrl', 'durationDays', 'creator', 'estimatedCost', 'days',
   'forkCount', 'forkedFrom',
+  'tripId', 'publishedAt', 'plan',
 ].sort();
 
 const FORBIDDEN = [

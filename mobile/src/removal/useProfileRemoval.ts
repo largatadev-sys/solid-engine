@@ -38,7 +38,7 @@ export function useProfileRemoval(announce: (message: string) => void): ProfileR
     useCallback(
       (ref) => {
         if (ref.kind === 'unpublish') {
-          commands.run(() => commands.republish(ref.subjectId));
+          commands.run(() => commands.republish(ref.tripId ?? ref.subjectId));
         }
       },
       [commands],
@@ -61,12 +61,13 @@ export function useProfileRemoval(announce: (message: string) => void): ProfileR
       }
 
       if (action.kind === 'unpublish') {
-        commands.run(() => commands.unpublish(subject.id));
+        commands.run(() => commands.unpublish(subject.tripId ?? subject.id));
         removal.request({
           subjectId: subject.id,
           kind: 'unpublish',
           message: ITINERARY_UNPUBLISHED_TOAST,
           deferred: false,
+          ...(subject.tripId === undefined ? {} : { tripId: subject.tripId }),
         });
         return;
       }

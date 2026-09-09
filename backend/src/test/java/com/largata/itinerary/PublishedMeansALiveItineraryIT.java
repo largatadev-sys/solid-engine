@@ -155,6 +155,15 @@ class PublishedMeansALiveItineraryIT extends PostgresTestBase {
                 .jsonPath("$.code")
                 .isEqualTo("ILLEGAL_STATE_TRANSITION");
 
+        for (String forwards : java.util.List.of("start", "complete")) {
+            rest.post()
+                    .uri("/v1/trips/" + trip + "/" + forwards)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                    .exchange()
+                    .expectStatus()
+                    .isEqualTo(409);
+        }
+
         unpublish(owner, trip);
 
         rest.post()
