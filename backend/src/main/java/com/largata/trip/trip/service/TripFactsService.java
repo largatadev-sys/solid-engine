@@ -106,16 +106,4 @@ class TripFactsService implements TripApi {
         return workspaces.isArchived(tripId);
     }
 
-
-    @Transactional
-    public void markPublished(UUID tripId, Instant at) {
-        trips.findById(tripId).ifPresent(trip -> trip.markPublishedAt(at));
-    }
-
-
-    @Transactional
-    public void markUnpublished(UUID tripId) {
-        trips.findById(tripId).ifPresent(Trip::unpublish);
-    }
-
 }

@@ -19,8 +19,4 @@ public interface TripApi {
     long shareCardVersionOf(UUID tripId);
 
     boolean frozen(UUID tripId);
-
-    void markPublished(UUID tripId, Instant at);
-
-    void markUnpublished(UUID tripId);
 }

@@ -12,3 +12,9 @@
 - [ ] A missing trip on the new root answers `TRIP_NOT_FOUND`; the client's four guard tests assert the new code and still tolerate the old
 - [ ] No end-to-end spec or script names the old root except the diary-entry paths; the Playwright list total is read
 - [ ] The object contracts' wire table and ADR-037's decision (5) carry the sunset date and the diary-route exception
+
+## Amendment — three non-diary mappings live on the old root by design
+
+**AC1/AC2 as written** require every mapping on `/v1/itineraries/**` to be gone but for the eight diary-entry routes, the rest answering as unmapped. Three others now live there: `GET /v1/itineraries/{objectId}`, `POST …/fork` and `DELETE …` — the Itinerary object's own routes, which took the domain's name at ticket 10 (see its amendment).
+
+So the root is not "sunset" in the sense of being empty; it is **re-tenanted**. The old world's trip-shaped acts are gone — publish, unpublish, preview, the projection root and the five lifecycle acts — and what remains under that prefix is the Itinerary, the diary adapters, and nothing else. `ItineraryController` and the diary adapters' `@RequestMapping` are the whole list, checked at review.

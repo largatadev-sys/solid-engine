@@ -15,6 +15,7 @@ import { track } from '../analytics/track';
 import { useAuth } from '../hooks/authContext';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { PHOTO_DUMP_PHOTO_ADDED, PHOTO_DUMP_PHOTO_REMOVED } from '../media/photoDumpEvents';
+import { ApiError } from '../api/ApiError';
 import { tripRepository } from '../repositories/tripRepository';
 import { joinKeys } from './joinKeys';
 import type {
@@ -209,8 +210,11 @@ export function usePublishedItinerary(id: string): UseQueryResult<PublishedItine
 async function resolvePublished(id: string): Promise<PublishedItineraryResponse> {
   try {
     return await tripRepository.fetchPublished(id);
-  } catch (whenNotAnItineraryId) {
-    return tripRepository.fetchPublishedByTrip(id);
+  } catch (refusal) {
+    if (refusal instanceof ApiError && refusal.status === 404) {
+      return tripRepository.fetchPublishedByTrip(id);
+    }
+    throw refusal;
   }
 }
 

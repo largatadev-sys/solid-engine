@@ -117,6 +117,28 @@ class ItineraryPageIT extends PostgresTestBase {
 
 
     @Test
+    void onlyTheOwnerPreviews_whichIsWhyThePreviewMayNameTheCallerAsItsCreator() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip = rig.createTrip(owner, 1);
+        String member = rig.joinAsMember(owner, trip, handle());
+
+        rest.get()
+                .uri("/v1/trips/" + trip + "/preview")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(member))
+                .exchange()
+                .expectStatus()
+                .isForbidden();
+
+        rest.get()
+                .uri("/v1/trips/" + trip + "/preview")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
+
+    @Test
     void aStrangerReadsAPrivateOwnersItinerary_becauseAPublishedItineraryIsPublic() {
         String owner = rig.travelerWithHandle(handle());
         String stranger = rig.travelerWithHandle(handle());

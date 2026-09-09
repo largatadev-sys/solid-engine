@@ -103,22 +103,21 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
             @Param("pageSize") int pageSize);
 
 
-    @Query(value = """
-            SELECT o.* FROM itinerary_object o
-            WHERE o.retired = false
-              AND o.owner_id = CAST(:ownerId AS uuid)
-              AND o.trip_id <> ALL (CAST(:excludedTripIds AS uuid[]))
-            ORDER BY o.published_at DESC, o.id DESC
-            """, nativeQuery = true)
-    List<ItineraryObject> findOwnedBy(
-            @Param("ownerId") UUID ownerId, @Param("excludedTripIds") String excludedTripIds);
-
-
     String OWNED_AND_LIVE = """
             o.retired = false
               AND o.owner_id = CAST(:ownerId AS uuid)
               AND o.trip_id <> ALL (CAST(:excludedTripIds AS uuid[]))
             """;
+
+
+    @Query(value = """
+            SELECT o.* FROM itinerary_object o
+            WHERE
+            """ + OWNED_AND_LIVE + """
+            ORDER BY o.published_at DESC, o.id DESC
+            """, nativeQuery = true)
+    List<ItineraryObject> findOwnedBy(
+            @Param("ownerId") UUID ownerId, @Param("excludedTripIds") String excludedTripIds);
 
 
     @Query(value = """

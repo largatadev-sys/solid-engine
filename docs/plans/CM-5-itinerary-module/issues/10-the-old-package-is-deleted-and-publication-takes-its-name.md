@@ -24,3 +24,11 @@
 **Two guards asserted `src/main/java/com/largata/itinerary` does not exist** — true while the name meant the old god package, false once the module took it. Both now assert the absence of the god package's own classes (`PublishedItineraryService` and four others) instead of the directory, which is the stronger check: it survives the name being reused. `tripGrammar.test.ts` was amended the same way — it forbids the old root except the object's own two routes, and was sabotage-checked with a `/v1/itineraries/${id}/days` path to prove it still bites.
 
 **A collision the rename created:** `ItineraryNotFoundException` already existed in `common.authz` carrying the wire code `ITINERARY_NOT_FOUND`, which five shipped client modules depend on for workspace refusals. The module's own exception is therefore `ItineraryObjectNotFoundException`; its `PUBLICATION_NOT_FOUND` code is left alone, since changing a wire code is a separate decision from renaming a package.
+
+## Amendment — the wire moved too, and this ticket's AC5 said it would not
+
+**AC5 as written:** *"No route, shape or status code changes in this ticket; the twin test still passes."* The route DID change here — `/v1/publications/{id}`, `/fork` and `DELETE` became `/v1/itineraries/…` — on the founder's instruction, recorded 2026-09-10: *"the whole purpose of this is actually moving into publication and renaming it into itinerary. this is also why we decoupled it too, so if it brakes, we know where to look."*
+
+AC5 is therefore **superseded for the three object routes** and holds for everything else. Recorded rather than quietly ignored, because a ticket whose ACs disagree with the tree teaches the next reader to trust neither.
+
+**What the additivity check actually proved, and what it missed.** The agent checked whether any shipped client called `/v1/publications` — the SOURCE path — and found none, which is true and is why the rename is not an ADR-008 break. It did not check the DESTINATION. The shipped client on `dev` does call `POST /v1/itineraries/{id}/fork` with a **trip id**; on this branch that path serves the Itinerary's fork by **object id**. Ids are UUIDs and never collide, so an old client gets a 404 either way — the same outcome ADR-037's approved sunset already produces. The conclusion held; the method was wrong end-first, and that is worth writing down.
