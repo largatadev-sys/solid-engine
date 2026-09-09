@@ -14,3 +14,19 @@
 - [ ] Republish keeps the Itinerary's id and refreshes the snapshot, the four columns and `publishedAt`; the trending and ordering reads use the refreshed instant
 - [ ] The migration is additive only; the four columns are filled at mint and refresh; the Itineraries already on `dev` keep null columns and render without pin and photos until republished
 - [ ] The page's contract tests live in the itinerary module, and every assertion line carried over from the old projection's tests is listed in this ticket's comments
+
+## Comments
+
+**2026-09-09 — built, backend CI green (1381 ITs, up 6; 473 unit; 0 failures).**
+
+*The audience change is the one worth reading twice.* CM-1's `PublicationController` consulted the authored-content fence on the object read, so a private owner's Itinerary answered `PROFILE_PRIVATE` to a stranger. ADR-034 decision 2 says the opposite, and the founder settled it in one line at the grilling. The fence is gone; `PublicationContractIT`'s assertion was **inverted rather than deleted**, so the rule stays pinned and now states canon. Archive still masks the page for non-owners — today's posture, unchanged.
+
+*What the snapshot needed.* Pin and per-activity photo ids, so a page renders without reaching back into the trip's rows. That meant widening `TripPlan` additively and batching photo ids through a **new `PhotoService.idsBySubject`** — `PhotoRepository` is package-private and the boundary was right to refuse the shortcut.
+
+*V56* adds the four Discover columns, nullable by design (the Itineraries already on `dev` keep nulls until republished — the same no-backfill ruling the flag columns took), with three partial indexes on `retired = FALSE` carrying `published_at DESC` beside the filtered column so a filter and its ordering answer from one scan.
+
+**Two boundary guards caught real breaches mid-build, and both were fixed rather than exempted.** `ItineraryPageResponse` borrowed `trip.fork.ForkedFromResponse` from behind trip's front door — publication now owns its own provenance record and reads the facts through a **new `ForkApi` in `trip.api`**, which is also the seam ticket 04 needs. And `ProfileFenceCoverageTest` flagged `PublicationController` the moment it stopped consulting the fence; it leaves that list, which is the bookkeeping the test exists for.
+
+*Assertion carried over from the old projection's tests:* the estimated-cost rules (zero-priced activities do not count toward the total, mixed currencies yield no total, an explicit zero is a stated price, partial when some activities are unpriced) are re-derived from the snapshot in `ItineraryPageService` rather than from `DayView`. `PublishedProjectionIT` still holds the originals until ticket 10 deletes it, so the two are provable side by side.
+
+**Not done here, and it belongs to ticket 03:** the client still reads the old projection route, so nothing a traveler sees has moved yet.
