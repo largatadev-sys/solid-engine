@@ -139,6 +139,34 @@ class PublishedMeansALiveItineraryIT extends PostgresTestBase {
 
 
     @Test
+    void aLiveItineraryPinsTheTripsLifecycleSoReopenIsRefused() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip = rig.createTrip(owner, 2);
+        walkToCompleted(owner, trip);
+        publish(owner, trip);
+
+        rest.post()
+                .uri("/v1/trips/" + trip + "/reopen")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("ILLEGAL_STATE_TRANSITION");
+
+        unpublish(owner, trip);
+
+        rest.post()
+                .uri("/v1/trips/" + trip + "/reopen")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
+
+    @Test
     void unpublishingATripThatHasNoItineraryStillSucceeds() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 2);

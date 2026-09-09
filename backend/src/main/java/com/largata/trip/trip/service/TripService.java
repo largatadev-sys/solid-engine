@@ -47,6 +47,7 @@ import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.trip.entity.TripFields;
 import com.largata.trip.trip.entity.TripCategory;
 import com.largata.trip.exception.NotTheTripOwnerException;
+import com.largata.trip.trip.exception.IllegalStateTransitionException;
 
 
 @Service
@@ -306,6 +307,10 @@ public class TripService {
     public Trip reopen(Membership owner) {
         Trip itinerary = authorizeAndLoad(owner);
         editLease.requireSessionFreeForLifecycle(owner);
+        if (publication.isPublished(itinerary.id())) {
+            throw new IllegalStateTransitionException(
+                    itinerary.state(), itinerary.state().previous().orElse(itinerary.state()));
+        }
         itinerary.reopen();
         workspaces.markActive(itinerary.id());
         return record(itinerary, owner, "itinerary_reopened");
