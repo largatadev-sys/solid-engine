@@ -47,9 +47,13 @@ describe('the client speaks the trip grammar (CM-3)', () => {
   });
 
   it('would fire if any old-root path were left in a repository', () => {
-    const leftBehind = [`apiClient.get(\`${OLD_ROOT}/\${id}/days\`)`];
+    const oldWorldsPath = `apiClient.get(\`${OLD_ROOT}/\${id}/days\`)`;
+    const theObjectsOwnRead = `apiClient.get(\`${OLD_ROOT}/\${id}\`)`;
+    const theObjectsOwnFork = `apiClient.post(\`${OLD_ROOT}/\${id}/fork\`)`;
 
-    expect(leftBehind.filter((line) => line.includes(OLD_ROOT))).not.toEqual([]);
+    expect(namesTheObjectRatherThanTheOldWorld(oldWorldsPath)).toBe(false);
+    expect(namesTheObjectRatherThanTheOldWorld(theObjectsOwnRead)).toBe(true);
+    expect(namesTheObjectRatherThanTheOldWorld(theObjectsOwnFork)).toBe(true);
   });
 
   it('publishing acts on the trip grammar, because published now means a live Itinerary exists', () => {

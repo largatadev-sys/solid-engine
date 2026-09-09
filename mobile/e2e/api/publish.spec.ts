@@ -223,9 +223,11 @@ test('a published plan is frozen — the edit is refused, naming why', async () 
 
 test('unpublishing leaves the trip completed — it does not un-travel it', async () => {
   const unpublished = await api(`/v1/trips/${trip}/unpublish`, 'POST', owner);
-  expect(unpublished.status).toBe(200);
-  expect(unpublished.body.state).toBe('completed');
-  expect(unpublished.body.published).toBe(false);
+  expect(unpublished.status).toBe(204);
+
+  const after = await api(`/v1/trips/${trip}`, 'GET', owner);
+  expect(after.body.state).toBe('completed');
+  expect(after.body.published).toBe(false);
 });
 
 test('and the plan is editable again', async () => {
@@ -289,7 +291,7 @@ test('a stranger still reads the itinerary of a trip whose owner asked for nothi
 test('unpublish masks the stranger again', async () => {
   const withdrawn = await api(`/v1/trips/${trip}/unpublish`, 'POST', owner);
   const goneAgain = await api(`/v1/trips/${trip}/itinerary`, 'GET', consumer);
-  expect(withdrawn.status).toBe(200);
+  expect(withdrawn.status).toBe(204);
   expect(goneAgain.status).toBe(404);
 });
 
