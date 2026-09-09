@@ -65,6 +65,8 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
             WHERE
             """ + DISCOVERABLE + """
               AND trim(coalesce(o.destination, '')) <> ''
+              AND (CAST(:text AS text) IS NULL
+                   OR o.destination ILIKE '%' || CAST(:text AS text) || '%')
               AND o.published_at >= CAST(:since AS timestamptz)
             GROUP BY lower(trim(o.destination))
             ORDER BY count(*) DESC, max(trim(o.destination))
@@ -86,6 +88,8 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
             WHERE
             """ + DISCOVERABLE + """
               AND trim(coalesce(o.title, '')) <> ''
+              AND (CAST(:text AS text) IS NULL
+                   OR o.title ILIKE '%' || CAST(:text AS text) || '%')
             ORDER BY o.title
             LIMIT :pageSize
             """, nativeQuery = true)
