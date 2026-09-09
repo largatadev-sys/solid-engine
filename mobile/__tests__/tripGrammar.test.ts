@@ -73,10 +73,12 @@ describe('the client speaks the trip grammar (CM-3)', () => {
     expect(publishing.match(/invalidateQueries/g) ?? []).not.toHaveLength(0);
   });
 
-  it('the published page still reads the old projection until the itinerary story', () => {
-    expect(readFileSync(join(REPOSITORIES, 'tripRepository.ts'), 'utf8')).toContain(
-      '/v1/published-itineraries/',
-    );
+  it('the published page reads the Itinerary by its own id, and by trip as the courtesy fallback', () => {
+    const source = readFileSync(join(REPOSITORIES, 'tripRepository.ts'), 'utf8');
+
+    expect(source).toContain('`/v1/publications/${id}`');
+    expect(source).toContain('`/v1/trips/${tripId}/itinerary`');
+    expect(source).not.toContain('/v1/published-itineraries/');
   });
 
   it('every cache write in the trip-events handler goes through an imported key factory', () => {

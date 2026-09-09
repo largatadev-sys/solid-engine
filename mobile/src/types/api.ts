@@ -115,6 +115,8 @@ export type ItineraryResponse = {
   endDate: string | null;
   state: ItineraryState;
   published: boolean;
+  itineraryId: string | null;
+  publishedAt: string | null;
 
   archived: boolean;
 
@@ -282,6 +284,8 @@ export type ItineraryObjectResponse = {
 
 export type PublishedItineraryResponse = {
   id: string;
+  tripId: string;
+  publishedAt: string;
   title: string;
   destination: string;
   pin: Pin | null;

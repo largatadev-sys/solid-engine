@@ -198,10 +198,19 @@ export function usePublishedItinerary(id: string): UseQueryResult<PublishedItine
   const { kind } = useAuth();
   return useQuery({
     queryKey: itineraryKeys.published(id),
-    queryFn: () => tripRepository.fetchPublished(id),
+    queryFn: () => resolvePublished(id),
     enabled: kind === 'signedIn',
     retry: false,
   });
+}
+
+
+async function resolvePublished(id: string): Promise<PublishedItineraryResponse> {
+  try {
+    return await tripRepository.fetchPublished(id);
+  } catch (whenNotAnItineraryId) {
+    return tripRepository.fetchPublishedByTrip(id);
+  }
 }
 
 

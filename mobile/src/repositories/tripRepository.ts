@@ -78,7 +78,11 @@ export const tripRepository = {
 
 
   async fetchPublished(id: string): Promise<PublishedItineraryResponse> {
-    return apiClient.get<PublishedItineraryResponse>(`/v1/published-itineraries/${id}`);
+    return apiClient.get<PublishedItineraryResponse>(`/v1/publications/${id}`);
+  },
+
+  async fetchPublishedByTrip(tripId: string): Promise<PublishedItineraryResponse> {
+    return apiClient.get<PublishedItineraryResponse>(`/v1/trips/${tripId}/itinerary`);
   },
 
 

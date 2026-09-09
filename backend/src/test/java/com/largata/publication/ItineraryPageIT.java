@@ -63,7 +63,7 @@ class ItineraryPageIT extends PostgresTestBase {
                 .isEqualTo(2)
                 .jsonPath("$.days[0].activities[0].title")
                 .isEqualTo("Snorkel the lagoon")
-                .jsonPath("$.days[0].activities[0].photoIds")
+                .jsonPath("$.days[0].activities[0].photos")
                 .isArray()
                 .jsonPath("$.plan.title")
                 .isEqualTo("Trip");

@@ -78,7 +78,7 @@ async function seedPublishedTrip(title: string): Promise<SeededTrip> {
 }
 
 const projectionOf = async (id: string) =>
-  (await api(`/v1/published-itineraries/${id}`, 'GET', forkerToken)).body;
+  (await api(`/v1/trips/${id}/itinerary`, 'GET', forkerToken)).body;
 
 const itineraryOf = async (id: string) => (await api(`/v1/trips/${id}`, 'GET', forkerToken)).body;
 

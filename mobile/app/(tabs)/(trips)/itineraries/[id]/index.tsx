@@ -93,7 +93,9 @@ export default function TripWorkspaceScreen() {
   }
 
   if (data.published && !data.archived) {
-    return <Redirect href={{ pathname: '/published/[id]', params: { id } }} />;
+    return (
+      <Redirect href={{ pathname: '/published/[id]', params: { id: data.itineraryId ?? id } }} />
+    );
   }
 
   const dayIds = data.days.map((d) => d.id);
@@ -117,7 +119,7 @@ export default function TripWorkspaceScreen() {
       return;
     }
     if (item === 'view-published') {
-      router.push({ pathname: '/published/[id]', params: { id } });
+      router.push({ pathname: '/published/[id]', params: { id: data.itineraryId ?? id } });
       return;
     }
     confirmWith(unpublishTripWording(), () => unpublish.mutate());

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -8,6 +8,7 @@ import { notify } from '../components/notify';
 import { ForkSheet } from './ForkSheet';
 import { FORK_CTA_LABEL, FORK_FAILED_BODY, FORK_FAILED_TITLE } from './forkCopy';
 import { PublishedItineraryView } from './PublishedItineraryView';
+import { addressOf, needsRewrite } from './itineraryAddress';
 import { publishedBackRoute, publishedRoute, type PublishedExit } from './publishedExit';
 import { useForkItinerary, usePublishedItinerary } from '../query/itineraryQueries';
 import { colors, radii, spacing, typography } from '../theme';
@@ -20,6 +21,13 @@ export function PublishedItineraryScreen({ exit = 'trip' }: { readonly exit?: Pu
   const { data, isPending, isError, error } = usePublishedItinerary(id);
   const fork = useForkItinerary(id);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const address = addressOf(id, data);
+  useEffect(() => {
+    if (needsRewrite(address) && address.kind === 'trip') {
+      router.replace(publishedRoute(exit, address.itineraryId));
+    }
+  }, [address.kind, exit, router, address]);
 
   if (isPending) {
     return (

@@ -6,7 +6,9 @@ import com.largata.identity.api.TravelerCardResponse;
 import com.largata.publication.dto.ItineraryPageResponse;
 import com.largata.publication.dto.ItineraryPageResponse.EstimatedCostResponse;
 import com.largata.publication.dto.ItineraryPageResponse.PageActivityResponse;
+import com.largata.media.MediaUrls;
 import com.largata.publication.dto.ItineraryPageResponse.PageDayResponse;
+import com.largata.publication.dto.ItineraryPageResponse.PagePhotoResponse;
 import com.largata.publication.entity.ItineraryObject;
 import com.largata.trip.api.ForkApi;
 import com.largata.publication.dto.ItineraryPageResponse.ForkedFromResponse;
@@ -101,7 +103,17 @@ public class ItineraryPageService {
                 activity.bookingProvider(),
                 activity.bookingPriceAmount(),
                 activity.bookingPriceCurrency(),
-                activity.photoIds() == null ? List.of() : activity.photoIds());
+                photosOf(activity));
+    }
+
+
+    private static List<PagePhotoResponse> photosOf(PlanSnapshot.Activity activity) {
+        if (activity.photoIds() == null) {
+            return List.of();
+        }
+        return activity.photoIds().stream()
+                .map(id -> new PagePhotoResponse(id, MediaUrls.of(id), MediaUrls.thumbnailOf(id)))
+                .toList();
     }
 
 

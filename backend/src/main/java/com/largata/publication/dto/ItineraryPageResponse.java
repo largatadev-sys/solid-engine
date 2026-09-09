@@ -56,5 +56,8 @@ public record ItineraryPageResponse(
             String bookingProvider,
             @JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal bookingPriceAmount,
             String bookingPriceCurrency,
-            List<UUID> photoIds) {}
+            List<PagePhotoResponse> photos) {}
+
+
+    public record PagePhotoResponse(UUID id, String url, String thumbUrl) {}
 }
