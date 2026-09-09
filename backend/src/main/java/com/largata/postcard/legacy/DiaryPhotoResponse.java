@@ -1,4 +1,4 @@
-package com.largata.itinerary.api;
+package com.largata.postcard.legacy;
 
 import com.largata.media.MediaUrls;
 import com.largata.media.Photo;

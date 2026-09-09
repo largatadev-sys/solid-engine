@@ -1,4 +1,4 @@
-package com.largata.itinerary;
+package com.largata.postcard.legacy;
 
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;

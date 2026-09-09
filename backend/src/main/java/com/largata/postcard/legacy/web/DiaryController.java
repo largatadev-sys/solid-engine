@@ -1,4 +1,4 @@
-package com.largata.itinerary.web;
+package com.largata.postcard.legacy.web;
 
 import com.largata.common.api.Page;
 import com.largata.common.authz.AudienceFence;
@@ -6,11 +6,11 @@ import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
-import com.largata.itinerary.DiaryService;
-import com.largata.itinerary.api.AddDiaryPhotoFromDumpRequest;
-import com.largata.itinerary.api.DiaryEntryResponse;
-import com.largata.itinerary.api.PostDiaryEntryRequest;
-import com.largata.itinerary.api.UpdateDiaryEntryRequest;
+import com.largata.postcard.legacy.DiaryService;
+import com.largata.postcard.legacy.AddDiaryPhotoFromDumpRequest;
+import com.largata.postcard.legacy.DiaryEntryResponse;
+import com.largata.postcard.legacy.PostDiaryEntryRequest;
+import com.largata.postcard.legacy.UpdateDiaryEntryRequest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

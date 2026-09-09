@@ -35,7 +35,8 @@ class TripModuleBoundaryTest {
                     "ownership", "validation", "destruction");
 
     private static final DescribedPredicate<JavaClass> THE_LEGACY_EXEMPTION =
-            resideInAPackage("com.largata.itinerary..");
+            resideInAPackage("com.largata.itinerary..")
+                    .or(resideInAPackage("com.largata.postcard.legacy.."));
 
     private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
             resideInAPackage(TRIP + "..").and(not(resideInAnyPackage(FRONT_DOOR)));
@@ -98,12 +99,16 @@ class TripModuleBoundaryTest {
     }
 
     @Test
-    void theLegacyExemptionSelectsTheWholeOldPackageAndDissolvesAtCM5() {
+    void theLegacyExemptionSelectsTheWholeLegacyWorldAndDissolvesWhenItGoes() {
         assertThat(largata.that(THE_LEGACY_EXEMPTION))
-                .as("the old package's content half reaches into the trip half today and is DELETED"
-                        + " at CM-5 rather than rewritten - an exemption selecting a handful of"
-                        + " classes would mean the predicate had stopped naming what it describes")
-                .hasSizeGreaterThan(30);
+                .as("the legacy content world reaches into the trip half today and is DELETED rather"
+                        + " than rewritten - an exemption selecting a handful of classes would mean"
+                        + " the predicate had stopped naming what it describes. CM-5 ticket 09 moved"
+                        + " the diary half into postcard.legacy WITHOUT rewriting its reach, so the"
+                        + " predicate follows it there: the five old Trip Diary screens still call"
+                        + " these paths, and the epic-map line that cuts them over is what finally"
+                        + " deletes both halves")
+                .hasSizeGreaterThan(20);
     }
 
     @Test

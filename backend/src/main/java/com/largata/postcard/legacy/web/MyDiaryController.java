@@ -1,10 +1,10 @@
-package com.largata.itinerary.web;
+package com.largata.postcard.legacy.web;
 
 import com.largata.common.api.Page;
-import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
-import com.largata.itinerary.DiaryService;
-import com.largata.profile.api.DiaryTripResponse;
+import com.largata.identity.Traveler;
+import com.largata.postcard.legacy.DiaryService;
+import com.largata.postcard.legacy.DiaryTripResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;

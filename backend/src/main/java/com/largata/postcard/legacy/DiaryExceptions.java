@@ -1,4 +1,4 @@
-package com.largata.itinerary;
+package com.largata.postcard.legacy;
 
 import com.largata.common.error.ConflictException;
 import com.largata.common.error.NotFoundException;

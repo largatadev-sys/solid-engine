@@ -1,4 +1,4 @@
-package com.largata.itinerary;
+package com.largata.postcard.legacy;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
@@ -8,14 +8,13 @@ import com.largata.common.authz.InAudience;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
-import com.largata.itinerary.api.DiaryEntryResponse;
-import com.largata.itinerary.api.DiaryPhotoResponse;
-import com.largata.profile.api.DiaryTripResponse;
-import com.largata.itinerary.DiaryExceptions.ActivityAlreadyInDiaryException;
-import com.largata.itinerary.DiaryExceptions.DiaryEntryNeedsAPhotoException;
-import com.largata.itinerary.DiaryExceptions.DiaryEntryNotFoundException;
-import com.largata.itinerary.DiaryExceptions.TooManyDiaryPhotosException;
-import com.largata.itinerary.DiaryExceptions.TripNotStartedException;
+import com.largata.postcard.legacy.DiaryEntryResponse;
+import com.largata.postcard.legacy.DiaryPhotoResponse;
+import com.largata.postcard.legacy.DiaryExceptions.ActivityAlreadyInDiaryException;
+import com.largata.postcard.legacy.DiaryExceptions.DiaryEntryNeedsAPhotoException;
+import com.largata.postcard.legacy.DiaryExceptions.DiaryEntryNotFoundException;
+import com.largata.postcard.legacy.DiaryExceptions.TooManyDiaryPhotosException;
+import com.largata.postcard.legacy.DiaryExceptions.TripNotStartedException;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;

@@ -1,4 +1,4 @@
-package com.largata.itinerary.api;
+package com.largata.postcard.legacy;
 
 import java.time.Instant;
 import java.time.LocalTime;
