@@ -14,6 +14,8 @@ public interface ForkApi {
     interface SourceVisibility {
 
         boolean stillLive(UUID sourceId);
+
+        java.util.Optional<UUID> ownerOf(UUID sourceId);
     }
 
 

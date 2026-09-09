@@ -52,7 +52,7 @@ class ForkProvenanceIT extends PostgresTestBase {
 
         JsonNode provenance = itinerary(forker, forkId).get("forkedFrom");
         assertThat(provenance.isNull()).isFalse();
-        assertThat(provenance.get("sourceItineraryId").asString()).isEqualTo(sourceId);
+        assertThat(provenance.get("sourceItineraryId").asString()).isEqualTo(itineraryBehind(sourceId));
 
         String scratchId = trip(forker);
         assertThat(itinerary(forker, scratchId).get("forkedFrom").isNull())
@@ -93,7 +93,7 @@ class ForkProvenanceIT extends PostgresTestBase {
 
         assertThat(itinerary(forker, forkId).get("forkedFrom").get("sourceItineraryId").asString())
                 .as("the full read model is where provenance lives, and it has it")
-                .isEqualTo(sourceId);
+                .isEqualTo(itineraryBehind(sourceId));
     }
 
 
@@ -192,7 +192,7 @@ class ForkProvenanceIT extends PostgresTestBase {
         publish(forker, forkId);
 
         JsonNode provenance = publicView(freshTraveler(), forkId).get("forkedFrom");
-        assertThat(provenance.get("sourceItineraryId").asString()).isEqualTo(sourceId);
+        assertThat(provenance.get("sourceTripId").asString()).isEqualTo(itineraryBehind(sourceId));
         assertThat(provenance.get("ownerHandle").asString()).isEqualTo(handle);
         assertThat(provenance.get("sourceVisible").asBoolean()).isTrue();
     }

@@ -58,6 +58,8 @@ class TripCreationService implements TripCreationApi {
                                         null,
                                         blueprint.pin()),
                                 at));
+        copy.editFields(fieldsOfTrip(blueprint), ownerId, at);
+        trips.save(copy);
         workspaces.formAround(copy.id(), ownerId, at);
 
         for (BlueprintDay day : blueprint.days()) {
@@ -69,6 +71,20 @@ class TripCreationService implements TripCreationApi {
             }
         }
         return copy.id();
+    }
+
+
+    private static TripFields fieldsOfTrip(PlanBlueprint blueprint) {
+        return new TripFields(
+                blueprint.title(),
+                blueprint.destination(),
+                blueprint.currency(),
+                blueprint.description(),
+                blueprint.standouts(),
+                blueprint.bestTimeOfYear() == null ? "" : blueprint.bestTimeOfYear(),
+                null,
+                null,
+                blueprint.pin());
     }
 
 

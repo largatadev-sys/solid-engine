@@ -63,7 +63,8 @@ class ForkAnalyticsIT extends PostgresTestBase {
                 .satisfies(
                         line -> {
                             assertThat(line.getMDCPropertyMap())
-                                    .containsEntry("event.sourceItineraryId", sourceId)
+                                    .containsEntry(
+                                            "event.sourceItineraryId", itineraryBehind(sourceId))
                                     .containsKey("event.itineraryId")
                                     .containsKey("event.travelerId");
                             assertThat(line.getMDCPropertyMap().get("event.itineraryId"))

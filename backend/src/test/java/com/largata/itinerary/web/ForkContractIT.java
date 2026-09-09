@@ -229,7 +229,8 @@ class ForkContractIT extends PostgresTestBase {
                                 "SELECT source_itinerary_id FROM fork_relationship WHERE forked_itinerary_id = ?",
                                 UUID.class,
                                 forkId))
-                .isEqualTo(UUID.fromString(sourceId));
+                .as("the provenance row names the ITINERARY the forker read, not the trip behind it")
+                .isEqualTo(UUID.fromString(itineraryBehind(sourceId)));
         assertThat(
                         jdbc.queryForObject(
                                 "SELECT forked_at FROM fork_relationship WHERE forked_itinerary_id = ?",
@@ -253,7 +254,7 @@ class ForkContractIT extends PostgresTestBase {
         assertThat(codeIn(refusal))
                 .as("two 404s with different codes would pass a status-only assertion in both worlds")
                 .isEqualTo(codeIn(neverExisted))
-                .isEqualTo("ITINERARY_NOT_FOUND");
+                .isEqualTo("PUBLICATION_NOT_FOUND");
     }
 
 
@@ -265,7 +266,7 @@ class ForkContractIT extends PostgresTestBase {
 
         String refusal = rawBody(fork(freshTraveler(), sourceId).expectStatus().isNotFound());
 
-        assertThat(codeIn(refusal)).isEqualTo("ITINERARY_NOT_FOUND");
+        assertThat(codeIn(refusal)).isEqualTo("PUBLICATION_NOT_FOUND");
     }
 
 
@@ -323,8 +324,9 @@ class ForkContractIT extends PostgresTestBase {
         JsonNode leaf = forkOf(lastForker, middleId);
 
         assertThat(leaf.get("forkedFrom").get("sourceItineraryId").asString())
-                .as("one hop — credit stays honest and simple regardless of how long the chain is")
-                .isEqualTo(middleId);
+                .as("one hop — credit stays honest and simple regardless of how long the chain is,"
+                        + " and from CM-5 it names the ITINERARY the traveler actually tapped")
+                .isEqualTo(itineraryBehind(middleId));
         assertThat(forkCountOf(rootId)).isEqualTo(1);
         assertThat(forkCountOf(middleId)).isEqualTo(1);
     }
@@ -359,10 +361,10 @@ class ForkContractIT extends PostgresTestBase {
     }
 
 
-    private long forkCountOf(String itineraryId) {
+    private long forkCountOf(String tripId) {
         return countOf(
                 "SELECT count(*) FROM fork_relationship WHERE source_itinerary_id = ?",
-                UUID.fromString(itineraryId));
+                UUID.fromString(itineraryBehind(tripId)));
     }
 
 
@@ -410,7 +412,22 @@ class ForkContractIT extends PostgresTestBase {
 
 
     private JsonNode forkOf(String token, String sourceId) {
-        return JSON.readTree(rawBody(fork(token, sourceId).expectStatus().isCreated()));
+        String forkedTripId =
+                TripRig.fieldIn(
+                        rawBody(fork(token, sourceId).expectStatus().isCreated()).getBytes(), "id");
+        return readTrip(token, forkedTripId);
+    }
+
+
+    private JsonNode readTrip(String token, String tripId) {
+        return JSON.readTree(
+                rawBody(
+                        rest.get()
+                                .uri("/v1/trips/" + tripId)
+                                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                                .exchange()
+                                .expectStatus()
+                                .isOk()));
     }
 
 

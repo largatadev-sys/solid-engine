@@ -97,7 +97,7 @@ public class ForkService implements ForkApi {
 
 
     private String handleOfOwnerOf(UUID sourceId) {
-        return workspaces
+        return sourceVisibility
                 .ownerOf(sourceId)
                 .flatMap(travelers::summaryById)
                 .map(TravelerSummary::handle)
