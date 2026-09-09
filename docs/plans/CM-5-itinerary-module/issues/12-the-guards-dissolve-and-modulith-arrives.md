@@ -18,3 +18,21 @@
 
 - [ ] `chat` and `verification` map on their own side of the door; their api records are bare data; both guards enforce the real contract rule and their breach-still-fails assertions are gone
 - [ ] The cycle rule's recorded list is re-measured and every cycle this story closes is removed from it
+
+## Comments
+
+**2026-09-09 — built. Backend unit 494 green, integration 1336 green (0 failures, 15 quarantined).**
+
+*The guards dissolved as the world they described disappeared, ticket by ticket.* The cycle rule lost `itinerary <-> trip` at ticket 10 and records five; the meta-test's dismantled list is empty; the new-world guard's content-half exemption is gone and its old-world regex no longer names the deleted package, with a new assertion pinning that the directory itself does not exist — a guard forbidding an import nobody can write is how a guard starts lying. The trip module's legacy exemption narrowed from the whole old package to `postcard.legacy` alone.
+
+*One guard could not simply be deleted.* `AudienceFenceCoverageTest`'s optional-membership registry is now **empty**, because the old fork route was the last door that served non-members. An empty scan and a broken regex are indistinguishable, so the anti-vacuity test now proves the **pattern** against a fork-shaped handler written inline: the day someone opens such a door again, the scan sees it and the registry refuses it.
+
+*Modulith (1.4.3, pinned — Boot 4.1 manages no version) reads the same tree and agrees with the ArchUnit guards*, which is the point of having both. Nineteen `package-info` files declare the model ADR-038 already described in prose: `common`, `identity` and `media` are **OPEN** by classification, and every other module declares named interfaces for what it publishes — `api` everywhere, plus `exception` where refusals are part of the contract, `dto`, `card`, and `legacy` for the relocated diary adapters.
+
+**`verify()` does NOT pass, and the test says so.** It is asserted to **throw**, naming `postcard` and `trip`: the diary adapters reaching trip's plan entities, the same counted exemption seen through a second lens. A second rule asserts no other module may appear in the refusals, so a new breach cannot shelter behind the recorded one. When the five old Trip Diary screens are cut over, the adapters, that exemption and both assertions are deleted together.
+
+*A correction worth keeping:* I briefly read the violation list as empty and nearly recorded "verify() passes". It does not — I had grepped output that did not carry the messages. Reading the assertion's own failure text settled it, where counting matching lines had not.
+
+**The registry ruling:** the founder's condition was that the event publication registry rides this ticket **only if 09 to 11 were green at its start**. They were not — the fork sweep was still red when ticket 12 began — so per that ruling the registry is **left to the next story**, and the epic map's registry line keeps its trigger.
+
+**Not done here:** trip's internals are not yet package-private where the layer folders allow. That half of the ticket is deferred with the gate.
