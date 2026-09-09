@@ -71,6 +71,52 @@ class ItineraryPageIT extends PostgresTestBase {
 
 
     @Test
+    void theTripsDatesReachThePageNowhere_noteVenInTheRawPlanBesideIt() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip =
+                TripRig.fieldIn(
+                        rest.post()
+                                .uri("/v1/trips")
+                                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body("{\"title\":\"Trip\",\"destination\":\"Palawan\","
+                                        + "\"durationDays\":2,\"startDate\":\"2026-11-02\","
+                                        + "\"endDate\":\"2026-11-03\"}")
+                                .exchange()
+                                .expectStatus()
+                                .isCreated()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id");
+        walkToCompleted(owner, trip);
+        String objectId = publish(owner, trip);
+
+        String body =
+                new String(
+                        rest.get()
+                                .uri("/v1/itineraries/" + objectId)
+                                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                                .exchange()
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent());
+
+        assertThat(body)
+                .as("the page is a reusable plan, not a dated trip - ADR-013's fork carries no dates"
+                        + " and the projection has never shown them. The snapshot DOES store them, so"
+                        + " the raw plan document beside the typed days is where they leak, and the"
+                        + " substring is the check because a nested blob is not reachable by jsonPath")
+                .doesNotContain("startDate")
+                .doesNotContain("endDate")
+                .doesNotContain("2026-11-02")
+                .doesNotContain("2026-11-03");
+    }
+
+
+    @Test
     void aStrangerReadsAPrivateOwnersItinerary_becauseAPublishedItineraryIsPublic() {
         String owner = rig.travelerWithHandle(handle());
         String stranger = rig.travelerWithHandle(handle());

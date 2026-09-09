@@ -21,7 +21,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 
 @Service
@@ -67,7 +69,16 @@ public class ItineraryPageService {
                                                 source.ownerHandle(),
                                                 source.sourceVisible()))
                         .orElse(null),
-                json.readTree(object.plan()));
+                planWithoutTheTripsDates(json.readTree(object.plan())));
+    }
+
+
+    private static JsonNode planWithoutTheTripsDates(JsonNode plan) {
+        if (plan instanceof ObjectNode document) {
+            document.remove("startDate");
+            document.remove("endDate");
+        }
+        return plan;
     }
 
 
@@ -99,7 +110,7 @@ public class ItineraryPageService {
                                                 source.ownerHandle(),
                                                 source.sourceVisible()))
                         .orElse(null),
-                json.readTree(snapshotJson));
+                planWithoutTheTripsDates(json.readTree(snapshotJson)));
     }
 
 
