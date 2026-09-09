@@ -33,6 +33,11 @@ async function publish(): Promise<void> {
   if (published.status !== 200) throw new SeedFailure('publishing the trip', published.body);
 }
 
+async function itineraryIdOfTrip(): Promise<string> {
+  const read = await api(`/v1/trips/${trip.id}`, 'GET', token);
+  return read.body?.itineraryId as string;
+}
+
 async function isPublished(): Promise<boolean> {
   const read = await api(`/v1/trips/${trip.id}`, 'GET', token);
   return read.body?.published === true;
@@ -74,7 +79,7 @@ test('View published page opens the published route, rather than dying as a dead
   await labelled(page, itineraryMenuLabel(title)).click();
   await labelled(page, VIEW_PUBLISHED_PAGE_LABEL).click();
 
-  await expect(page).toHaveURL(new RegExp(`/showcase/${trip.id}`));
+  await expect(page).toHaveURL(new RegExp(`/showcase/${await itineraryIdOfTrip()}`));
 });
 
 test('Edit details opens the details editor', async ({ page }) => {

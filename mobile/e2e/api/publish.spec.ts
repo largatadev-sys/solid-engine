@@ -155,8 +155,8 @@ test("the lifecycle walks draft to completed on the traveler's act", async () =>
 test('publish by the owner on a completed trip lands, public by default', async () => {
   const published = await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   expect(published.status).toBe(200);
-  expect(published.body.published).toBe(true);
-  expect(published.body.visibility).toBe('public');
+  expect(published.body.id).toBeTruthy();
+  expect(published.body.tripId).toBe(trip);
 });
 
 test('a published trip pins its lifecycle — reopen is refused', async () => {

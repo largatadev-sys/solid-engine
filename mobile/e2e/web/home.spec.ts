@@ -851,7 +851,7 @@ test.describe('the trip line self-heals at publish', () => {
         },
         { timeout: 15_000 },
       )
-      .toBe(trip.id);
+      .toBe(published.body.id);
   });
 
   test('tapping the trip line lands on the published itinerary', async ({ page }) => {

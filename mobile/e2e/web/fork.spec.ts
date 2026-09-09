@@ -176,7 +176,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
     expect(fork.days.length).toBe(DURATION_DAYS);
     expect(fork.days[0].activities[0].title).toBe(ACTIVITY);
     expect(fork.days[0].activities[0].notes).toBe(TIP);
-    expect(fork.forkedFrom.sourceItineraryId).toBe(source.id);
+    expect(fork.forkedFrom.sourceItineraryId).toBe(source.itineraryId);
     expect(fork.forkedFrom.ownerHandle).toBe(authorHandle);
     expect(fork.forkedFrom.sourceVisible).toBe(true);
   });
@@ -275,7 +275,7 @@ test.describe('attribution when the source stops being visible', () => {
     expect((await itineraryOf(forkId)).forkedFrom.sourceVisible).toBe(true);
 
     const hidden = await api(`/v1/trips/${source.id}/unpublish`, 'POST', source.ownerToken);
-    expect(hidden.status).toBe(200);
+    expect(hidden.status).toBe(204);
 
     await expect
       .poll(async () => (await itineraryOf(forkId)).forkedFrom.sourceVisible, { timeout: 15_000 })
