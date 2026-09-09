@@ -1,13 +1,13 @@
-package com.largata.itinerary.web;
+package com.largata.feed.web;
 
 import com.largata.common.api.Page;
 import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
-import com.largata.itinerary.PostcardFeedService;
-import com.largata.itinerary.api.FeedPostcardResponse;
-import com.largata.itinerary.api.PublicTripDiaryResponse;
+import com.largata.feed.PostcardFeedService;
+import com.largata.feed.api.FeedPostcardResponse;
+import com.largata.feed.api.PublicTripDiaryResponse;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

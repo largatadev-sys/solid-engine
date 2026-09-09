@@ -1,4 +1,4 @@
-package com.largata.itinerary.api;
+package com.largata.feed.api;
 
 import com.largata.identity.api.TravelerCardResponse;
 import java.util.List;

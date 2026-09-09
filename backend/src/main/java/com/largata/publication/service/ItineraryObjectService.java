@@ -123,9 +123,12 @@ public class ItineraryObjectService implements PublicationApi {
 
     @Transactional(readOnly = true)
     public Map<UUID, UUID> objectIdsByTrip(List<UUID> tripIds) {
+        if (tripIds.isEmpty()) {
+            return Map.of();
+        }
         Map<UUID, UUID> found = new HashMap<>();
-        for (UUID tripId : tripIds) {
-            objects.findByTripId(tripId).ifPresent(object -> found.put(tripId, object.id()));
+        for (ItineraryObject live : objects.findLiveByTripIdIn(tripIds)) {
+            found.put(live.tripId(), live.id());
         }
         return found;
     }

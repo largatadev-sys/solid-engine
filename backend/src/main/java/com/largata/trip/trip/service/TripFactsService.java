@@ -56,6 +56,19 @@ class TripFactsService implements TripApi {
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<TripTeaser> teasersOf(java.util.Collection<UUID> tripIds) {
+        if (tripIds.isEmpty()) {
+            return java.util.List.of();
+        }
+        return java.util.stream.StreamSupport.stream(
+                        trips.findAllById(tripIds).spliterator(), false)
+                .map(TripFactsService::teaserFrom)
+                .toList();
+    }
+
+
     private static TripTeaser teaserFrom(Trip trip) {
         return new TripTeaser(
                 trip.id(),

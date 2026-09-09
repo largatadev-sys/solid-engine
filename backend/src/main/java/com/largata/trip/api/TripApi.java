@@ -12,6 +12,8 @@ public interface TripApi {
 
     Optional<TripTeaser> teaserOf(UUID tripId);
 
+    java.util.List<TripTeaser> teasersOf(java.util.Collection<UUID> tripIds);
+
     Map<UUID, String> titlesByIds(Collection<UUID> tripIds);
 
     long shareCardVersionOf(UUID tripId);

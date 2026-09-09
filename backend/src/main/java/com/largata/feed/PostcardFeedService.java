@@ -1,13 +1,13 @@
-package com.largata.itinerary;
+package com.largata.feed;
 
 import com.largata.common.api.InstantCursor;
 import com.largata.common.api.Page;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.api.TravelerCardResponse;
-import com.largata.itinerary.api.DiaryPhotoResponse;
-import com.largata.itinerary.api.FeedPostcardResponse;
-import com.largata.itinerary.api.PublicTripDiaryResponse;
+import com.largata.feed.api.FeedPhotoResponse;
+import com.largata.feed.api.FeedPostcardResponse;
+import com.largata.feed.api.PublicTripDiaryResponse;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
@@ -23,8 +23,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.largata.trip.trip.entity.Trip;
-import com.largata.trip.workspace.service.WorkspaceService;
-import com.largata.trip.trip.repository.TripRepository;
+import com.largata.trip.api.MembershipApi;
+import com.largata.publication.api.PublicationApi;
+import com.largata.trip.api.TripApi;
+import com.largata.trip.api.TripTeaser;
 
 
 @Service
@@ -36,19 +38,22 @@ public class PostcardFeedService {
     private static final Logger log = LoggerFactory.getLogger(PostcardFeedService.class);
 
     private final LegacyEntries entries;
-    private final TripRepository itineraries;
-    private final WorkspaceService workspaces;
+    private final TripApi itineraries;
+    private final PublicationApi publications;
+    private final MembershipApi workspaces;
     private final TravelerService travelers;
     private final PhotoService photos;
 
     PostcardFeedService(
             LegacyEntries entries,
-            TripRepository itineraries,
-            WorkspaceService workspaces,
+            TripApi itineraries,
+            PublicationApi publications,
+            MembershipApi workspaces,
             TravelerService travelers,
             PhotoService photos) {
         this.entries = entries;
         this.itineraries = itineraries;
+        this.publications = publications;
         this.workspaces = workspaces;
         this.travelers = travelers;
         this.photos = photos;
@@ -109,12 +114,12 @@ public class PostcardFeedService {
     public PublicTripDiaryResponse tripDiary(UUID itineraryId, UUID authorId) {
         List<LegacyEntries.Entry> shared = entries.ofTrip(itineraryId, authorId);
         if (shared.isEmpty()) {
-            throw new DiaryExceptions.DiaryEntryNotFoundException();
+            throw new FeedExceptions.NoSharedPostcardsException();
         }
 
         List<FeedPostcardResponse> postcards = project(shared);
         if (postcards.isEmpty()) {
-            throw new DiaryExceptions.DiaryEntryNotFoundException();
+            throw new FeedExceptions.NoSharedPostcardsException();
         }
 
         FeedPostcardResponse first = postcards.getFirst();
@@ -135,13 +140,14 @@ public class PostcardFeedService {
                 photos.allOfEach(
                         PhotoSubject.POSTCARD, rows.stream().map(LegacyEntries.Entry::id).toList());
         Map<UUID, TravelerCardResponse> authors = authorsOf(rows);
-        Map<UUID, Trip> trips = tripsOf(rows);
+        Map<UUID, TripTeaser> trips = tripsOf(rows);
 
         Set<UUID> archived = workspaces.archivedAmong(trips.keySet());
+        Map<UUID, UUID> itineraryIds = publications.objectIdsByTrip(List.copyOf(trips.keySet()));
 
         return rows.stream()
                 .filter(entry -> entry.tripId() == null || !archived.contains(entry.tripId()))
-                .map(entry -> cardOf(entry, authors, trips, photosByEntry))
+                .map(entry -> cardOf(entry, authors, trips, photosByEntry, itineraryIds))
                 .filter(card -> card != null)
                 .toList();
     }
@@ -150,10 +156,11 @@ public class PostcardFeedService {
     private FeedPostcardResponse cardOf(
             LegacyEntries.Entry entry,
             Map<UUID, TravelerCardResponse> authors,
-            Map<UUID, Trip> trips,
-            Map<UUID, List<Photo>> photosByEntry) {
+            Map<UUID, TripTeaser> trips,
+            Map<UUID, List<Photo>> photosByEntry,
+            Map<UUID, UUID> itineraryIds) {
         TravelerCardResponse author = authors.get(entry.authorId());
-        Trip trip = entry.tripId() == null ? null : trips.get(entry.tripId());
+        TripTeaser trip = entry.tripId() == null ? null : trips.get(entry.tripId());
         if (author == null || (entry.tripId() != null && trip == null)) {
             log.warn(
                     "Shared postcard withheld from the feed: entryId={} authorFound={} tripFound={}",
@@ -168,20 +175,15 @@ public class PostcardFeedService {
                 entry.tripId(),
                 trip == null ? null : trip.title(),
                 trip == null ? null : trip.destination(),
-                trip == null ? null : navigableTripOf(trip),
+                trip == null ? null : itineraryIds.get(trip.tripId()),
                 entry.dayLabel(),
                 entry.activityTitle(),
                 entry.place(),
                 entry.caption(),
                 entry.sharedAt(),
                 photosByEntry.getOrDefault(entry.id(), List.of()).stream()
-                        .map(DiaryPhotoResponse::of)
+                        .map(FeedPhotoResponse::of)
                         .toList());
-    }
-
-
-    private UUID navigableTripOf(Trip trip) {
-        return trip.isPublished() ? trip.id() : null;
     }
 
 
@@ -192,15 +194,15 @@ public class PostcardFeedService {
     }
 
 
-    private Map<UUID, Trip> tripsOf(List<LegacyEntries.Entry> rows) {
+    private Map<UUID, TripTeaser> tripsOf(List<LegacyEntries.Entry> rows) {
         List<UUID> ids =
                 rows.stream()
                         .map(LegacyEntries.Entry::tripId)
                         .filter(id -> id != null)
                         .distinct()
                         .toList();
-        return itineraries.findAllById(ids).stream()
-                .collect(Collectors.toMap(Trip::id, Function.identity()));
+        return itineraries.teasersOf(ids).stream()
+                .collect(Collectors.toMap(TripTeaser::tripId, Function.identity()));
     }
 
 

@@ -24,6 +24,7 @@ class ModuleGuardMetaTest {
                     "chat",
                     "diary",
                     "discovery",
+                    "feed",
                     "health",
                     "invitation",
                     "join",

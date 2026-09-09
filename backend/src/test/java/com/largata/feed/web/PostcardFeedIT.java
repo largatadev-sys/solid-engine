@@ -1,4 +1,4 @@
-package com.largata.itinerary.web;
+package com.largata.feed.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -324,11 +324,11 @@ class PostcardFeedIT extends ObjectStoreTestBase {
                 .as("nothing to navigate to yet — the line renders inert")
                 .isNull();
 
-        publish(trip);
+        String itineraryId = publish(trip);
 
         assertThat(cardIn(feedFor(stranger), entryId).publishedItineraryId())
-                .as("the link self-heals the moment the trip publishes")
-                .isEqualTo(UUID.fromString(trip.tripId()));
+                .as("the link self-heals the moment the trip publishes, and it names the ITINERARY")
+                .isEqualTo(UUID.fromString(itineraryId));
     }
 
 
@@ -560,20 +560,21 @@ class PostcardFeedIT extends ObjectStoreTestBase {
     }
 
 
-    private void publish(Fixture trip) {
+    private String publish(Fixture trip) {
         rest.post()
                 .uri("/v1/itineraries/" + trip.tripId() + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
                 .isOk();
-        rig.send(
-                        HttpMethod.POST,
-                        "/v1/itineraries/" + trip.tripId() + "/publish",
-                        trip.owner(),
-                        "{\"visibility\":\"public\"}")
-                .expectStatus()
-                .isOk();
+        return TripRig.fieldIn(
+                rig.send(HttpMethod.POST, "/v1/trips/" + trip.tripId() + "/publish", trip.owner(), null)
+                        .expectStatus()
+                        .isOk()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent(),
+                "id");
     }
 
 

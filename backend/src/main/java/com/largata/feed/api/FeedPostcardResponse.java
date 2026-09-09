@@ -1,4 +1,4 @@
-package com.largata.itinerary.api;
+package com.largata.feed.api;
 
 import com.largata.identity.api.TravelerCardResponse;
 import java.time.Instant;
@@ -18,4 +18,4 @@ public record FeedPostcardResponse(
         String place,
         String caption,
         Instant sharedAt,
-        List<DiaryPhotoResponse> photos) {}
+        List<FeedPhotoResponse> photos) {}
