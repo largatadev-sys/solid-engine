@@ -27,12 +27,12 @@ class ModuleGuardMetaTest {
                     "feed",
                     "health",
                     "invitation",
+                    "itinerary",
                     "join",
                     "place",
                     "poll",
                     "postcard",
                     "profile",
-                    "publication",
                     "report",
                     "trip",
                     "verification");

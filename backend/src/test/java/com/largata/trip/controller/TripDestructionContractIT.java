@@ -130,7 +130,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
                                 .isEmpty());
 
         rest.get()
-                .uri("/v1/publications/" + objectId)
+                .uri("/v1/itineraries/" + objectId)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(member))
                 .exchange()
                 .expectStatus()
@@ -406,7 +406,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
     private String fork(String token, String itineraryId) {
         return TripRig.fieldIn(
                 rest.post()
-                        .uri("/v1/publications/" + itineraryId + "/fork")
+                        .uri("/v1/itineraries/" + itineraryId + "/fork")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                         .exchange()
                         .expectStatus()

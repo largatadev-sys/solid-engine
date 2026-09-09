@@ -74,12 +74,12 @@ export const tripRepository = {
 
 
   async forkItinerary(id: string): Promise<ForkedTripResponse> {
-    return apiClient.post<ForkedTripResponse>(`/v1/publications/${id}/fork`, undefined);
+    return apiClient.post<ForkedTripResponse>(`/v1/itineraries/${id}/fork`, undefined);
   },
 
 
   async fetchPublished(id: string): Promise<PublishedItineraryResponse> {
-    return apiClient.get<PublishedItineraryResponse>(`/v1/publications/${id}`);
+    return apiClient.get<PublishedItineraryResponse>(`/v1/itineraries/${id}`);
   },
 
   async fetchPublishedByTrip(tripId: string): Promise<PublishedItineraryResponse> {

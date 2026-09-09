@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 class NewWorldBoundaryTest {
 
-    private static final List<String> NEW_WORLD = List.of("trip", "diary", "postcard", "publication");
+    private static final List<String> NEW_WORLD = List.of("trip", "diary", "postcard", "itinerary");
 
     private static final Pattern OLD_WORLD =
             Pattern.compile(
@@ -67,7 +67,19 @@ class NewWorldBoundaryTest {
                 .isFalse();
         assertThat(Path.of("src/main/java/com/largata/workspace")).doesNotExist();
         assertThat(Path.of("src/main/java/com/largata/membership")).doesNotExist();
-        assertThat(Path.of("src/main/java/com/largata/itinerary")).doesNotExist();
+        for (String gone :
+                List.of(
+                        "PublishedItinerary",
+                        "PublishedItineraryService",
+                        "PublishedVisibility",
+                        "RowBackedPublicationState",
+                        "StrangersSurface")) {
+            assertThat(Path.of("src/main/java/com/largata/itinerary", gone + ".java"))
+                    .as("CM-5 ticket 10 deleted the god package and the module that owns the"
+                            + " Itinerary then took its name, so the path alone proves nothing any"
+                            + " more - what must stay gone are the god package's own classes")
+                    .doesNotExist();
+        }
     }
 
     private static String anImportOf(String pkg, String type) {

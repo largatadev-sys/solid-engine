@@ -106,7 +106,7 @@ class ForkAnalyticsIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec fork(String token, String sourceId) {
         return rest.post()
-                .uri("/v1/publications/" + itineraryBehind(sourceId) + "/fork")
+                .uri("/v1/itineraries/" + itineraryBehind(sourceId) + "/fork")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }

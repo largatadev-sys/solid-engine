@@ -262,7 +262,7 @@ test.describe('attribution when the source stops being visible', () => {
 
   test.beforeAll(async () => {
     source = await seedPublishedTrip(stamp('the vanishing source'));
-    const forked = await api(`/v1/publications/${source.itineraryId}/fork`, 'POST', forkerToken);
+    const forked = await api(`/v1/itineraries/${source.itineraryId}/fork`, 'POST', forkerToken);
     if (forked.status !== 201) throw new Error(`could not fork: ${forked.status}`);
     forkId = forked.body.id;
   });

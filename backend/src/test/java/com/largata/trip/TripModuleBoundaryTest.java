@@ -106,8 +106,12 @@ class TripModuleBoundaryTest {
                         + " still call those paths; the epic-map line that cuts them over is what"
                         + " finally deletes the adapters and this exemption together")
                 .hasSizeGreaterThan(5);
-        assertThat(java.nio.file.Path.of("src/main/java/com/largata/itinerary"))
-                .as("and the package the exemption used to name is gone for good")
+        assertThat(
+                        java.nio.file.Path.of(
+                                "src/main/java/com/largata/itinerary/PublishedItineraryService.java"))
+                .as("the god package the exemption named is gone for good; the module that owns the"
+                        + " Itinerary has since TAKEN that name, so what proves the deletion is the"
+                        + " absence of its classes rather than of the directory")
                 .doesNotExist();
     }
 

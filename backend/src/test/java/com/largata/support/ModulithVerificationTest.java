@@ -49,7 +49,7 @@ class ModulithVerificationTest {
                 .as("Modulith derives a module per top-level package, which is exactly how this tree"
                         + " is cut — a package that stops appearing here has been absorbed by"
                         + " another, and that is a boundary change nobody should make silently")
-                .contains("trip", "publication", "diary", "postcard", "discovery", "feed", "profile");
+                .contains("trip", "itinerary", "diary", "postcard", "discovery", "feed", "profile");
     }
 
 

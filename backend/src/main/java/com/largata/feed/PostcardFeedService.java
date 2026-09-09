@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.api.MembershipApi;
-import com.largata.publication.api.PublicationApi;
+import com.largata.itinerary.api.ItineraryApi;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripTeaser;
 
@@ -38,22 +38,22 @@ public class PostcardFeedService {
     private static final Logger log = LoggerFactory.getLogger(PostcardFeedService.class);
 
     private final LegacyEntries entries;
-    private final TripApi itineraries;
-    private final PublicationApi publications;
+    private final TripApi trips;
+    private final ItineraryApi itineraries;
     private final MembershipApi workspaces;
     private final TravelerService travelers;
     private final PhotoService photos;
 
     PostcardFeedService(
             LegacyEntries entries,
-            TripApi itineraries,
-            PublicationApi publications,
+            TripApi trips,
+            ItineraryApi itineraries,
             MembershipApi workspaces,
             TravelerService travelers,
             PhotoService photos) {
         this.entries = entries;
+        this.trips = trips;
         this.itineraries = itineraries;
-        this.publications = publications;
         this.workspaces = workspaces;
         this.travelers = travelers;
         this.photos = photos;
@@ -143,7 +143,7 @@ public class PostcardFeedService {
         Map<UUID, TripTeaser> trips = tripsOf(rows);
 
         Set<UUID> archived = workspaces.archivedAmong(trips.keySet());
-        Map<UUID, UUID> itineraryIds = publications.objectIdsByTrip(List.copyOf(trips.keySet()));
+        Map<UUID, UUID> itineraryIds = itineraries.objectIdsByTrip(List.copyOf(trips.keySet()));
 
         return rows.stream()
                 .filter(entry -> entry.tripId() == null || !archived.contains(entry.tripId()))
@@ -201,7 +201,7 @@ public class PostcardFeedService {
                         .filter(id -> id != null)
                         .distinct()
                         .toList();
-        return itineraries.teasersOf(ids).stream()
+        return trips.teasersOf(ids).stream()
                 .collect(Collectors.toMap(TripTeaser::tripId, Function.identity()));
     }
 

@@ -27,7 +27,7 @@ class ProfileModuleBoundaryTest {
                     .and(not(resideInAPackage(PROFILE + "..")))
                     .and(not(resideInAPackage("com.largata.common..")))
                     .and(not(resideInAPackage("com.largata.identity..")))
-                    .and(not(resideInAPackage("com.largata.publication.api..")))
+                    .and(not(resideInAPackage("com.largata.itinerary.api..")))
                     .and(not(resideInAPackage("com.largata.postcard.api..")))
                     .and(not(resideInAPackage("com.largata.trip.api..")));
 

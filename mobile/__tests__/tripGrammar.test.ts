@@ -8,6 +8,15 @@ const REPOSITORIES = join(MOBILE_ROOT, 'src', 'repositories');
 
 const OLD_ROOT = '/v1/itineraries';
 
+const THE_OBJECTS_OWN_ROUTES = [
+  OLD_ROOT + '/${id}`',
+  OLD_ROOT + '/${id}/fork`',
+];
+
+function namesTheObjectRatherThanTheOldWorld(line: string): boolean {
+  return THE_OBJECTS_OWN_ROUTES.some((route) => line.includes(route));
+}
+
 const STILL_ON_THE_OLD_ROOT = new Set(['diaryRepository.ts']);
 
 function repositoryFiles(): string[] {
@@ -17,7 +26,8 @@ function repositoryFiles(): string[] {
 function linesNamingTheOldRoot(file: string): string[] {
   return readFileSync(join(REPOSITORIES, file), 'utf8')
     .split('\n')
-    .filter((line) => line.includes(OLD_ROOT));
+    .filter((line) => line.includes(OLD_ROOT))
+    .filter((line) => !namesTheObjectRatherThanTheOldWorld(line));
 }
 
 describe('the client speaks the trip grammar (CM-3)', () => {
@@ -65,7 +75,7 @@ describe('the client speaks the trip grammar (CM-3)', () => {
   it('the published page reads the Itinerary by its own id, and by trip as the courtesy fallback', () => {
     const source = readFileSync(join(REPOSITORIES, 'tripRepository.ts'), 'utf8');
 
-    expect(source).toContain('`/v1/publications/${id}`');
+    expect(source).toContain('`/v1/itineraries/${id}`');
     expect(source).toContain('`/v1/trips/${tripId}/itinerary`');
     expect(source).not.toContain('/v1/published-itineraries/');
   });
