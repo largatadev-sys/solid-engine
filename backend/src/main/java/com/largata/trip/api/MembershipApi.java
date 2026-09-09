@@ -21,5 +21,7 @@ public interface MembershipApi {
 
     boolean isArchived(UUID tripId);
 
+    java.util.Set<UUID> allArchivedTripIds();
+
     List<UUID> tripIdsInSightOf(UUID travelerId);
 }

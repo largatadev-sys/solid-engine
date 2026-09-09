@@ -1,4 +1,4 @@
-package com.largata.itinerary;
+package com.largata.discovery;
 
 import com.largata.common.error.ValidationException;
 import java.util.Locale;
@@ -14,6 +14,11 @@ public record DiscoveryFilters(String query, String destination, DurationBand du
     public static DiscoveryFilters of(String query, String destination, String duration) {
         return new DiscoveryFilters(
                 normalizedQuery(query), blankToNull(destination), DurationBand.parse(duration));
+    }
+
+
+    public static DiscoveryFilters none() {
+        return new DiscoveryFilters(null, null, null);
     }
 
 

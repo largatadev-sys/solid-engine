@@ -1,4 +1,4 @@
-package com.largata.itinerary.web;
+package com.largata.discovery.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -98,11 +98,11 @@ class DiscoveryIT extends PostgresTestBase {
         String owner = traveler();
         String trip = trip(owner);
         travel(owner, trip);
-        publishTo(owner, trip, "public");
+        String itineraryId = publishForItineraryId(owner, trip);
 
         assertThat(browseIds(traveler()))
                 .as("published is the itinerary's whole exposure (ADR-034)")
-                .contains(trip);
+                .contains(itineraryId);
     }
 
 
@@ -137,7 +137,7 @@ class DiscoveryIT extends PostgresTestBase {
         String trip = publishedTrip(owner);
         assertThat(browseIds(owner)).contains(trip);
 
-        act(owner, trip, "unpublish");
+        act(owner, tripBehind(trip), "unpublish");
 
         assertThat(browseIds(owner)).doesNotContain(trip);
     }
@@ -164,8 +164,8 @@ class DiscoveryIT extends PostgresTestBase {
         String newer = publishedTrip(owner);
         assertThat(browseIds(owner).indexOf(newer)).isLessThan(browseIds(owner).indexOf(older));
 
-        act(owner, older, "unpublish");
-        act(owner, older, "publish");
+        act(owner, tripBehind(older), "unpublish");
+        publishForItineraryId(owner, tripBehind(older));
 
         List<String> ids = browseIds(owner);
         assertThat(ids.indexOf(older))
@@ -321,8 +321,33 @@ class DiscoveryIT extends PostgresTestBase {
     private String publishedTrip(String owner) {
         String trip = trip(owner);
         travel(owner, trip);
-        act(owner, trip, "publish");
-        return trip;
+        return publishForItineraryId(owner, trip);
+    }
+
+
+    private final java.util.Map<String, String> tripOf = new java.util.HashMap<>();
+
+
+    private String tripBehind(String itineraryId) {
+        return tripOf.getOrDefault(itineraryId, itineraryId);
+    }
+
+
+    private String publishForItineraryId(String owner, String trip) {
+        String itineraryId =
+                TripRig.fieldIn(
+                        rest.post()
+                                .uri("/v1/trips/" + trip + "/publish")
+                                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                                .exchange()
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id");
+        tripOf.put(itineraryId, trip);
+        return itineraryId;
     }
 
 
@@ -330,8 +355,7 @@ class DiscoveryIT extends PostgresTestBase {
         String trip = trip(owner);
         jdbc.update("UPDATE itinerary SET cover_image_url = ? WHERE id = ?::uuid", "media/x.jpg", trip);
         travel(owner, trip);
-        act(owner, trip, "publish");
-        return trip;
+        return publishForItineraryId(owner, trip);
     }
 
 
@@ -346,17 +370,24 @@ class DiscoveryIT extends PostgresTestBase {
 
 
     private void archive(String token, String itineraryId) {
-        act(token, itineraryId, "archive");
+        act(token, tripBehind(itineraryId), "archive");
+    }
+
+
+    private static String rootFor(String action) {
+        return action.equals("publish") || action.equals("unpublish")
+                ? "/v1/trips/"
+                : "/v1/itineraries/";
     }
 
 
     private void act(String token, String itineraryId, String action) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/" + action)
+                .uri(rootFor(action) + itineraryId + "/" + action)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .exchange()
                 .expectStatus()
-                .isOk();
+                .value(status -> org.assertj.core.api.Assertions.assertThat(status).isIn(200, 204));
     }
 
 
@@ -368,6 +399,6 @@ class DiscoveryIT extends PostgresTestBase {
                 .body("{\"audience\":\"" + audience + "\"}")
                 .exchange()
                 .expectStatus()
-                .isOk();
+                .value(status -> org.assertj.core.api.Assertions.assertThat(status).isIn(200, 204));
     }
 }

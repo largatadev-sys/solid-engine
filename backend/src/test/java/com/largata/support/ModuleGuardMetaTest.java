@@ -23,6 +23,7 @@ class ModuleGuardMetaTest {
             List.of(
                     "chat",
                     "diary",
+                    "discovery",
                     "health",
                     "invitation",
                     "join",

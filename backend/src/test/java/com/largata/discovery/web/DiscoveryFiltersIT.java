@@ -1,4 +1,4 @@
-package com.largata.itinerary.web;
+package com.largata.discovery.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -210,7 +210,7 @@ class DiscoveryFiltersIT extends PostgresTestBase {
         String archived = publishedTrip(owner, "Archived trip", "Nowhere", 3);
         long before = countFor(owner, "");
 
-        act(owner, archived, "archive");
+        act(owner, tripBehind(archived), "archive");
 
         assertThat(countFor(owner, ""))
                 .as("an archived trip leaves the count as well as the list")
@@ -272,7 +272,7 @@ class DiscoveryFiltersIT extends PostgresTestBase {
         String owner = traveler();
         String old = publishedTrip(owner, "Long ago", "Antarctica", 3);
         jdbc.update(
-                "UPDATE itinerary SET published_at = ? WHERE id = ?::uuid",
+                "UPDATE itinerary_object SET published_at = ? WHERE id = ?::uuid",
                 java.sql.Timestamp.from(Instant.now().minus(40, ChronoUnit.DAYS)),
                 old);
 
@@ -312,7 +312,7 @@ class DiscoveryFiltersIT extends PostgresTestBase {
     void suggestionsNeverLeakAPrivateOrArchivedTrip() {
         String owner = traveler();
         String archived = publishedTrip(owner, "Secretville archived", "Secretville", 3);
-        act(owner, archived, "archive");
+        act(owner, tripBehind(archived), "archive");
 
         String privateTrip = rig.createTrip(owner, 3);
         jdbc.update(
@@ -422,8 +422,32 @@ class DiscoveryFiltersIT extends PostgresTestBase {
                 destination,
                 trip);
         travel(owner, trip);
-        act(owner, trip, "publish");
-        return trip;
+        String itineraryId = publishForItineraryId(owner, trip);
+        tripOf.put(itineraryId, trip);
+        return itineraryId;
+    }
+
+
+    private final java.util.Map<String, String> tripOf = new java.util.HashMap<>();
+
+
+    private String tripBehind(String itineraryId) {
+        return tripOf.getOrDefault(itineraryId, itineraryId);
+    }
+
+
+    private String publishForItineraryId(String owner, String trip) {
+        return TripRig.fieldIn(
+                rest.post()
+                        .uri("/v1/trips/" + trip + "/publish")
+                        .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                        .exchange()
+                        .expectStatus()
+                        .isOk()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent(),
+                "id");
     }
 
 
@@ -437,12 +461,19 @@ class DiscoveryFiltersIT extends PostgresTestBase {
     }
 
 
+    private static String rootFor(String action) {
+        return action.equals("publish") || action.equals("unpublish")
+                ? "/v1/trips/"
+                : "/v1/itineraries/";
+    }
+
+
     private void act(String token, String itineraryId, String action) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/" + action)
+                .uri(rootFor(action) + itineraryId + "/" + action)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .exchange()
                 .expectStatus()
-                .isOk();
+                .value(status -> org.assertj.core.api.Assertions.assertThat(status).isIn(200, 204));
     }
 }
