@@ -10,6 +10,7 @@ import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -104,6 +105,20 @@ public class PhotoService {
     @Transactional(readOnly = true)
     public List<Photo> allOf(PhotoSubject subject, UUID subjectId) {
         return photos.findBySubjectKindAndSubjectIdOrderById(subject, subjectId);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Map<UUID, List<UUID>> idsBySubject(PhotoSubject subject, List<UUID> subjectIds) {
+        if (subjectIds.isEmpty()) {
+            return Map.of();
+        }
+        return photos.findBySubjectKindAndSubjectIdInOrderById(subject, subjectIds).stream()
+                .collect(
+                        Collectors.groupingBy(
+                                Photo::subjectId,
+                                LinkedHashMap::new,
+                                Collectors.mapping(Photo::id, Collectors.toList())));
     }
 
 

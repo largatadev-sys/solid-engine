@@ -1,0 +1,14 @@
+package com.largata.trip.api;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface ForkApi {
+
+    Optional<ForkProvenanceView> provenanceOf(UUID tripId, UUID readerId);
+
+    long forkCountOf(UUID sourceTripId);
+
+
+    record ForkProvenanceView(UUID sourceTripId, String ownerHandle, boolean sourceVisible) {}
+}

@@ -346,7 +346,7 @@ class PublicationContractIT extends PostgresTestBase {
 
 
     @Test
-    void aPrivateOwnersPublishedItineraryAnswersAStrangerByTheProfileFenceAndAFollowerInFull() {
+    void aPrivateOwnersPublishedItineraryIsReadableByEverySignedInTraveler_ADR034() {
         String owner = onboarded();
         String follower = onboarded();
         String stranger = onboarded();
@@ -356,16 +356,7 @@ class PublicationContractIT extends PostgresTestBase {
         String objectId = publish(owner, trip);
         goPrivate(owner);
 
-        rest.get()
-                .uri("/v1/publications/" + objectId)
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(stranger))
-                .exchange()
-                .expectStatus()
-                .isForbidden()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("PROFILE_PRIVATE");
-        for (String admitted : List.of(follower, owner)) {
+        for (String admitted : List.of(stranger, follower, owner)) {
             rest.get()
                     .uri("/v1/publications/" + objectId)
                     .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(admitted))

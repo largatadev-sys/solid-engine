@@ -3,6 +3,8 @@ package com.largata.trip.fork;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.AuthorizationGuard;
+import com.largata.trip.api.ForkApi;
+import com.largata.trip.api.ForkApi.ForkProvenanceView;
 import com.largata.common.authz.Membership;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
@@ -29,7 +31,7 @@ import com.largata.trip.plan.service.DayService;
 
 
 @Service
-public class ForkService {
+public class ForkService implements ForkApi {
 
     private static final Logger log = LoggerFactory.getLogger(ForkService.class);
 
@@ -108,14 +110,15 @@ public class ForkService {
     }
 
 
+    @Override
     @Transactional(readOnly = true)
-    public Optional<ForkProvenance> provenanceOf(UUID itineraryId, UUID readerId) {
+    public Optional<ForkProvenanceView> provenanceOf(UUID itineraryId, UUID readerId) {
         return relationships
                 .findByForkedItineraryId(itineraryId)
                 .map(ForkRelationship::sourceItineraryId)
                 .map(
                         sourceId ->
-                                new ForkProvenance(
+                                new ForkProvenanceView(
                                         sourceId,
                                         handleOfOwnerOf(sourceId),
                                         visibility.admits(sourceId, guard.membershipOf(readerId, sourceId))));
@@ -131,6 +134,7 @@ public class ForkService {
     }
 
 
+    @Override
     @Transactional(readOnly = true)
     public long forkCountOf(UUID sourceItineraryId) {
         return relationships.countBySourceItineraryId(sourceItineraryId);

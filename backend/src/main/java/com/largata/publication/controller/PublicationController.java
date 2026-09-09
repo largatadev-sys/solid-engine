@@ -2,12 +2,13 @@ package com.largata.publication.controller;
 
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
-import com.largata.identity.AuthoredContentAudience;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.publication.dto.ItineraryObjectResponse;
 import com.largata.publication.entity.ItineraryObject;
+import com.largata.publication.dto.ItineraryPageResponse;
 import com.largata.publication.service.ItineraryObjectService;
+import com.largata.publication.service.ItineraryPageService;
 import com.largata.trip.exception.TripNotFoundException;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -23,15 +24,15 @@ class PublicationController {
 
     private final ItineraryObjectService publications;
     private final AuthorizationGuard guard;
-    private final AuthoredContentAudience audience;
+    private final ItineraryPageService pages;
 
     PublicationController(
             ItineraryObjectService publications,
             AuthorizationGuard guard,
-            AuthoredContentAudience audience) {
+            ItineraryPageService pages) {
         this.publications = publications;
         this.guard = guard;
-        this.audience = audience;
+        this.pages = pages;
     }
 
 
@@ -50,10 +51,14 @@ class PublicationController {
 
 
     @GetMapping("/v1/publications/{objectId}")
-    ItineraryObjectResponse read(@CurrentTraveler Traveler traveler, @PathVariable UUID objectId) {
-        ItineraryObject object = publications.read(objectId);
-        audience.requireReadable(traveler.id(), object.ownerId());
-        return ItineraryObjectResponse.of(object, publications.planTreeOf(object));
+    ItineraryPageResponse read(@CurrentTraveler Traveler traveler, @PathVariable UUID objectId) {
+        return pages.pageOf(publications.readFor(traveler.id(), objectId), traveler.id());
+    }
+
+
+    @GetMapping("/v1/trips/{tripId}/itinerary")
+    ItineraryPageResponse readByTrip(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
+        return pages.pageOf(publications.liveOfTripFor(traveler.id(), tripId), traveler.id());
     }
 
 

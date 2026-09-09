@@ -39,6 +39,7 @@ public class TripPlanHeaders {
                 trip.coverImageUrl(),
                 trip.startDate(),
                 trip.endDate(),
+                trip.pin(),
                 trip.state(),
                 trip.isPublished(),
                 List.of());

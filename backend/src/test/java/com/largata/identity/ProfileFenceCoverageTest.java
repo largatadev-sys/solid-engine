@@ -32,8 +32,7 @@ class ProfileFenceCoverageTest {
                     "PostcardFeedController.java",
                     "PostcardController.java",
                     "DiaryController.java",
-                    "ProfileDiariesController.java",
-                    "PublicationController.java");
+                    "ProfileDiariesController.java");
 
 
     private static final Set<String> KNOWN_PROFILE_SUB_RESOURCE_GETS =

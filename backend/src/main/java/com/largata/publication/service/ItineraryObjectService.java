@@ -14,6 +14,7 @@ import com.largata.publication.repository.ItineraryObjectRepository;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.exception.TripNotFoundException;
 import com.largata.trip.api.TripPlan;
+import com.largata.trip.api.MembershipApi;
 import com.largata.trip.api.PlanApi;
 import java.time.Clock;
 import java.time.Instant;
@@ -36,6 +37,7 @@ public class ItineraryObjectService implements PublicationApi {
 
     private final ItineraryObjectRepository objects;
     private final PlanApi plans;
+    private final MembershipApi workspaces;
     private final TripEditingSession editingSession;
     private final ObjectMapper json;
     private final Analytics analytics;
@@ -44,12 +46,14 @@ public class ItineraryObjectService implements PublicationApi {
     ItineraryObjectService(
             ItineraryObjectRepository objects,
             PlanApi plans,
+            MembershipApi workspaces,
             TripEditingSession editingSession,
             ObjectMapper json,
             Analytics analytics,
             Clock clock) {
         this.objects = objects;
         this.plans = plans;
+        this.workspaces = workspaces;
         this.editingSession = editingSession;
         this.json = json;
         this.analytics = analytics;
@@ -73,15 +77,16 @@ public class ItineraryObjectService implements PublicationApi {
 
         Instant at = Instant.now(clock);
         String snapshot = json.writeValueAsString(PlanSnapshot.of(plan));
+        ItineraryObject.Discoverable facts = discoverableFrom(plan);
         ItineraryObject object =
                 objects.findByTripId(member.itineraryId())
                         .map(existing -> {
-                            existing.refresh(snapshot, at);
+                            existing.refresh(snapshot, at, facts);
                             return existing;
                         })
                         .orElseGet(() ->
                                 ItineraryObject.mintedFrom(
-                                        member.itineraryId(), plan.ownerId(), snapshot, at));
+                                        member.itineraryId(), plan.ownerId(), snapshot, at, facts));
         ItineraryObject saved = objects.saveAndFlush(object);
 
         log.info("Trip object published: id={} tripId={}", saved.id(), saved.tripId());
@@ -133,6 +138,30 @@ public class ItineraryObjectService implements PublicationApi {
     }
 
 
+    @Transactional(readOnly = true)
+    public ItineraryObject readFor(UUID readerId, UUID objectId) {
+        return admitted(readerId, read(objectId));
+    }
+
+
+    @Transactional(readOnly = true)
+    public ItineraryObject liveOfTripFor(UUID readerId, UUID tripId) {
+        return admitted(
+                readerId,
+                objects.findByTripId(tripId)
+                        .filter(candidate -> !candidate.isRetired())
+                        .orElseThrow(PublicationNotFoundException::new));
+    }
+
+
+    private ItineraryObject admitted(UUID readerId, ItineraryObject object) {
+        if (workspaces.isArchived(object.tripId()) && !object.isOwnedBy(readerId)) {
+            throw new PublicationNotFoundException();
+        }
+        return object;
+    }
+
+
     @Transactional
     public void destroy(UUID travelerId, UUID objectId) {
         ItineraryObject object =
@@ -145,6 +174,12 @@ public class ItineraryObjectService implements PublicationApi {
 
         log.info("Trip object destroyed: id={} tripId={}", objectId, object.tripId());
         emit(object, "itinerary_object_destroyed");
+    }
+
+
+    private static ItineraryObject.Discoverable discoverableFrom(TripPlan plan) {
+        return new ItineraryObject.Discoverable(
+                plan.title(), plan.destination(), plan.days().size(), plan.coverImageUrl());
     }
 
 

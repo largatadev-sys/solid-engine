@@ -1,5 +1,6 @@
 package com.largata.itinerary;
 
+import com.largata.trip.api.ForkApi;
 import com.largata.common.geo.Pin;
 import com.largata.trip.fork.ForkService;
 import com.largata.identity.TravelerSummary;
@@ -24,7 +25,7 @@ public record PublishedItinerary(
         EstimatedCost estimatedCost,
         List<DayView> days,
         long forkCount,
-        ForkService.ForkProvenance forkedFrom) {
+        ForkApi.ForkProvenanceView forkedFrom) {
 
 
     static PublishedItinerary of(
@@ -32,7 +33,7 @@ public record PublishedItinerary(
             List<DayView> plan,
             TravelerSummary creator,
             long forkCount,
-            ForkService.ForkProvenance forkedFrom) {
+            ForkApi.ForkProvenanceView forkedFrom) {
         return new PublishedItinerary(
                 itinerary.id(),
                 itinerary.title(),

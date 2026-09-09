@@ -1,5 +1,6 @@
 package com.largata.trip.trip.dto;
 
+import com.largata.trip.api.ForkApi;
 import com.largata.common.geo.PinPayload;
 import com.largata.identity.TravelerSummary;
 import com.largata.trip.fork.ForkService;
@@ -102,7 +103,7 @@ public record TripResponse(
     }
 
 
-    public static TripResponse of(TripPlanTree plan, ForkService.ForkProvenance provenance) {
+    public static TripResponse of(TripPlanTree plan, ForkApi.ForkProvenanceView provenance) {
         Trip itinerary = plan.itinerary();
         TravelerSummary editor = plan.editor(itinerary.lastEditedBy());
         return new TripResponse(

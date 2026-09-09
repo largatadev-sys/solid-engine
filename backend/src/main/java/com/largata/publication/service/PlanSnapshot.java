@@ -1,9 +1,11 @@
 package com.largata.publication.service;
 
+import com.largata.common.geo.Pin;
 import com.largata.trip.api.TripPlan;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 record PlanSnapshot(
         String title,
@@ -15,6 +17,7 @@ record PlanSnapshot(
         String coverImageUrl,
         LocalDate startDate,
         LocalDate endDate,
+        Pin pin,
         List<Day> days) {
 
 
@@ -29,6 +32,7 @@ record PlanSnapshot(
                 plan.coverImageUrl(),
                 plan.startDate(),
                 plan.endDate(),
+                plan.pin(),
                 plan.days().stream().map(Day::of).toList());
     }
 
@@ -54,7 +58,9 @@ record PlanSnapshot(
             String bookingPurpose,
             String bookingProvider,
             BigDecimal bookingPriceAmount,
-            String bookingPriceCurrency) {
+            String bookingPriceCurrency,
+            Pin pin,
+            List<UUID> photoIds) {
 
         static Activity of(TripPlan.PlanActivity activity) {
             return new Activity(
@@ -70,7 +76,9 @@ record PlanSnapshot(
                     activity.bookingPurpose(),
                     activity.bookingProvider(),
                     activity.bookingPriceAmount(),
-                    activity.bookingPriceCurrency());
+                    activity.bookingPriceCurrency(),
+                    activity.pin(),
+                    activity.photoIds());
         }
     }
 }
