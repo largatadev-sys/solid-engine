@@ -10,7 +10,7 @@ import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.itinerary.api.DiaryEntryResponse;
 import com.largata.itinerary.api.DiaryPhotoResponse;
-import com.largata.itinerary.api.DiaryTripResponse;
+import com.largata.profile.api.DiaryTripResponse;
 import com.largata.itinerary.DiaryExceptions.ActivityAlreadyInDiaryException;
 import com.largata.itinerary.DiaryExceptions.DiaryEntryNeedsAPhotoException;
 import com.largata.itinerary.DiaryExceptions.DiaryEntryNotFoundException;

@@ -19,7 +19,7 @@ class ProfileFenceCoverageTest {
     private static final Path CONTROLLERS = Path.of("src/main/java/com/largata");
 
     private static final Path PROFILE_CONTROLLER =
-            Path.of("src/main/java/com/largata/itinerary/web/PublicProfileController.java");
+            Path.of("src/main/java/com/largata/profile/web/PublicProfileController.java");
 
 
     private static final Set<String> DELIBERATELY_OPEN_TO_EVERY_TRAVELER =

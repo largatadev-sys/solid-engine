@@ -1,36 +1,35 @@
-package com.largata.itinerary.web;
+package com.largata.profile.web;
 
 import com.largata.common.api.Page;
 import com.largata.identity.FollowCounts;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
-import com.largata.trip.trip.entity.TripStats;
-import com.largata.itinerary.api.ProfileStatsResponse;
-import com.largata.itinerary.api.ShowcaseItineraryResponse;
+import com.largata.profile.api.ProfileStatsResponse;
+import com.largata.profile.api.ShowcaseItineraryResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.largata.trip.trip.service.TripService;
+import com.largata.profile.PublicProfileService;
 
 
 @RestController
 @RequestMapping("/v1/me/profile")
 class MyProfileController {
 
-    private final TripService itineraries;
+    private final PublicProfileService profiles;
     private final FollowService follows;
 
-    MyProfileController(TripService itineraries, FollowService follows) {
-        this.itineraries = itineraries;
+    MyProfileController(PublicProfileService profiles, FollowService follows) {
+        this.profiles = profiles;
         this.follows = follows;
     }
 
 
     @GetMapping("/stats")
     ProfileStatsResponse stats(@CurrentTraveler Traveler traveler) {
-        TripStats trips = itineraries.tripStatsFor(traveler.id());
+        PublicProfileService.ProfileCounts trips = profiles.countsFor(traveler.id());
         FollowCounts counts = follows.countsOf(traveler.id());
         return new ProfileStatsResponse(
                 trips.publishedCount(),
@@ -45,6 +44,6 @@ class MyProfileController {
             @CurrentTraveler Traveler traveler,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
-        return itineraries.listMyShowcase(traveler.id(), cursor, limit);
+        return profiles.myShowcase(traveler.id(), cursor, limit);
     }
 }

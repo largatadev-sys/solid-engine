@@ -1,9 +1,10 @@
-package com.largata.itinerary.web;
+package com.largata.profile.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
+import com.largata.support.TripRig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -88,13 +89,15 @@ class ProfileShowcaseIT extends PostgresTestBase {
         String trip = publishedTrip(traveler);
         assertThat(showcaseIds(traveler)).containsExactly(trip);
 
-        act(traveler, trip, "unpublish").expectStatus().isOk();
+        act(traveler, tripBehind(trip), "unpublish").expectStatus().isNoContent();
 
         assertThat(showcaseIds(traveler)).isEmpty();
         assertThat(publishedCount(traveler)).isZero();
         assertThat(destinationCount(traveler))
-                .as("unpublishing hides the trip from strangers; it is still a place they own")
-                .isEqualTo(1);
+                .as("the profile counts LIVE Itineraries from CM-5, so unpublishing takes the"
+                        + " destination with the page - the count and the showcase it sits above"
+                        + " cannot contradict each other")
+                .isZero();
     }
 
 
@@ -106,10 +109,12 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
         offer(owner, trip, travelerIdOf(member)).expectStatus().isCreated();
         accept(member, trip).expectStatus().isNoContent();
-        publish(member, trip);
+        String itineraryId = publish(member, trip);
 
         assertThat(showcaseIds(owner)).as("no longer theirs to show").isEmpty();
-        assertThat(showcaseIds(member)).as("the showcase follows ownership").containsExactly(trip);
+        assertThat(showcaseIds(member))
+                .as("the showcase follows ownership")
+                .containsExactly(itineraryId);
         assertThat(destinationCount(owner))
                 .as("the count follows OWNERSHIP, so the former owner keeps no destination")
                 .isZero();
@@ -121,7 +126,7 @@ class ProfileShowcaseIT extends PostgresTestBase {
         String traveler = freshTraveler();
         String trip = publishedTrip(traveler);
 
-        act(traveler, trip, "archive").expectStatus().isOk();
+        act(traveler, tripBehind(trip), "archive").expectStatus().isOk();
 
         assertThat(showcaseIds(traveler)).isEmpty();
         assertThat(publishedCount(traveler)).isZero();
@@ -260,14 +265,31 @@ class ProfileShowcaseIT extends PostgresTestBase {
 
     private String publishedTrip(String token) {
         String tripId = createTrip(token);
-        publish(token, tripId);
-        return tripId;
+        return publish(token, tripId);
     }
 
-    private void publish(String token, String tripId) {
+
+    private final java.util.Map<String, String> tripOf = new java.util.HashMap<>();
+
+
+    private String tripBehind(String itineraryId) {
+        return tripOf.getOrDefault(itineraryId, itineraryId);
+    }
+
+    private String publish(String token, String tripId) {
         act(token, tripId, "start").expectStatus().isOk();
         act(token, tripId, "complete").expectStatus().isOk();
-        act(token, tripId, "publish").expectStatus().isOk();
+        String itineraryId =
+                TripRig.fieldIn(
+                        act(token, tripId, "publish")
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id");
+        tripOf.put(itineraryId, tripId);
+        return itineraryId;
     }
 
     private String createTrip(String token) {
@@ -288,9 +310,16 @@ class ProfileShowcaseIT extends PostgresTestBase {
         return fieldIn(created, "id");
     }
 
+    private static String rootFor(String verb) {
+        return verb.equals("publish") || verb.equals("unpublish")
+                ? "/v1/trips/"
+                : "/v1/itineraries/";
+    }
+
+
     private RestTestClient.ResponseSpec act(String token, String tripId, String verb) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/" + verb)
+                .uri(rootFor(verb) + tripId + "/" + verb)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }

@@ -101,6 +101,32 @@ class ItineraryDiscoveryService implements ItineraryDiscoveryApi {
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public long countOwnedBy(UUID ownerId, Collection<UUID> excludedTripIds) {
+        return itineraries.countOwnedBy(ownerId, arrayOf(excludedTripIds));
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countDestinationsOwnedBy(UUID ownerId, Collection<UUID> excludedTripIds) {
+        return itineraries.countDestinationsOwnedBy(ownerId, arrayOf(excludedTripIds));
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DiscoverableItinerary> ownedPage(
+            UUID ownerId, Collection<UUID> excludedTripIds, Instant beforeAt, UUID beforeId, int limit) {
+        return itineraries
+                .findOwnedPage(ownerId, arrayOf(excludedTripIds), beforeAt, beforeId, limit)
+                .stream()
+                .map(ItineraryDiscoveryService::viewOf)
+                .toList();
+    }
+
+
     private static DiscoverableItinerary viewOf(ItineraryObject object) {
         return new DiscoverableItinerary(
                 object.id(),

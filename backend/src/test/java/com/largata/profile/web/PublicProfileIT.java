@@ -1,4 +1,4 @@
-package com.largata.itinerary.web;
+package com.largata.profile.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -166,10 +166,10 @@ class PublicProfileIT extends ObjectStoreTestBase {
 
         assertThat(showcase)
                 .as("presence first: the published public trip is on the stranger's surface")
-                .contains(shown);
+                .contains(itineraryBehind(shown));
         assertThat(showcase)
                 .as("and only then absence: the unpublished and the archived trips are not")
-                .doesNotContain(unpublished, archived);
+                .doesNotContain(itineraryBehind(unpublished), itineraryBehind(archived));
     }
 
 
@@ -212,7 +212,9 @@ class PublicProfileIT extends ObjectStoreTestBase {
         publish(subject, tripTo(subject, "Kyoto"));
         String blanked = tripTo(subject, "Reykjavik");
         publish(subject, blanked);
-        jdbc.update("UPDATE itinerary SET destination = '   ' WHERE id = ?", UUID.fromString(blanked));
+        jdbc.update(
+                "UPDATE itinerary_object SET destination = '   ' WHERE trip_id = ?",
+                UUID.fromString(blanked));
         String viewer = onboardedTraveler(handle());
 
         assertThat(numberIn(read(profileUri(handle), viewer), "destinationCount"))
@@ -283,8 +285,7 @@ class PublicProfileIT extends ObjectStoreTestBase {
         List<String> expected = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             String trip = createTrip(subject);
-            publish(subject, trip);
-            expected.add(trip);
+            expected.add(publish(subject, trip));
         }
         String viewer = onboardedTraveler(handle());
 
@@ -431,12 +432,27 @@ class PublicProfileIT extends ObjectStoreTestBase {
     }
 
 
-    private void publish(String token, String tripId) {
+    private final java.util.Map<String, String> itineraryOf = new java.util.HashMap<>();
+
+
+    private String itineraryBehind(String tripId) {
+        return itineraryOf.getOrDefault(tripId, tripId);
+    }
+
+    private String publish(String token, String tripId) {
         act(token, tripId, "start");
         act(token, tripId, "complete");
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + tripId + "/publish", token, "{\"audience\":\"public\"}")
-                .expectStatus()
-                .isOk();
+        String itineraryId =
+                TripRig.fieldIn(
+                        rig.send(HttpMethod.POST, "/v1/trips/" + tripId + "/publish", token, null)
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id");
+        itineraryOf.put(tripId, itineraryId);
+        return itineraryId;
     }
 
 
@@ -453,11 +469,18 @@ class PublicProfileIT extends ObjectStoreTestBase {
 
     private void act(String token, String tripId, String verb) {
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/" + verb)
+                .uri(rootFor(verb) + tripId + "/" + verb)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
-                .isOk();
+                .value(status -> org.assertj.core.api.Assertions.assertThat(status).isIn(200, 204));
+    }
+
+
+    private static String rootFor(String verb) {
+        return verb.equals("publish") || verb.equals("unpublish")
+                ? "/v1/trips/"
+                : "/v1/itineraries/";
     }
 
 

@@ -31,6 +31,7 @@ class ModuleGuardMetaTest {
                     "place",
                     "poll",
                     "postcard",
+                    "profile",
                     "publication",
                     "report",
                     "trip",

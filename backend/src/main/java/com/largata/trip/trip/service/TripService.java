@@ -11,7 +11,6 @@ import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.trip.api.TripTeaser;
-import com.largata.itinerary.api.ShowcaseItineraryResponse;
 import com.largata.trip.workspace.entity.WorkspaceState;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -47,7 +46,6 @@ import com.largata.trip.trip.repository.TripRepository;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.trip.entity.TripFields;
 import com.largata.trip.trip.entity.TripCategory;
-import com.largata.trip.trip.entity.TripStats;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.trip.trip.exception.IllegalStateTransitionException;
 
@@ -427,45 +425,7 @@ public class TripService {
     }
 
 
-    @Transactional(readOnly = true)
-    public Page<ShowcaseItineraryResponse> listMyShowcase(
-            UUID travelerId, String cursor, Integer requestedLimit) {
-        int limit = clamp(requestedLimit);
-        UUID decodedCursor = cursor == null ? null : Cursor.decode(cursor);
 
-        List<UUID> ownedIds = workspaces.ownedItineraryIdsFor(travelerId);
-        if (ownedIds.isEmpty()) {
-            return Page.exhausted(List.of());
-        }
-        Limit probe = Limit.of(limit + 1);
-        List<Trip> found =
-                decodedCursor == null
-                        ? trips.findFirstPublishedPage(ownedIds, probe)
-                        : trips.findPublishedPageAfter(ownedIds, decodedCursor, probe);
-
-        boolean more = found.size() > limit;
-        List<Trip> rows = more ? found.subList(0, limit) : found;
-        Map<UUID, Long> dayCounts = days.dayCountsOf(rows.stream().map(Trip::id).toList());
-        List<ShowcaseItineraryResponse> page =
-                rows.stream()
-                        .map(
-                                itinerary ->
-                                        ShowcaseItineraryResponse.of(
-                                                itinerary,
-                                                dayCounts.getOrDefault(itinerary.id(), 0L).intValue()))
-                        .toList();
-
-        return more ? Page.of(page, Cursor.encode(rows.getLast().id())) : Page.exhausted(page);
-    }
-
-
-    @Transactional(readOnly = true)
-    public TripStats tripStatsFor(UUID travelerId) {
-        List<UUID> ownedIds = workspaces.ownedItineraryIdsFor(travelerId);
-        long publishedCount = ownedIds.isEmpty() ? 0 : trips.countPublishedAmong(ownedIds);
-        long destinationCount = ownedIds.isEmpty() ? 0 : trips.countDestinationsAmong(ownedIds);
-        return new TripStats(publishedCount, destinationCount);
-    }
 
 
     @Transactional(readOnly = true)

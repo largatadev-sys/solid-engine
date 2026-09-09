@@ -1,4 +1,4 @@
-package com.largata.itinerary.api;
+package com.largata.profile.api;
 
 
 public record ProfileStatsResponse(

@@ -1,4 +1,4 @@
-package com.largata.itinerary.web;
+package com.largata.profile.web;
 
 import com.largata.common.api.Page;
 import com.largata.identity.AuthoredContentAudience;
@@ -7,9 +7,9 @@ import com.largata.identity.Traveler;
 import com.largata.identity.api.PublicProfileResponse;
 import com.largata.identity.api.TravelerCardResponse;
 import com.largata.common.security.CurrentTraveler;
-import com.largata.itinerary.PublicProfileService;
-import com.largata.itinerary.api.DiaryTripResponse;
-import com.largata.itinerary.api.ShowcaseItineraryResponse;
+import com.largata.profile.PublicProfileService;
+import com.largata.profile.api.DiaryTripResponse;
+import com.largata.profile.api.ShowcaseItineraryResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;

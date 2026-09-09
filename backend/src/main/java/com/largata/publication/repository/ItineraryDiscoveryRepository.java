@@ -108,4 +108,47 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
             """, nativeQuery = true)
     List<ItineraryObject> findOwnedBy(
             @Param("ownerId") UUID ownerId, @Param("excludedTripIds") String excludedTripIds);
+
+
+    String OWNED_AND_LIVE = """
+            o.retired = false
+              AND o.owner_id = CAST(:ownerId AS uuid)
+              AND o.trip_id <> ALL (CAST(:excludedTripIds AS uuid[]))
+            """;
+
+
+    @Query(value = """
+            SELECT count(*) FROM itinerary_object o
+            WHERE
+            """ + OWNED_AND_LIVE, nativeQuery = true)
+    long countOwnedBy(
+            @Param("ownerId") UUID ownerId, @Param("excludedTripIds") String excludedTripIds);
+
+
+    @Query(value = """
+            SELECT count(DISTINCT lower(trim(o.destination))) FROM itinerary_object o
+            WHERE
+            """ + OWNED_AND_LIVE + """
+              AND trim(coalesce(o.destination, '')) <> ''
+            """, nativeQuery = true)
+    long countDestinationsOwnedBy(
+            @Param("ownerId") UUID ownerId, @Param("excludedTripIds") String excludedTripIds);
+
+
+    @Query(value = """
+            SELECT o.* FROM itinerary_object o
+            WHERE
+            """ + OWNED_AND_LIVE + """
+              AND (CAST(:at AS timestamptz) IS NULL
+                   OR o.published_at < CAST(:at AS timestamptz)
+                   OR (o.published_at = CAST(:at AS timestamptz) AND o.id < CAST(:id AS uuid)))
+            ORDER BY o.published_at DESC, o.id DESC
+            LIMIT :pageSize
+            """, nativeQuery = true)
+    List<ItineraryObject> findOwnedPage(
+            @Param("ownerId") UUID ownerId,
+            @Param("excludedTripIds") String excludedTripIds,
+            @Param("at") Instant at,
+            @Param("id") UUID id,
+            @Param("pageSize") int pageSize);
 }

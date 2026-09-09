@@ -23,8 +23,7 @@ class NewWorldBoundaryTest {
 
     private static final Pattern THE_CONTENT_HALF_TW1_LEFT_STANDING =
             Pattern.compile(
-                    "com\\.largata\\.itinerary\\.(PublishedVisibility"
-                            + "|api\\.ShowcaseItineraryResponse)\\b");
+                    "com\\.largata\\.itinerary\\.(PublishedVisibility)\\b");
 
     @Test
     void newWorldSourcesNeverNameAnOldWorldPackage() {
@@ -52,15 +51,13 @@ class NewWorldBoundaryTest {
 
         assertThat(reaches)
                 .as(
-                        "TW-1 moved the trip half and left the content half standing, so two trip"
-                                + " files still name it: the fork's published-visibility check and"
-                                + " the profile showcase response. Both are types the CONTENT half"
-                                + " owns and has its own callers for, which the trip module merely"
-                                + " reads as a second consumer — CM-5 moves them onto the itinerary"
-                                + " object. This is NOT a migration window and NOT a leftover: it is"
-                                + " the shape of the tree until CM-5 deletes the old package."
-                                + " Counted, so a third is a red build")
-                .hasSize(2);
+                        "TW-1 left the content half standing and CM-5 is dismantling it. ONE trip"
+                                + " file still names the old package: the fork's published-visibility"
+                                + " check, which ticket 11 retires with the old fork route. The"
+                                + " showcase response left at ticket 07, when the profile module took"
+                                + " it. Counted and SHRINKING — a second is a red build, and the"
+                                + " exemption reaches zero when the old package does")
+                .hasSize(1);
     }
 
     @Test

@@ -19,6 +19,13 @@ public interface ItineraryDiscoveryApi {
 
     List<DiscoverableItinerary> ownedBy(UUID ownerId, Collection<UUID> excludedTripIds);
 
+    long countOwnedBy(UUID ownerId, Collection<UUID> excludedTripIds);
+
+    long countDestinationsOwnedBy(UUID ownerId, Collection<UUID> excludedTripIds);
+
+    List<DiscoverableItinerary> ownedPage(
+            UUID ownerId, Collection<UUID> excludedTripIds, Instant beforeAt, UUID beforeId, int limit);
+
 
     record DiscoveryQuery(
             String text,

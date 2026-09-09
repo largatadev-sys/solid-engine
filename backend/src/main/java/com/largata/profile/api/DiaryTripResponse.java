@@ -1,4 +1,4 @@
-package com.largata.itinerary.api;
+package com.largata.profile.api;
 
 import java.util.UUID;
 
