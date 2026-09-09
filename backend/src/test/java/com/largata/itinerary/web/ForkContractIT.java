@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
+import com.largata.support.TripRig;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -335,7 +336,7 @@ class ForkContractIT extends PostgresTestBase {
         String sourceId = publishedTripWithAPlan(author);
 
         rest.post()
-                .uri("/v1/trips/" + sourceId + "/fork")
+                .uri("/v1/publications/" + itineraryBehind(sourceId) + "/fork")
                 .exchange()
                 .expectStatus()
                 .isUnauthorized();
@@ -415,7 +416,7 @@ class ForkContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec fork(String token, String sourceId) {
         return rest.post()
-                .uri("/v1/trips/" + sourceId + "/fork")
+                .uri("/v1/publications/" + itineraryBehind(sourceId) + "/fork")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -571,12 +572,29 @@ class ForkContractIT extends PostgresTestBase {
 
     private final Set<String> travelled = new HashSet<>();
 
-    private void publish(String token, String itineraryId) {
-        if (travelled.add(itineraryId)) {
-            act(token, itineraryId, "start");
-            act(token, itineraryId, "complete");
+    private final java.util.Map<String, String> itineraryOf = new java.util.HashMap<>();
+
+
+    private String itineraryBehind(String tripId) {
+        return itineraryOf.getOrDefault(tripId, tripId);
+    }
+
+
+    private void publish(String token, String tripId) {
+        if (travelled.add(tripId)) {
+            act(token, tripId, "start");
+            act(token, tripId, "complete");
         }
-        act(token, itineraryId, "publish");
+        itineraryOf.put(
+                tripId,
+                TripRig.fieldIn(
+                        act(token, tripId, "publish")
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id"));
     }
 
 
@@ -592,13 +610,15 @@ class ForkContractIT extends PostgresTestBase {
     }
 
 
-    private void act(String token, String itineraryId, String verb) {
-        rest.post()
-                .uri(rootFor(verb) + itineraryId + "/" + verb)
-                .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .exchange()
-                .expectStatus()
+    private RestTestClient.ResponseSpec act(String token, String itineraryId, String verb) {
+        RestTestClient.ResponseSpec answered =
+                rest.post()
+                        .uri(rootFor(verb) + itineraryId + "/" + verb)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .exchange();
+        answered.expectStatus()
                 .value(status -> org.assertj.core.api.Assertions.assertThat(status).isIn(200, 204));
+        return answered;
     }
 
 

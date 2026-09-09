@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
+import com.largata.support.TripRig;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashSet;
@@ -270,7 +271,7 @@ class ForkProvenanceIT extends PostgresTestBase {
         return JSON.readTree(
                 rawBody(
                         rest.get()
-                                .uri("/v1/published-itineraries/" + itineraryId)
+                                .uri("/v1/trips/" + itineraryId + "/itinerary")
                                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                 .exchange()
                                 .expectStatus()
@@ -282,7 +283,7 @@ class ForkProvenanceIT extends PostgresTestBase {
         return JSON.readTree(
                 rawBody(
                         rest.post()
-                                .uri("/v1/trips/" + sourceId + "/fork")
+                                .uri("/v1/publications/" + itineraryBehind(sourceId) + "/fork")
                                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                 .exchange()
                                 .expectStatus()
@@ -353,12 +354,32 @@ class ForkProvenanceIT extends PostgresTestBase {
 
     private final Set<String> travelled = new HashSet<>();
 
-    private void publish(String token, String itineraryId) {
-        if (travelled.add(itineraryId)) {
-            act(token, itineraryId, "start");
-            act(token, itineraryId, "complete");
+    private final java.util.Map<String, String> itineraryOf = new java.util.HashMap<>();
+
+
+    private String itineraryBehind(String tripId) {
+        return itineraryOf.getOrDefault(tripId, tripId);
+    }
+
+
+    private void publish(String token, String tripId) {
+        if (travelled.add(tripId)) {
+            act(token, tripId, "start");
+            act(token, tripId, "complete");
         }
-        act(token, itineraryId, "publish");
+        itineraryOf.put(
+                tripId,
+                TripRig.fieldIn(
+                        rest.post()
+                                .uri("/v1/trips/" + tripId + "/publish")
+                                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                                .exchange()
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id"));
     }
 
 

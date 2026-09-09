@@ -220,7 +220,7 @@ class AudienceLadderIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec publicView(String token, String itineraryId) {
         return rest.get()
-                .uri("/v1/published-itineraries/" + itineraryId)
+                .uri("/v1/trips/" + itineraryId + "/itinerary")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }

@@ -72,7 +72,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
         act(owner, trip, "complete");
         String objectId = publish(owner, trip);
         String forker = rig.travelerWithHandle(handle());
-        String forkedTrip = fork(forker, trip);
+        String forkedTrip = fork(forker, objectId);
         UUID workspaceId =
                 jdbc.queryForObject(
                         "SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, tripId);
@@ -403,10 +403,10 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
     }
 
 
-    private String fork(String token, String trip) {
+    private String fork(String token, String itineraryId) {
         return TripRig.fieldIn(
                 rest.post()
-                        .uri("/v1/trips/" + trip + "/fork")
+                        .uri("/v1/publications/" + itineraryId + "/fork")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                         .exchange()
                         .expectStatus()

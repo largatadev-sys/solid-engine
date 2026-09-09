@@ -196,7 +196,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         walkToCompleted(owner, tripId);
         Map<String, Object> stamped = stampsOf(tripId);
 
-        finishPlanning(owner, tripId).expectStatus().isEqualTo(409);
         start(owner, tripId).expectStatus().isEqualTo(409);
         complete(owner, tripId).expectStatus().isEqualTo(409);
 
@@ -261,27 +260,11 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         String tripId = createItinerary(owner);
         String stranger = freshTraveler();
 
-        finishPlanning(stranger, tripId).expectStatus().isNotFound();
         start(stranger, tripId).expectStatus().isNotFound();
         complete(stranger, tripId).expectStatus().isNotFound();
         assertThat(stateOf(tripId)).isEqualTo("UPCOMING");
     }
 
-    @Test
-    void finishPlanningStaysMappedAndRefusesForeverInEveryState() {
-        String owner = freshTraveler();
-        String tripId = createItinerary(owner);
-
-        refusedAsRetired(finishPlanning(owner, tripId));
-        assertThat(stateOf(tripId)).as("the dormant endpoint moves nothing").isEqualTo("UPCOMING");
-
-        start(owner, tripId).expectStatus().isOk();
-        refusedAsRetired(finishPlanning(owner, tripId));
-
-        complete(owner, tripId).expectStatus().isOk();
-        refusedAsRetired(finishPlanning(owner, tripId));
-        assertThat(stateOf(tripId)).isEqualTo("COMPLETED");
-    }
 
 
     @Test
@@ -326,12 +309,6 @@ class ItineraryLifecycleIT extends PostgresTestBase {
         complete(token, itineraryId).expectStatus().isOk();
     }
 
-    private RestTestClient.ResponseSpec finishPlanning(String token, String itineraryId) {
-        return rest.post()
-                .uri("/v1/trips/" + itineraryId + "/finish-planning")
-                .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .exchange();
-    }
 
     private RestTestClient.ResponseSpec start(String token, String itineraryId) {
         return rest.post()

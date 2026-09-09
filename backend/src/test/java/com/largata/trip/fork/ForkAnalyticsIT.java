@@ -7,6 +7,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
+import com.largata.support.TripRig;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -104,7 +105,7 @@ class ForkAnalyticsIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec fork(String token, String sourceId) {
         return rest.post()
-                .uri("/v1/trips/" + sourceId + "/fork")
+                .uri("/v1/publications/" + itineraryBehind(sourceId) + "/fork")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -153,17 +154,32 @@ class ForkAnalyticsIT extends PostgresTestBase {
 
     private final Set<String> travelled = new HashSet<>();
 
-    private void publish(String token, String itineraryId) {
-        if (travelled.add(itineraryId)) {
-            act(token, itineraryId, "start");
-            act(token, itineraryId, "complete");
+    private final java.util.Map<String, String> itineraryOf = new java.util.HashMap<>();
+
+
+    private String itineraryBehind(String tripId) {
+        return itineraryOf.getOrDefault(tripId, tripId);
+    }
+
+
+    private void publish(String token, String tripId) {
+        if (travelled.add(tripId)) {
+            act(token, tripId, "start");
+            act(token, tripId, "complete");
         }
-        rest.post()
-                .uri("/v1/trips/" + itineraryId + "/publish")
-                .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .exchange()
-                .expectStatus()
-                .isOk();
+        itineraryOf.put(
+                tripId,
+                TripRig.fieldIn(
+                        rest.post()
+                                .uri("/v1/trips/" + tripId + "/publish")
+                                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                                .exchange()
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id"));
     }
 
 

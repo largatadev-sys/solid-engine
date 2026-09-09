@@ -83,7 +83,6 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                 "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId + "/move",
                 "{\"targetDayId\":\"" + dayId + "\"}"));
 
-        refused(post(trip.owner, "/v1/trips/" + trip.id + "/finish-planning", null));
         refused(post(trip.owner, "/v1/trips/" + trip.id + "/start", null));
         refused(post(trip.owner, "/v1/trips/" + trip.id + "/complete", null));
 

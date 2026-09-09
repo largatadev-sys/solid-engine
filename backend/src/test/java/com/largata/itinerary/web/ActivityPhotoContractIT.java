@@ -192,7 +192,7 @@ class ActivityPhotoContractIT extends ObjectStoreTestBase {
 
         String stranger = rig.travelerWithHandle(handle());
         rest.get()
-                .uri("/v1/published-itineraries/" + trip.tripId())
+                .uri("/v1/trips/" + trip.tripId() + "/itinerary")
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
                 .exchange()
                 .expectStatus()

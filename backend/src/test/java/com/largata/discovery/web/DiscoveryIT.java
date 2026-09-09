@@ -70,26 +70,31 @@ class DiscoveryIT extends PostgresTestBase {
 
 
     @Test
-    void aPrivateAudienceIsRefusedSoNoTripCanBePublishedOutOfDiscover() {
+    void thereIsNoAudienceToAskFor_soPublishingIsAlwaysDiscoverable() {
         String owner = traveler();
         String trip = trip(owner);
         travel(owner, trip);
 
-        rest.post()
-                .uri("/v1/trips/" + trip + "/publish")
-                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"audience\":\"private\"}")
-                .exchange()
-                .expectStatus()
-                .isBadRequest()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("VISIBILITY_RETIRED");
+        String itineraryId =
+                TripRig.fieldIn(
+                        rest.post()
+                                .uri("/v1/trips/" + trip + "/publish")
+                                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body("{\"audience\":\"private\"}")
+                                .exchange()
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id");
 
         assertThat(browseIds(owner))
-                .as("the refusal is the whole guard — published now means discoverable, always")
-                .doesNotContain(trip);
+                .as("CM-5 removed the audience axis rather than refusing it: an audience the caller"
+                        + " sends is IGNORED, and publishing puts the Itinerary on Discover for every"
+                        + " signed-in traveler. Published means discoverable, always (ADR-034)")
+                .contains(itineraryId);
     }
 
 
