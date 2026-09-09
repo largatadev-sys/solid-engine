@@ -284,13 +284,6 @@ public class TripService {
     }
 
 
-    @Transactional(readOnly = true)
-    public void refuseFinishPlanning(Membership owner) {
-        authorizeAndLoad(owner);
-        throw IllegalStateTransitionException.planningIsNoLongerAState();
-    }
-
-
     @Transactional
     public Trip start(Membership owner) {
         Trip itinerary = authorizeAndLoad(owner);
@@ -317,23 +310,6 @@ public class TripService {
         itinerary.reopen();
         workspaces.markActive(itinerary.id());
         return record(itinerary, owner, "itinerary_reopened");
-    }
-
-
-    @Transactional
-    public Trip publish(Membership owner) {
-        Trip itinerary = authorizeAndLoad(owner);
-        editLease.requireSessionFreeForLifecycle(owner);
-        itinerary.publishTo(Instant.now());
-        return recordStatus(itinerary, owner, "itinerary_published");
-    }
-
-
-    @Transactional
-    public Trip unpublish(Membership owner) {
-        Trip itinerary = authorizeAndLoad(owner);
-        itinerary.unpublish();
-        return recordStatus(itinerary, owner, "itinerary_unpublished");
     }
 
 
