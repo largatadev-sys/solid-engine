@@ -24,12 +24,12 @@ const send = async (as: string, body: string) => api(messagesUri(), 'POST', as, 
 const thread = async (as: string): Promise<Page<ChatMessageResponse>> =>
   (await api(messagesUri(), 'GET', as)).body;
 
-const TWINNED_ACTS = ['start', 'complete'];
+const TWINNED_ACTS = ['start', 'complete', 'publish', 'unpublish'];
 
 const act = async (action: string, as: string = owner) => {
   const root = TWINNED_ACTS.includes(action) ? '/v1/trips' : '/v1/itineraries';
   const moved = await api(`${root}/${trip}/${action}`, 'POST', as, {});
-  if (moved.status !== 200) throw new SeedFailure(`the ${action}`, moved.body);
+  if (moved.status !== 200 && moved.status !== 204) throw new SeedFailure(`the ${action}`, moved.body);
 };
 
 

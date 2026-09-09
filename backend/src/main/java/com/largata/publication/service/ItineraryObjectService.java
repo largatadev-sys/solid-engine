@@ -2,6 +2,7 @@ package com.largata.publication.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
+import com.largata.common.authz.ItineraryNotFoundException;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.TripEditingSession;
 import com.largata.common.tx.AfterCommit;
@@ -153,7 +154,7 @@ public class ItineraryObjectService implements PublicationApi {
                 readerId,
                 objects.findByTripId(tripId)
                         .filter(candidate -> !candidate.isRetired())
-                        .orElseThrow(PublicationNotFoundException::new));
+                        .orElseThrow(ItineraryNotFoundException::new));
     }
 
 

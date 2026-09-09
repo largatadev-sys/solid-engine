@@ -22,12 +22,14 @@ interface Fixture {
 
 let fixture: Fixture;
 
+type PublishedFixture = { tripId: string; itineraryId: string };
+
 async function publishedTrip(
   token: string,
   title: string,
   destination: string,
   durationDays: number,
-): Promise<string> {
+): Promise<PublishedFixture> {
   const created = await api('/v1/trips', 'POST', token, {
     title,
     destination,
@@ -41,7 +43,7 @@ async function publishedTrip(
   }
   const published = await api(`/v1/trips/${id}/publish`, 'POST', token, { audience: 'public' });
   if (published.status !== 200) throw new SeedFailure(`publishing "${title}"`, published.body);
-  return id;
+  return { tripId: id as string, itineraryId: published.body.id as string };
 }
 
 test.beforeAll(async () => {
@@ -54,12 +56,21 @@ test.beforeAll(async () => {
   const lima = await publishedTrip(publisherToken, `Lima ceviche ${mark}`, `Lima ${mark}`, 12);
 
   const hidden = await publishedTrip(publisherToken, `Hidden trip ${mark}`, `Secretplace ${mark}`, 4);
-  await api(`/v1/trips/${hidden}/unpublish`, 'POST', publisherToken);
+  await api(`/v1/trips/${hidden.tripId}/unpublish`, 'POST', publisherToken);
 
   const archived = await publishedTrip(publisherToken, `Archived trip ${mark}`, `Archivetown ${mark}`, 4);
-  await api(`/v1/trips/${archived}/archive`, 'POST', publisherToken);
+  await api(`/v1/trips/${archived.tripId}/archive`, 'POST', publisherToken);
 
-  fixture = { mark, kyoto, osaka, lima, hidden, archived, browserToken, publisherToken };
+  fixture = {
+    mark,
+    kyoto: kyoto.itineraryId,
+    osaka: osaka.itineraryId,
+    lima: lima.itineraryId,
+    hidden: hidden.itineraryId,
+    archived: archived.itineraryId,
+    browserToken,
+    publisherToken,
+  };
 });
 
 test('a published public trip reaches a stranger who shares no trip with its author', async () => {
