@@ -8,6 +8,8 @@ const FOLLOWED = 't5';
 
 requireStack(FOLLOWER);
 
+test.describe.configure({ mode: 'serial' });
+
 let followerToken: string;
 let followedToken: string;
 let follower: { handle: string };
