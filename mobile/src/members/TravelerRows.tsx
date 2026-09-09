@@ -4,7 +4,6 @@ import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedb
 import {
   travelerColors,
   travelerMetrics,
-  travelerRadii,
   travelerTypography,
 } from '../theme/workspaceTokens';
 import { EnvelopeAvatar, TravelerAvatar } from './TravelerAvatar';

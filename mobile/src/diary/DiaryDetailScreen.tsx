@@ -13,10 +13,8 @@ import {
   ADD_POSTCARD_CTA,
   BACK_LABEL,
   NO_POSTCARDS_ON_THIS_DAY,
-  dayMetaLine,
   dayMetaPrefix,
   dayOrdinalLabel,
-  detailMetaLine,
   detailMetaSuffix,
 } from './memoryCopy';
 import { MemoryIcon } from './MemoryIcon';

@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.api.MembershipApi;
 import com.largata.itinerary.api.ItineraryApi;
 import com.largata.trip.api.TripApi;

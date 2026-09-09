@@ -12,7 +12,6 @@ import { usePublicProfile } from '../query/publicProfileQueries';
 import { useRevalidateOnFocus } from '../query/useRevalidateOnFocus';
 import { colors, spacing } from '../theme';
 import {
-  followColors,
   followMetrics,
   followTypography,
   profileColors,

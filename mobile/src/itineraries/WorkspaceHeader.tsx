@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '../components/Icon';
-import { workspaceColors, workspaceRadii, workspaceTypography } from '../theme/workspaceTokens';
+import { workspaceColors, workspaceTypography } from '../theme/workspaceTokens';
 import { LifecycleBadge } from './LifecycleBadge';
 import type { StateBadge } from './workspaceControls';
 import { TRIP_SETTINGS_LABEL } from './tripSettingsItems';

@@ -4,12 +4,11 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { Icon } from '../../../../../../src/components/Icon';
+import { } from '../../../../../../src/components/Icon';
 import { ScreenHeader } from '../../../../../../src/components/ScreenHeader';
 import {
   itineraryLoadMessage,
@@ -42,11 +41,8 @@ import type { PickedPhoto } from '../../../../../../src/media/pickedPhoto';
 import type { PhotoDumpEntryResponse } from '../../../../../../src/types/api';
 import { usePostDiaryEntry } from '../../../../../../src/query/diaryQueries';
 import { useItinerary, usePhotoDump } from '../../../../../../src/query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../../../../../../src/theme';
+import { colors } from '../../../../../../src/theme';
 import {
-  diaryColors,
-  diaryMetrics,
-  diaryTypography,
   workspaceColors,
 } from '../../../../../../src/theme/workspaceTokens';
 

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { useOpenPlace } from '../maps/useOpenPlace';
 import { placeTapTarget } from '../maps/placeTap';
 import type { Pin } from '../maps/pinRules';

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { MAX_SCREEN_CHARS, pairedScreenString, screenStringOf } from '../src/feedback/reportScreen';
 import { SCREEN_LABELS } from '../src/feedback/screenLabels';

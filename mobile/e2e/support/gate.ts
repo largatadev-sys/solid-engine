@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 import { authenticatedReadiness, backendReachable, missingPoolEnv } from './pool';
-import { IDENTITY_MAP, assertVerified, type PoolTag, type SpecKey } from './identities';
+import { IDENTITY_MAP, type PoolTag, type SpecKey } from './identities';
 
 export function requireStack(tag: PoolTag): void {
   test.beforeAll(async () => {

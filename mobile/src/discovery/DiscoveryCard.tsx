@@ -10,7 +10,6 @@ import { spacing } from '../theme';
 import {
   discoveryColors,
   discoveryMetrics,
-  discoveryTypography,
   profileColors,
   profileMetrics,
   profileTypography,

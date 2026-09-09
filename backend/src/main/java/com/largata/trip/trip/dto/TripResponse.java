@@ -3,7 +3,6 @@ package com.largata.trip.trip.dto;
 import com.largata.trip.api.ForkApi;
 import com.largata.common.geo.PinPayload;
 import com.largata.identity.TravelerSummary;
-import com.largata.trip.fork.ForkService;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.plan.entity.TripPlanTree;
 import com.largata.trip.editing.entity.LeaseSubject;

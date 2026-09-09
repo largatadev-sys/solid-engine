@@ -1,25 +1,18 @@
 package com.largata.trip.fork;
 
 import com.largata.common.analytics.Analytics;
-import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.trip.api.ForkApi;
 import com.largata.trip.api.ForkApi.ForkProvenanceView;
-import com.largata.common.authz.Membership;
-import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.trip.workspace.entity.WorkspaceState;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.plan.entity.TripPlanTree;
-import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.plan.entity.Day;
 import com.largata.trip.plan.entity.Activity;
 import com.largata.trip.workspace.service.WorkspaceService;
@@ -27,7 +20,6 @@ import com.largata.trip.trip.repository.TripRepository;
 import com.largata.trip.plan.repository.DayRepository;
 import com.largata.trip.plan.repository.ActivityRepository;
 import com.largata.trip.plan.service.DayService;
-
 
 @Service
 public class ForkService implements ForkApi {
@@ -68,9 +60,6 @@ public class ForkService implements ForkApi {
         this.analytics = analytics;
     }
 
-
-
-
     private void copyPlanInto(UUID copyId, UUID sourceId, UUID forkerId, Instant at) {
         for (Day sourceDay : days.findByItineraryIdOrderByOrdinalAsc(sourceId)) {
             Day copiedDay = days.save(Day.copiedInto(copyId, sourceDay, at));
@@ -80,7 +69,6 @@ public class ForkService implements ForkApi {
         }
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public Optional<ForkProvenanceView> provenanceOf(UUID itineraryId, UUID readerId) {
@@ -88,13 +76,11 @@ public class ForkService implements ForkApi {
                 .findByForkedItineraryId(itineraryId)
                 .map(ForkRelationship::sourceItineraryId)
                 .map(
-                        sourceId ->
-                                new ForkProvenanceView(
-                                        sourceId,
-                                        handleOfOwnerOf(sourceId),
-                                        sourceVisibility.stillLive(sourceId)));
+                        sourceId -> new ForkProvenanceView(
+                                sourceId,
+                                handleOfOwnerOf(sourceId),
+                                sourceVisibility.stillLive(sourceId)));
     }
-
 
     private String handleOfOwnerOf(UUID sourceId) {
         return sourceVisibility
@@ -104,13 +90,11 @@ public class ForkService implements ForkApi {
                 .orElse(null);
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public long forkCountOf(UUID sourceItineraryId) {
         return relationships.countBySourceItineraryId(sourceItineraryId);
     }
-
 
     @Override
     @Transactional
@@ -118,6 +102,6 @@ public class ForkService implements ForkApi {
         relationships.save(ForkRelationship.recording(sourceId, forkedTripId, Instant.now()));
     }
 
-
-    public record ForkProvenance(UUID sourceItineraryId, String ownerHandle, boolean sourceVisible) {}
+    public record ForkProvenance(UUID sourceItineraryId, String ownerHandle, boolean sourceVisible) {
+    }
 }

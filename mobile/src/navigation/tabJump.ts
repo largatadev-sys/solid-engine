@@ -1,4 +1,4 @@
-import { HOME_TAB_ROUTE, PROFILE_TAB_ROUTE, TRIPS_TAB_ROUTE } from './authRoutes';
+import { HOME_TAB_ROUTE, PROFILE_TAB_ROUTE } from './authRoutes';
 
 
 export type TabJump = 'dismissTo' | 'navigate';

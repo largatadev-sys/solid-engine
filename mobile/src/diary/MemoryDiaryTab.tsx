@@ -13,7 +13,6 @@ import {
   DIARY_TAB_EMPTY_TITLE,
   VIEW_ITINERARY_LINK,
   dayOrdinalLabel,
-  looseMetaLine,
   looseMetaSuffix,
   photoIndexPill,
   sectionMetaLine,

@@ -53,11 +53,8 @@ import {
   useSaveDiaryEntry,
 } from '../query/diaryQueries';
 import { useItinerary, usePhotoDump } from '../query/itineraryQueries';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, spacing, typography } from '../theme';
 import {
-  diaryColors,
-  diaryMetrics,
-  diaryTypography,
   workspaceColors,
   workspaceMetrics,
   workspaceRadii,

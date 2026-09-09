@@ -15,7 +15,6 @@ import { dragToScroll } from '../components/stripScroll';
 import { dotScale, dotWindow, pageOfOffset } from '../feed/feedCarousel';
 import { colors, spacing } from '../theme';
 import {
-  discoveryColors,
   discoveryMetrics,
   discoveryTypography,
   profileColors,

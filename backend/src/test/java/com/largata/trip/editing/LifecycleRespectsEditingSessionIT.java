@@ -24,7 +24,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.TestPropertySource;
-import com.largata.trip.trip.exception.IllegalStateTransitionException;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.editing.entity.LeaseSubject;
 import com.largata.trip.editing.exception.EditLockedException;

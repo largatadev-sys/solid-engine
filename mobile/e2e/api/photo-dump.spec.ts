@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures';
-import { api, address, tokenFor, profileFor } from '../support/pool';
+import { api, tokenFor, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP, STRANGER_TAG } from '../support/identities';
 import { SeedFailure, stamp } from '../support/seed';

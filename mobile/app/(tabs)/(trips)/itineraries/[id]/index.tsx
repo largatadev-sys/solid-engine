@@ -56,7 +56,7 @@ import {
   capturesAreOpen,
   entryForActivity,
 } from '../../../../../src/diary/diaryCapture';
-import { colors, typography } from '../../../../../src/theme';
+import { colors } from '../../../../../src/theme';
 
 
 export default function TripWorkspaceScreen() {

@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
-import { api, profileFor, tokenFor } from '../support/pool';
+import { api, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
 import { SeedFailure, climbTo, seedTrip, stamp } from '../support/seed';
