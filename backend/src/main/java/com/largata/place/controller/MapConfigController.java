@@ -1,12 +1,12 @@
-package com.largata.place.web;
+package com.largata.place.controller;
 
-import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
+import com.largata.identity.Traveler;
+import com.largata.place.dto.MapConfigResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 
 @RestController
 @RequestMapping("/v1/places")

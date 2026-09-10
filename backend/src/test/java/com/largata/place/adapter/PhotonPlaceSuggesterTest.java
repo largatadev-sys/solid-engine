@@ -1,4 +1,4 @@
-package com.largata.place;
+package com.largata.place.adapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -7,8 +7,8 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import com.largata.place.api.PlaceCandidate;
-import com.largata.place.api.PlaceSearchUnavailableException;
+import com.largata.place.service.PlaceCandidate;
+import com.largata.place.exception.PlaceSearchUnavailableException;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;

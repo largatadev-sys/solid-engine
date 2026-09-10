@@ -1,6 +1,5 @@
-package com.largata.place;
+package com.largata.place.service;
 
-import com.largata.place.api.PlaceCandidate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-class SuggestionCache {
+public class SuggestionCache {
 
     static final int CAPACITY = 500;
 
