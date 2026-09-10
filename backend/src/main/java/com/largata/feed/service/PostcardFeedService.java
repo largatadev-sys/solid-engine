@@ -1,17 +1,22 @@
-package com.largata.feed;
+package com.largata.feed.service;
 
 import com.largata.common.api.InstantCursor;
 import com.largata.common.api.Page;
+import com.largata.feed.dto.FeedPhotoResponse;
+import com.largata.feed.dto.FeedPostcardResponse;
+import com.largata.feed.dto.PublicTripDiaryResponse;
+import com.largata.feed.exception.FeedExceptions;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.api.TravelerCardResponse;
-import com.largata.feed.api.FeedPhotoResponse;
-import com.largata.feed.api.FeedPostcardResponse;
-import com.largata.feed.api.PublicTripDiaryResponse;
+import com.largata.itinerary.api.ItineraryApi;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
 import com.largata.postcard.api.SharedEntries;
+import com.largata.trip.api.MembershipApi;
+import com.largata.trip.api.TripApi;
+import com.largata.trip.api.TripTeaser;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,11 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.largata.trip.api.MembershipApi;
-import com.largata.itinerary.api.ItineraryApi;
-import com.largata.trip.api.TripApi;
-import com.largata.trip.api.TripTeaser;
-
 
 @Service
 public class PostcardFeedService {

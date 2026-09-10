@@ -1,4 +1,4 @@
-package com.largata.feed.api;
+package com.largata.feed.dto;
 
 import com.largata.identity.api.TravelerCardResponse;
 import java.time.Instant;

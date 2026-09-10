@@ -1,4 +1,4 @@
-package com.largata.feed.web;
+package com.largata.feed.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
