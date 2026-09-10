@@ -1,4 +1,4 @@
-package com.largata.place.api;
+package com.largata.place.service;
 
 import java.math.BigDecimal;
 

@@ -1,6 +1,6 @@
-package com.largata.place;
+package com.largata.place.service;
 
-import com.largata.place.api.TooManySearchesException;
+import com.largata.place.exception.TooManySearchesException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-class SearchRateLimiter {
+public class SearchRateLimiter {
 
     static final int PER_TRAVELER_PER_MINUTE = 30;
 

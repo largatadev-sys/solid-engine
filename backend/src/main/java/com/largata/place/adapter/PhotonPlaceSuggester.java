@@ -1,8 +1,8 @@
-package com.largata.place;
+package com.largata.place.adapter;
 
-import com.largata.place.api.PlaceCandidate;
-import com.largata.place.api.PlaceSearchUnavailableException;
-import com.largata.place.api.PlaceSuggester;
+import com.largata.place.service.PlaceCandidate;
+import com.largata.place.exception.PlaceSearchUnavailableException;
+import com.largata.place.service.PlaceSuggester;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;

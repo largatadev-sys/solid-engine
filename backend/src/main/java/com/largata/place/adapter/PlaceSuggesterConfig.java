@@ -1,6 +1,6 @@
-package com.largata.place;
+package com.largata.place.adapter;
 
-import com.largata.place.api.PlaceSuggester;
+import com.largata.place.service.PlaceSuggester;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;

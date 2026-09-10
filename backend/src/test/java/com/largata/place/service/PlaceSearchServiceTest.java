@@ -1,12 +1,11 @@
-package com.largata.place;
+package com.largata.place.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.place.api.PlaceCandidate;
-import com.largata.place.api.PlaceSearchUnavailableException;
-import com.largata.place.api.PlaceSuggester;
-import com.largata.place.api.TooManySearchesException;
+import com.largata.place.adapter.FixturePlaceSuggester;
+import com.largata.place.exception.PlaceSearchUnavailableException;
+import com.largata.place.exception.TooManySearchesException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
@@ -15,7 +14,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-
 
 class PlaceSearchServiceTest {
 

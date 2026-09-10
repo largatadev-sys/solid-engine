@@ -1,4 +1,4 @@
-package com.largata.place.api;
+package com.largata.place.service;
 
 
 public record ResolvedPlace(PlaceCandidate place, boolean nearby) {

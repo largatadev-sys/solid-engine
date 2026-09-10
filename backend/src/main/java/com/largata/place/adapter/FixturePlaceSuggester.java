@@ -1,14 +1,14 @@
-package com.largata.place;
+package com.largata.place.adapter;
 
-import com.largata.place.api.PlaceCandidate;
-import com.largata.place.api.PlaceSuggester;
+import com.largata.place.service.PlaceCandidate;
+import com.largata.place.service.PlaceSuggester;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
 
-class FixturePlaceSuggester implements PlaceSuggester {
+public class FixturePlaceSuggester implements PlaceSuggester {
 
     private static final List<PlaceCandidate> WORLD =
             List.of(
