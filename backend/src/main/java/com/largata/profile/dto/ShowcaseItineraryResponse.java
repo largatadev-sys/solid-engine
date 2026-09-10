@@ -1,4 +1,4 @@
-package com.largata.profile.api;
+package com.largata.profile.dto;
 
 import java.util.UUID;
 

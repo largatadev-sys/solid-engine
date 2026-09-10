@@ -1,4 +1,4 @@
-package com.largata.profile;
+package com.largata.profile.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
@@ -12,8 +12,8 @@ import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.identity.api.PublicProfileResponse;
 import com.largata.identity.api.TravelerCardResponse;
-import com.largata.profile.api.DiaryTripResponse;
-import com.largata.profile.api.ShowcaseItineraryResponse;
+import com.largata.profile.dto.DiaryTripResponse;
+import com.largata.profile.dto.ShowcaseItineraryResponse;
 import com.largata.postcard.api.SharedEntries;
 import java.util.Collection;
 import java.util.List;
