@@ -1,17 +1,17 @@
-package com.largata.profile.web;
+package com.largata.profile.controller;
 
 import com.largata.common.api.Page;
 import com.largata.identity.FollowCounts;
 import com.largata.identity.FollowService;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
-import com.largata.profile.api.ProfileStatsResponse;
-import com.largata.profile.api.ShowcaseItineraryResponse;
+import com.largata.profile.dto.ProfileStatsResponse;
+import com.largata.profile.dto.ShowcaseItineraryResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.largata.profile.PublicProfileService;
+import com.largata.profile.service.PublicProfileService;
 
 
 @RestController

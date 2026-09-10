@@ -17,10 +17,8 @@ class ProfileModuleBoundaryTest {
 
     private static final String PROFILE = "com.largata.profile";
 
-    private static final String PUBLISHED_CONTRACT = PROFILE + ".api..";
-
-    private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
-            resideInAPackage(PROFILE + "..").and(not(resideInAPackage(PUBLISHED_CONTRACT)));
+    private static final DescribedPredicate<JavaClass> ANYTHING_IN_THE_MODULE =
+            resideInAPackage(PROFILE + "..");
 
     private static final DescribedPredicate<JavaClass> ANOTHER_MODULE =
             resideInAPackage("com.largata..")
@@ -37,15 +35,18 @@ class ProfileModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void theOnlyWayIntoTheProfileModuleIsItsApiPackage() {
+    void nothingOutsideTheProfileModuleReachesIntoIt() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(PROFILE + "..")
                 .should()
-                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
+                .dependOnClassesThat(ANYTHING_IN_THE_MODULE)
                 .as("a module is reached by ID and service interface only (ADR-002) — an ALLOWLIST, so"
                         + " the implementation, the web edge and any subpackage added later are all"
-                        + " covered without anyone remembering to name them")
+                        + " covered without anyone remembering to name them. Profile has no in-process"
+                        + " caller, so under ADR-038 rule 1 as amended on 11/09/2026 it has no api"
+                        + " package — and it publishes no refusal either, so it has no front door"
+                        + " at all and NOTHING outside it may name any part of it")
                 .check(largata);
     }
 
@@ -63,19 +64,6 @@ class ProfileModuleBoundaryTest {
                         + " trip.api for the teasers and the archived set")
                 .check(largata);
     }
-
-
-    @Test
-    void theModulesOwnApiPackageDependsOnNothingBehindIt() {
-        noClasses()
-                .that()
-                .resideInAPackage(PUBLISHED_CONTRACT)
-                .should()
-                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
-                .as("the published contract cannot depend on the implementation behind it")
-                .check(largata);
-    }
-
 
     @Test
     void theProfileModuleOwnsNoTableAndNoQueryOfItsOwn() {
@@ -103,7 +91,7 @@ class ProfileModuleBoundaryTest {
 
     @Test
     void theAllowlistPredicatesActuallySelectSomething() {
-        assertThat(largata.that(BEHIND_THE_MODULES_FRONT_DOOR))
+        assertThat(largata.that(ANYTHING_IN_THE_MODULE))
                 .as("a predicate matching nothing would pass every rule above while guarding nothing")
                 .isNotEmpty();
         assertThat(largata.that(ANOTHER_MODULE))
