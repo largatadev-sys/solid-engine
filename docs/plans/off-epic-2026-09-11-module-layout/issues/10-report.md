@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] Every main-tree class of the module sits in a slice or a root folder and the module root holds none
 - [ ] Direction holds: nothing in `intake` names a `delivery` type and nothing in `delivery` names an `intake` type — checked by a search, and worth one ArchUnit slice rule inside the module's boundary test in the mould of `trip`'s slice list
