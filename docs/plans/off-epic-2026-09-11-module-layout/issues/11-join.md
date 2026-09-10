@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] Every main-tree class of the module sits in a slice folder or a root folder and the module root holds none; no class is split
 - [ ] The never-read event-publisher field and its constructor parameter are deleted; the `card` `package-info` is deleted and `ModulithVerificationTest` still refuses postcard alone — if Modulith starts refusing something in `join`, that is a finding to record, not a reason to keep the annotation
