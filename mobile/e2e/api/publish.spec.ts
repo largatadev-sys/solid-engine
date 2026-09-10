@@ -315,6 +315,7 @@ test.describe('the archive fence', () => {
   let archivedMemberList: { status: number; body: any };
   let archivedOwner: { status: number; body: any };
   let fencedPublish: { status: number; body: any };
+  let fencedUnpublish: { status: number; body: any };
 
   test.beforeAll(async () => {
     await api(`/v1/trips/${trip}/archive`, 'POST', owner);
@@ -322,7 +323,8 @@ test.describe('the archive fence', () => {
     archivedMember = await api(`/v1/trips/${trip}`, 'GET', member);
     archivedMemberList = await api('/v1/trips?archived=true', 'GET', member);
     archivedOwner = await api(`/v1/trips/${trip}`, 'GET', owner);
-    fencedPublish = await api(`/v1/trips/${trip}/unpublish`, 'POST', owner);
+    fencedUnpublish = await api(`/v1/trips/${trip}/unpublish`, 'POST', owner);
+    fencedPublish = await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   });
 
   test('archived masks the stranger on the public page', () => {
@@ -342,6 +344,8 @@ test.describe('the archive fence', () => {
   });
 
   test('the fence rejects publish and unpublish', () => {
+    expect(fencedUnpublish.status).toBe(409);
+    expect(fencedUnpublish.body.code).toBe('TRIP_ARCHIVED');
     expect(fencedPublish.status).toBe(409);
     expect(fencedPublish.body.code).toBe('TRIP_ARCHIVED');
   });

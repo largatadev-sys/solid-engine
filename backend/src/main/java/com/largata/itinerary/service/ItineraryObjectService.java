@@ -5,6 +5,7 @@ import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.authz.ItineraryNotFoundException;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.TripEditingSession;
+import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.itinerary.api.ItineraryApi;
 import com.largata.itinerary.entity.ItineraryObject;
@@ -40,6 +41,7 @@ public class ItineraryObjectService implements ItineraryApi {
     private final PlanApi plans;
     private final MembershipApi workspaces;
     private final TripEditingSession editingSession;
+    private final WriteFence fence;
     private final ObjectMapper json;
     private final Analytics analytics;
     private final Clock clock;
@@ -49,6 +51,7 @@ public class ItineraryObjectService implements ItineraryApi {
             PlanApi plans,
             MembershipApi workspaces,
             TripEditingSession editingSession,
+            WriteFence fence,
             ObjectMapper json,
             Analytics analytics,
             Clock clock) {
@@ -56,6 +59,7 @@ public class ItineraryObjectService implements ItineraryApi {
         this.plans = plans;
         this.workspaces = workspaces;
         this.editingSession = editingSession;
+        this.fence = fence;
         this.json = json;
         this.analytics = analytics;
         this.clock = clock;
@@ -64,6 +68,7 @@ public class ItineraryObjectService implements ItineraryApi {
 
     @Transactional
     public ItineraryObject publish(Membership member) {
+        fence.requireWritable(member);
         if (!member.isOwner()) {
             throw new NotTheTripOwnerException("Only the trip owner can publish this trip.");
         }
@@ -108,6 +113,7 @@ public class ItineraryObjectService implements ItineraryApi {
 
     @Transactional
     public void unpublish(Membership member) {
+        fence.requireWritable(member);
         if (!member.isOwner()) {
             throw new NotTheTripOwnerException("Only the trip owner can unpublish this trip.");
         }

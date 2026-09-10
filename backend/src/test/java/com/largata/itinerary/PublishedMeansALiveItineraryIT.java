@@ -176,6 +176,34 @@ class PublishedMeansALiveItineraryIT extends PostgresTestBase {
 
 
     @Test
+    void anArchivedTripRefusesBothPublishAndUnpublish() {
+        String owner = rig.travelerWithHandle(handle());
+        String trip = rig.createTrip(owner, 2);
+        walkToCompleted(owner, trip);
+        publish(owner, trip);
+
+        rest.post()
+                .uri("/v1/trips/" + trip + "/archive")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        for (String act : java.util.List.of("publish", "unpublish")) {
+            rest.post()
+                    .uri("/v1/trips/" + trip + "/" + act)
+                    .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                    .exchange()
+                    .expectStatus()
+                    .isEqualTo(409)
+                    .expectBody()
+                    .jsonPath("$.code")
+                    .isEqualTo("TRIP_ARCHIVED");
+        }
+    }
+
+
+    @Test
     void unpublishingATripThatHasNoItineraryStillSucceeds() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 2);
