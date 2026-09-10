@@ -6,7 +6,7 @@
 
 **Blocked by:** 01, 02, 03, 04, 05, 06.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] The rule is stated over `@RestController` methods' return and parameter types, generic type arguments included
 - [ ] A vacuity check that the import found controllers and found `api` packages, so an empty scan cannot pass — the cycle rule's `theScanReachesRealFilesRatherThanPassingVacuously` is the mould
