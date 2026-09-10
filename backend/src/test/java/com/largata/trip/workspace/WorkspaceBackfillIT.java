@@ -160,7 +160,7 @@ class WorkspaceBackfillIT {
 
 
     private static String backfillSql() {
-        try (var in = WorkspaceBackfillIT.class.getResourceAsStream("/db/migration/V5__backfill_workspaces.sql")) {
+        try (var in = WorkspaceBackfillIT.class.getResourceAsStream("/db/migration/trip/V5__backfill_workspaces.sql")) {
             return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         } catch (java.io.IOException e) {
             throw new IllegalStateException("V5 must be readable from the classpath", e);

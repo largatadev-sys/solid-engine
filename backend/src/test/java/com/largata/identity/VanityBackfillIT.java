@@ -151,7 +151,7 @@ class VanityBackfillIT {
 
 
     private static String backfillSql() {
-        try (var in = VanityBackfillIT.class.getResourceAsStream("/db/migration/V25__backfill_vanity_numbers.sql")) {
+        try (var in = VanityBackfillIT.class.getResourceAsStream("/db/migration/identity/V25__backfill_vanity_numbers.sql")) {
             return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         } catch (java.io.IOException e) {
             throw new IllegalStateException("V25 must be readable from the classpath", e);
