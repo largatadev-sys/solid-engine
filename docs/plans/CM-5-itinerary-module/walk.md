@@ -4,7 +4,44 @@
 
 **What CM-5 changed that a traveler can reach:** publishing now mints an Itinerary with its own address; the page, Discover, Home and the profile read that object by its id; forking copies the Itinerary; unpublish/republish and "view published" act from the profile card's menu; and links shared with the old trip id must still resolve.
 
-## Stand it up
+## Stand it up — on the LAN, for a real phone
+
+The founder walks this on a phone, so the stack is bound to the **LAN IP**, not `localhost`. Four things must name that IP and two of them fail silently.
+
+```bash
+# The IP changes when the router re-leases. A stale one reads as a dead backend.
+powershell "Get-NetIPAddress -AddressFamily IPv4 | ? {$_.InterfaceAlias -notmatch 'Loopback|vEthernet|WSL'}"
+LAN=192.168.1.115                                    # <-- re-check every session
+
+LARGATA_CORS_ALLOWED_ORIGINS="http://localhost:8081,http://127.0.0.1:8081,http://10.0.2.2:8081,http://$LAN:8081" LARGATA_WEB_BASE_URL="http://$LAN:8081"   docker compose up -d --build
+
+cd mobile && set -a && . ./.env && set +a
+docker build -f Dockerfile.web-preview   --build-arg EXPO_PUBLIC_API_BASE_URL="http://$LAN:8080"   --build-arg LARGATA_WEB_BASE_URL="http://$LAN:8081"   --build-arg EXPO_PUBLIC_FIREBASE_API_KEY --build-arg EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN   --build-arg EXPO_PUBLIC_FIREBASE_PROJECT_ID --build-arg EXPO_PUBLIC_FIREBASE_APP_ID   --build-arg EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID -t largata-preview:lan .
+docker run -d --name largata-preview-lan -p 8081:8080 -e PORT=8080   --network app_default -e LARGATA_API_UPSTREAM=backend:8080 largata-preview:lan
+```
+
+**Prove it rather than trust the build args** — the two that fail silently:
+
+```bash
+# 1. the bundle BAKED the LAN IP (EXPO_PUBLIC_* are inlined at export, so a
+#    localhost build makes the PHONE call itself)
+docker run --rm --entrypoint sh largata-preview:lan -c "grep -c '$LAN:8080' /srv/_expo/static/js/web/*.js"   # >= 1
+docker run --rm --entrypoint sh largata-preview:lan -c "grep -c 'localhost:8080' /srv/_expo/static/js/web/*.js"  # 0
+
+# 2. CORS admits the LAN origin, checked on a SECURED route — /v1/health answers
+#    either way and proves nothing
+curl -si -X OPTIONS http://$LAN:8080/v1/me -H "Origin: http://$LAN:8081"   -H "Access-Control-Request-Method: GET" -H "Access-Control-Request-Headers: authorization" | grep -i allow-origin
+```
+
+Windows classifies most Wi-Fi as **Public** and blocks inbound, so the phone simply times out with everything on the host healthy. The rule is scoped to two ports and already exists from FB-2:
+
+```bash
+powershell "Get-NetFirewallRule -DisplayName 'Largata LAN preview' | Get-NetFirewallPortFilter"
+```
+
+**Two things on this rung are expected, not bugs.** Google's button will not render — authorized origins are console-registered and Google will not accept a bare IP; sign in with **email + password** as the pool. And `http://<LAN-IP>` is **not a secure context**, so every secure-context-only browser API is silently absent — before concluding a feature is broken here, load the same page on `localhost` and compare `window.isSecureContext`.
+
+## Stand it up on localhost instead (the fallback)
 
 ```bash
 docker compose up -d --build
