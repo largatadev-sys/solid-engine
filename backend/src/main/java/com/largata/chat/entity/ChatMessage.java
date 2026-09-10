@@ -1,6 +1,6 @@
-package com.largata.chat;
+package com.largata.chat.entity;
 
-import com.largata.chat.api.ChatLimits;
+import com.largata.chat.exception.ChatExceptions;
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,10 +9,9 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-
 @Entity
 @Table(name = "chat_message")
-class ChatMessage {
+public class ChatMessage {
 
     static final int MAX_BODY_LENGTH = ChatLimits.MAX_BODY_LENGTH;
 
@@ -43,7 +42,7 @@ class ChatMessage {
     }
 
 
-    static ChatMessage appended(UUID itineraryId, UUID authorTravelerId, String body, Instant at) {
+    public static ChatMessage appended(UUID itineraryId, UUID authorTravelerId, String body, Instant at) {
         if (itineraryId == null || authorTravelerId == null || at == null) {
             throw new IllegalArgumentException("A message belongs to a trip, has an author, and happens at a time");
         }
@@ -51,27 +50,27 @@ class ChatMessage {
     }
 
 
-    UUID id() {
+    public UUID id() {
         return id;
     }
 
 
-    UUID itineraryId() {
+    public UUID itineraryId() {
         return itineraryId;
     }
 
 
-    UUID authorTravelerId() {
+    public UUID authorTravelerId() {
         return authorTravelerId;
     }
 
 
-    String body() {
+    public String body() {
         return body;
     }
 
 
-    Instant at() {
+    public Instant at() {
         return at;
     }
 

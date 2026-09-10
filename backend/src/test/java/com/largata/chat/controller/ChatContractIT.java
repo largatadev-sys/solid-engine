@@ -1,4 +1,4 @@
-package com.largata.chat.web;
+package com.largata.chat.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

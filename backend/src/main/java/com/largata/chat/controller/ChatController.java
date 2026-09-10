@@ -1,13 +1,14 @@
-package com.largata.chat.web;
+package com.largata.chat.controller;
 
-import com.largata.chat.ChatService;
-import com.largata.chat.api.ChatMessageResponse;
+import com.largata.chat.dto.ChatMessageResponse;
+import com.largata.chat.dto.SendMessageRequest;
+import com.largata.chat.service.ChatService;
 import com.largata.common.api.Page;
 import com.largata.common.authz.AudienceFence;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
-import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
+import com.largata.identity.Traveler;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
 
 @RestController
 @RequestMapping("/v1/trips/{itineraryId}/chat/messages")

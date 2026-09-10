@@ -1,6 +1,6 @@
-package com.largata.chat.api;
+package com.largata.chat.dto;
 
-import com.largata.chat.ChatMessageView;
+import com.largata.chat.service.ChatMessageView;
 import com.largata.identity.TravelerSummary;
 import java.time.Instant;
 import java.util.UUID;

@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** claimed
+**Status:** resolved
 
 - [ ] Every main-tree class of the module sits in a target folder and the module root holds none
 - [ ] `api/` and its `package-info` are gone; the boundary test loses its contract rule and its recorded-breach test on the ticket 01 pattern, keeps the outside-in rule with its allowlist (`common`, `identity`, `ws`), and is sabotage-checked with a real usage

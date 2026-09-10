@@ -1,12 +1,12 @@
-package com.largata.chat;
+package com.largata.chat.repository;
 
+import com.largata.chat.entity.ChatMessage;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-
-interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> {
+public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> {
 
     List<ChatMessage> findByItineraryIdOrderByIdDesc(UUID itineraryId, Limit limit);
 
