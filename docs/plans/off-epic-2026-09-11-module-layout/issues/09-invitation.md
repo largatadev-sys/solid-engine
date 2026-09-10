@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** claimed
+**Status:** resolved
 
 - [ ] Every main-tree class of the module sits in a target folder and the module root holds none; `api/` is byte-identical
 - [ ] `join` compiles against `InvitationApi` unchanged
