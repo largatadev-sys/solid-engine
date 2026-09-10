@@ -1,0 +1,32 @@
+package com.largata.report.intake;
+
+import com.largata.report.outbox.ReportOutboxEntry;
+import com.largata.report.outbox.ReportOutboxRepository;
+import com.largata.report.outbox.ReportScreenshot;
+import com.largata.report.outbox.ReportScreenshotRepository;
+import java.util.List;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
+public class ReportInserter {
+
+    private final ReportOutboxRepository outbox;
+    private final ReportScreenshotRepository screenshots;
+
+    ReportInserter(ReportOutboxRepository outbox, ReportScreenshotRepository screenshots) {
+        this.outbox = outbox;
+        this.screenshots = screenshots;
+    }
+
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    ReportOutboxEntry insert(ReportOutboxEntry entry, List<ReportScreenshot> attachments) {
+        ReportOutboxEntry saved = outbox.saveAndFlush(entry);
+        if (!attachments.isEmpty()) {
+            screenshots.saveAllAndFlush(attachments);
+        }
+        return saved;
+    }
+}
