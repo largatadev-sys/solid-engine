@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] A `feed` module exists with its allowlist guard, is listed under the rule, and owns no table and no query of its own
-- [ ] The Home page and the per-trip-by-author page answer as today: `all` and `following` scopes, private authors hidden in the query, cursor paging unchanged
-- [ ] A card's trip link is the Itinerary's id when the trip has a live Itinerary and null otherwise; the app opens it by that id
-- [ ] The old feed classes are deleted in this ticket; the contract tests live in the new module; every assertion line carried over is listed in this ticket's comments
-- [ ] Playwright, both lanes: Home, both scopes, a trip link opening the Itinerary
+- [x] A `feed` module exists with its allowlist guard, is listed under the rule, and owns no table and no query of its own
+- [x] The Home page and the per-trip-by-author page answer as today: `all` and `following` scopes, private authors hidden in the query, cursor paging unchanged
+- [x] A card's trip link is the Itinerary's id when the trip has a live Itinerary and null otherwise; the app opens it by that id
+- [~] The old feed classes are deleted in this ticket; the contract tests live in the new module; every assertion line carried over is listed in this ticket's comments
+- [x] Playwright, both lanes: Home, both scopes, a trip link opening the Itinerary

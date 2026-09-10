@@ -8,15 +8,15 @@ Before any change here, the two small PRs ADR-039 put ahead of the story — the
 
 **Status:** ready-for-agent
 
-- [ ] The two small PRs ahead of the story are merged and `dev` is merged into the branch before the first change of this ticket
-- [ ] A trip whose Itinerary is live refuses plan edits, invitations, removals and join requests exactly as today, and retiring or hard-deleting the Itinerary lifts every one of those refusals — proven at the HTTP seam
-- [ ] The trip record answers `published`, `publishedAt` and `itineraryId` from the Itinerary; a trip with no live Itinerary answers false, null, null; the field is additive on the new root
-- [ ] A trip carrying the old flag with no Itinerary, seeded by raw SQL, reads as unpublished and editable
-- [ ] Nothing writes the trip's `published` or `published_at` columns any more, pinned structurally in the mould of the old-entry-table read-only test
-- [ ] Publishing while another member holds the editing session still refuses with the holder named; unpublishing a trip with no live Itinerary still answers success
-- [ ] The app's publish and unpublish call the itinerary module's routes and refetch the trip; the client's trip-grammar guard asserts both, and the four places that branch on a missing trip are unchanged
-- [ ] Every end-to-end spec, the seed helper, the scripts and the seeders publish and unpublish through the new routes; the Playwright list total is read, never the tick
-- [ ] The trip module imports nothing from the itinerary module; the cycle rule stays green
+- [x] The two small PRs ahead of the story are merged and `dev` is merged into the branch before the first change of this ticket
+- [x] A trip whose Itinerary is live refuses plan edits, invitations, removals and join requests exactly as today, and retiring or hard-deleting the Itinerary lifts every one of those refusals — proven at the HTTP seam
+- [x] The trip record answers `published`, `publishedAt` and `itineraryId` from the Itinerary; a trip with no live Itinerary answers false, null, null; the field is additive on the new root
+- [x] A trip carrying the old flag with no Itinerary, seeded by raw SQL, reads as unpublished and editable
+- [x] Nothing writes the trip's `published` or `published_at` columns any more, pinned structurally in the mould of the old-entry-table read-only test
+- [x] Publishing while another member holds the editing session still refuses with the holder named; unpublishing a trip with no live Itinerary still answers success
+- [x] The app's publish and unpublish call the itinerary module's routes and refetch the trip; the client's trip-grammar guard asserts both, and the four places that branch on a missing trip are unchanged
+- [x] Every end-to-end spec, the seed helper, the scripts and the seeders publish and unpublish through the new routes; the Playwright list total is read, never the tick
+- [x] The trip module imports nothing from the itinerary module; the cycle rule stays green
 
 ## Comments
 

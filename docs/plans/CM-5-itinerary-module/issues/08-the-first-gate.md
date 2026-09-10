@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] No end-to-end spec, script or seeder names publish, unpublish, fork, audience or finish-planning on the old root; the Playwright list total is read and recorded
-- [ ] Backend unit and integration suites, mobile typecheck and Jest, and Playwright on both lanes are green with their counts read from the logs and recorded here
+- [x] No end-to-end spec, script or seeder names publish, unpublish, fork, audience or finish-planning on the old root; the Playwright list total is read and recorded
+- [x] Backend unit and integration suites, mobile typecheck and Jest, and Playwright on both lanes are green with their counts read from the logs and recorded here
 - [ ] The `dev` walk is recorded with tags: `t1` publishes and the workspace fences; `t2` reads the page, finds it on Discover and Home, forks it; `t3`'s Itinerary is readable by `t2`; `t1` archives and `t2` loses it; `t1` unpublishes, edits, republishes and the same link resurrects at the top of Discover; an old-flag trip of `t1`'s shows unpublished and editable and one tap publishes it; the backend log lines name the itinerary module
 - [ ] TW-1's owed device walk is ticked on its gate ticket with a pointer here
-- [ ] The PR description carries the dark-morning note; the PR is squash-merged on the founder's word and the seeders rerun on `dev` on the founder's word
+- [~] The PR description carries the dark-morning note; the PR is squash-merged on the founder's word and the seeders rerun on `dev` on the founder's word

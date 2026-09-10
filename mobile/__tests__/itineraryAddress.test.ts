@@ -10,7 +10,7 @@ describe('the address a published link carries', () => {
   });
 
 
-  it('a trip id resolves to the itinerary behind it and asks to be rewritten', () => {
+  it('a trip id resolves to the itinerary behind it and asks to be rewritten — THE COURTESY, whose end is the epic-map line "The /published/{tripId} courtesy has an end", triggered 2026-10-10 or the first app in a store: delete this fallback, its client branch and this test together', () => {
     const address = addressOf('trip-1', { id: 'obj-1', tripId: 'trip-1' });
 
     expect(address).toEqual({ kind: 'trip', tripId: 'trip-1', itineraryId: 'obj-1' });

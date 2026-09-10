@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] A `profile` module exists with its allowlist guard, is listed under the rule, and owns no table and no query of its own
-- [ ] The profile header, followers and following answer from identity as today; the published count, destination count and showcase answer from live Itineraries and agree with Discover
-- [ ] Showcase cards carry the Itinerary's id and the app opens them by it
-- [ ] The per-trip diary list route answers unchanged from the old diary controllers
-- [ ] The old profile classes are deleted in this ticket; the contract tests live in the new module; every assertion line carried over is listed in this ticket's comments
-- [ ] Playwright, both lanes: a profile's counts and showcase, own and someone else's, public and private
+- [x] A `profile` module exists with its allowlist guard, is listed under the rule, and owns no table and no query of its own
+- [x] The profile header, followers and following answer from identity as today; the published count, destination count and showcase answer from live Itineraries and agree with Discover
+- [x] Showcase cards carry the Itinerary's id and the app opens them by it
+- [x] The per-trip diary list route answers unchanged from the old diary controllers
+- [~] The old profile classes are deleted in this ticket; the contract tests live in the new module; every assertion line carried over is listed in this ticket's comments
+- [x] Playwright, both lanes: a profile's counts and showcase, own and someone else's, public and private

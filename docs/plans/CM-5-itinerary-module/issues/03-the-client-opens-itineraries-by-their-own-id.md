@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] The published page renders from the Itinerary read by the Itinerary's id — creator, estimated cost, days and activities, photos, fork count and provenance included — and the old projection route has no caller left in the app
-- [ ] A link carrying a trip id opens the page and the address becomes the Itinerary's id; a link carrying an id that is neither answers the page's not-found state
-- [ ] From the workspace, the row's tap, the share link and "view published" carry the Itinerary's id; the badge and settings items still read the trip record
-- [ ] The client's trip-grammar guard asserts that the only old-root paths left in any repository are the diary's and the fork's
-- [ ] Playwright, both lanes: publish, open the page, share the link, open a trip-id link and see it rewrite
+- [x] The published page renders from the Itinerary read by the Itinerary's id — creator, estimated cost, days and activities, photos, fork count and provenance included — and the old projection route has no caller left in the app
+- [x] A link carrying a trip id opens the page and the address becomes the Itinerary's id; a link carrying an id that is neither answers the page's not-found state
+- [x] From the workspace, the row's tap, the share link and "view published" carry the Itinerary's id; the badge and settings items still read the trip record
+- [x] The client's trip-grammar guard asserts that the only old-root paths left in any repository are the diary's and the fork's
+- [x] Playwright, both lanes: publish, open the page, share the link, open a trip-id link and see it rewrite
 - [ ] The courtesy fallback has a test that names its epic-map end in the test's title

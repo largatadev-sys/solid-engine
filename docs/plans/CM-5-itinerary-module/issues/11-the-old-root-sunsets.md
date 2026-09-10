@@ -6,12 +6,12 @@
 
 **Status:** ready-for-agent
 
-- [ ] Every mapping on the old root is gone except the eight diary-entry routes, which still answer; every controller declares the trip's grammar alone
-- [ ] The five old-root lifecycle acts and the old published projection root answer as unmapped routes
-- [ ] The twin test and the equivalence test are removed, with the reason in the commit message
-- [ ] A missing trip on the new root answers `TRIP_NOT_FOUND`; the client's four guard tests assert the new code and still tolerate the old
-- [ ] No end-to-end spec or script names the old root except the diary-entry paths; the Playwright list total is read
-- [ ] The object contracts' wire table and ADR-037's decision (5) carry the sunset date and the diary-route exception
+- [~] Every mapping on the old root is gone except the eight diary-entry routes, which still answer; every controller declares the trip's grammar alone
+- [x] The five old-root lifecycle acts and the old published projection root answer as unmapped routes
+- [x] The twin test and the equivalence test are removed, with the reason in the commit message
+- [x] A missing trip on the new root answers `TRIP_NOT_FOUND`; the client's four guard tests assert the new code and still tolerate the old
+- [x] No end-to-end spec or script names the old root except the diary-entry paths; the Playwright list total is read
+- [x] The object contracts' wire table and ADR-037's decision (5) carry the sunset date and the diary-route exception
 
 ## Amendment — three non-diary mappings live on the old root by design
 

@@ -61,3 +61,29 @@ The 15 quarantined ITs and the 1 skipped Playwright test predate this story and 
 **It found nothing new, and its first run lied.** Two checks failed against a stack that had come up twelve minutes before the archive-fence commit — a stale container reporting a fixed regression as a live one, which is indistinguishable in the output from the real thing. Rebuilt and re-run: 11/11.
 
 **What the script cannot close, and what is therefore still the founder's:** whether the screens read correctly to a person. CM-5 adds no new screens — it changes what existing ones point at — so that residue is small, and CI's Playwright web lane already drives those surfaces through the true preview build path (859 passed). The honest statement is that the *contract* is walked and the *look* is not.
+
+## Every ticket's acceptance criteria, rechecked against the tree
+
+All 77 were re-read at the gate and marked, because they had been left **entirely unticked** — thirteen tickets, seventy-seven boxes, not one of them touched as the work landed. A box that was never ticked carries no information: it cannot tell a reader what shipped from what was skipped, which is the failure this section exists to end. Marks are `[x]` met, `[~]` met differently or superseded, `[ ]` genuinely open.
+
+### Still open — five, and only two are work
+
+**Ticket 09 AC2 — a real boundary leak, and the one worth fixing before this closes.** *"The legacy-entries port is no longer part of any module's public api."* `postcard.api.LegacyEntries` is still published and still read by **`feed` and `profile`**. Ticket 09 set out to close exactly this and did not. Roughly an hour, and it is the kind of thing that never gets done after a merge.
+
+**Ticket 03 AC6 — a minute's work that a date depends on.** *"The courtesy fallback has a test that names its epic-map end in the test's title."* `itineraryAddress.test.ts` has three titles and none names the courtesy or its date. That title is the only thread tying the trip-id fallback to its **2026-10-10** removal; without it the fallback outlives its deadline silently.
+
+**Ticket 12 AC1 and AC8 — open by the ticket's own admission, not by oversight.** The trip module's legacy exemption still names `postcard.legacy`, and `chat.api` / `verification.api` still map from internal types in static factories. Ticket 12's own preamble says *"until then the first AC below cannot honestly pass"*, and each guard asserts the breach **still fails**, so the day someone fixes the module its guard goes red and the real rule replaces the placeholder. Owned by the epic-map line that cuts the five old Trip Diary screens over.
+
+**Ticket 12 AC4 — genuinely half-done.** *"Trip's internals are package-private wherever the layout allows."* The slices still carry 71 public types: `plan` 32, `editing` 11, `ownership` 9, `workspace` 8, `fork` 4, `validation` 4, `dump` 2, `cover` 1. Only `destruction` is fully sealed. The boundary guards hold regardless — they forbid the *package*, not the modifier — so this is hygiene rather than a hole, but it was asked for and is not done.
+
+**Ticket 08 AC3 and AC4** are the founder's `dev` walk and TW-1's owed device walk. AC3 is superseded in substance by the local-stack walk recorded above; the device walk remains blocked by the recorded Gradle fault.
+
+### Marked `[~]` — met differently, and why
+
+The **assertion-line "listed in this ticket's comments"** criteria on 02, 05, 06, 07, 09 and 10 were never satisfied per ticket. They are satisfied **story-wide** by the assertion-line diff in this ticket, which compares 84 pre-existing test files rather than the handful each ticket touched — a stronger check than the one asked for, arriving in one place instead of six.
+
+**Ticket 04 AC5** (*"the old fork route still answers until…"*) and **Ticket 10 AC5** / **Ticket 11 AC1** are superseded by decisions taken in flight and recorded in those tickets' own amendments: the old fork route sunset at ticket 11, and the object's three routes took the old root's name.
+
+**Ticket 12 AC5** — `verify()` is asserted to **throw**, not pass, naming the counted `postcard` exemption. Honest rather than met.
+
+**Ticket 08 AC5** — the PR is open as the proposal; the merge is the founder's.

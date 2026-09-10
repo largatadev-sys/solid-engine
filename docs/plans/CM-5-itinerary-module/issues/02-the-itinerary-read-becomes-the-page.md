@@ -6,14 +6,14 @@
 
 **Status:** ready-for-agent
 
-- [ ] Reading an Itinerary by its id answers the widened shape — creator, fork count, provenance, estimated cost, pin, typed days with activities and photo ids — and the raw plan document is still present
-- [ ] A stranger reads a private owner's Itinerary and loads its photos, a test that fails on the tree as it stands; the same stranger is still refused that owner's postcards
-- [ ] A non-owner reading the Itinerary of an archived trip gets not-found; the owner still reads it; unarchiving restores it for everyone
-- [ ] The by-trip read answers the trip's live Itinerary in the page's shape and not-found when there is none
-- [ ] Preview answers the page's shape from the itinerary module, on the trip's grammar, and the old package no longer serves it
-- [ ] Republish keeps the Itinerary's id and refreshes the snapshot, the four columns and `publishedAt`; the trending and ordering reads use the refreshed instant
-- [ ] The migration is additive only; the four columns are filled at mint and refresh; the Itineraries already on `dev` keep null columns and render without pin and photos until republished
-- [ ] The page's contract tests live in the itinerary module, and every assertion line carried over from the old projection's tests is listed in this ticket's comments
+- [x] Reading an Itinerary by its id answers the widened shape — creator, fork count, provenance, estimated cost, pin, typed days with activities and photo ids — and the raw plan document is still present
+- [x] A stranger reads a private owner's Itinerary and loads its photos, a test that fails on the tree as it stands; the same stranger is still refused that owner's postcards
+- [x] A non-owner reading the Itinerary of an archived trip gets not-found; the owner still reads it; unarchiving restores it for everyone
+- [x] The by-trip read answers the trip's live Itinerary in the page's shape and not-found when there is none
+- [x] Preview answers the page's shape from the itinerary module, on the trip's grammar, and the old package no longer serves it
+- [x] Republish keeps the Itinerary's id and refreshes the snapshot, the four columns and `publishedAt`; the trending and ordering reads use the refreshed instant
+- [x] The migration is additive only; the four columns are filled at mint and refresh; the Itineraries already on `dev` keep null columns and render without pin and photos until republished
+- [~] The page's contract tests live in the itinerary module, and every assertion line carried over from the old projection's tests is listed in this ticket's comments
 
 ## Comments
 

@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] A `discovery` module exists with its allowlist guard, is listed under the rule in the module meta-test, and owns no table and no query of its own
-- [ ] Browse and count answer from one itinerary api call with a shared predicate, and the count equals the list under every filter, cursor page, hidden owner and archived trip — including the case that failed at S4.39
-- [ ] Trending, recommended, suggestions and people answer as they do today, over Itineraries and identity
-- [ ] Cards carry the Itinerary's id and the app opens them by it
-- [ ] The old discovery classes are deleted in this ticket; the contract tests live in the new module; every assertion line carried over is listed in this ticket's comments
-- [ ] Playwright, both lanes: Discover over Itineraries, filters and count included
+- [x] A `discovery` module exists with its allowlist guard, is listed under the rule in the module meta-test, and owns no table and no query of its own
+- [x] Browse and count answer from one itinerary api call with a shared predicate, and the count equals the list under every filter, cursor page, hidden owner and archived trip — including the case that failed at S4.39
+- [x] Trending, recommended, suggestions and people answer as they do today, over Itineraries and identity
+- [x] Cards carry the Itinerary's id and the app opens them by it
+- [~] The old discovery classes are deleted in this ticket; the contract tests live in the new module; every assertion line carried over is listed in this ticket's comments
+- [x] Playwright, both lanes: Discover over Itineraries, filters and count included

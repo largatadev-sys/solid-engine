@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Forking on the Itinerary's id creates a Trip from the snapshot with exactly the plan-only content the glossary's Fork row lists, born upcoming and unpublished, the forker its sole owner
-- [ ] The provenance row names the Itinerary; the page's fork count and provenance answer by the Itinerary's id; rows written before this story are unchanged and their attribution resolves to nothing without an Itinerary
-- [ ] A retired, absent, or archive-masked Itinerary answers not-found to a fork
-- [ ] The trip module exposes a creation port and imports nothing from the itinerary module; the cycle rule stays green
-- [ ] The app forks through the new route; the end-to-end suites fork through it; the old fork route still answers until the sunset
-- [ ] Playwright, both lanes: fork what you read, then edit the source, and the fork is unchanged
+- [x] Forking on the Itinerary's id creates a Trip from the snapshot with exactly the plan-only content the glossary's Fork row lists, born upcoming and unpublished, the forker its sole owner
+- [x] The provenance row names the Itinerary; the page's fork count and provenance answer by the Itinerary's id; rows written before this story are unchanged and their attribution resolves to nothing without an Itinerary
+- [x] A retired, absent, or archive-masked Itinerary answers not-found to a fork
+- [x] The trip module exposes a creation port and imports nothing from the itinerary module; the cycle rule stays green
+- [~] The app forks through the new route; the end-to-end suites fork through it; the old fork route still answers until the sunset
+- [x] Playwright, both lanes: fork what you read, then edit the source, and the fork is unchanged

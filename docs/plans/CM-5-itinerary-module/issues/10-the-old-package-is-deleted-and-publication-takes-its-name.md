@@ -7,10 +7,10 @@
 **Status:** ready-for-agent
 
 - [x] The old package does not exist; the publication module is named `itinerary` and its guard, contract test and stepping test are renamed with it
-- [ ] The row-backed publication state is gone and the itinerary module's implementation of the port is the only one; the published-visibility reader is gone
-- [ ] Every assertion the deleted tests carried is accounted for in this ticket's comments — moved, or retired with a reason
-- [ ] `mvn -o clean test-compile` is looped until quiet and the unit suite is run, and both are recorded
-- [ ] No route, shape or status code changes in this ticket; the twin test still passes
+- [x] The row-backed publication state is gone and the itinerary module's implementation of the port is the only one; the published-visibility reader is gone
+- [~] Every assertion the deleted tests carried is accounted for in this ticket's comments — moved, or retired with a reason
+- [x] `mvn -o clean test-compile` is looped until quiet and the unit suite is run, and both are recorded
+- [~] No route, shape or status code changes in this ticket; the twin test still passes
 
 
 ## What actually happened, and when
