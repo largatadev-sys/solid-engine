@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.largata.LargataApplication;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
@@ -15,10 +16,34 @@ class ModulithVerificationTest {
     private static final ApplicationModules MODULES =
             ApplicationModules.of(LargataApplication.class);
 
+    private static final List<String> REFUSALS = refusalsOf(MODULES);
+
+
+    @Test
+    void theRefusalReaderActuallyReadsRefusals() {
+        assertThat(REFUSALS)
+                .as("verify() MEMOISES, and so does ApplicationModules.of - the second caller is"
+                        + " answered with silence whether or not the tree is clean. Calling it per"
+                        + " test made this list empty while 128 breaches stood, and allMatch passed"
+                        + " on nothing. It is captured ONCE above and read here; if it is ever empty"
+                        + " every rule below is guarding air")
+                .isNotEmpty();
+    }
+
+
+    private static List<String> refusalsOf(ApplicationModules modules) {
+        try {
+            modules.verify();
+            return List.of();
+        } catch (Violations refused) {
+            return refused.getMessages();
+        }
+    }
+
 
     @Test
     void theOnlyBoundaryModulithRefusesIsTheDiaryAdaptersAlreadyCounted() {
-        assertThatExceptionOfType(Violations.class)
+        assertThat(String.join(System.lineSeparator(), REFUSALS))
                 .as("Modulith reads the same tree the ArchUnit guards read and agrees with them:"
                         + " every module reaches its neighbours through a named interface, the"
                         + " kernel, identity and media are OPEN by classification (ADR-038), and the"
@@ -28,15 +53,14 @@ class ModulithVerificationTest {
                         + " exemption TripModuleBoundaryTest counts, seen through a second tool. The"
                         + " epic-map line that cuts the five old Trip Diary screens over deletes the"
                         + " adapters, that exemption and this assertion together")
-                .isThrownBy(MODULES::verify)
-                .withMessageContaining("postcard")
-                .withMessageContaining("trip");
+                .contains("postcard")
+                .contains("trip");
     }
 
 
     @Test
     void nothingButPostcardIsRefused() {
-        assertThat(refusals())
+        assertThat(REFUSALS)
                 .as("a second module appearing here is a NEW breach, not the recorded one — this is"
                         + " what keeps the assertion above from quietly covering something else")
                 .allMatch(line -> !line.contains("Module '") || line.contains("Module 'postcard'"));
@@ -61,12 +85,4 @@ class ModulithVerificationTest {
     }
 
 
-    private static java.util.List<String> refusals() {
-        try {
-            MODULES.verify();
-            return java.util.List.of();
-        } catch (Violations refused) {
-            return refused.getMessages();
-        }
-    }
 }
