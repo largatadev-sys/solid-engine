@@ -1,4 +1,4 @@
-package com.largata.discovery.api;
+package com.largata.discovery.dto;
 
 import com.largata.common.api.Page;
 import com.largata.identity.api.TravelerCardResponse;

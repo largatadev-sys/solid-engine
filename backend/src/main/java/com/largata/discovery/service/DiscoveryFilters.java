@@ -1,4 +1,4 @@
-package com.largata.discovery;
+package com.largata.discovery.service;
 
 import com.largata.common.error.ValidationException;
 import java.util.Locale;
