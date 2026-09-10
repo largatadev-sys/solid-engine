@@ -25,6 +25,7 @@ export interface Removal {
   readonly token: number;
   readonly deferred: boolean;
   readonly itineraryId: string | null;
+  readonly tripId: string | null;
 }
 
 
@@ -48,6 +49,7 @@ export interface RemovalRef {
   readonly subjectId: string;
   readonly kind: RemovalKind;
   readonly itineraryId: string | null;
+  readonly tripId: string | null;
 }
 
 
@@ -56,6 +58,7 @@ function refOf(removal: Removal): RemovalRef {
     subjectId: removal.subjectId,
     kind: removal.kind,
     itineraryId: removal.itineraryId,
+    tripId: removal.tripId,
   };
 }
 
@@ -75,6 +78,7 @@ export interface RemovalRequest {
   readonly undoable?: boolean;
   readonly undoLabel?: string;
   readonly itineraryId?: string;
+  readonly tripId?: string;
 }
 
 
@@ -124,6 +128,7 @@ export function requested(queue: UndoQueue, request: RemovalRequest): UndoStep {
             token,
             deferred,
             itineraryId: request.itineraryId ?? null,
+            tripId: request.tripId ?? null,
           }
         : null,
       toast,

@@ -35,7 +35,7 @@ class DevCorsEnabledIT extends PostgresTestBase {
     void preflightToASecuredEndpointIsAllowedBeforeAuth() {
         client()
                 .options()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "GET")
                 .header("Access-Control-Request-Headers", "authorization")

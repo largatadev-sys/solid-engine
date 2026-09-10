@@ -27,10 +27,15 @@ let trip: SeededTrip;
 let title: string;
 
 async function publish(): Promise<void> {
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', token, {
+  const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', token, {
     audience: 'public',
   });
   if (published.status !== 200) throw new SeedFailure('publishing the trip', published.body);
+}
+
+async function itineraryIdOfTrip(): Promise<string> {
+  const read = await api(`/v1/trips/${trip.id}`, 'GET', token);
+  return read.body?.itineraryId as string;
 }
 
 async function isPublished(): Promise<boolean> {
@@ -74,7 +79,7 @@ test('View published page opens the published route, rather than dying as a dead
   await labelled(page, itineraryMenuLabel(title)).click();
   await labelled(page, VIEW_PUBLISHED_PAGE_LABEL).click();
 
-  await expect(page).toHaveURL(new RegExp(`/showcase/${trip.id}`));
+  await expect(page).toHaveURL(new RegExp(`/showcase/${await itineraryIdOfTrip()}`));
 });
 
 test('Edit details opens the details editor', async ({ page }) => {

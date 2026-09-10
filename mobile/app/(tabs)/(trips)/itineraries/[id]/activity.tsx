@@ -21,7 +21,7 @@ import {
   editActivity as stageEditActivity,
   type StagedPlan,
 } from '../../../../../src/itineraries/stagedPlan';
-import { colors, spacing, typography } from '../../../../../src/theme';
+import { colors, typography } from '../../../../../src/theme';
 import type { ActivityRequest } from '../../../../../src/types/api';
 import { PlacePickerModal } from '../../../../../src/maps/PlacePickerModal';
 import { SEARCH_PLACEHOLDER, placeFieldLabel } from '../../../../../src/maps/mapCopy';

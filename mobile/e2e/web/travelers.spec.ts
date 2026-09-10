@@ -419,14 +419,16 @@ test.describe('the frozen surface, walked on an archived trip', () => {
       durationDays: 2,
     });
     await climbTo(shipped, 'completed');
-    await api(`/v1/itineraries/${shipped.id}/publish`, 'POST', ownerToken, {});
+    const shippedItinerary = (
+      await api(`/v1/trips/${shipped.id}/publish`, 'POST', ownerToken, {})
+    ).body.id as string;
 
     await signIn(MEMBER);
     await page.goto(travelersTab(shipped.id));
 
     await expect
       .poll(() => new URL(page.url()).pathname, { timeout: 20_000 })
-      .toContain(`/published/${shipped.id}`);
+      .toContain(`/published/${shippedItinerary}`);
   });
 
   test('the add sheet’s member state renders for somebody already aboard', async ({

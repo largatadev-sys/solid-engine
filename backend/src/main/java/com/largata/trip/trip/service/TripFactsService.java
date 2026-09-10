@@ -4,7 +4,6 @@ import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripFacts;
 import com.largata.trip.api.TripTeaser;
 import com.largata.trip.exception.TripNotFoundException;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -56,6 +55,19 @@ class TripFactsService implements TripApi {
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<TripTeaser> teasersOf(java.util.Collection<UUID> tripIds) {
+        if (tripIds.isEmpty()) {
+            return java.util.List.of();
+        }
+        return java.util.stream.StreamSupport.stream(
+                        trips.findAllById(tripIds).spliterator(), false)
+                .map(TripFactsService::teaserFrom)
+                .toList();
+    }
+
+
     private static TripTeaser teaserFrom(Trip trip) {
         return new TripTeaser(
                 trip.id(),
@@ -91,18 +103,6 @@ class TripFactsService implements TripApi {
     @Transactional(readOnly = true)
     public boolean frozen(UUID tripId) {
         return workspaces.isArchived(tripId);
-    }
-
-
-    @Transactional
-    public void markPublished(UUID tripId, Instant at) {
-        trips.findById(tripId).ifPresent(trip -> trip.markPublishedAt(at));
-    }
-
-
-    @Transactional
-    public void markUnpublished(UUID tripId) {
-        trips.findById(tripId).ifPresent(Trip::unpublish);
     }
 
 }

@@ -1,5 +1,7 @@
 package com.largata.trip.plan.service;
 
+import com.largata.media.PhotoService;
+import com.largata.media.PhotoSubject;
 import com.largata.trip.api.ActivityFacts;
 import com.largata.trip.api.PlanApi;
 import com.largata.trip.api.TripDayFacts;
@@ -25,11 +27,17 @@ class PlanReadService implements PlanApi {
     private final DayRepository days;
     private final ActivityRepository activities;
     private final TripPlanHeaders headers;
+    private final PhotoService photos;
 
-    PlanReadService(DayRepository days, ActivityRepository activities, TripPlanHeaders headers) {
+    PlanReadService(
+            DayRepository days,
+            ActivityRepository activities,
+            TripPlanHeaders headers,
+            PhotoService photos) {
         this.days = days;
         this.activities = activities;
         this.headers = headers;
+        this.photos = photos;
     }
 
 
@@ -40,14 +48,17 @@ class PlanReadService implements PlanApi {
 
 
     private List<TripPlan.PlanDay> daysOf(UUID tripId) {
+        List<Activity> all = activities.allUnder(tripId);
+        Map<UUID, List<UUID>> photoIds = photoIdsFor(all);
         Map<UUID, List<TripPlan.PlanActivity>> byDay =
-                activities.allUnder(tripId).stream()
+                all.stream()
                         .collect(
                                 Collectors.groupingBy(
                                         Activity::dayId,
                                         LinkedHashMap::new,
                                         Collectors.mapping(
-                                                PlanReadService::planActivityOf, Collectors.toList())));
+                                                activity -> planActivityOf(activity, photoIds),
+                                                Collectors.toList())));
         return days.findByItineraryIdOrderByOrdinalAsc(tripId).stream()
                 .map(
                         day ->
@@ -59,7 +70,17 @@ class PlanReadService implements PlanApi {
     }
 
 
-    private static TripPlan.PlanActivity planActivityOf(Activity activity) {
+    private Map<UUID, List<UUID>> photoIdsFor(List<Activity> all) {
+        if (all.isEmpty()) {
+            return Map.of();
+        }
+        return photos.idsBySubject(
+                PhotoSubject.ACTIVITY, all.stream().map(Activity::id).toList());
+    }
+
+
+    private static TripPlan.PlanActivity planActivityOf(
+            Activity activity, Map<UUID, List<UUID>> photoIds) {
         return new TripPlan.PlanActivity(
                 activity.sortOrder(),
                 activity.title(),
@@ -73,7 +94,9 @@ class PlanReadService implements PlanApi {
                 activity.bookingPurpose(),
                 activity.bookingProvider(),
                 activity.bookingPriceAmount(),
-                activity.bookingPriceCurrency());
+                activity.bookingPriceCurrency(),
+                activity.pin(),
+                photoIds.getOrDefault(activity.id(), List.of()));
     }
 
 

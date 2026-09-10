@@ -219,7 +219,7 @@ test('a published trip still takes photos on the wire, though the workspace redi
     durationDays: 2,
   });
   await climbTo(published, 'completed');
-  await api(`/v1/itineraries/${published.id}/publish`, 'POST', token, { audience: 'public' });
+  await api(`/v1/trips/${published.id}/publish`, 'POST', token, { audience: 'public' });
 
   const uploaded = await uploadPhoto(`/v1/trips/${published.id}/photo-dump`, token);
   expect(uploaded.status).toBe(201);

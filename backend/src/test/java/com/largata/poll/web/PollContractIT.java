@@ -377,7 +377,7 @@ class PollContractIT extends PostgresTestBase {
 
         rig.send(
                         HttpMethod.DELETE,
-                        "/v1/itineraries/" + trip.tripId() + "/members/" + rig.travelerIdOf(trip.member()),
+                        "/v1/trips/" + trip.tripId() + "/members/" + rig.travelerIdOf(trip.member()),
                         trip.owner(),
                         null)
                 .expectStatus()
@@ -403,7 +403,7 @@ class PollContractIT extends PostgresTestBase {
 
         rig.send(
                         HttpMethod.DELETE,
-                        "/v1/itineraries/" + trip.tripId() + "/members/" + rig.travelerIdOf(trip.member()),
+                        "/v1/trips/" + trip.tripId() + "/members/" + rig.travelerIdOf(trip.member()),
                         trip.owner(),
                         null)
                 .expectStatus()
@@ -503,13 +503,13 @@ class PollContractIT extends PostgresTestBase {
 
 
     private static String pollsUri(Fixture trip) {
-        return "/v1/itineraries/" + trip.tripId() + "/polls";
+        return "/v1/trips/" + trip.tripId() + "/polls";
     }
 
 
     private void archive(Fixture trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.tripId() + "/archive")
+                .uri("/v1/trips/" + trip.tripId() + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(trip.owner()))
                 .exchange()
                 .expectStatus()

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { initialsFor } from '../onboarding/initials';
 import { MediaThumb } from '../media/MediaThumb';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, radii, typography } from '../theme';
 import type { MemberResponse } from '../types/api';
 
 

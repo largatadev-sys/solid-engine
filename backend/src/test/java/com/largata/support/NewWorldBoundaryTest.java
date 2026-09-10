@@ -14,24 +14,19 @@ import org.junit.jupiter.api.Test;
 
 class NewWorldBoundaryTest {
 
-    private static final List<String> NEW_WORLD = List.of("trip", "diary", "postcard", "publication");
+    private static final List<String> NEW_WORLD = List.of("trip", "diary", "postcard", "itinerary");
 
     private static final Pattern OLD_WORLD =
             Pattern.compile(
-                    "com\\.largata\\.(itinerary|invitation|join|chat|poll|ws"
+                    "com\\.largata\\.(invitation|join|chat|poll|ws"
                             + "|verification|report|health)\\.");
 
-    private static final Pattern THE_CONTENT_HALF_TW1_LEFT_STANDING =
-            Pattern.compile(
-                    "com\\.largata\\.itinerary\\.(PublishedVisibility"
-                            + "|api\\.ShowcaseItineraryResponse)\\b");
 
     @Test
     void newWorldSourcesNeverNameAnOldWorldPackage() {
         List<String> offenders =
                 newWorldFiles()
                         .flatMap(NewWorldBoundaryTest::offendingLines)
-                        .filter(line -> !THE_CONTENT_HALF_TW1_LEFT_STANDING.matcher(line).find())
                         .toList();
 
         assertThat(offenders)
@@ -42,26 +37,6 @@ class NewWorldBoundaryTest {
                 .isEmpty();
     }
 
-    @Test
-    void theContentHalfExemptionIsTwoNamedTypesAndDissolvesAtCM5() {
-        List<String> reaches =
-                newWorldFiles()
-                        .flatMap(NewWorldBoundaryTest::offendingLines)
-                        .filter(line -> THE_CONTENT_HALF_TW1_LEFT_STANDING.matcher(line).find())
-                        .toList();
-
-        assertThat(reaches)
-                .as(
-                        "TW-1 moved the trip half and left the content half standing, so two trip"
-                                + " files still name it: the fork's published-visibility check and"
-                                + " the profile showcase response. Both are types the CONTENT half"
-                                + " owns and has its own callers for, which the trip module merely"
-                                + " reads as a second consumer — CM-5 moves them onto the itinerary"
-                                + " object. This is NOT a migration window and NOT a leftover: it is"
-                                + " the shape of the tree until CM-5 deletes the old package."
-                                + " Counted, so a third is a red build")
-                .hasSize(2);
-    }
 
     @Test
     void theScanReachesRealFiles() {
@@ -70,7 +45,6 @@ class NewWorldBoundaryTest {
 
     @Test
     void theRuleWouldFireOnABadImport() {
-        assertThat(OLD_WORLD.matcher(anImportOf("itinerary", "Trip")).find()).isTrue();
         assertThat(OLD_WORLD.matcher(anImportOf("invitation", "InvitationService")).find()).isTrue();
         assertThat(OLD_WORLD.matcher(anImportOf("common.authz", "Membership")).find()).isFalse();
         assertThat(OLD_WORLD.matcher(anImportOf("media", "PhotoService")).find()).isFalse();
@@ -87,8 +61,25 @@ class NewWorldBoundaryTest {
         assertThat(OLD_WORLD.matcher(anImportOf("membership", "MembershipService")).find())
                 .as("and membership moved at ticket 07")
                 .isFalse();
+        assertThat(OLD_WORLD.matcher(anImportOf("itinerary", "PublishedVisibility")).find())
+                .as("and the old god package itself went at CM-5 ticket 10 — naming it here would"
+                        + " forbid an import nothing can write, which is how a guard starts lying")
+                .isFalse();
         assertThat(Path.of("src/main/java/com/largata/workspace")).doesNotExist();
         assertThat(Path.of("src/main/java/com/largata/membership")).doesNotExist();
+        for (String gone :
+                List.of(
+                        "PublishedItinerary",
+                        "PublishedItineraryService",
+                        "PublishedVisibility",
+                        "RowBackedPublicationState",
+                        "StrangersSurface")) {
+            assertThat(Path.of("src/main/java/com/largata/itinerary", gone + ".java"))
+                    .as("CM-5 ticket 10 deleted the god package and the module that owns the"
+                            + " Itinerary then took its name, so the path alone proves nothing any"
+                            + " more - what must stay gone are the god package's own classes")
+                    .doesNotExist();
+        }
     }
 
     private static String anImportOf(String pkg, String type) {

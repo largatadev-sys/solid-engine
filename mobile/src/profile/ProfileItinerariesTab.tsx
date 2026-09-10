@@ -55,6 +55,7 @@ export function ProfileItinerariesTab({ removal }: { readonly removal: RemovalQu
                     id: card.id,
                     kind: 'itinerary',
                     title: card.title,
+                    tripId: card.tripId,
                   })
                 }
               />

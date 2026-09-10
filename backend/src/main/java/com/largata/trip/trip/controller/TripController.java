@@ -3,6 +3,7 @@ package com.largata.trip.trip.controller;
 import com.largata.common.api.Page;
 import com.largata.common.authz.AuthorizationGuard;
 import com.largata.common.authz.Membership;
+import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.AudienceFence;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
@@ -37,7 +38,7 @@ import com.largata.trip.trip.service.TripService;
 
 
 @RestController
-@RequestMapping({"/v1/itineraries", "/v1/trips"})
+@RequestMapping("/v1/trips")
 class TripController {
 
     private final TripService itineraries;
@@ -46,6 +47,7 @@ class TripController {
     private final MembershipService memberships;
     private final AuthorizationGuard guard;
     private final AudienceFence audience;
+    private final PublicationState publication;
 
     TripController(
             TripService itineraries,
@@ -53,13 +55,15 @@ class TripController {
             TripCoverService covers,
             MembershipService memberships,
             AuthorizationGuard guard,
-            AudienceFence audience) {
+            AudienceFence audience,
+            PublicationState publication) {
         this.itineraries = itineraries;
         this.forks = forks;
         this.covers = covers;
         this.memberships = memberships;
         this.guard = guard;
         this.audience = audience;
+        this.publication = publication;
     }
 
 
@@ -155,6 +159,7 @@ class TripController {
         Map<UUID, Long> dayCounts = itineraries.dayCountsAmong(ids);
         Set<UUID> owned = itineraries.ownedAmong(traveler.id(), ids);
         Map<UUID, Integer> memberCounts = itineraries.memberCountsAmong(ids);
+        Map<UUID, PublicationState.LivePublication> live = publication.liveAmong(ids);
         return page.map(itinerary ->
                 TripResponse.summaryOf(
                         itinerary,
@@ -162,7 +167,10 @@ class TripController {
                         beingEdited.contains(itinerary.id()),
                         dayCounts.getOrDefault(itinerary.id(), 0L).intValue(),
                         owned.contains(itinerary.id()) ? "owner" : "member",
-                        memberCounts.getOrDefault(itinerary.id(), 1)));
+                        memberCounts.getOrDefault(itinerary.id(), 1),
+                        live.containsKey(itinerary.id()),
+                        live.containsKey(itinerary.id()) ? live.get(itinerary.id()).itineraryId() : null,
+                        live.containsKey(itinerary.id()) ? live.get(itinerary.id()).publishedAt() : null));
     }
 
 

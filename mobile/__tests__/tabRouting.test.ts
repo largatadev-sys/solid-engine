@@ -4,7 +4,7 @@ import { COMING_SOON_SURFACES } from '../src/components/comingSoonMessage';
 import { COG_IS_LIVE } from '../src/itineraries/tripSettingsItems';
 import { DISCOVER_TAB_LABEL } from '../src/discovery/discoveryCopy';
 import { tripRowDestination } from '../src/itineraries/TripRow';
-import { tripFormChrome, tripFormFields } from '../src/itineraries/tripFormContract';
+import { tripFormChrome } from '../src/itineraries/tripFormContract';
 
 
 const MOBILE_ROOT = join(__dirname, '..');

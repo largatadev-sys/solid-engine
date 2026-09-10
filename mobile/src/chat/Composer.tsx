@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { spacing } from '../theme';
-import { Animated, Easing, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Easing, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { AnimatedPressable, usePressFeedback } from '../components/usePressFeedback';

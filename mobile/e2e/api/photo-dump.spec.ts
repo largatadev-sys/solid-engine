@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures';
-import { api, address, tokenFor, profileFor } from '../support/pool';
+import { api, tokenFor, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP, STRANGER_TAG } from '../support/identities';
 import { SeedFailure, stamp } from '../support/seed';
@@ -150,7 +150,7 @@ test('a published trip still takes photos — the freeze is the plan, not the po
   for (const step of ['start', 'complete']) {
     await api(`/v1/trips/${trip}/${step}`, 'POST', owner);
   }
-  await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+  await api(`/v1/trips/${trip}/publish`, 'POST', owner);
   afterPublish = await uploadBytes(dump, member, solidJpeg(), 'dump.jpg');
   expect(afterPublish.status).toBe(201);
 });

@@ -38,7 +38,6 @@ import { memberControls } from '../../../../../src/members/memberControls';
 import { useMembers } from '../../../../../src/query/invitationQueries';
 import { useItinerary, useSavePlan } from '../../../../../src/query/itineraryQueries';
 import {
-  baseOf,
   closeDraft,
   draftOf,
   openDraft,

@@ -1,5 +1,6 @@
 package com.largata.trip.trip.adapter;
 
+import com.largata.common.authz.PublicationState;
 import com.largata.common.authz.Role;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -14,10 +15,13 @@ public class TripMediaAudience {
 
     private final TripRepository trips;
     private final WorkspaceService workspaces;
+    private final PublicationState publication;
 
-    TripMediaAudience(TripRepository trips, WorkspaceService workspaces) {
+    TripMediaAudience(
+            TripRepository trips, WorkspaceService workspaces, PublicationState publication) {
         this.trips = trips;
         this.workspaces = workspaces;
+        this.publication = publication;
     }
 
 
@@ -42,7 +46,7 @@ public class TripMediaAudience {
         if (admitsToTheWorkspace(itinerary.id(), travelerId)) {
             return true;
         }
-        return !archivedNarrowsToTheOwner(itinerary.id()) && itinerary.isPublished();
+        return !archivedNarrowsToTheOwner(itinerary.id()) && publication.isPublished(itinerary.id());
     }
 
 

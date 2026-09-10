@@ -191,14 +191,14 @@ class ArchivedTripListIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec archive(String token, String itineraryId) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/archive")
+                .uri("/v1/trips/" + itineraryId + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec unarchive(String token, String itineraryId) {
         return rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/unarchive")
+                .uri("/v1/trips/" + itineraryId + "/unarchive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -206,7 +206,7 @@ class ArchivedTripListIT extends PostgresTestBase {
     private String listBody(String token, boolean archived) {
         return new String(
                 rest.get()
-                        .uri("/v1/itineraries?archived=" + archived)
+                        .uri("/v1/trips?archived=" + archived)
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .exchange()
                         .expectStatus()
@@ -226,7 +226,7 @@ class ArchivedTripListIT extends PostgresTestBase {
         String body =
                 new String(
                         rest.get()
-                                .uri("/v1/itineraries?archived=" + archived + "&limit=" + limit)
+                                .uri("/v1/trips?archived=" + archived + "&limit=" + limit)
                                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                 .exchange()
                                 .expectStatus()
@@ -280,7 +280,7 @@ class ArchivedTripListIT extends PostgresTestBase {
     private String createItinerary(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

@@ -177,7 +177,7 @@ test.describe('the cover, and the audience ladder that governs it', () => {
     for (const step of ['start', 'complete']) {
       await api(`/v1/trips/${trip}/${step}`, 'POST', owner);
     }
-    await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
+    await api(`/v1/trips/${trip}/publish`, 'POST', owner);
     const strangerOnPublished = await fetchBytes(coverUrl, stranger);
     expect(strangerOnPublished.status).toBe(200);
   });
@@ -188,7 +188,7 @@ test.describe('the cover, and the audience ladder that governs it', () => {
   });
 
   test('unpublishing closes the cover again', async () => {
-    await api(`/v1/itineraries/${trip}/unpublish`, 'POST', owner);
+    await api(`/v1/trips/${trip}/unpublish`, 'POST', owner);
     const strangerAfterUnpublish = await fetchBytes(coverUrl, stranger);
     expect(strangerAfterUnpublish.status).toBe(404);
   });
@@ -295,8 +295,8 @@ test.describe('activity photos and the derived gallery', () => {
     for (const step of ['start', 'complete']) {
       await api(`/v1/trips/${trip}/${step}`, 'POST', owner);
     }
-    await api(`/v1/itineraries/${trip}/publish`, 'POST', owner);
-    const publicView = await api(`/v1/published-itineraries/${trip}`, 'GET', stranger);
+    await api(`/v1/trips/${trip}/publish`, 'POST', owner);
+    const publicView = await api(`/v1/trips/${trip}/itinerary`, 'GET', stranger);
     expect(publicView.body?.days?.[0]?.activities?.[0]?.photos ?? []).toHaveLength(5);
   });
 

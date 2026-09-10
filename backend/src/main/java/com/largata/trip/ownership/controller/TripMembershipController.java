@@ -23,7 +23,7 @@ import com.largata.trip.ownership.dto.OwnershipOfferRequest;
 
 
 @RestController
-@RequestMapping({"/v1/itineraries/{itineraryId}", "/v1/trips/{itineraryId}"})
+@RequestMapping("/v1/trips/{itineraryId}")
 class TripMembershipController {
 
     private final MembershipService memberships;

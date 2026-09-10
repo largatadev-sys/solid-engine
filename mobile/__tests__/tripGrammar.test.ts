@@ -8,9 +8,16 @@ const REPOSITORIES = join(MOBILE_ROOT, 'src', 'repositories');
 
 const OLD_ROOT = '/v1/itineraries';
 
-const STILL_ON_THE_OLD_ROOT = new Set(['diaryRepository.ts', 'tripRepository.ts']);
+const THE_OBJECTS_OWN_ROUTES = [
+  OLD_ROOT + '/${id}`',
+  OLD_ROOT + '/${id}/fork`',
+];
 
-const UNTWINNED_SUFFIXES = ['/fork', '/publish', '/unpublish'];
+function namesTheObjectRatherThanTheOldWorld(line: string): boolean {
+  return THE_OBJECTS_OWN_ROUTES.some((route) => line.includes(route));
+}
+
+const STILL_ON_THE_OLD_ROOT = new Set(['diaryRepository.ts']);
 
 function repositoryFiles(): string[] {
   return readdirSync(REPOSITORIES).filter((entry) => entry.endsWith('.ts'));
@@ -19,7 +26,8 @@ function repositoryFiles(): string[] {
 function linesNamingTheOldRoot(file: string): string[] {
   return readFileSync(join(REPOSITORIES, file), 'utf8')
     .split('\n')
-    .filter((line) => line.includes(OLD_ROOT));
+    .filter((line) => line.includes(OLD_ROOT))
+    .filter((line) => !namesTheObjectRatherThanTheOldWorld(line));
 }
 
 describe('the client speaks the trip grammar (CM-3)', () => {
@@ -34,38 +42,46 @@ describe('the client speaks the trip grammar (CM-3)', () => {
     },
   );
 
-  it('every old-root path the trip repository keeps is a route with no twin', () => {
-    const kept = linesNamingTheOldRoot('tripRepository.ts');
-
-    expect(kept.length).toBeGreaterThan(0);
-    for (const line of kept) {
-      expect(UNTWINNED_SUFFIXES.some((suffix) => line.includes(suffix))).toBe(true);
-    }
-    for (const suffix of UNTWINNED_SUFFIXES) {
-      expect(kept.filter((line) => line.includes(suffix))).toHaveLength(1);
-    }
+  it('the trip repository names no old-grammar path at all, now that fork has moved', () => {
+    expect(linesNamingTheOldRoot('tripRepository.ts')).toEqual([]);
   });
 
-  it('would fire if a twinned path were left on the old root', () => {
-    const twinnedOnTheOldRoot = `apiClient.get(\`${OLD_ROOT}/\${id}/days\`)`;
+  it('would fire if any old-root path were left in a repository', () => {
+    const oldWorldsPath = `apiClient.get(\`${OLD_ROOT}/\${id}/days\`)`;
+    const theObjectsOwnRead = `apiClient.get(\`${OLD_ROOT}/\${id}\`)`;
+    const theObjectsOwnFork = `apiClient.post(\`${OLD_ROOT}/\${id}/fork\`)`;
 
-    expect(twinnedOnTheOldRoot).toContain(OLD_ROOT);
-    expect(UNTWINNED_SUFFIXES.some((suffix) => twinnedOnTheOldRoot.includes(suffix))).toBe(false);
+    expect(namesTheObjectRatherThanTheOldWorld(oldWorldsPath)).toBe(false);
+    expect(namesTheObjectRatherThanTheOldWorld(theObjectsOwnRead)).toBe(true);
+    expect(namesTheObjectRatherThanTheOldWorld(theObjectsOwnFork)).toBe(true);
   });
 
-  it('publishing stays on the act the shipped app already calls, so no behaviour moves', () => {
+  it('publishing acts on the trip grammar, because published now means a live Itinerary exists', () => {
     const source = readFileSync(join(REPOSITORIES, 'tripRepository.ts'), 'utf8');
 
-    expect(source).toContain('`/v1/itineraries/${id}/publish`');
-    expect(source).toContain('`/v1/itineraries/${id}/unpublish`');
-    expect(source).not.toContain('`/v1/trips/${id}/publish`');
-    expect(source).not.toContain('`/v1/trips/${id}/unpublish`');
+    expect(source).toContain('`/v1/trips/${id}/publish`');
+    expect(source).toContain('`/v1/trips/${id}/unpublish`');
+    expect(source).not.toContain('`/v1/itineraries/${id}/publish`');
+    expect(source).not.toContain('`/v1/itineraries/${id}/unpublish`');
   });
 
-  it('the published page still reads the old projection until the itinerary story', () => {
-    expect(readFileSync(join(REPOSITORIES, 'tripRepository.ts'), 'utf8')).toContain(
-      '/v1/published-itineraries/',
+  it('the publish mutations refetch the trip rather than writing a response into its cache', () => {
+    const source = readFileSync(join(MOBILE_ROOT, 'src', 'query', 'itineraryQueries.ts'), 'utf8');
+    const publishing = source.slice(
+      source.indexOf('export function usePublishTrip'),
+      source.indexOf('export type LifecycleAct'),
     );
+
+    expect(publishing).not.toContain('onItineraryUpdated');
+    expect(publishing.match(/invalidateQueries/g) ?? []).not.toHaveLength(0);
+  });
+
+  it('the published page reads the Itinerary by its own id, and by trip as the courtesy fallback', () => {
+    const source = readFileSync(join(REPOSITORIES, 'tripRepository.ts'), 'utf8');
+
+    expect(source).toContain('`/v1/itineraries/${id}`');
+    expect(source).toContain('`/v1/trips/${tripId}/itinerary`');
+    expect(source).not.toContain('/v1/published-itineraries/');
   });
 
   it('every cache write in the trip-events handler goes through an imported key factory', () => {

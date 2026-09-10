@@ -15,6 +15,7 @@ import { track } from '../analytics/track';
 import { useAuth } from '../hooks/authContext';
 import type { PickedPhoto } from '../media/pickedPhoto';
 import { PHOTO_DUMP_PHOTO_ADDED, PHOTO_DUMP_PHOTO_REMOVED } from '../media/photoDumpEvents';
+import { ApiError } from '../api/ApiError';
 import { tripRepository } from '../repositories/tripRepository';
 import { joinKeys } from './joinKeys';
 import type {
@@ -22,6 +23,8 @@ import type {
   ActivityResponse,
   CreateItineraryRequest,
   DayResponse,
+  ForkedTripResponse,
+  ItineraryObjectResponse,
   ItineraryResponse,
   Page,
   PhotoDumpEntryResponse,
@@ -181,12 +184,12 @@ export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryRespons
   });
 }
 
-export function useForkItinerary(sourceId: string): UseMutationResult<ItineraryResponse, Error, void> {
+export function useForkItinerary(sourceId: string): UseMutationResult<ForkedTripResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => tripRepository.forkItinerary(sourceId),
-    onSuccess: async (forked) => {
-      await onItineraryCreated(client, forked);
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: itineraryKeys.lists() });
       await client.invalidateQueries({ queryKey: itineraryKeys.published(sourceId) });
     },
   });
@@ -197,10 +200,22 @@ export function usePublishedItinerary(id: string): UseQueryResult<PublishedItine
   const { kind } = useAuth();
   return useQuery({
     queryKey: itineraryKeys.published(id),
-    queryFn: () => tripRepository.fetchPublished(id),
+    queryFn: () => resolvePublished(id),
     enabled: kind === 'signedIn',
     retry: false,
   });
+}
+
+
+async function resolvePublished(id: string): Promise<PublishedItineraryResponse> {
+  try {
+    return await tripRepository.fetchPublished(id);
+  } catch (refusal) {
+    if (refusal instanceof ApiError && refusal.status === 404) {
+      return tripRepository.fetchPublishedByTrip(id);
+    }
+    throw refusal;
+  }
 }
 
 
@@ -217,26 +232,31 @@ export function useItineraryPreview(id: string): UseQueryResult<PublishedItinera
 
 export function usePublishTrip(
   id: string,
-): UseMutationResult<ItineraryResponse, Error, void> {
+): UseMutationResult<ItineraryObjectResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => tripRepository.publishTrip(id),
-    onSuccess: async (updated) => {
-      await onItineraryUpdated(client, updated);
-      await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
+    onSuccess: async () => {
+      await refetchAfterPublication(client, id);
     },
   });
 }
 
-export function useUnpublishTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
+export function useUnpublishTrip(id: string): UseMutationResult<void, Error, void> {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => tripRepository.unpublishTrip(id),
-    onSuccess: async (updated) => {
-      await onItineraryUpdated(client, updated);
-      await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
+    onSuccess: async () => {
+      await refetchAfterPublication(client, id);
     },
   });
+}
+
+
+async function refetchAfterPublication(client: QueryClient, id: string): Promise<void> {
+  await client.invalidateQueries({ queryKey: itineraryKeys.one(id) });
+  await client.invalidateQueries({ queryKey: itineraryKeys.lists() });
+  await client.invalidateQueries({ queryKey: itineraryKeys.published(id) });
 }
 
 export type LifecycleAct = 'start' | 'complete' | 'reopen';

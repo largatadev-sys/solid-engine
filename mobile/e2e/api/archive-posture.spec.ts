@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '../support/fixtures';
-import { api, address, request, tokenFor, API, profileFor } from '../support/pool';
+import { api, request, tokenFor, API, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { FIXTURE_PHOTO, SeedFailure, stamp } from '../support/seed';

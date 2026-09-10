@@ -211,8 +211,8 @@ test.describe('the publish act — dark since the walk was retired', () => {
   });
 
   test('unpublishing leaves the trip COMPLETE and returns the Publish CTA', async ({ page }) => {
-    const unpublished = await api(`/v1/itineraries/${trip.id}/unpublish`, 'POST', token, {});
-    expect(unpublished.status).toBe(200);
+    const unpublished = await api(`/v1/trips/${trip.id}/unpublish`, 'POST', token, {});
+    expect(unpublished.status).toBe(204);
 
     await expect
       .poll(async () => (await itineraryOf(trip.id)).published, { timeout: 15_000 })
@@ -228,13 +228,15 @@ test.describe('the public projection, read by a stranger', () => {
   test.describe.configure({ mode: 'serial' });
 
   let published: SeededTrip;
+  let publishedItineraryId: string;
 
   test.beforeAll(async () => {
     published = await seedCompletedTrip(stamp('the projection'));
-    const act = await api(`/v1/itineraries/${published.id}/publish`, 'POST', token, {
+    const act = await api(`/v1/trips/${published.id}/publish`, 'POST', token, {
       audience: 'public',
     });
     expect(act.status).toBe(200);
+    publishedItineraryId = act.body.id as string;
   });
 
   test.beforeEach(async ({ signIn }) => {
@@ -242,13 +244,13 @@ test.describe('the public projection, read by a stranger', () => {
   });
 
   test('the stranger opens the copied route and reads the projection', async ({ page }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
 
     await expect(page.getByText(published.title, { exact: true })).toBeVisible();
   });
 
   test('the five-tab shell renders with Overview winning', async ({ page }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
 
     for (const tab of PUBLISHED_TABS) {
       await expect(page.getByText(tab, { exact: true }).last()).toBeVisible();
@@ -259,14 +261,14 @@ test.describe('the public projection, read by a stranger', () => {
   });
 
   test('the derived total is real and carries no /Person', async ({ page }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
 
     await expect(page.getByText('Est. Cost', { exact: true })).toBeVisible();
     await expect(page.getByText('/Person')).toHaveCount(0);
   });
 
   test('the absence rule holds on the consumer screen too', async ({ page }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
     await expect(page.getByText('Est. Cost', { exact: true })).toBeVisible();
 
     const shown = await page.evaluate(() => document.body.innerText);
@@ -279,7 +281,7 @@ test.describe('the public projection, read by a stranger', () => {
   test('Day-by-Day is a real tab whose cards carry the tips and the booking link', async ({
     page,
   }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
     await labelled(page, 'Day-by-Day').click();
 
     await expect(page.getByText('Day 1', { exact: true })).toBeVisible();
@@ -289,7 +291,7 @@ test.describe('the public projection, read by a stranger', () => {
   });
 
   test('the activity place opens a destination-hinted Google Maps search', async ({ page }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
     await labelled(page, 'Day-by-Day').click();
     await labelled(page, `${PLACE}, open in Google Maps`).click();
 
@@ -299,7 +301,7 @@ test.describe('the public projection, read by a stranger', () => {
   });
 
   test('the header destination pill opens Maps on the destination itself', async ({ page }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
     await labelled(page, `${DESTINATION}, open in Google Maps`).click();
 
     await expect
@@ -311,7 +313,7 @@ test.describe('the public projection, read by a stranger', () => {
     page,
     signal,
   }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
     await labelled(page, 'Day-by-Day').click();
     await labelled(page, 'View booking options').click();
 
@@ -324,7 +326,7 @@ test.describe('the public projection, read by a stranger', () => {
     page,
     signal,
   }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
 
     for (const [tab, surface] of [
       ['Diary Entry', 'diary'],
@@ -342,7 +344,7 @@ test.describe('the public projection, read by a stranger', () => {
     page,
     signal,
   }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
 
     await expect(labelStarting(page, `${FOLLOW_LABEL} `)).toBeVisible({ timeout: 20_000 });
     await expect(labelled(page, 'Follow, coming soon')).toHaveCount(0);
@@ -357,7 +359,7 @@ test.describe('the public projection, read by a stranger', () => {
     page,
     signal,
   }) => {
-    await page.goto(`/published/${published.id}`);
+    await page.goto(`/published/${publishedItineraryId}`);
     await expect(page.getByText(published.title, { exact: true })).toBeVisible();
     await labelled(page, 'Day-by-Day').click();
     await expect(page.getByText(ACTIVITY, { exact: true })).toBeVisible();

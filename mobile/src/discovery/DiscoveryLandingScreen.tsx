@@ -16,7 +16,6 @@ import { SCROLL_TO_TOP_ANIMATED } from '../navigation/scrollToTop';
 import { FeedToast } from '../feed/FeedToast';
 import { colors, spacing } from '../theme';
 import {
-  discoveryColors,
   discoveryMetrics,
   profileColors,
   profileTypography,

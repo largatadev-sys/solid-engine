@@ -53,11 +53,14 @@ let authorHandle: string;
 let CREDIT: string;
 
 
+type PublishedSource = SeededTrip & { itineraryId: string };
+
+
 function visible(locator: Locator): Locator {
   return locator.locator('visible=true').last();
 }
 
-async function seedPublishedTrip(title: string): Promise<SeededTrip> {
+async function seedPublishedTrip(title: string): Promise<PublishedSource> {
   const trip = await seedTrip({
     ownerTag: AUTHOR,
     title,
@@ -70,15 +73,15 @@ async function seedPublishedTrip(title: string): Promise<SeededTrip> {
   await seedCover(trip);
   await climbTo(trip, 'completed');
 
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {
+  const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', trip.ownerToken, {
     audience: 'public',
   });
   if (published.status !== 200) throw new Error(`could not publish the source: ${published.status}`);
-  return trip;
+  return { ...trip, itineraryId: published.body.id as string };
 }
 
 const projectionOf = async (id: string) =>
-  (await api(`/v1/published-itineraries/${id}`, 'GET', forkerToken)).body;
+  (await api(`/v1/trips/${id}/itinerary`, 'GET', forkerToken)).body;
 
 const itineraryOf = async (id: string) => (await api(`/v1/trips/${id}`, 'GET', forkerToken)).body;
 
@@ -92,7 +95,7 @@ test.beforeAll(async () => {
 test.describe('the fork loop — reading someone else\'s plan to standing in your own copy', () => {
   test.describe.configure({ mode: 'serial' });
 
-  let source: SeededTrip;
+  let source: PublishedSource;
   let forkId: string;
 
   test.beforeAll(async () => {
@@ -104,13 +107,13 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   });
 
   test('the published page carries the docked Fork This Trip CTA', async ({ page }) => {
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await expect(visible(page.getByText(source.title, { exact: true }))).toBeVisible();
     await expect(labelled(page, FORK_CTA_LABEL)).toBeVisible();
   });
 
   test('the CTA opens a sheet that says what forking does and collects nothing', async ({ page }) => {
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await labelled(page, FORK_CTA_LABEL).click();
 
     await expect(visible(page.getByText(FORK_SHEET_BODY))).toBeVisible();
@@ -127,7 +130,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   test('Cancel leaves the published page standing and mints nothing', async ({ page }) => {
     const before = (await projectionOf(source.id)).forkCount;
 
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await labelled(page, FORK_CTA_LABEL).click();
     await labelled(page, FORK_CANCEL_LABEL).click();
 
@@ -138,7 +141,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   test('Fork It lands on the success screen with the attribution pill and a placeholder thumb', async ({
     page,
   }) => {
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await labelled(page, FORK_CTA_LABEL).click();
     await labelled(page, FORK_CONFIRM_LABEL).click();
 
@@ -173,7 +176,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
     expect(fork.days.length).toBe(DURATION_DAYS);
     expect(fork.days[0].activities[0].title).toBe(ACTIVITY);
     expect(fork.days[0].activities[0].notes).toBe(TIP);
-    expect(fork.forkedFrom.sourceItineraryId).toBe(source.id);
+    expect(fork.forkedFrom.sourceItineraryId).toBe(source.itineraryId);
     expect(fork.forkedFrom.ownerHandle).toBe(authorHandle);
     expect(fork.forkedFrom.sourceVisible).toBe(true);
   });
@@ -190,7 +193,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   test('back from the success screen lands on Trips, never the spent published page', async ({ page }) => {
     await page.goto('/trips');
     await expect(visible(page.getByText('Plan a Trip', { exact: true }))).toBeVisible();
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
 
     await labelled(page, FORK_CTA_LABEL).click();
     await labelled(page, FORK_CONFIRM_LABEL).click();
@@ -214,7 +217,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
     const counted = (await projectionOf(source.id)).forkCount;
     expect(counted).toBeGreaterThanOrEqual(2);
 
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await expect(visible(page.getByText(FORKED_STAT_LABEL, { exact: true }))).toBeVisible();
     await expect(visible(page.getByText(String(counted), { exact: true }))).toBeVisible();
 
@@ -225,7 +228,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
   test('forking from the Home feed lands the same way — it is the landing route, so it is the common path', async ({
     page,
   }) => {
-    await page.goto(`/feed/published/${source.id}`);
+    await page.goto(`/feed/published/${source.itineraryId}`);
     await expect(labelled(page, FORK_CTA_LABEL)).toBeVisible();
 
     await labelled(page, FORK_CTA_LABEL).click();
@@ -240,7 +243,7 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
 
 
   test('no console or page errors across the whole fork loop', async ({ page, signal }) => {
-    await page.goto(`/published/${source.id}`);
+    await page.goto(`/published/${source.itineraryId}`);
     await labelled(page, FORK_CTA_LABEL).click();
     await labelled(page, FORK_CANCEL_LABEL).click();
     await page.goto(`/itineraries/${forkId}`);
@@ -254,12 +257,12 @@ test.describe('the fork loop — reading someone else\'s plan to standing in you
 test.describe('attribution when the source stops being visible', () => {
   test.describe.configure({ mode: 'serial' });
 
-  let source: SeededTrip;
+  let source: PublishedSource;
   let forkId: string;
 
   test.beforeAll(async () => {
     source = await seedPublishedTrip(stamp('the vanishing source'));
-    const forked = await api(`/v1/itineraries/${source.id}/fork`, 'POST', forkerToken);
+    const forked = await api(`/v1/itineraries/${source.itineraryId}/fork`, 'POST', forkerToken);
     if (forked.status !== 201) throw new Error(`could not fork: ${forked.status}`);
     forkId = forked.body.id;
   });
@@ -271,8 +274,8 @@ test.describe('attribution when the source stops being visible', () => {
   test('the credit survives an unpublish, and stops linking', async ({ page }) => {
     expect((await itineraryOf(forkId)).forkedFrom.sourceVisible).toBe(true);
 
-    const hidden = await api(`/v1/itineraries/${source.id}/unpublish`, 'POST', source.ownerToken);
-    expect(hidden.status).toBe(200);
+    const hidden = await api(`/v1/trips/${source.id}/unpublish`, 'POST', source.ownerToken);
+    expect(hidden.status).toBe(204);
 
     await expect
       .poll(async () => (await itineraryOf(forkId)).forkedFrom.sourceVisible, { timeout: 15_000 })

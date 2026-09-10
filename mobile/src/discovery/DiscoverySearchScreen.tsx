@@ -17,7 +17,6 @@ import {
 } from '../query/discoveryQueries';
 import { colors, spacing } from '../theme';
 import {
-  discoveryColors,
   discoveryMetrics,
   discoveryTypography,
   profileColors,

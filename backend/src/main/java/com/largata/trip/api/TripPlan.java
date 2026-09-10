@@ -1,5 +1,6 @@
 package com.largata.trip.api;
 
+import com.largata.common.geo.Pin;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -17,6 +18,7 @@ public record TripPlan(
         String coverImageUrl,
         LocalDate startDate,
         LocalDate endDate,
+        Pin pin,
         TripLifecycle lifecycle,
         boolean published,
         List<PlanDay> days) {
@@ -35,6 +37,7 @@ public record TripPlan(
                 coverImageUrl,
                 startDate,
                 endDate,
+                pin,
                 lifecycle,
                 published,
                 days);
@@ -57,5 +60,7 @@ public record TripPlan(
             String bookingPurpose,
             String bookingProvider,
             BigDecimal bookingPriceAmount,
-            String bookingPriceCurrency) {}
+            String bookingPriceCurrency,
+            Pin pin,
+            List<UUID> photoIds) {}
 }

@@ -323,7 +323,7 @@ class InboxContextIT extends PostgresTestBase {
 
     private RestTestClient.BodyContentSpec pendingOf(String token, String tripId) {
         return rest.get()
-                .uri("/v1/itineraries/" + tripId + "/invitations")
+                .uri("/v1/trips/" + tripId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -333,7 +333,7 @@ class InboxContextIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec inviteByHandle(String token, String tripId, String handle) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"" + handle + "\"}")
@@ -342,7 +342,7 @@ class InboxContextIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec inviteByEmail(String token, String tripId, String email) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations")
+                .uri("/v1/trips/" + tripId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"email\":\"" + email + "\"}")

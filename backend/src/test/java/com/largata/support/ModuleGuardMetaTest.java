@@ -23,13 +23,16 @@ class ModuleGuardMetaTest {
             List.of(
                     "chat",
                     "diary",
+                    "discovery",
+                    "feed",
                     "health",
                     "invitation",
+                    "itinerary",
                     "join",
                     "place",
                     "poll",
                     "postcard",
-                    "publication",
+                    "profile",
                     "report",
                     "trip",
                     "verification");
@@ -43,8 +46,7 @@ class ModuleGuardMetaTest {
 
     private static final Map<String, String> OWED = Map.of();
 
-    private static final List<String> BEING_DISMANTLED =
-            List.of("itinerary");
+    private static final List<String> BEING_DISMANTLED = List.of();
 
     private static final Pattern A_BY_NAME_EXEMPTION =
             Pattern.compile("simpleName\\s*\\(|\\bhaveSimpleName\\s*\\(|\\bbelongToAnyOf\\s*\\(");

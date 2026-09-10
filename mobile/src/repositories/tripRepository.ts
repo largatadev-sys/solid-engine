@@ -6,6 +6,8 @@ import type {
   DayRequest,
   DayResponse,
   EditLeaseResponse,
+  ForkedTripResponse,
+  ItineraryObjectResponse,
   ItineraryResponse,
   LeaseSubject,
   MoveActivityRequest,
@@ -71,13 +73,17 @@ export const tripRepository = {
   },
 
 
-  async forkItinerary(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/fork`, undefined);
+  async forkItinerary(id: string): Promise<ForkedTripResponse> {
+    return apiClient.post<ForkedTripResponse>(`/v1/itineraries/${id}/fork`, undefined);
   },
 
 
   async fetchPublished(id: string): Promise<PublishedItineraryResponse> {
-    return apiClient.get<PublishedItineraryResponse>(`/v1/published-itineraries/${id}`);
+    return apiClient.get<PublishedItineraryResponse>(`/v1/itineraries/${id}`);
+  },
+
+  async fetchPublishedByTrip(tripId: string): Promise<PublishedItineraryResponse> {
+    return apiClient.get<PublishedItineraryResponse>(`/v1/trips/${tripId}/itinerary`);
   },
 
 
@@ -86,12 +92,12 @@ export const tripRepository = {
   },
 
 
-  async publishTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/publish`, undefined);
+  async publishTrip(id: string): Promise<ItineraryObjectResponse> {
+    return apiClient.post<ItineraryObjectResponse>(`/v1/trips/${id}/publish`, undefined);
   },
 
-  async unpublishTrip(id: string): Promise<ItineraryResponse> {
-    return apiClient.post<ItineraryResponse>(`/v1/itineraries/${id}/unpublish`, undefined);
+  async unpublishTrip(id: string): Promise<void> {
+    return apiClient.post<void>(`/v1/trips/${id}/unpublish`, undefined);
   },
 
 

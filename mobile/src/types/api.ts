@@ -115,6 +115,8 @@ export type ItineraryResponse = {
   endDate: string | null;
   state: ItineraryState;
   published: boolean;
+  itineraryId: string | null;
+  publishedAt: string | null;
 
   archived: boolean;
 
@@ -273,8 +275,22 @@ export type ForkedFromResponse = {
 };
 
 
+export type ForkedTripResponse = {
+  id: string;
+};
+
+
+export type ItineraryObjectResponse = {
+  id: string;
+  tripId: string;
+  publishedAt: string;
+};
+
+
 export type PublishedItineraryResponse = {
   id: string;
+  tripId: string;
+  publishedAt: string;
   title: string;
   destination: string;
   pin: Pin | null;
@@ -471,6 +487,7 @@ export type PublicProfileResponse = {
 
 export type ShowcaseItineraryResponse = {
   id: string;
+  tripId: string;
   title: string;
   destination: string;
   durationDays: number;

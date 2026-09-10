@@ -64,8 +64,11 @@ export default function ItineraryPreviewScreen() {
           accessibilityRole="button"
           onPress={() =>
             publish.mutate(undefined, {
-              onSuccess: () =>
-                router.replace({ pathname: '/itineraries/[id]/published', params: { id } }),
+              onSuccess: (itinerary) =>
+                router.replace({
+                  pathname: '/itineraries/[id]/published',
+                  params: { id: itinerary.id },
+                }),
             })
           }
         >

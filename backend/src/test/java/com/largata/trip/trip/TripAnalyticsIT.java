@@ -94,7 +94,7 @@ class TripAnalyticsIT extends PostgresTestBase {
     @Test
     void aRejectedCreateEmitsNothing() {
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(freshTraveler()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -162,7 +162,7 @@ class TripAnalyticsIT extends PostgresTestBase {
                 """);
 
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/complete")
+                .uri("/v1/trips/" + tripId + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -193,7 +193,7 @@ class TripAnalyticsIT extends PostgresTestBase {
 
     private void create(String token, String body) {
         rest.post()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
@@ -206,7 +206,7 @@ class TripAnalyticsIT extends PostgresTestBase {
     private String createAndReturnId(String token, String body) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(body)
@@ -223,7 +223,7 @@ class TripAnalyticsIT extends PostgresTestBase {
 
     private void transition(String token, String itineraryId, String act) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/" + act)
+                .uri("/v1/trips/" + itineraryId + "/" + act)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()

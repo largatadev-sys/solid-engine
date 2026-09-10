@@ -1,8 +1,8 @@
 package com.largata.trip.trip.dto;
 
+import com.largata.trip.api.ForkApi;
 import com.largata.common.geo.PinPayload;
 import com.largata.identity.TravelerSummary;
-import com.largata.trip.fork.ForkService;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.plan.entity.TripPlanTree;
 import com.largata.trip.editing.entity.LeaseSubject;
@@ -30,6 +30,8 @@ public record TripResponse(
         LocalDate endDate,
         String state,
         boolean published,
+        UUID itineraryId,
+        Instant publishedAt,
         String visibility,
         boolean archived,
         UUID lastEditedBy,
@@ -55,7 +57,10 @@ public record TripResponse(
             boolean beingEdited,
             int dayCount,
             String viewerRole,
-            Integer memberCount) {
+            Integer memberCount,
+            boolean published,
+            UUID itineraryId,
+            Instant publishedAt) {
         return new TripResponse(
                 itinerary.id(),
                 itinerary.title(),
@@ -69,7 +74,9 @@ public record TripResponse(
                 itinerary.startDate(),
                 itinerary.endDate(),
                 itinerary.state().wireName(),
-                itinerary.isPublished(),
+                published,
+                itineraryId,
+                publishedAt,
                 itinerary.visibility().wireName(),
                 workspaceState.isArchived(),
                 itinerary.lastEditedBy(),
@@ -95,7 +102,7 @@ public record TripResponse(
     }
 
 
-    public static TripResponse of(TripPlanTree plan, ForkService.ForkProvenance provenance) {
+    public static TripResponse of(TripPlanTree plan, ForkApi.ForkProvenanceView provenance) {
         Trip itinerary = plan.itinerary();
         TravelerSummary editor = plan.editor(itinerary.lastEditedBy());
         return new TripResponse(
@@ -111,7 +118,9 @@ public record TripResponse(
                 itinerary.startDate(),
                 itinerary.endDate(),
                 itinerary.state().wireName(),
-                itinerary.isPublished(),
+                plan.published(),
+                plan.itineraryId(),
+                plan.publishedAt(),
                 itinerary.visibility().wireName(),
                 plan.archived(),
                 itinerary.lastEditedBy(),

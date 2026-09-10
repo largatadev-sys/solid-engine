@@ -192,7 +192,7 @@ test('a published trip kills the link and refuses new asks', async () => {
   const frozen = await seedTrip({ ownerTag: OWNER, title: stamp('join link frozen') });
   const frozenToken = (await api(`/v1/trips/${frozen.id}/join-link`, 'GET', owner)).body.token;
   await climbTo(frozen, 'completed');
-  await api(`/v1/itineraries/${frozen.id}/publish`, 'POST', owner, {});
+  await api(`/v1/trips/${frozen.id}/publish`, 'POST', owner, {});
 
   const teaser = await api(`/v1/join/${frozenToken}`, 'GET', asker);
   expect(teaser.body.viewerState).toBe('dead');
@@ -206,7 +206,7 @@ test('a published trip kills the link and refuses new asks', async () => {
 test('a published trip refuses to hand out its link at all', async () => {
   const frozen = await seedTrip({ ownerTag: OWNER, title: stamp('join link no handout') });
   await climbTo(frozen, 'completed');
-  await api(`/v1/itineraries/${frozen.id}/publish`, 'POST', owner, {});
+  await api(`/v1/trips/${frozen.id}/publish`, 'POST', owner, {});
 
   const refused = await api(`/v1/trips/${frozen.id}/join-link`, 'GET', owner);
   expect(refused.status).toBe(409);

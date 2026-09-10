@@ -24,7 +24,7 @@ import {
   GapTimestamp,
   NewMessagesPill,
 } from './ThreadFurniture';
-import { mergeById, threadRows, toThreadMessage, type ThreadMessage } from './chatThread';
+import { mergeById, threadRows, toThreadMessage } from './chatThread';
 import { clearDraft, readDraft, writeDraft } from './draftStore';
 import {
   asThreadMessages,

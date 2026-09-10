@@ -341,7 +341,7 @@ class JoinCardIT extends ObjectStoreTestBase {
 
         rig.send(
                         HttpMethod.POST,
-                        "/v1/itineraries/" + trip.id() + "/chat/messages",
+                        "/v1/trips/" + trip.id() + "/chat/messages",
                         trip.owner(),
                         "{\"body\":\"anyone booked flights yet\"}")
                 .expectStatus()
@@ -365,7 +365,7 @@ class JoinCardIT extends ObjectStoreTestBase {
     void aLifecycleTransitionDoesNotBumpIt() {
         Trip trip = trip();
 
-        rig.send(HttpMethod.POST, "/v1/itineraries/" + trip.id() + "/start", trip.owner(), null)
+        rig.send(HttpMethod.POST, "/v1/trips/" + trip.id() + "/start", trip.owner(), null)
                 .expectStatus()
                 .isOk();
 
@@ -394,11 +394,14 @@ class JoinCardIT extends ObjectStoreTestBase {
 
 
     private void close(Trip trip) {
-        for (String rung : new String[] {"/start", "/complete", "/publish"}) {
-            rig.send(HttpMethod.POST, "/v1/itineraries/" + trip.id() + rung, trip.owner(), null)
+        for (String rung : new String[] {"/start", "/complete"}) {
+            rig.send(HttpMethod.POST, "/v1/trips/" + trip.id() + rung, trip.owner(), null)
                     .expectStatus()
                     .isOk();
         }
+        rig.send(HttpMethod.POST, "/v1/trips/" + trip.id() + "/publish", trip.owner(), null)
+                .expectStatus()
+                .isOk();
     }
 
 
@@ -414,7 +417,7 @@ class JoinCardIT extends ObjectStoreTestBase {
 
     private byte[] linkBody(Trip trip) {
         return rest.get()
-                .uri("/v1/itineraries/" + trip.id() + "/join-link")
+                .uri("/v1/trips/" + trip.id() + "/join-link")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()

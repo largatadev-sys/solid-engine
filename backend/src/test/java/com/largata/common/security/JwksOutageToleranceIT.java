@@ -91,7 +91,7 @@ class JwksOutageToleranceIT {
 
     private void expectStatus(String token, int status) {
         rest.get()
-                .uri("/v1/itineraries")
+                .uri("/v1/trips")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .exchange()
                 .expectStatus()

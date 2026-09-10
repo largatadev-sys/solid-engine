@@ -3,7 +3,7 @@ import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { seedTrip, seedPlan, stamp, type SeededTrip } from '../support/seed';
-import { labelled, dragStripBy } from '../support/screen';
+import { labelled } from '../support/screen';
 import { forwardConfirmWording, stateBadge } from '../../src/itineraries/workspaceControls';
 import { mapsUrl } from '../../src/places/mapsQuery';
 const DEAD_LABELS = ['Draft', 'Ready', 'Active'];

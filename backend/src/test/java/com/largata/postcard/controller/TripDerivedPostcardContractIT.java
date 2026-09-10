@@ -238,7 +238,7 @@ class TripDerivedPostcardContractIT extends ObjectStoreTestBase {
         start(owner, trip);
         String postcardId = TripRig.fieldIn(post(member, trip, activity, "{\"caption\":\"Before\"}"), "id");
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/archive")
+                .uri("/v1/trips/" + trip + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -275,7 +275,7 @@ class TripDerivedPostcardContractIT extends ObjectStoreTestBase {
         UUID memberId = rig.travelerIdOf(member);
 
         rest.delete()
-                .uri("/v1/itineraries/" + trip + "/members/" + memberId)
+                .uri("/v1/trips/" + trip + "/members/" + memberId)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -307,7 +307,7 @@ class TripDerivedPostcardContractIT extends ObjectStoreTestBase {
 
     private void start(String owner, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/start")
+                .uri("/v1/trips/" + trip + "/start")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()

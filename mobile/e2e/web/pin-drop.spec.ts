@@ -35,7 +35,7 @@ test.beforeAll(async () => {
   ]);
 
   await climbTo(trip, 'completed');
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {
+  const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', trip.ownerToken, {
     audience: 'public',
   });
   expect(published.status).toBe(200);
@@ -51,7 +51,7 @@ test.beforeEach(async ({ signIn }) => {
 test.describe('a pinned place opens in-app; a text-only place still hands off (PL-2)', () => {
 
   test('the pin round-trips through the API exactly as it was dropped', async () => {
-    const projection = await api(`/v1/published-itineraries/${publishedId}`, 'GET', await tokenFor(OWNER));
+    const projection = await api(`/v1/trips/${publishedId}/itinerary`, 'GET', await tokenFor(OWNER));
 
     expect(projection.status).toBe(200);
     const activities = projection.body.days[0].activities;

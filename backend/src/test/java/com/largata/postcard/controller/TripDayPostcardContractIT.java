@@ -192,7 +192,7 @@ class TripDayPostcardContractIT extends ObjectStoreTestBase {
 
     private void start(String owner, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/start")
+                .uri("/v1/trips/" + trip + "/start")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -202,7 +202,7 @@ class TripDayPostcardContractIT extends ObjectStoreTestBase {
 
     private void archive(String owner, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/archive")
+                .uri("/v1/trips/" + trip + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()

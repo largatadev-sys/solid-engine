@@ -367,7 +367,7 @@ test('a fresh trip shows the empty state, exactly as the canvas words it', async
 test('a published trip has no chat door, and its API send answers CHAT_CLOSED', async () => {
   await api(`/v1/trips/${trip}/start`, 'POST', ownerToken, {});
   await api(`/v1/trips/${trip}/complete`, 'POST', ownerToken, {});
-  const published = await api(`/v1/itineraries/${trip}/publish`, 'POST', ownerToken, {});
+  const published = await api(`/v1/trips/${trip}/publish`, 'POST', ownerToken, {});
   expect(published.status).toBe(200);
 
   try {
@@ -375,6 +375,6 @@ test('a published trip has no chat door, and its API send answers CHAT_CLOSED', 
     expect(refused.status).toBe(409);
     expect(refused.body.code).toBe('CHAT_CLOSED');
   } finally {
-    await api(`/v1/itineraries/${trip}/unpublish`, 'POST', ownerToken, {});
+    await api(`/v1/trips/${trip}/unpublish`, 'POST', ownerToken, {});
   }
 });

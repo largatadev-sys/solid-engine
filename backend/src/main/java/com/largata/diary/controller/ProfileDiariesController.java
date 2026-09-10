@@ -8,7 +8,7 @@ import com.largata.identity.Traveler;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
 import com.largata.common.security.CurrentTraveler;
-import com.largata.publication.api.PublicationApi;
+import com.largata.itinerary.api.ItineraryApi;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,17 +23,17 @@ class ProfileDiariesController {
 
     private final DiaryService diaries;
     private final TravelerService travelers;
-    private final PublicationApi publications;
+    private final ItineraryApi itineraries;
     private final AuthoredContentAudience audience;
 
     ProfileDiariesController(
             DiaryService diaries,
             TravelerService travelers,
-            PublicationApi publications,
+            ItineraryApi itineraries,
             AuthoredContentAudience audience) {
         this.diaries = diaries;
         this.travelers = travelers;
-        this.publications = publications;
+        this.itineraries = itineraries;
         this.audience = audience;
     }
 
@@ -50,7 +50,7 @@ class ProfileDiariesController {
                         .map(view -> view.diary().tripId())
                         .filter(tripId -> tripId != null)
                         .toList();
-        Map<UUID, UUID> publishedAs = publications.objectIdsByTrip(tripIds);
+        Map<UUID, UUID> publishedAs = itineraries.objectIdsByTrip(tripIds);
 
         return DiarySectionsResponse.of(sections, publishedAs);
     }

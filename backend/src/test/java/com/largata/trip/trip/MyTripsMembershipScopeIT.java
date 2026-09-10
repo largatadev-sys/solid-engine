@@ -98,7 +98,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
         String cursor = null;
         int pages = 0;
         do {
-            String uri = "/v1/itineraries?limit=2" + (cursor == null ? "" : "&cursor=" + cursor);
+            String uri = "/v1/trips?limit=2" + (cursor == null ? "" : "&cursor=" + cursor);
             byte[] body =
                     rest.get()
                             .uri(uri)
@@ -126,7 +126,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
 
         for (String token : List.of(withTrips, withNone)) {
             rest.get()
-                    .uri("/v1/itineraries?cursor=not-a-real-cursor")
+                    .uri("/v1/trips?cursor=not-a-real-cursor")
                     .header(HttpHeaders.AUTHORIZATION, bearer(token))
                     .exchange()
                     .expectStatus()
@@ -153,7 +153,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
     private List<String> myTripIds(String token) {
         byte[] body =
                 rest.get()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .exchange()
                         .expectStatus()
@@ -191,7 +191,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec offer(String callerToken, String tripId, UUID targetId) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/ownership-offer")
+                .uri("/v1/trips/" + tripId + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"travelerId\":\"" + targetId + "\"}")
@@ -200,14 +200,14 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec accept(String callerToken, String tripId) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/ownership-offer/accept")
+                .uri("/v1/trips/" + tripId + "/ownership-offer/accept")
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec depart(String callerToken, String tripId, UUID targetId) {
         return rest.method(HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/members/" + targetId)
+                .uri("/v1/trips/" + tripId + "/members/" + targetId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }
@@ -228,7 +228,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
     private String invite(String ownerToken, String tripId, String email) {
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/invitations")
+                        .uri("/v1/trips/" + tripId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + email + "\"}")
@@ -253,7 +253,7 @@ class MyTripsMembershipScopeIT extends PostgresTestBase {
     private String createTrip(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

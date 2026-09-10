@@ -80,7 +80,7 @@ class OwnershipTransferIT extends PostgresTestBase {
 
         depart(ownerToken, trip, formerOwnerId).expectStatus().isNoContent();
         rest.get()
-                .uri("/v1/itineraries/" + trip)
+                .uri("/v1/trips/" + trip)
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .exchange()
                 .expectStatus()
@@ -199,7 +199,7 @@ class OwnershipTransferIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec offer(String callerToken, String tripId, UUID targetTravelerId) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/ownership-offer")
+                .uri("/v1/trips/" + tripId + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"travelerId\":\"" + targetTravelerId + "\"}")
@@ -208,21 +208,21 @@ class OwnershipTransferIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec accept(String callerToken, String tripId) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/ownership-offer/accept")
+                .uri("/v1/trips/" + tripId + "/ownership-offer/accept")
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec revoke(String callerToken, String tripId) {
         return rest.method(HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/ownership-offer")
+                .uri("/v1/trips/" + tripId + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec depart(String callerToken, String tripId, UUID targetTravelerId) {
         return rest.method(HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/members/" + targetTravelerId)
+                .uri("/v1/trips/" + tripId + "/members/" + targetTravelerId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }
@@ -230,7 +230,7 @@ class OwnershipTransferIT extends PostgresTestBase {
     private String roleOnRoster(String token, String tripId, UUID travelerId) {
         byte[] body =
                 rest.get()
-                        .uri("/v1/itineraries/" + tripId + "/members")
+                        .uri("/v1/trips/" + tripId + "/members")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .exchange()
                         .expectStatus()
@@ -277,7 +277,7 @@ class OwnershipTransferIT extends PostgresTestBase {
     private String invite(String ownerToken, String tripId, String email) {
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/invitations")
+                        .uri("/v1/trips/" + tripId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + email + "\"}")
@@ -302,7 +302,7 @@ class OwnershipTransferIT extends PostgresTestBase {
     private String createTrip(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

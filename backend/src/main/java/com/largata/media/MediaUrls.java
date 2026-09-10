@@ -21,6 +21,11 @@ public final class MediaUrls {
 
 
     public static String thumbnailOf(Photo photo) {
-        return of(photo.id()) + "/thumb";
+        return thumbnailOf(photo.id());
+    }
+
+
+    public static String thumbnailOf(UUID photoId) {
+        return of(photoId) + "/thumb";
     }
 }

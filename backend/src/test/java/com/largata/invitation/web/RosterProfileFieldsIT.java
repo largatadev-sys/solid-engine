@@ -43,7 +43,7 @@ class RosterProfileFieldsIT extends PostgresTestBase {
         accept(member, invite(owner, itinerary, guestEmail));
 
         rest.get()
-                .uri("/v1/itineraries/" + itinerary + "/members")
+                .uri("/v1/trips/" + itinerary + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .exchange()
                 .expectStatus()
@@ -69,7 +69,7 @@ class RosterProfileFieldsIT extends PostgresTestBase {
         String itinerary = createItinerary(owner);
 
         rest.get()
-                .uri("/v1/itineraries/" + itinerary + "/members")
+                .uri("/v1/trips/" + itinerary + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -90,7 +90,7 @@ class RosterProfileFieldsIT extends PostgresTestBase {
         String itinerary = createItinerary(owner);
 
         rest.get()
-                .uri("/v1/itineraries/" + itinerary + "/members")
+                .uri("/v1/trips/" + itinerary + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -115,7 +115,7 @@ class RosterProfileFieldsIT extends PostgresTestBase {
         String itinerary = createItinerary(owner);
 
         rest.get()
-                .uri("/v1/itineraries/" + itinerary + "/members")
+                .uri("/v1/trips/" + itinerary + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(verified("stranger@example.com")))
                 .exchange()
                 .expectStatus()
@@ -146,7 +146,7 @@ class RosterProfileFieldsIT extends PostgresTestBase {
     private String invite(String ownerToken, String itineraryId, String email) {
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries/" + itineraryId + "/invitations")
+                        .uri("/v1/trips/" + itineraryId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + email + "\"}")
@@ -171,7 +171,7 @@ class RosterProfileFieldsIT extends PostgresTestBase {
     private String createItinerary(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"title\":\"A trip\",\"destination\":\"Lisbon\"}")

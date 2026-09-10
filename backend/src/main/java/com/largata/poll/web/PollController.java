@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping({"/v1/itineraries/{itineraryId}/polls", "/v1/trips/{itineraryId}/polls"})
+@RequestMapping("/v1/trips/{itineraryId}/polls")
 class PollController {
 
     private final PollService polls;

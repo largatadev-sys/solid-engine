@@ -1,0 +1,32 @@
+package com.largata.postcard.legacy.web;
+
+import com.largata.common.api.Page;
+import com.largata.common.security.CurrentTraveler;
+import com.largata.identity.Traveler;
+import com.largata.postcard.legacy.DiaryService;
+import com.largata.postcard.legacy.DiaryTripResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+
+@RestController
+@RequestMapping("/v1/me/diary")
+class MyDiaryController {
+
+    private final DiaryService diary;
+
+    MyDiaryController(DiaryService diary) {
+        this.diary = diary;
+    }
+
+
+    @GetMapping("/trips")
+    Page<DiaryTripResponse> trips(
+            @CurrentTraveler Traveler traveler,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit) {
+        return diary.myTrips(traveler.id(), cursor, limit);
+    }
+}

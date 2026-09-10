@@ -2,7 +2,7 @@ package com.largata.postcard.adapter;
 
 import com.largata.diary.api.DiaryApi;
 import com.largata.diary.api.DiaryDayView;
-import com.largata.postcard.api.LegacyEntries;
+import com.largata.postcard.legacy.LegacyEntries;
 import com.largata.postcard.entity.Postcard;
 import com.largata.postcard.exception.ActivityAlreadyPostcardedException;
 import com.largata.postcard.exception.PostcardNotFoundException;

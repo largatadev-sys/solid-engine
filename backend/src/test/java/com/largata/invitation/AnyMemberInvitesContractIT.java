@@ -131,7 +131,7 @@ class AnyMemberInvitesContractIT extends PostgresTestBase {
         String victim = rig.joinAsMember(owner, trip, uniqueHandle("victim"));
 
         rest.method(org.springframework.http.HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + trip + "/members/" + rig.travelerIdOf(victim))
+                .uri("/v1/trips/" + trip + "/members/" + rig.travelerIdOf(victim))
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .exchange()
                 .expectStatus()
@@ -150,7 +150,7 @@ class AnyMemberInvitesContractIT extends PostgresTestBase {
         String other = rig.joinAsMember(owner, trip, uniqueHandle("other"));
 
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/ownership-offer")
+                .uri("/v1/trips/" + trip + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"travelerId\":\"" + rig.travelerIdOf(other) + "\"}")
@@ -165,7 +165,7 @@ class AnyMemberInvitesContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec inviteByHandle(String token, String tripId, String handle) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"" + handle + "\"}")
@@ -174,7 +174,7 @@ class AnyMemberInvitesContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec inviteByEmail(String token, String tripId, String email) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations")
+                .uri("/v1/trips/" + tripId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"email\":\"" + email + "\"}")

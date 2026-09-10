@@ -35,7 +35,7 @@ class TripModuleBoundaryTest {
                     "ownership", "validation", "destruction");
 
     private static final DescribedPredicate<JavaClass> THE_LEGACY_EXEMPTION =
-            resideInAPackage("com.largata.itinerary..");
+            resideInAPackage("com.largata.postcard.legacy..");
 
     private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
             resideInAPackage(TRIP + "..").and(not(resideInAnyPackage(FRONT_DOOR)));
@@ -98,12 +98,21 @@ class TripModuleBoundaryTest {
     }
 
     @Test
-    void theLegacyExemptionSelectsTheWholeOldPackageAndDissolvesAtCM5() {
+    void theLegacyExemptionIsTheDiaryAdaptersAloneAndDissolvesWhenTheyGo() {
         assertThat(largata.that(THE_LEGACY_EXEMPTION))
-                .as("the old package's content half reaches into the trip half today and is DELETED"
-                        + " at CM-5 rather than rewritten - an exemption selecting a handful of"
-                        + " classes would mean the predicate had stopped naming what it describes")
-                .hasSizeGreaterThan(30);
+                .as("CM-5 ticket 10 deleted the old god package, so ONE legacy world is left: the"
+                        + " diary adapters ticket 09 moved into postcard.legacy without rewriting"
+                        + " their reach into trip's plan entities. The five old Trip Diary screens"
+                        + " still call those paths; the epic-map line that cuts them over is what"
+                        + " finally deletes the adapters and this exemption together")
+                .hasSizeGreaterThan(5);
+        assertThat(
+                        java.nio.file.Path.of(
+                                "src/main/java/com/largata/itinerary/PublishedItineraryService.java"))
+                .as("the god package the exemption named is gone for good; the module that owns the"
+                        + " Itinerary has since TAKEN that name, so what proves the deletion is the"
+                        + " absence of its classes rather than of the directory")
+                .doesNotExist();
     }
 
     @Test

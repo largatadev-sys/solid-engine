@@ -1,6 +1,5 @@
 package com.largata.trip.api;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -12,13 +11,11 @@ public interface TripApi {
 
     Optional<TripTeaser> teaserOf(UUID tripId);
 
+    java.util.List<TripTeaser> teasersOf(java.util.Collection<UUID> tripIds);
+
     Map<UUID, String> titlesByIds(Collection<UUID> tripIds);
 
     long shareCardVersionOf(UUID tripId);
 
     boolean frozen(UUID tripId);
-
-    void markPublished(UUID tripId, Instant at);
-
-    void markUnpublished(UUID tripId);
 }

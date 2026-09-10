@@ -64,7 +64,7 @@ class JoinLifecycleIT extends PostgresTestBase {
         String stranger = rig.travelerWithHandle(uniqueHandle("stranger"));
 
         rest.get()
-                .uri("/v1/itineraries/" + trip.id + "/join-link")
+                .uri("/v1/trips/" + trip.id + "/join-link")
                 .header(HttpHeaders.AUTHORIZATION, bearer(stranger))
                 .exchange()
                 .expectStatus()
@@ -246,7 +246,7 @@ class JoinLifecycleIT extends PostgresTestBase {
         assertThat(queueSize(trip)).isEqualTo(1);
 
         rest.get()
-                .uri("/v1/itineraries/" + trip.id + "/join-requests")
+                .uri("/v1/trips/" + trip.id + "/join-requests")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .exchange()
                 .expectStatus()
@@ -268,7 +268,7 @@ class JoinLifecycleIT extends PostgresTestBase {
 
         teaserAs(token, asker).jsonPath("$.viewerState").isEqualTo("member");
         rest.get()
-                .uri("/v1/itineraries/" + trip.id)
+                .uri("/v1/trips/" + trip.id)
                 .header(HttpHeaders.AUTHORIZATION, bearer(asker))
                 .exchange()
                 .expectStatus()
@@ -285,7 +285,7 @@ class JoinLifecycleIT extends PostgresTestBase {
         request(token, asker).expectStatus().isOk();
 
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + "/join-requests/" + firstRequestId(trip) + "/approve")
+                .uri("/v1/trips/" + trip.id + "/join-requests/" + firstRequestId(trip) + "/approve")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .exchange()
                 .expectStatus()
@@ -304,7 +304,7 @@ class JoinLifecycleIT extends PostgresTestBase {
         request(token, asker).expectStatus().isOk();
 
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + "/join-requests/" + firstRequestId(trip) + "/decline")
+                .uri("/v1/trips/" + trip.id + "/join-requests/" + firstRequestId(trip) + "/decline")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -412,7 +412,7 @@ class JoinLifecycleIT extends PostgresTestBase {
         String token = tokenOf(trip.owner, trip.id);
         String asker = rig.travelerWithHandle(uniqueHandle("asker"));
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + "/archive")
+                .uri("/v1/trips/" + trip.id + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -451,7 +451,7 @@ class JoinLifecycleIT extends PostgresTestBase {
         climb(trip, "/publish");
 
         rest.get()
-                .uri("/v1/itineraries/" + trip.id + "/join-link")
+                .uri("/v1/trips/" + trip.id + "/join-link")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -513,7 +513,7 @@ class JoinLifecycleIT extends PostgresTestBase {
 
     private void climb(Trip trip, String rung) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + rung)
+                .uri((rung.equals("/publish") ? "/v1/trips/" : "/v1/trips/") + trip.id + rung)
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -522,7 +522,7 @@ class JoinLifecycleIT extends PostgresTestBase {
 
     private byte[] linkBody(String token, String tripId) {
         return rest.get()
-                .uri("/v1/itineraries/" + tripId + "/join-link")
+                .uri("/v1/trips/" + tripId + "/join-link")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -555,14 +555,14 @@ class JoinLifecycleIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec approve(Trip trip, String requestId) {
         return rest.post()
-                .uri("/v1/itineraries/" + trip.id + "/join-requests/" + requestId + "/approve")
+                .uri("/v1/trips/" + trip.id + "/join-requests/" + requestId + "/approve")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange();
     }
 
     private byte[] queueBody(Trip trip) {
         return rest.get()
-                .uri("/v1/itineraries/" + trip.id + "/join-requests")
+                .uri("/v1/trips/" + trip.id + "/join-requests")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -589,7 +589,7 @@ class JoinLifecycleIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec inviteByHandle(String token, String tripId, String handle) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"" + handle + "\"}")

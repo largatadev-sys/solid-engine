@@ -289,7 +289,7 @@ class ProfileDiariesContractIT extends ObjectStoreTestBase {
 
     private void start(String owner, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/start")
+                .uri("/v1/trips/" + trip + "/start")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -299,7 +299,7 @@ class ProfileDiariesContractIT extends ObjectStoreTestBase {
 
     private void complete(String owner, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/complete")
+                .uri("/v1/trips/" + trip + "/complete")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()

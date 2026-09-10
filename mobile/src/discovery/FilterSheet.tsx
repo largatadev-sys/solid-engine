@@ -12,7 +12,6 @@ import { useDiscoveryCount, useSearchSuggestions } from '../query/discoveryQueri
 import { Icon } from '../components/Icon';
 import { colors, spacing } from '../theme';
 import {
-  discoveryColors,
   discoveryMetrics,
   discoveryTypography,
   profileColors,

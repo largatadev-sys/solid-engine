@@ -38,7 +38,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
         depart(ownerToken, trip, travelerIdOf(memberToken)).expectStatus().isNoContent();
 
         rest.get()
-                .uri("/v1/itineraries/" + trip + "/members")
+                .uri("/v1/trips/" + trip + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .exchange()
                 .expectStatus()
@@ -59,7 +59,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
         depart(memberToken, trip, travelerIdOf(memberToken)).expectStatus().isNoContent();
 
         rest.get()
-                .uri("/v1/itineraries/" + trip + "/members")
+                .uri("/v1/trips/" + trip + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .exchange()
                 .expectStatus()
@@ -131,7 +131,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
                 .isEqualTo("OWNER_CANNOT_LEAVE");
 
         rest.get()
-                .uri("/v1/itineraries/" + trip + "/members")
+                .uri("/v1/trips/" + trip + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .exchange()
                 .expectStatus()
@@ -192,7 +192,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
     @Test
     void aVisitorWithNoTokenIsRejectedAtTheSecurityChain() {
         rest.method(HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + UUID.randomUUID() + "/members/" + UUID.randomUUID())
+                .uri("/v1/trips/" + UUID.randomUUID() + "/members/" + UUID.randomUUID())
                 .exchange()
                 .expectStatus()
                 .isUnauthorized();
@@ -206,7 +206,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
         String memberToken = joinAsMember(ownerToken, trip, uniqueEmail());
 
         rest.get()
-                .uri("/v1/itineraries/" + trip)
+                .uri("/v1/trips/" + trip)
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .exchange()
                 .expectStatus()
@@ -215,7 +215,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
         depart(ownerToken, trip, travelerIdOf(memberToken)).expectStatus().isNoContent();
 
         rest.get()
-                .uri("/v1/itineraries/" + trip)
+                .uri("/v1/trips/" + trip)
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .exchange()
                 .expectStatus()
@@ -232,7 +232,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
         depart(ownerToken, trip, travelerIdOf(memberToken)).expectStatus().isNoContent();
 
         rest.method(HttpMethod.PATCH)
-                .uri("/v1/itineraries/" + trip)
+                .uri("/v1/trips/" + trip)
                 .header(HttpHeaders.AUTHORIZATION, bearer(memberToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
@@ -258,13 +258,13 @@ class MemberDepartureContractIT extends PostgresTestBase {
         accept(returnerToken, secondInvitation);
 
         rest.get()
-                .uri("/v1/itineraries/" + trip)
+                .uri("/v1/trips/" + trip)
                 .header(HttpHeaders.AUTHORIZATION, bearer(returnerToken))
                 .exchange()
                 .expectStatus()
                 .isOk();
         rest.get()
-                .uri("/v1/itineraries/" + trip + "/members")
+                .uri("/v1/trips/" + trip + "/members")
                 .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                 .exchange()
                 .expectStatus()
@@ -279,7 +279,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec depart(String callerToken, String tripId, UUID targetTravelerId) {
         return rest.method(HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/members/" + targetTravelerId)
+                .uri("/v1/trips/" + tripId + "/members/" + targetTravelerId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }
@@ -295,7 +295,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
     private String invite(String ownerToken, String tripId, String email) {
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/invitations")
+                        .uri("/v1/trips/" + tripId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + email + "\"}")
@@ -319,7 +319,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
 
     private void acquireLock(String token, String tripId) {
         rest.post()
-                .uri("/v1/itineraries/" + tripId + "/edit-lock")
+                .uri("/v1/trips/" + tripId + "/edit-lock")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
@@ -329,7 +329,7 @@ class MemberDepartureContractIT extends PostgresTestBase {
     private String createTrip(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

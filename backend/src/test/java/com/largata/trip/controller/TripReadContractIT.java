@@ -160,7 +160,7 @@ class TripReadContractIT extends PostgresTestBase {
     }
 
 
-    private static final String[] ROOTS = {"/v1/itineraries/", "/v1/trips/"};
+    private static final String[] ROOTS = {"/v1/trips/", "/v1/trips/"};
 
     private static String handle() {
         return "t" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);

@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
-import { api, profileFor, tokenFor } from '../support/pool';
+import { api, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor } from '../support/identities';
 import { SeedFailure, climbTo, seedTrip, stamp } from '../support/seed';
@@ -40,7 +40,7 @@ test.beforeAll(async () => {
   });
   publishedId = trip.id;
   await climbTo(trip, 'completed');
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {
+  const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', trip.ownerToken, {
     audience: 'public',
   });
   if (published.status !== 200) throw new SeedFailure('publishing the author trip', published.body);
@@ -103,7 +103,7 @@ test('my own byline lands on my own Profile tab, never the public screen', async
     durationDays: 2,
   });
   await climbTo(trip, 'completed');
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {
+  const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', trip.ownerToken, {
     audience: 'public',
   });
   if (published.status !== 200) throw new SeedFailure('publishing my own trip', published.body);

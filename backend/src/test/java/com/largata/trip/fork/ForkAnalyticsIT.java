@@ -7,6 +7,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
+import com.largata.support.TripRig;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -62,7 +63,8 @@ class ForkAnalyticsIT extends PostgresTestBase {
                 .satisfies(
                         line -> {
                             assertThat(line.getMDCPropertyMap())
-                                    .containsEntry("event.sourceItineraryId", sourceId)
+                                    .containsEntry(
+                                            "event.sourceItineraryId", itineraryBehind(sourceId))
                                     .containsKey("event.itineraryId")
                                     .containsKey("event.travelerId");
                             assertThat(line.getMDCPropertyMap().get("event.itineraryId"))
@@ -104,7 +106,7 @@ class ForkAnalyticsIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec fork(String token, String sourceId) {
         return rest.post()
-                .uri("/v1/itineraries/" + sourceId + "/fork")
+                .uri("/v1/itineraries/" + itineraryBehind(sourceId) + "/fork")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
@@ -131,7 +133,7 @@ class ForkAnalyticsIT extends PostgresTestBase {
         return JSON.readTree(
                         new String(
                                 rest.post()
-                                        .uri("/v1/itineraries")
+                                        .uri("/v1/trips")
                                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(
@@ -153,18 +155,38 @@ class ForkAnalyticsIT extends PostgresTestBase {
 
     private final Set<String> travelled = new HashSet<>();
 
-    private void publish(String token, String itineraryId) {
-        if (travelled.add(itineraryId)) {
-            act(token, itineraryId, "start");
-            act(token, itineraryId, "complete");
+    private final java.util.Map<String, String> itineraryOf = new java.util.HashMap<>();
+
+
+    private String itineraryBehind(String tripId) {
+        return itineraryOf.getOrDefault(tripId, tripId);
+    }
+
+
+    private void publish(String token, String tripId) {
+        if (travelled.add(tripId)) {
+            act(token, tripId, "start");
+            act(token, tripId, "complete");
         }
-        act(token, itineraryId, "publish");
+        itineraryOf.put(
+                tripId,
+                TripRig.fieldIn(
+                        rest.post()
+                                .uri("/v1/trips/" + tripId + "/publish")
+                                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                                .exchange()
+                                .expectStatus()
+                                .isOk()
+                                .expectBody()
+                                .returnResult()
+                                .getResponseBodyContent(),
+                        "id"));
     }
 
 
     private void act(String token, String itineraryId, String verb) {
         rest.post()
-                .uri("/v1/itineraries/" + itineraryId + "/" + verb)
+                .uri("/v1/trips/" + itineraryId + "/" + verb)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()

@@ -24,7 +24,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.TestPropertySource;
-import com.largata.trip.trip.exception.IllegalStateTransitionException;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.editing.entity.LeaseSubject;
 import com.largata.trip.editing.exception.EditLockedException;
@@ -55,11 +54,7 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
         return Stream.of(
                 Arguments.of("start", (LifecycleAct) TripService::start, 0),
                 Arguments.of("complete", (LifecycleAct) TripService::complete, 1),
-                Arguments.of("reopen", (LifecycleAct) TripService::reopen, 1),
-                Arguments.of(
-                        "publish",
-                        (LifecycleAct) (service, owner) -> service.publish(owner),
-                        2));
+                Arguments.of("reopen", (LifecycleAct) TripService::reopen, 1));
     }
 
 
@@ -110,14 +105,6 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
     }
 
 
-    @Test
-    void theSessionGuardDoesNotSwallowThePublishedRefusal() {
-        Membership owner = ownerAtRung(2);
-        itineraries.publish(owner);
-
-        assertThatExceptionOfType(IllegalStateTransitionException.class)
-                .isThrownBy(() -> itineraries.reopen(owner));
-    }
 
 
     private Membership ownerAtRung(int rungs) {

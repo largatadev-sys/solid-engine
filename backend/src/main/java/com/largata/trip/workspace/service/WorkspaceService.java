@@ -123,6 +123,7 @@ public class WorkspaceService implements MembershipApi {
 
 
     @Transactional(readOnly = true)
+    @Override
     public Set<UUID> archivedAmong(Collection<UUID> itineraryIds) {
         if (itineraryIds.isEmpty()) {
             return Set.of();
@@ -132,6 +133,12 @@ public class WorkspaceService implements MembershipApi {
 
 
     @Transactional(readOnly = true)
+    @Override
+    public Set<UUID> allArchivedTripIds() {
+        return allArchivedItineraryIds();
+    }
+
+
     public Set<UUID> allArchivedItineraryIds() {
         return Set.copyOf(workspaces.allArchivedItineraryIds());
     }

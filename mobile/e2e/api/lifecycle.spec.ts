@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures';
-import { api, address, tokenFor, profileFor } from '../support/pool';
+import { api, tokenFor, profileFor } from '../support/pool';
 import { requireStack } from '../support/gate';
 import { ownerTagFor, IDENTITY_MAP } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
@@ -64,13 +64,6 @@ test('a non-member is masked with 404, never 403', async () => {
   });
   const masked = await api(`/v1/trips/${theirs.body.id}/start`, 'POST', owner);
   expect(masked.status).toBe(404);
-});
-
-test('finish-planning stays mapped and refuses forever — the dormant endpoint, ADR-008 waiver #3', async () => {
-  const retired = await api(`/v1/itineraries/${trip.id}/finish-planning`, 'POST', owner);
-  expect(retired.status).toBe(409);
-  expect(retired.body?.code).toBe('ILLEGAL_STATE_TRANSITION');
-  expect(await stateOf(owner, trip.id)).toBe('upcoming');
 });
 
 test('the owner starts the trip, and the response carries the whole resource', async () => {

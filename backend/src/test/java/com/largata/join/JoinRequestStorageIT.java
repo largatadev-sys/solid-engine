@@ -86,7 +86,7 @@ class JoinRequestStorageIT extends PostgresTestBase {
         String requestId =
                 fieldIn(
                         rest.get()
-                                .uri("/v1/itineraries/" + trip + "/join-requests")
+                                .uri("/v1/trips/" + trip + "/join-requests")
                                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                                 .exchange()
                                 .expectStatus()
@@ -97,7 +97,7 @@ class JoinRequestStorageIT extends PostgresTestBase {
                         "id");
 
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/join-requests/" + requestId + "/approve")
+                .uri("/v1/trips/" + trip + "/join-requests/" + requestId + "/approve")
                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -188,7 +188,7 @@ class JoinRequestStorageIT extends PostgresTestBase {
         String token =
                 fieldIn(
                         rest.get()
-                                .uri("/v1/itineraries/" + trip + "/join-link")
+                                .uri("/v1/trips/" + trip + "/join-link")
                                 .header(HttpHeaders.AUTHORIZATION, bearer(owner))
                                 .exchange()
                                 .expectStatus()
@@ -211,7 +211,7 @@ class JoinRequestStorageIT extends PostgresTestBase {
     private String joinTokenOf(String ownerToken, String tripId) {
         return fieldIn(
                 rest.get()
-                        .uri("/v1/itineraries/" + tripId + "/join-link")
+                        .uri("/v1/trips/" + tripId + "/join-link")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .exchange()
                         .expectStatus()

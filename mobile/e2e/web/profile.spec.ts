@@ -39,6 +39,7 @@ let showcaseTitle: string;
 let draftTitle: string;
 let hostedTitle: string;
 let showcasedId: string;
+let showcasedItineraryId: string;
 let draftId: string;
 let hostedId: string;
 
@@ -62,9 +63,9 @@ async function everyItem(readToken: string, path: string): Promise<any[]> {
 async function publishedTrip(ownerTag: typeof TRAVELER, title: string, destination: string, days: number) {
   const trip = await seedTrip({ ownerTag, title, destination, durationDays: days });
   await climbTo(trip, 'completed');
-  const published = await api(`/v1/itineraries/${trip.id}/publish`, 'POST', trip.ownerToken, {  });
+  const published = await api(`/v1/trips/${trip.id}/publish`, 'POST', trip.ownerToken, {  });
   if (published.status !== 200) throw new SeedFailure(`publishing "${title}"`, published.body);
-  return trip;
+  return { ...trip, itineraryId: published.body.id as string };
 }
 
 test.beforeAll(async () => {
@@ -79,6 +80,7 @@ test.beforeAll(async () => {
 
   const showcased = await publishedTrip(TRAVELER, showcaseTitle, 'El Nido, Palawan', 5);
   showcasedId = showcased.id;
+  showcasedItineraryId = showcased.itineraryId;
 
   const draft = await seedTrip({
     ownerTag: TRAVELER,
@@ -96,7 +98,7 @@ test.beforeAll(async () => {
   });
   await joinTrip(hosted, TRAVELER);
   await climbTo(hosted, 'completed');
-  const hostedPublished = await api(`/v1/itineraries/${hosted.id}/publish`, 'POST', hostToken, {  });
+  const hostedPublished = await api(`/v1/trips/${hosted.id}/publish`, 'POST', hostToken, {  });
   if (hostedPublished.status !== 200) {
     throw new SeedFailure('publishing the hosted trip', hostedPublished.body);
   }
@@ -137,7 +139,7 @@ test.describe('the header the profile tab lands on', () => {
 
   test('Published counts the showcase it sits above — it cannot contradict the list', async () => {
     const showcase = await everyItem(token, '/v1/me/profile/published');
-    expect(showcase.some((card) => card.id === showcasedId)).toBe(true);
+    expect(showcase.some((card) => card.id === showcasedItineraryId)).toBe(true);
 
     const stats = (await api('/v1/me/profile/stats', 'GET', token)).body;
     expect(stats.publishedCount).toBeGreaterThanOrEqual(showcase.length);
@@ -171,7 +173,7 @@ test.describe('the header the profile tab lands on', () => {
 
   test('the counts move with the fixture this spec planted', async () => {
     const showcase = await everyItem(token, '/v1/me/profile/published');
-    expect(showcase.some((card) => card.id === showcasedId)).toBe(true);
+    expect(showcase.some((card) => card.id === showcasedItineraryId)).toBe(true);
     expect(showcase.some((card) => card.id === draftId)).toBe(false);
     expect(showcase.some((card) => card.id === hostedId)).toBe(false);
   });
@@ -241,7 +243,7 @@ test.describe('the Itineraries tab — the showcase, and only the showcase', () 
 
     await labelled(page, `Open the published view of ${showcaseTitle}`).click();
 
-    await expect(page).toHaveURL(new RegExp(`/showcase/${showcasedId}`));
+    await expect(page).toHaveURL(new RegExp(`/showcase/${showcasedItineraryId}`));
   });
 
   test('back returns to the profile with Itineraries still selected', async ({ page }) => {
@@ -297,7 +299,7 @@ test.describe('the cogwheel and the account page behind it', () => {
 
 test('the surface is own-view only — the host reads their own showcase, never this traveler one', async () => {
   const hostShowcase = (await api('/v1/me/profile/published?limit=100', 'GET', hostToken)).body;
-  expect((hostShowcase.items ?? []).every((card: { id: string }) => card.id !== showcasedId)).toBe(
+  expect((hostShowcase.items ?? []).every((card: { id: string }) => card.id !== showcasedItineraryId)).toBe(
     true,
   );
 });

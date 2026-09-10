@@ -72,7 +72,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
         act(owner, trip, "complete");
         String objectId = publish(owner, trip);
         String forker = rig.travelerWithHandle(handle());
-        String forkedTrip = fork(forker, trip);
+        String forkedTrip = fork(forker, objectId);
         UUID workspaceId =
                 jdbc.queryForObject(
                         "SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, tripId);
@@ -130,7 +130,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
                                 .isEmpty());
 
         rest.get()
-                .uri("/v1/publications/" + objectId)
+                .uri("/v1/itineraries/" + objectId)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(member))
                 .exchange()
                 .expectStatus()
@@ -194,7 +194,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 1);
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/archive")
+                .uri("/v1/trips/" + trip + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                 .exchange()
                 .expectStatus()
@@ -251,7 +251,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
 
     private void act(String token, String trip, String act) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/" + act)
+                .uri("/v1/trips/" + trip + "/" + act)
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .exchange()
                 .expectStatus()
@@ -261,7 +261,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
 
     private void chat(String token, String trip, String body) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/chat/messages")
+                .uri("/v1/trips/" + trip + "/chat/messages")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"body\":\"" + body + "\"}")
@@ -273,7 +273,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
 
     private void poll(String token, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/polls")
+                .uri("/v1/trips/" + trip + "/polls")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(
@@ -289,7 +289,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
 
     private void pendingInvitation(String token, String trip) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/invitations")
+                .uri("/v1/trips/" + trip + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"email\":\"never-answers-" + UUID.randomUUID() + "@example.com\"}")
@@ -301,7 +301,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
 
     private void joinLink(String token, String trip) {
         rest.get()
-                .uri("/v1/itineraries/" + trip + "/join-link")
+                .uri("/v1/trips/" + trip + "/join-link")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .exchange()
                 .expectStatus()
@@ -311,7 +311,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
 
     private void offerOwnership(String token, String trip, UUID travelerId) {
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/ownership-offer")
+                .uri("/v1/trips/" + trip + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"travelerId\":\"" + travelerId + "\"}")
@@ -331,7 +331,7 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
                 })
                 .contentType(MediaType.IMAGE_JPEG);
         rest.post()
-                .uri("/v1/itineraries/" + trip + "/photo-dump")
+                .uri("/v1/trips/" + trip + "/photo-dump")
                 .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(parts.build())
@@ -403,10 +403,10 @@ class TripDestructionContractIT extends ObjectStoreTestBase {
     }
 
 
-    private String fork(String token, String trip) {
+    private String fork(String token, String itineraryId) {
         return TripRig.fieldIn(
                 rest.post()
-                        .uri("/v1/itineraries/" + trip + "/fork")
+                        .uri("/v1/itineraries/" + itineraryId + "/fork")
                         .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
                         .exchange()
                         .expectStatus()

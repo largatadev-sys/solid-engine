@@ -212,7 +212,7 @@ async function main() {
     }
 
     if (spec.publish !== null) {
-      must(await api(`/v1/itineraries/${created.id}/publish`, 'POST', owner), 'publish');
+      must(await api(`/v1/trips/${created.id}/publish`, 'POST', owner), 'publish');
     }
 
     console.log(

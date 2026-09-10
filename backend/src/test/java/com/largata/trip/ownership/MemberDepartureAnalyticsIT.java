@@ -134,7 +134,7 @@ class MemberDepartureAnalyticsIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec depart(String callerToken, String tripId, UUID targetId) {
         return rest.method(HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/members/" + targetId)
+                .uri("/v1/trips/" + tripId + "/members/" + targetId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(callerToken))
                 .exchange();
     }
@@ -146,7 +146,7 @@ class MemberDepartureAnalyticsIT extends PostgresTestBase {
     private String joinAsMemberWithEmail(String ownerToken, String tripId, String email) {
         byte[] body =
                 rest.post()
-                        .uri("/v1/itineraries/" + tripId + "/invitations")
+                        .uri("/v1/trips/" + tripId + "/invitations")
                         .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"email\":\"" + email + "\"}")
@@ -169,7 +169,7 @@ class MemberDepartureAnalyticsIT extends PostgresTestBase {
     private String createTrip(String token) {
         byte[] created =
                 rest.post()
-                        .uri("/v1/itineraries")
+                        .uri("/v1/trips")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("""

@@ -144,7 +144,7 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
         publish(trip);
 
         rest.method(HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + trip.id + "/ownership-offer")
+                .uri("/v1/trips/" + trip.id + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -163,7 +163,7 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
         publish(trip);
 
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + "/ownership-offer/accept")
+                .uri("/v1/trips/" + trip.id + "/ownership-offer/accept")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .exchange()
                 .expectStatus()
@@ -182,7 +182,7 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
         publish(trip);
 
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + "/ownership-offer/decline")
+                .uri("/v1/trips/" + trip.id + "/ownership-offer/decline")
                 .header(HttpHeaders.AUTHORIZATION, bearer(member))
                 .exchange()
                 .expectStatus()
@@ -208,7 +208,7 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
         Trip trip = active();
         String member = rig.joinAsMember(trip.owner, trip.id, uniqueHandle("member"));
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + "/archive")
+                .uri("/v1/trips/" + trip.id + "/archive")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -291,7 +291,7 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
 
     private void climb(Trip trip, String rung) {
         rest.post()
-                .uri("/v1/itineraries/" + trip.id + rung)
+                .uri("/v1/trips/" + trip.id + rung)
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -299,16 +299,26 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
     }
 
     private void publish(Trip trip) {
-        climb(trip, "/publish");
+        rest.post()
+                .uri("/v1/trips/" + trip.id + "/publish")
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 
     private void unpublish(Trip trip) {
-        climb(trip, "/unpublish");
+        rest.post()
+                .uri("/v1/trips/" + trip.id + "/unpublish")
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
     }
 
     private RestTestClient.BodyContentSpec pendingCount(Trip trip) {
         return rest.get()
-                .uri("/v1/itineraries/" + trip.id + "/invitations")
+                .uri("/v1/trips/" + trip.id + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner))
                 .exchange()
                 .expectStatus()
@@ -328,14 +338,14 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec depart(String token, String tripId, UUID targetTravelerId) {
         return rest.method(HttpMethod.DELETE)
-                .uri("/v1/itineraries/" + tripId + "/members/" + targetTravelerId)
+                .uri("/v1/trips/" + tripId + "/members/" + targetTravelerId)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange();
     }
 
     private RestTestClient.ResponseSpec offerOwnership(String token, String tripId, UUID targetTravelerId) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/ownership-offer")
+                .uri("/v1/trips/" + tripId + "/ownership-offer")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"travelerId\":\"" + targetTravelerId + "\"}")
@@ -344,7 +354,7 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec inviteByHandle(String token, String tripId, String handle) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations/by-handle")
+                .uri("/v1/trips/" + tripId + "/invitations/by-handle")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"handle\":\"" + handle + "\"}")
@@ -353,7 +363,7 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec inviteByEmail(String token, String tripId, String email) {
         return rest.post()
-                .uri("/v1/itineraries/" + tripId + "/invitations")
+                .uri("/v1/trips/" + tripId + "/invitations")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"email\":\"" + email + "\"}")
