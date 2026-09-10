@@ -1,4 +1,4 @@
-package com.largata.profile.web;
+package com.largata.profile.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
