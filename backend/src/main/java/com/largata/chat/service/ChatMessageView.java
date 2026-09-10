@@ -1,4 +1,4 @@
-package com.largata.chat;
+package com.largata.chat.service;
 
 import com.largata.identity.TravelerSummary;
 import java.time.Instant;

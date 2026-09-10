@@ -1,5 +1,9 @@
-package com.largata.chat;
+package com.largata.chat.service;
 
+import com.largata.chat.adapter.ChatTopic;
+import com.largata.chat.entity.ChatMessage;
+import com.largata.chat.exception.ChatExceptions;
+import com.largata.chat.repository.ChatMessageRepository;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.common.api.Cursor;
@@ -21,7 +25,6 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 @Service
 public class ChatService {

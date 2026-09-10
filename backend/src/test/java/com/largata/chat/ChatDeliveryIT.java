@@ -2,6 +2,7 @@ package com.largata.chat;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.largata.chat.adapter.ChatTopic;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
