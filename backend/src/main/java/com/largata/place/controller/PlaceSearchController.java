@@ -1,15 +1,16 @@
-package com.largata.place.web;
+package com.largata.place.controller;
 
-import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
-import com.largata.place.PlaceSearchService;
+import com.largata.identity.Traveler;
+import com.largata.place.dto.PlaceCandidateResponse;
+import com.largata.place.dto.PlaceSearchResponse;
+import com.largata.place.service.PlaceSearchService;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 
 @RestController
 @RequestMapping("/v1/places")

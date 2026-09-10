@@ -1,12 +1,12 @@
-package com.largata.place.web;
+package com.largata.place.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.largata.place.api.PlaceCandidate;
-import com.largata.place.api.ResolvedPlace;
+import com.largata.place.service.PlaceCandidate;
+import com.largata.place.service.ResolvedPlace;
 import java.math.BigDecimal;
 
 
-record PlaceCandidateResponse(
+public record PlaceCandidateResponse(
         String name,
         String context,
         @JsonFormat(shape = JsonFormat.Shape.NUMBER) BigDecimal lat,
@@ -15,14 +15,14 @@ record PlaceCandidateResponse(
         boolean nearby) {
 
 
-    static PlaceCandidateResponse of(ResolvedPlace resolved) {
+    public static PlaceCandidateResponse of(ResolvedPlace resolved) {
         PlaceCandidateResponse found = of(resolved.place());
         return found == null ? null : new PlaceCandidateResponse(
                 found.name(), found.context(), found.lat(), found.lng(), found.kind(), resolved.nearby());
     }
 
 
-    static PlaceCandidateResponse of(PlaceCandidate candidate) {
+    public static PlaceCandidateResponse of(PlaceCandidate candidate) {
         if (candidate == null) {
             return null;
         }

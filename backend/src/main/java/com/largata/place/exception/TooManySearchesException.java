@@ -1,4 +1,4 @@
-package com.largata.place.api;
+package com.largata.place.exception;
 
 import com.largata.common.error.RateLimitedException;
 

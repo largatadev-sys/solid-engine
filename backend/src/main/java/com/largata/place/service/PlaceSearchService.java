@@ -1,8 +1,5 @@
-package com.largata.place;
+package com.largata.place.service;
 
-import com.largata.place.api.PlaceCandidate;
-import com.largata.place.api.PlaceSuggester;
-import com.largata.place.api.ResolvedPlace;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;

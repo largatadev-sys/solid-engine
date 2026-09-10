@@ -1,8 +1,8 @@
-package com.largata.place;
+package com.largata.place.adapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.place.api.PlaceSuggester;
+import com.largata.place.service.PlaceSuggester;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
