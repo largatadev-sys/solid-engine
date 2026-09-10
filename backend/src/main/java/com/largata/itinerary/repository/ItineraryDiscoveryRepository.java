@@ -13,7 +13,6 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
     String DISCOVERABLE = """
             o.retired = false
               AND o.trip_id <> ALL (CAST(:excludedTripIds AS uuid[]))
-              AND o.owner_id <> ALL (CAST(:excludedOwnerIds AS uuid[]))
               AND EXISTS (SELECT 1 FROM traveler t WHERE t.id = o.owner_id)
               AND (CAST(:text AS text) IS NULL
                    OR o.title ILIKE '%' || CAST(:text AS text) || '%'
@@ -37,7 +36,6 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
             """, nativeQuery = true)
     List<ItineraryObject> findDiscoveryPage(
             @Param("excludedTripIds") String excludedTripIds,
-            @Param("excludedOwnerIds") String excludedOwnerIds,
             @Param("text") String text,
             @Param("destination") String destination,
             @Param("minDays") Integer minDays,
@@ -53,7 +51,6 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
             """ + DISCOVERABLE, nativeQuery = true)
     long countDiscoverable(
             @Param("excludedTripIds") String excludedTripIds,
-            @Param("excludedOwnerIds") String excludedOwnerIds,
             @Param("text") String text,
             @Param("destination") String destination,
             @Param("minDays") Integer minDays,
@@ -74,7 +71,6 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
             """, nativeQuery = true)
     List<String> findTrendingDestinations(
             @Param("excludedTripIds") String excludedTripIds,
-            @Param("excludedOwnerIds") String excludedOwnerIds,
             @Param("text") String text,
             @Param("destination") String destination,
             @Param("minDays") Integer minDays,
@@ -95,7 +91,6 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
             """, nativeQuery = true)
     List<String> findMatchingTitles(
             @Param("excludedTripIds") String excludedTripIds,
-            @Param("excludedOwnerIds") String excludedOwnerIds,
             @Param("text") String text,
             @Param("destination") String destination,
             @Param("minDays") Integer minDays,
@@ -108,16 +103,6 @@ public interface ItineraryDiscoveryRepository extends JpaRepository<ItineraryObj
               AND o.owner_id = CAST(:ownerId AS uuid)
               AND o.trip_id <> ALL (CAST(:excludedTripIds AS uuid[]))
             """;
-
-
-    @Query(value = """
-            SELECT o.* FROM itinerary_object o
-            WHERE
-            """ + OWNED_AND_LIVE + """
-            ORDER BY o.published_at DESC, o.id DESC
-            """, nativeQuery = true)
-    List<ItineraryObject> findOwnedBy(
-            @Param("ownerId") UUID ownerId, @Param("excludedTripIds") String excludedTripIds);
 
 
     @Query(value = """

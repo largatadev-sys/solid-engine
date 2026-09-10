@@ -4,7 +4,6 @@ import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripFacts;
 import com.largata.trip.api.TripTeaser;
 import com.largata.trip.exception.TripNotFoundException;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;

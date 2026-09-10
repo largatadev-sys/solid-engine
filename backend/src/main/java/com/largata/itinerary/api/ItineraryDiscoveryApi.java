@@ -17,8 +17,6 @@ public interface ItineraryDiscoveryApi {
 
     List<String> titlesMatching(DiscoveryQuery query, int limit);
 
-    List<DiscoverableItinerary> ownedBy(UUID ownerId, Collection<UUID> excludedTripIds);
-
     long countOwnedBy(UUID ownerId, Collection<UUID> excludedTripIds);
 
     long countDestinationsOwnedBy(UUID ownerId, Collection<UUID> excludedTripIds);
@@ -32,8 +30,7 @@ public interface ItineraryDiscoveryApi {
             String destination,
             Integer minDays,
             Integer maxDays,
-            Collection<UUID> excludedTripIds,
-            Collection<UUID> excludedOwnerIds) {}
+            Collection<UUID> excludedTripIds) {}
 
 
     record DiscoverableItinerary(

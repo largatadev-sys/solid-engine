@@ -166,8 +166,7 @@ public class DiscoveryService {
                 filters.destination(),
                 filters.minDays(),
                 filters.maxDays(),
-                workspaces.allArchivedTripIds(),
-                Set.of());
+                workspaces.allArchivedTripIds());
     }
 
 
@@ -177,8 +176,7 @@ public class DiscoveryService {
                 destination,
                 query.minDays(),
                 query.maxDays(),
-                query.excludedTripIds(),
-                query.excludedOwnerIds());
+                query.excludedTripIds());
     }
 
 

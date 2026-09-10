@@ -1,7 +1,6 @@
 package com.largata.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.largata.LargataApplication;
 import java.util.List;

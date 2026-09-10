@@ -29,7 +29,6 @@ class ItineraryDiscoveryService implements ItineraryDiscoveryApi {
         return itineraries
                 .findDiscoveryPage(
                         arrayOf(query.excludedTripIds()),
-                        arrayOf(query.excludedOwnerIds()),
                         query.text(),
                         query.destination(),
                         query.minDays(),
@@ -48,7 +47,6 @@ class ItineraryDiscoveryService implements ItineraryDiscoveryApi {
     public long count(DiscoveryQuery query) {
         return itineraries.countDiscoverable(
                 arrayOf(query.excludedTripIds()),
-                arrayOf(query.excludedOwnerIds()),
                 query.text(),
                 query.destination(),
                 query.minDays(),
@@ -68,7 +66,6 @@ class ItineraryDiscoveryService implements ItineraryDiscoveryApi {
     public List<String> destinationsPublishedSince(DiscoveryQuery query, Instant since, int limit) {
         return itineraries.findTrendingDestinations(
                 arrayOf(query.excludedTripIds()),
-                arrayOf(query.excludedOwnerIds()),
                 query.text(),
                 query.destination(),
                 query.minDays(),
@@ -83,21 +80,11 @@ class ItineraryDiscoveryService implements ItineraryDiscoveryApi {
     public List<String> titlesMatching(DiscoveryQuery query, int limit) {
         return itineraries.findMatchingTitles(
                 arrayOf(query.excludedTripIds()),
-                arrayOf(query.excludedOwnerIds()),
                 query.text(),
                 query.destination(),
                 query.minDays(),
                 query.maxDays(),
                 limit);
-    }
-
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<DiscoverableItinerary> ownedBy(UUID ownerId, Collection<UUID> excludedTripIds) {
-        return itineraries.findOwnedBy(ownerId, arrayOf(excludedTripIds)).stream()
-                .map(ItineraryDiscoveryService::viewOf)
-                .toList();
     }
 
 
