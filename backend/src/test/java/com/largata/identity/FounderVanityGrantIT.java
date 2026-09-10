@@ -147,7 +147,7 @@ class FounderVanityGrantIT {
 
     private static String grantSql() {
         try (var in =
-                FounderVanityGrantIT.class.getResourceAsStream("/db/migration/V31__founder_vanity_zero.sql")) {
+                FounderVanityGrantIT.class.getResourceAsStream("/db/migration/identity/V31__founder_vanity_zero.sql")) {
             return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         } catch (java.io.IOException e) {
             throw new IllegalStateException("V31 must be readable from the classpath", e);
