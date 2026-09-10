@@ -1,12 +1,12 @@
-package com.largata.chat;
+package com.largata.chat.adapter;
 
-import com.largata.chat.api.ChatMessageResponse;
+import com.largata.chat.dto.ChatMessageResponse;
+import com.largata.chat.service.ChatMessageView;
 import com.largata.common.tx.AfterCommit;
 import com.largata.ws.EventFanout;
 import com.largata.ws.Topic;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
-
 
 @Component
 public class ChatTopic {
@@ -22,7 +22,7 @@ public class ChatTopic {
     }
 
 
-    void broadcastAppended(UUID itineraryId, ChatMessageView message) {
+    public void broadcastAppended(UUID itineraryId, ChatMessageView message) {
         ChatMessageResponse payload = ChatMessageResponse.of(message);
         AfterCommit.run(
                 () -> fanout.broadcast(Topic.ofItinerary(itineraryId, CHANNEL), EVENT_TYPE, payload));

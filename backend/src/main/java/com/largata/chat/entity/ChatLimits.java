@@ -1,4 +1,4 @@
-package com.largata.chat.api;
+package com.largata.chat.entity;
 
 
 public final class ChatLimits {
