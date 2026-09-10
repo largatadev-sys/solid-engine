@@ -1,6 +1,6 @@
-package com.largata.poll.web;
+package com.largata.poll.dto;
 
-import com.largata.poll.PollOptionView;
+import com.largata.poll.service.PollOptionView;
 import java.util.List;
 import java.util.UUID;
 

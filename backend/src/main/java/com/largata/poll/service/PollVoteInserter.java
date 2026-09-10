@@ -1,14 +1,15 @@
-package com.largata.poll;
+package com.largata.poll.service;
 
+import com.largata.poll.entity.PollVote;
+import com.largata.poll.repository.PollVoteRepository;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-
 @Component
-class PollVoteInserter {
+public class PollVoteInserter {
 
     private final PollVoteRepository votes;
 

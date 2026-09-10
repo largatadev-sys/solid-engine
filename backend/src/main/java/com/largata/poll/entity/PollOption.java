@@ -1,6 +1,7 @@
-package com.largata.poll;
+package com.largata.poll.entity;
 
 import com.largata.common.id.UuidV7;
+import com.largata.poll.exception.PollExceptions;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,10 +11,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.UUID;
 
-
 @Entity
 @Table(name = "poll_option")
-class PollOption {
+public class PollOption {
 
     static final int MAX_LABEL_LENGTH = 80;
 
@@ -54,7 +54,7 @@ class PollOption {
     }
 
 
-    UUID id() {
+    public UUID id() {
         return id;
     }
 
@@ -62,7 +62,7 @@ class PollOption {
         return ordinal;
     }
 
-    String label() {
+    public String label() {
         return label;
     }
 }

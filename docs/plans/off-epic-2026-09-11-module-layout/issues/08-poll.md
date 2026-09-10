@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** claimed
+**Status:** resolved
 
 - [ ] Every main-tree class of the module sits in a target folder and the module root holds none
 - [ ] `PollVoteInserter` keeps its own bean and its `REQUIRES_NEW` — the insert-on-conflict recovery depends on it being a separate bean, and a move must not fold it into the service

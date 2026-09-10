@@ -1,4 +1,4 @@
-package com.largata.poll;
+package com.largata.poll.exception;
 
 import com.largata.common.error.ConflictException;
 import com.largata.common.error.ForbiddenException;
@@ -6,76 +6,76 @@ import com.largata.common.error.NotFoundException;
 import com.largata.common.error.ValidationException;
 
 
-final class PollExceptions {
+public final class PollExceptions {
 
     private PollExceptions() {}
 
 
-    static final class PollNotFoundException extends NotFoundException {
-        PollNotFoundException() {
+    public static final class PollNotFoundException extends NotFoundException {
+        public PollNotFoundException() {
             super("POLL_NOT_FOUND", "That poll could not be found.");
         }
     }
 
 
-    static final class PollOptionNotFoundException extends NotFoundException {
-        PollOptionNotFoundException() {
+    public static final class PollOptionNotFoundException extends NotFoundException {
+        public PollOptionNotFoundException() {
             super("POLL_OPTION_NOT_FOUND", "That option is not on this poll.");
         }
     }
 
 
-    static final class PollClosedException extends ConflictException {
-        PollClosedException() {
+    public static final class PollClosedException extends ConflictException {
+        public PollClosedException() {
             super("POLL_CLOSED", "This poll has closed. Votes can no longer be changed.");
         }
     }
 
 
-    static final class NotThePollsAuthorException extends ForbiddenException {
-        NotThePollsAuthorException() {
+    public static final class NotThePollsAuthorException extends ForbiddenException {
+        public NotThePollsAuthorException() {
             super("NOT_PERMITTED", "Only the traveler who started this poll, or the trip owner, can do that.");
         }
     }
 
 
-    static final class QuestionMissingException extends ValidationException {
-        QuestionMissingException() {
+    public static final class QuestionMissingException extends ValidationException {
+        public QuestionMissingException() {
             super("POLL_QUESTION_MISSING", "A poll needs a question.");
         }
     }
 
 
-    static final class QuestionTooLongException extends ValidationException {
-        QuestionTooLongException(int limit) {
+    public static final class QuestionTooLongException extends ValidationException {
+        public QuestionTooLongException(int limit) {
             super("POLL_QUESTION_TOO_LONG", "A poll question is at most " + limit + " characters.");
         }
     }
 
 
-    static final class OptionTooLongException extends ValidationException {
-        OptionTooLongException(int limit) {
+    public static final class OptionTooLongException extends ValidationException {
+        public OptionTooLongException(int limit) {
             super("POLL_OPTION_TOO_LONG", "A poll option is at most " + limit + " characters.");
         }
     }
 
 
-    static final class OptionCountOutOfRangeException extends ValidationException {
-        OptionCountOutOfRangeException(int min, int max) {
+    public static final class OptionCountOutOfRangeException extends ValidationException {
+        public OptionCountOutOfRangeException(int min, int max) {
             super("POLL_OPTION_COUNT", "A poll needs between " + min + " and " + max + " options.");
         }
     }
 
 
-    static final class DeadlineNotInFutureException extends ValidationException {
-        DeadlineNotInFutureException() {
+    public static final class DeadlineNotInFutureException extends ValidationException {
+        public DeadlineNotInFutureException() {
             super("POLL_DEADLINE_NOT_FUTURE", "A poll has to close at some point in the future.");
         }
     }
 
 
-    static final class TooManyOpenPollsException extends ValidationException {
-        TooManyOpenPollsException(int limit) {
+    public static final class TooManyOpenPollsException extends ValidationException {
+        public TooManyOpenPollsException(int limit) {
             super(
                     "TOO_MANY_OPEN_POLLS",
                     "This trip already has " + limit + " open polls. Close one before starting another.");

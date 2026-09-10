@@ -1,16 +1,16 @@
-package com.largata.poll;
+package com.largata.poll.repository;
 
+import com.largata.poll.entity.Poll;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-
-interface PollRepository extends JpaRepository<Poll, UUID> {
+public interface PollRepository extends JpaRepository<Poll, UUID> {
 
     @EntityGraph(attributePaths = "options")
     @Query("SELECT p FROM Poll p WHERE p.workspaceId = :workspaceId ORDER BY p.id DESC")
