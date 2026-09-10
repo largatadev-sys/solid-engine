@@ -35,6 +35,26 @@ Sign in with **email + password**. Google's button will not render on this rung 
 
 The pool has no display names on purpose, so every screen shows `largata.dev+t1` and you never have to hold a mapping in your head.
 
+## The mechanical half is automated — run it first
+
+```bash
+cd mobile && set -a && . ./.env && set +a && node scripts/walk-cm5.js
+```
+
+Eleven checks over the steps below whose answer is a status code, an id or a
+substring rather than a judgement: the identity publishing mints, the page read
+by that id, the absence of the trip's dates, a stranger reading a private
+author, the courtesy link, the fork's provenance and datelessness, unpublish
+taking effect on the SERVER, republish keeping the address, archive masking the
+page and fencing both acts, and reopen refused on a published trip.
+
+**Run it against a backend built from this branch.** Its first run here reported
+two failures that were not real: the stack had come up twelve minutes before the
+archive-fence commit, so the container held the previous jar. `docker compose up
+-d --build backend` and re-run before believing any red — a stale container
+reports a fixed regression as a live one, and the two are indistinguishable in
+the output.
+
 ## The walk
 
 Ten steps. Each names **what to look at**, because most of these fail by looking plausible.

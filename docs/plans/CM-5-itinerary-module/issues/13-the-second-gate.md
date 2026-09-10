@@ -8,7 +8,7 @@
 
 - [x] The assertion-line diff over every moved test is run and its output recorded here; any difference is explained
 - [x] Backend unit and integration suites, mobile typecheck and Jest, and Playwright on both lanes are green with their counts read from the logs and recorded here
-- [ ] The `dev` walk from ticket 08 is repeated and recorded with tags
+- [~] The `dev` walk from ticket 08 is repeated and recorded with tags — the mechanical half is run and green (11/11, `scripts/walk-cm5.js`, t1 author / t3 stranger, local stack); the founder's eyes on the rendered screens is the residue
 - [ ] BUILD_STATUS's CM-5 row reads built with the spec link only; the epic map's CM-5 line is annotated built with the counts; the legacy-link courtesy line's trigger date is written
 - [ ] The PR carries the story's measured counts and is squash-merged on the founder's word
 
@@ -52,3 +52,12 @@ The 15 quarantined ITs and the 1 skipped Playwright test predate this story and 
 **Playwright's arc through this story is the record worth keeping: 12 failed → 5 → 2 → 1 → 1 → 0.** Every one of those was a real finding rather than a fixture to nudge — two defects a traveler would have met (publish 404'ing on every publish; the trip's dates on the public page), three regressions where an act moved modules and the guard around it stayed behind (`reopen`, then publish and unpublish losing the archive fence), one race in a spec that shared a follow edge across eleven parallel tests, and the rest cutover debt in assertions still naming the old world.
 
 **The green did not come free of a workflow fix, and that is worth recording.** Two runs reported failure having executed zero tests: `playwright install --with-deps` runs `apt-get update` across every repo the runner image ships, including Google's Chrome repo, which was serving a mismatched index. Playwright's chromium comes from its own CDN and that repo is nothing to us, so the source is now dropped before the install. An outage in a dependency this project never had was presenting as a red build on an innocent branch.
+
+
+## The walk — what is closed and what is not
+
+`node mobile/scripts/walk-cm5.js` against a local stack built from this branch: **11 of 11**, t1 as author and t3 as stranger. It closes every step of `walk.md` whose answer is a status code, an id or a substring — including the three findings this story is most likely to regress on: archive fencing publish and unpublish, reopen refused on a published trip, and the trip's dates reaching the page nowhere.
+
+**It found nothing new, and its first run lied.** Two checks failed against a stack that had come up twelve minutes before the archive-fence commit — a stale container reporting a fixed regression as a live one, which is indistinguishable in the output from the real thing. Rebuilt and re-run: 11/11.
+
+**What the script cannot close, and what is therefore still the founder's:** whether the screens read correctly to a person. CM-5 adds no new screens — it changes what existing ones point at — so that residue is small, and CI's Playwright web lane already drives those surfaces through the true preview build path (859 passed). The honest statement is that the *contract* is walked and the *look* is not.
