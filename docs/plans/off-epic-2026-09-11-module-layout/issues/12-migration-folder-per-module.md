@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] Every migration sits in a module folder and the migration root holds none; moves by `git mv`
 - [ ] `mvn -o test-compile` before any run — an edited resource never reaches the build output without it, and a moved one is an edited one
