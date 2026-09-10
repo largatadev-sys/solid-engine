@@ -566,6 +566,21 @@ CM-2.1 — the diary and postcard follow-ups, off-epic because CM-2 had already 
 Two of those forced work nobody asked for, and both are worth the record. **The ordinal model** — the founder ruled that a day can only be added inside its diary’s dates and that the dates can never strand a day, which removes the duplicate-ordinal class at its source rather than patching the paths one at a time; `widenTo` is gone and editing the dates is now the only act that moves a start. The first cut renumbered only when the start moved *earlier*, leaving the same duplicate reachable from the other side; the code review caught it, it was proven on the live stack, and it is closed in both directions with a sabotage-checked IT per direction. **The safe area** — the tab bar had been drawing the bottom inset for every screen beneath it, so hiding it left nine docked surfaces (seven memory screens, the trip form, the chat composer) with their CTA under the home indicator: invisible on the LAN rung, where a browser has no indicator, and only findable on a phone. Regression-checklist line 11 names exactly this failure, and it is why the guard now enumerates every docked surface in `src/` rather than trusting a list.
 
 Left measured and unchanged: the Trips header is still 28px where the other three roots are 22px — the founder asked only about Profile, so it is an epic-map line rather than an unasked change.
+
+---
+
+**2026-09-11** *(OPEN — an effort that spans sessions; each PR's last commit updates its line below and its issue's `Status:`)*
+
+The ten modules still on the pre-CM-2 flat shape take ADR-038's layout, one module per issue and per PR, and `api/` stops holding wire records: measured, the seven old-world `api/` packages hold response records and route constants that nothing outside their module imports, and eight of the ten modules have no in-process caller at all. Each module takes the layer folders (slices for `report` and `join`), its wire records move to `dto/`, `api/` keeps only what another module calls (`InvitationApi`), and a list-free ArchUnit rule pins that no `..api..` type appears in a controller signature. Two riders discharge halves of other backlog lines: a migration folder per module, and `SecurityConfig` owning its anonymous routes. `identity` is out — its split is a grilled story. Tracker: [spec](docs/plans/off-epic-2026-09-11-module-layout/spec.md), issues beside it.
+
+- ⬜ 01 report · ⬜ 02 verification · ⬜ 03 place · ⬜ 04 discovery · ⬜ 05 feed · ⬜ 06 profile · ⬜ 07 chat
+- ⬜ 08 the api-is-never-wire guard *(after 02, 04, 05, 06, 07)* · ⬜ 09 poll · ⬜ 10 invitation · ⬜ 11 join
+- ⬜ 12 migration folder per module · ⬜ 13 `SecurityConfig` owns its routes *(awaits a founder yes — auth stop rule)*
+
+*Why it isn't a story —* ADR-038 rule 2 is ratified and this is its application; no decision is taken here, no surface changes, and no act moves modules. What makes it a tracked effort rather than a drive-by is its width: ten modules, thirteen PRs, several sessions — the same shape as the seven owed guards, which was one PR, multiplied. The one finding worth keeping now, before any module moves: **the word `api` meant two things in this tree** — the in-process contract in the four converted modules, the wire in the seven guarded at PR #60 — and the guards were faithfully recording that as two breaches to fix rather than as one classification to correct.
+
+---
+
 ## Standing off-epic work
 
 - Register #8 unfurler spike — after the UX discussion (reg. #6/#7), before Epic 6.
