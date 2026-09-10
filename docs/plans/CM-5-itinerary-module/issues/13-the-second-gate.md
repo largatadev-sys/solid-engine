@@ -87,3 +87,13 @@ The **assertion-line "listed in this ticket's comments"** criteria on 02, 05, 06
 **Ticket 12 AC5** — `verify()` is asserted to **throw**, not pass, naming the counted `postcard` exemption. Honest rather than met.
 
 **Ticket 08 AC5** — the PR is open as the proposal; the merge is the founder's.
+
+## The fork transaction — put to the founder, and the answer moved
+
+The review found `ItineraryForkService.fork()` writing across `itinerary` and `trip` in one transaction: ADR-038 rule 5's sixth exception, recorded nowhere. Put as a choice; **the founder chose to split it.**
+
+Measuring the split reversed that, and the reversal is worth keeping. On a plain Spring event the trip commits, the provenance listener fails or the process dies, and **the fork exists with no credit, nothing retrying and nobody told** — a documented coupling traded for a silent data-loss path. Rule 5 has refused that trade twice already: for admission, and for TW-1's archive-voids-invitations, which was written as an event and reversed.
+
+What makes the split safe is the **event publication registry**, which persists each event and re-delivers what did not complete. That is ADR-039 decision 7's work, deferred at CM-5's slicing because tickets 09 to 11 were not green — **and they are now**, so the deferral's reason has expired.
+
+**So the split is sequenced rather than declined.** It lands with the registry, which now has two consumers waiting rather than one. Recorded in ADR-038 rule 5 as exception six with the registry as its trigger, and on the epic map's registry line. Until then `ItineraryForkRollbackIT` pins the atomicity by failing the provenance write and asserting the trip, its workspace, its membership and its whole plan all roll back — sabotage-checked by removing `@Transactional`.
