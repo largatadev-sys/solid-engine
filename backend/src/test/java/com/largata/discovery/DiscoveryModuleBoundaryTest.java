@@ -17,10 +17,8 @@ class DiscoveryModuleBoundaryTest {
 
     private static final String DISCOVERY = "com.largata.discovery";
 
-    private static final String PUBLISHED_CONTRACT = DISCOVERY + ".api..";
-
-    private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
-            resideInAPackage(DISCOVERY + "..").and(not(resideInAPackage(PUBLISHED_CONTRACT)));
+    private static final DescribedPredicate<JavaClass> ANYTHING_IN_THE_MODULE =
+            resideInAPackage(DISCOVERY + "..");
 
     private static final DescribedPredicate<JavaClass> ANOTHER_MODULE =
             resideInAPackage("com.largata..")
@@ -36,15 +34,18 @@ class DiscoveryModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void theOnlyWayIntoTheDiscoveryModuleIsItsApiPackage() {
+    void nothingOutsideTheDiscoveryModuleReachesIntoIt() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(DISCOVERY + "..")
                 .should()
-                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
+                .dependOnClassesThat(ANYTHING_IN_THE_MODULE)
                 .as("a module is reached by ID and service interface only (ADR-002) — an ALLOWLIST, so"
                         + " the implementation, the web edge and any subpackage added later are all"
-                        + " covered without anyone remembering to name them")
+                        + " covered without anyone remembering to name them. Discovery has no"
+                        + " in-process caller, so under ADR-038 rule 1 as amended on 11/09/2026 it has"
+                        + " no api package — and it publishes no refusal either, so it has no front"
+                        + " door at all and NOTHING outside it may name any part of it")
                 .check(largata);
     }
 
@@ -60,18 +61,6 @@ class DiscoveryModuleBoundaryTest {
                         + " reads publication.api and trip.api beside the two every module shares."
                         + " An allowlist, so a module invented tomorrow is forbidden the day it is"
                         + " created — and note it may name only the API packages, never the modules")
-                .check(largata);
-    }
-
-
-    @Test
-    void theModulesOwnApiPackageDependsOnNothingBehindIt() {
-        noClasses()
-                .that()
-                .resideInAPackage(PUBLISHED_CONTRACT)
-                .should()
-                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
-                .as("the published contract cannot depend on the implementation behind it")
                 .check(largata);
     }
 
@@ -102,7 +91,7 @@ class DiscoveryModuleBoundaryTest {
 
     @Test
     void theAllowlistPredicatesActuallySelectSomething() {
-        assertThat(largata.that(BEHIND_THE_MODULES_FRONT_DOOR))
+        assertThat(largata.that(ANYTHING_IN_THE_MODULE))
                 .as("a predicate matching nothing would pass every rule above while guarding nothing")
                 .isNotEmpty();
         assertThat(largata.that(ANOTHER_MODULE))
