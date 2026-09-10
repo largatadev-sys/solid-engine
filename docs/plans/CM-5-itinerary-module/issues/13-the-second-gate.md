@@ -7,7 +7,7 @@
 **Status:** ready-for-agent
 
 - [x] The assertion-line diff over every moved test is run and its output recorded here; any difference is explained
-- [ ] Backend unit and integration suites, mobile typecheck and Jest, and Playwright on both lanes are green with their counts read from the logs and recorded here
+- [x] Backend unit and integration suites, mobile typecheck and Jest, and Playwright on both lanes are green with their counts read from the logs and recorded here
 - [ ] The `dev` walk from ticket 08 is repeated and recorded with tags
 - [ ] BUILD_STATUS's CM-5 row reads built with the spec link only; the epic map's CM-5 line is annotated built with the counts; the legacy-link courtesy line's trigger date is written
 - [ ] The PR carries the story's measured counts and is squash-merged on the founder's word
@@ -34,3 +34,21 @@ Twenty-two, in three shapes. **The three DECREASES are the ones worth reading**,
 **Four line-level edits**, both guards this branch owns: `AudienceFenceCoverageTest` (its optional-membership registry emptied when ticket 11 closed the last such door, so it now proves the PATTERN against an inline fixture) and `DiscoveryScopeIsDefinedOnceTest` (repointed from `TripRepository`'s predicate, which has had zero callers since the readers moved, to the live `ItineraryDiscoveryRepository`, and now asserting TWO scopes because the owner's showcase is a different fence from the strangers surface).
 
 **Five files deleted.** `PublishMetadataIT` and `PublishedProjectionIT` went with the projection root; `TripGrammarTwinIT` and `TripGrammarEquivalenceIT` retired having done their job, as the spec planned; `ForkRollbackIT` was deleted with no replacement and that was an error — restored as `ItineraryForkRollbackIT`, which fails the provenance write and asserts the trip, workspace, membership and plan all roll back, sabotage-checked by removing `@Transactional`.
+
+## The suites, read from the logs
+
+Run `34421968717`, `workflow_dispatch` on the branch head — dispatch rather than push, because **Playwright only runs on `workflow_dispatch` or `pull_request`, never on a plain push**, so every push run this story read was skipping it silently.
+
+| Lane | Count |
+|---|---|
+| Backend unit (surefire) | **496** passed, 0 failed |
+| Backend integration (failsafe, real Postgres) | **1341** passed, 0 failed, **15 quarantined** |
+| Mobile typecheck | clean |
+| Mobile Jest | **6870** passed, 203 suites |
+| Playwright, api + web | **859** passed, 0 failed, 1 skipped |
+
+The 15 quarantined ITs and the 1 skipped Playwright test predate this story and carry their own ledger rows.
+
+**Playwright's arc through this story is the record worth keeping: 12 failed → 5 → 2 → 1 → 1 → 0.** Every one of those was a real finding rather than a fixture to nudge — two defects a traveler would have met (publish 404'ing on every publish; the trip's dates on the public page), three regressions where an act moved modules and the guard around it stayed behind (`reopen`, then publish and unpublish losing the archive fence), one race in a spec that shared a follow edge across eleven parallel tests, and the rest cutover debt in assertions still naming the old world.
+
+**The green did not come free of a workflow fix, and that is worth recording.** Two runs reported failure having executed zero tests: `playwright install --with-deps` runs `apt-get update` across every repo the runner image ships, including Google's Chrome repo, which was serving a mismatched index. Playwright's chromium comes from its own CDN and that repo is nothing to us, so the source is now dropped before the install. An outage in a dependency this project never had was presenting as a red build on an innocent branch.
