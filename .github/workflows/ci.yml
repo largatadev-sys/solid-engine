@@ -243,10 +243,17 @@ jobs:
           docker logs largata-preview --tail 40 || true
           exit 1
 
+      # --with-deps runs apt-get update across EVERY repo the runner image ships, and the image
+      # ships Google's Chrome repo. Playwright's chromium comes from Playwright's own CDN, so that
+      # repo is nothing to us - but when its index is inconsistent (hash sum mismatch, 2026-09-09)
+      # apt exits non-zero, install-deps treats that as fatal, and the whole lane reports failure
+      # having run zero tests. Dropping the source removes a dependency we never wanted. Matched by
+      # glob rather than by filename: a hardcoded path that stops matching would fail silently.
       - name: Install Playwright
         working-directory: mobile
         run: |
           npm ci
+          sudo find /etc/apt/sources.list.d -name '*google*' -delete
           npx playwright install --with-deps chromium
 
       # workers=2 measured on the first CI run, not guessed: 627 tests, 625 passed, 5.3 minutes.
