@@ -14,7 +14,7 @@ import com.largata.identity.api.PublicProfileResponse;
 import com.largata.identity.api.TravelerCardResponse;
 import com.largata.profile.api.DiaryTripResponse;
 import com.largata.profile.api.ShowcaseItineraryResponse;
-import com.largata.postcard.api.LegacyEntries;
+import com.largata.postcard.api.SharedEntries;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class PublicProfileService {
 
 
     private final ItineraryDiscoveryApi itineraries;
-    private final LegacyEntries entries;
+    private final SharedEntries entries;
     private final MembershipApi workspaces;
     private final TravelerService travelers;
     private final Analytics analytics;
@@ -44,7 +44,7 @@ public class PublicProfileService {
 
     PublicProfileService(
             ItineraryDiscoveryApi itineraries,
-            LegacyEntries entries,
+            SharedEntries entries,
             MembershipApi workspaces,
             TravelerService travelers,
             Analytics analytics,
@@ -171,10 +171,10 @@ public class PublicProfileService {
         int limit = clamp(requestedLimit);
         UUID from = cursor == null ? null : Cursor.decode(cursor);
 
-        List<LegacyEntries.TripRoll> found = entries.tripsOf(subject.id(), from, limit + 1);
+        List<SharedEntries.TripRoll> found = entries.tripsOf(subject.id(), from, limit + 1);
 
         boolean more = found.size() > limit;
-        List<LegacyEntries.TripRoll> rows = more ? found.subList(0, limit) : found;
+        List<SharedEntries.TripRoll> rows = more ? found.subList(0, limit) : found;
         List<DiaryTripResponse> sections = diarySectionsOf(rows);
 
         if (!more) {
@@ -204,11 +204,11 @@ public class PublicProfileService {
     }
 
 
-    private List<DiaryTripResponse> diarySectionsOf(List<LegacyEntries.TripRoll> rows) {
+    private List<DiaryTripResponse> diarySectionsOf(List<SharedEntries.TripRoll> rows) {
         if (rows.isEmpty()) {
             return List.of();
         }
-        List<UUID> tripIds = rows.stream().map(LegacyEntries.TripRoll::tripId).toList();
+        List<UUID> tripIds = rows.stream().map(SharedEntries.TripRoll::tripId).toList();
         Set<UUID> archived = workspaces.archivedAmong(tripIds);
         Map<UUID, TripTeaser> trips = tripsOf(tripIds);
 
@@ -220,7 +220,7 @@ public class PublicProfileService {
     }
 
 
-    private DiaryTripResponse sectionOf(LegacyEntries.TripRoll row, Map<UUID, TripTeaser> trips) {
+    private DiaryTripResponse sectionOf(SharedEntries.TripRoll row, Map<UUID, TripTeaser> trips) {
         TripTeaser trip = trips.get(row.tripId());
         if (trip == null) {
             return null;

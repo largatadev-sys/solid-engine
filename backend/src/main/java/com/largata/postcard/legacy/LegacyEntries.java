@@ -1,4 +1,4 @@
-package com.largata.postcard.api;
+package com.largata.postcard.legacy;
 
 import java.time.Instant;
 import java.time.LocalTime;
@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface LegacyEntries {
+import com.largata.postcard.api.SharedEntries;
+
+public interface LegacyEntries extends SharedEntries {
 
     Entry post(
             UUID authorId,
@@ -37,31 +39,6 @@ public interface LegacyEntries {
 
     List<TripRoll> tripsOf(UUID authorId, List<UUID> onlyTrips, UUID before, int limit);
 
-    List<TripRoll> tripsOf(UUID authorId, UUID before, int limit);
-
-    List<Entry> feedPage(List<UUID> hiddenAuthors, Instant at, UUID id, int limit);
-
-    List<Entry> feedPageOf(List<UUID> authorIds, Instant at, UUID id, int limit);
-
-    List<Entry> ofTrip(UUID tripId, UUID authorId);
-
     Optional<Entry> byId(UUID entryId);
 
-
-    record Entry(
-            UUID id,
-            UUID authorId,
-            UUID tripId,
-            UUID activityId,
-            String activityTitle,
-            String dayLabel,
-            LocalTime timeOfDay,
-            String place,
-            String caption,
-            Instant sharedAt,
-            Instant createdAt,
-            Instant updatedAt) {}
-
-
-    record TripRoll(UUID tripId, long entryCount, UUID latestEntryId) {}
 }

@@ -1,4 +1,4 @@
-const { api, poolToken, requirePoolEnv } = require('./poolApi');
+const { API, api, poolToken, requirePoolEnv } = require('./poolApi');
 
 requirePoolEnv();
 
@@ -9,6 +9,51 @@ const note = (step, ok, detail) => {
 };
 
 const stamp = `cm5 walk ${Date.now().toString(36)}`;
+const CAPTION = `cm5 walk card ${Date.now().toString(36)}`;
+
+
+function postcardOnActivity(token, tripId, activityId) {
+  return new Promise((resolve) => {
+    const http = require('http');
+    const CRLF = String.fromCharCode(13) + String.fromCharCode(10);
+    const boundary = `----largata${Date.now()}`;
+    const head =
+      `--${boundary}` + CRLF +
+      `Content-Disposition: form-data; name="postcard"` + CRLF +
+      `Content-Type: text/plain` + CRLF + CRLF +
+      JSON.stringify({ caption: CAPTION }) + CRLF;
+    const photo = require('fs').readFileSync(require('path').join(__dirname, 'fixtures', 'photo.jpg'));
+    const payload = Buffer.concat([
+      Buffer.from(head),
+      Buffer.from(
+        `--${boundary}` + CRLF +
+        `Content-Disposition: form-data; name="photos"; filename="photo.jpg"` + CRLF +
+        `Content-Type: image/jpeg` + CRLF + CRLF,
+      ),
+      photo,
+      Buffer.from(CRLF + `--${boundary}--` + CRLF),
+    ]);
+    const req = http.request(
+      new URL(`${API}/v1/trips/${tripId}/activities/${activityId}/postcards`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': payload.length,
+        },
+      },
+      (res) => {
+        let b = '';
+        res.on('data', (c) => (b += c));
+        res.on('end', () => resolve({ status: res.statusCode, body: b ? JSON.parse(b) : {} }));
+      },
+    );
+    req.on('error', () => resolve({ status: 0, body: {} }));
+    req.write(payload);
+    req.end();
+  });
+}
 
 async function main() {
   const t1 = await poolToken('t1');
@@ -70,6 +115,17 @@ async function main() {
   note('7  the profile showcase carries the Itinerary id AND its trip, so the menu can do both',
     showcase.status === 200 && mine !== undefined && mine.tripId === trip,
     `showcase ${showcase.status}, card ${mine ? 'found' : 'MISSING'}, tripId ${mine && mine.tripId}`);
+
+  // 6 — Home: a card's trip link is the ITINERARY id when the trip has a live one
+  const activityId = (await api(`/v1/trips/${trip}`, 'GET', t1)).body.days[0].activities[0].id;
+  const posted = await postcardOnActivity(t1, trip, activityId);
+  const feed = await api('/v1/feed/postcards?limit=50', 'GET', t1);
+  const card = ((feed.body && feed.body.items) || []).find((c) => c.caption === CAPTION);
+  note('6  the Home feed links its card to the ITINERARY, not the trip',
+    posted.status === 201 && feed.status === 200 && card !== undefined
+      && card.publishedItineraryId === itineraryId,
+    `postcard ${posted.status}, feed ${feed.status}, card ${card ? 'found' : 'MISSING'},`
+    + ` link ${card && card.publishedItineraryId} (itinerary ${itineraryId})`);
 
   // 9 — the courtesy: the by-trip read still resolves an old link
   const byTrip = await api(`/v1/trips/${trip}/itinerary`, 'GET', t3);

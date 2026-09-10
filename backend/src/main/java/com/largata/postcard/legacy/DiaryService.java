@@ -19,7 +19,7 @@ import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
-import com.largata.postcard.api.LegacyEntries;
+import com.largata.postcard.legacy.LegacyEntries;
 import com.largata.postcard.exception.ActivityAlreadyPostcardedException;
 import java.util.ArrayList;
 import java.util.List;

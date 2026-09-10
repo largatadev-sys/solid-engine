@@ -11,7 +11,7 @@ import com.largata.feed.api.PublicTripDiaryResponse;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
 import com.largata.media.PhotoSubject;
-import com.largata.postcard.api.LegacyEntries;
+import com.largata.postcard.api.SharedEntries;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,7 +36,7 @@ public class PostcardFeedService {
 
     private static final Logger log = LoggerFactory.getLogger(PostcardFeedService.class);
 
-    private final LegacyEntries entries;
+    private final SharedEntries entries;
     private final TripApi trips;
     private final ItineraryApi itineraries;
     private final MembershipApi workspaces;
@@ -44,7 +44,7 @@ public class PostcardFeedService {
     private final PhotoService photos;
 
     PostcardFeedService(
-            LegacyEntries entries,
+            SharedEntries entries,
             TripApi trips,
             ItineraryApi itineraries,
             MembershipApi workspaces,
@@ -64,7 +64,7 @@ public class PostcardFeedService {
             String cursor, Integer requestedLimit, List<UUID> hiddenAuthors) {
         int limit = clamp(requestedLimit);
         InstantCursor from = cursor == null ? null : InstantCursor.decode(cursor);
-        List<LegacyEntries.Entry> found =
+        List<SharedEntries.Entry> found =
                 entries.feedPage(
                         hiddenAuthors,
                         from == null ? null : from.at(),
@@ -85,7 +85,7 @@ public class PostcardFeedService {
         }
 
         InstantCursor from = cursor == null ? null : InstantCursor.decode(cursor);
-        List<LegacyEntries.Entry> found =
+        List<SharedEntries.Entry> found =
                 entries.feedPageOf(
                         onlyAuthors,
                         from == null ? null : from.at(),
@@ -96,22 +96,22 @@ public class PostcardFeedService {
     }
 
 
-    private Page<FeedPostcardResponse> pageOf(List<LegacyEntries.Entry> found, int limit) {
+    private Page<FeedPostcardResponse> pageOf(List<SharedEntries.Entry> found, int limit) {
         boolean more = found.size() > limit;
-        List<LegacyEntries.Entry> rows = more ? found.subList(0, limit) : found;
+        List<SharedEntries.Entry> rows = more ? found.subList(0, limit) : found;
         List<FeedPostcardResponse> cards = project(rows);
 
         if (!more) {
             return Page.exhausted(cards);
         }
-        LegacyEntries.Entry last = rows.getLast();
+        SharedEntries.Entry last = rows.getLast();
         return Page.of(cards, InstantCursor.encode(last.sharedAt(), last.id()));
     }
 
 
     @Transactional(readOnly = true)
     public PublicTripDiaryResponse tripDiary(UUID itineraryId, UUID authorId) {
-        List<LegacyEntries.Entry> shared = entries.ofTrip(itineraryId, authorId);
+        List<SharedEntries.Entry> shared = entries.ofTrip(itineraryId, authorId);
         if (shared.isEmpty()) {
             throw new FeedExceptions.NoSharedPostcardsException();
         }
@@ -131,13 +131,13 @@ public class PostcardFeedService {
     }
 
 
-    private List<FeedPostcardResponse> project(List<LegacyEntries.Entry> rows) {
+    private List<FeedPostcardResponse> project(List<SharedEntries.Entry> rows) {
         if (rows.isEmpty()) {
             return List.of();
         }
         Map<UUID, List<Photo>> photosByEntry =
                 photos.allOfEach(
-                        PhotoSubject.POSTCARD, rows.stream().map(LegacyEntries.Entry::id).toList());
+                        PhotoSubject.POSTCARD, rows.stream().map(SharedEntries.Entry::id).toList());
         Map<UUID, TravelerCardResponse> authors = authorsOf(rows);
         Map<UUID, TripTeaser> trips = tripsOf(rows);
 
@@ -153,7 +153,7 @@ public class PostcardFeedService {
 
 
     private FeedPostcardResponse cardOf(
-            LegacyEntries.Entry entry,
+            SharedEntries.Entry entry,
             Map<UUID, TravelerCardResponse> authors,
             Map<UUID, TripTeaser> trips,
             Map<UUID, List<Photo>> photosByEntry,
@@ -186,17 +186,17 @@ public class PostcardFeedService {
     }
 
 
-    private Map<UUID, TravelerCardResponse> authorsOf(List<LegacyEntries.Entry> rows) {
-        List<UUID> ids = rows.stream().map(LegacyEntries.Entry::authorId).distinct().toList();
+    private Map<UUID, TravelerCardResponse> authorsOf(List<SharedEntries.Entry> rows) {
+        List<UUID> ids = rows.stream().map(SharedEntries.Entry::authorId).distinct().toList();
         return travelers.summariesByIds(ids).stream()
                 .collect(Collectors.toMap(TravelerSummary::id, TravelerCardResponse::of));
     }
 
 
-    private Map<UUID, TripTeaser> tripsOf(List<LegacyEntries.Entry> rows) {
+    private Map<UUID, TripTeaser> tripsOf(List<SharedEntries.Entry> rows) {
         List<UUID> ids =
                 rows.stream()
-                        .map(LegacyEntries.Entry::tripId)
+                        .map(SharedEntries.Entry::tripId)
                         .filter(id -> id != null)
                         .distinct()
                         .toList();
