@@ -1,4 +1,4 @@
-package com.largata.poll.web;
+package com.largata.poll.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

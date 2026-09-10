@@ -1,11 +1,11 @@
-package com.largata.poll;
+package com.largata.poll.service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 
-final class PollTally {
+public final class PollTally {
 
     private PollTally() {}
 

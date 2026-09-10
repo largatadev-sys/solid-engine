@@ -1,4 +1,4 @@
-package com.largata.poll;
+package com.largata.poll.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
@@ -8,14 +8,19 @@ import com.largata.common.authz.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
-import com.largata.poll.PollExceptions.DeadlineNotInFutureException;
-import com.largata.poll.PollExceptions.NotThePollsAuthorException;
-import com.largata.poll.PollExceptions.PollClosedException;
-import com.largata.poll.PollExceptions.PollNotFoundException;
-import com.largata.poll.PollExceptions.PollOptionNotFoundException;
-import com.largata.poll.PollExceptions.TooManyOpenPollsException;
-import com.largata.trip.api.MembershipView;
+import com.largata.poll.entity.Poll;
+import com.largata.poll.entity.PollOption;
+import com.largata.poll.entity.PollVote;
+import com.largata.poll.exception.PollExceptions.DeadlineNotInFutureException;
+import com.largata.poll.exception.PollExceptions.NotThePollsAuthorException;
+import com.largata.poll.exception.PollExceptions.PollClosedException;
+import com.largata.poll.exception.PollExceptions.PollNotFoundException;
+import com.largata.poll.exception.PollExceptions.PollOptionNotFoundException;
+import com.largata.poll.exception.PollExceptions.TooManyOpenPollsException;
+import com.largata.poll.repository.PollRepository;
+import com.largata.poll.repository.PollVoteRepository;
 import com.largata.trip.api.MembershipApi;
+import com.largata.trip.api.MembershipView;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,11 +35,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 @Service
 public class PollService {
 
-    static final int MAX_OPEN_POLLS = 25;
+    public static final int MAX_OPEN_POLLS = 25;
 
     private final PollRepository polls;
     private final PollVoteRepository votes;

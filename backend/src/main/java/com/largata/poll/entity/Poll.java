@@ -1,6 +1,7 @@
-package com.largata.poll;
+package com.largata.poll.entity;
 
 import com.largata.common.id.UuidV7;
+import com.largata.poll.exception.PollExceptions;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,10 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-
 @Entity
 @Table(name = "poll")
-class Poll {
+public class Poll {
 
     static final int MAX_QUESTION_LENGTH = 120;
 
@@ -66,7 +66,7 @@ class Poll {
     }
 
 
-    static Poll asked(
+    public static Poll asked(
             UUID workspaceId, UUID createdBy, String question, List<String> optionLabels, Instant closesAt, Instant at) {
         if (workspaceId == null || createdBy == null || closesAt == null || at == null) {
             throw new IllegalArgumentException("A poll belongs to a workspace, is asked by a traveler, and closes");
@@ -80,18 +80,18 @@ class Poll {
     }
 
 
-    void closeEarly(UUID closerTravelerId, Instant at) {
+    public void closeEarly(UUID closerTravelerId, Instant at) {
         this.closedAt = at;
         this.closedBy = closerTravelerId;
     }
 
 
-    boolean isClosedAt(Instant now) {
+    public boolean isClosedAt(Instant now) {
         return closedAt != null || !now.isBefore(closesAt);
     }
 
 
-    boolean isAskedBy(UUID candidate) {
+    public boolean isAskedBy(UUID candidate) {
         return createdBy.equals(candidate);
     }
 
@@ -126,7 +126,7 @@ class Poll {
     }
 
 
-    UUID id() {
+    public UUID id() {
         return id;
     }
 
@@ -134,19 +134,19 @@ class Poll {
         return workspaceId;
     }
 
-    UUID createdBy() {
+    public UUID createdBy() {
         return createdBy;
     }
 
-    String question() {
+    public String question() {
         return question;
     }
 
-    Instant closesAt() {
+    public Instant closesAt() {
         return closesAt;
     }
 
-    Instant closedAt() {
+    public Instant closedAt() {
         return closedAt;
     }
 
@@ -154,11 +154,11 @@ class Poll {
         return closedBy;
     }
 
-    Instant createdAt() {
+    public Instant createdAt() {
         return createdAt;
     }
 
-    List<PollOption> options() {
+    public List<PollOption> options() {
         return List.copyOf(options);
     }
 }

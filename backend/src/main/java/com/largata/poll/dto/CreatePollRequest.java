@@ -1,4 +1,4 @@
-package com.largata.poll.web;
+package com.largata.poll.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;

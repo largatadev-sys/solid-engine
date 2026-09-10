@@ -17,10 +17,12 @@ class PollModuleBoundaryTest {
 
     private static final String POLL = "com.largata.poll";
 
-    private static final String PUBLISHED_CONTRACT = POLL + ".api..";
+    private static final String NO_SUCH_CONTRACT = POLL + ".api..";
+
+    private static final String PUBLISHED_REFUSALS = POLL + ".exception..";
 
     private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
-            resideInAPackage(POLL + "..").and(not(resideInAPackage(PUBLISHED_CONTRACT)));
+            resideInAPackage(POLL + "..").and(not(resideInAPackage(PUBLISHED_REFUSALS)));
 
     private static final DescribedPredicate<JavaClass> A_MODULE_IT_MAY_NOT_NAME =
             resideInAPackage("com.largata..")
@@ -35,7 +37,7 @@ class PollModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void theOnlyWayIntoThePollModuleIsItsApiPackage() {
+    void theOnlyWayIntoThePollModuleIsItsRefusals() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(POLL + "..")
@@ -43,7 +45,9 @@ class PollModuleBoundaryTest {
                 .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
                 .as("a module is reached by ID and service interface only (ADR-002) — an ALLOWLIST, so"
                         + " the implementation, the web edge and any subpackage added later are all"
-                        + " covered without anyone remembering to name them")
+                        + " covered without anyone remembering to name them. Poll has no in-process"
+                        + " caller, so under ADR-038 rule 1 as amended on 11/09/2026 it has no api"
+                        + " package at all and its refusals are the whole front door")
                 .check(largata);
     }
 
@@ -63,11 +67,11 @@ class PollModuleBoundaryTest {
 
     @Test
     void theModuleHasNoPublishedContractYet() {
-        assertThat(largata.that(resideInAPackage(PUBLISHED_CONTRACT)))
-                .as("poll publishes nothing today - it is reached by no other module, so it has no api"
-                        + " package and the contract rule below has nothing to check. This asserts the"
-                        + " ABSENCE deliberately: the day poll publishes a type, this fails and the"
-                        + " contract rule takes over")
+        assertThat(largata.that(resideInAPackage(NO_SUCH_CONTRACT)))
+                .as("poll publishes nothing today - it is reached by no other module, so under"
+                        + " ADR-038 rule 1 as amended on 11/09/2026 it has no api package at all."
+                        + " This asserts the ABSENCE deliberately: the day poll publishes a type,"
+                        + " this fails and a contract rule is written to take over")
                 .isEmpty();
     }
 
@@ -87,6 +91,9 @@ class PollModuleBoundaryTest {
                 .isNotEmpty();
         assertThat(largata.that(A_MODULE_IT_MAY_NOT_NAME))
                 .as("…and so would this one")
+                .isNotEmpty();
+        assertThat(largata.that(resideInAPackage(PUBLISHED_REFUSALS)))
+                .as("and a front door matching nothing would make the rules unfalsifiable")
                 .isNotEmpty();
     }
 }

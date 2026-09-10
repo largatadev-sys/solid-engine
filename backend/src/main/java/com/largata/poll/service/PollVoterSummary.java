@@ -1,4 +1,4 @@
-package com.largata.poll;
+package com.largata.poll.service;
 
 import java.util.UUID;
 

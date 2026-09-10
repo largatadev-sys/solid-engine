@@ -1,4 +1,4 @@
-package com.largata.poll;
+package com.largata.poll.entity;
 
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.Column;
@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "poll_vote")
-class PollVote {
+public class PollVote {
 
     @Id private UUID id;
 
@@ -44,7 +44,7 @@ class PollVote {
     }
 
 
-    static PollVote cast(UUID pollId, UUID optionId, UUID workspaceId, UUID travelerId, Instant at) {
+    public static PollVote cast(UUID pollId, UUID optionId, UUID workspaceId, UUID travelerId, Instant at) {
         if (pollId == null || optionId == null || workspaceId == null || travelerId == null || at == null) {
             throw new IllegalArgumentException("A vote names a poll, an option, and the membership that cast it");
         }
@@ -52,21 +52,21 @@ class PollVote {
     }
 
 
-    void moveTo(UUID newOptionId, Instant at) {
+    public void moveTo(UUID newOptionId, Instant at) {
         this.optionId = newOptionId;
         this.castAt = at;
     }
 
 
-    UUID pollId() {
+    public UUID pollId() {
         return pollId;
     }
 
-    UUID optionId() {
+    public UUID optionId() {
         return optionId;
     }
 
-    UUID travelerId() {
+    public UUID travelerId() {
         return travelerId;
     }
 

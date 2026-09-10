@@ -1,6 +1,6 @@
-package com.largata.poll.web;
+package com.largata.poll.dto;
 
-import com.largata.poll.PollView;
+import com.largata.poll.service.PollView;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
