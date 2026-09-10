@@ -40,16 +40,22 @@ async function main() {
 
   // 7 — the trip's dates must reach the page nowhere, including the raw plan
   const raw = JSON.stringify(page.body);
+  const readable = page.status === 200;
   note('7  no trip dates anywhere in the page body',
-    !raw.includes('startDate') && !raw.includes('endDate') && !raw.includes('2026-11-02'),
-    raw.includes('2026-11-02') ? 'THE DATE IS ON THE WIRE' : 'no startDate, no endDate, no date value');
+    readable && !raw.includes('startDate') && !raw.includes('endDate') && !raw.includes('2026-11-02'),
+    !readable ? `the page did not answer (${page.status}) - an error body carries no dates`
+      : raw.includes('2026-11-02') ? 'THE DATE IS ON THE WIRE' : 'no startDate, no endDate, no date value');
 
   // 6 — ADR-034: every signed-in traveler reads it, private author included
-  await api('/v1/me', 'PATCH', t1, { profileVisibility: 'private' });
-  const stranger = await api(`/v1/itineraries/${itineraryId}`, 'GET', t3);
+  let stranger;
+  try {
+    await api('/v1/me', 'PATCH', t1, { profileVisibility: 'private' });
+    stranger = await api(`/v1/itineraries/${itineraryId}`, 'GET', t3);
+  } finally {
+    await api('/v1/me', 'PATCH', t1, { profileVisibility: 'public' });
+  }
   note('6  a stranger reads a PRIVATE author\'s Itinerary (ADR-034)',
     stranger.status === 200, `private author, stranger -> ${stranger.status}`);
-  await api('/v1/me', 'PATCH', t1, { profileVisibility: 'public' });
 
   // 9 — the courtesy: the by-trip read still resolves an old link
   const byTrip = await api(`/v1/trips/${trip}/itinerary`, 'GET', t3);
@@ -79,16 +85,20 @@ async function main() {
     `republished id ${re.body && re.body.id} (was ${itineraryId})`);
 
   // 10 — archive masks the page, and now fences both acts
+  let masked, fencedPublish, fencedUnpublish;
+  try {
   await api(`/v1/trips/${trip}/archive`, 'POST', t1);
-  const masked = await api(`/v1/itineraries/${itineraryId}`, 'GET', t3);
-  const fencedPublish = await api(`/v1/trips/${trip}/publish`, 'POST', t1);
-  const fencedUnpublish = await api(`/v1/trips/${trip}/unpublish`, 'POST', t1);
+    masked = await api(`/v1/itineraries/${itineraryId}`, 'GET', t3);
+    fencedPublish = await api(`/v1/trips/${trip}/publish`, 'POST', t1);
+    fencedUnpublish = await api(`/v1/trips/${trip}/unpublish`, 'POST', t1);
+  } finally {
+    await api(`/v1/trips/${trip}/unarchive`, 'POST', t1);
+  }
   note('10 archive MASKS the page for a stranger',
     masked.status === 404, `archived, stranger -> ${masked.status}`);
   note('10 archive FENCES publish and unpublish (the regression this walk exists for)',
     fencedPublish.status === 409 && fencedUnpublish.status === 409,
     `publish ${fencedPublish.status}, unpublish ${fencedUnpublish.status}`);
-  await api(`/v1/trips/${trip}/unarchive`, 'POST', t1);
 
   // the reopen fence
   const reopened = await api(`/v1/trips/${trip}/reopen`, 'POST', t1);

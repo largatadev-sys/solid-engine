@@ -253,7 +253,7 @@ jobs:
         working-directory: mobile
         run: |
           npm ci
-          sudo find /etc/apt/sources.list.d -name '*google*' -delete
+          sudo find /etc/apt/sources.list.d -name '*google*' -delete || true
           npx playwright install --with-deps chromium
 
       # workers=2 measured on the first CI run, not guessed: 627 tests, 625 passed, 5.3 minutes.
