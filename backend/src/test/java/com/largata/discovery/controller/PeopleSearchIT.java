@@ -1,4 +1,4 @@
-package com.largata.discovery.web;
+package com.largata.discovery.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

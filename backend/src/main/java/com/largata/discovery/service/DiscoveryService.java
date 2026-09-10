@@ -1,13 +1,13 @@
-package com.largata.discovery;
+package com.largata.discovery.service;
 
 import com.largata.common.api.Cursor;
 import com.largata.common.api.InstantCursor;
 import com.largata.common.api.Page;
-import com.largata.discovery.api.DiscoveryCardResponse;
-import com.largata.discovery.api.DiscoveryCountResponse;
-import com.largata.discovery.api.DiscoverySuggestionsResponse;
-import com.largata.discovery.api.PeoplePageResponse;
-import com.largata.discovery.api.TrendingDestinationResponse;
+import com.largata.discovery.dto.DiscoveryCardResponse;
+import com.largata.discovery.dto.DiscoveryCountResponse;
+import com.largata.discovery.dto.DiscoverySuggestionsResponse;
+import com.largata.discovery.dto.PeoplePageResponse;
+import com.largata.discovery.dto.TrendingDestinationResponse;
 import com.largata.identity.TravelerService;
 import com.largata.identity.api.TravelerCardResponse;
 import com.largata.itinerary.api.ItineraryDiscoveryApi;

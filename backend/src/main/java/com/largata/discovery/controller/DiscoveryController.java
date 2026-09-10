@@ -1,15 +1,15 @@
-package com.largata.discovery.web;
+package com.largata.discovery.controller;
 
 import com.largata.common.api.Page;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
-import com.largata.discovery.DiscoveryFilters;
-import com.largata.discovery.DiscoveryService;
-import com.largata.discovery.api.DiscoveryCardResponse;
-import com.largata.discovery.api.DiscoveryCountResponse;
-import com.largata.discovery.api.DiscoverySuggestionsResponse;
-import com.largata.discovery.api.PeoplePageResponse;
-import com.largata.discovery.api.TrendingDestinationResponse;
+import com.largata.discovery.service.DiscoveryFilters;
+import com.largata.discovery.service.DiscoveryService;
+import com.largata.discovery.dto.DiscoveryCardResponse;
+import com.largata.discovery.dto.DiscoveryCountResponse;
+import com.largata.discovery.dto.DiscoverySuggestionsResponse;
+import com.largata.discovery.dto.PeoplePageResponse;
+import com.largata.discovery.dto.TrendingDestinationResponse;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
