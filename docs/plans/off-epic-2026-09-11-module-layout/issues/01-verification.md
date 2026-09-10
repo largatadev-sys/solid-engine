@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** claimed
+**Status:** resolved
 
 - [ ] Every main-tree class of the module sits in a target folder and the module root holds none; moves by `git mv`, staged by explicit path
 - [ ] `api/` and its `package-info` are gone; the boundary test loses its contract rule and its recorded-breach test, keeps the outside-in rule and the allowlist, and its remaining rule is sabotage-checked with a real usage (field, parameter or return type), never an unused import
