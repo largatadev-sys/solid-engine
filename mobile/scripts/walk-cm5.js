@@ -57,6 +57,20 @@ async function main() {
   note('6  a stranger reads a PRIVATE author\'s Itinerary (ADR-034)',
     stranger.status === 200, `private author, stranger -> ${stranger.status}`);
 
+  // 5/6 — the three surfaces tickets 05 to 07 rebuilt, each carrying the ITINERARY id
+  const onDiscover = await api(`/v1/discovery/itineraries?limit=50`, 'GET', t3);
+  const discoverIds = ((onDiscover.body && onDiscover.body.items) || []).map((c) => c.id);
+  note('5  Discover shows the Itinerary, keyed by the Itinerary id',
+    onDiscover.status === 200 && discoverIds.includes(itineraryId),
+    `discover ${onDiscover.status}, ${discoverIds.length} cards, mine present: ${discoverIds.includes(itineraryId)}`);
+
+  const showcase = await api('/v1/me/profile/published?limit=50', 'GET', t1);
+  const showcaseCards = (showcase.body && showcase.body.items) || [];
+  const mine = showcaseCards.find((c) => c.id === itineraryId);
+  note('7  the profile showcase carries the Itinerary id AND its trip, so the menu can do both',
+    showcase.status === 200 && mine !== undefined && mine.tripId === trip,
+    `showcase ${showcase.status}, card ${mine ? 'found' : 'MISSING'}, tripId ${mine && mine.tripId}`);
+
   // 9 — the courtesy: the by-trip read still resolves an old link
   const byTrip = await api(`/v1/trips/${trip}/itinerary`, 'GET', t3);
   note('9  an old /published/{tripId} link still resolves, and answers the SAME object',

@@ -37,7 +37,7 @@ Twenty-two, in three shapes. **The three DECREASES are the ones worth reading**,
 
 ## The suites, read from the logs
 
-Run `34421968717`, `workflow_dispatch` on the branch head — dispatch rather than push, because **Playwright only runs on `workflow_dispatch` or `pull_request`, never on a plain push**, so every push run this story read was skipping it silently.
+Run `34421968717`, `workflow_dispatch` — **on `8e9f58df`, not on the branch head, which the first draft of this line wrongly claimed.** The commits after it are the dead-code removals, the Modulith guard rework and docs; run `34434661079` covers all but the docs and is green on the same counts, and the PR's own `pull_request` run is the gate the merge reads — dispatch rather than push, because **Playwright only runs on `workflow_dispatch` or `pull_request`, never on a plain push**, so every push run this story read was skipping it silently.
 
 | Lane | Count |
 |---|---|
@@ -56,7 +56,7 @@ The 15 quarantined ITs and the 1 skipped Playwright test predate this story and 
 
 ## The walk — what is closed and what is not
 
-`node mobile/scripts/walk-cm5.js` against a local stack built from this branch: **11 of 11**, t1 as author and t3 as stranger. It closes every step of `walk.md` whose answer is a status code, an id or a substring — including the three findings this story is most likely to regress on: archive fencing publish and unpublish, reopen refused on a published trip, and the trip's dates reaching the page nowhere.
+`node mobile/scripts/walk-cm5.js` against a local stack built from this branch: **11 of 11**, t1 as author and t3 as stranger. It closes eleven of the thirteen steps whose answer is a status code, an id or a substring — **corrected at the final review, which caught the first draft claiming "every step" while the script never touched Discover, Home or the profile, the three surfaces tickets 05 to 07 rebuilt.** Discover and the showcase are covered now (13 checks); **Home is not**, because a feed card needs a postcard fixture the script does not seed, and that gap is stated rather than papered over — including the three findings this story is most likely to regress on: archive fencing publish and unpublish, reopen refused on a published trip, and the trip's dates reaching the page nowhere.
 
 **It found nothing new, and its first run lied.** Two checks failed against a stack that had come up twelve minutes before the archive-fence commit — a stale container reporting a fixed regression as a live one, which is indistinguishable in the output from the real thing. Rebuilt and re-run: 11/11.
 
@@ -70,7 +70,7 @@ All 77 were re-read at the gate and marked, because they had been left **entirel
 
 **Ticket 09 AC2 — a real boundary leak, and the one worth fixing before this closes.** *"The legacy-entries port is no longer part of any module's public api."* `postcard.api.LegacyEntries` is still published and still read by **`feed` and `profile`**. Ticket 09 set out to close exactly this and did not. Roughly an hour, and it is the kind of thing that never gets done after a merge.
 
-**Ticket 03 AC6 — a minute's work that a date depends on.** *"The courtesy fallback has a test that names its epic-map end in the test's title."* `itineraryAddress.test.ts` has three titles and none names the courtesy or its date. That title is the only thread tying the trip-id fallback to its **2026-10-10** removal; without it the fallback outlives its deadline silently.
+**~~Ticket 03 AC6~~ — CLOSED in the same commit that recorded it open, which is its own small lesson about writing a record and a fix together.** *"The courtesy fallback has a test that names its epic-map end in the test's title."* The title now names the epic-map line and its **2026-10-10** trigger — the only thread tying the trip-id fallback to its removal date. So the open set below is **four**, not five.
 
 **Ticket 12 AC1 and AC8 — open by the ticket's own admission, not by oversight.** The trip module's legacy exemption still names `postcard.legacy`, and `chat.api` / `verification.api` still map from internal types in static factories. Ticket 12's own preamble says *"until then the first AC below cannot honestly pass"*, and each guard asserts the breach **still fails**, so the day someone fixes the module its guard goes red and the real rule replaces the placeholder. Owned by the epic-map line that cuts the five old Trip Diary screens over.
 

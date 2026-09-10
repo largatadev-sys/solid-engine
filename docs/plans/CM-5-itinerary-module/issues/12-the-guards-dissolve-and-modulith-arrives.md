@@ -10,7 +10,7 @@
 - [x] The new-world guard's content-half exemption and old-world regex are gone with their tests
 - [x] The module meta-test's dismantled list is empty; `discovery`, `feed`, `profile` and `itinerary` are under the rule; every guard's sabotage checks still pass
 - [ ] Trip's internals are package-private wherever the layout allows, and the guards still pass
-- [~] Spring Modulith is on the classpath, `verify()` passes as a test, and each api package is a named interface
+- [ ] Spring Modulith is on the classpath, `verify()` passes as a test, and each api package is a named interface
 - [x] The cycle rule is green
 - [x] The registry is adopted here only if 09 to 11 were green at this ticket's start, and the outcome either way is written in this ticket's comments and on the epic map's registry line
 
@@ -36,3 +36,9 @@
 **The registry ruling:** the founder's condition was that the event publication registry rides this ticket **only if 09 to 11 were green at its start**. They were not — the fork sweep was still red when ticket 12 began — so per that ruling the registry is **left to the next story**, and the epic map's registry line keeps its trigger.
 
 **Not done here:** trip's internals are not yet package-private where the layer folders allow. That half of the ticket is deferred with the gate.
+
+## Amendment — AC5 is UNMET, not met differently
+
+Filed `[~]` at the gate and corrected at the final review, which was right to push: the spec's user story 21 asks for *"the graph acyclic by rule and Modulith's `verify()` **green**"*, and ADR-039 decision 9 asks for it too. `verify()` throws. `ModulithVerificationTest` asserts the refusals are **not empty** and names `postcard` and `trip` — honest about the state, but honest about a state the spec did not accept.
+
+The reason is recorded and unchanged: the diary adapters ticket 09 relocated into `postcard.legacy` still reach trip's plan entities, which is the same exemption `TripModuleBoundaryTest` counts, seen through a second tool. What was wrong was the MARK, not the work — `[~]` reads as "met differently" and invites the next reader to stop looking. It is `[ ]`, and it closes when the five old Trip Diary screens cut over and the adapters go.
