@@ -1,6 +1,5 @@
 package com.largata.ws;
 
-import com.largata.ws.api.WebSocketPaths;
 import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,7 +41,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(handler, WebSocketPaths.UPGRADE)
+        registry.addHandler(handler, "/ws")
                 .addInterceptors(gate)
                 .setAllowedOriginPatterns("*");
     }

@@ -25,11 +25,8 @@ class ModuleCycleTest {
 
     private static final Map<String, String> KNOWN_CYCLES =
             Map.of(
-                    "common <-> join", "SecurityConfig names JoinPaths - epic map: the request principal is in common.security, these five are the SecurityConfig half and are unowned",
-                    "common <-> report", "SecurityConfig names ReportPaths - epic map: the request principal is in common.security, these five are the SecurityConfig half and are unowned",
-                    "common <-> ws", "SecurityConfig names WebSocketPaths - epic map: the request principal is in common.security, these five are the SecurityConfig half and are unowned",
-                    "identity <-> media", "the avatar is a photo - epic map: the request principal is in common.security, these five are the SecurityConfig half and are unowned",
-                    "identity <-> ws", "FollowTopic fans out over the transport - epic map: the request principal is in common.security, these five are the SecurityConfig half and are unowned");
+                    "identity <-> media", "the avatar is a photo - epic map: the RequestPrincipal line owns the identity split that closes it",
+                    "identity <-> ws", "FollowTopic fans out over the transport - epic map: the RequestPrincipal line owns the identity split that closes it");
 
     private final JavaClasses largata =
             new ClassFileImporter()

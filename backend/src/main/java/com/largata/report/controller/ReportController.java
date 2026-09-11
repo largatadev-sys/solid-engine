@@ -1,6 +1,5 @@
 package com.largata.report.controller;
 
-import com.largata.report.api.ReportPaths;
 import com.largata.report.dto.SubmitReportRequest;
 import com.largata.report.dto.SubmitReportResponse;
 import com.largata.report.intake.AcceptedReport;
@@ -24,7 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
 
 @RestController
-@RequestMapping(ReportPaths.ANONYMOUS)
+@RequestMapping("/v1/reports")
 class ReportController {
 
     private final ReportService reports;
