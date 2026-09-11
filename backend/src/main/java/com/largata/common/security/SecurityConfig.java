@@ -1,9 +1,6 @@
 package com.largata.common.security;
 
 import com.largata.common.logging.UserContextFilter;
-import com.largata.join.api.JoinPaths;
-import com.largata.report.api.ReportPaths;
-import com.largata.ws.api.WebSocketPaths;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +13,14 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
+
+    static final String WEBSOCKET_UPGRADE = "/ws";
+
+    static final String LIVENESS = "/v1/health";
+
+    static final String OPENING_A_JOIN_LINK = "/v1/join/**";
+
+    static final String SUBMITTING_A_REPORT = "/v1/reports";
 
     @Bean
     SecurityFilterChain filterChain(
@@ -32,13 +37,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         auth ->
                                 auth
-                                        .requestMatchers(WebSocketPaths.UPGRADE)
+                                        .requestMatchers(WEBSOCKET_UPGRADE)
                                         .permitAll()
-                                        .requestMatchers(HttpMethod.GET, "/v1/health")
+                                        .requestMatchers(HttpMethod.GET, LIVENESS)
                                         .permitAll()
-                                        .requestMatchers(JoinPaths.ANONYMOUS)
+                                        .requestMatchers(OPENING_A_JOIN_LINK)
                                         .permitAll()
-                                        .requestMatchers(HttpMethod.POST, ReportPaths.ANONYMOUS)
+                                        .requestMatchers(HttpMethod.POST, SUBMITTING_A_REPORT)
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())

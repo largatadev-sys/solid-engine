@@ -3,7 +3,7 @@ package com.largata.report;
 import static com.largata.support.TripRig.bearer;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.report.api.ReportPaths;
+import com.largata.support.AnonymousRoutes;
 import com.largata.report.intake.ReportRateLimiter;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
@@ -180,7 +180,7 @@ class ReportRateLimitIT extends PostgresTestBase {
 
         var request =
                 rest.post()
-                        .uri(ReportPaths.ANONYMOUS)
+                        .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                         .header(CALLER_HEADER, caller)
                         .contentType(MediaType.MULTIPART_FORM_DATA);
         if (token != null) {

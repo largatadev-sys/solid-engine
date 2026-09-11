@@ -3,7 +3,7 @@ package com.largata.report;
 import static com.largata.support.TripRig.bearer;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.report.api.ReportPaths;
+import com.largata.support.AnonymousRoutes;
 import com.largata.report.intake.ReportService;
 import com.largata.report.outbox.DeviceContext;
 import com.largata.support.PostgresTestBase;
@@ -116,7 +116,7 @@ class ReportAcceptIT extends PostgresTestBase {
                                 + "\",\"name\":\"Somebody Else\"},\"reporterName\":\"Somebody Else\""));
 
         rest.post()
-                .uri(ReportPaths.ANONYMOUS)
+                .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                 .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
@@ -142,7 +142,7 @@ class ReportAcceptIT extends PostgresTestBase {
                         reportId, "problem", "Impersonation attempt.", "\"reporterName\":\"Somebody Else\""));
 
         rest.post()
-                .uri(ReportPaths.ANONYMOUS)
+                .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                 .header("X-Forwarded-For", anIpAddress())
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
@@ -284,7 +284,7 @@ class ReportAcceptIT extends PostgresTestBase {
                         + "\"}");
 
         rest.post()
-                .uri(ReportPaths.ANONYMOUS)
+                .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                 .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
@@ -302,7 +302,7 @@ class ReportAcceptIT extends PostgresTestBase {
         body.part("report", "{\"reportId\":\"not-a-uuid\",\"type\":\"idea\",\"description\":\"Hello.\"}");
 
         rest.post()
-                .uri(ReportPaths.ANONYMOUS)
+                .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                 .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
@@ -325,7 +325,7 @@ class ReportAcceptIT extends PostgresTestBase {
                         + "\"platform\":\"android\"}");
 
         rest.post()
-                .uri(ReportPaths.ANONYMOUS)
+                .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                 .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
@@ -450,7 +450,7 @@ class ReportAcceptIT extends PostgresTestBase {
         UUID reportId = UUID.randomUUID();
 
         rest.post()
-                .uri(ReportPaths.ANONYMOUS)
+                .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                 .header("X-Forwarded-For", anIpAddress())
                 .header(HttpHeaders.AUTHORIZATION, bearer(TestJwtSupport.expiredToken("uid-expired")))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
@@ -465,7 +465,7 @@ class ReportAcceptIT extends PostgresTestBase {
 
     private RestTestClient.ResponseSpec submit(
             UUID reportId, String token, String type, String description) {
-        var request = rest.post().uri(ReportPaths.ANONYMOUS).header("X-Forwarded-For", anIpAddress());
+        var request = rest.post().uri(AnonymousRoutes.SUBMIT_A_REPORT).header("X-Forwarded-For", anIpAddress());
         if (token != null) {
             request = request.header(HttpHeaders.AUTHORIZATION, bearer(token));
         }
@@ -488,7 +488,7 @@ class ReportAcceptIT extends PostgresTestBase {
         MultipartBodyBuilder body = new MultipartBodyBuilder();
         body.part("report", reportJson);
         return rest.post()
-                .uri(ReportPaths.ANONYMOUS)
+                .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                 .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())

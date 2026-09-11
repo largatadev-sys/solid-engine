@@ -3,7 +3,7 @@ package com.largata.report.delivery;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.report.ReportPayloads;
-import com.largata.report.api.ReportPaths;
+import com.largata.support.AnonymousRoutes;
 import com.largata.report.outbox.ReportScreenshot;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
@@ -233,7 +233,7 @@ class ReportDeliveryIT extends PostgresTestBase {
                     .contentType(MediaType.IMAGE_JPEG);
         }
         rest.post()
-                .uri(ReportPaths.ANONYMOUS)
+                .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                 .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())

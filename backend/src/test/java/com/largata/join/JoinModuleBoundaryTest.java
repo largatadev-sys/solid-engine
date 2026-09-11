@@ -2,7 +2,6 @@ package com.largata.join;
 
 import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
-import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,14 +18,12 @@ class JoinModuleBoundaryTest {
 
     private static final String JOIN = "com.largata.join";
 
-    private static final String PUBLISHED_CONTRACT = JOIN + ".api..";
-
-    private static final String[] FRONT_DOOR = {PUBLISHED_CONTRACT, JOIN + ".exception.."};
+    private static final String PUBLISHED_REFUSALS = JOIN + ".exception..";
 
     private static final List<String> THE_SLICES = List.of("join", "card");
 
     private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
-            resideInAPackage(JOIN + "..").and(not(resideInAnyPackage(FRONT_DOOR)));
+            resideInAPackage(JOIN + "..").and(not(resideInAPackage(PUBLISHED_REFUSALS)));
 
     private static final DescribedPredicate<JavaClass> A_MODULE_IT_MAY_NOT_NAME =
             resideInAPackage("com.largata..")
@@ -44,7 +41,7 @@ class JoinModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void theOnlyWayIntoTheJoinModuleIsItsApiAndItsRefusals() {
+    void theOnlyWayIntoTheJoinModuleIsItsRefusals() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(JOIN + "..")
@@ -53,8 +50,10 @@ class JoinModuleBoundaryTest {
                 .as("a module is reached by ID and service interface only (ADR-002) — an ALLOWLIST, so"
                         + " the implementation, the web edge and any subpackage added later are all"
                         + " covered without anyone remembering to name them. The two slices stay"
-                        + " inside; api holds only the route constant SecurityConfig reads, until"
-                        + " ticket 13 retires it")
+                        + " inside. Join has no in-process caller — its api held only the route"
+                        + " constant SecurityConfig read, and ticket 13 moved that into the"
+                        + " composition root — so under ADR-038 rule 1 as amended on 11/09/2026 it"
+                        + " has no api package at all and its refusals are the whole front door")
                 .check(largata);
     }
 
@@ -70,19 +69,6 @@ class JoinModuleBoundaryTest {
                         + " invented tomorrow is forbidden the day it is created")
                 .check(largata);
     }
-
-
-    @Test
-    void theModulesOwnApiPackageDependsOnNothingBehindIt() {
-        noClasses()
-                .that()
-                .resideInAPackage(PUBLISHED_CONTRACT)
-                .should()
-                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
-                .as("the published contract cannot depend on the implementation behind it")
-                .check(largata);
-    }
-
 
     @Test
     void everySliceNamedHereIsARealPackageHoldingRealCode() {
@@ -111,7 +97,7 @@ class JoinModuleBoundaryTest {
         assertThat(largata.that(A_MODULE_IT_MAY_NOT_NAME))
                 .as("…and so would this one")
                 .isNotEmpty();
-        assertThat(largata.that(resideInAnyPackage(FRONT_DOOR)))
+        assertThat(largata.that(resideInAPackage(PUBLISHED_REFUSALS)))
                 .as("and a front door matching nothing would make the rules unfalsifiable")
                 .isNotEmpty();
     }

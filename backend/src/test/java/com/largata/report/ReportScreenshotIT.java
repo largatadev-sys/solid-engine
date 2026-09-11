@@ -3,7 +3,7 @@ package com.largata.report;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.media.ImageIngest;
-import com.largata.report.api.ReportPaths;
+import com.largata.support.AnonymousRoutes;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import java.awt.Color;
@@ -177,7 +177,7 @@ class ReportScreenshotIT extends PostgresTestBase {
                     .contentType(MediaType.IMAGE_JPEG);
         }
         return rest.post()
-                .uri(ReportPaths.ANONYMOUS)
+                .uri(AnonymousRoutes.SUBMIT_A_REPORT)
                 .header("X-Forwarded-For", anIpAddress())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body.build())
