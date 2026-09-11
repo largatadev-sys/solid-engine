@@ -8,7 +8,7 @@
 
 **Blocked by:** 07, 10, 11, and a founder yes recorded under Comments before the ticket is claimed.
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] `SecurityConfig` lists the three anonymous routes as its own constants, named for what they admit
 - [ ] `JoinPaths`, `ReportPaths` and `WebSocketPaths` are deleted; `report/api` and `join/api` are gone with their `package-info`s; their guards lose the contract rule and are sabotage-checked with a real usage
@@ -20,3 +20,11 @@
 - [ ] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
 
 ## Comments
+
+**2026-09-11 — the founder yes this ticket waits on.**
+
+Asked directly, after the ticket was summarised for them: what it changes, that it closes three of the five recorded cycles, that there is no semantic change, and that it needs their yes because it edits `SecurityConfig`, which is inside the auth stop rule. The founder answered **"go ahead"**.
+
+Recorded here rather than only in a commit message because this ticket's own Blocked-by line requires *"a founder yes recorded under Comments before the ticket is claimed"* — so the record has to exist before the work does, and this commit is the claim.
+
+**What is authorised is exactly what this ticket describes:** three route literals move into the composition root as its own constants, three classes are deleted, two now-empty `api/` packages go with them, and the recorded-cycle list shrinks by three. The same three matchers, the same `permitAll`, nothing a traveler can see. Anything beyond that is a separate ask.
