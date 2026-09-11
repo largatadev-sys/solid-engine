@@ -17,10 +17,10 @@ class PlaceModuleBoundaryTest {
 
     private static final String PLACE = "com.largata.place";
 
-    private static final String PUBLISHED_CONTRACT = PLACE + ".api..";
+    private static final String PUBLISHED_REFUSALS = PLACE + ".exception..";
 
     private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
-            resideInAPackage(PLACE + "..").and(not(resideInAPackage(PUBLISHED_CONTRACT)));
+            resideInAPackage(PLACE + "..").and(not(resideInAPackage(PUBLISHED_REFUSALS)));
 
     private static final DescribedPredicate<JavaClass> ANOTHER_MODULE =
             resideInAPackage("com.largata..")
@@ -34,7 +34,7 @@ class PlaceModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void theOnlyWayIntoThePlaceModuleIsItsApiPackage() {
+    void theOnlyWayIntoThePlaceModuleIsItsRefusals() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(PLACE + "..")
@@ -42,7 +42,10 @@ class PlaceModuleBoundaryTest {
                 .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
                 .as("a module is reached by ID and service interface only (ADR-002) — an ALLOWLIST, so"
                         + " the implementation, the web edge and any subpackage added later are all"
-                        + " covered without anyone remembering to name them")
+                        + " covered without anyone remembering to name them. Place has no in-process"
+                        + " caller, so under ADR-038 rule 1 as amended on 11/09/2026 it has no api"
+                        + " package at all and its refusals are the whole front door; the suggester"
+                        + " seam is internal until a second side of it exists")
                 .check(largata);
     }
 
@@ -62,18 +65,6 @@ class PlaceModuleBoundaryTest {
 
 
     @Test
-    void theModulesOwnApiPackageDependsOnNothingBehindIt() {
-        noClasses()
-                .that()
-                .resideInAPackage(PUBLISHED_CONTRACT)
-                .should()
-                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
-                .as("the published contract cannot depend on the implementation behind it")
-                .check(largata);
-    }
-
-
-    @Test
     void theBoundaryTestSeesTheModuleItGuards() {
         assertThat(largata.that(resideInAPackage(PLACE + "..")))
                 .as("guards against a vacuously passing rule — the import must have found the module")
@@ -88,6 +79,9 @@ class PlaceModuleBoundaryTest {
                 .isNotEmpty();
         assertThat(largata.that(ANOTHER_MODULE))
                 .as("…and so would this one")
+                .isNotEmpty();
+        assertThat(largata.that(resideInAPackage(PUBLISHED_REFUSALS)))
+                .as("and a front door matching nothing would make the rules unfalsifiable")
                 .isNotEmpty();
     }
 }

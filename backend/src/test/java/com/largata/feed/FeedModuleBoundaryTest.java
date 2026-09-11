@@ -17,10 +17,10 @@ class FeedModuleBoundaryTest {
 
     private static final String FEED = "com.largata.feed";
 
-    private static final String PUBLISHED_CONTRACT = FEED + ".api..";
+    private static final String PUBLISHED_REFUSALS = FEED + ".exception..";
 
     private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
-            resideInAPackage(FEED + "..").and(not(resideInAPackage(PUBLISHED_CONTRACT)));
+            resideInAPackage(FEED + "..").and(not(resideInAPackage(PUBLISHED_REFUSALS)));
 
     private static final DescribedPredicate<JavaClass> ANOTHER_MODULE =
             resideInAPackage("com.largata..")
@@ -38,7 +38,7 @@ class FeedModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void theOnlyWayIntoTheFeedModuleIsItsApiPackage() {
+    void theOnlyWayIntoTheFeedModuleIsItsRefusals() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(FEED + "..")
@@ -46,7 +46,9 @@ class FeedModuleBoundaryTest {
                 .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
                 .as("a module is reached by ID and service interface only (ADR-002) — an ALLOWLIST, so"
                         + " the implementation, the web edge and any subpackage added later are all"
-                        + " covered without anyone remembering to name them")
+                        + " covered without anyone remembering to name them. Feed has no"
+                        + " in-process caller, so under ADR-038 rule 1 as amended on 11/09/2026 it"
+                        + " has no api package at all and its refusals are the whole front door")
                 .check(largata);
     }
 
@@ -64,19 +66,6 @@ class FeedModuleBoundaryTest {
                         + " photo bytes. An allowlist naming only API packages, never the modules")
                 .check(largata);
     }
-
-
-    @Test
-    void theModulesOwnApiPackageDependsOnNothingBehindIt() {
-        noClasses()
-                .that()
-                .resideInAPackage(PUBLISHED_CONTRACT)
-                .should()
-                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
-                .as("the published contract cannot depend on the implementation behind it")
-                .check(largata);
-    }
-
 
     @Test
     void theFeedModuleOwnsNoTableAndNoQueryOfItsOwn() {
@@ -109,6 +98,9 @@ class FeedModuleBoundaryTest {
                 .isNotEmpty();
         assertThat(largata.that(ANOTHER_MODULE))
                 .as("…and so would this one")
+                .isNotEmpty();
+        assertThat(largata.that(resideInAPackage(PUBLISHED_REFUSALS)))
+                .as("and a front door matching nothing would make the rules unfalsifiable")
                 .isNotEmpty();
     }
 }

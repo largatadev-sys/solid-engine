@@ -4,7 +4,7 @@ import static com.largata.support.TripRig.bearer;
 import static com.largata.support.TripRig.fieldIn;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.join.card.PreviewPage;
+import com.largata.join.card.service.PreviewPage;
 import com.largata.support.ObjectStoreTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;

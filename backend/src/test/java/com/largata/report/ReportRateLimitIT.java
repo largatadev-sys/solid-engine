@@ -4,6 +4,7 @@ import static com.largata.support.TripRig.bearer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.report.api.ReportPaths;
+import com.largata.report.intake.ReportRateLimiter;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;

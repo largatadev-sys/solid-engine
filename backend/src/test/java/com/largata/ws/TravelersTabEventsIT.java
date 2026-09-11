@@ -2,7 +2,7 @@ package com.largata.ws;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.join.JoinQueueTopic;
+import com.largata.join.join.adapter.JoinQueueTopic;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;

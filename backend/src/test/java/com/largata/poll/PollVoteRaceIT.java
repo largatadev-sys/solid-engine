@@ -4,8 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
-import com.largata.trip.trip.entity.Trip;
+import com.largata.poll.service.PollService;
+import com.largata.poll.service.PollView;
 import com.largata.support.PostgresTestBase;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.trip.service.TripService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -19,8 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import com.largata.trip.trip.service.TripService;
-
 
 @SpringBootTest
 class PollVoteRaceIT extends PostgresTestBase {

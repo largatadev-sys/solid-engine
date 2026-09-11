@@ -1,0 +1,166 @@
+package com.largata.invitation.entity;
+
+import com.largata.common.id.UuidV7;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.UUID;
+
+
+@Entity
+@Table(name = "invitation")
+public class Invitation {
+
+
+    public static final Duration VALIDITY = Duration.ofDays(14);
+
+    @Id private UUID id;
+
+    @Column(name = "workspace_id", nullable = false, updatable = false)
+    private UUID workspaceId;
+
+    @Column(updatable = false)
+    private String email;
+
+    @Column(name = "invitee_traveler_id", updatable = false)
+    private UUID inviteeTravelerId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private InvitationStatus status;
+
+    @Column(name = "invited_by", nullable = false, updatable = false)
+    private UUID invitedBy;
+
+    @Column(name = "accepted_by")
+    private UUID acceptedBy;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "expires_at", nullable = false, updatable = false)
+    private Instant expiresAt;
+
+    @Column(name = "resolved_at")
+    private Instant resolvedAt;
+
+    protected Invitation() {
+    }
+
+    private Invitation(
+            UUID id,
+            UUID workspaceId,
+            String email,
+            UUID inviteeTravelerId,
+            UUID invitedBy,
+            Instant createdAt) {
+        this.id = id;
+        this.workspaceId = workspaceId;
+        this.email = email;
+        this.inviteeTravelerId = inviteeTravelerId;
+        this.status = InvitationStatus.PENDING;
+        this.invitedBy = invitedBy;
+        this.createdAt = createdAt;
+        this.expiresAt = createdAt.plus(VALIDITY);
+    }
+
+
+    public static Invitation open(UUID workspaceId, String email, UUID invitedBy, Instant now) {
+        if (workspaceId == null || email == null || email.isBlank() || invitedBy == null || now == null) {
+            throw new IllegalArgumentException("An invitation names a workspace, an email, an inviter and an instant");
+        }
+        if (!email.equals(email.strip().toLowerCase())) {
+            throw new IllegalArgumentException("An invitation's email must be normalised (trimmed, lowercased)");
+        }
+        return new Invitation(UuidV7.generate(), workspaceId, email, null, invitedBy, now);
+    }
+
+
+    public static Invitation openFor(UUID workspaceId, UUID inviteeTravelerId, UUID invitedBy, Instant now) {
+        if (workspaceId == null || inviteeTravelerId == null || invitedBy == null || now == null) {
+            throw new IllegalArgumentException(
+                    "An invitation names a workspace, an invitee, an inviter and an instant");
+        }
+        return new Invitation(UuidV7.generate(), workspaceId, null, inviteeTravelerId, invitedBy, now);
+    }
+
+
+    public boolean isAddressedTo(UUID travelerId) {
+        return inviteeTravelerId != null && inviteeTravelerId.equals(travelerId);
+    }
+
+
+    public boolean isAddressedByEmail() {
+        return email != null;
+    }
+
+
+    public boolean isExpired(Instant now) {
+        return !now.isBefore(expiresAt);
+    }
+
+    public void accept(UUID acceptingTravelerId, Instant now) {
+        this.status = InvitationStatus.ACCEPTED;
+        this.acceptedBy = acceptingTravelerId;
+        this.resolvedAt = now;
+    }
+
+    public void decline(Instant now) {
+        this.status = InvitationStatus.DECLINED;
+        this.resolvedAt = now;
+    }
+
+    public void revoke(Instant now) {
+        this.status = InvitationStatus.REVOKED;
+        this.resolvedAt = now;
+    }
+
+
+    public void voidBySystem(Instant now) {
+        this.status = InvitationStatus.VOIDED;
+        this.resolvedAt = now;
+    }
+
+
+    public void expire(Instant now) {
+        this.status = InvitationStatus.EXPIRED;
+        this.resolvedAt = now;
+    }
+
+    public UUID id() {
+        return id;
+    }
+
+    public UUID workspaceId() {
+        return workspaceId;
+    }
+
+    public String email() {
+        return email;
+    }
+
+    public UUID inviteeTravelerId() {
+        return inviteeTravelerId;
+    }
+
+    public InvitationStatus status() {
+        return status;
+    }
+
+    public UUID invitedBy() {
+        return invitedBy;
+    }
+
+    public Instant createdAt() {
+        return createdAt;
+    }
+
+    public Instant expiresAt() {
+        return expiresAt;
+    }
+}

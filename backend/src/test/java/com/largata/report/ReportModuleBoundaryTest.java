@@ -2,6 +2,7 @@ package com.largata.report;
 
 import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,6 +11,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 
@@ -19,8 +21,12 @@ class ReportModuleBoundaryTest {
 
     private static final String PUBLISHED_CONTRACT = REPORT + ".api..";
 
+    private static final String[] FRONT_DOOR = {PUBLISHED_CONTRACT, REPORT + ".exception.."};
+
+    private static final List<String> THE_SLICES = List.of("outbox", "intake", "delivery");
+
     private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
-            resideInAPackage(REPORT + "..").and(not(resideInAPackage(PUBLISHED_CONTRACT)));
+            resideInAPackage(REPORT + "..").and(not(resideInAnyPackage(FRONT_DOOR)));
 
     private static final DescribedPredicate<JavaClass> A_MODULE_IT_MAY_NOT_NAME =
             resideInAPackage("com.largata..")
@@ -35,7 +41,7 @@ class ReportModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void theOnlyWayIntoTheReportModuleIsItsApiPackage() {
+    void theOnlyWayIntoTheReportModuleIsItsApiAndItsRefusals() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(REPORT + "..")
@@ -43,7 +49,9 @@ class ReportModuleBoundaryTest {
                 .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
                 .as("a module is reached by ID and service interface only (ADR-002) — an ALLOWLIST, so"
                         + " the implementation, the web edge and any subpackage added later are all"
-                        + " covered without anyone remembering to name them")
+                        + " covered without anyone remembering to name them. The slices stay inside;"
+                        + " api holds only the route constant SecurityConfig reads, until ticket 13"
+                        + " retires it")
                 .check(largata);
     }
 
@@ -74,6 +82,39 @@ class ReportModuleBoundaryTest {
 
 
     @Test
+    void intakeAndDeliveryMeetOnlyInTheOutbox() {
+        noClasses()
+                .that()
+                .resideInAPackage(REPORT + ".intake..")
+                .should()
+                .dependOnClassesThat(resideInAPackage(REPORT + ".delivery.."))
+                .as("intake writes the outbox and delivery drains it; the two never name each other,"
+                        + " which is what makes the outbox the seam rather than a shared bag of types")
+                .check(largata);
+
+        noClasses()
+                .that()
+                .resideInAPackage(REPORT + ".delivery..")
+                .should()
+                .dependOnClassesThat(resideInAPackage(REPORT + ".intake.."))
+                .as("…and the same in the other direction, so neither side can quietly become the"
+                        + " other's dependency")
+                .check(largata);
+    }
+
+
+    @Test
+    void everySliceNamedHereIsARealPackageHoldingRealCode() {
+        for (String slice : THE_SLICES) {
+            assertThat(largata.that(resideInAPackage(REPORT + "." + slice + "..")))
+                    .as("the slice list is the module's map; a name that has stopped matching a"
+                            + " package would leave a slice unlisted and nobody would notice", slice)
+                    .isNotEmpty();
+        }
+    }
+
+
+    @Test
     void theBoundaryTestSeesTheModuleItGuards() {
         assertThat(largata.that(resideInAPackage(REPORT + "..")))
                 .as("guards against a vacuously passing rule — the import must have found the module")
@@ -88,6 +129,9 @@ class ReportModuleBoundaryTest {
                 .isNotEmpty();
         assertThat(largata.that(A_MODULE_IT_MAY_NOT_NAME))
                 .as("…and so would this one")
+                .isNotEmpty();
+        assertThat(largata.that(resideInAnyPackage(FRONT_DOOR)))
+                .as("and a front door matching nothing would make the rules unfalsifiable")
                 .isNotEmpty();
     }
 }

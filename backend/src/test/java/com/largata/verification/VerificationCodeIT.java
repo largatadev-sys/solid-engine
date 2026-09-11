@@ -8,6 +8,11 @@ import static org.mockito.Mockito.verify;
 import com.largata.common.security.VerifiedContact;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
+import com.largata.verification.exception.VerificationExceptions;
+import com.largata.verification.service.EmailVerificationFlag;
+import com.largata.verification.service.VerificationMail;
+import com.largata.verification.service.VerificationMailer;
+import com.largata.verification.service.VerificationService;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +26,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
 
 @SpringBootTest
 @Import(VerificationCodeIT.Doubles.class)

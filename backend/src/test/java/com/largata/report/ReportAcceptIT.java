@@ -4,6 +4,8 @@ import static com.largata.support.TripRig.bearer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.report.api.ReportPaths;
+import com.largata.report.intake.ReportService;
+import com.largata.report.outbox.DeviceContext;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.nimbusds.jwt.SignedJWT;
@@ -21,7 +23,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
-
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
