@@ -4,7 +4,6 @@ import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -18,10 +17,10 @@ class VerificationModuleBoundaryTest {
 
     private static final String VERIFICATION = "com.largata.verification";
 
-    private static final String PUBLISHED_CONTRACT = VERIFICATION + ".api..";
+    private static final String PUBLISHED_REFUSALS = VERIFICATION + ".exception..";
 
     private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
-            resideInAPackage(VERIFICATION + "..").and(not(resideInAPackage(PUBLISHED_CONTRACT)));
+            resideInAPackage(VERIFICATION + "..").and(not(resideInAPackage(PUBLISHED_REFUSALS)));
 
     private static final DescribedPredicate<JavaClass> A_MODULE_IT_MAY_NOT_NAME =
             resideInAPackage("com.largata..")
@@ -35,7 +34,7 @@ class VerificationModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void theOnlyWayIntoTheVerificationModuleIsItsApiPackage() {
+    void theOnlyWayIntoTheVerificationModuleIsItsRefusals() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(VERIFICATION + "..")
@@ -43,7 +42,9 @@ class VerificationModuleBoundaryTest {
                 .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
                 .as("a module is reached by ID and service interface only (ADR-002) — an ALLOWLIST, so"
                         + " the implementation, the web edge and any subpackage added later are all"
-                        + " covered without anyone remembering to name them")
+                        + " covered without anyone remembering to name them. Verification has no"
+                        + " in-process caller, so under ADR-038 rule 1 as amended on 11/09/2026 it"
+                        + " has no api package at all and its refusals are the whole front door")
                 .check(largata);
     }
 
@@ -62,26 +63,6 @@ class VerificationModuleBoundaryTest {
 
 
     @Test
-    void theOnlyWayTheContractReachesBehindItIsTheOneBreachAlreadyRecorded() {
-        assertThatThrownBy(
-                        () ->
-                                noClasses()
-                                        .that()
-                                        .resideInAPackage(PUBLISHED_CONTRACT)
-                                        .should()
-                                        .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
-                                        .check(largata))
-                .as("VerificationCodeResponse.of(IssuedCode) maps from an internal type - a real ADR-039 breach,"
-                        + " recorded rather than fixed, because reshaping this module's contract is"
-                        + " not the scope of the PR that first guarded it. CM-5 ticket 12 closes it."
-                        + " Asserting the breach STILL FAILS is what stops it being forgotten: the day"
-                        + " someone fixes it this test goes red and the real rule replaces it")
-                .isInstanceOf(AssertionError.class)
-                .hasMessageContaining("VerificationCodeResponse");
-    }
-
-
-    @Test
     void theBoundaryTestSeesTheModuleItGuards() {
         assertThat(largata.that(resideInAPackage(VERIFICATION + "..")))
                 .as("guards against a vacuously passing rule — the import must have found the module")
@@ -96,6 +77,9 @@ class VerificationModuleBoundaryTest {
                 .isNotEmpty();
         assertThat(largata.that(A_MODULE_IT_MAY_NOT_NAME))
                 .as("…and so would this one")
+                .isNotEmpty();
+        assertThat(largata.that(resideInAPackage(PUBLISHED_REFUSALS)))
+                .as("and a front door matching nothing would make the rules unfalsifiable")
                 .isNotEmpty();
     }
 }

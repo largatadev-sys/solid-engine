@@ -3,8 +3,12 @@ package com.largata.invitation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.trip.trip.entity.Trip;
+import com.largata.invitation.entity.Invitation;
+import com.largata.invitation.entity.InvitationStatus;
+import com.largata.invitation.repository.InvitationRepository;
 import com.largata.support.PostgresTestBase;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.trip.service.TripService;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -12,8 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import com.largata.trip.trip.service.TripService;
-
 
 @SpringBootTest
 class InvitationStorageIT extends PostgresTestBase {

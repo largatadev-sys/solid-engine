@@ -7,9 +7,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import com.largata.common.authz.Membership;
 import com.largata.common.authz.Role;
 import com.largata.common.security.VerifiedContact;
-import com.largata.trip.trip.entity.Trip;
+import com.largata.invitation.entity.Invitation;
+import com.largata.invitation.exception.InvitationExceptions;
+import com.largata.invitation.service.InvitationService;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
+import com.largata.trip.trip.entity.Trip;
+import com.largata.trip.trip.service.TripService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -20,8 +24,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
-import com.largata.trip.trip.service.TripService;
-
 
 @SpringBootTest
 @Import(InvitationExpiryIT.ClockConfig.class)

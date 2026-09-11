@@ -1,6 +1,7 @@
 import { test, expect, dialogsSettled } from '../support/fixtures';
 import { api, tokenFor } from '../support/pool';
 import { requireStack } from '../support/gate';
+import { missingItineraryMessage } from '../../src/components/missingItineraryMessage';
 import { ownerTagFor, type PoolTag } from '../support/identities';
 import {
   FIXTURE_PHOTO,
@@ -240,6 +241,7 @@ test('a non-member sees no photos and no crash on the tab', async ({ page, signI
   await signIn(MEMBER);
   await page.goto(dumpRoute(theirs.id));
 
+  await expect(page.getByText(missingItineraryMessage.title)).toBeVisible();
   await expect(labelled(page, PHOTO_DUMP_ADD_LABEL)).toHaveCount(0);
   await expect(labelled(page, PHOTO_DUMP_TILE_LABEL)).toHaveCount(0);
   expect((await page.evaluate(() => document.body.innerText)).length).toBeGreaterThan(0);
