@@ -1,12 +1,12 @@
-package com.largata.health;
+package com.largata.health.service;
 
 import com.largata.common.error.DependencyUnavailableException;
-import com.largata.health.api.HealthResponse;
+import com.largata.health.dto.HealthResponse;
+import com.largata.health.repository.HealthRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-
 
 @Service
 public class HealthService {

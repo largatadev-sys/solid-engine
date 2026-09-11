@@ -1,4 +1,4 @@
-package com.largata.health.api;
+package com.largata.health.dto;
 
 
 public record HealthResponse(String status) {}

@@ -1,4 +1,4 @@
-package com.largata.health;
+package com.largata.health.repository;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -13,7 +13,7 @@ public class HealthRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    void ping() {
+    public void ping() {
         jdbcTemplate.queryForObject("SELECT 1", Integer.class);
     }
 }

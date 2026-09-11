@@ -47,7 +47,7 @@ Apply ADR-038 rule 2 to the ten modules exactly as it was applied to the four, o
 - A chore series under this one spec: no story id, the off-epic dated slug, `/to-tickets` producing one ticket per module plus the riders. Each ticket ships as its own PR on a `chore/module-layout-<module>` branch and is squash-merged to `dev` through the ordinary gate. This is a recorded exception to "one branch per story, one PR at the gate": that rule protects the rollback unit, and the rollback unit of a layout sweep is the module.
 - Every commit subject carries `module-layout` so the series is located by `git log --grep`, since no story id exists. Form: `refactor(<module>): module-layout — <what moved>`.
 - The tracker is the tickets: each carries a `Status:` line (`ready-for-agent` → `claimed` → `resolved`), and the BUILD_STATUS off-epic ledger entry for 2026-09-11 carries one glyph per ticket, updated in each PR's last commit before the merge. A session claims a ticket by committing its `Status:` change first, and takes another once that ticket's PR is open.
-- Order: verification, place, discovery, feed, profile, chat, then the api-is-never-wire guard, then poll, invitation, report, join; the migration folder at any point; `SecurityConfig` last, on its own yes.
+- Order: verification, place, discovery, feed, profile, chat, then the api-is-never-wire guard, then poll, invitation, report, join; the migration folder at any point; `health` after the guard, since it is what empties that guard's exclusion list; `SecurityConfig` last, on its own yes.
 
 **The rule applied.** ADR-038 rule 2 read literally: layers by default, slices when a layer folder would pass about ten files, `postcard` the reference for layers and `trip` for slices. Flat is not a shape. Folders with nothing in them do not exist.
 
@@ -101,7 +101,7 @@ Apply ADR-038 rule 2 to the ten modules exactly as it was applied to the four, o
 ## Out of Scope
 
 - `identity` in any form — the follow split, the `RequestPrincipal` record, a layout-only pass. The epic map's `RequestPrincipal` line owns it as a grilled story.
-- `common`, `ws`, `media` and `health`: outside the rule by ADR-038's classification, or five files. The dissolution of `common.authz` is the deferred TW-2.
+- `common`, `ws` and `media`: outside the rule by ADR-038's classification — they are a shared kernel, shared infrastructure and a transport, and the layout rule is written for capability modules. The dissolution of `common.authz` is the deferred TW-2. **`health` was excluded here too, by size rather than by classification, and came back in on 2026-09-11 as ticket 14** *(founder call, from the question of why the classified-out modules were untouched)*: `ModuleGuardMetaTest` lists it **under** the rule, so excluding it left ticket 07's guard carrying a by-module exclusion for a module the build says is in scope — a size exemption in a list otherwise about role. Converting five files is cheaper than carrying that divergence.
 - The four converted modules.
 - Any foreign-key drop or named Postgres schema: the FK-drop story, a stop-rule item.
 - Splitting any class, `JoinService` included; a split is a behaviour-shaped change and this series is moves.

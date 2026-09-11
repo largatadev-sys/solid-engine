@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.largata.health.service.HealthService;
 import com.largata.support.PostgresTestBase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;

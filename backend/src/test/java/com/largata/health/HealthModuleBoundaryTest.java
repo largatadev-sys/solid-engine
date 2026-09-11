@@ -17,10 +17,8 @@ class HealthModuleBoundaryTest {
 
     private static final String HEALTH = "com.largata.health";
 
-    private static final String PUBLISHED_CONTRACT = HEALTH + ".api..";
-
-    private static final DescribedPredicate<JavaClass> BEHIND_THE_MODULES_FRONT_DOOR =
-            resideInAPackage(HEALTH + "..").and(not(resideInAPackage(PUBLISHED_CONTRACT)));
+    private static final DescribedPredicate<JavaClass> ANYTHING_IN_THE_MODULE =
+            resideInAPackage(HEALTH + "..");
 
     private static final DescribedPredicate<JavaClass> A_MODULE_IT_MAY_NOT_NAME =
             resideInAPackage("com.largata..")
@@ -34,15 +32,18 @@ class HealthModuleBoundaryTest {
                     .importPackages("com.largata");
 
     @Test
-    void theOnlyWayIntoTheHealthModuleIsItsApiPackage() {
+    void nothingOutsideTheHealthModuleReachesIntoIt() {
         noClasses()
                 .that()
                 .resideOutsideOfPackage(HEALTH + "..")
                 .should()
-                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
+                .dependOnClassesThat(ANYTHING_IN_THE_MODULE)
                 .as("a module is reached by ID and service interface only (ADR-002) — an ALLOWLIST, so"
                         + " the implementation, the web edge and any subpackage added later are all"
-                        + " covered without anyone remembering to name them")
+                        + " covered without anyone remembering to name them. Health has no in-process"
+                        + " caller, so under ADR-038 rule 1 as amended on 11/09/2026 it has no api"
+                        + " package — and it publishes no refusal either, so it has no front door at"
+                        + " all and NOTHING outside it may name any part of it")
                 .check(largata);
     }
 
@@ -61,18 +62,6 @@ class HealthModuleBoundaryTest {
 
 
     @Test
-    void theModulesOwnApiPackageDependsOnNothingBehindIt() {
-        noClasses()
-                .that()
-                .resideInAPackage(PUBLISHED_CONTRACT)
-                .should()
-                .dependOnClassesThat(BEHIND_THE_MODULES_FRONT_DOOR)
-                .as("the published contract cannot depend on the implementation behind it")
-                .check(largata);
-    }
-
-
-    @Test
     void theBoundaryTestSeesTheModuleItGuards() {
         assertThat(largata.that(resideInAPackage(HEALTH + "..")))
                 .as("guards against a vacuously passing rule — the import must have found the module")
@@ -82,7 +71,7 @@ class HealthModuleBoundaryTest {
 
     @Test
     void theAllowlistPredicatesActuallySelectSomething() {
-        assertThat(largata.that(BEHIND_THE_MODULES_FRONT_DOOR))
+        assertThat(largata.that(ANYTHING_IN_THE_MODULE))
                 .as("a predicate matching nothing would pass every rule above while guarding nothing")
                 .isNotEmpty();
         assertThat(largata.that(A_MODULE_IT_MAY_NOT_NAME))

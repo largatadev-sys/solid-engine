@@ -1,10 +1,10 @@
-package com.largata.health;
+package com.largata.health.controller;
 
-import com.largata.health.api.HealthResponse;
+import com.largata.health.dto.HealthResponse;
+import com.largata.health.service.HealthService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 
 @RestController
 @RequestMapping("/v1/health")

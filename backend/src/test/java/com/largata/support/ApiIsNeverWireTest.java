@@ -34,10 +34,7 @@ class ApiIsNeverWireTest {
                                 + " owns the split that would give identity a dto",
                     "ws",
                             "transport - ConnectionTicketResponse is the handshake's own wire and ws"
-                                + " carries other modules' events (ADR-038 classification)",
-                    "health",
-                            "five files, outside the rule by size - HealthResponse is the liveness"
-                                + " body and health has no dto");
+                                + " carries other modules' events (ADR-038 classification)");
 
     private final JavaClasses largata =
             new ClassFileImporter()
@@ -54,7 +51,9 @@ class ApiIsNeverWireTest {
                             + " property of the build rather than a convention each module"
                             + " remembers. It is stated over the modules UNDER the rule: the four"
                             + " ADR-038 classifies outside it are excluded BY MODULE with their"
-                            + " reason, never by naming a class, so the meta-test's"
+                            + " reason — and by ROLE, never by size: a module under the rule is"
+                            + " converted rather than exempted, which is what ticket 14 did to"
+                            + " health. Never by naming a class, so the meta-test's"
                             + " no-by-name-exemption rule still holds and a module invented"
                             + " tomorrow is covered the day it is created")
                 .isEmpty();
@@ -74,10 +73,13 @@ class ApiIsNeverWireTest {
         }
         assertThat(OUTSIDE_THE_RULE.keySet())
                 .as(
-                        "the shared kernel, the transport and the five-file module - the same four"
-                            + " ModuleGuardMetaTest classifies outside the rule, plus health, and"
-                            + " nothing else")
-                .containsExactlyInAnyOrder("common", "identity", "ws", "health");
+                        "the shared kernel and the transport - excluded by ROLE. health was a fourth"
+                            + " entry until ticket 14 converted it: it was excluded by SIZE while"
+                            + " ModuleGuardMetaTest listed it UNDER the rule, so two guards"
+                            + " disagreed about one module. A size exemption in a list otherwise"
+                            + " about what a module IS is how a rule erodes, so this one carries"
+                            + " none")
+                .containsExactlyInAnyOrder("common", "identity", "ws");
     }
 
 
