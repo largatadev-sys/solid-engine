@@ -8,7 +8,7 @@ import tools.jackson.databind.ObjectMapper;
 
 
 @Configuration
-public class ReportRelayConfig {
+class ReportRelayConfig {
 
     @Bean
     @ConditionalOnExpression(WorklogReportRelay.INTAKE_CONFIGURED)

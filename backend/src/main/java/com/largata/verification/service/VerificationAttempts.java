@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-public class VerificationAttempts {
+class VerificationAttempts {
 
     private final VerificationCodeRepository codes;
 

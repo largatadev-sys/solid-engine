@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-public class SuggestionCache {
+class SuggestionCache {
 
     static final int CAPACITY = 500;
 

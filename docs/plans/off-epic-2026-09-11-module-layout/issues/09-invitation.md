@@ -8,13 +8,13 @@
 
 **Status:** resolved
 
-- [ ] Every main-tree class of the module sits in a target folder and the module root holds none; `api/` is byte-identical
-- [ ] `join` compiles against `InvitationApi` unchanged
-- [ ] `ArchiveVoidsInvitations` keeps `BEFORE_COMMIT` and `MANDATORY` propagation, and its atomicity test follows it and passes unedited — this is ADR-038 rule 5's recorded exception, and a move must not loosen it
-- [ ] The mail profile pair still resolves exactly one mailer in each profile, proven by one IT run in each
-- [ ] The boundary test passes with its allowlist unchanged and both predicates still selecting something
-- [ ] No test changes but its package line and imports; the invitation ITs pass unedited
-- [ ] The spec's verification loop, in full, and the structural guards green
-- [ ] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
+- [x] Every main-tree class of the module sits in a target folder and the module root holds none; `api/` is byte-identical
+- [x] `join` compiles against `InvitationApi` unchanged
+- [x] `ArchiveVoidsInvitations` keeps `BEFORE_COMMIT` and `MANDATORY` propagation, and its atomicity test follows it and passes unedited — this is ADR-038 rule 5's recorded exception, and a move must not loosen it
+- [x] The mail profile pair still resolves exactly one mailer in each profile, proven by one IT run in each
+- [x] The boundary test passes with its allowlist unchanged and both predicates still selecting something
+- [x] No test changes but its package line and imports; the invitation ITs pass unedited
+- [x] The spec's verification loop, in full, and the structural guards green
+- [x] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
 
 ## Comments

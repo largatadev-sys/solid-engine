@@ -8,14 +8,14 @@
 
 **Status:** resolved
 
-- [ ] Every main-tree class of the module sits in a slice folder or a root folder and the module root holds none; no class is split
-- [ ] The never-read event-publisher field and its constructor parameter are deleted; the `card` `package-info` is deleted and `ModulithVerificationTest` still refuses postcard alone — if Modulith starts refusing something in `join`, that is a finding to record, not a reason to keep the annotation
-- [ ] The boundary test passes with its allowlist (`common`, `identity`, `invitation`, `media`, `trip`, `ws`) unchanged and both predicates still selecting something
-- [ ] `SupersedeOnMembershipArrival` keeps its event phase and its test passes unedited
-- [ ] The card's fonts and art are found from their new package — a resource path relative to the old package is the trap; the join-link crawler block in the Playwright suite against a running preview is the external check
-- [ ] The four test files importing `JoinPaths` or reaching the join routes keep working unchanged; `JoinPaths` itself does not move
-- [ ] No test changes but its package line and imports; the join lifecycle IT passes unedited
-- [ ] The spec's verification loop, in full, and the structural guards green
-- [ ] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
+- [x] Every main-tree class of the module sits in a slice folder or a root folder and the module root holds none; no class is split
+- [x] The never-read event-publisher field and its constructor parameter are deleted; the `card` `package-info` is deleted and `ModulithVerificationTest` still refuses postcard alone — if Modulith starts refusing something in `join`, that is a finding to record, not a reason to keep the annotation
+- [x] The boundary test passes with its allowlist (`common`, `identity`, `invitation`, `media`, `trip`, `ws`) unchanged and both predicates still selecting something
+- [x] `SupersedeOnMembershipArrival` keeps its event phase and its test passes unedited
+- [x] The card's fonts and art are found from their new package — a resource path relative to the old package is the trap; the join-link crawler block in the Playwright suite against a running preview is the external check
+- [x] The four test files importing `JoinPaths` or reaching the join routes keep working unchanged; `JoinPaths` itself does not move
+- [x] No test changes but its package line and imports; the join lifecycle IT passes unedited
+- [x] The spec's verification loop, in full, and the structural guards green
+- [x] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
 
 ## Comments

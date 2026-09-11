@@ -8,11 +8,11 @@
 
 **Status:** resolved
 
-- [ ] Every migration sits in a module folder and the migration root holds none; moves by `git mv`
-- [ ] `mvn -o test-compile` before any run — an edited resource never reaches the build output without it, and a moved one is an edited one
-- [ ] The six migration-stepping ITs pass unedited: they are the proof that recursive scanning holds for a test-configured Flyway as well as for Boot's
-- [ ] CI's clean-checkout `docker compose up` boots against a fresh database and the schema history shows 56 rows applied — read from the run, not assumed
-- [ ] The epic map's FK-drop line gains a *cheap half built* note in the same PR
-- [ ] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
+- [x] Every migration sits in a module folder and the migration root holds none; moves by `git mv`
+- [x] `mvn -o test-compile` before any run — an edited resource never reaches the build output without it, and a moved one is an edited one
+- [x] The six migration-stepping ITs pass unedited: they are the proof that recursive scanning holds for a test-configured Flyway as well as for Boot's
+- [x] CI's clean-checkout `docker compose up` boots against a fresh database and the schema history shows 56 rows applied — read from the run, not assumed
+- [x] The epic map's FK-drop line gains a *cheap half built* note in the same PR
+- [x] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
 
 ## Comments

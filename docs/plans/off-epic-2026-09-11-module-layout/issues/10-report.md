@@ -8,13 +8,22 @@
 
 **Status:** resolved
 
-- [ ] Every main-tree class of the module sits in a slice or a root folder and the module root holds none
-- [ ] Direction holds: nothing in `intake` names a `delivery` type and nothing in `delivery` names an `intake` type — checked by a search, and worth one ArchUnit slice rule inside the module's boundary test in the mould of `trip`'s slice list
-- [ ] The boundary test passes with its front door still `api..` and `exception..`, and both predicates still selecting something
-- [ ] The four test files importing `ReportPaths` keep working unchanged; `ReportPaths` itself does not move
-- [ ] The relay's explicitly stated HTTP transport and the poller's schedule survive the move, proven by the module's ITs and not by reading — a moved `@Configuration` is still scanned
+- [x] Every main-tree class of the module sits in a slice or a root folder and the module root holds none
+- [x] Direction holds: nothing in `intake` names a `delivery` type and nothing in `delivery` names an `intake` type — checked by a search, and worth one ArchUnit slice rule inside the module's boundary test in the mould of `trip`'s slice list
+- [x] The boundary test passes with its front door still `api..` and `exception..`, and both predicates still selecting something
+- [x] The four test files importing `ReportPaths` keep working unchanged; `ReportPaths` itself does not move
+- [x] The relay's explicitly stated HTTP transport and the poller's schedule survive the move, proven by the module's ITs and not by reading — a moved `@Configuration` is still scanned
 - [ ] No test changes but its package line and imports; the report ITs pass unedited
-- [ ] The spec's verification loop, in full, and the structural guards green
-- [ ] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
+- [x] The spec's verification loop, in full, and the structural guards green
+- [x] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
 
 ## Comments
+
+**2026-09-11 — one deviation from this ticket's ACs, raised at the series' code review (spec axis) and recorded rather than reverted.**
+
+The AC reads *"No test changes but its package line and imports; the report ITs pass unedited."* **`ReportPayloads` was widened** — `final class` → `public final class`, both `reportJson` overloads with it. That is a visibility change, not a package line or an import, so the AC is **unmet as written**.
+
+**Why it was not reverted.** The review's implied fix was to move `ReportDeliveryIT` back out of `delivery/`. Measured, that is worse: the IT names `ReportDeliveryService`, `ReportRelay`, `RelayEnvelope` and `RelayOutcome` — all in `delivery/` — so moving it to the module root would force **four** types public to avoid widening **one** shared fixture. `ReportPayloads` is genuinely cross-package: `ReportAcceptIT`, `ReportRateLimitIT` and `ReportScreenshotIT` sit at the root and `ReportDeliveryIT` in `delivery/`, so a shared test fixture spanning two packages has to be reachable from both.
+
+**The narrowest form was chosen and is what shipped:** one test fixture public, no production type widened for a test. `ReportRelayBindingTest` and `WorklogReportRelayIT` stay in `delivery/` precisely so `ReportRelayConfig` can remain package-private — which it is.
+

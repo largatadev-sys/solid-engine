@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-public class PollVoteInserter {
+class PollVoteInserter {
 
     private final PollVoteRepository votes;
 

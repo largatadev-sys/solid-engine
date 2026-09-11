@@ -8,11 +8,11 @@
 
 **Status:** resolved
 
-- [ ] Every main-tree class of the module sits in a target folder and the module root holds none
-- [ ] `api/` and its `package-info` are gone; the boundary test loses its contract rule and its recorded-breach test on the ticket 01 pattern, keeps the outside-in rule with its allowlist (`common`, `identity`, `ws`), and is sabotage-checked with a real usage
-- [ ] The body limit is still what the entity validates against and what the wire refuses, proven by the existing chat ITs, unedited
-- [ ] No test changes but its package line and imports
-- [ ] The spec's verification loop, in full, and the structural guards green
-- [ ] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
+- [x] Every main-tree class of the module sits in a target folder and the module root holds none
+- [x] `api/` and its `package-info` are gone; the boundary test loses its contract rule and its recorded-breach test on the ticket 01 pattern, keeps the outside-in rule with its allowlist (`common`, `identity`, `ws`), and is sabotage-checked with a real usage
+- [x] The body limit is still what the entity validates against and what the wire refuses, proven by the existing chat ITs, unedited
+- [x] No test changes but its package line and imports
+- [x] The spec's verification loop, in full, and the structural guards green
+- [x] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
 
 ## Comments

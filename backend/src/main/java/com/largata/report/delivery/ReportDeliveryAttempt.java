@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-public class ReportDeliveryAttempt {
+class ReportDeliveryAttempt {
 
     private static final Logger log = LoggerFactory.getLogger(ReportDeliveryAttempt.class);
 

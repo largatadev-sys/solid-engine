@@ -8,11 +8,11 @@
 
 **Status:** resolved
 
-- [ ] Every main-tree class of the module sits in a target folder and the module root holds none
-- [ ] `api/` and its `package-info` are gone; the boundary test loses its contract rule on the ticket 01 pattern, keeps the outside-in rule, and is sabotage-checked with a real usage
-- [ ] The module still owns no table and no SQL
-- [ ] The feed ITs pass unedited; the Playwright feed specs against the local stack are the external check if any doubt about the wire remains
-- [ ] The spec's verification loop, in full, and the structural guards green
-- [ ] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
+- [x] Every main-tree class of the module sits in a target folder and the module root holds none
+- [x] `api/` and its `package-info` are gone; the boundary test loses its contract rule on the ticket 01 pattern, keeps the outside-in rule, and is sabotage-checked with a real usage
+- [x] The module still owns no table and no SQL
+- [x] The feed ITs pass unedited; the Playwright feed specs against the local stack are the external check if any doubt about the wire remains
+- [x] The spec's verification loop, in full, and the structural guards green
+- [x] The last commit sets this ticket `resolved` and flips its ledger glyph; the PR is opened, never merged unasked
 
 ## Comments

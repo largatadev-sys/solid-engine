@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 
-public final class PollTally {
+final class PollTally {
 
     private PollTally() {}
 

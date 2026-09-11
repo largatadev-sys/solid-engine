@@ -8,13 +8,13 @@
 
 **Status:** resolved
 
-- [ ] Every main-tree class of the module sits in a target folder and the module root holds none; moves by `git mv`, staged by explicit path
-- [ ] `api/` and its `package-info` are gone; the boundary test loses its contract rule and its recorded-breach test, keeps the outside-in rule and the allowlist, and its remaining rule is sabotage-checked with a real usage (field, parameter or return type), never an unused import
-- [ ] No test changes but its package line and imports; no assertion, no fixture edited
-- [ ] The two profile pairs (the verification flag, the mailer) still resolve exactly one bean each, proven by at least one IT run in each profile
-- [ ] The unit test that reproduces the Admin SDK startup failure and pins the explicit `NetHttpTransport` stays green
-- [ ] The spec's verification loop, in full: `clean test-compile` looped until quiet, the unit suite with its counts read, the module's ITs through failsafe with `failsafe:verify` and the counts read, CI green on the push
-- [ ] `ModuleCycleTest`'s recorded set unchanged; `ModulithVerificationTest` still refuses postcard alone; `ModuleGuardMetaTest` green
-- [ ] The last commit on the branch sets this ticket `resolved` and flips its glyph on the BUILD_STATUS ledger entry; the PR is opened, never merged unasked
+- [x] Every main-tree class of the module sits in a target folder and the module root holds none; moves by `git mv`, staged by explicit path
+- [x] `api/` and its `package-info` are gone; the boundary test loses its contract rule and its recorded-breach test, keeps the outside-in rule and the allowlist, and its remaining rule is sabotage-checked with a real usage (field, parameter or return type), never an unused import
+- [x] No test changes but its package line and imports; no assertion, no fixture edited
+- [x] The two profile pairs (the verification flag, the mailer) still resolve exactly one bean each, proven by at least one IT run in each profile
+- [x] The unit test that reproduces the Admin SDK startup failure and pins the explicit `NetHttpTransport` stays green
+- [x] The spec's verification loop, in full: `clean test-compile` looped until quiet, the unit suite with its counts read, the module's ITs through failsafe with `failsafe:verify` and the counts read, CI green on the push
+- [x] `ModuleCycleTest`'s recorded set unchanged; `ModulithVerificationTest` still refuses postcard alone; `ModuleGuardMetaTest` green
+- [x] The last commit on the branch sets this ticket `resolved` and flips its glyph on the BUILD_STATUS ledger entry; the PR is opened, never merged unasked
 
 ## Comments

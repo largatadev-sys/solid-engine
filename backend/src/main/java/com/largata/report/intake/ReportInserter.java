@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-public class ReportInserter {
+class ReportInserter {
 
     private final ReportOutboxRepository outbox;
     private final ReportScreenshotRepository screenshots;

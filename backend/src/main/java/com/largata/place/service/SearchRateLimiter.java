@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-public class SearchRateLimiter {
+class SearchRateLimiter {
 
     static final int PER_TRAVELER_PER_MINUTE = 30;
 

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-public class VerificationCodes {
+class VerificationCodes {
 
     static final int DIGITS = 6;
 
