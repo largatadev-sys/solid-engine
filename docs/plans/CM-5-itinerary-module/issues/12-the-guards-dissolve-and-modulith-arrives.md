@@ -37,6 +37,18 @@
 
 **Not done here:** trip's internals are not yet package-private where the layer folders allow. That half of the ticket is deferred with the gate.
 
+## Amendment — AC8 is discharged elsewhere, by a route this ticket did not anticipate
+
+*Recorded 2026-09-11 by the module-layout series, which did not own this ticket and has not ticked its box.*
+
+**AC8 reads:** *"`chat` and `verification` map on their own side of the door; their api records are bare data; both guards enforce the real contract rule and their breach-still-fails assertions are gone."* **Half of it is now true and the other half is unreachable**, because the off-epic module-layout series (`docs/plans/off-epic-2026-09-11-module-layout/`) deleted `chat.api` and `verification.api` outright.
+
+The finding those two guards recorded was a **classification error, not a contract problem**: a wire record sat in `api/` only because the flat shape had no `dto/`. Tickets 01 and 06 of that series moved `VerificationCodeResponse` and `ChatMessageResponse` into `dto/`, and under ADR-038 rule 1 as amended on 11/09/2026 a module with no in-process caller has no `api` package at all — so both packages went, and with them the contract rule and the breach-still-fails assertions. **The assertions are gone, as AC8 wanted. There is no contract rule for a guard to enforce, which AC8 assumed there would be.** What seals both modules now is the outside-in rule each guard keeps, sabotage-checked with a real field usage.
+
+**Why this is a comment and not a tick:** whether AC8 counts as met is CM-5's gate to call, not this series'. What the series owes is the warning — **a session picking this ticket up will go looking for `chat.api` and find nothing**, and should read this before re-deriving why.
+
+**Ticket 13 carries the same claim** and will be stale on the same merge: its line naming *"`chat.api` / `verification.api` still map from internal types in static factories"* describes a tree that no longer exists once the series lands. AC1 — trip's `postcard.legacy` exemption — is untouched by any of this and remains open exactly as recorded.
+
 ## Amendment — AC5 is UNMET, not met differently
 
 Filed `[~]` at the gate and corrected at the final review, which was right to push: the spec's user story 21 asks for *"the graph acyclic by rule and Modulith's `verify()` **green**"*, and ADR-039 decision 9 asks for it too. `verify()` throws. `ModulithVerificationTest` asserts the refusals are **not empty** and names `postcard` and `trip` — honest about the state, but honest about a state the spec did not accept.
