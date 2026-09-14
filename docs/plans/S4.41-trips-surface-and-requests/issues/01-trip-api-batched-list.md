@@ -10,7 +10,7 @@
 - [x] The list controller reads that call and the publication-state port, and nothing else
 - [x] Every IT that reaches `GET /v1/trips` today passes **unedited** — zero changed assertion lines, proven by the assertion-line diff script rather than by reading
 - [x] One plain IT in `trip` covers the new call: a page whose trips differ in lease state, ownership and workspace state comes back with each facet right
-- [x] The workspace-state lookup no longer runs per row: the discriminating check is a query count over a page of thirty trips, read from the SQL log, not inferred from timing
+- [x] The workspace-state lookup no longer runs per row: the discriminating check is a query count over a page of thirty trips, read from the SQL log, not inferred from timing — **measured, and sabotage-checked on CI because Docker was unavailable locally.** `TripListFacetsIT.aPageOfThirtyTripsCostsTheSameNumberOfQueriesAsAPageOfOne` counts Hibernate's prepared statements for a page of one and a page of thirty and asserts they are equal. Restoring the per-row `stateOf(id)` loop (commit `b9cb9a8d`, reverted in the next) turned it red with **expected 7, but was 36** — the twenty-nine extra queries this ticket exists to remove, named as a number rather than a claim
 - [x] Unit suite and the scoped `trip` ITs green locally; CI green on push
 
 ## Comments
