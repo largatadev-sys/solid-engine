@@ -4,16 +4,16 @@
 
 **Blocked by:** None (can start immediately) — mobile only; independent of the backend chain.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The Trips header shows a mail icon in the search icon's place, labelled for a screen reader; the search stub, its coming-soon message key, and the routing guard's "search greyed" pin are gone, replaced by a pin that the mail icon opens Requests
-- [ ] Tapping the icon pushes Requests inside the trips route group; the tab bar is hidden there, by the existing rule, with no change to that rule or its test
-- [ ] Requests lists invitations received and the traveler's own join requests on the existing cards; accept, decline (with its confirm and its "the inviter will not be told" wording) and withdraw behave exactly as they did in the header — the invitation-inbox and pending-request-card walks pass re-routed through the icon with their assertions unchanged
-- [ ] Requests uses the shared pushed-screen header with back, the archived-trips list container, pull-to-refresh, and an empty state; back lands on Trips
-- [ ] The Trips root no longer renders the inbox as a list header on any lifecycle tab
-- [ ] The Trips title is 22px extra-bold, the same token Discover's title uses; the padding is untouched
-- [ ] `npx playwright test --list` still parses every spec (read the `Total:` line — a bad import collapses the suite to zero silently); the full `npx jest` runs once before the push because this ticket adds files under `src/`
-- [ ] CI green on push; the walk on the preview container is the proof, and any local run against the stack is asked for first
+- [x] The Trips header shows a mail icon in the search icon's place, labelled for a screen reader; the search stub, its coming-soon message key, and the routing guard's "search greyed" pin are gone, replaced by a pin that the mail icon opens Requests
+- [x] Tapping the icon pushes Requests inside the trips route group; the tab bar is hidden there, by the existing rule, with no change to that rule or its test
+- [x] Requests lists invitations received and the traveler's own join requests on the existing cards; accept, decline (with its confirm and its "the inviter will not be told" wording) and withdraw behave exactly as they did in the header — the invitation-inbox and pending-request-card walks pass re-routed through the icon with their assertions unchanged
+- [x] Requests uses the shared pushed-screen header with back, the archived-trips list container, pull-to-refresh, and an empty state; back lands on Trips
+- [x] The Trips root no longer renders the inbox as a list header on any lifecycle tab
+- [x] The Trips title is 22px extra-bold, the same token Discover's title uses; the padding is untouched
+- [x] `npx playwright test --list` still parses every spec (read the `Total:` line — a bad import collapses the suite to zero silently); the full `npx jest` runs once before the push because this ticket adds files under `src/`
+- [~] CI green on push; the walk on the preview container is the proof, and any local run against the stack is asked for first — **⚠ PARTIAL: Playwright has not run.** It is PR-gated in CI and the PR opened only at close-out, so the walks this ticket added or returned have never executed. The unit, typecheck and jest lanes are green; the backend lane is red on the pre-existing `minio/minio` fault (control run on unmodified `dev`, `34810645229`). No local rung was exercised: Docker was not running this session
 
 ## Comments
 

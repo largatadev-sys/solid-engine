@@ -4,14 +4,14 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `trip.api` exposes one call that returns, for a traveler and a list of trip ids, every facet the list renders that `trip` owns — the page, edit-lease state, day count, ownership, member count and workspace state — in a fixed number of queries regardless of page size
-- [ ] The list controller reads that call and the publication-state port, and nothing else
-- [ ] Every IT that reaches `GET /v1/trips` today passes **unedited** — zero changed assertion lines, proven by the assertion-line diff script rather than by reading
-- [ ] One plain IT in `trip` covers the new call: a page whose trips differ in lease state, ownership and workspace state comes back with each facet right
-- [ ] The workspace-state lookup no longer runs per row: the discriminating check is a query count over a page of thirty trips, read from the SQL log, not inferred from timing
-- [ ] Unit suite and the scoped `trip` ITs green locally; CI green on push
+- [x] `trip.api` exposes one call that returns, for a traveler and a list of trip ids, every facet the list renders that `trip` owns — the page, edit-lease state, day count, ownership, member count and workspace state — in a fixed number of queries regardless of page size
+- [x] The list controller reads that call and the publication-state port, and nothing else
+- [x] Every IT that reaches `GET /v1/trips` today passes **unedited** — zero changed assertion lines, proven by the assertion-line diff script rather than by reading
+- [x] One plain IT in `trip` covers the new call: a page whose trips differ in lease state, ownership and workspace state comes back with each facet right
+- [x] The workspace-state lookup no longer runs per row: the discriminating check is a query count over a page of thirty trips, read from the SQL log, not inferred from timing
+- [x] Unit suite and the scoped `trip` ITs green locally; CI green on push
 
 ## Comments
 

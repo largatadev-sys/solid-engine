@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Icon } from '../../../src/components/Icon';
 import { requestsIconLabel } from '../../../src/members/requestsCopy';
-import { showsCount, unseenCount } from '../../../src/members/unseenCount';
+import { hasUnseen, unseenCount } from '../../../src/members/unseenCount';
 import { AnimatedPressable, usePressFeedback } from '../../../src/components/usePressFeedback';
 import { useReducedMotion } from '../../../src/components/useReducedMotion';
 import { TripRow } from '../../../src/itineraries/TripRow';
@@ -238,8 +238,11 @@ function RequestsIcon() {
         accessibilityLabel={requestsIconLabel(unseen)}
         hitSlop={8}>
         <Icon name="mail" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
-        {showsCount(unseen) ? (
-          <View style={styles.countBadge}>
+        {hasUnseen(unseen) ? (
+          <View
+            style={styles.countBadge}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants">
             <Text style={styles.countLabel} numberOfLines={1}>
               {unseen}
             </Text>

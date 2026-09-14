@@ -239,17 +239,16 @@ public class InvitationService implements InvitationApi {
 
 
     @Transactional
-    public int markInboxSeen(VerifiedContact contact, UUID travelerId) {
+    public void markInboxSeen(VerifiedContact contact, UUID travelerId) {
         Instant now = Instant.now(clock);
         List<Invitation> rows = pendingFor(contact, travelerId, now);
         List<Invitation> freshlySeen = rows.stream().filter(i -> i.markSeen(now)).toList();
         if (freshlySeen.isEmpty()) {
-            return 0;
+            return;
         }
         invitations.saveAllAndFlush(freshlySeen);
         log.info("Invitations marked seen: travelerId={} count={}", travelerId, freshlySeen.size());
         inbox.broadcastInvitationsChangedFor(travelerId);
-        return freshlySeen.size();
     }
 
 

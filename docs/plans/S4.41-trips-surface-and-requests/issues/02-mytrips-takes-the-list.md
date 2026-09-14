@@ -4,14 +4,14 @@
 
 **Blocked by:** 01 — the batched `trip.api` call is what the new module composes; without it the move drags six lookups across a module line.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `GET /v1/trips` is served from `mytrips`; `TripController` no longer declares it and keeps its other ten routes untouched
-- [ ] `mytrips` reads only `trip.api` and `common` — its boundary guard has the three-surface shape (composes-apis rule with that allowlist, owns-no-table rule) and is **sabotage-checked with a real usage**, not an unused import: a planted repository, and a planted import of a `trip` internal, each fail by name
-- [ ] The guard meta-test lists `mytrips` among the guarded modules and stays green; the api-is-never-wire rule stays green
-- [ ] Every IT that reaches `GET /v1/trips` passes unedited — the assertion-line diff reports zero moved assertions across the branch so far
-- [ ] The module carries no `api` package, per ADR-038 rule 1 as amended — nothing calls it in process — and the unit suite says so the same way it does for the other api-less modules
-- [ ] A clean `mvn -o clean test-compile` loop is quiet before the commit, and `git diff --name-only` is empty before it — a module move is exactly the shape where the index ships less than the tree
+- [x] `GET /v1/trips` is served from `mytrips`; `TripController` no longer declares it and keeps its other ten routes untouched
+- [x] `mytrips` reads only `trip.api` and `common` — its boundary guard has the three-surface shape (composes-apis rule with that allowlist, owns-no-table rule) and is **sabotage-checked with a real usage**, not an unused import: a planted repository, and a planted import of a `trip` internal, each fail by name
+- [x] The guard meta-test lists `mytrips` among the guarded modules and stays green; the api-is-never-wire rule stays green
+- [x] Every IT that reaches `GET /v1/trips` passes unedited — the assertion-line diff reports zero moved assertions across the branch so far
+- [x] The module carries no `api` package, per ADR-038 rule 1 as amended — nothing calls it in process — and the unit suite says so the same way it does for the other api-less modules
+- [x] A clean `mvn -o clean test-compile` loop is quiet before the commit, and `git diff --name-only` is empty before it — a module move is exactly the shape where the index ships less than the tree
 
 ## Comments
 

@@ -1,6 +1,7 @@
 package com.largata.trip.trip.service;
 
 import com.largata.common.api.Page;
+import com.largata.common.authz.Role;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripFacts;
 import com.largata.trip.api.TripListEntry;
@@ -60,7 +61,7 @@ class TripFactsService implements TripApi {
                                 states.getOrDefault(trip.id(), WorkspaceState.ACTIVE),
                                 beingEdited.contains(trip.id()),
                                 dayCounts.getOrDefault(trip.id(), 0L).intValue(),
-                                owned.contains(trip.id()) ? "owner" : "member",
+                                owned.contains(trip.id()) ? Role.OWNER : Role.MEMBER,
                                 memberCounts.getOrDefault(trip.id(), 1)));
     }
 
@@ -70,7 +71,7 @@ class TripFactsService implements TripApi {
             WorkspaceState workspaceState,
             boolean beingEdited,
             int dayCount,
-            String viewerRole,
+            Role viewerRole,
             int memberCount) {
         return new TripListEntry(
                 trip.id(),

@@ -9,10 +9,14 @@ import com.largata.support.TripRig;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripListEntry;
 import com.largata.trip.api.TripListQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +41,8 @@ class TripListFacetsIT extends PostgresTestBase {
     @Autowired private JdbcTemplate jdbc;
 
     @Autowired private TripApi trips;
+
+    @Autowired private EntityManagerFactory entityManagers;
 
     @BeforeEach
     void setUp() {
@@ -107,6 +113,41 @@ class TripListFacetsIT extends PostgresTestBase {
         assertThat(entry.archived()).isTrue();
         assertThat(entry.workspaceState()).isEqualTo("archived");
         assertThat(entry.dayCount()).isEqualTo(2);
+    }
+
+
+    @Test
+    void aPageOfThirtyTripsCostsTheSameNumberOfQueriesAsAPageOfOne() {
+        String traveler = rig.travelerWithHandle(handle());
+        UUID travelerId = rig.travelerIdOf(traveler);
+        rig.createTrip(traveler, 1);
+
+        long forOne = queriesToList(travelerId);
+
+        for (int i = 0; i < 29; i++) {
+            rig.createTrip(traveler, 1);
+        }
+        assertThat(listFor(travelerId)).as("thirty trips on one page").hasSize(30);
+
+        long forThirty = queriesToList(travelerId);
+
+        assertThat(forThirty)
+                .as("the workspace state was looked up ONCE PER ROW before S4.41, so a page of"
+                        + " thirty cost twenty-nine more queries than a page of one. A fixed count"
+                        + " is the whole claim, and counting is the only way to see it - timing"
+                        + " cannot tell thirty cheap queries from one")
+                .isEqualTo(forOne);
+    }
+
+
+    private long queriesToList(UUID travelerId) {
+        Statistics statistics = entityManagers.unwrap(SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+
+        trips.listFor(new TripListQuery(travelerId, null, 30, false, null));
+
+        return statistics.getPrepareStatementCount();
     }
 
 

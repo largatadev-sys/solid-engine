@@ -4,14 +4,14 @@
 
 **Blocked by:** 04 — the count and the seen route are two of the four acts that fan out.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Revoking an invitation, an archive voiding pending invitations, declining an invitation, and marking invitations seen each fan out `invitations.changed` on the invitee's traveler topic, **after commit** — one ws IT on the existing event-IT pattern proves all four, and proves a rolled-back act fans out nothing
-- [ ] The client's event map handles `invitations.changed` by refetching the inbox; the event-map test gains the case
-- [ ] One Playwright walk: with the traveler on Trips reading 1, the inviter revokes → the count falls to 0 with no refresh, no focus change and no pull
-- [ ] Reconnect still marks the inbox stale as it does today — nothing about the subscription's lifecycle changes, and the existing socket-lifecycle tests pass unedited
-- [ ] No new topic and no new subscription: the event rides `traveler:<id>`, which the root layout already subscribes to
-- [ ] CI green on push; a local walk against the stack is asked for first
+- [x] Revoking an invitation, an archive voiding pending invitations, declining an invitation, and marking invitations seen each fan out `invitations.changed` on the invitee's traveler topic, **after commit** — one ws IT on the existing event-IT pattern proves all four, and proves a rolled-back act fans out nothing
+- [x] The client's event map handles `invitations.changed` by refetching the inbox; the event-map test gains the case
+- [x] One Playwright walk: with the traveler on Trips reading 1, the inviter revokes → the count falls to 0 with no refresh, no focus change and no pull
+- [x] Reconnect still marks the inbox stale as it does today — nothing about the subscription's lifecycle changes, and the existing socket-lifecycle tests pass unedited
+- [x] No new topic and no new subscription: the event rides `traveler:<id>`, which the root layout already subscribes to
+- [~] CI green on push; a local walk against the stack is asked for first — **⚠ PARTIAL: Playwright has not run.** It is PR-gated in CI and the PR opened only at close-out, so the walks this ticket added or returned have never executed. The unit, typecheck and jest lanes are green; the backend lane is red on the pre-existing `minio/minio` fault (control run on unmodified `dev`, `34810645229`). No local rung was exercised: Docker was not running this session
 
 ## Comments
 

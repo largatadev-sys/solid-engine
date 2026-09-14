@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { showsCount, unseenCount } from '../src/members/unseenCount';
+import { hasUnseen, unseenCount } from '../src/members/unseenCount';
 
 
 const trips = readFileSync(join(__dirname, '..', 'app', '(tabs)', '(trips)', 'trips.tsx'), 'utf8');
@@ -30,12 +30,12 @@ describe('the count on the mail icon', () => {
   });
 
   it('renders nothing at zero, because Home’s unconditional bell dot is not the shape to copy', () => {
-    expect(showsCount(0)).toBe(false);
-    expect(showsCount(1)).toBe(true);
-    expect(showsCount(9)).toBe(true);
+    expect(hasUnseen(0)).toBe(false);
+    expect(hasUnseen(1)).toBe(true);
+    expect(hasUnseen(9)).toBe(true);
   });
 
   it('and the header actually ASKS before it renders — an unconditional badge passes the rule above', () => {
-    expect(trips).toContain('showsCount(unseen)');
+    expect(trips).toContain('hasUnseen(unseen)');
   });
 });

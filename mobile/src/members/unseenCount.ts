@@ -8,6 +8,6 @@ export function unseenCount(invitations: readonly SeenMark[]): number {
 }
 
 
-export function showsCount(unseen: number): boolean {
+export function hasUnseen(unseen: number): boolean {
   return unseen > 0;
 }

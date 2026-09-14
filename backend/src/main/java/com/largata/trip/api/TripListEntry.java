@@ -1,5 +1,6 @@
 package com.largata.trip.api;
 
+import com.largata.common.authz.Role;
 import com.largata.common.geo.Pin;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -29,5 +30,5 @@ public record TripListEntry(
         long planVersion,
         boolean beingEdited,
         int dayCount,
-        String viewerRole,
+        Role viewerRole,
         int memberCount) {}
