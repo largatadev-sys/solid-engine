@@ -331,12 +331,31 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(existsSync(join(TRIPS, 'archived.tsx'))).toBe(true);
   });
 
-  it('keeps search greyed and drops the filter icon the canvas does not draw (S4.26)', () => {
+  it('puts the mail icon where the search stub was, and opens Requests with it (S4.41)', () => {
     const trips = read(TRIPS_GROUP, 'trips.tsx');
 
-    expect(trips).toContain("comingSoon('tripSearch')");
+    expect(trips).toContain('name="mail"');
+    expect(trips).toContain("const REQUESTS_ROUTE = '/requests'");
+    expect(trips).toContain('<Link href={REQUESTS_ROUTE} asChild>');
+    expect(trips).not.toContain("comingSoon('tripSearch')");
+    expect(trips).not.toContain('name="search"');
     expect(trips).not.toContain("comingSoon('tripFilter')");
     expect(trips).not.toContain('name="filter"');
+    expect(existsSync(join(TRIPS_GROUP, 'requests.tsx'))).toBe(true);
+  });
+
+  it('takes the inbox OFF the trips list — Trips shows trips, and what waits lives behind the icon (S4.41)', () => {
+    const trips = read(TRIPS_GROUP, 'trips.tsx');
+
+    expect(trips).not.toContain('ListHeaderComponent');
+    expect(trips).not.toContain('InvitationInbox');
+  });
+
+  it('sizes the Trips title with the token the other three roots carry (S4.41)', () => {
+    const trips = read(TRIPS_GROUP, 'trips.tsx');
+
+    expect(trips).toContain('headerTitle: { ...profileTypography.displayName');
+    expect(trips).not.toContain('headerTitle: { ...typography.title');
   });
 
   it('TELLS THE CACHE the cover landed â€” the upload bypasses the mutation hook, so nothing else will', () => {

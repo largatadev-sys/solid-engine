@@ -20,8 +20,8 @@ import { MediaThumb } from '../media/MediaThumb';
 import { VERIFY_CODE_ROUTE } from '../onboarding/onboardingGate';
 import { invitationRepository } from '../repositories/invitationRepository';
 import { joinRepository } from '../repositories/joinRepository';
-import { useAcceptInvitation, useDeclineInvitation, useInbox } from '../query/invitationQueries';
-import { useMyJoinRequests, useWithdrawJoinRequest } from '../query/joinQueries';
+import { useAcceptInvitation, useDeclineInvitation } from '../query/invitationQueries';
+import { useWithdrawJoinRequest } from '../query/joinQueries';
 import {
   travelerColors,
   travelerMetrics,
@@ -38,13 +38,14 @@ import {
 } from '../members/travelerCopy';
 
 
-export function InvitationInbox() {
-  const { data, isPending, isError } = useInbox();
-  const asked = useMyJoinRequests();
+export function RequestsList({
+  invitations,
+  requests,
+}: {
+  invitations: readonly InboxInvitationResponse[];
+  requests: readonly MyJoinRequestResponse[];
+}) {
   const now = Date.now();
-  const invitations = isPending || isError ? [] : (data?.items ?? []);
-  const requests = asked.isPending || asked.isError ? [] : (asked.data?.items ?? []);
-
   const cards = inboxCards({ invitations, requests, now });
   if (cards.length === 0) return null;
 

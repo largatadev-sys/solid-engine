@@ -5,6 +5,7 @@ import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled } from '../support/screen';
 import { ACCEPT_LABEL, DECLINE_LABEL } from '../../src/members/travelerCopy';
+import { REQUESTS_ICON_LABEL, REQUESTS_TITLE } from '../../src/members/requestsCopy';
 import { declineInvitationWording } from '../../src/components/confirmDestructiveMessage';
 import { TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
 
@@ -26,6 +27,12 @@ async function inviteThem(tripId: string): Promise<string> {
   return invited.body.id;
 }
 
+async function openRequests(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto(TRIPS_TAB_ROUTE);
+  await labelled(page, REQUESTS_ICON_LABEL).click();
+  await expect(page.getByText(REQUESTS_TITLE).first()).toBeVisible();
+}
+
 async function inboxIds(): Promise<string[]> {
   return ((await api('/v1/invitations', 'GET', inviteeToken)).body.items ?? []).map(
     (row: { id: string }) => row.id,
@@ -39,7 +46,7 @@ test.beforeAll(async () => {
   ownerHandle = (await api('/v1/me', 'GET', ownerToken)).body.handle;
 });
 
-test.describe('the card an invitee meets on Trips', () => {
+test.describe('the card an invitee meets on Requests', () => {
   test.describe.configure({ mode: 'serial' });
 
   let trip: SeededTrip;
@@ -56,7 +63,7 @@ test.describe('the card an invitee meets on Trips', () => {
 
   test('carries the trip’s context, not just a line of text', async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
 
     await expect(page.getByText(trip.title).first()).toBeVisible();
     await expect(page.getByText(/El Nido/).first()).toBeVisible();
@@ -64,7 +71,7 @@ test.describe('the card an invitee meets on Trips', () => {
 
   test('names who invited them, by handle', async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible();
 
     await expect(page.getByText(new RegExp(`Invited by @${ownerHandle}`)).first()).toBeVisible();
@@ -72,7 +79,7 @@ test.describe('the card an invitee meets on Trips', () => {
 
   test('says when the invitation runs out', async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible();
 
     await expect(page.getByText(/Expires in/).first()).toBeVisible();
@@ -84,7 +91,7 @@ test.describe('the card an invitee meets on Trips', () => {
     signal,
   }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible();
 
     const covers = signal.apiRequests.filter((call) => call.url.includes('/cover'));
@@ -96,7 +103,7 @@ test.describe('the card an invitee meets on Trips', () => {
 
   test('never shows an address anywhere on the card', async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible();
 
     expect(await page.locator('body').innerText()).not.toContain('@gmail.com');
@@ -111,7 +118,7 @@ test.describe('the card an invitee meets on Trips', () => {
       + ' "the URL stayed at /trips". Owned by an epic-map line; see checklist 34.',
     async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`)).toBeVisible();
 
     await labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`).click();
@@ -127,8 +134,7 @@ test.describe('the card an invitee meets on Trips', () => {
       + ' it can only fail while that one is quarantined. It returns with it.',
     async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
-    await expect(page.getByText(/Trips/i).first()).toBeVisible();
+    await openRequests(page);
 
     await expect(
       labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`),
@@ -150,7 +156,7 @@ test.describe('declining, behind its confirm', () => {
 
   test('asks first, and says the inviter will not be told', async ({ page, signIn, signal }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(labelled(page, `${DECLINE_LABEL} invitation to ${trip.title}`)).toBeVisible();
 
     await labelled(page, `${DECLINE_LABEL} invitation to ${trip.title}`).click();

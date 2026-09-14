@@ -10,9 +10,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { comingSoon } from '../../../src/components/comingSoon';
 import { Icon } from '../../../src/components/Icon';
-import { InvitationInbox } from '../../../src/components/InvitationInbox';
+import { REQUESTS_ICON_LABEL } from '../../../src/members/requestsCopy';
 import { AnimatedPressable, usePressFeedback } from '../../../src/components/usePressFeedback';
 import { useReducedMotion } from '../../../src/components/useReducedMotion';
 import { TripRow } from '../../../src/itineraries/TripRow';
@@ -43,7 +42,13 @@ import { claimSwipeHint } from '../../../src/removal/swipeHintState';
 import { swipeActionFor, useTripsRemoval } from '../../../src/removal/useTripsRemoval';
 import type { ItineraryResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
-import { tripTabColors, tripTabMetrics, tripTabMotion, tripTabTypography } from '../../../src/theme/workspaceTokens';
+import {
+  profileTypography,
+  tripTabColors,
+  tripTabMetrics,
+  tripTabMotion,
+  tripTabTypography,
+} from '../../../src/theme/workspaceTokens';
 
 
 export default function MyTripsScreen() {
@@ -110,7 +115,7 @@ export default function MyTripsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Trips</Text>
-        <SearchIcon />
+        <RequestsIcon />
       </View>
 
       <TripTabRow selected={active} onSelect={chooseTab} />
@@ -164,7 +169,6 @@ export default function MyTripsScreen() {
               if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
             }}
             onEndReachedThreshold={0.5}
-            ListHeaderComponent={<InvitationInbox />}
             ListEmptyComponent={<TabEmptyState tab={active} />}
             ListFooterComponent={
               <View>
@@ -217,21 +221,21 @@ function TabEmptyState({ tab }: { tab: TripTab }) {
 }
 
 
-function SearchIcon() {
+function RequestsIcon() {
   const { opacity, onPressIn, onPressOut } = usePressFeedback();
 
   return (
-    <AnimatedPressable
-      style={{ opacity }}
-      onPress={() => comingSoon('tripSearch')}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: true }}
-      accessibilityLabel="Search trips, coming soon"
-      hitSlop={8}>
-      <Icon name="search" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
-    </AnimatedPressable>
+    <Link href={REQUESTS_ROUTE} asChild>
+      <AnimatedPressable
+        style={{ opacity }}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        accessibilityRole="button"
+        accessibilityLabel={REQUESTS_ICON_LABEL}
+        hitSlop={8}>
+        <Icon name="mail" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
+      </AnimatedPressable>
+    </Link>
   );
 }
 
@@ -300,6 +304,8 @@ function FadeRise({ children, style }: { children: React.ReactNode; style?: obje
   );
 }
 
+const REQUESTS_ROUTE = '/requests';
+
 const CREATE_LABEL = 'Plan a Trip';
 
 const ARCHIVED_LINK_LABEL = 'Archived trips';
@@ -319,7 +325,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
-  headerTitle: { ...typography.title, color: colors.textPrimary },
+  headerTitle: { ...profileTypography.displayName, color: colors.textPrimary },
   listWrap: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
   listContainer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },

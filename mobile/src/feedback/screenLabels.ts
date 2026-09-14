@@ -9,6 +9,7 @@ export const SCREEN_LABELS: Readonly<Record<string, string>> = {
   '(tabs)/(discover)/discovery-people': 'Discover people',
 
   '(tabs)/(trips)/trips': 'Trips',
+  '(tabs)/(trips)/requests': 'Requests',
   '(tabs)/(trips)/create': 'Create trip',
   '(tabs)/(trips)/itineraries/new': 'New trip',
   '(tabs)/(trips)/itineraries/archived': 'Archived trips',

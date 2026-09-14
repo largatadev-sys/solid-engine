@@ -6,7 +6,6 @@ export const COMING_SOON_SURFACES = {
   reviews: 'Reviews',
   rating: 'Ratings',
   booking: 'Booking options',
-  tripSearch: 'Searching your trips',
   share: 'Sharing a postcard',
   saved: 'Saved postcards',
   report: 'Reporting a postcard',
