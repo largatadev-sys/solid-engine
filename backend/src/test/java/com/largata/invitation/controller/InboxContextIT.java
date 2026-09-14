@@ -320,15 +320,15 @@ class InboxContextIT extends PostgresTestBase {
 
         inviteByHandle(owner, trip, inviteeHandle).expectStatus().isCreated();
 
-        inboxOf(invitee)
-                .jsonPath("$.items[0].seenAt")
-                .doesNotExist();
+        inboxOf(invitee).jsonPath("$.items.length()").isEqualTo(1);
+        assertThat(seenAtOf(trip))
+                .as("it arrives unseen, which is what the count on the mail icon counts")
+                .isNull();
 
         markSeen(invitee).expectStatus().isNoContent();
 
-        inboxOf(invitee)
-                .jsonPath("$.items[0].seenAt")
-                .exists();
+        inboxOf(invitee).jsonPath("$.items[0].seenAt").isNotEmpty();
+        assertThat(seenAtOf(trip)).isNotNull();
     }
 
 
@@ -346,9 +346,9 @@ class InboxContextIT extends PostgresTestBase {
         String second = rig.createTrip(owner, 1);
         inviteByHandle(owner, second, inviteeHandle).expectStatus().isCreated();
 
-        inboxOf(invitee)
-                .jsonPath("$.items[?(@.itineraryId=='" + second + "')].seenAt")
-                .doesNotExist();
+        assertThat(seenAtOf(second))
+                .as("the new arrival is unseen, even though the older one was marked a moment ago")
+                .isNull();
 
         markSeen(invitee).expectStatus().isNoContent();
 

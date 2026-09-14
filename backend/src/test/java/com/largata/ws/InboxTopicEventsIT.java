@@ -193,6 +193,39 @@ class InboxTopicEventsIT extends PostgresTestBase {
     }
 
 
+    @Test
+    void revokingAnEmailAddressedInvitationAnnouncesNothingAndDoesNotFail() {
+        String tag = WsRig.tag();
+        String owner = tripRig.travelerWithHandle("iveo" + tag);
+        String trip = tripRig.createTrip(owner, 1);
+        String invitationId = inviteByEmail(owner, trip, "nobody-" + tag + "@example.com");
+
+        rest.post()
+                .uri("/v1/invitations/" + invitationId + "/revoke")
+                .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+    }
+
+
+    private String inviteByEmail(String token, String tripId, String email) {
+        byte[] created =
+                rest.post()
+                        .uri("/v1/trips/" + tripId + "/invitations")
+                        .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"email\":\"" + email + "\"}")
+                        .exchange()
+                        .expectStatus()
+                        .isCreated()
+                        .expectBody()
+                        .returnResult()
+                        .getResponseBodyContent();
+        return TripRig.fieldIn(created, "id");
+    }
+
+
     private String inviteByHandle(String token, String tripId, String handle) {
         byte[] created =
                 rest.post()

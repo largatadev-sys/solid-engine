@@ -199,7 +199,7 @@ public class InvitationService implements InvitationApi {
         invitation.revoke(Instant.now(clock));
         invitations.saveAndFlush(invitation);
         log.info("Invitation revoked: id={} itineraryId={}", invitation.id(), itineraryId);
-        inbox.broadcastInvitationsChanged(List.of(invitation.inviteeTravelerId()));
+        inbox.broadcastInvitationsChangedFor(invitation.inviteeTravelerId());
         afterCommit(
                 () ->
                         analytics.emit(
@@ -248,7 +248,7 @@ public class InvitationService implements InvitationApi {
         }
         invitations.saveAllAndFlush(freshlySeen);
         log.info("Invitations marked seen: travelerId={} count={}", travelerId, freshlySeen.size());
-        inbox.broadcastInvitationsChanged(List.of(travelerId));
+        inbox.broadcastInvitationsChangedFor(travelerId);
         return freshlySeen.size();
     }
 
@@ -376,7 +376,7 @@ public class InvitationService implements InvitationApi {
         invitation.decline(Instant.now(clock));
         invitations.saveAndFlush(invitation);
         log.info("Invitation declined: id={}", invitationId);
-        inbox.broadcastInvitationsChanged(List.of(travelerId));
+        inbox.broadcastInvitationsChangedFor(travelerId);
         afterCommit(
                 () ->
                         analytics.emit(

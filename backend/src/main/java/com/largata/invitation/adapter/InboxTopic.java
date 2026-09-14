@@ -6,6 +6,7 @@ import com.largata.invitation.service.InboxInvitation;
 import com.largata.ws.EventFanout;
 import com.largata.ws.Topic;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,11 @@ public class InboxTopic {
                 () ->
                         fanout.broadcast(
                                 Topic.ofTraveler(inviteeTravelerId), INVITATION_RECEIVED, payload));
+    }
+
+
+    public void broadcastInvitationsChangedFor(UUID inviteeTravelerId) {
+        broadcastInvitationsChanged(Collections.singletonList(inviteeTravelerId));
     }
 
 
