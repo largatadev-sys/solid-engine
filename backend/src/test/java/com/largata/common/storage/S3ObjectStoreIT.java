@@ -8,26 +8,20 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.MinIOContainer;
-import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import com.largata.support.GarageContainer;
 
 
 class S3ObjectStoreIT {
 
-    private static final DockerImageName EMULATOR =
-            DockerImageName.parse("quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z")
-                    .asCompatibleSubstituteFor("minio/minio");
-
     private static final String BUCKET = "largata-media-test";
 
-    private static MinIOContainer emulator;
+    private static GarageContainer emulator;
     private static ObjectStore store;
 
 
     @BeforeAll
     static void startEmulator() {
-        emulator = new MinIOContainer(EMULATOR);
+        emulator = new GarageContainer(BUCKET);
         emulator.start();
         StorageSettings settings =
                 new StorageSettings(
@@ -36,8 +30,6 @@ class S3ObjectStoreIT {
                         emulator.getUserName(),
                         emulator.getPassword(),
                         "us-east-1");
-        S3ObjectStore.client(settings)
-                .createBucket(CreateBucketRequest.builder().bucket(BUCKET).build());
         store = S3ObjectStore.create(settings);
     }
 
