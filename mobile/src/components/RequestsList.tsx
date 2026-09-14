@@ -167,8 +167,8 @@ function InvitationCard({
     setAcceptFailed(false);
     accept.mutate(invitation.id, {
       onSuccess: (result) => {
-        closeLayout();
         router.push(`/itineraries/${result.itineraryId}`);
+        closeLayout();
       },
       onError: (error) => {
         if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {

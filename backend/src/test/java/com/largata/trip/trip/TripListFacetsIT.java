@@ -5,19 +5,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.largata.common.api.Page;
 import com.largata.common.authz.Role;
 import com.largata.support.PostgresTestBase;
+import com.largata.support.ThreadLocalStatementCounter;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
 import com.largata.trip.api.TripApi;
 import com.largata.trip.api.TripListEntry;
 import com.largata.trip.api.TripListQuery;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.hibernate.SessionFactory;
-import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +24,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 
@@ -45,7 +44,13 @@ class TripListFacetsIT extends PostgresTestBase {
 
     @Autowired private TripApi trips;
 
-    @Autowired private EntityManagerFactory entityManagers;
+
+    @DynamicPropertySource
+    static void countStatementsOnTheCallingThread(DynamicPropertyRegistry registry) {
+        registry.add(
+                "spring.jpa.properties.hibernate.session_factory.statement_inspector",
+                ThreadLocalStatementCounter.class::getName);
+    }
 
     @BeforeEach
     void setUp() {
@@ -146,13 +151,11 @@ class TripListFacetsIT extends PostgresTestBase {
 
 
     private long queriesToList(UUID travelerId) {
-        Statistics statistics = entityManagers.unwrap(SessionFactory.class).getStatistics();
-        statistics.setStatisticsEnabled(true);
-        statistics.clear();
+        ThreadLocalStatementCounter.reset();
 
         trips.listFor(new TripListQuery(travelerId, null, PAGE, false, null));
 
-        return statistics.getPrepareStatementCount();
+        return ThreadLocalStatementCounter.onThisThread();
     }
 
 

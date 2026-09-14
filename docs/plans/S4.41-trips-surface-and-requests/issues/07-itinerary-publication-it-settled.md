@@ -9,7 +9,7 @@
 - [x] A written diff, on this ticket, of the fifteen quarantined cases against the successor's eight: for each, *covered by* (which successor test) or *not covered* — no case marked covered by resemblance
 - [x] Every case the successor covers is deleted from the quarantined class; every case it does not is either repaired to assert the trip grammar's real contract or moved into the successor, and passes
 - [x] The `@Disabled` annotation is gone: the class is either deleted or green; no test in the tree carries a skip reason naming ticket 11
-- [x] The quarantine ledger row leaves BUILD_STATUS, and the reason it was stale — the exit condition fired and did not describe the class — is one line in the off-epic ledger's S4.41 entry, so the next stale row is recognised faster
+- [x] The quarantine ledger row leaves BUILD_STATUS, and the reason it was stale is recorded — **in the quarantine ledger's own preamble rather than the off-epic ledger**, because that is where the next person writing a row will read it, and a planned story carries no off-epic entry (ticket 08). The AC named the wrong home; the lesson landed in the right one
 - [x] Unit suite and the scoped `itinerary` and `trip` ITs green locally; CI green on push
 
 ## The diff: the fifteen, case by case

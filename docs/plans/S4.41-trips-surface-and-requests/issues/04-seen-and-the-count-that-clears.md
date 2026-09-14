@@ -14,7 +14,7 @@
 - [x] Opening Requests posts seen and refetches the inbox; the count is zero on return to Trips
 - [x] One Playwright walk carries the lifecycle: an invitation issued to the traveler → the icon reads 1; open Requests → 0; a second invitation arrives → 1 again without a refresh
 - [x] Never a query through the guard's back door: the seen write goes through the invitation service, and the route's IT signs in as the invitee — no planted rows
-- [~] CI green on push; a local Playwright run against the stack is asked for first — **⚠ PARTIAL: Playwright has not run.** It is PR-gated in CI and the PR opened only at close-out, so the walks this ticket added or returned have never executed. The unit, typecheck and jest lanes are green; the backend lane is red on the pre-existing `minio/minio` fault (control run on unmodified `dev`, `34810645229`). No local rung was exercised: Docker was not running this session
+- [x] CI green on push; a local Playwright run against the stack is asked for first — **green**: run `34856269840` is every job success — backend 499 unit + 1,342 ITs, Playwright 866/866, mobile typecheck + jest — after the object-store test image was repointed at quay.io (`7d5eba64`) and the founder walked the LAN rung on a real phone
 
 ## Comments
 

@@ -11,7 +11,7 @@
 - [x] One Playwright walk: with the traveler on Trips reading 1, the inviter revokes → the count falls to 0 with no refresh, no focus change and no pull
 - [x] Reconnect still marks the inbox stale as it does today — nothing about the subscription's lifecycle changes, and the existing socket-lifecycle tests pass unedited
 - [x] No new topic and no new subscription: the event rides `traveler:<id>`, which the root layout already subscribes to
-- [~] CI green on push; a local walk against the stack is asked for first — **⚠ PARTIAL: Playwright has not run.** It is PR-gated in CI and the PR opened only at close-out, so the walks this ticket added or returned have never executed. The unit, typecheck and jest lanes are green; the backend lane is red on the pre-existing `minio/minio` fault (control run on unmodified `dev`, `34810645229`). No local rung was exercised: Docker was not running this session
+- [x] CI green on push; a local walk against the stack is asked for first — **green**: run `34856269840` is every job success — backend 499 unit + 1,342 ITs, Playwright 866/866, mobile typecheck + jest — after the object-store test image was repointed at quay.io (`7d5eba64`) and the founder walked the LAN rung on a real phone
 
 ## Comments
 

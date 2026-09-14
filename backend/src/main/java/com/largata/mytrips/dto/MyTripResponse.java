@@ -5,7 +5,6 @@ import com.largata.common.authz.PublicationState;
 import com.largata.common.geo.PinPayload;
 import com.largata.trip.api.TripListEntry;
 import java.time.Instant;
-import java.util.Locale;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +84,7 @@ public record MyTripResponse(
                 trip.planVersion(),
                 null,
                 trip.dayCount(),
-                trip.viewerRole().name().toLowerCase(Locale.ROOT),
+                trip.viewerRole().wireName(),
                 trip.memberCount());
     }
 }

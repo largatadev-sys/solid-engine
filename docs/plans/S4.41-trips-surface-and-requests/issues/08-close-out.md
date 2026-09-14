@@ -4,15 +4,15 @@
 
 **Blocked by:** 01, 02, 03, 04, 05, 06, 07 — every ticket.
 
-**Status:** blocked — the device rung is owed, and it needs the founder's yes
+**Status:** done — the device rung walked by the founder 2026-09-15; the stack stays up until told otherwise
 
 - [x] The assertion-line diff over `dev...HEAD` reports every changed assertion, and each is explained on this ticket by the ticket that changed it; guard files and the meta-test are excluded from the comparison, as at TW-1, because a guard is the branch's own apparatus
-- [ ] **OWED — the founder's call.** The LAN stack is stood up and the walk done on a real phone: the icon is tappable at the size a finger needs, the count is legible, the Trips title reads as the other three roots do, Requests' bottom-most control clears the home indicator, back returns to Trips with the tab bar restored — each stated with what was seen, not "looks fine"
-- [ ] **OWED with the walk.** The secure-context caveat is read before any conclusion from the phone rung: nothing this story adds depends on a secure context, and the walk says so rather than assuming it
+- [x] The LAN stack was stood up (2026-09-15, on the founder's yes) and **the founder walked it on a real phone as `t1`** with five trips across every lifecycle tab, one unseen invitation on the icon and both card kinds on Requests — reported *"all good on the UI"*. Stood up per the recipe with every trap checked before the hand-over: the LAN IP grepped from the exported JS (`localhost:8080` present 0 times), CORS preflighted on the secured `/v1/me` with a negative control (unlisted origin → 403), `LARGATA_WEB_BASE_URL` read back from the container, and a real join-link's `shareUrl` confirmed to name the LAN. The one observation raised — the first row's swipe hint peeking on every browser refresh — is the S4.38 once-per-session hint doing what a module-level flag does under reload; native never refreshes, so it is intended, and recorded rather than changed
+- [x] The secure-context caveat was read before the walk: nothing this story adds — a query, a route, a pushed screen, a badge — depends on a secure context, so the plain-HTTP LAN IP proves the same code the HTTPS deploy runs
 - [x] The off-epic ledger carries no entry — this is a planned story — and the story's row in BUILD_STATUS carries its spec link. **It reads 🔄, not ✅**, because the walk above is owed; the row names why
 - [x] `git diff --name-only` is empty before that commit; the staged paths are compared both ways against what this branch edited
 - [x] The PR is opened against `dev` with the story id in its title and no attribution line, and is **not merged** — the founder says when: [#80](https://github.com/largatadev-sys/solid-engine/pull/80)
-- [ ] **N/A this session.** The LAN stack is torn down after the walk, and the docker images it built are named in the close-out — nothing was stood up, so nothing is left behind
+- [ ] The LAN stack is **still up** for the founder's use; teardown is `docker compose down` plus `docker rm -f largata-preview-lan` and `docker rmi largata-preview:lan`, on the founder's word. Containers: `app-backend-1`, `app-postgres-1`, `app-storage-1`, `largata-preview-lan`. Image: `largata-preview:lan`
 
 ## The assertion-line diff, explained
 
@@ -50,6 +50,24 @@ Two files are new and have nothing to compare: `TripListFacetsIT` (ticket 01) an
 - **No local rung was exercised at all.** Docker Desktop was not running this session, so the full-stack instance, the preview container and every local IT run were unavailable. CLAUDE.md's *"verify at the layer that ships"* is unmet on every rung below CI.
 - ~~Playwright has never run.~~ **It is GREEN: run `34817297953`, 866 passed, zero failed.** It took four rounds to get there and each one found something real: two stale S4.35 walks still asserting the inbox header this story removed (`ae6b4a9f`, `0ce378ce` — both re-pointed at the surface the thing now lives on, neither weakened), and then the accept race that had been the 2026-08-28 quarantine all along (`812bcc9e`). **The two returned quarantined walks pass**, and ticket 06 carries the mechanism with the evidence that proves it.
 - **The branch's CI cannot be green end-to-end**, because the backend lane is red on a fault this story did not cause: `minio/minio` is gone from Docker Hub and the test base still pins it. Proven not-ours by a `workflow_dispatch` control run on unmodified `dev` (`34810645229`) failing identically — same classes, same order, **zero assertion failures**. Quarantine row and epic-map line filed, with the fix (point both at Garage, ADR-021) and an immediate trigger.
+
+## The second code review, 2026-09-15 — what was taken and what was declined
+
+Run against the founder's Java/Spring checklist on top of the repo's standards. **No blocker.** Taken:
+
+- **`blocker`-grade in effect though filed under (c):** the accept-race fix in `812bcc9e` was a **no-op** — query-core awaits the hook's `onSettled` before dispatching success just as it awaits `onSuccess`. Verified against `mutation.js` and `mutationObserver.js` in `node_modules`, not taken on the reviewer's word. Corrected: the hook no longer awaits the invalidation, the caller navigates first, and the pin asserts the library's real ordering. Ticket 06 carries the correction.
+- **53 mojibake lines in `tabRouting.test.ts`** — my earlier "repair" double-encoded a file that was already UTF-8, producing valid-but-garbage UTF-8 that passed every scan. Rebuilt from `dev` plus the three S4.41 tests; the diff against `dev` is now 21 lines, not 129.
+- **`should:` §12 shared static state** — Hibernate `Statistics` is SessionFactory-global and a scheduler can fire between `clear()` and the read. Replaced with a `ThreadLocal` `StatementInspector`; sabotage re-run locally, still 7 vs 36.
+- **`should:` byte-for-byte has no test** — `MyTripResponseKeepsTheTripWireShapeTest` pins the two records' component names, order, and types (the four `Void` fields as a closed list).
+- **`nit:` `Role.wireName()`** — added; both hand-spelled call sites use it.
+- **Email-addressed invitations get no live count-fall** — accepted at the grilling in spirit, never written down. Now on the spec beside the second-page gap.
+- **Off-epic ledger** for the quay.io swap — both reviews asked; added.
+
+Declined, with the reason:
+
+- **`should:` §5 `markInboxSeen` as a `@Modifying` bulk update.** The reviewer's own stated downgrade applies: it mirrors `voidPendingInvitations`' shape, and a traveler's pending inbox is tens of rows at most. A JPQL update would also bypass `Invitation.markSeen`'s idempotence guard, moving the rule from the entity to a `WHERE`. Not worth the seam.
+- **`question:` `TripListEntry` mixes enums and wire strings.** True, and deliberate: `Visibility` and `WorkspaceState` live in `trip.*.entity` packages ADR-038 keeps out of `api`. Moving them is a `trip` refactor, not this story's.
+- **`question:` `pendingFor` is unbounded.** Pre-existing; the diff only extracted it. An inbox is bounded by how many trips can invite one traveler — an epic-map line if it ever isn't.
 
 ## Comments
 

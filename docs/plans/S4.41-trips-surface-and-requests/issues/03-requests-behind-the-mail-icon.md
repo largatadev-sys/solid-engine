@@ -13,7 +13,7 @@
 - [x] The Trips root no longer renders the inbox as a list header on any lifecycle tab
 - [x] The Trips title is 22px extra-bold, the same token Discover's title uses; the padding is untouched
 - [x] `npx playwright test --list` still parses every spec (read the `Total:` line — a bad import collapses the suite to zero silently); the full `npx jest` runs once before the push because this ticket adds files under `src/`
-- [~] CI green on push; the walk on the preview container is the proof, and any local run against the stack is asked for first — **⚠ PARTIAL: Playwright has not run.** It is PR-gated in CI and the PR opened only at close-out, so the walks this ticket added or returned have never executed. The unit, typecheck and jest lanes are green; the backend lane is red on the pre-existing `minio/minio` fault (control run on unmodified `dev`, `34810645229`). No local rung was exercised: Docker was not running this session
+- [x] CI green on push; the walk on the preview container is the proof, and any local run against the stack is asked for first — **green**: run `34856269840` is every job success — backend 499 unit + 1,342 ITs, Playwright 866/866, mobile typecheck + jest — after the object-store test image was repointed at quay.io (`7d5eba64`) and the founder walked the LAN rung on a real phone
 
 ## Comments
 
