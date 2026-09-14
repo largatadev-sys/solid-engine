@@ -73,7 +73,7 @@ export function useAcceptInvitation(): UseMutationResult<AcceptResponse, Error, 
   const client = useQueryClient();
   return useMutation({
     mutationFn: (invitationId: string) => invitationRepository.accept(invitationId),
-    onSuccess: () => onInvitationAccepted(client),
+    onSettled: () => onInvitationAccepted(client),
   });
 }
 
