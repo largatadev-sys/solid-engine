@@ -20,7 +20,8 @@ public record InboxInvitationResponse(
         List<GoingTravelerResponse> going,
         int travelerCount,
         Instant createdAt,
-        Instant expiresAt) {
+        Instant expiresAt,
+        Instant seenAt) {
 
 
     public record GoingTravelerResponse(UUID travelerId, String displayName, String avatarUrl) {
@@ -46,6 +47,7 @@ public record InboxInvitationResponse(
                 i.going().stream().map(GoingTravelerResponse::of).toList(),
                 i.travelerCount(),
                 i.createdAt(),
-                i.expiresAt());
+                i.expiresAt(),
+                i.seenAt());
     }
 }

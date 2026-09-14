@@ -33,4 +33,8 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
             WHERE w.state = com.largata.trip.workspace.entity.WorkspaceState.ARCHIVED
             """)
     List<UUID> allArchivedItineraryIds();
+
+
+    @Query("SELECT w FROM Workspace w WHERE w.itineraryId IN :itineraryIds")
+    List<Workspace> findAllByItineraryIdIn(@Param("itineraryIds") Collection<UUID> itineraryIds);
 }

@@ -39,6 +39,7 @@ const invite = (id: string, tripTitle: string): InboxInvitationResponse => ({
   travelerCount: 1,
   createdAt: '2026-07-20T00:00:00Z',
   expiresAt: '2026-08-03T00:00:00Z',
+  seenAt: null,
 });
 
 function freshClient(): QueryClient {

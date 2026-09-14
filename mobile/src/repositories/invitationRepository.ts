@@ -23,6 +23,10 @@ export const invitationRepository = {
   },
 
 
+  async markInboxSeen(): Promise<void> {
+    await apiClient.post<void>('/v1/invitations/seen', undefined);
+  },
+
   async accept(invitationId: string): Promise<AcceptResponse> {
     return apiClient.post<AcceptResponse>(`/v1/invitations/${invitationId}/accept`, {});
   },

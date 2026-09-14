@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../api/ApiError';
 import { confirmWith } from './confirmDestructive';
@@ -20,8 +21,8 @@ import { MediaThumb } from '../media/MediaThumb';
 import { VERIFY_CODE_ROUTE } from '../onboarding/onboardingGate';
 import { invitationRepository } from '../repositories/invitationRepository';
 import { joinRepository } from '../repositories/joinRepository';
-import { useAcceptInvitation, useDeclineInvitation, useInbox } from '../query/invitationQueries';
-import { useMyJoinRequests, useWithdrawJoinRequest } from '../query/joinQueries';
+import { useAcceptInvitation, useDeclineInvitation } from '../query/invitationQueries';
+import { useWithdrawJoinRequest } from '../query/joinQueries';
 import {
   travelerColors,
   travelerMetrics,
@@ -31,6 +32,7 @@ import {
 import type { InboxInvitationResponse, MyJoinRequestResponse } from '../types/api';
 
 import {
+  ACCEPT_FAILED,
   ACCEPT_LABEL,
   DECLINE_LABEL,
   REQUESTED_GHOST_LABEL,
@@ -38,13 +40,14 @@ import {
 } from '../members/travelerCopy';
 
 
-export function InvitationInbox() {
-  const { data, isPending, isError } = useInbox();
-  const asked = useMyJoinRequests();
+export function RequestsList({
+  invitations,
+  requests,
+}: {
+  invitations: readonly InboxInvitationResponse[];
+  requests: readonly MyJoinRequestResponse[];
+}) {
   const now = Date.now();
-  const invitations = isPending || isError ? [] : (data?.items ?? []);
-  const requests = asked.isPending || asked.isError ? [] : (asked.data?.items ?? []);
-
   const cards = inboxCards({ invitations, requests, now });
   if (cards.length === 0) return null;
 
@@ -153,6 +156,7 @@ function InvitationCard({
   const closeLayout = useLayoutClose();
   const acceptPress = usePressFeedback();
   const declinePress = usePressFeedback();
+  const [acceptFailed, setAcceptFailed] = useState(false);
   const busy = accept.isPending || decline.isPending;
 
   const meta = tripMetaLine(invitation.destination, invitation.startDate, invitation.endDate);
@@ -160,15 +164,18 @@ function InvitationCard({
   const urgent = expiryIsUrgent(invitation.expiresAt, now);
 
   const onAccept = () => {
+    setAcceptFailed(false);
     accept.mutate(invitation.id, {
       onSuccess: (result) => {
-        closeLayout();
         router.push(`/itineraries/${result.itineraryId}`);
+        closeLayout();
       },
       onError: (error) => {
         if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {
           router.push(VERIFY_CODE_ROUTE);
+          return;
         }
+        setAcceptFailed(true);
       },
     });
   };
@@ -263,6 +270,12 @@ function InvitationCard({
             </Text>
           ) : null}
         </View>
+
+        {acceptFailed ? (
+          <Text style={styles.acceptFailed} accessibilityRole="alert">
+            {ACCEPT_FAILED}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -364,6 +377,10 @@ const styles = StyleSheet.create({
     color: travelerColors.muted,
   },
   expiryUrgent: {
+    color: travelerColors.destructive,
+  },
+  acceptFailed: {
+    ...travelerTypography.cardMeta,
     color: travelerColors.destructive,
   },
 });

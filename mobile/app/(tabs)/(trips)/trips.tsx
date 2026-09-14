@@ -10,9 +10,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import { comingSoon } from '../../../src/components/comingSoon';
 import { Icon } from '../../../src/components/Icon';
-import { InvitationInbox } from '../../../src/components/InvitationInbox';
+import { requestsIconLabel } from '../../../src/members/requestsCopy';
+import { hasUnseen, unseenCount } from '../../../src/members/unseenCount';
 import { AnimatedPressable, usePressFeedback } from '../../../src/components/usePressFeedback';
 import { useReducedMotion } from '../../../src/components/useReducedMotion';
 import { TripRow } from '../../../src/itineraries/TripRow';
@@ -26,6 +26,7 @@ import {
   tripsInTab,
   type TripTab,
 } from '../../../src/itineraries/tripTabs';
+import { useInbox } from '../../../src/query/invitationQueries';
 import { useMyItineraries } from '../../../src/query/itineraryQueries';
 import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { TRIPS_TAB_ROUTE } from '../../../src/navigation/authRoutes';
@@ -43,7 +44,13 @@ import { claimSwipeHint } from '../../../src/removal/swipeHintState';
 import { swipeActionFor, useTripsRemoval } from '../../../src/removal/useTripsRemoval';
 import type { ItineraryResponse } from '../../../src/types/api';
 import { colors, radii, spacing, typography } from '../../../src/theme';
-import { tripTabColors, tripTabMetrics, tripTabMotion, tripTabTypography } from '../../../src/theme/workspaceTokens';
+import {
+  profileTypography,
+  tripTabColors,
+  tripTabMetrics,
+  tripTabMotion,
+  tripTabTypography,
+} from '../../../src/theme/workspaceTokens';
 
 
 export default function MyTripsScreen() {
@@ -110,7 +117,7 @@ export default function MyTripsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Trips</Text>
-        <SearchIcon />
+        <RequestsIcon />
       </View>
 
       <TripTabRow selected={active} onSelect={chooseTab} />
@@ -164,7 +171,6 @@ export default function MyTripsScreen() {
               if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
             }}
             onEndReachedThreshold={0.5}
-            ListHeaderComponent={<InvitationInbox />}
             ListEmptyComponent={<TabEmptyState tab={active} />}
             ListFooterComponent={
               <View>
@@ -217,21 +223,33 @@ function TabEmptyState({ tab }: { tab: TripTab }) {
 }
 
 
-function SearchIcon() {
+function RequestsIcon() {
   const { opacity, onPressIn, onPressOut } = usePressFeedback();
+  const inbox = useInbox();
+  const unseen = unseenCount(inbox.data?.items ?? []);
 
   return (
-    <AnimatedPressable
-      style={{ opacity }}
-      onPress={() => comingSoon('tripSearch')}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: true }}
-      accessibilityLabel="Search trips, coming soon"
-      hitSlop={8}>
-      <Icon name="search" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
-    </AnimatedPressable>
+    <Link href={REQUESTS_ROUTE} asChild>
+      <AnimatedPressable
+        style={{ opacity }}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        accessibilityRole="button"
+        accessibilityLabel={requestsIconLabel(unseen)}
+        hitSlop={8}>
+        <Icon name="mail" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
+        {hasUnseen(unseen) ? (
+          <View
+            style={styles.countBadge}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants">
+            <Text style={styles.countLabel} numberOfLines={1}>
+              {unseen}
+            </Text>
+          </View>
+        ) : null}
+      </AnimatedPressable>
+    </Link>
   );
 }
 
@@ -300,12 +318,18 @@ function FadeRise({ children, style }: { children: React.ReactNode; style?: obje
   );
 }
 
+const REQUESTS_ROUTE = '/requests';
+
 const CREATE_LABEL = 'Plan a Trip';
 
 const ARCHIVED_LINK_LABEL = 'Archived trips';
 
 
 const HEADER_ICON_SIZE = 20;
+
+const COUNT_BADGE_SIZE = 16;
+
+const COUNT_BADGE_OFFSET = 6;
 
 const CTA_ICON_SIZE = 16;
 
@@ -319,7 +343,20 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
-  headerTitle: { ...typography.title, color: colors.textPrimary },
+  headerTitle: { ...profileTypography.displayName, color: colors.textPrimary },
+  countBadge: {
+    position: 'absolute',
+    top: -COUNT_BADGE_OFFSET,
+    right: -COUNT_BADGE_OFFSET,
+    minWidth: COUNT_BADGE_SIZE,
+    height: COUNT_BADGE_SIZE,
+    paddingHorizontal: 4,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countLabel: { ...typography.caption, fontWeight: '700', color: colors.textOnAccent },
   listWrap: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
   listContainer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },

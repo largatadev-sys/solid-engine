@@ -613,6 +613,7 @@ export type InboxInvitationResponse = {
   travelerCount: number;
   createdAt: string;
   expiresAt: string;
+  seenAt: string | null;
 };
 
 

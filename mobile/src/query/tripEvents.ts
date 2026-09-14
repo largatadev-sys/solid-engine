@@ -22,6 +22,8 @@ export const MEMBERSHIP_GRANTED = 'membership.granted';
 
 export const INVITATION_RECEIVED = 'invitation.received';
 
+export const INVITATIONS_CHANGED = 'invitations.changed';
+
 export const JOIN_REQUESTS_CHANGED = 'join-requests.changed';
 
 export const ROSTER_CHANGED = 'roster.changed';
@@ -120,6 +122,7 @@ const HANDLERS: Readonly<Record<string, TripEventHandler>> = {
   [PLAN_SAVED]: absorbPlanSavedEverywhere,
   [MEMBERSHIP_GRANTED]: refetchTripsAndInbox,
   [INVITATION_RECEIVED]: absorbInvitationIntoInbox,
+  [INVITATIONS_CHANGED]: refetchInbox,
   [JOIN_REQUESTS_CHANGED]: refetchJoinRequests,
   [ROSTER_CHANGED]: refetchRoster,
   [FOLLOW_REQUESTS_CHANGED]: refetchFollowRequests,
@@ -151,6 +154,11 @@ function absorbInvitationIntoInbox(client: QueryClient, payload: unknown): void 
   client.setQueryData<Page<InboxInvitationResponse>>(invitationKeys.inbox(), (cached) =>
     absorbInvitation(cached, invitation),
   );
+}
+
+
+function refetchInbox(client: QueryClient): void {
+  void client.invalidateQueries({ queryKey: invitationKeys.inbox() });
 }
 
 

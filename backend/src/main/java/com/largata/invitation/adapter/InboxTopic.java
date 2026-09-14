@@ -5,6 +5,9 @@ import com.largata.invitation.dto.InboxInvitationResponse;
 import com.largata.invitation.service.InboxInvitation;
 import com.largata.ws.EventFanout;
 import com.largata.ws.Topic;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +15,8 @@ import org.springframework.stereotype.Component;
 public class InboxTopic {
 
     public static final String INVITATION_RECEIVED = "invitation.received";
+
+    public static final String INVITATIONS_CHANGED = "invitations.changed";
 
     private final EventFanout fanout;
 
@@ -26,5 +31,25 @@ public class InboxTopic {
                 () ->
                         fanout.broadcast(
                                 Topic.ofTraveler(inviteeTravelerId), INVITATION_RECEIVED, payload));
+    }
+
+
+    public void broadcastInvitationsChangedFor(UUID inviteeTravelerId) {
+        broadcastInvitationsChanged(Collections.singletonList(inviteeTravelerId));
+    }
+
+
+    public void broadcastInvitationsChanged(Collection<UUID> inviteeTravelerIds) {
+        inviteeTravelerIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .forEach(
+                        invitee ->
+                                AfterCommit.run(
+                                        () ->
+                                                fanout.broadcast(
+                                                        Topic.ofTraveler(invitee),
+                                                        INVITATIONS_CHANGED,
+                                                        null)));
     }
 }

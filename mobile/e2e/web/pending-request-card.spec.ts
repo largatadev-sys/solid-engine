@@ -5,6 +5,7 @@ import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled } from '../support/screen';
 import { REQUESTED_GHOST_LABEL, WITHDRAW_LABEL } from '../../src/members/travelerCopy';
+import { REQUESTS_ICON_LABEL, REQUESTS_TITLE } from '../../src/members/requestsCopy';
 import { withdrawJoinRequestWording } from '../../src/components/confirmDestructiveMessage';
 import { TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
 
@@ -36,6 +37,12 @@ test.beforeAll(async () => {
   askerToken = await tokenFor(ASKER);
 });
 
+async function openRequests(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto(TRIPS_TAB_ROUTE);
+  await labelled(page, REQUESTS_ICON_LABEL).click();
+  await expect(page.getByText(REQUESTS_TITLE).first()).toBeVisible();
+}
+
 test.describe('the card a traveler sees while waiting on a trip', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -52,7 +59,7 @@ test.describe('the card a traveler sees while waiting on a trip', () => {
 
   test('carries the trip context, so the wait is not a blank fact', async ({ page, signIn }) => {
     await signIn(ASKER);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
 
     await expect(page.getByText(trip.title).first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText(/Coron/).first()).toBeVisible();
@@ -60,7 +67,7 @@ test.describe('the card a traveler sees while waiting on a trip', () => {
 
   test('says Requested on a pill that does not act', async ({ page, signIn }) => {
     await signIn(ASKER);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible({ timeout: 20_000 });
 
     await expect(page.getByText(REQUESTED_GHOST_LABEL, { exact: true }).first()).toBeVisible();
@@ -69,7 +76,7 @@ test.describe('the card a traveler sees while waiting on a trip', () => {
 
   test('shows no expiry, because a request has none to show', async ({ page, signIn }) => {
     await signIn(ASKER);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible({ timeout: 20_000 });
 
     await expect(page.getByText(/Expires in/)).toHaveCount(0);
@@ -77,7 +84,7 @@ test.describe('the card a traveler sees while waiting on a trip', () => {
 
   test('never renders an address', async ({ page, signIn }) => {
     await signIn(ASKER);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible({ timeout: 20_000 });
 
     expect(await page.locator('body').innerText()).not.toContain('@gmail.com');
@@ -89,7 +96,7 @@ test.describe('the card a traveler sees while waiting on a trip', () => {
     signal,
   }) => {
     await signIn(ASKER);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible({ timeout: 20_000 });
 
     for (const call of signal.apiRequests.filter((c) => c.url.includes('/cover'))) {
@@ -119,7 +126,7 @@ test.describe('when the traveler both asked and was asked about one trip', () =>
     signIn,
   }) => {
     await signIn(ASKER);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible({ timeout: 20_000 });
 
     await expect(page.getByText(trip.title)).toHaveCount(1);
@@ -145,7 +152,7 @@ test.describe('withdrawing, behind its confirm', () => {
     signal,
   }) => {
     await signIn(ASKER);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(
       labelled(page, `${WITHDRAW_LABEL} request to join ${trip.title}`),
     ).toBeVisible({ timeout: 20_000 });

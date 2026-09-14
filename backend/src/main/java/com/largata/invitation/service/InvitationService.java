@@ -199,6 +199,7 @@ public class InvitationService implements InvitationApi {
         invitation.revoke(Instant.now(clock));
         invitations.saveAndFlush(invitation);
         log.info("Invitation revoked: id={} itineraryId={}", invitation.id(), itineraryId);
+        inbox.broadcastInvitationsChangedFor(invitation.inviteeTravelerId());
         afterCommit(
                 () ->
                         analytics.emit(
@@ -237,9 +238,21 @@ public class InvitationService implements InvitationApi {
 
 
 
-    @Transactional(readOnly = true)
-    public List<InboxInvitation> inbox(VerifiedContact contact, UUID travelerId) {
+    @Transactional
+    public void markInboxSeen(VerifiedContact contact, UUID travelerId) {
         Instant now = Instant.now(clock);
+        List<Invitation> rows = pendingFor(contact, travelerId, now);
+        List<Invitation> freshlySeen = rows.stream().filter(i -> i.markSeen(now)).toList();
+        if (freshlySeen.isEmpty()) {
+            return;
+        }
+        invitations.saveAllAndFlush(freshlySeen);
+        log.info("Invitations marked seen: travelerId={} count={}", travelerId, freshlySeen.size());
+        inbox.broadcastInvitationsChangedFor(travelerId);
+    }
+
+
+    private List<Invitation> pendingFor(VerifiedContact contact, UUID travelerId, Instant now) {
         List<Invitation> rows =
                 new ArrayList<>(
                         invitations.findByInviteeTravelerIdAndStatusAndExpiresAtAfterOrderByIdDesc(
@@ -249,6 +262,14 @@ public class InvitationService implements InvitationApi {
                     invitations.findByEmailAndStatusAndExpiresAtAfterOrderByIdDesc(
                             normalize(contact.email()), InvitationStatus.PENDING, now));
         }
+        return rows;
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<InboxInvitation> inbox(VerifiedContact contact, UUID travelerId) {
+        Instant now = Instant.now(clock);
+        List<Invitation> rows = pendingFor(contact, travelerId, now);
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -286,7 +307,8 @@ public class InvitationService implements InvitationApi {
                 goingPreviewOf(roster),
                 roster.size(),
                 invitation.createdAt(),
-                invitation.expiresAt());
+                invitation.expiresAt(),
+                invitation.seenAt());
     }
 
 
@@ -353,6 +375,7 @@ public class InvitationService implements InvitationApi {
         invitation.decline(Instant.now(clock));
         invitations.saveAndFlush(invitation);
         log.info("Invitation declined: id={}", invitationId);
+        inbox.broadcastInvitationsChangedFor(travelerId);
         afterCommit(
                 () ->
                         analytics.emit(
@@ -388,6 +411,8 @@ public class InvitationService implements InvitationApi {
         pending.forEach(invitation -> invitation.voidBySystem(now));
         invitations.saveAllAndFlush(pending);
         log.info("Pending invitations voided: workspaceId={} count={}", workspaceId, pending.size());
+        inbox.broadcastInvitationsChanged(
+                pending.stream().map(Invitation::inviteeTravelerId).toList());
         return pending.size();
     }
 

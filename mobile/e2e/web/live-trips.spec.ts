@@ -5,6 +5,12 @@ import { IDENTITY_MAP, ownerTagFor } from '../support/identities';
 import { seedTrip, stamp } from '../support/seed';
 import { TAB_ROW_LABEL, editingAdvisory, tabLabel } from '../../src/itineraries/tripTabs';
 import { REQUESTED_GHOST_LABEL } from '../../src/members/travelerCopy';
+import {
+  REQUESTS_ICON_LABEL,
+  REQUESTS_TITLE,
+  requestsIconLabel,
+} from '../../src/members/requestsCopy';
+import { labelled } from '../support/screen';
 
 const WATCHER = ownerTagFor('web/live-trips');
 const EDITOR = IDENTITY_MAP['web/live-trips'].tags[1]!;
@@ -126,7 +132,7 @@ test.describe('the Trips card moves while you are looking at it (S4.35 AC 1, 2)'
 
 
 test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () => {
-  test('an invitation lands in the inbox header with no refresh', async ({ signIn, page }) => {
+  test('an invitation raises the Requests count with no refresh', async ({ signIn, page }) => {
     await recordEveryFrameTheAppReceives(page);
     await signIn(WATCHER);
     await openUpcoming(page);
@@ -152,10 +158,14 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
       .poll(() => capturedTypes(page), { timeout: ARRIVAL_TIMEOUT_MS })
       .toContain('invitation.received');
     await expect(
-      page.getByText(invitedTitle),
-      'the inbox is the ListHeaderComponent of this very screen, so a new invitation must'
-        + ' appear on it without a refresh gesture',
+      labelled(page, requestsIconLabel(1)),
+      'S4.41 moved the inbox off this screen and behind the mail icon, so what must move'
+        + ' without a refresh gesture is the COUNT the icon carries — the arrival is the same'
+        + ' socket frame either way, which is what this walk is actually about',
     ).toBeVisible({ timeout: ARRIVAL_TIMEOUT_MS });
+
+    await labelled(page, requestsIconLabel(1)).click();
+    await expect(page.getByText(invitedTitle)).toBeVisible({ timeout: ARRIVAL_TIMEOUT_MS });
   });
 
 
@@ -209,21 +219,19 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
 
     await expect(
       page.getByRole('link', { name: hostTitle }),
-      'a requested trip is not a member trip yet, so it must not be a LIST CARD before approval.'
-        + ' Scoped to the link role because the title is already on screen inside the pending'
-        + ' request row — a bare text query would answer for that instead and never fail.',
+      'a requested trip is not a member trip yet, so it must not be a LIST CARD before approval',
     ).toHaveCount(0);
-    const pendingRows = page.getByText(REQUESTED_GHOST_LABEL, { exact: true });
-    await expect
-      .poll(() => pendingRows.count(), {
-        timeout: ARRIVAL_TIMEOUT_MS,
-        message:
-          'the pending row is on screen before approval — established by a fetch, because nothing'
-          + ' pushes a traveler their own request. Counted rather than matched, because the pool'
-          + ' carries requests from other walks and a bare locator is ambiguous.',
-      })
-      .toBeGreaterThan(0);
-    const pendingBefore = await pendingRows.count();
+
+    const pendingBefore = await countPendingRowsOnRequests(page);
+    expect(
+      pendingBefore,
+      'the pending row is on Requests before approval — S4.41 moved it off the Trips list, so'
+        + ' this is now read on the screen that owns it. Counted rather than matched, because the'
+        + ' pool carries requests from other walks and a bare locator is ambiguous.',
+    ).toBeGreaterThan(0);
+
+    await openUpcoming(page);
+    await waitForTheTravelerSubscription(page);
 
     const queue = await api(`/v1/trips/${host.body.id}/join-requests`, 'GET', editorToken);
     expect(queue.status, 'the owner must be able to see the queue').toBe(200);
@@ -246,14 +254,27 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
       'one event, two parts of one screen: the trip joins the list with no refresh gesture',
     ).toBeVisible({ timeout: ARRIVAL_TIMEOUT_MS });
     await expect
-      .poll(() => pendingRows.count(), {
+      .poll(() => countPendingRowsOnRequests(page), {
         timeout: ARRIVAL_TIMEOUT_MS,
         message:
-          'and the same single event clears the pending row — two events for this would be a'
-          + ' design regression, not a convenience (ticket 04)',
+          'and the same single event cleared the pending row — two events for this would be a'
+          + ' design regression, not a convenience (ticket 04). The row lives on Requests since'
+          + ' S4.41, so the count is read there; what is being asserted is unchanged.',
       })
       .toBeLessThan(pendingBefore);
   });
+
+
+  async function countPendingRowsOnRequests(
+    page: import('@playwright/test').Page,
+  ): Promise<number> {
+    await page.goto('/trips');
+    await labelled(page, REQUESTS_ICON_LABEL).click();
+    await expect(page.getByText(REQUESTS_TITLE).first()).toBeVisible({
+      timeout: ARRIVAL_TIMEOUT_MS,
+    });
+    return page.getByText(REQUESTED_GHOST_LABEL, { exact: true }).count();
+  }
 
 
   test('a reconnect marks queries stale and fetches nothing until focus', async ({ signIn, page }) => {

@@ -22,7 +22,7 @@ public record MemberResponse(
                 m.travelerId(),
                 m.displayName(),
                 m.avatarUrl(),
-                m.role().name().toLowerCase(java.util.Locale.ROOT),
+                m.role().wireName(),
                 m.joinedAt(),
                 ownershipOffered,
                 m.handle(),

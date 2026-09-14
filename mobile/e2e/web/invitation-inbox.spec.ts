@@ -4,7 +4,12 @@ import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled } from '../support/screen';
-import { ACCEPT_LABEL, DECLINE_LABEL } from '../../src/members/travelerCopy';
+import { ACCEPT_FAILED, ACCEPT_LABEL, DECLINE_LABEL } from '../../src/members/travelerCopy';
+import {
+  REQUESTS_ICON_LABEL,
+  REQUESTS_TITLE,
+  requestsIconLabel,
+} from '../../src/members/requestsCopy';
 import { declineInvitationWording } from '../../src/components/confirmDestructiveMessage';
 import { TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
 
@@ -26,6 +31,12 @@ async function inviteThem(tripId: string): Promise<string> {
   return invited.body.id;
 }
 
+async function openRequests(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto(TRIPS_TAB_ROUTE);
+  await labelled(page, REQUESTS_ICON_LABEL).click();
+  await expect(page.getByText(REQUESTS_TITLE).first()).toBeVisible();
+}
+
 async function inboxIds(): Promise<string[]> {
   return ((await api('/v1/invitations', 'GET', inviteeToken)).body.items ?? []).map(
     (row: { id: string }) => row.id,
@@ -39,7 +50,7 @@ test.beforeAll(async () => {
   ownerHandle = (await api('/v1/me', 'GET', ownerToken)).body.handle;
 });
 
-test.describe('the card an invitee meets on Trips', () => {
+test.describe('the card an invitee meets on Requests', () => {
   test.describe.configure({ mode: 'serial' });
 
   let trip: SeededTrip;
@@ -56,7 +67,7 @@ test.describe('the card an invitee meets on Trips', () => {
 
   test('carries the trip’s context, not just a line of text', async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
 
     await expect(page.getByText(trip.title).first()).toBeVisible();
     await expect(page.getByText(/El Nido/).first()).toBeVisible();
@@ -64,7 +75,7 @@ test.describe('the card an invitee meets on Trips', () => {
 
   test('names who invited them, by handle', async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible();
 
     await expect(page.getByText(new RegExp(`Invited by @${ownerHandle}`)).first()).toBeVisible();
@@ -72,7 +83,7 @@ test.describe('the card an invitee meets on Trips', () => {
 
   test('says when the invitation runs out', async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible();
 
     await expect(page.getByText(/Expires in/).first()).toBeVisible();
@@ -84,7 +95,7 @@ test.describe('the card an invitee meets on Trips', () => {
     signal,
   }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible();
 
     const covers = signal.apiRequests.filter((call) => call.url.includes('/cover'));
@@ -96,39 +107,31 @@ test.describe('the card an invitee meets on Trips', () => {
 
   test('never shows an address anywhere on the card', async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(page.getByText(trip.title).first()).toBeVisible();
 
     expect(await page.locator('body').innerText()).not.toContain('@gmail.com');
   });
 
-  test.skip(
-    'SKIPPED 2026-08-28 — accepting lands the traveler in the workspace. Quarantined by founder'
-      + ' call, NOT proven flaky: 4 attempts across two days failed on freshly seeded data, and'
-      + ' the last green run predates S4.38 merging to dev. Accept navigates only from onSuccess'
-      + ' and the error branch handles EMAIL_NOT_VERIFIED alone, so a failed accept is'
-      + ' indistinguishable from a click that never landed — which is why this reports only'
-      + ' "the URL stayed at /trips". Owned by an epic-map line; see checklist 34.',
-    async ({ page, signIn }) => {
+  test('accepting lands the traveler in the workspace', async ({ page, signIn }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`)).toBeVisible();
 
     await labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`).click();
 
+    await expect(page.getByText(ACCEPT_FAILED)).toHaveCount(0);
     await expect
       .poll(() => new URL(page.url()).pathname, { timeout: 30_000 })
       .toContain(`/itineraries/${trip.id}`);
   });
 
-  test.skip(
-    'SKIPPED 2026-08-28 — and this trip’s card is gone from Trips once it has been answered.'
-      + ' Not independently suspect: it asserts the state the skipped accept above creates, so'
-      + ' it can only fail while that one is quarantined. It returns with it.',
-    async ({ page, signIn }) => {
+  test('and this trip’s card is gone from Requests once it has been answered', async ({
+    page,
+    signIn,
+  }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
-    await expect(page.getByText(/Trips/i).first()).toBeVisible();
+    await openRequests(page);
 
     await expect(
       labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`),
@@ -150,7 +153,7 @@ test.describe('declining, behind its confirm', () => {
 
   test('asks first, and says the inviter will not be told', async ({ page, signIn, signal }) => {
     await signIn(INVITEE);
-    await page.goto(TRIPS_TAB_ROUTE);
+    await openRequests(page);
     await expect(labelled(page, `${DECLINE_LABEL} invitation to ${trip.title}`)).toBeVisible();
 
     await labelled(page, `${DECLINE_LABEL} invitation to ${trip.title}`).click();
@@ -166,5 +169,91 @@ test.describe('declining, behind its confirm', () => {
     const mine = await api('/v1/trips', 'GET', inviteeToken);
 
     expect(mine.body.items.map((row: { id: string }) => row.id)).not.toContain(trip.id);
+  });
+});
+
+test.describe('the count on the mail icon', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  let first: SeededTrip;
+  let second: SeededTrip;
+
+  test.beforeAll(async () => {
+    await api('/v1/invitations/seen', 'POST', inviteeToken);
+    first = await seedTrip({ ownerTag: OWNER, title: stamp('count one') });
+    await inviteThem(first.id);
+  });
+
+  test('reads one while the invitation is new to them', async ({ page, signIn }) => {
+    await signIn(INVITEE);
+    await page.goto(TRIPS_TAB_ROUTE);
+
+    await expect(labelled(page, requestsIconLabel(1))).toBeVisible({ timeout: 20_000 });
+  });
+
+  test('falls to zero once they have opened Requests, and the icon loses its number', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(INVITEE);
+    await openRequests(page);
+    await expect(page.getByText(first.title).first()).toBeVisible({ timeout: 20_000 });
+
+    await page.goBack();
+
+    await expect(labelled(page, REQUESTS_ICON_LABEL)).toBeVisible({ timeout: 20_000 });
+    await expect(labelled(page, requestsIconLabel(1))).toHaveCount(0);
+  });
+
+  test('rises again when a second invitation arrives, without a refresh', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(INVITEE);
+    await page.goto(TRIPS_TAB_ROUTE);
+    await expect(labelled(page, REQUESTS_ICON_LABEL)).toBeVisible({ timeout: 20_000 });
+
+    second = await seedTrip({ ownerTag: OWNER, title: stamp('count two') });
+    await inviteThem(second.id);
+
+    await expect(labelled(page, requestsIconLabel(1))).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('counts the unseen invitation and nothing the traveler asked for themselves', async () => {
+    const unseen = ((await api('/v1/invitations', 'GET', inviteeToken)).body.items ?? []).filter(
+      (row: { seenAt: string | null }) => row.seenAt === null,
+    );
+    const asked = (await api('/v1/join-requests', 'GET', inviteeToken)).body.items ?? [];
+
+    expect(unseen.map((row: { itineraryId: string }) => row.itineraryId)).toEqual([second.id]);
+    expect(asked.every((row: Record<string, unknown>) => !('seenAt' in row)))
+      .toBe(true);
+  });
+});
+
+test.describe('the count falls live, with no refresh', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  let trip: SeededTrip;
+  let invitationId: string;
+
+  test.beforeAll(async () => {
+    await api('/v1/invitations/seen', 'POST', inviteeToken);
+    trip = await seedTrip({ ownerTag: OWNER, title: stamp('live fall') });
+    invitationId = await inviteThem(trip.id);
+  });
+
+  test('a revoke by the inviter drops the number while the traveler sits on Trips', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(INVITEE);
+    await page.goto(TRIPS_TAB_ROUTE);
+    await expect(labelled(page, requestsIconLabel(1))).toBeVisible({ timeout: 20_000 });
+
+    await api(`/v1/invitations/${invitationId}/revoke`, 'POST', ownerToken);
+
+    await expect(labelled(page, REQUESTS_ICON_LABEL)).toBeVisible({ timeout: 30_000 });
+    await expect(labelled(page, requestsIconLabel(1))).toHaveCount(0);
   });
 });
