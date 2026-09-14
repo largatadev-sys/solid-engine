@@ -22,9 +22,7 @@ Every step is typed by the founder. The agent never chains two of them.
 
 ## Where the documents land
 
-- **The grilling record and the canon it amends** (glossary rows, ADR amendments, object-contract rows, epic-map annotations, the BUILD_STATUS row) ride **one docs-only PR** against `dev`, on the precedent of the trip-arc record (#50), ADR-039 (#55) and CM-5's record (#56).
-- **The spec** rode the same docs PR at TW-1 and CM-3 (#50). Whether it does so again, or lands on the feature branch, is the founder's call at `/to-spec`.
-- **The tickets and the build** ride the story's feature branch, `feature/<story-id>-<slug>`, and its one squash-merge.
+- **The grilling record, the spec, the tickets and the build ride the story's feature branch**, `feature/<story-id>-<slug>`, and its one squash-merge — with the canon the story amends (glossary rows, ADR amendments, object-contract rows, the BUILD_STATUS row), which describes what the branch builds and belongs beside it. *Founder ruling 2026-09-14 at S4.41's grilling: "the doc should also be included in the commit for the same branch with the feature". Until then the record and canon rode a docs-only PR (the trip-arc record #50, ADR-039 #55, CM-5 #56) and the spec sometimes with them — that shape stays the right one for canon written without a story (an ADR adopted on its own, a review's findings), and for a finding that is true on `dev` today and should not wait weeks on a branch.*
 - **Anything raised along the way** that outlives the story goes to the epic map, its one home.
 
 ## Execution needs a plain yes, every time
