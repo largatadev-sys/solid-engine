@@ -49,6 +49,9 @@ public class Invitation {
     @Column(name = "resolved_at")
     private Instant resolvedAt;
 
+    @Column(name = "seen_at")
+    private Instant seenAt;
+
     protected Invitation() {
     }
 
@@ -132,6 +135,15 @@ public class Invitation {
         this.resolvedAt = now;
     }
 
+
+    public boolean markSeen(Instant now) {
+        if (seenAt != null) {
+            return false;
+        }
+        this.seenAt = now;
+        return true;
+    }
+
     public UUID id() {
         return id;
     }
@@ -162,5 +174,9 @@ public class Invitation {
 
     public Instant expiresAt() {
         return expiresAt;
+    }
+
+    public Instant seenAt() {
+        return seenAt;
     }
 }

@@ -40,6 +40,13 @@ class InvitationController {
     }
 
 
+    @PostMapping("/seen")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void markSeen(@CurrentTraveler Traveler traveler, @AuthEmail VerifiedContact contact) {
+        invitations.markInboxSeen(contact, traveler.id());
+    }
+
+
     @GetMapping("/{invitationId}/cover")
     ResponseEntity<InputStreamResource> cover(
             @CurrentTraveler Traveler traveler,

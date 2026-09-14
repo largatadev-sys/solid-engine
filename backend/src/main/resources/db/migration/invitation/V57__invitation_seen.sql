@@ -1,0 +1,15 @@
+-- V57 — the Invitation records when its invitee first looked at it (S4.41 ticket 04).
+--
+-- The mail icon on Trips carries a count of what is NEW to the traveler, not of what is still
+-- pending, so opening Requests must make it zero — and stay zero on the other device they are
+-- signed in on. That makes "seen" a fact about the invitation rather than a preference held on a
+-- phone, so it lives here, on the row the invitee is already authorized to read.
+--
+-- NULLABLE, and nullable is the whole design: NULL means unseen, which is what every existing row
+-- is and what every new invitation starts as. Nothing backfills, because nothing has been seen.
+--
+-- Seeing is not consenting. Issuing, revoking and accepting are all refused while the trip is
+-- published (the publish freeze); marking seen is not, because a glance changes nothing about who
+-- is on the trip. It also never touches a join request: nothing about a request is new to the
+-- traveler who sent it.
+ALTER TABLE invitation ADD COLUMN seen_at TIMESTAMPTZ;

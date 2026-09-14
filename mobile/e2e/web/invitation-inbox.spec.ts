@@ -5,7 +5,11 @@ import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled } from '../support/screen';
 import { ACCEPT_LABEL, DECLINE_LABEL } from '../../src/members/travelerCopy';
-import { REQUESTS_ICON_LABEL, REQUESTS_TITLE } from '../../src/members/requestsCopy';
+import {
+  REQUESTS_ICON_LABEL,
+  REQUESTS_TITLE,
+  requestsIconLabel,
+} from '../../src/members/requestsCopy';
 import { declineInvitationWording } from '../../src/components/confirmDestructiveMessage';
 import { TRIPS_TAB_ROUTE } from '../../src/navigation/authRoutes';
 
@@ -172,5 +176,64 @@ test.describe('declining, behind its confirm', () => {
     const mine = await api('/v1/trips', 'GET', inviteeToken);
 
     expect(mine.body.items.map((row: { id: string }) => row.id)).not.toContain(trip.id);
+  });
+});
+
+test.describe('the count on the mail icon', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  let first: SeededTrip;
+  let second: SeededTrip;
+
+  test.beforeAll(async () => {
+    await api('/v1/invitations/seen', 'POST', inviteeToken);
+    first = await seedTrip({ ownerTag: OWNER, title: stamp('count one') });
+    await inviteThem(first.id);
+  });
+
+  test('reads one while the invitation is new to them', async ({ page, signIn }) => {
+    await signIn(INVITEE);
+    await page.goto(TRIPS_TAB_ROUTE);
+
+    await expect(labelled(page, requestsIconLabel(1))).toBeVisible({ timeout: 20_000 });
+  });
+
+  test('falls to zero once they have opened Requests, and the icon loses its number', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(INVITEE);
+    await openRequests(page);
+    await expect(page.getByText(first.title).first()).toBeVisible({ timeout: 20_000 });
+
+    await page.goBack();
+
+    await expect(labelled(page, REQUESTS_ICON_LABEL)).toBeVisible({ timeout: 20_000 });
+    await expect(labelled(page, requestsIconLabel(1))).toHaveCount(0);
+  });
+
+  test('rises again when a second invitation arrives, without a refresh', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(INVITEE);
+    await page.goto(TRIPS_TAB_ROUTE);
+    await expect(labelled(page, REQUESTS_ICON_LABEL)).toBeVisible({ timeout: 20_000 });
+
+    second = await seedTrip({ ownerTag: OWNER, title: stamp('count two') });
+    await inviteThem(second.id);
+
+    await expect(labelled(page, requestsIconLabel(1))).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('counts the unseen invitation and nothing the traveler asked for themselves', async () => {
+    const unseen = ((await api('/v1/invitations', 'GET', inviteeToken)).body.items ?? []).filter(
+      (row: { seenAt: string | null }) => row.seenAt === null,
+    );
+    const asked = (await api('/v1/join-requests', 'GET', inviteeToken)).body.items ?? [];
+
+    expect(unseen.map((row: { itineraryId: string }) => row.itineraryId)).toEqual([second.id]);
+    expect(asked.every((row: Record<string, unknown>) => !('seenAt' in row)))
+      .toBe(true);
   });
 });

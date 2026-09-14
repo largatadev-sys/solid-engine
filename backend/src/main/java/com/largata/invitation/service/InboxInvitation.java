@@ -19,7 +19,8 @@ public record InboxInvitation(
         List<GoingTraveler> going,
         int travelerCount,
         Instant createdAt,
-        Instant expiresAt) {
+        Instant expiresAt,
+        Instant seenAt) {
 
 
     public record GoingTraveler(UUID travelerId, String displayName, String avatarUrl) {}

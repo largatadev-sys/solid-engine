@@ -311,6 +311,74 @@ class InboxContextIT extends PostgresTestBase {
                 UUID.fromString(invitationId));
     }
 
+    @Test
+    void anInvitationArrivesUnseenAndStaysThatWayUntilTheTravelerOpensRequests() {
+        String owner = rig.travelerWithHandle(uniqueHandle("owner"));
+        String trip = rig.createTrip(owner, 1);
+        String inviteeHandle = uniqueHandle("invitee");
+        String invitee = rig.travelerWithHandle(inviteeHandle);
+
+        inviteByHandle(owner, trip, inviteeHandle).expectStatus().isCreated();
+
+        inboxOf(invitee)
+                .jsonPath("$.items[0].seenAt")
+                .doesNotExist();
+
+        markSeen(invitee).expectStatus().isNoContent();
+
+        inboxOf(invitee)
+                .jsonPath("$.items[0].seenAt")
+                .exists();
+    }
+
+
+    @Test
+    void seeingMarksEveryPendingInvitationAtOnceAndAnAlreadySeenOneKeepsItsInstant() {
+        String owner = rig.travelerWithHandle(uniqueHandle("owner"));
+        String first = rig.createTrip(owner, 1);
+        String inviteeHandle = uniqueHandle("invitee");
+        String invitee = rig.travelerWithHandle(inviteeHandle);
+        inviteByHandle(owner, first, inviteeHandle).expectStatus().isCreated();
+
+        markSeen(invitee).expectStatus().isNoContent();
+        java.time.Instant firstSeenAt = seenAtOf(first);
+
+        String second = rig.createTrip(owner, 1);
+        inviteByHandle(owner, second, inviteeHandle).expectStatus().isCreated();
+
+        inboxOf(invitee)
+                .jsonPath("$.items[?(@.itineraryId=='" + second + "')].seenAt")
+                .doesNotExist();
+
+        markSeen(invitee).expectStatus().isNoContent();
+
+        assertThat(seenAtOf(first))
+                .as("the second glance does not rewrite what the first one recorded")
+                .isEqualTo(firstSeenAt);
+        assertThat(seenAtOf(second)).isNotNull();
+    }
+
+
+    private java.time.Instant seenAtOf(String tripId) {
+        return jdbc.queryForObject(
+                """
+                SELECT i.seen_at FROM invitation i
+                JOIN workspace w ON w.id = i.workspace_id
+                WHERE w.itinerary_id = ?::uuid AND i.status = 'PENDING'
+                """,
+                java.time.Instant.class,
+                tripId);
+    }
+
+
+    private RestTestClient.ResponseSpec markSeen(String token) {
+        return rest.post()
+                .uri("/v1/invitations/seen")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .exchange();
+    }
+
+
     private RestTestClient.BodyContentSpec inboxOf(String token) {
         return rest.get()
                 .uri("/v1/invitations")

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { RefreshControl } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { RequestsList } from '../../../src/components/RequestsList';
 import { ScreenHeader } from '../../../src/components/ScreenHeader';
 import {
@@ -9,7 +10,7 @@ import {
   REQUESTS_ERROR_TITLE,
   REQUESTS_TITLE,
 } from '../../../src/members/requestsCopy';
-import { useInbox } from '../../../src/query/invitationQueries';
+import { useInbox, useMarkInboxSeen } from '../../../src/query/invitationQueries';
 import { useMyJoinRequests } from '../../../src/query/joinQueries';
 import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { colors, radii, spacing, typography } from '../../../src/theme';
@@ -18,10 +19,18 @@ import { colors, radii, spacing, typography } from '../../../src/theme';
 export default function RequestsScreen() {
   const inbox = useInbox();
   const asked = useMyJoinRequests();
+  const markSeen = useMarkInboxSeen();
   const [pulling, setPulling] = useState(false);
 
   useRevalidateOnFocus(inbox);
   useRevalidateOnFocus(asked);
+
+  const mark = markSeen.mutate;
+  useFocusEffect(
+    useCallback(() => {
+      mark();
+    }, [mark]),
+  );
 
   const isPending = inbox.isPending || asked.isPending;
   const isError = inbox.isError || asked.isError;

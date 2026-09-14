@@ -77,6 +77,14 @@ export function useAcceptInvitation(): UseMutationResult<AcceptResponse, Error, 
   });
 }
 
+export function useMarkInboxSeen(): UseMutationResult<void, Error, void> {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => invitationRepository.markInboxSeen(),
+    onSuccess: () => client.invalidateQueries({ queryKey: invitationKeys.inbox() }),
+  });
+}
+
 export function useDeclineInvitation(): UseMutationResult<void, Error, string> {
   const client = useQueryClient();
   return useMutation({

@@ -237,9 +237,21 @@ public class InvitationService implements InvitationApi {
 
 
 
-    @Transactional(readOnly = true)
-    public List<InboxInvitation> inbox(VerifiedContact contact, UUID travelerId) {
+    @Transactional
+    public int markInboxSeen(VerifiedContact contact, UUID travelerId) {
         Instant now = Instant.now(clock);
+        List<Invitation> rows = pendingFor(contact, travelerId, now);
+        List<Invitation> freshlySeen = rows.stream().filter(i -> i.markSeen(now)).toList();
+        if (freshlySeen.isEmpty()) {
+            return 0;
+        }
+        invitations.saveAllAndFlush(freshlySeen);
+        log.info("Invitations marked seen: travelerId={} count={}", travelerId, freshlySeen.size());
+        return freshlySeen.size();
+    }
+
+
+    private List<Invitation> pendingFor(VerifiedContact contact, UUID travelerId, Instant now) {
         List<Invitation> rows =
                 new ArrayList<>(
                         invitations.findByInviteeTravelerIdAndStatusAndExpiresAtAfterOrderByIdDesc(
@@ -249,6 +261,14 @@ public class InvitationService implements InvitationApi {
                     invitations.findByEmailAndStatusAndExpiresAtAfterOrderByIdDesc(
                             normalize(contact.email()), InvitationStatus.PENDING, now));
         }
+        return rows;
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<InboxInvitation> inbox(VerifiedContact contact, UUID travelerId) {
+        Instant now = Instant.now(clock);
+        List<Invitation> rows = pendingFor(contact, travelerId, now);
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -286,7 +306,8 @@ public class InvitationService implements InvitationApi {
                 goingPreviewOf(roster),
                 roster.size(),
                 invitation.createdAt(),
-                invitation.expiresAt());
+                invitation.expiresAt(),
+                invitation.seenAt());
     }
 
 

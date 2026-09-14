@@ -107,6 +107,36 @@ class PublishFreezesMembershipIT extends PostgresTestBase {
 
 
     @Test
+    void markingInvitationsSeenIsNOTRefusedOnAPublishedTrip() {
+        Trip trip = completed();
+        String inviteeEmail = uniqueEmail();
+        fieldIn(issuedByEmail(trip.owner, trip.id, inviteeEmail), "id");
+        String invitee = TestJwtSupport.verifiedToken("uid-" + UUID.randomUUID(), inviteeEmail);
+        publish(trip);
+
+        rest.post()
+                .uri("/v1/invitations/seen")
+                .header(HttpHeaders.AUTHORIZATION, bearer(invitee))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+    }
+
+
+    @Test
+    void markingInvitationsSeenAnswersTheSameWhenThereIsNothingToMark() {
+        String nobody = TestJwtSupport.verifiedToken("uid-" + UUID.randomUUID(), uniqueEmail());
+
+        rest.post()
+                .uri("/v1/invitations/seen")
+                .header(HttpHeaders.AUTHORIZATION, bearer(nobody))
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+    }
+
+
+    @Test
     void removingAMemberIsRefusedOnAPublishedTrip() {
         Trip trip = completed();
         String member = rig.joinAsMember(trip.owner, trip.id, uniqueHandle("member"));

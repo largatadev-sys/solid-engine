@@ -129,6 +129,41 @@ class InvitationStorageIT extends PostgresTestBase {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void seenAtIsNullableAndStartsNull() {
+        UUID workspaceId = aWorkspace();
+        Invitation invitation =
+                invitations.saveAndFlush(
+                        Invitation.open(workspaceId, "unseen@example.com", UUID.randomUUID(), Instant.now()));
+
+        assertThat(seenAtOf(invitation.id()))
+                .as("an invitation nobody has looked at yet - which is what the count counts")
+                .isNull();
+    }
+
+    @Test
+    void markingSeenWritesTheInstantAndIsIdempotent() {
+        UUID workspaceId = aWorkspace();
+        Instant looked = Instant.parse("2026-09-14T10:15:30Z");
+        Invitation invitation =
+                invitations.saveAndFlush(
+                        Invitation.open(workspaceId, "seen@example.com", UUID.randomUUID(), Instant.now()));
+
+        assertThat(invitation.markSeen(looked)).isTrue();
+        invitations.saveAndFlush(invitation);
+
+        assertThat(seenAtOf(invitation.id())).isEqualTo(looked);
+        assertThat(invitation.markSeen(looked.plusSeconds(60)))
+                .as("a second glance changes nothing, so the second device does not rewrite the first")
+                .isFalse();
+        assertThat(seenAtOf(invitation.id())).isEqualTo(looked);
+    }
+
+    private Instant seenAtOf(UUID invitationId) {
+        return jdbc.queryForObject(
+                "SELECT seen_at FROM invitation WHERE id = ?", Instant.class, invitationId);
+    }
+
     private UUID aWorkspace() {
         Trip itinerary = itineraries.create(UUID.randomUUID(), "Lisbon", "Lisbon", null, null);
         return jdbc.queryForObject("SELECT id FROM workspace WHERE itinerary_id = ?", UUID.class, itinerary.id());

@@ -11,7 +11,8 @@ import {
   View,
 } from 'react-native';
 import { Icon } from '../../../src/components/Icon';
-import { REQUESTS_ICON_LABEL } from '../../../src/members/requestsCopy';
+import { requestsIconLabel } from '../../../src/members/requestsCopy';
+import { showsCount, unseenCount } from '../../../src/members/unseenCount';
 import { AnimatedPressable, usePressFeedback } from '../../../src/components/usePressFeedback';
 import { useReducedMotion } from '../../../src/components/useReducedMotion';
 import { TripRow } from '../../../src/itineraries/TripRow';
@@ -25,6 +26,7 @@ import {
   tripsInTab,
   type TripTab,
 } from '../../../src/itineraries/tripTabs';
+import { useInbox } from '../../../src/query/invitationQueries';
 import { useMyItineraries } from '../../../src/query/itineraryQueries';
 import { useRevalidateOnFocus } from '../../../src/query/useRevalidateOnFocus';
 import { TRIPS_TAB_ROUTE } from '../../../src/navigation/authRoutes';
@@ -223,6 +225,8 @@ function TabEmptyState({ tab }: { tab: TripTab }) {
 
 function RequestsIcon() {
   const { opacity, onPressIn, onPressOut } = usePressFeedback();
+  const inbox = useInbox();
+  const unseen = unseenCount(inbox.data?.items ?? []);
 
   return (
     <Link href={REQUESTS_ROUTE} asChild>
@@ -231,9 +235,16 @@ function RequestsIcon() {
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         accessibilityRole="button"
-        accessibilityLabel={REQUESTS_ICON_LABEL}
+        accessibilityLabel={requestsIconLabel(unseen)}
         hitSlop={8}>
         <Icon name="mail" size={HEADER_ICON_SIZE} color={colors.textPrimary} />
+        {showsCount(unseen) ? (
+          <View style={styles.countBadge}>
+            <Text style={styles.countLabel} numberOfLines={1}>
+              {unseen}
+            </Text>
+          </View>
+        ) : null}
       </AnimatedPressable>
     </Link>
   );
@@ -313,6 +324,10 @@ const ARCHIVED_LINK_LABEL = 'Archived trips';
 
 const HEADER_ICON_SIZE = 20;
 
+const COUNT_BADGE_SIZE = 16;
+
+const COUNT_BADGE_OFFSET = 6;
+
 const CTA_ICON_SIZE = 16;
 
 const styles = StyleSheet.create({
@@ -326,6 +341,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   headerTitle: { ...profileTypography.displayName, color: colors.textPrimary },
+  countBadge: {
+    position: 'absolute',
+    top: -COUNT_BADGE_OFFSET,
+    right: -COUNT_BADGE_OFFSET,
+    minWidth: COUNT_BADGE_SIZE,
+    height: COUNT_BADGE_SIZE,
+    paddingHorizontal: 4,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countLabel: { ...typography.caption, fontWeight: '700', color: colors.textOnAccent },
   listWrap: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
   listContainer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
