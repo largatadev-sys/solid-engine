@@ -5,6 +5,8 @@ import { IDENTITY_MAP, ownerTagFor } from '../support/identities';
 import { seedTrip, stamp } from '../support/seed';
 import { TAB_ROW_LABEL, editingAdvisory, tabLabel } from '../../src/itineraries/tripTabs';
 import { REQUESTED_GHOST_LABEL } from '../../src/members/travelerCopy';
+import { requestsIconLabel } from '../../src/members/requestsCopy';
+import { labelled } from '../support/screen';
 
 const WATCHER = ownerTagFor('web/live-trips');
 const EDITOR = IDENTITY_MAP['web/live-trips'].tags[1]!;
@@ -126,7 +128,7 @@ test.describe('the Trips card moves while you are looking at it (S4.35 AC 1, 2)'
 
 
 test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () => {
-  test('an invitation lands in the inbox header with no refresh', async ({ signIn, page }) => {
+  test('an invitation raises the Requests count with no refresh', async ({ signIn, page }) => {
     await recordEveryFrameTheAppReceives(page);
     await signIn(WATCHER);
     await openUpcoming(page);
@@ -152,10 +154,14 @@ test.describe('the rest of the Trips surface moves too (S4.35 AC 5, 6, 11)', () 
       .poll(() => capturedTypes(page), { timeout: ARRIVAL_TIMEOUT_MS })
       .toContain('invitation.received');
     await expect(
-      page.getByText(invitedTitle),
-      'the inbox is the ListHeaderComponent of this very screen, so a new invitation must'
-        + ' appear on it without a refresh gesture',
+      labelled(page, requestsIconLabel(1)),
+      'S4.41 moved the inbox off this screen and behind the mail icon, so what must move'
+        + ' without a refresh gesture is the COUNT the icon carries — the arrival is the same'
+        + ' socket frame either way, which is what this walk is actually about',
     ).toBeVisible({ timeout: ARRIVAL_TIMEOUT_MS });
+
+    await labelled(page, requestsIconLabel(1)).click();
+    await expect(page.getByText(invitedTitle)).toBeVisible({ timeout: ARRIVAL_TIMEOUT_MS });
   });
 
 
