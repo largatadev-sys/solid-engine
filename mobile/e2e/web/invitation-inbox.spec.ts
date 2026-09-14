@@ -237,3 +237,30 @@ test.describe('the count on the mail icon', () => {
       .toBe(true);
   });
 });
+
+test.describe('the count falls live, with no refresh', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  let trip: SeededTrip;
+  let invitationId: string;
+
+  test.beforeAll(async () => {
+    await api('/v1/invitations/seen', 'POST', inviteeToken);
+    trip = await seedTrip({ ownerTag: OWNER, title: stamp('live fall') });
+    invitationId = await inviteThem(trip.id);
+  });
+
+  test('a revoke by the inviter drops the number while the traveler sits on Trips', async ({
+    page,
+    signIn,
+  }) => {
+    await signIn(INVITEE);
+    await page.goto(TRIPS_TAB_ROUTE);
+    await expect(labelled(page, requestsIconLabel(1))).toBeVisible({ timeout: 20_000 });
+
+    await api(`/v1/invitations/${invitationId}/revoke`, 'POST', ownerToken);
+
+    await expect(labelled(page, REQUESTS_ICON_LABEL)).toBeVisible({ timeout: 30_000 });
+    await expect(labelled(page, requestsIconLabel(1))).toHaveCount(0);
+  });
+});

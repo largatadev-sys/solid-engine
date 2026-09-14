@@ -4,6 +4,7 @@ import {
   FOLLOWERS_CHANGED,
   FOLLOW_REQUESTS_CHANGED,
   INVITATION_RECEIVED,
+  INVITATIONS_CHANGED,
   JOIN_REQUESTS_CHANGED,
   MEMBERSHIP_GRANTED,
   PLAN_SAVED,
@@ -247,6 +248,10 @@ describe('the event dispatch table', () => {
     expect(tripEventHandlerFor(INVITATION_RECEIVED)).toBeDefined();
   });
 
+  it('routes the generic invitations-changed signal, which is what makes the count FALL live', () => {
+    expect(tripEventHandlerFor(INVITATIONS_CHANGED)).toBeDefined();
+  });
+
   it('routes the two Travelers-tab signals', () => {
     expect(tripEventHandlerFor(JOIN_REQUESTS_CHANGED)).toBeDefined();
     expect(tripEventHandlerFor(ROSTER_CHANGED)).toBeDefined();
@@ -306,5 +311,28 @@ describe('the two payload-less frames the identity module sends (S4.40 decision 
     markStaleOnReconnect(client);
 
     expect(keys.some((key) => key.includes('follow'))).toBe(true);
+  });
+});
+
+describe('the count on the mail icon falls without a refresh (S4.41 ticket 05)', () => {
+  it('refetches the inbox when an invitation is revoked, voided, answered or seen elsewhere', () => {
+    const keys: string[] = [];
+    const client = {
+      invalidateQueries: (options: { queryKey: readonly unknown[] }) => {
+        keys.push(JSON.stringify(options.queryKey));
+      },
+    } as unknown as QueryClient;
+
+    tripEventHandlerFor(INVITATIONS_CHANGED)!(client, null, 'traveler:t1');
+
+    expect(keys.some((k) => k.includes('inbox'))).toBe(true);
+  });
+
+  it('carries no payload, so the client asks REST rather than trusting the frame', () => {
+    const client = {
+      invalidateQueries: () => {},
+    } as unknown as QueryClient;
+
+    expect(() => tripEventHandlerFor(INVITATIONS_CHANGED)!(client, null, 'traveler:t1')).not.toThrow();
   });
 });
