@@ -1,11 +1,14 @@
 package com.largata.trip.api;
 
+import com.largata.common.api.Page;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface TripApi {
+
+    Page<TripListEntry> listFor(TripListQuery query);
 
     Optional<TripFacts> factsOf(UUID tripId);
 

@@ -117,6 +117,16 @@ public class WorkspaceService implements MembershipApi {
 
 
     @Transactional(readOnly = true)
+    public Map<UUID, WorkspaceState> statesAmong(Collection<UUID> itineraryIds) {
+        if (itineraryIds.isEmpty()) {
+            return Map.of();
+        }
+        return workspaces.findAllByItineraryIdIn(itineraryIds).stream()
+                .collect(Collectors.toMap(Workspace::itineraryId, Workspace::state));
+    }
+
+
+    @Transactional(readOnly = true)
     public boolean isArchived(UUID itineraryId) {
         return stateOf(itineraryId).map(WorkspaceState::isArchived).orElse(false);
     }

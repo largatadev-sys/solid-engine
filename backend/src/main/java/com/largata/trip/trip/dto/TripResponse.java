@@ -6,7 +6,6 @@ import com.largata.identity.TravelerSummary;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.plan.entity.TripPlanTree;
 import com.largata.trip.editing.entity.LeaseSubject;
-import com.largata.trip.workspace.entity.WorkspaceState;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -49,52 +48,6 @@ public record TripResponse(
         int dayCount,
         String viewerRole,
         Integer memberCount) {
-
-
-    public static TripResponse summaryOf(
-            Trip itinerary,
-            WorkspaceState workspaceState,
-            boolean beingEdited,
-            int dayCount,
-            String viewerRole,
-            Integer memberCount,
-            boolean published,
-            UUID itineraryId,
-            Instant publishedAt) {
-        return new TripResponse(
-                itinerary.id(),
-                itinerary.title(),
-                itinerary.destination(),
-                PinPayload.of(itinerary.pin()),
-                itinerary.currency(),
-                itinerary.description(),
-                itinerary.standouts(),
-                itinerary.bestTimeOfYear(),
-                itinerary.coverImageUrl(),
-                itinerary.startDate(),
-                itinerary.endDate(),
-                itinerary.state().wireName(),
-                published,
-                itineraryId,
-                publishedAt,
-                itinerary.visibility().wireName(),
-                workspaceState.isArchived(),
-                itinerary.lastEditedBy(),
-                itinerary.lastEditedAt(),
-                List.of(),
-                itinerary.createdAt(),
-                workspaceState.wireName(),
-                null,
-                null,
-                null,
-                beingEdited,
-                null,
-                itinerary.planVersion(),
-                null,
-                dayCount,
-                viewerRole,
-                memberCount);
-    }
 
 
     public static TripResponse of(TripPlanTree plan) {

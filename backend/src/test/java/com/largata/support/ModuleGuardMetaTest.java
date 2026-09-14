@@ -29,6 +29,7 @@ class ModuleGuardMetaTest {
                     "invitation",
                     "itinerary",
                     "join",
+                    "mytrips",
                     "place",
                     "poll",
                     "postcard",
