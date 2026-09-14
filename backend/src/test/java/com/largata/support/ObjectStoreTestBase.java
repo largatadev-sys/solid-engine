@@ -18,7 +18,8 @@ public abstract class ObjectStoreTestBase extends PostgresTestBase {
     protected static final String BUCKET = "largata-media-it";
 
     protected static final MinIOContainer STORAGE =
-            new MinIOContainer(DockerImageName.parse("minio/minio:RELEASE.2025-09-07T16-13-09Z"));
+            new MinIOContainer(DockerImageName.parse("quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z")
+                    .asCompatibleSubstituteFor("minio/minio"));
 
     static {
         STORAGE.start();

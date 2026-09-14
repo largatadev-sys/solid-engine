@@ -16,7 +16,8 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 class S3ObjectStoreIT {
 
     private static final DockerImageName EMULATOR =
-            DockerImageName.parse("minio/minio:RELEASE.2025-09-07T16-13-09Z");
+            DockerImageName.parse("quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z")
+                    .asCompatibleSubstituteFor("minio/minio");
 
     private static final String BUCKET = "largata-media-test";
 
