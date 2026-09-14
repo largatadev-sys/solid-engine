@@ -30,7 +30,7 @@ Received string:    "/requests"
 
 **The fix:** the hook invalidates on `onSettled`, which runs after the caller's `onSuccess`, so the navigation wins the race by construction rather than by timing. `acceptNavigatesBeforeTheCacheMoves.test.ts` pins all three halves — the hook's callback, the caller's navigation, and the empty-state swap that makes the race real — and was sabotage-checked by putting the invalidation back on `onSuccess`.
 
-**Still owed:** a green run of this walk. The fix is pushed and the confirming run is in flight; until it goes green the diagnosis above is a well-evidenced explanation rather than a proven one, and **it must not be recorded as closed on the strength of reasoning alone** — that is the mistake this ticket exists to correct.
+**PROVEN, not reasoned: run `34817297953` is 866 passed, ZERO failed.** Both walks appear by name at positions 572 and 573, and the whole Playwright lane is green — the first time on this branch. The diagnosis above is therefore a mechanism that was named, fixed, and then demonstrated, rather than an explanation that happened to fit. **The quarantine that opened on 2026-08-28 closes here with a cause on the record**, which is what the ledger's exit condition asked for and what four attempts in August could not produce.
 
 ## Comments
 

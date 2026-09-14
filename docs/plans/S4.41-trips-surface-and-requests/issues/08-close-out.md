@@ -38,16 +38,17 @@ Two files are new and have nothing to compare: `TripListFacetsIT` (ticket 01) an
 
 ## What is actually verified, and what is not
 
-**Verified on CI** (run `34810077661` for the suites, plus the runs after it):
+**Verified on CI** (run `34817297953` is the current head: Playwright green, mobile green, stack green; `34810077661` and after for the backend suites):
 
-- Every test this story added or touched passes: `InboxTopicEventsIT` 7/7 · `InvitationStorageIT` 9/9 · `InboxContextIT` 13/13 · `InvitationContractIT` 19/19 · `AnyMemberInvitesContractIT` 7/7 · `TripListFacetsIT` 2/2 · backend unit 499/499 · mobile typecheck + 6,906 jest tests.
+- Every test this story added or touched passes: `InboxTopicEventsIT` 7/7 · `InvitationStorageIT` 9/9 · `InboxContextIT` 13/13 · `InvitationContractIT` 19/19 · `AnyMemberInvitesContractIT` 7/7 · `TripListFacetsIT` 3/3 · backend unit 499/499 · mobile typecheck + 6,909 jest tests · **the whole Playwright suite, 866/866**.
+- The query-count check was **sabotage-checked through CI** because Docker was unavailable locally: restoring the per-row lookup (`b9cb9a8d`, reverted in `0df7b426`) turned it red with **expected 7, but was 36** — the twenty-nine queries a page of thirty used to cost, which is ticket 01's claim as a number.
 - The `mytrips` boundary guard was **sabotage-checked with a real usage**, both halves: a planted repository and a planted call to `TripCategory.parse` each failed by name before the guard went green. The conditional-count pin and the accept-failure pin were each sabotage-checked too, and **the sabotage was grepped before it was believed** — the S4.30 lesson.
 
 **NOT verified, and stated rather than hidden:**
 
 - **The device rung is entirely undone** — the two ACs above. It needs the founder's yes.
 - **No local rung was exercised at all.** Docker Desktop was not running this session, so the full-stack instance, the preview container and every local IT run were unavailable. CLAUDE.md's *"verify at the layer that ships"* is unmet on every rung below CI.
-- ~~Playwright has never run.~~ **It ran: `34813763902`, 862 passed / 1 failed / 5 skipped.** The single failure was a stale S4.35 walk asserting the inbox header this story removed — mine, and fixed in `ae6b4a9f` by pointing it at the count instead, since its real subject is the live socket arrival rather than the surface. **The two returned quarantined walks PASSED on their first run since 2026-08-28**, along with the count-lifecycle and live-fall walks; ticket 06 carries what that settles. A confirming run is in flight at the time of writing.
+- ~~Playwright has never run.~~ **It is GREEN: run `34817297953`, 866 passed, zero failed.** It took four rounds to get there and each one found something real: two stale S4.35 walks still asserting the inbox header this story removed (`ae6b4a9f`, `0ce378ce` — both re-pointed at the surface the thing now lives on, neither weakened), and then the accept race that had been the 2026-08-28 quarantine all along (`812bcc9e`). **The two returned quarantined walks pass**, and ticket 06 carries the mechanism with the evidence that proves it.
 - **The branch's CI cannot be green end-to-end**, because the backend lane is red on a fault this story did not cause: `minio/minio` is gone from Docker Hub and the test base still pins it. Proven not-ours by a `workflow_dispatch` control run on unmodified `dev` (`34810645229`) failing identically — same classes, same order, **zero assertion failures**. Quarantine row and epic-map line filed, with the fix (point both at Garage, ADR-021) and an immediate trigger.
 
 ## Comments
