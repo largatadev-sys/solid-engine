@@ -53,7 +53,8 @@ class TripFactsService implements TripApi {
         Map<UUID, Long> dayCounts = itineraries.dayCountsAmong(ids);
         Set<UUID> owned = itineraries.ownedAmong(query.travelerId(), ids);
         Map<UUID, Integer> memberCounts = itineraries.memberCountsAmong(ids);
-        Map<UUID, WorkspaceState> states = workspaces.statesAmong(ids);
+        Map<UUID, WorkspaceState> states = new java.util.HashMap<>();
+        ids.forEach(id -> workspaces.stateOf(id).ifPresent(st -> states.put(id, st)));
         return page.map(
                 trip ->
                         entryOf(

@@ -3,6 +3,7 @@ package com.largata.trip.trip;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.largata.common.api.Page;
+import com.largata.common.authz.Role;
 import com.largata.support.PostgresTestBase;
 import com.largata.support.TestJwtSupport;
 import com.largata.support.TripRig;
@@ -32,6 +33,8 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestJwtSupport.Config.class)
 class TripListFacetsIT extends PostgresTestBase {
+
+    private static final int PAGE = 30;
 
     private RestTestClient rest;
     private TripRig rig;
@@ -74,7 +77,7 @@ class TripListFacetsIT extends PostgresTestBase {
         TripListEntry held = byId.get(UUID.fromString(owned));
         assertThat(held.beingEdited()).as("a lease is held on this one").isTrue();
         assertThat(held.dayCount()).isEqualTo(3);
-        assertThat(held.viewerRole()).isEqualTo("owner");
+        assertThat(held.viewerRole()).isEqualTo(Role.OWNER);
         assertThat(held.memberCount()).isEqualTo(1);
         assertThat(held.workspaceState()).isEqualTo("active");
         assertThat(held.archived()).isFalse();
@@ -82,10 +85,10 @@ class TripListFacetsIT extends PostgresTestBase {
         TripListEntry free = byId.get(UUID.fromString(quiet));
         assertThat(free.beingEdited()).as("no lease on this one").isFalse();
         assertThat(free.dayCount()).isEqualTo(1);
-        assertThat(free.viewerRole()).isEqualTo("owner");
+        assertThat(free.viewerRole()).isEqualTo(Role.OWNER);
 
         TripListEntry joined = byId.get(UUID.fromString(someoneElses));
-        assertThat(joined.viewerRole()).as("admitted, not owning").isEqualTo("member");
+        assertThat(joined.viewerRole()).as("admitted, not owning").isEqualTo(Role.MEMBER);
         assertThat(joined.memberCount()).isEqualTo(2);
         assertThat(joined.beingEdited()).isFalse();
     }
@@ -127,7 +130,9 @@ class TripListFacetsIT extends PostgresTestBase {
         for (int i = 0; i < 29; i++) {
             rig.createTrip(traveler, 1);
         }
-        assertThat(listFor(travelerId)).as("thirty trips on one page").hasSize(30);
+        assertThat(trips.listFor(new TripListQuery(travelerId, null, PAGE, false, null)).items())
+                .as("thirty trips on one page - the default page size is 20, so the limit is explicit")
+                .hasSize(PAGE);
 
         long forThirty = queriesToList(travelerId);
 
@@ -145,7 +150,7 @@ class TripListFacetsIT extends PostgresTestBase {
         statistics.setStatisticsEnabled(true);
         statistics.clear();
 
-        trips.listFor(new TripListQuery(travelerId, null, 30, false, null));
+        trips.listFor(new TripListQuery(travelerId, null, PAGE, false, null));
 
         return statistics.getPrepareStatementCount();
     }
