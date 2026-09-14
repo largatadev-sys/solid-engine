@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../api/ApiError';
 import { confirmWith } from './confirmDestructive';
@@ -31,6 +32,7 @@ import {
 import type { InboxInvitationResponse, MyJoinRequestResponse } from '../types/api';
 
 import {
+  ACCEPT_FAILED,
   ACCEPT_LABEL,
   DECLINE_LABEL,
   REQUESTED_GHOST_LABEL,
@@ -154,6 +156,7 @@ function InvitationCard({
   const closeLayout = useLayoutClose();
   const acceptPress = usePressFeedback();
   const declinePress = usePressFeedback();
+  const [acceptFailed, setAcceptFailed] = useState(false);
   const busy = accept.isPending || decline.isPending;
 
   const meta = tripMetaLine(invitation.destination, invitation.startDate, invitation.endDate);
@@ -161,6 +164,7 @@ function InvitationCard({
   const urgent = expiryIsUrgent(invitation.expiresAt, now);
 
   const onAccept = () => {
+    setAcceptFailed(false);
     accept.mutate(invitation.id, {
       onSuccess: (result) => {
         closeLayout();
@@ -169,7 +173,9 @@ function InvitationCard({
       onError: (error) => {
         if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {
           router.push(VERIFY_CODE_ROUTE);
+          return;
         }
+        setAcceptFailed(true);
       },
     });
   };
@@ -264,6 +270,12 @@ function InvitationCard({
             </Text>
           ) : null}
         </View>
+
+        {acceptFailed ? (
+          <Text style={styles.acceptFailed} accessibilityRole="alert">
+            {ACCEPT_FAILED}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -365,6 +377,10 @@ const styles = StyleSheet.create({
     color: travelerColors.muted,
   },
   expiryUrgent: {
+    color: travelerColors.destructive,
+  },
+  acceptFailed: {
+    ...travelerTypography.cardMeta,
     color: travelerColors.destructive,
   },
 });

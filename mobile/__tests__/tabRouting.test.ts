@@ -84,7 +84,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(layout).toContain('name="(trips)"');
   });
 
-  it('insets only the two bare tabs — the trip screens get theirs from ScreenHeader, and both would double up', () => {
+  it('insets only the two bare tabs â€” the trip screens get theirs from ScreenHeader, and both would double up', () => {
     const layout = read(TABS, '_layout.tsx');
 
     expect(layout).toContain('sceneStyle: bareScene(insets.top)');
@@ -117,14 +117,14 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(tripsTab).toContain('tabJump(router.canDismiss(), inTripsStack(pathname))](TRIPS_TAB_ROUTE)');
   });
 
-  it('dismisses only within its own stack — dismissTo cannot reach across one (S4.13)', () => {
+  it('dismisses only within its own stack â€” dismissTo cannot reach across one (S4.13)', () => {
     const layout = read(TABS, '_layout.tsx');
 
     expect(layout).toContain('tabJump(');
     expect(layout).not.toMatch(/router\.dismissTo\(/);
   });
 
-  it('lets the layout own the tab labels — a screen-level title silently overrides them', () => {
+  it('lets the layout own the tab labels â€” a screen-level title silently overrides them', () => {
     expect(read(DISCOVER_GROUP, 'discover.tsx')).not.toMatch(/<Stack\.Screen/);
     expect(read(HOME_GROUP, 'index.tsx')).not.toMatch(/<Stack\.Screen/);
     for (const screen of ['trips.tsx', 'create.tsx']) {
@@ -135,7 +135,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     }
   });
 
-  it('is four tabs with no centre button — the mock relocates creation to the Trips screen (S4.13)', () => {
+  it('is four tabs with no centre button â€” the mock relocates creation to the Trips screen (S4.13)', () => {
     const layout = read(TABS, '_layout.tsx');
 
     expect(layout).not.toContain('CREATE_BUTTON_SIZE');
@@ -144,7 +144,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(layout).toContain('height: TAB_BAR_HEIGHT + insets.bottom');
   });
 
-  it('calls the second tab Discover — the feed it opens is the discovery axis (ADR-019)', () => {
+  it('calls the second tab Discover â€” the feed it opens is the discovery axis (ADR-019)', () => {
     const layout = read(TABS, '_layout.tsx');
 
     expect(DISCOVER_TAB_LABEL).toBe('Discover');
@@ -152,7 +152,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(layout).not.toMatch(/title: 'Search'/);
   });
 
-  it('greys no tab at all — Discover went live at S4.3 and was the last one refusing taps', () => {
+  it('greys no tab at all â€” Discover went live at S4.3 and was the last one refusing taps', () => {
     const layout = read(TABS, '_layout.tsx');
 
     expect(layout).not.toContain('comingSoon');
@@ -193,13 +193,13 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(existsSync(join(TRIPS_GROUP, 'trips.tsx'))).toBe(true);
   });
 
-  it('gives every tab a real icon — an unset one renders as a tofu box on Android', () => {
+  it('gives every tab a real icon â€” an unset one renders as a tofu box on Android', () => {
     const layout = read(TABS, '_layout.tsx');
 
     expect(layout.match(/tabBarIcon:/g) ?? []).toHaveLength(4);
   });
 
-  it('shows no navigator header anywhere — every heading is drawn as page content', () => {
+  it('shows no navigator header anywhere â€” every heading is drawn as page content', () => {
     expect(read(TABS, '_layout.tsx')).toContain('headerShown: false');
     expect(read(TRIPS_GROUP, '_layout.tsx')).toContain('headerShown: false');
     expect(read(APP, 'travelers', '_layout.tsx')).toContain('headerShown: false');
@@ -232,7 +232,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   ];
 
   it.each(SHARED_SCREENS)(
-    '%s is a thin route over %s — two stacks reach one screen (S4.21)',
+    '%s is a thin route over %s â€” two stacks reach one screen (S4.21)',
     (route, shared, heading) => {
       const component = shared.split('/').at(-1)?.replace('.tsx', '') ?? '';
       const wrapper = read(TRIPS_GROUP, ...route.split('/'));
@@ -244,7 +244,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   );
 
   it.each(tripScreens().filter(([name]) => REDIRECT_STUBS.includes(name)))(
-    '%s draws no chrome at all — a retired route redirects, it does not render',
+    '%s draws no chrome at all â€” a retired route redirects, it does not render',
     (_name, source) => {
       expect(source).toContain('<Redirect');
       expect(source).not.toMatch(/<ScreenHeader|<WorkspaceHeader/);
@@ -258,7 +258,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     },
   );
 
-  it('makes the workspace header take the status-bar inset — the mock draws no header bar', () => {
+  it('makes the workspace header take the status-bar inset â€” the mock draws no header bar', () => {
     const header = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceHeader.tsx');
 
     expect(header).toMatch(/useSafeAreaInsets/);
@@ -274,7 +274,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
         !TRIP_FORM.includes(name) &&
         !SHARED_SCREENS.some(([route]) => route === name),
     ),
-  )('%s draws its own heading — with no header bar, a navigator title renders nowhere', (_name, source) => {
+  )('%s draws its own heading â€” with no header bar, a navigator title renders nowhere', (_name, source) => {
     expect(source).toMatch(/<ScreenHeader/);
   });
 
@@ -294,18 +294,18 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
   });
 
   it.each(tripScreens().filter(([name]) => FULL_BLEED.includes(name)))(
-    '%s is exempt because the mock draws no header bar — so it must take the inset itself',
+    '%s is exempt because the mock draws no header bar â€” so it must take the inset itself',
     (_name, source) => {
       expect(source).toMatch(/useSafeAreaInsets/);
       expect(source).toMatch(/paddingTop: insets\.top/);
     },
   );
 
-  it.each(tripScreens())('%s sets no navigator title — a dead option that reads as a heading', (_name, source) => {
+  it.each(tripScreens())('%s sets no navigator title â€” a dead option that reads as a heading', (_name, source) => {
     expect(source).not.toMatch(/options=\{\{[^}]*title:/);
   });
 
-  it('creates from the Trips screen, straight to the form — the mock connector, not the chooser', () => {
+  it('creates from the Trips screen, straight to the form â€” the mock connector, not the chooser', () => {
     const trips = read(TRIPS_GROUP, 'trips.tsx');
 
     expect(trips).toContain('href="/itineraries/new"');
@@ -315,7 +315,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(read(TABS, '_layout.tsx')).not.toContain("router.push('/itineraries/create')");
   });
 
-  it('scraps Add a Past Trip for good — the founder ruled it wontfix (S4.15 decision 6)', () => {
+  it('scraps Add a Past Trip for good â€” the founder ruled it wontfix (S4.15 decision 6)', () => {
     const trips = read(TRIPS_GROUP, 'trips.tsx');
 
     expect(trips).not.toMatch(/Add a Past Trip/);
@@ -344,7 +344,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(existsSync(join(TRIPS_GROUP, 'requests.tsx'))).toBe(true);
   });
 
-  it('takes the inbox OFF the trips list � Trips shows trips, and what waits lives behind the icon (S4.41)', () => {
+  it('takes the inbox OFF the trips list — Trips shows trips, and what waits lives behind the icon (S4.41)', () => {
     const trips = read(TRIPS_GROUP, 'trips.tsx');
 
     expect(trips).not.toContain('ListHeaderComponent');
@@ -358,7 +358,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(trips).not.toContain('headerTitle: { ...typography.title');
   });
 
-  it('TELLS THE CACHE the cover landed — the upload bypasses the mutation hook, so nothing else will', () => {
+  it('TELLS THE CACHE the cover landed â€” the upload bypasses the mutation hook, so nothing else will', () => {
     const create = read(TRIPS, 'new.tsx');
 
     expect(create).toMatch(/const withCover = await tripRepository\.uploadCover\(/);
@@ -375,7 +375,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(create).not.toMatch(/await attachChosenCover/);
   });
 
-  it('shows the picked photo while it uploads — a placeholder for a cover the traveler just chose reads as loss', () => {
+  it('shows the picked photo while it uploads â€” a placeholder for a cover the traveler just chose reads as loss', () => {
     expect(read(TRIPS, 'new.tsx')).toContain('rememberCoverPreview(created.id, chosenCover.uri)');
     expect(read(TRIPS, 'new.tsx')).toContain('forgetCoverPreview(itineraryId)');
 
@@ -389,7 +389,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     );
   });
 
-  it('never says "Uploading…" on the create form, where the only request in flight is the trip', () => {
+  it('never says "Uploadingâ€¦" on the create form, where the only request in flight is the trip', () => {
     const create = read(TRIPS, 'new.tsx');
     const edit = read(TRIPS, '[id]', 'edit.tsx');
 
@@ -414,7 +414,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(picker.match(/uploading \? UPLOADING_COVER_LABEL/g) ?? []).toHaveLength(2);
   });
 
-  it('fetches every thumbnail through the AUTHENTICATED media path — a bare URL 401s (S3.3)', () => {
+  it('fetches every thumbnail through the AUTHENTICATED media path â€” a bare URL 401s (S3.3)', () => {
     const thumb = read(MOBILE_ROOT, 'src', 'media', 'MediaThumb.tsx');
 
     expect(thumb).toContain('useMediaSource(full ? url : thumbOf(url))');
@@ -451,7 +451,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(layout).not.toContain("tabIcon('map')");
   });
 
-  it('says Standouts and never Highlights — the glossary reserved that word for diaries', () => {
+  it('says Standouts and never Highlights â€” the glossary reserved that word for diaries', () => {
     expect(read(MOBILE_ROOT, 'src', 'itineraries', 'TripForm.tsx')).toContain('Standout');
 
     for (const screen of [
@@ -470,7 +470,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(viewer).toContain('canPublish(data)');
   });
 
-  it('ends the creation walk with no terminal declaration at all — S4.26 retired the act', () => {
+  it('ends the creation walk with no terminal declaration at all â€” S4.26 retired the act', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 
     expect(preview).not.toMatch(/Finish Itinerary/);
@@ -479,7 +479,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(preview).not.toMatch(/Complete Itinerary/);
   });
 
-  it('names no origin at all — the stack remembers it, so no screen has to guess (founder, 2026-08-04)', () => {
+  it('names no origin at all â€” the stack remembers it, so no screen has to guess (founder, 2026-08-04)', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
     const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
 
@@ -487,7 +487,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(editor).not.toMatch(/from: '/);
   });
 
-  it('makes Continue Editing OPEN the editor — not go back, which returns to wherever you came from', () => {
+  it('makes Continue Editing OPEN the editor â€” not go back, which returns to wherever you came from', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 
     expect(preview).toMatch(
@@ -506,14 +506,14 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     }
   });
 
-  it('lets no screen override back — the previous page always wins (founder, 2026-08-04)', () => {
+  it('lets no screen override back â€” the previous page always wins (founder, 2026-08-04)', () => {
     const header = read(MOBILE_ROOT, 'src', 'components', 'ScreenHeader.tsx');
 
     expect(header).not.toMatch(/alwaysBackTo/);
     expect(header).toContain('useSafeBack(backTo)');
   });
 
-  it('reserves the publish footer for a completed, unpublished trip — frame 7 is the publish act', () => {
+  it('reserves the publish footer for a completed, unpublished trip â€” frame 7 is the publish act', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 
     expect(preview).toContain("state === 'completed' && trip.data?.published === false");
@@ -535,7 +535,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(view).not.toMatch(/Est\. Total|\/Person/);
   });
 
-  it('speaks the honest tense on the preview banner — nothing is published yet', () => {
+  it('speaks the honest tense on the preview banner â€” nothing is published yet', () => {
     const preview = read(TRIPS, '[id]', 'preview.tsx');
 
     expect(preview).toMatch(/what other travelers will see if you publish/);
@@ -571,7 +571,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(activity).toContain('buildActivityRequest');
   });
 
-  it('shows no edit attribution on activity rows — the mock draws a name and a time, nothing else', () => {
+  it('shows no edit attribution on activity rows â€” the mock draws a name and a time, nothing else', () => {
     const card = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceDayCard.tsx');
 
     expect(card).not.toMatch(/attributionLine|styles\.attribution/);
@@ -585,7 +585,7 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(activity).not.toMatch(/PROVIDER \d|Add another|Target URL/);
   });
 
-  it('opens the workspace door S4.15 greyed — the redesign it waited for is this story (S4.17 decision 12)', () => {
+  it('opens the workspace door S4.15 greyed â€” the redesign it waited for is this story (S4.17 decision 12)', () => {
     const overview = read(TRIPS, '[id]', 'created.tsx');
 
     expect(overview).toMatch(/router\.push\(\{ pathname: '\/itineraries\/\[id\]', params: \{ id \} \}\)/);
@@ -599,14 +599,14 @@ describe('the tab group is the navigation frame (S4.9 decision 12)', () => {
     expect(overview).toMatch(/router\.push\(\{ pathname: '\/itineraries\/\[id\]\/preview'/);
   });
 
-  it('leaves the publish-success screen alone — a different act, a different moment (spec AC 9)', () => {
+  it('leaves the publish-success screen alone â€” a different act, a different moment (spec AC 9)', () => {
     const published = read(TRIPS, '[id]', 'published.tsx');
 
     expect(published).toContain('Your Itinerary is Live!');
     expect(published).toContain('is now available for travelers to discover.');
   });
 
-  it('retires the create-method chooser — a door with one exit (S4.15 decision 7)', () => {
+  it('retires the create-method chooser â€” a door with one exit (S4.15 decision 7)', () => {
     expect(existsSync(join(TRIPS, 'create.tsx'))).toBe(false);
   });
 
@@ -627,7 +627,7 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13; da
     expect(form).toMatch(/fields\.showsDates/);
   });
 
-  it('gives each date a drawn clear on BOTH platforms — the web input has none (S4.25 ticket 04)', () => {
+  it('gives each date a drawn clear on BOTH platforms â€” the web input has none (S4.25 ticket 04)', () => {
     const field = read(MOBILE_ROOT, 'src', 'itineraries', 'ClearableDateField.tsx');
 
     expect(field).toMatch(/clearDateLabel/);
@@ -682,8 +682,8 @@ describe('the create form asks for a duration, never dates (S4.9 decision 13; da
 });
 
 
-describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the 2026-07-31 ruling)', () => {
-  it('retires the planner and the day view to redirect stubs — old deep links must not dead-end', () => {
+describe('one plan, two surfaces â€” viewer and editor (ADR-022, superseding the 2026-07-31 ruling)', () => {
+  it('retires the planner and the day view to redirect stubs â€” old deep links must not dead-end', () => {
     for (const name of ['index.tsx', '[dayId].tsx']) {
       const stub = read(TRIPS, '[id]', 'days', name);
 
@@ -737,14 +737,14 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     }
   });
 
-  it('keeps a published trip on its published view — the workspace is for unpublished trips', () => {
+  it('keeps a published trip on its published view â€” the workspace is for unpublished trips', () => {
     expect(
       tripRowDestination({ id: 'trip-1', archived: false, published: true, state: 'completed' })
         .pathname,
     ).toBe('/published/[id]');
   });
 
-  it('lets ARCHIVED win over everything — an archived trip has no public page, and no flow to rejoin', () => {
+  it('lets ARCHIVED win over everything â€” an archived trip has no public page, and no flow to rejoin', () => {
     expect(
       tripRowDestination({ id: 'trip-1', archived: true, published: true, state: 'completed' })
         .pathname,
@@ -770,7 +770,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(editor).toContain('onDeleteDay');
   });
 
-  it('stages a drop into the buffer instead of persisting it — the per-drop retry died with S4.18', () => {
+  it('stages a drop into the buffer instead of persisting it â€” the per-drop retry died with S4.18', () => {
     const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
 
     expect(editor).toContain('applyDrop');
@@ -779,7 +779,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(editor).not.toContain('STALE_REORDER');
   });
 
-  it('writes to the server exactly once, at Save Changes — no per-action mutation survives in the editor', () => {
+  it('writes to the server exactly once, at Save Changes â€” no per-action mutation survives in the editor', () => {
     const editor = read(TRIPS, '[id]', 'edit-plan.tsx');
 
     for (const retired of [
@@ -812,7 +812,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(editor).toContain('useExitGuard(dirty,');
   });
 
-  it('keeps a non-drag reorder path on both platforms — keys on web, a11y actions on native', () => {
+  it('keeps a non-drag reorder path on both platforms â€” keys on web, a11y actions on native', () => {
     const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
 
@@ -836,7 +836,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(body.match(/return \{/g) ?? []).toHaveLength(1);
   });
 
-  it('leaves a resting row unpainted — the lift belongs to the drag, not the list', () => {
+  it('leaves a resting row unpainted â€” the lift belongs to the drag, not the list', () => {
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
     const staticStyle = native.slice(native.indexOf('StyleSheet.create'));
 
@@ -858,7 +858,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(web).toContain('displacementFor(');
   });
 
-  it('keyboard reorder lives on the focusable grip — the arrows retired, the capability did not', () => {
+  it('keyboard reorder lives on the focusable grip â€” the arrows retired, the capability did not', () => {
     const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
 
     expect(web).toContain('focusable: true');
@@ -884,7 +884,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(queries).toContain('reorderInPlanCache(client, itineraryId, dayId, activityIds)');
   });
 
-  it('settles only the REMAINDER after release — the sub-slot distance, never the whole travel', () => {
+  it('settles only the REMAINDER after release â€” the sub-slot distance, never the whole travel', () => {
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
     const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
 
@@ -902,7 +902,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(native).not.toContain('displacementFor(');
   });
 
-  it('web settles through the Web Animations API — a CSS transition dies when React moves the node', () => {
+  it('web settles through the Web Animations API â€” a CSS transition dies when React moves the node', () => {
     const web = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.web.tsx');
 
     expect(web).toContain('element.animate(');
@@ -911,7 +911,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(web).not.toContain('settling');
   });
 
-  it('shifts the other rows LIVE during a drag — slots reassign progressively as the finger passes', () => {
+  it('shifts the other rows LIVE during a drag â€” slots reassign progressively as the finger passes', () => {
     const native = read(MOBILE_ROOT, 'src', 'itineraries', 'DraggableActivityList.native.tsx');
 
     expect(native).toContain('reassigned(slots.value, activity.id, hovered)');
@@ -927,7 +927,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(editor).toContain('session.release()');
   });
 
-  it('keeps the viewer read-only — it renders no editing affordance at all (S4.17 decision 2)', () => {
+  it('keeps the viewer read-only â€” it renders no editing affordance at all (S4.17 decision 2)', () => {
     const viewer = read(TRIPS, '[id]', 'index.tsx');
 
     expect(viewer).toContain("workspaceAffordances('viewer', isOwner)");
@@ -936,7 +936,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(viewer).not.toContain('Add a Day');
   });
 
-  it('keeps the archived banner above the tabs — an archived trip explains itself first', () => {
+  it('keeps the archived banner above the tabs â€” an archived trip explains itself first', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
     const tabRowAt = workspace.indexOf('<WorkspaceTabRow');
 
@@ -944,7 +944,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace.indexOf('<TripArchiveBanner')).toBeLessThan(tabRowAt);
   });
 
-  it('offers no way to archive from the UI — the control was pulled (founder, 08/01)', () => {
+  it('offers no way to archive from the UI â€” the control was pulled (founder, 08/01)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
     expect(workspace).not.toContain('ArchiveTripLink');
@@ -968,7 +968,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(dialog).not.toMatch(/borderTopLeftRadius/);
   });
 
-  it('caps every Modal at the phone frame — RN renders them outside MobileFrame on web', () => {
+  it('caps every Modal at the phone frame â€” RN renders them outside MobileFrame on web', () => {
     const sourcesUnder = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
         entry.isDirectory()
@@ -1013,7 +1013,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(existsSync(join(TRIPS, '[id]', 'invite.tsx'))).toBe(false);
   });
 
-  it('leaves no navigation reference behind to any of them — the S4.13 dead-weight lesson', () => {
+  it('leaves no navigation reference behind to any of them â€” the S4.13 dead-weight lesson', () => {
     for (const [route, source] of tripScreens()) {
       const where = `${route}: ${source}`;
 
@@ -1039,7 +1039,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(travelers).toContain('traveler={profileFor}');
   });
 
-  it('makes the avatar the row’s only tap target — the rest of the row is inert (S4.28 C3)', () => {
+  it('makes the avatar the rowâ€™s only tap target â€” the rest of the row is inert (S4.28 C3)', () => {
     const rows = read(MOBILE_ROOT, 'src', 'members', 'TravelerRows.tsx');
 
     expect(rows).toContain('view profile');
@@ -1085,7 +1085,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).toContain('editItineraryAction(data, canEditPlan(data), myId)');
   });
 
-  it('never reopens from any surface — Step back retired and no CTA replaced it (S4.26 decision 10)', () => {
+  it('never reopens from any surface â€” Step back retired and no CTA replaced it (S4.26 decision 10)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
     expect(workspace).not.toContain('reopen-then-edit');
@@ -1111,7 +1111,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(menu).toContain('unpublish');
   });
 
-  it('deletes the Details tab outright — no component, no tab key, no reference (S4.25 ticket 03)', () => {
+  it('deletes the Details tab outright â€” no component, no tab key, no reference (S4.25 ticket 03)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
     const tabRow = read(MOBILE_ROOT, 'src', 'itineraries', 'WorkspaceTabRow.tsx');
 
@@ -1133,7 +1133,7 @@ describe('one plan, two surfaces — viewer and editor (ADR-022, superseding the
     expect(workspace).toMatch(/onSettingsLayout=\{setCogY\}/);
   });
 
-  it('draws neither the facts line nor the cog — both parked (founder, 2026-08-18)', () => {
+  it('draws neither the facts line nor the cog â€” both parked (founder, 2026-08-18)', () => {
     const workspace = read(TRIPS, '[id]', 'index.tsx');
 
     expect(workspace).not.toMatch(/[Ff]actsLine/);

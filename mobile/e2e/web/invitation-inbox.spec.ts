@@ -4,7 +4,7 @@ import { requireStack } from '../support/gate';
 import { IDENTITY_MAP, ownerTagFor, type PoolTag } from '../support/identities';
 import { seedTrip, stamp, type SeededTrip } from '../support/seed';
 import { labelled } from '../support/screen';
-import { ACCEPT_LABEL, DECLINE_LABEL } from '../../src/members/travelerCopy';
+import { ACCEPT_FAILED, ACCEPT_LABEL, DECLINE_LABEL } from '../../src/members/travelerCopy';
 import {
   REQUESTS_ICON_LABEL,
   REQUESTS_TITLE,
@@ -113,30 +113,23 @@ test.describe('the card an invitee meets on Requests', () => {
     expect(await page.locator('body').innerText()).not.toContain('@gmail.com');
   });
 
-  test.skip(
-    'SKIPPED 2026-08-28 — accepting lands the traveler in the workspace. Quarantined by founder'
-      + ' call, NOT proven flaky: 4 attempts across two days failed on freshly seeded data, and'
-      + ' the last green run predates S4.38 merging to dev. Accept navigates only from onSuccess'
-      + ' and the error branch handles EMAIL_NOT_VERIFIED alone, so a failed accept is'
-      + ' indistinguishable from a click that never landed — which is why this reports only'
-      + ' "the URL stayed at /trips". Owned by an epic-map line; see checklist 34.',
-    async ({ page, signIn }) => {
+  test('accepting lands the traveler in the workspace', async ({ page, signIn }) => {
     await signIn(INVITEE);
     await openRequests(page);
     await expect(labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`)).toBeVisible();
 
     await labelled(page, `${ACCEPT_LABEL} invitation to ${trip.title}`).click();
 
+    await expect(page.getByText(ACCEPT_FAILED)).toHaveCount(0);
     await expect
       .poll(() => new URL(page.url()).pathname, { timeout: 30_000 })
       .toContain(`/itineraries/${trip.id}`);
   });
 
-  test.skip(
-    'SKIPPED 2026-08-28 — and this trip’s card is gone from Trips once it has been answered.'
-      + ' Not independently suspect: it asserts the state the skipped accept above creates, so'
-      + ' it can only fail while that one is quarantined. It returns with it.',
-    async ({ page, signIn }) => {
+  test('and this trip’s card is gone from Requests once it has been answered', async ({
+    page,
+    signIn,
+  }) => {
     await signIn(INVITEE);
     await openRequests(page);
 

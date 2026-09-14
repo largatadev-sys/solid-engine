@@ -7,6 +7,7 @@ export const SHEET_DISMISS_LABEL = 'Dismiss';
 
 export const ACCEPT_LABEL = 'Accept';
 export const DECLINE_LABEL = 'Decline';
+export const ACCEPT_FAILED = 'Could not accept. Tap Accept to try again.';
 
 export const REQUESTED_GHOST_LABEL = 'Requested';
 export const WITHDRAW_LABEL = 'Withdraw';
