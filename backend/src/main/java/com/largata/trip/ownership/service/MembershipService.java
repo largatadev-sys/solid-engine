@@ -2,9 +2,9 @@ package com.largata.trip.ownership.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Role;
+import com.largata.trip.api.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.ProfileVisibility;
 import com.largata.identity.TravelerService;

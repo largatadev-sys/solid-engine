@@ -1,5 +1,6 @@
-package com.largata.common.authz;
+package com.largata.trip.api;
 
+import com.largata.trip.exception.ItineraryNotFoundException;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;

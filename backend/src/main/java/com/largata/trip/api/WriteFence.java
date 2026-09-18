@@ -1,5 +1,9 @@
-package com.largata.common.authz;
+package com.largata.trip.api;
 
+import com.largata.trip.exception.ItineraryNotFoundException;
+import com.largata.trip.exception.ItineraryPublishedException;
+import com.largata.trip.exception.MembershipFrozenException;
+import com.largata.trip.exception.TripArchivedException;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
@@ -7,17 +11,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class WriteFence {
 
-    private final TripWritability writability;
+    private final ArchiveState archive;
     private final PublicationState publication;
 
-    public WriteFence(TripWritability writability, PublicationState publication) {
-        this.writability = writability;
+    public WriteFence(ArchiveState archive, PublicationState publication) {
+        this.archive = archive;
         this.publication = publication;
     }
 
 
     public void requireWritable(Membership member) {
-        if (!writability.isFrozen(member.itineraryId())) {
+        if (!archive.isArchived(member.itineraryId())) {
             return;
         }
         if (member.isOwner()) {

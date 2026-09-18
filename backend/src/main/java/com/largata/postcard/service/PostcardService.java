@@ -2,8 +2,8 @@ package com.largata.postcard.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.TripArchivedException;
+import com.largata.trip.api.Membership;
+import com.largata.trip.exception.TripArchivedException;
 import com.largata.common.geo.Pin;
 import com.largata.common.tx.AfterCommit;
 import com.largata.diary.api.DiaryApi;

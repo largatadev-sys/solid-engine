@@ -1,6 +1,6 @@
 package com.largata.trip.workspace.service;
 
-import com.largata.common.authz.Role;
+import com.largata.trip.api.Role;
 import com.largata.trip.api.MembershipApi;
 import com.largata.trip.api.MembershipArrived;
 import com.largata.trip.api.MembershipView;

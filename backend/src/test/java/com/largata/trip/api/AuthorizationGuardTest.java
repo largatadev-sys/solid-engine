@@ -1,9 +1,10 @@
-package com.largata.common.authz;
+package com.largata.trip.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.largata.common.id.UuidV7;
+import com.largata.trip.exception.ItineraryNotFoundException;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;

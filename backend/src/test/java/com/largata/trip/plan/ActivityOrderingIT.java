@@ -3,8 +3,8 @@ package com.largata.trip.plan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Role;
 import com.largata.support.PostgresTestBase;
 import java.time.LocalTime;
 import java.util.List;

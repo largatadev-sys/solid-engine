@@ -1,22 +1,22 @@
 package com.largata.trip.workspace.adapter;
 
-import com.largata.common.authz.TripWritability;
+import com.largata.trip.api.ArchiveState;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import com.largata.trip.workspace.repository.WorkspaceRepository;
 
 
 @Component
-class RowBackedTripWritability implements TripWritability {
+class RowBackedArchiveState implements ArchiveState {
 
     private final WorkspaceRepository workspaces;
 
-    RowBackedTripWritability(WorkspaceRepository workspaces) {
+    RowBackedArchiveState(WorkspaceRepository workspaces) {
         this.workspaces = workspaces;
     }
 
     @Override
-    public boolean isFrozen(UUID itineraryId) {
+    public boolean isArchived(UUID itineraryId) {
         return workspaces
                 .findByItineraryId(itineraryId)
                 .map(workspace -> workspace.state().isArchived())

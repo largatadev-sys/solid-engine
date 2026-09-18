@@ -3,8 +3,8 @@ package com.largata.trip.trip;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Role;
 import com.largata.support.PostgresTestBase;
 import com.largata.trip.api.TripLifecycle;
 import java.lang.reflect.RecordComponent;

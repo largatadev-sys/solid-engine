@@ -1,9 +1,9 @@
 package com.largata.trip.dump;
 
 import com.largata.common.api.Page;
-import com.largata.common.authz.InAudience;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.api.InAudience;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.WriteFence;
 import com.largata.media.MediaExceptions.PhotoNotFoundException;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;

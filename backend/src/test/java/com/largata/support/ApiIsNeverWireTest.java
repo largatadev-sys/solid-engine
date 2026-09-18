@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import java.util.ArrayList;
@@ -84,6 +85,37 @@ class ApiIsNeverWireTest {
 
 
     @Test
+    void theRuleReadsWhatIsOnTheWireRatherThanEveryMethodAControllerHappensToHave() {
+        long handlersRead = 0;
+        long privateHelpersSkipped = 0;
+        for (JavaClass controller : largata) {
+            if (!controller.isAnnotatedWith(REST_CONTROLLER)) {
+                continue;
+            }
+            for (JavaMethod method : controller.getMethods()) {
+                if (method.getModifiers().contains(JavaModifier.PRIVATE)) {
+                    privateHelpersSkipped += 1;
+                } else {
+                    handlersRead += 1;
+                }
+            }
+        }
+
+        assertThat(handlersRead)
+                .as("the rule is about what a client can see. Narrowing it to non-private methods"
+                        + " must leave the handlers themselves in scope, or it checks nothing")
+                .isGreaterThan(100);
+        assertThat(privateHelpersSkipped)
+                .as("TW-2 found the imprecision: `private Membership requireMember(...)` is a"
+                        + " controller's own plumbing and reaches no client, yet it read identically"
+                        + " to a handler here — so four controllers were 'wire' for wrapping a guard"
+                        + " call in a helper while a dozen doing the same inline were not. If this"
+                        + " ever counts zero the narrowing has stopped mattering and should go")
+                .isGreaterThan(0);
+    }
+
+
+    @Test
     void theScanFoundControllersAndFoundApiPackages() {
         assertThat(largata.stream().filter(c -> c.isAnnotatedWith(REST_CONTROLLER)).count())
                 .as("a scan that found no controllers would report no wire types and prove nothing")
@@ -109,6 +141,9 @@ class ApiIsNeverWireTest {
                 continue;
             }
             for (JavaMethod method : controller.getMethods()) {
+                if (method.getModifiers().contains(JavaModifier.PRIVATE)) {
+                    continue;
+                }
                 List<JavaClass> signature =
                         new ArrayList<>(method.getReturnType().getAllInvolvedRawTypes());
                 for (JavaClass parameter : method.getRawParameterTypes()) {

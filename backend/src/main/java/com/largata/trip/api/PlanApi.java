@@ -10,4 +10,6 @@ public interface PlanApi {
     Optional<TripDayFacts> dayFactsOf(UUID tripId, UUID dayId);
 
     Optional<ActivityFacts> activityFactsOf(UUID tripId, UUID activityId);
+
+    Optional<String> planHeldByAnotherTraveler(Membership member);
 }

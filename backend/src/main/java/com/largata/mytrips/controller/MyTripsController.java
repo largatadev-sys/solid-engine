@@ -1,7 +1,7 @@
 package com.largata.mytrips.controller;
 
 import com.largata.common.api.Page;
-import com.largata.common.authz.PublicationState;
+import com.largata.itinerary.api.PublishedItineraries;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.identity.Traveler;
 import com.largata.mytrips.dto.MyTripResponse;
@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 class MyTripsController {
 
     private final TripApi trips;
-    private final PublicationState publication;
+    private final PublishedItineraries publication;
 
-    MyTripsController(TripApi trips, PublicationState publication) {
+    MyTripsController(TripApi trips, PublishedItineraries publication) {
         this.trips = trips;
         this.publication = publication;
     }

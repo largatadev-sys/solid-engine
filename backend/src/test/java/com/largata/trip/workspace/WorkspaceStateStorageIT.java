@@ -2,8 +2,8 @@ package com.largata.trip.workspace;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Role;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
 import java.util.UUID;

@@ -1,6 +1,6 @@
 package com.largata.trip.cover;
 
-import com.largata.common.authz.Membership;
+import com.largata.trip.api.Membership;
 import com.largata.media.MediaUrls;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;

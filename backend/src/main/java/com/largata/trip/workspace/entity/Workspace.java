@@ -1,6 +1,6 @@
 package com.largata.trip.workspace.entity;
 
-import com.largata.common.authz.Role;
+import com.largata.trip.api.Role;
 import com.largata.common.id.UuidV7;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

@@ -3,9 +3,9 @@ package com.largata.poll;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import com.largata.common.authz.AudienceFence;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.Role;
+import com.largata.trip.api.AudienceFence;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.Role;
 import com.largata.poll.exception.PollExceptions;
 import com.largata.poll.service.PollBoard;
 import com.largata.poll.service.PollOptionView;

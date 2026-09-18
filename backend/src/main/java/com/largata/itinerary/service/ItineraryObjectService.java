@@ -2,10 +2,9 @@ package com.largata.itinerary.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.ItineraryNotFoundException;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.TripEditingSession;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.exception.ItineraryNotFoundException;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.WriteFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.itinerary.api.ItineraryApi;
 import com.largata.itinerary.entity.ItineraryObject;
@@ -40,7 +39,6 @@ public class ItineraryObjectService implements ItineraryApi {
     private final ItineraryObjectRepository objects;
     private final PlanApi plans;
     private final MembershipApi workspaces;
-    private final TripEditingSession editingSession;
     private final WriteFence fence;
     private final ObjectMapper json;
     private final Analytics analytics;
@@ -50,7 +48,6 @@ public class ItineraryObjectService implements ItineraryApi {
             ItineraryObjectRepository objects,
             PlanApi plans,
             MembershipApi workspaces,
-            TripEditingSession editingSession,
             WriteFence fence,
             ObjectMapper json,
             Analytics analytics,
@@ -58,7 +55,6 @@ public class ItineraryObjectService implements ItineraryApi {
         this.objects = objects;
         this.plans = plans;
         this.workspaces = workspaces;
-        this.editingSession = editingSession;
         this.fence = fence;
         this.json = json;
         this.analytics = analytics;
@@ -77,7 +73,7 @@ public class ItineraryObjectService implements ItineraryApi {
             throw new TripNotCompleteException(plan.lifecycle());
         }
 
-        editingSession.heldByAnotherTraveler(member).ifPresent(holder -> {
+        plans.planHeldByAnotherTraveler(member).ifPresent(holder -> {
             throw new TripBeingEditedException(holder);
         });
 

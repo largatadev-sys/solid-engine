@@ -1,4 +1,4 @@
-package com.largata.common.authz;
+package com.largata.trip.exception;
 
 import com.largata.common.error.ConflictException;
 

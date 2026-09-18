@@ -1,4 +1,4 @@
-package com.largata.common.authz;
+package com.largata.trip.api;
 
 public final class InAudience {
 

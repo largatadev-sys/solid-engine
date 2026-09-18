@@ -2,9 +2,9 @@ package com.largata.join.join.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.common.authz.Membership;
-import com.largata.common.authz.PublicationState;
-import com.largata.common.authz.WriteFence;
+import com.largata.trip.api.Membership;
+import com.largata.trip.api.PublicationState;
+import com.largata.trip.api.WriteFence;
 import com.largata.common.security.VerifiedContact;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;

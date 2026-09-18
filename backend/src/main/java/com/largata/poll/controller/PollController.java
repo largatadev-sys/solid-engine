@@ -1,8 +1,8 @@
 package com.largata.poll.controller;
 
-import com.largata.common.authz.AudienceFence;
-import com.largata.common.authz.AuthorizationGuard;
-import com.largata.common.authz.Membership;
+import com.largata.trip.api.AudienceFence;
+import com.largata.trip.api.AuthorizationGuard;
+import com.largata.trip.api.Membership;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.identity.Traveler;
 import com.largata.poll.dto.CastVoteRequest;

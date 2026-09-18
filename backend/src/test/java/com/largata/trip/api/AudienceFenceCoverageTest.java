@@ -1,4 +1,4 @@
-package com.largata.common.authz;
+package com.largata.trip.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

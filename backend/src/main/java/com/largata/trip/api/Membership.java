@@ -1,4 +1,4 @@
-package com.largata.common.authz;
+package com.largata.trip.api;
 
 import java.util.UUID;
 
