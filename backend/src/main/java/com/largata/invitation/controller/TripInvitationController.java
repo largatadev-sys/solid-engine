@@ -1,7 +1,7 @@
 package com.largata.invitation.controller;
 
 import com.largata.common.api.Page;
-import com.largata.trip.api.AudienceFence;
+import com.largata.trip.api.TripFence;
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
 import com.largata.common.security.CurrentTraveler;
@@ -27,13 +27,13 @@ class TripInvitationController {
 
     private final InvitationService invitations;
     private final AuthorizationGuard guard;
-    private final AudienceFence audience;
+    private final TripFence fence;
 
     TripInvitationController(
-            InvitationService invitations, AuthorizationGuard guard, AudienceFence audience) {
+            InvitationService invitations, AuthorizationGuard guard, TripFence fence) {
         this.invitations = invitations;
         this.guard = guard;
-        this.audience = audience;
+        this.fence = fence;
     }
 
     @PostMapping("/invitations")
@@ -43,7 +43,8 @@ class TripInvitationController {
             @PathVariable UUID itineraryId,
             @Valid @RequestBody CreateInvitationRequest request) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        return InvitationResponse.of(invitations.invite(membership, request.email()));
+        return InvitationResponse.of(
+                invitations.invite(fence.membershipMutable(membership), request.email()));
     }
 
     @PostMapping("/invitations/by-handle")
@@ -53,13 +54,14 @@ class TripInvitationController {
             @PathVariable UUID itineraryId,
             @Valid @RequestBody InviteByHandleRequest request) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        return InvitationResponse.of(invitations.inviteByHandle(membership, request.handle()));
+        return InvitationResponse.of(
+                invitations.inviteByHandle(fence.membershipMutable(membership), request.handle()));
     }
 
     @GetMapping("/invitations")
     Page<InvitationResponse> pendingInvitations(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership membership = guard.requireMember(traveler.id(), itineraryId);
-        audience.requireInAudience(membership);
+        fence.inAudience(membership);
         return Page.exhausted(invitations.pendingInvitations(membership).stream().map(InvitationResponse::of).toList());
     }
 }

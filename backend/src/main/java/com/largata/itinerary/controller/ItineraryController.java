@@ -2,6 +2,9 @@ package com.largata.itinerary.controller;
 
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.itinerary.dto.ItineraryObjectResponse;
@@ -27,14 +30,17 @@ class ItineraryController {
     private final AuthorizationGuard guard;
     private final ItineraryPageService pages;
     private final ItineraryForkService forks;
+    private final TripFence fence;
 
     ItineraryController(
             ItineraryObjectService itineraries,
             AuthorizationGuard guard,
             ItineraryPageService pages,
-            ItineraryForkService forks) {
+            ItineraryForkService forks,
+            TripFence fence) {
         this.itineraries = itineraries;
         this.guard = guard;
+        this.fence = fence;
         this.pages = pages;
         this.forks = forks;
     }
@@ -42,7 +48,12 @@ class ItineraryController {
 
     @PostMapping("/v1/trips/{tripId}/publish")
     ItineraryObjectResponse publish(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
-        ItineraryObject published = itineraries.publish(requireMember(traveler, tripId));
+        ItineraryObject published =
+                itineraries.publish(
+                        fence.writable(
+                                theOwner(
+                                        requireMember(traveler, tripId),
+                                        "Only the trip owner can publish this trip.")));
         return ItineraryObjectResponse.of(published, itineraries.planTreeOf(published));
     }
 
@@ -50,7 +61,11 @@ class ItineraryController {
     @PostMapping("/v1/trips/{tripId}/unpublish")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void unpublish(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
-        itineraries.unpublish(requireMember(traveler, tripId));
+        itineraries.unpublish(
+                fence.writable(
+                        theOwner(
+                                requireMember(traveler, tripId),
+                                "Only the trip owner can unpublish this trip.")));
     }
 
 
@@ -67,7 +82,9 @@ class ItineraryController {
                 tripId,
                 traveler.id(),
                 traveler.id(),
-                itineraries.snapshotOfLivePlan(owner));
+                itineraries.snapshotOfLivePlan(
+                        fence.inAudience(
+                                theOwner(owner, "Only the trip owner can preview the published page."))));
     }
 
 
@@ -96,5 +113,9 @@ class ItineraryController {
 
     private Membership requireMember(Traveler traveler, UUID tripId) {
         return guard.membershipOf(traveler.id(), tripId).orElseThrow(TripNotFoundException::new);
+    }
+
+    private Owner theOwner(Membership membership, String refusal) {
+        return fence.owner(membership, () -> new NotTheTripOwnerException(refusal));
     }
 }

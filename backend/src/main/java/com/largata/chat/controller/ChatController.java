@@ -1,10 +1,11 @@
 package com.largata.chat.controller;
 
+import com.largata.chat.exception.ChatExceptions;
 import com.largata.chat.dto.ChatMessageResponse;
 import com.largata.chat.dto.SendMessageRequest;
 import com.largata.chat.service.ChatService;
 import com.largata.common.api.Page;
-import com.largata.trip.api.AudienceFence;
+import com.largata.trip.api.TripFence;
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
 import com.largata.common.security.CurrentTraveler;
@@ -26,12 +27,12 @@ class ChatController {
 
     private final ChatService chat;
     private final AuthorizationGuard guard;
-    private final AudienceFence audience;
+    private final TripFence fence;
 
-    ChatController(ChatService chat, AuthorizationGuard guard, AudienceFence audience) {
+    ChatController(ChatService chat, AuthorizationGuard guard, TripFence fence) {
         this.chat = chat;
         this.guard = guard;
-        this.audience = audience;
+        this.fence = fence;
     }
 
 
@@ -42,7 +43,10 @@ class ChatController {
             @PathVariable UUID itineraryId,
             @RequestBody SendMessageRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return ChatMessageResponse.of(chat.send(member, request.body()));
+        return ChatMessageResponse.of(
+                chat.send(
+                        fence.editable(member, ChatExceptions.ChatClosedException::new),
+                        request.body()));
     }
 
 
@@ -53,7 +57,7 @@ class ChatController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return chat.thread(audience.requireInAudience(member), cursor, limit)
+        return chat.thread(fence.inAudience(member), cursor, limit)
                 .map(ChatMessageResponse::of);
     }
 }

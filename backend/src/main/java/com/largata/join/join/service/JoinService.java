@@ -3,8 +3,9 @@ package com.largata.join.join.service;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.trip.api.Membership;
-import com.largata.trip.api.PublicationState;
-import com.largata.trip.api.WriteFence;
+import com.largata.itinerary.api.PublishedItineraries;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
 import com.largata.common.security.VerifiedContact;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
@@ -59,8 +60,8 @@ public class JoinService {
     private final TripApi itineraries;
     private final TravelerService travelers;
     private final InvitationApi invitations;
-    private final WriteFence fence;
-    private final PublicationState publication;
+    private final TripFence fence;
+    private final PublishedItineraries publishedItineraries;
     private final Analytics analytics;
     private final JoinQueueTopic joinQueue;
     private final Clock clock;
@@ -74,8 +75,8 @@ public class JoinService {
             TripApi itineraries,
             TravelerService travelers,
             InvitationApi invitations,
-            WriteFence fence,
-            PublicationState publication,
+            TripFence fence,
+            PublishedItineraries publishedItineraries,
             Analytics analytics,
             JoinQueueTopic joinQueue,
             Clock clock,
@@ -88,7 +89,7 @@ public class JoinService {
         this.travelers = travelers;
         this.invitations = invitations;
         this.fence = fence;
-        this.publication = publication;
+        this.publishedItineraries = publishedItineraries;
         this.analytics = analytics;
         this.clock = clock;
         this.webBaseUrl = webBaseUrl;
@@ -96,8 +97,8 @@ public class JoinService {
 
 
     @Transactional
-    public JoinLinkView linkFor(Membership member) {
-        fence.requireMembershipMutable(member);
+    public JoinLinkView linkFor(TripFence.MembershipMutable<?> mutable) {
+        Membership member = mutable.member();
         UUID workspaceId = workspaceIdOf(member.itineraryId());
         JoinLink link = links.findByWorkspaceId(workspaceId).orElseGet(() -> mint(workspaceId));
         return new JoinLinkView(
@@ -170,7 +171,7 @@ public class JoinService {
         if (viewerId.isPresent() && workspaces.isMember(itineraryId, viewerId.get())) {
             return ViewerJoinState.MEMBER;
         }
-        if (isClosed(itineraryId, trip)) {
+        if (isClosed(itineraryId)) {
             return ViewerJoinState.DEAD;
         }
         if (viewerId.isEmpty()) {
@@ -182,8 +183,9 @@ public class JoinService {
     }
 
 
-    private boolean isClosed(UUID itineraryId, TripTeaser trip) {
-        return publication.isPublished(itineraryId) || workspaces.isArchived(itineraryId);
+    private boolean isClosed(UUID itineraryId) {
+        return !publishedItineraries.publishedAmong(List.of(itineraryId)).isEmpty()
+                || workspaces.isArchived(itineraryId);
     }
 
 
@@ -203,9 +205,10 @@ public class JoinService {
         if (workspaces.isMember(itineraryId, travelerId)) {
             throw new AlreadyMemberException();
         }
-        if (isClosed(itineraryId, trip)) {
+        if (workspaces.isArchived(itineraryId)) {
             throw new LinkClosedException();
         }
+        fence.unfrozen(itineraryId, LinkClosedException::new);
         if (!contact.verified()) {
             throw new EmailNotVerifiedException();
         }
@@ -236,10 +239,8 @@ public class JoinService {
 
 
     @Transactional(readOnly = true)
-    public List<PendingJoinRequest> queueFor(Membership owner) {
-        if (!owner.isOwner()) {
-            throw NotTheTripOwnerException.toReadTheJoinQueue();
-        }
+    public List<PendingJoinRequest> queueFor(TripFence.MembershipMutable<Owner> mutable) {
+        Membership owner = mutable.member();
         List<JoinRequest> rows =
                 requests.findByWorkspaceIdAndStatusOrderByCreatedAtAsc(
                         workspaceIdOf(owner.itineraryId()), JoinRequestStatus.PENDING);
@@ -343,7 +344,8 @@ public class JoinService {
 
 
     @Transactional
-    public void approve(Membership owner, UUID requestId) {
+    public void approve(TripFence.MembershipMutable<Owner> mutable, UUID requestId) {
+        Membership owner = mutable.member();
         JoinRequest asked = answerable(owner, requestId);
         UUID itineraryId = owner.itineraryId();
         Instant now = Instant.now(clock);
@@ -365,7 +367,8 @@ public class JoinService {
 
 
     @Transactional
-    public void decline(Membership owner, UUID requestId) {
+    public void decline(TripFence.MembershipMutable<Owner> mutable, UUID requestId) {
+        Membership owner = mutable.member();
         JoinRequest asked = answerable(owner, requestId);
         asked.decline(owner.travelerId(), Instant.now(clock));
         requests.saveAndFlush(asked);
@@ -382,10 +385,6 @@ public class JoinService {
 
 
     private JoinRequest answerable(Membership owner, UUID requestId) {
-        fence.requireMembershipMutable(owner);
-        if (!owner.isOwner()) {
-            throw NotTheTripOwnerException.toAnswerAJoinRequest();
-        }
         JoinRequest asked = requests.findById(requestId).orElseThrow(JoinRequestNotFoundException::new);
         if (!asked.workspaceId().equals(workspaceIdOf(owner.itineraryId()))) {
             throw new JoinRequestNotFoundException();

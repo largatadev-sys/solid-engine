@@ -2,9 +2,8 @@ package com.largata.poll.service;
 
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
-import com.largata.trip.api.InAudience;
 import com.largata.trip.api.Membership;
-import com.largata.trip.api.WriteFence;
+import com.largata.trip.api.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -45,7 +44,6 @@ public class PollService {
     private final PollVoteInserter inserter;
     private final MembershipApi workspaces;
     private final TravelerService travelers;
-    private final WriteFence writeFence;
     private final Analytics analytics;
     private final Clock clock;
 
@@ -55,7 +53,6 @@ public class PollService {
             PollVoteInserter inserter,
             MembershipApi workspaces,
             TravelerService travelers,
-            WriteFence writeFence,
             Analytics analytics,
             Clock clock) {
         this.polls = polls;
@@ -63,15 +60,15 @@ public class PollService {
         this.inserter = inserter;
         this.workspaces = workspaces;
         this.travelers = travelers;
-        this.writeFence = writeFence;
         this.analytics = analytics;
         this.clock = clock;
     }
 
 
     @Transactional
-    public PollView ask(Membership member, String question, List<String> optionLabels, Instant closesAt) {
-        writeFence.requireWritable(member);
+    public PollView ask(
+            TripFence.Writable<?> writable, String question, List<String> optionLabels, Instant closesAt) {
+        Membership member = writable.member();
         Instant now = Instant.now(clock);
         if (closesAt == null || !closesAt.isAfter(now)) {
             throw new DeadlineNotInFutureException();
@@ -89,7 +86,7 @@ public class PollService {
 
 
     @Transactional(readOnly = true)
-    public PollBoard board(InAudience audience) {
+    public PollBoard board(TripFence.InAudience<?> audience) {
         Membership member = audience.member();
         Instant now = Instant.now(clock);
         UUID workspaceId = workspaceIdOf(member);
@@ -120,8 +117,8 @@ public class PollService {
 
 
     @Transactional
-    public PollView vote(Membership member, UUID pollId, UUID optionId) {
-        writeFence.requireWritable(member);
+    public PollView vote(TripFence.Writable<?> writable, UUID pollId, UUID optionId) {
+        Membership member = writable.member();
         Instant now = Instant.now(clock);
         UUID workspaceId = workspaceIdOf(member);
         Poll poll = pollOf(workspaceId, pollId);
@@ -139,8 +136,8 @@ public class PollService {
 
 
     @Transactional
-    public PollView close(Membership member, UUID pollId) {
-        writeFence.requireWritable(member);
+    public PollView close(TripFence.Writable<?> writable, UUID pollId) {
+        Membership member = writable.member();
         Instant now = Instant.now(clock);
         UUID workspaceId = workspaceIdOf(member);
         Poll poll = pollOf(workspaceId, pollId);
@@ -157,8 +154,8 @@ public class PollService {
 
 
     @Transactional
-    public void delete(Membership member, UUID pollId) {
-        writeFence.requireWritable(member);
+    public void delete(TripFence.Writable<?> writable, UUID pollId) {
+        Membership member = writable.member();
         UUID workspaceId = workspaceIdOf(member);
         Poll poll = pollOf(workspaceId, pollId);
         requireAuthorOrOwner(member, poll);

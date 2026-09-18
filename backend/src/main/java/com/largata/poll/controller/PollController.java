@@ -1,6 +1,6 @@
 package com.largata.poll.controller;
 
-import com.largata.trip.api.AudienceFence;
+import com.largata.trip.api.TripFence;
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
 import com.largata.common.security.CurrentTraveler;
@@ -29,12 +29,12 @@ class PollController {
 
     private final PollService polls;
     private final AuthorizationGuard guard;
-    private final AudienceFence audience;
+    private final TripFence fence;
 
-    PollController(PollService polls, AuthorizationGuard guard, AudienceFence audience) {
+    PollController(PollService polls, AuthorizationGuard guard, TripFence fence) {
         this.polls = polls;
         this.guard = guard;
-        this.audience = audience;
+        this.fence = fence;
     }
 
 
@@ -46,14 +46,18 @@ class PollController {
             @Valid @RequestBody CreatePollRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
         return PollResponse.of(
-                polls.ask(member, request.question(), request.options(), request.closesAt()));
+                polls.ask(
+                        fence.writable(member),
+                        request.question(),
+                        request.options(),
+                        request.closesAt()));
     }
 
 
     @GetMapping
     PollBoardResponse board(@CurrentTraveler Traveler traveler, @PathVariable UUID itineraryId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return PollBoardResponse.of(polls.board(audience.requireInAudience(member)));
+        return PollBoardResponse.of(polls.board(fence.inAudience(member)));
     }
 
 
@@ -64,7 +68,7 @@ class PollController {
             @PathVariable UUID pollId,
             @Valid @RequestBody CastVoteRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return PollResponse.of(polls.vote(member, pollId, request.optionId()));
+        return PollResponse.of(polls.vote(fence.writable(member), pollId, request.optionId()));
     }
 
 
@@ -74,7 +78,7 @@ class PollController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID pollId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return PollResponse.of(polls.close(member, pollId));
+        return PollResponse.of(polls.close(fence.writable(member), pollId));
     }
 
 
@@ -85,6 +89,6 @@ class PollController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID pollId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        polls.delete(member, pollId);
+        polls.delete(fence.writable(member), pollId);
     }
 }
