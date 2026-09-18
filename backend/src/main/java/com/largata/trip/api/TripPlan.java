@@ -20,7 +20,6 @@ public record TripPlan(
         LocalDate endDate,
         Pin pin,
         TripLifecycle lifecycle,
-        boolean published,
         List<PlanDay> days) {
 
 
@@ -39,7 +38,6 @@ public record TripPlan(
                 endDate,
                 pin,
                 lifecycle,
-                published,
                 days);
     }
 

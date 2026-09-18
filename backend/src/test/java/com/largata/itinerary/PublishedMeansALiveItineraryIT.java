@@ -36,14 +36,11 @@ class PublishedMeansALiveItineraryIT extends PostgresTestBase {
 
 
     @Test
-    void aTripCarryingOnlyTheOldFlagReadsAsUnpublishedAndItsPlanIsEditableAgain() {
+    void aCompletedTripWithNoItineraryReadsAsUnpublishedAndItsPlanIsEditable() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 2);
         walkToCompleted(owner, trip);
 
-        flagPublishedWithoutAnItinerary(trip);
-
-        assertThat(publishedFlagOf(trip)).isTrue();
         readTrip(owner, trip)
                 .jsonPath("$.published")
                 .isEqualTo(false)
@@ -121,24 +118,6 @@ class PublishedMeansALiveItineraryIT extends PostgresTestBase {
 
 
     @Test
-    void nothingWritesTheTripsPublishedColumnsAnyMore() {
-        String owner = rig.travelerWithHandle(handle());
-        String trip = rig.createTrip(owner, 2);
-        walkToCompleted(owner, trip);
-
-        publish(owner, trip);
-
-        assertThat(publishedFlagOf(trip))
-                .as(
-                        "the flag columns are dead from CM-5 on - publishing must leave them exactly"
-                                + " as they were, so nothing can quietly keep a second truth about"
-                                + " what published means")
-                .isFalse();
-        assertThat(publishedAtOf(trip)).isNull();
-    }
-
-
-    @Test
     void aLiveItineraryPinsTheTripsLifecycleSoReopenIsRefused() {
         String owner = rig.travelerWithHandle(handle());
         String trip = rig.createTrip(owner, 2);
@@ -210,25 +189,6 @@ class PublishedMeansALiveItineraryIT extends PostgresTestBase {
         walkToCompleted(owner, trip);
 
         unpublish(owner, trip);
-    }
-
-
-    private void flagPublishedWithoutAnItinerary(String trip) {
-        jdbc.update(
-                "UPDATE itinerary SET published = TRUE, published_at = now() WHERE id = ?::uuid",
-                trip);
-    }
-
-
-    private Boolean publishedFlagOf(String trip) {
-        return jdbc.queryForObject(
-                "SELECT published FROM itinerary WHERE id = ?::uuid", Boolean.class, trip);
-    }
-
-
-    private Object publishedAtOf(String trip) {
-        return jdbc.queryForObject(
-                "SELECT published_at FROM itinerary WHERE id = ?::uuid", Object.class, trip);
     }
 
 

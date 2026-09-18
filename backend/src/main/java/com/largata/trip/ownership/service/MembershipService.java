@@ -152,7 +152,7 @@ public class MembershipService {
             throw IllegalWorkspaceTransitionException.notArchived();
         }
 
-        workspaces.unarchive(itineraryId, itineraries.isCompleted(itineraryId));
+        workspaces.unarchive(itineraryId);
 
         log.info("Trip unarchived: itineraryId={} by={}", itineraryId, owner.travelerId());
         emitArchiveEvent("itinerary_unarchived", itineraryId, owner.travelerId());

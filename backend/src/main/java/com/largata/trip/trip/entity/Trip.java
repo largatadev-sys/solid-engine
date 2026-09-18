@@ -18,7 +18,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import com.largata.trip.api.TripLifecycle;
 import com.largata.trip.trip.exception.IllegalStateTransitionException;
-import com.largata.trip.trip.exception.NotCompleteException;
 
 
 @Entity
@@ -77,9 +76,6 @@ public class Trip {
     @Column(nullable = false)
     private TripLifecycle state;
 
-    @Column(nullable = false)
-    private boolean published;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -94,9 +90,6 @@ public class Trip {
     @Column(name = "completed_at")
     private Instant completedAt;
 
-    @Column(name = "published_at")
-    private Instant publishedAt;
-
     protected Trip() {
     }
 
@@ -104,8 +97,6 @@ public class Trip {
         this.id = id;
         this.ownerId = ownerId;
         this.state = TripLifecycle.UPCOMING;
-
-        this.published = false;
         this.createdAt = createdAt;
         apply(fields);
     }
@@ -242,7 +233,6 @@ public class Trip {
     public void reopen() {
         TripLifecycle target =
                 state.previous().orElseThrow(() -> IllegalStateTransitionException.atTheFloor(state));
-        requireUnpublished(target);
         switch (target) {
             case ONGOING -> this.completedAt = null;
             case UPCOMING -> this.startedAt = null;
@@ -253,31 +243,9 @@ public class Trip {
 
 
     private void requireState(TripLifecycle required, TripLifecycle target) {
-        requireUnpublished(target);
         if (this.state != required) {
             throw new IllegalStateTransitionException(this.state, target);
         }
-    }
-
-
-    private void requireUnpublished(TripLifecycle target) {
-        if (published) {
-            throw new IllegalStateTransitionException(state, target);
-        }
-    }
-
-
-    public void publishTo(Instant at) {
-        if (!state.admitsPublishing()) {
-            throw new NotCompleteException(state);
-        }
-        this.published = true;
-        this.publishedAt = at;
-    }
-
-
-    public void unpublish() {
-        this.published = false;
     }
 
 
@@ -359,10 +327,6 @@ public class Trip {
     }
 
 
-    public boolean isPublished() {
-        return published;
-    }
-
     public Instant createdAt() {
         return createdAt;
     }
@@ -377,10 +341,6 @@ public class Trip {
         return startedAt;
     }
 
-
-    public Instant publishedAt() {
-        return publishedAt;
-    }
 
     public Instant completedAt() {
         return completedAt;

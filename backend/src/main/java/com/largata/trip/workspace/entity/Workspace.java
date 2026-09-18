@@ -59,22 +59,6 @@ public class Workspace {
     }
 
 
-    public void markCompleted() {
-        if (state == WorkspaceState.ARCHIVED) {
-            return;
-        }
-        this.state = WorkspaceState.COMPLETED;
-    }
-
-
-    public void markActive() {
-        if (state == WorkspaceState.ARCHIVED) {
-            return;
-        }
-        this.state = WorkspaceState.ACTIVE;
-    }
-
-
     public void archive() {
         if (state == WorkspaceState.ARCHIVED) {
             throw new IllegalStateException("Workspace " + id + " is already archived");
@@ -83,11 +67,11 @@ public class Workspace {
     }
 
 
-    public void unarchive(boolean itineraryIsCompleted) {
+    public void unarchive() {
         if (state != WorkspaceState.ARCHIVED) {
             throw new IllegalStateException("Workspace " + id + " is not archived");
         }
-        this.state = itineraryIsCompleted ? WorkspaceState.COMPLETED : WorkspaceState.ACTIVE;
+        this.state = WorkspaceState.ACTIVE;
     }
 
     public UUID id() {

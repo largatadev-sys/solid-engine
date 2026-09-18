@@ -7,6 +7,7 @@ import com.largata.trip.api.TripFacts;
 import com.largata.trip.api.TripListEntry;
 import com.largata.trip.api.TripListQuery;
 import com.largata.trip.api.TripTeaser;
+import com.largata.trip.api.WorkspaceStateProjection;
 import com.largata.trip.exception.TripNotFoundException;
 import java.util.Collection;
 import java.util.List;
@@ -88,7 +89,7 @@ class TripFactsService implements TripApi {
                 trip.state(),
                 trip.visibility().wireName(),
                 workspaceState.isArchived(),
-                workspaceState.wireName(),
+                WorkspaceStateProjection.of(trip.state(), workspaceState.isArchived()),
                 trip.lastEditedBy(),
                 trip.lastEditedAt(),
                 trip.createdAt(),
@@ -115,7 +116,6 @@ class TripFactsService implements TripApi {
                 trip.startDate(),
                 trip.endDate(),
                 trip.state(),
-                trip.isPublished(),
                 workspaces.isArchived(trip.id()),
                 trip.createdAt());
     }
@@ -147,8 +147,7 @@ class TripFactsService implements TripApi {
                 trip.destination(),
                 trip.startDate(),
                 trip.endDate(),
-                trip.coverImageUrl(),
-                trip.isPublished());
+                trip.coverImageUrl());
     }
 
 

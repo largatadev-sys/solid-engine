@@ -35,15 +35,20 @@ class WorkspaceStateStorageIT extends PostgresTestBase {
 
 
     @Test
-    void aCompletedTripsWorkspaceStoresCOMPLETED() {
+    void aCompletedTripsRoomStaysOpen_becauseTheLifecycleIsNotTheWorkspacesFactToStore() {
         Trip trip = createTrip();
         UUID owner = trip.ownerId();
 
         itineraries.start(ownerOf(trip, owner));
         itineraries.complete(ownerOf(trip, owner));
 
-        assertThat(storedState(trip.id())).isEqualTo("COMPLETED");
-        assertThat(workspaces.stateOf(trip.id())).contains(WorkspaceState.COMPLETED);
+        assertThat(storedState(trip.id()))
+                .as("TW-2: COMPLETED was a stored copy of the ITINERARY's lifecycle, written as a"
+                        + " side effect of a transition that had no business writing here. The room"
+                        + " of a completed trip is open — members still chat, poll and post — and"
+                        + " the wire still answers `completed` by projecting the lifecycle beside it")
+                .isEqualTo("ACTIVE");
+        assertThat(workspaces.stateOf(trip.id())).contains(WorkspaceState.ACTIVE);
     }
 
 

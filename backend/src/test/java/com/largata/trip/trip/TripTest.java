@@ -14,7 +14,6 @@ import com.largata.trip.trip.entity.Trip;
 import com.largata.trip.api.TripLifecycle;
 import com.largata.trip.trip.entity.Visibility;
 import com.largata.trip.trip.exception.IllegalStateTransitionException;
-import com.largata.trip.trip.exception.NotCompleteException;
 import com.largata.trip.trip.exception.UnknownAudienceException;
 import com.largata.trip.trip.exception.VisibilityRetiredException;
 
@@ -34,7 +33,6 @@ class TripTest {
                 .as("being planned is not travel started — only the acts that happen to the trip stamp")
                 .isNull();
         assertThat(itinerary.completedAt()).isNull();
-        assertThat(itinerary.isPublished()).as("nothing is born in the feed").isFalse();
         assertThat(itinerary.visibility())
                 .as("public is the default audience — it decides who reads it once it is published")
                 .isEqualTo(Visibility.PUBLIC);
@@ -258,7 +256,6 @@ class TripTest {
 
         assertThat(itinerary.ownerId()).isEqualTo(owner);
         assertThat(itinerary.state()).isEqualTo(TripLifecycle.UPCOMING);
-        assertThat(itinerary.isPublished()).isFalse();
     }
 
     @Test
@@ -351,67 +348,25 @@ class TripTest {
     }
 
     @Test
-    void publishingSetsTheAudienceAndUnpublishingLeavesTheLifecycleWhereItWas() {
-        Trip itinerary = completed();
-
-        itinerary.publishTo(Instant.now());
-        assertThat(itinerary.isPublished()).isTrue();
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLIC);
-
-        itinerary.unpublish();
-        assertThat(itinerary.isPublished()).isFalse();
-        assertThat(itinerary.visibility())
-                .as("unpublishing withdraws from the feed; it says nothing about the audience")
-                .isEqualTo(Visibility.PUBLIC);
-        assertThat(itinerary.state())
-                .as("…and it leaves the trip completed, because the trip still happened")
-                .isEqualTo(TripLifecycle.COMPLETED);
-    }
-
-    @Test
-    void onlyACompletedTripCanBePublished() {
-        Trip neverStarted = newTrip("Planned", "Cebu");
-        assertThatThrownBy(() -> neverStarted.publishTo(Instant.now()))
-                .as("a plan nobody has travelled is not a record of anything")
-                .isInstanceOf(NotCompleteException.class);
-
-        Trip travelling = newTrip("Planned", "Cebu");
-        travelling.start(Instant.now());
-        assertThatThrownBy(() -> travelling.publishTo(Instant.now()))
-                .isInstanceOf(NotCompleteException.class);
-
-        Trip travelled = completed();
-        travelled.publishTo(Instant.now());
-        assertThat(travelled.isPublished()).isTrue();
-    }
-
-    @Test
     void anItineraryIsPublicWhateverHappensToIt_becauseTheAudienceAxisRetired() {
         Trip itinerary = completed();
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLIC);
 
-        itinerary.publishTo(Instant.now());
-        assertThat(itinerary.visibility()).isEqualTo(Visibility.PUBLIC);
-
-        itinerary.unpublish();
         assertThat(itinerary.visibility())
                 .as("the field survives on the wire as a constant; nothing can move it (ADR-034)")
                 .isEqualTo(Visibility.PUBLIC);
     }
 
     @Test
-    void aPublishedTripPinsItsLifecycle_soUnpublishIsTheOnlyWayToMoveIt() {
+    void theTripKnowsNothingAboutPublication_soItsLifecycleMovesFreely() {
         Trip itinerary = completed();
-        itinerary.publishTo(Instant.now());
 
-        assertThatThrownBy(itinerary::reopen)
-                .as("published means nothing about this trip changes — the lifecycle included")
-                .isInstanceOf(IllegalStateTransitionException.class);
-
-        itinerary.unpublish();
         itinerary.reopen();
 
-        assertThat(itinerary.state()).isEqualTo(TripLifecycle.ONGOING);
+        assertThat(itinerary.state())
+                .as("TW-2: the freeze is the publication port's answer, checked in TripService, and"
+                        + " the entity carries no flag of its own to consult — a dead column that"
+                        + " always said false was pinning nothing and hiding that fact")
+                .isEqualTo(TripLifecycle.ONGOING);
     }
 
     @Test
@@ -435,18 +390,6 @@ class TripTest {
         assertThatThrownBy(itinerary::reopen)
                 .isInstanceOf(IllegalStateTransitionException.class)
                 .hasMessageContaining("nothing before it");
-    }
-
-    @Test
-    void repeatingEitherActIsANoOpRatherThanATransition() {
-        Trip itinerary = completed();
-
-        itinerary.unpublish();
-        assertThat(itinerary.isPublished()).isFalse();
-
-        itinerary.publishTo(Instant.now());
-        itinerary.publishTo(Instant.now());
-        assertThat(itinerary.isPublished()).isTrue();
     }
 
     @Test

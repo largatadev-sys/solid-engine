@@ -157,15 +157,6 @@ public class TripService {
 
 
     @Transactional(readOnly = true)
-    public boolean isCompleted(UUID itineraryId) {
-        return trips
-                .findById(itineraryId)
-                .map(itinerary -> itinerary.state() == TripLifecycle.COMPLETED)
-                .orElse(false);
-    }
-
-
-    @Transactional(readOnly = true)
     public TripPlanTree viewPlan(Membership membership) {
         return assemble(view(membership), days.plan(membership.itineraryId()));
     }
@@ -298,7 +289,6 @@ public class TripService {
         Trip itinerary = authorizeAndLoad(owner);
         editLease.requireSessionFreeForLifecycle(owner);
         itinerary.complete(Instant.now());
-        workspaces.markCompleted(itinerary.id());
         return record(itinerary, owner, "itinerary_completed");
     }
 
@@ -312,26 +302,7 @@ public class TripService {
                     itinerary.state(), itinerary.state().previous().orElse(itinerary.state()));
         }
         itinerary.reopen();
-        workspaces.markActive(itinerary.id());
         return record(itinerary, owner, "itinerary_reopened");
-    }
-
-
-    private Trip recordStatus(Trip itinerary, Membership owner, String eventName) {
-        trips.save(itinerary);
-        log.info(
-                "Trip publication: id={} published={} owner={}",
-                itinerary.id(),
-                itinerary.isPublished(),
-                owner.travelerId());
-        AfterCommit.run(
-                () ->
-                        analytics.emit(
-                                AnalyticsEvent.named(eventName)
-                                        .with("itineraryId", itinerary.id())
-                                        .with("travelerId", owner.travelerId())
-                                        .build()));
-        return itinerary;
     }
 
 
@@ -428,8 +399,7 @@ public class TripService {
                 itinerary.destination(),
                 itinerary.startDate(),
                 itinerary.endDate(),
-                itinerary.coverImageUrl(),
-                itinerary.isPublished());
+                itinerary.coverImageUrl());
     }
 
     private static int clamp(Integer requestedLimit) {

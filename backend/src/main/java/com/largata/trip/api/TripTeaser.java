@@ -10,5 +10,4 @@ public record TripTeaser(
         String destination,
         LocalDate startDate,
         LocalDate endDate,
-        String coverImageUrl,
-        boolean published) {}
+        String coverImageUrl) {}

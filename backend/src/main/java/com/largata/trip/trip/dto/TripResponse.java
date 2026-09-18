@@ -1,6 +1,7 @@
 package com.largata.trip.trip.dto;
 
 import com.largata.trip.api.ForkApi;
+import com.largata.trip.api.WorkspaceStateProjection;
 import com.largata.common.geo.PinPayload;
 import com.largata.identity.TravelerSummary;
 import com.largata.trip.trip.entity.Trip;
@@ -80,7 +81,7 @@ public record TripResponse(
                 itinerary.lastEditedAt(),
                 plan.days().stream().map(day -> DayResponse.annotated(day, plan)).toList(),
                 itinerary.createdAt(),
-                plan.workspaceState().wireName(),
+                WorkspaceStateProjection.of(itinerary.state(), plan.archived()),
                 editor == null ? null : editor.handle(),
                 editor == null ? null : editor.displayName(),
                 LeaseHolderResponse.of(plan.holderOf(LeaseSubject.header(itinerary.id()))),
