@@ -185,7 +185,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
 
     @Test
-    void acceptAndDeclineAreClosedByVoidingRatherThanByTheFence() {
+    void acceptAndDeclineAreClosedOnADeletedTrip_byTheMaskAndByTheVoiding() {
         Trip trip = liveTripWithTwoMembers();
         post(trip.owner, "/v1/trips/" + trip.id + "/ownership-offer", "{\"travelerId\":\"" + trip.memberId + "\"}")
                 .expectStatus()
@@ -193,18 +193,8 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        post(trip.member, "/v1/trips/" + trip.id + "/ownership-offer/accept", null)
-                .expectStatus()
-                .isNotFound()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("OFFER_NOT_FOUND");
-        post(trip.member, "/v1/trips/" + trip.id + "/ownership-offer/decline", null)
-                .expectStatus()
-                .isNotFound()
-                .expectBody()
-                .jsonPath("$.code")
-                .isEqualTo("OFFER_NOT_FOUND");
+        masked(post(trip.member, "/v1/trips/" + trip.id + "/ownership-offer/accept", null));
+        masked(post(trip.member, "/v1/trips/" + trip.id + "/ownership-offer/decline", null));
     }
 
 

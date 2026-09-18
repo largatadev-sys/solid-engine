@@ -3,7 +3,10 @@ package com.largata.trip.trip;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.largata.support.Proofs;
 import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
 import com.largata.trip.api.Role;
 import com.largata.support.PostgresTestBase;
 import com.largata.trip.api.TripLifecycle;
@@ -24,6 +27,7 @@ import com.largata.trip.trip.service.TripService;
 class TripLifecycleStorageIT extends PostgresTestBase {
 
     @Autowired private TripService itineraries;
+    @Autowired private TripFence fence;
     @Autowired private JdbcTemplate jdbc;
 
 
@@ -36,11 +40,11 @@ class TripLifecycleStorageIT extends PostgresTestBase {
                 .isEqualTo("UPCOMING");
         assertThat(TripLifecycle.UPCOMING.wireName()).isEqualTo("upcoming");
 
-        itineraries.start(owner);
+        itineraries.start(editableOwner(owner));
         assertThat(storedState(owner.itineraryId())).isEqualTo("ONGOING");
         assertThat(TripLifecycle.ONGOING.wireName()).isEqualTo("ongoing");
 
-        itineraries.complete(owner);
+        itineraries.complete(editableOwner(owner));
         assertThat(storedState(owner.itineraryId())).isEqualTo("COMPLETED");
         assertThat(TripLifecycle.COMPLETED.wireName()).isEqualTo("completed");
     }
@@ -98,7 +102,7 @@ class TripLifecycleStorageIT extends PostgresTestBase {
     void theAggregateItselfRefusesASkipEdge() {
         Membership owner = tripOwnedByFreshTraveler();
 
-        assertThatThrownBy(() -> itineraries.complete(owner))
+        assertThatThrownBy(() -> itineraries.complete(editableOwner(owner)))
                 .isInstanceOf(IllegalStateTransitionException.class)
                 .hasMessageContaining("upcoming")
                 .hasMessageContaining("completed");
@@ -116,5 +120,13 @@ class TripLifecycleStorageIT extends PostgresTestBase {
         UUID ownerId = UUID.randomUUID();
         Trip itinerary = itineraries.create(ownerId, "Planned trip", "Cebu", null, null);
         return new Membership(ownerId, itinerary.id(), Role.OWNER);
+    }
+
+    private Proofs proofs() {
+        return new Proofs(fence);
+    }
+
+    private TripFence.Editable<Owner> editableOwner(Membership member) {
+        return proofs().editableOwner(member);
     }
 }

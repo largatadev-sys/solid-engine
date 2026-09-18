@@ -1,6 +1,7 @@
 package com.largata.trip.cover;
 
 import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
 import com.largata.media.MediaUrls;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
@@ -45,8 +46,9 @@ public class TripCoverService {
 
 
     @Transactional
-    public Trip replaceCover(Membership member, byte[] uploaded) {
-        Trip itinerary = editableHeaderOf(member);
+    public Trip replaceCover(TripFence.Editable<?> editable, byte[] uploaded) {
+        Membership member = editable.member();
+        Trip itinerary = editableHeaderOf(editable);
         Photo stored =
                 photos.replaceSingle(
                         PhotoSubject.ITINERARY_COVER, member.itineraryId(), uploaded, member.travelerId());
@@ -63,8 +65,9 @@ public class TripCoverService {
 
 
     @Transactional
-    public Trip removeCover(Membership member) {
-        Trip itinerary = editableHeaderOf(member);
+    public Trip removeCover(TripFence.Editable<?> editable) {
+        Membership member = editable.member();
+        Trip itinerary = editableHeaderOf(editable);
         boolean hadCover = itinerary.coverImageUrl() != null;
         photos.deleteSingle(PhotoSubject.ITINERARY_COVER, member.itineraryId());
         itinerary.showCover(null, member.travelerId(), Instant.now());
@@ -80,8 +83,9 @@ public class TripCoverService {
     }
 
 
-    private Trip editableHeaderOf(Membership member) {
-        editLease.requireHeldBy(member, LeaseSubject.header(member.itineraryId()));
+    private Trip editableHeaderOf(TripFence.Editable<?> editable) {
+        Membership member = editable.member();
+        editLease.requireHeldBy(editable, LeaseSubject.header(member.itineraryId()));
         return trips
                 .findById(member.itineraryId())
                 .orElseThrow(() -> new IllegalStateException(

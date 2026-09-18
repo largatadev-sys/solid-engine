@@ -21,6 +21,12 @@ public final class TripFence {
     }
 
 
+    public Owner owner(Membership member, Supplier<? extends RuntimeException> refusal) {
+        requireOpenRoom(member);
+        return Owner.of(member, refusal);
+    }
+
+
     public <S extends Standing> InAudience<S> inAudience(S standing) {
         requireOpenRoom(standing);
         return new InAudience<>(standing);

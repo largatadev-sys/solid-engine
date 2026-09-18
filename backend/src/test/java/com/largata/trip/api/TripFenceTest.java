@@ -222,16 +222,39 @@ class TripFenceTest {
 
     @Test
     void roleIsCheckedBeforeStateByConstruction() {
-        TripFence fence = archived();
+        TripFence fence = openAndPublished();
 
         assertThatThrownBy(
                         () ->
                                 fence.editable(
                                         Owner.of(PLAIN_MEMBER, NotTheTripOwnerException::toRemoveAMember)))
-                .as("the argument is evaluated before the call, so a non-owner hears `only the trip"
-                        + " owner can…` whatever the room is doing — the ordering is the language's,"
-                        + " not a rule anybody has to remember")
+                .as("the argument is evaluated before the call, so on a trip a member can SEE, a"
+                        + " non-owner hears `only the trip owner can…` rather than the freeze — the"
+                        + " ordering is the language's, not a rule anybody has to remember (Q14)")
                 .isInstanceOf(NotTheTripOwnerException.class);
+    }
+
+
+    @Test
+    void theMaskIsStillOutermost_soADeletedTripRefusesAMemberBeforeItRefusesTheirRole() {
+        TripFence fence = archived();
+
+        assertThatThrownBy(
+                        () -> fence.owner(PLAIN_MEMBER, NotTheTripOwnerException::toRemoveAMember))
+                .as("Q14 chose role-before-state for a PUBLISHED trip's owner-only act. A DELETED one"
+                        + " is a different question: a member who cannot see the trip must not learn"
+                        + " it exists from an owner refusal, so the room is checked first. This door"
+                        + " is how an owner-only act keeps the mask outermost while still checking"
+                        + " role before the freeze")
+                .isInstanceOf(ItineraryNotFoundException.class);
+    }
+
+
+    @Test
+    void thatSameDoorYieldsTheOwnerWhenTheRoomIsOpen() {
+        assertThat(openAndPublished().owner(OWNER_MEMBER, NotTheTripOwnerException::toRemoveAMember))
+                .as("a live publication says nothing about who owns the trip")
+                .isEqualTo(owner());
     }
 
 

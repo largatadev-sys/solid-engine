@@ -4,7 +4,10 @@ import com.largata.trip.ownership.entity.OwnershipOfferStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.largata.support.Proofs;
 import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
 import com.largata.trip.api.Role;
 import com.largata.trip.trip.entity.Trip;
 import com.largata.support.PostgresTestBase;
@@ -25,6 +28,7 @@ import com.largata.trip.workspace.service.WorkspaceService;
 class OwnershipOfferStorageIT extends PostgresTestBase {
 
     @Autowired private TripService itineraries;
+    @Autowired private TripFence fence;
     @Autowired private MembershipService memberships;
     @Autowired private WorkspaceService workspaces;
     @Autowired private JdbcTemplate jdbc;
@@ -37,7 +41,7 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
         UUID ownerId = UUID.randomUUID();
         UUID memberId = admittedMemberOn(newTrip(ownerId), ownerId);
         UUID itineraryId = itineraryOf(memberId);
-        memberships.offerOwnership(ownerMembership(itineraryId, ownerId), memberId);
+        memberships.offerOwnership(mutableOwner(ownerMembership(itineraryId, ownerId)), memberId);
 
         String stored =
                 jdbc.queryForObject(
@@ -133,5 +137,13 @@ class OwnershipOfferStorageIT extends PostgresTestBase {
 
     private static Membership ownerMembership(UUID itineraryId, UUID ownerId) {
         return new Membership(ownerId, itineraryId, Role.OWNER);
+    }
+
+    private Proofs proofs() {
+        return new Proofs(fence);
+    }
+
+    private TripFence.MembershipMutable<Owner> mutableOwner(Membership member) {
+        return proofs().mutableOwner(member);
     }
 }

@@ -3,7 +3,8 @@ package com.largata.trip.plan.service;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.trip.api.Membership;
-import com.largata.trip.api.WriteFence;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.media.Photo;
 import com.largata.media.PhotoService;
@@ -48,7 +49,6 @@ public class DayService {
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
-    private final WriteFence fence;
     private final Analytics analytics;
     private final PhotoService photos;
 
@@ -60,7 +60,6 @@ public class DayService {
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,
-            WriteFence fence,
             Analytics analytics,
             PhotoService photos) {
         this.days = days;
@@ -68,7 +67,6 @@ public class DayService {
         this.editLease = editLease;
         this.history = history;
         this.planVersion = planVersion;
-        this.fence = fence;
         this.analytics = analytics;
         this.photos = photos;
     }
@@ -121,9 +119,9 @@ public class DayService {
 
 
     @Transactional
-    public DayView appendDay(Membership member, String title) {
-        requireOwnerOfWritableTrip(member);
-        editLease.requireNoForeignSession(member);
+    public DayView appendDay(TripFence.Editable<Owner> editable, String title) {
+        Membership member = editable.member();
+        editLease.requireNoForeignSession(editable);
         UUID itineraryId = member.itineraryId();
         long existing = days.countByItineraryId(itineraryId);
         if (existing >= Trip.MAX_DAYS) {
@@ -140,9 +138,10 @@ public class DayService {
 
 
     @Transactional
-    public DayView renameDay(Membership member, UUID dayId, String title) {
+    public DayView renameDay(TripFence.Editable<?> editable, UUID dayId, String title) {
+        Membership member = editable.member();
         Day day = require(member.itineraryId(), dayId);
-        editLease.requireHeldBy(member, LeaseSubject.day(dayId));
+        editLease.requireHeldBy(editable, LeaseSubject.day(dayId));
         day.rename(title);
         days.save(day);
         history.record(member, HistoryAct.DAY_RENAMED, LeaseSubject.day(dayId));
@@ -153,11 +152,11 @@ public class DayService {
 
 
     @Transactional
-    public void deleteDay(Membership member, UUID dayId) {
-        requireOwnerOfWritableTrip(member);
+    public void deleteDay(TripFence.Editable<Owner> editable, UUID dayId) {
+        Membership member = editable.member();
         UUID itineraryId = member.itineraryId();
         Day day = require(itineraryId, dayId);
-        editLease.requireHeldBy(member, LeaseSubject.day(dayId));
+        editLease.requireHeldBy(editable, LeaseSubject.day(dayId));
 
         List<UUID> containedIds =
                 activities.findByDayIdOrderBySortOrderAscIdAsc(dayId).stream().map(Activity::id).toList();
@@ -189,14 +188,6 @@ public class DayService {
 
     private Day require(UUID itineraryId, UUID dayId) {
         return days.findByIdAndItineraryId(dayId, itineraryId).orElseThrow(DayNotFoundException::new);
-    }
-
-
-    private void requireOwnerOfWritableTrip(Membership member) {
-        fence.requireEditable(member);
-        if (!member.isOwner()) {
-            throw new NotTheTripOwnerException("Only the trip owner can add or remove days.");
-        }
     }
 
 

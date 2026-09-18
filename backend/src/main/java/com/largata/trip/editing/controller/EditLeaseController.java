@@ -2,6 +2,7 @@ package com.largata.trip.editing.controller;
 
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.editing.dto.EditLeaseResponse;
@@ -24,10 +25,12 @@ class EditLeaseController {
 
     private final EditLeaseService leases;
     private final AuthorizationGuard guard;
+    private final TripFence fence;
 
-    EditLeaseController(EditLeaseService leases, AuthorizationGuard guard) {
+    EditLeaseController(EditLeaseService leases, AuthorizationGuard guard, TripFence fence) {
         this.leases = leases;
         this.guard = guard;
+        this.fence = fence;
     }
 
 
@@ -37,7 +40,7 @@ class EditLeaseController {
             @PathVariable UUID itineraryId,
             @RequestBody(required = false) LeaseSubjectRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return EditLeaseResponse.of(leases.acquire(member, LeaseSubjectRequest.resolve(request, itineraryId)));
+        return EditLeaseResponse.of(leases.acquire(fence.editable(member), LeaseSubjectRequest.resolve(request, itineraryId)));
     }
 
 
@@ -47,7 +50,7 @@ class EditLeaseController {
             @PathVariable UUID itineraryId,
             @RequestBody(required = false) LeaseSubjectRequest request) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return EditLeaseResponse.of(leases.renew(member, LeaseSubjectRequest.resolve(request, itineraryId)));
+        return EditLeaseResponse.of(leases.renew(fence.editable(member), LeaseSubjectRequest.resolve(request, itineraryId)));
     }
 
 

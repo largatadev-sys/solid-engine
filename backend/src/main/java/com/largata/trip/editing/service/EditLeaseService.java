@@ -3,7 +3,7 @@ package com.largata.trip.editing.service;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.trip.api.Membership;
-import com.largata.trip.api.WriteFence;
+import com.largata.trip.api.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.identity.TravelerService;
 import com.largata.identity.TravelerSummary;
@@ -55,7 +55,6 @@ public class EditLeaseService {
     private final ActivityRepository activities;
     private final TravelerService travelers;
     private final Analytics analytics;
-    private final WriteFence fence;
     private final ApplicationEventPublisher events;
     private final Clock clock;
     private final Duration ttl;
@@ -67,7 +66,6 @@ public class EditLeaseService {
             ActivityRepository activities,
             TravelerService travelers,
             Analytics analytics,
-            WriteFence fence,
             ApplicationEventPublisher events,
             Clock clock,
             @Value("${largata.edit-lock.ttl:PT3M}") Duration ttl) {
@@ -77,7 +75,6 @@ public class EditLeaseService {
         this.activities = activities;
         this.travelers = travelers;
         this.analytics = analytics;
-        this.fence = fence;
         this.events = events;
         this.clock = clock;
         this.ttl = ttl;
@@ -85,8 +82,8 @@ public class EditLeaseService {
 
 
     @Transactional
-    public EditLeaseView acquire(Membership member, LeaseSubject subject) {
-        fence.requireEditable(member);
+    public EditLeaseView acquire(TripFence.Editable<?> editable, LeaseSubject subject) {
+        Membership member = editable.member();
         requireSubjectBelongsTo(member.itineraryId(), subject);
         requireNoCompetingHold(member, subject);
         Instant now = clock.instant();
@@ -121,8 +118,8 @@ public class EditLeaseService {
 
 
     @Transactional
-    public EditLeaseView renew(Membership member, LeaseSubject subject) {
-        fence.requireEditable(member);
+    public EditLeaseView renew(TripFence.Editable<?> editable, LeaseSubject subject) {
+        Membership member = editable.member();
         Instant now = clock.instant();
         EditLease lease =
                 liveOrStale(subject)
@@ -189,8 +186,8 @@ public class EditLeaseService {
 
 
     @Transactional
-    public void requireHeldBy(Membership member, LeaseSubject subject) {
-        fence.requireEditable(member);
+    public void requireHeldBy(TripFence.Editable<?> editable, LeaseSubject subject) {
+        Membership member = editable.member();
         Instant now = clock.instant();
         if (subsumedBySession(member, now)) {
             return;
@@ -208,8 +205,8 @@ public class EditLeaseService {
 
 
     @Transactional
-    public void requireSessionHeldBy(Membership member) {
-        fence.requireEditable(member);
+    public void requireSessionHeldBy(TripFence.Editable<?> editable) {
+        Membership member = editable.member();
         Instant now = clock.instant();
         Optional<EditLease> session = liveSession(member.itineraryId(), now);
         if (session.isPresent() && session.get().isHeldBy(member.travelerId())) {
@@ -223,9 +220,8 @@ public class EditLeaseService {
 
 
     @Transactional
-    public void requireNoForeignSession(Membership member) {
-        fence.requireEditable(member);
-        subsumedBySession(member, clock.instant());
+    public void requireNoForeignSession(TripFence.Editable<?> editable) {
+        subsumedBySession(editable.member(), clock.instant());
     }
 
 

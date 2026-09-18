@@ -3,7 +3,10 @@ package com.largata.trip.plan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.largata.support.Proofs;
 import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
 import com.largata.trip.api.Role;
 import com.largata.support.PostgresTestBase;
 import java.math.BigDecimal;
@@ -29,6 +32,7 @@ import com.largata.trip.plan.exception.ActivityNotFoundException;
 class ActivityStorageIT extends PostgresTestBase {
 
     @Autowired private TripService itineraries;
+    @Autowired private TripFence fence;
     @Autowired private DayService days;
     @Autowired private ActivityService activities;
     @Autowired private EditLeaseService editLease;
@@ -41,7 +45,7 @@ class ActivityStorageIT extends PostgresTestBase {
 
         ActivityView created =
                 activities.create(
-                        member,
+                        editable(member),
                         dayId,
                         UnbookedActivity.fields(
                                 "Airport Transfer",
@@ -71,8 +75,8 @@ class ActivityStorageIT extends PostgresTestBase {
 
         ActivityView free =
                 activities.create(
-                        member, dayId, fields("Sunset walk", BigDecimal.ZERO, "PHP"));
-        ActivityView unstated = activities.create(member, dayId, fields("Wander", null, null));
+                        editable(member), dayId, fields("Sunset walk", BigDecimal.ZERO, "PHP"));
+        ActivityView unstated = activities.create(editable(member), dayId, fields("Wander", null, null));
 
         assertThat(free.costAmount()).isEqualByComparingTo("0");
         assertThat(free.costCurrency()).isEqualTo("PHP");
@@ -86,10 +90,10 @@ class ActivityStorageIT extends PostgresTestBase {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
         for (int i = 0; i < ActivityService.MAX_ACTIVITIES_PER_DAY; i++) {
-            activities.create(member, dayId, fields("Filler " + i, null, null));
+            activities.create(editable(member), dayId, fields("Filler " + i, null, null));
         }
 
-        assertThatThrownBy(() -> activities.create(member, dayId, fields("One too many", null, null)))
+        assertThatThrownBy(() -> activities.create(editable(member), dayId, fields("One too many", null, null)))
                 .isInstanceOf(com.largata.common.error.ValidationException.class);
     }
 
@@ -111,9 +115,9 @@ class ActivityStorageIT extends PostgresTestBase {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
 
-        ActivityView first = activities.create(member, dayId, fields("First", null, null));
-        ActivityView second = activities.create(member, dayId, fields("Second", null, null));
-        ActivityView third = activities.create(member, dayId, fields("Third", null, null));
+        ActivityView first = activities.create(editable(member), dayId, fields("First", null, null));
+        ActivityView second = activities.create(editable(member), dayId, fields("Second", null, null));
+        ActivityView third = activities.create(editable(member), dayId, fields("Third", null, null));
 
         assertThat(first.sortOrder()).isLessThan(second.sortOrder());
         assertThat(second.sortOrder()).isLessThan(third.sortOrder());
@@ -123,12 +127,12 @@ class ActivityStorageIT extends PostgresTestBase {
     void editReplacesFieldsAndRestampsAttribution() {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
-        ActivityView created = activities.create(member, dayId, fields("Draft", null, null));
-        editLease.acquire(member, LeaseSubject.activity(created.id()));
+        ActivityView created = activities.create(editable(member), dayId, fields("Draft", null, null));
+        editLease.acquire(editable(member), LeaseSubject.activity(created.id()));
 
         ActivityView edited =
                 activities.edit(
-                        member,
+                        editable(member),
                         dayId,
                         created.id(),
                         UnbookedActivity.fields("Final", LocalTime.of(9, 30), null, null, "Beach", null, null, null));
@@ -143,10 +147,10 @@ class ActivityStorageIT extends PostgresTestBase {
     void deleteRemovesTheActivity() {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
-        ActivityView created = activities.create(member, dayId, fields("Doomed", null, null));
-        editLease.acquire(member, LeaseSubject.activity(created.id()));
+        ActivityView created = activities.create(editable(member), dayId, fields("Doomed", null, null));
+        editLease.acquire(editable(member), LeaseSubject.activity(created.id()));
 
-        activities.delete(member, dayId, created.id());
+        activities.delete(editable(member), dayId, created.id());
 
         assertThat(jdbc.queryForObject("SELECT count(*) FROM activity WHERE id = ?", Integer.class, created.id()))
                 .isEqualTo(0);
@@ -156,10 +160,10 @@ class ActivityStorageIT extends PostgresTestBase {
     void anActivityOfAnotherDayIsNotFound() {
         Membership member = tripWithOneDay();
         UUID dayA = firstDayId(member.itineraryId());
-        DayView dayB = days.appendDay(member, "Day B");
-        ActivityView onB = activities.create(member, dayB.id(), fields("On B", null, null));
+        DayView dayB = days.appendDay(editableOwner(member), "Day B");
+        ActivityView onB = activities.create(editable(member), dayB.id(), fields("On B", null, null));
 
-        assertThatThrownBy(() -> activities.edit(member, dayA, onB.id(), fields("x", null, null)))
+        assertThatThrownBy(() -> activities.edit(editable(member), dayA, onB.id(), fields("x", null, null)))
                 .isInstanceOf(ActivityNotFoundException.class);
     }
 
@@ -167,10 +171,10 @@ class ActivityStorageIT extends PostgresTestBase {
     void deletingADayCascadesItsActivities() {
         Membership member = tripWithOneDay();
         UUID dayId = firstDayId(member.itineraryId());
-        activities.create(member, dayId, fields("Gone with the day", null, null));
-        editLease.acquire(member, LeaseSubject.day(dayId));
+        activities.create(editable(member), dayId, fields("Gone with the day", null, null));
+        editLease.acquire(editable(member), LeaseSubject.day(dayId));
 
-        days.deleteDay(member, dayId);
+        days.deleteDay(editableOwner(member), dayId);
 
         assertThat(jdbc.queryForObject("SELECT count(*) FROM activity WHERE day_id = ?", Integer.class, dayId))
                 .as("V7's ON DELETE CASCADE takes the activities with the day")
@@ -190,5 +194,17 @@ class ActivityStorageIT extends PostgresTestBase {
     private UUID firstDayId(UUID itineraryId) {
         return jdbc.queryForObject(
                 "SELECT id FROM day WHERE itinerary_id = ? AND ordinal = 1", UUID.class, itineraryId);
+    }
+
+    private Proofs proofs() {
+        return new Proofs(fence);
+    }
+
+    private TripFence.Editable<Membership> editable(Membership member) {
+        return proofs().editable(member);
+    }
+
+    private TripFence.Editable<Owner> editableOwner(Membership member) {
+        return proofs().editableOwner(member);
     }
 }

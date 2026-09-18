@@ -80,6 +80,7 @@ class AudienceFenceCoverageTest {
 
         for (ScannedHandler handler : scannedHandlers()) {
             if (handler.body().contains("requireInAudience")
+                    || handler.body().contains("inAudience(")
                     || OWNER_ONLY_OR_DELIBERATELY_UNFENCED.contains(handler.name())
                     || MEMBERSHIP_SCOPED_GETS_FENCED_BY_LIFECYCLE.contains(handler.qualifiedName())) {
                 continue;
@@ -90,7 +91,8 @@ class AudienceFenceCoverageTest {
         assertThat(unfenced)
                 .as(
                         "ADR-017: archived trips are owner-only sight. A workspace-scoped GET that resolves a "
-                                + "membership must call AudienceFence.requireInAudience or be named in the "
+                                + "membership must open the fence's inAudience door (or the old "
+                                + "AudienceFence.requireInAudience, which now delegates to it) or be named in the "
                                 + "exception set with a reason — S4.1 shipped this fence at two of its three "
                                 + "doors, and only a review caught the third")
                 .isEmpty();

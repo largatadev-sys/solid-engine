@@ -2,6 +2,8 @@ package com.largata.trip.destruction;
 
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.trip.exception.TripNotFoundException;
@@ -29,7 +31,10 @@ class TripDestructionController {
     @DeleteMapping("/{tripId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void destroy(@CurrentTraveler Traveler traveler, @PathVariable UUID tripId) {
-        trips.destroy(requireMember(traveler, tripId));
+        trips.destroy(
+                Owner.of(
+                        requireMember(traveler, tripId),
+                        () -> new NotTheTripOwnerException("Only the trip owner can delete this trip.")));
     }
 
 

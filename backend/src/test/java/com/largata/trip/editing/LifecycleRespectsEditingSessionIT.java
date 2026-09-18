@@ -3,7 +3,10 @@ package com.largata.trip.editing;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import com.largata.support.Proofs;
 import com.largata.trip.api.Membership;
+import com.largata.trip.api.Owner;
+import com.largata.trip.api.TripFence;
 import com.largata.trip.api.Role;
 import com.largata.support.MutableClock;
 import com.largata.support.PostgresTestBase;
@@ -39,6 +42,7 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
     private static final Duration TTL = Duration.ofMinutes(3);
 
     @Autowired private TripService itineraries;
+    @Autowired private TripFence fence;
     @Autowired private TravelerService travelers;
     @Autowired private EditLeaseService leases;
     @Autowired private MutableClock clock;
@@ -46,15 +50,24 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
 
     @FunctionalInterface
     interface LifecycleAct {
-        void run(TripService service, Membership owner);
+        void run(TripService service, Proofs proofs, Membership owner);
     }
 
 
     static Stream<Arguments> everyLifecycleAct() {
         return Stream.of(
-                Arguments.of("start", (LifecycleAct) TripService::start, 0),
-                Arguments.of("complete", (LifecycleAct) TripService::complete, 1),
-                Arguments.of("reopen", (LifecycleAct) TripService::reopen, 1));
+                Arguments.of(
+                        "start",
+                        (LifecycleAct) (service, proofs, owner) -> service.start(proofs.editableOwner(owner)),
+                        0),
+                Arguments.of(
+                        "complete",
+                        (LifecycleAct) (service, proofs, owner) -> service.complete(proofs.editableOwner(owner)),
+                        1),
+                Arguments.of(
+                        "reopen",
+                        (LifecycleAct) (service, proofs, owner) -> service.reopen(proofs.writableOwner(owner)),
+                        1));
     }
 
 
@@ -65,10 +78,10 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
         Membership owner = ownerAtRung(rungsToClimb);
         Membership member = otherMemberOf(owner);
 
-        leases.acquire(member, LeaseSubject.session(owner.itineraryId()));
+        leases.acquire(editable(member), LeaseSubject.session(owner.itineraryId()));
 
         assertThatExceptionOfType(EditLockedException.class)
-                .isThrownBy(() -> act.run(itineraries, owner));
+                .isThrownBy(() -> act.run(itineraries, proofs(), owner));
     }
 
 
@@ -78,9 +91,9 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
             String name, LifecycleAct act, int rungsToClimb) {
         Membership owner = ownerAtRung(rungsToClimb);
 
-        leases.acquire(owner, LeaseSubject.session(owner.itineraryId()));
+        leases.acquire(editable(owner), LeaseSubject.session(owner.itineraryId()));
 
-        assertThatCode(() -> act.run(itineraries, owner)).doesNotThrowAnyException();
+        assertThatCode(() -> act.run(itineraries, proofs(), owner)).doesNotThrowAnyException();
     }
 
 
@@ -90,10 +103,10 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
         Membership owner = ownerAtRung(rungsToClimb);
         Membership member = otherMemberOf(owner);
 
-        leases.acquire(member, LeaseSubject.session(owner.itineraryId()));
+        leases.acquire(editable(member), LeaseSubject.session(owner.itineraryId()));
         clock.advance(TTL.plusSeconds(1));
 
-        assertThatCode(() -> act.run(itineraries, owner)).doesNotThrowAnyException();
+        assertThatCode(() -> act.run(itineraries, proofs(), owner)).doesNotThrowAnyException();
     }
 
 
@@ -101,7 +114,7 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
     void anUnheldTripStartsExactlyAsBefore() {
         Membership owner = ownerAtRung(0);
 
-        assertThatCode(() -> itineraries.start(owner)).doesNotThrowAnyException();
+        assertThatCode(() -> itineraries.start(editableOwner(owner))).doesNotThrowAnyException();
     }
 
 
@@ -112,8 +125,8 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
         Trip trip = itineraries.create(ownerId, "Trip", "Palawan", null, null, null, 1);
         Membership owner = new Membership(ownerId, trip.id(), Role.OWNER);
 
-        if (rungs >= 1) itineraries.start(owner);
-        if (rungs >= 2) itineraries.complete(owner);
+        if (rungs >= 1) itineraries.start(editableOwner(owner));
+        if (rungs >= 2) itineraries.complete(editableOwner(owner));
         return owner;
     }
 
@@ -137,5 +150,17 @@ class LifecycleRespectsEditingSessionIT extends PostgresTestBase {
         MutableClock lifecycleSessionTestClock() {
             return new MutableClock(Instant.parse("2026-08-09T10:00:00Z"));
         }
+    }
+
+    private Proofs proofs() {
+        return new Proofs(fence);
+    }
+
+    private TripFence.Editable<Membership> editable(Membership member) {
+        return proofs().editable(member);
+    }
+
+    private TripFence.Editable<Owner> editableOwner(Membership member) {
+        return proofs().editableOwner(member);
     }
 }

@@ -1,7 +1,7 @@
 package com.largata.trip.dump;
 
 import com.largata.common.api.Page;
-import com.largata.trip.api.AudienceFence;
+import com.largata.trip.api.TripFence;
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
 import com.largata.identity.Traveler;
@@ -29,12 +29,12 @@ class PhotoDumpController {
 
     private final PhotoDumpService dump;
     private final AuthorizationGuard guard;
-    private final AudienceFence audience;
+    private final TripFence fence;
 
-    PhotoDumpController(PhotoDumpService dump, AuthorizationGuard guard, AudienceFence audience) {
+    PhotoDumpController(PhotoDumpService dump, AuthorizationGuard guard, TripFence fence) {
         this.dump = dump;
         this.guard = guard;
-        this.audience = audience;
+        this.fence = fence;
     }
 
 
@@ -46,7 +46,7 @@ class PhotoDumpController {
             @RequestPart("photo") MultipartFile photo)
             throws IOException {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return PhotoDumpEntryResponse.of(dump.add(member, photo.getBytes()));
+        return PhotoDumpEntryResponse.of(dump.add(fence.writable(member), photo.getBytes()));
     }
 
 
@@ -57,7 +57,7 @@ class PhotoDumpController {
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        return dump.list(audience.requireInAudience(member), cursor, limit)
+        return dump.list(fence.inAudience(member), cursor, limit)
                 .map(PhotoDumpEntryResponse::of);
     }
 
@@ -69,6 +69,6 @@ class PhotoDumpController {
             @PathVariable UUID itineraryId,
             @PathVariable UUID photoId) {
         Membership member = guard.requireMember(traveler.id(), itineraryId);
-        dump.remove(member, photoId);
+        dump.remove(fence.writable(member), photoId);
     }
 }

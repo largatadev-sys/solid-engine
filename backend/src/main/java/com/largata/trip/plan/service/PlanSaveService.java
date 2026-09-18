@@ -3,7 +3,7 @@ package com.largata.trip.plan.service;
 import com.largata.common.analytics.Analytics;
 import com.largata.common.analytics.AnalyticsEvent;
 import com.largata.trip.api.Membership;
-import com.largata.trip.api.WriteFence;
+import com.largata.trip.api.TripFence;
 import com.largata.common.tx.AfterCommit;
 import com.largata.trip.plan.dto.SavePlanRequest;
 import com.largata.trip.api.PlanSaved;
@@ -54,7 +54,6 @@ public class PlanSaveService {
     private final EditLeaseService editLease;
     private final ActivityHistoryService history;
     private final PlanVersionService planVersion;
-    private final WriteFence fence;
     private final Analytics analytics;
     private final ApplicationEventPublisher events;
     private final Clock clock;
@@ -68,7 +67,6 @@ public class PlanSaveService {
             EditLeaseService editLease,
             ActivityHistoryService history,
             PlanVersionService planVersion,
-            WriteFence fence,
             Analytics analytics,
             ApplicationEventPublisher events,
             Clock clock) {
@@ -78,7 +76,6 @@ public class PlanSaveService {
         this.editLease = editLease;
         this.history = history;
         this.planVersion = planVersion;
-        this.fence = fence;
         this.analytics = analytics;
         this.events = events;
         this.clock = clock;
@@ -86,9 +83,9 @@ public class PlanSaveService {
 
 
     @Transactional
-    public long save(Membership member, SavePlanRequest request) {
-        fence.requireEditable(member);
-        editLease.requireSessionHeldBy(member);
+    public long save(TripFence.Editable<?> editable, SavePlanRequest request) {
+        Membership member = editable.member();
+        editLease.requireSessionHeldBy(editable);
 
         UUID itineraryId = member.itineraryId();
         long committed = planVersion.currentVersion(itineraryId);
