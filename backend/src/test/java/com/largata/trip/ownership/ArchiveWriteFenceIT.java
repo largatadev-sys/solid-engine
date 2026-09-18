@@ -43,7 +43,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
 
     @Test
-    void everyActOnAnArchivedTripIsRefused() {
+    void everyActOnADeletedTripAnswersTheOwnerItDoesNotExist() {
         Trip trip = liveTripWithTwoMembers();
         UUID dayId = firstDayOf(trip.id);
         UUID activityId = createActivity(trip.owner, trip.id, dayId);
@@ -51,26 +51,26 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
 
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        refused(patch(trip.owner, "/v1/trips/" + trip.id, VALID_ITINERARY_PATCH));
-        refused(post(trip.owner, "/v1/trips/" + trip.id + "/days", """
+        masked(patch(trip.owner, "/v1/trips/" + trip.id, VALID_ITINERARY_PATCH));
+        masked(post(trip.owner, "/v1/trips/" + trip.id + "/days", """
                 {"title":"A new day"}
                 """));
-        refused(patch(trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId, """
+        masked(patch(trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId, """
                 {"title":"Renamed day"}
                 """));
-        refused(delete(trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId));
-        refused(post(trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId + "/activities", """
+        masked(delete(trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId));
+        masked(post(trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId + "/activities", """
                 {"title":"A new activity"}
                 """));
-        refused(patch(
+        masked(patch(
                 trip.owner,
                 "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId,
                 """
                 {"title":"Renamed activity"}
                 """));
-        refused(delete(
+        masked(delete(
                 trip.owner, "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId));
-        refused(put(
+        masked(put(
                 trip.owner,
                 "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/order",
                 "{\"expectedActivityIds\":[\""
@@ -78,34 +78,34 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
                         + "\"],\"activityIds\":[\""
                         + activityId
                         + "\"]}"));
-        refused(post(
+        masked(post(
                 trip.owner,
                 "/v1/trips/" + trip.id + "/days/" + dayId + "/activities/" + activityId + "/move",
                 "{\"targetDayId\":\"" + dayId + "\"}"));
 
-        refused(post(trip.owner, "/v1/trips/" + trip.id + "/start", null));
-        refused(post(trip.owner, "/v1/trips/" + trip.id + "/complete", null));
+        masked(post(trip.owner, "/v1/trips/" + trip.id + "/start", null));
+        masked(post(trip.owner, "/v1/trips/" + trip.id + "/complete", null));
 
-        refused(post(trip.owner, "/v1/trips/" + trip.id + "/edit-lock", null));
-        refused(post(trip.owner, "/v1/trips/" + trip.id + "/edit-lock/renew", null));
+        masked(post(trip.owner, "/v1/trips/" + trip.id + "/edit-lock", null));
+        masked(post(trip.owner, "/v1/trips/" + trip.id + "/edit-lock/renew", null));
 
-        refused(post(trip.owner, "/v1/trips/" + trip.id + "/invitations", """
+        masked(post(trip.owner, "/v1/trips/" + trip.id + "/invitations", """
                 {"email":"someone@example.com"}
                 """));
-        refused(post(trip.owner, "/v1/invitations/" + trip.pendingInvitationId + "/revoke", null));
-        refused(post(
+        masked(post(trip.owner, "/v1/invitations/" + trip.pendingInvitationId + "/revoke", null));
+        masked(post(
                 trip.owner,
                 "/v1/trips/" + trip.id + "/ownership-offer",
                 "{\"travelerId\":\"" + trip.memberId + "\"}"));
-        refused(delete(trip.owner, "/v1/trips/" + trip.id + "/ownership-offer"));
+        masked(delete(trip.owner, "/v1/trips/" + trip.id + "/ownership-offer"));
 
-        refused(delete(trip.owner, "/v1/trips/" + trip.id + "/members/" + trip.memberId));
+        masked(delete(trip.owner, "/v1/trips/" + trip.id + "/members/" + trip.memberId));
     }
 
 
 
     @Test
-    void anArchivedTripTellsAMemberItDoesNotExist_notThatItIsFrozen() {
+    void aDeletedTripTellsAMemberItDoesNotExist_theSameAnswerItsOwnerGets() {
         Trip trip = liveTripWithTwoMembers();
         UUID dayId = firstDayOf(trip.id);
         archive(trip.owner, trip.id).expectStatus().isOk();
@@ -167,7 +167,7 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
         Trip trip = liveTripWithTwoMembers();
         archive(trip.owner, trip.id).expectStatus().isOk();
 
-        refused(post(trip.owner, "/v1/trips/" + trip.id + "/edit-lock", null));
+        masked(post(trip.owner, "/v1/trips/" + trip.id + "/edit-lock", null));
         delete(trip.owner, "/v1/trips/" + trip.id + "/edit-lock").expectStatus().isNoContent();
     }
 
@@ -275,10 +275,6 @@ class ArchiveWriteFenceIT extends PostgresTestBase {
     }
 
 
-
-    private void refused(RestTestClient.ResponseSpec response) {
-        response.expectStatus().isEqualTo(409).expectBody().jsonPath("$.code").isEqualTo("TRIP_ARCHIVED");
-    }
 
     private void masked(RestTestClient.ResponseSpec response) {
         response.expectStatus().isNotFound().expectBody().jsonPath("$.code").isEqualTo("ITINERARY_NOT_FOUND");

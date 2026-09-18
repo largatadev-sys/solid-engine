@@ -266,7 +266,7 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
 
 
     @Test
-    void anArchivedTripRefusesUploadAndDeleteWhileTheOwnerStillReadsThePool() throws IOException {
+    void aDeletedTripHidesItsPhotoPoolFromEverybody_theOwnerIncluded() throws IOException {
         Fixture trip = tripWithAMember();
         DumpPhoto photo = upload(trip.owner(), trip);
         archive(trip);
@@ -278,18 +278,21 @@ class PhotoDumpContractIT extends ObjectStoreTestBase {
                 .body(multipart(photo()))
                 .exchange()
                 .expectStatus()
-                .isEqualTo(409);
+                .isNotFound();
 
         rest.delete()
                 .uri(dumpUri(trip) + "/" + photo.id())
                 .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
                 .exchange()
                 .expectStatus()
-                .isEqualTo(409);
+                .isNotFound();
 
-        assertThat(idsIn(listAs(trip.owner(), trip)))
-                .as("archive narrows the audience to the owner — it does not hide the pool from them")
-                .containsExactly(photo.id());
+        rest.get()
+                .uri(dumpUri(trip))
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .exchange()
+                .expectStatus()
+                .isNotFound();
     }
 
 

@@ -41,12 +41,6 @@ public interface MembershipRepository extends JpaRepository<Membership, Membersh
 
 
 
-    @Query("SELECT m.workspace.itineraryId FROM Membership m WHERE m.travelerId = :travelerId "
-            + "AND (m.workspace.state <> :state OR m.role = com.largata.trip.api.Role.OWNER)")
-    List<UUID> findItineraryIdsInSightOf(
-            @Param("travelerId") UUID travelerId, @Param("state") WorkspaceState state);
-
-
 
     @Query("SELECT m.travelerId FROM Membership m WHERE m.workspace.itineraryId = :itineraryId "
             + "AND m.role = com.largata.trip.api.Role.OWNER")

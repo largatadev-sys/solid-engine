@@ -274,18 +274,20 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
 
     @Test
-    void anArchivedTripRefusesNewPostsWhileItsEntriesStayReadable() throws IOException {
+    void aDeletedTripIsNotFoundThroughItsOwnDiaryRoot_forTheOwnerToo() throws IOException {
         Fixture trip = startedTrip();
         Entry posted = post(trip.owner(), trip, trip.activityId(), "before the archive", List.of(), 1);
         UUID secondActivity = rig.addActivity(trip.owner(), trip.tripId(), rig.dayAt(trip.tripId(), 1), "Later");
         archive(trip);
 
-        postExpecting(trip.owner(), trip, secondActivity, 409, List.of(), 1);
+        postExpecting(trip.owner(), trip, secondActivity, 404, List.of(), 1);
 
-        assertThat(captionsOf(mine(trip.owner(), trip)))
-                .as("the fence stops writes; a memory already posted stays readable")
-                .containsExactly("before the archive");
-        assertThat(bytesOf("/v1/media/" + idsOf(posted).getFirst(), trip.owner())).isNotEmpty();
+        assertThat(bytesOf("/v1/media/" + idsOf(posted).getFirst(), trip.owner()))
+                .as("the PHOTOS of a posted memory stay served — the record survives the trip, and"
+                        + " TW-2 ticket 05 gives the entries themselves a route that is not the"
+                        + " trip’s. What 404s here is the trip-rooted door, which is correct: it"
+                        + " asks about a trip that has been deleted")
+                .isNotEmpty();
     }
 
 
@@ -395,7 +397,7 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
 
     @Test
-    void anArchivedTripRefusesEveryEntryWriteWhileTheAuthorStillReads() throws IOException {
+    void everyTripRootedEntryWriteOnADeletedTripIsNotFound() throws IOException {
         Fixture trip = startedTrip();
         Entry posted = post(trip.owner(), trip, trip.activityId(), "kept", List.of(), 2);
         archive(trip);
@@ -406,20 +408,18 @@ class DiaryContractIT extends ObjectStoreTestBase {
                         trip.owner(),
                         "{\"caption\":\"after the fence\"}")
                 .expectStatus()
-                .isEqualTo(409);
-        addDevicePhotoExpecting(trip.owner(), trip, posted.id(), 409);
+                .isNotFound();
+        addDevicePhotoExpecting(trip.owner(), trip, posted.id(), 404);
         rig.send(
                         HttpMethod.DELETE,
                         diaryUri(trip) + "/" + posted.id() + "/photos/" + idsOf(posted).getFirst(),
                         trip.owner(),
                         null)
                 .expectStatus()
-                .isEqualTo(409);
+                .isNotFound();
         rig.send(HttpMethod.DELETE, diaryUri(trip) + "/" + posted.id(), trip.owner(), null)
                 .expectStatus()
-                .isEqualTo(409);
-
-        assertThat(only(mine(trip.owner(), trip)).caption()).isEqualTo("kept");
+                .isNotFound();
     }
 
 
@@ -476,13 +476,17 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
 
     @Test
-    void anArchivedTripsEntriesStillAppearInMyDiary() throws IOException {
+    void aDeletedTripsDiaryIsNotReachableThroughTheTripItself() throws IOException {
         Fixture trip = startedTrip();
-        post(trip.owner(), trip, trip.activityId(), "kept after archiving", List.of(), 1);
+        post(trip.owner(), trip, trip.activityId(), "kept after deleting", List.of(), 1);
         archive(trip);
 
-        assertThat(myTrips(trip.owner(), "")).hasSize(1);
-        assertThat(captionsOf(mine(trip.owner(), trip))).containsExactly("kept after archiving");
+        rest.get()
+                .uri(diaryUri(trip))
+                .header(HttpHeaders.AUTHORIZATION, bearer(trip.owner()))
+                .exchange()
+                .expectStatus()
+                .isNotFound();
     }
 
 
@@ -497,8 +501,8 @@ class DiaryContractIT extends ObjectStoreTestBase {
                 .as("a member's archived trip is masked at the per-trip door, so it cannot be listed here")
                 .doesNotContain(archived.tripId());
         assertThat(tripIdsIn(myTrips(archived.owner(), "")))
-                .as("the owner legitimately still sees their own archived trip")
-                .contains(archived.tripId());
+                .as("ADR-040 supersedes S4.23 here: the owner deleted it, so it is gone for them too")
+                .doesNotContain(archived.tripId());
 
         Fixture departed = startedTrip();
         post(departed.member(), departed, departed.activityId(), "before leaving", List.of(), 1);
@@ -524,9 +528,11 @@ class DiaryContractIT extends ObjectStoreTestBase {
         post(owner, live, live.activityId(), "a live trip", List.of(), 1);
         Fixture second = startedTrip(owner);
         post(owner, second, second.activityId(), "another live trip", List.of(), 1);
-        Fixture archived = startedTrip(owner);
-        post(owner, archived, archived.activityId(), "an archived trip", List.of(), 1);
-        archive(archived);
+        Fixture third = startedTrip(owner);
+        post(owner, third, third.activityId(), "a third live trip", List.of(), 1);
+        Fixture deleted = startedTrip(owner);
+        post(owner, deleted, deleted.activityId(), "a deleted trip", List.of(), 1);
+        archive(deleted);
 
         TripPage first = myTripsPage(owner, "?limit=2");
         assertThat(first.items()).hasSize(2);
@@ -534,8 +540,9 @@ class DiaryContractIT extends ObjectStoreTestBase {
 
         TripPage next = myTripsPage(owner, "?limit=2&cursor=" + first.nextCursor());
         assertThat(tripIdsIn(concat(first.items(), next.items())))
-                .as("paging over mixed live and archived data reaches every openable trip exactly once")
-                .containsExactlyInAnyOrder(live.tripId(), second.tripId(), archived.tripId());
+                .as("paging past the fence predicate reaches every openable trip exactly once, and a"
+                        + " deleted one is not openable by anybody now — its owner included (ADR-040)")
+                .containsExactlyInAnyOrder(live.tripId(), second.tripId(), third.tripId());
         assertThat(next.nextCursor()).as("the last page is exhausted").isNull();
     }
 

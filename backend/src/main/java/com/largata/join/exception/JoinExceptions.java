@@ -38,21 +38,6 @@ public final class JoinExceptions {
     }
 
 
-    public static final class NotTripOwnerException extends ForbiddenException {
-        private NotTripOwnerException(String message) {
-            super("NOT_PERMITTED", message);
-        }
-
-        public static NotTripOwnerException toReadTheQueue() {
-            return new NotTripOwnerException("Only the trip owner can see who has asked to join.");
-        }
-
-        public static NotTripOwnerException toAnswerARequest() {
-            return new NotTripOwnerException("Only the trip owner can approve or decline a request to join.");
-        }
-    }
-
-
     public static final class JoinRequestNotFoundException extends NotFoundException {
         public JoinRequestNotFoundException() {
             super("JOIN_REQUEST_NOT_FOUND", "No such request to join.");

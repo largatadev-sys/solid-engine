@@ -286,8 +286,8 @@ test('an archived trip freezes poll writes for the owner and hides the board fro
     options: ['A', 'B'],
     closesAt: inADay(),
   });
-  expect(ownerWrites.status).toBe(409);
-  expect(ownerWrites.body?.code).toBe('TRIP_ARCHIVED');
+  expect(ownerWrites.status).toBe(404);
+  expect(ownerWrites.body?.code).toBe('ITINERARY_NOT_FOUND');
 
   const strangerReads = await api(`/v1/trips/${archivedTrip}/polls`, 'GET', member);
   expect(strangerReads.status).toBe(404);

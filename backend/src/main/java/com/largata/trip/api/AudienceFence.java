@@ -1,23 +1,20 @@
 package com.largata.trip.api;
 
-import com.largata.trip.exception.ItineraryNotFoundException;
 import org.springframework.stereotype.Component;
 
 
 @Component
 public class AudienceFence {
 
-    private final ArchiveState archive;
+    private final TripFence fence;
 
-    public AudienceFence(ArchiveState archive) {
-        this.archive = archive;
+    public AudienceFence(TripFence fence) {
+        this.fence = fence;
     }
 
 
     public InAudience requireInAudience(Membership member) {
-        if (!member.isOwner() && archive.isArchived(member.itineraryId())) {
-            throw new ItineraryNotFoundException();
-        }
+        fence.inAudience(member);
         return new InAudience(member);
     }
 }

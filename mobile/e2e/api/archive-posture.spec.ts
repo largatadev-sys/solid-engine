@@ -51,10 +51,7 @@ const masked = (response: { status: number; body: any }): void => {
   expect(response.body?.code).toBe('ITINERARY_NOT_FOUND');
 };
 
-const archivedRefusal = (response: { status: number; body: any }): void => {
-  expect(response.status).toBe(409);
-  expect(response.body?.code).toBe('TRIP_ARCHIVED');
-};
+
 
 test.beforeAll(async () => {
   owner = await tokenFor(OWNER);
@@ -119,8 +116,8 @@ test('AC 5: the member diary list no longer offers the archived trip — the dea
   expect(await listsTrip(member)).toBe(false);
 });
 
-test('AC 5: the owner diary list still holds it — they legitimately still see it', async () => {
-  expect(await listsTrip(owner)).toBe(true);
+test('ADR-040: the OWNER diary list drops it too — delete means deleted for everyone', async () => {
+  expect(await listsTrip(owner)).toBe(false);
 });
 
 test('AC 1/2: a day write answers the member with the not-found mask', async () => {
@@ -159,20 +156,16 @@ test('AC 1/2: offering ownership — likewise a 403 on a live trip — is masked
   );
 });
 
-test('AC 3: a day write still answers 409 TRIP_ARCHIVED for the owner', async () => {
-  archivedRefusal(
-    await api(`/v1/trips/${trip}/days`, 'POST', owner, { title: 'While frozen' }),
-  );
+test('ADR-040: a day write answers the OWNER with the same not-found mask', async () => {
+  masked(await api(`/v1/trips/${trip}/days`, 'POST', owner, { title: 'While frozen' }));
 });
 
-test('AC 3: acquiring the editing session still answers 409 TRIP_ARCHIVED for the owner', async () => {
-  archivedRefusal(await api(`/v1/trips/${trip}/edit-lock`, 'POST', owner));
+test('ADR-040: acquiring the editing session answers the OWNER with the mask', async () => {
+  masked(await api(`/v1/trips/${trip}/edit-lock`, 'POST', owner));
 });
 
-test('AC 3: issuing an invitation still answers 409 TRIP_ARCHIVED for the owner', async () => {
-  archivedRefusal(
-    await api(`/v1/trips/${trip}/invitations`, 'POST', owner, { email: 'x@example.com' }),
-  );
+test('ADR-040: issuing an invitation answers the OWNER with the mask', async () => {
+  masked(await api(`/v1/trips/${trip}/invitations`, 'POST', owner, { email: 'x@example.com' }));
 });
 
 test('AC 4: the member can still leave a trip archived under them', async () => {

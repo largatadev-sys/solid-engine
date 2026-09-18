@@ -197,7 +197,7 @@ public class WorkspaceService implements MembershipApi {
 
     @Transactional(readOnly = true)
     public List<UUID> tripIdsInSightOf(UUID travelerId) {
-        return memberships.findItineraryIdsInSightOf(travelerId, WorkspaceState.ARCHIVED);
+        return memberships.findItineraryIdsNotIn(travelerId, WorkspaceState.ARCHIVED);
     }
 
 

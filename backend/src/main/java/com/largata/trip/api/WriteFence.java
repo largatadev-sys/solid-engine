@@ -1,9 +1,5 @@
 package com.largata.trip.api;
 
-import com.largata.trip.exception.ItineraryNotFoundException;
-import com.largata.trip.exception.ItineraryPublishedException;
-import com.largata.trip.exception.MembershipFrozenException;
-import com.largata.trip.exception.TripArchivedException;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
@@ -11,43 +7,29 @@ import org.springframework.stereotype.Component;
 @Component
 public class WriteFence {
 
-    private final ArchiveState archive;
-    private final PublicationState publication;
+    private final TripFence fence;
 
-    public WriteFence(ArchiveState archive, PublicationState publication) {
-        this.archive = archive;
-        this.publication = publication;
+    public WriteFence(TripFence fence) {
+        this.fence = fence;
     }
 
 
     public void requireWritable(Membership member) {
-        if (!archive.isArchived(member.itineraryId())) {
-            return;
-        }
-        if (member.isOwner()) {
-            throw new TripArchivedException();
-        }
-        throw new ItineraryNotFoundException();
+        fence.writable(member);
     }
 
 
     public void requireEditable(Membership member) {
-        requireWritable(member);
-        if (publication.isPublished(member.itineraryId())) {
-            throw new ItineraryPublishedException();
-        }
+        fence.editable(member);
     }
 
 
     public void requireMembershipMutable(Membership member) {
-        requireWritable(member);
-        requireMembershipUnfrozen(member.itineraryId());
+        fence.membershipMutable(member);
     }
 
 
     public void requireMembershipUnfrozen(UUID itineraryId) {
-        if (publication.isPublished(itineraryId)) {
-            throw new MembershipFrozenException();
-        }
+        fence.unfrozen(itineraryId);
     }
 }

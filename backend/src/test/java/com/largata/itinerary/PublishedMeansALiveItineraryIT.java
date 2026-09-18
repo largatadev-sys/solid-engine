@@ -174,10 +174,10 @@ class PublishedMeansALiveItineraryIT extends PostgresTestBase {
                     .header(HttpHeaders.AUTHORIZATION, TripRig.bearer(owner))
                     .exchange()
                     .expectStatus()
-                    .isEqualTo(409)
+                    .isNotFound()
                     .expectBody()
                     .jsonPath("$.code")
-                    .isEqualTo("TRIP_ARCHIVED");
+                    .isEqualTo("ITINERARY_NOT_FOUND");
         }
     }
 

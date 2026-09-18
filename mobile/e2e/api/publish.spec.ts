@@ -339,15 +339,15 @@ test.describe('the archive fence', () => {
     expect((archivedMemberList.body?.items ?? []).some((row: { id: string }) => row.id === trip)).toBe(false);
   });
 
-  test('archived retains the owner’s access', () => {
-    expect(archivedOwner.status).toBe(200);
+  test('a deleted trip is not found for its owner either (ADR-040)', () => {
+    expect(archivedOwner.status).toBe(404);
   });
 
-  test('the fence rejects publish and unpublish', () => {
-    expect(fencedUnpublish.status).toBe(409);
-    expect(fencedUnpublish.body.code).toBe('TRIP_ARCHIVED');
-    expect(fencedPublish.status).toBe(409);
-    expect(fencedPublish.body.code).toBe('TRIP_ARCHIVED');
+  test('the fence answers publish and unpublish with the mask', () => {
+    expect(fencedUnpublish.status).toBe(404);
+    expect(fencedUnpublish.body.code).toBe('ITINERARY_NOT_FOUND');
+    expect(fencedPublish.status).toBe(404);
+    expect(fencedPublish.body.code).toBe('ITINERARY_NOT_FOUND');
   });
 });
 

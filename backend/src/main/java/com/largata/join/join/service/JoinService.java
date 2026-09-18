@@ -15,7 +15,7 @@ import com.largata.join.exception.JoinExceptions.EmailNotVerifiedException;
 import com.largata.join.exception.JoinExceptions.JoinRequestNotFoundException;
 import com.largata.join.exception.JoinExceptions.JoinRequestNotPendingException;
 import com.largata.join.exception.JoinExceptions.LinkClosedException;
-import com.largata.join.exception.JoinExceptions.NotTripOwnerException;
+import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.join.exception.JoinExceptions.UnknownJoinTokenException;
 import com.largata.join.join.adapter.JoinQueueTopic;
 import com.largata.join.join.entity.JoinLink;
@@ -238,7 +238,7 @@ public class JoinService {
     @Transactional(readOnly = true)
     public List<PendingJoinRequest> queueFor(Membership owner) {
         if (!owner.isOwner()) {
-            throw NotTripOwnerException.toReadTheQueue();
+            throw NotTheTripOwnerException.toReadTheJoinQueue();
         }
         List<JoinRequest> rows =
                 requests.findByWorkspaceIdAndStatusOrderByCreatedAtAsc(
@@ -384,7 +384,7 @@ public class JoinService {
     private JoinRequest answerable(Membership owner, UUID requestId) {
         fence.requireMembershipMutable(owner);
         if (!owner.isOwner()) {
-            throw NotTripOwnerException.toAnswerARequest();
+            throw NotTheTripOwnerException.toAnswerAJoinRequest();
         }
         JoinRequest asked = requests.findById(requestId).orElseThrow(JoinRequestNotFoundException::new);
         if (!asked.workspaceId().equals(workspaceIdOf(owner.itineraryId()))) {

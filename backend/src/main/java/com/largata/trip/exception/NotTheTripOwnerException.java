@@ -34,4 +34,15 @@ public final class NotTheTripOwnerException extends ForbiddenException {
     public static NotTheTripOwnerException toRevokeAnOffer() {
         return new NotTheTripOwnerException("Only the trip owner can revoke an ownership offer.");
     }
+
+
+    public static NotTheTripOwnerException toReadTheJoinQueue() {
+        return new NotTheTripOwnerException("Only the trip owner can see who has asked to join.");
+    }
+
+
+    public static NotTheTripOwnerException toAnswerAJoinRequest() {
+        return new NotTheTripOwnerException(
+                "Only the trip owner can approve or decline a request to join.");
+    }
 }
