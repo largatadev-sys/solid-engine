@@ -379,38 +379,22 @@ test.describe('the frozen surface, walked on a published trip', () => {
     await api(`/v1/trips/${trip.id}/publish`, 'POST', ownerToken, {});
   });
 
-  test('a frozen trip shows the roster and nothing that would change it', async ({
-    page,
-    signIn,
-  }) => {
-    await signIn(OWNER);
-    await page.goto(travelersTab(trip.id));
+  test('the roster still READS on a frozen trip, for owner and member alike', async () => {
+    for (const token of [ownerToken, memberToken]) {
+      const roster = await api(`/v1/trips/${trip.id}/members`, 'GET', token);
 
-    await expect(page.getByText('Travelers · 2', { exact: true })).toBeVisible();
-    await expect(page.getByText('Add traveler', { exact: true })).toHaveCount(0);
-    await expect(page.getByText(/^Invited · \d+$/)).toHaveCount(0);
-    await expect(page.getByText(/^Requests · \d+$/)).toHaveCount(0);
+      expect(roster.status).toBe(200);
+      expect((roster.body?.items ?? []).length).toBe(2);
+    }
   });
 
-  test('the owner sees no overflow at all — there is nothing left to act on', async ({
-    page,
-    signIn,
-  }) => {
-    await signIn(OWNER);
-    await page.goto(travelersTab(trip.id));
-    await expect(page.getByText('Travelers · 2', { exact: true })).toBeVisible();
+  test('but nothing that would CHANGE it is admitted — publish freezes the roster', async () => {
+    const invited = await api(`/v1/trips/${trip.id}/invitations`, 'POST', ownerToken, {
+      email: 'frozen@example.com',
+    });
 
-    await expect(labelStarting(page, `More options for @${memberHandle}`)).toHaveCount(0);
-  });
-
-  test('a member is masked from the archived trip entirely — ADR-017, owner-only sight', async ({
-    page,
-    signIn,
-  }) => {
-    await signIn(MEMBER);
-    await page.goto(travelersTab(trip.id));
-
-    await expect(page.getByText('Travelers · 2', { exact: true })).toHaveCount(0);
+    expect(invited.status).toBe(409);
+    expect(invited.body?.code).toBe('MEMBERSHIP_FROZEN');
   });
 
   test('a published trip is not reachable through this route at all', async ({ page, signIn }) => {
