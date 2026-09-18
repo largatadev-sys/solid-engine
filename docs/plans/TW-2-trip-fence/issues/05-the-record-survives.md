@@ -6,7 +6,7 @@
 
 **Status:** done
 
-- [x] After a trip is archived, its postcards are listed on Home and its diary sections on the profile — for the author, a member and a stranger alike — and the api-project `archive-posture.spec.ts` needed **no** amendment here: its `listsTrip` helper reads `/v1/me/diary/trips`, which is the traveler's own membership-gated list and correctly still excludes a deleted trip (ticket 03 took the owner exception out of that query). What survives is the PUBLIC profile diary and the feed, which  and  cover
+- [x] After a trip is archived, its postcards are listed on Home and its diary sections on the profile — for the author, a member and a stranger alike — and the api-project `archive-posture.spec.ts` needed **no** amendment here: its `listsTrip` helper reads `/v1/me/diary/trips`, which is the traveler's own membership-gated list and correctly still excludes a deleted trip (ticket 03 took the owner exception out of that query). What survives is the PUBLIC profile diary and the feed, which the public-profile and feed ITs cover
 - [x] The author's recaption, place, add-photo, remove-photo and delete on a postcard whose source trip is archived succeed; the freeze that refused them is deleted with no replacement; an IT covers each act
 - [x] Creating a postcard through the trip-rooted route on an archived trip answers `ITINERARY_NOT_FOUND`; creating one through the diary-rooted route succeeds; both covered by IT
 - [x] The published page of an archived trip answers not-found to its owner as well; Discover's list and count, the profile's itineraries tab and counts, and the join teaser's closed answer behave as today; a postcard card whose source trip is archived carries no itinerary link — each covered at the HTTP seam
