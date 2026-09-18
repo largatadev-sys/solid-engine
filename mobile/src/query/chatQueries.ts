@@ -58,7 +58,7 @@ export function nextCursorOf(page: Page<ChatMessageResponse>): string | undefine
 }
 
 
-export function useChatDelivery(itineraryId: string, enabled: boolean): void {
+export function useChatDelivery(itineraryId: string): void {
   const client = useQueryClient();
 
   const absorb = useCallback(
@@ -75,7 +75,7 @@ export function useChatDelivery(itineraryId: string, enabled: boolean): void {
   }, [client, itineraryId]);
 
   useTopicSubscription(
-    enabled ? chatTopicFor(itineraryId) : null,
+    chatTopicFor(itineraryId),
     (frame) => {
       if (frame.type !== CHAT_MESSAGE_APPENDED) return;
       const message = asChatMessage(frame.payload);

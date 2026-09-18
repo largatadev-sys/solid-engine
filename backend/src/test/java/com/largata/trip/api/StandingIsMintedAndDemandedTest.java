@@ -28,6 +28,12 @@ class StandingIsMintedAndDemandedTest {
             Pattern.compile("public [A-Za-z<>,.? \\[\\]]+ ([a-zA-Z]+)\\((Membership|Owner) ");
 
 
+    private static final Pattern A_READ = Pattern.compile("@Transactional\\(readOnly = true\\)");
+
+
+    private static final int BARE_STANDING_WRITES_AT_CLOSE = 7;
+
+
     private static final int BARE_STANDING_METHODS_AT_CLOSE = 15;
 
 
@@ -48,18 +54,34 @@ class StandingIsMintedAndDemandedTest {
 
 
     @Test
-    void theBareStandingListIsARatchetRatherThanASet() throws IOException {
-        List<String> bare = bareStandingMethods();
+    void theBareStandingWritesAreTheOnesTheSpecNames() throws IOException {
+        List<String> writes = bareStandingMethods(false);
 
-        assertThat(bare)
-                .as("a ratchet: %s service method(s) take a standing with no state proof beside it."
-                        + " Each is deliberate — archive, unarchive and destroy must reach a CLOSED"
-                        + " room; self-leave is S1.9's rule; the rest are reads and internal helpers"
-                        + " that no door governs. The list is printed rather than held as a set, so"
-                        + " adding one is visible in the failure and removing one just makes the"
-                        + " number smaller. It must never grow.%n%s",
-                        bare.size(),
-                        String.join(System.lineSeparator(), bare))
+        assertThat(writes)
+                .as("the ratchet that matters: %s service method(s) WRITE while taking a standing with"
+                        + " no state proof beside it. Decision 9 names four — archive, unarchive and"
+                        + " destroy must reach a CLOSED room, and self-leave is S1.9's rule — and the"
+                        + " other three are internal writes reached only from inside an act that"
+                        + " already holds a proof (the history record, the lease release a holder must"
+                        + " always be able to make, and the session check the lifecycle acts call).%n%s",
+                        writes.size(),
+                        String.join(System.lineSeparator(), writes))
+                .hasSizeLessThanOrEqualTo(BARE_STANDING_WRITES_AT_CLOSE);
+    }
+
+
+    @Test
+    void theReadsThatTakeABareStandingAreCountedToo_soTheyCannotDriftEither() throws IOException {
+        List<String> all = bareStandingMethods(null);
+
+        assertThat(all)
+                .as("%s method(s) in total. The reads are listed rather than exempted: Decision 9 says"
+                        + " reads on a workspace take InAudience, and each of these is a read the"
+                        + " controller has already fenced before calling — but that is a claim about"
+                        + " call sites, which is exactly the kind of claim that rots. Printing them"
+                        + " keeps the claim visible; the number must fall rather than grow.%n%s",
+                        all.size(),
+                        String.join(System.lineSeparator(), all))
                 .hasSizeLessThanOrEqualTo(BARE_STANDING_METHODS_AT_CLOSE);
     }
 
@@ -86,11 +108,31 @@ class StandingIsMintedAndDemandedTest {
     }
 
 
-    private static List<String> bareStandingMethods() throws IOException {
+    private static List<String> bareStandingMethods(Boolean readOnly) throws IOException {
         try (Stream<Path> files = javaFiles()) {
             return files.filter(file -> file.toString().endsWith("Service.java"))
-                    .flatMap(file -> matching(file, A_BARE_STANDING_METHOD))
+                    .flatMap(file -> bareStandingMethodsIn(file, readOnly))
                     .toList();
+        }
+    }
+
+
+    private static Stream<String> bareStandingMethodsIn(Path file, Boolean readOnly) {
+        try {
+            List<String> lines = Files.readAllLines(file);
+            List<String> found = new java.util.ArrayList<>();
+            for (int at = 0; at < lines.size(); at += 1) {
+                if (!A_BARE_STANDING_METHOD.matcher(lines.get(at)).find()) {
+                    continue;
+                }
+                boolean isRead = at > 0 && A_READ.matcher(lines.get(at - 1)).find();
+                if (readOnly == null || readOnly == isRead) {
+                    found.add(file.getFileName() + ": " + lines.get(at).strip());
+                }
+            }
+            return found.stream();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

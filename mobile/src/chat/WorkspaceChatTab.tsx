@@ -49,7 +49,7 @@ interface WorkspaceChatTabProps {
 export function WorkspaceChatTab({ itineraryId, myId }: WorkspaceChatTabProps) {
   const thread = useChatThread(itineraryId, true);
   const send = useSendChatMessage(itineraryId);
-  useChatDelivery(itineraryId, true);
+  useChatDelivery(itineraryId);
 
   const [draft, setDraft] = useState(() => readDraft(itineraryId));
   const [pending, setPending] = useState<PendingSends>([]);

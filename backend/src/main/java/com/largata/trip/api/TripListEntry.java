@@ -1,6 +1,5 @@
 package com.largata.trip.api;
 
-import com.largata.trip.api.Role;
 import com.largata.common.geo.Pin;
 import java.time.Instant;
 import java.time.LocalDate;

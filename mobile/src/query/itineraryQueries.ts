@@ -167,14 +167,6 @@ export function useRemoveCover(id: string): UseMutationResult<void, Error, void>
 }
 
 
-export function useUnarchiveTrip(id: string): UseMutationResult<ItineraryResponse, Error, void> {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: () => tripRepository.unarchiveTrip(id),
-    onSuccess: (updated) => onItineraryUpdated(client, updated),
-  });
-}
-
 export function useForkItinerary(sourceId: string): UseMutationResult<ForkedTripResponse, Error, void> {
   const client = useQueryClient();
   return useMutation({

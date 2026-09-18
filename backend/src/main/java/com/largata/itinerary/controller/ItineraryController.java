@@ -3,6 +3,7 @@ package com.largata.itinerary.controller;
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
 import com.largata.trip.api.Owner;
+import java.util.function.Supplier;
 import com.largata.trip.api.TripFence;
 import com.largata.trip.exception.NotTheTripOwnerException;
 import com.largata.identity.Traveler;
@@ -115,7 +116,7 @@ class ItineraryController {
     }
 
     private Owner theOwner(
-            Traveler traveler, UUID tripId, java.util.function.Supplier<NotTheTripOwnerException> refusal) {
+            Traveler traveler, UUID tripId, Supplier<NotTheTripOwnerException> refusal) {
         return fence.owner(requireMember(traveler, tripId), refusal);
     }
 }

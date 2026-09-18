@@ -259,6 +259,24 @@ class TripFenceTest {
 
 
     @Test
+    void theTwoWaysToMintAnOwnerDifferOnlyOnADeletedTrip_andThatIsTheWholePoint() {
+        TripFence fence = archived();
+
+        assertThatThrownBy(() -> fence.owner(PLAIN_MEMBER, NotTheTripOwnerException::toRemoveAMember))
+                .as("through the fence: an act a member cannot SEE refuses with the mask first")
+                .isInstanceOf(ItineraryNotFoundException.class);
+
+        assertThatThrownBy(() -> Owner.of(PLAIN_MEMBER, NotTheTripOwnerException::toRemoveAMember))
+                .as("bare: the value validates role and knows nothing about rooms, which is what lets"
+                        + " archive, unarchive and destroy REACH a closed room — they are the three"
+                        + " acts whose whole job is to operate on a trip nobody else can see, so they"
+                        + " are the only call sites that mint this way. Every other owner-only act"
+                        + " goes through the door above")
+                .isInstanceOf(NotTheTripOwnerException.class);
+    }
+
+
+    @Test
     void aFenceNeedsBothItsFacts() {
         assertThatThrownBy(() -> new TripFence(null, openStateForTest()))
                 .isInstanceOf(IllegalArgumentException.class);
