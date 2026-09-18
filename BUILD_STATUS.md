@@ -122,6 +122,12 @@ Key: ⬜ not started · 🔄 in progress · ✅ done · ⚠ blocked · 🚫 wont
 
 *One entry per change, oldest first. Prose, not a table: these entries run to thousands of characters and a three-column cell renders them as an unreadable column of text.*
 
+**2026-09-18**
+
+The `implement` skill (both copies, `.agents/skills/` and `.claude/skills/`) gains one clause — *run the full test suite once at the end* — beside the existing *typechecking regularly, single test files regularly*. Found uncommitted in the shared checkout at TW-2's session start; committed at the founder's instruction as its own commit on TW-2's branch, on the 2026-08-28 skills-sync precedent, so it reaches `dev` with that PR rather than sitting under a `docs(trip)` heading.
+
+*Why it wasn't a story —* tooling config with no product surface: one sentence in an agent skill.
+
 **2026-09-15**
 
 The object-store test base repointed at `quay.io/minio/minio` — two files, `ObjectStoreTestBase` and `S3ObjectStoreIT`, landed on S4.41's branch as `7d5eba64` because it was where the fault surfaced, but it is not that story's work. Docker Hub dropped the whole `minio/minio` repository (confirmed with `docker manifest inspect` from a second machine, not inferred from the runner's 404), so every IT extending the base — ~200 across `join`, `profile`, `media`, `postcard`, `diary`, `feed`, `identity`, `trip.dump` — had errored at class initialisation since 2026-09-11, and `dev`'s backend lane had been red the whole time. The identical release tag is still served from MinIO's own registry, so the fix is a registry swap plus `.asCompatibleSubstituteFor("minio/minio")` to keep `MinIOContainer`'s API; proven locally (`S3ObjectStoreIT` 4/4, `PhotoStorageIT` 2/2) before the push, then on CI as 1,342 ITs green. **Superseded the same day.** The next CI run pulled from quay.io for two minutes and timed out — eight Testcontainers retries, the pull completing only after the class had already died — so a registry that stalls is a coin flip on every backend run, not a fix. `GarageContainer` now wraps the same `dxflrs/garage:v2.3.0` compose runs, on Docker Hub's primary registry, with the same four-method surface the two callers used (`getS3URL`/`getUserName`/`getPassword`/`start`). Garage mints the bucket at boot, so the S3 `createBucket` step is gone too. Proven locally on `S3ObjectStoreIT` 4/4, `PhotoStorageIT` 2/2 and `CoverContractIT` 9/9 — the last a real multipart upload through ingest. **The stack and its tests now emulate the same store**, which is what the S3.3 swap should have done.
