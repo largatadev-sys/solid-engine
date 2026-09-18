@@ -156,22 +156,21 @@ public class ItineraryObjectService implements ItineraryApi {
 
     @Transactional(readOnly = true)
     public ItineraryObject readFor(UUID readerId, UUID objectId) {
-        return admitted(readerId, read(objectId));
+        return admitted(read(objectId));
     }
 
 
     @Transactional(readOnly = true)
     public ItineraryObject liveOfTripFor(UUID readerId, UUID tripId) {
         return admitted(
-                readerId,
                 objects.findByTripId(tripId)
                         .filter(candidate -> !candidate.isRetired())
                         .orElseThrow(ItineraryNotFoundException::new));
     }
 
 
-    private ItineraryObject admitted(UUID readerId, ItineraryObject object) {
-        if (workspaces.isArchived(object.tripId()) && !object.isOwnedBy(readerId)) {
+    private ItineraryObject admitted(ItineraryObject object) {
+        if (workspaces.isArchived(object.tripId())) {
             throw new ItineraryObjectNotFoundException();
         }
         return object;

@@ -2,6 +2,7 @@ package com.largata.postcard.controller;
 
 import com.largata.trip.api.AuthorizationGuard;
 import com.largata.trip.api.Membership;
+import com.largata.trip.api.TripFence;
 import com.largata.identity.Traveler;
 import com.largata.common.security.CurrentTraveler;
 import com.largata.postcard.dto.PostFromActivityRequest;
@@ -28,11 +29,14 @@ class TripPostcardController {
     private final PostcardService postcards;
     private final AuthorizationGuard guard;
     private final ObjectMapper json;
+    private final TripFence fence;
 
-    TripPostcardController(PostcardService postcards, AuthorizationGuard guard, ObjectMapper json) {
+    TripPostcardController(
+            PostcardService postcards, AuthorizationGuard guard, ObjectMapper json, TripFence fence) {
         this.postcards = postcards;
         this.guard = guard;
         this.json = json;
+        this.fence = fence;
     }
 
 
@@ -52,7 +56,7 @@ class TripPostcardController {
                         : json.readValue(postcardJson, PostFromActivityRequest.class);
         return PostcardResponse.of(
                 postcards.postFromActivity(
-                        member,
+                        fence.writable(member),
                         activityId,
                         request.caption(),
                         PostcardController.bytesOf(devicePhotos)));
